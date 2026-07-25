@@ -1,0 +1,16 @@
+# Git ignore for peanut-v2
+
+# Server
+server/.env
+server/runtime/
+server/vendor/
+server/public/uploads/
+
+# Web
+web/node_modules/
+web/dist/
+web/.eslintcache
+
+# System
+.DS_Store
+*.log
