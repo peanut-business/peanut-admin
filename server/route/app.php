@@ -13,6 +13,7 @@ use app\adminapi\controller\dict\DictDataController;
 use app\adminapi\controller\file\FileController;
 use app\adminapi\controller\file\UploadController;
 use app\adminapi\controller\crontab\CrontabController;
+use app\adminapi\controller\system\SystemController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
@@ -124,6 +125,10 @@ Route::group('api/admin', function () {
     Route::post('crontab/edit',      [CrontabController::class, 'edit']);
     Route::post('crontab/delete',    [CrontabController::class, 'delete']);
     Route::post('crontab/operate',   [CrontabController::class, 'operate']);
+
+    // 系统维护
+    Route::get('system/info',        [SystemController::class, 'info']);
+    Route::post('system/clearCache', [SystemController::class, 'clearCache']);
 
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);

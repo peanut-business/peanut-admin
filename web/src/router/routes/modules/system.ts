@@ -103,6 +103,16 @@ const SYSTEM: AppRouteRecordRaw = {
       },
     },
     {
+      path: 'maintenance',
+      name: 'SystemMaintenance',
+      component: () => import('@/views/system/maintenance/index.vue'),
+      meta: {
+        locale: 'menu.system.maintenance',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
       path: 'config',
       name: 'SystemConfig',
       component: () => import('@/views/system/config/index.vue'),
