@@ -37,6 +37,7 @@ import localeSystemCrontab from '@/views/system/crontab/locale/zh-CN';
 import localeSystemMaintenance from '@/views/system/maintenance/locale/zh-CN';
 import localeSystemLog from '@/views/system/log/locale/zh-CN';
 import localeSystemConfig from '@/views/system/config/locale/zh-CN';
+import localeSystemStorage from '@/views/system/storage/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
@@ -87,4 +88,5 @@ export default {
   ...localeSystemMaintenance,
   ...localeSystemLog,
   ...localeSystemConfig,
+  ...localeSystemStorage,
 };

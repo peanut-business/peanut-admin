@@ -5,13 +5,12 @@ namespace app\common\service;
 
 use app\common\enum\FileEnum;
 use app\common\model\file\File;
-use think\facade\Filesystem;
+use app\common\service\storage\Driver;
 use think\file\UploadedFile;
 
 /**
- * 上传服务：本地磁盘引擎（likeadmin 默认）。
- * 校验扩展名白名单与大小上限，保存到 public/uploads/<type>/<Ymd>/，
- * 落库 pa_file 并返回可访问 URL。
+ * 上传服务：校验扩展名白名单与大小上限后，交由存储引擎（local/qiniu/aliyun/qcloud）落盘/上云，
+ * 落库 pa_file 并返回可访问 URL。引擎由 storage.default 配置决定。
  */
 class UploadService
 {
@@ -58,15 +57,14 @@ class UploadService
         $originName = $uploaded->getOriginalName();
         $name = mb_substr((string)pathinfo($originName, PATHINFO_FILENAME), 0, 120) . '.' . $ext;
 
-        // 保存到 public/storage/uploads/<type>/<Ymd>/<hash>.ext
-        // putFile 默认规则已生成 date('Ymd')/md5 前缀，此处只需给出业务子目录，避免日期重复。
-        $subDir  = FileEnum::SAVE_DIR[$type];
-        $saved   = Filesystem::disk('public')->putFile($subDir, $uploaded);
-        if (!$saved) {
-            throw new \Exception('文件保存失败');
+        // 交由存储引擎上传：local 落盘 public/storage/，云引擎上传至对应 bucket
+        $subDir = FileEnum::SAVE_DIR[$type];
+        $driver = new Driver();
+        $driver->setUploadFile($uploaded);
+        if (!$driver->upload($subDir)) {
+            throw new \Exception($driver->getError() ?: '文件上传失败');
         }
-        // Filesystem 存到 public/storage/<subDir>/xxx；对外 uri 走 storage 目录
-        $uri = 'storage/' . str_replace('\\', '/', $saved);
+        $uri = $driver->buildUri($subDir);
 
         $file = File::create([
             'cid'       => $cid,

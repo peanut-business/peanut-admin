@@ -122,6 +122,16 @@ const SYSTEM: AppRouteRecordRaw = {
         roles: ['admin'],
       },
     },
+    {
+      path: 'storage',
+      name: 'SystemStorage',
+      component: () => import('@/views/system/storage/index.vue'),
+      meta: {
+        locale: 'menu.system.storage',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
   ],
 };
 

@@ -37,6 +37,7 @@ import localeSystemCrontab from '@/views/system/crontab/locale/en-US';
 import localeSystemMaintenance from '@/views/system/maintenance/locale/en-US';
 import localeSystemLog from '@/views/system/log/locale/en-US';
 import localeSystemConfig from '@/views/system/config/locale/en-US';
+import localeSystemStorage from '@/views/system/storage/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
@@ -87,4 +88,5 @@ export default {
   ...localeSystemMaintenance,
   ...localeSystemLog,
   ...localeSystemConfig,
+  ...localeSystemStorage,
 };

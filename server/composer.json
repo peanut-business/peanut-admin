@@ -25,7 +25,10 @@
         "topthink/think-orm": "^3.0|^4.0",
         "topthink/think-filesystem": "^2.0|^3.0",
         "firebase/php-jwt": "^6.10",
-        "dragonmantank/cron-expression": "^3.3"
+        "dragonmantank/cron-expression": "^3.3",
+        "qiniu/php-sdk": "7.4",
+        "aliyuncs/oss-sdk-php": "^2.4",
+        "qcloud/cos-sdk-v5": "^2.5"
     },
     "require-dev": {
         "topthink/think-dumper": "^1.0",

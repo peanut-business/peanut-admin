@@ -14,6 +14,7 @@ use app\adminapi\controller\file\FileController;
 use app\adminapi\controller\file\UploadController;
 use app\adminapi\controller\crontab\CrontabController;
 use app\adminapi\controller\system\SystemController;
+use app\adminapi\controller\setting\StorageController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
@@ -138,4 +139,10 @@ Route::group('api/admin', function () {
     // 系统配置 - 网站设置
     Route::get('config/website',      [ConfigController::class, 'getWebsite']);
     Route::post('config/website/save', [ConfigController::class, 'saveWebsite']);
+
+    // 系统配置 - 存储设置
+    Route::get('storage/lists',   [StorageController::class, 'lists']);
+    Route::get('storage/detail',  [StorageController::class, 'detail']);
+    Route::post('storage/setup',  [StorageController::class, 'setup']);
+    Route::post('storage/change', [StorageController::class, 'change']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
