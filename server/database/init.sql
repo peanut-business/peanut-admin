@@ -97,6 +97,22 @@ CREATE TABLE IF NOT EXISTS `pa_config` (
   UNIQUE KEY `uk_type_name` (`type`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置';
 
+CREATE TABLE IF NOT EXISTS `pa_jobs` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(50)  NOT NULL DEFAULT '' COMMENT '岗位名称',
+  `code`        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '岗位编码',
+  `sort`        SMALLINT     NOT NULL DEFAULT 0  COMMENT '排序',
+  `is_disable`  TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '是否禁用：0启用 1禁用',
+  `remark`      VARCHAR(500) NOT NULL DEFAULT '' COMMENT '备注',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_code` (`code`)
+  -- 不设 UNIQUE(code)：软删除会保留行，唯一键会阻止编码复用；
+  -- 编码唯一性由 JobsLogic::codeExists 在活跃记录范围内保证（软删的编码可复用）。
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='岗位';
+
 -- 超级管理员（密码：admin123456）
 INSERT IGNORE INTO `pa_admin` (`id`,`username`,`nickname`,`password`,`salt`,`root`,`create_time`,`update_time`)
 VALUES (1,'admin','超级管理员', MD5(CONCAT(MD5('admin123456'),'abcd1234')), 'abcd1234', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());

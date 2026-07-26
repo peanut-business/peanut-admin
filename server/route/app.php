@@ -7,6 +7,7 @@ use app\adminapi\controller\auth\MenuController;
 use app\adminapi\controller\auth\RoleController;
 use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\dept\DeptController;
+use app\adminapi\controller\dept\JobsController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
@@ -65,6 +66,15 @@ Route::group('api/admin', function () {
     Route::post('dept/edit',   [DeptController::class, 'edit']);
     Route::post('dept/delete', [DeptController::class, 'delete']);
     Route::post('dept/status', [DeptController::class, 'updateStatus']);
+
+    // 岗位
+    Route::get('jobs/lists',   [JobsController::class, 'lists']);
+    Route::get('jobs/all',     [JobsController::class, 'all']);
+    Route::get('jobs/detail',  [JobsController::class, 'detail']);
+    Route::post('jobs/add',    [JobsController::class, 'add']);
+    Route::post('jobs/edit',   [JobsController::class, 'edit']);
+    Route::post('jobs/delete', [JobsController::class, 'delete']);
+    Route::post('jobs/status', [JobsController::class, 'updateStatus']);
 
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);

@@ -30,6 +30,7 @@ import localeSystemMenu from '@/views/system/menu/locale/en-US';
 import localeSystemRole from '@/views/system/role/locale/en-US';
 import localeSystemAdmin from '@/views/system/admin/locale/en-US';
 import localeSystemDept from '@/views/system/dept/locale/en-US';
+import localeSystemJobs from '@/views/system/jobs/locale/en-US';
 import localeSystemLog from '@/views/system/log/locale/en-US';
 import localeSystemConfig from '@/views/system/config/locale/en-US';
 import localeSettings from './en-US/settings';
@@ -75,6 +76,7 @@ export default {
   ...localeSystemRole,
   ...localeSystemAdmin,
   ...localeSystemDept,
+  ...localeSystemJobs,
   ...localeSystemLog,
   ...localeSystemConfig,
 };
