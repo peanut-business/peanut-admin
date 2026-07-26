@@ -5,6 +5,7 @@ use app\adminapi\controller\auth\AdminController;
 use app\adminapi\controller\auth\LoginController;
 use app\adminapi\controller\auth\MenuController;
 use app\adminapi\controller\auth\RoleController;
+use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\dept\DeptController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
@@ -68,4 +69,8 @@ Route::group('api/admin', function () {
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);
     Route::post('log/clear', [OperationLogController::class, 'clear']);
+
+    // 系统配置 - 网站设置
+    Route::get('config/website',      [ConfigController::class, 'getWebsite']);
+    Route::post('config/website/save', [ConfigController::class, 'saveWebsite']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
