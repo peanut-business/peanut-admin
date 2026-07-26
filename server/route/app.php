@@ -5,6 +5,7 @@ use app\adminapi\controller\auth\AdminController;
 use app\adminapi\controller\auth\LoginController;
 use app\adminapi\controller\auth\MenuController;
 use app\adminapi\controller\auth\RoleController;
+use app\adminapi\controller\dept\DeptController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use think\facade\Route;
@@ -52,4 +53,13 @@ Route::group('api/admin', function () {
     Route::post('admin/edit',   [AdminController::class, 'edit']);
     Route::post('admin/delete', [AdminController::class, 'delete']);
     Route::post('admin/status', [AdminController::class, 'updateStatus']);
+
+    // 部门
+    Route::get('dept/lists',   [DeptController::class, 'lists']);
+    Route::get('dept/all',     [DeptController::class, 'all']);
+    Route::get('dept/detail',  [DeptController::class, 'detail']);
+    Route::post('dept/add',    [DeptController::class, 'add']);
+    Route::post('dept/edit',   [DeptController::class, 'edit']);
+    Route::post('dept/delete', [DeptController::class, 'delete']);
+    Route::post('dept/status', [DeptController::class, 'updateStatus']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class]);

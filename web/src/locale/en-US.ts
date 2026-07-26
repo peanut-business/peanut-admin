@@ -29,6 +29,7 @@ import localeUserSetting from '@/views/user/setting/locale/en-US';
 import localeSystemMenu from '@/views/system/menu/locale/en-US';
 import localeSystemRole from '@/views/system/role/locale/en-US';
 import localeSystemAdmin from '@/views/system/admin/locale/en-US';
+import localeSystemDept from '@/views/system/dept/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
@@ -71,4 +72,5 @@ export default {
   ...localeSystemMenu,
   ...localeSystemRole,
   ...localeSystemAdmin,
+  ...localeSystemDept,
 };
