@@ -46,7 +46,15 @@ class AdminLogic extends BaseLogic
     {
         Db::startTrans();
         try {
-            $data = ['id' => $params['id'], 'nickname' => $params['nickname'] ?? '', 'avatar' => $params['avatar'] ?? '', 'root' => $params['root'] ?? 0, 'disable' => $params['disable'] ?? 0];
+            // 只更新显式传入的字段，避免用默认值覆盖未提交字段（如 root/avatar）——
+            // 否则编辑超管时前端未传 root 会被静默降级为 0，造成越权/自锁。
+            $data = ['id' => $params['id']];
+            foreach (['nickname', 'avatar'] as $f) {
+                if (isset($params[$f])) $data[$f] = (string)$params[$f];
+            }
+            foreach (['root', 'disable'] as $f) {
+                if (isset($params[$f])) $data[$f] = (int)$params[$f];
+            }
             if (!empty($params['password'])) {
                 $salt = substr(md5((string)time()), 0, 8);
                 $data['salt'] = $salt; $data['password'] = $params['password'];
@@ -61,13 +69,26 @@ class AdminLogic extends BaseLogic
         } catch (\Throwable $e) { Db::rollback(); self::setError($e->getMessage()); return false; }
     }
 
-    public static function delete(int $id): void
+    public static function delete(int $id, int $selfId = 0): bool
     {
+        if (!self::guard($id, $selfId)) return false;
         Admin::destroy($id); AdminRole::where('admin_id', $id)->delete();
+        return true;
     }
 
-    public static function updateStatus(int $id, int $disable): void
+    public static function updateStatus(int $id, int $disable, int $selfId = 0): bool
     {
+        if (!self::guard($id, $selfId)) return false;
         Admin::update(['id' => $id, 'disable' => $disable]);
+        return true;
+    }
+
+    /** 防自锁：不能删除/禁用自己，也不能操作超级管理员(root) */
+    protected static function guard(int $id, int $selfId): bool
+    {
+        if ($selfId > 0 && $id === $selfId) { self::setError('不能操作当前登录的管理员'); return false; }
+        $target = Admin::findOrEmpty($id);
+        if (!$target->isEmpty() && (int)$target->root === 1) { self::setError('超级管理员不可删除或禁用'); return false; }
+        return true;
     }
 }

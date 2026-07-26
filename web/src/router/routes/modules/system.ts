@@ -22,6 +22,26 @@ const SYSTEM: AppRouteRecordRaw = {
         roles: ['admin'],
       },
     },
+    {
+      path: 'role',
+      name: 'SystemRole',
+      component: () => import('@/views/system/role/index.vue'),
+      meta: {
+        locale: 'menu.system.role',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
+      path: 'admin',
+      name: 'SystemAdmin',
+      component: () => import('@/views/system/admin/index.vue'),
+      meta: {
+        locale: 'menu.system.admin',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
   ],
 };
 
