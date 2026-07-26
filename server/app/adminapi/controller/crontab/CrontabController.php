@@ -1,0 +1,59 @@
+<?php
+declare(strict_types=1);
+
+namespace app\adminapi\controller\crontab;
+
+use app\adminapi\controller\BaseAdminController;
+use app\adminapi\logic\crontab\CrontabLogic;
+use app\adminapi\validate\crontab\CrontabValidate;
+
+/**
+ * 定时任务控制器
+ */
+class CrontabController extends BaseAdminController
+{
+    public function lists()
+    {
+        $res = CrontabLogic::lists($this->request->get());
+        return $this->dataLists($res['lists'], $res['count'], $res['pageNo'], $res['pageSize']);
+    }
+
+    public function detail()
+    {
+        return $this->data(CrontabLogic::detail((int) $this->request->get('id')));
+    }
+
+    public function add()
+    {
+        $this->validate($this->request->post(), CrontabValidate::class . '.add');
+        $r = CrontabLogic::add($this->request->post());
+        return $r ? $this->success('添加成功') : $this->fail(CrontabLogic::getError());
+    }
+
+    public function edit()
+    {
+        $this->validate($this->request->post(), CrontabValidate::class . '.edit');
+        $r = CrontabLogic::edit($this->request->post());
+        return $r ? $this->success('编辑成功') : $this->fail(CrontabLogic::getError());
+    }
+
+    public function delete()
+    {
+        CrontabLogic::delete((int) $this->request->post('id'));
+        return $this->success('删除成功');
+    }
+
+    public function operate()
+    {
+        $id      = (int) $this->request->post('id');
+        $operate = (string) $this->request->post('operate', '');
+        $r = CrontabLogic::operate($id, $operate);
+        return $r ? $this->success('操作成功') : $this->fail(CrontabLogic::getError());
+    }
+
+    public function expression()
+    {
+        $expression = (string) $this->request->get('expression', '');
+        return $this->data(CrontabLogic::expression($expression));
+    }
+}

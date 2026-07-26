@@ -176,6 +176,28 @@ CREATE TABLE IF NOT EXISTS `pa_file` (
   KEY `idx_type` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件';
 
+-- 定时任务（由 `php think crontab` 每分钟被系统 cron 调度，逐条比对 cron 表达式并派发 console 命令）
+CREATE TABLE IF NOT EXISTS `pa_crontab` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(100) NOT NULL DEFAULT '' COMMENT '任务名称',
+  `type`        TINYINT(1)   NOT NULL DEFAULT 1  COMMENT '类型：1定时任务',
+  `command`     VARCHAR(100) NOT NULL DEFAULT '' COMMENT '命令（think console 命令名）',
+  `params`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT '命令参数（空格分隔）',
+  `status`      TINYINT(1)   NOT NULL DEFAULT 2  COMMENT '状态：1运行 2停止 3错误',
+  `expression`  VARCHAR(100) NOT NULL DEFAULT '' COMMENT 'crontab 运行规则',
+  `error`       VARCHAR(255) NOT NULL DEFAULT '' COMMENT '最近一次错误信息',
+  `last_time`   INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '最后执行时间',
+  `time`        DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '最近一次耗时（秒）',
+  `max_time`    DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '最大耗时（秒）',
+  `sort`        INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '排序',
+  `remark`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='定时任务';
+
 -- 超级管理员（密码：admin123456）
 INSERT IGNORE INTO `pa_admin` (`id`,`username`,`nickname`,`password`,`salt`,`root`,`create_time`,`update_time`)
 VALUES (1,'admin','超级管理员', MD5(CONCAT(MD5('admin123456'),'abcd1234')), 'abcd1234', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());

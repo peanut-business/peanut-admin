@@ -12,6 +12,7 @@ use app\adminapi\controller\dict\DictTypeController;
 use app\adminapi\controller\dict\DictDataController;
 use app\adminapi\controller\file\FileController;
 use app\adminapi\controller\file\UploadController;
+use app\adminapi\controller\crontab\CrontabController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
@@ -114,6 +115,15 @@ Route::group('api/admin', function () {
     Route::post('file/cate/add',    [FileController::class, 'addCate']);
     Route::post('file/cate/edit',   [FileController::class, 'editCate']);
     Route::post('file/cate/delete', [FileController::class, 'delCate']);
+
+    // 定时任务
+    Route::get('crontab/lists',      [CrontabController::class, 'lists']);
+    Route::get('crontab/detail',     [CrontabController::class, 'detail']);
+    Route::get('crontab/expression', [CrontabController::class, 'expression']);
+    Route::post('crontab/add',       [CrontabController::class, 'add']);
+    Route::post('crontab/edit',      [CrontabController::class, 'edit']);
+    Route::post('crontab/delete',    [CrontabController::class, 'delete']);
+    Route::post('crontab/operate',   [CrontabController::class, 'operate']);
 
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);

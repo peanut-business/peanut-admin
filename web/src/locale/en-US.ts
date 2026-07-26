@@ -33,6 +33,7 @@ import localeSystemDept from '@/views/system/dept/locale/en-US';
 import localeSystemJobs from '@/views/system/jobs/locale/en-US';
 import localeSystemDict from '@/views/system/dict/locale/en-US';
 import localeSystemFile from '@/views/system/file/locale/en-US';
+import localeSystemCrontab from '@/views/system/crontab/locale/en-US';
 import localeSystemLog from '@/views/system/log/locale/en-US';
 import localeSystemConfig from '@/views/system/config/locale/en-US';
 import localeSettings from './en-US/settings';
@@ -81,6 +82,7 @@ export default {
   ...localeSystemJobs,
   ...localeSystemDict,
   ...localeSystemFile,
+  ...localeSystemCrontab,
   ...localeSystemLog,
   ...localeSystemConfig,
 };
