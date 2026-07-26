@@ -61,7 +61,7 @@
         },
         series: {
           name: 'total',
-          data,
+          data: data.value,
           type: 'bar',
           barWidth: 7,
           itemStyle: {
@@ -163,7 +163,7 @@
             label: {
               show: false,
             },
-            data,
+            data: data.value,
           },
         ],
       };
