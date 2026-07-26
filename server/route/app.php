@@ -6,8 +6,10 @@ use app\adminapi\controller\auth\LoginController;
 use app\adminapi\controller\auth\MenuController;
 use app\adminapi\controller\auth\RoleController;
 use app\adminapi\controller\dept\DeptController;
+use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
+use app\adminapi\http\middleware\OperationLogMiddleware;
 use think\facade\Route;
 
 // ─── 免登录路由（不挂任何鉴权中间件） ──────────────────────────────────────
@@ -62,4 +64,8 @@ Route::group('api/admin', function () {
     Route::post('dept/edit',   [DeptController::class, 'edit']);
     Route::post('dept/delete', [DeptController::class, 'delete']);
     Route::post('dept/status', [DeptController::class, 'updateStatus']);
-})->middleware([LoginMiddleware::class, AuthMiddleware::class]);
+
+    // 操作日志
+    Route::get('log/lists',  [OperationLogController::class, 'lists']);
+    Route::post('log/clear', [OperationLogController::class, 'clear']);
+})->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
