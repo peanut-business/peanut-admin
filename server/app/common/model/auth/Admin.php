@@ -15,7 +15,7 @@ class Admin extends BaseModel
 
     public function roles()
     {
-        return $this->belongsToMany(SystemRole::class, 'pa_admin_role', 'role_id', 'admin_id');
+        return $this->belongsToMany(SystemRole::class, 'admin_role', 'role_id', 'admin_id');
     }
 
     public function setPasswordAttr(string $value, array $data): string
