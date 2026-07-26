@@ -113,6 +113,39 @@ CREATE TABLE IF NOT EXISTS `pa_jobs` (
   -- 编码唯一性由 JobsLogic::codeExists 在活跃记录范围内保证（软删的编码可复用）。
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='岗位';
 
+-- 字典类型
+CREATE TABLE IF NOT EXISTS `pa_dict_type` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(100) NOT NULL DEFAULT '' COMMENT '字典名称',
+  `type`        VARCHAR(100) NOT NULL DEFAULT '' COMMENT '字典类型（英文标识）',
+  `is_disable`  TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '是否禁用：0启用 1禁用',
+  `remark`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_type` (`type`)
+  -- 不设 UNIQUE(type)：软删除保留行，唯一键会阻止类型标识复用；
+  -- 类型唯一性由 DictTypeLogic::typeExists 在活跃记录范围内保证。
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典类型';
+
+-- 字典数据
+CREATE TABLE IF NOT EXISTS `pa_dict_data` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(100) NOT NULL DEFAULT '' COMMENT '数据名称',
+  `value`       VARCHAR(255) NOT NULL DEFAULT '' COMMENT '数据值',
+  `type_id`     INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '字典类型id',
+  `type_value`  VARCHAR(100) NOT NULL DEFAULT '' COMMENT '冗余：字典类型标识（随类型编辑级联更新）',
+  `sort`        SMALLINT     NOT NULL DEFAULT 0  COMMENT '排序',
+  `is_disable`  TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '是否禁用：0启用 1禁用',
+  `remark`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_type_id` (`type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典数据';
+
 -- 超级管理员（密码：admin123456）
 INSERT IGNORE INTO `pa_admin` (`id`,`username`,`nickname`,`password`,`salt`,`root`,`create_time`,`update_time`)
 VALUES (1,'admin','超级管理员', MD5(CONCAT(MD5('admin123456'),'abcd1234')), 'abcd1234', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());

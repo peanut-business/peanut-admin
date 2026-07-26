@@ -31,6 +31,7 @@ import localeSystemRole from '@/views/system/role/locale/zh-CN';
 import localeSystemAdmin from '@/views/system/admin/locale/zh-CN';
 import localeSystemDept from '@/views/system/dept/locale/zh-CN';
 import localeSystemJobs from '@/views/system/jobs/locale/zh-CN';
+import localeSystemDict from '@/views/system/dict/locale/zh-CN';
 import localeSystemLog from '@/views/system/log/locale/zh-CN';
 import localeSystemConfig from '@/views/system/config/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
@@ -77,6 +78,7 @@ export default {
   ...localeSystemAdmin,
   ...localeSystemDept,
   ...localeSystemJobs,
+  ...localeSystemDict,
   ...localeSystemLog,
   ...localeSystemConfig,
 };

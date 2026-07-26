@@ -63,6 +63,16 @@ const SYSTEM: AppRouteRecordRaw = {
       },
     },
     {
+      path: 'dict',
+      name: 'SystemDict',
+      component: () => import('@/views/system/dict/index.vue'),
+      meta: {
+        locale: 'menu.system.dict',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
       path: 'log',
       name: 'SystemLog',
       component: () => import('@/views/system/log/index.vue'),

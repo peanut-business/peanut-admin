@@ -8,6 +8,8 @@ use app\adminapi\controller\auth\RoleController;
 use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\dept\DeptController;
 use app\adminapi\controller\dept\JobsController;
+use app\adminapi\controller\dict\DictTypeController;
+use app\adminapi\controller\dict\DictDataController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
@@ -75,6 +77,24 @@ Route::group('api/admin', function () {
     Route::post('jobs/edit',   [JobsController::class, 'edit']);
     Route::post('jobs/delete', [JobsController::class, 'delete']);
     Route::post('jobs/status', [JobsController::class, 'updateStatus']);
+
+    // 字典类型
+    Route::get('dict/type/lists',   [DictTypeController::class, 'lists']);
+    Route::get('dict/type/all',     [DictTypeController::class, 'all']);
+    Route::get('dict/type/detail',  [DictTypeController::class, 'detail']);
+    Route::post('dict/type/add',    [DictTypeController::class, 'add']);
+    Route::post('dict/type/edit',   [DictTypeController::class, 'edit']);
+    Route::post('dict/type/delete', [DictTypeController::class, 'delete']);
+    Route::post('dict/type/status', [DictTypeController::class, 'updateStatus']);
+
+    // 字典数据
+    Route::get('dict/data/lists',   [DictDataController::class, 'lists']);
+    Route::get('dict/data/byType',  [DictDataController::class, 'byType']);
+    Route::get('dict/data/detail',  [DictDataController::class, 'detail']);
+    Route::post('dict/data/add',    [DictDataController::class, 'add']);
+    Route::post('dict/data/edit',   [DictDataController::class, 'edit']);
+    Route::post('dict/data/delete', [DictDataController::class, 'delete']);
+    Route::post('dict/data/status', [DictDataController::class, 'updateStatus']);
 
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);
