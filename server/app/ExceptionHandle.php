@@ -50,7 +50,11 @@ class ExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
-        // 添加自定义异常处理机制
+        // 参数校验失败：框架原生 validate() 抛出的 ValidateException，
+        // 统一转成 {code:40000, msg:友好提示}，避免泄露内部错误页。
+        if ($e instanceof ValidateException) {
+            return json(['code' => 40000, 'msg' => $e->getError(), 'data' => null]);
+        }
 
         // 其他错误交给系统处理
         return parent::render($request, $e);
