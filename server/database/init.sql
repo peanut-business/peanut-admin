@@ -146,6 +146,36 @@ CREATE TABLE IF NOT EXISTS `pa_dict_data` (
   KEY `idx_type_id` (`type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典数据';
 
+-- 文件分类
+CREATE TABLE IF NOT EXISTS `pa_file_cate` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `pid`         INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '父级ID',
+  `type`        TINYINT(2)   NOT NULL DEFAULT 10 COMMENT '类型：10图片 20视频 30文件',
+  `name`        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '分类名称',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件分类';
+
+-- 文件（素材）
+CREATE TABLE IF NOT EXISTS `pa_file` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `cid`         INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '分类ID',
+  `source_id`   INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '上传者ID',
+  `source`      TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '来源：0后台 1用户',
+  `type`        TINYINT(2)   NOT NULL DEFAULT 10 COMMENT '类型：10图片 20视频 30文件',
+  `name`        VARCHAR(255) NOT NULL DEFAULT '' COMMENT '文件名称',
+  `uri`         VARCHAR(255) NOT NULL DEFAULT '' COMMENT '相对路径',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_cid` (`cid`),
+  KEY `idx_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件';
+
 -- 超级管理员（密码：admin123456）
 INSERT IGNORE INTO `pa_admin` (`id`,`username`,`nickname`,`password`,`salt`,`root`,`create_time`,`update_time`)
 VALUES (1,'admin','超级管理员', MD5(CONCAT(MD5('admin123456'),'abcd1234')), 'abcd1234', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());

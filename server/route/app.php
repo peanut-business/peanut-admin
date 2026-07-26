@@ -10,6 +10,8 @@ use app\adminapi\controller\dept\DeptController;
 use app\adminapi\controller\dept\JobsController;
 use app\adminapi\controller\dict\DictTypeController;
 use app\adminapi\controller\dict\DictDataController;
+use app\adminapi\controller\file\FileController;
+use app\adminapi\controller\file\UploadController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
@@ -95,6 +97,23 @@ Route::group('api/admin', function () {
     Route::post('dict/data/edit',   [DictDataController::class, 'edit']);
     Route::post('dict/data/delete', [DictDataController::class, 'delete']);
     Route::post('dict/data/status', [DictDataController::class, 'updateStatus']);
+
+    // 素材库 - 上传
+    Route::post('upload/image', [UploadController::class, 'image']);
+    Route::post('upload/video', [UploadController::class, 'video']);
+    Route::post('upload/file',  [UploadController::class, 'file']);
+
+    // 素材库 - 文件
+    Route::get('file/lists',   [FileController::class, 'lists']);
+    Route::post('file/move',   [FileController::class, 'move']);
+    Route::post('file/rename', [FileController::class, 'rename']);
+    Route::post('file/delete', [FileController::class, 'delete']);
+
+    // 素材库 - 分类
+    Route::get('file/cate/lists',   [FileController::class, 'listCate']);
+    Route::post('file/cate/add',    [FileController::class, 'addCate']);
+    Route::post('file/cate/edit',   [FileController::class, 'editCate']);
+    Route::post('file/cate/delete', [FileController::class, 'delCate']);
 
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);

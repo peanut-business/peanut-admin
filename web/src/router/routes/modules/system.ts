@@ -73,6 +73,16 @@ const SYSTEM: AppRouteRecordRaw = {
       },
     },
     {
+      path: 'file',
+      name: 'SystemFile',
+      component: () => import('@/views/system/file/index.vue'),
+      meta: {
+        locale: 'menu.system.file',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
       path: 'log',
       name: 'SystemLog',
       component: () => import('@/views/system/log/index.vue'),
