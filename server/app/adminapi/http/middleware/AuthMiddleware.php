@@ -12,7 +12,7 @@ use app\common\service\JsonService;
  *
  * 必须在 LoginMiddleware 之后执行（依赖 $request->adminInfo）。
  * root=1 的超级管理员放行；其余按 角色→菜单→perms 校验。
- * 访问标识由 URL path 推导（去掉 admin/ 前缀），例如 admin/menu/lists → menu/lists。
+ * 访问标识由 URL path 推导（去掉 api/admin/ 前缀），例如 api/admin/menu/lists → menu/lists。
  */
 class AuthMiddleware
 {
@@ -28,9 +28,9 @@ class AuthMiddleware
             return $next($request);
         }
 
-        // 由请求路径推导访问标识：strip 掉入口 admin/ 前缀
+        // 由请求路径推导访问标识：strip 掉入口 api/admin/ 前缀
         $path      = strtolower(trim($request->pathinfo(), '/'));
-        $accessUri = preg_replace('#^admin/#', '', $path);
+        $accessUri = preg_replace('#^api/admin/#', '', $path);
 
         $roleIds = array_column($adminInfo['roles'] ?? [], 'id');
         if (empty($roleIds)) {

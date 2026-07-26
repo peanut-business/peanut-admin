@@ -22,7 +22,8 @@ Route::group(function () {
 })->middleware(LoginMiddleware::class);
 
 // ─── 管理后台完整 API（Login → Auth 两层中间件） ─────────────────────────────
-Route::group('admin', function () {
+// 前缀统一挂在 api/ 下，前端 vite 代理只转发 /api，生产 nginx 也只需转一条前缀。
+Route::group('api/admin', function () {
     Route::get('login/info', [LoginController::class, 'info']);
 
     // 菜单
