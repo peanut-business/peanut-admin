@@ -91,4 +91,37 @@ class AdminLogic extends BaseLogic
         if (!$target->isEmpty() && (int)$target->root === 1) { self::setError('超级管理员不可删除或禁用'); return false; }
         return true;
     }
+
+    /**
+     * 编辑当前登录管理员的个人信息（昵称/头像/密码）
+     * 修改密码需校验当前密码；密码留空则不改。
+     */
+    public static function editSelf(int $adminId, array $params): bool
+    {
+        $admin = Admin::findOrEmpty($adminId);
+        if ($admin->isEmpty()) { self::setError('管理员不存在'); return false; }
+
+        $data = [
+            'id'       => $adminId,
+            'nickname' => (string)$params['nickname'],
+        ];
+        if (isset($params['avatar'])) {
+            $data['avatar'] = (string)$params['avatar'];
+        }
+
+        if (!empty($params['password'])) {
+            $old = (string)($params['password_old'] ?? '');
+            if (md5(md5($old) . $admin->salt) !== $admin->password) {
+                self::setError('当前密码错误');
+                return false;
+            }
+            // password mutator 用同一数组里的 salt 参与哈希，故一并更新
+            $salt = substr(md5((string)time()), 0, 8);
+            $data['salt']     = $salt;
+            $data['password'] = $params['password'];
+        }
+
+        Admin::update($data);
+        return true;
+    }
 }

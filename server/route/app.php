@@ -59,6 +59,7 @@ Route::group('api/admin', function () {
     Route::get('admin/lists',   [AdminController::class, 'lists']);
     Route::get('admin/detail',  [AdminController::class, 'detail']);
     Route::get('admin/self',    [AdminController::class, 'self']);
+    Route::post('admin/editSelf', [AdminController::class, 'editSelf']);
     Route::post('admin/add',    [AdminController::class, 'add']);
     Route::post('admin/edit',   [AdminController::class, 'edit']);
     Route::post('admin/delete', [AdminController::class, 'delete']);

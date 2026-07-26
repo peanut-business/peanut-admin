@@ -78,4 +78,20 @@ export default {
   'userSetting.certification.columns.operation': '操作',
   'userSetting.certification.button.check': '查看',
   'userSetting.certification.button.withdraw': '撤回',
+  // 个人中心 - 头像
+  'userSetting.avatar.uploadSuccess': '头像上传成功',
+  'userSetting.avatar.uploadFail': '头像上传失败',
+  // 个人中心 - 安全设置（修改密码）
+  'userSetting.security.oldPassword': '当前密码',
+  'userSetting.security.oldPassword.placeholder': '请输入当前密码',
+  'userSetting.security.newPassword': '新密码',
+  'userSetting.security.newPassword.placeholder': '请输入新密码（6~32 位）',
+  'userSetting.security.confirmPassword': '确认新密码',
+  'userSetting.security.confirmPassword.placeholder': '请再次输入新密码',
+  'userSetting.security.success': '密码修改成功',
+  'userSetting.security.error.oldRequired': '请输入当前密码',
+  'userSetting.security.error.newRequired': '请输入新密码',
+  'userSetting.security.error.length': '密码长度须在 6~32 位字符',
+  'userSetting.security.error.confirmRequired': '请再次输入新密码',
+  'userSetting.security.error.mismatch': '两次输入的密码不一致',
 };

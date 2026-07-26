@@ -38,9 +38,28 @@ export interface AdminForm {
   disable: number;
 }
 
+/** 个人中心：编辑个人信息提交体（密码留空 = 不修改） */
+export interface EditSelfForm {
+  nickname: string;
+  avatar: string;
+  password?: string;
+  password_confirm?: string;
+  password_old?: string;
+}
+
 /** 管理员列表（含所属角色） */
 export function getAdminList() {
   return axios.get<AdminRecord[]>('/api/admin/admin/lists');
+}
+
+/** 当前登录管理员信息（个人中心回填） */
+export function getAdminSelf() {
+  return axios.get<AdminDetail>('/api/admin/admin/self');
+}
+
+/** 编辑当前登录管理员的个人信息 */
+export function editAdminSelf(data: EditSelfForm) {
+  return axios.post('/api/admin/admin/editSelf', data);
 }
 
 /** 管理员详情（含 role_ids，供编辑回填角色选择） */
