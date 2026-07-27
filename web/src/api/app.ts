@@ -106,3 +106,19 @@ export function getDecorateConfig() {
 export function saveDecorateConfig(data: DecorateConfig) {
   return axios.post('/api/admin/setting/decorate/save', data);
 }
+
+// ─── 交易设置 ────────────────────────────────────────────────────────────────
+export interface TransactionConfig {
+  cancel_unpaid_orders: number;
+  cancel_unpaid_orders_times: number;
+  verification_orders: number;
+  verification_orders_times: number;
+}
+
+export function getTransactionConfig() {
+  return axios.get<TransactionConfig>('/api/admin/setting/transaction/config');
+}
+
+export function saveTransactionConfig(data: TransactionConfig) {
+  return axios.post('/api/admin/setting/transaction/save', data);
+}

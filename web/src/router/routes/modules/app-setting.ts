@@ -62,6 +62,16 @@ const APP_SETTING: AppRouteRecordRaw = {
         roles: ['admin'],
       },
     },
+    {
+      path: 'transaction',
+      name: 'AppSettingTransaction',
+      component: () => import('@/views/app-setting/transaction/index.vue'),
+      meta: {
+        locale: 'menu.appSetting.transaction',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
   ],
 };
 

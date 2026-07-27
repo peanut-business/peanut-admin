@@ -34,6 +34,7 @@ use app\adminapi\controller\setting\CustomerServiceController;
 use app\adminapi\controller\setting\PayConfigController;
 use app\adminapi\controller\setting\ChannelController;
 use app\adminapi\controller\setting\DecorateController;
+use app\adminapi\controller\setting\TransactionSettingsController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\controller\finance\AccountLogController;
 use app\adminapi\controller\finance\RechargeController;
@@ -236,6 +237,10 @@ Route::group('api/admin', function () {
     // 应用设置 - 页面装修
     Route::get('setting/decorate/config',  [DecorateController::class, 'getConfig']);
     Route::post('setting/decorate/save',   [DecorateController::class, 'setConfig']);
+
+    // 应用设置 - 交易设置
+    Route::get('setting/transaction/config',  [TransactionSettingsController::class, 'getConfig']);
+    Route::post('setting/transaction/save',   [TransactionSettingsController::class, 'setConfig']);
 
     // 财务 - 充值订单
     Route::get('finance/recharge/lists', [RechargeController::class, 'lists']);

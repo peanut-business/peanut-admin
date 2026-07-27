@@ -27,6 +27,7 @@ import localeAppCustomerService from '@/views/app-setting/customer-service/local
 import localeAppPay from '@/views/app-setting/pay/locale/zh-CN';
 import localeAppChannel from '@/views/app-setting/channel/locale/zh-CN';
 import localeAppDecorate from '@/views/app-setting/decorate/locale/zh-CN';
+import localeAppTransaction from '@/views/app-setting/transaction/locale/zh-CN';
 import localeArticleCate from '@/views/article/cate/locale/zh-CN';
 import localeArticleList from '@/views/article/list/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
@@ -65,6 +66,7 @@ export default {
   ...localeAppPay,
   ...localeAppChannel,
   ...localeAppDecorate,
+  ...localeAppTransaction,
   ...localeArticleCate,
   ...localeArticleList,
 };
