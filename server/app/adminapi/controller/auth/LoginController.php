@@ -37,13 +37,19 @@ class LoginController extends BaseAdminController
         $admin = Admin::with(['roles'])->findOrEmpty($this->adminId);
         if ($admin->isEmpty()) return $this->fail('管理员不存在');
 
+        $roleNames = $admin->roles->column('name');
+
         return $this->data([
             'id'       => $admin->id,
             'username' => $admin->username,
             'nickname' => $admin->nickname,
+            // Arco Design Pro Vue 展示与鉴权所需字段
+            'name'     => $admin->nickname ?: $admin->username,
             'avatar'   => $admin->avatar,
+            // 前端路由守卫用标量 role（'admin' 可访问全部 demo 路由）
+            'role'     => $admin->root ? 'admin' : 'user',
             'root'     => $admin->root,
-            'roles'    => $admin->roles->column('name'),
+            'roles'    => $roleNames,
         ]);
     }
 

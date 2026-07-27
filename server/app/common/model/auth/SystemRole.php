@@ -11,6 +11,6 @@ class SystemRole extends BaseModel
 
     public function menus()
     {
-        return $this->belongsToMany(SystemMenu::class, 'pa_system_role_menu', 'menu_id', 'role_id');
+        return $this->belongsToMany(SystemMenu::class, 'system_role_menu', 'menu_id', 'role_id');
     }
 }

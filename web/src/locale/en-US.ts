@@ -1,68 +1,74 @@
-import localeMessageBox from '@/components/message-box/locale/en-US';
 import localeLogin from '@/views/login/locale/en-US';
 
 import localeWorkplace from '@/views/dashboard/workplace/locale/en-US';
-/** simple */
-import localeMonitor from '@/views/dashboard/monitor/locale/en-US';
-
-import localeSearchTable from '@/views/list/search-table/locale/en-US';
-import localeCardList from '@/views/list/card/locale/en-US';
-
-import localeStepForm from '@/views/form/step/locale/en-US';
-import localeGroupForm from '@/views/form/group/locale/en-US';
-
-import localeBasicProfile from '@/views/profile/basic/locale/en-US';
-
-import localeDataAnalysis from '@/views/visualization/data-analysis/locale/en-US';
-import localeMultiDAnalysis from '@/views/visualization/multi-dimension-data-analysis/locale/en-US';
-
-import localeSuccess from '@/views/result/success/locale/en-US';
-import localeError from '@/views/result/error/locale/en-US';
-
-import locale403 from '@/views/exception/403/locale/en-US';
-import locale404 from '@/views/exception/404/locale/en-US';
-import locale500 from '@/views/exception/500/locale/en-US';
-
-import localeUserInfo from '@/views/user/info/locale/en-US';
 import localeUserSetting from '@/views/user/setting/locale/en-US';
-/** simple end */
+
+import localeSystemMenu from '@/views/system/menu/locale/en-US';
+import localeSystemRole from '@/views/system/role/locale/en-US';
+import localeSystemAdmin from '@/views/system/admin/locale/en-US';
+import localeSystemDept from '@/views/system/dept/locale/en-US';
+import localeSystemJobs from '@/views/system/jobs/locale/en-US';
+import localeSystemDict from '@/views/system/dict/locale/en-US';
+import localeSystemFile from '@/views/system/file/locale/en-US';
+import localeSystemCrontab from '@/views/system/crontab/locale/en-US';
+import localeSystemMaintenance from '@/views/system/maintenance/locale/en-US';
+import localeSystemLog from '@/views/system/log/locale/en-US';
+import localeSystemConfig from '@/views/system/config/locale/en-US';
+import localeSystemStorage from '@/views/system/storage/locale/en-US';
+import localeMemberList from '@/views/member/list/locale/en-US';
+import localeMemberTag from '@/views/member/tag/locale/en-US';
+import localeNoticeChannel from '@/views/notice/channel/locale/en-US';
+import localeNoticeTemplate from '@/views/notice/template/locale/en-US';
+import localeNoticeLog from '@/views/notice/log/locale/en-US';
+import localeFinanceAccountLog from '@/views/finance/account-log/locale/en-US';
+import localeFinanceRecharge from '@/views/finance/recharge/locale/en-US';
+import localeFinanceRefund from '@/views/finance/refund/locale/en-US';
+import localeAppHotSearch from '@/views/app-setting/hot-search/locale/en-US';
+import localeAppCustomerService from '@/views/app-setting/customer-service/locale/en-US';
+import localeAppPay from '@/views/app-setting/pay/locale/en-US';
+import localeAppChannel from '@/views/app-setting/channel/locale/en-US';
+import localeAppDecorate from '@/views/app-setting/decorate/locale/en-US';
+import localeAppTransaction from '@/views/app-setting/transaction/locale/en-US';
+import localeArticleCate from '@/views/article/cate/locale/en-US';
+import localeArticleList from '@/views/article/list/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
   'menu.dashboard': 'Dashboard',
-  'menu.server.dashboard': 'Dashboard-Server',
-  'menu.server.workplace': 'Workplace-Server',
-  'menu.server.monitor': 'Monitor-Server',
-  'menu.list': 'List',
-  'menu.result': 'Result',
-  'menu.exception': 'Exception',
-  'menu.form': 'Form',
-  'menu.profile': 'Profile',
-  'menu.visualization': 'Data Visualization',
   'menu.user': 'User Center',
-  'menu.arcoWebsite': 'Arco Design',
-  'menu.faq': 'FAQ',
-  'navbar.docs': 'Docs',
   'navbar.action.locale': 'Switch to English',
+  'navbar.userSettings': 'User Settings',
+  'navbar.logout': 'Logout',
   ...localeSettings,
-  ...localeMessageBox,
   ...localeLogin,
   ...localeWorkplace,
-  /** simple */
-  ...localeMonitor,
-  ...localeSearchTable,
-  ...localeCardList,
-  ...localeStepForm,
-  ...localeGroupForm,
-  ...localeBasicProfile,
-  ...localeDataAnalysis,
-  ...localeMultiDAnalysis,
-  ...localeSuccess,
-  ...localeError,
-  ...locale403,
-  ...locale404,
-  ...locale500,
-  ...localeUserInfo,
   ...localeUserSetting,
-  /** simple end */
+  ...localeSystemMenu,
+  ...localeSystemRole,
+  ...localeSystemAdmin,
+  ...localeSystemDept,
+  ...localeSystemJobs,
+  ...localeSystemDict,
+  ...localeSystemFile,
+  ...localeSystemCrontab,
+  ...localeSystemMaintenance,
+  ...localeSystemLog,
+  ...localeSystemConfig,
+  ...localeSystemStorage,
+  ...localeMemberList,
+  ...localeMemberTag,
+  ...localeNoticeChannel,
+  ...localeNoticeTemplate,
+  ...localeNoticeLog,
+  ...localeFinanceAccountLog,
+  ...localeFinanceRecharge,
+  ...localeFinanceRefund,
+  ...localeAppHotSearch,
+  ...localeAppCustomerService,
+  ...localeAppPay,
+  ...localeAppChannel,
+  ...localeAppDecorate,
+  ...localeAppTransaction,
+  ...localeArticleCate,
+  ...localeArticleList,
 };

@@ -1,68 +1,74 @@
-import localeMessageBox from '@/components/message-box/locale/zh-CN';
 import localeLogin from '@/views/login/locale/zh-CN';
 
 import localeWorkplace from '@/views/dashboard/workplace/locale/zh-CN';
-/** simple */
-import localeMonitor from '@/views/dashboard/monitor/locale/zh-CN';
-
-import localeSearchTable from '@/views/list/search-table/locale/zh-CN';
-import localeCardList from '@/views/list/card/locale/zh-CN';
-
-import localeStepForm from '@/views/form/step/locale/zh-CN';
-import localeGroupForm from '@/views/form/group/locale/zh-CN';
-
-import localeBasicProfile from '@/views/profile/basic/locale/zh-CN';
-
-import localeDataAnalysis from '@/views/visualization/data-analysis/locale/zh-CN';
-import localeMultiDAnalysis from '@/views/visualization/multi-dimension-data-analysis/locale/zh-CN';
-
-import localeSuccess from '@/views/result/success/locale/zh-CN';
-import localeError from '@/views/result/error/locale/zh-CN';
-
-import locale403 from '@/views/exception/403/locale/zh-CN';
-import locale404 from '@/views/exception/404/locale/zh-CN';
-import locale500 from '@/views/exception/500/locale/zh-CN';
-
-import localeUserInfo from '@/views/user/info/locale/zh-CN';
 import localeUserSetting from '@/views/user/setting/locale/zh-CN';
-/** simple end */
+
+import localeSystemMenu from '@/views/system/menu/locale/zh-CN';
+import localeSystemRole from '@/views/system/role/locale/zh-CN';
+import localeSystemAdmin from '@/views/system/admin/locale/zh-CN';
+import localeSystemDept from '@/views/system/dept/locale/zh-CN';
+import localeSystemJobs from '@/views/system/jobs/locale/zh-CN';
+import localeSystemDict from '@/views/system/dict/locale/zh-CN';
+import localeSystemFile from '@/views/system/file/locale/zh-CN';
+import localeSystemCrontab from '@/views/system/crontab/locale/zh-CN';
+import localeSystemMaintenance from '@/views/system/maintenance/locale/zh-CN';
+import localeSystemLog from '@/views/system/log/locale/zh-CN';
+import localeSystemConfig from '@/views/system/config/locale/zh-CN';
+import localeSystemStorage from '@/views/system/storage/locale/zh-CN';
+import localeMemberList from '@/views/member/list/locale/zh-CN';
+import localeMemberTag from '@/views/member/tag/locale/zh-CN';
+import localeNoticeChannel from '@/views/notice/channel/locale/zh-CN';
+import localeNoticeTemplate from '@/views/notice/template/locale/zh-CN';
+import localeNoticeLog from '@/views/notice/log/locale/zh-CN';
+import localeFinanceAccountLog from '@/views/finance/account-log/locale/zh-CN';
+import localeFinanceRecharge from '@/views/finance/recharge/locale/zh-CN';
+import localeFinanceRefund from '@/views/finance/refund/locale/zh-CN';
+import localeAppHotSearch from '@/views/app-setting/hot-search/locale/zh-CN';
+import localeAppCustomerService from '@/views/app-setting/customer-service/locale/zh-CN';
+import localeAppPay from '@/views/app-setting/pay/locale/zh-CN';
+import localeAppChannel from '@/views/app-setting/channel/locale/zh-CN';
+import localeAppDecorate from '@/views/app-setting/decorate/locale/zh-CN';
+import localeAppTransaction from '@/views/app-setting/transaction/locale/zh-CN';
+import localeArticleCate from '@/views/article/cate/locale/zh-CN';
+import localeArticleList from '@/views/article/list/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
   'menu.dashboard': '仪表盘',
-  'menu.server.dashboard': '仪表盘-服务端',
-  'menu.server.workplace': '工作台-服务端',
-  'menu.server.monitor': '实时监控-服务端',
-  'menu.list': '列表页',
-  'menu.result': '结果页',
-  'menu.exception': '异常页',
-  'menu.form': '表单页',
-  'menu.profile': '详情页',
-  'menu.visualization': '数据可视化',
   'menu.user': '个人中心',
-  'menu.arcoWebsite': 'Arco Design',
-  'menu.faq': '常见问题',
-  'navbar.docs': '文档中心',
   'navbar.action.locale': '切换为中文',
+  'navbar.userSettings': '用户设置',
+  'navbar.logout': '退出登录',
   ...localeSettings,
-  ...localeMessageBox,
   ...localeLogin,
   ...localeWorkplace,
-  /** simple */
-  ...localeMonitor,
-  ...localeSearchTable,
-  ...localeCardList,
-  ...localeStepForm,
-  ...localeGroupForm,
-  ...localeBasicProfile,
-  ...localeDataAnalysis,
-  ...localeMultiDAnalysis,
-  ...localeSuccess,
-  ...localeError,
-  ...locale403,
-  ...locale404,
-  ...locale500,
-  ...localeUserInfo,
   ...localeUserSetting,
-  /** simple end */
+  ...localeSystemMenu,
+  ...localeSystemRole,
+  ...localeSystemAdmin,
+  ...localeSystemDept,
+  ...localeSystemJobs,
+  ...localeSystemDict,
+  ...localeSystemFile,
+  ...localeSystemCrontab,
+  ...localeSystemMaintenance,
+  ...localeSystemLog,
+  ...localeSystemConfig,
+  ...localeSystemStorage,
+  ...localeMemberList,
+  ...localeMemberTag,
+  ...localeNoticeChannel,
+  ...localeNoticeTemplate,
+  ...localeNoticeLog,
+  ...localeFinanceAccountLog,
+  ...localeFinanceRecharge,
+  ...localeFinanceRefund,
+  ...localeAppHotSearch,
+  ...localeAppCustomerService,
+  ...localeAppPay,
+  ...localeAppChannel,
+  ...localeAppDecorate,
+  ...localeAppTransaction,
+  ...localeArticleCate,
+  ...localeArticleList,
 };

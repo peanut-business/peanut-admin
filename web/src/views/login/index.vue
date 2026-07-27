@@ -1,11 +1,8 @@
 <template>
   <div class="container">
     <div class="logo">
-      <img
-        alt="logo"
-        src="//p3-armor.byteimg.com/tos-cn-i-49unhts6dw/dfdba5317c0c20ce20e64fac803d52bc.svg~tplv-49unhts6dw-image.image"
-      />
-      <div class="logo-text">Arco Design Pro</div>
+      <img alt="logo" src="/favicon.svg" style="width: 32px; height: 32px" />
+      <div class="logo-text">Peanut Admin</div>
     </div>
     <LoginBanner />
     <div class="content">

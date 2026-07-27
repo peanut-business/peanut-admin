@@ -88,4 +88,22 @@ export default {
   'userSetting.certification.columns.operation': 'Operation',
   'userSetting.certification.button.check': 'Check',
   'userSetting.certification.button.withdraw': 'Withdraw',
+  // Personal center - avatar
+  'userSetting.avatar.uploadSuccess': 'Avatar uploaded',
+  'userSetting.avatar.uploadFail': 'Avatar upload failed',
+  // Personal center - security (change password)
+  'userSetting.security.oldPassword': 'Current Password',
+  'userSetting.security.oldPassword.placeholder': 'Enter current password',
+  'userSetting.security.newPassword': 'New Password',
+  'userSetting.security.newPassword.placeholder':
+    'Enter new password (6-32 chars)',
+  'userSetting.security.confirmPassword': 'Confirm New Password',
+  'userSetting.security.confirmPassword.placeholder':
+    'Enter new password again',
+  'userSetting.security.success': 'Password updated',
+  'userSetting.security.error.oldRequired': 'Please enter current password',
+  'userSetting.security.error.newRequired': 'Please enter new password',
+  'userSetting.security.error.length': 'Password must be 6-32 characters',
+  'userSetting.security.error.confirmRequired': 'Please confirm new password',
+  'userSetting.security.error.mismatch': 'Passwords do not match',
 };

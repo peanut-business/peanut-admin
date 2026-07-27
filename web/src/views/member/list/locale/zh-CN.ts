@@ -1,0 +1,53 @@
+export default {
+  'menu.member': '会员管理',
+  'menu.member.list': '会员列表',
+  'menu.member.tag': '会员标签',
+
+  'member.operation.add': '新增会员',
+  'member.operation.edit': '编辑',
+  'member.operation.delete': '删除',
+  'member.operation.adjustBalance': '调整余额',
+  'member.operation.enable': '启用',
+  'member.operation.disable': '禁用',
+
+  'member.columns.sn': '编号',
+  'member.columns.nickname': '昵称',
+  'member.columns.mobile': '手机号',
+  'member.columns.status': '状态',
+  'member.columns.balance': '余额',
+  'member.columns.points': '积分',
+  'member.columns.tags': '标签',
+  'member.columns.createTime': '注册时间',
+  'member.columns.operations': '操作',
+
+  'member.status.normal': '正常',
+  'member.status.disabled': '禁用',
+
+  'member.sex.unknown': '未知',
+  'member.sex.male': '男',
+  'member.sex.female': '女',
+
+  'member.field.nickname': '昵称',
+  'member.field.nickname.placeholder': '请输入昵称',
+  'member.field.nickname.required': '昵称不能为空',
+  'member.field.mobile': '手机号',
+  'member.field.email': '邮箱',
+  'member.field.sex': '性别',
+  'member.field.birthday': '生日',
+  'member.field.status': '状态',
+  'member.field.tags': '标签',
+  'member.field.amount': '调整金额',
+  'member.field.amount.placeholder': '正数增加，负数减少',
+  'member.field.amount.required': '请输入调整金额',
+  'member.field.remark': '备注',
+  'member.field.remark.placeholder': '请输入备注',
+
+  'member.filter.keyword': '搜索昵称/手机号/编号',
+  'member.filter.status': '状态',
+  'member.filter.status.all': '全部',
+
+  'member.tip.success': '操作成功',
+  'member.balance.modalTitle': '调整余额',
+  'member.modal.addTitle': '新增会员',
+  'member.modal.editTitle': '编辑会员',
+};
