@@ -38,7 +38,11 @@
 
     <a-modal
       v-model:visible="modalVisible"
-      :title="isEdit ? $t('memberTag.modal.editTitle') : $t('memberTag.modal.addTitle')"
+      :title="
+        isEdit
+          ? $t('memberTag.modal.editTitle')
+          : $t('memberTag.modal.addTitle')
+      "
       :ok-loading="submitLoading"
       :mask-closable="false"
       @ok="handleSubmit"
@@ -85,7 +89,11 @@
   const columns = computed<TableColumnData[]>(() => [
     { title: t('memberTag.columns.name'), dataIndex: 'name' },
     { title: t('memberTag.columns.remark'), dataIndex: 'remark' },
-    { title: t('memberTag.columns.operations'), slotName: 'operations', width: 160 },
+    {
+      title: t('memberTag.columns.operations'),
+      slotName: 'operations',
+      width: 160,
+    },
   ]);
 
   const fetchData = async () => {
@@ -103,24 +111,45 @@
   const isEdit = ref(false);
   const submitLoading = ref(false);
   const formRef = ref<FormInstance>();
-  const defaultForm = (): MemberTagForm => ({ id: undefined, name: '', remark: '' });
+  const defaultForm = (): MemberTagForm => ({
+    id: undefined,
+    name: '',
+    remark: '',
+  });
   const form = reactive<MemberTagForm>(defaultForm());
-  const rules = { name: [{ required: true, message: t('memberTag.field.name.required') }] };
+  const rules = {
+    name: [{ required: true, message: t('memberTag.field.name.required') }],
+  };
 
-  const resetForm = (patch: Partial<MemberTagForm> = {}) => Object.assign(form, defaultForm(), patch);
-  const handleAdd = () => { isEdit.value = false; resetForm(); modalVisible.value = true; };
-  const handleEdit = (record: MemberTagRecord) => { isEdit.value = true; resetForm({ ...record }); modalVisible.value = true; };
+  const resetForm = (patch: Partial<MemberTagForm> = {}) =>
+    Object.assign(form, defaultForm(), patch);
+  const handleAdd = () => {
+    isEdit.value = false;
+    resetForm();
+    modalVisible.value = true;
+  };
+  const handleEdit = (record: MemberTagRecord) => {
+    isEdit.value = true;
+    resetForm({ ...record });
+    modalVisible.value = true;
+  };
 
   const handleSubmit = async () => {
     const err = await formRef.value?.validate();
     if (err) return;
     submitLoading.value = true;
     try {
-      isEdit.value ? await editMemberTag(form) : await addMemberTag(form);
+      if (isEdit.value) {
+        await editMemberTag(form);
+      } else {
+        await addMemberTag(form);
+      }
       Message.success(t('memberTag.tip.success'));
       modalVisible.value = false;
       await fetchData();
-    } finally { submitLoading.value = false; }
+    } finally {
+      submitLoading.value = false;
+    }
   };
 
   const handleDelete = async (record: MemberTagRecord) => {
@@ -135,5 +164,7 @@
 </script>
 
 <style scoped lang="less">
-  .container { padding: 0 20px 20px 20px; }
+  .container {
+    padding: 0 20px 20px 20px;
+  }
 </style>

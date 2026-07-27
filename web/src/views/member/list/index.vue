@@ -45,25 +45,37 @@
       >
         <template #status="{ record }">
           <a-tag :color="record.status === 1 ? 'green' : 'red'">
-            {{ record.status === 1 ? $t('member.status.normal') : $t('member.status.disabled') }}
+            {{
+              record.status === 1
+                ? $t('member.status.normal')
+                : $t('member.status.disabled')
+            }}
           </a-tag>
         </template>
         <template #tags="{ record }">
           <a-space wrap>
-            <a-tag v-for="tag in (record.tags || [])" :key="tag.id" size="small">
+            <a-tag v-for="tag in record.tags || []" :key="tag.id" size="small">
               {{ tag.name }}
             </a-tag>
           </a-space>
         </template>
         <template #createTime="{ record }">
-          {{ record.create_time ? new Date(record.create_time * 1000).toLocaleDateString() : '-' }}
+          {{
+            record.create_time
+              ? new Date(record.create_time * 1000).toLocaleDateString()
+              : '-'
+          }}
         </template>
         <template #operations="{ record }">
           <a-space>
             <a-button type="text" size="small" @click="handleEdit(record)">
               {{ $t('member.operation.edit') }}
             </a-button>
-            <a-button type="text" size="small" @click="handleAdjustBalance(record)">
+            <a-button
+              type="text"
+              size="small"
+              @click="handleAdjustBalance(record)"
+            >
               {{ $t('member.operation.adjustBalance') }}
             </a-button>
             <a-button
@@ -72,7 +84,11 @@
               :status="record.status === 1 ? 'danger' : 'normal'"
               @click="handleToggleStatus(record)"
             >
-              {{ record.status === 1 ? $t('member.operation.disable') : $t('member.operation.enable') }}
+              {{
+                record.status === 1
+                  ? $t('member.operation.disable')
+                  : $t('member.operation.enable')
+              }}
             </a-button>
           </a-space>
         </template>
@@ -82,7 +98,9 @@
     <!-- 新增/编辑弹窗 -->
     <a-modal
       v-model:visible="modalVisible"
-      :title="isEdit ? $t('member.modal.editTitle') : $t('member.modal.addTitle')"
+      :title="
+        isEdit ? $t('member.modal.editTitle') : $t('member.modal.addTitle')
+      "
       :ok-loading="submitLoading"
       :mask-closable="false"
       @ok="handleSubmit"
@@ -90,7 +108,10 @@
     >
       <a-form ref="formRef" :model="form" :rules="formRules" layout="vertical">
         <a-form-item field="nickname" :label="$t('member.field.nickname')">
-          <a-input v-model="form.nickname" :placeholder="$t('member.field.nickname.placeholder')" />
+          <a-input
+            v-model="form.nickname"
+            :placeholder="$t('member.field.nickname.placeholder')"
+          />
         </a-form-item>
         <a-form-item field="mobile" :label="$t('member.field.mobile')">
           <a-input v-model="form.mobile" />
@@ -112,7 +133,11 @@
             </a-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="!isEdit" field="status" :label="$t('member.field.status')">
+        <a-form-item
+          v-if="!isEdit"
+          field="status"
+          :label="$t('member.field.status')"
+        >
           <a-radio-group v-model="form.status">
             <a-radio :value="1">{{ $t('member.status.normal') }}</a-radio>
             <a-radio :value="0">{{ $t('member.status.disabled') }}</a-radio>
@@ -130,7 +155,12 @@
       @ok="handleBalanceSubmit"
       @cancel="balanceModalVisible = false"
     >
-      <a-form ref="balanceFormRef" :model="balanceForm" :rules="balanceRules" layout="vertical">
+      <a-form
+        ref="balanceFormRef"
+        :model="balanceForm"
+        :rules="balanceRules"
+        layout="vertical"
+      >
         <a-form-item field="amount" :label="$t('member.field.amount')">
           <a-input-number
             v-model="balanceForm.amount"
@@ -141,7 +171,10 @@
           />
         </a-form-item>
         <a-form-item field="remark" :label="$t('member.field.remark')">
-          <a-input v-model="balanceForm.remark" :placeholder="$t('member.field.remark.placeholder')" />
+          <a-input
+            v-model="balanceForm.remark"
+            :placeholder="$t('member.field.remark.placeholder')"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -156,9 +189,15 @@
   import type { FormInstance } from '@arco-design/web-vue/es/form';
   import useLoading from '@/hooks/loading';
   import {
-    getMemberList, getMemberTagList, addMember, editMember,
-    updateMemberStatus, adjustMemberBalance,
-    type MemberRecord, type MemberTagRecord, type MemberForm,
+    getMemberList,
+    getMemberTagList,
+    addMember,
+    editMember,
+    updateMemberStatus,
+    adjustMemberBalance,
+    type MemberRecord,
+    type MemberTagRecord,
+    type MemberForm,
   } from '@/api/member';
 
   const { t } = useI18n();
@@ -176,8 +215,16 @@
     { title: t('member.columns.status'), slotName: 'status', width: 90 },
     { title: t('member.columns.balance'), dataIndex: 'balance', width: 100 },
     { title: t('member.columns.points'), dataIndex: 'points', width: 90 },
-    { title: t('member.columns.createTime'), slotName: 'createTime', width: 120 },
-    { title: t('member.columns.operations'), slotName: 'operations', width: 240 },
+    {
+      title: t('member.columns.createTime'),
+      slotName: 'createTime',
+      width: 120,
+    },
+    {
+      title: t('member.columns.operations'),
+      slotName: 'operations',
+      width: 240,
+    },
   ]);
 
   const fetchData = async () => {
@@ -188,7 +235,9 @@
         status: filterStatus.value || undefined,
       });
       renderData.value = data;
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   onMounted(async () => {
@@ -201,25 +250,50 @@
   const submitLoading = ref(false);
   const formRef = ref<FormInstance>();
   const defaultForm = (): MemberForm => ({
-    id: undefined, nickname: '', mobile: '', email: '', sex: 0, status: 1, tag_ids: [],
+    id: undefined,
+    nickname: '',
+    mobile: '',
+    email: '',
+    sex: 0,
+    status: 1,
+    tag_ids: [],
   });
   const form = reactive<MemberForm>(defaultForm());
-  const formRules = { nickname: [{ required: true, message: t('member.field.nickname.required') }] };
+  const formRules = {
+    nickname: [
+      { required: true, message: t('member.field.nickname.required') },
+    ],
+  };
 
-  const resetForm = (patch: Partial<MemberForm> = {}) => Object.assign(form, defaultForm(), patch);
-  const handleAdd = () => { isEdit.value = false; resetForm(); modalVisible.value = true; };
-  const handleEdit = (record: MemberRecord) => { isEdit.value = true; resetForm({ ...record }); modalVisible.value = true; };
+  const resetForm = (patch: Partial<MemberForm> = {}) =>
+    Object.assign(form, defaultForm(), patch);
+  const handleAdd = () => {
+    isEdit.value = false;
+    resetForm();
+    modalVisible.value = true;
+  };
+  const handleEdit = (record: MemberRecord) => {
+    isEdit.value = true;
+    resetForm({ ...record });
+    modalVisible.value = true;
+  };
 
   const handleSubmit = async () => {
     const err = await formRef.value?.validate();
     if (err) return;
     submitLoading.value = true;
     try {
-      isEdit.value ? await editMember(form) : await addMember(form);
+      if (isEdit.value) {
+        await editMember(form);
+      } else {
+        await addMember(form);
+      }
       Message.success(t('member.tip.success'));
       modalVisible.value = false;
       await fetchData();
-    } finally { submitLoading.value = false; }
+    } finally {
+      submitLoading.value = false;
+    }
   };
 
   const handleToggleStatus = async (record: MemberRecord) => {
@@ -234,11 +308,14 @@
   const balanceFormRef = ref<FormInstance>();
   const balanceMemberId = ref(0);
   const balanceForm = reactive({ amount: 0, remark: '' });
-  const balanceRules = { amount: [{ required: true, message: t('member.field.amount.required') }] };
+  const balanceRules = {
+    amount: [{ required: true, message: t('member.field.amount.required') }],
+  };
 
   const handleAdjustBalance = (record: MemberRecord) => {
     balanceMemberId.value = record.id;
-    balanceForm.amount = 0; balanceForm.remark = '';
+    balanceForm.amount = 0;
+    balanceForm.remark = '';
     balanceModalVisible.value = true;
   };
 
@@ -247,11 +324,17 @@
     if (err) return;
     balanceLoading.value = true;
     try {
-      await adjustMemberBalance(balanceMemberId.value, balanceForm.amount, balanceForm.remark);
+      await adjustMemberBalance(
+        balanceMemberId.value,
+        balanceForm.amount,
+        balanceForm.remark
+      );
       Message.success(t('member.tip.success'));
       balanceModalVisible.value = false;
       await fetchData();
-    } finally { balanceLoading.value = false; }
+    } finally {
+      balanceLoading.value = false;
+    }
   };
 </script>
 
@@ -260,5 +343,7 @@
 </script>
 
 <style scoped lang="less">
-  .container { padding: 0 20px 20px 20px; }
+  .container {
+    padding: 0 20px 20px 20px;
+  }
 </style>
