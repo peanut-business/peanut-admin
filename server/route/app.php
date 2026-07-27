@@ -8,6 +8,9 @@ use app\adminapi\controller\auth\RoleController;
 use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\member\MemberController;
 use app\adminapi\controller\member\MemberTagController;
+use app\adminapi\controller\notice\NoticeChannelController;
+use app\adminapi\controller\notice\NoticeTemplateController;
+use app\adminapi\controller\notice\NoticeLogController;
 use app\adminapi\controller\dept\DeptController;
 use app\adminapi\controller\dept\JobsController;
 use app\adminapi\controller\dict\DictTypeController;
@@ -161,4 +164,18 @@ Route::group('api/admin', function () {
     Route::post('member/tag/add',    [MemberTagController::class, 'add']);
     Route::post('member/tag/edit',   [MemberTagController::class, 'edit']);
     Route::post('member/tag/delete', [MemberTagController::class, 'delete']);
+
+    // 通知渠道配置
+    Route::get('notice/channel/detail', [NoticeChannelController::class, 'detail']);
+    Route::post('notice/channel/save',  [NoticeChannelController::class, 'save']);
+
+    // 通知模板
+    Route::get('notice/template/lists',   [NoticeTemplateController::class, 'lists']);
+    Route::post('notice/template/add',    [NoticeTemplateController::class, 'add']);
+    Route::post('notice/template/edit',   [NoticeTemplateController::class, 'edit']);
+    Route::post('notice/template/delete', [NoticeTemplateController::class, 'delete']);
+
+    // 通知发送日志
+    Route::get('notice/log/lists',  [NoticeLogController::class, 'lists']);
+    Route::get('notice/log/detail', [NoticeLogController::class, 'detail']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
