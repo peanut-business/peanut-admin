@@ -355,4 +355,22 @@ INSERT IGNORE INTO `pa_system_menu`
   (38, 0, 'M', '财务管理', 'icon-fingerprint', 60, '',                              '/finance',             '',                          0, 1, 0),
   (39,38, 'C', '账户流水', 'icon-bar-chart',   90, 'finance/account-log/lists',     '/finance/account-log', 'finance/account-log/index', 0, 1, 0);
 
+-- ─── 应用设置基建（热门搜索词表）─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `pa_hot_search` (
+  `id`          INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(200)    NOT NULL DEFAULT '' COMMENT '搜索词',
+  `sort`        SMALLINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序（倒序）',
+  `create_time` INT UNSIGNED    NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='热门搜索词';
+
+-- ─── 应用设置菜单种子 ──────────────────────────────────────────────────────────
+INSERT IGNORE INTO `pa_system_menu`
+  (`id`,`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`) VALUES
+  (40, 0, 'M', '应用设置', 'icon-apps',        50, '',                                '/app-setting',                    '',                                     0, 1, 0),
+  (41,40, 'C', '热门搜索', 'icon-search',      90, 'setting/hot-search/config',       '/app-setting/hot-search',         'app-setting/hot-search/index',         0, 1, 0),
+  (42,41, 'A', '热门搜索保存', '',              0, 'setting/hot-search/save',         '',                                '',                                     0, 1, 0),
+  (43,40, 'C', '客服设置', 'icon-customer-service', 80, 'setting/customer-service/config', '/app-setting/customer-service',  'app-setting/customer-service/index',   0, 1, 0),
+  (44,43, 'A', '客服设置保存', '',              0, 'setting/customer-service/save',   '',                                '',                                     0, 1, 0);
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -21,6 +21,8 @@ import localeNoticeChannel from '@/views/notice/channel/locale/en-US';
 import localeNoticeTemplate from '@/views/notice/template/locale/en-US';
 import localeNoticeLog from '@/views/notice/log/locale/en-US';
 import localeFinanceAccountLog from '@/views/finance/account-log/locale/en-US';
+import localeAppHotSearch from '@/views/app-setting/hot-search/locale/en-US';
+import localeAppCustomerService from '@/views/app-setting/customer-service/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
@@ -51,4 +53,6 @@ export default {
   ...localeNoticeTemplate,
   ...localeNoticeLog,
   ...localeFinanceAccountLog,
+  ...localeAppHotSearch,
+  ...localeAppCustomerService,
 };

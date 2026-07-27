@@ -21,6 +21,8 @@ import localeNoticeChannel from '@/views/notice/channel/locale/zh-CN';
 import localeNoticeTemplate from '@/views/notice/template/locale/zh-CN';
 import localeNoticeLog from '@/views/notice/log/locale/zh-CN';
 import localeFinanceAccountLog from '@/views/finance/account-log/locale/zh-CN';
+import localeAppHotSearch from '@/views/app-setting/hot-search/locale/zh-CN';
+import localeAppCustomerService from '@/views/app-setting/customer-service/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
@@ -51,4 +53,6 @@ export default {
   ...localeNoticeTemplate,
   ...localeNoticeLog,
   ...localeFinanceAccountLog,
+  ...localeAppHotSearch,
+  ...localeAppCustomerService,
 };

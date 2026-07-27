@@ -20,6 +20,8 @@ use app\adminapi\controller\file\UploadController;
 use app\adminapi\controller\crontab\CrontabController;
 use app\adminapi\controller\system\SystemController;
 use app\adminapi\controller\setting\StorageController;
+use app\adminapi\controller\setting\HotSearchController;
+use app\adminapi\controller\setting\CustomerServiceController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\controller\finance\AccountLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
@@ -182,4 +184,12 @@ Route::group('api/admin', function () {
 
     // 财务 - 账户流水
     Route::get('finance/account-log/lists', [AccountLogController::class, 'lists']);
+
+    // 应用设置 - 热门搜索
+    Route::get('setting/hot-search/config',  [HotSearchController::class, 'getConfig']);
+    Route::post('setting/hot-search/save',   [HotSearchController::class, 'setConfig']);
+
+    // 应用设置 - 客服设置
+    Route::get('setting/customer-service/config', [CustomerServiceController::class, 'getConfig']);
+    Route::post('setting/customer-service/save',  [CustomerServiceController::class, 'setConfig']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
