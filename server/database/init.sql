@@ -227,4 +227,74 @@ VALUES (1, '普通管理员', '系统预置角色（仅菜单管理权限，演�
 INSERT IGNORE INTO `pa_system_role_menu` (`role_id`,`menu_id`) VALUES
   (1,1),(1,2),(1,3),(1,4),(1,5);
 
+-- ─── 会员体系 ────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS `pa_member` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `sn`          VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '会员编号',
+  `nickname`    VARCHAR(50)  NOT NULL DEFAULT '' COMMENT '昵称',
+  `avatar`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT '头像',
+  `mobile`      VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '手机号',
+  `email`       VARCHAR(100) NOT NULL DEFAULT '' COMMENT '邮箱',
+  `sex`         TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '性别：0未知 1男 2女',
+  `birthday`    DATE                  DEFAULT NULL COMMENT '生日',
+  `status`      TINYINT(1)   NOT NULL DEFAULT 1  COMMENT '状态：0禁用 1正常',
+  `balance`     DECIMAL(10,2) NOT NULL DEFAULT 0  COMMENT '余额（元）',
+  `points`      INT UNSIGNED  NOT NULL DEFAULT 0  COMMENT '积分',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sn` (`sn`),
+  KEY `idx_mobile` (`mobile`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员';
+
+CREATE TABLE IF NOT EXISTS `pa_member_tag` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(50)  NOT NULL DEFAULT '' COMMENT '标签名称',
+  `remark`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员标签';
+
+CREATE TABLE IF NOT EXISTS `pa_member_tag_relation` (
+  `id`        INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `tag_id`    INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_member_tag` (`member_id`, `tag_id`),
+  KEY `idx_tag_id` (`tag_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员标签关联';
+
+-- 会员余额变动记录
+CREATE TABLE IF NOT EXISTS `pa_member_balance_log` (
+  `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `member_id`     INT UNSIGNED  NOT NULL DEFAULT 0  COMMENT '会员ID',
+  `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0  COMMENT '变动金额（正增负减）',
+  `after_amount`  DECIMAL(10,2) NOT NULL DEFAULT 0  COMMENT '变动后余额',
+  `source_type`   TINYINT(2)    NOT NULL DEFAULT 0  COMMENT '来源：0手动调整',
+  `remark`        VARCHAR(255)  NOT NULL DEFAULT '' COMMENT '备注',
+  `admin_id`      INT UNSIGNED  NOT NULL DEFAULT 0  COMMENT '操作管理员',
+  `create_time`   INT UNSIGNED  NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_member_id` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员余额变动记录';
+
+-- ─── 会员菜单种子 ──────────────────────────────────────────────────────────────
+INSERT IGNORE INTO `pa_system_menu`
+  (`id`,`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`) VALUES
+  (20, 0, 'M', '会员管理',   'icon-user',       80, '',                   '/member',            '',                         0, 1, 0),
+  (21,20, 'C', '会员列表',   'icon-user-group',  90, 'member/lists',       '/member/list',       'member/list/index',        0, 1, 0),
+  (22,21, 'A', '会员详情',   '',                  0, 'member/detail',      '',                   '',                         0, 1, 0),
+  (23,21, 'A', '会员状态',   '',                  0, 'member/status',      '',                   '',                         0, 1, 0),
+  (24,21, 'A', '余额调整',   '',                  0, 'member/adjustBalance','',                  '',                         0, 1, 0),
+  (25,20, 'C', '会员标签',   'icon-tag',         80, 'member/tag/lists',   '/member/tag',        'member/tag/index',         0, 1, 0),
+  (26,25, 'A', '标签新增',   '',                  0, 'member/tag/add',     '',                   '',                         0, 1, 0),
+  (27,25, 'A', '标签编辑',   '',                  0, 'member/tag/edit',    '',                   '',                         0, 1, 0),
+  (28,25, 'A', '标签删除',   '',                  0, 'member/tag/delete',  '',                   '',                         0, 1, 0);
+
 SET FOREIGN_KEY_CHECKS = 1;

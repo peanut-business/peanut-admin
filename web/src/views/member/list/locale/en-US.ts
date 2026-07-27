@@ -1,0 +1,53 @@
+export default {
+  'menu.member': 'Members',
+  'menu.member.list': 'Member List',
+  'menu.member.tag': 'Member Tags',
+
+  'member.operation.add': 'Add Member',
+  'member.operation.edit': 'Edit',
+  'member.operation.delete': 'Delete',
+  'member.operation.adjustBalance': 'Adjust Balance',
+  'member.operation.enable': 'Enable',
+  'member.operation.disable': 'Disable',
+
+  'member.columns.sn': 'No.',
+  'member.columns.nickname': 'Nickname',
+  'member.columns.mobile': 'Mobile',
+  'member.columns.status': 'Status',
+  'member.columns.balance': 'Balance',
+  'member.columns.points': 'Points',
+  'member.columns.tags': 'Tags',
+  'member.columns.createTime': 'Registered',
+  'member.columns.operations': 'Operations',
+
+  'member.status.normal': 'Normal',
+  'member.status.disabled': 'Disabled',
+
+  'member.sex.unknown': 'Unknown',
+  'member.sex.male': 'Male',
+  'member.sex.female': 'Female',
+
+  'member.field.nickname': 'Nickname',
+  'member.field.nickname.placeholder': 'Enter nickname',
+  'member.field.nickname.required': 'Nickname is required',
+  'member.field.mobile': 'Mobile',
+  'member.field.email': 'Email',
+  'member.field.sex': 'Gender',
+  'member.field.birthday': 'Birthday',
+  'member.field.status': 'Status',
+  'member.field.tags': 'Tags',
+  'member.field.amount': 'Amount',
+  'member.field.amount.placeholder': 'Positive to add, negative to deduct',
+  'member.field.amount.required': 'Amount is required',
+  'member.field.remark': 'Remark',
+  'member.field.remark.placeholder': 'Enter remark',
+
+  'member.filter.keyword': 'Search nickname / mobile / no.',
+  'member.filter.status': 'Status',
+  'member.filter.status.all': 'All',
+
+  'member.tip.success': 'Operation successful',
+  'member.balance.modalTitle': 'Adjust Balance',
+  'member.modal.addTitle': 'Add Member',
+  'member.modal.editTitle': 'Edit Member',
+};

@@ -15,6 +15,8 @@ import localeSystemMaintenance from '@/views/system/maintenance/locale/en-US';
 import localeSystemLog from '@/views/system/log/locale/en-US';
 import localeSystemConfig from '@/views/system/config/locale/en-US';
 import localeSystemStorage from '@/views/system/storage/locale/en-US';
+import localeMemberList from '@/views/member/list/locale/en-US';
+import localeMemberTag from '@/views/member/tag/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
@@ -39,4 +41,6 @@ export default {
   ...localeSystemLog,
   ...localeSystemConfig,
   ...localeSystemStorage,
+  ...localeMemberList,
+  ...localeMemberTag,
 };

@@ -6,6 +6,8 @@ use app\adminapi\controller\auth\LoginController;
 use app\adminapi\controller\auth\MenuController;
 use app\adminapi\controller\auth\RoleController;
 use app\adminapi\controller\config\ConfigController;
+use app\adminapi\controller\member\MemberController;
+use app\adminapi\controller\member\MemberTagController;
 use app\adminapi\controller\dept\DeptController;
 use app\adminapi\controller\dept\JobsController;
 use app\adminapi\controller\dict\DictTypeController;
@@ -145,4 +147,18 @@ Route::group('api/admin', function () {
     Route::get('storage/detail',  [StorageController::class, 'detail']);
     Route::post('storage/setup',  [StorageController::class, 'setup']);
     Route::post('storage/change', [StorageController::class, 'change']);
+
+    // 会员列表
+    Route::get('member/lists',          [MemberController::class, 'lists']);
+    Route::get('member/detail',         [MemberController::class, 'detail']);
+    Route::post('member/add',           [MemberController::class, 'add']);
+    Route::post('member/edit',          [MemberController::class, 'edit']);
+    Route::post('member/status',        [MemberController::class, 'updateStatus']);
+    Route::post('member/adjustBalance', [MemberController::class, 'adjustBalance']);
+
+    // 会员标签
+    Route::get('member/tag/lists',   [MemberTagController::class, 'lists']);
+    Route::post('member/tag/add',    [MemberTagController::class, 'add']);
+    Route::post('member/tag/edit',   [MemberTagController::class, 'edit']);
+    Route::post('member/tag/delete', [MemberTagController::class, 'delete']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
