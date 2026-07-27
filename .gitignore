@@ -14,3 +14,10 @@ web/.eslintcache
 # System
 .DS_Store
 *.log
+
+# Claude / AI tooling
+.claude/
+web/.claude/
+
+# UniApp (separate app — tracked independently if needed)
+uniapp/
