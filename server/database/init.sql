@@ -416,4 +416,25 @@ INSERT IGNORE INTO `pa_system_menu`
   (52,50, 'A', '文章编辑', '',                  0, 'article/edit',           '',                       '',                       0, 1, 0),
   (53,50, 'A', '文章删除', '',                  0, 'article/delete',         '',                       '',                       0, 1, 0);
 
+
+-- ─── 用户端 API 扩展（2026-07-27） ────────────────────────────────────────────
+
+-- pa_member 补充登录字段（幂等 ALTER）
+ALTER TABLE `pa_member`
+    ADD COLUMN IF NOT EXISTS `account`    VARCHAR(50)  NOT NULL DEFAULT '' COMMENT '登录账号' AFTER `sn`,
+    ADD COLUMN IF NOT EXISTS `password`   VARCHAR(100) NOT NULL DEFAULT '' COMMENT '登录密码（哈希）' AFTER `account`,
+    ADD COLUMN IF NOT EXISTS `login_time` INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '最后登录时间' AFTER `password`,
+    ADD COLUMN IF NOT EXISTS `login_ip`   VARCHAR(45)  NOT NULL DEFAULT '' COMMENT '最后登录IP' AFTER `login_time`;
+
+-- 文章收藏
+CREATE TABLE IF NOT EXISTS `pa_article_collect` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id`  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '会员ID',
+  `article_id` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文章ID',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_member_article` (`member_id`, `article_id`),
+  KEY `idx_member_id` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章收藏';
+
 SET FOREIGN_KEY_CHECKS = 1;

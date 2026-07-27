@@ -5,6 +5,15 @@ use app\adminapi\controller\auth\AdminController;
 use app\adminapi\controller\auth\LoginController;
 use app\adminapi\controller\auth\MenuController;
 use app\adminapi\controller\auth\RoleController;
+use app\api\controller\IndexController as ApiIndexController;
+use app\api\controller\LoginController as ApiLoginController;
+use app\api\controller\UserController as ApiUserController;
+use app\api\controller\ArticleController as ApiArticleController;
+use app\api\controller\SearchController as ApiSearchController;
+use app\api\controller\UploadController as ApiUploadController;
+use app\api\controller\AccountLogController as ApiAccountLogController;
+use app\api\controller\PcController as ApiPcController;
+use app\api\middleware\CheckTokenMiddleware;
 use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\member\MemberController;
 use app\adminapi\controller\member\MemberTagController;
@@ -212,3 +221,49 @@ Route::group('api/admin', function () {
     Route::get('setting/customer-service/config', [CustomerServiceController::class, 'getConfig']);
     Route::post('setting/customer-service/save',  [CustomerServiceController::class, 'setConfig']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 用户端 API（/api/user/ 和 /api/  命名空间）
+// 公开接口无中间件；需登录接口挂 CheckTokenMiddleware
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── 公开接口（无需 token） ────────────────────────────────────────────────────
+Route::get('api/index/index',   [ApiIndexController::class, 'index']);
+Route::get('api/index/config',  [ApiIndexController::class, 'config']);
+Route::get('api/index/policy',  [ApiIndexController::class, 'policy']);
+
+Route::post('api/login/register', [ApiLoginController::class, 'register']);
+Route::post('api/login/account',  [ApiLoginController::class, 'account']);
+Route::post('api/login/logout',   [ApiLoginController::class, 'logout']);
+
+Route::get('api/article/cate',    [ApiArticleController::class, 'cate']);
+Route::get('api/article/lists',   [ApiArticleController::class, 'lists']);
+Route::get('api/article/detail',  [ApiArticleController::class, 'detail']);
+
+Route::get('api/search/hotLists', [ApiSearchController::class, 'hotLists']);
+
+Route::post('api/upload/image',   [ApiUploadController::class, 'image']);
+
+// PC 端聚合（公开）
+Route::get('api/pc/config',         [ApiPcController::class, 'config']);
+Route::get('api/pc/index',          [ApiPcController::class, 'index']);
+Route::get('api/pc/infoCenter',     [ApiPcController::class, 'infoCenter']);
+Route::get('api/pc/articleDetail',  [ApiPcController::class, 'articleDetail']);
+
+// ─── 需登录接口（挂 CheckTokenMiddleware） ──────────────────────────────────
+Route::group('api', function () {
+    // 用户信息
+    Route::get('user/center',         [ApiUserController::class, 'center']);
+    Route::get('user/info',           [ApiUserController::class, 'info']);
+    Route::post('user/setInfo',       [ApiUserController::class, 'setInfo']);
+    Route::post('user/changePassword',[ApiUserController::class, 'changePassword']);
+    Route::post('user/bindMobile',    [ApiUserController::class, 'bindMobile']);
+
+    // 文章收藏
+    Route::post('article/addCollect',    [ApiArticleController::class, 'addCollect']);
+    Route::post('article/cancelCollect', [ApiArticleController::class, 'cancelCollect']);
+    Route::get('article/collect',        [ApiArticleController::class, 'collect']);
+
+    // 账户流水
+    Route::get('account_log/lists', [ApiAccountLogController::class, 'lists']);
+})->middleware([CheckTokenMiddleware::class]);
