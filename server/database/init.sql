@@ -465,4 +465,48 @@ INSERT IGNORE INTO `pa_system_menu`
   -- 财务子项
   (57,38,'C','充值记录',  'icon-thunderbolt', 80, 'finance/recharge/lists',  '/finance/recharge',     'finance/recharge/index',     0,1,0);
 
+-- ─── 退款模块（2026-07-27） ─────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS `pa_refund_log` (
+  `id`            INT          NOT NULL AUTO_INCREMENT,
+  `sn`            VARCHAR(32)  DEFAULT NULL,
+  `record_id`     INT          NOT NULL,
+  `user_id`       INT          NOT NULL DEFAULT 0,
+  `handle_id`     INT          NOT NULL DEFAULT 0,
+  `order_amount`  DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0.00,
+  `refund_amount` DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0.00,
+  `refund_status` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+  `refund_msg`    TEXT         DEFAULT NULL,
+  `create_time`   INT UNSIGNED DEFAULT 0,
+  `update_time`   INT          DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_record_id` (`record_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款日志';
+
+CREATE TABLE IF NOT EXISTS `pa_refund_record` (
+  `id`             INT          NOT NULL AUTO_INCREMENT,
+  `sn`             VARCHAR(32)  NOT NULL DEFAULT '',
+  `user_id`        INT          NOT NULL DEFAULT 0,
+  `order_id`       INT          NOT NULL DEFAULT 0,
+  `order_sn`       VARCHAR(32)  NOT NULL,
+  `order_type`     VARCHAR(255) DEFAULT 'order',
+  `order_amount`   DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0.00,
+  `refund_amount`  DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0.00,
+  `transaction_id` VARCHAR(255) DEFAULT NULL,
+  `refund_way`     TINYINT(1)   NOT NULL DEFAULT 1,
+  `refund_type`    TINYINT(1)   NOT NULL DEFAULT 1,
+  `refund_status`  TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+  `create_time`    INT UNSIGNED DEFAULT 0,
+  `update_time`    INT          DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id`      (`user_id`),
+  KEY `idx_order_sn`     (`order_sn`),
+  KEY `idx_refund_status`(`refund_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录';
+
+-- 退款菜单种子
+INSERT IGNORE INTO `pa_system_menu`
+  (`id`,`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`) VALUES
+  (58,38,'C','退款记录','icon-undo',70,'finance/refund/record','/finance/refund','finance/refund/index',0,1,0);
+
 SET FOREIGN_KEY_CHECKS = 1;

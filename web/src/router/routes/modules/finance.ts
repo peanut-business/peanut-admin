@@ -32,6 +32,16 @@ const FINANCE: AppRouteRecordRaw = {
         roles: ['admin'],
       },
     },
+    {
+      path: 'refund',
+      name: 'FinanceRefund',
+      component: () => import('@/views/finance/refund/index.vue'),
+      meta: {
+        locale: 'menu.finance.refund',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
   ],
 };
 

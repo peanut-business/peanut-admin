@@ -22,6 +22,7 @@ import localeNoticeTemplate from '@/views/notice/template/locale/zh-CN';
 import localeNoticeLog from '@/views/notice/log/locale/zh-CN';
 import localeFinanceAccountLog from '@/views/finance/account-log/locale/zh-CN';
 import localeFinanceRecharge from '@/views/finance/recharge/locale/zh-CN';
+import localeFinanceRefund from '@/views/finance/refund/locale/zh-CN';
 import localeAppHotSearch from '@/views/app-setting/hot-search/locale/zh-CN';
 import localeAppCustomerService from '@/views/app-setting/customer-service/locale/zh-CN';
 import localeAppPay from '@/views/app-setting/pay/locale/zh-CN';
@@ -61,6 +62,7 @@ export default {
   ...localeNoticeLog,
   ...localeFinanceAccountLog,
   ...localeFinanceRecharge,
+  ...localeFinanceRefund,
   ...localeAppHotSearch,
   ...localeAppCustomerService,
   ...localeAppPay,

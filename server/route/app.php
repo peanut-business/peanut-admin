@@ -38,6 +38,7 @@ use app\adminapi\controller\setting\TransactionSettingsController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\controller\finance\AccountLogController;
 use app\adminapi\controller\finance\RechargeController;
+use app\adminapi\controller\finance\RefundController;
 use app\adminapi\controller\article\ArticleController;
 use app\adminapi\controller\article\ArticleCateController;
 use app\adminapi\http\middleware\AuthMiddleware;
@@ -244,6 +245,11 @@ Route::group('api/admin', function () {
 
     // 财务 - 充值订单
     Route::get('finance/recharge/lists', [RechargeController::class, 'lists']);
+
+    // 财务 - 退款模块
+    Route::get('finance/refund/stat',   [RefundController::class, 'stat']);
+    Route::get('finance/refund/record', [RefundController::class, 'record']);
+    Route::get('finance/refund/log',    [RefundController::class, 'log']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
