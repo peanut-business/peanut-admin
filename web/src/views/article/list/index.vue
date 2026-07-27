@@ -236,8 +236,13 @@
     { label: t('article.show.0'), value: 0 },
   ]);
 
-  const formatTime = (ts: number) =>
-    ts ? new Date(ts * 1000).toLocaleString() : '-';
+  // 后端已将 int 时间戳格式化为 "Y-m-d H:i:s" 字符串，直接展示；
+  // 兼容极少数返回秒级整数的场景。
+  const formatTime = (ts: number | string) => {
+    if (!ts) return '-';
+    if (typeof ts === 'number') return new Date(ts * 1000).toLocaleString();
+    return ts;
+  };
 
   const columns = computed<TableColumnData[]>(() => [
     { title: t('article.columns.id'), dataIndex: 'id', width: 70 },

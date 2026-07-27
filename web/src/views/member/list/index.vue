@@ -60,11 +60,7 @@
           </a-space>
         </template>
         <template #createTime="{ record }">
-          {{
-            record.create_time
-              ? new Date(record.create_time * 1000).toLocaleDateString()
-              : '-'
-          }}
+          {{ record.create_time || '-' }}
         </template>
         <template #operations="{ record }">
           <a-space>
