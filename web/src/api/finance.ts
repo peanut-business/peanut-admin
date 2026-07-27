@@ -36,3 +36,38 @@ export function getAccountLogList(params: AccountLogParams) {
     params,
   });
 }
+
+// ─── 充值订单 ────────────────────────────────────────────────────────────────
+export interface RechargeRecord {
+  id: number;
+  member_id: number;
+  member_nickname: string;
+  member_sn: string;
+  order_sn: string;
+  amount: string;
+  pay_way: number; // 1微信 2支付宝
+  status: number;  // 0待支付 1已支付 2已关闭
+  pay_time: number | string;
+  create_time: number | string;
+}
+
+export interface RechargeParams {
+  keyword?: string;
+  status?: string;
+  pay_way?: string;
+  start_time?: number;
+  end_time?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface RechargeListRes {
+  lists: RechargeRecord[];
+  count: number;
+  pageNo: number;
+  pageSize: number;
+}
+
+export function getRechargeList(params: RechargeParams) {
+  return axios.get<RechargeListRes>('/api/admin/finance/recharge/lists', { params });
+}

@@ -21,8 +21,12 @@ import localeNoticeChannel from '@/views/notice/channel/locale/en-US';
 import localeNoticeTemplate from '@/views/notice/template/locale/en-US';
 import localeNoticeLog from '@/views/notice/log/locale/en-US';
 import localeFinanceAccountLog from '@/views/finance/account-log/locale/en-US';
+import localeFinanceRecharge from '@/views/finance/recharge/locale/en-US';
 import localeAppHotSearch from '@/views/app-setting/hot-search/locale/en-US';
 import localeAppCustomerService from '@/views/app-setting/customer-service/locale/en-US';
+import localeAppPay from '@/views/app-setting/pay/locale/en-US';
+import localeAppChannel from '@/views/app-setting/channel/locale/en-US';
+import localeAppDecorate from '@/views/app-setting/decorate/locale/en-US';
 import localeArticleCate from '@/views/article/cate/locale/en-US';
 import localeArticleList from '@/views/article/list/locale/en-US';
 import localeSettings from './en-US/settings';
@@ -55,8 +59,12 @@ export default {
   ...localeNoticeTemplate,
   ...localeNoticeLog,
   ...localeFinanceAccountLog,
+  ...localeFinanceRecharge,
   ...localeAppHotSearch,
   ...localeAppCustomerService,
+  ...localeAppPay,
+  ...localeAppChannel,
+  ...localeAppDecorate,
   ...localeArticleCate,
   ...localeArticleList,
 };

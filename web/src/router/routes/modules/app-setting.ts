@@ -32,6 +32,36 @@ const APP_SETTING: AppRouteRecordRaw = {
         roles: ['admin'],
       },
     },
+    {
+      path: 'pay',
+      name: 'AppSettingPay',
+      component: () => import('@/views/app-setting/pay/index.vue'),
+      meta: {
+        locale: 'menu.appSetting.pay',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
+      path: 'channel',
+      name: 'AppSettingChannel',
+      component: () => import('@/views/app-setting/channel/index.vue'),
+      meta: {
+        locale: 'menu.appSetting.channel',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
+      path: 'decorate',
+      name: 'AppSettingDecorate',
+      component: () => import('@/views/app-setting/decorate/index.vue'),
+      meta: {
+        locale: 'menu.appSetting.decorate',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
   ],
 };
 

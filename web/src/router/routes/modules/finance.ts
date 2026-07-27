@@ -22,6 +22,16 @@ const FINANCE: AppRouteRecordRaw = {
         roles: ['admin'],
       },
     },
+    {
+      path: 'recharge',
+      name: 'FinanceRecharge',
+      component: () => import('@/views/finance/recharge/index.vue'),
+      meta: {
+        locale: 'menu.finance.recharge',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
   ],
 };
 

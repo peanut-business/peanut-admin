@@ -437,4 +437,32 @@ CREATE TABLE IF NOT EXISTS `pa_article_collect` (
   KEY `idx_member_id` (`member_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章收藏';
 
+-- ─── 充值订单表 ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `pa_recharge_order` (
+  `id`          INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `member_id`   INT UNSIGNED    NOT NULL DEFAULT 0  COMMENT '会员ID',
+  `order_sn`    VARCHAR(64)     NOT NULL DEFAULT '' COMMENT '订单号',
+  `amount`      DECIMAL(10,2)   NOT NULL DEFAULT 0  COMMENT '充值金额',
+  `pay_way`     TINYINT(1)      NOT NULL DEFAULT 1  COMMENT '支付方式：1微信 2支付宝',
+  `status`      TINYINT(1)      NOT NULL DEFAULT 0  COMMENT '状态：0待支付 1已支付 2已关闭',
+  `pay_time`    INT UNSIGNED    NOT NULL DEFAULT 0  COMMENT '支付时间',
+  `transaction_id` VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '第三方交易号',
+  `create_time` INT UNSIGNED    NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED    NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_sn` (`order_sn`),
+  KEY `idx_member_id` (`member_id`),
+  KEY `idx_status`    (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='充值订单';
+
+-- ─── 新增应用设置 + 财务菜单种子 ──────────────────────────────────────────────
+INSERT IGNORE INTO `pa_system_menu`
+  (`id`,`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`) VALUES
+  -- 应用设置子项
+  (54,40,'C','支付配置',  'icon-payment',    70, 'setting/pay/config',      '/app-setting/pay',      'app-setting/pay/index',      0,1,0),
+  (55,40,'C','渠道配置',  'icon-share-alt',  60, 'setting/channel/config',  '/app-setting/channel',  'app-setting/channel/index',  0,1,0),
+  (56,40,'C','页面装修',  'icon-brush',      50, 'setting/decorate/config', '/app-setting/decorate', 'app-setting/decorate/index', 0,1,0),
+  -- 财务子项
+  (57,38,'C','充值记录',  'icon-thunderbolt', 80, 'finance/recharge/lists',  '/finance/recharge',     'finance/recharge/index',     0,1,0);
+
 SET FOREIGN_KEY_CHECKS = 1;

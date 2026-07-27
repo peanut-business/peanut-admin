@@ -31,8 +31,12 @@ use app\adminapi\controller\system\SystemController;
 use app\adminapi\controller\setting\StorageController;
 use app\adminapi\controller\setting\HotSearchController;
 use app\adminapi\controller\setting\CustomerServiceController;
+use app\adminapi\controller\setting\PayConfigController;
+use app\adminapi\controller\setting\ChannelController;
+use app\adminapi\controller\setting\DecorateController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\controller\finance\AccountLogController;
+use app\adminapi\controller\finance\RechargeController;
 use app\adminapi\controller\article\ArticleController;
 use app\adminapi\controller\article\ArticleCateController;
 use app\adminapi\http\middleware\AuthMiddleware;
@@ -220,6 +224,21 @@ Route::group('api/admin', function () {
     // 应用设置 - 客服设置
     Route::get('setting/customer-service/config', [CustomerServiceController::class, 'getConfig']);
     Route::post('setting/customer-service/save',  [CustomerServiceController::class, 'setConfig']);
+
+    // 应用设置 - 支付配置
+    Route::get('setting/pay/config',  [PayConfigController::class, 'getConfig']);
+    Route::post('setting/pay/save',   [PayConfigController::class, 'setConfig']);
+
+    // 应用设置 - 渠道配置
+    Route::get('setting/channel/config',  [ChannelController::class, 'getConfig']);
+    Route::post('setting/channel/save',   [ChannelController::class, 'setConfig']);
+
+    // 应用设置 - 页面装修
+    Route::get('setting/decorate/config',  [DecorateController::class, 'getConfig']);
+    Route::post('setting/decorate/save',   [DecorateController::class, 'setConfig']);
+
+    // 财务 - 充值订单
+    Route::get('finance/recharge/lists', [RechargeController::class, 'lists']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
