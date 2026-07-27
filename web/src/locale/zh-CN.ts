@@ -17,6 +17,9 @@ import localeSystemConfig from '@/views/system/config/locale/zh-CN';
 import localeSystemStorage from '@/views/system/storage/locale/zh-CN';
 import localeMemberList from '@/views/member/list/locale/zh-CN';
 import localeMemberTag from '@/views/member/tag/locale/zh-CN';
+import localeNoticeChannel from '@/views/notice/channel/locale/zh-CN';
+import localeNoticeTemplate from '@/views/notice/template/locale/zh-CN';
+import localeNoticeLog from '@/views/notice/log/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
@@ -43,4 +46,7 @@ export default {
   ...localeSystemStorage,
   ...localeMemberList,
   ...localeMemberTag,
+  ...localeNoticeChannel,
+  ...localeNoticeTemplate,
+  ...localeNoticeLog,
 };

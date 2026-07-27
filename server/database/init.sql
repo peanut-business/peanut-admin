@@ -297,4 +297,56 @@ INSERT IGNORE INTO `pa_system_menu`
   (27,25, 'A', '标签编辑',   '',                  0, 'member/tag/edit',    '',                   '',                         0, 1, 0),
   (28,25, 'A', '标签删除',   '',                  0, 'member/tag/delete',  '',                   '',                         0, 1, 0);
 
+-- ─── 通知基建 ────────────────────────────────────────────────────────────────
+
+-- 通知模板
+CREATE TABLE IF NOT EXISTS `pa_notice_template` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(100) NOT NULL DEFAULT '' COMMENT '模板名称',
+  `code`        VARCHAR(50)  NOT NULL DEFAULT '' COMMENT '模板标识（英文）',
+  `channel`     TINYINT(2)   NOT NULL DEFAULT 1  COMMENT '渠道：1短信 2邮件 3推送',
+  `title`       VARCHAR(200) NOT NULL DEFAULT '' COMMENT '标题（邮件/推送用）',
+  `content`     TEXT                              COMMENT '内容（支持变量{xxx}）',
+  `is_disable`  TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '是否禁用：0启用 1禁用',
+  `remark`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_code` (`code`),
+  KEY `idx_channel` (`channel`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知模板';
+
+-- 通知发送记录
+CREATE TABLE IF NOT EXISTS `pa_notice_log` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `template_id` INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '模板ID',
+  `channel`     TINYINT(2)   NOT NULL DEFAULT 1  COMMENT '渠道：1短信 2邮件 3推送',
+  `receiver`    VARCHAR(200) NOT NULL DEFAULT '' COMMENT '接收者（手机号/邮箱/设备token）',
+  `title`       VARCHAR(200) NOT NULL DEFAULT '' COMMENT '标题快照',
+  `content`     TEXT                              COMMENT '内容快照（已替换变量）',
+  `status`      TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '状态：0待发 1成功 2失败',
+  `error`       VARCHAR(500) NOT NULL DEFAULT '' COMMENT '错误信息',
+  `extra`       TEXT                              COMMENT '额外数据（JSON）',
+  `send_time`   INT UNSIGNED NOT NULL DEFAULT 0  COMMENT '发送时间',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_template_id` (`template_id`),
+  KEY `idx_channel` (`channel`),
+  KEY `idx_status` (`status`),
+  KEY `idx_send_time` (`send_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知发送记录';
+
+-- ─── 通知菜单种子 ──────────────────────────────────────────────────────────────
+INSERT IGNORE INTO `pa_system_menu`
+  (`id`,`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`) VALUES
+  (30, 0, 'M', '通知管理',   'icon-notification', 70, '',                      '/notice',              '',                         0, 1, 0),
+  (31,30, 'C', '渠道配置',   'icon-settings',     90, 'notice/channel/detail', '/notice/channel',      'notice/channel/index',     0, 1, 0),
+  (32,31, 'A', '渠道保存',   '',                   0, 'notice/channel/save',   '',                     '',                         0, 1, 0),
+  (33,30, 'C', '模板管理',   'icon-file',         80, 'notice/template/lists', '/notice/template',     'notice/template/index',    0, 1, 0),
+  (34,33, 'A', '模板新增',   '',                   0, 'notice/template/add',   '',                     '',                         0, 1, 0),
+  (35,33, 'A', '模板编辑',   '',                   0, 'notice/template/edit',  '',                     '',                         0, 1, 0),
+  (36,33, 'A', '模板删除',   '',                   0, 'notice/template/delete','',                     '',                         0, 1, 0),
+  (37,30, 'C', '发送日志',   'icon-history',      70, 'notice/log/lists',      '/notice/log',          'notice/log/index',         0, 1, 0);
+
 SET FOREIGN_KEY_CHECKS = 1;

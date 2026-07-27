@@ -17,6 +17,9 @@ import localeSystemConfig from '@/views/system/config/locale/en-US';
 import localeSystemStorage from '@/views/system/storage/locale/en-US';
 import localeMemberList from '@/views/member/list/locale/en-US';
 import localeMemberTag from '@/views/member/tag/locale/en-US';
+import localeNoticeChannel from '@/views/notice/channel/locale/en-US';
+import localeNoticeTemplate from '@/views/notice/template/locale/en-US';
+import localeNoticeLog from '@/views/notice/log/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
@@ -43,4 +46,7 @@ export default {
   ...localeSystemStorage,
   ...localeMemberList,
   ...localeMemberTag,
+  ...localeNoticeChannel,
+  ...localeNoticeTemplate,
+  ...localeNoticeLog,
 };
