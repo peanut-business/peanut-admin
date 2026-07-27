@@ -20,6 +20,7 @@ import localeMemberTag from '@/views/member/tag/locale/zh-CN';
 import localeNoticeChannel from '@/views/notice/channel/locale/zh-CN';
 import localeNoticeTemplate from '@/views/notice/template/locale/zh-CN';
 import localeNoticeLog from '@/views/notice/log/locale/zh-CN';
+import localeFinanceAccountLog from '@/views/finance/account-log/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
@@ -49,4 +50,5 @@ export default {
   ...localeNoticeChannel,
   ...localeNoticeTemplate,
   ...localeNoticeLog,
+  ...localeFinanceAccountLog,
 };

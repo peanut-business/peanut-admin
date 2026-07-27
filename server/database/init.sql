@@ -349,4 +349,10 @@ INSERT IGNORE INTO `pa_system_menu`
   (36,33, 'A', '模板删除',   '',                   0, 'notice/template/delete','',                     '',                         0, 1, 0),
   (37,30, 'C', '发送日志',   'icon-history',      70, 'notice/log/lists',      '/notice/log',          'notice/log/index',         0, 1, 0);
 
+-- ─── 财务菜单种子 ──────────────────────────────────────────────────────────────
+INSERT IGNORE INTO `pa_system_menu`
+  (`id`,`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`) VALUES
+  (38, 0, 'M', '财务管理', 'icon-fingerprint', 60, '',                              '/finance',             '',                          0, 1, 0),
+  (39,38, 'C', '账户流水', 'icon-bar-chart',   90, 'finance/account-log/lists',     '/finance/account-log', 'finance/account-log/index', 0, 1, 0);
+
 SET FOREIGN_KEY_CHECKS = 1;

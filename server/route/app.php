@@ -21,6 +21,7 @@ use app\adminapi\controller\crontab\CrontabController;
 use app\adminapi\controller\system\SystemController;
 use app\adminapi\controller\setting\StorageController;
 use app\adminapi\controller\log\OperationLogController;
+use app\adminapi\controller\finance\AccountLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
@@ -178,4 +179,7 @@ Route::group('api/admin', function () {
     // 通知发送日志
     Route::get('notice/log/lists',  [NoticeLogController::class, 'lists']);
     Route::get('notice/log/detail', [NoticeLogController::class, 'detail']);
+
+    // 财务 - 账户流水
+    Route::get('finance/account-log/lists', [AccountLogController::class, 'lists']);
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
