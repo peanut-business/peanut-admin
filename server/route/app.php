@@ -24,6 +24,8 @@ use app\adminapi\controller\setting\HotSearchController;
 use app\adminapi\controller\setting\CustomerServiceController;
 use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\controller\finance\AccountLogController;
+use app\adminapi\controller\article\ArticleController;
+use app\adminapi\controller\article\ArticleCateController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
@@ -181,6 +183,23 @@ Route::group('api/admin', function () {
     // 通知发送日志
     Route::get('notice/log/lists',  [NoticeLogController::class, 'lists']);
     Route::get('notice/log/detail', [NoticeLogController::class, 'detail']);
+
+    // 内容管理 - 文章分类
+    Route::get('article/cate/lists',  [ArticleCateController::class, 'lists']);
+    Route::get('article/cate/all',    [ArticleCateController::class, 'all']);
+    Route::get('article/cate/detail', [ArticleCateController::class, 'detail']);
+    Route::post('article/cate/add',    [ArticleCateController::class, 'add']);
+    Route::post('article/cate/edit',   [ArticleCateController::class, 'edit']);
+    Route::post('article/cate/delete', [ArticleCateController::class, 'delete']);
+    Route::post('article/cate/status', [ArticleCateController::class, 'status']);
+
+    // 内容管理 - 文章
+    Route::get('article/lists',  [ArticleController::class, 'lists']);
+    Route::get('article/detail', [ArticleController::class, 'detail']);
+    Route::post('article/add',    [ArticleController::class, 'add']);
+    Route::post('article/edit',   [ArticleController::class, 'edit']);
+    Route::post('article/delete', [ArticleController::class, 'delete']);
+    Route::post('article/status', [ArticleController::class, 'status']);
 
     // 财务 - 账户流水
     Route::get('finance/account-log/lists', [AccountLogController::class, 'lists']);

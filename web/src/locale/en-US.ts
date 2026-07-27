@@ -23,6 +23,8 @@ import localeNoticeLog from '@/views/notice/log/locale/en-US';
 import localeFinanceAccountLog from '@/views/finance/account-log/locale/en-US';
 import localeAppHotSearch from '@/views/app-setting/hot-search/locale/en-US';
 import localeAppCustomerService from '@/views/app-setting/customer-service/locale/en-US';
+import localeArticleCate from '@/views/article/cate/locale/en-US';
+import localeArticleList from '@/views/article/list/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
@@ -55,4 +57,6 @@ export default {
   ...localeFinanceAccountLog,
   ...localeAppHotSearch,
   ...localeAppCustomerService,
+  ...localeArticleCate,
+  ...localeArticleList,
 };

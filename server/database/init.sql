@@ -373,4 +373,47 @@ INSERT IGNORE INTO `pa_system_menu`
   (43,40, 'C', '客服设置', 'icon-customer-service', 80, 'setting/customer-service/config', '/app-setting/customer-service',  'app-setting/customer-service/index',   0, 1, 0),
   (44,43, 'A', '客服设置保存', '',              0, 'setting/customer-service/save',   '',                                '',                                     0, 1, 0);
 
+-- ─── 内容管理基建（文章分类 + 文章）────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `pa_article_cate` (
+  `id`          INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(50)     NOT NULL DEFAULT '' COMMENT '分类名称',
+  `sort`        SMALLINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序（倒序）',
+  `is_show`     TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '是否显示 0否1是',
+  `create_time` INT UNSIGNED    NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED    NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED    NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章分类';
+
+CREATE TABLE IF NOT EXISTS `pa_article` (
+  `id`          INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `cate_id`     INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT '分类id',
+  `title`       VARCHAR(100)    NOT NULL DEFAULT '' COMMENT '标题',
+  `intro`       VARCHAR(255)    NOT NULL DEFAULT '' COMMENT '简介',
+  `image`       VARCHAR(255)    NOT NULL DEFAULT '' COMMENT '封面图',
+  `author`      VARCHAR(50)     NOT NULL DEFAULT '' COMMENT '作者',
+  `content`     MEDIUMTEXT      NULL COMMENT '内容',
+  `click_num`   INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT '点击量',
+  `sort`        SMALLINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序（倒序）',
+  `is_show`     TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '是否显示 0否1是',
+  `create_time` INT UNSIGNED    NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED    NOT NULL DEFAULT 0,
+  `delete_time` INT UNSIGNED    NULL     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_cate_id` (`cate_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章';
+
+-- ─── 内容管理菜单种子 ──────────────────────────────────────────────────────────
+INSERT IGNORE INTO `pa_system_menu`
+  (`id`,`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`) VALUES
+  (45, 0, 'M', '内容管理', 'icon-file',        55, '',                       '/article',              '',                       0, 1, 0),
+  (46,45, 'C', '文章分类', 'icon-folder',      90, 'article/cate/lists',     '/article/cate',         'article/cate/index',     0, 1, 0),
+  (47,46, 'A', '分类新增', '',                  0, 'article/cate/add',       '',                       '',                       0, 1, 0),
+  (48,46, 'A', '分类编辑', '',                  0, 'article/cate/edit',      '',                       '',                       0, 1, 0),
+  (49,46, 'A', '分类删除', '',                  0, 'article/cate/delete',    '',                       '',                       0, 1, 0),
+  (50,45, 'C', '文章管理', 'icon-file',        80, 'article/lists',          '/article/list',         'article/list/index',     0, 1, 0),
+  (51,50, 'A', '文章新增', '',                  0, 'article/add',            '',                       '',                       0, 1, 0),
+  (52,50, 'A', '文章编辑', '',                  0, 'article/edit',           '',                       '',                       0, 1, 0),
+  (53,50, 'A', '文章删除', '',                  0, 'article/delete',         '',                       '',                       0, 1, 0);
+
 SET FOREIGN_KEY_CHECKS = 1;
