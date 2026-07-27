@@ -1,0 +1,25 @@
+{
+  "name": "peanut-v2-pc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --port 3100",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@element-plus/nuxt": "^1.0.10",
+    "@pinia/nuxt": "^0.5.5",
+    "element-plus": "^2.9.1",
+    "nuxt": "^3.14.0",
+    "pinia": "^2.2.6",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.2",
+    "typescript": "^5.6.3",
+    "vue-tsc": "^2.1.10"
+  }
+}
