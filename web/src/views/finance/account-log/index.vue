@@ -2,6 +2,9 @@
   <div class="container">
     <Breadcrumb :items="['menu.finance', 'menu.finance.accountLog']" />
     <a-card class="general-card" :title="$t('menu.finance.accountLog')">
+      <a-alert type="warning" style="margin-bottom: 16px">
+        {{ $t('accountLog.alert') }}
+      </a-alert>
       <a-row>
         <a-col :flex="1">
           <a-form
@@ -13,26 +16,27 @@
             <a-row :gutter="16">
               <a-col :span="8">
                 <a-form-item
-                  field="keyword"
-                  :label="$t('accountLog.form.keyword')"
+                  field="user_info"
+                  :label="$t('accountLog.form.userInfo')"
                 >
                   <a-input
-                    v-model="formModel.keyword"
+                    v-model="formModel.user_info"
                     allow-clear
-                    :placeholder="$t('accountLog.form.keyword.placeholder')"
+                    :placeholder="$t('accountLog.form.userInfo.placeholder')"
+                    @press-enter="search"
                   />
                 </a-form-item>
               </a-col>
               <a-col :span="8">
                 <a-form-item
-                  field="direction"
-                  :label="$t('accountLog.form.direction')"
+                  field="change_type"
+                  :label="$t('accountLog.form.changeType')"
                 >
                   <a-select
-                    v-model="formModel.direction"
+                    v-model="formModel.change_type"
                     allow-clear
-                    :options="directionOptions"
-                    :placeholder="$t('accountLog.form.direction.placeholder')"
+                    :options="changeTypeOptions"
+                    :placeholder="$t('accountLog.form.changeType.placeholder')"
                   />
                 </a-form-item>
               </a-col>
@@ -43,7 +47,11 @@
                 >
                   <a-range-picker
                     v-model="formModel.timeRange"
+                    show-time
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                     style="width: 100%"
+                    allow-clear
                   />
                 </a-form-item>
               </a-col>
@@ -72,29 +80,22 @@
         :data="renderData"
         :pagination="pagination"
         :bordered="{ cell: true }"
+        :scroll="{ x: 1250 }"
         @page-change="onPageChange"
+        @page-size-change="onPageSizeChange"
       >
-        <template #member="{ record }">
-          <div>{{ record.member_nickname || '-' }}</div>
-          <div class="member-sn">{{ record.member_sn }}</div>
+        <template #nickname="{ record }">
+          <a-space>
+            <a-avatar :size="40" :image-url="record.avatar">
+              {{ record.nickname?.slice(0, 1) }}
+            </a-avatar>
+            <span>{{ record.nickname || '-' }}</span>
+          </a-space>
         </template>
         <template #change_amount="{ record }">
-          <span
-            :class="record.direction === 1 ? 'amount-income' : 'amount-expense'"
-          >
-            {{ record.direction === 1 ? '+' : '' }}{{ record.change_amount }}
+          <span :class="{ 'amount-expense': record.action === 2 }">
+            {{ record.change_amount }}
           </span>
-        </template>
-        <template #direction="{ record }">
-          <a-tag :color="record.direction === 1 ? 'green' : 'red'">
-            {{ $t(`accountLog.direction.${record.direction}`) }}
-          </a-tag>
-        </template>
-        <template #source_type="{ record }">
-          {{ $t(`accountLog.source.${record.source_type}`) }}
-        </template>
-        <template #create_time="{ record }">
-          {{ formatTime(record.create_time) }}
         </template>
       </a-table>
     </a-card>
@@ -109,6 +110,7 @@
   import useLoading from '@/hooks/loading';
   import {
     getAccountLogList,
+    getUmChangeType,
     type AccountLogRecord,
     type AccountLogParams,
   } from '@/api/finance';
@@ -118,8 +120,8 @@
   const renderData = ref<AccountLogRecord[]>([]);
 
   const generateFormModel = () => ({
-    keyword: '',
-    direction: '',
+    user_info: '',
+    change_type: '',
     timeRange: [] as string[],
   });
   const formModel = ref(generateFormModel());
@@ -129,48 +131,42 @@
     pageSize: 15,
     total: 0,
     showTotal: true,
+    showPageSize: true,
   });
 
-  const directionOptions = computed<SelectOptionData[]>(() => [
-    { label: t('accountLog.direction.1'), value: '1' },
-    { label: t('accountLog.direction.2'), value: '2' },
-  ]);
-
-  // 后端已将 int 时间戳格式化为 "Y-m-d H:i:s" 字符串，直接展示；
-  // 兼容极少数返回秒级整数的场景。
-  const formatTime = (ts: number | string) => {
-    if (!ts) return '-';
-    if (typeof ts === 'number') return new Date(ts * 1000).toLocaleString();
-    return ts;
-  };
+  const changeTypeOptions = ref<SelectOptionData[]>([]);
 
   const columns = computed<TableColumnData[]>(() => [
-    { title: t('accountLog.columns.id'), dataIndex: 'id', width: 80 },
-    { title: t('accountLog.columns.member'), slotName: 'member', width: 160 },
+    { title: t('accountLog.columns.account'), dataIndex: 'account', width: 140 },
+    {
+      title: t('accountLog.columns.nickname'),
+      slotName: 'nickname',
+      width: 180,
+    },
+    { title: t('accountLog.columns.mobile'), dataIndex: 'mobile', width: 140 },
     {
       title: t('accountLog.columns.changeAmount'),
       slotName: 'change_amount',
-      width: 130,
-    },
-    {
-      title: t('accountLog.columns.afterAmount'),
-      dataIndex: 'after_amount',
       width: 120,
     },
     {
-      title: t('accountLog.columns.direction'),
-      slotName: 'direction',
-      width: 90,
-    },
-    {
-      title: t('accountLog.columns.source'),
-      slotName: 'source_type',
+      title: t('accountLog.columns.leftAmount'),
+      dataIndex: 'left_amount',
       width: 120,
     },
-    { title: t('accountLog.columns.remark'), dataIndex: 'remark' },
+    {
+      title: t('accountLog.columns.changeType'),
+      dataIndex: 'change_type_desc',
+      width: 180,
+    },
+    {
+      title: t('accountLog.columns.sourceSn'),
+      dataIndex: 'source_sn',
+      width: 180,
+    },
     {
       title: t('accountLog.columns.createTime'),
-      slotName: 'create_time',
+      dataIndex: 'create_time',
       width: 180,
     },
   ]);
@@ -179,31 +175,41 @@
     setLoading(true);
     try {
       const params: AccountLogParams = {
-        keyword: formModel.value.keyword || undefined,
-        direction: formModel.value.direction || undefined,
-        page,
-        limit: pagination.pageSize,
+        user_info: formModel.value.user_info || undefined,
+        change_type: formModel.value.change_type || undefined,
+        page_no: page,
+        page_size: pagination.pageSize,
       };
       if (formModel.value.timeRange?.length === 2) {
-        params.start_time = Math.floor(
-          new Date(formModel.value.timeRange[0]).getTime() / 1000
-        );
-        params.end_time = Math.floor(
-          new Date(formModel.value.timeRange[1]).getTime() / 1000
-        );
+        [params.start_time, params.end_time] = formModel.value.timeRange;
       }
       const { data } = await getAccountLogList(params);
       renderData.value = data.lists;
       pagination.current = data.pageNo;
+      pagination.pageSize = data.pageSize;
       pagination.total = data.count;
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchChangeTypes = async () => {
+    const { data } = await getUmChangeType();
+    changeTypeOptions.value = Object.entries(data).map(([value, label]) => ({
+      label,
+      value,
+    }));
+  };
+
   fetchData();
+  fetchChangeTypes();
 
   const search = () => fetchData(1);
   const onPageChange = (current: number) => fetchData(current);
+  const onPageSizeChange = (pageSize: number) => {
+    pagination.pageSize = pageSize;
+    fetchData(1);
+  };
   const reset = () => {
     formModel.value = generateFormModel();
     fetchData(1);
@@ -219,15 +225,6 @@
 <style scoped lang="less">
   .container {
     padding: 0 20px 20px 20px;
-  }
-
-  .member-sn {
-    color: var(--color-text-3);
-    font-size: 12px;
-  }
-
-  .amount-income {
-    color: rgb(var(--green-6));
   }
 
   .amount-expense {

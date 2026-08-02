@@ -36,6 +36,13 @@ import localeSettings from './zh-CN/settings';
 export default {
   'menu.dashboard': '仪表盘',
   'menu.user': '个人中心',
+  'menu.appSetting.user': '用户设置',
+  'menu.decoration': '装修管理',
+  'menu.decoration.mobile': '移动端装修',
+  'menu.decoration.tabbar': 'Tabbar 装修',
+  'menu.decoration.pc': 'PC 装修',
+  'menu.devTools': '开发工具',
+  'menu.devTools.code': '代码生成器',
   'navbar.action.locale': '切换为中文',
   'navbar.userSettings': '用户设置',
   'navbar.logout': '退出登录',

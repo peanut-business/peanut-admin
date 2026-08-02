@@ -61,13 +61,54 @@ export function savePayConfig(data: PayConfig) {
 }
 
 // ─── 渠道配置 ────────────────────────────────────────────────────────────────
+export interface WebPageConfig {
+  status: 0 | 1;
+  page_status: 0 | 1;
+  page_url: string;
+  url: string;
+}
+
+export function getWebPageConfig() {
+  return axios.get<WebPageConfig>('/api/admin/setting/web-page/config');
+}
+
+export function saveWebPageConfig(data: Omit<WebPageConfig, 'url'>) {
+  return axios.post('/api/admin/setting/web-page/save', data);
+}
+
+export interface MiniProgramConfig {
+  name: string;
+  original_id: string;
+  qr_code: string;
+  app_id: string;
+  app_secret: string;
+  request_domain: string;
+  socket_domain: string;
+  upload_file_domain: string;
+  download_file_domain: string;
+  udp_domain: string;
+  business_domain: string;
+}
+
+export function getMiniProgramConfig() {
+  return axios.get<MiniProgramConfig>(
+    '/api/admin/setting/mini-program/config'
+  );
+}
+
+export function saveMiniProgramConfig(
+  data: Pick<
+    MiniProgramConfig,
+    'name' | 'original_id' | 'qr_code' | 'app_id' | 'app_secret'
+  >
+) {
+  return axios.post('/api/admin/setting/mini-program/save', data);
+}
+
 export interface ChannelConfig {
   wechat_open_status: number;
   wechat_open_appid: string;
   wechat_open_secret: string;
-  wechat_mini_status: number;
-  wechat_mini_appid: string;
-  wechat_mini_secret: string;
   wechat_oa_status: number;
   wechat_oa_appid: string;
   wechat_oa_secret: string;

@@ -22,8 +22,8 @@ export interface CrontabRecord {
   expression: string;
   error: string;
   last_time: string;
-  time: string;
-  max_time: string;
+  time: number;
+  max_time: number;
   sort: number;
   remark: string;
   create_time?: string;

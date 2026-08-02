@@ -100,7 +100,12 @@
                 :content="$t('systemMaintenance.cache.confirm')"
                 @ok="handleClearCache"
               >
-                <a-button type="primary" status="warning" :loading="clearing">
+                <a-button
+                  v-permission="['system/clearcache']"
+                  type="primary"
+                  status="warning"
+                  :loading="clearing"
+                >
                   <template #icon><icon-delete /></template>
                   {{ $t('systemMaintenance.cache.clear') }}
                 </a-button>

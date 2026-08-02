@@ -25,6 +25,8 @@ export default {
   'systemCrontab.columns.status': '状态',
   'systemCrontab.columns.lastTime': '最后执行',
   'systemCrontab.columns.time': '耗时(秒)',
+  'systemCrontab.columns.maxTime': '最大耗时(秒)',
+  'systemCrontab.columns.error': '最近错误',
   'systemCrontab.columns.operations': '操作',
 
   'systemCrontab.field.name': '任务名称',
@@ -36,6 +38,7 @@ export default {
   'systemCrontab.field.params': '参数',
   'systemCrontab.field.params.placeholder':
     '命令参数，多个用空格分隔（可留空）',
+  'systemCrontab.field.sort': '排序',
   'systemCrontab.field.expression': '运行规则',
   'systemCrontab.field.expression.placeholder': 'cron 表达式，如 * * * * *',
   'systemCrontab.field.expression.required': '运行规则不能为空',

@@ -1,33 +1,80 @@
 import { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
-import { useUserStore } from '@/store';
+import { useAppStore, useUserStore } from '@/store';
+import { REDIRECT_ROUTE_NAME } from '@/router/constants';
+
+export function hasPermission(
+  requiredPermissions: string | string[],
+  grantedPermissions?: string[]
+): boolean {
+  const required = (
+    Array.isArray(requiredPermissions)
+      ? requiredPermissions
+      : [requiredPermissions]
+  ).filter(Boolean);
+  if (required.length === 0) return true;
+
+  const permissions = grantedPermissions ?? useUserStore().permissions;
+  return (
+    permissions.includes('*') ||
+    required.some((permission) => permissions.includes(permission))
+  );
+}
+
+function hasRouteName(routes: RouteRecordRaw[], routeName: string): boolean {
+  const pending = [...routes];
+  while (pending.length) {
+    const route = pending.shift();
+    if (String(route?.name || '') === routeName) return true;
+    if (route?.children?.length) pending.push(...route.children);
+  }
+  return false;
+}
 
 export default function usePermission() {
   const userStore = useUserStore();
+  const appStore = useAppStore();
   return {
     accessRouter(route: RouteLocationNormalized | RouteRecordRaw) {
+      if (!route.meta?.requiresAuth) return true;
+
+      if (appStore.menuFromServer) {
+        const routeName = String(route.name || '');
+        if (
+          routeName === REDIRECT_ROUTE_NAME ||
+          routeName === 'redirectWrapper'
+        ) {
+          return true;
+        }
+        return (
+          routeName !== '' && hasRouteName(appStore.appAsyncMenus, routeName)
+        );
+      }
+
       return (
-        !route.meta?.requiresAuth ||
         !route.meta?.roles ||
         route.meta?.roles?.includes('*') ||
         route.meta?.roles?.includes(userStore.role)
       );
     },
-    findFirstPermissionRoute(_routers: any, role = 'admin') {
-      const cloneRouters = [..._routers];
-      while (cloneRouters.length) {
-        const firstElement = cloneRouters.shift();
-        if (
-          firstElement?.meta?.roles?.find((el: string[]) => {
-            return el.includes('*') || el.includes(role);
-          })
-        )
-          return { name: firstElement.name };
-        if (firstElement?.children) {
-          cloneRouters.push(...firstElement.children);
+    findFirstPermissionRoute(routers: RouteRecordRaw[], role = 'admin') {
+      const pending = [...routers];
+      while (pending.length) {
+        const route = pending.shift();
+        if (route) {
+          if (route.children?.length) {
+            pending.unshift(...route.children);
+          } else {
+            const roles = route.meta?.roles;
+            const roleAllowed =
+              !roles || roles.includes('*') || roles.includes(role as never);
+            if ((appStore.menuFromServer || roleAllowed) && route.name) {
+              return { name: route.name };
+            }
+          }
         }
       }
       return null;
     },
-    // You can add any rules you want
+    hasPermission,
   };
 }

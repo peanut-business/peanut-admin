@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { Notification } from '@arco-design/web-vue';
 import type { NotificationReturn } from '@arco-design/web-vue/es/notification/interface';
-import type { RouteRecordNormalized } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 import defaultSettings from '@/config/settings.json';
 import { getMenuList } from '@/api/user';
-import { AppState } from './types';
+import type { AppState, ServerMenuRecord } from './types';
+import mapServerMenu from './server-menu';
 
 const useAppStore = defineStore('app', {
   state: (): AppState => ({ ...defaultSettings }),
@@ -16,8 +17,8 @@ const useAppStore = defineStore('app', {
     appDevice(state: AppState) {
       return state.device;
     },
-    appAsyncMenus(state: AppState): RouteRecordNormalized[] {
-      return state.serverMenu as unknown as RouteRecordNormalized[];
+    appAsyncMenus(state: AppState): RouteRecordRaw[] {
+      return state.serverMenu;
     },
   },
 
@@ -44,6 +45,10 @@ const useAppStore = defineStore('app', {
     toggleMenu(value: boolean) {
       this.hideMenu = value;
     },
+    setServerMenu(menu: ServerMenuRecord[]) {
+      this.serverMenu = mapServerMenu(menu);
+      this.serverMenuLoaded = true;
+    },
     async fetchServerMenuConfig() {
       let notifyInstance: NotificationReturn | null = null;
       try {
@@ -53,13 +58,15 @@ const useAppStore = defineStore('app', {
           closable: true,
         });
         const { data } = await getMenuList();
-        this.serverMenu = data;
+        this.setServerMenu(data);
         notifyInstance = Notification.success({
           id: 'menuNotice',
           content: 'success',
           closable: true,
         });
       } catch (error) {
+        this.serverMenu = [];
+        this.serverMenuLoaded = true;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         notifyInstance = Notification.error({
           id: 'menuNotice',
@@ -70,6 +77,7 @@ const useAppStore = defineStore('app', {
     },
     clearServerMenu() {
       this.serverMenu = [];
+      this.serverMenuLoaded = false;
     },
   },
 });

@@ -1,5 +1,3 @@
-const BASE_URL = useRuntimeConfig().public.apiBase
-
 interface ApiResponse<T = unknown> {
   code: number
   msg: string
@@ -7,6 +5,7 @@ interface ApiResponse<T = unknown> {
 }
 
 export function useRequest() {
+  const baseUrl = useRuntimeConfig().public.apiBase
   const userStore = useUserStore()
 
   async function request<T = unknown>(
@@ -20,7 +19,7 @@ export function useRequest() {
       headers['Authorization'] = `Bearer ${userStore.token}`
     }
 
-    const resp = await $fetch<ApiResponse<T>>(`${BASE_URL}/${url}`, {
+    const resp = await $fetch<ApiResponse<T>>(`${baseUrl}/${url}`, {
       headers,
       ...rest,
     })

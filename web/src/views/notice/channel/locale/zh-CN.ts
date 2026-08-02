@@ -1,7 +1,7 @@
 export default {
   'menu.notice': '通知管理',
   'menu.notice.channel': '渠道配置',
-  'menu.notice.template': '模板管理',
+  'menu.notice.template': '通知场景',
   'menu.notice.log': '发送日志',
 
   // 渠道配置
@@ -27,4 +27,7 @@ export default {
   'notice.channel.status.disabled': '未配置',
   'notice.channel.save': '保存配置',
   'notice.channel.tip.success': '配置已保存',
+  'notice.channel.sms.current': '当前短信服务商',
+  'notice.channel.enabled': '启用服务商',
+  'notice.channel.none': '未启用',
 };

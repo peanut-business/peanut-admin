@@ -17,6 +17,7 @@ export interface FileCateRecord {
   type: FileType;
   name: string;
   create_time?: string;
+  children?: FileCateRecord[];
 }
 
 export function getFileCateList(type: FileType) {
@@ -25,7 +26,7 @@ export function getFileCateList(type: FileType) {
   });
 }
 
-export function addFileCate(data: { type: FileType; name: string }) {
+export function addFileCate(data: { type: FileType; pid?: number; name: string }) {
   return axios.post('/api/admin/file/cate/add', data);
 }
 
@@ -52,6 +53,7 @@ export interface FileListParams {
   type: FileType;
   cid?: number | '';
   name?: string;
+  source?: number | '';
   page_no?: number;
   page_size?: number;
 }

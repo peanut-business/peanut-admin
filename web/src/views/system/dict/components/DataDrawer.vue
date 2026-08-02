@@ -9,7 +9,11 @@
   >
     <a-row style="margin-bottom: 16px" justify="space-between">
       <a-col :span="12">
-        <a-button type="primary" @click="handleAdd">
+        <a-button
+          v-permission="['dict/data/add']"
+          type="primary"
+          @click="handleAdd"
+        >
           <template #icon><icon-plus /></template>
           {{ $t('systemDict.data.create') }}
         </a-button>
@@ -35,20 +39,31 @@
     >
       <template #is_disable="{ record }">
         <a-switch
+          v-permission="['dict/data/status']"
           :model-value="record.is_disable === 0"
           @change="(v) => handleStatus(record, v as boolean)"
         />
       </template>
       <template #operations="{ record }">
         <a-space>
-          <a-button type="text" size="small" @click="handleEdit(record)">
+          <a-button
+            v-permission="['dict/data/edit']"
+            type="text"
+            size="small"
+            @click="handleEdit(record)"
+          >
             {{ $t('systemDict.operation.edit') }}
           </a-button>
           <a-popconfirm
             :content="$t('systemDict.data.delete.confirm')"
             @ok="handleDelete(record)"
           >
-            <a-button type="text" status="danger" size="small">
+            <a-button
+              v-permission="['dict/data/delete']"
+              type="text"
+              status="danger"
+              size="small"
+            >
               {{ $t('systemDict.operation.delete') }}
             </a-button>
           </a-popconfirm>

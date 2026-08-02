@@ -1,44 +1,90 @@
 import axios from 'axios';
 
-/** 管理员所属角色（列表接口内联返回） */
 export interface AdminRoleBrief {
   id: number;
   name: string;
 }
 
-/** 管理员记录 */
 export interface AdminRecord {
   id: number;
+  account: string;
+  name: string;
   username: string;
   nickname: string;
   avatar: string;
   root: number;
   disable: number;
-  create_time?: string;
-  update_time?: string;
-  roles?: AdminRoleBrief[];
-}
-
-/** 管理员详情：额外带已分配角色 id 列表 */
-export interface AdminDetail extends AdminRecord {
+  disable_desc: string;
+  multipoint_login: number;
+  login_time: string;
+  login_ip: string;
+  create_time: string;
+  update_time: string;
+  role_id: number[];
   role_ids: number[];
+  dept_id: number[];
+  jobs_id: number[];
+  role_name: string;
+  dept_name: string;
+  jobs_name: string;
+  roles: AdminRoleBrief[];
 }
 
-/**
- * 新增/编辑提交体。
- * - username 仅新增有效（编辑不可改，后端 edit 场景忽略）。
- * - password 新增必填；编辑留空 = 不修改（非空即重置密码）。
- */
+export type AdminDetail = AdminRecord;
+
 export interface AdminForm {
   id?: number;
-  username: string;
-  nickname: string;
-  password?: string;
-  role_ids: number[];
+  account: string;
+  name: string;
+  avatar: string;
+  dept_id: number[];
+  jobs_id: number[];
+  role_id: number[];
+  password: string;
+  password_confirm: string;
   disable: number;
+  multipoint_login: number;
+  root?: number;
 }
 
-/** 个人中心：编辑个人信息提交体（密码留空 = 不修改） */
+export interface AdminListParams {
+  account?: string;
+  name?: string;
+  role_id?: number | '';
+  page_no?: number;
+  page_size?: number;
+  field?: 'id' | 'create_time';
+  order_by?: 'asc' | 'desc';
+  export?: 1 | 2;
+  page_type?: 0 | 1;
+  page_start?: number;
+  page_end?: number;
+  file_name?: string;
+}
+
+export interface AdminListResult {
+  lists: AdminRecord[];
+  count: number;
+  pageNo: number;
+  pageSize: number;
+}
+
+export interface AdminExportInfo {
+  count: number;
+  page_size: number;
+  sum_page: number;
+  max_page: number;
+  all_max_size: number;
+  page_start: number;
+  page_end: number;
+  file_name: string;
+}
+
+export interface AdminExportResult {
+  url: string;
+  file_name: string;
+}
+
 export interface EditSelfForm {
   nickname: string;
   avatar: string;
@@ -47,22 +93,30 @@ export interface EditSelfForm {
   password_old?: string;
 }
 
-/** 管理员列表（含所属角色） */
-export function getAdminList() {
-  return axios.get<AdminRecord[]>('/api/admin/admin/lists');
+export function getAdminList(params: AdminListParams = {}) {
+  return axios.get<AdminListResult>('/api/admin/admin/lists', { params });
 }
 
-/** 当前登录管理员信息（个人中心回填） */
+export function getAdminExportInfo(params: AdminListParams) {
+  return axios.get<AdminExportInfo>('/api/admin/admin/lists', {
+    params: { ...params, export: 1 },
+  });
+}
+
+export function exportAdmins(params: AdminListParams) {
+  return axios.get<AdminExportResult>('/api/admin/admin/lists', {
+    params: { ...params, export: 2 },
+  });
+}
+
 export function getAdminSelf() {
   return axios.get<AdminDetail>('/api/admin/admin/self');
 }
 
-/** 编辑当前登录管理员的个人信息 */
 export function editAdminSelf(data: EditSelfForm) {
   return axios.post('/api/admin/admin/editSelf', data);
 }
 
-/** 管理员详情（含 role_ids，供编辑回填角色选择） */
 export function getAdminDetail(id: number) {
   return axios.get<AdminDetail>('/api/admin/admin/detail', { params: { id } });
 }
@@ -79,7 +133,6 @@ export function deleteAdmin(id: number) {
   return axios.post('/api/admin/admin/delete', { id });
 }
 
-/** 启用/禁用：disable 1=禁用 0=启用 */
 export function updateAdminStatus(id: number, disable: number) {
   return axios.post('/api/admin/admin/status', { id, disable });
 }

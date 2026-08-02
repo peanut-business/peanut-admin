@@ -18,7 +18,12 @@
           <div class="cate-panel">
             <div class="cate-head">
               <span>{{ $t('systemFile.cate.title') }}</span>
-              <a-button type="text" size="mini" @click="handleCateAdd">
+              <a-button
+                v-permission="['file/cate/add']"
+                type="text"
+                size="mini"
+                @click="handleCateAdd()"
+              >
                 <template #icon><icon-plus /></template>
               </a-button>
             </div>
@@ -30,15 +35,23 @@
                 <span class="cate-name">{{ $t('systemFile.cate.all') }}</span>
               </li>
               <li
-                v-for="c in cateList"
+                v-for="c in flatCateList"
                 :key="c.id"
                 :class="{ active: currentCid === c.id }"
                 @click="selectCate(c.id)"
               >
-                <span class="cate-name">{{ c.name }}</span>
+                <span class="cate-name">
+                  {{ `${'  '.repeat(c.depth)}${c.name}` }}
+                </span>
                 <span class="cate-ops" @click.stop>
-                  <icon-edit @click="handleCateEdit(c)" />
+                  <span v-permission="['file/cate/add']">
+                    <icon-plus @click="handleCateAdd(c.id)" />
+                  </span>
+                  <span v-permission="['file/cate/edit']">
+                    <icon-edit @click="handleCateEdit(c)" />
+                  </span>
                   <a-popconfirm
+                    v-permission="['file/cate/delete']"
                     :content="$t('systemFile.cate.delete.confirm')"
                     @ok="handleCateDelete(c)"
                   >
@@ -54,6 +67,7 @@
           <div class="toolbar">
             <a-space>
               <a-upload
+                v-permission="[uploadPermission]"
                 :action="uploadUrl[activeType]"
                 :headers="uploadHeaders"
                 :data="{ cid: String(currentCid === '' ? 0 : currentCid) }"
@@ -77,6 +91,21 @@
                 @press-enter="() => fetchFiles(1)"
                 @clear="() => fetchFiles(1)"
               />
+              <a-select
+                v-model="searchSource"
+                allow-clear
+                style="width: 140px"
+                :placeholder="$t('systemFile.search.source')"
+                @change="() => fetchFiles(1)"
+                @clear="() => fetchFiles(1)"
+              >
+                <a-option :value="0">
+                  {{ $t('systemFile.source.admin') }}
+                </a-option>
+                <a-option :value="1">
+                  {{ $t('systemFile.source.user') }}
+                </a-option>
+              </a-select>
               <a-button @click="() => fetchFiles(1)">
                 <template #icon><icon-search /></template>
               </a-button>
@@ -85,10 +114,15 @@
               <span class="selected-tip">
                 {{ $t('systemFile.op.selected', { n: checkedIds.length }) }}
               </span>
-              <a-button size="small" @click="openMove">
+              <a-button
+                v-permission="['file/move']"
+                size="small"
+                @click="openMove"
+              >
                 {{ $t('systemFile.op.move') }}
               </a-button>
               <a-popconfirm
+                v-permission="['file/delete']"
                 :content="$t('systemFile.op.batchDelete.confirm')"
                 @ok="handleBatchDelete"
               >
@@ -126,10 +160,22 @@
                 </div>
                 <div class="name" :title="item.name">{{ item.name }}</div>
                 <div class="ops">
-                  <a-button type="text" size="mini" @click="handleRename(item)">
+                  <a-button type="text" size="mini" @click="previewFile(item)">
+                    {{ $t('systemFile.op.preview') }}
+                  </a-button>
+                  <a-button type="text" size="mini" @click="copyUrl(item)">
+                    {{ $t('systemFile.op.copy') }}
+                  </a-button>
+                  <a-button
+                    v-permission="['file/rename']"
+                    type="text"
+                    size="mini"
+                    @click="handleRename(item)"
+                  >
                     {{ $t('systemFile.op.rename') }}
                   </a-button>
                   <a-popconfirm
+                    v-permission="['file/delete']"
                     :content="$t('systemFile.op.delete.confirm')"
                     @ok="handleDelete(item)"
                   >
@@ -177,6 +223,8 @@
         <a-form-item field="name" :label="$t('systemFile.cate.field.name')">
           <a-input
             v-model="cateForm.name"
+            :max-length="20"
+            show-word-limit
             :placeholder="$t('systemFile.cate.field.name.placeholder')"
           />
         </a-form-item>
@@ -225,8 +273,8 @@
             <a-option :value="0">{{
               $t('systemFile.cate.uncategorized')
             }}</a-option>
-            <a-option v-for="c in cateList" :key="c.id" :value="c.id">
-              {{ c.name }}
+            <a-option v-for="c in flatCateList" :key="c.id" :value="c.id">
+              {{ `${'  '.repeat(c.depth)}${c.name}` }}
             </a-option>
           </a-select>
         </a-form-item>
@@ -272,9 +320,28 @@
     20: 'video/*',
     30: '',
   };
+  const uploadPermissionMap: Record<FileType, string> = {
+    10: 'upload/image',
+    20: 'upload/video',
+    30: 'upload/file',
+  };
+  const uploadPermission = computed(
+    () => uploadPermissionMap[activeType.value]
+  );
 
   // ---- 分类 ----
   const cateList = ref<FileCateRecord[]>([]);
+  const flatCateList = computed(() => {
+    const result: Array<FileCateRecord & { depth: number }> = [];
+    const walk = (items: FileCateRecord[], depth: number) => {
+      items.forEach((item) => {
+        result.push({ ...item, depth });
+        if (item.children?.length) walk(item.children, depth + 1);
+      });
+    };
+    walk(cateList.value, 0);
+    return result;
+  });
   const currentCid = ref<number | ''>('');
 
   const fetchCate = async () => {
@@ -285,6 +352,7 @@
   // ---- 文件 ----
   const renderData = ref<FileRecord[]>([]);
   const searchName = ref('');
+  const searchSource = ref<number | ''>('');
   const checkedIds = ref<number[]>([]);
   const pagination = reactive({ current: 1, pageSize: 24, total: 0 });
 
@@ -295,6 +363,7 @@
         type: activeType.value,
         cid: currentCid.value,
         name: searchName.value,
+        source: searchSource.value,
         page_no: page,
         page_size: pagination.pageSize,
       });
@@ -316,6 +385,7 @@
   const onTypeChange = async () => {
     currentCid.value = '';
     searchName.value = '';
+    searchSource.value = '';
     await fetchCate();
     await fetchFiles(1);
   };
@@ -349,16 +419,18 @@
   const cateIsEdit = ref(false);
   const cateSubmitting = ref(false);
   const cateFormRef = ref<FormInstance>();
-  const cateForm = reactive({ id: 0, name: '' });
+  const cateForm = reactive({ id: 0, pid: 0, name: '' });
   const cateRules = {
     name: [
       { required: true, message: t('systemFile.cate.field.name.required') },
+      { maxLength: 20, message: t('systemFile.cate.field.name.max') },
     ],
   };
 
-  const handleCateAdd = () => {
+  const handleCateAdd = (pid = 0) => {
     cateIsEdit.value = false;
     cateForm.id = 0;
+    cateForm.pid = pid;
     cateForm.name = '';
     cateModalVisible.value = true;
   };
@@ -376,7 +448,11 @@
       if (cateIsEdit.value) {
         await editFileCate({ id: cateForm.id, name: cateForm.name });
       } else {
-        await addFileCate({ type: activeType.value, name: cateForm.name });
+        await addFileCate({
+          type: activeType.value,
+          pid: cateForm.pid,
+          name: cateForm.name,
+        });
       }
       Message.success(t('systemFile.tip.ok'));
       cateModalVisible.value = false;
@@ -430,6 +506,14 @@
     await deleteFile([...checkedIds.value]);
     Message.success(t('systemFile.tip.ok'));
     await fetchFiles(pagination.current);
+  };
+
+  const previewFile = (item: FileRecord) => {
+    window.open(item.url, '_blank', 'noopener,noreferrer');
+  };
+  const copyUrl = async (item: FileRecord) => {
+    await navigator.clipboard.writeText(item.url);
+    Message.success(t('systemFile.tip.copied'));
   };
 
   // ---- 移动 ----

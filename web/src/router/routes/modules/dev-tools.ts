@@ -1,0 +1,28 @@
+import { DEFAULT_LAYOUT } from '../base';
+import { AppRouteRecordRaw } from '../types';
+
+const DEV_TOOLS: AppRouteRecordRaw = {
+  path: '/dev-tools',
+  name: 'devTools',
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'menu.devTools',
+    requiresAuth: true,
+    icon: 'icon-code',
+    order: 0,
+  },
+  children: [
+    {
+      path: 'code',
+      name: 'DevToolsCode',
+      component: () => import('@/views/dev-tools/code/index.vue'),
+      meta: {
+        locale: 'menu.devTools.code',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+  ],
+};
+
+export default DEV_TOOLS;

@@ -2,6 +2,7 @@ export default {
   'menu.system.log': 'Operation Log',
 
   'systemLog.operation.clear': 'Clear Logs',
+  'systemLog.operation.export': 'Export Logs',
 
   'systemLog.form.username': 'Operator',
   'systemLog.form.username.placeholder': 'Filter by username',
@@ -9,6 +10,9 @@ export default {
   'systemLog.form.uri.placeholder': 'Filter by URI',
   'systemLog.form.method': 'Method',
   'systemLog.form.method.placeholder': 'Select method',
+  'systemLog.form.ip': 'IP',
+  'systemLog.form.ip.placeholder': 'Filter by IP',
+  'systemLog.form.time': 'Time',
   'systemLog.form.search': 'Search',
   'systemLog.form.reset': 'Reset',
 
@@ -22,4 +26,16 @@ export default {
 
   'systemLog.clear.confirm': 'Clear all operation logs? This cannot be undone.',
   'systemLog.tip.success': 'Success',
+  'systemLog.export.title': 'Export Operation Logs',
+  'systemLog.export.confirm': 'Export',
+  'systemLog.export.summary': '{count} rows, {pages} pages, {size} rows/page',
+  'systemLog.export.limit': 'At most {pages} pages / {count} rows per export',
+  'systemLog.export.range': 'Range',
+  'systemLog.export.all': 'All rows',
+  'systemLog.export.pages': 'Selected pages',
+  'systemLog.export.pageRange': 'Page range',
+  'systemLog.export.to': 'to',
+  'systemLog.export.fileName': 'File name',
+  'systemLog.export.invalidRange': 'End page must not be less than start page',
+  'systemLog.export.success': 'Exported successfully',
 };

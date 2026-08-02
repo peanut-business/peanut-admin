@@ -9,9 +9,22 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // SSR cannot consume the browser-only same-origin proxy. Deployments may
+    // override this private origin without exposing it to clients.
+    apiServerBase: 'http://127.0.0.1:8000',
     public: {
-      // override at runtime via NUXT_PUBLIC_API_BASE env var
-      apiBase: 'http://192.168.192.2:8080',
+      // Production normally serves the API on the same origin. Override only
+      // when the deployed frontend intentionally uses a separate API origin.
+      apiBase: '',
+    },
+  },
+
+  nitro: {
+    devProxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000/api',
+        changeOrigin: true,
+      },
     },
   },
 

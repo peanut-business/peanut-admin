@@ -23,6 +23,15 @@
         </el-form-item>
       </el-form>
 
+      <el-divider content-position="center">或</el-divider>
+      <el-button
+        class="w-full"
+        :loading="wechatLoading"
+        @click="handleWechatLogin"
+      >
+        使用微信登录
+      </el-button>
+
       <p class="text-center text-sm text-gray-400">
         没有账号？
         <NuxtLink to="/register" class="text-primary hover:underline">立即注册</NuxtLink>
@@ -32,6 +41,8 @@
 </template>
 
 <script setup lang="ts">
+import { beginWechatPc } from '~/api/oauth'
+
 definePageMeta({ layout: false })
 
 const userStore = useUserStore()
@@ -39,6 +50,7 @@ if (userStore.isLoggedIn) await navigateTo('/')
 
 const apiBase = useRuntimeConfig().public.apiBase
 const loading = ref(false)
+const wechatLoading = ref(false)
 const formRef = ref()
 const form = ref({ account: '', password: '' })
 const rules = {
@@ -62,6 +74,22 @@ async function handleLogin() {
     ElMessage.error('登录失败，请重试')
   } finally {
     loading.value = false
+  }
+}
+
+async function handleWechatLogin() {
+  wechatLoading.value = true
+  try {
+    const result = await beginWechatPc(useRequest(), '/')
+    if (!result.authorization_url) {
+      ElMessage.error('微信授权地址为空')
+      return
+    }
+    window.location.assign(result.authorization_url)
+  } catch {
+    // useRequest already reports the server message.
+  } finally {
+    wechatLoading.value = false
   }
 }
 </script>

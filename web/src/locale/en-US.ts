@@ -36,6 +36,13 @@ import localeSettings from './en-US/settings';
 export default {
   'menu.dashboard': 'Dashboard',
   'menu.user': 'User Center',
+  'menu.appSetting.user': 'User Settings',
+  'menu.decoration': 'Decoration',
+  'menu.decoration.mobile': 'Mobile Decoration',
+  'menu.decoration.tabbar': 'Tabbar Decoration',
+  'menu.decoration.pc': 'PC Decoration',
+  'menu.devTools': 'Developer Tools',
+  'menu.devTools.code': 'Code Generator',
   'navbar.action.locale': 'Switch to English',
   'navbar.userSettings': 'User Settings',
   'navbar.logout': 'Logout',

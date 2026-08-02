@@ -16,9 +16,11 @@ export default function useMenuTree() {
   });
   const menuTree = computed(() => {
     const copyRouter = cloneDeep(appRoute.value) as RouteRecordNormalized[];
-    copyRouter.sort((a: RouteRecordNormalized, b: RouteRecordNormalized) => {
-      return (a.meta.order || 0) - (b.meta.order || 0);
-    });
+    if (!appStore.menuFromServer) {
+      copyRouter.sort((a: RouteRecordNormalized, b: RouteRecordNormalized) => {
+        return (a.meta.order || 0) - (b.meta.order || 0);
+      });
+    }
     function travel(_routes: RouteRecordRaw[], layer: number) {
       if (!_routes) return null;
 

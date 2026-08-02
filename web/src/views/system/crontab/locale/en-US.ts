@@ -25,6 +25,8 @@ export default {
   'systemCrontab.columns.status': 'Status',
   'systemCrontab.columns.lastTime': 'Last Run',
   'systemCrontab.columns.time': 'Time(s)',
+  'systemCrontab.columns.maxTime': 'Max Time(s)',
+  'systemCrontab.columns.error': 'Last Error',
   'systemCrontab.columns.operations': 'Actions',
 
   'systemCrontab.field.name': 'Name',
@@ -35,6 +37,7 @@ export default {
   'systemCrontab.field.command.required': 'Command is required',
   'systemCrontab.field.params': 'Params',
   'systemCrontab.field.params.placeholder': 'Space-separated args (optional)',
+  'systemCrontab.field.sort': 'Sort',
   'systemCrontab.field.expression': 'Cron Rule',
   'systemCrontab.field.expression.placeholder':
     'cron expression, e.g. * * * * *',

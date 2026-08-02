@@ -1,6 +1,7 @@
 <template>
   <div class="container">
-    <!-- 统计卡片 -->
+    <Breadcrumb :items="['menu.finance', 'menu.finance.refund']" />
+
     <a-card :bordered="false" style="margin-bottom: 16px">
       <a-row :gutter="24">
         <a-col :span="6">
@@ -34,59 +35,70 @@
       </a-row>
     </a-card>
 
-    <!-- 搜索条件 -->
     <a-card :bordered="false" style="margin-bottom: 16px">
-      <a-form :model="params" layout="inline">
+      <a-form :model="formModel" layout="inline">
         <a-form-item :label="$t('refund.filter.sn')">
           <a-input
-            v-model="params.sn"
+            v-model="formModel.sn"
             :placeholder="$t('refund.filter.sn.placeholder')"
             allow-clear
             style="width: 200px"
-            @press-enter="handleSearch"
+            @press-enter="search"
           />
         </a-form-item>
         <a-form-item :label="$t('refund.filter.order_sn')">
           <a-input
-            v-model="params.order_sn"
+            v-model="formModel.order_sn"
             :placeholder="$t('refund.filter.order_sn.placeholder')"
             allow-clear
             style="width: 200px"
-            @press-enter="handleSearch"
+            @press-enter="search"
           />
         </a-form-item>
         <a-form-item :label="$t('refund.filter.user_info')">
           <a-input
-            v-model="params.user_info"
+            v-model="formModel.user_info"
             :placeholder="$t('refund.filter.user_info.placeholder')"
             allow-clear
             style="width: 200px"
-            @press-enter="handleSearch"
+            @press-enter="search"
           />
         </a-form-item>
         <a-form-item :label="$t('refund.filter.refund_type')">
           <a-select
-            v-model="params.refund_type"
-            style="width: 130px"
+            v-model="formModel.refund_type"
             allow-clear
+            style="width: 130px"
+            :placeholder="$t('refund.filter.all')"
           >
-            <a-option value="">全部</a-option>
-            <a-option :value="1">后台退款</a-option>
+            <a-option :value="1">{{ $t('refund.filter.admin') }}</a-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('refund.filter.time')">
-          <a-range-picker v-model="timeRange" style="width: 280px" />
+          <a-range-picker
+            v-model="formModel.timeRange"
+            show-time
+            format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            allow-clear
+            style="width: 360px"
+          />
         </a-form-item>
         <a-form-item>
           <a-space>
-            <a-button type="primary" @click="handleSearch">查询</a-button>
-            <a-button @click="handleReset">重置</a-button>
+            <a-button type="primary" @click="search">
+              <template #icon><icon-search /></template>
+              {{ $t('refund.filter.search') }}
+            </a-button>
+            <a-button @click="reset">
+              <template #icon><icon-refresh /></template>
+              {{ $t('refund.filter.reset') }}
+            </a-button>
           </a-space>
         </a-form-item>
       </a-form>
     </a-card>
 
-    <!-- 表格 -->
     <a-card :bordered="false">
       <a-tabs v-model:active-key="activeTab" @change="handleTabChange">
         <a-tab-pane
@@ -99,60 +111,47 @@
       <a-table
         :data="list"
         :loading="loading"
-        :pagination="{
-          total,
-          current: params.page,
-          pageSize: params.limit,
-          showTotal: true,
-        }"
+        :pagination="pagination"
+        :bordered="{ cell: true }"
+        :scroll="{ x: 1250 }"
         row-key="id"
-        @page-change="(p: number) => { params.page = p; fetchList(); }"
-        @page-size-change="(s: number) => { params.limit = s; params.page = 1; fetchList(); }"
+        @page-change="onPageChange"
+        @page-size-change="onPageSizeChange"
       >
         <template #columns>
           <a-table-column
             :title="$t('refund.col.sn')"
             data-index="sn"
-            :width="190"
+            :width="200"
           />
-          <a-table-column :title="$t('refund.col.user')" :width="160">
+          <a-table-column :title="$t('refund.col.user')" :width="180">
             <template #cell="{ record }">
               <a-space>
-                <a-avatar
-                  v-if="record.avatar"
-                  :image-url="record.avatar"
-                  :size="32"
-                />
-                <span>{{ record.nickname }}</span>
+                <a-avatar :size="40" :image-url="record.avatar">
+                  {{ record.nickname?.slice(0, 1) }}
+                </a-avatar>
+                <span>{{ record.nickname || '-' }}</span>
               </a-space>
             </template>
           </a-table-column>
           <a-table-column
             :title="$t('refund.col.order_sn')"
             data-index="order_sn"
-            :width="190"
+            :width="200"
           />
-          <a-table-column :title="$t('refund.col.refund_amount')" :width="110">
+          <a-table-column :title="$t('refund.col.refund_amount')" :width="120">
             <template #cell="{ record }">
-              ¥{{ record.refund_amount }}
+              ¥ {{ record.refund_amount }}
             </template>
           </a-table-column>
           <a-table-column
             :title="$t('refund.col.refund_type')"
             data-index="refund_type_text"
-            :width="100"
+            :width="110"
           />
-          <a-table-column :title="$t('refund.col.refund_status')" :width="100">
+          <a-table-column :title="$t('refund.col.refund_status')" :width="110">
             <template #cell="{ record }">
-              <a-tag
-                :color="
-                  record.refund_status === 0
-                    ? 'orange'
-                    : record.refund_status === 1
-                    ? 'green'
-                    : 'red'
-                "
-              >
+              <a-tag :color="statusColor(record.refund_status)">
                 {{ record.refund_status_text }}
               </a-tag>
             </template>
@@ -160,32 +159,48 @@
           <a-table-column
             :title="$t('refund.col.create_time')"
             data-index="create_time"
-            :width="160"
-          >
-            <template #cell="{ record }">
-              {{ formatTime(record.create_time) }}
-            </template>
-          </a-table-column>
+            :width="180"
+          />
           <a-table-column
             :title="$t('refund.col.action')"
-            :width="120"
+            :width="180"
             fixed="right"
           >
             <template #cell="{ record }">
-              <a-button type="text" size="small" @click="openLog(record.id)">
-                {{ $t('refund.action.log') }}
-              </a-button>
+              <a-space>
+                <a-button
+                  v-permission="['finance.refund/log']"
+                  type="text"
+                  size="small"
+                  @click="openLog(record.id)"
+                >
+                  {{ $t('refund.action.log') }}
+                </a-button>
+                <a-popconfirm
+                  v-if="record.refund_status === 2"
+                  :content="$t('refund.retry.confirm')"
+                  @ok="handleRetry(record.id)"
+                >
+                  <a-button
+                    v-permission="['recharge.recharge/refundAgain']"
+                    type="text"
+                    size="small"
+                    :loading="retryingId === record.id"
+                  >
+                    {{ $t('refund.action.retry') }}
+                  </a-button>
+                </a-popconfirm>
+              </a-space>
             </template>
           </a-table-column>
         </template>
       </a-table>
     </a-card>
 
-    <!-- 退款日志 Drawer -->
     <a-drawer
       v-model:visible="logVisible"
       :title="$t('refund.log.title')"
-      :width="680"
+      :width="760"
       :footer="false"
     >
       <a-table
@@ -198,30 +213,22 @@
           <a-table-column
             :title="$t('refund.log.col.sn')"
             data-index="sn"
-            :width="190"
+            :width="200"
           />
           <a-table-column
             :title="$t('refund.log.col.refund_amount')"
-            :width="110"
+            :width="120"
           >
             <template #cell="{ record }">
-              ¥{{ record.refund_amount }}
+              ¥ {{ record.refund_amount }}
             </template>
           </a-table-column>
           <a-table-column
             :title="$t('refund.log.col.refund_status')"
-            :width="100"
+            :width="110"
           >
             <template #cell="{ record }">
-              <a-tag
-                :color="
-                  record.refund_status === 0
-                    ? 'orange'
-                    : record.refund_status === 1
-                    ? 'green'
-                    : 'red'
-                "
-              >
+              <a-tag :color="statusColor(record.refund_status)">
                 {{ record.refund_status_text }}
               </a-tag>
             </template>
@@ -229,12 +236,8 @@
           <a-table-column
             :title="$t('refund.log.col.create_time')"
             data-index="create_time"
-            :width="160"
-          >
-            <template #cell="{ record }">
-              {{ formatTime(record.create_time) }}
-            </template>
-          </a-table-column>
+            :width="180"
+          />
           <a-table-column
             :title="$t('refund.log.col.handler')"
             data-index="handler"
@@ -247,26 +250,31 @@
 </template>
 
 <script lang="ts" setup>
-  import { reactive, ref, onMounted } from 'vue';
+  import { onMounted, reactive, ref } from 'vue';
+  import { Message } from '@arco-design/web-vue';
+  import { useI18n } from 'vue-i18n';
   import {
-    getRefundStat,
-    getRefundRecords,
     getRefundLog,
-    RefundStat,
-    RefundRecord,
-    RefundListRes,
+    getRefundRecords,
+    getRefundStat,
+    refundAgain,
+    type RefundListExtend,
+    type RefundLogRecord,
+    type RefundParams,
+    type RefundRecord,
+    type RefundStat,
   } from '@/api/finance';
 
-  // ── 统计 ──────────────────────────────────────────────────────────────────
+  const { t } = useI18n();
+
   const stat = reactive<RefundStat>({ total: 0, ing: 0, success: 0, error: 0 });
+  const extend = reactive<RefundListExtend>({
+    total: 0,
+    ing: 0,
+    success: 0,
+    error: 0,
+  });
 
-  const fetchStat = async () => {
-    const res = await getRefundStat();
-    const data = (res.data as any).data as RefundStat;
-    Object.assign(stat, data);
-  };
-
-  // ── tabs ──────────────────────────────────────────────────────────────────
   const tabs = [
     { key: '', label: 'refund.tab.all', extendKey: 'total' },
     { key: '0', label: 'refund.tab.ing', extendKey: 'ing' },
@@ -274,93 +282,105 @@
     { key: '2', label: 'refund.tab.error', extendKey: 'error' },
   ] as const;
   const activeTab = ref('');
-  const extend = reactive({ total: 0, ing: 0, success: 0, error: 0 });
 
-  // ── 搜索参数 ───────────────────────────────────────────────────────────────
-  const timeRange = ref<string[]>([]);
-  const params = reactive({
+  const generateFormModel = () => ({
     sn: '',
     order_sn: '',
     user_info: '',
-    refund_type: '' as string,
-    refund_status: '' as string,
-    start_time: '' as number | string,
-    end_time: '' as number | string,
-    page: 1,
-    limit: 15,
+    refund_type: '' as string | number,
+    timeRange: [] as string[],
   });
+  const formModel = ref(generateFormModel());
 
-  // ── 列表 ───────────────────────────────────────────────────────────────────
+  const pagination = reactive({
+    current: 1,
+    pageSize: 15,
+    total: 0,
+    showTotal: true,
+    showPageSize: true,
+  });
   const list = ref<RefundRecord[]>([]);
-  const total = ref(0);
   const loading = ref(false);
 
-  const formatTime = (val: number | string): string => {
-    if (!val) return '';
-    if (typeof val === 'string') return val;
-    const d = new Date(val * 1000);
-    return d.toLocaleString('zh-CN', { hour12: false });
+  const statusColor = (status: number) =>
+    ({ 0: 'orange', 1: 'green', 2: 'red' }[status] ?? 'gray');
+
+  const listParams = (pageNo: number): RefundParams => {
+    const params: RefundParams = {
+      sn: formModel.value.sn || undefined,
+      order_sn: formModel.value.order_sn || undefined,
+      user_info: formModel.value.user_info || undefined,
+      refund_type:
+        formModel.value.refund_type === ''
+          ? undefined
+          : formModel.value.refund_type,
+      refund_status: activeTab.value === '' ? undefined : activeTab.value,
+      page_no: pageNo,
+      page_size: pagination.pageSize,
+    };
+    if (formModel.value.timeRange.length === 2) {
+      [params.start_time, params.end_time] = formModel.value.timeRange;
+    }
+    return params;
   };
 
-  const fetchList = async () => {
+  const fetchStat = async () => {
+    const { data } = await getRefundStat();
+    Object.assign(stat, data);
+  };
+
+  const fetchList = async (pageNo = 1) => {
     loading.value = true;
-    // compute timestamps from timeRange v-model
-    if (timeRange.value && timeRange.value.length === 2) {
-      params.start_time = Math.floor(new Date(timeRange.value[0]).getTime() / 1000);
-      params.end_time = Math.floor(new Date(timeRange.value[1]).getTime() / 1000);
-    } else {
-      params.start_time = '';
-      params.end_time = '';
-    }
     try {
-      const res = await getRefundRecords({ ...params });
-      const data = (res.data as any).data as RefundListRes;
+      const { data } = await getRefundRecords(listParams(pageNo));
       list.value = data.lists;
-      total.value = data.count;
+      pagination.current = data.page_no ?? data.pageNo ?? pageNo;
+      pagination.pageSize =
+        data.page_size ?? data.pageSize ?? pagination.pageSize;
+      pagination.total = data.count;
       Object.assign(extend, data.extend);
     } finally {
       loading.value = false;
     }
   };
 
+  const search = () => fetchList(1);
+  const reset = () => {
+    formModel.value = generateFormModel();
+    fetchList(1);
+  };
   const handleTabChange = (key: string | number) => {
-    params.refund_status = String(key);
-    params.page = 1;
-    fetchList();
+    activeTab.value = String(key);
+    fetchList(1);
+  };
+  const onPageChange = (current: number) => fetchList(current);
+  const onPageSizeChange = (pageSize: number) => {
+    pagination.pageSize = pageSize;
+    fetchList(1);
   };
 
-  const handleSearch = () => {
-    params.page = 1;
-    fetchList();
+  const retryingId = ref(0);
+  const handleRetry = async (recordId: number) => {
+    retryingId.value = recordId;
+    try {
+      await refundAgain(recordId);
+      Message.success(t('refund.retry.success'));
+      await Promise.all([fetchList(pagination.current), fetchStat()]);
+    } finally {
+      retryingId.value = 0;
+    }
   };
 
-  const handleReset = () => {
-    Object.assign(params, {
-      sn: '',
-      order_sn: '',
-      user_info: '',
-      refund_type: '',
-      refund_status: activeTab.value,
-      start_time: '',
-      end_time: '',
-      page: 1,
-    });
-    timeRange.value = [];
-    fetchList();
-  };
-
-  // ── 退款日志 ───────────────────────────────────────────────────────────────
   const logVisible = ref(false);
   const logLoading = ref(false);
-  const logList = ref<any[]>([]);
-
+  const logList = ref<RefundLogRecord[]>([]);
   const openLog = async (recordId: number) => {
     logVisible.value = true;
     logLoading.value = true;
     logList.value = [];
     try {
-      const res = await getRefundLog(recordId);
-      logList.value = (res.data as any).data as any[];
+      const { data } = await getRefundLog(recordId);
+      logList.value = data;
     } finally {
       logLoading.value = false;
     }
@@ -371,3 +391,13 @@
     fetchList();
   });
 </script>
+
+<script lang="ts">
+  export default { name: 'FinanceRefund' };
+</script>
+
+<style scoped lang="less">
+  .container {
+    padding: 0 20px 20px 20px;
+  }
+</style>

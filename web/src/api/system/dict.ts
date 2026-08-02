@@ -13,6 +13,12 @@ export interface DictTypeRecord {
 
 export type DictTypeForm = Partial<DictTypeRecord> & { id?: number };
 
+export interface DictTypeOption {
+  id: number;
+  name: string;
+  type: string;
+}
+
 export interface DictTypeListParams {
   name?: string;
   type?: string;
@@ -35,7 +41,7 @@ export function getDictTypeList(params: DictTypeListParams) {
 }
 
 export function getDictTypeAll() {
-  return axios.get<DictTypeRecord[]>('/api/admin/dict/type/all');
+  return axios.get<DictTypeOption[]>('/api/admin/dict/type/all');
 }
 
 export function addDictType(data: DictTypeForm) {
@@ -84,6 +90,19 @@ export interface DictDataListParams {
 export function getDictDataList(params: DictDataListParams) {
   return axios.get<ListRes<DictDataRecord>>('/api/admin/dict/data/lists', {
     params,
+  });
+}
+
+export interface DictDataOption {
+  id: number;
+  name: string;
+  value: string;
+  sort: number;
+}
+
+export function getDictDataByType(typeValue: string) {
+  return axios.get<DictDataOption[]>('/api/admin/dict/data/byType', {
+    params: { type_value: typeValue },
   });
 }
 

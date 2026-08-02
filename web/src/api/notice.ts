@@ -6,6 +6,7 @@ export interface SmsAliyunConfig {
   access_key_id: string;
   access_key_secret: string;
   sign_name: string;
+  status: number;
 }
 
 export interface SmsTencentConfig {
@@ -14,6 +15,7 @@ export interface SmsTencentConfig {
   sdk_app_id: string;
   sign_name: string;
   region: string;
+  status: number;
 }
 
 export interface MailSmtpConfig {
@@ -26,11 +28,47 @@ export interface MailSmtpConfig {
 }
 
 export interface NoticeChannelDetail {
-  sms_default: 'aliyun' | 'tencent';
+  sms_default: 'aliyun' | 'tencent' | '';
   sms_aliyun: SmsAliyunConfig;
   sms_tencent: SmsTencentConfig;
   mail_smtp: MailSmtpConfig;
   status: { sms: boolean; mail: boolean };
+}
+
+// ─── 固定业务场景 ───────────────────────────────────────────────────────────
+
+export interface NoticeSceneRecord {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  recipient: string;
+  variables: string[];
+  sms_template_id: string;
+  sms_content: string;
+  sms_status: number;
+  update_time: number;
+}
+
+export function getNoticeSceneList() {
+  return axios.get<{ list: NoticeSceneRecord[]; total: number }>(
+    '/api/admin/notice/scene/lists'
+  );
+}
+
+export function getNoticeSceneDetail(id: number) {
+  return axios.get<NoticeSceneRecord>('/api/admin/notice/scene/detail', {
+    params: { id },
+  });
+}
+
+export function saveNoticeScene(
+  data: Pick<
+    NoticeSceneRecord,
+    'id' | 'sms_template_id' | 'sms_content' | 'sms_status'
+  >
+) {
+  return axios.post('/api/admin/notice/scene/save', data);
 }
 
 export type ChannelSection =
@@ -100,11 +138,18 @@ export interface NoticeLogRecord {
   template_id: number;
   template_name: string;
   template_code: string;
+  scene_id: number;
+  scene_name: string;
+  scene_code: string;
   channel: number;
   receiver: string;
   title: string;
   content: string;
   status: number; // 0待发 1成功 2失败
+  provider: string;
+  is_verified: number;
+  check_count: number;
+  verified_time: number;
   error: string;
   send_time: number;
   create_time: number;
@@ -114,6 +159,7 @@ export function getNoticeLogList(params?: {
   receiver?: string;
   channel?: string;
   status?: string;
+  scene_id?: string;
   start_time?: number;
   end_time?: number;
   page?: number;

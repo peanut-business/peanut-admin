@@ -2,16 +2,50 @@
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.dept']" />
     <a-card class="general-card" :title="$t('menu.system.dept')">
+      <a-form :model="queryParams" layout="inline" style="margin-bottom: 16px">
+        <a-form-item field="name" :label="$t('systemDept.search.name')">
+          <a-input
+            v-model="queryParams.name"
+            :placeholder="$t('systemDept.search.name.placeholder')"
+            allow-clear
+            @press-enter="fetchData"
+          />
+        </a-form-item>
+        <a-form-item field="status" :label="$t('systemDept.search.status')">
+          <a-select
+            v-model="queryParams.status"
+            :placeholder="$t('systemDept.search.status.all')"
+            allow-clear
+            style="width: 180px"
+          >
+            <a-option :value="1">{{ $t('systemDept.status.normal') }}</a-option>
+            <a-option :value="0">{{ $t('systemDept.status.disabled') }}</a-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item>
+          <a-space>
+            <a-button type="primary" @click="fetchData">
+              {{ $t('systemDept.operation.search') }}
+            </a-button>
+            <a-button @click="resetQuery">
+              {{ $t('systemDept.operation.reset') }}
+            </a-button>
+          </a-space>
+        </a-form-item>
+      </a-form>
       <a-row style="margin-bottom: 16px">
         <a-col :span="12">
           <a-space>
-            <a-button type="primary" @click="handleAdd()">
+            <a-button
+              v-permission="['dept/add']"
+              type="primary"
+              @click="handleAdd()"
+            >
               <template #icon><icon-plus /></template>
               {{ $t('systemDept.operation.create') }}
             </a-button>
-            <a-button @click="fetchData">
-              <template #icon><icon-refresh /></template>
-              {{ $t('systemDept.operation.refresh') }}
+            <a-button @click="toggleExpand">
+              {{ $t('systemDept.operation.expand') }}
             </a-button>
           </a-space>
         </a-col>
@@ -23,27 +57,45 @@
         :data="renderData"
         :pagination="false"
         :bordered="{ cell: true }"
-        :default-expand-all-rows="true"
+        v-model:expanded-keys="expandedKeys"
       >
-        <template #is_disable="{ record }">
-          <a-switch
-            :model-value="record.is_disable === 0"
-            @change="(v) => handleStatus(record, v as boolean)"
-          />
+        <template #status="{ record }">
+          <a-tag :color="record.status === 1 ? 'green' : 'red'">
+            {{ record.status_desc }}
+          </a-tag>
+        </template>
+        <template #update_time="{ record }">
+          {{ formatTime(record.update_time) }}
         </template>
         <template #operations="{ record }">
           <a-space>
-            <a-button type="text" size="small" @click="handleAdd(record)">
+            <a-button
+              v-permission="['dept/add']"
+              type="text"
+              size="small"
+              @click="handleAdd(record)"
+            >
               {{ $t('systemDept.operation.addChild') }}
             </a-button>
-            <a-button type="text" size="small" @click="handleEdit(record)">
+            <a-button
+              v-permission="['dept/edit']"
+              type="text"
+              size="small"
+              @click="handleEdit(record)"
+            >
               {{ $t('systemDept.operation.edit') }}
             </a-button>
             <a-popconfirm
+              v-if="record.pid !== 0"
               :content="$t('systemDept.delete.confirm')"
               @ok="handleDelete(record)"
             >
-              <a-button type="text" status="danger" size="small">
+              <a-button
+                v-permission="['dept/delete']"
+                type="text"
+                status="danger"
+                size="small"
+              >
                 {{ $t('systemDept.operation.delete') }}
               </a-button>
             </a-popconfirm>
@@ -65,24 +117,29 @@
       @cancel="modalVisible = false"
     >
       <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="pid" :label="$t('systemDept.field.pid')">
+        <a-form-item
+          v-if="form.pid !== 0"
+          field="pid"
+          :label="$t('systemDept.field.pid')"
+        >
           <a-tree-select
             v-model="form.pid"
             :data="parentTree"
             :field-names="{ key: 'id', title: 'name', children: 'children' }"
             :placeholder="$t('systemDept.field.pid.placeholder')"
-            allow-clear
           />
         </a-form-item>
         <a-form-item field="name" :label="$t('systemDept.field.name')">
           <a-input
             v-model="form.name"
+            :max-length="30"
             :placeholder="$t('systemDept.field.name.placeholder')"
           />
         </a-form-item>
         <a-form-item field="leader" :label="$t('systemDept.field.leader')">
           <a-input
             v-model="form.leader"
+            :max-length="30"
             :placeholder="$t('systemDept.field.leader.placeholder')"
           />
         </a-form-item>
@@ -93,7 +150,15 @@
           />
         </a-form-item>
         <a-form-item field="sort" :label="$t('systemDept.field.sort')">
-          <a-input-number v-model="form.sort" :min="0" style="width: 160px" />
+          <a-input-number
+            v-model="form.sort"
+            :min="0"
+            :max="9999"
+            style="width: 160px"
+          />
+        </a-form-item>
+        <a-form-item field="status" :label="$t('systemDept.field.status')">
+          <a-switch v-model="form.status" :checked-value="1" :unchecked-value="0" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -110,10 +175,11 @@
   import useLoading from '@/hooks/loading';
   import {
     getDeptList,
+    getDeptAll,
+    getDeptDetail,
     addDept,
     editDept,
     deleteDept,
-    updateDeptStatus,
     type DeptRecord,
     type DeptForm,
   } from '@/api/system/dept';
@@ -121,16 +187,26 @@
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);
   const renderData = ref<DeptRecord[]>([]);
+  const deptOptions = ref<DeptRecord[]>([]);
+  const expandedKeys = ref<number[]>([]);
+  const isExpanded = ref(true);
+  const queryParams = reactive<{ name: string; status: number | '' }>({
+    name: '',
+    status: '',
+  });
 
   const columns = computed<TableColumnData[]>(() => [
     { title: t('systemDept.columns.name'), dataIndex: 'name' },
-    { title: t('systemDept.columns.leader'), dataIndex: 'leader', width: 140 },
-    { title: t('systemDept.columns.mobile'), dataIndex: 'mobile', width: 160 },
-    { title: t('systemDept.columns.sort'), dataIndex: 'sort', width: 80 },
     {
       title: t('systemDept.columns.status'),
-      slotName: 'is_disable',
-      width: 90,
+      slotName: 'status',
+      width: 110,
+    },
+    { title: t('systemDept.columns.sort'), dataIndex: 'sort', width: 100 },
+    {
+      title: t('systemDept.columns.updateTime'),
+      slotName: 'update_time',
+      width: 180,
     },
     {
       title: t('systemDept.columns.operations'),
@@ -142,15 +218,45 @@
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data } = await getDeptList();
+      const { data } = await getDeptList({
+        name: queryParams.name || undefined,
+        status: queryParams.status === '' ? undefined : queryParams.status,
+      });
       renderData.value = data;
+      if (isExpanded.value) {
+        expandedKeys.value = collectIds(data);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const resetQuery = () => {
+    queryParams.name = '';
+    queryParams.status = '';
+    fetchData();
+  };
+
+  const collectIds = (nodes: DeptRecord[]): number[] =>
+    nodes.flatMap((node) => [
+      node.id,
+      ...collectIds(node.children || []),
+    ]);
+
+  const toggleExpand = () => {
+    isExpanded.value = !isExpanded.value;
+    expandedKeys.value = isExpanded.value ? collectIds(renderData.value) : [];
+  };
+
+  const formatTime = (value?: number | string): string => {
+    if (!value) return '-';
+    if (typeof value === 'string') return value;
+    return new Date(value * 1000).toLocaleString('zh-CN', { hour12: false });
+  };
+
   fetchData();
 
-  // ---- 上级部门选择树：根节点 + 全部部门 ----
+  // ---- 上级部门选择树：仅正常部门 ----
   // field-names 把 id/name 映射到 key/title，运行期结构安全，故用窄化 cast。
   interface DeptTreeNode {
     id: number;
@@ -164,15 +270,13 @@
         name: n.name,
         children: n.children ? strip(n.children) : [],
       }));
-    const tree: DeptTreeNode[] = [
-      {
-        id: 0,
-        name: t('systemDept.field.pid.root'),
-        children: strip(renderData.value),
-      },
-    ];
-    return tree as unknown as TreeNodeData[];
+    return strip(deptOptions.value) as unknown as TreeNodeData[];
   });
+
+  const loadDeptOptions = async () => {
+    const { data } = await getDeptAll();
+    deptOptions.value = data;
+  };
 
   // ---- 弹窗 & 表单 ----
   const modalVisible = ref(false);
@@ -182,32 +286,47 @@
 
   const defaultForm = (): DeptForm => ({
     id: undefined,
-    pid: 0,
+    pid: undefined,
     name: '',
     leader: '',
     mobile: '',
     sort: 0,
+    status: 1,
     is_disable: 0,
   });
   const form = reactive<DeptForm>(defaultForm());
 
   const rules = {
     name: [{ required: true, message: t('systemDept.field.name.required') }],
+    pid: [{ required: true, message: t('systemDept.field.pid.required') }],
+    mobile: [
+      {
+        validator: (value: string, callback: (error?: string) => void) => {
+          if (!value || /^1[3-9]\d{9}$/.test(value)) callback();
+          else callback(t('systemDept.field.mobile.invalid'));
+        },
+      },
+    ],
   };
 
   const resetForm = (patch: Partial<DeptForm> = {}) => {
     Object.assign(form, defaultForm(), patch);
   };
 
-  const handleAdd = (parent?: DeptRecord) => {
+  const handleAdd = async (parent?: DeptRecord) => {
     isEdit.value = false;
-    resetForm({ pid: parent ? parent.id : 0 });
+    await loadDeptOptions();
+    resetForm({ pid: parent?.id });
     modalVisible.value = true;
   };
 
-  const handleEdit = (record: DeptRecord) => {
+  const handleEdit = async (record: DeptRecord) => {
     isEdit.value = true;
-    resetForm({ ...record, children: undefined });
+    const [{ data }] = await Promise.all([
+      getDeptDetail(record.id),
+      loadDeptOptions(),
+    ]);
+    resetForm({ ...data, children: undefined });
     modalVisible.value = true;
   };
 
@@ -233,12 +352,6 @@
     await deleteDept(record.id);
     Message.success(t('systemDept.tip.success'));
     await fetchData();
-  };
-
-  const handleStatus = async (record: DeptRecord, enabled: boolean) => {
-    await updateDeptStatus(record.id, enabled ? 0 : 1);
-    record.is_disable = enabled ? 0 : 1;
-    Message.success(t('systemDept.tip.success'));
   };
 </script>
 

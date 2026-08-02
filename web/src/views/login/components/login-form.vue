@@ -80,10 +80,10 @@
   const { loading, setLoading } = useLoading();
   const userStore = useUserStore();
 
-  const loginConfig = useStorage('login-config', {
+  const loginConfig = useStorage('login-config-v2', {
     rememberPassword: true,
     username: 'admin', // 演示默认值
-    password: 'admin', // demo default value
+    password: 'admin123456', // demo default value
   });
   const userInfo = reactive({
     username: loginConfig.value.username,
@@ -103,8 +103,14 @@
       try {
         await userStore.login(values as LoginData);
         const { redirect, ...othersQuery } = router.currentRoute.value.query;
+        const redirectRoute =
+          typeof redirect === 'string' &&
+          redirect !== 'login' &&
+          router.hasRoute(redirect)
+            ? redirect
+            : 'Workplace';
         router.push({
-          name: (redirect as string) || 'Workplace',
+          name: redirectRoute,
           query: {
             ...othersQuery,
           },

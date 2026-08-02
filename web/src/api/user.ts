@@ -1,6 +1,6 @@
 import axios from 'axios';
-import type { RouteRecordNormalized } from 'vue-router';
 import { UserState } from '@/store/modules/user/types';
+import type { ServerMenuRecord } from '@/store/modules/app/types';
 
 export interface LoginData {
   username: string;
@@ -23,5 +23,5 @@ export function getUserInfo() {
 }
 
 export function getMenuList() {
-  return axios.post<RouteRecordNormalized[]>('/api/user/menu');
+  return axios.post<ServerMenuRecord[]>('/api/user/menu');
 }

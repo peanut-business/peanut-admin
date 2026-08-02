@@ -11,6 +11,7 @@
         <nav class="flex items-center gap-8">
           <NuxtLink to="/" class="text-gray-600 hover:text-primary transition-colors">首页</NuxtLink>
           <NuxtLink to="/information" class="text-gray-600 hover:text-primary transition-colors">资讯</NuxtLink>
+          <NuxtLink v-if="isLoggedIn" to="/recharge" class="text-gray-600 hover:text-primary transition-colors">充值</NuxtLink>
         </nav>
 
         <div class="flex items-center gap-3">

@@ -45,6 +45,29 @@
                   />
                 </a-form-item>
               </a-col>
+              <a-col :span="8">
+                <a-form-item field="ip" :label="$t('systemLog.form.ip')">
+                  <a-input
+                    v-model="formModel.ip"
+                    allow-clear
+                    :placeholder="$t('systemLog.form.ip.placeholder')"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item
+                  field="timeRange"
+                  :label="$t('systemLog.form.time')"
+                >
+                  <a-range-picker
+                    v-model="formModel.timeRange"
+                    show-time
+                    value-format="YYYY-MM-DD HH:mm:ss"
+                    allow-clear
+                    style="width: 100%"
+                  />
+                </a-form-item>
+              </a-col>
             </a-row>
           </a-form>
         </a-col>
@@ -65,15 +88,25 @@
       <a-divider style="margin-top: 0" />
       <a-row style="margin-bottom: 16px">
         <a-col :span="12">
-          <a-popconfirm
-            :content="$t('systemLog.clear.confirm')"
-            @ok="handleClear"
-          >
-            <a-button status="danger">
-              <template #icon><icon-delete /></template>
-              {{ $t('systemLog.operation.clear') }}
+          <a-space>
+            <a-button
+              v-permission="['log/lists']"
+              type="outline"
+              @click="openExport"
+            >
+              <template #icon><icon-export /></template>
+              {{ $t('systemLog.operation.export') }}
             </a-button>
-          </a-popconfirm>
+            <a-popconfirm
+              :content="$t('systemLog.clear.confirm')"
+              @ok="handleClear"
+            >
+              <a-button v-permission="['log/clear']" status="danger">
+                <template #icon><icon-delete /></template>
+                {{ $t('systemLog.operation.clear') }}
+              </a-button>
+            </a-popconfirm>
+          </a-space>
         </a-col>
       </a-row>
       <a-table
@@ -97,8 +130,72 @@
             {{ record.params }}
           </a-typography-text>
         </template>
+        <template #createTime="{ record }">
+          {{ formatTime(record.create_time) }}
+        </template>
       </a-table>
     </a-card>
+
+    <a-modal
+      v-model:visible="exportVisible"
+      :title="$t('systemLog.export.title')"
+      :ok-text="$t('systemLog.export.confirm')"
+      :ok-loading="exportLoading"
+      :mask-closable="false"
+      width="540px"
+      @before-ok="handleExport"
+    >
+      <a-spin :loading="exportInfoLoading" style="width: 100%">
+        <a-alert type="info" style="margin-bottom: 16px">
+          {{
+            $t('systemLog.export.summary', {
+              count: exportInfo.count,
+              pages: exportInfo.sum_page,
+              size: exportInfo.page_size,
+            })
+          }}
+          <br />
+          {{
+            $t('systemLog.export.limit', {
+              pages: exportInfo.max_page,
+              count: exportInfo.all_max_size,
+            })
+          }}
+        </a-alert>
+        <a-form :model="exportForm" layout="vertical">
+          <a-form-item field="page_type" :label="$t('systemLog.export.range')">
+            <a-radio-group v-model="exportForm.page_type">
+              <a-radio :value="0">{{ $t('systemLog.export.all') }}</a-radio>
+              <a-radio :value="1">{{ $t('systemLog.export.pages') }}</a-radio>
+            </a-radio-group>
+          </a-form-item>
+          <a-form-item
+            v-if="exportForm.page_type === 1"
+            :label="$t('systemLog.export.pageRange')"
+          >
+            <a-space>
+              <a-input-number
+                v-model="exportForm.page_start"
+                :min="1"
+                :max="exportInfo.sum_page || 1"
+              />
+              <span>{{ $t('systemLog.export.to') }}</span>
+              <a-input-number
+                v-model="exportForm.page_end"
+                :min="exportForm.page_start"
+                :max="exportInfo.sum_page || 1"
+              />
+            </a-space>
+          </a-form-item>
+          <a-form-item
+            field="file_name"
+            :label="$t('systemLog.export.fileName')"
+          >
+            <a-input v-model="exportForm.file_name" :max-length="100" />
+          </a-form-item>
+        </a-form>
+      </a-spin>
+    </a-modal>
   </div>
 </template>
 
@@ -111,9 +208,12 @@
   import useLoading from '@/hooks/loading';
   import {
     getOperationLogList,
+    getOperationLogExportInfo,
+    exportOperationLog,
     clearOperationLog,
     type OperationLogRecord,
     type OperationLogParams,
+    type OperationLogExportInfo,
   } from '@/api/system/log';
 
   const { t } = useI18n();
@@ -124,6 +224,8 @@
     username: '',
     uri: '',
     method: '',
+    ip: '',
+    timeRange: [] as string[],
   });
   const formModel = ref(generateFormModel());
 
@@ -154,16 +256,27 @@
     { title: t('systemLog.columns.params'), slotName: 'params', width: 240 },
     {
       title: t('systemLog.columns.createTime'),
-      dataIndex: 'create_time',
+      slotName: 'createTime',
       width: 180,
     },
   ]);
+
+  const formatTime = (value?: number | string): string => {
+    if (!value) return '-';
+    if (typeof value === 'string') return value;
+    return new Date(value * 1000).toLocaleString('zh-CN', { hour12: false });
+  };
 
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
       const params: OperationLogParams = {
-        ...formModel.value,
+        username: formModel.value.username || undefined,
+        uri: formModel.value.uri || undefined,
+        method: formModel.value.method || undefined,
+        ip: formModel.value.ip || undefined,
+        start_time: formModel.value.timeRange[0] || undefined,
+        end_time: formModel.value.timeRange[1] || undefined,
         page_no: page,
         page_size: pagination.pageSize,
       };
@@ -188,6 +301,80 @@
     await clearOperationLog();
     Message.success(t('systemLog.tip.success'));
     fetchData(1);
+  };
+
+  // ---- 两阶段 XLSX 导出 ----
+  const exportVisible = ref(false);
+  const exportInfoLoading = ref(false);
+  const exportLoading = ref(false);
+  const emptyExportInfo = (): OperationLogExportInfo => ({
+    count: 0,
+    page_size: pagination.pageSize,
+    sum_page: 0,
+    max_page: 0,
+    all_max_size: 0,
+    page_start: 1,
+    page_end: 1,
+    file_name: '',
+  });
+  const exportInfo = reactive<OperationLogExportInfo>(emptyExportInfo());
+  const exportForm = reactive({
+    page_type: 0 as 0 | 1,
+    page_start: 1,
+    page_end: 1,
+    file_name: '',
+  });
+  const listParams = (): OperationLogParams => ({
+    username: formModel.value.username || undefined,
+    uri: formModel.value.uri || undefined,
+    method: formModel.value.method || undefined,
+    ip: formModel.value.ip || undefined,
+    start_time: formModel.value.timeRange[0] || undefined,
+    end_time: formModel.value.timeRange[1] || undefined,
+    page_no: 1,
+    page_size: pagination.pageSize,
+  });
+  const openExport = async () => {
+    exportVisible.value = true;
+    exportInfoLoading.value = true;
+    try {
+      const { data } = await getOperationLogExportInfo(listParams());
+      Object.assign(exportInfo, data);
+      exportForm.page_type = 0;
+      exportForm.page_start = data.page_start;
+      exportForm.page_end = data.page_end;
+      exportForm.file_name = data.file_name;
+    } finally {
+      exportInfoLoading.value = false;
+    }
+  };
+  const handleExport = async () => {
+    if (exportInfoLoading.value) return false;
+    if (
+      exportForm.page_type === 1 &&
+      exportForm.page_end < exportForm.page_start
+    ) {
+      Message.error(t('systemLog.export.invalidRange'));
+      return false;
+    }
+    exportLoading.value = true;
+    try {
+      const { data } = await exportOperationLog({
+        ...listParams(),
+        ...exportForm,
+      });
+      const link = document.createElement('a');
+      link.href = data.url;
+      link.download = data.file_name;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      Message.success(t('systemLog.export.success'));
+      return true;
+    } finally {
+      exportLoading.value = false;
+    }
   };
 </script>
 

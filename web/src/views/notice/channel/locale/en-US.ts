@@ -1,7 +1,7 @@
 export default {
   'menu.notice': 'Notifications',
   'menu.notice.channel': 'Channel Config',
-  'menu.notice.template': 'Templates',
+  'menu.notice.template': 'Notification Scenes',
   'menu.notice.log': 'Send Log',
 
   'notice.channel.sms': 'SMS Channel',
@@ -26,4 +26,7 @@ export default {
   'notice.channel.status.disabled': 'Not configured',
   'notice.channel.save': 'Save Config',
   'notice.channel.tip.success': 'Config saved',
+  'notice.channel.sms.current': 'Current SMS provider',
+  'notice.channel.enabled': 'Enable Provider',
+  'notice.channel.none': 'None',
 };

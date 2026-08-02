@@ -13,6 +13,16 @@ const APP_SETTING: AppRouteRecordRaw = {
   },
   children: [
     {
+      path: 'user',
+      name: 'AppSettingUser',
+      component: () => import('@/views/app-setting/user/index.vue'),
+      meta: {
+        locale: 'menu.appSetting.user',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
       path: 'hot-search',
       name: 'AppSettingHotSearch',
       component: () => import('@/views/app-setting/hot-search/index.vue'),

@@ -13,6 +13,22 @@
         </a-col>
         <a-col :span="4">
           <a-select
+            v-model="filterForm.scene_id"
+            :placeholder="$t('noticeLog.filter.scene')"
+            allow-clear
+            style="width: 100%"
+          >
+            <a-option
+              v-for="scene in sceneOptions"
+              :key="scene.id"
+              :value="String(scene.id)"
+            >
+              {{ scene.name }}
+            </a-option>
+          </a-select>
+        </a-col>
+        <a-col :span="4">
+          <a-select
             v-model="filterForm.channel"
             :placeholder="$t('noticeLog.filter.channel')"
             allow-clear
@@ -49,9 +65,11 @@
           <a-space>
             <a-button type="primary" @click="handleSearch">
               <template #icon><icon-search /></template>
-              {{ $t('form.search') }}
+              {{ $t('noticeLog.form.search') }}
             </a-button>
-            <a-button @click="handleReset">{{ $t('form.reset') }}</a-button>
+            <a-button @click="handleReset">
+              {{ $t('noticeLog.form.reset') }}
+            </a-button>
           </a-space>
         </a-col>
       </a-row>
@@ -69,9 +87,13 @@
         <template #columns>
           <a-table-column title="ID" data-index="id" :width="70" />
           <a-table-column
-            :title="$t('noticeLog.columns.template_name')"
-            data-index="template_name"
-          />
+            :title="$t('noticeLog.columns.scene')"
+            data-index="scene_name"
+          >
+            <template #cell="{ record }">
+              {{ record.scene_name || record.template_name || '-' }}
+            </template>
+          </a-table-column>
           <a-table-column
             :title="$t('noticeLog.columns.channel')"
             data-index="channel"
@@ -119,7 +141,12 @@
             :width="80"
           >
             <template #cell="{ record }">
-              <a-button type="text" size="small" @click="openDetail(record)">
+              <a-button
+                v-permission="['notice/log/detail']"
+                type="text"
+                size="small"
+                @click="openDetail(record)"
+              >
                 {{ $t('form.detail') }}
               </a-button>
             </template>
@@ -143,13 +170,19 @@
 <script lang="ts" setup>
   import { reactive, ref, computed, onMounted } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { getNoticeLogList, NoticeLogRecord } from '@/api/notice';
+  import {
+    getNoticeLogList,
+    getNoticeSceneList,
+    type NoticeLogRecord,
+    type NoticeSceneRecord,
+  } from '@/api/notice';
 
   const { t } = useI18n();
 
   // ─── 列表 ─────────────────────────────────────────────────────────────────────
   const loading = ref(false);
   const tableData = ref<NoticeLogRecord[]>([]);
+  const sceneOptions = ref<NoticeSceneRecord[]>([]);
   const pagination = reactive({
     current: 1,
     pageSize: 15,
@@ -161,6 +194,7 @@
     receiver: '',
     channel: '',
     status: '',
+    scene_id: '',
     timeRange: [] as string[],
   });
 
@@ -174,6 +208,7 @@
       if (filterForm.receiver) params.receiver = filterForm.receiver;
       if (filterForm.channel) params.channel = filterForm.channel;
       if (filterForm.status) params.status = filterForm.status;
+      if (filterForm.scene_id) params.scene_id = filterForm.scene_id;
       if (filterForm.timeRange?.length === 2) {
         params.start_time = Math.floor(
           new Date(filterForm.timeRange[0]).getTime() / 1000
@@ -185,11 +220,10 @@
       const res = await getNoticeLogList(
         params as Parameters<typeof getNoticeLogList>[0]
       );
-      const payload = (
-        res.data as unknown as {
-          data: { list: NoticeLogRecord[]; total: number };
-        }
-      ).data;
+      const payload = res.data as unknown as {
+        list: NoticeLogRecord[];
+        total: number;
+      };
       tableData.value = payload.list;
       pagination.total = payload.total;
     } finally {
@@ -205,6 +239,7 @@
     filterForm.receiver = '';
     filterForm.channel = '';
     filterForm.status = '';
+    filterForm.scene_id = '';
     filterForm.timeRange = [];
     handleSearch();
   };
@@ -235,7 +270,10 @@
     if (!r) return [];
     return [
       { label: 'ID', value: String(r.id) },
-      { label: t('noticeLog.columns.template_name'), value: r.template_name },
+      {
+        label: t('noticeLog.columns.scene'),
+        value: r.scene_name || r.template_name || '-',
+      },
       {
         label: t('noticeLog.columns.channel'),
         value: t(`noticeLog.channel.${r.channel}`),
@@ -248,6 +286,15 @@
         value: t(`noticeLog.status.${r.status}`),
       },
       { label: t('noticeLog.detail.error'), value: r.error || '-' },
+      { label: t('noticeLog.detail.provider'), value: r.provider || '-' },
+      {
+        label: t('noticeLog.detail.verifyStatus'),
+        value: r.scene_id ? t(`noticeLog.verify.${r.is_verified}`) : '-',
+      },
+      {
+        label: t('noticeLog.detail.checkCount'),
+        value: String(r.check_count || 0),
+      },
       {
         label: t('noticeLog.columns.send_time'),
         value: formatTime(r.send_time),
@@ -255,5 +302,9 @@
     ];
   });
 
-  onMounted(fetchData);
+  onMounted(async () => {
+    const { data } = await getNoticeSceneList();
+    sceneOptions.value = data.list;
+    await fetchData();
+  });
 </script>

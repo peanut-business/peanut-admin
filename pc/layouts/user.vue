@@ -19,6 +19,11 @@
             class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-blue-50 hover:text-primary"
             active-class="bg-blue-50 text-primary font-medium"
           >账户安全</NuxtLink>
+          <NuxtLink
+            to="/recharge"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-blue-50 hover:text-primary"
+            active-class="bg-blue-50 text-primary font-medium"
+          >账户充值</NuxtLink>
         </nav>
       </aside>
 

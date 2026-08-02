@@ -5,6 +5,8 @@ export interface JobsRecord {
   name: string;
   code: string;
   sort: number;
+  status: number;
+  status_desc: string;
   is_disable: number;
   remark: string;
   create_time?: string;
@@ -17,9 +19,14 @@ export type JobsForm = Partial<JobsRecord> & { id?: number };
 export interface JobsListParams {
   name?: string;
   code?: string;
-  is_disable?: number | '';
+  status?: number | '';
   page_no?: number;
   page_size?: number;
+  export?: 1 | 2;
+  page_type?: 0 | 1;
+  page_start?: number;
+  page_end?: number;
+  file_name?: string;
 }
 
 export interface JobsListRes {
@@ -29,9 +36,37 @@ export interface JobsListRes {
   pageSize: number;
 }
 
+export interface JobsExportInfo {
+  count: number;
+  page_size: number;
+  sum_page: number;
+  max_page: number;
+  all_max_size: number;
+  page_start: number;
+  page_end: number;
+  file_name: string;
+}
+
+export interface JobsExportResult {
+  url: string;
+  file_name: string;
+}
+
 /** 分页列表（含禁用项，供后台管理） */
 export function getJobsList(params: JobsListParams) {
   return axios.get<JobsListRes>('/api/admin/jobs/lists', { params });
+}
+
+export function getJobsExportInfo(params: JobsListParams) {
+  return axios.get<JobsExportInfo>('/api/admin/jobs/lists', {
+    params: { ...params, export: 1 },
+  });
+}
+
+export function exportJobs(params: JobsListParams) {
+  return axios.get<JobsExportResult>('/api/admin/jobs/lists', {
+    params: { ...params, export: 2 },
+  });
 }
 
 /** 全量启用岗位（供下拉选择） */
@@ -55,6 +90,6 @@ export function deleteJobs(id: number) {
   return axios.post('/api/admin/jobs/delete', { id });
 }
 
-export function updateJobsStatus(id: number, isDisable: number) {
-  return axios.post('/api/admin/jobs/status', { id, is_disable: isDisable });
+export function updateJobsStatus(id: number, status: number) {
+  return axios.post('/api/admin/jobs/status', { id, status });
 }

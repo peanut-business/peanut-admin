@@ -56,7 +56,11 @@
       <a-divider style="margin-top: 0" />
       <a-row style="margin-bottom: 16px">
         <a-col :span="12">
-          <a-button type="primary" @click="handleAdd">
+          <a-button
+            v-permission="['crontab/add']"
+            type="primary"
+            @click="handleAdd"
+          >
             <template #icon><icon-plus /></template>
             {{ $t('systemCrontab.operation.create') }}
           </a-button>
@@ -80,6 +84,7 @@
           <a-space>
             <a-button
               v-if="record.status !== 1"
+              v-permission="['crontab/operate']"
               type="text"
               size="small"
               @click="handleOperate(record, 'start')"
@@ -88,6 +93,7 @@
             </a-button>
             <a-button
               v-else
+              v-permission="['crontab/operate']"
               type="text"
               size="small"
               status="warning"
@@ -95,14 +101,24 @@
             >
               {{ $t('systemCrontab.operation.stop') }}
             </a-button>
-            <a-button type="text" size="small" @click="handleEdit(record)">
+            <a-button
+              v-permission="['crontab/edit']"
+              type="text"
+              size="small"
+              @click="handleEdit(record)"
+            >
               {{ $t('systemCrontab.operation.edit') }}
             </a-button>
             <a-popconfirm
               :content="$t('systemCrontab.delete.confirm')"
               @ok="handleDelete(record)"
             >
-              <a-button type="text" status="danger" size="small">
+              <a-button
+                v-permission="['crontab/delete']"
+                type="text"
+                status="danger"
+                size="small"
+              >
                 {{ $t('systemCrontab.operation.delete') }}
               </a-button>
             </a-popconfirm>
@@ -142,6 +158,9 @@
             :placeholder="$t('systemCrontab.field.params.placeholder')"
           />
         </a-form-item>
+        <a-form-item field="sort" :label="$t('systemCrontab.field.sort')">
+          <a-input-number v-model="form.sort" :min="0" style="width: 160px" />
+        </a-form-item>
         <a-form-item
           field="expression"
           :label="$t('systemCrontab.field.expression')"
@@ -151,7 +170,10 @@
               v-model="form.expression"
               :placeholder="$t('systemCrontab.field.expression.placeholder')"
             />
-            <a-button @click="previewExpression">
+            <a-button
+              v-permission="['crontab/expression']"
+              @click="previewExpression"
+            >
               {{ $t('systemCrontab.field.preview') }}
             </a-button>
           </a-input-group>
@@ -244,6 +266,16 @@
     },
     { title: t('systemCrontab.columns.time'), dataIndex: 'time', width: 90 },
     {
+      title: t('systemCrontab.columns.maxTime'),
+      dataIndex: 'max_time',
+      width: 90,
+    },
+    {
+      title: t('systemCrontab.columns.error'),
+      dataIndex: 'error',
+      width: 180,
+    },
+    {
       title: t('systemCrontab.columns.operations'),
       slotName: 'operations',
       width: 220,
@@ -287,6 +319,7 @@
     type: 1,
     command: '',
     params: '',
+    sort: 0,
     status: 1,
     expression: '',
     remark: '',
@@ -322,6 +355,7 @@
       type: record.type,
       command: record.command,
       params: record.params,
+      sort: record.sort,
       status: record.status === 3 ? 2 : record.status,
       expression: record.expression,
       remark: record.remark,

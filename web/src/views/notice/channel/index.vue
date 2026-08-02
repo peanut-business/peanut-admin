@@ -16,23 +16,10 @@
         </a-tag>
       </a-typography-title>
 
-      <a-form
-        :model="smsDefaultForm"
-        layout="inline"
-        style="margin-bottom: 16px"
-      >
-        <a-form-item :label="$t('notice.channel.sms.default')">
-          <a-radio-group
-            v-model="smsDefaultForm.value"
-            @change="saveSmsDefault"
-          >
-            <a-radio value="aliyun">{{ $t('notice.channel.aliyun') }}</a-radio>
-            <a-radio value="tencent">{{
-              $t('notice.channel.tencent')
-            }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
+      <a-alert style="margin-bottom: 16px">
+        {{ $t('notice.channel.sms.current') }}：
+        {{ providerName(detail.sms_default) }}
+      </a-alert>
 
       <a-tabs v-model:active-key="smsTab">
         <a-tab-pane key="aliyun" :title="$t('notice.channel.aliyun')">
@@ -41,6 +28,13 @@
             layout="vertical"
             style="max-width: 520px"
           >
+            <a-form-item :label="$t('notice.channel.enabled')">
+              <a-switch
+                v-model="aliyunForm.status"
+                :checked-value="1"
+                :unchecked-value="0"
+              />
+            </a-form-item>
             <a-form-item :label="$t('notice.channel.access_key_id')">
               <a-input v-model="aliyunForm.access_key_id" allow-clear />
             </a-form-item>
@@ -55,6 +49,7 @@
             </a-form-item>
             <a-form-item>
               <a-button
+                v-permission="['notice/channel/save']"
                 type="primary"
                 :loading="saving.aliyun"
                 @click="saveSection('sms_aliyun', aliyunForm)"
@@ -70,6 +65,13 @@
             layout="vertical"
             style="max-width: 520px"
           >
+            <a-form-item :label="$t('notice.channel.enabled')">
+              <a-switch
+                v-model="tencentForm.status"
+                :checked-value="1"
+                :unchecked-value="0"
+              />
+            </a-form-item>
             <a-form-item :label="$t('notice.channel.secret_id')">
               <a-input v-model="tencentForm.secret_id" allow-clear />
             </a-form-item>
@@ -87,6 +89,7 @@
             </a-form-item>
             <a-form-item>
               <a-button
+                v-permission="['notice/channel/save']"
                 type="primary"
                 :loading="saving.tencent"
                 @click="saveSection('sms_tencent', tencentForm)"
@@ -145,6 +148,7 @@
         </a-form-item>
         <a-form-item>
           <a-button
+            v-permission="['notice/channel/save']"
             type="primary"
             :loading="saving.mail"
             @click="saveSection('mail_smtp', mailForm)"
@@ -176,11 +180,11 @@
   const detail = ref<Partial<NoticeChannelDetail>>({});
   const smsTab = ref('aliyun');
 
-  const smsDefaultForm = reactive({ value: 'aliyun' });
   const aliyunForm = reactive<SmsAliyunConfig>({
     access_key_id: '',
     access_key_secret: '',
     sign_name: '',
+    status: 0,
   });
   const tencentForm = reactive<SmsTencentConfig>({
     secret_id: '',
@@ -188,6 +192,7 @@
     sdk_app_id: '',
     sign_name: '',
     region: 'ap-guangzhou',
+    status: 0,
   });
   const mailForm = reactive<MailSmtpConfig>({
     host: '',
@@ -201,19 +206,18 @@
 
   const fetchDetail = async () => {
     const res = await getNoticeChannelDetail();
-    const data = res.data as unknown as { data: NoticeChannelDetail };
-    detail.value = data.data;
-    const d = data.data;
-    smsDefaultForm.value = d.sms_default ?? 'aliyun';
+    const data = res.data as unknown as NoticeChannelDetail;
+    detail.value = data;
+    const d = data;
     Object.assign(aliyunForm, d.sms_aliyun ?? {});
     Object.assign(tencentForm, d.sms_tencent ?? {});
     Object.assign(mailForm, d.mail_smtp ?? {});
   };
 
-  const saveSmsDefault = async () => {
-    await saveNoticeChannel('sms_default', { value: smsDefaultForm.value });
-    Message.success(t('notice.channel.tip.success'));
-    fetchDetail();
+  const providerName = (provider?: string) => {
+    if (provider === 'aliyun') return t('notice.channel.aliyun');
+    if (provider === 'tencent') return t('notice.channel.tencent');
+    return t('notice.channel.none');
   };
 
   const sectionLoadingKey: Record<ChannelSection, keyof typeof saving> = {

@@ -28,6 +28,8 @@ const useUserStore = defineStore('user', {
     accountId: undefined,
     certification: undefined,
     role: '',
+    permissions: [],
+    menu: [],
   }),
 
   getters: {
@@ -50,7 +52,8 @@ const useUserStore = defineStore('user', {
     // Get user's information
     async info() {
       const res = await getUserInfo();
-
+      const appStore = useAppStore();
+      appStore.setServerMenu(res.data.menu || []);
       this.setInfo(res.data);
     },
 

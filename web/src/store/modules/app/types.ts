@@ -1,4 +1,20 @@
-import type { RouteRecordNormalized } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
+
+export interface ServerMenuRecord {
+  id: number;
+  pid: number;
+  type: 'M' | 'C';
+  name: string;
+  icon?: string;
+  sort?: number;
+  perms?: string;
+  paths: string;
+  component?: string;
+  is_cache?: number;
+  is_show?: number;
+  is_disable?: number;
+  children?: ServerMenuRecord[];
+}
 
 export interface AppState {
   theme: string;
@@ -15,6 +31,7 @@ export interface AppState {
   device: string;
   tabBar: boolean;
   menuFromServer: boolean;
-  serverMenu: RouteRecordNormalized[];
+  serverMenuLoaded: boolean;
+  serverMenu: RouteRecordRaw[];
   [key: string]: unknown;
 }

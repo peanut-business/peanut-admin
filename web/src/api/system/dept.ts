@@ -7,23 +7,37 @@ export interface DeptRecord {
   leader: string;
   mobile: string;
   sort: number;
+  status: number;
+  status_desc?: string;
   is_disable: number;
-  create_time?: string;
-  update_time?: string;
+  create_time?: number | string;
+  update_time?: number | string;
   children?: DeptRecord[];
 }
 
 /** 新增/编辑提交体：id 仅编辑时带 */
 export type DeptForm = Partial<DeptRecord> & { id?: number };
 
-/** 树形全量列表（含禁用项，供后台管理） */
-export function getDeptList() {
-  return axios.get<DeptRecord[]>('/api/admin/dept/lists');
+export interface DeptListParams {
+  name?: string;
+  status?: number | string;
 }
 
-/** 精简树（id/pid/name），供上级部门选择器 */
+/** 树形全量列表（含禁用项，供后台管理） */
+export function getDeptList(params?: DeptListParams) {
+  return axios.get<DeptRecord[]>('/api/admin/dept/lists', { params });
+}
+
+/** 正常部门树，供上级部门选择器 */
 export function getDeptAll() {
   return axios.get<DeptRecord[]>('/api/admin/dept/all');
+}
+
+/** 正常部门扁平列表，供管理员所属部门选择器 */
+export function getLeaderDept() {
+  return axios.get<Pick<DeptRecord, 'id' | 'name'>[]>(
+    '/api/admin/dept/leaderDept'
+  );
 }
 
 export function getDeptDetail(id: number) {
@@ -42,6 +56,6 @@ export function deleteDept(id: number) {
   return axios.post('/api/admin/dept/delete', { id });
 }
 
-export function updateDeptStatus(id: number, isDisable: number) {
-  return axios.post('/api/admin/dept/status', { id, is_disable: isDisable });
+export function updateDeptStatus(id: number, status: number) {
+  return axios.post('/api/admin/dept/status', { id, status });
 }

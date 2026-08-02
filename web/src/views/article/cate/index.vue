@@ -2,9 +2,16 @@
   <div class="container">
     <Breadcrumb :items="['menu.article', 'menu.article.cate']" />
     <a-card class="general-card" :title="$t('menu.article.cate')">
+      <a-alert type="warning" style="margin-bottom: 16px">
+        {{ $t('articleCate.alert') }}
+      </a-alert>
       <a-row style="margin-bottom: 16px">
         <a-col :span="24">
-          <a-button type="primary" @click="openAdd">
+          <a-button
+            v-permission="['article.articleCate/add']"
+            type="primary"
+            @click="openAdd"
+          >
             <template #icon><icon-plus /></template>
             {{ $t('articleCate.button.add') }}
           </a-button>
@@ -15,25 +22,37 @@
         :loading="loading"
         :columns="columns"
         :data="renderData"
-        :pagination="false"
+        :pagination="pagination"
         :bordered="{ cell: true }"
+        @page-change="onPageChange"
       >
         <template #is_show="{ record }">
           <a-switch
+            v-permission="['article.articleCate/updateStatus']"
             :model-value="record.is_show === 1"
             @change="(v) => onStatusChange(record, v)"
           />
         </template>
         <template #operations="{ record }">
           <a-space>
-            <a-button type="text" size="small" @click="openEdit(record)">
+            <a-button
+              v-permission="['article.articleCate/edit']"
+              type="text"
+              size="small"
+              @click="openEdit(record)"
+            >
               {{ $t('articleCate.button.edit') }}
             </a-button>
             <a-popconfirm
               :content="$t('articleCate.confirm.delete')"
               @ok="onDelete(record)"
             >
-              <a-button type="text" size="small" status="danger">
+              <a-button
+                v-permission="['article.articleCate/delete']"
+                type="text"
+                size="small"
+                status="danger"
+              >
                 {{ $t('articleCate.button.delete') }}
               </a-button>
             </a-popconfirm>
@@ -54,10 +73,22 @@
             <a-input
               v-model="form.name"
               :placeholder="$t('articleCate.form.name.placeholder')"
+              :max-length="90"
+              show-word-limit
             />
           </a-form-item>
           <a-form-item field="sort" :label="$t('articleCate.form.sort')">
-            <a-input-number v-model="form.sort" :min="0" />
+            <div>
+              <a-input-number
+                v-model="form.sort"
+                :min="0"
+                :max="9999"
+                style="width: 160px"
+              />
+              <div class="form-tip">
+                {{ $t('articleCate.form.sort.tip') }}
+              </div>
+            </div>
           </a-form-item>
           <a-form-item field="is_show" :label="$t('articleCate.form.isShow')">
             <a-switch
@@ -73,7 +104,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, ref } from 'vue';
+  import { computed, nextTick, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
   import { Message } from '@arco-design/web-vue';
   import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
@@ -81,6 +112,7 @@
   import useLoading from '@/hooks/loading';
   import {
     getArticleCateList,
+    getArticleCateDetail,
     addArticleCate,
     editArticleCate,
     deleteArticleCate,
@@ -92,16 +124,22 @@
   const { loading, setLoading } = useLoading(true);
   const renderData = ref<ArticleCateRecord[]>([]);
 
+  const pagination = reactive({
+    current: 1,
+    pageSize: 25,
+    total: 0,
+    showTotal: true,
+  });
+
   const columns = computed<TableColumnData[]>(() => [
-    { title: t('articleCate.columns.id'), dataIndex: 'id', width: 80 },
     { title: t('articleCate.columns.name'), dataIndex: 'name' },
     {
       title: t('articleCate.columns.articleCount'),
       dataIndex: 'article_count',
       width: 120,
     },
-    { title: t('articleCate.columns.sort'), dataIndex: 'sort', width: 100 },
     { title: t('articleCate.columns.isShow'), slotName: 'is_show', width: 100 },
+    { title: t('articleCate.columns.sort'), dataIndex: 'sort', width: 100 },
     {
       title: t('articleCate.columns.operations'),
       slotName: 'operations',
@@ -109,16 +147,24 @@
     },
   ]);
 
-  const fetchData = async () => {
+  const fetchData = async (page = 1) => {
     setLoading(true);
     try {
-      const { data } = await getArticleCateList();
-      renderData.value = data;
+      const { data } = await getArticleCateList({
+        page_no: page,
+        page_size: pagination.pageSize,
+      });
+      renderData.value = data.lists;
+      pagination.current = data.page_no;
+      pagination.pageSize = data.page_size;
+      pagination.total = data.count;
     } finally {
       setLoading(false);
     }
   };
   fetchData();
+
+  const onPageChange = (current: number) => fetchData(current);
 
   const formRef = ref<FormInstance>();
   const modalVisible = ref(false);
@@ -126,22 +172,48 @@
   const form = ref(generateForm());
 
   const rules = {
-    name: [{ required: true, message: t('articleCate.form.name.placeholder') }],
+    name: [
+      { required: true, message: t('articleCate.form.name.required') },
+      {
+        minLength: 1,
+        maxLength: 90,
+        message: t('articleCate.form.name.length'),
+      },
+    ],
+    sort: [
+      {
+        validator: (
+          value: number,
+          callback: (message?: string) => void
+        ) => {
+          if (value == null || Number(value) < 0) {
+            callback(t('articleCate.form.sort.min'));
+            return;
+          }
+          callback();
+        },
+      },
+    ],
   };
 
-  const openAdd = () => {
+  const openAdd = async () => {
     form.value = generateForm();
     modalVisible.value = true;
+    await nextTick();
+    formRef.value?.clearValidate();
   };
 
-  const openEdit = (record: ArticleCateRecord) => {
+  const openEdit = async (record: ArticleCateRecord) => {
+    const { data } = await getArticleCateDetail(record.id);
     form.value = {
-      id: record.id,
-      name: record.name,
-      sort: record.sort,
-      is_show: record.is_show,
+      id: data.id,
+      name: data.name,
+      sort: data.sort,
+      is_show: data.is_show,
     };
     modalVisible.value = true;
+    await nextTick();
+    formRef.value?.clearValidate();
   };
 
   const onSubmit = async () => {
@@ -153,20 +225,26 @@
       await addArticleCate(form.value);
     }
     Message.success(t('articleCate.message.success'));
-    fetchData();
+    fetchData(pagination.current);
     return true;
   };
 
   const onDelete = async (record: ArticleCateRecord) => {
     await deleteArticleCate(record.id);
     Message.success(t('articleCate.message.success'));
-    fetchData();
+    fetchData(pagination.current);
   };
 
   const onStatusChange = async (record: ArticleCateRecord, val: unknown) => {
-    await updateArticleCateStatus(record.id, val ? 1 : 0);
-    record.is_show = val ? 1 : 0;
-    Message.success(t('articleCate.message.success'));
+    const previousStatus = record.is_show;
+    const nextStatus = val ? 1 : 0;
+    try {
+      await updateArticleCateStatus(record.id, nextStatus);
+      record.is_show = nextStatus;
+      Message.success(t('articleCate.message.success'));
+    } catch {
+      record.is_show = previousStatus;
+    }
   };
 </script>
 
@@ -179,5 +257,12 @@
 <style scoped lang="less">
   .container {
     padding: 0 20px 20px 20px;
+  }
+
+  .form-tip {
+    margin-top: 4px;
+    color: var(--color-text-3);
+    font-size: 12px;
+    line-height: 20px;
   }
 </style>

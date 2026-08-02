@@ -1,3 +1,5 @@
+import type { ServerMenuRecord } from '../app/types';
+
 export type RoleType = '' | '*' | 'admin' | 'user';
 export interface UserState {
   id?: number;
@@ -18,4 +20,6 @@ export interface UserState {
   accountId?: string;
   certification?: number;
   role: RoleType;
+  permissions: string[];
+  menu: ServerMenuRecord[];
 }
