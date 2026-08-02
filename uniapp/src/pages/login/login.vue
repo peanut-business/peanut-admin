@@ -26,6 +26,23 @@
       <button class="btn-primary" :disabled="loading" @click="handleLogin">
         {{ loading ? '登录中...' : '登录' }}
       </button>
+
+      <button
+        v-if="isMiniProgram"
+        class="btn-wechat"
+        :disabled="wechatLoading"
+        @click="handleMiniProgramLogin"
+      >
+        {{ wechatLoading ? '微信登录中...' : '微信一键登录' }}
+      </button>
+      <button
+        v-else
+        class="btn-wechat"
+        :disabled="wechatLoading"
+        @click="handleOfficialAccountLogin"
+      >
+        {{ wechatLoading ? '正在跳转...' : '微信公众号登录' }}
+      </button>
     </view>
 
     <view class="links">
@@ -41,13 +58,19 @@ import { useAppStore } from '@/store/app'
 import { useUserStore } from '@/store/user'
 import { loginByAccount } from '@/api/account'
 import { computed } from 'vue'
+import { beginWechatOAuth, loginWechatMiniProgram, type OAuthResult } from '@/api/oauth'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
 const appName = computed(() => appStore.config?.website?.shop_name || 'peanut')
 
 const loading = ref(false)
+const wechatLoading = ref(false)
 const form = ref({ account: '', password: '' })
+const runtimeInfo = (typeof uni !== 'undefined' && typeof uni.getSystemInfoSync === 'function'
+  ? uni.getSystemInfoSync()
+  : {}) as { uniPlatform?: string }
+const isMiniProgram = computed(() => runtimeInfo.uniPlatform === 'mp-weixin')
 
 async function handleLogin() {
   if (!form.value.account) return uni.showToast({ title: '请输入账号', icon: 'none' })
@@ -61,6 +84,60 @@ async function handleLogin() {
   } finally {
     loading.value = false
   }
+}
+
+async function handleMiniProgramLogin() {
+  wechatLoading.value = true
+  try {
+    const code = await new Promise<string>((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: (result) => {
+          const value = String((result as { code?: string }).code || '')
+          value ? resolve(value) : reject(new Error('微信登录凭证缺失'))
+        },
+        fail: reject,
+      })
+    })
+    await consumeWechatResult(await loginWechatMiniProgram(code))
+  } catch (error) {
+    uni.showToast({ title: error instanceof Error ? error.message : '微信登录失败', icon: 'none' })
+  } finally {
+    wechatLoading.value = false
+  }
+}
+
+async function handleOfficialAccountLogin() {
+  wechatLoading.value = true
+  try {
+    const result = await beginWechatOAuth({ scene: 'oa', return_path: '/pages/user/user' })
+    const location = (globalThis as { location?: { href: string } }).location
+    if (location) {
+      location.href = result.authorization_url
+    } else {
+      uni.setClipboardData({ data: result.authorization_url })
+      uni.showModal({ title: '请打开微信授权链接', content: result.authorization_url, showCancel: false })
+    }
+  } catch (error) {
+    uni.showToast({ title: error instanceof Error ? error.message : '微信授权失败', icon: 'none' })
+  } finally {
+    wechatLoading.value = false
+  }
+}
+
+async function consumeWechatResult(result: OAuthResult) {
+  if (result.completed && result.token) {
+    // A completion ticket is not a login token. Only persist a token after the
+    // server has returned completed=true.
+    userStore.setToken(result.token)
+    userStore.setUserInfo(result.member)
+    uni.reLaunch({ url: '/pages/user/user' })
+    return
+  }
+  if (!result.completion_ticket) throw new Error('微信登录补全票据缺失')
+  uni.navigateTo({
+    url: `/pages/oauth/complete?ticket=${encodeURIComponent(result.completion_ticket)}&need_profile=${result.need_profile ? '1' : '0'}&need_mobile=${result.need_mobile ? '1' : '0'}&return_path=${encodeURIComponent('/pages/user/user')}`,
+  })
 }
 
 function goRegister() { uni.navigateTo({ url: '/pages/register/register' }) }
@@ -77,5 +154,7 @@ function goForget() { uni.navigateTo({ url: '/pages/forget_pwd/forget_pwd' }) }
 .input { width: 100%; height: 80rpx; font-size: 30rpx; color: #333; }
 .btn-primary { width: 100%; height: 90rpx; background: #2979ff; color: #fff; font-size: 32rpx; border-radius: 45rpx; border: none; margin-top: 40rpx; }
 .btn-primary[disabled] { opacity: 0.6; }
+.btn-wechat { width: 100%; height: 90rpx; background: #07c160; color: #fff; font-size: 32rpx; border-radius: 45rpx; border: none; margin-top: 24rpx; }
+.btn-wechat[disabled] { opacity: 0.6; }
 .links { display: flex; justify-content: space-between; margin-top: 30rpx; font-size: 28rpx; color: #2979ff; }
 </style>

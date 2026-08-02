@@ -127,6 +127,22 @@
         "navigationBarBackgroundColor": "#ffffff",
         "navigationBarTextStyle": "black"
       }
+    },
+    {
+      "path": "pages/oauth/callback",
+      "style": {
+        "navigationBarTitleText": "微信授权",
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/oauth/complete",
+      "style": {
+        "navigationBarTitleText": "完善资料",
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTextStyle": "black"
+      }
     }
   ],
   "subPackages": [
@@ -144,7 +160,7 @@
         {
           "path": "pages/recharge/recharge",
           "style": {
-            "navigationBarTitleText": "充值",
+            "navigationBarTitleText": "账户充值",
             "navigationBarBackgroundColor": "#ffffff",
             "navigationBarTextStyle": "black"
           }
@@ -156,42 +172,10 @@
             "navigationBarBackgroundColor": "#ffffff",
             "navigationBarTextStyle": "black"
           }
-        },
-        {
-          "path": "pages/404/404",
-          "style": {
-            "navigationBarTitleText": "页面不存在"
-          }
         }
       ]
     }
   ],
-  "tabBar": {
-    "color": "#999999",
-    "selectedColor": "#2979ff",
-    "borderStyle": "white",
-    "backgroundColor": "#ffffff",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "iconPath": "static/tabbar/home.png",
-        "selectedIconPath": "static/tabbar/home-active.png",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/news/news",
-        "iconPath": "static/tabbar/news.png",
-        "selectedIconPath": "static/tabbar/news-active.png",
-        "text": "资讯"
-      },
-      {
-        "pagePath": "pages/user/user",
-        "iconPath": "static/tabbar/user.png",
-        "selectedIconPath": "static/tabbar/user-active.png",
-        "text": "我的"
-      }
-    ]
-  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "peanut",

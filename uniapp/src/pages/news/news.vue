@@ -30,6 +30,7 @@
         </view>
       </view>
     </scroll-view>
+    <DecorationTabbar />
   </view>
 </template>
 
@@ -37,6 +38,7 @@
 import { ref, onMounted } from 'vue'
 import { getArticleCate, getArticleLists } from '@/api/news'
 import type { Article, ArticleCate } from '@/api/news'
+import DecorationTabbar from '@/components/DecorationTabbar.vue'
 
 const categories = ref<ArticleCate[]>([])
 const currentCateId = ref<number>(0)
@@ -76,7 +78,7 @@ function goDetail(id: number) {
 </script>
 
 <style scoped>
-.news-page { display: flex; flex-direction: column; height: 100vh; background: #f5f5f5; }
+.news-page { display: flex; flex-direction: column; height: 100vh; padding-bottom: calc(120rpx + env(safe-area-inset-bottom)); background: #f5f5f5; box-sizing: border-box; }
 .tabs { display: flex; background: #fff; padding: 0 24rpx; border-bottom: 1rpx solid #eee; overflow-x: auto; white-space: nowrap; }
 .tab-item { padding: 24rpx 20rpx; font-size: 28rpx; color: #666; display: inline-block; }
 .tab-item.active { color: #2979ff; border-bottom: 4rpx solid #2979ff; font-weight: 600; }

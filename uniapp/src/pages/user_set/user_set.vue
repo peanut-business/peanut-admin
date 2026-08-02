@@ -9,6 +9,10 @@
         <text class="title">绑定手机号</text>
         <text class="arrow">›</text>
       </view>
+      <view v-if="isMiniProgram" class="menu-item" @click="handleBindWechat">
+        <text class="title">绑定微信小程序</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goPrivacy">
         <text class="title">隐私政策</text>
         <text class="arrow">›</text>
@@ -28,13 +32,37 @@
 <script setup lang="ts">
 import { useUserStore } from '@/store/user'
 import { logout } from '@/api/account'
+import { bindWechatIdentity } from '@/api/oauth'
 
 const userStore = useUserStore()
+const runtimeInfo = (typeof uni !== 'undefined' && typeof uni.getSystemInfoSync === 'function'
+  ? uni.getSystemInfoSync()
+  : {}) as { uniPlatform?: string }
+const isMiniProgram = runtimeInfo.uniPlatform === 'mp-weixin'
 
 function goChangePwd() { uni.navigateTo({ url: '/pages/change_password/change_password' }) }
 function goBindMobile() { uni.navigateTo({ url: '/pages/bind_mobile/bind_mobile' }) }
 function goPrivacy() { uni.navigateTo({ url: '/pages/agreement/agreement?type=privacy' }) }
 function goService() { uni.navigateTo({ url: '/pages/agreement/agreement?type=service' }) }
+
+async function handleBindWechat() {
+  try {
+    const code = await new Promise<string>((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: (result) => {
+          const value = String((result as { code?: string }).code || '')
+          value ? resolve(value) : reject(new Error('微信登录凭证缺失'))
+        },
+        fail: reject,
+      })
+    })
+    await bindWechatIdentity('mnp', code)
+    uni.showToast({ title: '微信绑定成功' })
+  } catch (error) {
+    uni.showToast({ title: error instanceof Error ? error.message : '微信绑定失败', icon: 'none' })
+  }
+}
 
 async function handleLogout() {
   const confirmed = await new Promise<boolean>((resolve) =>

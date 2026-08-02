@@ -1,6 +1,7 @@
 import { useUserStore } from '@/store/user'
 
-const BASE_URL = import.meta.env.VITE_APP_BASE_URL || 'http://192.168.192.2:8080'
+const BASE_URL = import.meta.env.VITE_APP_BASE_URL
+  || (import.meta.env.DEV ? '' : 'http://192.168.192.2:8080')
 
 interface RequestOptions {
   url: string
