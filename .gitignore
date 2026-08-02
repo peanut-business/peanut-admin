@@ -30,3 +30,6 @@ web/.claude/
 
 # UniApp (separate app — tracked independently if needed)
 uniapp/
+
+# Runtime-generated storage (uploads/exports)
+server/public/storage/
