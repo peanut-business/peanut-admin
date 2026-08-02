@@ -22,10 +22,7 @@ git clone <repo-url> && cd peanut-v2
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p peanut_admin < server/database/init.sql
 ```
-
-`init.sql` 包含全部表结构、菜单种子和默认管理员（`admin / admin123456`）。
 
 ### 3. 配置后端
 
@@ -33,7 +30,11 @@ mysql -u root -p peanut_admin < server/database/init.sql
 cd server
 cp .env.example .env   # 填写 DB_HOST / DB_NAME / DB_USER / DB_PASS / JWT_SECRET
 composer install
+cd ..
+php server/database/install.php
 ```
+
+安装器只接受空数据库，按顺序执行基础结构和全部迁移，并校验完整表结构、菜单、配置及默认管理员（`admin / admin123456`）。已有数据库不得运行首次安装器，应备份后按 `server/database/migrations/` 的文件名顺序执行尚未应用的迁移。
 
 ### 4. 启动
 
@@ -57,7 +58,9 @@ peanut-v2/
 │   │   ├── api/             # 用户端 API
 │   │   └── common/          # 公共 model / service / enum
 │   ├── config/              # 框架配置
-│   ├── database/init.sql    # 一键初始化脚本
+│   ├── database/install.php # 空数据库首次安装器
+│   ├── database/init.sql    # 基础结构和种子
+│   ├── database/migrations/ # 增量业务迁移
 │   └── route/app.php        # 全部路由
 └── web/                     # Arco Design Vue 3 前端
     └── src/
