@@ -1,4 +1,4 @@
-# Git ignore for peanut-v2
+# Git ignore for Peanut Admin
 
 # Server
 server/.env

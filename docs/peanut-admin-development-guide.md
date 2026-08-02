@@ -7,7 +7,7 @@
 Peanut 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是 server/public/index.php，路由集中在 server/route/app.php。
 
 ~~~text
-peanut-v2/
+peanut-admin/
 ├── server/
 │   ├── app/adminapi/        管理端 API：controller、logic、validate、service、http/middleware
 │   ├── app/api/             会员/公开 API：controller、logic、validate、service
@@ -146,7 +146,7 @@ DB_TYPE、DB_DRIVER、DB_CHARSET 可按 server/config/database.php 的默认值�
 以下步骤使用仓库当前 README 与脚本中的路径。<仓库地址>、数据库账号和密码是占位符，按环境替换。
 
 ~~~bash
-git clone <仓库地址> && cd peanut-v2
+git clone <仓库地址> && cd peanut-admin
 
 # 后端配置与依赖
 cd server
@@ -246,7 +246,7 @@ uniapp/src/utils/request.ts 读取 VITE_APP_BASE_URL；开发时为空字符串�
 server {
     listen 80;
     server_name admin.example.com;
-    root /var/www/peanut-v2/web/dist;
+    root /var/www/peanut-admin/web/dist;
 
     location / {
         try_files $uri $uri/ /index.html;
@@ -254,14 +254,14 @@ server {
 
     location /api/ {
         include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME /var/www/peanut-v2/server/public/index.php;
+        fastcgi_param SCRIPT_FILENAME /var/www/peanut-admin/server/public/index.php;
         fastcgi_param SCRIPT_NAME /index.php;
         fastcgi_param REQUEST_URI $request_uri;
         fastcgi_pass unix:/run/php/php8.2-fpm.sock;
     }
 
     location /storage/ {
-        alias /var/www/peanut-v2/server/public/storage/;
+        alias /var/www/peanut-admin/server/public/storage/;
         try_files $uri =404;
     }
 }
@@ -278,7 +278,7 @@ web 的 pnpm build 适合直接部署 dist/ 到 Nginx。pc 的 npm run build 生
 仓库没有队列驱动、队列 worker 或 Supervisor 配置；异步/周期工作通过 ThinkPHP Console + 系统 cron 实现。server/config/console.php 当前注册了 crontab、crontab:demo、refund:reconcile、generator:cleanup 四个命令。调度器源码要求每分钟执行一次：
 
 ~~~cron
-* * * * * cd /var/www/peanut-v2/server && /usr/bin/php think crontab >> /var/log/peanut-crontab.log 2>&1
+* * * * * cd /var/www/peanut-admin/server && /usr/bin/php think crontab >> /var/log/peanut-crontab.log 2>&1
 ~~~
 
 pa_crontab 的 status=1 任务按自己的 Cron 表达式触发；init.sql 默认启用 refund:reconcile。调度器使用 MySQL GET_LOCK 防止多实例重复派发，并只允许 config/console.php 中显式注册且不是 crontab 自身的命令。若未来接入真正消息队列，应新增独立 service/worker 和部署清单，不要把队列调用塞进 Crontab 调度器。

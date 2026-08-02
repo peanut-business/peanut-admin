@@ -6,7 +6,7 @@ namespace app\common\service\storage\engine;
 use think\facade\Filesystem;
 
 /**
- * 本地磁盘存储引擎（peanut-v2 默认）。
+ * 本地磁盘存储引擎（Peanut Admin 默认）。
  * 落盘到 public/storage/<saveDir>/<fileName>，对外 uri 带 storage/ 前缀，
  * 由 nginx / think-filesystem 的 /storage 映射直接访问。
  */

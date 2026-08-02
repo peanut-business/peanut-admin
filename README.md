@@ -1,4 +1,4 @@
-# Peanut Admin v2
+# Peanut Admin
 
 基于 ThinkPHP 8 + Arco Design Pro Vue 的企业后台管理脚手架，完整复刻 likeadmin 标准版能力。
 
@@ -15,7 +15,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone <repo-url> && cd peanut-v2
+git clone <repo-url> && cd peanut-admin
 ```
 
 ### 2. 初始化数据库
@@ -51,7 +51,7 @@ cd web && pnpm install && pnpm dev
 ## 目录结构
 
 ```
-peanut-v2/
+peanut-admin/
 ├── server/                  # ThinkPHP 8 后端
 │   ├── app/
 │   │   ├── adminapi/        # 管理后台 API（controller / logic）
