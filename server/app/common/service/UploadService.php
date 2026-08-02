@@ -5,6 +5,7 @@ namespace app\common\service;
 
 use app\common\enum\FileEnum;
 use app\common\model\file\File;
+use app\common\model\file\FileCate;
 use app\common\service\storage\Driver;
 use think\file\UploadedFile;
 
@@ -35,6 +36,25 @@ class UploadService
      */
     protected static function save(int $type, int $cid, int $sourceId, int $source): array
     {
+        if (!FileEnum::isValidType($type)) {
+            throw new \InvalidArgumentException('文件类型无效');
+        }
+        if (!in_array($source, [FileEnum::SOURCE_ADMIN, FileEnum::SOURCE_USER], true)) {
+            throw new \InvalidArgumentException('上传来源无效');
+        }
+        if ($cid < 0) {
+            throw new \InvalidArgumentException('目标分类无效');
+        }
+        if ($cid > 0) {
+            $category = FileCate::find($cid);
+            if (!$category) {
+                throw new \InvalidArgumentException('目标分类不存在');
+            }
+            if ((int)$category->type !== $type) {
+                throw new \InvalidArgumentException('上传类型与目标分类不一致');
+            }
+        }
+
         /** @var UploadedFile|null $uploaded */
         $uploaded = request()->file('file');
         if (!$uploaded) {
@@ -66,14 +86,22 @@ class UploadService
         }
         $uri = $driver->buildUri($subDir);
 
-        $file = File::create([
-            'cid'       => $cid,
-            'source_id' => $sourceId,
-            'source'    => $source,
-            'type'      => $type,
-            'name'      => $name,
-            'uri'       => $uri,
-        ]);
+        try {
+            $file = File::create([
+                'cid'       => $cid,
+                'source_id' => $sourceId,
+                'source'    => $source,
+                'type'      => $type,
+                'name'      => $name,
+                'uri'       => $uri,
+                'storage'   => $driver->getEngineName(),
+            ]);
+        } catch (\Throwable $e) {
+            if (!$driver->delete($uri)) {
+                throw new \RuntimeException('素材记录写入失败，且存储对象清理失败：' . ($driver->getError() ?: '未知错误'), 0, $e);
+            }
+            throw $e;
+        }
 
         return [
             'id'   => $file->id,
@@ -81,6 +109,7 @@ class UploadService
             'type' => $file->type,
             'name' => $file->name,
             'uri'  => $uri,
+            'storage' => $driver->getEngineName(),
             'url'  => FileService::getFileUrl($uri),
         ];
     }

@@ -33,6 +33,7 @@ class NoticeChannelController extends BaseAdminController
                 'access_key_id'     => $smsAliyun['access_key_id']     ?? '',
                 'access_key_secret' => empty($smsAliyun['access_key_secret']) ? '' : '******',
                 'sign_name'         => $smsAliyun['sign_name']         ?? '',
+                'status'            => (int) ($smsAliyun['status'] ?? 0),
             ],
             'sms_tencent' => [
                 'secret_id'  => $smsTencent['secret_id']  ?? '',
@@ -40,6 +41,7 @@ class NoticeChannelController extends BaseAdminController
                 'sdk_app_id' => $smsTencent['sdk_app_id'] ?? '',
                 'sign_name'  => $smsTencent['sign_name']  ?? '',
                 'region'     => $smsTencent['region']     ?? 'ap-guangzhou',
+                'status'     => (int) ($smsTencent['status'] ?? 0),
             ],
             'mail_smtp' => [
                 'host'       => $mail['host']      ?? '',
@@ -70,7 +72,15 @@ class NoticeChannelController extends BaseAdminController
         unset($post['section']);
 
         if ($section === 'sms_default') {
-            ConfigService::set('notice', 'sms_default', $post['value'] ?? 'aliyun');
+            $provider = (string) ($post['value'] ?? '');
+            if (!in_array($provider, ['aliyun', 'tencent'], true)) {
+                return $this->fail('短信服务商无效');
+            }
+            $providerConfig = $this->configArray('sms_' . $provider);
+            if ((int) ($providerConfig['status'] ?? 0) !== 1) {
+                return $this->fail('只能选择已启用的短信服务商');
+            }
+            ConfigService::set('notice', 'sms_default', $provider);
             return $this->success('保存成功');
         }
 
@@ -87,8 +97,50 @@ class NoticeChannelController extends BaseAdminController
             }
         }
 
+        if (str_starts_with($section, 'sms_')) {
+            $post['status'] = (int) ($post['status'] ?? $current['status'] ?? 0);
+            if (!in_array($post['status'], [0, 1], true)) {
+                return $this->fail('短信服务状态无效');
+            }
+            if ($post['status'] === 1 && !$this->smsConfigComplete($section, $post)) {
+                return $this->fail('启用短信服务前请完整填写服务商配置');
+            }
+        }
+
         ConfigService::set('notice', $section, $post);
 
+        if (str_starts_with($section, 'sms_')) {
+            $provider = substr($section, 4);
+            if ((int) ($post['status'] ?? 0) === 1) {
+                $other = $provider === 'aliyun' ? 'tencent' : 'aliyun';
+                $otherConfig = $this->configArray('sms_' . $other);
+                $otherConfig['status'] = 0;
+                ConfigService::set('notice', 'sms_' . $other, $otherConfig);
+                ConfigService::set('notice', 'sms_default', $provider);
+            } elseif ((string) ConfigService::get('notice', 'sms_default', '') === $provider) {
+                ConfigService::set('notice', 'sms_default', '');
+            }
+        }
+
         return $this->success('保存成功');
+    }
+
+    private function configArray(string $name): array
+    {
+        $raw = ConfigService::get('notice', $name, '');
+        return is_array($raw) ? $raw : (json_decode((string) $raw, true) ?? []);
+    }
+
+    private function smsConfigComplete(string $section, array $config): bool
+    {
+        $required = $section === 'sms_aliyun'
+            ? ['access_key_id', 'access_key_secret', 'sign_name']
+            : ['secret_id', 'secret_key', 'sdk_app_id', 'sign_name', 'region'];
+        foreach ($required as $field) {
+            if (trim((string) ($config[$field] ?? '')) === '') {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -78,15 +78,16 @@ class DictDataLogic extends BaseLogic
     public static function edit(array $params): bool
     {
         try {
-            // type_id / type_value 不在编辑范围内变更，避免跨类型迁移
-            DictData::update([
-                'id'         => (int)$params['id'],
-                'name'       => (string)$params['name'],
-                'value'      => (string)$params['value'],
-                'sort'       => (int)($params['sort'] ?? 0),
-                'is_disable' => (int)($params['is_disable'] ?? 0),
-                'remark'     => (string)($params['remark'] ?? ''),
-            ]);
+            $data = DictData::findOrEmpty((int)$params['id']);
+            if ($data->isEmpty()) {
+                throw new \RuntimeException('字典数据不存在');
+            }
+            $data->name = (string)$params['name'];
+            $data->value = (string)$params['value'];
+            $data->sort = (int)($params['sort'] ?? 0);
+            $data->is_disable = (int)($params['is_disable'] ?? 0);
+            $data->remark = (string)($params['remark'] ?? '');
+            $data->save();
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -94,13 +95,26 @@ class DictDataLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): void
+    public static function delete(int $id): bool
     {
-        DictData::destroy($id);
+        $data = DictData::findOrEmpty($id);
+        if ($data->isEmpty()) {
+            self::setError('字典数据不存在');
+            return false;
+        }
+        $data->delete();
+        return true;
     }
 
-    public static function updateStatus(int $id, int $isDisable): void
+    public static function updateStatus(int $id, int $isDisable): bool
     {
-        DictData::update(['id' => $id, 'is_disable' => $isDisable]);
+        $data = DictData::findOrEmpty($id);
+        if ($data->isEmpty()) {
+            self::setError('字典数据不存在');
+            return false;
+        }
+        $data->is_disable = $isDisable;
+        $data->save();
+        return true;
     }
 }

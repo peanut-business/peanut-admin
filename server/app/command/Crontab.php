@@ -10,6 +10,8 @@ use think\console\Command;
 use think\console\Input;
 use think\console\Output;
 use think\facade\Console;
+use think\facade\Db;
+use app\common\service\CrontabCommandService;
 
 /**
  * 定时任务调度器。
@@ -25,13 +27,18 @@ class Crontab extends Command
 
     protected function execute(Input $input, Output $output)
     {
-        $lists = CrontabModel::where('status', CrontabEnum::START)->select()->toArray();
-        if (empty($lists)) {
+        if (!self::acquireSchedulerLock()) {
             return 0;
         }
-
-        $now = time();
-        foreach ($lists as $item) {
+        try {
+            $models = CrontabModel::where('status', CrontabEnum::START)->select();
+            if ($models->isEmpty()) {
+                return 0;
+            }
+            $now = time();
+            foreach ($models as $model) {
+                // 使用原始时间戳，避免模型格式化访问器把年份误当 last_time。
+                $item = $model->getData();
             // 首次运行：仅登记下次预期时间，不立即执行
             if (empty($item['last_time'])) {
                 CrontabModel::where('id', $item['id'])->update(['last_time' => $now]);
@@ -55,7 +62,20 @@ class Crontab extends Command
                 continue; // 未到时间
             }
 
-            self::start($item);
+                // 在派发前以状态和上次时间做 CAS 认领；进程即使在命令执行中崩溃，
+                // 同一个到期窗口也不会被下一轮再次派发。
+                $claimed = CrontabModel::where('id', (int)$item['id'])
+                    ->where('status', CrontabEnum::START)
+                    ->where('last_time', (int)$item['last_time'])
+                    ->update(['last_time' => $now]);
+                if ($claimed !== 1) {
+                    continue;
+                }
+                $item['last_time'] = $now;
+                self::start($item);
+            }
+        } finally {
+            self::releaseSchedulerLock();
         }
 
         return 0;
@@ -66,6 +86,7 @@ class Crontab extends Command
     {
         $startTime = microtime(true);
         try {
+            CrontabCommandService::assertAllowed((string)$item['command']);
             $params = ($item['params'] !== '') ? explode(' ', $item['params']) : [];
             Console::call($item['command'], $params);
             CrontabModel::where('id', $item['id'])->update(['error' => '']);
@@ -77,10 +98,23 @@ class Crontab extends Command
         } finally {
             $useTime = round(microtime(true) - $startTime, 2);
             CrontabModel::where('id', $item['id'])->update([
-                'last_time' => time(),
                 'time'      => $useTime,
                 'max_time'  => max($useTime, (float) $item['max_time']),
             ]);
+        }
+    }
+
+    private static function acquireSchedulerLock(): bool
+    {
+        $rows = Db::query("SELECT GET_LOCK('peanut:crontab:scheduler', 0) AS acquired");
+        return (int)($rows[0]['acquired'] ?? 0) === 1;
+    }
+
+    private static function releaseSchedulerLock(): void
+    {
+        try {
+            Db::query("SELECT RELEASE_LOCK('peanut:crontab:scheduler')");
+        } catch (\Throwable) {
         }
     }
 }

@@ -11,7 +11,7 @@ use app\common\model\BaseModel;
 class NoticeLog extends BaseModel
 {
     protected $name = 'notice_log';
-    protected $updateTime = false; // 日志只插入不更新
+    protected $updateTime = false;
 
     /** 状态：待发送 */
     public const STATUS_PENDING = 0;
@@ -26,4 +26,14 @@ class NoticeLog extends BaseModel
     public const CHANNEL_EMAIL = 2;
     /** 渠道：推送 */
     public const CHANNEL_PUSH = 3;
+
+    /** 验证状态：未验证 */
+    public const VERIFIED_NO = 0;
+    /** 验证状态：已验证 */
+    public const VERIFIED_YES = 1;
+
+    /** 短信服务商：阿里云 */
+    public const PROVIDER_ALIYUN = 'aliyun';
+    /** 短信服务商：腾讯云 */
+    public const PROVIDER_TENCENT = 'tencent';
 }

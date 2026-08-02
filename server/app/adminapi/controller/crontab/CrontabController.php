@@ -20,7 +20,10 @@ class CrontabController extends BaseAdminController
 
     public function detail()
     {
-        return $this->data(CrontabLogic::detail((int) $this->request->get('id')));
+        $params = $this->request->get();
+        $this->validate($params, CrontabValidate::class . '.detail');
+        $result = CrontabLogic::detail((int)$params['id']);
+        return $result === [] ? $this->fail('定时任务不存在') : $this->data($result);
     }
 
     public function add()
@@ -39,21 +42,27 @@ class CrontabController extends BaseAdminController
 
     public function delete()
     {
-        CrontabLogic::delete((int) $this->request->post('id'));
-        return $this->success('删除成功');
+        $params = $this->request->post();
+        $this->validate($params, CrontabValidate::class . '.delete');
+        $result = CrontabLogic::delete((int)$params['id']);
+        return $result ? $this->success('删除成功') : $this->fail(CrontabLogic::getError());
     }
 
     public function operate()
     {
-        $id      = (int) $this->request->post('id');
-        $operate = (string) $this->request->post('operate', '');
+        $params = $this->request->post();
+        $this->validate($params, CrontabValidate::class . '.operate');
+        $id      = (int)$params['id'];
+        $operate = (string)$params['operate'];
         $r = CrontabLogic::operate($id, $operate);
         return $r ? $this->success('操作成功') : $this->fail(CrontabLogic::getError());
     }
 
     public function expression()
     {
-        $expression = (string) $this->request->get('expression', '');
+        $params = $this->request->get();
+        $this->validate($params, CrontabValidate::class . '.expression');
+        $expression = (string)$params['expression'];
         return $this->data(CrontabLogic::expression($expression));
     }
 }

@@ -7,6 +7,8 @@ use app\common\enum\CrontabEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\Crontab;
 use Cron\CronExpression;
+use app\common\service\CrontabCommandService;
+use think\facade\Db;
 
 /**
  * 定时任务逻辑层
@@ -46,6 +48,7 @@ class CrontabLogic extends BaseLogic
     public static function add(array $params): bool
     {
         try {
+            CrontabCommandService::assertAllowed(trim((string)$params['command']));
             Crontab::create([
                 'name'       => (string) $params['name'],
                 'type'       => (int) $params['type'],
@@ -67,17 +70,23 @@ class CrontabLogic extends BaseLogic
     public static function edit(array $params): bool
     {
         try {
-            Crontab::update([
-                'id'         => (int) $params['id'],
-                'name'       => (string) $params['name'],
-                'type'       => (int) $params['type'],
-                'command'    => (string) $params['command'],
-                'params'     => (string) ($params['params'] ?? ''),
-                'status'     => (int) $params['status'],
-                'expression' => (string) $params['expression'],
-                'sort'       => (int) ($params['sort'] ?? 0),
-                'remark'     => (string) ($params['remark'] ?? ''),
-            ]);
+            CrontabCommandService::assertAllowed(trim((string)$params['command']));
+            Db::transaction(function () use ($params): void {
+                $crontab = Crontab::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
+                if ($crontab->isEmpty()) {
+                    throw new \RuntimeException('定时任务不存在');
+                }
+                $crontab->save([
+                    'name' => (string)$params['name'],
+                    'type' => (int)$params['type'],
+                    'command' => trim((string)$params['command']),
+                    'params' => (string)($params['params'] ?? ''),
+                    'status' => (int)$params['status'],
+                    'expression' => (string)$params['expression'],
+                    'sort' => (int)($params['sort'] ?? 0),
+                    'remark' => (string)($params['remark'] ?? ''),
+                ]);
+            });
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -85,9 +94,15 @@ class CrontabLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): void
+    public static function delete(int $id): bool
     {
-        Crontab::destroy($id);
+        $crontab = Crontab::findOrEmpty($id);
+        if ($crontab->isEmpty()) {
+            self::setError('定时任务不存在');
+            return false;
+        }
+        $crontab->delete();
+        return true;
     }
 
     /** 运行 / 停止 */

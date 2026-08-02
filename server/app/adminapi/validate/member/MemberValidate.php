@@ -3,18 +3,26 @@ declare(strict_types=1);
 
 namespace app\adminapi\validate\member;
 
+use app\common\enum\AccountLogEnum;
+use app\common\model\member\Member;
 use think\Validate;
 
 class MemberValidate extends Validate
 {
     protected $rule = [
-        'id'       => 'require|integer|gt:0',
+        'id'       => 'require|integer|gt:0|checkMember',
         'nickname' => 'require|max:50',
         'mobile'   => 'max:20',
         'email'    => 'email',
         'sex'      => 'in:0,1,2',
         'status'   => 'require|in:0,1',
         'amount'   => 'require|float',
+        'field'    => 'require|checkField',
+        'value'    => 'require',
+        'user_id'  => 'require|integer|gt:0|checkMember',
+        'action'   => 'require|in:' . AccountLogEnum::INC . ',' . AccountLogEnum::DEC,
+        'num'      => 'require|float|gt:0|checkMoney',
+        'remark'   => 'max:128',
     ];
 
     protected $message = [
@@ -28,11 +36,75 @@ class MemberValidate extends Validate
         'status.in'        => '状态值无效',
         'amount.require'   => '调整金额不能为空',
         'amount.float'     => '金额格式不正确',
+        'field.require'    => '请选择操作',
+        'value.require'    => '请输入内容',
+        'user_id.require'  => '请选择用户',
+        'action.require'   => '请选择调整类型',
+        'action.in'        => '调整类型错误',
+        'num.require'      => '请输入调整数量',
+        'num.float'        => '调整余额格式错误',
+        'num.gt'           => '调整余额必须大于零',
+        'remark.max'       => '备注不可超过128个符号',
     ];
 
     protected $scene = [
-        'add'     => ['nickname', 'mobile', 'email', 'sex', 'status'],
-        'edit'    => ['id', 'nickname', 'mobile', 'email', 'sex'],
-        'balance' => ['id', 'amount'],
+        'add'         => ['nickname', 'mobile', 'email', 'sex', 'status'],
+        'profileEdit' => ['id', 'nickname', 'mobile', 'email', 'sex'],
+        'detail'      => ['id'],
+        'setInfo'     => ['id', 'field', 'value'],
+        'status'      => ['id', 'status'],
+        'adjustMoney' => ['user_id', 'action', 'num', 'remark'],
+        'balance'     => ['id', 'amount'],
     ];
+
+    protected function checkMember($value): bool|string
+    {
+        return Member::find($value) ? true : '用户不存在！';
+    }
+
+    protected function checkField($value, $rule, array $data): bool|string
+    {
+        if (!in_array($value, ['account', 'sex', 'mobile', 'real_name'], true)) {
+            return '用户信息不允许更新';
+        }
+
+        if ($value === 'account') {
+            $exists = Member::where('id', '<>', (int)($data['id'] ?? 0))
+                ->where('account', (string)($data['value'] ?? ''))
+                ->findOrEmpty();
+            if (!$exists->isEmpty()) {
+                return '账号已被使用';
+            }
+        }
+
+        if ($value === 'mobile') {
+            $mobile = (string)($data['value'] ?? '');
+            if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
+                return '手机号码格式错误';
+            }
+            $exists = Member::where('id', '<>', (int)($data['id'] ?? 0))
+                ->where('mobile', $mobile)
+                ->findOrEmpty();
+            if (!$exists->isEmpty()) {
+                return '手机号码已存在';
+            }
+        }
+
+        return true;
+    }
+
+    protected function checkMoney($value, $rule, array $data): bool|string
+    {
+        $member = Member::find((int)($data['user_id'] ?? 0));
+        if (!$member) {
+            return '用户不存在';
+        }
+        if ((int)($data['action'] ?? 0) === AccountLogEnum::INC) {
+            return true;
+        }
+        if ((float)$member->user_money - (float)$value < 0) {
+            return '用户可用余额仅剩' . $member->user_money;
+        }
+        return true;
+    }
 }

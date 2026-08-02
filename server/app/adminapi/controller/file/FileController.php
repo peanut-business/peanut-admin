@@ -13,15 +13,23 @@ class FileController extends BaseAdminController
     // ---- 文件 ----
     public function lists()
     {
-        $res = FileLogic::lists($this->request->get());
-        return $this->dataLists($res['lists'], $res['count'], $res['pageNo'], $res['pageSize']);
+        try {
+            $res = FileLogic::lists($this->request->get());
+            return $this->dataLists($res['lists'], $res['count'], $res['pageNo'], $res['pageSize']);
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 
     public function move()
     {
         $ids = (array)$this->request->post('ids', []);
-        FileLogic::move(array_map('intval', $ids), (int)$this->request->post('cid', 0));
-        return $this->success('操作成功');
+        try {
+            FileLogic::move(array_map('intval', $ids), $this->integerValue($this->request->post('cid', 0), '目标分类无效'));
+            return $this->success('操作成功');
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 
     public function rename()
@@ -30,21 +38,36 @@ class FileController extends BaseAdminController
         if ($name === '') {
             return $this->fail('名称不能为空');
         }
-        FileLogic::rename((int)$this->request->post('id'), $name);
-        return $this->success('操作成功');
+        if (mb_strlen($name) > 20) {
+            return $this->fail('名称最多 20 个字符');
+        }
+        try {
+            FileLogic::rename($this->integerValue($this->request->post('id'), '素材 ID 无效'), $name);
+            return $this->success('操作成功');
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 
     public function delete()
     {
         $ids = (array)$this->request->post('ids', []);
-        FileLogic::delete(array_map('intval', $ids));
-        return $this->success('操作成功');
+        try {
+            $result = FileLogic::delete(array_map('intval', $ids));
+            return $this->success('操作成功', $result);
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 
     // ---- 分类 ----
     public function listCate()
     {
-        return $this->data(FileCateLogic::lists((int)$this->request->get('type', 10)));
+        try {
+            return $this->data(FileCateLogic::lists($this->integerValue($this->request->get('type', 10), '文件类型无效')));
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 
     public function addCate()
@@ -63,7 +86,19 @@ class FileController extends BaseAdminController
 
     public function delCate()
     {
-        $r = FileCateLogic::delete((int)$this->request->post('id'));
-        return $r ? $this->success('操作成功') : $this->fail(FileCateLogic::getError());
+        try {
+            $result = FileCateLogic::delete($this->integerValue($this->request->post('id'), '分类 ID 无效'));
+            return $this->success('操作成功', $result);
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
+    }
+
+    private function integerValue(mixed $value, string $message): int
+    {
+        if (!is_int($value) && !(is_string($value) && preg_match('/^-?\d+$/D', $value) === 1)) {
+            throw new \InvalidArgumentException($message);
+        }
+        return (int)$value;
     }
 }

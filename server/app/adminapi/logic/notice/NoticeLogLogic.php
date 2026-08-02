@@ -19,7 +19,8 @@ class NoticeLogLogic extends BaseLogic
     {
         $query = NoticeLog::alias('l')
             ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->field('l.*, t.name as template_name, t.code as template_code');
+            ->leftJoin('notice_scene s', 's.id = l.scene_id')
+            ->field('l.*, t.name as template_name, t.code as template_code, s.name as scene_name, s.code as scene_code');
 
         if (!empty($params['receiver'])) {
             $query->whereLike('l.receiver', '%' . $params['receiver'] . '%');
@@ -29,6 +30,9 @@ class NoticeLogLogic extends BaseLogic
         }
         if (isset($params['status']) && $params['status'] !== '') {
             $query->where('l.status', (int) $params['status']);
+        }
+        if (isset($params['scene_id']) && $params['scene_id'] !== '') {
+            $query->where('l.scene_id', (int) $params['scene_id']);
         }
         if (!empty($params['start_time'])) {
             $query->where('l.send_time', '>=', (int) $params['start_time']);
@@ -56,7 +60,8 @@ class NoticeLogLogic extends BaseLogic
     {
         $log = NoticeLog::alias('l')
             ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->field('l.*, t.name as template_name, t.code as template_code')
+            ->leftJoin('notice_scene s', 's.id = l.scene_id')
+            ->field('l.*, t.name as template_name, t.code as template_code, s.name as scene_name, s.code as scene_code')
             ->where('l.id', $id)
             ->findOrEmpty();
 

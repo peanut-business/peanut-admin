@@ -5,6 +5,7 @@ namespace app\adminapi\validate\crontab;
 
 use Cron\CronExpression;
 use think\Validate;
+use app\common\service\CrontabCommandService;
 
 class CrontabValidate extends Validate
 {
@@ -12,9 +13,10 @@ class CrontabValidate extends Validate
         'id'         => 'require|integer|gt:0',
         'name'       => 'require|max:100',
         'type'       => 'require|in:1',
-        'command'    => 'require|max:100',
+        'command'    => 'require|max:100|checkCommand',
         'status'     => 'require|in:1,2,3',
         'expression' => 'require|max:100|checkExpression',
+        'operate'     => 'require|in:start,stop',
     ];
 
     protected $message = [
@@ -34,6 +36,10 @@ class CrontabValidate extends Validate
     protected $scene = [
         'add'  => ['name', 'type', 'command', 'status', 'expression'],
         'edit' => ['id', 'name', 'type', 'command', 'status', 'expression'],
+        'detail' => ['id'],
+        'delete' => ['id'],
+        'operate' => ['id', 'operate'],
+        'expression' => ['expression'],
     ];
 
     /** 校验 cron 表达式合法性 */
@@ -43,5 +49,15 @@ class CrontabValidate extends Validate
             return '定时任务运行规则错误';
         }
         return true;
+    }
+
+    protected function checkCommand($value): bool|string
+    {
+        try {
+            CrontabCommandService::assertAllowed(trim((string)$value));
+            return true;
+        } catch (\Throwable $e) {
+            return $e->getMessage();
+        }
     }
 }

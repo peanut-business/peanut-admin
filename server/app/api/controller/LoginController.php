@@ -7,7 +7,7 @@ use app\api\logic\LoginLogic;
 
 class LoginController extends BaseApiController
 {
-    public array $notNeedLogin = ['register', 'account', 'logout'];
+    public array $notNeedLogin = ['register', 'account', 'mobile', 'resetPassword', 'logout'];
 
     /** 注册账号 */
     public function register()
@@ -48,6 +48,41 @@ class LoginController extends BaseApiController
         }
 
         return $this->data($result);
+    }
+
+    /** 手机号验证码登录 */
+    public function mobile()
+    {
+        $params = [
+            'mobile' => $this->request->post('mobile/s', ''),
+            'code'   => $this->request->post('code/s', ''),
+        ];
+        if (!preg_match('/^1[3-9]\d{9}$/', $params['mobile']) || $params['code'] === '') {
+            return $this->fail('手机号或验证码格式不正确');
+        }
+
+        $result = LoginLogic::mobileLogin($params);
+        return $result === false
+            ? $this->fail(LoginLogic::getError())
+            : $this->data($result);
+    }
+
+    /** 手机号验证码找回密码 */
+    public function resetPassword()
+    {
+        $params = [
+            'mobile'   => $this->request->post('mobile/s', ''),
+            'code'     => $this->request->post('code/s', ''),
+            'password' => $this->request->post('password/s', ''),
+        ];
+        if (!preg_match('/^1[3-9]\d{9}$/', $params['mobile'])
+            || $params['code'] === '' || strlen($params['password']) < 6) {
+            return $this->fail('手机号、验证码或新密码格式不正确');
+        }
+
+        return LoginLogic::resetPassword($params)
+            ? $this->success('密码已重置')
+            : $this->fail(LoginLogic::getError());
     }
 
     /** 退出登录 */

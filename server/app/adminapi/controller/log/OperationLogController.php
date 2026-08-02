@@ -10,7 +10,14 @@ class OperationLogController extends BaseAdminController
 {
     public function lists()
     {
-        $res = OperationLogLogic::lists($this->request->get());
+        try {
+            $res = OperationLogLogic::lists($this->request->get());
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
+        if (isset($res['url']) || isset($res['sum_page'])) {
+            return $this->data($res);
+        }
         return $this->dataLists($res['lists'], $res['count'], $res['pageNo'], $res['pageSize']);
     }
 

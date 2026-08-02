@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\enum;
 
+use app\common\model\finance\RechargeOrder;
+
 class RefundEnum
 {
     // 退款类型
@@ -47,5 +49,14 @@ class RefundEnum
             self::REFUND_OFFLINE => '线下退款',
         ];
         return $value === true ? $data : ($data[$value] ?? '');
+    }
+
+    /** 线上渠道原路退回；余额等非线上渠道归为线下退款。 */
+    public static function getRefundWayByPayWay(int $payWay): int
+    {
+        return in_array($payWay, [
+            RechargeOrder::PAY_WAY_WECHAT,
+            RechargeOrder::PAY_WAY_ALIPAY,
+        ], true) ? self::REFUND_ONLINE : self::REFUND_OFFLINE;
     }
 }

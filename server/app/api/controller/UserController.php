@@ -62,6 +62,7 @@ class UserController extends BaseApiController
     {
         $params = [
             'mobile' => $this->request->post('mobile/s', ''),
+            'code'   => $this->request->post('code/s', ''),
         ];
 
         $result = UserLogic::bindMobile($this->memberId, $params);

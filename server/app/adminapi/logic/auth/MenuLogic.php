@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\auth;
 
+use app\adminapi\service\AdminPermissionService;
 use app\common\logic\BaseLogic;
-use app\common\model\auth\Admin;
 use app\common\model\auth\SystemMenu;
 use app\common\model\auth\SystemRoleMenu;
 
@@ -12,20 +12,7 @@ class MenuLogic extends BaseLogic
 {
     public static function getMenuByAdminId(int $adminId): array
     {
-        $admin = Admin::with(['roles'])->findOrEmpty($adminId);
-        if ($admin->isEmpty()) return [];
-
-        $where = [['type', 'in', ['M', 'C']], ['is_disable', '=', 0]];
-
-        if (!$admin->root) {
-            $roleIds = array_column($admin->roles->toArray(), 'id');
-            if (empty($roleIds)) return [];
-            $menuIds = SystemRoleMenu::whereIn('role_id', $roleIds)->column('menu_id');
-            $where[] = ['id', 'in', $menuIds];
-        }
-
-        $menus = SystemMenu::where($where)->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
-        return linear_to_tree($menus);
+        return AdminPermissionService::menusForAdminId($adminId);
     }
 
     public static function getAll(): array

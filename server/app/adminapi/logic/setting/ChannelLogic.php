@@ -10,7 +10,8 @@ use app\common\service\ConfigService;
  * 渠道配置 Logic（第三方登录渠道）
  *
  * type = channel
- * 字段：微信开放平台（wechat_open_*）、微信小程序（wechat_mini_*）、QQ（qq_*）
+ * 字段：微信开放平台（wechat_open_*）、微信公众号（wechat_oa_*）、QQ（qq_*）。
+ * 微信小程序资料由 MiniProgramLogic 的 mnp_setting 单一模型维护。
  */
 class ChannelLogic extends BaseLogic
 {
@@ -22,10 +23,6 @@ class ChannelLogic extends BaseLogic
         'wechat_open_status'    => 0,
         'wechat_open_appid'     => '',
         'wechat_open_secret'    => '',
-        // 微信小程序
-        'wechat_mini_status'    => 0,
-        'wechat_mini_appid'     => '',
-        'wechat_mini_secret'    => '',
         // 微信公众号
         'wechat_oa_status'      => 0,
         'wechat_oa_appid'       => '',
@@ -40,7 +37,7 @@ class ChannelLogic extends BaseLogic
     {
         $stored = ConfigService::get(self::CONFIG_TYPE);
         $result = [];
-        $statusFields = ['wechat_open_status', 'wechat_mini_status', 'wechat_oa_status', 'qq_status'];
+        $statusFields = ['wechat_open_status', 'wechat_oa_status', 'qq_status'];
         foreach (self::FIELDS as $field => $default) {
             $value = $stored[$field] ?? $default;
             if (in_array($field, $statusFields, true)) {

@@ -4,9 +4,11 @@ declare(strict_types=1);
 namespace app\api\logic;
 
 use app\common\logic\BaseLogic;
+use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
 use app\common\model\article\ArticleCollect;
 use app\common\service\FileService;
+use app\common\service\notice\VerificationCodeService;
 
 class UserLogic extends BaseLogic
 {
@@ -22,7 +24,13 @@ class UserLogic extends BaseLogic
 
         $data               = $member->toArray();
         $data['avatar']     = FileService::getFileUrl((string) $data['avatar']);
-        $data['collect_num'] = ArticleCollect::where('member_id', $memberId)->count();
+        $data['collect_num'] = ArticleCollect::alias('c')
+            ->join('article a', 'c.article_id = a.id')
+            ->where('c.member_id', $memberId)
+            ->where('c.status', 1)
+            ->where('a.is_show', 1)
+            ->where('a.delete_time', 'null')
+            ->count();
 
         return $data;
     }
@@ -106,6 +114,18 @@ class UserLogic extends BaseLogic
             }
             if (Member::where('mobile', $mobile)->where('id', '<>', $memberId)->count()) {
                 throw new \Exception('手机号已被其他账号绑定');
+            }
+
+            $member = Member::findOrEmpty($memberId);
+            if ($member->isEmpty()) {
+                throw new \Exception('用户不存在');
+            }
+            $scene = empty($member->mobile)
+                ? NoticeSceneEnum::BIND_MOBILE
+                : NoticeSceneEnum::CHANGE_MOBILE;
+            $service = new VerificationCodeService();
+            if (!$service->verify($scene, $mobile, (string) ($params['code'] ?? ''))) {
+                throw new \Exception($service->getError());
             }
             Member::update(['mobile' => $mobile], ['id' => $memberId]);
             return true;

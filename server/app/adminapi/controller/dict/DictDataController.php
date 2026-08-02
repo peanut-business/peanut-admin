@@ -21,7 +21,13 @@ class DictDataController extends BaseAdminController
         return $this->data(DictDataLogic::byType((string)$this->request->get('type_value', '')));
     }
 
-    public function detail() { return $this->data(DictDataLogic::detail((int)$this->request->get('id'))); }
+    public function detail()
+    {
+        $params = $this->request->get();
+        $this->validate($params, DictDataValidate::class . '.detail');
+        $result = DictDataLogic::detail((int)$params['id']);
+        return $result === [] ? $this->fail('字典数据不存在') : $this->data($result);
+    }
 
     public function add()
     {
@@ -39,13 +45,17 @@ class DictDataController extends BaseAdminController
 
     public function delete()
     {
-        DictDataLogic::delete((int)$this->request->post('id'));
-        return $this->success('操作成功');
+        $params = $this->request->post();
+        $this->validate($params, DictDataValidate::class . '.delete');
+        $result = DictDataLogic::delete((int)$params['id']);
+        return $result ? $this->success('操作成功') : $this->fail(DictDataLogic::getError());
     }
 
     public function updateStatus()
     {
-        DictDataLogic::updateStatus((int)$this->request->post('id'), (int)$this->request->post('is_disable', 0));
-        return $this->success('操作成功');
+        $params = $this->request->post();
+        $this->validate($params, DictDataValidate::class . '.status');
+        $result = DictDataLogic::updateStatus((int)$params['id'], (int)$params['is_disable']);
+        return $result ? $this->success('操作成功') : $this->fail(DictDataLogic::getError());
     }
 }

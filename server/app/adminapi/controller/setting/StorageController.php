@@ -30,7 +30,7 @@ class StorageController extends BaseAdminController
     public function change()
     {
         $this->validate($this->request->post(), StorageValidate::class . '.change');
-        StorageLogic::change($this->request->post());
-        return $this->success('操作成功');
+        $result = StorageLogic::change($this->request->post());
+        return $result ? $this->success('操作成功') : $this->fail(StorageLogic::getError());
     }
 }

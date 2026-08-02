@@ -13,6 +13,15 @@ class RefundRecord extends BaseModel
 {
     protected $name = 'refund_record';
 
+    public static function generateSn(): string
+    {
+        do {
+            $sn = date('YmdHis') . str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        } while (self::where('sn', $sn)->count() > 0);
+
+        return $sn;
+    }
+
     /** 退款类型文字 */
     public function getRefundTypeTextAttr($value, $data): string
     {

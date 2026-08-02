@@ -11,8 +11,10 @@ class ArticleController extends BaseAdminController
 {
     public function lists()
     {
-        $result = ArticleLogic::lists($this->request->get());
-        return $this->dataLists($result['lists'], $result['count'], $result['page'], $result['limit']);
+        $params = $this->request->get();
+        $this->validate($params, ArticleValidate::class . '.lists');
+        $result = ArticleLogic::lists($params);
+        return $result === false ? $this->fail(ArticleLogic::getError()) : $this->data($result);
     }
 
     public function detail()
@@ -23,31 +25,35 @@ class ArticleController extends BaseAdminController
 
     public function add()
     {
-        $this->validate($this->request->post(), ArticleValidate::class . '.add');
-        $r = ArticleLogic::add($this->request->post());
-        return $r ? $this->success('操作成功') : $this->fail(ArticleLogic::getError());
+        $params = $this->request->post();
+        $this->validate($params, ArticleValidate::class . '.add');
+        $r = ArticleLogic::add($params);
+        return $r ? $this->success('添加成功') : $this->fail(ArticleLogic::getError());
     }
 
     public function edit()
     {
-        $this->validate($this->request->post(), ArticleValidate::class . '.edit');
-        $r = ArticleLogic::edit($this->request->post());
-        return $r ? $this->success('操作成功') : $this->fail(ArticleLogic::getError());
+        $params = $this->request->post();
+        $this->validate($params, ArticleValidate::class . '.edit');
+        $r = ArticleLogic::edit($params);
+        return $r ? $this->success('编辑成功') : $this->fail(ArticleLogic::getError());
     }
 
     public function delete()
     {
         $this->validate($this->request->post(), ArticleValidate::class . '.delete');
         $r = ArticleLogic::delete((int) $this->request->post('id'));
-        return $r ? $this->success('操作成功') : $this->fail(ArticleLogic::getError());
+        return $r ? $this->success('删除成功') : $this->fail(ArticleLogic::getError());
     }
 
-    public function status()
+    public function updateStatus()
     {
+        $this->validate($this->request->post(), ArticleValidate::class . '.status');
         $r = ArticleLogic::updateStatus(
             (int) $this->request->post('id'),
             (int) $this->request->post('is_show')
         );
-        return $r ? $this->success('操作成功') : $this->fail(ArticleLogic::getError());
+        return $r ? $this->success('修改成功') : $this->fail(ArticleLogic::getError());
     }
+
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service;
 
 use app\common\model\config\Config;
+use think\facade\Db;
 
 /**
  * 系统配置读写服务（可复用基础设施）
@@ -51,5 +52,13 @@ class ConfigService
         foreach ($data as $name => $value) {
             self::set($type, (string) $name, $value);
         }
+    }
+
+    /** 在同一事务内批量写入配置，避免相关配置出现部分更新。 */
+    public static function setManyAtomic(string $type, array $data): void
+    {
+        Db::transaction(function () use ($type, $data): void {
+            self::setMany($type, $data);
+        });
     }
 }

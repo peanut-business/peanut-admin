@@ -27,8 +27,12 @@ class UploadController extends BaseAdminController
     /** @param string $method image|video|file */
     protected function upload(string $method)
     {
-        $cid = (int)$this->request->post('cid', 0);
         try {
+            $cidValue = $this->request->post('cid', 0);
+            if (!is_int($cidValue) && !(is_string($cidValue) && preg_match('/^-?\d+$/D', $cidValue) === 1)) {
+                throw new \InvalidArgumentException('目标分类无效');
+            }
+            $cid = (int)$cidValue;
             $res = UploadService::$method($cid, $this->adminId, FileEnum::SOURCE_ADMIN);
             return $this->success('上传成功', $res);
         } catch (\Throwable $e) {

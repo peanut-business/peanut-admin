@@ -54,6 +54,9 @@ class StorageLogic extends BaseLogic
         $result = $defaults[$engine] ?? [];
         if ($engine !== 'local') {
             $result = array_merge($result, self::decode($engine));
+            if (($result['secret_key'] ?? '') !== '') {
+                $result['secret_key'] = '******';
+            }
         }
         $result['status'] = $default === $engine ? 1 : 0;
         return $result;
@@ -68,32 +71,37 @@ class StorageLogic extends BaseLogic
         $engine = (string) ($params['engine'] ?? 'local');
         $status = (int) ($params['status'] ?? 0);
 
-        // 状态开启则设为默认引擎，否则回落 local
-        ConfigService::set('storage', 'default', $status === 1 ? $engine : 'local');
-
+        $config = [];
         switch ($engine) {
             case 'local':
-                ConfigService::set('storage', 'local', []);
+                $config = [];
                 break;
             case 'qiniu':
             case 'aliyun':
-                ConfigService::set('storage', $engine, [
+                $config = [
                     'bucket'     => $params['bucket'] ?? '',
                     'access_key' => $params['access_key'] ?? '',
-                    'secret_key' => $params['secret_key'] ?? '',
+                    'secret_key' => self::retainedSecret($engine, (string)($params['secret_key'] ?? '')),
                     'domain'     => $params['domain'] ?? '',
-                ]);
+                ];
                 break;
             case 'qcloud':
-                ConfigService::set('storage', 'qcloud', [
+                $config = [
                     'bucket'     => $params['bucket'] ?? '',
                     'region'     => $params['region'] ?? '',
                     'access_key' => $params['access_key'] ?? '',
-                    'secret_key' => $params['secret_key'] ?? '',
+                    'secret_key' => self::retainedSecret($engine, (string)($params['secret_key'] ?? '')),
                     'domain'     => $params['domain'] ?? '',
-                ]);
+                ];
                 break;
         }
+        if ($status === 1) {
+            self::assertUsable($engine, $config);
+        }
+        ConfigService::setManyAtomic('storage', [
+            $engine => $config,
+            'default' => $status === 1 ? $engine : 'local',
+        ]);
 
         self::clearCache();
         if ($engine === 'local' && $status === 0) {
@@ -103,12 +111,22 @@ class StorageLogic extends BaseLogic
     }
 
     /** @notes 切换默认引擎（再次点击当前默认则回落 local） */
-    public static function change(array $params): void
+    public static function change(array $params): bool
     {
-        $engine  = (string) ($params['engine'] ?? 'local');
-        $default = (string) ConfigService::get('storage', 'default', '');
-        ConfigService::set('storage', 'default', $default === $engine ? 'local' : $engine);
-        self::clearCache();
+        try {
+            $engine  = (string)($params['engine'] ?? 'local');
+            $default = (string)ConfigService::get('storage', 'default', 'local');
+            $next = $default === $engine ? 'local' : $engine;
+            if ($next !== 'local') {
+                self::assertUsable($next, self::decode($next));
+            }
+            ConfigService::setManyAtomic('storage', ['default' => $next]);
+            self::clearCache();
+            return true;
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
     }
 
     /** 读取某引擎配置（JSON 字符串 → 数组） */
@@ -126,5 +144,34 @@ class StorageLogic extends BaseLogic
     {
         Cache::delete('STORAGE_DEFAULT');
         Cache::delete('STORAGE_ENGINE');
+    }
+
+    private static function retainedSecret(string $engine, string $value): string
+    {
+        if ($value !== '******') {
+            return trim($value);
+        }
+        return (string)(self::decode($engine)['secret_key'] ?? '');
+    }
+
+    private static function assertUsable(string $engine, array $config): void
+    {
+        if ($engine === 'local') {
+            return;
+        }
+        $required = ['bucket', 'access_key', 'secret_key', 'domain'];
+        if ($engine === 'qcloud') {
+            $required[] = 'region';
+        }
+        foreach ($required as $field) {
+            if (trim((string)($config[$field] ?? '')) === '') {
+                throw new \RuntimeException('云存储配置不完整，不能设为默认引擎');
+            }
+        }
+        $domain = trim((string)$config['domain']);
+        if (filter_var($domain, FILTER_VALIDATE_URL) === false
+            || !in_array(strtolower((string)parse_url($domain, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            throw new \RuntimeException('云存储访问域名无效');
+        }
     }
 }

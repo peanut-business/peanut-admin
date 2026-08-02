@@ -9,8 +9,17 @@ use app\adminapi\validate\member\MemberValidate;
 
 class MemberController extends BaseAdminController
 {
-    public function lists()  { return $this->data(MemberLogic::lists($this->request->get())); }
-    public function detail() { return $this->data(MemberLogic::detail((int)$this->request->get('id'))); }
+    public function lists()
+    {
+        $result = MemberLogic::lists($this->request->get());
+        return $result === false ? $this->fail(MemberLogic::getError()) : $this->data($result);
+    }
+
+    public function detail()
+    {
+        $this->validate($this->request->get(), MemberValidate::class . '.detail');
+        return $this->data(MemberLogic::detail((int)$this->request->get('id')));
+    }
 
     public function add()
     {
@@ -21,17 +30,24 @@ class MemberController extends BaseAdminController
 
     public function edit()
     {
-        $this->validate($this->request->post(), MemberValidate::class . '.edit');
-        $r = MemberLogic::edit($this->request->post());
+        $this->validate($this->request->post(), MemberValidate::class . '.setInfo');
+        $r = MemberLogic::setUserInfo($this->request->post());
+        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
+    }
+
+    /** Peanut 原有的整表单编辑兼容入口。 */
+    public function profileEdit()
+    {
+        $this->validate($this->request->post(), MemberValidate::class . '.profileEdit');
+        $r = MemberLogic::editProfile($this->request->post());
         return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
     }
 
     public function updateStatus()
     {
-        $r = MemberLogic::updateStatus(
-            (int)$this->request->post('id'),
-            (int)$this->request->post('status', 1)
-        );
+        $params = $this->request->post();
+        $this->validate($params, MemberValidate::class . '.status');
+        $r = MemberLogic::updateStatus((int)$params['id'], (int)$params['status']);
         return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
     }
 
@@ -44,6 +60,14 @@ class MemberController extends BaseAdminController
             (string)$this->request->post('remark', ''),
             $this->adminId
         );
+        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
+    }
+
+    public function adjustMoney()
+    {
+        $params = $this->request->post();
+        $this->validate($params, MemberValidate::class . '.adjustMoney');
+        $r = MemberLogic::adjustUserMoney($params, $this->adminId);
         return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
     }
 }

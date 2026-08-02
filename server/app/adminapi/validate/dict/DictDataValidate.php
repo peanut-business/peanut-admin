@@ -13,6 +13,7 @@ class DictDataValidate extends Validate
         'name'    => 'require|max:100',
         'value'   => 'require|max:255',
         'sort'    => 'integer|egt:0',
+        'is_disable' => 'require|in:0,1',
     ];
 
     protected $message = [
@@ -27,5 +28,8 @@ class DictDataValidate extends Validate
     protected $scene = [
         'add'  => ['type_id', 'name', 'value', 'sort'],
         'edit' => ['id', 'name', 'value', 'sort'],
+        'detail' => ['id'],
+        'delete' => ['id'],
+        'status' => ['id', 'is_disable'],
     ];
 }

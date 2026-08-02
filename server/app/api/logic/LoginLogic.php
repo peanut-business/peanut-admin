@@ -5,8 +5,11 @@ namespace app\api\logic;
 
 use app\api\service\UserTokenService;
 use app\common\logic\BaseLogic;
+use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
 use app\common\service\FileService;
+use app\common\service\ConfigService;
+use app\common\service\notice\VerificationCodeService;
 
 class LoginLogic extends BaseLogic
 {
@@ -17,6 +20,7 @@ class LoginLogic extends BaseLogic
     public static function register(array $params): bool
     {
         try {
+            self::assertLoginWayEnabled(1);
             if (Member::where('account', $params['account'])->count()) {
                 throw new \Exception('账号已被注册');
             }
@@ -30,7 +34,11 @@ class LoginLogic extends BaseLogic
                 'account'  => $params['account'],
                 'password' => $password . ':' . $salt,  // 存 hash:salt
                 'nickname' => '用户' . substr($sn, -6),
-                'avatar'   => '',
+                'avatar'   => (string)ConfigService::get(
+                    'default_image',
+                    'user_avatar',
+                    (string)config('project.default_image.user_avatar', '')
+                ),
                 'status'   => 1,
             ]);
 
@@ -48,6 +56,7 @@ class LoginLogic extends BaseLogic
     public static function login(array $params): array|false
     {
         try {
+            self::assertLoginWayEnabled(1);
             /** @var Member|null $member */
             $member = Member::where(function ($q) use ($params) {
                 $q->where('account', $params['account'])
@@ -86,6 +95,106 @@ class LoginLogic extends BaseLogic
         } catch (\Exception $e) {
             self::setError($e->getMessage());
             return false;
+        }
+    }
+
+    public static function mobileLogin(array $params): array|false
+    {
+        try {
+            self::assertLoginWayEnabled(2);
+            $mobile = (string) $params['mobile'];
+            $service = new VerificationCodeService();
+            if (!$service->verify(NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
+                throw new \RuntimeException($service->getError());
+            }
+
+            $member = Member::where('mobile', $mobile)->findOrEmpty();
+            if ($member->isEmpty()) {
+                $sn = Member::generateSn();
+                $member = Member::create([
+                    'sn'       => $sn,
+                    'account'  => $mobile,
+                    'password' => '',
+                    'mobile'   => $mobile,
+                    'nickname' => '用户' . substr($sn, -6),
+                    'avatar'   => (string)ConfigService::get(
+                        'default_image',
+                        'user_avatar',
+                        (string)config('project.default_image.user_avatar', '')
+                    ),
+                    'status'   => 1,
+                ]);
+            }
+            if (!(int) $member->status) {
+                throw new \RuntimeException('账号已被禁用');
+            }
+
+            return self::loginResult($member);
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    public static function resetPassword(array $params): bool
+    {
+        try {
+            $member = Member::where('mobile', (string) $params['mobile'])->findOrEmpty();
+            if ($member->isEmpty()) {
+                throw new \RuntimeException('手机号未绑定账号');
+            }
+
+            $service = new VerificationCodeService();
+            if (!$service->verify(
+                NoticeSceneEnum::RESET_PASSWORD,
+                (string) $params['mobile'],
+                (string) $params['code']
+            )) {
+                throw new \RuntimeException($service->getError());
+            }
+
+            [$hash, $salt] = self::passwordHash((string) $params['password']);
+            $member->password = $hash . ':' . $salt;
+            $member->save();
+            return true;
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    private static function loginResult(Member $member): array
+    {
+        $member->login_time = time();
+        $member->login_ip = request()->ip();
+        $member->save();
+
+        return [
+            'token'    => UserTokenService::createToken((int) $member->id),
+            'id'       => $member->id,
+            'sn'       => $member->sn,
+            'nickname' => $member->nickname,
+            'avatar'   => FileService::getFileUrl((string) $member->avatar),
+            'mobile'   => $member->mobile,
+        ];
+    }
+
+    /** @return array{0:string,1:string} */
+    private static function passwordHash(string $password): array
+    {
+        $salt = substr(md5(uniqid((string) mt_rand(), true)), 0, 8);
+        return [md5(md5($password) . $salt), $salt];
+    }
+
+    private static function assertLoginWayEnabled(int $way): void
+    {
+        $raw = ConfigService::get('login', 'login_way', '[1,2]');
+        $enabled = is_array($raw) ? $raw : json_decode((string)$raw, true);
+        if (!is_array($enabled)) {
+            $enabled = [1, 2];
+        }
+        if (!in_array($way, array_map('intval', $enabled), true)) {
+            throw new \RuntimeException('当前登录方式未启用');
         }
     }
 

@@ -25,11 +25,13 @@ class PayConfigLogic extends BaseLogic
         'wx_pay_secret'        => '',
         'wx_pay_cert_path'     => '',
         'wx_pay_cert_key_path' => '',
+        'wx_pay_platform_cert_path' => '',
         // 支付宝
         'ali_pay_status'       => 0,   // 0关 1开
         'ali_pay_app_id'       => '',
         'ali_pay_private_key'  => '',
         'ali_pay_public_key'   => '',
+        'ali_pay_seller_id'    => '',
     ];
 
     public static function getConfig(): array
@@ -44,18 +46,59 @@ class PayConfigLogic extends BaseLogic
             }
             $result[$field] = $value;
         }
+        foreach (['wx_pay_secret', 'ali_pay_private_key'] as $field) {
+            $configured = trim((string)$result[$field]) !== '';
+            $result[$field . '_configured'] = $configured;
+            $result[$field] = $configured ? '******' : '';
+        }
         return $result;
     }
 
     public static function setConfig(array $params): bool
     {
-        $data = [];
-        foreach (self::FIELDS as $field => $default) {
-            if (array_key_exists($field, $params)) {
-                $data[$field] = (string) $params[$field];
+        try {
+            $stored = ConfigService::get(self::CONFIG_TYPE);
+            $data = [];
+            foreach (self::FIELDS as $field => $default) {
+                $current = (string)($stored[$field] ?? $default);
+                if (!array_key_exists($field, $params)) {
+                    $data[$field] = $current;
+                    continue;
+                }
+                $incoming = trim((string)$params[$field]);
+                if ($incoming === '******' && in_array($field, ['wx_pay_secret', 'ali_pay_private_key'], true)) {
+                    $data[$field] = $current;
+                } else {
+                    $data[$field] = $incoming;
+                }
+            }
+            self::assertUsable($data);
+            ConfigService::setManyAtomic(self::CONFIG_TYPE, $data);
+            return true;
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    private static function assertUsable(array $data): void
+    {
+        if ((int)$data['wx_pay_status'] === 1) {
+            foreach (['wx_pay_appid', 'wx_pay_mch_id', 'wx_pay_secret', 'wx_pay_cert_path', 'wx_pay_cert_key_path', 'wx_pay_platform_cert_path'] as $field) {
+                if (trim((string)$data[$field]) === '') {
+                    throw new \RuntimeException('启用微信支付前请完整填写 AppID、商户号、密钥和证书');
+                }
+            }
+            if (strlen((string)$data['wx_pay_secret']) !== 32) {
+                throw new \RuntimeException('微信支付 APIv3 密钥必须为 32 字节');
             }
         }
-        ConfigService::setMany(self::CONFIG_TYPE, $data);
-        return true;
+        if ((int)$data['ali_pay_status'] === 1) {
+            foreach (['ali_pay_app_id', 'ali_pay_private_key', 'ali_pay_public_key', 'ali_pay_seller_id'] as $field) {
+                if (trim((string)$data[$field]) === '') {
+                    throw new \RuntimeException('启用支付宝前请完整填写应用和密钥配置');
+                }
+            }
+        }
     }
 }

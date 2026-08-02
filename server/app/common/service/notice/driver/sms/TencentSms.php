@@ -98,6 +98,7 @@ class TencentSms extends SmsDriver
         }
 
         $data = json_decode((string) $resp, true);
+        $this->result = is_array($data) ? $data : ['raw' => (string) $resp];
         $result = $data['Response'] ?? [];
         if (isset($result['Error'])) {
             $this->error = ($result['Error']['Code'] ?? '') . ': ' . ($result['Error']['Message'] ?? '');

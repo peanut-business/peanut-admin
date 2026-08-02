@@ -9,8 +9,9 @@ class FileCateValidate extends Validate
 {
     protected $rule = [
         'id'   => 'require|integer|gt:0',
+        'pid'  => 'integer|egt:0',
         'type' => 'require|integer',
-        'name' => 'require|max:64',
+        'name' => 'require|max:20',
     ];
 
     protected $message = [
@@ -21,7 +22,7 @@ class FileCateValidate extends Validate
     ];
 
     protected $scene = [
-        'add'  => ['type', 'name'],
+        'add'  => ['pid', 'type', 'name'],
         'edit' => ['id', 'name'],
     ];
 }

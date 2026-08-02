@@ -11,6 +11,7 @@ class DictTypeValidate extends Validate
         'id'   => 'require|integer|gt:0',
         'name' => 'require|max:100',
         'type' => 'require|max:100|alphaDash',
+        'is_disable' => 'require|in:0,1',
     ];
 
     protected $message = [
@@ -25,5 +26,8 @@ class DictTypeValidate extends Validate
     protected $scene = [
         'add'  => ['name', 'type'],
         'edit' => ['id', 'name', 'type'],
+        'detail' => ['id'],
+        'delete' => ['id'],
+        'status' => ['id', 'is_disable'],
     ];
 }

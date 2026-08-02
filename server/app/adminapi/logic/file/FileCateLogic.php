@@ -7,28 +7,54 @@ use app\common\enum\FileEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\file\File;
 use app\common\model\file\FileCate;
+use think\facade\Db;
 
 class FileCateLogic extends BaseLogic
 {
-    /** 某类型下的全部分类（按 id 升序） */
+    /** 某类型下的稳定分类树（同级按 id 升序）。 */
     public static function lists(int $type): array
     {
-        return FileCate::where('type', $type)
+        if (!FileEnum::isValidType($type)) {
+            throw new \InvalidArgumentException('文件类型无效');
+        }
+        $categories = FileCate::where('type', $type)
             ->order(['id' => 'asc'])
             ->select()->toArray();
+        return linear_to_tree($categories);
     }
 
     public static function add(array $params): bool
     {
+        $name = trim((string)($params['name'] ?? ''));
+        if ($name === '') {
+            self::setError('分类名称不能为空');
+            return false;
+        }
         if (!FileEnum::isValidType((int)($params['type'] ?? 0))) {
             self::setError('文件类型无效');
             return false;
         }
+        $pid = (int)($params['pid'] ?? 0);
+        if ($pid < 0) {
+            self::setError('父分类无效');
+            return false;
+        }
+        if ($pid > 0) {
+            $parent = FileCate::find($pid);
+            if (!$parent) {
+                self::setError('父分类不存在');
+                return false;
+            }
+            if ((int)$parent->type !== (int)$params['type']) {
+                self::setError('父分类类型不一致');
+                return false;
+            }
+        }
         try {
             FileCate::create([
-                'pid'  => (int)($params['pid'] ?? 0),
+                'pid'  => $pid,
                 'type' => (int)$params['type'],
-                'name' => (string)$params['name'],
+                'name' => $name,
             ]);
             return true;
         } catch (\Throwable $e) {
@@ -39,11 +65,18 @@ class FileCateLogic extends BaseLogic
 
     public static function edit(array $params): bool
     {
+        $name = trim((string)($params['name'] ?? ''));
+        if ($name === '') {
+            self::setError('分类名称不能为空');
+            return false;
+        }
+        $category = FileCate::find((int)($params['id'] ?? 0));
+        if (!$category) {
+            self::setError('分类不存在');
+            return false;
+        }
         try {
-            FileCate::update([
-                'id'   => (int)$params['id'],
-                'name' => (string)$params['name'],
-            ]);
+            $category->save(['name' => $name]);
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -51,14 +84,83 @@ class FileCateLogic extends BaseLogic
         }
     }
 
-    /** 删除分类：分类下有文件时禁止删除 */
-    public static function delete(int $id): bool
+    /** 删除分类子树、其中素材及存储对象，并返回三者结果。 */
+    public static function delete(int $id): array
     {
-        if (File::where('cid', $id)->count() > 0) {
-            self::setError('该分类下存在文件，不可删除');
-            return false;
+        if ($id <= 0) {
+            throw new \InvalidArgumentException('分类 ID 无效');
         }
-        FileCate::destroy($id);
-        return true;
+        $root = FileCate::find($id);
+        if (!$root) {
+            throw new \InvalidArgumentException('分类不存在');
+        }
+        $categoryIds = self::subtreeIds($id, (int)$root->type);
+        $fileIds = array_map('intval', File::whereIn('cid', $categoryIds)->column('id'));
+        $fileResult = empty($fileIds)
+            ? ['files_deleted' => 0, 'storage_deleted' => 0]
+            : FileLogic::delete($fileIds);
+
+        Db::startTrans();
+        try {
+            $categories = FileCate::whereIn('id', $categoryIds)->select();
+            if ($categories->count() !== count($categoryIds)) {
+                throw new \RuntimeException('分类记录删除不完整');
+            }
+            foreach ($categories as $category) {
+                if (!$category->delete()) {
+                    throw new \RuntimeException('分类记录删除失败');
+                }
+            }
+            Db::commit();
+        } catch (\Throwable $e) {
+            Db::rollback();
+            throw $e;
+        }
+
+        return [
+            'categories_deleted' => count($categoryIds),
+            'files_deleted' => $fileResult['files_deleted'],
+            'storage_deleted' => $fileResult['storage_deleted'],
+        ];
+    }
+
+    /** 校验根分类类型并返回包含自身的稳定子树 ID。 */
+    public static function subtreeIds(int $id, int $type): array
+    {
+        if (!FileEnum::isValidType($type)) {
+            throw new \InvalidArgumentException('文件类型无效');
+        }
+        $categories = FileCate::order(['id' => 'asc'])
+            ->field(['id', 'pid', 'type'])
+            ->select()
+            ->toArray();
+        $children = [];
+        $exists = false;
+        foreach ($categories as $category) {
+            $categoryId = (int)$category['id'];
+            $parentId = (int)$category['pid'];
+            $children[$parentId][] = $category;
+            $exists = $exists || ($categoryId === $id && (int)$category['type'] === $type);
+        }
+        if (!$exists) {
+            throw new \InvalidArgumentException('分类不存在或类型不一致');
+        }
+
+        $result = [];
+        $queue = [$id];
+        while ($queue) {
+            $current = array_shift($queue);
+            if (in_array($current, $result, true)) {
+                throw new \RuntimeException('分类子树存在循环关系');
+            }
+            $result[] = $current;
+            foreach ($children[$current] ?? [] as $child) {
+                if ((int)$child['type'] !== $type) {
+                    throw new \RuntimeException('分类子树存在跨类型关系');
+                }
+                $queue[] = (int)$child['id'];
+            }
+        }
+        return $result;
     }
 }

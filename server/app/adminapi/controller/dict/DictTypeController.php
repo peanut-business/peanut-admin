@@ -16,7 +16,13 @@ class DictTypeController extends BaseAdminController
     }
 
     public function all()    { return $this->data(DictTypeLogic::all()); }
-    public function detail() { return $this->data(DictTypeLogic::detail((int)$this->request->get('id'))); }
+    public function detail()
+    {
+        $params = $this->request->get();
+        $this->validate($params, DictTypeValidate::class . '.detail');
+        $result = DictTypeLogic::detail((int)$params['id']);
+        return $result === [] ? $this->fail('字典类型不存在') : $this->data($result);
+    }
 
     public function add()
     {
@@ -34,13 +40,17 @@ class DictTypeController extends BaseAdminController
 
     public function delete()
     {
-        DictTypeLogic::delete((int)$this->request->post('id'));
-        return $this->success('操作成功');
+        $params = $this->request->post();
+        $this->validate($params, DictTypeValidate::class . '.delete');
+        $result = DictTypeLogic::delete((int)$params['id']);
+        return $result ? $this->success('操作成功') : $this->fail(DictTypeLogic::getError());
     }
 
     public function updateStatus()
     {
-        DictTypeLogic::updateStatus((int)$this->request->post('id'), (int)$this->request->post('is_disable', 0));
-        return $this->success('操作成功');
+        $params = $this->request->post();
+        $this->validate($params, DictTypeValidate::class . '.status');
+        $result = DictTypeLogic::updateStatus((int)$params['id'], (int)$params['is_disable']);
+        return $result ? $this->success('操作成功') : $this->fail(DictTypeLogic::getError());
     }
 }

@@ -6,6 +6,7 @@ namespace app\adminapi\logic\dict;
 use app\common\logic\BaseLogic;
 use app\common\model\dict\DictType;
 use app\common\model\dict\DictData;
+use think\facade\Db;
 
 class DictTypeLogic extends BaseLogic
 {
@@ -77,16 +78,19 @@ class DictTypeLogic extends BaseLogic
             return false;
         }
         try {
-            DictType::update([
-                'id'         => (int)$params['id'],
-                'name'       => (string)$params['name'],
-                'type'       => (string)$params['type'],
-                'is_disable' => (int)($params['is_disable'] ?? 0),
-                'remark'     => (string)($params['remark'] ?? ''),
-            ]);
-            // 级联：类型标识变更时，同步更新其字典数据的冗余 type_value
-            DictData::where('type_id', (int)$params['id'])
-                ->update(['type_value' => (string)$params['type']]);
+            Db::transaction(function () use ($params): void {
+                $type = DictType::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
+                if ($type->isEmpty()) {
+                    throw new \RuntimeException('字典类型不存在');
+                }
+                $type->name = (string)$params['name'];
+                $type->type = (string)$params['type'];
+                $type->is_disable = (int)($params['is_disable'] ?? 0);
+                $type->remark = (string)($params['remark'] ?? '');
+                $type->save();
+                DictData::where('type_id', (int)$type->id)
+                    ->update(['type_value' => (string)$type->type]);
+            });
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -94,18 +98,37 @@ class DictTypeLogic extends BaseLogic
         }
     }
 
-    /** 删除类型：同时软删除其下字典数据 */
-    public static function delete(int $id): void
+    /** 被数据占用时拒绝删除，避免无意级联丢失业务枚举。 */
+    public static function delete(int $id): bool
     {
-        DictType::destroy($id);
-        DictData::where('type_id', $id)->select()->each(function ($row) {
-            $row->delete();
-        });
+        try {
+            Db::transaction(function () use ($id): void {
+                $type = DictType::where('id', $id)->lock(true)->findOrEmpty();
+                if ($type->isEmpty()) {
+                    throw new \RuntimeException('字典类型不存在');
+                }
+                if (!DictData::where('type_id', $id)->lock(true)->findOrEmpty()->isEmpty()) {
+                    throw new \RuntimeException('字典类型已被数据项使用，请先删除数据项');
+                }
+                $type->delete();
+            });
+            return true;
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
     }
 
-    public static function updateStatus(int $id, int $isDisable): void
+    public static function updateStatus(int $id, int $isDisable): bool
     {
-        DictType::update(['id' => $id, 'is_disable' => $isDisable]);
+        $type = DictType::findOrEmpty($id);
+        if ($type->isEmpty()) {
+            self::setError('字典类型不存在');
+            return false;
+        }
+        $type->is_disable = $isDisable;
+        $type->save();
+        return true;
     }
 
     /** 类型标识唯一性检查（排除自身；软删除记录不参与） */

@@ -9,6 +9,8 @@ namespace app\common\service\notice\driver\sms;
 abstract class SmsDriver
 {
     protected string $error = '';
+    /** @var array<string,mixed> */
+    protected array $result = [];
 
     abstract public function __construct(array $config);
 
@@ -23,5 +25,11 @@ abstract class SmsDriver
     public function getError(): string
     {
         return $this->error;
+    }
+
+    /** @return array<string,mixed> */
+    public function getResult(): array
+    {
+        return $this->result;
     }
 }

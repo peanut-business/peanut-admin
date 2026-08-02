@@ -18,19 +18,25 @@ class LoginMiddleware
 {
     public function handle($request, \Closure $next)
     {
-        $authorization = $request->header('Authorization', '');
-        $token         = '';
-        if (str_starts_with($authorization, 'Bearer ')) {
-            $token = substr($authorization, 7);
-        }
+        $token = AdminTokenService::tokenFromRequest($request);
 
         if (empty($token)) {
             return JsonService::fail('请求缺少 token', null, 40100);
         }
 
-        $adminId = AdminTokenService::parseToken($token);
-        if ($adminId === false) {
+        $session = AdminTokenService::resolveToken($token);
+        if ($session === false) {
             return JsonService::fail('登录超时，请重新登录', null, 40100);
+        }
+        $adminId = (int)$session['admin_id'];
+
+        $requestIp = $request->ip();
+        if (($session['login_ip'] ?? '') === '') {
+            if (!AdminTokenService::bindLoginIp($token, $requestIp)) {
+                return JsonService::fail('ip地址发生变化，请重新登录', null, 40100);
+            }
+        } elseif ($session['login_ip'] !== $requestIp) {
+            return JsonService::fail('ip地址发生变化，请重新登录', null, 40100);
         }
 
         $admin = Admin::with(['roles'])->findOrEmpty($adminId);
@@ -41,9 +47,13 @@ class LoginMiddleware
             return JsonService::fail('账号已被禁用', null, 40300);
         }
 
-        // 注入给控制器 / 后续中间件使用
-        $request->adminInfo = $admin->toArray();
-        $request->adminId   = $adminId;
+        // Request 使用重载属性，必须先完成数组装配再一次性写入。
+        $adminInfo                = $admin->toArray();
+        $adminInfo['token']       = $token;
+        $adminInfo['terminal']    = (int)$session['terminal'];
+        $adminInfo['expire_time'] = (int)$session['expire_time'];
+        $request->adminInfo       = $adminInfo;
+        $request->adminId         = $adminId;
 
         return $next($request);
     }

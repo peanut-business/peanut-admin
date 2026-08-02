@@ -1,0 +1,402 @@
+<?php
+declare(strict_types=1);
+
+namespace app\api\logic;
+
+use app\common\enum\AccountLogEnum;
+use app\common\enum\UserTerminalEnum;
+use app\common\logic\AccountLogLogic;
+use app\common\logic\BaseLogic;
+use app\common\model\finance\PaymentScene;
+use app\common\model\finance\RechargeOrder;
+use app\common\model\member\Member;
+use app\common\model\oauth\OAuthIdentity;
+use app\common\service\ConfigService;
+use app\common\service\payment\PaymentServiceFactory;
+use app\common\service\payment\dto\PaymentEvent;
+use app\common\service\payment\dto\PrepayRequest;
+use think\facade\Db;
+
+/** 用户充值订单和幂等入账状态机。 */
+class RechargeLogic extends BaseLogic
+{
+    private const MAX_AMOUNT_CENTS = 99999999;
+
+    public static function config(int $memberId, int $terminal): array|false
+    {
+        try {
+            self::assertTerminal($terminal);
+            $member = Member::findOrEmpty($memberId);
+            if ($member->isEmpty()) {
+                throw new \RuntimeException('用户不存在');
+            }
+
+            $scenes = PaymentScene::where([
+                'terminal' => $terminal,
+                'status' => 1,
+            ])->order('is_default', 'desc')->order('pay_way', 'asc')->select()->toArray();
+            $scenes = array_values(array_filter(
+                $scenes,
+                static fn(array $scene): bool => self::isChannelConfigured((int)$scene['pay_way'])
+            ));
+
+            return [
+                'status' => (int)ConfigService::get('recharge', 'status', 0),
+                'min_amount' => self::moneyString(ConfigService::get('recharge', 'min_amount', '0.01')),
+                'balance' => self::moneyString($member->user_money),
+                'terminal' => $terminal,
+                'channels' => array_map(static fn(array $scene): array => [
+                    'pay_way' => (int)$scene['pay_way'],
+                    'name' => PaymentScene::getPayWayDesc((int)$scene['pay_way']),
+                    'is_default' => (int)$scene['is_default'],
+                ], $scenes),
+            ];
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    public static function create(int $memberId, array $params): array|false
+    {
+        try {
+            $terminal = (int)$params['terminal'];
+            self::assertTerminal($terminal);
+            if ((int)ConfigService::get('recharge', 'status', 0) !== 1) {
+                throw new \RuntimeException('充值功能未开启');
+            }
+
+            $amountCents = self::moneyToCents((string)$params['amount']);
+            $minCents = self::moneyToCents((string)ConfigService::get('recharge', 'min_amount', '0.01'));
+            if ($amountCents <= 0 || $amountCents < $minCents) {
+                throw new \RuntimeException('充值金额不能低于最低充值金额');
+            }
+            $configuredMax = self::moneyToCents((string)ConfigService::get('recharge', 'max_amount', '99999.00'));
+            $maxCents = min(self::MAX_AMOUNT_CENTS, $configuredMax);
+            if ($amountCents > $maxCents) {
+                throw new \RuntimeException('充值金额超过单次上限');
+            }
+
+            $member = Member::findOrEmpty($memberId);
+            if ($member->isEmpty()) {
+                throw new \RuntimeException('用户不存在');
+            }
+            $defaultScene = PaymentScene::where([
+                'terminal' => $terminal,
+                'status' => 1,
+                'is_default' => 1,
+            ])->findOrEmpty();
+            if ($defaultScene->isEmpty() || !self::isChannelConfigured((int)$defaultScene->pay_way)) {
+                throw new \RuntimeException('当前终端暂无可用支付方式');
+            }
+
+            $order = RechargeOrder::create([
+                'sn' => RechargeOrder::generateSn(),
+                'user_id' => $memberId,
+                'pay_sn' => '',
+                'pay_way' => (int)$defaultScene->pay_way,
+                'pay_status' => RechargeOrder::PAY_STATUS_UNPAID,
+                'pay_time' => null,
+                'order_amount' => self::centsToMoney($amountCents),
+                'order_terminal' => $terminal,
+                'transaction_id' => null,
+                'refund_status' => RechargeOrder::REFUND_STATUS_NONE,
+            ]);
+
+            return self::formatOrder($order->toArray());
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    /** 锁定本人未支付订单并固化本次支付渠道和请求号。 */
+    public static function prepareAttempt(int $memberId, int $orderId, int $payWay): array|false
+    {
+        Db::startTrans();
+        try {
+            /** @var RechargeOrder $order */
+            $order = RechargeOrder::lock(true)->findOrEmpty($orderId);
+            self::assertOwnedUnpaid($order, $memberId);
+            $terminal = (int)$order->order_terminal;
+            if (!PaymentScene::supports($terminal, $payWay)) {
+                throw new \RuntimeException('当前终端未启用该支付方式');
+            }
+            $scene = PaymentScene::where([
+                'terminal' => $terminal,
+                'pay_way' => $payWay,
+                'status' => 1,
+            ])->findOrEmpty();
+            if ($scene->isEmpty()) {
+                throw new \RuntimeException('当前终端未启用该支付方式');
+            }
+            if (!self::isChannelConfigured($payWay)) {
+                throw new \RuntimeException('支付渠道未启用或配置不完整');
+            }
+
+            $order->pay_way = $payWay;
+            $order->pay_sn = RechargeOrder::generatePaySn();
+            $order->save();
+            $result = $order->toArray();
+            Db::commit();
+            return $result;
+        } catch (\Throwable $e) {
+            Db::rollback();
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    /** 创建真实渠道预支付参数；渠道调用通过 PaymentServiceFactory 边界完成。 */
+    public static function prepay(
+        int $memberId,
+        int $orderId,
+        int $payWay,
+        string $notifyUrl,
+        string $clientIp = '',
+        string $openid = ''
+    ): array|false {
+        $order = self::prepareAttempt($memberId, $orderId, $payWay);
+        if ($order === false) {
+            return false;
+        }
+
+        try {
+            if ($payWay === PaymentScene::PAY_WAY_WECHAT
+                && in_array((int)$order['order_terminal'], [1, 2], true)) {
+                $openid = OAuthIdentity::subjectForMember(
+                    $memberId,
+                    (int)$order['order_terminal']
+                );
+                if ($openid === '') {
+                    throw new \RuntimeException('当前微信终端尚未绑定可用身份');
+                }
+            }
+            $channel = match ($payWay) {
+                PaymentScene::PAY_WAY_WECHAT => 'wechat',
+                PaymentScene::PAY_WAY_ALIPAY => 'alipay',
+                default => throw new \RuntimeException('支付渠道不受支持'),
+            };
+            $request = new PrepayRequest(
+                (string)$order['sn'],
+                self::moneyToCents((string)$order['order_amount']),
+                (int)$order['order_terminal'],
+                $notifyUrl,
+                '账户充值',
+                'CNY',
+                $openid,
+                $clientIp
+            );
+            $result = (new PaymentServiceFactory())->prepay($channel)->prepay($request);
+            return [
+                'order' => self::formatOrder($order),
+                'payment' => $result->toArray(),
+            ];
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    public static function detail(int $memberId, int $orderId): array|false
+    {
+        try {
+            $order = RechargeOrder::where(['id' => $orderId, 'user_id' => $memberId])->findOrEmpty();
+            if ($order->isEmpty()) {
+                throw new \RuntimeException('充值订单不存在');
+            }
+            return self::formatOrder($order->toArray());
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    public static function lists(int $memberId, array $params): array
+    {
+        $pageNo = max(1, (int)($params['page_no'] ?? 1));
+        $pageSize = max(1, min(100, (int)($params['page_size'] ?? 15)));
+        $query = RechargeOrder::where('user_id', $memberId);
+        $count = $query->count();
+        $rows = $query->order('id', 'desc')->page($pageNo, $pageSize)->select()->toArray();
+        return [
+            'lists' => array_map([self::class, 'formatOrder'], $rows),
+            'count' => $count,
+            'page_no' => $pageNo,
+            'page_size' => $pageSize,
+        ];
+    }
+
+    /**
+     * 可信渠道回调的唯一入账入口。
+     * @param PaymentEvent|array{order_sn:string,pay_way:int,transaction_id:string,amount_cents?:int,amount?:string|float|int,currency:string,status?:string} $payment
+     */
+    public static function settle(PaymentEvent|array $payment): bool
+    {
+        Db::startTrans();
+        try {
+            if ($payment instanceof PaymentEvent) {
+                $payment = [
+                    'order_sn' => $payment->orderSn(),
+                    'pay_way' => self::channelToPayWay($payment->channel()),
+                    'transaction_id' => $payment->transactionId(),
+                    'amount_cents' => $payment->amount(),
+                    'currency' => $payment->currency(),
+                    'status' => $payment->status(),
+                ];
+            }
+            $orderSn = trim((string)($payment['order_sn'] ?? ''));
+            $transactionId = trim((string)($payment['transaction_id'] ?? ''));
+            $payWay = (int)($payment['pay_way'] ?? 0);
+            $currency = strtoupper(trim((string)($payment['currency'] ?? '')));
+            if ($orderSn === '' || $transactionId === '') {
+                throw new \RuntimeException('支付回调订单或交易流水缺失');
+            }
+            if ($currency !== 'CNY') {
+                throw new \RuntimeException('支付币种不一致');
+            }
+            if (($payment['status'] ?? 'success') !== 'success') {
+                throw new \RuntimeException('支付状态尚未成功');
+            }
+
+            /** @var RechargeOrder $order */
+            $order = RechargeOrder::where('sn', $orderSn)->lock(true)->findOrEmpty();
+            if ($order->isEmpty()) {
+                throw new \RuntimeException('充值订单不存在');
+            }
+            $callbackCents = array_key_exists('amount_cents', $payment)
+                ? (int)$payment['amount_cents']
+                : self::moneyToCents((string)($payment['amount'] ?? ''));
+            $orderCents = self::moneyToCents((string)$order->order_amount);
+            if ($callbackCents !== $orderCents) {
+                throw new \RuntimeException('支付金额不一致');
+            }
+            if ((int)$order->pay_way !== $payWay) {
+                throw new \RuntimeException('支付渠道不一致');
+            }
+
+            if ((int)$order->pay_status === RechargeOrder::PAY_STATUS_PAID) {
+                if ((string)$order->transaction_id !== $transactionId) {
+                    throw new \RuntimeException('支付交易流水冲突');
+                }
+                Db::commit();
+                return true;
+            }
+
+            $conflict = RechargeOrder::where('transaction_id', $transactionId)
+                ->where('id', '<>', (int)$order->id)->lock(true)->findOrEmpty();
+            if (!$conflict->isEmpty()) {
+                throw new \RuntimeException('支付交易流水已被使用');
+            }
+
+            /** @var Member $member */
+            $member = Member::lock(true)->findOrEmpty((int)$order->user_id);
+            if ($member->isEmpty()) {
+                throw new \RuntimeException('用户不存在');
+            }
+
+            $balanceCents = self::moneyToCents((string)$member->user_money) + $orderCents;
+            $totalCents = self::moneyToCents((string)$member->total_recharge_amount) + $orderCents;
+            $member->user_money = self::centsToMoney($balanceCents);
+            $member->balance = self::centsToMoney($balanceCents);
+            $member->total_recharge_amount = self::centsToMoney($totalCents);
+            $member->save();
+
+            $order->pay_status = RechargeOrder::PAY_STATUS_PAID;
+            $order->pay_time = time();
+            $order->transaction_id = $transactionId;
+            $order->save();
+
+            if (AccountLogLogic::add(
+                (int)$member->id,
+                AccountLogEnum::USER_MONEY_INC_RECHARGE,
+                AccountLogEnum::INC,
+                $orderCents / 100,
+                (string)$order->sn,
+                '用户充值'
+            ) === false) {
+                throw new \RuntimeException('账户流水记录失败');
+            }
+
+            Db::commit();
+            return true;
+        } catch (\Throwable $e) {
+            Db::rollback();
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
+    private static function assertOwnedUnpaid(RechargeOrder $order, int $memberId): void
+    {
+        if ($order->isEmpty() || (int)$order->user_id !== $memberId) {
+            throw new \RuntimeException('充值订单不存在');
+        }
+        if ((int)$order->pay_status !== RechargeOrder::PAY_STATUS_UNPAID) {
+            throw new \RuntimeException('充值订单已支付');
+        }
+    }
+
+    private static function assertTerminal(int $terminal): void
+    {
+        if (!UserTerminalEnum::isValid($terminal)) {
+            throw new \RuntimeException('支付终端不支持');
+        }
+    }
+
+    private static function isChannelConfigured(int $payWay): bool
+    {
+        return match ($payWay) {
+            PaymentScene::PAY_WAY_WECHAT => (int)ConfigService::get('pay', 'wx_pay_status', 0) === 1,
+            PaymentScene::PAY_WAY_ALIPAY => (int)ConfigService::get('pay', 'ali_pay_status', 0) === 1,
+            default => false,
+        };
+    }
+
+    private static function channelToPayWay(string $channel): int
+    {
+        return match (strtolower(trim($channel))) {
+            'wechat' => PaymentScene::PAY_WAY_WECHAT,
+            'alipay' => PaymentScene::PAY_WAY_ALIPAY,
+            default => throw new \RuntimeException('支付渠道不受支持'),
+        };
+    }
+
+    private static function moneyToCents(string $amount): int
+    {
+        $amount = trim($amount);
+        if (!preg_match('/^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/', $amount)) {
+            throw new \RuntimeException('金额格式错误');
+        }
+        [$yuan, $fraction] = array_pad(explode('.', $amount, 2), 2, '');
+        return ((int)$yuan * 100) + (int)str_pad($fraction, 2, '0');
+    }
+
+    private static function centsToMoney(int $cents): string
+    {
+        return number_format($cents / 100, 2, '.', '');
+    }
+
+    private static function moneyString(mixed $amount): string
+    {
+        return self::centsToMoney(self::moneyToCents((string)$amount));
+    }
+
+    private static function formatOrder(array $row): array
+    {
+        return [
+            'id' => (int)$row['id'],
+            'sn' => (string)$row['sn'],
+            'pay_way' => (int)$row['pay_way'],
+            'pay_way_text' => PaymentScene::getPayWayDesc((int)$row['pay_way']),
+            'pay_status' => (int)$row['pay_status'],
+            'pay_status_text' => (int)$row['pay_status'] === RechargeOrder::PAY_STATUS_PAID ? '已支付' : '未支付',
+            'order_amount' => self::moneyString($row['order_amount']),
+            'order_terminal' => (int)$row['order_terminal'],
+            'terminal_text' => UserTerminalEnum::getDesc((int)$row['order_terminal']),
+            'transaction_id' => (string)($row['transaction_id'] ?? ''),
+            'pay_time' => empty($row['pay_time']) ? '' : date('Y-m-d H:i:s', (int)$row['pay_time']),
+            'create_time' => empty($row['create_time']) ? '' : (is_numeric($row['create_time']) ? date('Y-m-d H:i:s', (int)$row['create_time']) : (string)$row['create_time']),
+        ];
+    }
+}

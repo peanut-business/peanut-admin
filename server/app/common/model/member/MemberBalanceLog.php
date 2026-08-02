@@ -3,12 +3,23 @@ declare(strict_types=1);
 
 namespace app\common\model\member;
 
-use think\Model;
+use app\common\model\BaseModel;
+use think\model\concern\SoftDelete;
 
-class MemberBalanceLog extends Model
+class MemberBalanceLog extends BaseModel
 {
-    protected $name           = 'member_balance_log';
-    protected $autoWriteTimestamp = 'int';
-    protected $createTime     = 'create_time';
-    protected $updateTime     = false; // 仅记录插入时间
+    use SoftDelete;
+
+    protected $name = 'member_balance_log';
+    protected $deleteTime = 'delete_time';
+
+    /** 生成 20 位数字流水号。 */
+    public static function generateSn(): string
+    {
+        do {
+            $sn = date('YmdHis') . str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        } while (self::withTrashed()->where('sn', $sn)->count() > 0);
+
+        return $sn;
+    }
 }

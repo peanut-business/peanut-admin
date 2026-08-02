@@ -58,7 +58,8 @@ class NoticeService
         $mailCfg    = json_decode((string) ConfigService::get('notice', 'mail_smtp', '{}'), true);
 
         return [
-            'sms'  => !empty($smsCfg['access_key_id'] ?? $smsCfg['secret_id'] ?? ''),
+            'sms'  => (int) ($smsCfg['status'] ?? 0) === 1
+                && !empty($smsCfg['access_key_id'] ?? $smsCfg['secret_id'] ?? ''),
             'mail' => !empty($mailCfg['host'] ?? ''),
         ];
     }
@@ -112,6 +113,11 @@ class NoticeService
         $provider   = ConfigService::get('notice', 'sms_default', 'aliyun');
         $cfgRaw     = ConfigService::get('notice', 'sms_' . $provider, '');
         $cfg        = is_array($cfgRaw) ? $cfgRaw : (json_decode((string) $cfgRaw, true) ?? []);
+
+        if ((int) ($cfg['status'] ?? 0) !== 1) {
+            $this->error = '短信服务未开启';
+            return false;
+        }
 
         $driver = $this->makeSmsDriver((string) $provider, $cfg);
         if ($driver === null) {

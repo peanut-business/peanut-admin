@@ -41,13 +41,16 @@ class FileService
         return self::format($domain, $uri);
     }
 
-    /** 绝对 URL → 相对 uri（去掉本站域名前缀） */
+    /** 绝对 URL → 相对 uri（去掉当前存储引擎域名前缀） */
     public static function setFileUrl(string $url = ''): string
     {
         if ($url === '') {
             return '';
         }
-        $domain = request()->domain();
+        $cloudDomain = self::cloudDomain();
+        $domain = $cloudDomain === ''
+            ? rtrim(request()->domain(), '/')
+            : rtrim(self::format($cloudDomain, ''), '/');
         return ltrim(str_replace($domain . '/', '', $url), '/');
     }
 

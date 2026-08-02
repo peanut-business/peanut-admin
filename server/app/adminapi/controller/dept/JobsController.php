@@ -11,36 +11,48 @@ class JobsController extends BaseAdminController
 {
     public function lists()
     {
-        $res = JobsLogic::lists($this->request->get());
-        return $this->dataLists($res['lists'], $res['count'], $res['pageNo'], $res['pageSize']);
+        $result = JobsLogic::lists($this->request->get());
+        return $result === false ? $this->fail(JobsLogic::getError()) : $this->data($result);
     }
 
     public function all()    { return $this->data(JobsLogic::all()); }
-    public function detail() { return $this->data(JobsLogic::detail((int)$this->request->get('id'))); }
+
+    public function detail()
+    {
+        $params = ['id' => (int)$this->request->get('id')];
+        $this->validate($params, JobsValidate::class . '.detail');
+        return $this->data(JobsLogic::detail($params['id']));
+    }
 
     public function add()
     {
-        $this->validate($this->request->post(), JobsValidate::class . '.add');
-        $r = JobsLogic::add($this->request->post());
+        $params = JobsLogic::normalizeInput($this->request->post());
+        $this->validate($params, JobsValidate::class . '.add');
+        $r = JobsLogic::add($params);
         return $r ? $this->success('操作成功') : $this->fail(JobsLogic::getError());
     }
 
     public function edit()
     {
-        $this->validate($this->request->post(), JobsValidate::class . '.edit');
-        $r = JobsLogic::edit($this->request->post());
+        $params = JobsLogic::normalizeInput($this->request->post());
+        $this->validate($params, JobsValidate::class . '.edit');
+        $r = JobsLogic::edit($params);
         return $r ? $this->success('操作成功') : $this->fail(JobsLogic::getError());
     }
 
     public function delete()
     {
-        JobsLogic::delete((int)$this->request->post('id'));
-        return $this->success('操作成功');
+        $params = ['id' => (int)$this->request->post('id')];
+        $this->validate($params, JobsValidate::class . '.delete');
+        $r = JobsLogic::delete($params['id']);
+        return $r ? $this->success('操作成功') : $this->fail(JobsLogic::getError());
     }
 
     public function updateStatus()
     {
-        JobsLogic::updateStatus((int)$this->request->post('id'), (int)$this->request->post('is_disable', 0));
-        return $this->success('操作成功');
+        $params = JobsLogic::normalizeInput($this->request->post());
+        $this->validate($params, JobsValidate::class . '.status');
+        $r = JobsLogic::updateStatus((int)$params['id'], (int)$params['status']);
+        return $r ? $this->success('操作成功') : $this->fail(JobsLogic::getError());
     }
 }

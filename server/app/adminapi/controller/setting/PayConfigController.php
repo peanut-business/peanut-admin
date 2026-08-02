@@ -5,6 +5,7 @@ namespace app\adminapi\controller\setting;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\setting\PayConfigLogic;
+use app\adminapi\validate\setting\PayConfigValidate;
 
 class PayConfigController extends BaseAdminController
 {
@@ -15,7 +16,9 @@ class PayConfigController extends BaseAdminController
 
     public function setConfig()
     {
-        PayConfigLogic::setConfig($this->request->post());
-        return $this->success('操作成功');
+        $params = $this->request->post();
+        $this->validate($params, PayConfigValidate::class);
+        $result = PayConfigLogic::setConfig($params);
+        return $result ? $this->success('操作成功') : $this->fail(PayConfigLogic::getError());
     }
 }
