@@ -19,5 +19,14 @@ web/.eslintcache
 .claude/
 web/.claude/
 
+# Generated indexes & tool caches (regenerable — not source)
+.codegraph/
+.playwright-cli/
+.playwright-mcp/
+
+# Ad-hoc comparison screenshots (not referenced by docs)
+/likeadmin-dept-list.png
+/peanut-dept-list.png
+
 # UniApp (separate app — tracked independently if needed)
 uniapp/
