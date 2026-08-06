@@ -7,9 +7,9 @@ x-app-environment: &app-environment
   DB_PORT: 3306
   DB_NAME: ${DB_NAME:-peanut_admin}
   DB_USER: ${DB_USER:-peanut_admin}
-  DB_PASS: ${DB_PASS:?set DB_PASS in deploy/production.env}
+  DB_PASS: ${DB_PASS:?set DB_PASS in .env}
   DB_PREFIX: pa_
-  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in deploy/production.env}
+  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
 
 x-logging: &default-logging
   driver: json-file
@@ -87,8 +87,8 @@ services:
     environment:
       MYSQL_DATABASE: ${DB_NAME:-peanut_admin}
       MYSQL_USER: ${DB_USER:-peanut_admin}
-      MYSQL_PASSWORD: ${DB_PASS:?set DB_PASS in deploy/production.env}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in deploy/production.env}
+      MYSQL_PASSWORD: ${DB_PASS:?set DB_PASS in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
       TZ: Asia/Shanghai
     volumes:
       - mysql-data:/var/lib/mysql

@@ -32,19 +32,16 @@
 ```bash
 git clone git@github.com:peanut-business/peanut-admin.git
 cd peanut-admin
-cp deploy/production.env.example deploy/production.env
-chmod 600 deploy/production.env
+cp .env.example .env
+chmod 600 .env
 ```
 
-编辑 `deploy/production.env`，至少替换 `DB_PASS`、`MYSQL_ROOT_PASSWORD` 和 `JWT_SECRET`。该文件已被 Git 和 Docker 构建上下文排除。
+编辑 `.env`，至少替换 `DB_PASS`、`MYSQL_ROOT_PASSWORD` 和 `JWT_SECRET`。该文件已被 Git 和 Docker 构建上下文排除。
 
 然后只执行：
 
 ```bash
-docker compose \
-  --env-file deploy/production.env \
-  -f deploy/docker-compose.prod.yml \
-  up -d --build
+docker compose up -d --build
 ```
 
 Compose 会启动 MySQL、PHP-FPM、Nginx 和定时任务。空数据库由 PHP 入口安全初始化；已有完整数据库不会重复安装。首次安装后的管理员账号为 `admin / admin123456`，登录后立即修改密码。
@@ -52,8 +49,7 @@ Compose 会启动 MySQL、PHP-FPM、Nginx 和定时任务。空数据库由 PHP 
 最低检查：
 
 ```bash
-docker compose --env-file deploy/production.env \
-  -f deploy/docker-compose.prod.yml ps
+docker compose ps
 curl -fsS http://127.0.0.1:18082/healthz
 ```
 
@@ -90,9 +86,7 @@ Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开�
 当前应用没有 Redis 硬依赖。确有需要时才启用：
 
 ```bash
-docker compose --env-file deploy/production.env \
-  -f deploy/docker-compose.prod.yml \
-  --profile redis up -d
+docker compose --profile redis up -d
 ```
 
 ## 后续升级
@@ -102,9 +96,7 @@ docker compose --env-file deploy/production.env \
 ```bash
 git fetch --tags
 git checkout <release-tag>
-docker compose --env-file deploy/production.env \
-  -f deploy/docker-compose.prod.yml \
-  up -d --build
+docker compose up -d --build
 ```
 
 `--skip-if-installed` 只避免容器重启时重复执行首次安装，不代替版本化数据库迁移。自动升级管理将在独立运营平台实现前保持手动。

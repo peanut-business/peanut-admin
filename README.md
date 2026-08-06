@@ -102,10 +102,23 @@ peanut-admin/
 
 ## 生产部署
 
-生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。推荐服务器只安装 Git 和 Docker，拉取应用 release 后由 `deploy/docker-compose.prod.yml` 在容器内完成构建和启动；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。
+生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。服务器只安装 Git 和 Docker，拉取应用 release、准备根目录 `.env` 后执行 `docker compose up -d --build`；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。
 
 同一入口分别提供 `/admin/`（管理端静态 SPA）、`/pc/`（Nuxt 静态 SPA）、`/mobile/`（UniApp H5）、`/api/`（ThinkPHP）和 `/storage/`。三个前端都写入各自子目录，不覆盖后端 public 根文件。完整命令、版本范围和首次部署流程见 `docs/peanut-admin-release-deployment.md`。
 
+## 文档站
+
+独立 VitePress 文档站位于 `docs-site/`，当前发布在 <https://peanut-admin-docs.pages.dev>。构建与 Cloudflare Pages 直接发布使用：
+
+```bash
+cd docs-site
+pnpm install --frozen-lockfile
+pnpm build
+npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --branch=main
+```
+
+正式域名为 `peanut-admin.007345.xyz`；Cloudflare Pages 项目名固定为 `peanut-admin-docs`。
+
 ## 目标架构
 
-当前代码仍是已完成业务验收的 Arco/应用内实现。已确认的下一阶段目标是 Web 管理端统一 Element Plus，应用只直接安装一个 Composer 核心包和一个 npm 管理端核心包，并以标准注册表支持应用覆盖；迁移完成前不将这些目标描述为现成功能。契约见 `docs/architecture/application-package-and-release-contract.md`。
+当前代码仍是已完成业务验收的 Arco/应用内实现。已确认的下一阶段目标是 Web 管理端统一 Element Plus，并把公共能力收敛为一个 Composer 核心包、一个 npm 管理端包和一个 PC/UniApp 共用的无 UI 客户端包；三个运行包均以标准注册表支持应用覆盖。迁移完成前不将这些目标描述为现成功能。契约见 `docs/architecture/application-package-and-release-contract.md`。

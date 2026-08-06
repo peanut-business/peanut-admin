@@ -8,6 +8,7 @@ server/public/uploads/
 
 # Production deployment secrets
 deploy/production.env
+/.env
 
 # Web
 web/node_modules/
