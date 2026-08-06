@@ -57,7 +57,7 @@ cd server && php think run --host 0.0.0.0 --port 8000
 cd web && pnpm install && pnpm dev
 ```
 
-浏览器打开 `http://localhost:5173`，账号 `admin / admin123456`（**首次登录请修改密码**）。
+浏览器打开 `http://localhost:5173/admin/`，账号 `admin / admin123456`（**首次登录请修改密码**）。
 
 ## 目录结构
 
@@ -102,7 +102,7 @@ peanut-admin/
 
 ## 生产部署
 
-生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。推荐服务器只安装 Git 和 Docker，拉取应用 release 后由 `deploy/docker-compose.prod.yml` 在容器内完成构建和启动；宿主机不需要 Node.js、PHP 或 Composer。镜像同时构建管理端 `web/`、PC 端 `pc/` 和 UniApp H5 `uniapp/`。
+生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。推荐服务器只安装 Git 和 Docker，拉取应用 release 后由 `deploy/docker-compose.prod.yml` 在容器内完成构建和启动；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。
 
 同一入口分别提供 `/admin/`（管理端静态 SPA）、`/pc/`（Nuxt 静态 SPA）、`/mobile/`（UniApp H5）、`/api/`（ThinkPHP）和 `/storage/`。三个前端都写入各自子目录，不覆盖后端 public 根文件。完整命令、版本范围和首次部署流程见 `docs/peanut-admin-release-deployment.md`。
 
