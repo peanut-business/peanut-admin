@@ -2,6 +2,17 @@
 
 基于 ThinkPHP 8 + Arco Design Pro Vue 的企业后台管理脚手架，完整复刻 likeadmin 标准版能力。
 
+## 项目身份与当前基线
+
+- 产品名称：Peanut Admin（无版本后缀）
+- 当前工作目录：`/Users/xing/Documents/company-projects/peanut-admin`
+- GitHub 仓库：`peanut-business/peanut-admin`
+- PC package name：`peanut-admin-pc`
+- 当前主线：`main` 已完成并推送 LikeAdmin 1.9.4 标准版 parity 的 9 个 commits；已完成使命的功能分支不再作为后续工作基线
+- 数据库基线：`server/database/install.php` + `init.sql` + 23 个 migrations，共 42 张表
+- 独立验证：42 tables / 170 menus / 59 configs / 1 default admin
+- SaaS 多租户：仅为 `docs/design/saas-roadmap/` 中的 roadmap 设计，当前代码尚未实现
+
 ## 技术栈
 
 | 层 | 技术 |
@@ -91,6 +102,10 @@ peanut-admin/
 
 ## 生产部署
 
-1. `cd web && pnpm build` — 产物在 `dist/`，部署到 Nginx 并配置 `try_files $uri /index.html`
-2. 后端配置 PHP-FPM，入口指向 `server/public/index.php`
-3. 确保 `server/runtime/` 目录可写
+生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。推荐服务器只安装 Git 和 Docker，拉取应用 release 后由 `deploy/docker-compose.prod.yml` 在容器内完成构建和启动；宿主机不需要 Node.js、PHP 或 Composer。镜像同时构建管理端 `web/`、PC 端 `pc/` 和 UniApp H5 `uniapp/`。
+
+同一入口分别提供 `/admin/`（管理端静态 SPA）、`/pc/`（Nuxt 静态 SPA）、`/mobile/`（UniApp H5）、`/api/`（ThinkPHP）和 `/storage/`。三个前端都写入各自子目录，不覆盖后端 public 根文件。完整命令、版本范围和首次部署流程见 `docs/peanut-admin-release-deployment.md`。
+
+## 目标架构
+
+当前代码仍是已完成业务验收的 Arco/应用内实现。已确认的下一阶段目标是 Web 管理端统一 Element Plus，应用只直接安装一个 Composer 核心包和一个 npm 管理端核心包，并以标准注册表支持应用覆盖；迁移完成前不将这些目标描述为现成功能。契约见 `docs/architecture/application-package-and-release-contract.md`。

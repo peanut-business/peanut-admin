@@ -211,7 +211,7 @@ npm run build
 npm run preview
 ~~~
 
-pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址，私有 apiServerBase 供 SSR 使用；开发时 /api 代理到 8000。生产使用 SSR 还是 npm run generate 静态输出取决于部署目标，仓库未提供 Node 进程管理配置，需按环境配置。
+pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址；开发时 `/api` 代理到 8000。生产使用 `npm run generate` 生成静态 SPA，由 Nginx 挂载在 `/pc/`。
 
 ### uniapp/ 多端会员端
 
@@ -227,51 +227,21 @@ npm run dev:mp-weixin
 npm run build:mp-weixin
 ~~~
 
-uniapp/src/utils/request.ts 读取 VITE_APP_BASE_URL；开发时为空字符串即可走 uniapp/vite.config.ts 的 /api 代理，生产请显式配置真实 API 地址。src/manifest.json 中的 App/小程序 appid 当前为空，按发布平台填写；不同平台产物目录由 uni CLI 版本决定，不在本文虚构固定路径。
+uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生产默认留空，分别使用开发代理或同源 `/api`。生产 H5 产物位于 `dist/build/h5`，Docker 将其复制到 Nginx 镜像的 `/mobile/` 子目录。小程序仍需按平台配置 appid、合法域名和证书。
 
 ## 8. 开发环境与生产部署
 
-### 后端和 PHP-FPM
+### 生产应用仓与容器
 
-1. 服务器安装 PHP（server/composer.json 要求 >=8.0；项目 README 推荐 PHP 8.1+）、Composer、MySQL，并在 PHP-FPM 环境安装 PDO MySQL。支付/OAuth 需要 cURL、OpenSSL；XLSX 导出需要 ZipArchive；手机号/中文校验使用 mbstring。具体扩展包按发行版配置。
-2. 发布 server/ 代码并执行 composer install --no-dev（若生产不需要开发依赖）。PHP-FPM 的站点入口指向 server/public/index.php，不要把 server/ 根目录作为 Web 根。
-3. 确保 PHP-FPM 用户对 server/runtime/ 和本地存储 server/public/storage/ 有写权限；导出文件会落在 server/public/storage/exports/。
-4. 生产 .env 使用随机 JWT_SECRET、正确数据库凭据和 APP_DEBUG=false。全新空库运行 `php server/database/install.php`；已有库完成必要增量迁移后再启动流量。
+生产服务器部署已经存在的应用 release，不在服务器用模板创建新应用。宿主机只安装 Git、Docker Engine 和 Compose；拉取代码、配置 `deploy/production.env` 后执行一次 `docker compose ... up -d --build`。完整首次部署、宝塔反代和 Cloudflare 设置见 `docs/peanut-admin-release-deployment.md`。
 
-### Nginx
+生产 Compose 内部运行 MySQL、PHP-FPM、Nginx 和定时任务；Redis 为可选 profile。管理端、PC、H5 和 API 共用一个 Nginx 入口，分别位于 `/admin/`、`/pc/`、`/mobile/` 和 `/api/`。宿主机不安装 Node.js、PHP 或 Composer。
 
-前端静态站点可将 web/dist/ 作为根目录；将 /api 交给后端入口，将 /storage/ 映射到 server/public/storage/。下面是最小示意，域名、PHP-FPM socket、绝对路径和 HTTPS 证书必须按环境替换并先在预发布验证：
-
-~~~nginx
-server {
-    listen 80;
-    server_name admin.example.com;
-    root /var/www/peanut-admin/web/dist;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME /var/www/peanut-admin/server/public/index.php;
-        fastcgi_param SCRIPT_NAME /index.php;
-        fastcgi_param REQUEST_URI $request_uri;
-        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
-    }
-
-    location /storage/ {
-        alias /var/www/peanut-admin/server/public/storage/;
-        try_files $uri =404;
-    }
-}
-~~~
-
-如果使用独立后端域名，也可以把 /api 反向代理到后端 Nginx/PHP-FPM 站点，但必须同步设置客户端的 VITE_API_BASE_URL、Nuxt runtimeConfig 和 uni-app VITE_APP_BASE_URL，并按环境处理 CORS。PHP-FPM/Nginx 的实际 FastCGI 参数应以目标发行版和 ThinkPHP pathinfo 配置为准。
+PHP 运行用户必须能写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、独立数据库密码和 `APP_DEBUG=false`。首次空库由容器入口初始化；已有库升级必须先备份并执行该 release 尚未应用的迁移。
 
 ### PC 与 uni-app 产物
 
-web 的 pnpm build 适合直接部署 dist/ 到 Nginx。pc 的 npm run build 生成 Nuxt 运行产物，需使用 Node 进程管理器启动；是否使用 npm run generate 的静态模式由页面是否需要 SSR 决定。uniapp 的 H5/小程序构建和发布由 uni CLI/对应平台完成，src/manifest.json 的 appid、合法域名和平台证书属于环境配置。
+管理端 `web/dist/`、UniApp H5 和 Nuxt PC 分别进入 Nginx 镜像的 `server/public/admin/`、`server/public/mobile/`、`server/public/pc/`，不会覆盖后端 public 根文件。小程序产物仍按对应平台单独上传。
 
 ### Cron、命令与“队列”边界
 

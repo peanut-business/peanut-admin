@@ -6,6 +6,9 @@ server/runtime/
 server/vendor/
 server/public/uploads/
 
+# Production deployment secrets
+deploy/production.env
+
 # Web
 web/node_modules/
 web/dist/
@@ -28,8 +31,9 @@ web/.claude/
 /likeadmin-dept-list.png
 /peanut-dept-list.png
 
-# UniApp (separate app — tracked independently if needed)
-uniapp/
+# UniApp generated dependencies and build output
+uniapp/node_modules/
+uniapp/dist/
 
 # Runtime-generated storage (uploads/exports)
 server/public/storage/
