@@ -1,3 +1,8 @@
+---
+title: 开发与部署指南
+description: Peanut Admin 的架构、开发约定、客户端命令和生产部署边界。
+---
+
 # Peanut Admin 独立开发与部署指南
 
 本文只描述当前 Peanut Admin 仓库中的代码、命令和运行边界，不依赖其他项目。示例中的域名、仓库地址、数据库账号、密码、证书和云服务参数均需按环境配置；不要把真实密钥提交到 Git。
@@ -32,7 +37,7 @@ peanut-admin/
 └── docs/                    项目文档
 ~~~
 
-三个客户端都以 /api 为后端前缀：web/config/vite.config.dev.ts、pc/nuxt.config.ts 和 uniapp/vite.config.ts 的开发代理均指向 http://127.0.0.1:8000。生产环境建议由同一域名的 Nginx 将 /api 转给 PHP-FPM，减少跨域配置。
+三个客户端都以 `/api` 为后端前缀：`web/config/vite.config.dev.ts`、`pc/nuxt.config.ts` 和 `uniapp/vite.config.ts` 的开发代理均指向 `http://127.0.0.1:8000`。生产多阶段镜像将 web 管理端放在 `/admin/`、uniapp H5 放在 `/mobile/`、Nuxt PC 放在 `/pc/`；API 统一走 `/api/`。
 
 后端路由大致分为：
 
@@ -59,11 +64,11 @@ return $result ? $this->success('操作成功') : $this->fail(DemoLogic::getErro
 
 ### Logic
 
-业务逻辑放在 server/app/adminapi/logic/<module>/ 或 server/app/api/logic/，继承 app\common\logic\BaseLogic。逻辑层负责查询组合、事务、状态机、领域规则和错误信息；失败时 setError() 并返回 false，不要在控制器中复制业务规则。涉及多表写入时使用 think\facade\Db::startTrans()、commit()、rollback()。
+业务逻辑放在 `server/app/adminapi/logic/<module>/` 或 `server/app/api/logic/`，继承 `app\common\logic\BaseLogic`。逻辑层负责查询组合、事务、状态机、领域规则和错误信息；失败时 `setError()` 并返回 false，不要在控制器中复制业务规则。涉及多表写入时使用 `think\facade\Db::startTrans()`、`commit()`、`rollback()`。
 
 ### Validate
 
-验证器放在与逻辑同名的 validate/<module>/ 目录，使用场景（例如 .add、.edit、.detail）限制字段集合。跨字段、数据库唯一性或余额等规则写成验证器方法；逻辑层仍需对权限、状态和并发条件再次检查，不能把验证器当作授权层。
+验证器放在与逻辑同名的 `validate/<module>/` 目录，使用场景（例如 `.add`、`.edit`、`.detail`）限制字段集合。跨字段、数据库唯一性或余额等规则写成验证器方法；逻辑层仍需对权限、状态和并发条件再次检查，不能把验证器当作授权层。
 
 ### Model
 
@@ -89,7 +94,7 @@ JsonService::dataLists() 的 data 包含 lists、count、pageNo、pageSize；业
 
 server/route/app.php 中，登录路由不挂鉴权；管理端 api/admin/* 统一按 LoginMiddleware → AuthMiddleware → OperationLogMiddleware 执行：
 
-1. LoginMiddleware 从 Authorization: Bearer <token> 读取 pa_admin_session，检查过期、登录 IP、账号状态，并把 adminInfo/adminId 注入请求。
+1. LoginMiddleware 从 `Authorization: Bearer <token>` 读取 `pa_admin_session`，检查过期、登录 IP、账号状态，并把 `adminInfo/adminId` 注入请求。
 2. AuthMiddleware 根据请求路径去掉 api/admin/ 得到权限标识，例如 api/admin/menu/lists 对应 menu/lists。
 3. OperationLogMiddleware 仅记录成功的 POST 写操作，并对 password、token、secret、证书等字段打码。
 
@@ -143,7 +148,7 @@ DB_TYPE、DB_DRIVER、DB_CHARSET 可按 server/config/database.php 的默认值�
 
 ## 6. 从 clone 到可登录开发环境
 
-以下步骤使用仓库当前 README 与脚本中的路径。<仓库地址>、数据库账号和密码是占位符，按环境替换。
+以下步骤使用仓库当前 README 与脚本中的路径。`<仓库地址>`、数据库账号和密码是占位符，按环境替换。
 
 ~~~bash
 git clone <仓库地址> && cd peanut-admin
@@ -175,7 +180,7 @@ pnpm install
 pnpm dev
 ~~~
 
-打开 http://localhost:5173，登录后立即修改默认密码。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
+打开 `http://localhost:5173`，登录后立即修改默认密码。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
 
 已有数据库升级时，不要运行首次安装器，也不要再次把 init.sql 当迁移工具；先备份，再按 server/database/migrations/ 文件名顺序执行所需 SQL。例如：
 
@@ -211,7 +216,7 @@ npm run build
 npm run preview
 ~~~
 
-pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址；开发时 `/api` 代理到 8000。生产使用 `npm run generate` 生成静态 SPA，由 Nginx 挂载在 `/pc/`。
+pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址，开发时 `/api` 代理到 8000。生产使用 `npm run generate` 生成静态 SPA，由 Nginx 挂载在 `/pc/`。
 
 ### uniapp/ 多端会员端
 
@@ -231,17 +236,83 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 ## 8. 开发环境与生产部署
 
-### 生产应用仓与容器
+### 生产应用仓与多阶段 Compose
 
-生产服务器部署已经存在的应用 release，不在服务器用模板创建新应用。宿主机只安装 Git、Docker Engine 和 Compose；拉取代码、配置 `deploy/production.env` 后执行一次 `docker compose ... up -d --build`。完整首次部署、宝塔反代和 Cloudflare 设置见 `docs/peanut-admin-release-deployment.md`。
+生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。开发环境使用独立的 `deploy/docker-compose.dev.yml`，不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
 
-生产 Compose 内部运行 MySQL、PHP-FPM、Nginx 和定时任务；Redis 为可选 profile。管理端、PC、H5 和 API 共用一个 Nginx 入口，分别位于 `/admin/`、`/pc/`、`/mobile/` 和 `/api/`。宿主机不安装 Node.js、PHP 或 Composer。
+生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 MySQL、PHP-FPM、Nginx 和后端 scheduler；Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
 
-PHP 运行用户必须能写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、独立数据库密码和 `APP_DEBUG=false`。首次空库由容器入口初始化；已有库升级必须先备份并执行该 release 尚未应用的迁移。
+无论采用 Docker 还是原生发布包，都必须确保运行用户可写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、正确数据库凭据和 `APP_DEBUG=false`。
+
+### Nginx
+
+Nginx 根目录固定为发布制品的 `server/public/`。根路径 `/` 重定向到 `/admin/`；管理端、H5 和 PC 静态文件分别位于 `server/public/admin/`、`server/public/mobile/` 和 `server/public/pc/`；`/api/` 和 legacy `/admin/login/*` 进入 ThinkPHP。
+
+~~~nginx
+server {
+    listen 80;
+    server_name admin.example.com;
+    root /var/www/peanut-admin/server/public;
+
+    location = / {
+        return 302 /admin/;
+    }
+
+    location = /admin {
+        return 302 /admin/;
+    }
+
+    location = /mobile {
+        return 302 /mobile/;
+    }
+
+    location = /pc {
+        return 302 /pc/;
+    }
+
+    location ~ ^/admin/login/(?:login|logout)/?$ {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location ^~ /api/ {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location /admin/ {
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    location /mobile/ {
+        try_files $uri $uri/ /mobile/index.html;
+    }
+
+    location /pc/ {
+        try_files $uri $uri/ /pc/index.html;
+    }
+
+    location / {
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    location ^~ /storage/ {
+        try_files $uri =404;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_pass php:9000;
+    }
+}
+~~~
+
+宝塔面板的反向代理目标为 `http://127.0.0.1:18082`；Cloudflare 对应 DNS 记录开启代理。PHP-FPM 和 MySQL 不直接暴露到公网。
 
 ### PC 与 uni-app 产物
 
-管理端 `web/dist/`、UniApp H5 和 Nuxt PC 分别进入 Nginx 镜像的 `server/public/admin/`、`server/public/mobile/`、`server/public/pc/`，不会覆盖后端 public 根文件。小程序产物仍按对应平台单独上传。
+管理端 `web/dist/` 进入 `/admin/`，uniapp H5 构建产物进入 `/mobile/`，PC 使用 `npm run generate` 生成 `.output/public/` 并进入 `/pc/`。三端都是独立静态目录，不覆盖后端 public 根文件。
 
 ### Cron、命令与“队列”边界
 
@@ -280,10 +351,10 @@ OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 
 
 以管理端模块为例，建议按以下顺序提交，且每一步都保持可回滚：
 
-1. **数据设计**：新增 server/database/migrations/YYYYMMDD_<module>.sql，使用 pa_<module> 表名、索引、时间戳和软删除字段；首次安装器会按文件名顺序纳入迁移，不要把同一增量结构重复写进 init.sql。
-2. **Model/Enum**：在 server/app/common/model/<module>/ 增加继承 BaseModel 的模型；状态/类型常量放 common/enum，关系和访问器放模型。
-3. **Validate/Logic/Service**：分别创建 adminapi/validate/<module>/、adminapi/logic/<module>/；跨模块/外部服务才增加 service。列表分页统一 page_no/page_size 和 dataLists，写操作使用事务，失败通过 BaseLogic::setError() 返回。
-4. **Controller 与路由**：创建 adminapi/controller/<module>/ 控制器，继承 BaseAdminController；在 server/route/app.php 的 api/admin 组声明 GET/POST 路由。确认权限标识等于去掉 api/admin/ 后的路径（必要时增加显式 alias）。
+1. **数据设计**：新增 `server/database/migrations/YYYYMMDD_<module>.sql`，使用 `pa_<module>` 表名、索引、时间戳和软删除字段；首次安装器会按文件名顺序纳入迁移，不要把同一增量结构重复写进 `init.sql`。
+2. **Model/Enum**：在 `server/app/common/model/<module>/` 增加继承 BaseModel 的模型；状态/类型常量放 `common/enum`，关系和访问器放模型。
+3. **Validate/Logic/Service**：分别创建 `adminapi/validate/<module>/`、`adminapi/logic/<module>/`；跨模块/外部服务才增加 service。列表分页统一 `page_no/page_size` 和 `dataLists`，写操作使用事务，失败通过 `BaseLogic::setError()` 返回。
+4. **Controller 与路由**：创建 `adminapi/controller/<module>/` 控制器，继承 BaseAdminController；在 `server/route/app.php` 的 `api/admin` 组声明 GET/POST 路由。确认权限标识等于去掉 `api/admin/` 后的路径（必要时增加显式 alias）。
 5. **菜单与角色**：在迁移/种子中写入 M/C/A 菜单、paths、component 和 perms；登录 root 账号检查动态菜单，普通角色授予最小 A 权限。
 6. **客户端**：在 web/src/api/ 增加请求封装，在 web/src/router/routes/modules/ 注册页面并在 web/src/views/ 实现；PC/uni-app 只有确实提供该业务入口时才分别增加 pc/api、pc/pages 或 uniapp/src/api、uniapp/src/pages。
 7. **数据范围和审计**：若有部门/租户/所有者隔离，在 logic 的列表、详情和写操作都加显式范围条件；敏感写操作依赖管理端操作日志中间件，并检查日志脱敏字段。
@@ -311,7 +382,7 @@ cd web && pnpm run type:check
 | 40100 | 请求是否带 Authorization: Bearer；pa_admin_session/会员令牌是否过期；登录 IP 是否变化。 |
 | 40300 或菜单为空 | pa_system_menu.is_disable、角色关联和 perms 是否与实际 /api/admin/... 路径一致；非 root 未登记 URI 当前会放行，不能据此判断权限已配置。 |
 | 数据库连接失败/表不存在 | .env 的 DB_*、DB_PREFIX 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认目标迁移已执行。 |
-| 前端请求 404/CORS | 开发代理是否指向 8000；生产 Nginx 是否把 /api 送到 server/public/index.php；检查各客户端 API base 配置。 |
+| 前端请求 404/CORS | 开发代理是否指向 8000；生产是否将 `/api/` 送到 ThinkPHP，并确认 `/admin/`、`/mobile/`、`/pc/` 分别命中对应客户端；检查各客户端 API base 配置。 |
 | 上传/导出失败或文件 404 | PHP-FPM 对 server/runtime/、server/public/storage/ 的写权限；Nginx /storage/ alias；ZipArchive 是否安装。 |
 | 支付/OAuth 失败 | 先确认 pa_config 中对应开关、AppID、证书/公钥、回调 HTTPS 和平台白名单；查看 server/runtime/log/，不要关闭验签。 |
 | 定时任务不执行 | 系统 cron 是否每分钟调用 php think crontab；pa_crontab.status、表达式、error、数据库 GET_LOCK；命令是否在 server/config/console.php 注册。 |

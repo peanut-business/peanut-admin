@@ -2,6 +2,17 @@
 
 基于 ThinkPHP 8 + Arco Design Pro Vue 的企业后台管理脚手架，完整复刻 likeadmin 标准版能力。
 
+## 项目身份与当前基线
+
+- 产品名称：Peanut Admin（无版本后缀）
+- 当前工作目录：`/Users/xing/Documents/company-projects/peanut-admin`
+- GitHub 仓库：`peanut-business/peanut-admin`
+- PC package name：`peanut-admin-pc`
+- 当前主线：`main` 已完成并推送 LikeAdmin 1.9.4 标准版 parity 的 9 个 commits；已完成使命的功能分支不再作为后续工作基线
+- 数据库基线：`server/database/install.php` + `init.sql` + 23 个 migrations，共 42 张表
+- 独立验证：42 tables / 170 menus / 59 configs / 1 default admin
+- SaaS 多租户：仅为 `docs/design/saas-roadmap/` 中的 roadmap 设计，当前代码尚未实现
+
 ## 技术栈
 
 | 层 | 技术 |
@@ -46,7 +57,7 @@ cd server && php think run --host 0.0.0.0 --port 8000
 cd web && pnpm install && pnpm dev
 ```
 
-浏览器打开 `http://localhost:5173`，账号 `admin / admin123456`（**首次登录请修改密码**）。
+浏览器打开 `http://localhost:5173/admin/`，账号 `admin / admin123456`（**首次登录请修改密码**）。
 
 ## 目录结构
 
@@ -91,6 +102,23 @@ peanut-admin/
 
 ## 生产部署
 
-1. `cd web && pnpm build` — 产物在 `dist/`，部署到 Nginx 并配置 `try_files $uri /index.html`
-2. 后端配置 PHP-FPM，入口指向 `server/public/index.php`
-3. 确保 `server/runtime/` 目录可写
+生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。服务器只安装 Git 和 Docker，拉取应用 release、准备根目录 `.env` 后执行 `docker compose up -d --build`；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。
+
+同一入口分别提供 `/admin/`（管理端静态 SPA）、`/pc/`（Nuxt 静态 SPA）、`/mobile/`（UniApp H5）、`/api/`（ThinkPHP）和 `/storage/`。三个前端都写入各自子目录，不覆盖后端 public 根文件。完整命令、版本范围和首次部署流程见 `docs/peanut-admin-release-deployment.md`。
+
+## 文档站
+
+独立 VitePress 文档站位于 `docs-site/`，当前发布在 <https://peanut-admin-docs.pages.dev>。构建与 Cloudflare Pages 直接发布使用：
+
+```bash
+cd docs-site
+pnpm install --frozen-lockfile
+pnpm build
+npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --branch=main
+```
+
+正式域名为 `peanut-admin.007345.xyz`；Cloudflare Pages 项目名固定为 `peanut-admin-docs`。
+
+## 目标架构
+
+当前代码仍是已完成业务验收的 Arco/应用内实现。已确认的下一阶段目标是 Web 管理端统一 Element Plus，并把公共能力收敛为一个 Composer 核心包、一个 npm 管理端包和一个 PC/UniApp 共用的无 UI 客户端包；三个运行包均以标准注册表支持应用覆盖。迁移完成前不将这些目标描述为现成功能。契约见 `docs/architecture/application-package-and-release-contract.md`。

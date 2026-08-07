@@ -117,49 +117,87 @@ function main(): int
     }
 
     try {
-    $tableCountStatement = $pdo->prepare(
-        'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?'
-    );
-    $tableCountStatement->execute([$database]);
-    if ((int)$tableCountStatement->fetchColumn() !== 0) {
-        throw new RuntimeException('目标数据库不是空库，已拒绝执行首次安装');
-    }
+        $files = sqlFiles($databaseDir);
+        $expected = expectedTables($files);
+        $tableCountStatement = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?'
+        );
+        $tableCountStatement->execute([$database]);
+        if ((int)$tableCountStatement->fetchColumn() !== 0) {
+            if (!in_array('--skip-if-installed', $_SERVER['argv'] ?? [], true)) {
+                throw new RuntimeException('目标数据库不是空库，已拒绝执行首次安装');
+            }
 
-    $files = sqlFiles($databaseDir);
-    $expected = expectedTables($files);
-    executeSqlFiles($pdo, $files);
+            $actualStatement = $pdo->prepare(
+                'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME'
+            );
+            $actualStatement->execute([$database]);
+            $actual = $actualStatement->fetchAll(PDO::FETCH_COLUMN);
+            $missing = array_values(array_diff($expected, $actual));
+            $defaultAdmin = in_array('pa_admin', $actual, true)
+                ? (int)$pdo->query(
+                    "SELECT COUNT(*) FROM pa_admin WHERE username = 'admin' AND root = 1"
+                )->fetchColumn()
+                : 0;
+            $activeMenus = in_array('pa_system_menu', $actual, true)
+                ? (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn()
+                : 0;
+            $configCount = in_array('pa_config', $actual, true)
+                ? (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn()
+                : 0;
+            if ($missing !== [] || $defaultAdmin !== 1 || $activeMenus === 0 || $configCount === 0) {
+                throw new RuntimeException('已有数据库结构不完整，拒绝跳过安装：' . json_encode(
+                    [
+                        'missing_tables' => $missing,
+                        'default_admin' => $defaultAdmin,
+                        'active_menus' => $activeMenus,
+                        'configs' => $configCount,
+                    ],
+                    JSON_UNESCAPED_UNICODE
+                ));
+            }
 
-    $actualStatement = $pdo->prepare(
-        'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME'
-    );
-    $actualStatement->execute([$database]);
-    $actual = $actualStatement->fetchAll(PDO::FETCH_COLUMN);
-    $missing = array_values(array_diff($expected, $actual));
+            echo json_encode([
+                'database' => $database,
+                'status' => 'already_installed',
+                'tables' => count($actual),
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
+            return 0;
+        }
 
-    $defaultAdmin = (int)$pdo->query(
-        "SELECT COUNT(*) FROM pa_admin WHERE username = 'admin' AND root = 1"
-    )->fetchColumn();
-    $activeMenus = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
-    $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
+        executeSqlFiles($pdo, $files);
 
-    if ($missing !== [] || $defaultAdmin !== 1 || $activeMenus === 0 || $configCount === 0) {
-        throw new RuntimeException('安装结果不完整：' . json_encode([
-            'missing_tables' => $missing,
+        $actualStatement = $pdo->prepare(
+            'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME'
+        );
+        $actualStatement->execute([$database]);
+        $actual = $actualStatement->fetchAll(PDO::FETCH_COLUMN);
+        $missing = array_values(array_diff($expected, $actual));
+
+        $defaultAdmin = (int)$pdo->query(
+            "SELECT COUNT(*) FROM pa_admin WHERE username = 'admin' AND root = 1"
+        )->fetchColumn();
+        $activeMenus = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
+        $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
+
+        if ($missing !== [] || $defaultAdmin !== 1 || $activeMenus === 0 || $configCount === 0) {
+            throw new RuntimeException('安装结果不完整：' . json_encode([
+                'missing_tables' => $missing,
+                'default_admin' => $defaultAdmin,
+                'active_menus' => $activeMenus,
+                'configs' => $configCount,
+            ], JSON_UNESCAPED_UNICODE));
+        }
+
+        echo json_encode([
+            'database' => $database,
+            'sql_files' => count($files),
+            'tables' => count($actual),
+            'expected_tables' => count($expected),
             'default_admin' => $defaultAdmin,
             'active_menus' => $activeMenus,
             'configs' => $configCount,
-        ], JSON_UNESCAPED_UNICODE));
-    }
-
-    echo json_encode([
-        'database' => $database,
-        'sql_files' => count($files),
-        'tables' => count($actual),
-        'expected_tables' => count($expected),
-        'default_admin' => $defaultAdmin,
-        'active_menus' => $activeMenus,
-        'configs' => $configCount,
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
     } finally {
         $releaseStatement = $pdo->prepare('SELECT RELEASE_LOCK(?)');
         $releaseStatement->execute([$lockName]);
