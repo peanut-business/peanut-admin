@@ -44,7 +44,7 @@ chmod 600 .env
 docker compose up -d --build
 ```
 
-Compose 会启动 MySQL、PHP-FPM、Nginx 和定时任务。空数据库由 PHP 入口安全初始化；已有完整数据库不会重复安装。首次安装后的管理员账号为 `admin / admin123456`，登录后立即修改密码。
+Compose 会启动 MySQL、PHP-FPM、Nginx 和定时任务。空数据库由 PHP 入口安全初始化，并将全部 migrations 记入 `pa_schema_migration`；已有完整数据库不会重复安装。首次安装后的管理员账号为 `admin / admin123456`，登录后立即修改密码。
 
 最低检查：
 
@@ -91,13 +91,28 @@ docker compose --profile redis up -d
 
 ## 后续升级
 
-升级由应用 release tag 驱动。正式升级前先备份 MySQL 与 `php-storage` 卷，阅读该版本迁移清单并执行尚未应用的迁移，再重建容器：
+默认沿用服务器当前部署分支。正式升级前先备份 MySQL 与 `php-storage` 卷，拉取已经审核并合并的应用代码并重建容器，然后执行迁移：
 
 ```bash
-git fetch --tags
-git checkout <release-tag>
+git pull --ff-only
 docker compose up -d --build
 ```
+
+历史安装首次升级时，在上面的重建完成后只执行一次历史接管：
+
+```bash
+docker compose exec -T php php server/database/migrate.php --adopt-existing
+```
+
+接管会先完整校验历史基线，再登记历史迁移并执行未登记文件。之后每次升级执行普通迁移命令：
+
+```bash
+docker compose exec -T php php server/database/migrate.php
+```
+
+`php` 服务继承镜像工作目录 `/var/www/peanut-admin`，所以命令使用 `server/database/migrate.php`；在 server 工作目录中等价于 `php database/migrate.php`。迁移只处理账本中未登记的文件，并校验 SHA-256；无待执行文件时返回 `up_to_date`。失败记录或校验值变化必须人工处置后再继续，历史接管命令不可在后续发布中重复执行。
+
+需要严格锁版或回滚时，再使用 release tag；这不是首次部署和日常升级的必需步骤。
 
 `--skip-if-installed` 只避免容器重启时重复执行首次安装，不代替版本化数据库迁移。自动升级管理将在独立运营平台实现前保持手动。
 

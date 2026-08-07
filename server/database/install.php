@@ -82,6 +82,23 @@ function executeSqlFiles(PDO $pdo, array $files): void
     }
 }
 
+function recordInstalledMigrations(PDO $pdo, array $files): void
+{
+    $statement = $pdo->prepare(
+        'INSERT INTO pa_schema_migration '
+        . '(migration, checksum, batch, status, started_at, applied_at, error) '
+        . "VALUES (?, ?, 1, 'applied', ?, ?, '')"
+    );
+    $now = time();
+    foreach ($files as $file) {
+        $checksum = hash_file('sha256', $file);
+        if ($checksum === false) {
+            throw new RuntimeException('无法计算迁移校验值：' . basename($file));
+        }
+        $statement->execute([basename($file), $checksum, $now, $now]);
+    }
+}
+
 function main(): int
 {
     $databaseDir = __DIR__;
@@ -188,6 +205,8 @@ function main(): int
                 'configs' => $configCount,
             ], JSON_UNESCAPED_UNICODE));
         }
+
+        recordInstalledMigrations($pdo, array_slice($files, 1));
 
         echo json_encode([
             'database' => $database,

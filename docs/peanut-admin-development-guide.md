@@ -15,7 +15,7 @@ peanut-admin/
 │   ├── config/              ThinkPHP、数据库、JWT、控制台等配置
 │   ├── route/app.php        管理端和用户端路由
 │   ├── database/init.sql    新环境的一次性全量表结构与种子
-│   ├── database/migrations/ 已有环境的增量 SQL（无自动迁移命令）
+│   ├── database/migrations/ 版本化增量 SQL（由 database/migrate.php 执行）
 │   ├── public/index.php     PHP-FPM/内置服务器入口
 │   ├── public/storage/      本地存储和导出文件的公开目录
 │   └── runtime/             日志、缓存和运行时文件（需可写）
@@ -114,9 +114,10 @@ pa_system_menu 的 type 为 M（目录）、C（菜单）或 A（按钮/API 权�
 ## 4. 数据库与迁移
 
 - 数据库默认 MySQL，编码 utf8mb4，表前缀由 DB_PREFIX 控制，默认 pa_；配置来源是 server/config/database.php。
-- 新环境先创建空数据库并配置 server/.env，再执行 `php server/database/install.php`。安装器按顺序执行 server/database/init.sql 和全部 server/database/migrations/*.sql，并校验预期表、菜单、配置及默认管理员；目标库已有任何表时会拒绝运行。
+- 新环境先创建空数据库并配置 server/.env，再执行 `php server/database/install.php`。安装器按顺序执行 server/database/init.sql 和全部 server/database/migrations/*.sql，并校验预期表、菜单、配置及默认管理员；安装成功后会把全部 migration 文件的名称、SHA-256、批次和状态写入 `pa_schema_migration`；目标库已有任何表时会拒绝运行。
 - server/database/init.sql 只保存基础结构和基础种子，不单独代表完整的当前版本。后续业务表和增量字段以 migrations/ 为准，由首次安装器统一收口。
-- 既有环境的增量文件位于 server/database/migrations/，文件名按时间排序。仓库没有迁移记录表或 php think migrate 命令；发布时先备份，再由 DBA 按文件名逐个执行尚未应用的 SQL，并记录版本。
+- `server/database/migrations/20260807_schema_migration_ledger.sql` 创建迁移账本；`php server/database/migrate.php` 只执行账本中未登记的文件，并在运行前校验已登记文件的 SHA-256。没有待执行文件时返回 `up_to_date`，普通成功可以重复运行。
+- 历史安装升级必须先完成数据库和存储备份。首次接管只执行一次 `php server/database/migrate.php --adopt-existing`；脚本会完整校验历史基线（预期表、root 管理员、菜单和配置），校验通过后登记历史迁移，随后执行未登记文件。基线校验失败或已有失败记录时必须停止并人工处置，不要绕过账本。
 - server/database/import.php 是读取 .env 后通过 PDO 执行 init.sql 的一次性脚本，文件注释明确提示“用完即删”；优先使用可审计的 mysql 导入命令，除非环境确实需要该脚本。
 - 金额、状态和软删除字段应沿用已有表的类型/命名；涉及旧数据兼容时在迁移中写幂等的 information_schema 检查，并先发布迁移再发布依赖字段的 PHP 代码。
 
@@ -177,13 +178,19 @@ pnpm dev
 
 打开 http://localhost:5173，登录后立即修改默认密码。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
 
-已有数据库升级时，不要运行首次安装器，也不要再次把 init.sql 当迁移工具；先备份，再按 server/database/migrations/ 文件名顺序执行所需 SQL。例如：
+已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管时先完成数据库和存储备份，然后只执行一次：
 
 ~~~bash
-mysql -u <db-user> -p <db-name> < server/database/migrations/20260802_system_tools_core.sql
+php server/database/migrate.php --adopt-existing
 ~~~
 
-上例文件名仅示范格式，实际应按该环境的迁移记录选择，不要重复执行不兼容的业务变更。
+接管会在完整基线校验通过后登记历史迁移，并继续处理未登记文件。之后每次发布只执行：
+
+~~~bash
+php server/database/migrate.php
+~~~
+
+命令会按文件名顺序执行未登记迁移并校验 SHA-256；无待执行文件时返回 `up_to_date`。出现失败记录或校验值变化时必须人工处置后再继续；不要重复执行历史接管。
 
 ## 7. 客户端开发与构建命令
 
@@ -237,7 +244,7 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 生产 Compose 内部运行 MySQL、PHP-FPM、Nginx 和定时任务；Redis 为可选 profile。管理端、PC、H5 和 API 共用一个 Nginx 入口，分别位于 `/admin/`、`/pc/`、`/mobile/` 和 `/api/`。宿主机不安装 Node.js、PHP 或 Composer。
 
-PHP 运行用户必须能写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、独立数据库密码和 `APP_DEBUG=false`。首次空库由容器入口初始化；已有库升级必须先备份并执行该 release 尚未应用的迁移。
+PHP 运行用户必须能写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、独立数据库密码和 `APP_DEBUG=false`。首次空库由容器入口初始化；历史已有库首次升级必须先备份并接管一次，之后由 `migrate.php` 执行未登记迁移。
 
 ### PC 与 uni-app 产物
 
@@ -310,7 +317,7 @@ cd web && pnpm run type:check
 | --- | --- |
 | 40100 | 请求是否带 Authorization: Bearer；pa_admin_session/会员令牌是否过期；登录 IP 是否变化。 |
 | 40300 或菜单为空 | pa_system_menu.is_disable、角色关联和 perms 是否与实际 /api/admin/... 路径一致；非 root 未登记 URI 当前会放行，不能据此判断权限已配置。 |
-| 数据库连接失败/表不存在 | .env 的 DB_*、DB_PREFIX 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认目标迁移已执行。 |
+| 数据库连接失败/表不存在 | .env 的 DB_*、DB_PREFIX 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认历史接管或 `php server/database/migrate.php` 成功。 |
 | 前端请求 404/CORS | 开发代理是否指向 8000；生产 Nginx 是否把 /api 送到 server/public/index.php；检查各客户端 API base 配置。 |
 | 上传/导出失败或文件 404 | PHP-FPM 对 server/runtime/、server/public/storage/ 的写权限；Nginx /storage/ alias；ZipArchive 是否安装。 |
 | 支付/OAuth 失败 | 先确认 pa_config 中对应开关、AppID、证书/公钥、回调 HTTPS 和平台白名单；查看 server/runtime/log/，不要关闭验签。 |
