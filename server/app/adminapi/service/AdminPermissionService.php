@@ -6,6 +6,7 @@ namespace app\adminapi\service;
 use app\common\model\auth\Admin;
 use app\common\model\auth\SystemMenu;
 use app\common\model\auth\SystemRoleMenu;
+use PeanutAdmin\Kernel\Authorization\EffectivePermissionSet;
 
 /**
  * 管理端菜单、按钮与 API 权限的单一计算入口。
@@ -99,12 +100,14 @@ class AdminPermissionService
 
         $accessUri = strtolower(trim($accessUri, '/'));
         $accessUri = self::ACCESS_ALIASES[$accessUri] ?? $accessUri;
-        $registered = SystemMenu::where('is_disable', 0)
-            ->where('perms', '<>', '')
-            ->column('perms');
-        $registered = array_map('strtolower', $registered);
+        $registered = new EffectivePermissionSet(array_map(
+            'strtolower',
+            SystemMenu::where('is_disable', 0)
+                ->where('perms', '<>', '')
+                ->column('perms')
+        ));
 
-        if (!in_array($accessUri, $registered, true)) {
+        if (!$registered->allows($accessUri)) {
             return true;
         }
 
@@ -113,13 +116,15 @@ class AdminPermissionService
             return false;
         }
 
-        $owned = SystemMenu::whereIn('id', $menuIds)
-            ->where('is_disable', 0)
-            ->where('perms', '<>', '')
-            ->column('perms');
-        $owned = array_map('strtolower', $owned);
+        $owned = new EffectivePermissionSet(array_map(
+            'strtolower',
+            SystemMenu::whereIn('id', $menuIds)
+                ->where('is_disable', 0)
+                ->where('perms', '<>', '')
+                ->column('perms')
+        ));
 
-        return in_array($accessUri, $owned, true);
+        return $owned->allows($accessUri);
     }
 
     private static function assignedMenuIds(Admin|array $admin): array
