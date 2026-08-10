@@ -1,77 +1,93 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.member', 'menu.member.tag']" />
-    <a-card class="general-card" :title="$t('menu.member.tag')">
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-button type="primary" @click="handleAdd">
-            <template #icon><icon-plus /></template>
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.member.tag') }}</template>
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-button type="primary" @click="handleAdd">
+            <template #icon><Plus /></template>
             {{ $t('memberTag.operation.add') }}
-          </a-button>
-        </a-col>
-      </a-row>
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="false"
-        :bordered="{ cell: true }"
-      >
-        <template #operations="{ record }">
-          <a-space>
-            <a-button type="text" size="small" @click="handleEdit(record)">
-              {{ $t('memberTag.operation.edit') }}
-            </a-button>
-            <a-popconfirm
-              :content="$t('memberTag.delete.confirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button type="text" status="danger" size="small">
-                {{ $t('memberTag.operation.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+          </el-button>
+        </el-col>
+      </el-row>
+      <el-table v-loading="loading" row-key="id" :data="renderData" border>
+        <el-table-column prop="name" :label="$t('memberTag.columns.name')" />
+        <el-table-column
+          prop="remark"
+          :label="$t('memberTag.columns.remark')"
+        />
+        <el-table-column
+          :label="$t('memberTag.columns.operations')"
+          width="160"
+        >
+          <template #default="{ row }">
+            <el-space>
+              <el-button link size="small" @click="handleEdit(row)">
+                {{ $t('memberTag.operation.edit') }}
+              </el-button>
+              <el-popconfirm
+                :title="$t('memberTag.delete.confirm')"
+                @confirm="handleDelete(row)"
+              >
+                <template #reference>
+                  <el-button link type="danger" size="small">
+                    {{ $t('memberTag.operation.delete') }}
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </el-space>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('memberTag.modal.editTitle')
           : $t('memberTag.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
-      @ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="name" :label="$t('memberTag.field.name')">
-          <a-input
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+      >
+        <el-form-item prop="name" :label="$t('memberTag.field.name')">
+          <el-input
             v-model="form.name"
             :placeholder="$t('memberTag.field.name.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('memberTag.field.remark')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="remark" :label="$t('memberTag.field.remark')">
+          <el-input
             v-model="form.remark"
             :placeholder="$t('memberTag.field.remark.placeholder')"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="modalVisible = false">
+          {{ $t('userSetting.cancel') }}
+        </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
+          {{ $t('userSetting.save') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, computed } from 'vue';
+  import { ref, reactive } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { Plus } from '@element-plus/icons-vue';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getMemberTagList,
@@ -85,16 +101,6 @@
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);
   const renderData = ref<MemberTagRecord[]>([]);
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('memberTag.columns.name'), dataIndex: 'name' },
-    { title: t('memberTag.columns.remark'), dataIndex: 'remark' },
-    {
-      title: t('memberTag.columns.operations'),
-      slotName: 'operations',
-      width: 160,
-    },
-  ]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -135,8 +141,8 @@
   };
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       if (isEdit.value) {
@@ -144,7 +150,7 @@
       } else {
         await addMemberTag(form);
       }
-      Message.success(t('memberTag.tip.success'));
+      ElMessage.success(t('memberTag.tip.success'));
       modalVisible.value = false;
       await fetchData();
     } finally {
@@ -154,7 +160,7 @@
 
   const handleDelete = async (record: MemberTagRecord) => {
     await deleteMemberTag(record.id);
-    Message.success(t('memberTag.tip.success'));
+    ElMessage.success(t('memberTag.tip.success'));
     await fetchData();
   };
 </script>
