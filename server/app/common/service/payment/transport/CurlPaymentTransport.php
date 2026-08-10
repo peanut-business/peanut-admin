@@ -17,16 +17,30 @@ final class CurlPaymentTransport implements PaymentTransportInterface
         if ($curl === false) {
             throw new \RuntimeException('支付渠道请求初始化失败');
         }
+        $responseHeaders = [];
         curl_setopt_array($curl, [
             CURLOPT_CUSTOMREQUEST => strtoupper($method),
-            CURLOPT_POSTFIELDS => $body,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_HEADERFUNCTION => static function ($handle, string $line) use (&$responseHeaders): int {
+                $length = strlen($line);
+                $separator = strpos($line, ':');
+                if ($separator !== false) {
+                    $name = strtolower(trim(substr($line, 0, $separator)));
+                    if ($name !== '') {
+                        $responseHeaders[$name] = trim(substr($line, $separator + 1));
+                    }
+                }
+                return $length;
+            },
         ]);
+        if ($body !== '') {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+        }
         $response = curl_exec($curl);
         if ($response === false) {
             $message = curl_error($curl);
@@ -35,6 +49,6 @@ final class CurlPaymentTransport implements PaymentTransportInterface
         }
         $statusCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
-        return new TransportResponse($statusCode, (string)$response);
+        return new TransportResponse($statusCode, (string)$response, $responseHeaders);
     }
 }

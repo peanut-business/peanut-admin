@@ -38,28 +38,6 @@ export function saveCustomerServiceConfig(data: CustomerServiceConfig) {
   return axios.post('/api/admin/setting/customer-service/save', data);
 }
 
-// ─── 支付配置 ────────────────────────────────────────────────────────────────
-export interface PayConfig {
-  wx_pay_status: number;
-  wx_pay_appid: string;
-  wx_pay_mch_id: string;
-  wx_pay_secret: string;
-  wx_pay_cert_path: string;
-  wx_pay_cert_key_path: string;
-  ali_pay_status: number;
-  ali_pay_app_id: string;
-  ali_pay_private_key: string;
-  ali_pay_public_key: string;
-}
-
-export function getPayConfig() {
-  return axios.get<PayConfig>('/api/admin/setting/pay/config');
-}
-
-export function savePayConfig(data: PayConfig) {
-  return axios.post('/api/admin/setting/pay/save', data);
-}
-
 // ─── 渠道配置 ────────────────────────────────────────────────────────────────
 export interface WebPageConfig {
   status: 0 | 1;

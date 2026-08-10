@@ -11,7 +11,8 @@ use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
-use app\common\service\RefundGatewayService;
+use app\common\service\payment\contract\RefundGatewayInterface;
+use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
 use think\facade\Db;
 
@@ -260,19 +261,24 @@ class RechargeLogic extends BaseLogic
         $result = null;
         $gatewayError = null;
         try {
-            $result = RefundGatewayService::refund(
+            $channel = match ((int)$order->pay_way) {
+                RechargeOrder::PAY_WAY_WECHAT => 'wechat',
+                RechargeOrder::PAY_WAY_ALIPAY => 'alipay',
+                default => throw new \RuntimeException('支付方式异常'),
+            };
+            $result = (new PaymentServiceFactory())->refund($channel)->refund(
                 $order->getData(),
                 (string)$log->sn,
-                (float)$record->refund_amount
+                MemberBalanceService::moneyToCents((string)$record->refund_amount)
             );
         } catch (\Throwable $e) {
             $message = $e->getMessage() !== '' ? $e->getMessage() : '支付渠道退款失败';
-            if ((int)$e->getCode() === RefundGatewayService::ERROR_RESULT_UNKNOWN) {
+            if ((int)$e->getCode() === RefundGatewayInterface::ERROR_RESULT_UNKNOWN) {
                 // 请求可能已被渠道受理，保持退款中交由 refund:reconcile 查询收敛。
                 $result = [
-                    'status' => RefundGatewayService::STATUS_PENDING,
+                    'status' => RefundGatewayInterface::STATUS_PENDING,
                     'transaction_id' => '',
-                    'raw' => ['message' => $message],
+                    'receipt' => ['message' => $message],
                 ];
             } else {
                 $gatewayError = $message;
@@ -297,8 +303,8 @@ class RechargeLogic extends BaseLogic
                 $lockedRecord->refund_status = RefundEnum::REFUND_ERROR;
                 $message = $gatewayError;
             } else {
-                $message = self::encodeGatewayResult($result['raw'] ?? $result);
-                if (($result['status'] ?? '') === RefundGatewayService::STATUS_SUCCESS) {
+                $message = self::encodeGatewayResult($result['receipt'] ?? []);
+                if (($result['status'] ?? '') === RefundGatewayInterface::STATUS_SUCCESS) {
                     $lockedLog->refund_status = RefundEnum::REFUND_SUCCESS;
                     $lockedRecord->refund_status = RefundEnum::REFUND_SUCCESS;
                     $lockedOrder->refund_transaction_id = (string)($result['transaction_id'] ?? '');
