@@ -1,6 +1,6 @@
 # Peanut Admin 核心包发布状态
 
-> 核查日期：2026-08-08  
+> 核查日期：2026-08-10
 > 核心仓：`peanut-opensource/peanut-admin`
 
 ## 结论
@@ -18,12 +18,11 @@
 
 ## 当前事实
 
-- 核心仓 `feat/p1-override-registry` 分支当前只有 `packages/php/composer.json` 与 `packages/web/package.json` 两个公开 manifest；原领域目录继续作为包内模块。
-- 两个 manifest 的当前资格版本均为 `0.1.0-alpha.2`。固定候选 `b0dc376c2147b98522764486342c9525fe5678ce` 已通过聚合门禁和包投影检查。
-- npm 包 `@peanut-admin/admin@0.1.0-alpha.2` 已公开发布。2026-08-08 的隔离消费者已从公开 registry 安装成功，确认版本、14 个 exports 及其目标文件全部存在；发布 tarball SHA-256 为 `94b15ddcbe031b109e687b01c61002b343c8259d4b0745b05e64b391718b13ef`。
-- npm 的 `alpha` 与 `latest` 当前都指向 `0.1.0-alpha.2`。`latest` 不是预期的预发布通道，但本轮修正因 npm 安全写权限返回 403 而停止，未继续创建新凭据。
-- Composer 包 `peanut-admin/core@0.1.0-alpha.2` 尚未发布。固定投影包含 604 个文件，SHA-256 为 `176608c1602b0ccf8acf79a9755eb7417c25445330ccde7baddcae7df8620bdc`；公开 split 仓库与 Packagist 条目当前均不可见。浏览器已确认 Packagist 账户处于登录状态并具备提交入口，但生成仓库、包所有权、更新身份和发布批准仍未建立，批准状态仍为 `preflight-open / publication_authorized: false`。
-- 本应用仍使用应用内 PHP、Arco 管理端以及 PC/UniApp 内置客户端逻辑，尚未迁移为上述两个公共依赖。
+- 核心仓 `dev` 只有 `packages/php/composer.json` 与 `packages/web/package.json` 两个公开 manifest；原领域目录继续作为包内模块。
+- Composer `peanut-admin/core@0.1.0-alpha.2` 已通过 Packagist 发布，并已由本应用的锁文件从公开 registry 安装。
+- npm 已公开发布 `@peanut-admin/admin@0.1.0-alpha.2` 与 `0.1.0-alpha.3`；当前 `alpha` 指向 Alpha.3，`latest` 保持 Alpha.2。应用管理端锁定 Alpha.3。
+- 核心仓不再部署重复的 GitHub Pages，只保留文档构建校验；2026-08-10 的 Documentation workflow 已成功。正式文档站仍由 Cloudflare Pages 托管。
+- 本应用已消费 PHP 权限集合与 Web 权限 helper，但绝大多数 PHP 业务、管理端页面及 PC/UniApp 客户端逻辑仍在应用内，尚未完成领域迁移。
 
 PC 已使用 Nuxt 3 + Element Plus，UniApp H5 使用 UniApp + Vue 3。核心包现已提供 `./client`、`./client/nuxt` 与 `./client/uniapp` 三个无 UI 子路径；本应用尚未迁移消费。端特有页面、组件、存储、导航和支付/OAuth 平台调用仍留在应用中。
 
@@ -43,9 +42,9 @@ PC 已使用 Nuxt 3 + Element Plus，UniApp H5 使用 UniApp + Vue 3。核心包
 
 1. [已完成] 完成一个 PHP 包与一个管理端 Web 包的收敛门禁，内部模块目录继续保留。
 2. [已完成] 在现有 npm 总包内新增无 UI client 子路径，不新增第三个 package manifest。
-3. [部分完成] 修复 CI，并完成固定候选聚合门禁、包投影和内部 Host 消费验证；npm registry 隔离消费者已通过，Composer registry 消费仍待发布后执行一次。
-4. [部分完成] npm Alpha.2 已发布；Composer Alpha.2 仍须在 split 仓库、Packagist owner、发布身份和审批门禁完成后发布。门禁稳定前不发布 `1.0.0`。
+3. [已完成] 修复核心 CI，并完成固定候选聚合门禁、包投影、registry 安装和内部 Host 消费验证。
+4. [已完成] npm Alpha.2/Alpha.3 与 Composer Alpha.2 已发布；产品化完成前不发布 `1.0.0`。
 5. 在本应用先迁移认证与权限，再按系统、会员、内容、通知、支付迁移；每个领域完成后删除应用内重复实现。
 6. 全部领域迁移完成后，应用才可声明核心能力已外置。
 
-Composer split、Packagist owner/更新身份与发布批准仍是 Composer 发布前置条件。npm 临时发布令牌已进入删除流程，但 npm 要求账户密码二次确认；不得绕过该确认或把凭据写入仓库、命令输出和日志。未经可安装性验证，不发布更多测试 tag。
+后续测试版本只在核心仓门禁全绿且产品应用完成一次 registry 消费验证后发布。任何 registry 凭据都不得写入仓库、命令输出或日志。

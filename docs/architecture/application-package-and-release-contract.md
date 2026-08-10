@@ -1,7 +1,7 @@
 # Peanut Admin 应用、核心包与发布契约
 
-> 状态：Accepted Target，npm 核心包已发布，Composer 发布与应用迁移尚未完成
-> 日期：2026-08-08
+> 状态：Accepted Target，两个核心包已发布，应用领域迁移尚未完成
+> 日期：2026-08-10
 
 ## 1. 产品与仓库边界
 
@@ -68,13 +68,13 @@ Docker 多阶段构建一次完成：
 4. 安装后端 Composer 生产依赖并运行 PHP-FPM。
 5. 由 Nginx 统一暴露 `/admin/`、`/mobile/`、`/pc/`、`/api/` 和 `/storage/`。
 
-三个静态客户端只写入自己的目录，不覆盖后端 public 根文件。生产宿主机只需要 Git、Docker 和 Compose；Node、PHP、Composer 均由构建或运行容器提供。宝塔反代 `127.0.0.1:18082`，Cloudflare 代理服务器域名。
+三个静态客户端只写入自己的目录，不覆盖后端 public 根文件。生产宿主机只需要 Git、Docker 和 Compose；Node、PHP、Composer 均由构建或运行容器提供。宝塔反代 `127.0.0.1:18092`，Cloudflare 代理服务器域名。
 
 ## 6. 迁移顺序
 
 1. [已完成 2026-08-07] 稳定当前三端 Docker 发布和首次空库启动。
-2. [进行中] 核心仓已收敛为一个 Composer 包和一个 npm 前端总包；npm `@peanut-admin/admin@0.1.0-alpha.2` 已发布并通过一次隔离安装，Composer `peanut-admin/core@0.1.0-alpha.2` 尚待生成 split、Packagist 发布授权与隔离安装。
-3. 在两个公开包内建立后端、管理端和客户端覆盖注册表，以认证与权限作为第一条端到端消费链。
+2. [已完成 2026-08-10] 核心仓已收敛并发布一个 Composer 包和一个 npm 前端总包；Composer Alpha.2 与 npm Alpha.2/Alpha.3 均可从公开 registry 安装。
+3. [进行中] 在两个公开包内建立后端、管理端和客户端覆盖注册表；认证与权限已完成首条消费，应用 Host 的完整覆盖装配尚待完成。
 4. 按系统、会员、内容、通知、支付迁移业务域，同时将管理端迁移到 Element Plus。
 5. PC 与 UniApp 先迁移重复的请求、认证、DTO 和状态规则，再按领域删除应用内重复实现并完成一次最低业务验收。
 6. 全部完成后，模板应用才切换为完全依赖核心包的正式基线。
