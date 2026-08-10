@@ -121,7 +121,7 @@ pa_system_menu 的 type 为 M（目录）、C（菜单）或 A（按钮/API 权�
 - 数据库默认 MySQL，编码 utf8mb4，表前缀由 DB_PREFIX 控制，默认 pa_；配置来源是 server/config/database.php。
 - 新环境先创建空数据库并配置 server/.env，再执行 `php server/database/install.php`。安装器按顺序执行 server/database/init.sql 和全部 server/database/migrations/*.sql，并校验预期表、菜单、配置及默认管理员；目标库已有任何表时会拒绝运行。
 - server/database/init.sql 只保存基础结构和基础种子，不单独代表完整的当前版本。后续业务表和增量字段以 migrations/ 为准，由首次安装器统一收口。
-- 既有环境的增量文件位于 server/database/migrations/，文件名按时间排序。仓库没有迁移记录表或 php think migrate 命令；发布时先备份，再由 DBA 按文件名逐个执行尚未应用的 SQL，并记录版本。
+- 既有环境的增量文件位于 server/database/migrations/，文件名按时间排序。`pa_schema_migration` 保存文件名、SHA-256、批次和执行状态；历史安装首次执行 `php server/database/migrate.php --adopt-existing`，之后发布执行 `php server/database/migrate.php`。迁移失败时停止切换新应用，核对 MySQL DDL 的实际结果并采用前滚修复，不得删除失败记录或改写已登记迁移。
 - server/database/import.php 是读取 .env 后通过 PDO 执行 init.sql 的一次性脚本，文件注释明确提示“用完即删”；优先使用可审计的 mysql 导入命令，除非环境确实需要该脚本。
 - 金额、状态和软删除字段应沿用已有表的类型/命名；涉及旧数据兼容时在迁移中写幂等的 information_schema 检查，并先发布迁移再发布依赖字段的 PHP 代码。
 
@@ -238,9 +238,9 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 ### 生产应用仓与多阶段 Compose
 
-生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。开发环境使用独立的 `deploy/docker-compose.dev.yml`，不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
+生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 并填写外部 MySQL 地址后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。开发环境使用独立的 `deploy/docker-compose.dev.yml`，不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
 
-生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 MySQL、PHP-FPM、Nginx 和后端 scheduler；Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
+生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 PHP-FPM、Nginx 和后端 scheduler；生产连接 `.env` 指定的局域网 MySQL，单机演示才启用 `bundled-db`，Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
 
 无论采用 Docker 还是原生发布包，都必须确保运行用户可写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、正确数据库凭据和 `APP_DEBUG=false`。
 
@@ -308,7 +308,7 @@ server {
 }
 ~~~
 
-宝塔面板的反向代理目标为 `http://127.0.0.1:18082`；Cloudflare 对应 DNS 记录开启代理。PHP-FPM 和 MySQL 不直接暴露到公网。
+宝塔面板的反向代理目标为 `http://127.0.0.1:18092`；Cloudflare 对应 DNS 记录开启代理。宝塔站点的 443 必须安装覆盖应用域名的 Cloudflare Origin CA 或 Let's Encrypt 证书，Cloudflare 使用 `Full (strict)`。PHP-FPM 和 MySQL 不直接暴露到公网。
 
 ### PC 与 uni-app 产物
 

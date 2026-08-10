@@ -102,7 +102,7 @@ peanut-admin/
 
 ## 生产部署
 
-生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。服务器只安装 Git 和 Docker，拉取应用 release、准备根目录 `.env` 后执行 `docker compose up -d --build`；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。
+生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。服务器只安装 Git 和 Docker，拉取应用 release、在根目录 `.env` 配置局域网 MySQL 后执行 `docker compose up -d --build`；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。单机演示才使用可选的 `bundled-db` profile。
 
 同一入口分别提供 `/admin/`（管理端静态 SPA）、`/pc/`（Nuxt 静态 SPA）、`/mobile/`（UniApp H5）、`/api/`（ThinkPHP）和 `/storage/`。三个前端都写入各自子目录，不覆盖后端 public 根文件。完整命令、版本范围和首次部署流程见 `docs/peanut-admin-release-deployment.md`。
 

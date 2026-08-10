@@ -39,11 +39,24 @@ docker compose --profile bundled-db up -d --build
 docker compose --profile redis up -d
 ```
 
-Redis 没有应用依赖边，只在明确接入时启用。生产数据库密码、MySQL root 密码和 `JWT_SECRET` 均为必填项。
+Redis 没有应用依赖边，只在明确接入时启用。外部数据库模式必须填写 `DB_HOST`、应用数据库账号密码和 `JWT_SECRET`；`MYSQL_ROOT_PASSWORD` 只在启用 `bundled-db` 时必填。
 
 Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。宝塔面板新增反向代理，目标填写 `http://127.0.0.1:18092`；Cloudflare DNS 对应记录开启代理（橙色云朵）。宝塔站点必须安装覆盖应用域名的有效证书（Cloudflare Origin CA 或自动续期的 Let's Encrypt）并开启 HTTPS，Cloudflare SSL/TLS 模式使用 `Full (strict)`。不要直接暴露 PHP-FPM 或 MySQL。
 
 `peanut-admin-doc.007345.xyz` 专用于 Cloudflare Pages 文档站，不经过宝塔。服务器应用使用 `peanut-admin.007345.xyz`，避免一个 DNS 名称同时绑定 Pages 和源站。
+
+## 已有应用升级
+
+升级必须先备份数据库和 `php-storage` 卷，再按“构建 → 迁移 → 切换”执行，不能先启动依赖新结构的应用代码：
+
+```bash
+git pull --ff-only
+docker compose build
+docker compose run --rm --no-deps php php server/database/migrate.php
+docker compose up -d --no-build
+```
+
+历史安装第一次进入迁移账本时，把普通迁移命令替换为 `php server/database/migrate.php --adopt-existing`。失败时保持旧容器运行，核对 DDL 实际结果并前滚修复。
 
 ## 原生发布包（备选）
 
