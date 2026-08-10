@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace app\adminapi\logic;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
 use app\common\service\FileService;
+use app\common\service\config\PaConfigWebsiteStore;
+use app\common\service\config\WebsiteConfigService;
 
 class WorkbenchLogic extends BaseLogic
 {
@@ -23,23 +24,29 @@ class WorkbenchLogic extends BaseLogic
 
     public static function versionInfo(): array
     {
+        $website = self::websiteService()->get();
         return [
             'version' => (string) config('project.version', '1.0.0'),
-            'website' => (string) config('project.website.url', ''),
-            'name'    => (string) ConfigService::get(
-                'website',
-                'name',
-                config('project.website.name', 'Peanut Admin')
-            ),
+            'website' => $website['official_url'],
+            'name'    => $website['name'],
             'based'   => (string) config(
                 'project.based',
-                'Vue 3.x、Arco Design Vue、ThinkPHP 8、MySQL'
+                'Vue 3.x、Element Plus、ThinkPHP 8、MySQL'
             ),
             'channel' => [
-                'website' => (string) config('project.channel.website', ''),
-                'gitee'   => (string) config('project.channel.gitee', ''),
+                'website' => $website['official_url'],
+                'github'  => $website['github_url'],
             ],
         ];
+    }
+
+    private static function websiteService(): WebsiteConfigService
+    {
+        return new WebsiteConfigService(
+            new PaConfigWebsiteStore(),
+            static fn(string $value): string => FileService::getFileUrl($value),
+            static fn(string $value): string => FileService::setFileUrl($value),
+        );
     }
 
     public static function today(): array

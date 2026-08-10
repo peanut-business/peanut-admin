@@ -81,7 +81,10 @@ final class WebsiteConfigService
         $stored = $this->store->read();
         $result = [];
         foreach ($this->defaults as $field => $default) {
-            $value = is_string($stored[$field] ?? null) ? $stored[$field] : $default;
+            $value = is_string($stored[$field] ?? null) ? trim($stored[$field]) : $default;
+            if ($value === '' && $default !== '' && $field !== 'official_url') {
+                $value = $default;
+            }
             $result[$field] = $this->isImage($field)
                 ? (string)($this->urlForRead)($value)
                 : $value;

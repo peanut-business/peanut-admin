@@ -1,3 +1,5 @@
+import defaultBrand from './generated/brand.json'
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: false },
@@ -5,6 +7,14 @@ export default defineNuxtConfig({
 
   app: {
     baseURL: '/pc/',
+    head: {
+      title: defaultBrand.website.pc_title,
+      meta: [
+        { name: 'description', content: defaultBrand.website.pc_desc },
+        { name: 'keywords', content: defaultBrand.website.pc_keywords },
+      ],
+      link: [{ rel: 'icon', href: '/brand/favicon.svg' }],
+    },
   },
 
   modules: ['@element-plus/nuxt', '@pinia/nuxt', '@nuxtjs/tailwindcss'],

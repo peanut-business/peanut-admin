@@ -2,8 +2,12 @@
   <div class="navbar">
     <div class="left-side">
       <el-space class="left-content" :size="12" alignment="center">
-        <img alt="logo" src="/favicon.svg" style="width: 28px; height: 28px" />
-        <h5 class="brand-title">Peanut Admin</h5>
+        <img
+          alt="logo"
+          :src="brandStore.website.web_logo"
+          style="width: 28px; height: 28px"
+        />
+        <h5 class="brand-title">{{ brandStore.website.name }}</h5>
         <el-button
           v-if="!topMenu && appStore.device === 'mobile'"
           class="mobile-menu-button"
@@ -128,13 +132,14 @@
     Sunny,
     SwitchButton,
   } from '@element-plus/icons-vue';
-  import { useAppStore, useUserStore } from '@/store';
+  import { useAppStore, useBrandStore, useUserStore } from '@/store';
   import { LOCALE_OPTIONS } from '@/locale';
   import useLocale from '@/hooks/locale';
   import useUser from '@/hooks/user';
   import MenuComponent from '@/components/menu/index.vue';
 
   const appStore = useAppStore();
+  const brandStore = useBrandStore();
   const userStore = useUserStore();
   const router = useRouter();
   const { logout } = useUser();

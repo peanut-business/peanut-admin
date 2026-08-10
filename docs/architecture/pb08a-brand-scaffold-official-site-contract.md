@@ -1,6 +1,6 @@
 # PB08A 脚手架品牌与官方网站合同
 
-> 状态：Frozen，Runtime 尚未实施
+> 状态：Implemented（品牌 Runtime、安装与四端消费）；官网门户待实施
 >
 > 应用基线：`88da40579f250f24700106bbe331e2706c48044b`
 >
@@ -36,6 +36,7 @@ fresh clone 与尚未连接 Runtime 的静态构建需要确定性默认值。�
 4. 不直接修改 `server/database/init.sql`。数据库变更只能新增迁移；安装凭据的动态写入由安装器负责。
 5. 不把生产域名、局域网地址、真实账号、密钥或证书写成模板默认值。
 6. 不预设赞助、商业服务、多版本文档或 SaaS 宣传；没有已发布事实的能力不得出现在官网 CTA 或版本页。
+7. 应用仓没有根 `LICENSE`，既有审计要求公开发布前完成 provenance/clean-room、LICENSE、NOTICE 与第三方清单。PB08A 包元数据只能标记 `proprietary/UNLICENSED`；未经用户明确许可不得推断或授予 MIT/Apache-2.0，PB09 在该决策完成前停止。
 
 ## 3. 品牌字段与生命周期
 
@@ -149,3 +150,11 @@ PB08A 只有在以下条件全部满足后才可标记完成：
 - 三个测试 owner 通过且浏览器验收只执行一次。
 
 通过只表示脚手架与官网门禁完成；不表示 PB08B 集成门禁、PB09 正式发布、真实第三方渠道或 SaaS 已完成。
+
+## 10. 当前实施记录
+
+品牌/脚手架 Runtime 已完成：`server/config/brand.json` 是 bootstrap 默认值和源资产索引，`scripts/sync-brand-assets.mjs` 生成并检查 Web、PC、UniApp 与 docs-site 静态副本；安装后仍由 `WebsiteConfigService + pa_config(type=website)` 唯一拥有可变值。管理端网站表单、登录页/壳层/页脚、PC metadata/layout 和 UniApp login/about 已消费同一规范 DTO；ThinkPHP/Uni preset/AUX、固定密码、固定旧 logo 和小写产品 fallback 已退出运行路径。用途化默认头像、菜单、文档与支持资产不再复用 favicon。
+
+空库安装现要求显式 `ADMIN_INITIAL_PASSWORD`，先验证再以随机盐把唯一管理员 seed 在内存中替换，输出不回显秘密；已有库/升级不要求该变量。应用包元数据已改为 Peanut Admin 身份，并因根许可证尚未获批而明确标记 `proprietary/UNLICENSED`。
+
+最低验证已通过：品牌与网站服务聚焦 PHP 测试、安装 bootstrap 测试、变更 PHP/SVG lint、生成资产无漂移、Web/PC/UniApp typecheck、Composer manifest/lock 与 Compose 配置。未执行真实数据库、全量构建或浏览器；这些只在 PB08B 的唯一正式候选验收执行。PB08A 剩余工作是官网/文档门户和配套用户、开发、部署、升级文档。

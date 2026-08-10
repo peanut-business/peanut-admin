@@ -121,6 +121,9 @@ jobs:
           HUSKY: '0'
         run: pnpm install --frozen-lockfile
 
+      - name: Check generated brand files
+        run: node scripts/sync-brand-assets.mjs --check
+
       - name: Build
         working-directory: web
         run: pnpm run build

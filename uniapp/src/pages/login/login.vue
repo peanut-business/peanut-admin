@@ -1,7 +1,7 @@
 <template>
   <view class="login-page">
     <view class="logo-area">
-      <image src="/static/logo.png" class="logo" />
+      <image :src="appLogo" class="logo" mode="aspectFit" />
       <view class="app-name">{{ appName }}</view>
     </view>
 
@@ -59,10 +59,12 @@ import { useUserStore } from '@/store/user'
 import { loginByAccount } from '@/api/account'
 import { computed } from 'vue'
 import { beginWechatOAuth, loginWechatMiniProgram, stashOAuthCompletion, type OAuthResult } from '@/api/oauth'
+import { resolveBrandLogo, resolveBrandName } from '@/utils/brand'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
-const appName = computed(() => appStore.config?.website?.shop_name || 'peanut')
+const appName = computed(() => resolveBrandName(appStore.config?.website))
+const appLogo = computed(() => resolveBrandLogo(appStore.config?.website))
 
 const loading = ref(false)
 const wechatLoading = ref(false)

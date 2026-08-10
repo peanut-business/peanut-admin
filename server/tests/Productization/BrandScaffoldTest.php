@@ -14,6 +14,7 @@ function brandExpect(bool $condition, string $message): void
 }
 
 $website = BrandDefaults::website();
+$defaultImages = BrandDefaults::defaultImages();
 brandExpect(
     array_keys($website) === WebsiteConfigService::fields(),
     'bootstrap manifest and website Runtime fields must match exactly'
@@ -34,5 +35,27 @@ foreach (['web_favicon', 'web_logo', 'login_image', 'shop_logo', 'pc_logo', 'pc_
     $content = file_get_contents($asset);
     brandExpect(is_string($content) && str_contains($content, '<svg'), "invalid SVG asset for {$field}");
 }
+
+foreach ($defaultImages as $field => $relativePath) {
+    $asset = $publicRoot . $relativePath;
+    brandExpect(is_file($asset), "missing default image for {$field}");
+}
+
+$projectConfig = file_get_contents(dirname(__DIR__, 2) . '/config/project.php');
+brandExpect(is_string($projectConfig), 'brand test must read project config');
+foreach (['admin_avatar', 'user_avatar', 'menu', 'project_docs', 'technical_support'] as $field) {
+    brandExpect(
+        str_contains($projectConfig, "\$defaultImage['{$field}']"),
+        "project config must read {$field} from the manifest"
+    );
+}
+
+$migration = file_get_contents(
+    dirname(__DIR__, 2) . '/database/migrations/20260811-brand-scaffold-defaults.sql'
+);
+brandExpect(
+    is_string($migration) && str_contains($migration, "'{$defaultImages['user_avatar']}'"),
+    'legacy user avatar migration must match the manifest'
+);
 
 echo "PB08A-BRAND-SCAFFOLD-001 bootstrap passed\n";

@@ -11,8 +11,10 @@
   import zhCN from 'element-plus/es/locale/lang/zh-cn';
   import GlobalSetting from '@/components/global-setting/index.vue';
   import useLocale from '@/hooks/locale';
+  import { useBrandStore } from '@/store';
 
   const { currentLocale } = useLocale();
+  useBrandStore().load();
   const locale = computed(() => {
     switch (currentLocale.value) {
       case 'zh-CN':

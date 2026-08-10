@@ -94,6 +94,8 @@ PB03–PB07 完成后先执行 PB08A：
 
 PB08A 执行合同见 `docs/architecture/pb08a-brand-scaffold-official-site-contract.md`。当前已冻结：继续扩展应用 `WebsiteConfigService + pa_config(type=website)` 作为唯一可变 Runtime；仓库 bootstrap manifest 只拥有安装前/静态构建默认值；空库安装必须显式提供合格的 `ADMIN_INITIAL_PASSWORD` 且不得回显；品牌 Runtime、安装、四端消费、官网依次串行实施。官网调研已记录 Vben Admin、Ant Design Pro、Arco Design Pro、SoybeanAdmin 与 Pure Admin 的官方来源，只吸收信息架构和交付完整性。PB08A 不另跑浏览器，最终桌面/移动 Chromium 与 PB08B 合并为唯一一次验收。
 
+PB08A 品牌 Runtime、安装安全和四端消费现已完成：bootstrap manifest/源资产与生成检查、16 字段网站配置、用途化默认图片、管理端/PC/UniApp-H5 消费、包元数据和显式初始管理员密码均已落地；旧 ThinkPHP/Uni preset/AUX、固定 logo、固定密码和小写产品 fallback 已退出运行路径。应用根许可证仍缺失，包元数据暂按 `proprietary/UNLICENSED`，PB09 前必须取得 provenance/clean-room、LICENSE/NOTICE 与第三方清单的明确决策。当前下一项仅为 docs-site 官网与文档门户，不提前执行 PB08B 浏览器或 PB09 发布。
+
 ## 6. 并行规则
 
 - 只读图谱、互不依赖的前后端契约和文档核对可以并行。

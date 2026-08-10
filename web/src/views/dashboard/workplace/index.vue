@@ -32,12 +32,12 @@
                     {{ $t('workplace.version.official') }}
                   </el-link>
                   <el-link
-                    v-if="workbench.version.channel.gitee"
-                    :href="workbench.version.channel.gitee"
+                    v-if="workbench.version.channel.github"
+                    :href="workbench.version.channel.github"
                     target="_blank"
                     type="primary"
                   >
-                    Gitee
+                    GitHub
                   </el-link>
                 </el-space>
                 <span v-else>--</span>
@@ -155,7 +155,7 @@
       website: '',
       name: '',
       based: '',
-      channel: { website: '', gitee: '' },
+      channel: { website: '', github: '' },
     },
     today: {
       time: '',
@@ -177,7 +177,7 @@
   const hasChannelLinks = computed(
     () =>
       Boolean(workbench.version.channel.website) ||
-      Boolean(workbench.version.channel.gitee)
+      Boolean(workbench.version.channel.github)
   );
 
   const metrics = computed(() => [

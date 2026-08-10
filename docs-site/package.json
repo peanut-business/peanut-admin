@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "description": "Peanut Admin public documentation site",
+  "homepage": "https://github.com/peanut-business/peanut-admin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peanut-business/peanut-admin.git",
+    "directory": "docs-site"
+  },
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vitepress dev .",

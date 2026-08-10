@@ -1,42 +1,23 @@
 <template>
-  <div class="banner">
+  <div class="banner" :style="bannerStyle">
     <div class="banner-inner">
-      <el-carousel class="carousel" height="100%">
-        <el-carousel-item v-for="item in carouselItem" :key="item.slogan">
-          <div :key="item.slogan" class="carousel-item">
-            <div class="carousel-title">{{ item.slogan }}</div>
-            <div class="carousel-sub-title">{{ item.subSlogan }}</div>
-            <img class="carousel-image" :src="item.image" />
-          </div>
-        </el-carousel-item>
-      </el-carousel>
+      <div class="brand-message">
+        <img class="brand-logo" :src="brandStore.website.web_logo" alt="" />
+        <div class="brand-title">{{ brandStore.website.name }}</div>
+        <div class="brand-slogan">{{ brandStore.website.slogan }}</div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import { useI18n } from 'vue-i18n';
-  import bannerImage from '@/assets/images/login-banner.png';
+  import { useBrandStore } from '@/store';
 
-  const { t } = useI18n();
-  const carouselItem = computed(() => [
-    {
-      slogan: t('login.banner.slogan1'),
-      subSlogan: t('login.banner.subSlogan1'),
-      image: bannerImage,
-    },
-    {
-      slogan: t('login.banner.slogan2'),
-      subSlogan: t('login.banner.subSlogan2'),
-      image: bannerImage,
-    },
-    {
-      slogan: t('login.banner.slogan3'),
-      subSlogan: t('login.banner.subSlogan3'),
-      image: bannerImage,
-    },
-  ]);
+  const brandStore = useBrandStore();
+  const bannerStyle = computed(() => ({
+    backgroundImage: `linear-gradient(145deg, rgb(9 30 73 / 82%), rgb(15 118 110 / 64%)), url(${brandStore.website.login_image})`,
+  }));
 </script>
 
 <style lang="less" scoped>
@@ -44,6 +25,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background-position: center;
+    background-size: cover;
 
     &-inner {
       flex: 1;
@@ -51,34 +34,33 @@
     }
   }
 
-  .carousel {
+  .brand-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     height: 100%;
+    padding: 48px;
+    color: #fff;
+    text-align: center;
+  }
 
-    &-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-    }
+  .brand-logo {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 24px;
+  }
 
-    &-title {
-      color: var(--el-fill-color-light);
-      font-weight: 500;
-      font-size: 20px;
-      line-height: 28px;
-    }
+  .brand-title {
+    font-weight: 600;
+    font-size: 28px;
+  }
 
-    &-sub-title {
-      margin-top: 8px;
-      color: var(--el-text-color-secondary);
-      font-size: 14px;
-      line-height: 22px;
-    }
-
-    &-image {
-      width: 320px;
-      margin-top: 30px;
-    }
+  .brand-slogan {
+    max-width: 380px;
+    margin-top: 12px;
+    color: rgb(255 255 255 / 78%);
+    font-size: 15px;
+    line-height: 1.7;
   }
 </style>

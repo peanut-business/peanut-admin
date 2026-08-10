@@ -61,6 +61,7 @@ $service = new WebsiteConfigService(
 $result = $service->get();
 expect(array_keys($result) === WebsiteConfigService::fields(), 'read must expose only fixed fields');
 expect($result['web_logo'] === 'read:logo.png', 'read mapper must handle image fields');
+expect($result['pc_logo'] === 'read:brand/logo.svg', 'empty image fields must resolve to the bootstrap asset');
 expect($result['pc_desc'] === 'Peanut Admin 全端管理脚手架', 'missing fields must use the bootstrap default');
 
 $service->save(validPayload());

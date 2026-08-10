@@ -1,9 +1,28 @@
 import { http } from '@/utils/request'
 import type { DecorationPage, DecorationTabbar, DecorationTheme } from '@/utils/decoration'
 
+export interface WebsiteConfig {
+  name: string
+  web_favicon: string
+  web_logo: string
+  login_image: string
+  shop_name: string
+  shop_logo: string
+  pc_logo: string
+  pc_title: string
+  pc_ico: string
+  pc_desc: string
+  pc_keywords: string
+  h5_favicon: string
+  slogan: string
+  copyright: string
+  official_url: string
+  github_url: string
+}
+
 export interface ConfigData {
   domain: string
-  website: { shop_name: string; shop_logo: string }
+  website: WebsiteConfig
   login: { login_way: number[] }
   web_page: {
     status: 0 | 1

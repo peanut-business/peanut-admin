@@ -1,6 +1,15 @@
 {
-  "name": "uni-preset-vue",
-  "version": "0.0.0",
+  "name": "peanut-admin-uniapp",
+  "description": "Peanut Admin UniApp/H5 consumer client",
+  "version": "1.0.0",
+  "private": true,
+  "homepage": "https://github.com/peanut-business/peanut-admin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peanut-business/peanut-admin.git",
+    "directory": "uniapp"
+  },
+  "license": "UNLICENSED",
   "scripts": {
     "dev:custom": "uni -p",
     "dev:h5": "uni",

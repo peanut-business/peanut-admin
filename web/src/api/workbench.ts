@@ -7,7 +7,7 @@ export interface VersionInfo {
   based: string;
   channel: {
     website: string;
-    gitee: string;
+    github: string;
   };
 }
 
