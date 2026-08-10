@@ -42,13 +42,13 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 
 ```bash
 cd server
-cp .env.example .env   # 填写 DB_HOST / DB_NAME / DB_USER / DB_PASS / JWT_SECRET
+cp .env.example .env   # 填写 DB_* / JWT_SECRET / ADMIN_INITIAL_PASSWORD
 composer install
 cd ..
 php server/database/install.php
 ```
 
-安装器只接受空数据库，按顺序执行基础结构和全部迁移，并校验完整表结构、菜单、配置及默认管理员（`admin / admin123456`）。已有数据库不得运行首次安装器，应备份后按 `server/database/migrations/` 的文件名顺序执行尚未应用的迁移。
+安装器只接受空数据库。首次安装前必须通过环境变量或 `server/.env` 显式设置至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器不会回显密码。它按顺序执行基础结构和全部迁移，并校验完整表结构、菜单、配置及管理员 `admin`。已有数据库不得运行首次安装器，应备份后按 `server/database/migrations/` 的文件名顺序执行尚未应用的迁移。
 
 ### 4. 启动
 
@@ -60,7 +60,7 @@ cd server && php think run --host 0.0.0.0 --port 8000
 cd web && pnpm install && pnpm dev
 ```
 
-浏览器打开 `http://localhost:5173/admin/`，账号 `admin / admin123456`（**首次登录请修改密码**）。
+浏览器打开 `http://localhost:5173/admin/`，使用账号 `admin` 和安装时提供的 `ADMIN_INITIAL_PASSWORD` 登录（**首次登录后建议立即改为个人凭据**）。
 
 ## 目录结构
 

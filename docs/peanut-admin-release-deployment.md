@@ -36,7 +36,7 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-编辑 `.env`，至少填写局域网数据库的 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASS`，并替换 `JWT_SECRET`。该文件已被 Git 和 Docker 构建上下文排除。生产默认连接外部 MySQL，不依赖容器名解析。
+编辑 `.env`，至少填写数据库的 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASS`，替换 `JWT_SECRET`；空库首次安装还必须填写 `ADMIN_INITIAL_PASSWORD`。示例的 `DB_HOST=mysql` 对应可选 `bundled-db` profile，外部 MySQL 部署必须改为可从 PHP 容器访问的地址。该文件已被 Git 和 Docker 构建上下文排除。
 
 然后只执行：
 
@@ -44,7 +44,7 @@ chmod 600 .env
 docker compose up -d --build
 ```
 
-Compose 默认只启动 PHP-FPM、Nginx 和定时任务，并连接 `.env` 指定的 MySQL。空数据库由 PHP 入口安全初始化，并将全部 migrations 记入 `pa_schema_migration`；已有完整数据库不会重复安装。首次安装后的管理员账号为 `admin / admin123456`，登录后立即修改密码。
+Compose 默认只启动 PHP-FPM、Nginx 和定时任务，并连接 `.env` 指定的 MySQL。空数据库由 PHP 入口安全初始化，并将全部 migrations 记入 `pa_schema_migration`；已有完整数据库不会重复安装。首次空库安装必须设置 `ADMIN_INITIAL_PASSWORD`，管理员用户名为 `admin`，密码不会写入日志或响应；首次登录后应改为个人凭据。
 
 最低检查：
 

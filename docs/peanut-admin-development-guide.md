@@ -154,7 +154,7 @@ git clone <仓库地址> && cd peanut-admin
 # 后端配置与依赖
 cd server
 cp .env.example .env
-# 编辑 .env，至少填写 DB_* 和 JWT_SECRET
+# 编辑 .env，至少填写 DB_*、JWT_SECRET 和仅首次安装使用的 ADMIN_INITIAL_PASSWORD
 composer install
 cd ..
 
@@ -165,7 +165,7 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 php server/database/install.php
 ~~~
 
-安装器会写入 pa_admin 的默认超级管理员：用户名 admin，初始密码 admin123456（密码哈希和盐由 SQL 固定生成）。安装完成后启动后端和管理端：
+安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。安装完成后启动后端和管理端：
 
 ~~~bash
 # 终端 A：ThinkPHP 开发服务器（server 目录）
@@ -178,7 +178,7 @@ pnpm install
 pnpm dev
 ~~~
 
-打开 http://localhost:5173，登录后立即修改默认密码。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
+打开 http://localhost:5173，使用安装时提供的密码登录，随后改为个人凭据。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
 
 已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管时先完成数据库和存储备份，然后只执行一次：
 

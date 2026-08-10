@@ -85,7 +85,7 @@
   const loginConfig = useStorage('login-config-v2', {
     rememberPassword: true,
     username: 'admin', // 演示默认值
-    password: 'admin123456', // demo default value
+    password: '',
   });
   const userInfo = reactive({
     username: loginConfig.value.username,

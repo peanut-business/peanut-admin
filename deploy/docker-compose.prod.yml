@@ -41,7 +41,9 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     command: ["/usr/local/bin/peanut-php-entrypoint"]
-    environment: *app-environment
+    environment:
+      <<: *app-environment
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
     volumes:
       - php-runtime:/var/www/peanut-admin/server/runtime
       - php-storage:/var/www/peanut-admin/server/public/storage

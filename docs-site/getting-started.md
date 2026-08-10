@@ -38,10 +38,11 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 安装基础结构、增量迁移和种子数据：
 
 ```bash
+export ADMIN_INITIAL_PASSWORD='<至少 12 位且同时包含字母和数字>'
 php server/database/install.php
 ```
 
-安装器只接受空数据库。已有环境请备份后，按迁移文件名顺序执行尚未应用的 SQL，不要重复运行首次安装器。
+安装器只接受空数据库，创建管理员 `admin`，且不会回显初始密码。已有环境请备份后，按迁移文件名顺序执行尚未应用的 SQL，不要重复运行首次安装器，也不要在升级环境设置该变量。
 
 ## 启动服务
 
@@ -60,7 +61,7 @@ pnpm install
 pnpm dev
 ```
 
-打开 `http://localhost:5173`。开发安装器创建的管理员账号仅用于本地环境；首次登录后请立即修改密码。
+打开 `http://localhost:5173`，使用管理员 `admin` 和安装时提供的密码登录；首次登录后请改为个人凭据。
 
 ## 下一步
 
