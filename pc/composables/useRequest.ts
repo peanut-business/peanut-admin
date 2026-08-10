@@ -1,48 +1,69 @@
+import {
+  createClient,
+  type ClientDecodeResult,
+  type ClientTransportRequest,
+} from '@peanut-admin/admin/client'
+import { createNuxtClientTransport } from '@peanut-admin/admin/client/nuxt'
+
 interface ApiResponse<T = unknown> {
   code: number
   msg: string
   data: T
 }
 
+const isApiResponse = (value: unknown): value is ApiResponse => (
+  typeof value === 'object'
+  && value !== null
+  && 'code' in value
+  && 'data' in value
+)
+
+const decodeApiResponse = <T>(
+  response: unknown,
+  _request: ClientTransportRequest,
+): ClientDecodeResult<T> => {
+  if (!isApiResponse(response)) {
+    return { kind: 'business', code: 'API_RESPONSE_INVALID', message: '响应格式无效' }
+  }
+  if (response.code === 20000) return { kind: 'success', data: response.data as T }
+  if (response.code === 40100) {
+    return { kind: 'unauthorized', code: String(response.code), message: response.msg }
+  }
+  return { kind: 'business', code: String(response.code), message: response.msg }
+}
+
 export function useRequest() {
-  const baseUrl = useRuntimeConfig().public.apiBase
+  const configuredBaseUrl = String(useRuntimeConfig().public.apiBase || '')
+  const baseUrl = configuredBaseUrl || (import.meta.client ? window.location.origin : 'http://localhost')
   const userStore = useUserStore()
 
-  async function request<T = unknown>(
-    url: string,
-    options: Parameters<typeof $fetch>[1] & { auth?: boolean } = {}
-  ): Promise<T> {
-    const { auth = true, headers: extraHeaders, ...rest } = options
-
-    const headers: Record<string, string> = { ...(extraHeaders as Record<string, string>) }
-    if (auth && userStore.token) {
-      headers['Authorization'] = `Bearer ${userStore.token}`
-    }
-
-    const resp = await $fetch<ApiResponse<T>>(`${baseUrl}/${url}`, {
-      headers,
-      ...rest,
-    })
-
-    if (resp.code === 40100) {
-      userStore.logout()
-      await navigateTo('/login')
-      throw new Error(resp.msg || '请先登录')
-    }
-
-    if (resp.code !== 20000) {
-      ElMessage.error(resp.msg || '请求失败')
-      throw new Error(resp.msg || '请求失败')
-    }
-
-    return resp.data
-  }
+  const client = createClient({
+    transport: createNuxtClientTransport({
+      baseUrl,
+      $fetch: (url, options) => $fetch(
+        url,
+        options as unknown as Parameters<typeof $fetch>[1],
+      ),
+    }),
+    session: {
+      accessToken: () => userStore.token,
+      clear: () => userStore.logout(),
+    },
+    decoder: decodeApiResponse,
+    hooks: {
+      unauthorized: async () => {
+        await navigateTo('/login')
+      },
+      businessError: (error) => {
+        ElMessage.error(error.message || '请求失败')
+      },
+    },
+  })
 
   return {
     get: <T = unknown>(url: string, params?: Record<string, unknown>, auth = true) =>
-      request<T>(url, { method: 'GET', params, auth }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    post: <T = unknown>(url: string, body?: Record<string, any> | null, auth = true) =>
-      request<T>(url, { method: 'POST', body, auth }),
+      client.request<T>({ path: url, method: 'GET', data: params, auth }),
+    post: <T = unknown>(url: string, body?: Record<string, unknown> | null, auth = true) =>
+      client.request<T>({ path: url, method: 'POST', data: body ?? undefined, auth }),
   }
 }
