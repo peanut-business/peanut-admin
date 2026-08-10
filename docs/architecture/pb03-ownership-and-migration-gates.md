@@ -76,7 +76,8 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 | PB05 会员/财务 | R01/R02 事务/幂等/审计候选（无下游采用授权）；不得借用 Tenant membership owner | `PB05-MEMBER-FINANCE-001`（已通过） | `user_money` 权威、唯一 writer、流水原子性、重复入账/扣款拒绝 |
 | PB06 内容/装修 | 无产品域 core owner | `PB06-CONTENT-DECORATION-001`（已通过） | 发布/下架、分类、资源 provenance、三端一个装修结果 |
 | PB07 通知 | `RUNTIME-NOTIFICATION-SMS-001` | `PB07-NOTIFICATION-HOST-001` | 模板快照、发送状态、失败/重试与脱敏 |
-| PB07 支付/OAuth/渠道 | `RUNTIME-INTEGRATION-SECURITY-001` 加通用原语 owner | `PB07-PAYMENT-OAUTH-001` | 回调验签、金额/订单一致、幂等、绑定冲突 |
+| PB07 支付 | 无产品支付 owner；Integration Security 仅相邻候选 | `PB07-PAYMENT-HOST-001`（已通过） | 回调/响应验签、金额/订单一致、结算幂等与退款单次扣款 |
+| PB07 OAuth/渠道 | `RUNTIME-INTEGRATION-SECURITY-001`（相邻候选，无采用授权） | `PB07-OAUTH-CHANNEL-HOST-001`（已通过） | state/ticket 单次消费、身份冲突、固定回跳、唯一配置与旧 Runtime 退出 |
 
 应用 owner 的证据路径和执行命令必须在每个实施契约中创建并固定；PB03 只分配责任，不伪造尚不存在的通过证据。
 

@@ -83,26 +83,6 @@ export function saveMiniProgramConfig(
   return axios.post('/api/admin/setting/mini-program/save', data);
 }
 
-export interface ChannelConfig {
-  wechat_open_status: number;
-  wechat_open_appid: string;
-  wechat_open_secret: string;
-  wechat_oa_status: number;
-  wechat_oa_appid: string;
-  wechat_oa_secret: string;
-  qq_status: number;
-  qq_appid: string;
-  qq_secret: string;
-}
-
-export function getChannelConfig() {
-  return axios.get<ChannelConfig>('/api/admin/setting/channel/config');
-}
-
-export function saveChannelConfig(data: ChannelConfig) {
-  return axios.post('/api/admin/setting/channel/save', data);
-}
-
 // ─── 页面装修 ────────────────────────────────────────────────────────────────
 export interface BannerItem {
   image: string;

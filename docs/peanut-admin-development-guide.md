@@ -287,7 +287,7 @@ server/app/common/service/storage/Driver.php 通过 storage.default 选择 local
 
 ### 微信 OAuth
 
-OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 mnp_setting，公众号 oa 使用 oa_setting，PC 开放平台 open_pc 使用 open_platform。身份表、一次性 state 和补全票据由 server/database/migrations/20260802_wechat_oauth.sql 创建；浏览器流程通过 /api/oauth/wechat/begin、callback，小程序通过 mini-program，已登录绑定通过 bind。state、completion ticket 都是一次性并有过期时间，补全接口不能当作会员 token。新增 OAuth 提供商应实现 OAuthTransportInterface，保留 provider/client/subject 隔离和一次性票据语义，不要在控制器直接写身份表。
+OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 mnp_setting，公众号 oa 使用 oa_setting，PC 开放平台 open_pc 使用 open_platform。身份表、一次性 state 和补全票据由 server/database/migrations/20260802_wechat_oauth.sql 创建；浏览器流程通过 /api/oauth/wechat/begin、callback，小程序通过 mini-program，已登录绑定通过 bind。`OAuthBrowserCallbackService` 是浏览器回跳唯一映射点：微信分别登记 `/api/oauth/wechat/redirect/pc` 与 `/api/oauth/wechat/redirect/official-account`，再固定桥接到 `/pc/oauth/callback` 与 `/mobile/#/pages/oauth/callback`，禁止客户端或控制器另拼根路径。state、completion ticket 均为 32 字节随机值、SHA-256 存储、600 秒和行锁单次消费；UniApp completion ticket 暂存后读即删，不进入 URL，补全接口不能当作会员 token。旧 Channel CRUD 和公众号 AES 写入口已经退出，当前只支持明文公众号回调。新增 OAuth 提供商应实现 OAuthTransportInterface，保留 provider/client/subject 隔离和一次性票据语义，不要在控制器直接写身份表。完整边界见 `docs/architecture/pb07-oauth-channel-host-contract.md`。
 
 ## 10. 增加一个业务模块
 

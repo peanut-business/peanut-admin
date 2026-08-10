@@ -5,6 +5,7 @@ namespace app\api\controller;
 
 use app\api\logic\OAuthLogic;
 use app\api\validate\OAuthValidate;
+use app\common\service\oauth\OAuthBrowserCallbackService;
 
 class OAuthController extends BaseApiController
 {
@@ -12,13 +13,36 @@ class OAuthController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.begin');
-        $callbackUrl = rtrim((string)$this->request->domain(), '/') . '/oauth/callback';
+        $scene = (string)$params['scene'];
+        if (!in_array($scene, ['oa', 'open_pc'], true)) {
+            return $this->fail('该微信场景不支持浏览器授权');
+        }
+        $callbackUrl = OAuthBrowserCallbackService::callbackUrl(
+            (string)$this->request->domain(),
+            $scene
+        );
         $result = OAuthLogic::begin(
-            (string)$params['scene'],
+            $scene,
             (string)$params['return_path'],
             $callbackUrl
         );
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
+    }
+
+    public function redirectPc()
+    {
+        return redirect(OAuthBrowserCallbackService::clientRedirectUrl(
+            'pc',
+            $this->request->get()
+        ));
+    }
+
+    public function redirectOfficialAccount()
+    {
+        return redirect(OAuthBrowserCallbackService::clientRedirectUrl(
+            'official-account',
+            $this->request->get()
+        ));
     }
 
     public function callback()

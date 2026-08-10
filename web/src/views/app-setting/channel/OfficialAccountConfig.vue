@@ -78,29 +78,6 @@
       <el-form-item prop="token" :label="$t('channel.officialAccount.token')">
         <el-input v-model="form.token" :maxlength="255" />
       </el-form-item>
-      <el-form-item
-        prop="encoding_aes_key"
-        :label="$t('channel.officialAccount.encodingAesKey')"
-      >
-        <el-input v-model="form.encoding_aes_key" :maxlength="43" />
-      </el-form-item>
-      <el-form-item
-        prop="encryption_type"
-        :label="$t('channel.officialAccount.encryptionType')"
-      >
-        <el-radio-group v-model="form.encryption_type">
-          <el-radio :value="1">{{
-            $t('channel.officialAccount.plaintext')
-          }}</el-radio>
-          <el-radio :value="2">{{
-            $t('channel.officialAccount.compatible')
-          }}</el-radio>
-          <el-radio :value="3">{{
-            $t('channel.officialAccount.safe')
-          }}</el-radio>
-        </el-radio-group>
-      </el-form-item>
-
       <el-divider content-position="left">
         {{ $t('channel.officialAccount.callback') }}
       </el-divider>
@@ -166,8 +143,6 @@
     app_secret_configured: false,
     url: '',
     token: '',
-    encoding_aes_key: '',
-    encryption_type: 1,
     business_domain: '',
     js_secure_domain: '',
     web_auth_domain: '',
@@ -179,7 +154,6 @@
     app_secret: [
       { required: true, message: t('channel.field.secret.required') },
     ],
-    encryption_type: [{ required: true }],
   };
 
   const domainFields: Array<{
@@ -225,8 +199,6 @@
         app_id: form.app_id.trim(),
         app_secret: form.app_secret.trim(),
         token: form.token.trim(),
-        encoding_aes_key: form.encoding_aes_key.trim(),
-        encryption_type: form.encryption_type,
       };
       await saveOfficialAccountConfig(data);
       await fetchData();

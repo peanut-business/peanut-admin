@@ -41,7 +41,7 @@
 | PB04 | 系统基础域收口 | 已完成 | 网站设置、权限/RBAC、字典、文件、任务/XLSX、日志/维护均冻结应用唯一 Runtime、核心候选停止线与测试 owner |
 | PB05 | 会员与财务域收口 | 已完成 | `user_money` 权威字段、唯一余额/流水 writer、充值回调防重和退款单次扣款由应用 Host 与测试 owner 固定 |
 | PB06 | 内容与装修域收口 | 已完成 | 应用 Module 唯一拥有文章、分类、素材引用与移动/PC/Tabbar 装修；四端共用一个读取 DTO |
-| PB07 | 通知、渠道、支付与 OAuth 域收口 | 进行中 | 通知与支付切片已固定应用唯一 Host、安全外部结果与测试 owner；OAuth/外部渠道待收口 |
+| PB07 | 通知、渠道、支付与 OAuth 域收口 | 已完成 | 四个验证码 scene、支付状态机、OAuth 身份绑定、固定回跳和外部渠道均由应用唯一 Host 与测试 owner 固定 |
 | PB08A | 脚手架产品化与官方网站 | 待开始 | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；桌面/移动一次验收 |
 | PB08B | 正式候选集成验收 | 待开始 | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致 |
 | PB09 | 发布正式基线 | 待开始 | `dev` 合入并推送 `main`；版本与发布记录完整 |
@@ -77,6 +77,8 @@
 通知合同见 `docs/architecture/pb07-notification-host-contract.md`。核心 `NotificationSms` 虽已随 Composer Alpha.2 发布，但没有 Peanut Admin 下游采用授权，且 Tenant message/outbox 语义不等价于产品四个验证码场景；本片不升级依赖、不 deep import、不修改核心。应用 `NoticeChannelService` 唯一拥有阿里云/腾讯云配置、单默认 Provider、原子切换、驱动选择和脱敏回执；验证码只保存慢哈希与 `****` 快照，验证固定最近成功记录且不回退旧码。无消费者的通用模板/SMTP Runtime 已退出，历史 `pa_notice_template` 数据保留。`PB07-NOTIFICATION-HOST-001`、PHP lint 与 Web typecheck 一次通过；通知切片完成，PB07 下一片为支付、OAuth 与外部渠道。
 
 支付合同见 `docs/architecture/pb07-payment-host-contract.md`。核心没有产品支付 Runtime，Integration Security 的 Tenant 机器身份/Webhook/会话能力也不等价且未获应用采用授权；充值订单、商户凭据、预支付、渠道回调、结算和退款继续由应用 Payment/Finance Module 唯一拥有。本片将退款 gateway 纳入 `PaymentServiceFactory` 和可注入 transport，删除旧静态退款签名/HTTP 路径与重复 Web facade；微信预支付/退款响应强制平台证书验签，支付宝退款响应继续 RSA2 验签，持久化仅保留白名单回执。`PB07-PAYMENT-HOST-001` 绑定封存 S01/F02 并以纯内存证书证明响应篡改拒绝；支付切片完成，PB07 下一片为 OAuth 与外部渠道。
+
+OAuth 与渠道合同见 `docs/architecture/pb07-oauth-channel-host-contract.md`。应用 `OAuthLogic → OAuthTransportInterface → WechatOAuthTransport` 是会员 OAuth 与身份表唯一 Runtime，`mnp_setting/oa_setting/open_platform` 是微信渠道唯一配置；核心 Integration Security 不等价且没有采用授权。本片以 `OAuthBrowserCallbackService` 固定 PC 与公众号 API bridge，再分别回到 `/pc/` 和 `/mobile/` 客户端；UniApp completion ticket 改为读后即删的临时端内状态，不进入 URL。旧 Channel CRUD/Web facade、重复微信/QQ 凭据及未实现的公众号 AES 配置入口退出，精确迁移清理敏感旧行。`PB07-OAUTH-CHANNEL-HOST-001` 绑定封存 S01/CH02/CH03，明确真实微信凭据与平台登记未验证；PB07 至此完成，下一阶段为 PB08A。
 
 ## 5. PB09 前脚手架与官网门禁
 

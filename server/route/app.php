@@ -41,7 +41,6 @@ use app\adminapi\controller\setting\HotSearchController;
 use app\adminapi\controller\setting\CustomerServiceController;
 use app\adminapi\controller\setting\PayConfigController;
 use app\adminapi\controller\setting\RechargeSettingController;
-use app\adminapi\controller\setting\ChannelController;
 use app\adminapi\controller\setting\TransactionSettingsController;
 use app\adminapi\controller\setting\WebPageController;
 use app\adminapi\controller\setting\MiniProgramController;
@@ -287,10 +286,6 @@ Route::group('api/admin', function () {
     Route::get('setting/recharge/config', [RechargeSettingController::class, 'config']);
     Route::post('setting/recharge/save', [RechargeSettingController::class, 'save']);
 
-    // 应用设置 - 渠道配置
-    Route::get('setting/channel/config',  [ChannelController::class, 'getConfig']);
-    Route::post('setting/channel/save',   [ChannelController::class, 'setConfig']);
-
     // 应用设置 - 交易设置
     Route::get('setting/transaction/config',  [TransactionSettingsController::class, 'getConfig']);
     Route::post('setting/transaction/save',   [TransactionSettingsController::class, 'setConfig']);
@@ -372,6 +367,8 @@ Route::post('api/oauth/wechat/begin', [ApiOAuthController::class, 'begin']);
 Route::post('api/oauth/wechat/callback', [ApiOAuthController::class, 'callback']);
 Route::post('api/oauth/wechat/mini-program', [ApiOAuthController::class, 'miniProgram']);
 Route::post('api/oauth/wechat/complete', [ApiOAuthController::class, 'complete']);
+Route::get('api/oauth/wechat/redirect/pc', [ApiOAuthController::class, 'redirectPc']);
+Route::get('api/oauth/wechat/redirect/official-account', [ApiOAuthController::class, 'redirectOfficialAccount']);
 
 // 支付渠道回调：匿名入口，但业务处理前必须完成渠道验签。
 Route::post('api/payment/notify/wechat', [ApiPaymentNotifyController::class, 'wechat']);

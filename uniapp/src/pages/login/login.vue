@@ -58,7 +58,7 @@ import { useAppStore } from '@/store/app'
 import { useUserStore } from '@/store/user'
 import { loginByAccount } from '@/api/account'
 import { computed } from 'vue'
-import { beginWechatOAuth, loginWechatMiniProgram, type OAuthResult } from '@/api/oauth'
+import { beginWechatOAuth, loginWechatMiniProgram, stashOAuthCompletion, type OAuthResult } from '@/api/oauth'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -135,9 +135,8 @@ async function consumeWechatResult(result: OAuthResult) {
     return
   }
   if (!result.completion_ticket) throw new Error('微信登录补全票据缺失')
-  uni.navigateTo({
-    url: `/pages/oauth/complete?ticket=${encodeURIComponent(result.completion_ticket)}&need_profile=${result.need_profile ? '1' : '0'}&need_mobile=${result.need_mobile ? '1' : '0'}&return_path=${encodeURIComponent('/pages/user/user')}`,
-  })
+  stashOAuthCompletion(result, '/pages/user/user')
+  uni.navigateTo({ url: '/pages/oauth/complete' })
 }
 
 function goRegister() { uni.navigateTo({ url: '/pages/register/register' }) }

@@ -64,6 +64,8 @@ docker compose up -d --no-build
 
 PB07 支付切片不新增数据库结构，但微信预支付、退款请求和退款查询现在都要求响应带有效的平台证书签名。升级前确认 `wx_pay_platform_cert_path` 指向 PHP-FPM 可读且与微信响应 serial 匹配的当前平台证书；证书缺失、过期或不匹配会 fail closed。部署 smoke 只能使用真实商户沙箱/低风险订单验证，不能关闭验签或手工改成功状态。
 
+PB07 OAuth/渠道切片会执行 `20260811-oauth-channel-host.sql`，删除旧 `channel` 微信/QQ 九字段和 `oa_setting` 中未实现的 AES 两字段；这些行可能包含敏感凭据，迁移前必须完成数据库备份。迁移不删除当前公众号、小程序、开放平台、菜单、回复、OAuth 身份或会员数据。反向代理必须正确传递外部 HTTPS scheme/Host；微信开放平台登记 `/api/oauth/wechat/redirect/pc`，公众号网页授权登记 `/api/oauth/wechat/redirect/official-account`。只有真实凭据、微信平台域名/白名单和一次低风险回跳通过后，才能声明生产 OAuth 可用；当前封存验收没有调用真实微信。
+
 历史安装第一次进入迁移账本时，把普通迁移命令替换为 `php server/database/migrate.php --adopt-existing`。失败时保持旧容器运行，核对 DDL 实际结果并前滚修复。
 
 ## 原生发布包（备选）

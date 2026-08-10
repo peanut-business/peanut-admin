@@ -27,8 +27,6 @@ class OfficialAccountLogic extends BaseLogic
             'app_secret_configured' => $secret !== '',
             'url' => $domain . '/api/wechat/official-account/callback',
             'token' => (string)ConfigService::get(self::CONFIG_TYPE, 'token', ''),
-            'encoding_aes_key' => (string)ConfigService::get(self::CONFIG_TYPE, 'encoding_aes_key', ''),
-            'encryption_type' => (int)ConfigService::get(self::CONFIG_TYPE, 'encryption_type', 1),
             'business_domain' => $authority,
             'js_secure_domain' => $authority,
             'web_auth_domain' => $authority,
@@ -52,8 +50,6 @@ class OfficialAccountLogic extends BaseLogic
             'app_id' => trim((string)$params['app_id']),
             'app_secret' => $secret,
             'token' => trim((string)($params['token'] ?? '')),
-            'encoding_aes_key' => trim((string)($params['encoding_aes_key'] ?? '')),
-            'encryption_type' => (int)$params['encryption_type'],
         ]);
         return true;
     }

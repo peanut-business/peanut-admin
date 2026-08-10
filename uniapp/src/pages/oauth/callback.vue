@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { callbackWechatOAuth, type OAuthResult } from '@/api/oauth'
+import { callbackWechatOAuth, stashOAuthCompletion, type OAuthResult } from '@/api/oauth'
 import { useUserStore } from '@/store/user'
 
 const userStore = useUserStore()
@@ -48,9 +48,8 @@ async function consumeResult(result: OAuthResult) {
 
   if (!result.completion_ticket) throw new Error('微信登录补全票据缺失')
   const returnPath = safePath(result.return_path, '/pages/user/user')
-  uni.navigateTo({
-    url: `/pages/oauth/complete?ticket=${encodeURIComponent(result.completion_ticket)}&need_profile=${result.need_profile ? '1' : '0'}&need_mobile=${result.need_mobile ? '1' : '0'}&return_path=${encodeURIComponent(returnPath)}`,
-  })
+  stashOAuthCompletion(result, returnPath)
+  uni.navigateTo({ url: '/pages/oauth/complete' })
 }
 
 function safePath(value: string | undefined, fallback: string): string {
