@@ -1,6 +1,6 @@
 <template>
   <div class="tab-bar-container">
-    <a-affix ref="affixRef" :offset-top="offsetTop">
+    <el-affix ref="affixRef" :offset="offsetTop">
       <div class="tab-bar-box">
         <div class="tab-bar-scroll">
           <div class="tags-wrap">
@@ -14,7 +14,7 @@
         </div>
         <div class="tag-bar-operation"></div>
       </div>
-    </a-affix>
+    </el-affix>
   </div>
 </template>
 
@@ -42,7 +42,7 @@
   watch(
     () => appStore.navbar,
     () => {
-      affixRef.value.updatePosition();
+      affixRef.value?.updateRoot?.();
     }
   );
   listenerRouteChange((route: RouteLocationNormalized) => {
@@ -62,12 +62,12 @@
 <style scoped lang="less">
   .tab-bar-container {
     position: relative;
-    background-color: var(--color-bg-2);
+    background-color: var(--el-bg-color);
     .tab-bar-box {
       display: flex;
       padding: 0 0 0 20px;
-      background-color: var(--color-bg-2);
-      border-bottom: 1px solid var(--color-border);
+      background-color: var(--el-bg-color);
+      border-bottom: 1px solid var(--el-border-color);
       .tab-bar-scroll {
         height: 32px;
         flex: 1;
@@ -78,16 +78,11 @@
           white-space: nowrap;
           overflow-x: auto;
 
-          :deep(.arco-tag) {
+          :deep(.el-tag) {
             display: inline-flex;
             align-items: center;
             margin-right: 6px;
             cursor: pointer;
-            &:first-child {
-              .arco-tag-close-btn {
-                display: none;
-              }
-            }
           }
         }
       }

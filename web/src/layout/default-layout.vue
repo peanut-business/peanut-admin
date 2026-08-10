@@ -1,51 +1,46 @@
 <template>
-  <a-layout class="layout" :class="{ mobile: appStore.hideMenu }">
+  <el-container class="layout" :class="{ mobile: appStore.hideMenu }">
     <div v-if="navbar" class="layout-navbar">
       <NavBar />
     </div>
-    <a-layout>
-      <a-layout>
-        <a-layout-sider
+    <el-container class="is-vertical">
+      <el-container>
+        <el-aside
           v-if="renderMenu"
           v-show="!hideMenu"
           class="layout-sider"
-          breakpoint="xl"
-          :collapsed="collapsed"
-          :collapsible="true"
-          :width="menuWidth"
+          :width="`${menuWidth}px`"
           :style="{ paddingTop: navbar ? '60px' : '' }"
-          :hide-trigger="true"
-          @collapse="setCollapsed"
         >
           <div class="menu-wrapper">
             <Menu />
           </div>
-        </a-layout-sider>
-        <a-drawer
+        </el-aside>
+        <el-drawer
           v-if="hideMenu"
-          :visible="drawerVisible"
-          placement="left"
-          :footer="false"
-          mask-closable
-          :closable="false"
-          @cancel="drawerCancel"
+          v-model="drawerVisible"
+          direction="ltr"
+          :size="`${appStore.menuWidth}px`"
+          :with-header="false"
+          :show-close="false"
+          @close="drawerCancel"
         >
           <Menu />
-        </a-drawer>
-        <a-layout class="layout-content" :style="paddingStyle">
+        </el-drawer>
+        <el-container class="layout-content" :style="paddingStyle">
           <TabBar v-if="appStore.tabBar" />
-          <a-layout-content>
+          <el-main class="layout-main">
             <PageLayout />
-          </a-layout-content>
+          </el-main>
           <Footer v-if="footer" />
-        </a-layout>
-      </a-layout>
-    </a-layout>
-  </a-layout>
+        </el-container>
+      </el-container>
+    </el-container>
+  </el-container>
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, watch, provide, onMounted } from 'vue';
+  import { ref, computed, watch, provide } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
   import { useAppStore, useUserStore } from '@/store';
   import NavBar from '@/components/navbar/index.vue';
@@ -56,7 +51,6 @@
   import useResponsive from '@/hooks/responsive';
   import PageLayout from './page-layout.vue';
 
-  const isInit = ref(false);
   const appStore = useAppStore();
   const userStore = useUserStore();
   const router = useRouter();
@@ -71,9 +65,6 @@
   const menuWidth = computed(() => {
     return appStore.menuCollapse ? 48 : appStore.menuWidth;
   });
-  const collapsed = computed(() => {
-    return appStore.menuCollapse;
-  });
   const paddingStyle = computed(() => {
     const paddingLeft =
       renderMenu.value && !hideMenu.value
@@ -82,10 +73,6 @@
     const paddingTop = navbar.value ? { paddingTop: navbarHeight } : {};
     return { ...paddingLeft, ...paddingTop };
   });
-  const setCollapsed = (val: boolean) => {
-    if (!isInit.value) return; // for page initialization menu state problem
-    appStore.updateSettings({ menuCollapse: val });
-  };
   watch(
     () => userStore.role,
     (roleValue) => {
@@ -100,9 +87,6 @@
   provide('toggleDrawerMenu', () => {
     drawerVisible.value = !drawerVisible.value;
   });
-  onMounted(() => {
-    isInit.value = true;
-  });
 </script>
 
 <style scoped lang="less">
@@ -112,6 +96,11 @@
   .layout {
     width: 100%;
     height: 100%;
+    flex-direction: column;
+
+    > :deep(.el-container) {
+      min-height: 0;
+    }
   }
 
   .layout-navbar {
@@ -137,20 +126,18 @@
       display: block;
       width: 1px;
       height: 100%;
-      background-color: var(--color-border);
+      background-color: var(--el-border-color);
       content: '';
     }
 
-    > :deep(.arco-layout-sider-children) {
-      overflow-y: hidden;
-    }
+    overflow-y: hidden;
   }
 
   .menu-wrapper {
     height: 100%;
     overflow: auto;
     overflow-x: hidden;
-    :deep(.arco-menu) {
+    :deep(.el-menu) {
       ::-webkit-scrollbar {
         width: 12px;
         height: 4px;
@@ -160,19 +147,30 @@
         border: 4px solid transparent;
         background-clip: padding-box;
         border-radius: 7px;
-        background-color: var(--color-text-4);
+        background-color: var(--el-text-color-placeholder);
       }
 
       ::-webkit-scrollbar-thumb:hover {
-        background-color: var(--color-text-3);
+        background-color: var(--el-text-color-secondary);
       }
     }
   }
 
   .layout-content {
+    min-width: 0;
     min-height: 100vh;
     overflow-y: hidden;
-    background-color: var(--color-fill-2);
+    flex-direction: column;
+    background-color: var(--el-fill-color-light);
     transition: padding 0.2s cubic-bezier(0.34, 0.69, 0.1, 1);
+  }
+
+  .layout-main {
+    min-width: 0;
+    padding: 0;
+  }
+
+  :deep(.el-drawer__body) {
+    padding: 0;
   }
 </style>

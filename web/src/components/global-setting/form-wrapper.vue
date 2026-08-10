@@ -1,14 +1,14 @@
 <template>
-  <a-input-number
+  <el-input-number
     v-if="type === 'number'"
     :style="{ width: '80px' }"
     size="small"
-    :default-value="(defaultValue as number)"
+    :model-value="(defaultValue as number)"
     @change="handleChange"
   />
-  <a-switch
+  <el-switch
     v-else
-    :default-checked="(defaultValue as boolean)"
+    :model-value="(defaultValue as boolean)"
     size="small"
     @change="handleChange"
   />
