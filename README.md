@@ -1,6 +1,6 @@
 # Peanut Admin
 
-基于 ThinkPHP 8 + Arco Design Pro Vue 的企业后台管理脚手架，完整复刻 likeadmin 标准版能力。
+基于 ThinkPHP 8、Vue 3 与 Element Plus 的企业后台管理应用模板。项目以 clean-room 方式对标 LikeAdmin 1.9.4 标准版的产品能力和业务结果，不复制其源码、接口形态或视觉实现。
 
 ## 项目身份与当前基线
 
@@ -8,9 +8,10 @@
 - 当前工作目录：`/Users/xing/Documents/company-projects/peanut-admin`
 - GitHub 仓库：`peanut-business/peanut-admin`
 - PC package name：`peanut-admin-pc`
-- 当前主线：`main` 已完成并推送 LikeAdmin 1.9.4 标准版 parity 的 9 个 commits；已完成使命的功能分支不再作为后续工作基线
-- 数据库基线：`server/database/install.php` + `init.sql` + 23 个 migrations，共 42 张表
-- 独立验证：42 tables / 170 menus / 59 configs / 1 default admin
+- 集成分支：`dev`；稳定分支：`main`
+- LikeAdmin parity：已完成并独立验证，证据见 `output/playwright/v02/`；后续不重复验收
+- 数据库基线：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 24 个 migrations
+- 独立验证：空库安装 42 张业务表；迁移账本接管后共 43 张表、24 条账本记录；170 个菜单、59 项配置、1 个默认管理员
 - SaaS 多租户：仅为 `docs/design/saas-roadmap/` 中的 roadmap 设计，当前代码尚未实现
 
 ## 技术栈
@@ -18,7 +19,9 @@
 | 层 | 技术 |
 |---|---|
 | 后端 | ThinkPHP 8、PHP 8.1+、JWT（firebase/php-jwt） |
-| 前端 | Arco Design Pro Vue 3、Vite、TypeScript |
+| 管理端 | Vue 3、Element Plus、Vite、TypeScript |
+| PC | Nuxt 3、Element Plus |
+| H5 / 小程序 | UniApp |
 | 数据库 | MySQL 8 |
 
 ## 快速开始
@@ -73,11 +76,14 @@ peanut-admin/
 │   ├── database/init.sql    # 基础结构和种子
 │   ├── database/migrations/ # 增量业务迁移
 │   └── route/app.php        # 全部路由
-└── web/                     # Arco Design Vue 3 前端
+├── web/                     # Vue 3 + Element Plus 管理端
     └── src/
         ├── api/             # axios 请求封装
         ├── views/           # 页面组件
         └── router/          # 前端路由
+├── pc/                      # Nuxt 3 PC 客户端
+├── uniapp/                  # UniApp H5 / 小程序客户端
+└── docs-site/               # 独立 VitePress 文档站
 ```
 
 ## 已实现模块
@@ -121,4 +127,4 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 
 ## 目标架构
 
-当前代码仍是已完成业务验收的 Arco/应用内实现。已确认的下一阶段目标是 Web 管理端统一 Element Plus，并把公共能力收敛为一个 Composer 核心包和一个 npm 前端总包。npm 包通过子路径同时提供管理端能力及 PC/UniApp 共用的无 UI 客户端内核；两个公开包均以标准注册表支持应用覆盖。迁移完成前不将这些目标描述为现成功能。契约见 `docs/architecture/application-package-and-release-contract.md`。
+管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client 和三端 Docker 基线已经完成。当前产品化工作是把仍在应用内的标准业务能力逐域迁移为核心包唯一实现，并删除应用内重复实现；完成后再发布正式基线。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
