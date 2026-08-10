@@ -67,7 +67,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 
 | 阶段/领域 | 核心已有 owner（仅在实际消费时适用） | 应用 Host owner | 一次最低验收 |
 |---|---|---|---|
-| PB04 认证/权限 | `RUNTIME-TENANT-AUTH-001`、`RUNTIME-TENANT-ADMIN-001`、`RUNTIME-DATA-AUTHORIZATION-001` | `PB04-AUTH-HOST-001`（Host 策略已通过；账户 CRUD 待后续切片） | non-root 已登记拒绝/未登记放行；root；菜单/按钮一致 |
+| PB04 认证/权限 | `RUNTIME-TENANT-AUTH-001`、`RUNTIME-TENANT-ADMIN-001`、`RUNTIME-DATA-AUTHORIZATION-001` | `PB04-AUTH-HOST-001` + `PB04-AUTH-CRUD-001`（均已通过） | Host：root/登记语义/菜单按钮；CRUD：关系、root/自操作、引用/层级拒绝与清理 |
 | PB04 网站设置 | `RUNTIME-SETTINGS-001` | `PB04-SETTINGS-WEBSITE-001` | 读取、合法保存、非法输入不写、恢复原值 |
 | PB04 字典 | `RUNTIME-REFERENCE-CODES-001` | `PB04-REFERENCE-CODES-HOST-001` | 列表、创建/编辑约束、被引用或状态边界 |
 | PB04 文件 | `RUNTIME-FILE-MEDIA-001` | `PB04-FILE-MEDIA-HOST-001` | 上传、私有/公开 URL 结果、删除/归档边界 |
@@ -86,7 +86,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 
 | 顺序 | 任务 | 所有权结果 | 启动条件 | 停止线 |
 |---|---|---|---|---|
-| PB04-01 | 认证/权限 Host 收口 | 核心原语 + 应用管理员模型 | 固定现有 URI/菜单语义与覆盖 slot | 不迁 Tenant schema，不重做 parity |
+| PB04-01 | 认证/权限 Host 与 CRUD 收口 | 核心原语 + 应用管理员模型 | 固定现有 URI/菜单语义、覆盖 slot 与 CRUD 事务合同 | 不迁 Tenant schema，不重做 parity |
 | PB04-02 | 网站设置 | 应用唯一服务 + `pa_config` adapter | PB03 应用 owner 决策 | 不改核心 Runtime；不迁支付/渠道设置 |
 | PB04-03 | 字典 | 核心编码不变量 + 应用兼容/定义 | 表/状态/引用语义映射完成 | 不并行修改内容分类 |
 | PB04-04 | 文件与素材 | 核心存储/交付原语 + 应用分类/Provider | URL、元数据、存储升级合同完成 | 不顺带迁装修素材 |
@@ -99,7 +99,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 
 ## 7. PB04-02 网站设置首片冻结合同
 
-PB04 从网站基础设置开始；该首片已按本节更新后的应用 owner 路线完成，其他 PB04 切片尚未开始。
+PB04 从网站基础设置开始；该首片已按本节更新后的应用 owner 路线完成。权限 Host 与管理员/RBAC CRUD 随后已按独立合同完成，其余 PB04 字典、文件、任务和运维切片尚未开始。
 
 ### 7.1 现有路径与数据 owner
 

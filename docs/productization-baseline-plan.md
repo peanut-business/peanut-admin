@@ -38,7 +38,7 @@
 | PB01 | 三端 Docker、生产 MySQL、文档站和域名基线 | 已完成 | 镜像构建、迁移账本、容器健康、发布域名登录/文章页、PC/H5 和文档通过 |
 | PB02 | 两包发布、标准覆盖 Host、三端 client、Element Plus | 已完成 | registry 锁定、CI、真实 Chromium 代表域通过 |
 | PB03 | 核心/应用所有权图谱与迁移门禁 | 已完成 | `pb03-ownership-and-migration-gates.md` 固定两仓所有权、唯一实现、Host/override、领域顺序和测试 owner |
-| PB04 | 系统基础域收口 | 进行中 | 网站设置、权限 Host 已形成唯一实现并通过聚焦测试与数据库探针；账户 CRUD、字典、文件、任务、日志/维护待执行 |
+| PB04 | 系统基础域收口 | 进行中 | 网站设置、权限 Host、管理员/RBAC CRUD 已形成应用唯一实现并通过各自一次聚焦验收；字典、文件、任务、日志/维护待执行 |
 | PB05 | 会员与财务域收口 | 待开始 | 应用 Module 唯一拥有会员、标签、余额、流水、充值退款；复用核心事务/幂等/审计原语 |
 | PB06 | 内容与装修域收口 | 待开始 | 应用 Module 唯一拥有文章、分类、素材业务与移动/PC/Tabbar 装修；复用设置/文件/Host 原语 |
 | PB07 | 通知、渠道、支付与 OAuth 域收口 | 待开始 | 通知基础设施按获批核心候选消费；产品 scene、渠道、支付回调/OAuth 流程由应用唯一拥有 |
@@ -59,6 +59,8 @@
 6. 更新本计划、发布状态和对应开发/使用文档。
 
 网站设置首片的真实存储表是 `pa_config`，不是 `pa_system_config`。限定静态枚举证明核心现有 Settings 同时绑定 `pa_setting_*`、revision/ETag、平台操作员和 Tenant/target 语义，不是小型存储端口。本片已按应用 owner 路线以 `WebsiteConfigService` 收口唯一实现，不修改核心 Runtime、不双写两套表；`PB04-SETTINGS-WEBSITE-001` 聚焦测试和一次可恢复数据库验收通过。
+
+管理员/RBAC CRUD 继续由应用唯一拥有，合同见 `docs/architecture/pb04-admin-rbac-crud-contract.md`。本片补齐 `dept/status`、`menu/status` 对编辑权限的固定 alias，并将菜单层级、角色引用和删除边界收进事务；`PB04-AUTH-CRUD-001` 一次可恢复数据库验收通过。它不授权核心 Tenant Runtime 消费，也不重复既有权限 Host 或 LikeAdmin parity 验收。
 
 ## 5. PB09 前脚手架与官网门禁
 

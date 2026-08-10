@@ -16,7 +16,9 @@ class AdminPermissionService
     /** Peanut 的轻量状态接口复用 LikeAdmin 的管理员编辑权限。 */
     private const ACCESS_ALIASES = [
         'admin/status' => 'admin/edit',
+        'dept/status' => 'dept/edit',
         'jobs/status' => 'jobs/edit',
+        'menu/status' => 'menu/edit',
         'finance/account-log/lists' => 'finance.account_log/lists',
         'finance/recharge/lists' => 'recharge.recharge/lists',
         'finance/recharge/refund' => 'recharge.recharge/refund',

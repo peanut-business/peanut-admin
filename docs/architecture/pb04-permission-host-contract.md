@@ -1,6 +1,6 @@
 # PB04-01 管理端权限 Host 收口合同
 
-> 状态：Implemented，待提交
+> 状态：Accepted
 >
 > 应用前置提交：`7d27a48938fe464ad89082d2652cc3acfdd84a60`
 >
@@ -77,3 +77,5 @@ Web 聚焦测试必须证明空要求、root wildcard、单项、多项 any-of�
 - 新增 PHP 文件 lint 通过；Web 测试使用仓内 TypeScript compiler，不新增依赖或产物。
 - 只读数据库 Host 探针一次通过：non-root 已登记拒绝/未登记放行、root 放行、真实 root 菜单非空且按钮权限为 `['*']`。
 - 本机默认 PHP 8.1 无法解析核心包的 `readonly class`；最终 PHP 证据来自项目要求的 Homebrew PHP 8.3，未修改 vendor 或测试规避。
+
+后续 `PB04-AUTH-CRUD-001` 已在独立合同中补齐 `dept/status`、`menu/status` alias 与菜单 CRUD 不变量；这不回改或重复本合同的 Host 验收。见 `docs/architecture/pb04-admin-rbac-crud-contract.md`。
