@@ -19,7 +19,7 @@ peanut-admin/
 │   ├── public/index.php     PHP-FPM/内置服务器入口
 │   ├── public/storage/      本地存储和导出文件的公开目录
 │   └── runtime/             日志、缓存和运行时文件（需可写）
-├── web/                     Arco Design Vue 管理端
+├── web/                     Vue 3 + Element Plus 管理端
 │   └── src/{api,router,views,store,components,...}
 ├── pc/                      Nuxt 3 PC 会员端
 │   ├── pages/、api/、components/、layouts/

@@ -6,7 +6,7 @@ return [
         'name' => env('project.web_name', 'Peanut Admin'),
         'url'  => env('project.web_url', ''),
     ],
-    'based' => 'Vue 3.x、Arco Design Vue、ThinkPHP 8、MySQL',
+    'based' => 'Vue 3.x、Element Plus、ThinkPHP 8、MySQL',
     'channel' => [
         'website' => env('project.channel_website', ''),
         'gitee'   => env('project.channel_gitee', ''),
