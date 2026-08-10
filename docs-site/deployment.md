@@ -30,7 +30,9 @@ chmod 600 .env
 docker compose up -d --build
 ```
 
-生产镜像是多阶段构建：web 管理端放到 `server/public/admin/`，uniapp H5 放到 `server/public/mobile/`，Nuxt PC 放到 `server/public/pc/`，API 统一走 `/api/`。PHP 容器入口会自动执行可跳过已安装数据库的安装器。生产默认连接 `.env` 指定的局域网 MySQL，不要求数据库与应用位于同一 Docker 网络。
+生产镜像是多阶段构建：web 管理端放到 `server/public/admin/`，uniapp H5 放到 `server/public/mobile/`，Nuxt PC 放到 `server/public/pc/`，API 统一走 `/api/`。PHP 容器入口会自动执行可跳过已安装数据库的安装器。可以连接外部 MySQL，也可以为单机部署启用 `bundled-db`；外部地址必须能从生产服务器实际路由。
+
+当前 `peanut-admin.007345.xyz` 演示部署使用 `bundled-db`，因为公网服务器不能直连开发局域网 `192.168.192.2`。2026-08-11 已完成 24 条迁移账本接管和三端生产 smoke；这不会改变其他部署选择外部 MySQL 的能力。
 
 默认服务为 PHP-FPM、Nginx 和后端 scheduler。单机演示需要内置 MySQL 时，将 `DB_HOST=mysql` 并启用 `bundled-db` profile；需要 Redis 时显式启用可选 profile：
 

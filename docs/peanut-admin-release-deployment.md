@@ -69,7 +69,9 @@ Docker Desktop 可通过 `docker buildx inspect --bootstrap` 查看 `moby.host-g
 
 2026-08-07 在独立 Compose 项目和全新 MySQL 卷中完成一次生产构建与启动：`/healthz`、`/admin/`、`/mobile/`、`/pc/` 均返回 HTTP 200；首次安装生成 42 张表、1 个默认超级管理员、170 个菜单和 59 项配置。验证后已删除测试容器、网络和卷。
 
-同日完成首次服务器部署与公网接入：生产 Compose 在 `161.153.52.6` 运行，宝塔反向代理服务器实际配置的 `127.0.0.1:18092`；Cloudflare 代理记录 `peanut-admin.007345.xyz` 和 `peanut-admin-doc.007345.xyz` 已生效。最低公网验证中，`https://peanut-admin.007345.xyz/healthz` 与 `https://peanut-admin-doc.007345.xyz/` 均返回 HTTP 200。
+同日完成首次服务器部署与公网接入：生产 Compose 在 `161.153.52.6` 运行，宝塔反向代理服务器实际配置的 `127.0.0.1:18092`；Cloudflare 代理记录 `peanut-admin.007345.xyz` 和 `peanut-admin-doc.007345.xyz` 已生效。
+
+2026-08-11 已把服务器从历史功能分支升级到 `dev`，完成数据库/存储备份、24 条迁移账本接管、生产 API 路由修复和三端镜像更新。当前四个服务健康/运行，真实 Chromium 已通过管理端登录、文章页、UniApp H5、Nuxt PC 与文档站 smoke；证据见 `output/playwright/production-baseline/final-summary.json`。
 
 ## 宝塔与 Cloudflare
 
@@ -97,13 +99,13 @@ docker compose --profile redis up -d
 
 ## 可选内置 MySQL
 
-生产默认连接另一台局域网数据库服务器。只有单机演示环境确实需要把数据库也交给本项目管理时，才启用内置数据库 profile，并将 `DB_HOST` 设为 `mysql`：
+模板默认支持连接外部数据库。当前公网演示服务器无法路由开发局域网的 `192.168.192.2`，所以实际启用内置数据库 profile，并将 `DB_HOST` 设为 `mysql`：
 
 ```bash
 docker compose --profile bundled-db up -d --build
 ```
 
-两台不同机器上的应用和 MySQL 不能使用 Docker 服务名通信；此时必须填写数据库服务器的局域网 IP 或可解析主机名，并在 MySQL 侧授权应用服务器来源地址。
+若应用和 MySQL 位于两台可互通的机器，不能使用 Docker 服务名通信；必须填写数据库服务器对应用服务器可路由的 IP/主机名，并在 MySQL 侧授权来源地址。公网服务器不得填写只能在开发局域网访问的地址。
 
 ## 后续升级
 
