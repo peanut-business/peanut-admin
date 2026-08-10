@@ -2,6 +2,8 @@
 
 > 计划状态：已完成  
 > 执行方式：按依赖顺序推进；无文件冲突的只读盘点和独立模块并行；每项仅做一次最小充分验收。
+> 当前基线：9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线。
+> 范围说明：SaaS/多租户仅为 `docs/design/saas-roadmap/` 中的后续 roadmap，当前产品代码尚未实现。
 
 ## 1. 任务状态
 
@@ -61,7 +63,7 @@
 
 ## 5. 当前批次
 
-当前批次已完成 CH03、DE01、DE02、S01、T01 和 V01 全量菜单与核心业务回归；下一项为 DOC01/DOC02：
+LikeAdmin 1.9.4 标准版 parity、V01、DOC01 和 DOC02 均已完成并封存；本计划没有待执行的下一项：
 
 1. 汇总 P01 的前端、参考后端和 Peanut 后端全量盘点；
 2. A02、A03 与 O03 已完成；
@@ -81,7 +83,7 @@
 16. CH02 已完成小程序资料、二维码相对 URI/绝对 URL 转换、AppID/AppSecret、六类派生域名、独立权限和原子保存；双端浏览器及 Peanut API/数据库验收通过，旧三字段未形成兼容层，默认配置和临时权限数据已恢复清理，证据见 `output/playwright/ch02/`；
 17. CH03 已完成唯一 `oa_setting/open_platform` 配置、菜单发布“远端成功后落本地”、自动回复事务/唯一约束、明文 Webhook 状态机与 13 个权限节点；管理端与 LikeAdmin 真实页面完成一次最低充分对比，配置/菜单/三类回复/开放平台/受限权限均通过，配置和临时权限夹具已精确恢复，证据见 `output/playwright/ch03/{backend-summary,frontend-summary}.json`；
 18. DE01/DE02 已完成五类页面、严格组件与业务链接 Schema、Tabbar 首项/可见项不变量、相对资源 URI、移动/PC 权限隔离、匿名只读消费 DTO 和即时生效链；真实浏览器确认移动 Banner、主题色、动态 Tabbar 和 PC Banner 保存后立即被客户端消费，装修数据、Tabbar 主键与时间戳均已恢复，证据见 `output/playwright/de01-de02/{backend-summary,frontend-summary}.json`；
-19. 当前 Luna 任务只包含边界已冻结的管理页面、客户端渲染、API 类型和一次最低充分双端浏览器验收，见 `docs/luna-handoff-20260802.md`；迁移、Schema、权限、不变量与服务边界不得由 Luna 修改；
+19. `docs/luna-handoff-20260802.md` 是已完成任务的历史交接归档，不是当前工作队列；其冻结边界和验收说明仅用于回溯；
 20. S01 已完成唯一网站配置、备案、协议富文本资源、统计、默认头像、登录方式、支付密钥掩码和存储引擎切换核心；一次最低充分验收全部通过并恢复配置，证据见 `output/playwright/s01/core-summary.json`；
 21. S01 充值支付已完成六终端、11 场景矩阵、归属订单、预支付、微信 V3/支付宝 RSA2 回调验签、第三方流水唯一、行锁、幂等入账及余额/流水只增加一次；假传输边界验收通过且夹具已清理，证据见 `output/playwright/s01/recharge-payment-summary.json`；
 22. S01 微信 OAuth 已完成小程序、公众号和开放平台 PC 三场景，采用 principal/identity 双层身份、UnionID 归一、哈希 state、一次性 completion ticket、冲突拒绝和登录态绑定；假微信传输验收通过且夹具已清理，证据见 `output/playwright/s01/wechat-oauth-summary.json`；没有扩展 LikeAdmin 不具备的 QQ、移动 App OAuth、解绑或账号合并；
@@ -89,7 +91,7 @@
 24. T01 字典、调度、日志与维护后端核心已收口：类型改名事务同步、占用拒删、Cron 注册表与 CAS 原子认领、失败/重启状态、嵌套敏感值递归脱敏、IP/时间筛选、25,000 上限 XLSX 和精确清缓存；合并验收通过且夹具已清理，证据见 `output/playwright/t01/system-tools-core-summary.json`；
 25. S01 管理端、UniApp 与 PC 客户端已完成；真实浏览器确认支付密钥掩码、六终端 11 场景、充值创建/详情/列表/预支付边界、PC/公众号微信入口和两套 completion 页面，并与 LikeAdmin 1.9.4 的支付方式、支付配置和登录注册页面核对一致。运行时修复了充值正则规则、Nuxt composable 上下文、PC 同源开发代理和 UniApp 分包目录；配置、会员、订单、操作日志及参考管理员密码哈希均精确恢复，证据见 `output/playwright/s01/frontend-summary.json`；
 26. T01 管理页面与双系统真实浏览器已完成：参考端只读核对生成器、字典、定时任务、系统日志、缓存和环境页面；Peanut 完成生成器导入→配置→预览→一次下载、字典改名/占用拒删、Cron 预览/启停、日志 IP/时间筛选与 XLSX、环境查看和清缓存。夹具、参考管理员、相关日志及下载产物均精确清理，证据见 `output/playwright/t01/frontend-summary.json`；T01 已封存，禁止重复验收。
-27. V01 已完成：Luna Playwright 独立会话 v01pm 按实际侧边栏逐个点击全部 30 个可见叶子菜单，30/30 成功；无 404/500、登录重定向或空白页，每页标题为 `Peanut Admin` 且含主要业务内容。装修/开发页仅有不影响呈现的 i18n fallback warning；全程只读，未点击新增、保存、删除、启停或清缓存等写操作。精简证据见 `output/playwright/v01/frontend-summary.json`；下一项为 DOC01/DOC02。
+27. V01 已完成：Luna Playwright 独立会话 v01pm 按实际侧边栏逐个点击全部 30 个可见叶子菜单，30/30 成功；无 404/500、登录重定向或空白页，每页标题为 `Peanut Admin` 且含主要业务内容。装修/开发页仅有不影响呈现的 i18n fallback warning；全程只读，未点击新增、保存、删除、启停或清缓存等写操作。精简证据见 `output/playwright/v01/frontend-summary.json`。
 28. DOC01/DOC02 已完成：独立开发与部署指南、空库首次安装器和管理员使用手册均经 Sol 核查；MySQL 8 隔离空库真实执行基础 SQL 与全部迁移，24 个 SQL 文件生成 42/42 张预期表，默认管理员、170 条菜单和 59 条配置完整，临时库与用户清理为 0。证据见 `output/playwright/v01/clone-install-summary.json`。
 
 ## 6. 复刻边界

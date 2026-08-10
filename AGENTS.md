@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-03
+> Last updated: 2026-08-10
 
 ---
 
@@ -9,24 +9,24 @@
 
 | 项目 | 值 |
 |------|----|
-| 产品名称 | **Peanut Admin**（无 v2 后缀，永远不写 "Peanut Admin v2"） |
+| 产品名称 | **Peanut Admin**（不使用任何版本后缀） |
 | 本地目录 | `/Users/xing/Documents/company-projects/peanut-admin/` |
 | GitHub 仓库 | `git@github.com:peanut-business/peanut-admin.git` |
-| 主分支 | `main` |
+| PC package name | `peanut-admin-pc` |
+| 集成分支 | `dev` |
+| 稳定分支 | `main` |
 
-**旧路径已删除，不再存在：**
-- ~~`~/Documents/company-projects/peanut-v2/`~~
-- ~~`github.com:peanut-business/peanut-v2`~~
-- ~~独立的 orchestration workspace `peanut-admin/`~~（旧的，非本目录）
+此前的独立编排工作区已经删除，内容已归档。当前目录是现行产品代码仓，不是旧编排工作区；后续任务只以本文件记录的目录、仓库和主分支为当前事实源。
 
 ---
 
-## 2. 当前状态（2026-08-03）
+## 2. 当前状态（2026-08-10）
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 
+- 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 数据库：`server/database/install.php` + `init.sql` + 23 migrations
+- 数据库：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 24 migrations
 
 **独立验证结果（非 Codex 自报）：**
 
@@ -34,6 +34,7 @@
 |--------|------|------|
 | Fresh-clone install | `git clone` → 空 MySQL → `php install.php` | 42 tables / 170 menus / 59 configs / 1 admin ✓ |
 | 前端路由回归 | Playwright 1.62 headless Chromium 真实浏览器 | 30/30 routes pass ✓ |
+| 升级演练 | fresh + legacy adopt + idempotent rerun | 43 tables / 24 migration ledger ✓ |
 
 证据文件：
 - `output/playwright/v01/clone-install-summary.json` — Codex 原始报告（参考）
@@ -43,6 +44,13 @@
 ### 2.2 SaaS / 多租户设计 — 🗺️ Roadmap Only，未实现
 
 设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。**后端代码中没有任何多租户实现。** 不要在现有代码里查找 Tenant / pa_tenant 相关逻辑。
+
+### 2.3 产品化正式基线 — 🚧 进行中
+
+- 集成 PR：`feat/productization-baseline` → `dev`（GitHub PR #3）
+- 已完成：远程数据库生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI
+- 进行中：管理端 Element Plus、完整核心业务依赖消费、标准覆盖 Host、PC/UniApp 无 UI client 消费
+- 产品化阶段通过后才将 `dev` 合入 `main`；SaaS 作为后续独立目标
 
 ---
 
@@ -56,7 +64,7 @@ peanut-admin/
 │   ├── database/
 │   │   ├── install.php  # 一键安装（空库 → 全量初始化）
 │   │   ├── init.sql     # 基础表 + 种子数据
-│   │   └── migrations/  # 23 个增量迁移
+│   │   └── migrations/  # 24 个增量迁移
 │   └── .env             # DB/JWT 配置（不提交）
 ├── web/             # 管理端前端（Vue3 + ArcoDesign）
 ├── pc/              # PC 消费端（Nuxt3）
@@ -98,7 +106,7 @@ LikeAdmin 到 Peanut Admin 的刻意改名，**不是缺失**：
 ## 6. 给 Codex 的工作约定
 
 1. 所有任务在 `/Users/xing/Documents/company-projects/peanut-admin/` 下执行
-2. 功能分支命名：`feat/<描述>`，完成后 PR → main
-3. 不要创建 `peanut-v2`、`v2/` 路径或任何带 "v2" 的文件名
+2. 功能分支命名：`feat/<描述>`，完成后 PR → `dev`；阶段验收通过后 `dev` → `main`
+3. 不要创建带产品版本后缀的名称、路径或文件名
 4. SaaS 相关实现需求 → 先查阅 `docs/design/saas-roadmap/` 再动手
 5. DB 变更：新建 `server/database/migrations/YYYYMMDD-<描述>.sql`，不要直接修改 `init.sql`

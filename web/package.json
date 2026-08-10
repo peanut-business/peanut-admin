@@ -31,11 +31,13 @@
   },
   "dependencies": {
     "@arco-design/web-vue": "^2.44.7",
+    "@element-plus/icons-vue": "2.3.2",
     "@peanut-admin/admin": "0.1.0-alpha.3",
     "@vueuse/core": "^9.3.0",
     "axios": "^0.24.0",
     "dayjs": "^1.11.5",
     "echarts": "^5.4.0",
+    "element-plus": "2.14.3",
     "lodash": "^4.17.21",
     "mitt": "^3.0.0",
     "nprogress": "^0.2.0",

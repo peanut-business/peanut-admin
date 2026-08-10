@@ -1,7 +1,7 @@
 {
   "run": "26080101",
   "prefix": "C0126080101",
-  "system": "Peanut Admin v2",
+  "system": "Peanut Admin",
   "pre_cleanup_fixture_state": {
     "categories": [
       {"id": 6, "name": "C0126080101-A2", "sort": 9001, "is_show": 1, "soft_deleted": false},

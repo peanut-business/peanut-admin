@@ -1,7 +1,7 @@
 import { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
-import { hasPermission as coreHasPermission } from '@peanut-admin/admin/core';
 import { useAppStore, useUserStore } from '@/store';
 import { REDIRECT_ROUTE_NAME } from '@/router/constants';
+import { permissionEvaluator } from '@/core/runtime';
 
 export function hasPermission(
   requiredPermissions: string | string[],
@@ -18,7 +18,7 @@ export function hasPermission(
   const permissionSet = new Set(permissions);
   return (
     permissionSet.has('*') ||
-    required.some((permission) => coreHasPermission(permissionSet, permission))
+    required.some((permission) => permissionEvaluator(permissionSet, permission))
   );
 }
 

@@ -7,7 +7,7 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   sitemap: {
-    hostname: 'https://peanut-admin.007345.xyz',
+    hostname: 'https://peanut-admin-doc.007345.xyz',
   },
   themeConfig: {
     siteTitle: 'Peanut Admin',

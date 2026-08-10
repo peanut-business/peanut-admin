@@ -4,7 +4,9 @@
 
 > 背景:当前产品仓 = 对标 LikeAdmin 标准版的管理端底座(克隆安装即可部署一个应用)。
 > 长期方向 = 在此基础上支持 SaaS/多租户模型,并作为 DCS 等下游项目的开发底座。
-> 这些设计原本只存在于旧编排工作区(`peanut-admin-project`),v2 产品仓完全没有。为避免与旧工作区一起丢失,迁移至此,跟随产品仓演进。
+> 这些设计已统一归档到本目录并跟随产品仓演进；它们只记录未来方向，不代表当前产品能力。
+
+> 包边界说明：本目录中的历史方案可能仍引用 `kernel`、`admin-core`、`admin-shell` 等多包名称。当前有效目标以 `docs/architecture/application-package-and-release-contract.md` 为准：应用只直接安装一个 Composer 核心包和一个 npm 管理端核心包，领域仅作为包内模块存在。
 
 ## 目录结构
 
@@ -21,7 +23,7 @@
 
 ## 来源与可回溯
 
-- `rebuild-design/`、`dcs-integration/`、`lifecycle/`:来自 `peanut-business/peanut-admin-project`(旧编排工作区,已归档,commit `be4a6a7`)
+- `rebuild-design/`、`dcs-integration/`、`lifecycle/`:归档来源 commit `be4a6a7`
 - `kernel-contracts/`:来自 `peanut-opensource/peanut-admin` 分支 `feature/new-backend-tp8`(commit `90da97b`)
 
 > 注意:这些是**设计资料**,不代表当前基础版已实现租户能力。当前 `server/` 里没有 `pa_tenant` 表、没有平台/租户分层。实现 SaaS 是独立的后续目标。

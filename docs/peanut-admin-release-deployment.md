@@ -36,7 +36,7 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-编辑 `.env`，至少替换 `DB_PASS`、`MYSQL_ROOT_PASSWORD` 和 `JWT_SECRET`。该文件已被 Git 和 Docker 构建上下文排除。
+编辑 `.env`，至少填写局域网数据库的 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASS`，并替换 `JWT_SECRET`。该文件已被 Git 和 Docker 构建上下文排除。生产默认连接外部 MySQL，不依赖容器名解析。
 
 然后只执行：
 
@@ -44,13 +44,13 @@ chmod 600 .env
 docker compose up -d --build
 ```
 
-Compose 会启动 MySQL、PHP-FPM、Nginx 和定时任务。空数据库由 PHP 入口安全初始化；已有完整数据库不会重复安装。首次安装后的管理员账号为 `admin / admin123456`，登录后立即修改密码。
+Compose 默认只启动 PHP-FPM、Nginx 和定时任务，并连接 `.env` 指定的 MySQL。空数据库由 PHP 入口安全初始化，并将全部 migrations 记入 `pa_schema_migration`；已有完整数据库不会重复安装。首次安装后的管理员账号为 `admin / admin123456`，登录后立即修改密码。
 
 最低检查：
 
 ```bash
 docker compose ps
-curl -fsS http://127.0.0.1:18082/healthz
+curl -fsS http://127.0.0.1:18092/healthz
 ```
 
 ### 可选构建代理
@@ -69,17 +69,23 @@ Docker Desktop 可通过 `docker buildx inspect --bootstrap` 查看 `moby.host-g
 
 2026-08-07 在独立 Compose 项目和全新 MySQL 卷中完成一次生产构建与启动：`/healthz`、`/admin/`、`/mobile/`、`/pc/` 均返回 HTTP 200；首次安装生成 42 张表、1 个默认超级管理员、170 个菜单和 59 项配置。验证后已删除测试容器、网络和卷。
 
+同日完成首次服务器部署与公网接入：生产 Compose 在 `161.153.52.6` 运行，宝塔反向代理服务器实际配置的 `127.0.0.1:18092`；Cloudflare 代理记录 `peanut-admin.007345.xyz` 和 `peanut-admin-doc.007345.xyz` 已生效。最低公网验证中，`https://peanut-admin.007345.xyz/healthz` 与 `https://peanut-admin-doc.007345.xyz/` 均返回 HTTP 200。
+
 ## 宝塔与 Cloudflare
 
 宝塔创建站点并将全部请求反向代理到：
 
 ```text
-http://127.0.0.1:18082
+http://127.0.0.1:18092
 ```
 
 Compose 只监听宿主机回环地址，不直接暴露 PHP-FPM、MySQL 或 PC 容器端口。宝塔负责公网 80/443 和源站证书。
 
-Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开启代理。Cloudflare 访问宝塔，宝塔再访问本机 `18082`；本方案不需要 Cloudflare Tunnel 容器。
+Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开启代理。Cloudflare 访问宝塔，宝塔再访问本机 `18092`；本方案不需要 Cloudflare Tunnel 容器。
+
+宝塔对应站点的 443 必须安装覆盖 `peanut-admin.007345.xyz` 的有效证书，否则 HTTPS 会落到宝塔默认站点。可使用 Cloudflare Origin CA，也可使用自动续期的 Let's Encrypt 证书；当前生产服务器使用后者。宝塔开启 HTTPS 后，Cloudflare 加密模式固定为 **Full (strict)**，不要使用 Flexible。源站 80/443 应只接受可信来源，且不得绕过 Cloudflare 对外提供服务。
+
+服务器应用域名固定为 `peanut-admin.007345.xyz`。文档站域名 `peanut-admin-doc.007345.xyz` 属于 Cloudflare Pages，不经过宝塔，也不安装 Origin CA 证书；同一个 DNS 名称不能同时指向 Pages 和服务器源站。
 
 ## Redis
 
@@ -89,15 +95,38 @@ Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开�
 docker compose --profile redis up -d
 ```
 
-## 后续升级
+## 可选内置 MySQL
 
-升级由应用 release tag 驱动。正式升级前先备份 MySQL 与 `php-storage` 卷，阅读该版本迁移清单并执行尚未应用的迁移，再重建容器：
+生产默认连接另一台局域网数据库服务器。只有单机演示环境确实需要把数据库也交给本项目管理时，才启用内置数据库 profile，并将 `DB_HOST` 设为 `mysql`：
 
 ```bash
-git fetch --tags
-git checkout <release-tag>
-docker compose up -d --build
+docker compose --profile bundled-db up -d --build
 ```
+
+两台不同机器上的应用和 MySQL 不能使用 Docker 服务名通信；此时必须填写数据库服务器的局域网 IP 或可解析主机名，并在 MySQL 侧授权应用服务器来源地址。
+
+## 后续升级
+
+默认沿用服务器当前稳定发布分支。正式升级前先备份 MySQL 与 `php-storage` 卷。升级顺序固定为：拉取代码、构建新镜像、用新镜像迁移数据库，迁移成功后才切换运行容器：
+
+```bash
+git pull --ff-only
+docker compose build
+docker compose run --rm --no-deps php php server/database/migrate.php
+docker compose up -d --no-build
+```
+
+历史安装首次升级时，把普通迁移命令替换为只执行一次的历史接管；接管成功后再启动新容器：
+
+```bash
+docker compose build
+docker compose run --rm --no-deps php php server/database/migrate.php --adopt-existing
+docker compose up -d --no-build
+```
+
+接管会先完整校验历史基线，再登记历史迁移并执行未登记文件。`php` 服务继承镜像工作目录 `/var/www/peanut-admin`，所以命令使用 `server/database/migrate.php`；在 server 工作目录中等价于 `php database/migrate.php`。迁移只处理账本中未登记的文件，并校验 SHA-256；无待执行文件时返回 `up_to_date`。迁移失败时不要启动新容器：MySQL DDL 不能假定事务回滚，应核对已执行结构、备份和失败记录，编写前滚修复后再继续。历史接管命令不可在后续发布中重复执行。
+
+需要严格锁版或回滚时，再使用 release tag；这不是首次部署和日常升级的必需步骤。
 
 `--skip-if-installed` 只避免容器重启时重复执行首次安装，不代替版本化数据库迁移。自动升级管理将在独立运营平台实现前保持手动。
 
