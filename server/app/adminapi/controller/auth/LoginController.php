@@ -18,7 +18,7 @@ class LoginController extends BaseAdminController
     {
         $params = $this->request->post();
 
-        // LikeAdmin 使用 account；保留现有 Arco 前端 username 入参兼容。
+        // 管理端登录表单提交 username，业务层统一映射为管理员账号。
         $params['account']  = trim((string)($params['account'] ?? $params['username'] ?? ''));
         $params['terminal'] = (int)($params['terminal'] ?? 1);
 
@@ -42,7 +42,7 @@ class LoginController extends BaseAdminController
             'id'          => $admin->id,
             'username'    => $admin->username,
             'nickname'    => $admin->nickname,
-            // Arco Design Pro Vue 展示与鉴权所需字段
+            // 管理端展示与鉴权所需字段
             'name'        => $admin->nickname ?: $admin->username,
             'avatar'      => $admin->avatar,
             // 前端路由守卫用标量 role（'admin' 可访问全部 demo 路由）

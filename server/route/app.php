@@ -69,7 +69,7 @@ Route::post('api/user/logout', [LoginController::class, 'logout']);
 Route::post('admin/login/login',  [LoginController::class, 'login']);
 Route::post('admin/login/logout', [LoginController::class, 'logout']);
 
-// ─── Arco Design Pro Vue 兼容路由（仅需登录，不做 RBAC） ─────────────────────
+// ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
 Route::group(function () {
     Route::post('api/user/info', [LoginController::class, 'info']);
     Route::post('api/user/menu', [MenuController::class, 'route']);
