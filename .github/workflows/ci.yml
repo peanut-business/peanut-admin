@@ -75,6 +75,10 @@ jobs:
         working-directory: server
         run: php tests/Productization/ContentDecorationHostTest.php
 
+      - name: Test notification Host ownership
+        working-directory: server
+        run: php tests/Productization/NotificationHostTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest

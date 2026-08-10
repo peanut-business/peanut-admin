@@ -51,7 +51,7 @@ flowchart LR
 | 字典 | `pa_dict_type/pa_dict_data`、LikeAdmin CRUD/状态/选择器与 HTTP/UI 的唯一 Runtime | Tenant 三表、不可变 code、版本追加、ETag/幂等 Reference Codes 候选 | 当前 schema/API 不等价且核心无下游采用授权；PB04-03 保留应用唯一实现，不双写、不 deep import |
 | 文件、素材、存储引擎 | `pa_file*`、公开素材 URL、分类/选择器和 local/qiniu/aliyun/qcloud 唯一 Runtime；`storage` 同时决定 URL 与删除 Provider | Tenant-private `pa_file_object`、archive、delivery grant 与 local-private 候选 | 当前可见性/schema/生命周期不等价且核心无采用授权；应用不双写、不 deep import，产品引用 provenance 延后各表 owner |
 | 定时任务、生成器、导入导出、日志、维护 | Crontab/Generator/OperationLog/System；PB04 已收口任务、XLSX、脱敏审计和只读环境探针 | Tenant Task Job、私有 CSV Import Export、platform Ops Console 候选 | 当前 audience/schema/重试/日志/文件语义不等价且核心无采用授权；应用保留唯一 Runtime，不双写、不 deep import |
-| 通知与短信 | Scene/Template/Log/Sms | Notification SMS 与 Integration Security | 核心拥有模板、发送状态、验证码和服务商端口；应用只配置/覆盖提供商 |
+| 通知与短信 | 四个固定验证码 Scene、`NoticeChannelService`、Log/SMS；通用模板/SMTP Runtime 已退出 | Tenant message/outbox/Task 重试型 Notification SMS 与 Integration Security 候选，已发布但无应用采用授权 | PB07 通知切片保留应用唯一 Runtime：产品 scene、频控/消费、短信凭据、Provider 和同步结果均归应用；不升级依赖、不 deep import，未来采用须有新资格与显式决策 |
 | 会员、标签、余额 | Member/MemberTag/AccountLog/Recharge/Refund；`MemberBalanceService` 是唯一余额与流水 writer | Kernel 有 Tenant membership 与 R01/R02 事务/幂等/审计候选，不是客户财务模型且无下游采用授权 | PB05 保留应用 Member/Finance Module 唯一 Runtime；`user_money` 权威、`balance` 镜像，充值/退款防重留在产品 Host |
 | 文章、分类、搜索 | Article/ArticleCate/Search；`ProductAssetReferenceService` 固定产品资源 provenance | 暂无产品内容模块；可复用设置/文件/任务原语 | PB06 保留应用 Content Module 唯一 Runtime，拥有发布/分类/收藏/计数与搜索规则 |
 | 移动/PC/Tabbar 装修 | Decoration Logic；管理端/API/PC/UniApp 共用 `DecorationReadService` | Web Shell/client 只有通用宿主能力 | PB06 保留应用 Decoration Module 唯一 Runtime，拥有 Schema、DTO 与即时渲染结果；三端不得复制状态机 |
@@ -79,4 +79,4 @@ PB04 已从网站设置唯一实现开始，而不是直接迁移全部系统页
 - 本片只处理网站基础设置的读取、校验和保存，未修改登录、支付、渠道、协议、版权或默认头像。
 - 应用 owner `PB04-SETTINGS-WEBSITE-001` 的聚焦测试与一次真实数据库读取/合法保存/非法不写/恢复原值均已通过。
 
-该切片证明应用 owner 能通过单一服务和存储端口删除规则重复。随后 PB04 系统域、PB05 会员/财务与 PB06 内容/装修均已由各自 owner 固定；内容资源保留原 Provider provenance，管理端与三端共用唯一装修读取 DTO。下一步按合同进入 PB07 通知、渠道、支付与 OAuth，不提前开始脚手架/官网或 SaaS。
+该切片证明应用 owner 能通过单一服务和存储端口删除规则重复。随后 PB04 系统域、PB05 会员/财务与 PB06 内容/装修均已由各自 owner 固定；内容资源保留原 Provider provenance，管理端与三端共用唯一装修读取 DTO。PB07 通知切片也已固定应用唯一 SMS Host、四个产品 scene 与敏感数据边界；下一步仅处理支付、OAuth 与外部渠道，不提前开始脚手架/官网或 SaaS。

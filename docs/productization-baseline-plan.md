@@ -41,7 +41,7 @@
 | PB04 | 系统基础域收口 | 已完成 | 网站设置、权限/RBAC、字典、文件、任务/XLSX、日志/维护均冻结应用唯一 Runtime、核心候选停止线与测试 owner |
 | PB05 | 会员与财务域收口 | 已完成 | `user_money` 权威字段、唯一余额/流水 writer、充值回调防重和退款单次扣款由应用 Host 与测试 owner 固定 |
 | PB06 | 内容与装修域收口 | 已完成 | 应用 Module 唯一拥有文章、分类、素材引用与移动/PC/Tabbar 装修；四端共用一个读取 DTO |
-| PB07 | 通知、渠道、支付与 OAuth 域收口 | 待开始 | 通知基础设施按获批核心候选消费；产品 scene、渠道、支付回调/OAuth 流程由应用唯一拥有 |
+| PB07 | 通知、渠道、支付与 OAuth 域收口 | 进行中 | 通知切片已固定应用唯一 SMS Host、四个 scene 与敏感数据边界；支付/OAuth/外部渠道待收口 |
 | PB08A | 脚手架产品化与官方网站 | 待开始 | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；桌面/移动一次验收 |
 | PB08B | 正式候选集成验收 | 待开始 | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致 |
 | PB09 | 发布正式基线 | 待开始 | `dev` 合入并推送 `main`；版本与发布记录完整 |
@@ -73,6 +73,8 @@
 会员与财务合同见 `docs/architecture/pb05-member-finance-host-contract.md`。核心 Tenant membership 不是客户会员，R01/R02 事务/幂等/审计候选也没有 Peanut Admin 下游采用授权；会员、标签、余额、流水、充值与退款继续由应用 Module 唯一拥有。本片以 `MemberBalanceService` 收口 `user_money` 权威余额、`balance` 兼容镜像、累计充值和分类流水写入，三条变动路径继续在各自领域事务内装配。`PB05-MEMBER-FINANCE-001` 一次无数据库验收绑定封存 S01/F02 业务证据并证明重复回调/退款不重复入账，PB05 至此完成。
 
 内容与装修合同见 `docs/architecture/pb06-content-decoration-host-contract.md`。核心没有产品内容/装修 Runtime，文章、分类、收藏/计数、搜索和移动/PC/Tabbar 装修继续由应用 Module 唯一拥有。本片以 `ProductAssetReferenceService` 保留新资源的 local 相对 URI 或云/CDN 绝对 provenance，以 `DecorationReadService` 删除管理端重复 formatter 并统一 API、PC 与 UniApp/H5 读取 DTO；文章分类存在性与占用删除边界同步固定。`PB06-CONTENT-DECORATION-001` 一次无数据库验收绑定封存 C01/C02/DE01-DE02 证据并证明三端即时消费，PB06 至此完成，下一阶段为 PB07。
+
+通知合同见 `docs/architecture/pb07-notification-host-contract.md`。核心 `NotificationSms` 虽已随 Composer Alpha.2 发布，但没有 Peanut Admin 下游采用授权，且 Tenant message/outbox 语义不等价于产品四个验证码场景；本片不升级依赖、不 deep import、不修改核心。应用 `NoticeChannelService` 唯一拥有阿里云/腾讯云配置、单默认 Provider、原子切换、驱动选择和脱敏回执；验证码只保存慢哈希与 `****` 快照，验证固定最近成功记录且不回退旧码。无消费者的通用模板/SMTP Runtime 已退出，历史 `pa_notice_template` 数据保留。`PB07-NOTIFICATION-HOST-001`、PHP lint 与 Web typecheck 一次通过；通知切片完成，PB07 下一片为支付、OAuth 与外部渠道。
 
 ## 5. PB09 前脚手架与官网门禁
 

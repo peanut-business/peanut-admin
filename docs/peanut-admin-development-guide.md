@@ -142,6 +142,8 @@ DB_TYPE、DB_DRIVER、DB_CHARSET 可按 server/config/database.php 的默认值�
 
 网站、支付、存储、渠道、充值和 OAuth 等业务配置主要保存在 pa_config，由管理端设置页面维护；不要把支付私钥、微信 AppSecret、短信密钥、对象存储 Secret、证书内容或 .env 提交到仓库。生产环境使用独立的密钥注入/文件权限方案，并限制 PHP-FPM 用户读取证书目录。配置修改后如遇旧值，使用管理端系统维护页面清理缓存或按发布流程重启 PHP-FPM。
 
+通知验证码由 `NoticeChannelService` 统一读取 `pa_config` 的阿里云/腾讯云凭据并选择唯一启用 Provider，`VerificationCodeService` 不得自行解析配置或实例化驱动。验证码只保存 `password_hash`，内容快照固定为 `****`，Provider 回执只保存白名单字段；当前同步发送不自动重试。通用通知模板、邮件/SMTP 没有产品消费者，不得绕过固定 scene 恢复入口。完整边界见 `docs/architecture/pb07-notification-host-contract.md`。
+
 ## 6. 从 clone 到可登录开发环境
 
 以下步骤使用仓库当前 README 与脚本中的路径。<仓库地址>、数据库账号和密码是占位符，按环境替换。

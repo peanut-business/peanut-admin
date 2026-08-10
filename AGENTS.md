@@ -54,7 +54,8 @@
 - 已完成 PB03：`docs/architecture/pb03-ownership-and-migration-gates.md` 已冻结核心通用基础设施、应用产品 Module、唯一实现、Host/override、测试 owner 与逐领域停止线
 - PB04 已完成：网站设置、权限 Host、管理员/RBAC CRUD、字典、文件素材、任务/导入导出与日志/维护均形成应用唯一实现、核心候选停止线及测试 owner
 - PB05 已完成：会员/标签、权威余额、兼容镜像、分类流水、充值入账与退款形成应用唯一 Runtime；核心 Tenant membership 与 R01/R02 候选未经采用授权
-- PB06 已完成：文章/分类/收藏/计数与移动/PC/Tabbar 装修形成应用唯一 Runtime；产品资源保留 Provider provenance，四端共用唯一装修读取 DTO；下一阶段为 PB07 通知、渠道、支付与 OAuth
+- PB06 已完成：文章/分类/收藏/计数与移动/PC/Tabbar 装修形成应用唯一 Runtime；产品资源保留 Provider provenance，四端共用唯一装修读取 DTO
+- PB07 通知切片已完成：应用唯一拥有四个验证码 scene、SMS Host、凭据/Provider 与同步发送结果；核心 Notification SMS 未获下游采用授权；下一片为支付、OAuth 与外部渠道
 - PB03–PB07 后、PB09 前新增 PB08A 脚手架产品化与官方网站门禁；PB08A/PB08B 都通过后才可发布正式基线
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
 - 产品化阶段通过后才将 `dev` 合入 `main`；SaaS 作为后续独立目标
