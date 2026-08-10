@@ -1,123 +1,125 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.appSetting', 'menu.appSetting.channel']" />
-    <a-card class="general-card" :title="$t('menu.appSetting.channel')">
-      <a-spin :loading="loading" style="width: 100%">
-        <a-tabs default-active-key="official-account">
-          <a-tab-pane
-            key="official-account"
-            :title="$t('channel.tab.wechatOa')"
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.appSetting.channel') }}</template>
+      <div v-loading="loading">
+        <el-tabs model-value="official-account">
+          <el-tab-pane
+            name="official-account"
+            :label="$t('channel.tab.wechatOa')"
           >
             <OfficialAccountConfig />
-          </a-tab-pane>
-          <a-tab-pane
-            key="official-account-menu"
-            :title="$t('channel.tab.wechatOaMenu')"
+          </el-tab-pane>
+          <el-tab-pane
+            name="official-account-menu"
+            :label="$t('channel.tab.wechatOaMenu')"
           >
             <OfficialAccountMenu />
-          </a-tab-pane>
-          <a-tab-pane
-            key="official-account-reply"
-            :title="$t('channel.tab.wechatOaReply')"
+          </el-tab-pane>
+          <el-tab-pane
+            name="official-account-reply"
+            :label="$t('channel.tab.wechatOaReply')"
           >
             <OfficialAccountReply />
-          </a-tab-pane>
-          <a-tab-pane
-            key="open-platform"
-            :title="$t('channel.tab.wechatOpen')"
+          </el-tab-pane>
+          <el-tab-pane
+            name="open-platform"
+            :label="$t('channel.tab.wechatOpen')"
           >
             <OpenPlatform />
-          </a-tab-pane>
+          </el-tab-pane>
 
           <!-- 既有 H5 网页渠道 -->
-          <a-tab-pane key="h5" :title="$t('channel.tab.h5')">
-            <a-form
+          <el-tab-pane name="h5" :label="$t('channel.tab.h5')">
+            <el-form
               ref="webPageFormRef"
               :model="webPageForm"
               :rules="webPageRules"
-              layout="vertical"
+              label-position="top"
               style="max-width: 640px; margin-top: 16px"
             >
-              <a-form-item field="status" :label="$t('channel.h5.status')">
-                <a-switch
+              <el-form-item prop="status" :label="$t('channel.h5.status')">
+                <el-switch
                   v-model="webPageForm.status"
-                  :checked-value="1"
-                  :unchecked-value="0"
+                  :active-value="1"
+                  :inactive-value="0"
                 />
-              </a-form-item>
-              <a-form-item :label="$t('channel.h5.url')">
-                <a-input-group>
-                  <a-input :model-value="webPageForm.url" readonly />
-                  <a-button @click="copyH5Url">
-                    {{ $t('channel.operation.copy') }}
-                  </a-button>
-                </a-input-group>
-              </a-form-item>
+              </el-form-item>
+              <el-form-item :label="$t('channel.h5.url')">
+                <el-input :model-value="webPageForm.url" readonly>
+                  <template #append
+                    ><el-button @click="copyH5Url">
+                      {{ $t('channel.operation.copy') }}
+                    </el-button></template
+                  >
+                </el-input>
+              </el-form-item>
               <template v-if="webPageForm.status === 0">
-                <a-form-item
-                  field="page_status"
+                <el-form-item
+                  prop="page_status"
                   :label="$t('channel.h5.closedMode')"
                 >
-                  <a-radio-group v-model="webPageForm.page_status">
-                    <a-radio :value="0">
+                  <el-radio-group v-model="webPageForm.page_status">
+                    <el-radio :value="0">
                       {{ $t('channel.h5.closedMode.blank') }}
-                    </a-radio>
-                    <a-radio :value="1">
+                    </el-radio>
+                    <el-radio :value="1">
                       {{ $t('channel.h5.closedMode.redirect') }}
-                    </a-radio>
-                  </a-radio-group>
-                </a-form-item>
-                <a-form-item
+                    </el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item
                   v-if="webPageForm.page_status === 1"
-                  field="page_url"
+                  prop="page_url"
                   :label="$t('channel.h5.redirectUrl')"
                 >
-                  <a-input
+                  <el-input
                     v-model="webPageForm.page_url"
                     :placeholder="$t('channel.h5.redirectUrl.placeholder')"
                   />
-                </a-form-item>
+                </el-form-item>
               </template>
-              <a-form-item>
-                <a-button
+              <el-form-item>
+                <el-button
                   v-permission="['setting/web-page/save']"
                   type="primary"
                   :loading="webPageSubmitLoading"
                   @click="handleWebPageSubmit"
                 >
                   {{ $t('channel.operation.save') }}
-                </a-button>
-              </a-form-item>
-            </a-form>
-          </a-tab-pane>
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
 
           <!-- 既有微信小程序渠道 -->
-          <a-tab-pane key="wechat_mini" :title="$t('channel.tab.wechatMini')">
-            <a-form
+          <el-tab-pane name="wechat_mini" :label="$t('channel.tab.wechatMini')">
+            <el-form
               ref="miniProgramFormRef"
               :model="miniProgramForm"
               :rules="miniProgramRules"
-              layout="vertical"
+              label-position="top"
               style="max-width: 720px; margin-top: 16px"
             >
-              <a-form-item field="name" :label="$t('channel.mini.name')">
-                <a-input
+              <el-form-item prop="name" :label="$t('channel.mini.name')">
+                <el-input
                   v-model="miniProgramForm.name"
                   :placeholder="$t('channel.mini.name.placeholder')"
                 />
-              </a-form-item>
-              <a-form-item
-                field="original_id"
+              </el-form-item>
+              <el-form-item
+                prop="original_id"
                 :label="$t('channel.mini.originalId')"
               >
-                <a-input
+                <el-input
                   v-model="miniProgramForm.original_id"
                   :placeholder="$t('channel.mini.originalId.placeholder')"
                 />
-              </a-form-item>
-              <a-form-item field="qr_code" :label="$t('channel.mini.qrCode')">
-                <a-space align="end">
-                  <a-image
+              </el-form-item>
+              <el-form-item prop="qr_code" :label="$t('channel.mini.qrCode')">
+                <el-space alignment="flex-end">
+                  <el-image
                     v-if="miniProgramForm.qr_code"
                     :src="miniProgramForm.qr_code"
                     width="96"
@@ -130,68 +132,70 @@
                     :button-text="$t('channel.mini.qrCode.select')"
                     @select="onMiniQrSelected"
                   />
-                  <a-button
+                  <el-button
                     v-if="miniProgramForm.qr_code"
-                    status="danger"
+                    type="danger"
                     @click="miniProgramForm.qr_code = ''"
                   >
                     {{ $t('channel.operation.clear') }}
-                  </a-button>
-                </a-space>
-              </a-form-item>
-              <a-form-item field="app_id" :label="$t('channel.field.appid')">
-                <a-input
+                  </el-button>
+                </el-space>
+              </el-form-item>
+              <el-form-item prop="app_id" :label="$t('channel.field.appid')">
+                <el-input
                   v-model="miniProgramForm.app_id"
                   :placeholder="$t('channel.field.appid.placeholder')"
                 />
-              </a-form-item>
-              <a-form-item
-                field="app_secret"
+              </el-form-item>
+              <el-form-item
+                prop="app_secret"
                 :label="$t('channel.field.secret')"
               >
-                <a-input-password
+                <el-input
                   v-model="miniProgramForm.app_secret"
+                  type="password"
+                  show-password
                   :placeholder="$t('channel.field.secret.placeholder')"
                 />
-              </a-form-item>
-              <a-divider orientation="left">
+              </el-form-item>
+              <el-divider content-position="left">
                 {{ $t('channel.mini.domains') }}
-              </a-divider>
-              <a-form-item
+              </el-divider>
+              <el-form-item
                 v-for="field in miniDomainFields"
                 :key="field.key"
                 :label="$t(field.label)"
               >
-                <a-input-group>
-                  <a-input :model-value="miniProgramForm[field.key]" readonly />
-                  <a-button @click="copyText(miniProgramForm[field.key])">
-                    {{ $t('channel.operation.copy') }}
-                  </a-button>
-                </a-input-group>
-              </a-form-item>
-              <a-form-item>
-                <a-button
+                <el-input :model-value="miniProgramForm[field.key]" readonly>
+                  <template #append
+                    ><el-button @click="copyText(miniProgramForm[field.key])">
+                      {{ $t('channel.operation.copy') }}
+                    </el-button></template
+                  >
+                </el-input>
+              </el-form-item>
+              <el-form-item>
+                <el-button
                   v-permission="['setting/mini-program/save']"
                   type="primary"
                   :loading="miniProgramSubmitLoading"
                   @click="handleMiniProgramSubmit"
                 >
                   {{ $t('channel.operation.save') }}
-                </a-button>
-              </a-form-item>
-            </a-form>
-          </a-tab-pane>
-        </a-tabs>
-      </a-spin>
-    </a-card>
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import FilePicker from '@/components/file-picker/index.vue';
   import {
@@ -220,18 +224,23 @@
     page_url: '',
     url: '',
   });
-  const webPageRules = {
+  const webPageRules: FormRules = {
     status: [{ required: true }],
     page_status: [{ required: true }],
     page_url: [
       {
-        validator: (value: string, callback: (error?: string) => void) => {
+        validator: (
+          _rule: unknown,
+          value: string,
+          callback: (error?: Error) => void
+        ) => {
           if (webPageForm.status === 0 && webPageForm.page_status === 1) {
             try {
               const url = new URL(value);
-              if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+              if (!['http:', 'https:'].includes(url.protocol))
+                throw new Error();
             } catch {
-              callback(t('channel.h5.redirectUrl.invalid'));
+              callback(new Error(t('channel.h5.redirectUrl.invalid')));
               return;
             }
           }
@@ -254,10 +263,8 @@
     udp_domain: '',
     business_domain: '',
   });
-  const miniProgramRules = {
-    app_id: [
-      { required: true, message: t('channel.field.appid.required') },
-    ],
+  const miniProgramRules: FormRules = {
+    app_id: [{ required: true, message: t('channel.field.appid.required') }],
     app_secret: [
       { required: true, message: t('channel.field.secret.required') },
     ],
@@ -296,8 +303,8 @@
   fetchData();
 
   const handleWebPageSubmit = async () => {
-    const errors = await webPageFormRef.value?.validate();
-    if (errors) return;
+    const valid = await webPageFormRef.value?.validate().catch(() => false);
+    if (!valid) return;
     webPageSubmitLoading.value = true;
     try {
       await saveWebPageConfig({
@@ -307,15 +314,15 @@
       });
       const { data } = await getWebPageConfig();
       Object.assign(webPageForm, data);
-      Message.success(t('channel.tip.success'));
+      ElMessage.success(t('channel.tip.success'));
     } finally {
       webPageSubmitLoading.value = false;
     }
   };
 
   const handleMiniProgramSubmit = async () => {
-    const errors = await miniProgramFormRef.value?.validate();
-    if (errors) return;
+    const valid = await miniProgramFormRef.value?.validate().catch(() => false);
+    if (!valid) return;
     miniProgramSubmitLoading.value = true;
     try {
       await saveMiniProgramConfig({
@@ -327,7 +334,7 @@
       });
       const { data } = await getMiniProgramConfig();
       Object.assign(miniProgramForm, data);
-      Message.success(t('channel.tip.success'));
+      ElMessage.success(t('channel.tip.success'));
     } finally {
       miniProgramSubmitLoading.value = false;
     }
@@ -340,7 +347,7 @@
   const copyText = async (value: string) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
-    Message.success(t('channel.tip.copied'));
+    ElMessage.success(t('channel.tip.copied'));
   };
 
   const copyH5Url = async () => copyText(webPageForm.url);

@@ -1,139 +1,153 @@
 <template>
-  <a-spin :loading="loading" style="width: 100%">
-    <a-alert v-if="!canView" type="warning">
+  <div v-loading="loading" class="channel-panel">
+    <el-alert v-if="!canView" type="warning" :closable="false">
       {{ $t('channel.officialAccount.permissionDenied') }}
-    </a-alert>
+    </el-alert>
     <template v-else>
-      <a-alert type="info" :show-icon="true" style="margin-top: 16px">
+      <el-alert
+        type="info"
+        show-icon
+        :closable="false"
+        style="margin-top: 16px"
+      >
         {{ $t('channel.menu.ruleNotice') }}
-      </a-alert>
-      <a-space style="margin: 16px 0">
-        <a-button
+      </el-alert>
+      <el-space style="margin: 16px 0">
+        <el-button
           v-permission="['setting/official-account/menu/save']"
           type="primary"
           :loading="saving"
           @click="save(false)"
         >
           {{ $t('channel.menu.save') }}
-        </a-button>
-        <a-button
+        </el-button>
+        <el-button
           v-permission="['setting/official-account/menu/publish']"
           :loading="publishing"
           @click="save(true)"
         >
           {{ $t('channel.menu.publish') }}
-        </a-button>
-        <a-button
+        </el-button>
+        <el-button
           v-permission="['setting/official-account/menu/save']"
           :disabled="menu.length >= 3"
           @click="addTopMenu"
         >
           {{ $t('channel.menu.addTop') }}
-        </a-button>
-      </a-space>
+        </el-button>
+      </el-space>
 
-      <a-empty v-if="menu.length === 0" :description="$t('channel.menu.empty')" />
-      <a-space v-else direction="vertical" fill :size="16">
-        <a-card v-for="(item, index) in menu" :key="index" :title="topTitle(index)">
-          <a-form :model="item" layout="vertical">
-            <a-form-item :label="$t('channel.menu.nameTop')">
-              <a-input
+      <el-empty
+        v-if="menu.length === 0"
+        :description="$t('channel.menu.empty')"
+      />
+      <el-space v-else direction="vertical" fill :size="16">
+        <el-card
+          v-for="(item, index) in menu"
+          :key="index"
+          :header="topTitle(index)"
+        >
+          <el-form :model="item" label-position="top">
+            <el-form-item :label="$t('channel.menu.nameTop')">
+              <el-input
                 v-model="item.name"
-                :max-length="4"
+                :maxlength="4"
                 show-word-limit
                 :placeholder="$t('channel.menu.namePlaceholder')"
               />
-            </a-form-item>
+            </el-form-item>
             <template v-if="hasChildren(item)">
-              <a-divider orientation="left">
+              <el-divider content-position="left">
                 {{ $t('channel.menu.children') }}
-              </a-divider>
-              <a-space direction="vertical" fill :size="12">
-                <a-card
+              </el-divider>
+              <el-space direction="vertical" fill :size="12">
+                <el-card
                   v-for="(child, childIndex) in item.sub_button"
                   :key="childIndex"
                   size="small"
-                  :title="childTitle(childIndex)"
+                  :header="childTitle(childIndex)"
                 >
-                  <a-form :model="child" layout="vertical">
-                    <a-form-item :label="$t('channel.menu.nameChild')">
-                      <a-input
+                  <el-form :model="child" label-position="top">
+                    <el-form-item :label="$t('channel.menu.nameChild')">
+                      <el-input
                         v-model="child.name"
-                        :max-length="8"
+                        :maxlength="8"
                         show-word-limit
                         :placeholder="$t('channel.menu.namePlaceholder')"
                       />
-                    </a-form-item>
+                    </el-form-item>
                     <MenuLeafFields
                       :model-value="child"
                       @update:model-value="
                         (value) => updateChild(item, childIndex, value)
                       "
                     />
-                    <a-button
+                    <el-button
                       v-permission="['setting/official-account/menu/save']"
-                      status="danger"
-                      type="text"
+                      type="danger"
+                      link
                       @click="removeChild(item, childIndex)"
                     >
                       {{ $t('channel.menu.removeChild') }}
-                    </a-button>
-                  </a-form>
-                </a-card>
-              </a-space>
-              <a-button
+                    </el-button>
+                  </el-form>
+                </el-card>
+              </el-space>
+              <el-button
                 v-permission="['setting/official-account/menu/save']"
                 style="margin-top: 12px"
                 :disabled="(item.sub_button?.length || 0) >= 5"
                 @click="addChild(item)"
               >
                 {{ $t('channel.menu.addChild') }}
-              </a-button>
+              </el-button>
             </template>
             <MenuLeafFields
               v-else
               :model-value="item"
               @update:model-value="(value) => updateTop(index, value)"
             />
-            <a-space style="margin-top: 12px">
-              <a-button
+            <el-space style="margin-top: 12px">
+              <el-button
                 v-if="!hasChildren(item)"
                 v-permission="['setting/official-account/menu/save']"
                 @click="makeGroup(item)"
               >
                 {{ $t('channel.menu.makeGroup') }}
-              </a-button>
-              <a-button
+              </el-button>
+              <el-button
                 v-if="hasChildren(item)"
                 v-permission="['setting/official-account/menu/save']"
                 @click="makeLeaf(item)"
               >
                 {{ $t('channel.menu.makeLeaf') }}
-              </a-button>
-              <a-popconfirm
-                :content="$t('channel.menu.removeTopConfirm')"
-                @ok="removeTopMenu(index)"
+              </el-button>
+              <el-popconfirm
+                :title="$t('channel.menu.removeTopConfirm')"
+                @confirm="removeTopMenu(index)"
               >
-                <a-button
-                  v-permission="['setting/official-account/menu/save']"
-                  status="danger"
-                  type="text"
+                <template #reference
+                  ><el-button
+                    v-permission="['setting/official-account/menu/save']"
+                    type="danger"
+                    link
+                  >
+                    {{ $t('channel.menu.removeTop') }}
+                  </el-button></template
                 >
-                  {{ $t('channel.menu.removeTop') }}
-                </a-button>
-              </a-popconfirm>
-            </a-space>
-          </a-form>
-        </a-card>
-      </a-space>
+              </el-popconfirm>
+            </el-space>
+          </el-form>
+        </el-card>
+      </el-space>
     </template>
-  </a-spin>
+  </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, onMounted, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
   import { hasPermission } from '@/hooks/permission';
   import {
     getOfficialAccountMenu,
@@ -144,7 +158,9 @@
   import MenuLeafFields from './components/MenuLeafFields.vue';
 
   const { t } = useI18n();
-  const canView = computed(() => hasPermission('setting/official-account/menu'));
+  const canView = computed(() =>
+    hasPermission('setting/official-account/menu')
+  );
   const loading = ref(false);
   const saving = ref(false);
   const publishing = ref(false);
@@ -159,7 +175,9 @@
     pagepath: '',
   });
 
-  const normaliseItem = (item: OfficialAccountMenuItem): OfficialAccountMenuItem => {
+  const normaliseItem = (
+    item: OfficialAccountMenuItem
+  ): OfficialAccountMenuItem => {
     const children = Array.isArray(item.sub_button)
       ? item.sub_button.map(normaliseItem)
       : [];
@@ -191,7 +209,7 @@
 
   const addTopMenu = () => {
     if (menu.value.length >= 3) {
-      Message.warning(t('channel.menu.topLimit'));
+      ElMessage.warning(t('channel.menu.topLimit'));
       return;
     }
     menu.value.push(newLeaf());
@@ -200,7 +218,7 @@
   const addChild = (parent: OfficialAccountMenuItem) => {
     if (!Array.isArray(parent.sub_button)) parent.sub_button = [];
     if (parent.sub_button.length >= 5) {
-      Message.warning(t('channel.menu.childLimit'));
+      ElMessage.warning(t('channel.menu.childLimit'));
       return;
     }
     parent.sub_button.push(newLeaf());
@@ -278,7 +296,9 @@
     return '';
   };
 
-  const toPayload = (item: OfficialAccountMenuItem): OfficialAccountMenuItem => {
+  const toPayload = (
+    item: OfficialAccountMenuItem
+  ): OfficialAccountMenuItem => {
     const name = String(item.name || '').trim();
     if (hasChildren(item)) {
       return {
@@ -341,7 +361,7 @@
   const save = async (publish: boolean) => {
     const validationError = validateMenu();
     if (validationError) {
-      Message.error(validationError);
+      ElMessage.error(validationError);
       return;
     }
     const payload = menu.value.map(toPayload);
@@ -350,7 +370,7 @@
     try {
       if (publish) await publishOfficialAccountMenu(payload);
       else await saveOfficialAccountMenu(payload);
-      Message.success(
+      ElMessage.success(
         t(publish ? 'channel.menu.publishSuccess' : 'channel.tip.success')
       );
       await fetchData();
@@ -360,6 +380,12 @@
     }
   };
 </script>
+
+<style scoped>
+  .channel-panel {
+    min-height: 180px;
+  }
+</style>
 
 <script lang="ts">
   export default { name: 'OfficialAccountMenu' };

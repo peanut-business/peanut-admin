@@ -1,162 +1,210 @@
 <template>
-  <a-spin :loading="loading" style="width: 100%">
-    <a-alert v-if="!canView" type="warning">
+  <div v-loading="loading" class="channel-panel">
+    <el-alert v-if="!canView" type="warning" :closable="false">
       {{ $t('channel.officialAccount.permissionDenied') }}
-    </a-alert>
+    </el-alert>
     <template v-else>
-      <a-row align="center" justify="space-between" style="margin: 16px 0">
-        <a-col>
-          <a-select
-            v-model="filterType"
-            allow-clear
-            style="width: 180px"
-            :placeholder="$t('channel.reply.filterType')"
-            @change="onTypeChange"
-          >
-            <a-option :value="''">{{ $t('channel.reply.allTypes') }}</a-option>
-            <a-option :value="1">{{ $t('channel.reply.subscribe') }}</a-option>
-            <a-option :value="2">{{ $t('channel.reply.keyword') }}</a-option>
-            <a-option :value="3">{{ $t('channel.reply.default') }}</a-option>
-          </a-select>
-        </a-col>
-        <a-col>
-          <a-button
-            v-permission="['setting/official-account/reply/add']"
-            type="primary"
-            @click="handleAdd"
-          >
-            {{ $t('channel.reply.add') }}
-          </a-button>
-        </a-col>
-      </a-row>
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="rows"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        @page-change="onPageChange"
-      >
-        <template #reply_type="{ record }">
-          {{ replyTypeLabel(record.reply_type) }}
-        </template>
-        <template #matching_type="{ record }">
-          <span v-if="record.reply_type === 2">
-            {{ matchingTypeLabel(record.matching_type) }}
-          </span>
-          <span v-else>-</span>
-        </template>
-        <template #content_type>
-          {{ $t('channel.reply.text') }}
-        </template>
-        <template #status="{ record }">
-          <a-switch
-            :model-value="record.status === 1"
-            v-permission="['setting/official-account/reply/status']"
-            @change="(value) => handleStatus(record, value as boolean)"
-          />
-          <span v-if="!hasStatusPermission">
-            {{ record.status === 1 ? $t('channel.reply.enabled') : $t('channel.reply.disabled') }}
-          </span>
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-permission="['setting/official-account/reply/edit']"
-              type="text"
-              size="small"
-              @click="handleEdit(record)"
-            >
-              {{ $t('channel.reply.edit') }}
-            </a-button>
-            <a-popconfirm
-              :content="$t('channel.reply.deleteConfirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button
-                v-permission="['setting/official-account/reply/delete']"
-                type="text"
-                status="danger"
+      <div class="toolbar">
+        <el-select
+          v-model="filterType"
+          clearable
+          style="width: 180px"
+          :placeholder="$t('channel.reply.filterType')"
+          @change="onTypeChange"
+        >
+          <el-option :label="$t('channel.reply.allTypes')" :value="''" />
+          <el-option :label="$t('channel.reply.subscribe')" :value="1" />
+          <el-option :label="$t('channel.reply.keyword')" :value="2" />
+          <el-option :label="$t('channel.reply.default')" :value="3" />
+        </el-select>
+        <el-button
+          v-permission="['setting/official-account/reply/add']"
+          type="primary"
+          @click="handleAdd"
+        >
+          {{ $t('channel.reply.add') }}
+        </el-button>
+      </div>
+      <el-table row-key="id" :data="rows" border>
+        <el-table-column
+          prop="name"
+          :label="$t('channel.reply.columns.name')"
+        />
+        <el-table-column :label="$t('channel.reply.columns.type')" width="110"
+          ><template #default="{ row }">{{
+            replyTypeLabel(row.reply_type)
+          }}</template></el-table-column
+        >
+        <el-table-column
+          prop="keyword"
+          :label="$t('channel.reply.columns.keyword')"
+          width="160"
+        />
+        <el-table-column
+          :label="$t('channel.reply.columns.matchingType')"
+          width="110"
+          ><template #default="{ row }"
+            ><span v-if="row.reply_type === 2">{{
+              matchingTypeLabel(row.matching_type)
+            }}</span
+            ><span v-else>-</span></template
+          ></el-table-column
+        >
+        <el-table-column
+          :label="$t('channel.reply.columns.contentType')"
+          width="90"
+          ><template #default>{{
+            $t('channel.reply.text')
+          }}</template></el-table-column
+        >
+        <el-table-column
+          prop="content"
+          :label="$t('channel.reply.columns.content')"
+          show-overflow-tooltip
+        />
+        <el-table-column :label="$t('channel.reply.columns.status')" width="100"
+          ><template #default="{ row }">
+            <el-switch
+              :model-value="row.status === 1"
+              v-permission="['setting/official-account/reply/status']"
+              @change="(value: boolean) => handleStatus(row, value)"
+            />
+            <span v-if="!hasStatusPermission">{{
+              row.status === 1
+                ? $t('channel.reply.enabled')
+                : $t('channel.reply.disabled')
+            }}</span>
+          </template></el-table-column
+        >
+        <el-table-column
+          prop="sort"
+          :label="$t('channel.reply.columns.sort')"
+          width="80"
+        />
+        <el-table-column
+          :label="$t('channel.reply.columns.operations')"
+          width="170"
+          fixed="right"
+          ><template #default="{ row }">
+            <el-space>
+              <el-button
+                v-permission="['setting/official-account/reply/edit']"
+                link
+                type="primary"
                 size="small"
+                @click="handleEdit(row)"
               >
-                {{ $t('channel.reply.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
+                {{ $t('channel.reply.edit') }}
+              </el-button>
+              <el-popconfirm
+                :title="$t('channel.reply.deleteConfirm')"
+                @confirm="handleDelete(row)"
+              >
+                <template #reference
+                  ><el-button
+                    v-permission="['setting/official-account/reply/delete']"
+                    link
+                    type="danger"
+                    size="small"
+                  >
+                    {{ $t('channel.reply.delete') }}
+                  </el-button></template
+                >
+              </el-popconfirm>
+            </el-space>
+          </template></el-table-column
+        >
+      </el-table>
+      <div class="pagination-wrapper"
+        ><el-pagination
+          :current-page="pagination.current"
+          :page-size="pagination.pageSize"
+          :total="pagination.total"
+          layout="total, prev, pager, next"
+          @current-change="onPageChange"
+      /></div>
     </template>
-  </a-spin>
+  </div>
 
-  <a-modal
-    v-model:visible="modalVisible"
-    :title="isEdit ? $t('channel.reply.editTitle') : $t('channel.reply.addTitle')"
-    :ok-loading="submitLoading"
-    :mask-closable="false"
-    @ok="handleSubmit"
-    @cancel="modalVisible = false"
+  <el-dialog
+    v-model="modalVisible"
+    :title="
+      isEdit ? $t('channel.reply.editTitle') : $t('channel.reply.addTitle')
+    "
+    :close-on-click-modal="false"
   >
-    <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-      <a-form-item field="reply_type" :label="$t('channel.reply.type')">
-        <a-select v-model="form.reply_type">
-          <a-option :value="1">{{ $t('channel.reply.subscribe') }}</a-option>
-          <a-option :value="2">{{ $t('channel.reply.keyword') }}</a-option>
-          <a-option :value="3">{{ $t('channel.reply.default') }}</a-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item field="name" :label="$t('channel.reply.name')">
-        <a-input v-model="form.name" :max-length="100" />
-      </a-form-item>
+    <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+      <el-form-item prop="reply_type" :label="$t('channel.reply.type')"
+        ><el-select v-model="form.reply_type"
+          ><el-option
+            :label="$t('channel.reply.subscribe')"
+            :value="1" /><el-option
+            :label="$t('channel.reply.keyword')"
+            :value="2" /><el-option
+            :label="$t('channel.reply.default')"
+            :value="3" /></el-select
+      ></el-form-item>
+      <el-form-item prop="name" :label="$t('channel.reply.name')"
+        ><el-input v-model="form.name" :maxlength="100"
+      /></el-form-item>
       <template v-if="form.reply_type === 2">
-        <a-form-item field="keyword" :label="$t('channel.reply.keywordValue')">
-          <a-input v-model="form.keyword" :max-length="255" />
-        </a-form-item>
-        <a-form-item
-          field="matching_type"
+        <el-form-item prop="keyword" :label="$t('channel.reply.keywordValue')"
+          ><el-input v-model="form.keyword" :maxlength="255"
+        /></el-form-item>
+        <el-form-item
+          prop="matching_type"
           :label="$t('channel.reply.matchingType')"
         >
-          <a-radio-group v-model="form.matching_type">
-            <a-radio :value="1">{{ $t('channel.reply.exact') }}</a-radio>
-            <a-radio :value="2">{{ $t('channel.reply.fuzzy') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
+          <el-radio-group v-model="form.matching_type"
+            ><el-radio :value="1">{{ $t('channel.reply.exact') }}</el-radio
+            ><el-radio :value="2">{{
+              $t('channel.reply.fuzzy')
+            }}</el-radio></el-radio-group
+          >
+        </el-form-item>
       </template>
-      <a-form-item :label="$t('channel.reply.contentType')">
-        <a-tag color="arcoblue">{{ $t('channel.reply.text') }}</a-tag>
-      </a-form-item>
-      <a-form-item field="content" :label="$t('channel.reply.content')">
-        <a-textarea
+      <el-form-item :label="$t('channel.reply.contentType')"
+        ><el-tag type="primary">{{
+          $t('channel.reply.text')
+        }}</el-tag></el-form-item
+      >
+      <el-form-item prop="content" :label="$t('channel.reply.content')">
+        <el-input
+          type="textarea"
           v-model="form.content"
-          :max-length="5000"
+          :maxlength="5000"
           show-word-limit
-          :auto-size="{ minRows: 4, maxRows: 10 }"
+          :autosize="{ minRows: 4, maxRows: 10 }"
         />
-      </a-form-item>
-      <a-form-item field="status" :label="$t('channel.reply.status')">
-        <a-switch
+      </el-form-item>
+      <el-form-item prop="status" :label="$t('channel.reply.status')">
+        <el-switch
           v-model="form.status"
-          :checked-value="1"
-          :unchecked-value="0"
+          :active-value="1"
+          :inactive-value="0"
         />
-      </a-form-item>
-      <a-form-item
+      </el-form-item>
+      <el-form-item
         v-if="form.reply_type === 2"
-        field="sort"
+        prop="sort"
         :label="$t('channel.reply.sort')"
       >
-        <a-input-number v-model="form.sort" :min="0" :precision="0" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
+        <el-input-number v-model="form.sort" :min="0" :precision="0" />
+      </el-form-item>
+    </el-form>
+    <template #footer
+      ><el-button @click="modalVisible = false">取消</el-button
+      ><el-button type="primary" :loading="submitLoading" @click="handleSubmit"
+        >确定</el-button
+      ></template
+    >
+  </el-dialog>
 </template>
 
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
   import { hasPermission } from '@/hooks/permission';
   import {
     addOfficialAccountReply,
@@ -187,42 +235,6 @@
     total: 0,
     showTotal: true,
   });
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('channel.reply.columns.name'), dataIndex: 'name' },
-    {
-      title: t('channel.reply.columns.type'),
-      slotName: 'reply_type',
-      width: 110,
-    },
-    {
-      title: t('channel.reply.columns.keyword'),
-      dataIndex: 'keyword',
-      width: 160,
-    },
-    {
-      title: t('channel.reply.columns.matchingType'),
-      slotName: 'matching_type',
-      width: 110,
-    },
-    {
-      title: t('channel.reply.columns.contentType'),
-      slotName: 'content_type',
-      width: 90,
-    },
-    { title: t('channel.reply.columns.content'), dataIndex: 'content' },
-    {
-      title: t('channel.reply.columns.status'),
-      slotName: 'status',
-      width: 100,
-    },
-    { title: t('channel.reply.columns.sort'), dataIndex: 'sort', width: 80 },
-    {
-      title: t('channel.reply.columns.operations'),
-      slotName: 'operations',
-      width: 170,
-    },
-  ]);
-
   const defaultForm = (): OfficialAccountReplyForm => ({
     name: '',
     keyword: '',
@@ -239,29 +251,38 @@
   const isEdit = ref(false);
   const submitLoading = ref(false);
   const detailLoading = ref(false);
-  const rules = {
+  const rules: FormRules = {
     reply_type: [{ required: true }],
     name: [{ required: true, message: t('channel.reply.nameRequired') }],
     keyword: [
       {
-        validator: (value: string, callback: (error?: string) => void) => {
+        validator: (
+          _rule: unknown,
+          value: string,
+          callback: (error?: Error) => void
+        ) => {
           if (form.reply_type === 2 && !value.trim()) {
-            callback(t('channel.reply.keywordRequired'));
+            callback(new Error(t('channel.reply.keywordRequired')));
             return;
           }
           callback();
         },
       },
     ],
-    content: [
-      { required: true, message: t('channel.reply.contentRequired') },
-    ],
+    content: [{ required: true, message: t('channel.reply.contentRequired') }],
     status: [{ required: true }],
     sort: [
       {
-        validator: (value: number, callback: (error?: string) => void) => {
-          if (form.reply_type === 2 && (!Number.isInteger(value) || value < 0)) {
-            callback(t('channel.reply.sortInvalid'));
+        validator: (
+          _rule: unknown,
+          value: number,
+          callback: (error?: Error) => void
+        ) => {
+          if (
+            form.reply_type === 2 &&
+            (!Number.isInteger(value) || value < 0)
+          ) {
+            callback(new Error(t('channel.reply.sortInvalid')));
             return;
           }
           callback();
@@ -328,19 +349,19 @@
   };
 
   const handleSubmit = async () => {
-    const errors = await formRef.value?.validate();
-    if (errors) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     if (!form.name.trim() || !form.content.trim()) {
-      Message.error(t('channel.reply.contentRequired'));
+      ElMessage.error(t('channel.reply.contentRequired'));
       return;
     }
     if (form.reply_type === 2) {
       if (!form.keyword.trim()) {
-        Message.error(t('channel.reply.keywordRequired'));
+        ElMessage.error(t('channel.reply.keywordRequired'));
         return;
       }
       if (!Number.isInteger(form.sort) || form.sort < 0) {
-        Message.error(t('channel.reply.sortInvalid'));
+        ElMessage.error(t('channel.reply.sortInvalid'));
         return;
       }
     }
@@ -359,7 +380,7 @@
     try {
       if (isEdit.value) await editOfficialAccountReply(payload);
       else await addOfficialAccountReply(payload);
-      Message.success(t('channel.tip.success'));
+      ElMessage.success(t('channel.tip.success'));
       modalVisible.value = false;
       await fetchData(pagination.current);
     } finally {
@@ -369,7 +390,7 @@
 
   const handleDelete = async (record: OfficialAccountReplyRecord) => {
     await deleteOfficialAccountReply(record.id);
-    Message.success(t('channel.tip.success'));
+    ElMessage.success(t('channel.tip.success'));
     await fetchData(pagination.current);
   };
 
@@ -380,9 +401,26 @@
     const status: 0 | 1 = enabled ? 1 : 0;
     await updateOfficialAccountReplyStatus(record.id, status);
     record.status = status;
-    Message.success(t('channel.tip.success'));
+    ElMessage.success(t('channel.tip.success'));
   };
 </script>
+
+<style scoped>
+  .channel-panel {
+    min-height: 180px;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 16px 0;
+  }
+  .pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+</style>
 
 <script lang="ts">
   export default { name: 'OfficialAccountReply' };
