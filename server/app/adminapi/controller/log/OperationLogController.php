@@ -23,7 +23,11 @@ class OperationLogController extends BaseAdminController
 
     public function clear()
     {
-        OperationLogLogic::clear();
+        OperationLogLogic::clear(
+            $this->adminId,
+            (string)($this->adminInfo['username'] ?? ''),
+            (string)$this->request->ip()
+        );
         return $this->success('操作成功');
     }
 }

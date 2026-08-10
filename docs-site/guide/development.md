@@ -357,7 +357,7 @@ OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 
 4. **Controller 与路由**：创建 `adminapi/controller/<module>/` 控制器，继承 BaseAdminController；在 `server/route/app.php` 的 `api/admin` 组声明 GET/POST 路由。确认权限标识等于去掉 `api/admin/` 后的路径（必要时增加显式 alias）。
 5. **菜单与角色**：在迁移/种子中写入 M/C/A 菜单、paths、component 和 perms；登录 root 账号检查动态菜单，普通角色授予最小 A 权限。
 6. **客户端**：在 web/src/api/ 增加请求封装，在 web/src/router/routes/modules/ 注册页面并在 web/src/views/ 实现；PC/uni-app 只有确实提供该业务入口时才分别增加 pc/api、pc/pages 或 uniapp/src/api、uniapp/src/pages。
-7. **数据范围和审计**：若有部门/租户/所有者隔离，在 logic 的列表、详情和写操作都加显式范围条件；敏感写操作依赖管理端操作日志中间件，并检查日志脱敏字段。
+7. **数据范围和审计**：若有部门/租户/所有者隔离，在 logic 的列表、详情和写操作都加显式范围条件；敏感写操作统一由 `OperationLogService` 写入，新增支付/API key、证书、验证码或授权字段时必须补充聚焦脱敏用例，不在 controller 另写日志。
 
 最小验收是：迁移在空库/目标升级库各执行一次；登录后访问列表、详情、新增、编辑、删除和无权限场景；确认统一响应、菜单过滤、runtime 日志和上传文件路径均符合约定。不要用生成器产物替代人工审查路由、权限和数据范围。
 

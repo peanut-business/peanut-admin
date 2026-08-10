@@ -63,6 +63,10 @@ jobs:
         working-directory: server
         run: php tests/Productization/FileMediaHostTest.php
 
+      - name: Test operations Host ownership
+        working-directory: server
+        run: php tests/Productization/OpsHostTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest
