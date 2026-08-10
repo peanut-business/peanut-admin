@@ -74,7 +74,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 | PB04 任务/导入导出 | `RUNTIME-TASK-JOB-001`、`RUNTIME-IMPORT-EXPORT-001`（候选，无下游采用授权） | `PB04-TASK-OPS-HOST-001`（已通过） | 一条任务成功、一条失败/人工重试、一次 XLSX 导出与零夹具 |
 | PB04 日志/维护 | `RUNTIME-OPS-CONSOLE-001`（platform 候选，无下游采用授权） | `PB04-OPS-HOST-001`（已通过） | 权限拒绝、递归脱敏/清理审计、只读维护探针 |
 | PB05 会员/财务 | R01/R02 事务/幂等/审计候选（无下游采用授权）；不得借用 Tenant membership owner | `PB05-MEMBER-FINANCE-001`（已通过） | `user_money` 权威、唯一 writer、流水原子性、重复入账/扣款拒绝 |
-| PB06 内容/装修 | 无产品域 core owner | `PB06-CONTENT-DECORATION-001` | 发布/下架、分类、三端一个装修结果 |
+| PB06 内容/装修 | 无产品域 core owner | `PB06-CONTENT-DECORATION-001`（已通过） | 发布/下架、分类、资源 provenance、三端一个装修结果 |
 | PB07 通知 | `RUNTIME-NOTIFICATION-SMS-001` | `PB07-NOTIFICATION-HOST-001` | 模板快照、发送状态、失败/重试与脱敏 |
 | PB07 支付/OAuth/渠道 | `RUNTIME-INTEGRATION-SECURITY-001` 加通用原语 owner | `PB07-PAYMENT-OAUTH-001` | 回调验签、金额/订单一致、幂等、绑定冲突 |
 
@@ -93,7 +93,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 | PB04-05 | 任务/导入导出 | 应用 Crontab/Generator/同步 XLSX 唯一 Runtime；核心仅为未获准 Tenant/CSV 候选 | 不等价任务状态、重试、文件可见性与 CSV/XLSX 已映射 | 不消费核心、不改会员/通知触发器 |
 | PB04-06 | 日志/维护 | 应用 `pa_operation_log`/System Host 唯一 Runtime；核心仅为未获准 platform 候选 | audience、日志 shape、维护/备份边界与脱敏合同已完成 | 不消费核心、不扩大为备份/恢复平台 |
 | PB05 | 会员与财务 | 应用 Module 唯一 Runtime；核心仅为未获准原语候选 | 权威余额、兼容镜像、流水与充值/退款防重合同已完成 | 不向核心迁客户/余额模型，不 deep import R01/R02 |
-| PB06 | 内容与装修 | 应用 Module | PB04 设置/文件通过 | 不复制三端业务状态机 |
+| PB06 | 内容与装修 | 应用 Module 唯一 Runtime；核心无产品域 owner | 资源 provenance、分类/发布规则和共享读取 DTO 合同已完成 | 不复制三端业务状态机，不迁产品模型到核心 |
 | PB07-01 | 通知基础设施 | 核心候选 + 应用 scene/provider | 核心固定候选获准 | scene/触发条件不进核心 |
 | PB07-02 | 支付/OAuth/渠道 | 应用 Module + 核心安全原语 | PB05 余额、PB07-01 通知稳定 | 核心不得写产品订单/余额 |
 

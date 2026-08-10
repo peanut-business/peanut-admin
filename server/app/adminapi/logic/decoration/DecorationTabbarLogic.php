@@ -6,6 +6,7 @@ namespace app\adminapi\logic\decoration;
 use app\common\logic\BaseLogic;
 use app\common\model\decoration\DecorateTabbar;
 use app\common\service\ConfigService;
+use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
 use think\facade\Db;
 
@@ -13,14 +14,7 @@ class DecorationTabbarLogic extends BaseLogic
 {
     public static function detail(): array
     {
-        $style = json_decode((string)ConfigService::get('tabbar', 'style', '{}'), true);
-        $list = DecorateTabbar::order(['position' => 'asc', 'id' => 'asc'])->select()->toArray();
-        foreach ($list as &$item) {
-            $item['link'] = json_decode((string)$item['link'], true) ?: [];
-            $item = DecorationSchemaService::resourcesForRead($item);
-        }
-        unset($item);
-        return ['style' => is_array($style) ? $style : [], 'list' => $list];
+        return DecorationReadService::tabbar(false);
     }
 
     public static function save(array $style, array $items): bool

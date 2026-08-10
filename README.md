@@ -127,4 +127,4 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 
 ## 目标架构
 
-管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client 和三端 Docker 基线已经完成。当前产品化工作是把仍在应用内的标准业务能力逐域迁移为核心包唯一实现，并删除应用内重复实现；完成后再发布正式基线。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
+管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client 和三端 Docker 基线已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。当前按领域删除重复实现、固定 Host 与测试 owner；PB09 前还必须完成中性脚手架、品牌单一事实源和官网+文档门户门禁。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。

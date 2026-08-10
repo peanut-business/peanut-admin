@@ -71,6 +71,10 @@ jobs:
         working-directory: server
         run: php tests/Productization/MemberFinanceHostTest.php
 
+      - name: Test content decoration Host ownership
+        working-directory: server
+        run: php tests/Productization/ContentDecorationHostTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest

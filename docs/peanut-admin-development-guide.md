@@ -275,6 +275,10 @@ php think generator:cleanup
 
 server/app/common/service/storage/Driver.php 通过 storage.default 选择 local、qiniu、aliyun 或 qcloud 引擎，配置保存在 pa_config(type=storage)。本地文件写入 server/public/storage/，URI 以 storage/ 开头；云存储 URI 是对象 key，由 FileService 拼接配置的 domain。七牛/阿里云配置 bucket/access_key/secret_key/domain，腾讯 COS 还需要 region。切换默认引擎不会搬迁旧文件，旧云域名配置必须继续有效。新增存储厂商时实现 storage/engine/Server.php 约定、在 Driver 注册，并补充后台验证；不要在 controller 直接调用 SDK。
 
+### 内容与装修
+
+文章、分类、收藏/计数、搜索和移动/PC/Tabbar 装修是应用产品 Module，不迁入核心包。`ProductAssetReferenceService` 是文章与装修资源引用的唯一边界：同源 local `/storage/` 地址保存为相对 URI，云/CDN/外部地址保留绝对 provenance；历史无 provenance 相对资源仍依赖原 Provider 配置，不得猜测来源或批量改写。`DecorationSchemaService` 唯一拥有组件与链接规则，`DecorationReadService` 唯一生成管理端、API、PC 与 UniApp/H5 的读取 DTO；客户端只渲染结果，不复制 Schema 或草稿/发布状态机。对应数据库增量为 `20260811-content-asset-reference.sql`，已有环境应先备份并通过迁移账本执行，再发布依赖扩容字段的代码。
+
 ### 支付
 
 支付入口由 server/app/common/service/payment/PaymentServiceFactory.php 统一选择 wechat 或 alipay。预支付由 PrepayGatewayInterface 实现，回调由 CallbackParserInterface 先验签和标准化，再交给业务 logic（充值结算）更新订单、余额和流水。`user_money` 是权威余额，旧 `balance` 只是兼容镜像；后台调账、可信充值回调和首次充值退款必须在各自领域事务内调用 `MemberBalanceService`，不得直接写余额或 `AccountLogLogic`。回调路由是 /api/payment/notify/wechat 与 /api/payment/notify/alipay，必须保持公网 HTTPS、时间戳/证书/公钥配置正确。当前实现只覆盖微信支付和支付宝；新增渠道应增加 gateway、callback parser、配置校验和终端场景，不要绕过工厂直接修改余额。
