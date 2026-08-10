@@ -36,7 +36,7 @@ export default {
 
   'systemDict.modal.addTitle': '新增字典',
   'systemDict.modal.editTitle': '编辑字典',
-  'systemDict.delete.confirm': '确定删除该字典及其数据吗？',
+  'systemDict.delete.confirm': '确定删除该字典类型吗？存在字典数据时不能删除。',
   'systemDict.tip.success': '操作成功',
 
   'systemDict.data.title': '字典数据',

@@ -36,7 +36,7 @@ export default {
 
   'systemDict.modal.addTitle': 'New Dict',
   'systemDict.modal.editTitle': 'Edit Dict',
-  'systemDict.delete.confirm': 'Delete this dict and its data?',
+  'systemDict.delete.confirm': 'Delete this dictionary type? It cannot be deleted while it contains data.',
   'systemDict.tip.success': 'Success',
 
   'systemDict.data.title': 'Dict Data',
