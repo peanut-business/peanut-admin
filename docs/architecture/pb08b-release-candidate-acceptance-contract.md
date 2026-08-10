@@ -2,13 +2,13 @@
 
 > 状态：Frozen，待执行
 >
-> 当前应用候选：`aa5349a95b7fe1697895581fd25215b75a259348`
+> 当前应用候选：`c93445f7cdc97a28a195849bc96a02f05cd7dbc3`
 >
 > 升级起点：`bc2e75ac6217d7defc44cd2b8e0c9e85a7cefc62`
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 当前验收 owner：`PB08B-RC-006`
+> 当前验收 owner：`PB08B-RC-007`
 
 ## 1. 目标与候选定义
 
@@ -130,8 +130,16 @@ RC005 继承 RC001 唯一无缓存 registry/全目标构建，以及 RC003 已�
 
 RC005 fresh bundled-db 无重启启动成功，MySQL/PHP/Nginx healthy；当前空库得到 43 表、28 条 `applied`/0 异常账本、唯一 root admin、167 菜单、62 配置与 16/16 品牌值。`/healthz`、`/admin/`、`/pc/`、`/mobile/` 全部 200，品牌 API、镜像静态边界和两包/Host/override 静态边界通过。唯一 Chromium 任务随后证明官网导航、快速开始 CTA、搜索结果与 GitHub href 正常，但未知路径返回 HTTP 404 时渲染 VitePress 默认英文 `PAGE NOT FOUND`，没有渲染仓库 `404.md` 的 Peanut Admin 品牌内容。浏览器任务立即停止，管理端、PC 与 H5 未执行；一次只读诊断确认根级 `404.md` 只是页面模块，未知路由必须由主题级 `NotFound` 接管。RC005 判失败，浏览器和专用容器、网络、volume、临时候选目录均已清理。
 
-### `PB08B-RC-006` — 当前 owner
+### `PB08B-RC-006` — VitePress Layout slot 未接管
 
 新候选 `aa5349a95b7fe1697895581fd25215b75a259348` 只新增消费生成品牌 manifest 的 VitePress `NotFound` 组件，并在主题入口注册；静态构建通过，自定义中文标题、首页及文档入口均进入主题 bundle。生产 Runtime、Docker、数据库、锁文件与四端源码和 RC005 相同，因此 RC006 继承 RC005 当前空库、Compose/HTTP、镜像与 Host/override 边界结果，不重复执行。
 
 RC006 只运行一次完整桌面/移动 Chromium：重新覆盖官网导航/CTA/搜索/404 后，在同一任务继续管理端登录与代表只读页、PC 和 H5 默认品牌；随后完成 RC06 文档一致性、生成脱敏 `summary.json` 并清理浏览器/文档预览。任何失败仍按停止线处理。
+
+RC006 唯一 Chromium 再次在未知路径看到默认英文 404，并立即停止；管理端、PC 与 H5 未执行。一次只读诊断确认 VitePress 1.6 默认 Layout 的 `VPContent` 自行渲染内置 NotFound，顶层 `Theme.NotFound` 已弃用且不会覆盖 Layout 的 `not-found` slot。浏览器、失败截图、专用容器、网络、volume 和临时候选目录均已清理。
+
+### `PB08B-RC-007` — 当前 owner
+
+新候选 `c93445f7cdc97a28a195849bc96a02f05cd7dbc3` 只包装 VitePress 默认 Layout，并通过其 `not-found` slot 注入 RC006 已构建的品牌组件；静态构建和主题 bundle 检查通过。生产 Runtime、Docker、数据库、锁文件与四端源码仍和 RC005 相同，继续继承 RC005 当前空库、Compose/HTTP、镜像与 Host/override 边界结果。
+
+RC007 只运行一次完整桌面/移动 Chromium：官网导航/CTA/搜索/品牌 404、管理端登录与代表只读页、PC、H5；随后完成 RC06 文档一致性、生成脱敏 `summary.json` 并清理浏览器/文档预览与专用运行资源。任何失败仍按停止线处理。

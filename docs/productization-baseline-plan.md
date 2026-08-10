@@ -114,6 +114,10 @@ RC005 已证明 bundled-db 无重启启动，MySQL/PHP/Nginx 全部 healthy，�
 
 新候选 `aa5349a…` 只把品牌 404 注册为 VitePress 主题级 `NotFound`；根级 `404.md` 仍保留正常页面模块，不再被误当作未知路由接管机制。官网静态构建通过，自定义中文标题与文档入口进入主题 bundle；生产 Runtime、Docker、数据库、锁文件和四端源码与 RC005 相同。当前 owner 为 RC006，继承 RC005 空库、Compose、HTTP、镜像和边界结果，只执行一次完整桌面/移动 Chromium 与 RC06 文档一致性。
 
+RC006 的唯一浏览器仍在未知路由看到默认英文 404，并立即停止。一次只读诊断确认 VitePress 1.6 默认 Layout 的 `VPContent` 自行渲染内置 NotFound，顶层 `Theme.NotFound` 已弃用且不会覆盖该 slot；RC006 判失败并清理浏览器、截图、容器、网络、volume 与临时候选目录，管理端/PC/H5 未执行。
+
+新候选 `c93445f…` 只改为包装默认 Layout 并向 `not-found` slot 注入既有品牌组件，这是 VitePress 1.6 类型与默认主题实现指定的接管路径；静态构建和主题 bundle 检查通过。当前 owner 为 RC007，继续继承 RC005 非官网结果，只运行一次完整桌面/移动 Chromium 与 RC06 文档一致性。
+
 ## 6. 并行规则
 
 - 只读图谱、互不依赖的前后端契约和文档核对可以并行。
