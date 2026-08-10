@@ -47,9 +47,11 @@
 
 ### 2.3 产品化正式基线 — 🚧 进行中
 
-- 集成 PR：`feat/productization-baseline` → `dev`（GitHub PR #3）
-- 已完成：远程数据库生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
-- 进行中：按系统、会员、内容、通知、支付迁移完整核心业务依赖，并删除应用内重复实现
+- 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
+- 已完成：生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
+- 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`
+- 当前生产服务器使用 `bundled-db` MySQL profile；局域网 `192.168.192.2` 是开发/历史验收数据库，公网服务器不可直接路由该地址
+- 进行中：PB03/PB04，按系统、会员、内容、通知、支付迁移完整核心业务依赖，并删除应用内重复实现
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
 - 产品化阶段通过后才将 `dev` 合入 `main`；SaaS 作为后续独立目标
 
