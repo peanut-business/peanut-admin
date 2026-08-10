@@ -5,12 +5,12 @@ namespace app\adminapi\logic\member;
 
 use app\common\enum\AccountLogEnum;
 use app\common\enum\MemberChannelEnum;
-use app\common\logic\AccountLogLogic;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
 use app\common\model\member\MemberTag;
 use app\common\model\member\MemberTagRelation;
 use app\common\service\FileService;
+use app\common\service\MemberBalanceService;
 use app\common\service\XlsxExportService;
 use think\facade\Db;
 
@@ -281,42 +281,20 @@ class MemberLogic extends BaseLogic
     {
         Db::startTrans();
         try {
-            /** @var Member $member */
-            $member = Member::lock(true)->findOrEmpty((int)$params['user_id']);
-            if ($member->isEmpty()) {
-                throw new \RuntimeException('用户不存在');
-            }
-
-            $num = abs(round((float)$params['num'], 2));
             $action = (int)$params['action'];
-            $current = (float)$member->user_money;
-            $after = round($current + ($action === AccountLogEnum::INC ? $num : -$num), 2);
-            if ($after < 0) {
-                throw new \RuntimeException('用户可用余额仅剩' . $current);
-            }
-
-            Member::update([
-                'id' => $member->id,
-                'user_money' => $after,
-                // Peanut 原有 balance 字段作为兼容镜像同步更新。
-                'balance' => $after,
-            ]);
-
             $changeType = $action === AccountLogEnum::INC
                 ? AccountLogEnum::USER_MONEY_INC_ADMIN
                 : AccountLogEnum::USER_MONEY_DEC_ADMIN;
-            if (AccountLogLogic::add(
-                (int)$member->id,
+            MemberBalanceService::applyInTransaction(
+                (int)$params['user_id'],
                 $changeType,
                 $action,
-                $num,
+                MemberBalanceService::moneyToCents(abs((float)$params['num'])),
                 '',
                 (string)($params['remark'] ?? ''),
                 [],
                 $adminId
-            ) === false) {
-                throw new \RuntimeException('账户流水记录失败');
-            }
+            );
             Db::commit();
             return true;
         } catch (\Throwable $e) {

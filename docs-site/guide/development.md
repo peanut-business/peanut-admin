@@ -341,7 +341,7 @@ server/app/common/service/storage/Driver.php 通过 storage.default 选择 local
 
 ### 支付
 
-支付入口由 server/app/common/service/payment/PaymentServiceFactory.php 统一选择 wechat 或 alipay。预支付由 PrepayGatewayInterface 实现，回调由 CallbackParserInterface 先验签和标准化，再交给业务 logic（充值结算）更新订单、余额和流水。回调路由是 /api/payment/notify/wechat 与 /api/payment/notify/alipay，必须保持公网 HTTPS、时间戳/证书/公钥配置正确。当前实现只覆盖微信支付和支付宝；新增渠道应增加 gateway、callback parser、配置校验和终端场景，不要绕过工厂直接修改余额。
+支付入口由 server/app/common/service/payment/PaymentServiceFactory.php 统一选择 wechat 或 alipay。预支付由 PrepayGatewayInterface 实现，回调由 CallbackParserInterface 先验签和标准化，再交给业务 logic（充值结算）更新订单、余额和流水。`user_money` 是权威余额，旧 `balance` 只是兼容镜像；后台调账、可信充值回调和首次充值退款必须在各自领域事务内调用 `MemberBalanceService`，不得直接写余额或 `AccountLogLogic`。回调路由是 /api/payment/notify/wechat 与 /api/payment/notify/alipay，必须保持公网 HTTPS、时间戳/证书/公钥配置正确。当前实现只覆盖微信支付和支付宝；新增渠道应增加 gateway、callback parser、配置校验和终端场景，不要绕过工厂直接修改余额。
 
 ### 微信 OAuth
 

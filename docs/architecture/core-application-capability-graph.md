@@ -52,7 +52,7 @@ flowchart LR
 | 文件、素材、存储引擎 | `pa_file*`、公开素材 URL、分类/选择器和 local/qiniu/aliyun/qcloud 唯一 Runtime；`storage` 同时决定 URL 与删除 Provider | Tenant-private `pa_file_object`、archive、delivery grant 与 local-private 候选 | 当前可见性/schema/生命周期不等价且核心无采用授权；应用不双写、不 deep import，产品引用 provenance 延后各表 owner |
 | 定时任务、生成器、导入导出、日志、维护 | Crontab/Generator/OperationLog/System；PB04 已收口任务、XLSX、脱敏审计和只读环境探针 | Tenant Task Job、私有 CSV Import Export、platform Ops Console 候选 | 当前 audience/schema/重试/日志/文件语义不等价且核心无采用授权；应用保留唯一 Runtime，不双写、不 deep import |
 | 通知与短信 | Scene/Template/Log/Sms | Notification SMS 与 Integration Security | 核心拥有模板、发送状态、验证码和服务商端口；应用只配置/覆盖提供商 |
-| 会员、标签、余额 | Member/MemberTag/AccountLog | Kernel 有 Tenant membership 与事务/幂等/审计原语，不是客户财务模型 | 应用 Member/Finance Module 唯一拥有客户、余额与充值退款规则；不向核心迁模型 |
+| 会员、标签、余额 | Member/MemberTag/AccountLog/Recharge/Refund；`MemberBalanceService` 是唯一余额与流水 writer | Kernel 有 Tenant membership 与 R01/R02 事务/幂等/审计候选，不是客户财务模型且无下游采用授权 | PB05 保留应用 Member/Finance Module 唯一 Runtime；`user_money` 权威、`balance` 镜像，充值/退款防重留在产品 Host |
 | 文章、分类、搜索 | Article/ArticleCate/Search | 暂无产品内容模块；可复用设置/文件/任务原语 | 应用 Content Module 唯一拥有发布/分类/收藏/计数与搜索规则 |
 | 移动/PC/Tabbar 装修 | Decoration Logic 与三端消费 | Web Shell/client 只有通用宿主能力 | 应用 Decoration Module 唯一拥有 Schema、DTO 与渲染结果；三端不得复制状态机 |
 | 充值、退款、支付 | Recharge/Refund/Payment Service | 有事务、幂等、安全与通用集成原语，无产品订单/余额模型 | 应用 Finance/Payment Module 唯一拥有金额、状态机、结算与回调；核心不得直接写余额/订单 |

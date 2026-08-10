@@ -5,13 +5,12 @@ namespace app\adminapi\logic\finance;
 
 use app\common\enum\AccountLogEnum;
 use app\common\enum\RefundEnum;
-use app\common\logic\AccountLogLogic;
 use app\common\logic\BaseLogic;
 use app\common\model\finance\RechargeOrder;
-use app\common\model\member\Member;
 use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\FileService;
+use app\common\service\MemberBalanceService;
 use app\common\service\RefundGatewayService;
 use app\common\service\XlsxExportService;
 use think\facade\Db;
@@ -88,34 +87,24 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('订单已发起退款,退款失败请到退款记录重新退款');
             }
 
-            /** @var Member $member */
-            $member = Member::lock(true)->findOrEmpty((int)$order->user_id);
-            self::assertRefundBalance($member, (float)$order->order_amount);
-
-            $amount = round((float)$order->order_amount, 2);
-            $afterMoney = round((float)$member->user_money - $amount, 2);
-            $afterRecharge = round((float)$member->total_recharge_amount - $amount, 2);
+            $amountCents = MemberBalanceService::moneyToCents((string)$order->order_amount);
+            $amount = $amountCents / 100;
 
             $order->refund_status = RechargeOrder::REFUND_STATUS_STARTED;
             $order->save();
 
-            $member->user_money = $afterMoney;
-            $member->balance = $afterMoney;
-            $member->total_recharge_amount = $afterRecharge;
-            $member->save();
-
-            if (AccountLogLogic::add(
-                (int)$member->id,
+            MemberBalanceService::applyInTransaction(
+                (int)$order->user_id,
                 AccountLogEnum::USER_MONEY_DEC_RECHARGE_REFUND,
                 AccountLogEnum::DEC,
-                $amount,
+                $amountCents,
                 (string)$order->sn,
                 '充值订单退款',
                 [],
-                $adminId
-            ) === false) {
-                throw new \RuntimeException('账户流水记录失败');
-            }
+                $adminId,
+                -$amountCents,
+                '退款失败:用户余额已不足退款金额'
+            );
 
             /** @var RefundRecord $record */
             $record = RefundRecord::create([
@@ -241,13 +230,6 @@ class RechargeLogic extends BaseLogic
         }
         if ((int)$order->refund_status === RechargeOrder::REFUND_STATUS_STARTED) {
             throw new \RuntimeException('订单已发起退款,退款失败请到退款记录重新退款');
-        }
-    }
-
-    private static function assertRefundBalance(Member $member, float $amount): void
-    {
-        if ($member->isEmpty() || (float)$member->user_money < $amount) {
-            throw new \RuntimeException('退款失败:用户余额已不足退款金额');
         }
     }
 
