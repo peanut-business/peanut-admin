@@ -1,6 +1,6 @@
 # PB08B 正式候选集成验收合同
 
-> 状态：Frozen；RC008 只执行 RC06 文档一致性
+> 状态：Completed；技术正式候选通过，PB09 未授权
 >
 > 当前应用候选：`44422297af1f7b6144428091d0fceebf526143e5`
 >
@@ -148,8 +148,10 @@ RC007 的唯一 Chromium 已完整通过：桌面官网导航、关键 CTA、本
 
 随后的 RC06 一致性核对发现两个同源文档缺陷：根 README 仍把数据库基线写成历史 24 条 migrations，而候选、合同与实时数据库均为 28；根 README 和官网快速开始还要求已有库按文件名手工执行 SQL，绕开已冻结的 `server/database/migrate.php` 账本、SHA-256 校验和历史接管停止线。该结果属于候选文档门禁失败，不得用浏览器通过覆盖。一次只读诊断后 RC007 判失败，未生成 `summary.json`；浏览器、文档预览、专用容器、网络、volume、未提交截图和临时候选目录均已清理。下一候选只允许修正上述 README/快速开始事实并同步状态记录；不得重跑 RC007 已通过的浏览器或 RC001–RC005 继承门禁。
 
-### `PB08B-RC-008` — 当前 owner
+### `PB08B-RC-008` — 通过
 
 新候选 `44422297af1f7b6144428091d0fceebf526143e5` 只修正文档：README 与官网快速开始统一为当前 28 条 migration，并要求历史安装先备份、首次执行 `migrate.php --adopt-existing`、后续执行 `migrate.php`，不得手工绕开账本或 SHA-256 校验；README 同时移除本机绝对路径与尚未决策的 clean-room 断言。PHP、SQL、锁文件、Docker、四端 Runtime、品牌源和 404 实现均未变化。
 
 RC008 继承 RC001 的唯一 registry/无缓存全目标构建、RC003 的弱凭据及 24→28 前滚、RC005 的当前空库/Compose/HTTP/镜像/Host 边界，以及 RC007 已完整通过的唯一 Chromium。只执行一次 RC06 静态一致性与 VitePress 构建，随后生成脱敏总摘要并清理/封存证据；不得重跑浏览器或更早门禁。
+
+RC008 静态一致性确认实际 28 个 migration 与 README/官网快速开始一致，升级只通过迁移账本、`--adopt-existing` 和 SHA-256 校验路径；公开文档不再包含本机路径或未决 clean-room 断言。VitePress 1.6.4 构建通过。`output/playwright/pb08b/summary.json` 汇总全部继承门禁与 RC007 关键截图，不包含密码、token、摘要、盐或完整日志；RC007 专用浏览器、预览、4 个容器、3 个 volume、1 个网络和临时候选工作区均已清理。RC001–RC006 至此在候选谱系上完整通过，PB08B 技术正式候选成立；许可证/provenance 门禁未决，PB09 仍未授权。

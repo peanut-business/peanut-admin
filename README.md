@@ -125,4 +125,4 @@ PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
 
 ## 目标架构
 
-管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime 和官网/文档门户实现已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。PB09 前仍需完成 PB08B 唯一一次正式候选集成验收，并明确应用仓许可证、provenance/clean-room、NOTICE 与第三方清单。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
+管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime、官网/文档门户和 PB08B 正式候选集成验收已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。进入 PB09 前仍须明确应用仓许可证、provenance/clean-room、根 `LICENSE`、`NOTICE` 与第三方清单；当前不得宣称应用 `1.0.0` 已发布。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
