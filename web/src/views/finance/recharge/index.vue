@@ -1,165 +1,193 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.finance', 'menu.finance.recharge']" />
-    <a-card class="general-card" :title="$t('menu.finance.recharge')">
-      <a-alert type="warning" style="margin-bottom: 16px">
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.finance.recharge') }}</template>
+      <el-alert type="warning" :closable="false" style="margin-bottom: 16px">
         {{ $t('recharge.alert') }}
-      </a-alert>
+      </el-alert>
 
-      <a-row>
-        <a-col :flex="1">
-          <a-form
-            :model="formModel"
-            :label-col-props="{ span: 6 }"
-            :wrapper-col-props="{ span: 18 }"
-            label-align="left"
-          >
-            <a-row :gutter="16">
-              <a-col :span="8">
-                <a-form-item field="sn" :label="$t('recharge.form.sn')">
-                  <a-input
-                    v-model="formModel.sn"
-                    allow-clear
-                    :placeholder="$t('recharge.form.sn.placeholder')"
-                    @press-enter="search"
-                  />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="user_info"
-                  :label="$t('recharge.form.userInfo')"
-                >
-                  <a-input
-                    v-model="formModel.user_info"
-                    allow-clear
-                    :placeholder="$t('recharge.form.userInfo.placeholder')"
-                    @press-enter="search"
-                  />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="pay_way"
-                  :label="$t('recharge.form.payWay')"
-                >
-                  <a-select
-                    v-model="formModel.pay_way"
-                    allow-clear
-                    :options="payWayOptions"
-                    :placeholder="$t('recharge.form.payWay.placeholder')"
-                  />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="pay_status"
-                  :label="$t('recharge.form.payStatus')"
-                >
-                  <a-select
-                    v-model="formModel.pay_status"
-                    allow-clear
-                    :options="payStatusOptions"
-                    :placeholder="$t('recharge.form.payStatus.placeholder')"
-                  />
-                </a-form-item>
-              </a-col>
-              <a-col :span="16">
-                <a-form-item
-                  field="timeRange"
-                  :label="$t('recharge.form.time')"
-                  :label-col-props="{ span: 3 }"
-                  :wrapper-col-props="{ span: 21 }"
-                >
-                  <a-range-picker
-                    v-model="formModel.timeRange"
-                    show-time
-                    format="YYYY-MM-DD HH:mm:ss"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    allow-clear
-                    style="width: 100%"
-                  />
-                </a-form-item>
-              </a-col>
-            </a-row>
-          </a-form>
-        </a-col>
-        <a-divider style="height: 124px" direction="vertical" />
-        <a-col :flex="'86px'" style="text-align: right">
-          <a-space direction="vertical" :size="10">
-            <a-button type="primary" @click="search">
-              <template #icon><icon-search /></template>
-              {{ $t('recharge.form.search') }}
-            </a-button>
-            <a-button @click="reset">
-              <template #icon><icon-refresh /></template>
-              {{ $t('recharge.form.reset') }}
-            </a-button>
-            <a-button @click="openExport">
-              <template #icon><icon-download /></template>
-              {{ $t('recharge.form.export') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-
-      <a-divider style="margin-top: 0" />
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        :scroll="{ x: 1250 }"
-        @page-change="onPageChange"
-        @page-size-change="onPageSizeChange"
-      >
-        <template #user="{ record }">
-          <a-space>
-            <a-avatar :size="40" :image-url="record.avatar">
-              {{ record.nickname?.slice(0, 1) }}
-            </a-avatar>
-            <span>{{ record.nickname || '-' }}</span>
-          </a-space>
-        </template>
-        <template #pay_status="{ record }">
-          <span :class="{ 'pay-unpaid': record.pay_status === 0 }">
-            {{ record.pay_status_text }}
-          </span>
-        </template>
-        <template #operations="{ record }">
-          <a-popconfirm
-            v-if="record.pay_status === 1"
-            :content="$t('recharge.refund.confirm')"
-            @ok="handleRefund(record.id)"
-          >
-            <a-button
-              v-permission="['recharge.recharge/refund']"
-              type="text"
-              size="small"
-              :disabled="record.refund_status === 1"
-              :loading="refundingId === record.id"
+      <el-form :model="formModel" label-position="top">
+        <el-row :gutter="16">
+          <el-col :span="6">
+            <el-form-item prop="sn" :label="$t('recharge.form.sn')">
+              <el-input
+                v-model="formModel.sn"
+                clearable
+                :placeholder="$t('recharge.form.sn.placeholder')"
+                @keyup.enter="search"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item
+              prop="user_info"
+              :label="$t('recharge.form.userInfo')"
             >
-              {{ $t('recharge.action.refund') }}
-            </a-button>
-          </a-popconfirm>
-        </template>
-      </a-table>
-    </a-card>
+              <el-input
+                v-model="formModel.user_info"
+                clearable
+                :placeholder="$t('recharge.form.userInfo.placeholder')"
+                @keyup.enter="search"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item prop="pay_way" :label="$t('recharge.form.payWay')">
+              <el-select
+                v-model="formModel.pay_way"
+                clearable
+                :placeholder="$t('recharge.form.payWay.placeholder')"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in payWayOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item
+              prop="pay_status"
+              :label="$t('recharge.form.payStatus')"
+            >
+              <el-select
+                v-model="formModel.pay_status"
+                clearable
+                :placeholder="$t('recharge.form.payStatus.placeholder')"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in payStatusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item prop="timeRange" :label="$t('recharge.form.time')">
+              <el-date-picker
+                v-model="formModel.timeRange"
+                type="datetimerange"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                clearable
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" class="filter-actions">
+            <el-space>
+              <el-button type="primary" :icon="Search" @click="search">{{
+                $t('recharge.form.search')
+              }}</el-button>
+              <el-button :icon="Refresh" @click="reset">{{
+                $t('recharge.form.reset')
+              }}</el-button>
+              <el-button :icon="Download" @click="openExport">{{
+                $t('recharge.form.export')
+              }}</el-button>
+            </el-space>
+          </el-col>
+        </el-row>
+      </el-form>
 
-    <a-modal
-      v-model:visible="exportVisible"
+      <el-divider style="margin-top: 0" />
+      <el-table v-loading="loading" row-key="id" :data="renderData" border>
+        <el-table-column :label="$t('recharge.columns.user')" width="180">
+          <template #default="{ row }"
+            ><el-space
+              ><el-avatar :size="40" :src="row.avatar">{{
+                row.nickname?.slice(0, 1)
+              }}</el-avatar
+              ><span>{{ row.nickname || '-' }}</span></el-space
+            ></template
+          >
+        </el-table-column>
+        <el-table-column
+          prop="sn"
+          :label="$t('recharge.columns.sn')"
+          width="210"
+        />
+        <el-table-column
+          prop="order_amount"
+          :label="$t('recharge.columns.orderAmount')"
+          width="120"
+        />
+        <el-table-column
+          prop="pay_way_text"
+          :label="$t('recharge.columns.payWay')"
+          width="110"
+        />
+        <el-table-column :label="$t('recharge.columns.payStatus')" width="110">
+          <template #default="{ row }"
+            ><span :class="{ 'pay-unpaid': row.pay_status === 0 }">{{
+              row.pay_status_text
+            }}</span></template
+          >
+        </el-table-column>
+        <el-table-column
+          prop="create_time"
+          :label="$t('recharge.columns.createTime')"
+          width="180"
+        />
+        <el-table-column
+          prop="pay_time"
+          :label="$t('recharge.columns.payTime')"
+          width="180"
+        />
+        <el-table-column
+          :label="$t('recharge.columns.operations')"
+          width="120"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-popconfirm
+              v-if="row.pay_status === 1"
+              :title="$t('recharge.refund.confirm')"
+              @confirm="handleRefund(row.id)"
+            >
+              <template #reference>
+                <el-button
+                  v-permission="['recharge.recharge/refund']"
+                  link
+                  type="primary"
+                  size="small"
+                  :disabled="row.refund_status === 1"
+                  :loading="refundingId === row.id"
+                  >{{ $t('recharge.action.refund') }}</el-button
+                >
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          :current-page="pagination.current"
+          :page-size="pagination.pageSize"
+          :total="pagination.total"
+          :page-sizes="[25, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @current-change="onPageChange"
+          @size-change="onPageSizeChange"
+        />
+      </div>
+    </el-card>
+
+    <el-dialog
+      v-model="exportVisible"
       :title="$t('recharge.export.title')"
-      :ok-text="$t('recharge.export.confirm')"
-      :ok-loading="exportLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="540px"
-      @before-ok="handleExport"
     >
-      <a-spin :loading="exportInfoLoading" style="width: 100%">
-        <a-form :model="exportForm" layout="vertical">
-          <a-alert type="info" style="margin-bottom: 16px">
+      <div v-loading="exportInfoLoading">
+        <el-form :model="exportForm" label-position="top">
+          <el-alert type="info" :closable="false" style="margin-bottom: 16px">
             {{
               $t('recharge.export.summary', {
                 count: exportInfo.count,
@@ -174,49 +202,57 @@
                 count: exportInfo.all_max_size,
               })
             }}
-          </a-alert>
-          <a-form-item field="page_type" :label="$t('recharge.export.range')">
-            <a-radio-group v-model="exportForm.page_type">
-              <a-radio :value="0">{{ $t('recharge.export.all') }}</a-radio>
-              <a-radio :value="1">{{ $t('recharge.export.pages') }}</a-radio>
-            </a-radio-group>
-          </a-form-item>
-          <a-form-item
+          </el-alert>
+          <el-form-item prop="page_type" :label="$t('recharge.export.range')">
+            <el-radio-group v-model="exportForm.page_type">
+              <el-radio :value="0">{{ $t('recharge.export.all') }}</el-radio>
+              <el-radio :value="1">{{ $t('recharge.export.pages') }}</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item
             v-if="exportForm.page_type === 1"
             :label="$t('recharge.export.pageRange')"
           >
-            <a-space>
-              <a-input-number
+            <el-space>
+              <el-input-number
                 v-model="exportForm.page_start"
                 :min="1"
                 :max="exportInfo.sum_page || 1"
               />
               <span>{{ $t('recharge.export.to') }}</span>
-              <a-input-number
+              <el-input-number
                 v-model="exportForm.page_end"
                 :min="exportForm.page_start"
                 :max="exportInfo.sum_page || 1"
               />
-            </a-space>
-          </a-form-item>
-          <a-form-item
-            field="file_name"
+            </el-space>
+          </el-form-item>
+          <el-form-item
+            prop="file_name"
             :label="$t('recharge.export.fileName')"
           >
-            <a-input v-model="exportForm.file_name" :max-length="100" />
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-modal>
+            <el-input v-model="exportForm.file_name" :maxlength="100" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="exportVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="exportLoading"
+          @click="handleExport"
+          >{{ $t('recharge.export.confirm') }}</el-button
+        >
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
+  import { Download, Refresh, Search } from '@element-plus/icons-vue';
   import { useI18n } from 'vue-i18n';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { SelectOptionData } from '@arco-design/web-vue/es/select/interface';
   import useLoading from '@/hooks/loading';
   import {
     exportRecharge,
@@ -249,48 +285,12 @@
     showPageSize: true,
   });
 
-  const payWayOptions = computed<SelectOptionData[]>(() => [
+  const payWayOptions = computed(() => [
     { label: t('recharge.payWay.2'), value: 2 },
   ]);
-  const payStatusOptions = computed<SelectOptionData[]>(() => [
+  const payStatusOptions = computed(() => [
     { label: t('recharge.payStatus.0'), value: 0 },
     { label: t('recharge.payStatus.1'), value: 1 },
-  ]);
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('recharge.columns.user'), slotName: 'user', width: 180 },
-    { title: t('recharge.columns.sn'), dataIndex: 'sn', width: 210 },
-    {
-      title: t('recharge.columns.orderAmount'),
-      dataIndex: 'order_amount',
-      width: 120,
-    },
-    {
-      title: t('recharge.columns.payWay'),
-      dataIndex: 'pay_way_text',
-      width: 110,
-    },
-    {
-      title: t('recharge.columns.payStatus'),
-      slotName: 'pay_status',
-      width: 110,
-    },
-    {
-      title: t('recharge.columns.createTime'),
-      dataIndex: 'create_time',
-      width: 180,
-    },
-    {
-      title: t('recharge.columns.payTime'),
-      dataIndex: 'pay_time',
-      width: 180,
-    },
-    {
-      title: t('recharge.columns.operations'),
-      slotName: 'operations',
-      width: 120,
-      fixed: 'right',
-    },
   ]);
 
   const listParams = (pageNo: number): RechargeParams => {
@@ -342,7 +342,7 @@
     refundingId.value = id;
     try {
       await refundRecharge(id);
-      Message.success(t('recharge.refund.success'));
+      ElMessage.success(t('recharge.refund.success'));
       await fetchData(pagination.current);
     } finally {
       refundingId.value = 0;
@@ -391,7 +391,7 @@
       exportForm.page_type === 1 &&
       exportForm.page_end < exportForm.page_start
     ) {
-      Message.error(t('recharge.export.invalidRange'));
+      ElMessage.error(t('recharge.export.invalidRange'));
       return false;
     }
     exportLoading.value = true;
@@ -407,7 +407,8 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
-      Message.success(t('recharge.export.success'));
+      ElMessage.success(t('recharge.export.success'));
+      exportVisible.value = false;
       return true;
     } finally {
       exportLoading.value = false;
@@ -427,6 +428,19 @@
   }
 
   .pay-unpaid {
-    color: rgb(var(--red-6));
+    color: var(--el-color-danger);
+  }
+
+  .filter-actions {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding-bottom: 18px;
+  }
+
+  .pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
   }
 </style>

@@ -1,14 +1,14 @@
 <template>
-  <a-config-provider :locale="locale">
+  <el-config-provider :locale="locale">
     <router-view />
     <global-setting />
-  </a-config-provider>
+  </el-config-provider>
 </template>
 
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import enUS from '@arco-design/web-vue/es/locale/lang/en-us';
-  import zhCN from '@arco-design/web-vue/es/locale/lang/zh-cn';
+  import enUS from 'element-plus/es/locale/lang/en';
+  import zhCN from 'element-plus/es/locale/lang/zh-cn';
   import GlobalSetting from '@/components/global-setting/index.vue';
   import useLocale from '@/hooks/locale';
 

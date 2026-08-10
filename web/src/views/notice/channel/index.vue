@@ -1,11 +1,11 @@
 <template>
   <div class="container">
-    <a-card :bordered="false">
+    <el-card shadow="never">
       <!-- 短信渠道 -->
-      <a-typography-title :heading="6" style="margin-bottom: 16px">
+      <h3 class="section-title">
         {{ $t('notice.channel.sms') }}
-        <a-tag
-          :color="detail.status?.sms ? 'green' : 'red'"
+        <el-tag
+          :type="detail.status?.sms ? 'success' : 'danger'"
           style="margin-left: 8px; vertical-align: middle"
         >
           {{
@@ -13,101 +13,108 @@
               ? $t('notice.channel.status.enabled')
               : $t('notice.channel.status.disabled')
           }}
-        </a-tag>
-      </a-typography-title>
+        </el-tag>
+      </h3>
 
-      <a-alert style="margin-bottom: 16px">
+      <el-alert :closable="false" style="margin-bottom: 16px">
         {{ $t('notice.channel.sms.current') }}：
         {{ providerName(detail.sms_default) }}
-      </a-alert>
+      </el-alert>
 
-      <a-tabs v-model:active-key="smsTab">
-        <a-tab-pane key="aliyun" :title="$t('notice.channel.aliyun')">
-          <a-form
+      <el-tabs v-model="smsTab">
+        <el-tab-pane name="aliyun" :label="$t('notice.channel.aliyun')">
+          <el-form
             :model="aliyunForm"
-            layout="vertical"
+            label-position="top"
             style="max-width: 520px"
           >
-            <a-form-item :label="$t('notice.channel.enabled')">
-              <a-switch
+            <el-form-item :label="$t('notice.channel.enabled')">
+              <el-switch
                 v-model="aliyunForm.status"
-                :checked-value="1"
-                :unchecked-value="0"
+                :active-value="1"
+                :inactive-value="0"
               />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.access_key_id')">
-              <a-input v-model="aliyunForm.access_key_id" allow-clear />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.access_key_secret')">
-              <a-input-password
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.access_key_id')">
+              <el-input v-model="aliyunForm.access_key_id" clearable />
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.access_key_secret')">
+              <el-input
                 v-model="aliyunForm.access_key_secret"
-                allow-clear
+                type="password"
+                clearable
+                show-password
               />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.sign_name')">
-              <a-input v-model="aliyunForm.sign_name" allow-clear />
-            </a-form-item>
-            <a-form-item>
-              <a-button
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.sign_name')">
+              <el-input v-model="aliyunForm.sign_name" clearable />
+            </el-form-item>
+            <el-form-item>
+              <el-button
                 v-permission="['notice/channel/save']"
                 type="primary"
                 :loading="saving.aliyun"
                 @click="saveSection('sms_aliyun', aliyunForm)"
               >
                 {{ $t('notice.channel.save') }}
-              </a-button>
-            </a-form-item>
-          </a-form>
-        </a-tab-pane>
-        <a-tab-pane key="tencent" :title="$t('notice.channel.tencent')">
-          <a-form
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+        <el-tab-pane name="tencent" :label="$t('notice.channel.tencent')">
+          <el-form
             :model="tencentForm"
-            layout="vertical"
+            label-position="top"
             style="max-width: 520px"
           >
-            <a-form-item :label="$t('notice.channel.enabled')">
-              <a-switch
+            <el-form-item :label="$t('notice.channel.enabled')">
+              <el-switch
                 v-model="tencentForm.status"
-                :checked-value="1"
-                :unchecked-value="0"
+                :active-value="1"
+                :inactive-value="0"
               />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.secret_id')">
-              <a-input v-model="tencentForm.secret_id" allow-clear />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.secret_key')">
-              <a-input-password v-model="tencentForm.secret_key" allow-clear />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.sdk_app_id')">
-              <a-input v-model="tencentForm.sdk_app_id" allow-clear />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.sign_name')">
-              <a-input v-model="tencentForm.sign_name" allow-clear />
-            </a-form-item>
-            <a-form-item :label="$t('notice.channel.region')">
-              <a-input v-model="tencentForm.region" allow-clear />
-            </a-form-item>
-            <a-form-item>
-              <a-button
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.secret_id')">
+              <el-input v-model="tencentForm.secret_id" clearable />
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.secret_key')">
+              <el-input
+                v-model="tencentForm.secret_key"
+                type="password"
+                clearable
+                show-password
+              />
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.sdk_app_id')">
+              <el-input v-model="tencentForm.sdk_app_id" clearable />
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.sign_name')">
+              <el-input v-model="tencentForm.sign_name" clearable />
+            </el-form-item>
+            <el-form-item :label="$t('notice.channel.region')">
+              <el-input v-model="tencentForm.region" clearable />
+            </el-form-item>
+            <el-form-item>
+              <el-button
                 v-permission="['notice/channel/save']"
                 type="primary"
                 :loading="saving.tencent"
                 @click="saveSection('sms_tencent', tencentForm)"
               >
                 {{ $t('notice.channel.save') }}
-              </a-button>
-            </a-form-item>
-          </a-form>
-        </a-tab-pane>
-      </a-tabs>
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
 
-      <a-divider />
+      <el-divider />
 
       <!-- 邮件渠道 -->
-      <a-typography-title :heading="6" style="margin-bottom: 16px">
+      <h3 class="section-title">
         {{ $t('notice.channel.mail') }}
-        <a-tag
-          :color="detail.status?.mail ? 'green' : 'red'"
+        <el-tag
+          :type="detail.status?.mail ? 'success' : 'danger'"
           style="margin-left: 8px; vertical-align: middle"
         >
           {{
@@ -115,56 +122,61 @@
               ? $t('notice.channel.status.enabled')
               : $t('notice.channel.status.disabled')
           }}
-        </a-tag>
-      </a-typography-title>
+        </el-tag>
+      </h3>
 
-      <a-form :model="mailForm" layout="vertical" style="max-width: 520px">
-        <a-form-item :label="$t('notice.channel.host')">
-          <a-input v-model="mailForm.host" allow-clear />
-        </a-form-item>
-        <a-form-item :label="$t('notice.channel.port')">
-          <a-input-number
+      <el-form :model="mailForm" label-position="top" style="max-width: 520px">
+        <el-form-item :label="$t('notice.channel.host')">
+          <el-input v-model="mailForm.host" clearable />
+        </el-form-item>
+        <el-form-item :label="$t('notice.channel.port')">
+          <el-input-number
             v-model="mailForm.port"
             :min="1"
             :max="65535"
             style="width: 100%"
           />
-        </a-form-item>
-        <a-form-item :label="$t('notice.channel.username')">
-          <a-input v-model="mailForm.username" allow-clear />
-        </a-form-item>
-        <a-form-item :label="$t('notice.channel.password')">
-          <a-input-password v-model="mailForm.password" allow-clear />
-        </a-form-item>
-        <a-form-item :label="$t('notice.channel.from_name')">
-          <a-input v-model="mailForm.from_name" allow-clear />
-        </a-form-item>
-        <a-form-item :label="$t('notice.channel.encryption')">
-          <a-select v-model="mailForm.encryption" style="width: 180px">
-            <a-option value="ssl">SSL</a-option>
-            <a-option value="tls">TLS (STARTTLS)</a-option>
-            <a-option value="none">None</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button
+        </el-form-item>
+        <el-form-item :label="$t('notice.channel.username')">
+          <el-input v-model="mailForm.username" clearable />
+        </el-form-item>
+        <el-form-item :label="$t('notice.channel.password')">
+          <el-input
+            v-model="mailForm.password"
+            type="password"
+            clearable
+            show-password
+          />
+        </el-form-item>
+        <el-form-item :label="$t('notice.channel.from_name')">
+          <el-input v-model="mailForm.from_name" clearable />
+        </el-form-item>
+        <el-form-item :label="$t('notice.channel.encryption')">
+          <el-select v-model="mailForm.encryption" style="width: 180px">
+            <el-option label="SSL" value="ssl" />
+            <el-option label="TLS (STARTTLS)" value="tls" />
+            <el-option label="None" value="none" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button
             v-permission="['notice/channel/save']"
             type="primary"
             :loading="saving.mail"
             @click="saveSection('mail_smtp', mailForm)"
           >
             {{ $t('notice.channel.save') }}
-          </a-button>
-        </a-form-item>
-      </a-form>
-    </a-card>
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref, onMounted } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
   import {
     getNoticeChannelDetail,
     saveNoticeChannel,
@@ -235,7 +247,7 @@
     saving[loadingKey] = true;
     try {
       await saveNoticeChannel(section, { ...form });
-      Message.success(t('notice.channel.tip.success'));
+      ElMessage.success(t('notice.channel.tip.success'));
       fetchDetail();
     } finally {
       saving[loadingKey] = false;
@@ -244,3 +256,16 @@
 
   onMounted(fetchDetail);
 </script>
+
+<style scoped lang="less">
+  .container {
+    padding: 0 20px 20px;
+  }
+
+  .section-title {
+    margin: 0 0 16px;
+    color: var(--el-text-color-primary);
+    font-size: 16px;
+    font-weight: 600;
+  }
+</style>

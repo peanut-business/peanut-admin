@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Message } from '@arco-design/web-vue';
+import { ElMessage } from 'element-plus';
 
 export default function useLocale() {
   const i18 = useI18n();
@@ -12,8 +12,8 @@ export default function useLocale() {
       return;
     }
     i18.locale.value = value;
-    localStorage.setItem('arco-locale', value);
-    Message.success(i18.t('navbar.action.locale'));
+    localStorage.setItem('peanut-locale', value);
+    ElMessage.success(i18.t('navbar.action.locale'));
   };
   return {
     currentLocale,

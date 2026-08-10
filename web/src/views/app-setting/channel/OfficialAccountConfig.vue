@@ -1,39 +1,39 @@
 <template>
-  <a-spin :loading="loading" style="width: 100%">
-    <a-alert v-if="!canView" type="warning">
+  <div v-loading="loading" class="channel-panel">
+    <el-alert v-if="!canView" type="warning" :closable="false">
       {{ $t('channel.officialAccount.permissionDenied') }}
-    </a-alert>
-    <a-form
+    </el-alert>
+    <el-form
       v-else
       ref="formRef"
       :model="form"
       :rules="rules"
-      layout="vertical"
+      label-position="top"
       style="max-width: 720px; margin-top: 16px"
     >
-      <a-form-item field="name" :label="$t('channel.officialAccount.name')">
-        <a-input
+      <el-form-item prop="name" :label="$t('channel.officialAccount.name')">
+        <el-input
           v-model="form.name"
-          :max-length="100"
+          :maxlength="100"
           :placeholder="$t('channel.officialAccount.namePlaceholder')"
         />
-      </a-form-item>
-      <a-form-item
-        field="original_id"
+      </el-form-item>
+      <el-form-item
+        prop="original_id"
         :label="$t('channel.officialAccount.originalId')"
       >
-        <a-input
+        <el-input
           v-model="form.original_id"
-          :max-length="100"
+          :maxlength="100"
           :placeholder="$t('channel.officialAccount.originalIdPlaceholder')"
         />
-      </a-form-item>
-      <a-form-item
-        field="qr_code"
+      </el-form-item>
+      <el-form-item
+        prop="qr_code"
         :label="$t('channel.officialAccount.qrCode')"
       >
-        <a-space align="end">
-          <a-image
+        <el-space alignment="flex-end">
+          <el-image
             v-if="form.qr_code"
             :src="form.qr_code"
             width="96"
@@ -46,96 +46,101 @@
             :button-text="$t('channel.officialAccount.selectQrCode')"
             @select="onQrSelected"
           />
-          <a-button
+          <el-button
             v-if="form.qr_code"
-            status="danger"
+            type="danger"
             @click="form.qr_code = ''"
           >
             {{ $t('channel.operation.clear') }}
-          </a-button>
-        </a-space>
-      </a-form-item>
-      <a-form-item field="app_id" label="AppID">
-        <a-input
+          </el-button>
+        </el-space>
+      </el-form-item>
+      <el-form-item prop="app_id" label="AppID">
+        <el-input
           v-model="form.app_id"
-          :max-length="128"
+          :maxlength="128"
           :placeholder="$t('channel.field.appid.placeholder')"
         />
-      </a-form-item>
-      <a-form-item field="app_secret" label="AppSecret">
-        <a-input-password
+      </el-form-item>
+      <el-form-item prop="app_secret" label="AppSecret">
+        <el-input
           v-model="form.app_secret"
-          :max-length="255"
+          type="password"
+          show-password
+          :maxlength="255"
           :placeholder="
             form.app_secret_configured
               ? $t('channel.officialAccount.secretMaskedPlaceholder')
               : $t('channel.field.secret.placeholder')
           "
         />
-      </a-form-item>
-      <a-form-item
-        field="token"
-        :label="$t('channel.officialAccount.token')"
-      >
-        <a-input v-model="form.token" :max-length="255" />
-      </a-form-item>
-      <a-form-item
-        field="encoding_aes_key"
+      </el-form-item>
+      <el-form-item prop="token" :label="$t('channel.officialAccount.token')">
+        <el-input v-model="form.token" :maxlength="255" />
+      </el-form-item>
+      <el-form-item
+        prop="encoding_aes_key"
         :label="$t('channel.officialAccount.encodingAesKey')"
       >
-        <a-input v-model="form.encoding_aes_key" :max-length="43" />
-      </a-form-item>
-      <a-form-item
-        field="encryption_type"
+        <el-input v-model="form.encoding_aes_key" :maxlength="43" />
+      </el-form-item>
+      <el-form-item
+        prop="encryption_type"
         :label="$t('channel.officialAccount.encryptionType')"
       >
-        <a-radio-group v-model="form.encryption_type">
-          <a-radio :value="1">{{ $t('channel.officialAccount.plaintext') }}</a-radio>
-          <a-radio :value="2">{{ $t('channel.officialAccount.compatible') }}</a-radio>
-          <a-radio :value="3">{{ $t('channel.officialAccount.safe') }}</a-radio>
-        </a-radio-group>
-      </a-form-item>
+        <el-radio-group v-model="form.encryption_type">
+          <el-radio :value="1">{{
+            $t('channel.officialAccount.plaintext')
+          }}</el-radio>
+          <el-radio :value="2">{{
+            $t('channel.officialAccount.compatible')
+          }}</el-radio>
+          <el-radio :value="3">{{
+            $t('channel.officialAccount.safe')
+          }}</el-radio>
+        </el-radio-group>
+      </el-form-item>
 
-      <a-divider orientation="left">
+      <el-divider content-position="left">
         {{ $t('channel.officialAccount.callback') }}
-      </a-divider>
-      <a-alert type="info" :show-icon="true">
+      </el-divider>
+      <el-alert type="info" show-icon :closable="false">
         {{ $t('channel.officialAccount.plaintextNotice') }}
-      </a-alert>
-      <a-form-item :label="$t('channel.officialAccount.callbackUrl')">
-        <a-input-group>
-          <a-input :model-value="form.url" readonly />
-          <a-button @click="copyText(form.url)">
-            {{ $t('channel.operation.copy') }}
-          </a-button>
-        </a-input-group>
-      </a-form-item>
-      <a-form-item
+      </el-alert>
+      <el-form-item :label="$t('channel.officialAccount.callbackUrl')">
+        <el-input :model-value="form.url" readonly>
+          <template #append
+            ><el-button @click="copyText(form.url)">
+              {{ $t('channel.operation.copy') }}
+            </el-button></template
+          >
+        </el-input>
+      </el-form-item>
+      <el-form-item
         v-for="field in domainFields"
         :key="field.key"
         :label="$t(field.label)"
       >
-        <a-input :model-value="form[field.key]" readonly />
-      </a-form-item>
-      <a-form-item>
-        <a-button
+        <el-input :model-value="form[field.key]" readonly />
+      </el-form-item>
+      <el-form-item>
+        <el-button
           v-permission="['setting/official-account/save']"
           type="primary"
           :loading="submitLoading"
           @click="handleSubmit"
         >
           {{ $t('channel.operation.save') }}
-        </a-button>
-      </a-form-item>
-    </a-form>
-  </a-spin>
+        </el-button>
+      </el-form-item>
+    </el-form>
+  </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage, type FormInstance } from 'element-plus';
   import FilePicker from '@/components/file-picker/index.vue';
   import { hasPermission } from '@/hooks/permission';
   import {
@@ -146,7 +151,9 @@
   } from '@/api/official-account';
 
   const { t } = useI18n();
-  const canView = computed(() => hasPermission('setting/official-account/config'));
+  const canView = computed(() =>
+    hasPermission('setting/official-account/config')
+  );
   const loading = ref(false);
   const submitLoading = ref(false);
   const formRef = ref<FormInstance>();
@@ -168,9 +175,7 @@
   });
 
   const rules = {
-    app_id: [
-      { required: true, message: t('channel.field.appid.required') },
-    ],
+    app_id: [{ required: true, message: t('channel.field.appid.required') }],
     app_secret: [
       { required: true, message: t('channel.field.secret.required') },
     ],
@@ -209,8 +214,8 @@
   onMounted(fetchData);
 
   const handleSubmit = async () => {
-    const errors = await formRef.value?.validate();
-    if (errors) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       const data: OfficialAccountConfigForm = {
@@ -225,7 +230,7 @@
       };
       await saveOfficialAccountConfig(data);
       await fetchData();
-      Message.success(t('channel.tip.success'));
+      ElMessage.success(t('channel.tip.success'));
     } finally {
       submitLoading.value = false;
     }
@@ -238,9 +243,15 @@
   const copyText = async (value: string) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
-    Message.success(t('channel.tip.copied'));
+    ElMessage.success(t('channel.tip.copied'));
   };
 </script>
+
+<style scoped>
+  .channel-panel {
+    min-height: 180px;
+  }
+</style>
 
 <script lang="ts">
   export default { name: 'OfficialAccountConfig' };

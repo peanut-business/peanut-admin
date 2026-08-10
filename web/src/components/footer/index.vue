@@ -1,5 +1,5 @@
 <template>
-  <a-layout-footer class="footer">Peanut Admin</a-layout-footer>
+  <footer class="footer">Peanut Admin</footer>
 </template>
 
 <script lang="ts" setup></script>
@@ -10,7 +10,7 @@
     align-items: center;
     justify-content: center;
     height: 40px;
-    color: var(--color-text-2);
+    color: var(--el-text-color-secondary);
     text-align: center;
   }
 </style>

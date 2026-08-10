@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-10
+> Last updated: 2026-08-11
 
 ---
 
@@ -48,8 +48,9 @@
 ### 2.3 产品化正式基线 — 🚧 进行中
 
 - 集成 PR：`feat/productization-baseline` → `dev`（GitHub PR #3）
-- 已完成：远程数据库生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI
-- 进行中：管理端 Element Plus、完整核心业务依赖消费、标准覆盖 Host、PC/UniApp 无 UI client 消费
+- 已完成：远程数据库生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
+- 进行中：按系统、会员、内容、通知、支付迁移完整核心业务依赖，并删除应用内重复实现
+- Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
 - 产品化阶段通过后才将 `dev` 合入 `main`；SaaS 作为后续独立目标
 
 ---
@@ -66,7 +67,7 @@ peanut-admin/
 │   │   ├── init.sql     # 基础表 + 种子数据
 │   │   └── migrations/  # 24 个增量迁移
 │   └── .env             # DB/JWT 配置（不提交）
-├── web/             # 管理端前端（Vue3 + ArcoDesign）
+├── web/             # 管理端前端（Vue3 + Element Plus）
 ├── pc/              # PC 消费端（Nuxt3）
 ├── uniapp/          # 小程序/H5 客户端
 ├── docs/
@@ -74,7 +75,8 @@ peanut-admin/
 │   └── peanut-admin-*.md      # 开发指南、用户手册
 └── output/playwright/         # 验证证据
     ├── v01/  # Codex 自报
-    └── v02/  # 独立验证（可信）
+    ├── v02/  # 独立验证（可信）
+    └── element-plus-baseline/  # Element Plus 迁移真实浏览器证据
 ```
 
 ---

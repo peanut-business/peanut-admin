@@ -2,256 +2,242 @@
   <div class="container">
     <Breadcrumb :items="['menu.finance', 'menu.finance.refund']" />
 
-    <a-card :bordered="false" style="margin-bottom: 16px">
-      <a-row :gutter="24">
-        <a-col :span="6">
-          <a-statistic
+    <el-card shadow="never" style="margin-bottom: 16px">
+      <el-row :gutter="24">
+        <el-col :span="6">
+          <el-statistic
             :title="$t('refund.stat.total')"
             :value="stat.total"
             :precision="2"
           />
-        </a-col>
-        <a-col :span="6">
-          <a-statistic
+        </el-col>
+        <el-col :span="6">
+          <el-statistic
             :title="$t('refund.stat.ing')"
             :value="stat.ing"
             :precision="2"
           />
-        </a-col>
-        <a-col :span="6">
-          <a-statistic
+        </el-col>
+        <el-col :span="6">
+          <el-statistic
             :title="$t('refund.stat.success')"
             :value="stat.success"
             :precision="2"
           />
-        </a-col>
-        <a-col :span="6">
-          <a-statistic
+        </el-col>
+        <el-col :span="6">
+          <el-statistic
             :title="$t('refund.stat.error')"
             :value="stat.error"
             :precision="2"
           />
-        </a-col>
-      </a-row>
-    </a-card>
+        </el-col>
+      </el-row>
+    </el-card>
 
-    <a-card :bordered="false" style="margin-bottom: 16px">
-      <a-form :model="formModel" layout="inline">
-        <a-form-item :label="$t('refund.filter.sn')">
-          <a-input
+    <el-card shadow="never" style="margin-bottom: 16px">
+      <el-form :model="formModel" inline>
+        <el-form-item :label="$t('refund.filter.sn')">
+          <el-input
             v-model="formModel.sn"
             :placeholder="$t('refund.filter.sn.placeholder')"
-            allow-clear
+            clearable
             style="width: 200px"
-            @press-enter="search"
+            @keyup.enter="search"
           />
-        </a-form-item>
-        <a-form-item :label="$t('refund.filter.order_sn')">
-          <a-input
+        </el-form-item>
+        <el-form-item :label="$t('refund.filter.order_sn')">
+          <el-input
             v-model="formModel.order_sn"
             :placeholder="$t('refund.filter.order_sn.placeholder')"
-            allow-clear
+            clearable
             style="width: 200px"
-            @press-enter="search"
+            @keyup.enter="search"
           />
-        </a-form-item>
-        <a-form-item :label="$t('refund.filter.user_info')">
-          <a-input
+        </el-form-item>
+        <el-form-item :label="$t('refund.filter.user_info')">
+          <el-input
             v-model="formModel.user_info"
             :placeholder="$t('refund.filter.user_info.placeholder')"
-            allow-clear
+            clearable
             style="width: 200px"
-            @press-enter="search"
+            @keyup.enter="search"
           />
-        </a-form-item>
-        <a-form-item :label="$t('refund.filter.refund_type')">
-          <a-select
+        </el-form-item>
+        <el-form-item :label="$t('refund.filter.refund_type')">
+          <el-select
             v-model="formModel.refund_type"
-            allow-clear
+            clearable
             style="width: 130px"
             :placeholder="$t('refund.filter.all')"
           >
-            <a-option :value="1">{{ $t('refund.filter.admin') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item :label="$t('refund.filter.time')">
-          <a-range-picker
+            <el-option :label="$t('refund.filter.admin')" :value="1" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('refund.filter.time')">
+          <el-date-picker
             v-model="formModel.timeRange"
-            show-time
-            format="YYYY-MM-DD HH:mm:ss"
+            type="datetimerange"
             value-format="YYYY-MM-DD HH:mm:ss"
-            allow-clear
+            clearable
             style="width: 360px"
           />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="search">
-              <template #icon><icon-search /></template>
+        </el-form-item>
+        <el-form-item>
+          <el-space>
+            <el-button type="primary" :icon="Search" @click="search">
               {{ $t('refund.filter.search') }}
-            </a-button>
-            <a-button @click="reset">
-              <template #icon><icon-refresh /></template>
+            </el-button>
+            <el-button :icon="Refresh" @click="reset">
               {{ $t('refund.filter.reset') }}
-            </a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+            </el-button>
+          </el-space>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-    <a-card :bordered="false">
-      <a-tabs v-model:active-key="activeTab" @change="handleTabChange">
-        <a-tab-pane
+    <el-card shadow="never">
+      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+        <el-tab-pane
           v-for="tab in tabs"
           :key="tab.key"
-          :title="`${$t(tab.label)}(${extend[tab.extendKey] ?? 0})`"
+          :name="tab.key"
+          :label="`${$t(tab.label)}(${extend[tab.extendKey] ?? 0})`"
         />
-      </a-tabs>
+      </el-tabs>
 
-      <a-table
-        :data="list"
-        :loading="loading"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        :scroll="{ x: 1250 }"
-        row-key="id"
-        @page-change="onPageChange"
-        @page-size-change="onPageSizeChange"
-      >
-        <template #columns>
-          <a-table-column
-            :title="$t('refund.col.sn')"
-            data-index="sn"
-            :width="200"
-          />
-          <a-table-column :title="$t('refund.col.user')" :width="180">
-            <template #cell="{ record }">
-              <a-space>
-                <a-avatar :size="40" :image-url="record.avatar">
-                  {{ record.nickname?.slice(0, 1) }}
-                </a-avatar>
-                <span>{{ record.nickname || '-' }}</span>
-              </a-space>
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('refund.col.order_sn')"
-            data-index="order_sn"
-            :width="200"
-          />
-          <a-table-column :title="$t('refund.col.refund_amount')" :width="120">
-            <template #cell="{ record }">
-              ¥ {{ record.refund_amount }}
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('refund.col.refund_type')"
-            data-index="refund_type_text"
-            :width="110"
-          />
-          <a-table-column :title="$t('refund.col.refund_status')" :width="110">
-            <template #cell="{ record }">
-              <a-tag :color="statusColor(record.refund_status)">
-                {{ record.refund_status_text }}
-              </a-tag>
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('refund.col.create_time')"
-            data-index="create_time"
-            :width="180"
-          />
-          <a-table-column
-            :title="$t('refund.col.action')"
-            :width="180"
-            fixed="right"
-          >
-            <template #cell="{ record }">
-              <a-space>
-                <a-button
-                  v-permission="['finance.refund/log']"
-                  type="text"
-                  size="small"
-                  @click="openLog(record.id)"
-                >
-                  {{ $t('refund.action.log') }}
-                </a-button>
-                <a-popconfirm
-                  v-if="record.refund_status === 2"
-                  :content="$t('refund.retry.confirm')"
-                  @ok="handleRetry(record.id)"
-                >
-                  <a-button
+      <el-table v-loading="loading" :data="list" row-key="id" border>
+        <el-table-column :label="$t('refund.col.sn')" prop="sn" width="200" />
+        <el-table-column :label="$t('refund.col.user')" width="180">
+          <template #default="{ row }">
+            <el-space>
+              <el-avatar :size="40" :src="row.avatar">
+                {{ row.nickname?.slice(0, 1) }}
+              </el-avatar>
+              <span>{{ row.nickname || '-' }}</span>
+            </el-space>
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('refund.col.order_sn')"
+          prop="order_sn"
+          width="200"
+        />
+        <el-table-column :label="$t('refund.col.refund_amount')" width="120">
+          <template #default="{ row }"> ¥ {{ row.refund_amount }} </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('refund.col.refund_type')"
+          prop="refund_type_text"
+          width="110"
+        />
+        <el-table-column :label="$t('refund.col.refund_status')" width="110">
+          <template #default="{ row }">
+            <el-tag :type="statusType(row.refund_status)">
+              {{ row.refund_status_text }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('refund.col.create_time')"
+          prop="create_time"
+          width="180"
+        />
+        <el-table-column
+          :label="$t('refund.col.action')"
+          width="180"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-space>
+              <el-button
+                v-permission="['finance.refund/log']"
+                link
+                type="primary"
+                size="small"
+                @click="openLog(row.id)"
+              >
+                {{ $t('refund.action.log') }}
+              </el-button>
+              <el-popconfirm
+                v-if="row.refund_status === 2"
+                :title="$t('refund.retry.confirm')"
+                @confirm="handleRetry(row.id)"
+              >
+                <template #reference>
+                  <el-button
                     v-permission="['recharge.recharge/refundAgain']"
-                    type="text"
+                    link
+                    type="primary"
                     size="small"
-                    :loading="retryingId === record.id"
+                    :loading="retryingId === row.id"
+                    >{{ $t('refund.action.retry') }}</el-button
                   >
-                    {{ $t('refund.action.retry') }}
-                  </a-button>
-                </a-popconfirm>
-              </a-space>
-            </template>
-          </a-table-column>
-        </template>
-      </a-table>
-    </a-card>
+                </template>
+              </el-popconfirm>
+            </el-space>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          :current-page="pagination.current"
+          :page-size="pagination.pageSize"
+          :total="pagination.total"
+          :page-sizes="[15, 30, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @current-change="onPageChange"
+          @size-change="onPageSizeChange"
+        />
+      </div>
+    </el-card>
 
-    <a-drawer
-      v-model:visible="logVisible"
+    <el-drawer
+      v-model="logVisible"
       :title="$t('refund.log.title')"
-      :width="760"
-      :footer="false"
+      size="760px"
     >
-      <a-table
-        :data="logList"
-        :loading="logLoading"
-        :pagination="false"
-        row-key="id"
-      >
-        <template #columns>
-          <a-table-column
-            :title="$t('refund.log.col.sn')"
-            data-index="sn"
-            :width="200"
-          />
-          <a-table-column
-            :title="$t('refund.log.col.refund_amount')"
-            :width="120"
-          >
-            <template #cell="{ record }">
-              ¥ {{ record.refund_amount }}
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('refund.log.col.refund_status')"
-            :width="110"
-          >
-            <template #cell="{ record }">
-              <a-tag :color="statusColor(record.refund_status)">
-                {{ record.refund_status_text }}
-              </a-tag>
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('refund.log.col.create_time')"
-            data-index="create_time"
-            :width="180"
-          />
-          <a-table-column
-            :title="$t('refund.log.col.handler')"
-            data-index="handler"
-            :width="120"
-          />
-        </template>
-      </a-table>
-    </a-drawer>
+      <el-table v-loading="logLoading" :data="logList" row-key="id" border>
+        <el-table-column
+          :label="$t('refund.log.col.sn')"
+          prop="sn"
+          width="200"
+        />
+        <el-table-column
+          :label="$t('refund.log.col.refund_amount')"
+          width="120"
+        >
+          <template #default="{ row }"> ¥ {{ row.refund_amount }} </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('refund.log.col.refund_status')"
+          width="110"
+        >
+          <template #default="{ row }">
+            <el-tag :type="statusType(row.refund_status)">
+              {{ row.refund_status_text }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('refund.log.col.create_time')"
+          prop="create_time"
+          width="180"
+        />
+        <el-table-column
+          :label="$t('refund.log.col.handler')"
+          prop="handler"
+          width="120"
+        />
+      </el-table>
+    </el-drawer>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { onMounted, reactive, ref } from 'vue';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage, type TagProps } from 'element-plus';
+  import { Refresh, Search } from '@element-plus/icons-vue';
   import { useI18n } from 'vue-i18n';
   import {
     getRefundLog,
@@ -302,8 +288,8 @@
   const list = ref<RefundRecord[]>([]);
   const loading = ref(false);
 
-  const statusColor = (status: number) =>
-    ({ 0: 'orange', 1: 'green', 2: 'red' }[status] ?? 'gray');
+  const statusType = (status: number): TagProps['type'] =>
+    (({ 0: 'warning', 1: 'success', 2: 'danger' } as const)[status] ?? 'info');
 
   const listParams = (pageNo: number): RefundParams => {
     const params: RefundParams = {
@@ -364,7 +350,7 @@
     retryingId.value = recordId;
     try {
       await refundAgain(recordId);
-      Message.success(t('refund.retry.success'));
+      ElMessage.success(t('refund.retry.success'));
       await Promise.all([fetchList(pagination.current), fetchStat()]);
     } finally {
       retryingId.value = 0;
@@ -399,5 +385,11 @@
 <style scoped lang="less">
   .container {
     padding: 0 20px 20px 20px;
+  }
+
+  .pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
   }
 </style>

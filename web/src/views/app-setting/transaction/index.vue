@@ -1,94 +1,94 @@
 <template>
   <div class="container">
-    <a-card :bordered="false">
-      <a-form
+    <el-card shadow="never">
+      <el-form
         :model="form"
-        layout="vertical"
+        label-position="top"
         style="max-width: 560px"
         @submit.prevent="handleSave"
       >
         <!-- 自动取消未付款订单 -->
-        <a-form-item>
+        <el-form-item>
           <template #label>
             <span>{{ $t('transaction.cancelUnpaid') }}</span>
           </template>
           <div style="display: flex; align-items: center; gap: 12px">
-            <a-switch
+            <el-switch
               v-model="form.cancel_unpaid_orders"
-              :checked-value="1"
-              :unchecked-value="0"
+              :active-value="1"
+              :inactive-value="0"
             />
-            <a-typography-text type="secondary" style="font-size: 12px">
+            <el-text type="info" size="small">
               {{ $t('transaction.cancelUnpaid.enable') }}
-            </a-typography-text>
+            </el-text>
           </div>
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item
+        <el-form-item
           v-if="form.cancel_unpaid_orders === 1"
           :label="$t('transaction.cancelUnpaidTimes')"
         >
-          <a-input-number
+          <el-input-number
             v-model="form.cancel_unpaid_orders_times"
             :min="1"
             :precision="0"
             style="width: 200px"
           >
             <template #suffix>分钟</template>
-          </a-input-number>
-        </a-form-item>
+          </el-input-number>
+        </el-form-item>
 
-        <a-divider style="margin: 8px 0 20px" />
+        <el-divider style="margin: 8px 0 20px" />
 
         <!-- 自动核销订单 -->
-        <a-form-item>
+        <el-form-item>
           <template #label>
             <span>{{ $t('transaction.verificationOrders') }}</span>
           </template>
           <div style="display: flex; align-items: center; gap: 12px">
-            <a-switch
+            <el-switch
               v-model="form.verification_orders"
-              :checked-value="1"
-              :unchecked-value="0"
+              :active-value="1"
+              :inactive-value="0"
             />
-            <a-typography-text type="secondary" style="font-size: 12px">
+            <el-text type="info" size="small">
               {{ $t('transaction.verificationOrders.enable') }}
-            </a-typography-text>
+            </el-text>
           </div>
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item
+        <el-form-item
           v-if="form.verification_orders === 1"
           :label="$t('transaction.verificationOrdersTimes')"
         >
-          <a-input-number
+          <el-input-number
             v-model="form.verification_orders_times"
             :min="1"
             :precision="0"
             style="width: 200px"
           >
             <template #suffix>小时</template>
-          </a-input-number>
-        </a-form-item>
+          </el-input-number>
+        </el-form-item>
 
-        <a-form-item>
-          <a-button type="primary" html-type="submit" :loading="saving">
+        <el-form-item>
+          <el-button type="primary" native-type="submit" :loading="saving">
             {{ $t('transaction.save') }}
-          </a-button>
-        </a-form-item>
-      </a-form>
-    </a-card>
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref, onMounted } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
   import {
     getTransactionConfig,
     saveTransactionConfig,
-    TransactionConfig,
+    type TransactionConfig,
   } from '@/api/app';
 
   const { t } = useI18n();
@@ -112,7 +112,7 @@
     saving.value = true;
     try {
       await saveTransactionConfig({ ...form });
-      Message.success(t('transaction.tip.success'));
+      ElMessage.success(t('transaction.tip.success'));
     } finally {
       saving.value = false;
     }

@@ -1,118 +1,112 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.storage']" />
-    <a-card class="general-card" :title="$t('menu.system.storage')">
-      <a-table
-        row-key="engine"
-        :loading="loading"
-        :data="renderData"
-        :pagination="false"
-        :bordered="false"
-      >
-        <template #columns>
-          <a-table-column
-            :title="$t('systemStorage.column.name')"
-            data-index="name"
-          />
-          <a-table-column
-            :title="$t('systemStorage.column.path')"
-            data-index="path"
-          />
-          <a-table-column :title="$t('systemStorage.column.status')">
-            <template #cell="{ record }">
-              <a-tag v-if="record.status === 1" color="green">
-                {{ $t('systemStorage.status.using') }}
-              </a-tag>
-              <a-tag v-else color="gray">
-                {{ $t('systemStorage.status.unused') }}
-              </a-tag>
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('systemStorage.column.operations')"
-            :width="140"
-          >
-            <template #cell="{ record }">
-              <a-button type="text" size="small" @click="openConfig(record)">
-                {{ $t('systemStorage.operation.config') }}
-              </a-button>
-            </template>
-          </a-table-column>
-        </template>
-      </a-table>
-    </a-card>
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.storage') }}</template>
+      <el-table row-key="engine" :loading="loading" :data="renderData" border>
+        <el-table-column :label="$t('systemStorage.column.name')" prop="name" />
+        <el-table-column :label="$t('systemStorage.column.path')" prop="path" />
+        <el-table-column :label="$t('systemStorage.column.status')">
+          <template #default="{ row: record }">
+            <el-tag v-if="record.status === 1" type="success">
+              {{ $t('systemStorage.status.using') }}
+            </el-tag>
+            <el-tag v-else type="info">
+              {{ $t('systemStorage.status.unused') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('systemStorage.column.operations')"
+          :width="140"
+        >
+          <template #default="{ row: record }">
+            <el-button link size="small" @click="openConfig(record)">
+              {{ $t('systemStorage.operation.config') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+    <el-dialog
+      v-model="modalVisible"
       :title="$t('systemStorage.modal.title')"
-      :ok-text="$t('systemStorage.operation.save')"
-      :cancel-text="$t('systemStorage.operation.cancel')"
-      :confirm-loading="submitLoading"
-      @ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <template v-if="form.engine === 'local'">
-          <a-alert>{{ $t('systemStorage.tip.localOnly') }}</a-alert>
+          <el-alert>{{ $t('systemStorage.tip.localOnly') }}</el-alert>
         </template>
         <template v-else>
-          <a-form-item field="bucket" :label="$t('systemStorage.field.bucket')">
-            <a-input
+          <el-form-item prop="bucket" :label="$t('systemStorage.field.bucket')">
+            <el-input
               v-model="form.bucket"
               :placeholder="$t('systemStorage.field.bucket.placeholder')"
             />
-          </a-form-item>
-          <a-form-item
+          </el-form-item>
+          <el-form-item
             v-if="form.engine === 'qcloud'"
-            field="region"
+            prop="region"
             :label="$t('systemStorage.field.region')"
           >
-            <a-input
+            <el-input
               v-model="form.region"
               :placeholder="$t('systemStorage.field.region.placeholder')"
             />
-          </a-form-item>
-          <a-form-item
-            field="access_key"
+          </el-form-item>
+          <el-form-item
+            prop="access_key"
             :label="$t('systemStorage.field.accessKey')"
           >
-            <a-input
+            <el-input
               v-model="form.access_key"
               :placeholder="$t('systemStorage.field.accessKey.placeholder')"
             />
-          </a-form-item>
-          <a-form-item
-            field="secret_key"
+          </el-form-item>
+          <el-form-item
+            prop="secret_key"
             :label="$t('systemStorage.field.secretKey')"
           >
-            <a-input
+            <el-input
               v-model="form.secret_key"
               :placeholder="$t('systemStorage.field.secretKey.placeholder')"
             />
-          </a-form-item>
-          <a-form-item field="domain" :label="$t('systemStorage.field.domain')">
-            <a-input
+          </el-form-item>
+          <el-form-item prop="domain" :label="$t('systemStorage.field.domain')">
+            <el-input
               v-model="form.domain"
               :placeholder="$t('systemStorage.field.domain.placeholder')"
             />
-          </a-form-item>
+          </el-form-item>
         </template>
-        <a-form-item field="status" :label="$t('systemStorage.field.status')">
-          <a-switch
+        <el-form-item prop="status" :label="$t('systemStorage.field.status')">
+          <el-switch
             v-model="form.status"
-            :checked-value="1"
-            :unchecked-value="0"
+            :active-value="1"
+            :inactive-value="0"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="modalVisible = false">{{
+          $t('systemStorage.operation.cancel')
+        }}</el-button
+        ><el-button
+          type="primary"
+          :loading="submitLoading"
+          @click="handleSubmit"
+          >{{ $t('systemStorage.operation.save') }}</el-button
+        ></template
+      >
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getStorageList,
@@ -179,13 +173,13 @@
 
   const handleSubmit = async () => {
     if (form.engine !== 'local') {
-      const err = await formRef.value?.validate();
-      if (err) return false;
+      const valid = await formRef.value?.validate().catch(() => false);
+      if (!valid) return false;
     }
     submitLoading.value = true;
     try {
       await setupStorage({ ...form });
-      Message.success(t('systemStorage.tip.success'));
+      ElMessage.success(t('systemStorage.tip.success'));
       modalVisible.value = false;
       await fetchData();
       return true;

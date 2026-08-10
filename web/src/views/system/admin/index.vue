@@ -2,172 +2,219 @@
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.admin']" />
 
-    <a-card class="general-card search-card">
-      <a-form :model="queryParams" layout="inline">
-        <a-form-item field="account" :label="$t('systemAdmin.search.account')">
-          <a-input
+    <el-card class="general-card search-card">
+      <el-form :model="queryParams" inline>
+        <el-form-item prop="account" :label="$t('systemAdmin.search.account')">
+          <el-input
             v-model="queryParams.account"
-            allow-clear
+            clearable
             :placeholder="$t('systemAdmin.search.account.placeholder')"
-            @press-enter="search"
+            @keyup.enter="search"
           />
-        </a-form-item>
-        <a-form-item field="name" :label="$t('systemAdmin.search.name')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="name" :label="$t('systemAdmin.search.name')">
+          <el-input
             v-model="queryParams.name"
-            allow-clear
+            clearable
             :placeholder="$t('systemAdmin.search.name.placeholder')"
-            @press-enter="search"
+            @keyup.enter="search"
           />
-        </a-form-item>
-        <a-form-item field="role_id" :label="$t('systemAdmin.search.role')">
-          <a-select
+        </el-form-item>
+        <el-form-item prop="role_id" :label="$t('systemAdmin.search.role')">
+          <el-select
             v-model="queryParams.role_id"
-            allow-clear
+            clearable
             :placeholder="$t('systemAdmin.search.role.all')"
-            :options="roleOptions"
             style="width: 180px"
-          />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="search">
+            ><el-option
+              v-for="option in roleOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+          /></el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-space>
+            <el-button type="primary" @click="search">
               <template #icon><icon-search /></template>
               {{ $t('systemAdmin.operation.search') }}
-            </a-button>
-            <a-button @click="resetQuery">
+            </el-button>
+            <el-button @click="resetQuery">
               <template #icon><icon-refresh /></template>
               {{ $t('systemAdmin.operation.reset') }}
-            </a-button>
-            <a-button @click="openExport">
+            </el-button>
+            <el-button @click="openExport">
               <template #icon><icon-export /></template>
               {{ $t('systemAdmin.operation.export') }}
-            </a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+            </el-button>
+          </el-space>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-    <a-card class="general-card list-card" :title="$t('menu.system.admin')">
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-button
+    <el-card class="general-card list-card">
+      <template #header>{{ $t('menu.system.admin') }}</template>
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-button
             v-permission="['admin/add']"
             type="primary"
             @click="handleAdd"
           >
             <template #icon><icon-plus /></template>
             {{ $t('systemAdmin.operation.create') }}
-          </a-button>
-        </a-col>
-      </a-row>
+          </el-button>
+        </el-col>
+      </el-row>
 
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        :scroll="{ x: 1500 }"
-        @page-change="onPageChange"
-        @page-size-change="onPageSizeChange"
-      >
-        <template #avatar="{ record }">
-          <a-avatar :size="42" :image-url="record.avatar">
-            {{ record.name?.slice(0, 1) }}
-          </a-avatar>
-        </template>
-        <template #status="{ record }">
-          <a-switch
-            v-permission="['admin/edit']"
-            :model-value="record.disable === 0"
-            :disabled="isProtected(record)"
-            @change="(value) => handleStatus(record, value as boolean)"
-          />
-          <a-tag
-            v-if="record.root === 1"
-            color="gold"
-            size="small"
-            style="margin-left: 6px"
-          >
-            {{ $t('systemAdmin.root.yes') }}
-          </a-tag>
-        </template>
-        <template #multipoint="{ record }">
-          <a-tag :color="record.multipoint_login === 1 ? 'green' : 'gray'">
-            {{
-              record.multipoint_login === 1
+      <el-table row-key="id" :loading="loading" :data="renderData" border>
+        <el-table-column
+          prop="id"
+          :label="$t('systemAdmin.columns.id')"
+          width="70"
+        />
+        <el-table-column :label="$t('systemAdmin.columns.avatar')" width="80"
+          ><template #default="{ row }"
+            ><el-avatar :size="42" :src="row.avatar">{{
+              row.name?.slice(0, 1)
+            }}</el-avatar></template
+          ></el-table-column
+        >
+        <el-table-column
+          prop="account"
+          :label="$t('systemAdmin.columns.account')"
+          width="130"
+        />
+        <el-table-column
+          prop="name"
+          :label="$t('systemAdmin.columns.name')"
+          width="130"
+        />
+        <el-table-column
+          prop="role_name"
+          :label="$t('systemAdmin.columns.roles')"
+          width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="dept_name"
+          :label="$t('systemAdmin.columns.dept')"
+          width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="create_time"
+          :label="$t('systemAdmin.columns.createTime')"
+          width="180"
+        />
+        <el-table-column
+          :label="$t('systemAdmin.columns.loginTime')"
+          width="180"
+          ><template #default="{ row }">{{
+            row.login_time || '-'
+          }}</template></el-table-column
+        >
+        <el-table-column :label="$t('systemAdmin.columns.loginIp')" width="150"
+          ><template #default="{ row }">{{
+            row.login_ip || '-'
+          }}</template></el-table-column
+        >
+        <el-table-column :label="$t('systemAdmin.columns.status')" width="130"
+          ><template #default="{ row }"
+            ><el-switch
+              v-permission="['admin/edit']"
+              :model-value="row.disable === 0"
+              :disabled="isProtected(row)"
+              @change="(value: string | number | boolean) => handleStatus(row, value as boolean)"
+            /><el-tag
+              v-if="row.root === 1"
+              type="warning"
+              size="small"
+              style="margin-left: 6px"
+              >{{ $t('systemAdmin.root.yes') }}</el-tag
+            ></template
+          ></el-table-column
+        >
+        <el-table-column
+          :label="$t('systemAdmin.columns.multipoint')"
+          width="120"
+          ><template #default="{ row }"
+            ><el-tag :type="row.multipoint_login === 1 ? 'success' : 'info'">{{
+              row.multipoint_login === 1
                 ? $t('systemAdmin.common.yes')
                 : $t('systemAdmin.common.no')
-            }}
-          </a-tag>
-        </template>
-        <template #login_time="{ record }">
-          {{ record.login_time || '-' }}
-        </template>
-        <template #login_ip="{ record }">
-          {{ record.login_ip || '-' }}
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-permission="['admin/edit']"
-              type="text"
-              size="small"
-              @click="handleEdit(record)"
-            >
-              {{ $t('systemAdmin.operation.edit') }}
-            </a-button>
-            <a-popconfirm
-              v-if="!isProtected(record)"
-              :content="$t('systemAdmin.delete.confirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button
-                v-permission="['admin/delete']"
-                type="text"
-                status="danger"
+            }}</el-tag></template
+          ></el-table-column
+        >
+        <el-table-column
+          :label="$t('systemAdmin.columns.operations')"
+          width="150"
+          fixed="right"
+          ><template #default="{ row }"
+            ><el-space
+              ><el-button
+                v-permission="['admin/edit']"
+                link
                 size="small"
-              >
-                {{ $t('systemAdmin.operation.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+                @click="handleEdit(row)"
+                >{{ $t('systemAdmin.operation.edit') }}</el-button
+              ><el-popconfirm
+                v-if="!isProtected(row)"
+                :title="$t('systemAdmin.delete.confirm')"
+                @confirm="handleDelete(row)"
+                ><template #reference
+                  ><el-button
+                    v-permission="['admin/delete']"
+                    link
+                    type="danger"
+                    size="small"
+                    >{{ $t('systemAdmin.operation.delete') }}</el-button
+                  ></template
+                ></el-popconfirm
+              ></el-space
+            ></template
+          ></el-table-column
+        >
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        :page-sizes="[10, 15, 30, 50]"
+        layout="total, sizes, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="onPageChange"
+        @size-change="onPageSizeChange"
+      />
+    </el-card>
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('systemAdmin.modal.editTitle')
           : $t('systemAdmin.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="620px"
-      @before-ok="handleSubmit"
-      @cancel="modalVisible = false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="account" :label="$t('systemAdmin.field.account')">
-          <a-input
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item prop="account" :label="$t('systemAdmin.field.account')">
+          <el-input
             v-model="form.account"
             :disabled="form.root === 1"
-            :max-length="32"
+            maxlength="32"
             :placeholder="$t('systemAdmin.field.account.placeholder')"
           />
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item field="avatar" :label="$t('systemAdmin.field.avatar')">
-          <a-space align="start">
-            <a-avatar :size="72" :image-url="avatarUrl">
+        <el-form-item prop="avatar" :label="$t('systemAdmin.field.avatar')">
+          <el-space align="start">
+            <el-avatar :size="72" :src="avatarUrl">
               {{ form.name?.slice(0, 1) }}
-            </a-avatar>
+            </el-avatar>
             <div>
-              <a-upload
+              <el-upload
                 :action="uploadAction"
                 :headers="uploadHeaders"
                 :show-file-list="false"
@@ -175,128 +222,146 @@
                 @success="onAvatarSuccess"
                 @error="onAvatarError"
               >
-                <template #upload-button>
-                  <a-button>
+                <template #trigger>
+                  <el-button>
                     <template #icon><icon-upload /></template>
                     {{ $t('systemAdmin.field.avatar.upload') }}
-                  </a-button>
+                  </el-button>
                 </template>
-              </a-upload>
+              </el-upload>
               <div class="form-tip">{{
                 $t('systemAdmin.field.avatar.tip')
               }}</div>
             </div>
-          </a-space>
-        </a-form-item>
+          </el-space>
+        </el-form-item>
 
-        <a-form-item field="name" :label="$t('systemAdmin.field.name')">
-          <a-input
+        <el-form-item prop="name" :label="$t('systemAdmin.field.name')">
+          <el-input
             v-model="form.name"
-            :max-length="16"
+            maxlength="16"
             :placeholder="$t('systemAdmin.field.name.placeholder')"
           />
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item field="dept_id" :label="$t('systemAdmin.field.dept')">
-          <a-tree-select
+        <el-form-item prop="dept_id" :label="$t('systemAdmin.field.dept')">
+          <el-tree-select
             v-model="form.dept_id"
             :data="deptOptions"
-            :field-names="{ key: 'id', title: 'name', children: 'children' }"
+            :props="{ value: 'id', label: 'name', children: 'children' }"
             multiple
-            allow-clear
+            clearable
             :placeholder="$t('systemAdmin.field.dept.placeholder')"
           />
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item field="jobs_id" :label="$t('systemAdmin.field.jobs')">
-          <a-select
+        <el-form-item prop="jobs_id" :label="$t('systemAdmin.field.jobs')">
+          <el-select
             v-model="form.jobs_id"
-            :options="jobsOptions"
             multiple
-            allow-clear
+            clearable
             :placeholder="$t('systemAdmin.field.jobs.placeholder')"
-          />
-        </a-form-item>
+            ><el-option
+              v-for="option in jobsOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+          /></el-select>
+        </el-form-item>
 
-        <a-form-item
+        <el-form-item
           v-if="form.root !== 1"
-          field="role_id"
+          prop="role_id"
           :label="$t('systemAdmin.field.roles')"
         >
-          <a-select
+          <el-select
             v-model="form.role_id"
-            :options="roleOptions"
             multiple
-            allow-clear
+            clearable
             :placeholder="$t('systemAdmin.field.roles.placeholder')"
-          />
-        </a-form-item>
+            ><el-option
+              v-for="option in roleOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+          /></el-select>
+        </el-form-item>
 
-        <a-form-item field="password" :label="$t('systemAdmin.field.password')">
-          <a-input-password
+        <el-form-item prop="password" :label="$t('systemAdmin.field.password')">
+          <el-input
+            type="password"
+            show-password
             v-model="form.password"
-            allow-clear
+            clearable
             :placeholder="
               isEdit
                 ? $t('systemAdmin.field.password.editPlaceholder')
                 : $t('systemAdmin.field.password.addPlaceholder')
             "
           />
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item
-          field="password_confirm"
+        <el-form-item
+          prop="password_confirm"
           :label="$t('systemAdmin.field.passwordConfirm')"
         >
-          <a-input-password
+          <el-input
+            type="password"
+            show-password
             v-model="form.password_confirm"
-            allow-clear
+            clearable
             :placeholder="$t('systemAdmin.field.passwordConfirm.placeholder')"
           />
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item
+        <el-form-item
           v-if="form.root !== 1"
-          field="disable"
+          prop="disable"
           :label="$t('systemAdmin.field.status')"
         >
-          <a-switch
+          <el-switch
             v-model="form.disable"
-            :checked-value="0"
-            :unchecked-value="1"
+            :active-value="0"
+            :inactive-value="1"
           />
-        </a-form-item>
+        </el-form-item>
 
-        <a-form-item
-          field="multipoint_login"
+        <el-form-item
+          prop="multipoint_login"
           :label="$t('systemAdmin.field.multipoint')"
         >
           <div>
-            <a-switch
+            <el-switch
               v-model="form.multipoint_login"
-              :checked-value="1"
-              :unchecked-value="0"
+              :active-value="1"
+              :inactive-value="0"
             />
             <div class="form-tip">
               {{ $t('systemAdmin.field.multipoint.tip') }}
             </div>
           </div>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="modalVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="submitLoading"
+          @click="handleSubmit"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
 
-    <a-modal
-      v-model:visible="exportVisible"
+    <el-dialog
+      v-model="exportVisible"
       :title="$t('systemAdmin.export.title')"
-      :ok-text="$t('systemAdmin.export.confirm')"
-      :ok-loading="exportLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="540px"
-      @before-ok="handleExport"
     >
-      <a-spin :loading="exportInfoLoading" style="width: 100%">
-        <a-form ref="exportFormRef" :model="exportForm" layout="vertical">
-          <a-alert type="info" style="margin-bottom: 16px">
+      <div v-loading="exportInfoLoading" style="width: 100%">
+        <el-form ref="exportFormRef" :model="exportForm" label-position="top">
+          <el-alert type="info" style="margin-bottom: 16px">
             {{
               $t('systemAdmin.export.summary', {
                 count: exportInfo.count,
@@ -311,54 +376,64 @@
                 count: exportInfo.all_max_size,
               })
             }}
-          </a-alert>
-          <a-form-item
-            field="page_type"
+          </el-alert>
+          <el-form-item
+            prop="page_type"
             :label="$t('systemAdmin.export.range')"
           >
-            <a-radio-group v-model="exportForm.page_type">
-              <a-radio :value="0">{{ $t('systemAdmin.export.all') }}</a-radio>
-              <a-radio :value="1">{{ $t('systemAdmin.export.pages') }}</a-radio>
-            </a-radio-group>
-          </a-form-item>
-          <a-form-item
+            <el-radio-group v-model="exportForm.page_type">
+              <el-radio :value="0" label="0">{{
+                $t('systemAdmin.export.all')
+              }}</el-radio>
+              <el-radio :value="1" label="1">{{
+                $t('systemAdmin.export.pages')
+              }}</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item
             v-if="exportForm.page_type === 1"
             :label="$t('systemAdmin.export.pageRange')"
           >
-            <a-space>
-              <a-input-number
+            <el-space>
+              <el-input-number
                 v-model="exportForm.page_start"
                 :min="1"
                 :max="exportInfo.sum_page || 1"
               />
               <span>{{ $t('systemAdmin.export.to') }}</span>
-              <a-input-number
+              <el-input-number
                 v-model="exportForm.page_end"
                 :min="exportForm.page_start"
                 :max="exportInfo.sum_page || 1"
               />
-            </a-space>
-          </a-form-item>
-          <a-form-item
-            field="file_name"
+            </el-space>
+          </el-form-item>
+          <el-form-item
+            prop="file_name"
             :label="$t('systemAdmin.export.fileName')"
           >
-            <a-input v-model="exportForm.file_name" :max-length="100" />
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-modal>
+            <el-input v-model="exportForm.file_name" maxlength="100" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer
+        ><el-button @click="exportVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="exportLoading"
+          @click="handleExport"
+          >{{ $t('systemAdmin.export.confirm') }}</el-button
+        ></template
+      >
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, nextTick, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FileItem } from '@arco-design/web-vue/es/upload/interfaces';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
-  import type { SelectOptionData } from '@arco-design/web-vue/es/select/interface';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import { useUserStore } from '@/store';
   import { getToken } from '@/utils/auth';
@@ -384,8 +459,8 @@
   const userStore = useUserStore();
   const { loading, setLoading } = useLoading(true);
   const renderData = ref<AdminRecord[]>([]);
-  const roleOptions = ref<SelectOptionData[]>([]);
-  const jobsOptions = ref<SelectOptionData[]>([]);
+  const roleOptions = ref<{ value: number; label: string }[]>([]);
+  const jobsOptions = ref<{ value: number; label: string }[]>([]);
   const deptOptions = ref<DeptRecord[]>([]);
 
   const queryParams = reactive({
@@ -401,60 +476,6 @@
     showTotal: true,
     showPageSize: true,
   });
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemAdmin.columns.id'), dataIndex: 'id', width: 70 },
-    { title: t('systemAdmin.columns.avatar'), slotName: 'avatar', width: 80 },
-    {
-      title: t('systemAdmin.columns.account'),
-      dataIndex: 'account',
-      width: 130,
-    },
-    { title: t('systemAdmin.columns.name'), dataIndex: 'name', width: 130 },
-    {
-      title: t('systemAdmin.columns.roles'),
-      dataIndex: 'role_name',
-      width: 150,
-      ellipsis: true,
-      tooltip: true,
-    },
-    {
-      title: t('systemAdmin.columns.dept'),
-      dataIndex: 'dept_name',
-      width: 150,
-      ellipsis: true,
-      tooltip: true,
-    },
-    {
-      title: t('systemAdmin.columns.createTime'),
-      dataIndex: 'create_time',
-      width: 180,
-    },
-    {
-      title: t('systemAdmin.columns.loginTime'),
-      dataIndex: 'login_time',
-      slotName: 'login_time',
-      width: 180,
-    },
-    {
-      title: t('systemAdmin.columns.loginIp'),
-      dataIndex: 'login_ip',
-      slotName: 'login_ip',
-      width: 150,
-    },
-    { title: t('systemAdmin.columns.status'), slotName: 'status', width: 130 },
-    {
-      title: t('systemAdmin.columns.multipoint'),
-      slotName: 'multipoint',
-      width: 120,
-    },
-    {
-      title: t('systemAdmin.columns.operations'),
-      slotName: 'operations',
-      width: 150,
-      fixed: 'right',
-    },
-  ]);
 
   const listParams = (page = pagination.current): AdminListParams => ({
     account: queryParams.account || undefined,
@@ -544,24 +565,28 @@
     account: [
       { required: true, message: t('systemAdmin.field.account.required') },
       {
-        minLength: 1,
-        maxLength: 32,
+        min: 1,
+        max: 32,
         message: t('systemAdmin.field.account.length'),
       },
     ],
     name: [
       { required: true, message: t('systemAdmin.field.name.required') },
       {
-        minLength: 1,
-        maxLength: 16,
+        min: 1,
+        max: 16,
         message: t('systemAdmin.field.name.length'),
       },
     ],
     role_id: [
       {
-        validator: (value: number[], callback: (message?: string) => void) => {
+        validator: (
+          _rule: unknown,
+          value: number[],
+          callback: (message?: string | Error) => void
+        ) => {
           if (form.root !== 1 && (!value || value.length === 0)) {
-            callback(t('systemAdmin.field.roles.required'));
+            callback(new Error(t('systemAdmin.field.roles.required')));
             return;
           }
           callback();
@@ -572,11 +597,12 @@
       ? [
           {
             validator: (
+              _rule: unknown,
               value: string,
-              callback: (message?: string) => void
+              callback: (message?: string | Error) => void
             ) => {
               if (value && (value.length < 6 || value.length > 32)) {
-                callback(t('systemAdmin.field.password.length'));
+                callback(new Error(t('systemAdmin.field.password.length')));
                 return;
               }
               callback();
@@ -586,20 +612,28 @@
       : [
           { required: true, message: t('systemAdmin.field.password.required') },
           {
-            minLength: 6,
-            maxLength: 32,
+            min: 6,
+            max: 32,
             message: t('systemAdmin.field.password.length'),
           },
         ],
     password_confirm: [
       {
-        validator: (value: string, callback: (message?: string) => void) => {
+        validator: (
+          _rule: unknown,
+          value: string,
+          callback: (message?: string | Error) => void
+        ) => {
           if (form.password && !value) {
-            callback(t('systemAdmin.field.passwordConfirm.required'));
+            callback(
+              new Error(t('systemAdmin.field.passwordConfirm.required'))
+            );
             return;
           }
           if ((value || '') !== (form.password || '')) {
-            callback(t('systemAdmin.field.passwordConfirm.mismatch'));
+            callback(
+              new Error(t('systemAdmin.field.passwordConfirm.mismatch'))
+            );
             return;
           }
           callback();
@@ -641,8 +675,8 @@
   };
 
   const handleSubmit = async () => {
-    const errors = await formRef.value?.validate();
-    if (errors) return false;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return false;
     submitLoading.value = true;
     try {
       const payload: AdminForm = {
@@ -653,7 +687,8 @@
       };
       if (isEdit.value) await editAdmin(payload);
       else await addAdmin(payload);
-      Message.success(t('systemAdmin.tip.success'));
+      ElMessage.success(t('systemAdmin.tip.success'));
+      modalVisible.value = false;
       await fetchData(isEdit.value ? pagination.current : 1);
       return true;
     } finally {
@@ -663,7 +698,7 @@
 
   const handleDelete = async (record: AdminRecord) => {
     await deleteAdmin(record.id);
-    Message.success(t('systemAdmin.tip.success'));
+    ElMessage.success(t('systemAdmin.tip.success'));
     const targetPage = renderData.value.length === 1 ? 1 : pagination.current;
     await fetchData(targetPage);
   };
@@ -676,21 +711,22 @@
       disable === 1
         ? t('systemAdmin.status.disabled')
         : t('systemAdmin.status.normal');
-    Message.success(t('systemAdmin.tip.success'));
+    ElMessage.success(t('systemAdmin.tip.success'));
   };
 
-  const onAvatarSuccess = (fileItem: FileItem) => {
-    const { response } = fileItem;
+  const onAvatarSuccess = (response: any) => {
     if (!response || response.code !== 20000) {
-      Message.error(response?.msg || t('systemAdmin.field.avatar.uploadFail'));
+      ElMessage.error(
+        response?.msg || t('systemAdmin.field.avatar.uploadFail')
+      );
       return;
     }
     form.avatar = response.data.uri;
     avatarPreview.value = response.data.url;
-    Message.success(t('systemAdmin.field.avatar.uploadSuccess'));
+    ElMessage.success(t('systemAdmin.field.avatar.uploadSuccess'));
   };
   const onAvatarError = () => {
-    Message.error(t('systemAdmin.field.avatar.uploadFail'));
+    ElMessage.error(t('systemAdmin.field.avatar.uploadFail'));
   };
 
   // ---- 两阶段导出 ----
@@ -737,7 +773,7 @@
       exportForm.page_type === 1 &&
       exportForm.page_end < exportForm.page_start
     ) {
-      Message.error(t('systemAdmin.export.invalidRange'));
+      ElMessage.error(t('systemAdmin.export.invalidRange'));
       return false;
     }
     exportLoading.value = true;
@@ -753,7 +789,8 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
-      Message.success(t('systemAdmin.export.success'));
+      ElMessage.success(t('systemAdmin.export.success'));
+      exportVisible.value = false;
       return true;
     } finally {
       exportLoading.value = false;

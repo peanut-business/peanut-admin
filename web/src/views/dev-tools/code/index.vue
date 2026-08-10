@@ -1,32 +1,36 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['开发工具', '代码生成器']" />
-    <a-card class="general-card" title="代码生成器">
-      <a-row align="center" justify="space-between" style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-space>
-            <a-input-search
+    <el-card class="general-card">
+      <template #header>代码生成器</template>
+      <el-row
+        align="center"
+        justify="space-between"
+        style="margin-bottom: 16px"
+      >
+        <el-col :span="12">
+          <el-space>
+            <el-input
               v-model="keyword"
-              allow-clear
+              clearable
               placeholder="按表名、说明或实体筛选"
               style="width: 300px"
-              @search="() => fetchData(1)"
-              @press-enter="() => fetchData(1)"
+              @keyup.enter="fetchData(1)"
             />
-            <a-button @click="fetchData(1)">查询</a-button>
-          </a-space>
-        </a-col>
-        <a-col>
-          <a-space>
-            <a-button
+            <el-button @click="fetchData(1)">查询</el-button>
+          </el-space>
+        </el-col>
+        <el-col>
+          <el-space>
+            <el-button
               v-permission="['generator/import']"
               type="primary"
               @click="openSourceTables"
             >
               <template #icon><icon-plus /></template>
               导入数据表
-            </a-button>
-            <a-button
+            </el-button>
+            <el-button
               v-permission="['generator/generate']"
               :disabled="selectedKeys.length === 0"
               :loading="generateLoading"
@@ -34,361 +38,383 @@
             >
               <template #icon><icon-code /></template>
               生成并下载
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
 
-      <a-table
-        v-model:selected-keys="selectedKeys"
+      <el-table
         row-key="id"
         :loading="loading"
-        :columns="columns"
         :data="renderData"
-        :pagination="pagination"
-        :row-selection="{ type: 'checkbox', showCheckedAll: true }"
-        :bordered="{ cell: true }"
-        @page-change="onPageChange"
+        border
+        @selection-change="onSelectionChange"
       >
-        <template #template_type="{ record }">
-          <a-tag>{{ record.template_type === 'tree' ? '树形' : 'CRUD' }}</a-tag>
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-permission="['generator/detail']"
-              type="text"
-              size="small"
-              @click="openEdit(record)"
-            >
-              配置
-            </a-button>
-            <a-button
-              v-permission="['generator/sync']"
-              type="text"
-              size="small"
-              @click="handleSync(record)"
-            >
-              同步字段
-            </a-button>
-            <a-button
-              v-permission="['generator/preview']"
-              type="text"
-              size="small"
-              @click="openPreview(record)"
-            >
-              预览
-            </a-button>
-            <a-popconfirm
-              content="确定删除该生成配置吗？"
-              @ok="handleDelete(record)"
-            >
-              <a-button
-                v-permission="['generator/delete']"
-                type="text"
-                status="danger"
+        <el-table-column type="selection" width="55" reserve-selection />
+        <el-table-column prop="id" label="编号" width="70" />
+        <el-table-column prop="table_name" label="数据表" width="180" />
+        <el-table-column prop="table_comment" label="表说明" width="220" />
+        <el-table-column prop="module_name" label="模块" width="140" />
+        <el-table-column prop="entity_name" label="实体" width="160" />
+        <el-table-column label="模板" width="90"
+          ><template #default="{ row }"
+            ><el-tag>{{
+              row.template_type === 'tree' ? '树形' : 'CRUD'
+            }}</el-tag></template
+          ></el-table-column
+        >
+        <el-table-column label="操作" width="300"
+          ><template #default="{ row }"
+            ><el-space
+              ><el-button
+                v-permission="['generator/detail']"
+                link
                 size="small"
-              >
-                删除
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+                @click="openEdit(row)"
+                >配置</el-button
+              ><el-button
+                v-permission="['generator/sync']"
+                link
+                size="small"
+                @click="handleSync(row)"
+                >同步字段</el-button
+              ><el-button
+                v-permission="['generator/preview']"
+                link
+                size="small"
+                @click="openPreview(row)"
+                >预览</el-button
+              ><el-popconfirm
+                title="确定删除该生成配置吗？"
+                @confirm="handleDelete(row)"
+                ><template #reference
+                  ><el-button
+                    v-permission="['generator/delete']"
+                    link
+                    type="danger"
+                    size="small"
+                    >删除</el-button
+                  ></template
+                ></el-popconfirm
+              ></el-space
+            ></template
+          ></el-table-column
+        >
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        layout="total, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="onPageChange"
+      />
+    </el-card>
 
-    <a-modal
-      v-model:visible="sourceVisible"
-      title="导入数据表"
-      width="760px"
-      :ok-loading="importLoading"
-      @ok="handleImport"
-      @cancel="sourceVisible = false"
-    >
-      <a-input-search
+    <el-dialog v-model="sourceVisible" title="导入数据表" width="760px">
+      <el-input
         v-model="sourceKeyword"
-        allow-clear
+        clearable
         placeholder="按表名或说明筛选"
         style="margin-bottom: 12px"
-        @search="() => fetchSourceTables(1)"
-        @press-enter="() => fetchSourceTables(1)"
+        @keyup.enter="fetchSourceTables(1)"
       />
-      <a-table
-        v-model:selected-keys="sourceSelectedKeys"
+      <el-table
         row-key="table_name"
         :loading="sourceLoading"
-        :columns="sourceColumns"
         :data="sourceTables"
-        :pagination="sourcePagination"
-        :row-selection="{ type: 'checkbox', showCheckedAll: true }"
-        :bordered="{ cell: true }"
-        @page-change="fetchSourceTables"
+        border
+        @selection-change="onSourceSelectionChange"
+        ><el-table-column
+          type="selection"
+          width="55"
+          reserve-selection /><el-table-column
+          prop="table_name"
+          label="表名" /><el-table-column
+          prop="table_comment"
+          label="表说明" /><el-table-column
+          prop="engine"
+          label="引擎"
+          width="100" /><el-table-column
+          prop="table_rows"
+          label="估计行数"
+          width="100" /><el-table-column
+          prop="create_time"
+          label="创建时间"
+          width="180"
+      /></el-table>
+      <el-pagination
+        v-model:current-page="sourcePagination.current"
+        v-model:page-size="sourcePagination.pageSize"
+        :total="sourcePagination.total"
+        layout="total, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="fetchSourceTables"
       />
-    </a-modal>
+      <template #footer
+        ><el-button @click="sourceVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="importLoading"
+          @click="handleImport"
+          >导入</el-button
+        ></template
+      >
+    </el-dialog>
 
-    <a-modal
-      v-model:visible="editVisible"
+    <el-dialog
+      v-model="editVisible"
       title="配置生成规则"
       width="1120px"
-      :ok-loading="saveLoading"
-      :mask-closable="false"
-      @ok="handleSave"
-      @cancel="editVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form
+      <el-form
         ref="formRef"
         :model="editForm"
         :rules="formRules"
-        layout="vertical"
+        label-position="top"
       >
-        <a-row :gutter="16">
-          <a-col :span="8">
-            <a-form-item field="table_comment" label="表说明">
-              <a-input v-model="editForm.table_comment" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item field="module_name" label="模块名称">
-              <a-input v-model="editForm.module_name" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item field="entity_name" label="实体名称">
-              <a-input v-model="editForm.entity_name" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item field="template_type" label="模板类型">
-              <a-select v-model="editForm.template_type">
-                <a-option value="crud">CRUD</a-option>
-                <a-option value="tree">树形</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item field="author" label="作者">
-              <a-input v-model="editForm.author" />
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item prop="table_comment" label="表说明">
+              <el-input v-model="editForm.table_comment" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="module_name" label="模块名称">
+              <el-input v-model="editForm.module_name" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="entity_name" label="实体名称">
+              <el-input v-model="editForm.entity_name" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="template_type" label="模板类型">
+              <el-select v-model="editForm.template_type">
+                <el-option value="crud">CRUD</el-option>
+                <el-option value="tree">树形</el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="author" label="作者">
+              <el-input v-model="editForm.author" />
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-        <a-divider orientation="left">字段配置</a-divider>
-        <a-table
-          row-key="id"
-          :data="editForm.columns"
-          :pagination="false"
-          :bordered="{ cell: true }"
-          :scroll="{ x: 1320 }"
-        >
-          <template #columns>
-            <a-table-column
-              title="字段"
-              data-index="column_name"
-              :width="130"
-            />
-            <a-table-column
-              title="类型"
-              data-index="column_type"
-              :width="130"
-            />
-            <a-table-column title="说明" :width="220">
-              <template #cell="{ record }">
-                <a-input v-model="record.column_comment" />
-              </template>
-            </a-table-column>
-            <a-table-column title="列表" :width="80">
-              <template #cell="{ record }">
-                <a-switch
-                  v-model="record.is_lists"
-                  :checked-value="1"
-                  :unchecked-value="0"
-                />
-              </template>
-            </a-table-column>
-            <a-table-column title="查询" :width="80">
-              <template #cell="{ record }">
-                <a-switch
-                  v-model="record.is_query"
-                  :checked-value="1"
-                  :unchecked-value="0"
-                />
-              </template>
-            </a-table-column>
-            <a-table-column title="新增" :width="80">
-              <template #cell="{ record }">
-                <a-switch
-                  v-model="record.is_insert"
-                  :checked-value="1"
-                  :unchecked-value="0"
-                />
-              </template>
-            </a-table-column>
-            <a-table-column title="编辑" :width="80">
-              <template #cell="{ record }">
-                <a-switch
-                  v-model="record.is_update"
-                  :checked-value="1"
-                  :unchecked-value="0"
-                />
-              </template>
-            </a-table-column>
-            <a-table-column title="查询条件" :width="130">
-              <template #cell="{ record }">
-                <a-select v-model="record.query_type" style="width: 115px">
-                  <a-option
-                    v-for="item in queryTypes"
-                    :key="item"
-                    :value="item"
-                    >{{ item }}</a-option
-                  >
-                </a-select>
-              </template>
-            </a-table-column>
-            <a-table-column title="控件" :width="130">
-              <template #cell="{ record }">
-                <a-select v-model="record.view_type" style="width: 115px">
-                  <a-option
-                    v-for="item in viewTypes"
-                    :key="item"
-                    :value="item"
-                    >{{ item }}</a-option
-                  >
-                </a-select>
-              </template>
-            </a-table-column>
-            <a-table-column title="字典标识" :width="160">
-              <template #cell="{ record }">
-                <a-input v-model="record.dict_type" />
-              </template>
-            </a-table-column>
-          </template>
-        </a-table>
+        <el-divider content-position="left">字段配置</el-divider>
+        <el-table row-key="id" :data="editForm.columns" border>
+          <el-table-column label="字段" prop="column_name" :width="130" />
+          <el-table-column label="类型" prop="column_type" :width="130" />
+          <el-table-column label="说明" :width="220">
+            <template #default="{ row: record }">
+              <el-input v-model="record.column_comment" />
+            </template>
+          </el-table-column>
+          <el-table-column label="列表" :width="80">
+            <template #default="{ row: record }">
+              <el-switch
+                v-model="record.is_lists"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="查询" :width="80">
+            <template #default="{ row: record }">
+              <el-switch
+                v-model="record.is_query"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="新增" :width="80">
+            <template #default="{ row: record }">
+              <el-switch
+                v-model="record.is_insert"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="编辑" :width="80">
+            <template #default="{ row: record }">
+              <el-switch
+                v-model="record.is_update"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="查询条件" :width="130">
+            <template #default="{ row: record }">
+              <el-select v-model="record.query_type" style="width: 115px">
+                <el-option
+                  v-for="item in queryTypes"
+                  :key="item"
+                  :value="item"
+                  >{{ item }}</el-option
+                >
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="控件" :width="130">
+            <template #default="{ row: record }">
+              <el-select v-model="record.view_type" style="width: 115px">
+                <el-option
+                  v-for="item in viewTypes"
+                  :key="item"
+                  :value="item"
+                  >{{ item }}</el-option
+                >
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="字典标识" :width="160">
+            <template #default="{ row: record }">
+              <el-input v-model="record.dict_type" />
+            </template>
+          </el-table-column>
+        </el-table>
 
         <template v-if="editForm.template_type === 'tree'">
-          <a-divider orientation="left">树形配置</a-divider>
-          <a-row :gutter="16">
-            <a-col :span="8">
-              <a-form-item label="主键字段">
-                <a-select v-model="editForm.tree_config.id_field">
-                  <a-option
+          <el-divider content-position="left">树形配置</el-divider>
+          <el-row :gutter="16">
+            <el-col :span="8">
+              <el-form-item label="主键字段">
+                <el-select v-model="editForm.tree_config.id_field">
+                  <el-option
                     v-for="column in editForm.columns"
                     :key="column.id"
                     :value="column.column_name"
-                    >{{ column.column_name }}</a-option
+                    >{{ column.column_name }}</el-option
                   >
-                </a-select>
-              </a-form-item>
-            </a-col>
-            <a-col :span="8">
-              <a-form-item label="父级字段">
-                <a-select v-model="editForm.tree_config.parent_field">
-                  <a-option
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="父级字段">
+                <el-select v-model="editForm.tree_config.parent_field">
+                  <el-option
                     v-for="column in editForm.columns"
                     :key="column.id"
                     :value="column.column_name"
-                    >{{ column.column_name }}</a-option
+                    >{{ column.column_name }}</el-option
                   >
-                </a-select>
-              </a-form-item>
-            </a-col>
-            <a-col :span="8">
-              <a-form-item label="名称字段">
-                <a-select v-model="editForm.tree_config.name_field">
-                  <a-option
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="名称字段">
+                <el-select v-model="editForm.tree_config.name_field">
+                  <el-option
                     v-for="column in editForm.columns"
                     :key="column.id"
                     :value="column.column_name"
-                    >{{ column.column_name }}</a-option
+                    >{{ column.column_name }}</el-option
                   >
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
         </template>
 
-        <a-divider orientation="left">模型关系</a-divider>
-        <a-space direction="vertical" fill>
-          <a-space
+        <el-divider content-position="left">模型关系</el-divider>
+        <el-space direction="vertical" fill>
+          <el-space
             v-for="(relation, index) in editForm.relations"
             :key="relationKey(relation, index)"
             fill
           >
-            <a-select
+            <el-select
               v-model="relation.target_table_id"
               placeholder="目标配置"
               style="width: 200px"
             >
-              <a-option
+              <el-option
                 v-for="model in models"
                 :key="model.id"
                 :value="model.id"
-                >{{ model.entity_name }}（{{ model.table_name }}）</a-option
+                :label="`${model.entity_name}（${model.table_name}）`"
+                >{{ model.entity_name }}（{{ model.table_name }}）</el-option
               >
-            </a-select>
-            <a-input
+            </el-select>
+            <el-input
               v-model="relation.name"
               placeholder="关系名称"
               style="width: 150px"
             />
-            <a-select v-model="relation.type" style="width: 130px">
-              <a-option value="belongsTo">belongsTo</a-option>
-              <a-option value="hasOne">hasOne</a-option>
-              <a-option value="hasMany">hasMany</a-option>
-            </a-select>
-            <a-input
+            <el-select v-model="relation.type" style="width: 130px">
+              <el-option value="belongsTo">belongsTo</el-option>
+              <el-option value="hasOne">hasOne</el-option>
+              <el-option value="hasMany">hasMany</el-option>
+            </el-select>
+            <el-input
               v-model="relation.local_key"
               placeholder="本地字段"
               style="width: 130px"
             />
-            <a-input
+            <el-input
               v-model="relation.foreign_key"
               placeholder="目标字段"
               style="width: 130px"
             />
-            <a-button type="text" status="danger" @click="removeRelation(index)"
-              >删除</a-button
+            <el-button link type="danger" @click="removeRelation(index)"
+              >删除</el-button
             >
-          </a-space>
-          <a-button type="outline" @click="addRelation">新增关系</a-button>
-        </a-space>
-      </a-form>
-    </a-modal>
+          </el-space>
+          <el-button plain @click="addRelation">新增关系</el-button>
+        </el-space>
+      </el-form>
+      <template #footer
+        ><el-button @click="editVisible = false">取消</el-button
+        ><el-button type="primary" :loading="saveLoading" @click="handleSave"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
 
-    <a-modal
-      v-model:visible="previewVisible"
-      title="代码预览"
-      width="1080px"
-      :footer="false"
-    >
-      <a-tabs
+    <el-dialog v-model="previewVisible" title="代码预览" width="1080px">
+      <el-tabs
         v-if="previewFiles.length"
-        v-model:active-key="previewActiveKey"
+        v-model="previewActiveKey"
         type="card"
       >
-        <a-tab-pane
+        <el-tab-pane
           v-for="file in previewFiles"
           :key="file.path"
-          :title="file.path"
+          :label="file.path"
         >
-          <a-typography-paragraph copyable style="margin-bottom: 8px">{{
+          <el-text style="display: block; margin-bottom: 8px">{{
             file.path
-          }}</a-typography-paragraph>
-          <a-tag color="arcoblue" style="margin-bottom: 8px">
+          }}</el-text>
+          <el-button
+            link
+            size="small"
+            style="margin-bottom: 8px"
+            @click="copyPreview(file.content)"
+          >
+            复制
+          </el-button>
+          <el-tag type="primary" style="margin-bottom: 8px">
             {{ file.language }}
-          </a-tag>
+          </el-tag>
           <pre class="code-preview"><code>{{ file.content }}</code></pre>
-        </a-tab-pane>
-      </a-tabs>
-      <a-empty v-else description="暂无预览" />
-    </a-modal>
+        </el-tab-pane>
+      </el-tabs>
+      <el-empty v-else description="暂无预览" />
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { computed, reactive, ref } from 'vue';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
+  import { reactive, ref } from 'vue';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     deleteGenerator,
@@ -423,16 +449,6 @@
     showTotal: true,
   });
 
-  const columns = computed<TableColumnData[]>(() => [
-    { title: '编号', dataIndex: 'id', width: 70 },
-    { title: '数据表', dataIndex: 'table_name', width: 180 },
-    { title: '表说明', dataIndex: 'table_comment', width: 220 },
-    { title: '模块', dataIndex: 'module_name', width: 140 },
-    { title: '实体', dataIndex: 'entity_name', width: 160 },
-    { title: '模板', slotName: 'template_type', width: 90 },
-    { title: '操作', slotName: 'operations', width: 300 },
-  ]);
-
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
@@ -453,6 +469,9 @@
   };
   fetchData();
   const onPageChange = (page: number) => fetchData(page);
+  const onSelectionChange = (rows: GeneratorRecord[]) => {
+    selectedKeys.value = rows.map((row) => row.id);
+  };
 
   const sourceVisible = ref(false);
   const sourceLoading = ref(false);
@@ -466,14 +485,6 @@
     total: 0,
     showTotal: true,
   });
-  const sourceColumns = computed<TableColumnData[]>(() => [
-    { title: '表名', dataIndex: 'table_name' },
-    { title: '表说明', dataIndex: 'table_comment' },
-    { title: '引擎', dataIndex: 'engine', width: 100 },
-    { title: '估计行数', dataIndex: 'table_rows', width: 100 },
-    { title: '创建时间', dataIndex: 'create_time', width: 180 },
-  ]);
-
   const fetchSourceTables = async (page = 1) => {
     sourceLoading.value = true;
     try {
@@ -489,6 +500,9 @@
       sourceLoading.value = false;
     }
   };
+  const onSourceSelectionChange = (rows: GeneratorSourceTable[]) => {
+    sourceSelectedKeys.value = rows.map((row) => row.table_name);
+  };
   const openSourceTables = async () => {
     sourceVisible.value = true;
     sourceSelectedKeys.value = [];
@@ -496,13 +510,13 @@
   };
   const handleImport = async () => {
     if (!sourceSelectedKeys.value.length) {
-      Message.warning('请选择至少一张数据表');
+      ElMessage.warning('请选择至少一张数据表');
       return false;
     }
     importLoading.value = true;
     try {
       await importGeneratorTables(sourceSelectedKeys.value);
-      Message.success('导入成功');
+      ElMessage.success('导入成功');
       sourceVisible.value = false;
       await fetchData(1);
       return true;
@@ -562,8 +576,8 @@
     editVisible.value = true;
   };
   const handleSave = async () => {
-    const error = await formRef.value?.validate();
-    if (error) return false;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return false;
     saveLoading.value = true;
     try {
       await updateGenerator({
@@ -581,7 +595,7 @@
           dict_type: column.dict_type,
         })),
       });
-      Message.success('保存成功');
+      ElMessage.success('保存成功');
       editVisible.value = false;
       await fetchData(pagination.current);
       return true;
@@ -592,7 +606,7 @@
   const addRelation = () => {
     const first = models.value[0];
     if (!first) {
-      Message.warning('暂无可关联的生成配置');
+      ElMessage.warning('暂无可关联的生成配置');
       return;
     }
     editForm.relations.push({
@@ -609,12 +623,12 @@
 
   const handleSync = async (record: GeneratorRecord) => {
     await syncGenerator(record.id);
-    Message.success('同步成功');
+    ElMessage.success('同步成功');
     await fetchData(pagination.current);
   };
   const handleDelete = async (record: GeneratorRecord) => {
     await deleteGenerator([record.id]);
-    Message.success('删除成功');
+    ElMessage.success('删除成功');
     selectedKeys.value = selectedKeys.value.filter((id) => id !== record.id);
     await fetchData(pagination.current);
   };
@@ -628,6 +642,10 @@
     previewActiveKey.value = data[0]?.path || '';
     previewVisible.value = true;
   };
+  const copyPreview = async (content: string) => {
+    await navigator.clipboard.writeText(content);
+    ElMessage.success('已复制');
+  };
 
   const generateLoading = ref(false);
   const generateSelected = async () => {
@@ -638,7 +656,7 @@
       // The download is deliberately consumed immediately; the server token is one-shot.
       // eslint-disable-next-line no-use-before-define
       await downloadGenerated(data);
-      Message.success('代码已生成并下载');
+      ElMessage.success('代码已生成并下载');
       selectedKeys.value = [];
     } finally {
       generateLoading.value = false;

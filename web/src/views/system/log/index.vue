@@ -1,152 +1,171 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.log']" />
-    <a-card class="general-card" :title="$t('menu.system.log')">
-      <a-row>
-        <a-col :flex="1">
-          <a-form
-            :model="formModel"
-            :label-col-props="{ span: 6 }"
-            :wrapper-col-props="{ span: 18 }"
-            label-align="left"
-          >
-            <a-row :gutter="16">
-              <a-col :span="8">
-                <a-form-item
-                  field="username"
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.log') }}</template>
+      <el-row>
+        <el-col :span="18">
+          <el-form :model="formModel" label-position="left">
+            <el-row :gutter="16">
+              <el-col :span="8">
+                <el-form-item
+                  prop="username"
                   :label="$t('systemLog.form.username')"
                 >
-                  <a-input
+                  <el-input
                     v-model="formModel.username"
-                    allow-clear
+                    clearable
                     :placeholder="$t('systemLog.form.username.placeholder')"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item field="uri" :label="$t('systemLog.form.uri')">
-                  <a-input
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item prop="uri" :label="$t('systemLog.form.uri')">
+                  <el-input
                     v-model="formModel.uri"
-                    allow-clear
+                    clearable
                     :placeholder="$t('systemLog.form.uri.placeholder')"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="method"
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item
+                  prop="method"
                   :label="$t('systemLog.form.method')"
                 >
-                  <a-select
+                  <el-select
                     v-model="formModel.method"
-                    allow-clear
-                    :options="methodOptions"
+                    clearable
                     :placeholder="$t('systemLog.form.method.placeholder')"
-                  />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item field="ip" :label="$t('systemLog.form.ip')">
-                  <a-input
+                  >
+                    <el-option
+                      v-for="option in methodOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item prop="ip" :label="$t('systemLog.form.ip')">
+                  <el-input
                     v-model="formModel.ip"
-                    allow-clear
+                    clearable
                     :placeholder="$t('systemLog.form.ip.placeholder')"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="timeRange"
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item
+                  prop="timeRange"
                   :label="$t('systemLog.form.time')"
                 >
-                  <a-range-picker
+                  <el-date-picker
                     v-model="formModel.timeRange"
-                    show-time
+                    type="datetimerange"
                     value-format="YYYY-MM-DD HH:mm:ss"
-                    allow-clear
+                    clearable
                     style="width: 100%"
                   />
-                </a-form-item>
-              </a-col>
-            </a-row>
-          </a-form>
-        </a-col>
-        <a-divider style="height: 84px" direction="vertical" />
-        <a-col :flex="'86px'" style="text-align: right">
-          <a-space direction="vertical" :size="18">
-            <a-button type="primary" @click="search">
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
+        </el-col>
+        <el-divider style="height: 84px" direction="vertical" />
+        <el-col :span="6" style="text-align: right">
+          <el-space direction="vertical" :size="18">
+            <el-button type="primary" @click="search">
               <template #icon><icon-search /></template>
               {{ $t('systemLog.form.search') }}
-            </a-button>
-            <a-button @click="reset">
+            </el-button>
+            <el-button @click="reset">
               <template #icon><icon-refresh /></template>
               {{ $t('systemLog.form.reset') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-divider style="margin-top: 0" />
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-space>
-            <a-button
-              v-permission="['log/lists']"
-              type="outline"
-              @click="openExport"
-            >
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-divider style="margin-top: 0" />
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-space>
+            <el-button v-permission="['log/lists']" plain @click="openExport">
               <template #icon><icon-export /></template>
               {{ $t('systemLog.operation.export') }}
-            </a-button>
-            <a-popconfirm
-              :content="$t('systemLog.clear.confirm')"
-              @ok="handleClear"
+            </el-button>
+            <el-popconfirm
+              :title="$t('systemLog.clear.confirm')"
+              @confirm="handleClear"
             >
-              <a-button v-permission="['log/clear']" status="danger">
-                <template #icon><icon-delete /></template>
-                {{ $t('systemLog.operation.clear') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        @page-change="onPageChange"
-      >
-        <template #method="{ record }">
-          <a-tag color="green">{{ record.method }}</a-tag>
-        </template>
-        <template #params="{ record }">
-          <a-typography-text
-            code
-            copyable
-            :ellipsis="{ rows: 1, showTooltip: true }"
-          >
-            {{ record.params }}
-          </a-typography-text>
-        </template>
-        <template #createTime="{ record }">
-          {{ formatTime(record.create_time) }}
-        </template>
-      </a-table>
-    </a-card>
+              <template #reference
+                ><el-button v-permission="['log/clear']" type="danger">
+                  <template #icon><icon-delete /></template>
+                  {{ $t('systemLog.operation.clear') }}
+                </el-button></template
+              >
+            </el-popconfirm>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-table row-key="id" :loading="loading" :data="renderData" border>
+        <el-table-column
+          prop="id"
+          :label="$t('systemLog.columns.id')"
+          width="80"
+        />
+        <el-table-column
+          prop="username"
+          :label="$t('systemLog.columns.username')"
+          width="120"
+        />
+        <el-table-column
+          prop="ip"
+          :label="$t('systemLog.columns.ip')"
+          width="140"
+        />
+        <el-table-column prop="uri" :label="$t('systemLog.columns.uri')" />
+        <el-table-column :label="$t('systemLog.columns.method')" width="90"
+          ><template #default="{ row }"
+            ><el-tag type="success">{{ row.method }}</el-tag></template
+          ></el-table-column
+        >
+        <el-table-column
+          :label="$t('systemLog.columns.params')"
+          width="240"
+          show-overflow-tooltip
+          ><template #default="{ row }"
+            ><el-text truncated>{{ row.params }}</el-text
+            ><el-button link size="small" @click="copyParams(row.params)"
+              >复制</el-button
+            ></template
+          ></el-table-column
+        >
+        <el-table-column :label="$t('systemLog.columns.createTime')" width="180"
+          ><template #default="{ row }">{{
+            formatTime(row.create_time)
+          }}</template></el-table-column
+        >
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        layout="total, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="onPageChange"
+      />
+    </el-card>
 
-    <a-modal
-      v-model:visible="exportVisible"
+    <el-dialog
+      v-model="exportVisible"
       :title="$t('systemLog.export.title')"
-      :ok-text="$t('systemLog.export.confirm')"
-      :ok-loading="exportLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="540px"
-      @before-ok="handleExport"
     >
-      <a-spin :loading="exportInfoLoading" style="width: 100%">
-        <a-alert type="info" style="margin-bottom: 16px">
+      <div v-loading="exportInfoLoading" style="width: 100%">
+        <el-alert type="info" style="margin-bottom: 16px">
           {{
             $t('systemLog.export.summary', {
               count: exportInfo.count,
@@ -161,50 +180,61 @@
               count: exportInfo.all_max_size,
             })
           }}
-        </a-alert>
-        <a-form :model="exportForm" layout="vertical">
-          <a-form-item field="page_type" :label="$t('systemLog.export.range')">
-            <a-radio-group v-model="exportForm.page_type">
-              <a-radio :value="0">{{ $t('systemLog.export.all') }}</a-radio>
-              <a-radio :value="1">{{ $t('systemLog.export.pages') }}</a-radio>
-            </a-radio-group>
-          </a-form-item>
-          <a-form-item
+        </el-alert>
+        <el-form :model="exportForm" label-position="top">
+          <el-form-item prop="page_type" :label="$t('systemLog.export.range')">
+            <el-radio-group v-model="exportForm.page_type">
+              <el-radio :value="0" label="0">{{
+                $t('systemLog.export.all')
+              }}</el-radio>
+              <el-radio :value="1" label="1">{{
+                $t('systemLog.export.pages')
+              }}</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item
             v-if="exportForm.page_type === 1"
             :label="$t('systemLog.export.pageRange')"
           >
-            <a-space>
-              <a-input-number
+            <el-space>
+              <el-input-number
                 v-model="exportForm.page_start"
                 :min="1"
                 :max="exportInfo.sum_page || 1"
               />
               <span>{{ $t('systemLog.export.to') }}</span>
-              <a-input-number
+              <el-input-number
                 v-model="exportForm.page_end"
                 :min="exportForm.page_start"
                 :max="exportInfo.sum_page || 1"
               />
-            </a-space>
-          </a-form-item>
-          <a-form-item
-            field="file_name"
+            </el-space>
+          </el-form-item>
+          <el-form-item
+            prop="file_name"
             :label="$t('systemLog.export.fileName')"
           >
-            <a-input v-model="exportForm.file_name" :max-length="100" />
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-modal>
+            <el-input v-model="exportForm.file_name" maxlength="100" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer
+        ><el-button @click="exportVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="exportLoading"
+          @click="handleExport"
+          >{{ $t('systemLog.export.confirm') }}</el-button
+        ></template
+      >
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, ref, reactive } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { SelectOptionData } from '@arco-design/web-vue/es/select/interface';
+  import { ElMessage } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getOperationLogList,
@@ -236,35 +266,21 @@
     showTotal: true,
   });
 
-  const methodOptions = computed<SelectOptionData[]>(() => [
+  const methodOptions = computed(() => [
     { label: 'POST', value: 'POST' },
     { label: 'GET', value: 'GET' },
     { label: 'PUT', value: 'PUT' },
     { label: 'DELETE', value: 'DELETE' },
   ]);
 
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemLog.columns.id'), dataIndex: 'id', width: 80 },
-    {
-      title: t('systemLog.columns.username'),
-      dataIndex: 'username',
-      width: 120,
-    },
-    { title: t('systemLog.columns.ip'), dataIndex: 'ip', width: 140 },
-    { title: t('systemLog.columns.uri'), dataIndex: 'uri' },
-    { title: t('systemLog.columns.method'), slotName: 'method', width: 90 },
-    { title: t('systemLog.columns.params'), slotName: 'params', width: 240 },
-    {
-      title: t('systemLog.columns.createTime'),
-      slotName: 'createTime',
-      width: 180,
-    },
-  ]);
-
   const formatTime = (value?: number | string): string => {
     if (!value) return '-';
     if (typeof value === 'string') return value;
     return new Date(value * 1000).toLocaleString('zh-CN', { hour12: false });
+  };
+  const copyParams = async (value: string) => {
+    await navigator.clipboard.writeText(value || '');
+    ElMessage.success('已复制');
   };
 
   const fetchData = async (page = 1) => {
@@ -299,7 +315,7 @@
 
   const handleClear = async () => {
     await clearOperationLog();
-    Message.success(t('systemLog.tip.success'));
+    ElMessage.success(t('systemLog.tip.success'));
     fetchData(1);
   };
 
@@ -354,7 +370,7 @@
       exportForm.page_type === 1 &&
       exportForm.page_end < exportForm.page_start
     ) {
-      Message.error(t('systemLog.export.invalidRange'));
+      ElMessage.error(t('systemLog.export.invalidRange'));
       return false;
     }
     exportLoading.value = true;
@@ -370,7 +386,8 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
-      Message.success(t('systemLog.export.success'));
+      ElMessage.success(t('systemLog.export.success'));
+      exportVisible.value = false;
       return true;
     } finally {
       exportLoading.value = false;

@@ -1,71 +1,72 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.config']" />
-    <a-card class="general-card" :title="$t('menu.system.config')">
-      <a-spin :loading="loading" style="width: 100%">
-        <a-form
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.config') }}</template>
+      <div v-loading="loading" style="width: 100%">
+        <el-form
           ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical"
+          label-position="top"
           style="max-width: 560px"
         >
-          <a-form-item field="name" :label="$t('systemConfig.field.name')">
-            <a-input
+          <el-form-item prop="name" :label="$t('systemConfig.field.name')">
+            <el-input
               v-model="form.name"
               :placeholder="$t('systemConfig.field.name.placeholder')"
             />
-          </a-form-item>
-          <a-form-item field="logo" :label="$t('systemConfig.field.logo')">
-            <a-input
+          </el-form-item>
+          <el-form-item prop="logo" :label="$t('systemConfig.field.logo')">
+            <el-input
               v-model="form.logo"
               :placeholder="$t('systemConfig.field.logo.placeholder')"
             />
-          </a-form-item>
-          <a-form-item
-            field="favicon"
+          </el-form-item>
+          <el-form-item
+            prop="favicon"
             :label="$t('systemConfig.field.favicon')"
           >
-            <a-input
+            <el-input
               v-model="form.favicon"
               :placeholder="$t('systemConfig.field.favicon.placeholder')"
             />
-          </a-form-item>
-          <a-form-item
-            field="copyright"
+          </el-form-item>
+          <el-form-item
+            prop="copyright"
             :label="$t('systemConfig.field.copyright')"
           >
-            <a-input
+            <el-input
               v-model="form.copyright"
               :placeholder="$t('systemConfig.field.copyright.placeholder')"
             />
-          </a-form-item>
-          <a-form-item field="icp" :label="$t('systemConfig.field.icp')">
-            <a-input
+          </el-form-item>
+          <el-form-item prop="icp" :label="$t('systemConfig.field.icp')">
+            <el-input
               v-model="form.icp"
               :placeholder="$t('systemConfig.field.icp.placeholder')"
             />
-          </a-form-item>
-          <a-form-item>
-            <a-button
+          </el-form-item>
+          <el-form-item>
+            <el-button
               type="primary"
               :loading="submitLoading"
               @click="handleSubmit"
             >
               {{ $t('systemConfig.operation.save') }}
-            </a-button>
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-card>
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getWebsiteConfig,
@@ -102,12 +103,12 @@
   fetchData();
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       await saveWebsiteConfig({ ...form });
-      Message.success(t('systemConfig.tip.success'));
+      ElMessage.success(t('systemConfig.tip.success'));
     } finally {
       submitLoading.value = false;
     }

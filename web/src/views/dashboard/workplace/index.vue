@@ -1,140 +1,148 @@
 <template>
   <div class="container">
-    <a-spin :loading="loading" tip="Loading...">
-      <a-grid :cols="24" :col-gap="16" :row-gap="16">
-        <a-grid-item :span="{ xs: 24, lg: 7 }">
-          <a-card
-            class="general-card full-height"
-            :title="$t('workplace.version.title')"
-          >
-            <a-descriptions :column="1" bordered size="large">
-              <a-descriptions-item :label="$t('workplace.version.platform')">
+    <div v-loading="loading" class="workplace-loading">
+      <el-row :gutter="16" class="workplace-grid">
+        <el-col :xs="24" :lg="7">
+          <el-card class="general-card full-height">
+            <template #header>{{ $t('workplace.version.title') }}</template>
+            <el-descriptions :column="1" border size="large">
+              <el-descriptions-item :label="$t('workplace.version.platform')">
                 {{ workbench.version.name || 'Peanut Admin' }}
-              </a-descriptions-item>
-              <a-descriptions-item :label="$t('workplace.version.current')">
+              </el-descriptions-item>
+              <el-descriptions-item :label="$t('workplace.version.current')">
                 {{ workbench.version.version }}
-              </a-descriptions-item>
-              <a-descriptions-item :label="$t('workplace.version.based')">
+              </el-descriptions-item>
+              <el-descriptions-item :label="$t('workplace.version.based')">
                 {{ workbench.version.based }}
-              </a-descriptions-item>
-              <a-descriptions-item
+              </el-descriptions-item>
+              <el-descriptions-item
                 v-if="workbench.version.website"
                 :label="$t('workplace.version.website')"
               >
                 {{ workbench.version.website }}
-              </a-descriptions-item>
-              <a-descriptions-item :label="$t('workplace.version.channel')">
-                <a-space v-if="hasChannelLinks">
-                  <a-link
+              </el-descriptions-item>
+              <el-descriptions-item :label="$t('workplace.version.channel')">
+                <el-space v-if="hasChannelLinks">
+                  <el-link
                     v-if="workbench.version.channel.website"
                     :href="workbench.version.channel.website"
                     target="_blank"
+                    type="primary"
                   >
                     {{ $t('workplace.version.official') }}
-                  </a-link>
-                  <a-link
+                  </el-link>
+                  <el-link
                     v-if="workbench.version.channel.gitee"
                     :href="workbench.version.channel.gitee"
                     target="_blank"
+                    type="primary"
                   >
                     Gitee
-                  </a-link>
-                </a-space>
+                  </el-link>
+                </el-space>
                 <span v-else>--</span>
-              </a-descriptions-item>
-            </a-descriptions>
-          </a-card>
-        </a-grid-item>
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-card>
+        </el-col>
 
-        <a-grid-item :span="{ xs: 24, lg: 17 }">
-          <a-card class="general-card full-height">
-            <template #title>
-              <a-space>
+        <el-col :xs="24" :lg="17">
+          <el-card class="general-card full-height">
+            <template #header>
+              <el-space>
                 <span>{{ $t('workplace.today.title') }}</span>
                 <span class="updated-at">
                   {{ $t('workplace.today.updatedAt')
                   }}{{ workbench.today.time }}
                 </span>
-              </a-space>
+              </el-space>
             </template>
-            <a-grid :cols="24" :col-gap="16" :row-gap="24">
-              <a-grid-item
+            <el-row :gutter="16" class="metrics-grid">
+              <el-col
                 v-for="metric in metrics"
                 :key="metric.key"
-                :span="{ xs: 12, sm: 6 }"
+                :xs="12"
+                :sm="6"
               >
-                <a-statistic :title="$t(metric.label)" :value="metric.value">
+                <el-statistic :title="$t(metric.label)" :value="metric.value">
                   <template #suffix>
                     <span class="metric-unit">{{ $t(metric.unit) }}</span>
                   </template>
-                </a-statistic>
+                </el-statistic>
                 <div class="metric-total">
                   {{ $t('workplace.today.total') }}{{ metric.total }}
                 </div>
-              </a-grid-item>
-            </a-grid>
-          </a-card>
-        </a-grid-item>
+              </el-col>
+            </el-row>
+          </el-card>
+        </el-col>
 
-        <a-grid-item :span="24">
-          <a-card class="general-card" :title="$t('workplace.shortcuts.title')">
-            <a-grid :cols="24" :col-gap="12" :row-gap="20">
-              <a-grid-item
+        <el-col :span="24">
+          <el-card class="general-card">
+            <template #header>{{ $t('workplace.shortcuts.title') }}</template>
+            <el-row :gutter="12" class="shortcut-grid">
+              <el-col
                 v-for="item in workbench.menu"
                 :key="item.url"
-                :span="{ xs: 6, sm: 3 }"
+                :xs="6"
+                :sm="3"
               >
                 <router-link :to="item.url" class="shortcut">
-                  <a-avatar :size="48" shape="square" :image-url="item.image">
-                    <icon-apps />
-                  </a-avatar>
+                  <el-avatar :size="48" shape="square" :src="item.image">
+                    <el-icon><Grid /></el-icon>
+                  </el-avatar>
                   <span>{{ item.name }}</span>
                 </router-link>
-              </a-grid-item>
-            </a-grid>
-          </a-card>
-        </a-grid-item>
+              </el-col>
+            </el-row>
+          </el-card>
+        </el-col>
 
-        <a-grid-item :span="{ xs: 24, lg: 16 }">
-          <a-card class="general-card" :title="$t('workplace.visitor.title')">
+        <el-col :xs="24" :lg="16">
+          <el-card class="general-card">
+            <template #header>{{ $t('workplace.visitor.title') }}</template>
             <Chart height="320px" :option="visitorOption" />
-          </a-card>
-        </a-grid-item>
-        <a-grid-item :span="{ xs: 24, lg: 8 }">
-          <a-card class="general-card" :title="$t('workplace.sale.title')">
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :lg="8">
+          <el-card class="general-card">
+            <template #header>{{ $t('workplace.sale.title') }}</template>
             <Chart height="320px" :option="saleOption" />
-          </a-card>
-        </a-grid-item>
+          </el-card>
+        </el-col>
 
-        <a-grid-item :span="24">
-          <a-card class="general-card" :title="$t('workplace.support.title')">
-            <a-grid :cols="24" :col-gap="16" :row-gap="16">
-              <a-grid-item
+        <el-col :span="24">
+          <el-card class="general-card">
+            <template #header>{{ $t('workplace.support.title') }}</template>
+            <el-row :gutter="16" class="support-grid">
+              <el-col
                 v-for="item in workbench.support"
                 :key="item.title"
-                :span="{ xs: 24, sm: 12 }"
+                :xs="24"
+                :sm="12"
               >
                 <div class="support-item">
-                  <a-avatar :size="48" :image-url="item.image">
-                    <icon-question-circle />
-                  </a-avatar>
+                  <el-avatar :size="48" :src="item.image">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-avatar>
                   <div>
                     <div class="support-title">{{ item.title }}</div>
                     <div class="support-desc">{{ item.desc }}</div>
                   </div>
                 </div>
-              </a-grid-item>
-            </a-grid>
-          </a-card>
-        </a-grid-item>
-      </a-grid>
-    </a-spin>
+              </el-col>
+            </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
+  import { Grid, QuestionFilled } from '@element-plus/icons-vue';
   import { useI18n } from 'vue-i18n';
   import Chart from '@/components/chart/index.vue';
   import { getWorkbench, type WorkbenchData } from '@/api/workbench';
@@ -249,7 +257,7 @@
       const { data } = await getWorkbench();
       Object.assign(workbench, data);
     } catch (error) {
-      Message.error(t('workplace.loadFailed'));
+      ElMessage.error(t('workplace.loadFailed'));
     } finally {
       loading.value = false;
     }
@@ -273,16 +281,32 @@
     height: 100%;
   }
 
+  .workplace-loading {
+    min-height: 280px;
+  }
+
+  .workplace-grid,
+  .metrics-grid,
+  .shortcut-grid,
+  .support-grid {
+    row-gap: 16px;
+  }
+
+  .metrics-grid,
+  .shortcut-grid {
+    row-gap: 20px;
+  }
+
   .updated-at,
   .metric-total,
   .support-desc {
-    color: var(--color-text-3);
+    color: var(--el-text-color-secondary);
     font-size: 12px;
   }
 
   .metric-unit {
     margin-left: 4px;
-    color: var(--color-text-3);
+    color: var(--el-text-color-secondary);
     font-size: 13px;
   }
 
@@ -295,12 +319,12 @@
     flex-direction: column;
     gap: 8px;
     align-items: center;
-    color: var(--color-text-2);
+    color: var(--el-text-color-regular);
     text-decoration: none;
   }
 
   .shortcut:hover {
-    color: rgb(var(--primary-6));
+    color: var(--el-color-primary);
   }
 
   .support-item {
@@ -308,13 +332,13 @@
     gap: 12px;
     align-items: center;
     padding: 16px;
-    background: var(--color-fill-1);
-    border-radius: var(--border-radius-medium);
+    background: var(--el-fill-color-light);
+    border-radius: var(--el-border-radius-base);
   }
 
   .support-title {
     margin-bottom: 6px;
-    color: var(--color-text-1);
+    color: var(--el-text-color-primary);
     font-weight: 500;
   }
 </style>
