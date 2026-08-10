@@ -2,13 +2,13 @@
 
 > 状态：Frozen，待执行
 >
-> 应用实现基线：`04594943e5a854bff0452524bf97f6616855ff6e`
+> 当前应用候选：`cb214d786ef3901416643832a7d92bd9be5e527a`
 >
 > 升级起点：`bc2e75ac6217d7defc44cd2b8e0c9e85a7cefc62`
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 当前验收状态：`PB08B-RC-003` 候选失败，待修复后冻结新候选/owner
+> 当前验收 owner：`PB08B-RC-004`
 
 ## 1. 目标与候选定义
 
@@ -113,3 +113,9 @@ RC003 继续绑定同一实现候选和 RC01 唯一构建。数据库哨兵改�
 RC003 的缓存镜像恢复再次 40 步命中 cache。弱密码零写入、43 表/24 条账本基线、`pc_title` 与管理员摘要哨兵、24→28 前滚、无初始密码的 `--skip-if-installed`、幂等迁移及哨兵保留均越过逐项断言；随后生产 Compose 的 MySQL 与 PHP 健康，但 Nginx healthcheck 持续失败，候选在 `fresh_nginx_health` 停止，后续当前空库精确计数/品牌、HTTP 总矩阵和浏览器未执行。
 
 一次只读诊断确认 Nginx 本身已监听且宿主机 `/healthz` 返回 200；容器内 healthcheck 的 `wget http://127.0.0.1/healthz` 实际被运行环境代理重定向到 `127.0.0.1:7890`，连接拒绝。当前 Compose healthcheck 没有显式禁用代理，因而在带透明/注入代理的 Docker 环境产生假阴性。该问题属于生产健康门禁缺陷，候选 `0459494…` 判失败；必须最小修复 healthcheck 的 loopback 直连语义，冻结新实现候选和 owner 后再执行未完成矩阵。RC003 未启动浏览器，专用资源已清理。
+
+### `PB08B-RC-004` — 当前 owner
+
+新候选 `cb214d786ef3901416643832a7d92bd9be5e527a` 只把生产 Nginx healthcheck 改为 BusyBox 明确支持的 `wget -Y off`，使 loopback 探针不受容器/平台代理注入影响；Compose 解析检查已通过。除此之外候选 Runtime、锁文件、Dockerfile、数据库与四端源码和 `0459494…` 相同。
+
+RC004 继承 RC001 唯一无缓存 registry/全目标构建，以及 RC003 已通过的弱密码、24→28 前滚、幂等和升级保留证据；不重跑这些验收。只为新候选构建受一行 Compose 变更影响的 Nginx 服务装配，复用既有 PHP/Nginx build cache，建立当前空库生产 Compose，完成 RC02 剩余精确断言、RC03 HTTP/镜像、RC04 静态边界、RC05 唯一桌面/移动浏览器和 RC06 文档一致性。若构建 cache miss 重新执行依赖安装，或任何候选断言失败，按停止线处理。

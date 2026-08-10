@@ -106,6 +106,8 @@ RC002 精确证明旧 24 条基线不存在 `website/name`，所以使用该新�
 
 RC003 已越过弱密码、24 条基线、`pc_title`/管理员哨兵、24→28 前滚、无初始密码跳过安装、幂等与升级保留断言；生产 Compose 的 MySQL/PHP 健康，但 Nginx healthcheck 在运行环境代理注入下把 loopback `wget` 送往 `127.0.0.1:7890`，即使宿主机 `/healthz` 已返回 200 仍判 unhealthy。一次只读诊断后候选 `0459494…` 判失败并清理资源，浏览器未启动。下一步只最小修复 healthcheck 显式直连 loopback，冻结新候选/owner 后继续 PB08B。
 
+新候选 `cb214d7…` 已将 Nginx healthcheck 收口为 `wget -Y off` 的 loopback 直连，Compose 解析通过，其他 Runtime/锁文件/数据库/四端源码未变；当前 owner 为 RC004。RC004 绑定先前唯一 registry 构建与已通过升级证据，只重建受影响的生产装配并完成当前空库、HTTP/镜像、静态边界、唯一桌面/移动浏览器和文档一致性。
+
 ## 6. 并行规则
 
 - 只读图谱、互不依赖的前后端契约和文档核对可以并行。
