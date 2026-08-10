@@ -1,17 +1,16 @@
 # Peanut Admin
 
-基于 ThinkPHP 8、Vue 3 与 Element Plus 的企业后台管理应用模板。项目以 clean-room 方式对标 LikeAdmin 1.9.4 标准版的产品能力和业务结果，不复制其源码、接口形态或视觉实现。
+基于 ThinkPHP 8、Vue 3 与 Element Plus 的企业后台管理应用模板。LikeAdmin 1.9.4 标准版 parity 已按仓库封存合同完成；应用仓许可证与 provenance/clean-room 仍须在正式发布前形成明确决策。
 
 ## 项目身份与当前基线
 
 - 产品名称：Peanut Admin（无版本后缀）
-- 当前工作目录：`/Users/xing/Documents/company-projects/peanut-admin`
 - GitHub 仓库：`peanut-business/peanut-admin`
 - PC package name：`peanut-admin-pc`
 - 集成分支：`dev`；稳定分支：`main`
 - LikeAdmin parity：已完成并独立验证，证据见 `output/playwright/v02/`；后续不重复验收
-- 数据库基线：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 24 个 migrations
-- 独立验证：空库安装 42 张业务表；迁移账本接管后共 43 张表、24 条账本记录；170 个菜单、59 项配置、1 个默认管理员
+- 数据库基线：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 28 个 migrations
+- 当前候选数据库门禁：空库安装后共 43 张表、28 条 `applied` 账本记录、167 个菜单、62 项配置和唯一 root 管理员
 - SaaS 多租户：仅为 `docs/design/saas-roadmap/` 中的 roadmap 设计，当前代码尚未实现
 
 ## 技术栈
@@ -48,7 +47,7 @@ cd ..
 php server/database/install.php
 ```
 
-安装器只接受空数据库。首次安装前必须通过环境变量或 `server/.env` 显式设置至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器不会回显密码。它按顺序执行基础结构和全部迁移，并校验完整表结构、菜单、配置及管理员 `admin`。已有数据库不得运行首次安装器，应备份后按 `server/database/migrations/` 的文件名顺序执行尚未应用的迁移。
+安装器只接受空数据库。首次安装前必须通过环境变量或 `server/.env` 显式设置至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器不会回显密码。它按顺序执行基础结构和全部迁移，并校验完整表结构、菜单、配置及管理员 `admin`。已有数据库不得运行首次安装器：先完成数据库与存储备份，尚未进入迁移账本的历史安装只执行一次 `php server/database/migrate.php --adopt-existing`，已接管环境及后续发布执行 `php server/database/migrate.php`。不要手工改写账本或已登记迁移。
 
 ### 4. 启动
 

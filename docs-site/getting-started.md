@@ -42,7 +42,7 @@ export ADMIN_INITIAL_PASSWORD='<至少 12 位且同时包含字母和数字>'
 php server/database/install.php
 ```
 
-安装器只接受空数据库，创建管理员 `admin`，且不会回显初始密码。已有环境请备份后，按迁移文件名顺序执行尚未应用的 SQL，不要重复运行首次安装器，也不要在升级环境设置该变量。
+安装器只接受空数据库，创建管理员 `admin`，且不会回显初始密码。已有环境不要重复运行首次安装器，也不要设置该变量：先完成数据库与存储备份，尚未进入迁移账本的历史安装只执行一次 `php server/database/migrate.php --adopt-existing`，已接管环境及后续发布执行 `php server/database/migrate.php`。命令会按账本处理未登记迁移并校验 SHA-256；不要手工改写账本或已登记迁移。
 
 ## 启动服务
 
