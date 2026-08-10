@@ -71,12 +71,12 @@ flowchart LR
 
 ## 5. 首个实施切片
 
-PB04 从“网站设置 Host 与存储/schema 决策”开始，而不是直接迁移全部系统页面：
+PB04 已从网站设置唯一实现开始，而不是直接迁移全部系统页面：
 
 - 真实表是 `pa_config`，网站组为 `type=website`；不存在 `pa_system_config`。
-- 核心现有 Settings 直接依赖 `final PdoSettingRepository` 与 `pa_setting_*` schema，并非可供 `pa_config` 实现的稳定存储端口。
-- 下一步必须先获批产品无关的核心 Host 存储端口合同，或明确迁往 `pa_setting_*` 的前滚/恢复合同；不得伪装 adapter、双写两套表或直接修改核心 Runtime。
-- 决策获批后只处理网站基础设置的读取、校验和保存，不同时修改登录、支付、渠道、协议、版权或默认头像。
-- 应用 owner `PB04-SETTINGS-WEBSITE-001` 只验收读取、一次合法保存、一次非法输入不写入和恢复原值。
+- 核心现有 Settings 直接依赖 `final PdoSettingRepository` 与 `pa_setting_*` schema，并非可供 `pa_config` 实现的稳定存储端口；为首片抽象它会改变平台操作员、Tenant/target、revision/ETag 和 P1 audience。
+- 已选择应用 owner 路线：`WebsiteConfigService` 拥有字段/规则/标准化，`WebsiteConfigStore` 是应用内部端口，`PaConfigWebsiteStore` 是唯一生产 adapter；不改核心 Runtime、不双写。
+- 本片只处理网站基础设置的读取、校验和保存，未修改登录、支付、渠道、协议、版权或默认头像。
+- 应用 owner `PB04-SETTINGS-WEBSITE-001` 的聚焦测试与一次真实数据库读取/合法保存/非法不写/恢复原值均已通过。
 
-该切片必须证明“获批核心契约/资格 → registry 发布 → 单一 Host 装配 → 删除重复规则”的完整链路；在前置决策完成前 PB04 保持未开始。通过后再扩展同一设置域，不在首片同时修改会员、支付或渠道。
+该切片证明应用 owner 能通过单一服务和存储端口删除规则重复。PB04 进入进行中；后续仍按逐域合同串行推进，不在首片提交中扩展会员、支付或渠道。

@@ -87,7 +87,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 | 顺序 | 任务 | 所有权结果 | 启动条件 | 停止线 |
 |---|---|---|---|---|
 | PB04-01 | 认证/权限 Host 收口 | 核心原语 + 应用管理员模型 | 固定现有 URI/菜单语义与覆盖 slot | 不迁 Tenant schema，不重做 parity |
-| PB04-02 | 网站设置 | 核心通用校验/设置契约 + 应用定义/`pa_config` adapter | 核心 Settings 下游授权或获批的新 P1 Host 合同 | 不改核心 Runtime 前置授权；不迁支付/渠道设置 |
+| PB04-02 | 网站设置 | 应用唯一服务 + `pa_config` adapter | PB03 应用 owner 决策 | 不改核心 Runtime；不迁支付/渠道设置 |
 | PB04-03 | 字典 | 核心编码不变量 + 应用兼容/定义 | 表/状态/引用语义映射完成 | 不并行修改内容分类 |
 | PB04-04 | 文件与素材 | 核心存储/交付原语 + 应用分类/Provider | URL、元数据、存储升级合同完成 | 不顺带迁装修素材 |
 | PB04-05 | 任务/导入导出 | 核心任务原语 + 应用执行器 | 任务状态/租约/重试映射完成 | 不改会员/通知触发器 |
@@ -99,7 +99,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 
 ## 7. PB04-02 网站设置首片冻结合同
 
-PB04 从网站基础设置开始，但当前只完成合同冻结，Runtime 尚未开始。
+PB04 从网站基础设置开始；该首片已按本节更新后的应用 owner 路线完成，其他 PB04 切片尚未开始。
 
 ### 7.1 现有路径与数据 owner
 
@@ -109,20 +109,17 @@ PB04 从网站基础设置开始，但当前只完成合同冻结，Runtime 尚�
 - 文件 URL 映射继续通过应用 `FileService`，不属于通用 Settings 存储。
 - 管理页、路由和品牌字段仍由应用拥有。
 
-### 7.2 必须先解决的核心差异
+### 7.2 核心差异与已选路线
 
 核心 `SettingAdminService`、`SettingResolver` 和 `TargetSettingWriter` 直接依赖 `final PdoSettingRepository`，其 schema 是 `pa_setting_*`、Tenant/target/revision/secret 模型；它不是 `pa_config` 的可替换存储端口。核心 P1-B03 也明确应用拥有 key/schema/default，且当前没有下游采用授权。
 
-因此禁止把 `pa_config` 伪装成现有 `PdoSettingRepository`，禁止同时写两套表。下一步只能二选一并先形成核心获批合同：
+限定静态枚举证明这不是一个可由小型 repository interface 解决的差异：核心服务共同依赖定义同步、revision/ETag、平台操作员、Tenant/target 和 P1 audience。为了单租户网站设置抽象该边界会同时改变核心安全、并发和受众语义。
 
-1. 形成产品无关的 Host 存储端口，语义覆盖原子批量写、定义校验与错误合同，由应用实现 `pa_config` adapter；或
-2. 明确迁移到核心 `pa_setting_*` schema，提供一次前滚、回滚/恢复和旧表退役合同。
-
-在该选择获批前，`ConfigLogic`/`ConfigService` 是网站设置的唯一生产实现，PB04 保持“未开始”。
+PB04 已选择应用 owner 路线：不改核心 Runtime、不双写 `pa_setting_*`，在应用内以 `WebsiteConfigService` + `WebsiteConfigStore` + `PaConfigWebsiteStore` 收口唯一实现。未来若出现完整等价 schema 和独立下游授权，再以新的 P1 合同评估核心 Settings 消费。
 
 ### 7.3 首片最小验收与恢复
 
-实现契约必须固定网站字段白名单、空值/长度/图片 URL 规则、原子写错误、稳定 override key 与契约版本。应用侧只执行一次：读取当前值，合法保存一组临时值，证明一次非法输入没有写入，再恢复原值。不得同时修改支付、渠道、登录、版权、协议或默认头像设置，不运行 LikeAdmin 全量回归。
+实施合同已固定网站字段白名单、空值/长度/图片 URL 规则和原子写错误；该端口属于应用内部，不建立核心 override key。应用侧已执行一次：读取当前值，合法保存一组临时值，证明一次非法输入没有写入，再恢复并核对原值。未同时修改支付、渠道、登录、版权、协议或默认头像设置，也未运行 LikeAdmin 全量回归。
 
 ## 8. 后续产品化收尾门禁
 

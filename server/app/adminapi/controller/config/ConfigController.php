@@ -6,6 +6,7 @@ namespace app\adminapi\controller\config;
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\config\ConfigLogic;
 use app\adminapi\validate\config\WebsiteValidate;
+use InvalidArgumentException;
 
 class ConfigController extends BaseAdminController
 {
@@ -16,8 +17,11 @@ class ConfigController extends BaseAdminController
 
     public function saveWebsite()
     {
-        $this->validate($this->request->post(), WebsiteValidate::class . '.website');
-        ConfigLogic::saveWebsite($this->request->post());
+        try {
+            ConfigLogic::saveWebsite($this->request->post());
+        } catch (InvalidArgumentException $exception) {
+            return $this->fail($exception->getMessage());
+        }
         return $this->success('操作成功');
     }
 

@@ -47,6 +47,10 @@ jobs:
       - name: Check PHP syntax
         run: find server/app server/config server/database server/route -type f -name '*.php' -print0 | xargs -0 -n1 php -l
 
+      - name: Test website settings contract
+        working-directory: server
+        run: php tests/Productization/WebsiteConfigServiceTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest
