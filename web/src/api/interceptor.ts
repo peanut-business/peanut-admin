@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Message, Modal } from '@arco-design/web-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useUserStore } from '@/store';
 import { getToken } from '@/utils/auth';
 
@@ -42,8 +42,8 @@ axios.interceptors.response.use(
     // 20000 is the normal success envelope; LikeAdmin uses code=2 for a
     // successfully generated export file.
     if (![20000, 2].includes(res.code)) {
-      Message.error({
-        content: res.msg || 'Error',
+      ElMessage.error({
+        message: res.msg || 'Error',
         duration: 5 * 1000,
       });
       // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
@@ -51,26 +51,29 @@ axios.interceptors.response.use(
         [40100].includes(res.code) &&
         response.config.url !== '/api/user/info'
       ) {
-        Modal.error({
-          title: 'Confirm logout',
-          content:
-            'You have been logged out, you can cancel to stay on this page, or log in again',
-          okText: 'Re-Login',
-          async onOk() {
+        void ElMessageBox.confirm(
+          'You have been logged out, you can cancel to stay on this page, or log in again',
+          'Confirm logout',
+          {
+            confirmButtonText: 'Re-Login',
+            cancelButtonText: 'Cancel',
+            type: 'error',
+          }
+        )
+          .then(async () => {
             const userStore = useUserStore();
-
             await userStore.logout();
             window.location.reload();
-          },
-        });
+          })
+          .catch(() => undefined);
       }
       return Promise.reject(new Error(res.msg || 'Error'));
     }
     return res;
   },
   (error) => {
-    Message.error({
-      content: error.msg || 'Request Error',
+    ElMessage.error({
+      message: error.msg || 'Request Error',
       duration: 5 * 1000,
     });
     return Promise.reject(error);
