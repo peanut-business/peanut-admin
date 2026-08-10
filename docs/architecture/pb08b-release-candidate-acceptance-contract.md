@@ -2,13 +2,13 @@
 
 > 状态：Frozen，待执行
 >
-> 当前应用候选：`cb214d786ef3901416643832a7d92bd9be5e527a`
+> 当前应用候选：`61d9fb796f920b0982ec286d701cdc31f7ae84ef`
 >
 > 升级起点：`bc2e75ac6217d7defc44cd2b8e0c9e85a7cefc62`
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 当前验收 owner：`PB08B-RC-004`
+> 当前验收 owner：`PB08B-RC-005`
 
 ## 1. 目标与候选定义
 
@@ -114,8 +114,16 @@ RC003 的缓存镜像恢复再次 40 步命中 cache。弱密码零写入、43 �
 
 一次只读诊断确认 Nginx 本身已监听且宿主机 `/healthz` 返回 200；容器内 healthcheck 的 `wget http://127.0.0.1/healthz` 实际被运行环境代理重定向到 `127.0.0.1:7890`，连接拒绝。当前 Compose healthcheck 没有显式禁用代理，因而在带透明/注入代理的 Docker 环境产生假阴性。该问题属于生产健康门禁缺陷，候选 `0459494…` 判失败；必须最小修复 healthcheck 的 loopback 直连语义，冻结新实现候选和 owner 后再执行未完成矩阵。RC003 未启动浏览器，专用资源已清理。
 
-### `PB08B-RC-004` — 当前 owner
+### `PB08B-RC-004` — bundled-db 启动门禁失败
 
 新候选 `cb214d786ef3901416643832a7d92bd9be5e527a` 只把生产 Nginx healthcheck 改为 BusyBox 明确支持的 `wget -Y off`，使 loopback 探针不受容器/平台代理注入影响；Compose 解析检查已通过。除此之外候选 Runtime、锁文件、Dockerfile、数据库与四端源码和 `0459494…` 相同。
 
 RC004 继承 RC001 唯一无缓存 registry/全目标构建，以及 RC003 已通过的弱密码、24→28 前滚、幂等和升级保留证据；不重跑这些验收。只为新候选构建受一行 Compose 变更影响的 Nginx 服务装配，复用既有 PHP/Nginx build cache，建立当前空库生产 Compose，完成 RC02 剩余精确断言、RC03 HTTP/镜像、RC04 静态边界、RC05 唯一桌面/移动浏览器和 RC06 文档一致性。若构建 cache miss 重新执行依赖安装，或任何候选断言失败，按停止线处理。
+
+RC004 fresh bundled-db 启动时，MySQL 最终 healthy，但 PHP 没有对可选 MySQL 的启动依赖边。PHP 安装入口在数据库监听前连续 7 次因 `SQLSTATE[HY000] [2002] Connection refused` 退出；`restart: unless-stopped` 随后让 PHP 成功安装并转为 healthy，但 Compose 启动等待已经失败，Nginx 与 cron 停留在 Created，因此该生产门禁不能接受为成功。一次只读诊断确认 PHP-FPM 配置、安装结果和 MySQL 最终状态正常，根因仅是 bundled-db 启动顺序；浏览器未启动，专用容器、网络、volume 与临时候选目录已清理。
+
+### `PB08B-RC-005` — 当前 owner
+
+新候选 `61d9fb796f920b0982ec286d701cdc31f7ae84ef` 只为 PHP 增加 `mysql` 的可选 `service_healthy` 依赖。启用 `bundled-db` profile 时 PHP 必须等待内置 MySQL healthy；未启用时 `required: false` 保持外部数据库部署成立。带与不带 `bundled-db` 的 Compose 解析均已通过；除此之外候选 Runtime、锁文件、Dockerfile、数据库与四端源码和 RC004 相同。
+
+RC005 继承 RC001 唯一无缓存 registry/全目标构建，以及 RC003 已通过的弱密码、24→28 前滚、幂等和升级保留证据；不重跑这些验收。只从既有验证 cache 重建生产装配并重新建立当前空库 Compose，完成 RC02 剩余精确断言、RC03 HTTP/镜像、RC04 静态边界、RC05 唯一桌面/移动浏览器和 RC06 文档一致性。若 build cache miss 重新执行依赖安装，或任何候选断言失败，按停止线处理。
