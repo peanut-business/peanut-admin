@@ -67,7 +67,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 
 | 阶段/领域 | 核心已有 owner（仅在实际消费时适用） | 应用 Host owner | 一次最低验收 |
 |---|---|---|---|
-| PB04 认证/权限 | `RUNTIME-TENANT-AUTH-001`、`RUNTIME-TENANT-ADMIN-001`、`RUNTIME-DATA-AUTHORIZATION-001` | `PB04-AUTH-HOST-001` | 普通管理员允许/拒绝各一条；root 一条；菜单/按钮一致 |
+| PB04 认证/权限 | `RUNTIME-TENANT-AUTH-001`、`RUNTIME-TENANT-ADMIN-001`、`RUNTIME-DATA-AUTHORIZATION-001` | `PB04-AUTH-HOST-001`（Host 策略已通过；账户 CRUD 待后续切片） | non-root 已登记拒绝/未登记放行；root；菜单/按钮一致 |
 | PB04 网站设置 | `RUNTIME-SETTINGS-001` | `PB04-SETTINGS-WEBSITE-001` | 读取、合法保存、非法输入不写、恢复原值 |
 | PB04 字典 | `RUNTIME-REFERENCE-CODES-001` | `PB04-REFERENCE-CODES-HOST-001` | 列表、创建/编辑约束、被引用或状态边界 |
 | PB04 文件 | `RUNTIME-FILE-MEDIA-001` | `PB04-FILE-MEDIA-HOST-001` | 上传、私有/公开 URL 结果、删除/归档边界 |

@@ -46,7 +46,7 @@ flowchart LR
 
 | 领域 | 应用当前实现 | 核心当前能力 | 正式基线目标 |
 |---|---|---|---|
-| 登录、管理员、角色、部门、岗位、菜单 | 应用 Logic/Model 完整实现；仅权限集合原语接入包 | Kernel 已有多租户身份、会话、组织、RBAC、菜单、审计 | 核心拥有通用原语；应用拥有单租户管理员模型、LikeAdmin URI 语义与 ThinkPHP Host |
+| 登录、管理员、角色、部门、岗位、菜单 | 应用 Logic/Model 完整实现；权限 Host/override 已收口并有两端测试 owner | Kernel 已有多租户身份、会话、组织、RBAC、菜单、审计 | 核心拥有通用原语；应用拥有单租户管理员模型、LikeAdmin URI 语义与 ThinkPHP Host；账户 CRUD 仍待后续切片 |
 | 配置、支付配置、渠道配置 | `ConfigService` 与多组 Setting Logic | Settings 已有定义、作用域、校验、密钥保护和 `pa_setting_*` PDO 存储候选 | 应用拥有 key/schema/default 和 `pa_config`；核心候选获准且存储/schema 合同明确后才切换通用用例 |
 | 字典 | DictType/DictData Logic | Reference Codes | 核心拥有编码不变量与用例；应用保留 HTTP 装配 |
 | 文件、素材、存储引擎 | File/FileCate/Upload/Storage | File & Media 有元数据、存储端口和私有交付 | 统一元数据与生命周期契约；云厂商适配器可由应用覆盖 |

@@ -52,7 +52,7 @@
 - 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`
 - 当前生产服务器使用 `bundled-db` MySQL profile；局域网 `192.168.192.2` 是开发/历史验收数据库，公网服务器不可直接路由该地址
 - 已完成 PB03：`docs/architecture/pb03-ownership-and-migration-gates.md` 已冻结核心通用基础设施、应用产品 Module、唯一实现、Host/override、测试 owner 与逐领域停止线
-- PB04 进行中：网站设置首片已按应用 owner 路线形成 `WebsiteConfigService` 唯一实现并通过聚焦测试与一次可恢复数据库验收；核心 P1 Settings 等候选未经固定资格和下游采用决策前不得替换应用
+- PB04 进行中：网站设置首片与权限 Host 已形成应用唯一实现并通过聚焦测试/数据库探针；账户 CRUD、字典、文件、任务、日志/维护待执行；核心 P1 候选未经固定资格和下游采用决策前不得替换应用
 - PB03–PB07 后、PB09 前新增 PB08A 脚手架产品化与官方网站门禁；PB08A/PB08B 都通过后才可发布正式基线
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
 - 产品化阶段通过后才将 `dev` 合入 `main`；SaaS 作为后续独立目标
