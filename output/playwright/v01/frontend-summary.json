@@ -1,6 +1,6 @@
 {
   "date": "2026-08-03",
-  "scope": "Peanut Admin v2 管理端 Luna Playwright 独立会话 v01pm：按实际侧边栏逐个点击全部可见叶子菜单，只读确认页面可达、标题和主要业务内容",
+  "scope": "Peanut Admin 管理端 Luna Playwright 独立会话 v01pm：按实际侧边栏逐个点击全部可见叶子菜单，只读确认页面可达、标题和主要业务内容",
   "total": 30,
   "passed": 30,
   "failed": 0,

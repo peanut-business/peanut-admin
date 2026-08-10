@@ -117,8 +117,8 @@ pnpm build
 npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --branch=main
 ```
 
-正式域名为 `peanut-admin.007345.xyz`；Cloudflare Pages 项目名固定为 `peanut-admin-docs`。
+正式域名为 `peanut-admin-doc.007345.xyz`；Cloudflare Pages 项目名固定为 `peanut-admin-docs`。应用入口使用 `peanut-admin.007345.xyz`，由 Cloudflare 代理到生产服务器。
 
 ## 目标架构
 
-当前代码仍是已完成业务验收的 Arco/应用内实现。已确认的下一阶段目标是 Web 管理端统一 Element Plus，并把公共能力收敛为一个 Composer 核心包、一个 npm 管理端包和一个 PC/UniApp 共用的无 UI 客户端包；三个运行包均以标准注册表支持应用覆盖。迁移完成前不将这些目标描述为现成功能。契约见 `docs/architecture/application-package-and-release-contract.md`。
+当前代码仍是已完成业务验收的 Arco/应用内实现。已确认的下一阶段目标是 Web 管理端统一 Element Plus，并把公共能力收敛为一个 Composer 核心包和一个 npm 前端总包。npm 包通过子路径同时提供管理端能力及 PC/UniApp 共用的无 UI 客户端内核；两个公开包均以标准注册表支持应用覆盖。迁移完成前不将这些目标描述为现成功能。契约见 `docs/architecture/application-package-and-release-contract.md`。

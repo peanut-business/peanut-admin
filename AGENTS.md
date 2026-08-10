@@ -9,15 +9,13 @@
 
 | 项目 | 值 |
 |------|----|
-| 产品名称 | **Peanut Admin**（无 v2 后缀，永远不写 "Peanut Admin v2"） |
+| 产品名称 | **Peanut Admin**（不使用任何版本后缀） |
 | 本地目录 | `/Users/xing/Documents/company-projects/peanut-admin/` |
 | GitHub 仓库 | `git@github.com:peanut-business/peanut-admin.git` |
+| PC package name | `peanut-admin-pc` |
 | 主分支 | `main` |
 
-**旧路径已删除，不再存在：**
-- ~~`~/Documents/company-projects/peanut-v2/`~~
-- ~~`github.com:peanut-business/peanut-v2`~~
-- ~~独立的 orchestration workspace `peanut-admin/`~~（旧的，非本目录）
+此前的独立编排工作区已经删除，内容已归档。当前目录是现行产品代码仓，不是旧编排工作区；后续任务只以本文件记录的目录、仓库和主分支为当前事实源。
 
 ---
 
@@ -25,6 +23,7 @@
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 
+- 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
 - 数据库：`server/database/install.php` + `init.sql` + 23 migrations
 
@@ -99,6 +98,6 @@ LikeAdmin 到 Peanut Admin 的刻意改名，**不是缺失**：
 
 1. 所有任务在 `/Users/xing/Documents/company-projects/peanut-admin/` 下执行
 2. 功能分支命名：`feat/<描述>`，完成后 PR → main
-3. 不要创建 `peanut-v2`、`v2/` 路径或任何带 "v2" 的文件名
+3. 不要创建带产品版本后缀的名称、路径或文件名
 4. SaaS 相关实现需求 → 先查阅 `docs/design/saas-roadmap/` 再动手
 5. DB 变更：新建 `server/database/migrations/YYYYMMDD-<描述>.sql`，不要直接修改 `init.sql`

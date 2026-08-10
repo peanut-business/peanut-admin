@@ -40,7 +40,9 @@ docker compose --profile redis up -d
 
 Redis 没有应用依赖边，只在明确接入时启用。生产数据库密码、MySQL root 密码和 `JWT_SECRET` 均为必填项。
 
-Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18082`。宝塔面板新增反向代理，目标填写 `http://127.0.0.1:18082`；Cloudflare DNS 对应记录开启代理（橙色云朵）。不要直接暴露 PHP-FPM 或 MySQL。
+Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18082`。宝塔面板新增反向代理，目标填写 `http://127.0.0.1:18082`；Cloudflare DNS 对应记录开启代理（橙色云朵）。宝塔站点安装 Cloudflare Origin CA 证书并强制 HTTPS，Cloudflare SSL/TLS 模式使用 `Full (strict)`。不要直接暴露 PHP-FPM 或 MySQL。
+
+`peanut-admin-doc.007345.xyz` 专用于 Cloudflare Pages 文档站，不经过宝塔。服务器应用使用 `peanut-admin.007345.xyz`，避免一个 DNS 名称同时绑定 Pages 和源站。
 
 ## 原生发布包（备选）
 

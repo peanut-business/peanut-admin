@@ -1,7 +1,7 @@
 # Peanut Admin 应用、核心包与发布契约
 
-> 状态：Accepted Target，核心包迁移尚未完成
-> 日期：2026-08-07
+> 状态：Accepted Target，npm 核心包已发布，Composer 发布与应用迁移尚未完成
+> 日期：2026-08-08
 
 ## 1. 产品与仓库边界
 
@@ -19,15 +19,14 @@
 
 ## 3. 核心依赖边界
 
-模块化用于组织代码，公开 package 用于稳定分发，两者不能机械地一一对应。正式目标只发布三个运行包：
+模块化用于组织代码，公开 package 用于稳定分发，两者不能机械地一一对应。正式目标只发布两个运行包：
 
-| 生态 | 唯一运行入口 | 内部模块 |
+| 生态 | 唯一公开包 | 内部入口与模块 |
 |---|---|---|
 | PHP | `peanut-admin/core` | kernel、认证、权限、数据权限、设置、文件、任务及核心业务域 |
-| Web | `@peanut-admin/admin` | Element Plus Shell、HTTP、认证权限、页面和扩展注册表 |
-| Client | `@peanut-admin/client` | PC 与 UniApp 共用的 DTO、API 契约、认证会话、业务状态机和规则；不包含 Element Plus、UniApp 组件或页面 |
+| Frontend | `@peanut-admin/admin` | `./core`、`./shell` 和领域入口服务管理端；`./client`、`./client/nuxt`、`./client/uniapp` 服务 PC 与 UniApp 的 DTO、API 契约、认证会话、业务状态机、规则及端适配器 |
 
-管理应用直接安装 PHP 与 Admin 包；PC 和 UniApp 共同安装 Client 包，并分别注入 Nuxt `$fetch`/cookie 与 `uni.request`/storage 适配器。测试工具、starter 和示例留在核心 monorepo 内。新模块默认进入上述包的内部目录；只有真实第二消费者要求独立安装、API 稳定且需要独立发布节奏时才拆包。
+管理应用安装 PHP 与 Frontend 两个包；PC 和 UniApp 只消费 Frontend 包的无 UI client 子路径，并分别注入 Nuxt `$fetch`/cookie 与 `uni.request`/storage 适配器。`./client` 不得依赖 Element Plus、管理端页面或 UniApp 组件。测试工具、starter 和示例留在核心 monorepo 内。新模块默认进入上述包的内部目录；只有真实第二消费者要求独立安装、API 稳定且需要独立发布节奏时才允许重新评估拆包。
 
 应用后端只保留 HTTP 装配、项目配置、应用专属模块和覆盖实现。应用管理端只保留启动入口、品牌主题、菜单装配、项目页面与覆盖注册。不得复制核心业务规则形成双实现。
 
@@ -74,8 +73,8 @@ Docker 多阶段构建一次完成：
 ## 6. 迁移顺序
 
 1. [已完成 2026-08-07] 稳定当前三端 Docker 发布和首次空库启动。
-2. 将核心仓收敛为一个 Composer 包、一个管理端 npm 包和一个无 UI 客户端 npm 包，建立标准 registry 发布链。
-3. 建立后端、管理端和客户端覆盖注册表，以认证与权限作为第一条端到端消费链。
+2. [进行中] 核心仓已收敛为一个 Composer 包和一个 npm 前端总包；npm `@peanut-admin/admin@0.1.0-alpha.2` 已发布并通过一次隔离安装，Composer `peanut-admin/core@0.1.0-alpha.2` 尚待生成 split、Packagist 发布授权与隔离安装。
+3. 在两个公开包内建立后端、管理端和客户端覆盖注册表，以认证与权限作为第一条端到端消费链。
 4. 按系统、会员、内容、通知、支付迁移业务域，同时将管理端迁移到 Element Plus。
 5. PC 与 UniApp 先迁移重复的请求、认证、DTO 和状态规则，再按领域删除应用内重复实现并完成一次最低业务验收。
 6. 全部完成后，模板应用才切换为完全依赖核心包的正式基线。

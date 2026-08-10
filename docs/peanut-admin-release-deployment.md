@@ -69,6 +69,8 @@ Docker Desktop 可通过 `docker buildx inspect --bootstrap` 查看 `moby.host-g
 
 2026-08-07 在独立 Compose 项目和全新 MySQL 卷中完成一次生产构建与启动：`/healthz`、`/admin/`、`/mobile/`、`/pc/` 均返回 HTTP 200；首次安装生成 42 张表、1 个默认超级管理员、170 个菜单和 59 项配置。验证后已删除测试容器、网络和卷。
 
+同日完成首次服务器部署与公网接入：生产 Compose 在 `161.153.52.6` 运行，宝塔反向代理服务器实际配置的 `127.0.0.1:18092`；Cloudflare 代理记录 `peanut-admin.007345.xyz` 和 `peanut-admin-doc.007345.xyz` 已生效。最低公网验证中，`https://peanut-admin.007345.xyz/healthz` 与 `https://peanut-admin-doc.007345.xyz/` 均返回 HTTP 200。
+
 ## 宝塔与 Cloudflare
 
 宝塔创建站点并将全部请求反向代理到：
@@ -80,6 +82,10 @@ http://127.0.0.1:18082
 Compose 只监听宿主机回环地址，不直接暴露 PHP-FPM、MySQL 或 PC 容器端口。宝塔负责公网 80/443 和源站证书。
 
 Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开启代理。Cloudflare 访问宝塔，宝塔再访问本机 `18082`；本方案不需要 Cloudflare Tunnel 容器。
+
+应用源站必须使用 Cloudflare Origin CA 证书：在 Cloudflare 的 **SSL/TLS -> Origin Server** 为应用域名签发证书，将证书和私钥安装到宝塔对应站点，并开启强制 HTTPS。Cloudflare 的加密模式固定为 **Full (strict)**，不要使用 Flexible 或 Full。Origin CA 证书只用于 Cloudflare 到宝塔的链路；源站 80/443 应只接受可信来源，且不得绕过 Cloudflare 对外提供服务。
+
+服务器应用域名固定为 `peanut-admin.007345.xyz`。文档站域名 `peanut-admin-doc.007345.xyz` 属于 Cloudflare Pages，不经过宝塔，也不安装 Origin CA 证书；同一个 DNS 名称不能同时指向 Pages 和服务器源站。
 
 ## Redis
 
