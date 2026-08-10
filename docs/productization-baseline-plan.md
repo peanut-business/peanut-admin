@@ -38,7 +38,7 @@
 | PB01 | 三端 Docker、生产 MySQL、文档站和域名基线 | 已完成 | 镜像构建、迁移账本、容器健康、发布域名登录/文章页、PC/H5 和文档通过 |
 | PB02 | 两包发布、标准覆盖 Host、三端 client、Element Plus | 已完成 | registry 锁定、CI、真实 Chromium 代表域通过 |
 | PB03 | 核心/应用所有权图谱与迁移门禁 | 已完成 | `pb03-ownership-and-migration-gates.md` 固定两仓所有权、唯一实现、Host/override、领域顺序和测试 owner |
-| PB04 | 系统基础域收口 | 进行中 | 网站设置、权限 Host、管理员/RBAC CRUD、字典、文件素材已形成应用唯一实现与测试 owner；任务、日志/维护待执行 |
+| PB04 | 系统基础域收口 | 进行中 | 网站设置、权限 Host、管理员/RBAC CRUD、字典、文件素材、任务/导入导出已形成应用唯一实现与测试 owner；日志/维护待执行 |
 | PB05 | 会员与财务域收口 | 待开始 | 应用 Module 唯一拥有会员、标签、余额、流水、充值退款；复用核心事务/幂等/审计原语 |
 | PB06 | 内容与装修域收口 | 待开始 | 应用 Module 唯一拥有文章、分类、素材业务与移动/PC/Tabbar 装修；复用设置/文件/Host 原语 |
 | PB07 | 通知、渠道、支付与 OAuth 域收口 | 待开始 | 通知基础设施按获批核心候选消费；产品 scene、渠道、支付回调/OAuth 流程由应用唯一拥有 |
@@ -65,6 +65,8 @@
 字典合同见 `docs/architecture/pb04-reference-codes-host-contract.md`。核心 Reference Codes 的 Tenant 三表、不可变 code、版本追加、ETag/幂等 API 与应用 `pa_dict_type/pa_dict_data` 不等价，且没有 Peanut Admin 下游采用授权；本片保留应用唯一 Runtime、不双写。`PB04-REFERENCE-CODES-HOST-001` 只读绑定已封存 T01 行为证据并核对当前唯一链，一次通过，未重复数据库/API/浏览器验收。
 
 文件素材合同见 `docs/architecture/pb04-file-media-host-contract.md`。核心 File And Media 是 Tenant-private、archive/delivery 模型，既不等价于应用公开素材/分类/云 Provider，也没有下游采用授权；本片保留应用唯一 Runtime。`pa_file.storage` 现作为 URL 与删除共同的 Provider provenance，旧云素材不再随默认引擎切换而误拼域名；`PB04-FILE-MEDIA-HOST-001` 一次无外部写入验收通过，并复用封存 M02/S01 证据。
+
+任务与导入导出合同见 `docs/architecture/pb04-task-import-export-host-contract.md`。应用 Crontab 是同步 console 调度、Generator import 是数据库元数据快照、当前业务导出是同步 XLSX；它们与核心 Tenant Task/Job、私有 CSV Import/Export 的 schema、租约/重试和文件语义不等价，且没有下游采用授权。本片保留应用唯一 Runtime，将五个 XLSX 调用方收口到 `XlsxExportService`；`PB04-TASK-OPS-HOST-001` 一次通过任务成功、失败后人工重试、XLSX 生成和零夹具清理。
 
 ## 5. PB09 前脚手架与官网门禁
 
