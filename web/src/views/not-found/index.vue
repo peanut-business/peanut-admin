@@ -1,8 +1,8 @@
 <template>
   <div class="content">
-    <a-result class="result" status="404" :subtitle="'not found'"> </a-result>
+    <el-result class="result" icon="warning" title="404" sub-title="not found" />
     <div class="operation-row">
-      <a-button key="back" type="primary" @click="back"> back </a-button>
+      <el-button key="back" type="primary" @click="back"> back </el-button>
     </div>
   </div>
 </template>
