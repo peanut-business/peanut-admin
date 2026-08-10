@@ -43,7 +43,7 @@
 | PB06 | 内容与装修域收口 | 已完成 | 应用 Module 唯一拥有文章、分类、素材引用与移动/PC/Tabbar 装修；四端共用一个读取 DTO |
 | PB07 | 通知、渠道、支付与 OAuth 域收口 | 已完成 | 四个验证码 scene、支付状态机、OAuth 身份绑定、固定回跳和外部渠道均由应用唯一 Host 与测试 owner 固定 |
 | PB08A | 脚手架产品化与官方网站 | 完成（浏览器证据并入 PB08B） | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；静态门禁通过 |
-| PB08B | 正式候选集成验收 | 待开始 | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致 |
+| PB08B | 正式候选集成验收 | 进行中（合同已冻结） | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致 |
 | PB09 | 发布正式基线 | 待开始 | `dev` 合入并推送 `main`；版本与发布记录完整 |
 | SAAS01 | SaaS 多租户实现 | 后续独立阶段 | PB09 后按 `docs/design/saas-roadmap/` 重新冻结执行契约 |
 
@@ -97,6 +97,8 @@ PB08A 执行合同见 `docs/architecture/pb08a-brand-scaffold-official-site-cont
 PB08A 品牌 Runtime、安装安全和四端消费现已完成：bootstrap manifest/源资产与生成检查、16 字段网站配置、用途化默认图片、管理端/PC/UniApp-H5 消费、包元数据和显式初始管理员密码均已落地；旧 ThinkPHP/Uni preset/AUX、固定 logo、固定密码和小写产品 fallback 已退出运行路径。应用根许可证仍缺失，包元数据暂按 `proprietary/UNLICENSED`，PB09 前必须取得 provenance/clean-room、LICENSE/NOTICE 与第三方清单的明确决策。该阶段未提前执行 PB08B 浏览器或 PB09 发布。
 
 PB08A 官网与文档门户现已完成：产品首页、能力/场景、快速开始、开发、部署升级、API/扩展、管理员手册、版本信息、GitHub、搜索和 404 均进入同一 VitePress 站点；站点消费生成的品牌 manifest/资产，公开文档不再固化历史验收域名、服务器 IP、局域网数据库或过期 PHP 版本。用户、开发、部署/升级文档已同步。`PB08A-OFFICIAL-SITE-001` 唯一静态门禁通过品牌生成检查、VitePress 构建/内部链接、搜索索引、关键页面和 404 产物检查；未运行浏览器，桌面/移动唯一一次真实 Chromium 验收仍归 PB08B。PB08A 至此完成，下一阶段仅为 PB08B。
+
+PB08B 执行合同见 `docs/architecture/pb08b-release-candidate-acceptance-contract.md`。当前已冻结：候选从干净提交导出；生产无缓存 Docker 构建同时证明两包 registry 安装和三端产物；实时数据库只做弱密码零写入、当前 28 条迁移空库、从 `bc2e75ac…` 的 24→28 前滚及品牌/管理员保留；领域/覆盖行为绑定封存证据，不重跑；官网、管理端、PC、H5 只执行一次桌面/移动 Chromium。证据只写脱敏摘要并在结束后删除专用容器、网络、volume 与临时目录。
 
 ## 6. 并行规则
 

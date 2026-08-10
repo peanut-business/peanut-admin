@@ -79,4 +79,4 @@ PB04 已从网站设置唯一实现开始，而不是直接迁移全部系统页
 - 本片只处理网站基础设置的读取、校验和保存，未修改登录、支付、渠道、协议、版权或默认头像。
 - 应用 owner `PB04-SETTINGS-WEBSITE-001` 的聚焦测试与一次真实数据库读取/合法保存/非法不写/恢复原值均已通过。
 
-该切片证明应用 owner 能通过单一服务和存储端口删除规则重复。随后 PB04 系统域、PB05 会员/财务与 PB06 内容/装修均已由各自 owner 固定；内容资源保留原 Provider provenance，管理端与三端共用唯一装修读取 DTO。PB07 通知、支付、OAuth 与外部渠道也已固定应用唯一 Host、产品状态机、回跳与外部结果安全边界。PB08A 已完成应用 `WebsiteConfigService + pa_config(type=website)` 唯一可变品牌 Runtime、bootstrap manifest/源资产、安装凭据门禁和管理端/PC/UniApp-H5 消费；仓库默认值不形成第二套运行时，核心仓未修改。下一步只建设官网与文档门户，再进入 PB08B 唯一候选验收，不提前开始 PB09 或 SaaS。
+该切片证明应用 owner 能通过单一服务和存储端口删除规则重复。随后 PB04 系统域、PB05 会员/财务与 PB06 内容/装修均已由各自 owner 固定；内容资源保留原 Provider provenance，管理端与三端共用唯一装修读取 DTO。PB07 通知、支付、OAuth 与外部渠道也已固定应用唯一 Host、产品状态机、回跳与外部结果安全边界。PB08A 已完成应用 `WebsiteConfigService + pa_config(type=website)` 唯一可变品牌 Runtime、bootstrap manifest/源资产、安装凭据门禁、四端消费和官网/文档门户；仓库默认值不形成第二套运行时，核心仓未修改。当前只执行 PB08B 唯一正式候选验收，不提前开始 PB09 或 SaaS。

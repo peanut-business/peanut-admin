@@ -1,6 +1,6 @@
 # Peanut Admin 应用、核心包与发布契约
 
-> 状态：Accepted Target，两个核心包已发布，PB04–PB07 已收口
+> 状态：Accepted Target，两个核心包已发布，PB04–PB08A 已收口
 > 日期：2026-08-11
 
 ## 1. 产品与仓库边界
@@ -79,7 +79,8 @@ Docker 多阶段构建一次完成：
 5. [已完成 2026-08-11] PC 与 UniApp 已迁移共用请求、认证和错误处理到无 UI client 子路径。
 6. [已完成 2026-08-11] PB03 已固定核心通用能力、应用产品 Module、唯一实现、Host/override、测试 owner 和逐领域停止线。
 7. [已完成 2026-08-11] 系统基础设施 PB04、会员/财务 PB05、内容/装修 PB06、通知/支付/OAuth/渠道 PB07 均固定应用唯一 Host；核心相邻候选无采用授权且语义不等价。OAuth 使用固定 API callback bridge，旧 Channel/AES 写入口退出。
-8. [待开始] 执行 PB08A 中性脚手架、品牌单一事实源和官网+文档门户门禁，再执行 PB08B 正式候选集成验收。
-9. 全部完成后，模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
+8. [已完成 2026-08-11] PB08A 中性脚手架、品牌单一事实源和官网+文档门户实现及静态门禁。
+9. [进行中] 按 `docs/architecture/pb08b-release-candidate-acceptance-contract.md` 执行唯一正式候选集成验收。
+10. PB08B 与许可证/provenance 门禁完成后进入 PB09；PB09 完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
 
 SaaS 多租户仍是 `docs/design/saas-roadmap/` 中的路线图，不属于当前发布能力。
