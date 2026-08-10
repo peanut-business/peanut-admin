@@ -70,7 +70,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 | PB04 认证/权限 | `RUNTIME-TENANT-AUTH-001`、`RUNTIME-TENANT-ADMIN-001`、`RUNTIME-DATA-AUTHORIZATION-001` | `PB04-AUTH-HOST-001` + `PB04-AUTH-CRUD-001`（均已通过） | Host：root/登记语义/菜单按钮；CRUD：关系、root/自操作、引用/层级拒绝与清理 |
 | PB04 网站设置 | `RUNTIME-SETTINGS-001` | `PB04-SETTINGS-WEBSITE-001` | 读取、合法保存、非法输入不写、恢复原值 |
 | PB04 字典 | `RUNTIME-REFERENCE-CODES-001`（候选，无下游采用授权） | `PB04-REFERENCE-CODES-HOST-001`（已通过） | 复用封存 T01 行为证据；唯一链、改名事务、占用拒删、状态选择器与零夹具 |
-| PB04 文件 | `RUNTIME-FILE-MEDIA-001` | `PB04-FILE-MEDIA-HOST-001` | 上传、私有/公开 URL 结果、删除/归档边界 |
+| PB04 文件 | `RUNTIME-FILE-MEDIA-001`（Tenant-private 候选，无下游采用授权） | `PB04-FILE-MEDIA-HOST-001`（已通过） | 复用封存 M02/S01；公开 URL、Provider provenance、删除/归档不等价与零夹具 |
 | PB04 任务/导入导出 | `RUNTIME-TASK-JOB-001`、`RUNTIME-IMPORT-EXPORT-001` | `PB04-TASK-OPS-HOST-001` | 一条任务成功、一条失败/重试、一次导出 |
 | PB04 日志/维护 | `RUNTIME-OPS-CONSOLE-001` | `PB04-OPS-HOST-001` | 权限拒绝、脱敏日志、一个只读维护探针 |
 | PB05 会员/财务 | 核心事务/幂等/审计原语的任务 owner；不得借用 Tenant membership owner | `PB05-MEMBER-FINANCE-001` | 余额权威字段、流水原子性、重复入账拒绝 |
@@ -89,7 +89,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 | PB04-01 | 认证/权限 Host 与 CRUD 收口 | 核心原语 + 应用管理员模型 | 固定现有 URI/菜单语义、覆盖 slot 与 CRUD 事务合同 | 不迁 Tenant schema，不重做 parity |
 | PB04-02 | 网站设置 | 应用唯一服务 + `pa_config` adapter | PB03 应用 owner 决策 | 不改核心 Runtime；不迁支付/渠道设置 |
 | PB04-03 | 字典 | 应用 `pa_dict_*` 唯一 Runtime；核心仅为未获准候选 | 不等价表/状态/API 与历史证据已映射 | 不消费核心、不并行修改内容分类 |
-| PB04-04 | 文件与素材 | 核心存储/交付原语 + 应用分类/Provider | URL、元数据、存储升级合同完成 | 不顺带迁装修素材 |
+| PB04-04 | 文件与素材 | 应用 `pa_file*`/Provider 唯一 Runtime；核心仅为未获准私有交付候选 | URL、元数据、Provider provenance 与存储升级合同已完成 | 不消费核心、不顺带迁装修素材 |
 | PB04-05 | 任务/导入导出 | 核心任务原语 + 应用执行器 | 任务状态/租约/重试映射完成 | 不改会员/通知触发器 |
 | PB04-06 | 日志/维护 | 核心脱敏/运维原语 + 应用探针 | 权限与脱敏合同完成 | 只读探针先行，不扩大为运维平台重构 |
 | PB05 | 会员与财务 | 应用 Module | PB04 通过；余额与事务 owner 冻结 | 不向核心迁客户/余额模型 |
@@ -99,7 +99,7 @@ Alpha.4 的 npm tarball 已被 `uniapp/package-lock.json` 从 registry 解析，
 
 ## 7. PB04-02 网站设置首片冻结合同
 
-PB04 从网站基础设置开始；该首片已按本节更新后的应用 owner 路线完成。权限 Host 与管理员/RBAC CRUD 随后已按独立合同完成，其余 PB04 字典、文件、任务和运维切片尚未开始。
+PB04 从网站基础设置开始；该首片已按本节更新后的应用 owner 路线完成。权限 Host、管理员/RBAC CRUD、字典与文件素材随后已按独立合同完成，其余 PB04 任务和运维切片尚未开始。
 
 ### 7.1 现有路径与数据 owner
 

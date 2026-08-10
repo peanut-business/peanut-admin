@@ -59,6 +59,10 @@ jobs:
         working-directory: server
         run: php tests/Productization/ReferenceCodesHostTest.php
 
+      - name: Test file media Host ownership
+        working-directory: server
+        run: php tests/Productization/FileMediaHostTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest

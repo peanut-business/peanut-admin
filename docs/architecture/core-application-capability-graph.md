@@ -49,7 +49,7 @@ flowchart LR
 | 登录、管理员、角色、部门、岗位、菜单 | 应用 Logic/Model 完整实现；权限 Host/override 与管理员/RBAC CRUD 均已收口并有应用测试 owner | Kernel 已有多租户身份、会话、组织、RBAC、菜单、审计 | 核心拥有通用原语；应用拥有单租户管理员模型、LikeAdmin URI 语义、CRUD 事务与 ThinkPHP Host；不迁 Tenant schema |
 | 配置、支付配置、渠道配置 | `ConfigService` 与多组 Setting Logic | Settings 已有定义、作用域、校验、密钥保护和 `pa_setting_*` PDO 存储候选 | 应用拥有 key/schema/default 和 `pa_config`；核心候选获准且存储/schema 合同明确后才切换通用用例 |
 | 字典 | `pa_dict_type/pa_dict_data`、LikeAdmin CRUD/状态/选择器与 HTTP/UI 的唯一 Runtime | Tenant 三表、不可变 code、版本追加、ETag/幂等 Reference Codes 候选 | 当前 schema/API 不等价且核心无下游采用授权；PB04-03 保留应用唯一实现，不双写、不 deep import |
-| 文件、素材、存储引擎 | File/FileCate/Upload/Storage | File & Media 有元数据、存储端口和私有交付 | 统一元数据与生命周期契约；云厂商适配器可由应用覆盖 |
+| 文件、素材、存储引擎 | `pa_file*`、公开素材 URL、分类/选择器和 local/qiniu/aliyun/qcloud 唯一 Runtime；`storage` 同时决定 URL 与删除 Provider | Tenant-private `pa_file_object`、archive、delivery grant 与 local-private 候选 | 当前可见性/schema/生命周期不等价且核心无采用授权；应用不双写、不 deep import，产品引用 provenance 延后各表 owner |
 | 定时任务、生成器、导入导出、日志、维护 | Crontab/Generator/OperationLog/System | Task Job、Import Export、Ops Console | 核心拥有任务状态、导出、运维查询和脱敏规则；应用注入执行器与环境探针 |
 | 通知与短信 | Scene/Template/Log/Sms | Notification SMS 与 Integration Security | 核心拥有模板、发送状态、验证码和服务商端口；应用只配置/覆盖提供商 |
 | 会员、标签、余额 | Member/MemberTag/AccountLog | Kernel 有 Tenant membership 与事务/幂等/审计原语，不是客户财务模型 | 应用 Member/Finance Module 唯一拥有客户、余额与充值退款规则；不向核心迁模型 |
@@ -79,4 +79,4 @@ PB04 已从网站设置唯一实现开始，而不是直接迁移全部系统页
 - 本片只处理网站基础设置的读取、校验和保存，未修改登录、支付、渠道、协议、版权或默认头像。
 - 应用 owner `PB04-SETTINGS-WEBSITE-001` 的聚焦测试与一次真实数据库读取/合法保存/非法不写/恢复原值均已通过。
 
-该切片证明应用 owner 能通过单一服务和存储端口删除规则重复。随后 `PB04-AUTH-HOST-001` 与 `PB04-AUTH-CRUD-001` 已分别固定权限 Host 和管理员/RBAC CRUD owner；`PB04-REFERENCE-CODES-HOST-001` 又固定了应用字典唯一 Runtime 与核心未消费边界。后续仍按逐域合同串行推进，不扩展会员、支付或渠道。
+该切片证明应用 owner 能通过单一服务和存储端口删除规则重复。随后权限 Host、管理员/RBAC CRUD、字典和文件素材均已由各自 PB04 owner 固定；后续仍按逐域合同串行推进，不扩展会员、支付或渠道。
