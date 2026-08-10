@@ -1,112 +1,147 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.finance', 'menu.finance.accountLog']" />
-    <a-card class="general-card" :title="$t('menu.finance.accountLog')">
-      <a-alert type="warning" style="margin-bottom: 16px">
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.finance.accountLog') }}</template>
+      <el-alert type="warning" :closable="false" style="margin-bottom: 16px">
         {{ $t('accountLog.alert') }}
-      </a-alert>
-      <a-row>
-        <a-col :flex="1">
-          <a-form
-            :model="formModel"
-            :label-col-props="{ span: 6 }"
-            :wrapper-col-props="{ span: 18 }"
-            label-align="left"
-          >
-            <a-row :gutter="16">
-              <a-col :span="8">
-                <a-form-item
-                  field="user_info"
+      </el-alert>
+      <el-row :gutter="16">
+        <el-col :span="21">
+          <el-form :model="formModel" label-position="left" label-width="100px">
+            <el-row :gutter="16">
+              <el-col :span="8">
+                <el-form-item
+                  prop="user_info"
                   :label="$t('accountLog.form.userInfo')"
                 >
-                  <a-input
+                  <el-input
                     v-model="formModel.user_info"
-                    allow-clear
+                    clearable
                     :placeholder="$t('accountLog.form.userInfo.placeholder')"
-                    @press-enter="search"
+                    @keyup.enter="search"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="change_type"
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item
+                  prop="change_type"
                   :label="$t('accountLog.form.changeType')"
                 >
-                  <a-select
+                  <el-select
                     v-model="formModel.change_type"
-                    allow-clear
-                    :options="changeTypeOptions"
+                    clearable
                     :placeholder="$t('accountLog.form.changeType.placeholder')"
-                  />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="timeRange"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in changeTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item
+                  prop="timeRange"
                   :label="$t('accountLog.form.time')"
                 >
-                  <a-range-picker
+                  <el-date-picker
                     v-model="formModel.timeRange"
-                    show-time
-                    format="YYYY-MM-DD HH:mm:ss"
+                    type="datetimerange"
                     value-format="YYYY-MM-DD HH:mm:ss"
                     style="width: 100%"
-                    allow-clear
+                    clearable
                   />
-                </a-form-item>
-              </a-col>
-            </a-row>
-          </a-form>
-        </a-col>
-        <a-divider style="height: 84px" direction="vertical" />
-        <a-col :flex="'86px'" style="text-align: right">
-          <a-space direction="vertical" :size="18">
-            <a-button type="primary" @click="search">
-              <template #icon><icon-search /></template>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
+        </el-col>
+        <el-col :span="3" class="filter-actions">
+          <el-space direction="vertical" :size="18">
+            <el-button type="primary" :icon="Search" @click="search">
               {{ $t('accountLog.form.search') }}
-            </a-button>
-            <a-button @click="reset">
-              <template #icon><icon-refresh /></template>
+            </el-button>
+            <el-button :icon="Refresh" @click="reset">
               {{ $t('accountLog.form.reset') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-divider style="margin-top: 0" />
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        :scroll="{ x: 1250 }"
-        @page-change="onPageChange"
-        @page-size-change="onPageSizeChange"
-      >
-        <template #nickname="{ record }">
-          <a-space>
-            <a-avatar :size="40" :image-url="record.avatar">
-              {{ record.nickname?.slice(0, 1) }}
-            </a-avatar>
-            <span>{{ record.nickname || '-' }}</span>
-          </a-space>
-        </template>
-        <template #change_amount="{ record }">
-          <span :class="{ 'amount-expense': record.action === 2 }">
-            {{ record.change_amount }}
-          </span>
-        </template>
-      </a-table>
-    </a-card>
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-divider style="margin-top: 0" />
+      <el-table v-loading="loading" row-key="id" :data="renderData" border>
+        <el-table-column
+          prop="account"
+          :label="$t('accountLog.columns.account')"
+          width="140"
+        />
+        <el-table-column :label="$t('accountLog.columns.nickname')" width="180">
+          <template #default="{ row }">
+            <el-space>
+              <el-avatar :size="40" :src="row.avatar">
+                {{ row.nickname?.slice(0, 1) }}
+              </el-avatar>
+              <span>{{ row.nickname || '-' }}</span>
+            </el-space>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="mobile"
+          :label="$t('accountLog.columns.mobile')"
+          width="140"
+        />
+        <el-table-column
+          :label="$t('accountLog.columns.changeAmount')"
+          width="120"
+        >
+          <template #default="{ row }">
+            <span :class="{ 'amount-expense': row.action === 2 }">
+              {{ row.change_amount }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="left_amount"
+          :label="$t('accountLog.columns.leftAmount')"
+          width="120"
+        />
+        <el-table-column
+          prop="change_type_desc"
+          :label="$t('accountLog.columns.changeType')"
+          width="180"
+        />
+        <el-table-column
+          prop="source_sn"
+          :label="$t('accountLog.columns.sourceSn')"
+          width="180"
+        />
+        <el-table-column
+          prop="create_time"
+          :label="$t('accountLog.columns.createTime')"
+          width="180"
+        />
+      </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          :current-page="pagination.current"
+          :page-size="pagination.pageSize"
+          :total="pagination.total"
+          :page-sizes="[15, 30, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @current-change="onPageChange"
+          @size-change="onPageSizeChange"
+        />
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { computed, ref, reactive } from 'vue';
-  import { useI18n } from 'vue-i18n';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { SelectOptionData } from '@arco-design/web-vue/es/select/interface';
+  import { ref, reactive } from 'vue';
+  import { Refresh, Search } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     getAccountLogList,
@@ -115,7 +150,6 @@
     type AccountLogParams,
   } from '@/api/finance';
 
-  const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);
   const renderData = ref<AccountLogRecord[]>([]);
 
@@ -134,42 +168,7 @@
     showPageSize: true,
   });
 
-  const changeTypeOptions = ref<SelectOptionData[]>([]);
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('accountLog.columns.account'), dataIndex: 'account', width: 140 },
-    {
-      title: t('accountLog.columns.nickname'),
-      slotName: 'nickname',
-      width: 180,
-    },
-    { title: t('accountLog.columns.mobile'), dataIndex: 'mobile', width: 140 },
-    {
-      title: t('accountLog.columns.changeAmount'),
-      slotName: 'change_amount',
-      width: 120,
-    },
-    {
-      title: t('accountLog.columns.leftAmount'),
-      dataIndex: 'left_amount',
-      width: 120,
-    },
-    {
-      title: t('accountLog.columns.changeType'),
-      dataIndex: 'change_type_desc',
-      width: 180,
-    },
-    {
-      title: t('accountLog.columns.sourceSn'),
-      dataIndex: 'source_sn',
-      width: 180,
-    },
-    {
-      title: t('accountLog.columns.createTime'),
-      dataIndex: 'create_time',
-      width: 180,
-    },
-  ]);
+  const changeTypeOptions = ref<Array<{ label: string; value: string }>>([]);
 
   const fetchData = async (page = 1) => {
     setLoading(true);
@@ -228,6 +227,16 @@
   }
 
   .amount-expense {
-    color: rgb(var(--red-6));
+    color: var(--el-color-danger);
+  }
+
+  .filter-actions {
+    text-align: right;
+  }
+
+  .pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
   }
 </style>
