@@ -1,6 +1,6 @@
 # Peanut Admin 生产发布与部署
 
-生产部署只采用一条主路径：服务器拉取已经开发完成的应用仓，使用 Docker Compose 构建并启动，宝塔反代本机端口，Cloudflare 代理服务器域名。服务器不是用模板创建新应用的地方。
+生产部署只采用一条主路径：服务器拉取已经开发完成的应用仓，使用 Docker Compose 构建并启动，再由目标环境的 HTTPS 反向代理接入。服务器不是用模板创建新应用的地方。
 
 ## 发布内容
 
@@ -69,25 +69,25 @@ Docker Desktop 可通过 `docker buildx inspect --bootstrap` 查看 `moby.host-g
 
 2026-08-07 在独立 Compose 项目和全新 MySQL 卷中完成一次生产构建与启动：`/healthz`、`/admin/`、`/mobile/`、`/pc/` 均返回 HTTP 200；首次安装生成 42 张表、1 个默认超级管理员、170 个菜单和 59 项配置。验证后已删除测试容器、网络和卷。
 
-同日完成首次服务器部署与公网接入：生产 Compose 在 `161.153.52.6` 运行，宝塔反向代理服务器实际配置的 `127.0.0.1:18092`；Cloudflare 代理记录 `peanut-admin.007345.xyz` 和 `peanut-admin-doc.007345.xyz` 已生效。
-
 2026-08-11 已把服务器从历史功能分支升级到 `dev`，完成数据库/存储备份、24 条迁移账本接管、生产 API 路由修复和三端镜像更新。当前四个服务健康/运行，真实 Chromium 已通过管理端登录、文章页、UniApp H5、Nuxt PC 与文档站 smoke；证据见 `output/playwright/production-baseline/final-summary.json`。
 
-## 宝塔与 Cloudflare
+以上只记录已封存的验收范围，不是模板域名、IP、数据库地址或云平台默认值。
 
-宝塔创建站点并将全部请求反向代理到：
+## HTTPS 反向代理
+
+Compose 默认只监听宿主机回环地址。可使用 Nginx、宝塔或等价入口，把应用域名的请求反向代理到：
 
 ```text
 http://127.0.0.1:18092
 ```
 
-Compose 只监听宿主机回环地址，不直接暴露 PHP-FPM、MySQL 或 PC 容器端口。宝塔负责公网 80/443 和源站证书。
+不要直接暴露 PHP-FPM、MySQL 或 PC 容器端口。外层入口负责公网 80/443、有效证书、Host 与外部 HTTPS scheme 转发。
 
-Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开启代理。Cloudflare 访问宝塔，宝塔再访问本机 `18092`；本方案不需要 Cloudflare Tunnel 容器。
+如使用 Cloudflare，将应用域名的 A/AAAA 记录指向源站并开启代理，再由源站反向代理到本机 `18092`；本方案不要求 Cloudflare Tunnel 容器。
 
-宝塔对应站点的 443 必须安装覆盖 `peanut-admin.007345.xyz` 的有效证书，否则 HTTPS 会落到宝塔默认站点。可使用 Cloudflare Origin CA，也可使用自动续期的 Let's Encrypt 证书；当前生产服务器使用后者。宝塔开启 HTTPS 后，Cloudflare 加密模式固定为 **Full (strict)**，不要使用 Flexible。源站 80/443 应只接受可信来源，且不得绕过 Cloudflare 对外提供服务。
+站点 443 必须安装覆盖实际应用域名的有效证书，否则 HTTPS 可能落到默认站点。可使用 Cloudflare Origin CA，也可使用自动续期的 Let's Encrypt 证书；使用 Cloudflare 时加密模式应为 **Full (strict)**，不要使用 Flexible。源站 80/443 应只接受可信来源，且不得绕过代理策略对外提供服务。
 
-服务器应用域名固定为 `peanut-admin.007345.xyz`。文档站域名 `peanut-admin-doc.007345.xyz` 属于 Cloudflare Pages，不经过宝塔，也不安装 Origin CA 证书；同一个 DNS 名称不能同时指向 Pages 和服务器源站。
+应用与文档站可以使用独立域名或同站分区；若文档站发布到 Cloudflare Pages，它不经过应用服务器，也不安装应用源站证书。同一个 DNS 名称不要同时绑定 Pages 和应用源站。
 
 ## Redis
 
@@ -99,7 +99,7 @@ docker compose --profile redis up -d
 
 ## 可选内置 MySQL
 
-模板默认支持连接外部数据库。当前公网演示服务器无法路由开发局域网的 `192.168.192.2`，所以实际启用内置数据库 profile，并将 `DB_HOST` 设为 `mysql`：
+模板支持连接外部数据库，也支持单机部署的内置数据库 profile。启用内置数据库时将 `DB_HOST` 设为 `mysql`：
 
 ```bash
 docker compose --profile bundled-db up -d --build
@@ -136,8 +136,29 @@ docker compose up -d --no-build
 
 接管会先完整校验历史基线，再登记历史迁移并执行未登记文件。`php` 服务继承镜像工作目录 `/var/www/peanut-admin`，所以命令使用 `server/database/migrate.php`；在 server 工作目录中等价于 `php database/migrate.php`。迁移只处理账本中未登记的文件，并校验 SHA-256；无待执行文件时返回 `up_to_date`。迁移失败时不要启动新容器：MySQL DDL 不能假定事务回滚，应核对已执行结构、备份和失败记录，编写前滚修复后再继续。历史接管命令不可在后续发布中重复执行。
 
+### 回滚停止线
+
+- 数据库迁移只前滚，不提供自动 down migration；不要删除账本记录、改写已登记 SQL，或假定 MySQL DDL 会随事务完整回滚。
+- 只有新迁移对旧应用保持向后兼容时，才可把应用镜像切回上一版本；切回前确认后台任务、缓存和三端静态资源与旧版本匹配。
+- 如果迁移已产生旧应用不能读取的结构或数据，立即停止写流量，不启动旧镜像；只能修复并继续前滚，或恢复发布前同一时点的数据库与 `php-storage` 成对备份。
+- 真实支付、通知或 OAuth 外部状态不能靠数据库恢复撤销；恢复前先停止对应回调/任务并人工对账。
+
 需要严格锁版或回滚时，再使用 release tag；这不是首次部署和日常升级的必需步骤。
 
 `--skip-if-installed` 只避免容器重启时重复执行首次安装，不代替版本化数据库迁移。自动升级管理将在独立运营平台实现前保持手动。
 
 `scripts/package-release.sh` 仅保留为管理端 + PHP 的原生制品工具，不是完整三端生产部署方案。生产环境以 Docker Compose 为唯一推荐入口。
+
+## 品牌与官网发布
+
+首次安装前，脚手架默认品牌来自 `server/config/brand.json` 与 `server/public/brand/`，运行 `node scripts/sync-brand-assets.mjs` 后再构建。安装完成后只通过管理端“应用设置 → 网站设置”修改产品名称、各端 logo/favicon、slogan、版权、官网和 GitHub 地址；不要手改生成文件。
+
+官方网站与文档门户位于 `docs-site/`。发布前以目标站点地址构建 sitemap，并把 `.vitepress/dist/` 交给静态托管平台：
+
+```bash
+cd docs-site
+pnpm install --frozen-lockfile
+PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
+```
+
+域名、Pages 项目名、账号和令牌由目标环境提供，不写入模板默认值。应用网站设置中的 `official_url` 应在站点可访问后再填写。

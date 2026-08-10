@@ -4,7 +4,7 @@
 
 ## 1. 架构与目录
 
-Peanut 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是 server/public/index.php，路由集中在 server/route/app.php。
+Peanut Admin 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是 server/public/index.php，路由集中在 server/route/app.php。
 
 ~~~text
 peanut-admin/
@@ -136,11 +136,14 @@ DB_PASS=按环境配置
 DB_PREFIX=pa_
 JWT_SECRET=至少32位随机字符串
 JWT_EXPIRE=7200
+ADMIN_INITIAL_PASSWORD=仅空库首次安装使用的强密码
 ~~~
 
 DB_TYPE、DB_DRIVER、DB_CHARSET 可按 server/config/database.php 的默认值或环境需要设置。管理端锁定参数可通过 ADMIN_TOKEN_EXPIRE、ADMIN_TOKEN_RENEW_BEFORE、ADMIN_PASSWORD_ERROR_TIMES、ADMIN_LOGIN_LOCK_MINUTES 覆盖 server/config/admin_auth.php 的默认值。
 
 网站、支付、存储、渠道、充值和 OAuth 等业务配置主要保存在 pa_config，由管理端设置页面维护；不要把支付私钥、微信 AppSecret、短信密钥、对象存储 Secret、证书内容或 .env 提交到仓库。生产环境使用独立的密钥注入/文件权限方案，并限制 PHP-FPM 用户读取证书目录。配置修改后如遇旧值，使用管理端系统维护页面清理缓存或按发布流程重启 PHP-FPM。
+
+品牌默认值的唯一安装前入口是 `server/config/brand.json`，源资产在 `server/public/brand/`。克隆后、首次安装前可修改这两处，再运行 `node scripts/sync-brand-assets.mjs` 生成 Web、PC、UniApp/H5 与官网的静态 fallback；CI 使用 `node scripts/sync-brand-assets.mjs --check` 防止漂移。安装完成后，品牌只通过管理端“应用设置 → 网站设置”写入 `pa_config(type=website)`，不要手改生成 JSON、复制核心实现或修改 `vendor/`、`node_modules/`。仓库默认 `official_url` 为空，目标部署应显式填写正式官网地址。
 
 通知验证码由 `NoticeChannelService` 统一读取 `pa_config` 的阿里云/腾讯云凭据并选择唯一启用 Provider，`VerificationCodeService` 不得自行解析配置或实例化驱动。验证码只保存 `password_hash`，内容快照固定为 `****`，Provider 回执只保存白名单字段；当前同步发送不自动重试。通用通知模板、邮件/SMTP 没有产品消费者，不得绕过固定 scene 恢复入口。完整边界见 `docs/architecture/pb07-notification-host-contract.md`。
 

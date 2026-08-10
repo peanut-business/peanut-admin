@@ -18,7 +18,7 @@
 
 | 层 | 技术 |
 |---|---|
-| 后端 | ThinkPHP 8、PHP 8.1+、JWT（firebase/php-jwt） |
+| 后端 | ThinkPHP 8、PHP 8.3、JWT（firebase/php-jwt） |
 | 管理端 | Vue 3、Element Plus、Vite、TypeScript |
 | PC | Nuxt 3、Element Plus |
 | H5 / 小程序 | UniApp |
@@ -108,23 +108,22 @@ peanut-admin/
 
 ## 生产部署
 
-生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。服务器只安装 Git 和 Docker，拉取应用 release、在根目录 `.env` 配置局域网 MySQL 后执行 `docker compose up -d --build`；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。单机演示才使用可选的 `bundled-db` profile。
+生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。服务器只安装 Git 和 Docker，拉取应用 release、在根目录 `.env` 配置可从容器路由的 MySQL 后执行 `docker compose up -d --build`；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。单机部署可使用 `bundled-db` profile。
 
 同一入口分别提供 `/admin/`（管理端静态 SPA）、`/pc/`（Nuxt 静态 SPA）、`/mobile/`（UniApp H5）、`/api/`（ThinkPHP）和 `/storage/`。三个前端都写入各自子目录，不覆盖后端 public 根文件。完整命令、版本范围和首次部署流程见 `docs/peanut-admin-release-deployment.md`。
 
 ## 文档站
 
-独立 VitePress 文档站位于 `docs-site/`，当前发布在 <https://peanut-admin-docs.pages.dev>。构建与 Cloudflare Pages 直接发布使用：
+Peanut Admin 官方网站与文档门户位于 `docs-site/`。站点包含产品首页、能力与场景、快速开始、开发、部署升级、API/扩展、管理员手册和版本信息；构建使用：
 
 ```bash
 cd docs-site
 pnpm install --frozen-lockfile
-pnpm build
-npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --branch=main
+PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
 ```
 
-正式域名为 `peanut-admin-doc.007345.xyz`；Cloudflare Pages 项目名固定为 `peanut-admin-docs`。应用入口使用 `peanut-admin.007345.xyz`，由 Cloudflare 代理到生产服务器。
+`PEANUT_DOCS_SITE_URL` 只用于生成目标环境的 sitemap canonical host；省略时仍可完成本地构建。部署平台、项目名和公开域名由目标环境决定，不作为脚手架默认值提交。
 
 ## 目标架构
 
-管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client 和三端 Docker 基线已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。当前按领域删除重复实现、固定 Host 与测试 owner；PB09 前还必须完成中性脚手架、品牌单一事实源和官网+文档门户门禁。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
+管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime 和官网/文档门户实现已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。PB09 前仍需完成 PB08B 唯一一次正式候选集成验收，并明确应用仓许可证、provenance/clean-room、NOTICE 与第三方清单。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。

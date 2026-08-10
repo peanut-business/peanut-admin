@@ -9,7 +9,7 @@ description: Peanut Admin 本地开发环境的安装与启动步骤。
 
 ## 环境准备
 
-- PHP 8.1 或更高版本（后端要求 PHP 8.0+）。
+- PHP 8.3。
 - Composer。
 - MySQL 8。
 - Node.js 与 pnpm（管理端前端使用）。
@@ -24,7 +24,7 @@ cd peanut-admin
 
 cd server
 cp .env.example .env
-# 编辑 .env，填写 DB_* 和随机 JWT_SECRET
+# 编辑 .env，填写 DB_*、随机 JWT_SECRET 和首次安装用 ADMIN_INITIAL_PASSWORD
 composer install
 cd ..
 ```

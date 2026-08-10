@@ -1,6 +1,6 @@
 # PB08A 脚手架品牌与官方网站合同
 
-> 状态：Implemented（品牌 Runtime、安装与四端消费）；官网门户待实施
+> 状态：Implemented；静态门禁通过，真实浏览器证据并入 PB08B
 >
 > 应用基线：`88da40579f250f24700106bbe331e2706c48044b`
 >
@@ -157,4 +157,8 @@ PB08A 只有在以下条件全部满足后才可标记完成：
 
 空库安装现要求显式 `ADMIN_INITIAL_PASSWORD`，先验证再以随机盐把唯一管理员 seed 在内存中替换，输出不回显秘密；已有库/升级不要求该变量。应用包元数据已改为 Peanut Admin 身份，并因根许可证尚未获批而明确标记 `proprietary/UNLICENSED`。
 
-最低验证已通过：品牌与网站服务聚焦 PHP 测试、安装 bootstrap 测试、变更 PHP/SVG lint、生成资产无漂移、Web/PC/UniApp typecheck、Composer manifest/lock 与 Compose 配置。未执行真实数据库、全量构建或浏览器；这些只在 PB08B 的唯一正式候选验收执行。PB08A 剩余工作是官网/文档门户和配套用户、开发、部署、升级文档。
+此前的最低验证已通过：品牌与网站服务聚焦 PHP 测试、安装 bootstrap 测试、变更 PHP/SVG lint、生成资产无漂移、Web/PC/UniApp typecheck、Composer manifest/lock 与 Compose 配置。未执行真实数据库、全量构建或浏览器；这些只在 PB08B 的唯一正式候选验收执行。
+
+官网与文档门户已完成：`docs-site` 现包含产品首页、能力与场景、文档门户、快速开始、开发、部署升级、API/扩展、管理员手册、版本信息与自定义 404；导航、CTA、搜索和 GitHub 入口统一消费生成品牌 manifest/资产。README、用户手册、开发、部署/升级文档已同步，公开页面不固化历史验收域名、服务器 IP、局域网数据库或过期 PHP 版本。
+
+`PB08A-OFFICIAL-SITE-001` 唯一静态门禁通过：品牌生成检查、VitePress 构建与内部链接、搜索索引、关键页面和 404 产物均成功。按合同未另跑浏览器；官网导航/CTA/搜索/404、管理端登录页、PC 与 H5 默认品牌的桌面/移动真实 Chromium 证据只在 PB08B 执行一次。PB08A 实现至此完成。

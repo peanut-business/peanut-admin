@@ -17,6 +17,7 @@ const manifestTargets = [
   'web/src/generated/brand.json',
   'pc/generated/brand.json',
   'uniapp/src/generated/brand.json',
+  'docs-site/generated/brand.json',
 ]
 const assetNames = [
   'favicon.svg',

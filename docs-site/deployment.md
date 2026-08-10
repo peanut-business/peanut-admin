@@ -1,9 +1,9 @@
 ---
-title: 部署清单
-description: Peanut Admin 生产发布前的配置与检查清单。
+title: 部署与升级
+description: Peanut Admin 的 Docker/原生部署、空库安装、前滚升级与停止线。
 ---
 
-# 部署清单
+# 部署与升级
 
 Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 Git 和 Docker Compose；生产 Compose 在容器内完成 web 管理端、uniapp H5、Nuxt PC、PHP 依赖和服务启动，宿主机不需要 Node.js、PHP 或 Composer。
 
@@ -25,14 +25,14 @@ git clone git@github.com:peanut-business/peanut-admin.git /srv/peanut-admin
 cd /srv/peanut-admin
 cp .env.example .env
 chmod 600 .env
-# 编辑 .env，填写外部数据库地址、账号密码和 JWT_SECRET
+# 编辑 .env，填写数据库、JWT_SECRET；空库还要填写 ADMIN_INITIAL_PASSWORD
 
 docker compose up -d --build
 ```
 
 生产镜像是多阶段构建：web 管理端放到 `server/public/admin/`，uniapp H5 放到 `server/public/mobile/`，Nuxt PC 放到 `server/public/pc/`，API 统一走 `/api/`。PHP 容器入口会自动执行可跳过已安装数据库的安装器。可以连接外部 MySQL，也可以为单机部署启用 `bundled-db`；外部地址必须能从生产服务器实际路由。
 
-当前 `peanut-admin.007345.xyz` 演示部署使用 `bundled-db`，因为公网服务器不能直连开发局域网 `192.168.192.2`。2026-08-11 已完成 24 条迁移账本接管和三端生产 smoke；这不会改变其他部署选择外部 MySQL 的能力。
+外部 MySQL 地址必须能从 PHP 容器实际路由；不要把开发局域网地址写成生产默认值。单机部署可使用 `bundled-db`，多机部署则显式提供数据库主机并在 MySQL 侧限制来源。
 
 默认服务为 PHP-FPM、Nginx 和后端 scheduler。单机演示需要内置 MySQL 时，将 `DB_HOST=mysql` 并启用 `bundled-db` profile；需要 Redis 时显式启用可选 profile：
 
@@ -43,9 +43,9 @@ docker compose --profile redis up -d
 
 Redis 没有应用依赖边，只在明确接入时启用。外部数据库模式必须填写 `DB_HOST`、应用数据库账号密码和 `JWT_SECRET`；`MYSQL_ROOT_PASSWORD` 只在启用 `bundled-db` 时必填。
 
-Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。宝塔面板新增反向代理，目标填写 `http://127.0.0.1:18092`；Cloudflare DNS 对应记录开启代理（橙色云朵）。宝塔站点必须安装覆盖应用域名的有效证书（Cloudflare Origin CA 或自动续期的 Let's Encrypt）并开启 HTTPS，Cloudflare SSL/TLS 模式使用 `Full (strict)`。不要直接暴露 PHP-FPM 或 MySQL。
+Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。使用 Nginx、宝塔或等价入口反向代理到该地址，并为实际应用域名安装有效证书；使用 Cloudflare 时 SSL/TLS 模式采用 `Full (strict)`。不要直接暴露 PHP-FPM 或 MySQL。
 
-`peanut-admin-doc.007345.xyz` 专用于 Cloudflare Pages 文档站，不经过宝塔。服务器应用使用 `peanut-admin.007345.xyz`，避免一个 DNS 名称同时绑定 Pages 和源站。
+文档站若发布到 Cloudflare Pages，不经过应用服务器。应用与文档可使用独立域名或同站分区；同一个 DNS 名称不要同时绑定 Pages 和应用源站。
 
 ## 已有应用升级
 
@@ -67,6 +67,13 @@ PB07 支付切片不新增数据库结构，但微信预支付、退款请求和
 PB07 OAuth/渠道切片会执行 `20260811-oauth-channel-host.sql`，删除旧 `channel` 微信/QQ 九字段和 `oa_setting` 中未实现的 AES 两字段；这些行可能包含敏感凭据，迁移前必须完成数据库备份。迁移不删除当前公众号、小程序、开放平台、菜单、回复、OAuth 身份或会员数据。反向代理必须正确传递外部 HTTPS scheme/Host；微信开放平台登记 `/api/oauth/wechat/redirect/pc`，公众号网页授权登记 `/api/oauth/wechat/redirect/official-account`。只有真实凭据、微信平台域名/白名单和一次低风险回跳通过后，才能声明生产 OAuth 可用；当前封存验收没有调用真实微信。
 
 历史安装第一次进入迁移账本时，把普通迁移命令替换为 `php server/database/migrate.php --adopt-existing`。失败时保持旧容器运行，核对 DDL 实际结果并前滚修复。
+
+### 回滚停止线
+
+- 数据库迁移只前滚，不提供自动 down migration；不要删除账本记录、改写已登记 SQL，或假定 MySQL DDL 会随事务完整回滚。
+- 只有新迁移对旧应用保持向后兼容时，才可把应用镜像切回上一版本；切回前仍需确认后台任务、缓存和三端静态资源与旧版本匹配。
+- 如果迁移已产生旧应用不能读取的结构或数据，立即停止写流量，不启动旧镜像；只能修复并继续前滚，或恢复发布前同一时点的数据库与 `php-storage` 成对备份。
+- 真实支付、通知或 OAuth 外部状态不能靠数据库恢复撤销；恢复前先停止对应回调/任务并人工对账。
 
 ## 原生发布包（备选）
 
@@ -129,6 +136,20 @@ location ^~ /storage/ {
 ```
 
 命令必须来自 `server/config/console.php` 中的显式注册项。
+
+## 品牌与官网发布
+
+首次安装前，脚手架默认品牌来自 `server/config/brand.json` 与 `server/public/brand/`。修改后运行 `node scripts/sync-brand-assets.mjs`，再构建四端和官网；安装完成后只通过管理端“应用设置 → 网站设置”修改 Runtime 品牌，不手改生成 JSON 或静态副本。
+
+官方网站与文档门户位于 `docs-site/`。目标站点地址只在构建时注入，用于 sitemap canonical host：
+
+```bash
+cd docs-site
+pnpm install --frozen-lockfile
+PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
+```
+
+省略 `PEANUT_DOCS_SITE_URL` 仍可本地构建。域名、静态托管项目名、账号和令牌由目标环境提供，不写成模板默认值；站点可访问后再在网站设置中填写 `official_url`。
 
 ## 发布后检查
 
