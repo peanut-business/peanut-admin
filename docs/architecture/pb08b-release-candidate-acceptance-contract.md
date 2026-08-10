@@ -2,13 +2,13 @@
 
 > 状态：Frozen，待执行
 >
-> 当前应用候选：`61d9fb796f920b0982ec286d701cdc31f7ae84ef`
+> 当前应用候选：`aa5349a95b7fe1697895581fd25215b75a259348`
 >
 > 升级起点：`bc2e75ac6217d7defc44cd2b8e0c9e85a7cefc62`
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 当前验收 owner：`PB08B-RC-005`
+> 当前验收 owner：`PB08B-RC-006`
 
 ## 1. 目标与候选定义
 
@@ -122,8 +122,16 @@ RC004 继承 RC001 唯一无缓存 registry/全目标构建，以及 RC003 已�
 
 RC004 fresh bundled-db 启动时，MySQL 最终 healthy，但 PHP 没有对可选 MySQL 的启动依赖边。PHP 安装入口在数据库监听前连续 7 次因 `SQLSTATE[HY000] [2002] Connection refused` 退出；`restart: unless-stopped` 随后让 PHP 成功安装并转为 healthy，但 Compose 启动等待已经失败，Nginx 与 cron 停留在 Created，因此该生产门禁不能接受为成功。一次只读诊断确认 PHP-FPM 配置、安装结果和 MySQL 最终状态正常，根因仅是 bundled-db 启动顺序；浏览器未启动，专用容器、网络、volume 与临时候选目录已清理。
 
-### `PB08B-RC-005` — 当前 owner
+### `PB08B-RC-005` — 官网品牌 404 门禁失败
 
 新候选 `61d9fb796f920b0982ec286d701cdc31f7ae84ef` 只为 PHP 增加 `mysql` 的可选 `service_healthy` 依赖。启用 `bundled-db` profile 时 PHP 必须等待内置 MySQL healthy；未启用时 `required: false` 保持外部数据库部署成立。带与不带 `bundled-db` 的 Compose 解析均已通过；除此之外候选 Runtime、锁文件、Dockerfile、数据库与四端源码和 RC004 相同。
 
 RC005 继承 RC001 唯一无缓存 registry/全目标构建，以及 RC003 已通过的弱密码、24→28 前滚、幂等和升级保留证据；不重跑这些验收。只从既有验证 cache 重建生产装配并重新建立当前空库 Compose，完成 RC02 剩余精确断言、RC03 HTTP/镜像、RC04 静态边界、RC05 唯一桌面/移动浏览器和 RC06 文档一致性。若 build cache miss 重新执行依赖安装，或任何候选断言失败，按停止线处理。
+
+RC005 fresh bundled-db 无重启启动成功，MySQL/PHP/Nginx healthy；当前空库得到 43 表、28 条 `applied`/0 异常账本、唯一 root admin、167 菜单、62 配置与 16/16 品牌值。`/healthz`、`/admin/`、`/pc/`、`/mobile/` 全部 200，品牌 API、镜像静态边界和两包/Host/override 静态边界通过。唯一 Chromium 任务随后证明官网导航、快速开始 CTA、搜索结果与 GitHub href 正常，但未知路径返回 HTTP 404 时渲染 VitePress 默认英文 `PAGE NOT FOUND`，没有渲染仓库 `404.md` 的 Peanut Admin 品牌内容。浏览器任务立即停止，管理端、PC 与 H5 未执行；一次只读诊断确认根级 `404.md` 只是页面模块，未知路由必须由主题级 `NotFound` 接管。RC005 判失败，浏览器和专用容器、网络、volume、临时候选目录均已清理。
+
+### `PB08B-RC-006` — 当前 owner
+
+新候选 `aa5349a95b7fe1697895581fd25215b75a259348` 只新增消费生成品牌 manifest 的 VitePress `NotFound` 组件，并在主题入口注册；静态构建通过，自定义中文标题、首页及文档入口均进入主题 bundle。生产 Runtime、Docker、数据库、锁文件与四端源码和 RC005 相同，因此 RC006 继承 RC005 当前空库、Compose/HTTP、镜像与 Host/override 边界结果，不重复执行。
+
+RC006 只运行一次完整桌面/移动 Chromium：重新覆盖官网导航/CTA/搜索/404 后，在同一任务继续管理端登录与代表只读页、PC 和 H5 默认品牌；随后完成 RC06 文档一致性、生成脱敏 `summary.json` 并清理浏览器/文档预览。任何失败仍按停止线处理。

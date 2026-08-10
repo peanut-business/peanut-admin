@@ -110,6 +110,10 @@ RC003 已越过弱密码、24 条基线、`pc_title`/管理员哨兵、24→28 �
 
 新候选 `61d9fb7…` 只为 PHP 增加 `mysql` 的可选 `service_healthy` 依赖：启用 `bundled-db` 时等待内置数据库，外部数据库模式仍不要求 MySQL service；两种 Compose 解析均通过，其他 Runtime、锁文件、数据库与四端源码未变。当前 owner 为 RC005，继续绑定先前唯一 registry 构建与已通过升级证据，只重建受影响的生产装配并完成当前空库、HTTP/镜像、静态边界、唯一桌面/移动浏览器和文档一致性。
 
+RC005 已证明 bundled-db 无重启启动，MySQL/PHP/Nginx 全部 healthy，当前空库得到 43 表、28 条 applied/0 异常账本、唯一 root admin、167 菜单、62 配置与 16/16 品牌值；四个 HTTP 入口、品牌 API、镜像静态边界和两包/Host/override 边界均通过。唯一浏览器任务中的官网导航、CTA、搜索与 GitHub href 通过，但未知路径渲染 VitePress 默认英文 404，而不是仓库已有品牌页面；任务立即停止，未执行管理端/PC/H5，RC005 判失败并清理全部专用资源。
+
+新候选 `aa5349a…` 只把品牌 404 注册为 VitePress 主题级 `NotFound`；根级 `404.md` 仍保留正常页面模块，不再被误当作未知路由接管机制。官网静态构建通过，自定义中文标题与文档入口进入主题 bundle；生产 Runtime、Docker、数据库、锁文件和四端源码与 RC005 相同。当前 owner 为 RC006，继承 RC005 空库、Compose、HTTP、镜像和边界结果，只执行一次完整桌面/移动 Chromium 与 RC06 文档一致性。
+
 ## 6. 并行规则
 
 - 只读图谱、互不依赖的前后端契约和文档核对可以并行。
