@@ -1,123 +1,141 @@
 <template>
-  <a-drawer
-    :visible="visible"
-    :width="720"
+  <el-drawer
+    v-model="drawerVisible"
+    size="720px"
     :title="`${$t('systemDict.data.title')} - ${typeName}`"
-    :footer="false"
-    unmount-on-close
-    @cancel="$emit('update:visible', false)"
+    destroy-on-close
   >
-    <a-row style="margin-bottom: 16px" justify="space-between">
-      <a-col :span="12">
-        <a-button
+    <el-row style="margin-bottom: 16px" justify="space-between">
+      <el-col :span="12">
+        <el-button
           v-permission="['dict/data/add']"
           type="primary"
           @click="handleAdd"
         >
           <template #icon><icon-plus /></template>
           {{ $t('systemDict.data.create') }}
-        </a-button>
-      </a-col>
-      <a-col :span="10">
-        <a-input-search
+        </el-button>
+      </el-col>
+      <el-col :span="10">
+        <el-input
           v-model="keyword"
-          allow-clear
+          clearable
           :placeholder="$t('systemDict.data.search.placeholder')"
-          @search="() => fetchData(1)"
-          @press-enter="() => fetchData(1)"
+          @keyup.enter="fetchData(1)"
         />
-      </a-col>
-    </a-row>
-    <a-table
-      row-key="id"
-      :loading="loading"
-      :columns="columns"
-      :data="renderData"
-      :pagination="pagination"
-      :bordered="{ cell: true }"
-      @page-change="onPageChange"
-    >
-      <template #is_disable="{ record }">
-        <a-switch
-          v-permission="['dict/data/status']"
-          :model-value="record.is_disable === 0"
-          @change="(v) => handleStatus(record, v as boolean)"
-        />
-      </template>
-      <template #operations="{ record }">
-        <a-space>
-          <a-button
-            v-permission="['dict/data/edit']"
-            type="text"
-            size="small"
-            @click="handleEdit(record)"
-          >
-            {{ $t('systemDict.operation.edit') }}
-          </a-button>
-          <a-popconfirm
-            :content="$t('systemDict.data.delete.confirm')"
-            @ok="handleDelete(record)"
-          >
-            <a-button
-              v-permission="['dict/data/delete']"
-              type="text"
-              status="danger"
+      </el-col>
+    </el-row>
+    <el-table row-key="id" :loading="loading" :data="renderData" border>
+      <el-table-column
+        prop="name"
+        :label="$t('systemDict.data.columns.name')"
+      />
+      <el-table-column
+        prop="value"
+        :label="$t('systemDict.data.columns.value')"
+      />
+      <el-table-column
+        prop="sort"
+        :label="$t('systemDict.data.columns.sort')"
+        width="80"
+      />
+      <el-table-column :label="$t('systemDict.data.columns.status')" width="80"
+        ><template #default="{ row }"
+          ><el-switch
+            v-permission="['dict/data/status']"
+            :model-value="row.is_disable === 0"
+            @change="(v) => handleStatus(row, v as boolean)" /></template
+      ></el-table-column>
+      <el-table-column
+        :label="$t('systemDict.data.columns.operations')"
+        width="140"
+        ><template #default="{ row }"
+          ><el-space
+            ><el-button
+              v-permission="['dict/data/edit']"
+              link
               size="small"
-            >
-              {{ $t('systemDict.operation.delete') }}
-            </a-button>
-          </a-popconfirm>
-        </a-space>
-      </template>
-    </a-table>
+              @click="handleEdit(row)"
+              >{{ $t('systemDict.operation.edit') }}</el-button
+            ><el-popconfirm
+              :title="$t('systemDict.data.delete.confirm')"
+              @confirm="handleDelete(row)"
+              ><template #reference
+                ><el-button
+                  v-permission="['dict/data/delete']"
+                  link
+                  type="danger"
+                  size="small"
+                  >{{ $t('systemDict.operation.delete') }}</el-button
+                ></template
+              ></el-popconfirm
+            ></el-space
+          ></template
+        ></el-table-column
+      >
+    </el-table>
+    <el-pagination
+      v-model:current-page="pagination.current"
+      v-model:page-size="pagination.pageSize"
+      :total="pagination.total"
+      layout="total, prev, pager, next"
+      style="margin-top: 16px; justify-content: flex-end"
+      @current-change="onPageChange"
+    />
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('systemDict.data.modal.editTitle')
           : $t('systemDict.data.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
-      @ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="name" :label="$t('systemDict.data.field.name')">
-          <a-input
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item prop="name" :label="$t('systemDict.data.field.name')">
+          <el-input
             v-model="form.name"
             :placeholder="$t('systemDict.data.field.name.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="value" :label="$t('systemDict.data.field.value')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="value" :label="$t('systemDict.data.field.value')">
+          <el-input
             v-model="form.value"
             :placeholder="$t('systemDict.data.field.value.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="sort" :label="$t('systemDict.data.field.sort')">
-          <a-input-number v-model="form.sort" :min="0" style="width: 160px" />
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('systemDict.data.field.remark')">
-          <a-textarea
+        </el-form-item>
+        <el-form-item prop="sort" :label="$t('systemDict.data.field.sort')">
+          <el-input-number v-model="form.sort" :min="0" style="width: 160px" />
+        </el-form-item>
+        <el-form-item prop="remark" :label="$t('systemDict.data.field.remark')">
+          <el-input
+            type="textarea"
             v-model="form.remark"
             :placeholder="$t('systemDict.data.field.remark.placeholder')"
-            :max-length="255"
+            maxlength="255"
             show-word-limit
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
-  </a-drawer>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="modalVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="submitLoading"
+          @click="handleSubmit"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
+  </el-drawer>
 </template>
 
 <script lang="ts" setup>
   import { computed, ref, reactive, watch } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getDictDataList,
@@ -135,7 +153,11 @@
     typeId: number;
     typeName: string;
   }>();
-  defineEmits<{ (e: 'update:visible', v: boolean): void }>();
+  const emit = defineEmits<{ (e: 'update:visible', v: boolean): void }>();
+  const drawerVisible = computed({
+    get: () => props.visible,
+    set: (value: boolean) => emit('update:visible', value),
+  });
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(false);
@@ -148,22 +170,6 @@
     total: 0,
     showTotal: true,
   });
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemDict.data.columns.name'), dataIndex: 'name' },
-    { title: t('systemDict.data.columns.value'), dataIndex: 'value' },
-    { title: t('systemDict.data.columns.sort'), dataIndex: 'sort', width: 80 },
-    {
-      title: t('systemDict.data.columns.status'),
-      slotName: 'is_disable',
-      width: 80,
-    },
-    {
-      title: t('systemDict.data.columns.operations'),
-      slotName: 'operations',
-      width: 140,
-    },
-  ]);
 
   const fetchData = async (page = 1) => {
     if (!props.typeId) return;
@@ -240,8 +246,8 @@
   };
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       if (isEdit.value) {
@@ -249,7 +255,7 @@
       } else {
         await addDictData({ ...form, type_id: props.typeId });
       }
-      Message.success(t('systemDict.tip.success'));
+      ElMessage.success(t('systemDict.tip.success'));
       modalVisible.value = false;
       await fetchData(pagination.current);
     } finally {
@@ -259,13 +265,13 @@
 
   const handleDelete = async (record: DictDataRecord) => {
     await deleteDictData(record.id);
-    Message.success(t('systemDict.tip.success'));
+    ElMessage.success(t('systemDict.tip.success'));
     await fetchData(pagination.current);
   };
 
   const handleStatus = async (record: DictDataRecord, enabled: boolean) => {
     await updateDictDataStatus(record.id, enabled ? 0 : 1);
     record.is_disable = enabled ? 0 : 1;
-    Message.success(t('systemDict.tip.success'));
+    ElMessage.success(t('systemDict.tip.success'));
   };
 </script>

@@ -1,190 +1,223 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.jobs']" />
-    <a-card class="general-card" :title="$t('menu.system.jobs')">
-      <a-row>
-        <a-col :flex="1">
-          <a-form
-            :model="formModel"
-            :label-col-props="{ span: 6 }"
-            :wrapper-col-props="{ span: 18 }"
-            label-align="left"
-          >
-            <a-row :gutter="16">
-              <a-col :span="8">
-                <a-form-item field="name" :label="$t('systemJobs.form.name')">
-                  <a-input
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.jobs') }}</template>
+      <el-row>
+        <el-col :span="18">
+          <el-form :model="formModel" label-position="left">
+            <el-row :gutter="16">
+              <el-col :span="8">
+                <el-form-item prop="name" :label="$t('systemJobs.form.name')">
+                  <el-input
                     v-model="formModel.name"
-                    allow-clear
+                    clearable
                     :placeholder="$t('systemJobs.form.name.placeholder')"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item field="code" :label="$t('systemJobs.form.code')">
-                  <a-input
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item prop="code" :label="$t('systemJobs.form.code')">
+                  <el-input
                     v-model="formModel.code"
-                    allow-clear
+                    clearable
                     :placeholder="$t('systemJobs.form.code.placeholder')"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="status"
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item
+                  prop="status"
                   :label="$t('systemJobs.form.status')"
                 >
-                  <a-select
+                  <el-select
                     v-model="formModel.status"
-                    allow-clear
-                    :options="statusOptions"
+                    clearable
                     :placeholder="$t('systemJobs.form.status.placeholder')"
-                  />
-                </a-form-item>
-              </a-col>
-            </a-row>
-          </a-form>
-        </a-col>
-        <a-divider style="height: 84px" direction="vertical" />
-        <a-col :flex="'86px'" style="text-align: right">
-          <a-space direction="vertical" :size="18">
-            <a-button type="primary" @click="search">
+                  >
+                    <el-option
+                      v-for="option in statusOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
+        </el-col>
+        <el-divider style="height: 84px" direction="vertical" />
+        <el-col :span="6" style="text-align: right">
+          <el-space direction="vertical" :size="18">
+            <el-button type="primary" @click="search">
               <template #icon><icon-search /></template>
               {{ $t('systemJobs.form.search') }}
-            </a-button>
-            <a-button @click="reset">
+            </el-button>
+            <el-button @click="reset">
               <template #icon><icon-refresh /></template>
               {{ $t('systemJobs.form.reset') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-divider style="margin-top: 0" />
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-space>
-            <a-button
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-divider style="margin-top: 0" />
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-space>
+            <el-button
               v-permission="['jobs/add']"
               type="primary"
               @click="handleAdd"
             >
               <template #icon><icon-plus /></template>
               {{ $t('systemJobs.operation.create') }}
-            </a-button>
-            <a-button @click="openExport">
+            </el-button>
+            <el-button @click="openExport">
               <template #icon><icon-export /></template>
               {{ $t('systemJobs.operation.export') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        @page-change="onPageChange"
-      >
-        <template #status="{ record }">
-          <a-switch
-            v-permission="['jobs/edit']"
-            :model-value="record.status === 1"
-            @change="(v) => handleStatus(record, v as boolean)"
-          />
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-table row-key="id" :loading="loading" :data="renderData" border>
+        <el-table-column
+          prop="id"
+          :label="$t('systemJobs.columns.id')"
+          width="80"
+        />
+        <el-table-column prop="name" :label="$t('systemJobs.columns.name')" />
+        <el-table-column
+          prop="code"
+          :label="$t('systemJobs.columns.code')"
+          width="160"
+        />
+        <el-table-column
+          prop="sort"
+          :label="$t('systemJobs.columns.sort')"
+          width="80"
+        />
+        <el-table-column
+          prop="remark"
+          :label="$t('systemJobs.columns.remark')"
+        />
+        <el-table-column
+          prop="create_time"
+          :label="$t('systemJobs.columns.createTime')"
+          width="180"
+        />
+        <el-table-column :label="$t('systemJobs.columns.status')" width="90"
+          ><template #default="{ row }"
+            ><el-switch
               v-permission="['jobs/edit']"
-              type="text"
-              size="small"
-              @click="handleEdit(record)"
-            >
-              {{ $t('systemJobs.operation.edit') }}
-            </a-button>
-            <a-popconfirm
-              :content="$t('systemJobs.delete.confirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button
-                v-permission="['jobs/delete']"
-                type="text"
-                status="danger"
+              :model-value="row.status === 1"
+              @change="(v) => handleStatus(row, v as boolean)" /></template
+        ></el-table-column>
+        <el-table-column
+          :label="$t('systemJobs.columns.operations')"
+          width="160"
+          ><template #default="{ row }"
+            ><el-space
+              ><el-button
+                v-permission="['jobs/edit']"
+                link
                 size="small"
-              >
-                {{ $t('systemJobs.operation.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+                @click="handleEdit(row)"
+                >{{ $t('systemJobs.operation.edit') }}</el-button
+              ><el-popconfirm
+                :title="$t('systemJobs.delete.confirm')"
+                @confirm="handleDelete(row)"
+                ><template #reference
+                  ><el-button
+                    v-permission="['jobs/delete']"
+                    link
+                    type="danger"
+                    size="small"
+                    >{{ $t('systemJobs.operation.delete') }}</el-button
+                  ></template
+                ></el-popconfirm
+              ></el-space
+            ></template
+          ></el-table-column
+        >
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        layout="total, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="onPageChange"
+      />
+    </el-card>
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('systemJobs.modal.editTitle')
           : $t('systemJobs.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
-      @ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="name" :label="$t('systemJobs.field.name')">
-          <a-input
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item prop="name" :label="$t('systemJobs.field.name')">
+          <el-input
             v-model="form.name"
             :placeholder="$t('systemJobs.field.name.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="code" :label="$t('systemJobs.field.code')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="code" :label="$t('systemJobs.field.code')">
+          <el-input
             v-model="form.code"
             :placeholder="$t('systemJobs.field.code.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="sort" :label="$t('systemJobs.field.sort')">
-          <a-input-number
+        </el-form-item>
+        <el-form-item prop="sort" :label="$t('systemJobs.field.sort')">
+          <el-input-number
             v-model="form.sort"
             :min="0"
             :max="9999"
             style="width: 160px"
           />
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('systemJobs.field.remark')">
-          <a-textarea
+        </el-form-item>
+        <el-form-item prop="remark" :label="$t('systemJobs.field.remark')">
+          <el-input
+            type="textarea"
             v-model="form.remark"
             :placeholder="$t('systemJobs.field.remark.placeholder')"
-            :max-length="200"
+            maxlength="200"
             show-word-limit
           />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('systemJobs.field.status')">
-          <a-switch
+        </el-form-item>
+        <el-form-item prop="status" :label="$t('systemJobs.field.status')">
+          <el-switch
             v-model="form.status"
-            :checked-value="1"
-            :unchecked-value="0"
+            :active-value="1"
+            :inactive-value="0"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="modalVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="submitLoading"
+          @click="handleSubmit"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
 
-    <a-modal
-      v-model:visible="exportVisible"
+    <el-dialog
+      v-model="exportVisible"
       :title="$t('systemJobs.export.title')"
-      :ok-text="$t('systemJobs.export.confirm')"
-      :ok-loading="exportLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="540px"
-      @before-ok="handleExport"
     >
-      <a-spin :loading="exportInfoLoading" style="width: 100%">
-        <a-form :model="exportForm" layout="vertical">
-          <a-alert type="info" style="margin-bottom: 16px">
+      <div v-loading="exportInfoLoading" style="width: 100%">
+        <el-form :model="exportForm" label-position="top">
+          <el-alert type="info" style="margin-bottom: 16px">
             {{
               $t('systemJobs.export.summary', {
                 count: exportInfo.count,
@@ -199,50 +232,61 @@
                 count: exportInfo.all_max_size,
               })
             }}
-          </a-alert>
-          <a-form-item field="page_type" :label="$t('systemJobs.export.range')">
-            <a-radio-group v-model="exportForm.page_type">
-              <a-radio :value="0">{{ $t('systemJobs.export.all') }}</a-radio>
-              <a-radio :value="1">{{ $t('systemJobs.export.pages') }}</a-radio>
-            </a-radio-group>
-          </a-form-item>
-          <a-form-item
+          </el-alert>
+          <el-form-item prop="page_type" :label="$t('systemJobs.export.range')">
+            <el-radio-group v-model="exportForm.page_type">
+              <el-radio :value="0" label="0">{{
+                $t('systemJobs.export.all')
+              }}</el-radio>
+              <el-radio :value="1" label="1">{{
+                $t('systemJobs.export.pages')
+              }}</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item
             v-if="exportForm.page_type === 1"
             :label="$t('systemJobs.export.pageRange')"
           >
-            <a-space>
-              <a-input-number
+            <el-space>
+              <el-input-number
                 v-model="exportForm.page_start"
                 :min="1"
                 :max="exportInfo.sum_page || 1"
               />
               <span>{{ $t('systemJobs.export.to') }}</span>
-              <a-input-number
+              <el-input-number
                 v-model="exportForm.page_end"
                 :min="exportForm.page_start"
                 :max="exportInfo.sum_page || 1"
               />
-            </a-space>
-          </a-form-item>
-          <a-form-item
-            field="file_name"
+            </el-space>
+          </el-form-item>
+          <el-form-item
+            prop="file_name"
             :label="$t('systemJobs.export.fileName')"
           >
-            <a-input v-model="exportForm.file_name" :max-length="100" />
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-modal>
+            <el-input v-model="exportForm.file_name" maxlength="100" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer
+        ><el-button @click="exportVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="exportLoading"
+          @click="handleExport"
+          >{{ $t('systemJobs.export.confirm') }}</el-button
+        ></template
+      >
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, ref, reactive } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { SelectOptionData } from '@arco-design/web-vue/es/select/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getJobsList,
@@ -276,32 +320,9 @@
     showTotal: true,
   });
 
-  const statusOptions = computed<SelectOptionData[]>(() => [
+  const statusOptions = computed(() => [
     { label: t('systemJobs.status.normal'), value: 1 },
     { label: t('systemJobs.status.stopped'), value: 0 },
-  ]);
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemJobs.columns.id'), dataIndex: 'id', width: 80 },
-    { title: t('systemJobs.columns.name'), dataIndex: 'name' },
-    { title: t('systemJobs.columns.code'), dataIndex: 'code', width: 160 },
-    { title: t('systemJobs.columns.sort'), dataIndex: 'sort', width: 80 },
-    { title: t('systemJobs.columns.remark'), dataIndex: 'remark' },
-    {
-      title: t('systemJobs.columns.createTime'),
-      dataIndex: 'create_time',
-      width: 180,
-    },
-    {
-      title: t('systemJobs.columns.status'),
-      slotName: 'status',
-      width: 90,
-    },
-    {
-      title: t('systemJobs.columns.operations'),
-      slotName: 'operations',
-      width: 160,
-    },
   ]);
 
   const fetchData = async (page = 1) => {
@@ -350,8 +371,8 @@
     name: [
       { required: true, message: t('systemJobs.field.name.required') },
       {
-        minLength: 1,
-        maxLength: 50,
+        min: 1,
+        max: 50,
         message: t('systemJobs.field.name.length'),
       },
     ],
@@ -375,8 +396,8 @@
   };
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return false;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return false;
     submitLoading.value = true;
     try {
       if (isEdit.value) {
@@ -384,7 +405,7 @@
       } else {
         await addJobs({ ...form });
       }
-      Message.success(t('systemJobs.tip.success'));
+      ElMessage.success(t('systemJobs.tip.success'));
       modalVisible.value = false;
       await fetchData(pagination.current);
       return true;
@@ -395,7 +416,7 @@
 
   const handleDelete = async (record: JobsRecord) => {
     await deleteJobs(record.id);
-    Message.success(t('systemJobs.tip.success'));
+    ElMessage.success(t('systemJobs.tip.success'));
     await fetchData(pagination.current);
   };
 
@@ -406,7 +427,7 @@
       ? t('systemJobs.status.normal')
       : t('systemJobs.status.stopped');
     record.is_disable = enabled ? 0 : 1;
-    Message.success(t('systemJobs.tip.success'));
+    ElMessage.success(t('systemJobs.tip.success'));
   };
 
   // ---- 两阶段导出 ----
@@ -459,7 +480,7 @@
       exportForm.page_type === 1 &&
       exportForm.page_end < exportForm.page_start
     ) {
-      Message.error(t('systemJobs.export.invalidRange'));
+      ElMessage.error(t('systemJobs.export.invalidRange'));
       return false;
     }
     exportLoading.value = true;
@@ -475,7 +496,8 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
-      Message.success(t('systemJobs.export.success'));
+      ElMessage.success(t('systemJobs.export.success'));
+      exportVisible.value = false;
       return true;
     } finally {
       exportLoading.value = false;

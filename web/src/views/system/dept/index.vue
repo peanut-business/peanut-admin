@@ -1,177 +1,204 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.dept']" />
-    <a-card class="general-card" :title="$t('menu.system.dept')">
-      <a-form :model="queryParams" layout="inline" style="margin-bottom: 16px">
-        <a-form-item field="name" :label="$t('systemDept.search.name')">
-          <a-input
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.dept') }}</template>
+      <el-form :model="queryParams" inline style="margin-bottom: 16px">
+        <el-form-item prop="name" :label="$t('systemDept.search.name')">
+          <el-input
             v-model="queryParams.name"
             :placeholder="$t('systemDept.search.name.placeholder')"
-            allow-clear
-            @press-enter="fetchData"
+            clearable
+            @keyup.enter="fetchData"
           />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('systemDept.search.status')">
-          <a-select
+        </el-form-item>
+        <el-form-item prop="status" :label="$t('systemDept.search.status')">
+          <el-select
             v-model="queryParams.status"
             :placeholder="$t('systemDept.search.status.all')"
-            allow-clear
+            clearable
             style="width: 180px"
           >
-            <a-option :value="1">{{ $t('systemDept.status.normal') }}</a-option>
-            <a-option :value="0">{{ $t('systemDept.status.disabled') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="fetchData">
+            <el-option :value="1" :label="$t('systemDept.status.normal')">{{
+              $t('systemDept.status.normal')
+            }}</el-option>
+            <el-option :value="0" :label="$t('systemDept.status.disabled')">{{
+              $t('systemDept.status.disabled')
+            }}</el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-space>
+            <el-button type="primary" @click="fetchData">
               {{ $t('systemDept.operation.search') }}
-            </a-button>
-            <a-button @click="resetQuery">
+            </el-button>
+            <el-button @click="resetQuery">
               {{ $t('systemDept.operation.reset') }}
-            </a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-space>
-            <a-button
+            </el-button>
+          </el-space>
+        </el-form-item>
+      </el-form>
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-space>
+            <el-button
               v-permission="['dept/add']"
               type="primary"
               @click="handleAdd()"
             >
               <template #icon><icon-plus /></template>
               {{ $t('systemDept.operation.create') }}
-            </a-button>
-            <a-button @click="toggleExpand">
+            </el-button>
+            <el-button @click="toggleExpand">
               {{ $t('systemDept.operation.expand') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-table
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-table
+        :key="isExpanded ? 'expanded' : 'collapsed'"
         row-key="id"
         :loading="loading"
-        :columns="columns"
         :data="renderData"
-        :pagination="false"
-        :bordered="{ cell: true }"
-        v-model:expanded-keys="expandedKeys"
+        border
+        :default-expand-all="isExpanded"
+        :tree-props="{ children: 'children' }"
       >
-        <template #status="{ record }">
-          <a-tag :color="record.status === 1 ? 'green' : 'red'">
-            {{ record.status_desc }}
-          </a-tag>
-        </template>
-        <template #update_time="{ record }">
-          {{ formatTime(record.update_time) }}
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-permission="['dept/add']"
-              type="text"
-              size="small"
-              @click="handleAdd(record)"
-            >
-              {{ $t('systemDept.operation.addChild') }}
-            </a-button>
-            <a-button
-              v-permission="['dept/edit']"
-              type="text"
-              size="small"
-              @click="handleEdit(record)"
-            >
-              {{ $t('systemDept.operation.edit') }}
-            </a-button>
-            <a-popconfirm
-              v-if="record.pid !== 0"
-              :content="$t('systemDept.delete.confirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button
-                v-permission="['dept/delete']"
-                type="text"
-                status="danger"
+        <el-table-column prop="name" :label="$t('systemDept.columns.name')" />
+        <el-table-column :label="$t('systemDept.columns.status')" width="110">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">{{
+              row.status_desc
+            }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="sort"
+          :label="$t('systemDept.columns.sort')"
+          width="100"
+        />
+        <el-table-column
+          :label="$t('systemDept.columns.updateTime')"
+          width="180"
+        >
+          <template #default="{ row }">{{
+            formatTime(row.update_time)
+          }}</template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('systemDept.columns.operations')"
+          width="220"
+        >
+          <template #default="{ row }">
+            <el-space>
+              <el-button
+                v-permission="['dept/add']"
+                link
                 size="small"
+                @click="handleAdd(row)"
+                >{{ $t('systemDept.operation.addChild') }}</el-button
               >
-                {{ $t('systemDept.operation.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+              <el-button
+                v-permission="['dept/edit']"
+                link
+                size="small"
+                @click="handleEdit(row)"
+                >{{ $t('systemDept.operation.edit') }}</el-button
+              >
+              <el-popconfirm
+                v-if="row.pid !== 0"
+                :title="$t('systemDept.delete.confirm')"
+                @confirm="handleDelete(row)"
+              >
+                <template #reference>
+                  <el-button
+                    v-permission="['dept/delete']"
+                    link
+                    type="danger"
+                    size="small"
+                    >{{ $t('systemDept.operation.delete') }}</el-button
+                  >
+                </template>
+              </el-popconfirm>
+            </el-space>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('systemDept.modal.editTitle')
           : $t('systemDept.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
-      @ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item
           v-if="form.pid !== 0"
-          field="pid"
+          prop="pid"
           :label="$t('systemDept.field.pid')"
         >
-          <a-tree-select
+          <el-tree-select
             v-model="form.pid"
             :data="parentTree"
-            :field-names="{ key: 'id', title: 'name', children: 'children' }"
+            :props="{ value: 'id', label: 'name', children: 'children' }"
             :placeholder="$t('systemDept.field.pid.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="name" :label="$t('systemDept.field.name')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="name" :label="$t('systemDept.field.name')">
+          <el-input
             v-model="form.name"
-            :max-length="30"
+            maxlength="30"
             :placeholder="$t('systemDept.field.name.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="leader" :label="$t('systemDept.field.leader')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="leader" :label="$t('systemDept.field.leader')">
+          <el-input
             v-model="form.leader"
-            :max-length="30"
+            maxlength="30"
             :placeholder="$t('systemDept.field.leader.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="mobile" :label="$t('systemDept.field.mobile')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="mobile" :label="$t('systemDept.field.mobile')">
+          <el-input
             v-model="form.mobile"
             :placeholder="$t('systemDept.field.mobile.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="sort" :label="$t('systemDept.field.sort')">
-          <a-input-number
+        </el-form-item>
+        <el-form-item prop="sort" :label="$t('systemDept.field.sort')">
+          <el-input-number
             v-model="form.sort"
             :min="0"
             :max="9999"
             style="width: 160px"
           />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('systemDept.field.status')">
-          <a-switch v-model="form.status" :checked-value="1" :unchecked-value="0" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+        <el-form-item prop="status" :label="$t('systemDept.field.status')">
+          <el-switch
+            v-model="form.status"
+            :active-value="1"
+            :inactive-value="0"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="modalVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"
+          >保存</el-button
+        >
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, ref, reactive } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
-  import type { TreeNodeData } from '@arco-design/web-vue/es/tree/interface';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getDeptList,
@@ -194,26 +221,6 @@
     name: '',
     status: '',
   });
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemDept.columns.name'), dataIndex: 'name' },
-    {
-      title: t('systemDept.columns.status'),
-      slotName: 'status',
-      width: 110,
-    },
-    { title: t('systemDept.columns.sort'), dataIndex: 'sort', width: 100 },
-    {
-      title: t('systemDept.columns.updateTime'),
-      slotName: 'update_time',
-      width: 180,
-    },
-    {
-      title: t('systemDept.columns.operations'),
-      slotName: 'operations',
-      width: 220,
-    },
-  ]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -238,10 +245,7 @@
   };
 
   const collectIds = (nodes: DeptRecord[]): number[] =>
-    nodes.flatMap((node) => [
-      node.id,
-      ...collectIds(node.children || []),
-    ]);
+    nodes.flatMap((node) => [node.id, ...collectIds(node.children || [])]);
 
   const toggleExpand = () => {
     isExpanded.value = !isExpanded.value;
@@ -270,7 +274,7 @@
         name: n.name,
         children: n.children ? strip(n.children) : [],
       }));
-    return strip(deptOptions.value) as unknown as TreeNodeData[];
+    return strip(deptOptions.value);
   });
 
   const loadDeptOptions = async () => {
@@ -301,9 +305,13 @@
     pid: [{ required: true, message: t('systemDept.field.pid.required') }],
     mobile: [
       {
-        validator: (value: string, callback: (error?: string) => void) => {
+        validator: (
+          _rule: unknown,
+          value: string,
+          callback: (error?: string | Error) => void
+        ) => {
           if (!value || /^1[3-9]\d{9}$/.test(value)) callback();
-          else callback(t('systemDept.field.mobile.invalid'));
+          else callback(new Error(t('systemDept.field.mobile.invalid')));
         },
       },
     ],
@@ -331,8 +339,8 @@
   };
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       if (isEdit.value) {
@@ -340,7 +348,7 @@
       } else {
         await addDept(form);
       }
-      Message.success(t('systemDept.tip.success'));
+      ElMessage.success(t('systemDept.tip.success'));
       modalVisible.value = false;
       await fetchData();
     } finally {
@@ -350,7 +358,7 @@
 
   const handleDelete = async (record: DeptRecord) => {
     await deleteDept(record.id);
-    Message.success(t('systemDept.tip.success'));
+    ElMessage.success(t('systemDept.tip.success'));
     await fetchData();
   };
 </script>

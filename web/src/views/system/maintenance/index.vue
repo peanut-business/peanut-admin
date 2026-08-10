@@ -1,127 +1,111 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.maintenance']" />
-    <a-spin :loading="loading" style="width: 100%">
-      <a-row :gutter="16">
-        <a-col :span="12">
-          <a-card
-            class="general-card"
-            :title="$t('systemMaintenance.server.title')"
-          >
-            <a-descriptions :column="1" bordered>
-              <a-descriptions-item
+    <div v-loading="loading" style="width: 100%">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-card class="general-card">
+            <template #header>{{
+              $t('systemMaintenance.server.title')
+            }}</template>
+            <el-descriptions :column="1" bordered>
+              <el-descriptions-item
                 v-for="item in info.server"
                 :key="item.param"
                 :label="item.param"
               >
                 {{ item.value }}
-              </a-descriptions-item>
-            </a-descriptions>
-          </a-card>
-        </a-col>
-        <a-col :span="12">
-          <a-card
-            class="general-card"
-            :title="$t('systemMaintenance.env.title')"
-          >
-            <a-table
-              :data="info.env"
-              :pagination="false"
-              :bordered="{ cell: true }"
-              row-key="option"
-            >
-              <template #columns>
-                <a-table-column
-                  :title="$t('systemMaintenance.env.option')"
-                  data-index="option"
-                />
-                <a-table-column
-                  :title="$t('systemMaintenance.env.require')"
-                  data-index="require"
-                />
-                <a-table-column :title="$t('systemMaintenance.env.status')">
-                  <template #cell="{ record }">
-                    <a-tag :color="record.status ? 'green' : 'red'">
-                      {{
-                        record.status
-                          ? $t('systemMaintenance.status.ok')
-                          : $t('systemMaintenance.status.fail')
-                      }}
-                    </a-tag>
-                  </template>
-                </a-table-column>
-              </template>
-            </a-table>
-          </a-card>
-          <a-card
-            class="general-card"
-            :title="$t('systemMaintenance.auth.title')"
-            style="margin-top: 16px"
-          >
-            <a-table
-              :data="info.auth"
-              :pagination="false"
-              :bordered="{ cell: true }"
-              row-key="dir"
-            >
-              <template #columns>
-                <a-table-column
-                  :title="$t('systemMaintenance.auth.dir')"
-                  data-index="dir"
-                />
-                <a-table-column
-                  :title="$t('systemMaintenance.auth.require')"
-                  data-index="require"
-                />
-                <a-table-column :title="$t('systemMaintenance.env.status')">
-                  <template #cell="{ record }">
-                    <a-tag :color="record.status ? 'green' : 'red'">
-                      {{
-                        record.status
-                          ? $t('systemMaintenance.status.writable')
-                          : $t('systemMaintenance.status.readonly')
-                      }}
-                    </a-tag>
-                  </template>
-                </a-table-column>
-              </template>
-            </a-table>
-          </a-card>
-          <a-card
-            class="general-card"
-            :title="$t('systemMaintenance.cache.title')"
-            style="margin-top: 16px"
-          >
-            <a-space direction="vertical" fill>
-              <a-typography-text type="secondary">
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card class="general-card">
+            <template #header>{{ $t('systemMaintenance.env.title') }}</template>
+            <el-table :data="info.env" border row-key="option">
+              <el-table-column
+                :label="$t('systemMaintenance.env.option')"
+                prop="option"
+              />
+              <el-table-column
+                :label="$t('systemMaintenance.env.require')"
+                prop="require"
+              />
+              <el-table-column :label="$t('systemMaintenance.env.status')">
+                <template #default="{ row: record }">
+                  <el-tag :type="record.status ? 'success' : 'danger'">
+                    {{
+                      record.status
+                        ? $t('systemMaintenance.status.ok')
+                        : $t('systemMaintenance.status.fail')
+                    }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+          <el-card class="general-card" style="margin-top: 16px">
+            <template #header>{{
+              $t('systemMaintenance.auth.title')
+            }}</template>
+            <el-table :data="info.auth" border row-key="dir">
+              <el-table-column
+                :label="$t('systemMaintenance.auth.dir')"
+                prop="dir"
+              />
+              <el-table-column
+                :label="$t('systemMaintenance.auth.require')"
+                prop="require"
+              />
+              <el-table-column :label="$t('systemMaintenance.env.status')">
+                <template #default="{ row: record }">
+                  <el-tag :type="record.status ? 'success' : 'danger'">
+                    {{
+                      record.status
+                        ? $t('systemMaintenance.status.writable')
+                        : $t('systemMaintenance.status.readonly')
+                    }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+          <el-card class="general-card" style="margin-top: 16px">
+            <template #header>{{
+              $t('systemMaintenance.cache.title')
+            }}</template>
+            <el-space direction="vertical" fill>
+              <el-text type="info">
                 {{ $t('systemMaintenance.cache.desc') }}
-              </a-typography-text>
-              <a-popconfirm
-                :content="$t('systemMaintenance.cache.confirm')"
-                @ok="handleClearCache"
+              </el-text>
+              <el-popconfirm
+                :title="$t('systemMaintenance.cache.confirm')"
+                @confirm="handleClearCache"
               >
-                <a-button
-                  v-permission="['system/clearcache']"
-                  type="primary"
-                  status="warning"
-                  :loading="clearing"
+                <template #reference
+                  ><el-button
+                    v-permission="['system/clearcache']"
+                    type="primary"
+                    plain
+                    :loading="clearing"
+                  >
+                    <template #icon><icon-delete /></template>
+                    {{ $t('systemMaintenance.cache.clear') }}
+                  </el-button></template
                 >
-                  <template #icon><icon-delete /></template>
-                  {{ $t('systemMaintenance.cache.clear') }}
-                </a-button>
-              </a-popconfirm>
-            </a-space>
-          </a-card>
-        </a-col>
-      </a-row>
-    </a-spin>
+              </el-popconfirm>
+            </el-space>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getSystemInfo,
@@ -156,7 +140,7 @@
     clearing.value = true;
     try {
       await clearSystemCache();
-      Message.success(t('systemMaintenance.cache.success'));
+      ElMessage.success(t('systemMaintenance.cache.success'));
     } finally {
       clearing.value = false;
     }

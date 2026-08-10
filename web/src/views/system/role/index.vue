@@ -1,169 +1,220 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.role']" />
-    <a-card class="general-card" :title="$t('menu.system.role')">
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-space>
-            <a-button
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.role') }}</template>
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-space>
+            <el-button
               v-permission="['role/add']"
               type="primary"
               @click="handleAdd"
             >
               <template #icon><icon-plus /></template>
               {{ $t('systemRole.operation.create') }}
-            </a-button>
-            <a-button @click="fetchData(pagination.current)">
+            </el-button>
+            <el-button @click="fetchData(pagination.current)">
               <template #icon><icon-refresh /></template>
               {{ $t('systemRole.operation.refresh') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
 
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        @page-change="onPageChange"
-        @page-size-change="onPageSizeChange"
-      >
-        <template #create_time="{ record }">
-          {{ formatTime(record.create_time) }}
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-permission="['role/edit']"
-              type="text"
-              size="small"
-              @click="handleEdit(record)"
-            >
-              {{ $t('systemRole.operation.edit') }}
-            </a-button>
-            <a-button
-              v-permission="['role/edit']"
-              type="text"
-              size="small"
-              @click="handleAuth(record)"
-            >
-              {{ $t('systemRole.operation.permission') }}
-            </a-button>
-            <a-popconfirm
-              :content="$t('systemRole.delete.confirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button
-                v-permission="['role/delete']"
-                type="text"
-                status="danger"
+      <el-table row-key="id" :loading="loading" :data="renderData" border>
+        <el-table-column
+          prop="id"
+          :label="$t('systemRole.columns.id')"
+          width="80"
+        />
+        <el-table-column
+          prop="name"
+          :label="$t('systemRole.columns.name')"
+          width="150"
+        />
+        <el-table-column
+          prop="desc"
+          :label="$t('systemRole.columns.desc')"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="sort"
+          :label="$t('systemRole.columns.sort')"
+          width="90"
+        />
+        <el-table-column
+          prop="num"
+          :label="$t('systemRole.columns.num')"
+          width="120"
+        />
+        <el-table-column
+          :label="$t('systemRole.columns.createTime')"
+          width="180"
+        >
+          <template #default="{ row }">{{
+            formatTime(row.create_time)
+          }}</template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('systemRole.columns.operations')"
+          width="220"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-space>
+              <el-button
+                v-permission="['role/edit']"
+                link
                 size="small"
+                @click="handleEdit(row)"
+                >{{ $t('systemRole.operation.edit') }}</el-button
               >
-                {{ $t('systemRole.operation.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+              <el-button
+                v-permission="['role/edit']"
+                link
+                size="small"
+                @click="handleAuth(row)"
+                >{{ $t('systemRole.operation.permission') }}</el-button
+              >
+              <el-popconfirm
+                :title="$t('systemRole.delete.confirm')"
+                @confirm="handleDelete(row)"
+              >
+                <template #reference
+                  ><el-button
+                    v-permission="['role/delete']"
+                    link
+                    type="danger"
+                    size="small"
+                    >{{ $t('systemRole.operation.delete') }}</el-button
+                  ></template
+                >
+              </el-popconfirm>
+            </el-space>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        :page-sizes="[10, 15, 30, 50]"
+        layout="total, sizes, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="onPageChange"
+        @size-change="onPageSizeChange"
+      />
+    </el-card>
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('systemRole.modal.editTitle')
           : $t('systemRole.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
-      @before-ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="name" :label="$t('systemRole.field.name')">
-          <a-input
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item prop="name" :label="$t('systemRole.field.name')">
+          <el-input
             v-model="form.name"
             :placeholder="$t('systemRole.field.name.placeholder')"
-            allow-clear
+            clearable
           />
-        </a-form-item>
-        <a-form-item field="desc" :label="$t('systemRole.field.desc')">
-          <a-textarea
+        </el-form-item>
+        <el-form-item prop="desc" :label="$t('systemRole.field.desc')">
+          <el-input
+            type="textarea"
             v-model="form.desc"
             :placeholder="$t('systemRole.field.desc.placeholder')"
-            :auto-size="{ minRows: 4, maxRows: 6 }"
-            :max-length="200"
+            :autosize="{ minRows: 4, maxRows: 6 }"
+            maxlength="200"
             show-word-limit
           />
-        </a-form-item>
-        <a-form-item field="sort" :label="$t('systemRole.field.sort')">
-          <a-input-number
+        </el-form-item>
+        <el-form-item prop="sort" :label="$t('systemRole.field.sort')">
+          <el-input-number
             v-model="form.sort"
             :min="0"
             :max="9999"
             style="width: 160px"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="modalVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="submitLoading"
+          @click="handleSubmit"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
 
-    <a-modal
-      v-model:visible="authVisible"
+    <el-dialog
+      v-model="authVisible"
       :title="$t('systemRole.modal.authTitle')"
-      :ok-loading="authSubmitLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="560px"
-      @before-ok="handleAuthSubmit"
-      @cancel="authVisible = false"
     >
-      <a-spin :loading="authLoading" style="width: 100%">
+      <div v-loading="authLoading" style="width: 100%">
         <div class="auth-toolbar">
-          <a-checkbox
+          <el-checkbox
             :model-value="expandedKeys.length > 0"
             @change="handleExpandAll"
           >
             {{ $t('systemRole.auth.expand') }}
-          </a-checkbox>
-          <a-checkbox
-            :model-value="isAllChecked"
-            @change="handleSelectAll"
-          >
+          </el-checkbox>
+          <el-checkbox :model-value="isAllChecked" @change="handleSelectAll">
             {{ $t('systemRole.auth.selectAll') }}
-          </a-checkbox>
-          <a-checkbox
-            v-model="parentLinked"
-            @change="handleLinkageChange"
-          >
+          </el-checkbox>
+          <el-checkbox v-model="parentLinked" @change="handleLinkageChange">
             {{ $t('systemRole.auth.parentLinked') }}
-          </a-checkbox>
+          </el-checkbox>
         </div>
         <div class="auth-tree">
-          <a-tree
-            v-model:expanded-keys="expandedKeys"
-            :checked-keys="authCheckedKeys"
-            :half-checked-keys="authHalfCheckedKeys"
+          <el-tree
+            :key="treeRenderKey"
+            :default-expanded-keys="expandedKeys"
+            :default-checked-keys="authCheckedKeys"
             :data="treeData"
-            :field-names="{ key: 'id', title: 'name', children: 'children' }"
-            checkable
+            node-key="id"
+            :props="{ label: 'name', children: 'children' }"
+            show-checkbox
             check-strictly
-            @check="handleAuthCheck"
+            @node-expand="handleTreeExpand"
+            @node-collapse="handleTreeCollapse"
+            @check="
+              (data, checked) =>
+                handleAuthCheck(checked.checkedKeys, {
+                  checked: checked.checked,
+                  node: data,
+                })
+            "
           />
         </div>
-      </a-spin>
-    </a-modal>
+      </div>
+      <template #footer
+        ><el-button @click="authVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="authSubmitLoading"
+          @click="handleAuthSubmit"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { TreeNodeData } from '@arco-design/web-vue/es/tree/interface';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import { getMenuAll, type MenuRecord } from '@/api/system/menu';
   import {
@@ -181,7 +232,7 @@
   type CheckboxValue = boolean | Array<string | number | boolean>;
   type AuthCheckEvent = {
     checked?: boolean;
-    node?: TreeNodeData & { id?: number };
+    node?: MenuRecord & { id?: number };
   };
 
   const { t } = useI18n();
@@ -195,30 +246,6 @@
     showTotal: true,
     showPageSize: true,
   });
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemRole.columns.id'), dataIndex: 'id', width: 80 },
-    { title: t('systemRole.columns.name'), dataIndex: 'name', width: 150 },
-    {
-      title: t('systemRole.columns.desc'),
-      dataIndex: 'desc',
-      ellipsis: true,
-      tooltip: true,
-    },
-    { title: t('systemRole.columns.sort'), dataIndex: 'sort', width: 90 },
-    { title: t('systemRole.columns.num'), dataIndex: 'num', width: 120 },
-    {
-      title: t('systemRole.columns.createTime'),
-      slotName: 'create_time',
-      width: 180,
-    },
-    {
-      title: t('systemRole.columns.operations'),
-      slotName: 'operations',
-      width: 220,
-      fixed: 'right',
-    },
-  ]);
 
   const fetchData = async (page = 1) => {
     setLoading(true);
@@ -291,8 +318,8 @@
   };
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return false;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return false;
 
     submitLoading.value = true;
     try {
@@ -307,7 +334,7 @@
       } else {
         await addRole(payload);
       }
-      Message.success(t('systemRole.tip.success'));
+      ElMessage.success(t('systemRole.tip.success'));
       modalVisible.value = false;
       await fetchData(pagination.current);
       return true;
@@ -318,7 +345,7 @@
 
   const handleDelete = async (record: RoleRecord) => {
     await deleteRole(record.id);
-    Message.success(t('systemRole.tip.success'));
+    ElMessage.success(t('systemRole.tip.success'));
     await fetchData(pagination.current);
   };
 
@@ -327,9 +354,7 @@
   const authLoading = ref(false);
   const authSubmitLoading = ref(false);
   const menuTree = ref<MenuRecord[]>([]);
-  const treeData = computed(
-    () => menuTree.value as unknown as TreeNodeData[]
-  );
+  const treeData = computed(() => menuTree.value);
   const parentLinked = ref(true);
   const expandedKeys = ref<number[]>([]);
   const authCheckedKeys = ref<number[]>([]);
@@ -341,6 +366,30 @@
     sort: 0,
     menu_id: [],
   });
+
+  // Element Plus exposes default tree state as initialization-only props. Re-key
+  // the tree whenever our controlled permission state changes so the toolbar
+  // actions (expand/select all) and linkage mode stay reflected in the UI.
+  const treeRenderKey = computed(
+    () =>
+      `${parentLinked.value}-${expandedKeys.value.join(
+        ','
+      )}-${authCheckedKeys.value.join(',')}-${authHalfCheckedKeys.value.join(
+        ','
+      )}`
+  );
+
+  const handleTreeExpand = (data: MenuRecord) => {
+    const id = Number(data.id);
+    if (!expandedKeys.value.includes(id)) {
+      expandedKeys.value = [...expandedKeys.value, id];
+    }
+  };
+
+  const handleTreeCollapse = (data: MenuRecord) => {
+    const id = Number(data.id);
+    expandedKeys.value = expandedKeys.value.filter((key) => key !== id);
+  };
 
   const allMenuIds = computed(() => {
     const ids: number[] = [];
@@ -469,8 +518,7 @@
         children.length > 0 &&
         children.every((child) => checkedSet.has(child.id));
       const hasCheckedChild = children.some(
-        (child) =>
-          checkedSet.has(child.id) || halfCheckedSet.has(child.id)
+        (child) => checkedSet.has(child.id) || halfCheckedSet.has(child.id)
       );
 
       if (allChildrenChecked) {
@@ -543,7 +591,7 @@
       new Set([...authCheckedKeys.value, ...authHalfCheckedKeys.value])
     );
     if (menuIds.length === 0) {
-      Message.warning(t('systemRole.tip.permissionRequired'));
+      ElMessage.warning(t('systemRole.tip.permissionRequired'));
       return false;
     }
 
@@ -556,7 +604,7 @@
         sort: authForm.sort,
         menu_id: menuIds,
       });
-      Message.success(t('systemRole.tip.success'));
+      ElMessage.success(t('systemRole.tip.success'));
       authVisible.value = false;
       await fetchData(pagination.current);
       return true;

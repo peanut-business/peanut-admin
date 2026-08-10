@@ -1,217 +1,265 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.crontab']" />
-    <a-card class="general-card" :title="$t('menu.system.crontab')">
-      <a-row>
-        <a-col :flex="1">
-          <a-form
-            :model="formModel"
-            :label-col-props="{ span: 6 }"
-            :wrapper-col-props="{ span: 18 }"
-            label-align="left"
-          >
-            <a-row :gutter="16">
-              <a-col :span="8">
-                <a-form-item
-                  field="name"
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.crontab') }}</template>
+      <el-row>
+        <el-col :span="18">
+          <el-form :model="formModel" label-position="left">
+            <el-row :gutter="16">
+              <el-col :span="8">
+                <el-form-item
+                  prop="name"
                   :label="$t('systemCrontab.form.name')"
                 >
-                  <a-input
+                  <el-input
                     v-model="formModel.name"
-                    allow-clear
+                    clearable
                     :placeholder="$t('systemCrontab.form.name.placeholder')"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item
-                  field="status"
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item
+                  prop="status"
                   :label="$t('systemCrontab.form.status')"
                 >
-                  <a-select
+                  <el-select
                     v-model="formModel.status"
-                    allow-clear
-                    :options="statusOptions"
+                    clearable
                     :placeholder="$t('systemCrontab.form.status.placeholder')"
-                  />
-                </a-form-item>
-              </a-col>
-            </a-row>
-          </a-form>
-        </a-col>
-        <a-divider style="height: 56px" direction="vertical" />
-        <a-col :flex="'86px'" style="text-align: right">
-          <a-space direction="vertical" :size="18">
-            <a-button type="primary" @click="search">
+                  >
+                    <el-option
+                      v-for="option in statusOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
+        </el-col>
+        <el-divider style="height: 56px" direction="vertical" />
+        <el-col :span="6" style="text-align: right">
+          <el-space direction="vertical" :size="18">
+            <el-button type="primary" @click="search">
               <template #icon><icon-search /></template>
               {{ $t('systemCrontab.form.search') }}
-            </a-button>
-            <a-button @click="reset">
+            </el-button>
+            <el-button @click="reset">
               <template #icon><icon-refresh /></template>
               {{ $t('systemCrontab.form.reset') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-divider style="margin-top: 0" />
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-button
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-divider style="margin-top: 0" />
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-button
             v-permission="['crontab/add']"
             type="primary"
             @click="handleAdd"
           >
             <template #icon><icon-plus /></template>
             {{ $t('systemCrontab.operation.create') }}
-          </a-button>
-        </a-col>
-      </a-row>
-      <a-table
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        @page-change="onPageChange"
-      >
-        <template #status="{ record }">
-          <a-tag :color="statusColor(record.status)">
-            {{ record.status_desc }}
-          </a-tag>
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-if="record.status !== 1"
-              v-permission="['crontab/operate']"
-              type="text"
-              size="small"
-              @click="handleOperate(record, 'start')"
-            >
-              {{ $t('systemCrontab.operation.start') }}
-            </a-button>
-            <a-button
-              v-else
-              v-permission="['crontab/operate']"
-              type="text"
-              size="small"
-              status="warning"
-              @click="handleOperate(record, 'stop')"
-            >
-              {{ $t('systemCrontab.operation.stop') }}
-            </a-button>
-            <a-button
-              v-permission="['crontab/edit']"
-              type="text"
-              size="small"
-              @click="handleEdit(record)"
-            >
-              {{ $t('systemCrontab.operation.edit') }}
-            </a-button>
-            <a-popconfirm
-              :content="$t('systemCrontab.delete.confirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button
-                v-permission="['crontab/delete']"
-                type="text"
-                status="danger"
+          </el-button>
+        </el-col>
+      </el-row>
+      <el-table row-key="id" :loading="loading" :data="renderData" border>
+        <el-table-column
+          prop="id"
+          :label="$t('systemCrontab.columns.id')"
+          width="70"
+        />
+        <el-table-column
+          prop="name"
+          :label="$t('systemCrontab.columns.name')"
+        />
+        <el-table-column
+          prop="command"
+          :label="$t('systemCrontab.columns.command')"
+        />
+        <el-table-column
+          prop="expression"
+          :label="$t('systemCrontab.columns.expression')"
+        />
+        <el-table-column :label="$t('systemCrontab.columns.status')" width="90"
+          ><template #default="{ row }"
+            ><el-tag :type="statusColor(row.status) as any">{{
+              row.status_desc
+            }}</el-tag></template
+          ></el-table-column
+        >
+        <el-table-column
+          prop="last_time"
+          :label="$t('systemCrontab.columns.lastTime')"
+          width="170"
+        />
+        <el-table-column
+          prop="time"
+          :label="$t('systemCrontab.columns.time')"
+          width="90"
+        />
+        <el-table-column
+          prop="max_time"
+          :label="$t('systemCrontab.columns.maxTime')"
+          width="90"
+        />
+        <el-table-column
+          prop="error"
+          :label="$t('systemCrontab.columns.error')"
+          width="180"
+        />
+        <el-table-column
+          :label="$t('systemCrontab.columns.operations')"
+          width="220"
+          ><template #default="{ row }"
+            ><el-space
+              ><el-button
+                v-if="row.status !== 1"
+                v-permission="['crontab/operate']"
+                link
                 size="small"
-              >
-                {{ $t('systemCrontab.operation.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
-    <a-modal
-      v-model:visible="modalVisible"
+                @click="handleOperate(row, 'start')"
+                >{{ $t('systemCrontab.operation.start') }}</el-button
+              ><el-button
+                v-else
+                v-permission="['crontab/operate']"
+                link
+                type="warning"
+                size="small"
+                @click="handleOperate(row, 'stop')"
+                >{{ $t('systemCrontab.operation.stop') }}</el-button
+              ><el-button
+                v-permission="['crontab/edit']"
+                link
+                size="small"
+                @click="handleEdit(row)"
+                >{{ $t('systemCrontab.operation.edit') }}</el-button
+              ><el-popconfirm
+                :title="$t('systemCrontab.delete.confirm')"
+                @confirm="handleDelete(row)"
+                ><template #reference
+                  ><el-button
+                    v-permission="['crontab/delete']"
+                    link
+                    type="danger"
+                    size="small"
+                    >{{ $t('systemCrontab.operation.delete') }}</el-button
+                  ></template
+                ></el-popconfirm
+              ></el-space
+            ></template
+          ></el-table-column
+        >
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        layout="total, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="onPageChange"
+      />
+    </el-card>
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('systemCrontab.modal.editTitle')
           : $t('systemCrontab.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="640px"
-      @ok="handleSubmit"
-      @cancel="modalVisible = false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="name" :label="$t('systemCrontab.field.name')">
-          <a-input
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item prop="name" :label="$t('systemCrontab.field.name')">
+          <el-input
             v-model="form.name"
             :placeholder="$t('systemCrontab.field.name.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="command" :label="$t('systemCrontab.field.command')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="command" :label="$t('systemCrontab.field.command')">
+          <el-input
             v-model="form.command"
             :placeholder="$t('systemCrontab.field.command.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="params" :label="$t('systemCrontab.field.params')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="params" :label="$t('systemCrontab.field.params')">
+          <el-input
             v-model="form.params"
             :placeholder="$t('systemCrontab.field.params.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="sort" :label="$t('systemCrontab.field.sort')">
-          <a-input-number v-model="form.sort" :min="0" style="width: 160px" />
-        </a-form-item>
-        <a-form-item
-          field="expression"
+        </el-form-item>
+        <el-form-item prop="sort" :label="$t('systemCrontab.field.sort')">
+          <el-input-number v-model="form.sort" :min="0" style="width: 160px" />
+        </el-form-item>
+        <el-form-item
+          prop="expression"
           :label="$t('systemCrontab.field.expression')"
         >
-          <a-input-group style="width: 100%">
-            <a-input
-              v-model="form.expression"
-              :placeholder="$t('systemCrontab.field.expression.placeholder')"
-            />
-            <a-button
-              v-permission="['crontab/expression']"
-              @click="previewExpression"
+          <el-input
+            v-model="form.expression"
+            :placeholder="$t('systemCrontab.field.expression.placeholder')"
+          >
+            <template #append
+              ><el-button
+                v-permission="['crontab/expression']"
+                @click="previewExpression"
+                >{{ $t('systemCrontab.field.preview') }}</el-button
+              ></template
             >
-              {{ $t('systemCrontab.field.preview') }}
-            </a-button>
-          </a-input-group>
-        </a-form-item>
-        <a-form-item
+          </el-input>
+        </el-form-item>
+        <el-form-item
           v-if="previewList.length"
           :label="$t('systemCrontab.field.nextRuns')"
         >
           <ul class="preview-list">
             <li v-for="p in previewList" :key="p.time">{{ p.date }}</li>
           </ul>
-        </a-form-item>
-        <a-form-item field="status" :label="$t('systemCrontab.field.status')">
-          <a-radio-group v-model="form.status">
-            <a-radio :value="1">{{ $t('systemCrontab.status.start') }}</a-radio>
-            <a-radio :value="2">{{ $t('systemCrontab.status.stop') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('systemCrontab.field.remark')">
-          <a-textarea
+        </el-form-item>
+        <el-form-item prop="status" :label="$t('systemCrontab.field.status')">
+          <el-radio-group v-model="form.status">
+            <el-radio :value="1" label="1">{{
+              $t('systemCrontab.status.start')
+            }}</el-radio>
+            <el-radio :value="2" label="2">{{
+              $t('systemCrontab.status.stop')
+            }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item prop="remark" :label="$t('systemCrontab.field.remark')">
+          <el-input
+            type="textarea"
             v-model="form.remark"
             :placeholder="$t('systemCrontab.field.remark.placeholder')"
-            :max-length="255"
+            maxlength="255"
             show-word-limit
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="modalVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="submitLoading"
+          @click="handleSubmit"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { SelectOptionData } from '@arco-design/web-vue/es/select/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getCrontabList,
@@ -244,43 +292,14 @@
     showTotal: true,
   });
 
-  const statusOptions = computed<SelectOptionData[]>(() => [
+  const statusOptions = computed(() => [
     { label: t('systemCrontab.status.start'), value: 1 },
     { label: t('systemCrontab.status.stop'), value: 2 },
     { label: t('systemCrontab.status.error'), value: 3 },
   ]);
 
   const statusColor = (status: CrontabStatus) =>
-    ({ 1: 'green', 2: 'gray', 3: 'red' }[status] || 'gray');
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemCrontab.columns.id'), dataIndex: 'id', width: 70 },
-    { title: t('systemCrontab.columns.name'), dataIndex: 'name' },
-    { title: t('systemCrontab.columns.command'), dataIndex: 'command' },
-    { title: t('systemCrontab.columns.expression'), dataIndex: 'expression' },
-    { title: t('systemCrontab.columns.status'), slotName: 'status', width: 90 },
-    {
-      title: t('systemCrontab.columns.lastTime'),
-      dataIndex: 'last_time',
-      width: 170,
-    },
-    { title: t('systemCrontab.columns.time'), dataIndex: 'time', width: 90 },
-    {
-      title: t('systemCrontab.columns.maxTime'),
-      dataIndex: 'max_time',
-      width: 90,
-    },
-    {
-      title: t('systemCrontab.columns.error'),
-      dataIndex: 'error',
-      width: 180,
-    },
-    {
-      title: t('systemCrontab.columns.operations'),
-      slotName: 'operations',
-      width: 220,
-    },
-  ]);
+    ({ 1: 'success', 2: 'info', 3: 'danger' }[status] || 'info');
 
   const fetchData = async (page = 1) => {
     setLoading(true);
@@ -365,7 +384,7 @@
 
   const previewExpression = async () => {
     if (!form.expression) {
-      Message.warning(t('systemCrontab.field.expression.required'));
+      ElMessage.warning(t('systemCrontab.field.expression.required'));
       return;
     }
     const { data } = await getCrontabExpression(form.expression);
@@ -373,13 +392,13 @@
       previewList.value = data;
     } else {
       previewList.value = [];
-      Message.error(t('systemCrontab.tip.badExpression'));
+      ElMessage.error(t('systemCrontab.tip.badExpression'));
     }
   };
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       if (isEdit.value) {
@@ -387,7 +406,7 @@
       } else {
         await addCrontab(form);
       }
-      Message.success(t('systemCrontab.tip.success'));
+      ElMessage.success(t('systemCrontab.tip.success'));
       modalVisible.value = false;
       await fetchData(pagination.current);
     } finally {
@@ -397,7 +416,7 @@
 
   const handleDelete = async (record: CrontabRecord) => {
     await deleteCrontab(record.id);
-    Message.success(t('systemCrontab.tip.success'));
+    ElMessage.success(t('systemCrontab.tip.success'));
     await fetchData(pagination.current);
   };
 
@@ -406,7 +425,7 @@
     operate: 'start' | 'stop'
   ) => {
     await operateCrontab(record.id, operate);
-    Message.success(t('systemCrontab.tip.success'));
+    ElMessage.success(t('systemCrontab.tip.success'));
     await fetchData(pagination.current);
   };
 </script>
