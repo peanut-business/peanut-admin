@@ -1,14 +1,14 @@
 # PB08B 正式候选集成验收合同
 
-> 状态：Frozen，待执行
+> 状态：RC007 已失败；RC008 待冻结
 >
-> 当前应用候选：`c93445f7cdc97a28a195849bc96a02f05cd7dbc3`
+> 最近验收候选：`c93445f7cdc97a28a195849bc96a02f05cd7dbc3`（RC007 文档一致性失败）
 >
 > 升级起点：`bc2e75ac6217d7defc44cd2b8e0c9e85a7cefc62`
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 当前验收 owner：`PB08B-RC-007`
+> 当前验收 owner：待冻结 `PB08B-RC-008`
 
 ## 1. 目标与候选定义
 
@@ -138,8 +138,12 @@ RC006 只运行一次完整桌面/移动 Chromium：重新覆盖官网导航/CTA
 
 RC006 唯一 Chromium 再次在未知路径看到默认英文 404，并立即停止；管理端、PC 与 H5 未执行。一次只读诊断确认 VitePress 1.6 默认 Layout 的 `VPContent` 自行渲染内置 NotFound，顶层 `Theme.NotFound` 已弃用且不会覆盖 Layout 的 `not-found` slot。浏览器、失败截图、专用容器、网络、volume 和临时候选目录均已清理。
 
-### `PB08B-RC-007` — 当前 owner
+### `PB08B-RC-007` — 文档一致性失败
 
 新候选 `c93445f7cdc97a28a195849bc96a02f05cd7dbc3` 只包装 VitePress 默认 Layout，并通过其 `not-found` slot 注入 RC006 已构建的品牌组件；静态构建和主题 bundle 检查通过。生产 Runtime、Docker、数据库、锁文件与四端源码仍和 RC005 相同，继续继承 RC005 当前空库、Compose/HTTP、镜像与 Host/override 边界结果。
 
 RC007 只运行一次完整桌面/移动 Chromium：官网导航/CTA/搜索/品牌 404、管理端登录与代表只读页、PC、H5；随后完成 RC06 文档一致性、生成脱敏 `summary.json` 并清理浏览器/文档预览与专用运行资源。任何失败仍按停止线处理。
+
+RC007 的唯一 Chromium 已完整通过：桌面官网导航、关键 CTA、本地搜索、GitHub href 与品牌 404 正常；390×844 移动官网的折叠导航、文档分组、快速开始和品牌 404 正常；管理端显示默认 logo/name/slogan/favicon，以本次随机密码登录后打开文章管理只读页；PC 显示默认 name/logo/favicon 并打开资讯页；H5 从“我的”进入公开“关于我们”页，显示默认 logo/name/slogan 与页面标题。所有应用请求返回 200，唯一 404 是合同指定的未知官网路由。
+
+随后的 RC06 一致性核对发现两个同源文档缺陷：根 README 仍把数据库基线写成历史 24 条 migrations，而候选、合同与实时数据库均为 28；根 README 和官网快速开始还要求已有库按文件名手工执行 SQL，绕开已冻结的 `server/database/migrate.php` 账本、SHA-256 校验和历史接管停止线。该结果属于候选文档门禁失败，不得用浏览器通过覆盖。一次只读诊断后 RC007 判失败，未生成 `summary.json`；浏览器、文档预览、专用容器、网络、volume、未提交截图和临时候选目录均已清理。下一候选只允许修正上述 README/快速开始事实并同步状态记录；不得重跑 RC007 已通过的浏览器或 RC001–RC005 继承门禁。
