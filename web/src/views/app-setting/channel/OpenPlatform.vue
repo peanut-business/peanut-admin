@@ -1,56 +1,62 @@
 <template>
-  <a-spin :loading="loading" style="width: 100%">
-    <a-alert v-if="!canView" type="warning">
+  <div v-loading="loading" class="channel-panel">
+    <el-alert v-if="!canView" type="warning" :closable="false">
       {{ $t('channel.officialAccount.permissionDenied') }}
-    </a-alert>
-    <a-form
+    </el-alert>
+    <el-form
       v-else
       ref="formRef"
       :model="form"
       :rules="rules"
-      layout="vertical"
+      label-position="top"
       style="max-width: 560px; margin-top: 16px"
     >
-      <a-alert type="info" :show-icon="true" style="margin-bottom: 16px">
+      <el-alert
+        type="info"
+        show-icon
+        :closable="false"
+        style="margin-bottom: 16px"
+      >
         {{ $t('channel.openPlatform.notice') }}
-      </a-alert>
-      <a-form-item field="app_id" label="AppID">
-        <a-input
+      </el-alert>
+      <el-form-item prop="app_id" label="AppID">
+        <el-input
           v-model="form.app_id"
-          :max-length="128"
+          :maxlength="128"
           :placeholder="$t('channel.field.appid.placeholder')"
         />
-      </a-form-item>
-      <a-form-item field="app_secret" label="AppSecret">
-        <a-input-password
+      </el-form-item>
+      <el-form-item prop="app_secret" label="AppSecret">
+        <el-input
           v-model="form.app_secret"
-          :max-length="255"
+          type="password"
+          show-password
+          :maxlength="255"
           :placeholder="
             form.app_secret_configured
               ? $t('channel.officialAccount.secretMaskedPlaceholder')
               : $t('channel.field.secret.placeholder')
           "
         />
-      </a-form-item>
-      <a-form-item>
-        <a-button
+      </el-form-item>
+      <el-form-item>
+        <el-button
           v-permission="['setting/open-platform/save']"
           type="primary"
           :loading="submitLoading"
           @click="handleSubmit"
         >
           {{ $t('channel.operation.save') }}
-        </a-button>
-      </a-form-item>
-    </a-form>
-  </a-spin>
+        </el-button>
+      </el-form-item>
+    </el-form>
+  </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage, type FormInstance } from 'element-plus';
   import { hasPermission } from '@/hooks/permission';
   import {
     getOpenPlatformConfig,
@@ -70,9 +76,7 @@
     app_secret_configured: false,
   });
   const rules = {
-    app_id: [
-      { required: true, message: t('channel.field.appid.required') },
-    ],
+    app_id: [{ required: true, message: t('channel.field.appid.required') }],
     app_secret: [
       { required: true, message: t('channel.field.secret.required') },
     ],
@@ -91,8 +95,8 @@
   onMounted(fetchData);
 
   const handleSubmit = async () => {
-    const errors = await formRef.value?.validate();
-    if (errors) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       const data: OpenPlatformConfigForm = {
@@ -101,12 +105,18 @@
       };
       await saveOpenPlatformConfig(data);
       await fetchData();
-      Message.success(t('channel.tip.success'));
+      ElMessage.success(t('channel.tip.success'));
     } finally {
       submitLoading.value = false;
     }
   };
 </script>
+
+<style scoped>
+  .channel-panel {
+    min-height: 160px;
+  }
+</style>
 
 <script lang="ts">
   export default { name: 'OpenPlatform' };
