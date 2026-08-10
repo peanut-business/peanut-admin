@@ -2,7 +2,7 @@
   <div v-if="!appStore.navbar" class="fixed-settings" @click="setVisible">
     <el-button type="primary">
       <template #icon>
-        <Settings />
+        <Setting />
       </template>
     </el-button>
   </div>
@@ -27,7 +27,7 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
   import { ElMessage } from 'element-plus';
-  import { Settings } from '@element-plus/icons-vue';
+  import { Setting } from '@element-plus/icons-vue';
   import { useI18n } from 'vue-i18n';
   import { useClipboard } from '@vueuse/core';
   import { useAppStore } from '@/store';
