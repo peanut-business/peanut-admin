@@ -68,7 +68,7 @@ Docker 多阶段构建一次完成：
 4. 安装后端 Composer 生产依赖并运行 PHP-FPM。
 5. 由 Nginx 统一暴露 `/admin/`、`/mobile/`、`/pc/`、`/api/` 和 `/storage/`。
 
-三个静态客户端只写入自己的目录，不覆盖后端 public 根文件。生产宿主机只需要 Git、Docker 和 Compose；Node、PHP、Composer 均由构建或运行容器提供。宝塔反代 `127.0.0.1:18092`，Cloudflare 代理服务器域名。
+三个静态客户端只写入自己的目录，不覆盖后端 public 根文件。生产宿主机只需要 Git、Docker 和 Compose；Node、PHP、Composer 均由构建或运行容器提供。反向代理、回环端口和公开域名由目标部署环境显式配置，不作为脚手架默认值。
 
 ## 6. 迁移顺序
 
@@ -80,7 +80,7 @@ Docker 多阶段构建一次完成：
 6. [已完成 2026-08-11] PB03 已固定核心通用能力、应用产品 Module、唯一实现、Host/override、测试 owner 和逐领域停止线。
 7. [已完成 2026-08-11] 系统基础设施 PB04、会员/财务 PB05、内容/装修 PB06、通知/支付/OAuth/渠道 PB07 均固定应用唯一 Host；核心相邻候选无采用授权且语义不等价。OAuth 使用固定 API callback bridge，旧 Channel/AES 写入口退出。
 8. [已完成 2026-08-11] PB08A 中性脚手架、品牌单一事实源和官网+文档门户实现及静态门禁。
-9. [进行中] 按 `docs/architecture/pb08b-release-candidate-acceptance-contract.md` 执行唯一正式候选集成验收。
-10. PB08B 与许可证/provenance 门禁完成后进入 PB09；PB09 完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
+9. [已完成 2026-08-11] PB08B 唯一正式候选集成验收通过；脱敏总摘要见 `output/playwright/pb08b/summary.json`。
+10. [待决策] 明确应用许可证/provenance、根 `LICENSE`、`NOTICE` 与第三方清单后才进入 PB09；PB09 完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
 
 SaaS 多租户仍是 `docs/design/saas-roadmap/` 中的路线图，不属于当前发布能力。
