@@ -51,7 +51,7 @@ axios.interceptors.response.use(
         [40100].includes(res.code) &&
         response.config.url !== '/api/user/info'
       ) {
-        void ElMessageBox.confirm(
+        ElMessageBox.confirm(
           'You have been logged out, you can cancel to stay on this page, or log in again',
           'Confirm logout',
           {

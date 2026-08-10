@@ -21,7 +21,7 @@
             v-for="item in flatCategories"
             :key="item.id"
             :value="item.id"
-            :label="`${'　'.repeat(item.depth)}${item.name}`"
+            :label="`${'\u3000'.repeat(item.depth)}${item.name}`"
           />
         </el-select>
         <el-select v-model="source" style="width: 140px" @change="refresh">
