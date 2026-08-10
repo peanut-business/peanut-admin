@@ -42,7 +42,7 @@
 | PB05 | 会员与财务域收口 | 已完成 | `user_money` 权威字段、唯一余额/流水 writer、充值回调防重和退款单次扣款由应用 Host 与测试 owner 固定 |
 | PB06 | 内容与装修域收口 | 已完成 | 应用 Module 唯一拥有文章、分类、素材引用与移动/PC/Tabbar 装修；四端共用一个读取 DTO |
 | PB07 | 通知、渠道、支付与 OAuth 域收口 | 已完成 | 四个验证码 scene、支付状态机、OAuth 身份绑定、固定回跳和外部渠道均由应用唯一 Host 与测试 owner 固定 |
-| PB08A | 脚手架产品化与官方网站 | 待开始 | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；桌面/移动一次验收 |
+| PB08A | 脚手架产品化与官方网站 | 进行中（合同已冻结） | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；桌面/移动一次验收 |
 | PB08B | 正式候选集成验收 | 待开始 | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致 |
 | PB09 | 发布正式基线 | 待开始 | `dev` 合入并推送 `main`；版本与发布记录完整 |
 | SAAS01 | SaaS 多租户实现 | 后续独立阶段 | PB09 后按 `docs/design/saas-roadmap/` 重新冻结执行契约 |
@@ -91,6 +91,8 @@ PB03–PB07 完成后先执行 PB08A：
 5. 只做一次桌面/移动真实浏览器验收：导航、关键 CTA、搜索/链接、404、四端默认品牌和登录页。
 
 已登记的输入包括 UniApp `pages.json`、PC/UniApp fallback 中的小写 `peanut`、固定 `/static/logo.png` 和泛化“感谢使用本产品”文案；PB03 不修改这些文件。PB08A 与 PB08B 都通过并同步用户手册、开发、部署和升级文档后，才能进入 PB09。
+
+PB08A 执行合同见 `docs/architecture/pb08a-brand-scaffold-official-site-contract.md`。当前已冻结：继续扩展应用 `WebsiteConfigService + pa_config(type=website)` 作为唯一可变 Runtime；仓库 bootstrap manifest 只拥有安装前/静态构建默认值；空库安装必须显式提供合格的 `ADMIN_INITIAL_PASSWORD` 且不得回显；品牌 Runtime、安装、四端消费、官网依次串行实施。官网调研已记录 Vben Admin、Ant Design Pro、Arco Design Pro、SoybeanAdmin 与 Pure Admin 的官方来源，只吸收信息架构和交付完整性。PB08A 不另跑浏览器，最终桌面/移动 Chromium 与 PB08B 合并为唯一一次验收。
 
 ## 6. 并行规则
 
