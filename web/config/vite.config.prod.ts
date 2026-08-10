@@ -2,7 +2,6 @@ import { mergeConfig } from 'vite';
 import baseConfig from './vite.config.base';
 import configCompressPlugin from './plugin/compress';
 import configVisualizerPlugin from './plugin/visualizer';
-import configArcoResolverPlugin from './plugin/arcoResolver';
 
 export default mergeConfig(
   {
@@ -10,13 +9,12 @@ export default mergeConfig(
     plugins: [
       configCompressPlugin('gzip'),
       configVisualizerPlugin(),
-      configArcoResolverPlugin(),
     ],
     build: {
       rollupOptions: {
         output: {
           manualChunks: {
-            arco: ['@arco-design/web-vue'],
+            element: ['element-plus', '@element-plus/icons-vue'],
             chart: ['echarts', 'vue-echarts'],
             vue: ['vue', 'vue-router', 'pinia', '@vueuse/core', 'vue-i18n'],
           },

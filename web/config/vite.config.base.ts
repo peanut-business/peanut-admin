@@ -3,7 +3,6 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import svgLoader from 'vite-svg-loader';
-import configArcoStyleImportPlugin from './plugin/arcoStyleImport';
 
 export default defineConfig({
   // The admin SPA is published below server/public/admin in every environment.
@@ -12,7 +11,6 @@ export default defineConfig({
     vue(),
     vueJsx(),
     svgLoader({ svgoConfig: {} }),
-    configArcoStyleImportPlugin(),
   ],
   resolve: {
     alias: [
