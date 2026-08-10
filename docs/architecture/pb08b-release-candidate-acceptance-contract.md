@@ -8,7 +8,7 @@
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 当前验收 owner：`PB08B-RC-003`
+> 当前验收状态：`PB08B-RC-003` 候选失败，待修复后冻结新候选/owner
 
 ## 1. 目标与候选定义
 
@@ -106,6 +106,10 @@ RC002 继续使用相同实现候选，不重复 RC01 无缓存/registry 验收�
 
 RC002 的缓存镜像重建 40 个步骤命中 cache，未重复 registry 安装；弱密码零写入、43 表/24 条账本基线安装通过，精确停在 `baseline_brand_presence`。一次只读诊断列出旧库 website 键：旧基线只有 `web_logo/web_favicon/login_image/shop_name/shop_logo/pc_logo/pc_title/pc_ico/pc_desc/pc_keywords/h5_favicon`，没有 `website/name`。因此失败来自验收脚本错误假定新字段已存在，不是升级 Runtime 失败；尚未执行 24→28 迁移、当前空库、HTTP 或浏览器。专用资源已再次清理。
 
-### `PB08B-RC-003` — 当前 owner
+### `PB08B-RC-003` — Nginx 健康门禁失败
 
 RC003 继续绑定同一实现候选和 RC01 唯一构建。数据库哨兵改用旧基线确定存在的 `website/pc_title`，并在升级后同时验证该自定义值保持不变、Runtime `/api/index/config` 仍补齐完整规范 DTO；不得预先插入当前新增 website 字段来伪造升级输入。其余逐断言 stage、现有 salt 密码摘要、cache-only 镜像恢复和清理规则沿用 RC002。
+
+RC003 的缓存镜像恢复再次 40 步命中 cache。弱密码零写入、43 表/24 条账本基线、`pc_title` 与管理员摘要哨兵、24→28 前滚、无初始密码的 `--skip-if-installed`、幂等迁移及哨兵保留均越过逐项断言；随后生产 Compose 的 MySQL 与 PHP 健康，但 Nginx healthcheck 持续失败，候选在 `fresh_nginx_health` 停止，后续当前空库精确计数/品牌、HTTP 总矩阵和浏览器未执行。
+
+一次只读诊断确认 Nginx 本身已监听且宿主机 `/healthz` 返回 200；容器内 healthcheck 的 `wget http://127.0.0.1/healthz` 实际被运行环境代理重定向到 `127.0.0.1:7890`，连接拒绝。当前 Compose healthcheck 没有显式禁用代理，因而在带透明/注入代理的 Docker 环境产生假阴性。该问题属于生产健康门禁缺陷，候选 `0459494…` 判失败；必须最小修复 healthcheck 的 loopback 直连语义，冻结新实现候选和 owner 后再执行未完成矩阵。RC003 未启动浏览器，专用资源已清理。
