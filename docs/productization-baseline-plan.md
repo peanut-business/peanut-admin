@@ -102,6 +102,8 @@ PB08B 执行合同见 `docs/architecture/pb08b-release-candidate-acceptance-cont
 
 PB08B RC001 的唯一无缓存 registry/生产构建通过，弱密码零写入与 24 条账本基线安装也成功；首版 shell 在哨兵准备阶段因预期失败 trap 和粗粒度 stage 无法定位断言，清理后不足以判定候选。一次只读诊断排除旧库 salt 字段宽度问题。当前 owner 更新为 RC002：继承同一候选 RC01 结果，不重复无缓存构建，只从验证 cache 重建镜像并用逐断言 stage 完成尚未通过的数据库、Docker 与唯一浏览器矩阵。
 
+RC002 精确证明旧 24 条基线不存在 `website/name`，所以使用该新字段作为“已有品牌”哨兵的前提错误；缓存重建、弱密码零写入和基线安装均通过，候选仍未执行升级。当前 owner 更新为 RC003：改用旧基线确定存在的 `website/pc_title` 作为保留哨兵，升级后另由公开配置 API 证明完整规范 DTO；继续禁止重复 RC01 registry 构建。
+
 ## 6. 并行规则
 
 - 只读图谱、互不依赖的前后端契约和文档核对可以并行。

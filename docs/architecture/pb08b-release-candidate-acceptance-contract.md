@@ -8,7 +8,7 @@
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 当前验收 owner：`PB08B-RC-002`
+> 当前验收 owner：`PB08B-RC-003`
 
 ## 1. 目标与候选定义
 
@@ -100,6 +100,12 @@ PB08B 只有在 RC01–RC06 同一候选全部通过、`summary.json` 完整、�
 - 随后的基线哨兵准备阶段失败。一次只读诊断确认旧基线 `pa_admin.salt` 是 `VARCHAR(16)`，排除字段宽度推断；但首版 shell 把预期弱密码非零退出也接入全局 `ERR` trap，并把多条哨兵断言共用一个粗粒度 stage。专用数据库已按合同清理，现有证据不能定位是哪条编排断言失败，因此 RC001 不形成数据库通过/候选失败结论。
 - 未执行当前空库、升级、浏览器或 PB09；专用容器、网络、volume、镜像已删除，临时候选目录移入废纸篓。
 
-### `PB08B-RC-002` — 当前 owner
+### `PB08B-RC-002` — 旧品牌哨兵前提错误，候选未判失败
 
 RC002 继续使用相同实现候选，不重复 RC01 无缓存/registry 验收。允许从已验证构建 cache 重建同摘要镜像；若 cache miss 导致重新访问 registry 或重新执行依赖安装，则停止并先修订本记录。数据库编排必须为预期弱密码失败临时禁用 `ERR` trap，并在账本计数、哨兵写入、升级、保留值、幂等、空库与 HTTP 断言前分别设置唯一 stage；管理员密码哨兵复用旧行现有 salt，只更新由该 salt 计算的摘要，不修改 salt 字段。
+
+RC002 的缓存镜像重建 40 个步骤命中 cache，未重复 registry 安装；弱密码零写入、43 表/24 条账本基线安装通过，精确停在 `baseline_brand_presence`。一次只读诊断列出旧库 website 键：旧基线只有 `web_logo/web_favicon/login_image/shop_name/shop_logo/pc_logo/pc_title/pc_ico/pc_desc/pc_keywords/h5_favicon`，没有 `website/name`。因此失败来自验收脚本错误假定新字段已存在，不是升级 Runtime 失败；尚未执行 24→28 迁移、当前空库、HTTP 或浏览器。专用资源已再次清理。
+
+### `PB08B-RC-003` — 当前 owner
+
+RC003 继续绑定同一实现候选和 RC01 唯一构建。数据库哨兵改用旧基线确定存在的 `website/pc_title`，并在升级后同时验证该自定义值保持不变、Runtime `/api/index/config` 仍补齐完整规范 DTO；不得预先插入当前新增 website 字段来伪造升级输入。其余逐断言 stage、现有 salt 密码摘要、cache-only 镜像恢复和清理规则沿用 RC002。

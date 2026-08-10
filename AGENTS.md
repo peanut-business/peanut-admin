@@ -57,7 +57,7 @@
 - PB06 已完成：文章/分类/收藏/计数与移动/PC/Tabbar 装修形成应用唯一 Runtime；产品资源保留 Provider provenance，四端共用唯一装修读取 DTO
 - PB07 已完成：通知、支付、OAuth 与外部渠道均固定应用唯一 Host；旧 Channel CRUD、重复凭据和未实现的公众号 AES 配置入口已退出，PC/公众号通过固定 API bridge 回跳；核心相邻候选未获下游采用授权
 - PB08A 实现已完成：品牌单一 Runtime、中性安装默认、四端消费、包元数据、官网与文档门户均已落地；静态官网门禁通过，唯一桌面/移动 Chromium 验收归 PB08B
-- PB08B 正式候选合同已冻结；RC001 无缓存 registry/生产构建通过但数据库编排证据不足，当前按 `PB08B-RC-002` 继承同一候选并执行逐断言数据库、Docker 和唯一桌面/移动 Chromium 验收
+- PB08B 正式候选合同已冻结；RC001 无缓存 registry/生产构建通过，RC002 发现旧基线不存在 `website/name`；当前按 `PB08B-RC-003` 改用旧库 `website/pc_title` 哨兵并执行逐断言数据库、Docker 和唯一桌面/移动 Chromium 验收
 - PB08B 通过且许可证/provenance 门禁解决后才可进入 PB09
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
 - 产品化阶段通过后才将 `dev` 合入 `main`；SaaS 作为后续独立目标
