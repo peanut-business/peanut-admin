@@ -111,7 +111,7 @@
             ><el-switch
               v-permission="['jobs/edit']"
               :model-value="row.status === 1"
-              @change="(v) => handleStatus(row, v as boolean)" /></template
+              @change="(v: string | number | boolean) => handleStatus(row, v as boolean)" /></template
         ></el-table-column>
         <el-table-column
           :label="$t('systemJobs.columns.operations')"

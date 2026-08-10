@@ -48,7 +48,7 @@
           <template #default="{ row }">
             <el-switch
               :model-value="row.is_disable === 0"
-              @change="(v) => handleStatus(row, v as boolean)"
+              @change="(v: string | number | boolean) => handleStatus(row, v as boolean)"
             />
           </template>
         </el-table-column>

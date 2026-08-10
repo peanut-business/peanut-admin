@@ -125,7 +125,7 @@
               v-permission="['admin/edit']"
               :model-value="row.disable === 0"
               :disabled="isProtected(row)"
-              @change="(value) => handleStatus(row, value as boolean)"
+              @change="(value: string | number | boolean) => handleStatus(row, value as boolean)"
             /><el-tag
               v-if="row.root === 1"
               type="warning"

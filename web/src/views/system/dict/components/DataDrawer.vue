@@ -44,7 +44,7 @@
           ><el-switch
             v-permission="['dict/data/status']"
             :model-value="row.is_disable === 0"
-            @change="(v) => handleStatus(row, v as boolean)" /></template
+            @change="(v: string | number | boolean) => handleStatus(row, v as boolean)" /></template
       ></el-table-column>
       <el-table-column
         :label="$t('systemDict.data.columns.operations')"

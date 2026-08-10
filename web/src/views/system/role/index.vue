@@ -187,13 +187,7 @@
             check-strictly
             @node-expand="handleTreeExpand"
             @node-collapse="handleTreeCollapse"
-            @check="
-              (data, checked) =>
-                handleAuthCheck(checked.checkedKeys, {
-                  checked: checked.checked,
-                  node: data,
-                })
-            "
+            @check="handleTreeCheck"
           />
         </div>
       </div>
@@ -233,6 +227,10 @@
   type AuthCheckEvent = {
     checked?: boolean;
     node?: MenuRecord & { id?: number };
+  };
+  type AuthTreeCheckedInfo = {
+    checked: boolean;
+    checkedKeys: Array<number | string>;
   };
 
   const { t } = useI18n();
@@ -557,6 +555,16 @@
     updateAncestors(node, checkedSet, halfCheckedSet);
     authCheckedKeys.value = orderKeys(checkedSet);
     authHalfCheckedKeys.value = orderKeys(halfCheckedSet);
+  };
+
+  const handleTreeCheck = (
+    data: MenuRecord,
+    checked: AuthTreeCheckedInfo
+  ) => {
+    handleAuthCheck(checked.checkedKeys, {
+      checked: checked.checked,
+      node: data,
+    });
   };
 
   const handleLinkageChange = (value: CheckboxValue) => {
