@@ -9,6 +9,8 @@ use app\common\model\article\ArticleCate;
 use app\common\service\ConfigService;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
+use app\common\service\config\PaConfigWebsiteStore;
+use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
 
@@ -18,16 +20,7 @@ class IndexLogic extends BaseLogic
     public static function getConfigData(): array
     {
         $domain    = request()->domain();
-        $website = [
-            'shop_name' => (string)ConfigService::get('website', 'shop_name', ''),
-            'shop_logo' => FileService::getFileUrl((string)ConfigService::get('website', 'shop_logo', '')),
-            'pc_logo' => FileService::getFileUrl((string)ConfigService::get('website', 'pc_logo', '')),
-            'pc_title' => (string)ConfigService::get('website', 'pc_title', ''),
-            'pc_ico' => FileService::getFileUrl((string)ConfigService::get('website', 'pc_ico', '')),
-            'pc_desc' => (string)ConfigService::get('website', 'pc_desc', ''),
-            'pc_keywords' => (string)ConfigService::get('website', 'pc_keywords', ''),
-            'h5_favicon' => FileService::getFileUrl((string)ConfigService::get('website', 'h5_favicon', '')),
-        ];
+        $website = self::websiteService()->get();
         $loginWayRaw = ConfigService::get('login', 'login_way', '[1,2]');
         $loginWay = is_array($loginWayRaw) ? $loginWayRaw : json_decode((string)$loginWayRaw, true);
         if (!is_array($loginWay)) {
@@ -59,6 +52,15 @@ class IndexLogic extends BaseLogic
             'theme'    => DecorationReadService::pageByType(DecorationEnum::SYSTEM_THEME),
             'version'  => '1.0.0',
         ];
+    }
+
+    private static function websiteService(): WebsiteConfigService
+    {
+        return new WebsiteConfigService(
+            new PaConfigWebsiteStore(),
+            static fn(string $value): string => FileService::getFileUrl($value),
+            static fn(string $value): string => FileService::setFileUrl($value),
+        );
     }
 
     private static function copyright(): array

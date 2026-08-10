@@ -10,18 +10,22 @@ use InvalidArgumentException;
 final class WebsiteConfigService
 {
     private const FIELDS = [
-        'name' => '',
-        'web_favicon' => '',
-        'web_logo' => '',
-        'login_image' => '',
-        'shop_name' => '',
-        'shop_logo' => '',
-        'pc_logo' => '',
-        'pc_title' => '',
-        'pc_ico' => '',
-        'pc_desc' => '',
-        'pc_keywords' => '',
-        'h5_favicon' => '',
+        'name',
+        'web_favicon',
+        'web_logo',
+        'login_image',
+        'shop_name',
+        'shop_logo',
+        'pc_logo',
+        'pc_title',
+        'pc_ico',
+        'pc_desc',
+        'pc_keywords',
+        'h5_favicon',
+        'slogan',
+        'copyright',
+        'official_url',
+        'github_url',
     ];
 
     private const IMAGE_FIELDS = [
@@ -42,20 +46,41 @@ final class WebsiteConfigService
         'pc_desc' => 500,
         'pc_keywords' => 500,
         'h5_favicon' => 500,
+        'slogan' => 160,
+        'copyright' => 200,
+        'official_url' => 500,
+        'github_url' => 500,
     ];
+
+    private const URL_FIELDS = ['official_url', 'github_url'];
+
+    /** @var array<string, string> */
+    private array $defaults;
 
     public function __construct(
         private WebsiteConfigStore $store,
         private Closure $urlForRead,
         private Closure $urlForStorage,
-    ) {}
+        ?array $defaults = null,
+    ) {
+        $defaults ??= BrandDefaults::website();
+        if (array_keys($defaults) !== self::FIELDS) {
+            throw new InvalidArgumentException('品牌默认字段与网站配置合同不一致');
+        }
+        foreach ($defaults as $value) {
+            if (!is_string($value)) {
+                throw new InvalidArgumentException('品牌默认字段必须是字符串');
+            }
+        }
+        $this->defaults = $defaults;
+    }
 
     /** @return array<string, string> */
     public function get(): array
     {
         $stored = $this->store->read();
         $result = [];
-        foreach (self::FIELDS as $field => $default) {
+        foreach ($this->defaults as $field => $default) {
             $value = is_string($stored[$field] ?? null) ? $stored[$field] : $default;
             $result[$field] = $this->isImage($field)
                 ? (string)($this->urlForRead)($value)
@@ -67,7 +92,7 @@ final class WebsiteConfigService
     public function save(array $params): void
     {
         $normalized = [];
-        foreach (self::FIELDS as $field => $default) {
+        foreach ($this->defaults as $field => $default) {
             $raw = $params[$field] ?? $default;
             if (!is_string($raw)) {
                 throw new InvalidArgumentException($this->label($field) . '格式错误');
@@ -78,6 +103,9 @@ final class WebsiteConfigService
             }
             if (mb_strlen($value) > self::MAX_LENGTHS[$field]) {
                 throw new InvalidArgumentException($this->label($field) . '长度超出限制');
+            }
+            if (in_array($field, self::URL_FIELDS, true) && !$this->validUrl($value)) {
+                throw new InvalidArgumentException($this->label($field) . '必须是 HTTP(S) URL');
             }
             $normalized[$field] = $this->isImage($field)
                 ? (string)($this->urlForStorage)($value)
@@ -90,12 +118,22 @@ final class WebsiteConfigService
     /** @return list<string> */
     public static function fields(): array
     {
-        return array_keys(self::FIELDS);
+        return self::FIELDS;
     }
 
     private function isImage(string $field): bool
     {
         return in_array($field, self::IMAGE_FIELDS, true);
+    }
+
+    private function validUrl(string $value): bool
+    {
+        if ($value === '') {
+            return true;
+        }
+        $scheme = strtolower((string)parse_url($value, PHP_URL_SCHEME));
+        return in_array($scheme, ['http', 'https'], true)
+            && filter_var($value, FILTER_VALIDATE_URL) !== false;
     }
 
     private function label(string $field): string
@@ -104,6 +142,8 @@ final class WebsiteConfigService
             'name' => '网站名称',
             'shop_name' => '商城名称',
             'pc_title' => 'PC 页面标题',
+            'official_url' => '官网地址',
+            'github_url' => 'GitHub 地址',
             default => '网站配置字段 ' . $field,
         };
     }

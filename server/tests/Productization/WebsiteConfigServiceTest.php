@@ -61,7 +61,7 @@ $service = new WebsiteConfigService(
 $result = $service->get();
 expect(array_keys($result) === WebsiteConfigService::fields(), 'read must expose only fixed fields');
 expect($result['web_logo'] === 'read:logo.png', 'read mapper must handle image fields');
-expect($result['pc_desc'] === '', 'missing optional fields must use their default');
+expect($result['pc_desc'] === 'Peanut Admin 全端管理脚手架', 'missing fields must use the bootstrap default');
 
 $service->save(validPayload());
 expect($store->attempts === 1, 'valid save must produce one atomic store call');
@@ -80,6 +80,9 @@ $invalidPayloads[] = $longTitle;
 $nonString = validPayload();
 $nonString['pc_desc'] = ['invalid'];
 $invalidPayloads[] = $nonString;
+$unsafeUrl = validPayload();
+$unsafeUrl['official_url'] = 'javascript:alert(1)';
+$invalidPayloads[] = $unsafeUrl;
 
 foreach ($invalidPayloads as $payload) {
     $before = $store->values;
