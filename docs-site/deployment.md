@@ -25,22 +25,23 @@ git clone git@github.com:peanut-business/peanut-admin.git /srv/peanut-admin
 cd /srv/peanut-admin
 cp .env.example .env
 chmod 600 .env
-# 编辑 .env，填写数据库密码和 JWT_SECRET
+# 编辑 .env，填写外部数据库地址、账号密码和 JWT_SECRET
 
 docker compose up -d --build
 ```
 
-生产镜像是多阶段构建：web 管理端放到 `server/public/admin/`，uniapp H5 放到 `server/public/mobile/`，Nuxt PC 放到 `server/public/pc/`，API 统一走 `/api/`。PHP 容器入口会自动执行可跳过已安装数据库的安装器，不需要额外启动 MySQL 或手动 `run` 安装命令。
+生产镜像是多阶段构建：web 管理端放到 `server/public/admin/`，uniapp H5 放到 `server/public/mobile/`，Nuxt PC 放到 `server/public/pc/`，API 统一走 `/api/`。PHP 容器入口会自动执行可跳过已安装数据库的安装器。生产默认连接 `.env` 指定的局域网 MySQL，不要求数据库与应用位于同一 Docker 网络。
 
-默认服务为 MySQL、PHP-FPM、Nginx 和后端 scheduler。需要 Redis 时显式启用可选 profile：
+默认服务为 PHP-FPM、Nginx 和后端 scheduler。单机演示需要内置 MySQL 时，将 `DB_HOST=mysql` 并启用 `bundled-db` profile；需要 Redis 时显式启用可选 profile：
 
 ```bash
+docker compose --profile bundled-db up -d --build
 docker compose --profile redis up -d
 ```
 
 Redis 没有应用依赖边，只在明确接入时启用。生产数据库密码、MySQL root 密码和 `JWT_SECRET` 均为必填项。
 
-Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18082`。宝塔面板新增反向代理，目标填写 `http://127.0.0.1:18082`；Cloudflare DNS 对应记录开启代理（橙色云朵）。宝塔站点安装 Cloudflare Origin CA 证书并强制 HTTPS，Cloudflare SSL/TLS 模式使用 `Full (strict)`。不要直接暴露 PHP-FPM 或 MySQL。
+Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。宝塔面板新增反向代理，目标填写 `http://127.0.0.1:18092`；Cloudflare DNS 对应记录开启代理（橙色云朵）。宝塔站点必须安装覆盖应用域名的有效证书（Cloudflare Origin CA 或自动续期的 Let's Encrypt）并开启 HTTPS，Cloudflare SSL/TLS 模式使用 `Full (strict)`。不要直接暴露 PHP-FPM 或 MySQL。
 
 `peanut-admin-doc.007345.xyz` 专用于 Cloudflare Pages 文档站，不经过宝塔。服务器应用使用 `peanut-admin.007345.xyz`，避免一个 DNS 名称同时绑定 Pages 和源站。
 

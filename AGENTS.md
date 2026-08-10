@@ -13,7 +13,8 @@
 | 本地目录 | `/Users/xing/Documents/company-projects/peanut-admin/` |
 | GitHub 仓库 | `git@github.com:peanut-business/peanut-admin.git` |
 | PC package name | `peanut-admin-pc` |
-| 主分支 | `main` |
+| 集成分支 | `dev` |
+| 稳定分支 | `main` |
 
 此前的独立编排工作区已经删除，内容已归档。当前目录是现行产品代码仓，不是旧编排工作区；后续任务只以本文件记录的目录、仓库和主分支为当前事实源。
 
@@ -97,7 +98,7 @@ LikeAdmin 到 Peanut Admin 的刻意改名，**不是缺失**：
 ## 6. 给 Codex 的工作约定
 
 1. 所有任务在 `/Users/xing/Documents/company-projects/peanut-admin/` 下执行
-2. 功能分支命名：`feat/<描述>`，完成后 PR → main
+2. 功能分支命名：`feat/<描述>`，完成后 PR → `dev`；阶段验收通过后 `dev` → `main`
 3. 不要创建带产品版本后缀的名称、路径或文件名
 4. SaaS 相关实现需求 → 先查阅 `docs/design/saas-roadmap/` 再动手
 5. DB 变更：新建 `server/database/migrations/YYYYMMDD-<描述>.sql`，不要直接修改 `init.sql`
