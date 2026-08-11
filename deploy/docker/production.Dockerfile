@@ -50,6 +50,7 @@ RUN apt-get update \
 
 WORKDIR /var/www/peanut-admin
 
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json legal/
 COPY server/app server/app
 COPY server/config server/config
 COPY server/database server/database
@@ -76,6 +77,7 @@ FROM nginx:1.28.0-alpine AS nginx
 
 COPY deploy/nginx/peanut-admin.conf /etc/nginx/conf.d/default.conf
 COPY server/public /var/www/peanut-admin/server/public
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json /var/www/peanut-admin/server/public/legal/
 COPY --from=admin-builder /build/web/dist /var/www/peanut-admin/server/public/admin
 COPY --from=mobile-builder /build/uniapp/dist/build/h5 /var/www/peanut-admin/server/public/mobile
 COPY --from=pc-builder /build/pc/.output/public /var/www/peanut-admin/server/public/pc

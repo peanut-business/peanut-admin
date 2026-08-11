@@ -70,4 +70,4 @@ features:
 
 ## 发布边界
 
-当前应用仍处于产品化正式基线收尾阶段。Composer `peanut-admin/core` 与 npm `@peanut-admin/admin` 是仅有的公开运行依赖；内部领域目录不是独立包。PB08B 正式候选集成验收已经完成，但许可证/provenance 门禁与 PB09 发布尚未完成，因此本站不会把当前状态描述为正式 `1.0.0`，也不会宣称 SaaS 已实现。
+当前应用仍处于产品化正式基线收尾阶段。Composer `peanut-admin/core` 与 npm `@peanut-admin/admin` 是仅有的公开运行依赖；内部领域目录不是独立包。PB08B 正式候选集成验收及 PB09 法律文件准备已经完成，但分支合入、tag、GitHub Release 与正式部署尚未完成，因此本站不会提前把当前状态描述为正式 `1.0.0`，也不会宣称 SaaS 已实现。

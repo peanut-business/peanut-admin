@@ -7,7 +7,7 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-Peanut Admin 正在完成产品化正式基线，尚未发布应用 `1.0.0`。PB03–PB07 领域收口、PB08A 品牌/脚手架/官网门户以及 PB08B 正式候选集成验收已经完成；许可证/provenance 门禁与 PB09 发布仍未执行。
+Peanut Admin 正在完成产品化正式基线，应用 `1.0.0` 仍是拟发布候选。PB03–PB07 领域收口、PB08A 品牌/脚手架/官网门户、PB08B 正式候选集成验收以及 PB09 法律文件准备已经完成；功能分支合入、tag、GitHub Release 和正式部署尚未执行。
 
 ## 公开运行依赖
 
@@ -26,9 +26,10 @@ Peanut Admin 正在完成产品化正式基线，尚未发布应用 `1.0.0`。PB
 - PB08A 已完成品牌单一 Runtime、显式初始管理员密码、四端默认品牌、包元数据和官网/文档门户静态门禁；真实浏览器证据并入 PB08B。
 - PB08B 已通过公开 registry 构建、弱凭据零写入、24→28 前滚、当前空库、生产 Compose/路由、Host 边界、桌面/移动 Chromium 与文档一致性门禁；脱敏总摘要见 `output/playwright/pb08b/summary.json`。
 
-## 尚未完成
+## PB09 当前门禁
 
-- PB09：先完成应用许可证/provenance、根 `LICENSE`、`NOTICE` 与第三方清单的明确决策，再执行 `dev` 合入/推送 `main` 和版本发布记录。
+- 应用暂时采用专有 / All Rights Reserved，版权主体显示为“花生科技”；根许可证、NOTICE、第三方清单和 SPDX SBOM 已形成。
+- 仍须让功能分支 PR 的五组 CI 一次通过，再按 `dev` → `main`、annotated `v1.0.0`、GitHub Release 与官网正式状态的顺序执行。
 - 真实短信、支付、微信/OAuth 凭据和平台登记只在对应部署 smoke 后才能宣称生产可用。
 - SaaS/多租户是 PB09 后的独立阶段。
 
@@ -37,5 +38,6 @@ Peanut Admin 正在完成产品化正式基线，尚未发布应用 `1.0.0`。PB
 - [GitHub 仓库](https://github.com/peanut-business/peanut-admin)
 - [部署与升级](/deployment)
 - [开发指南](/guide/development)
+- [许可证与第三方告知](/legal)
 
-正式 release/changelog 入口将在 PB09 创建；在此之前不使用虚构版本号或发布日期。
+正式 GitHub Release 入口将在 annotated `v1.0.0` 创建后启用；当前 [Changelog](/legal/CHANGELOG.txt) 只记录已冻结的拟发布内容，不把候选冒充成已发布版本。

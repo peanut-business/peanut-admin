@@ -1,6 +1,6 @@
 # Peanut Admin
 
-基于 ThinkPHP 8、Vue 3 与 Element Plus 的企业后台管理应用模板。LikeAdmin 1.9.4 标准版 parity 已按仓库封存合同完成；应用仓许可证与 provenance/clean-room 仍须在正式发布前形成明确决策。
+基于 ThinkPHP 8、Vue 3 与 Element Plus 的企业后台管理应用模板。LikeAdmin 1.9.4 标准版 parity 已按仓库封存合同完成；应用暂时采用专有 / All Rights Reserved，第三方组件继续受各自许可证约束。
 
 ## 项目身份与当前基线
 
@@ -123,6 +123,12 @@ PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
 
 `PEANUT_DOCS_SITE_URL` 只用于生成目标环境的 sitemap canonical host；省略时仍可完成本地构建。部署平台、项目名和公开域名由目标环境决定，不作为脚手架默认值提交。
 
+## 许可证与发布告知
+
+Peanut Admin 应用版权主体显示为“花生科技”，package manifests 使用 `proprietary/UNLICENSED` 语义；两个公开核心包仍为 Apache-2.0。源码使用边界见 [LICENSE](LICENSE)，来源与第三方告知见 [NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，完整五锁图依赖库存见 [RELEASE_SBOM.spdx.json](RELEASE_SBOM.spdx.json)。
+
+应用 `1.0.0` 当前是拟发布候选；只有最终 `main` 上的 annotated `v1.0.0` 与同 tag GitHub Release 创建后才视为正式发布。变更与停止线见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 目标架构
 
-管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime、官网/文档门户和 PB08B 正式候选集成验收已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。进入 PB09 前仍须明确应用仓许可证、provenance/clean-room、根 `LICENSE`、`NOTICE` 与第三方清单；当前不得宣称应用 `1.0.0` 已发布。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
+管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime、官网/文档门户和 PB08B 正式候选集成验收已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。PB09 的许可证策略、发布授权、根法律文件、第三方告知和 SBOM 已形成，正在进入功能分支 → `dev` → `main` 的正式发布流程；当前仍不得宣称应用 `1.0.0` 已发布。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。

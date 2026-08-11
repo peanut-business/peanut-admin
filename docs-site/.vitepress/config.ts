@@ -32,7 +32,13 @@ export default defineConfig({
           { text: '管理员手册', link: '/guide/user-manual' },
         ],
       },
-      { text: '版本', link: '/releases' },
+      {
+        text: '版本',
+        items: [
+          { text: '版本与发布', link: '/releases' },
+          { text: '许可证与告知', link: '/legal' },
+        ],
+      },
       { text: 'GitHub', link: website.github_url },
     ],
     sidebar: {
@@ -47,6 +53,7 @@ export default defineConfig({
             { text: 'API 与扩展', link: '/api' },
             { text: '管理员使用手册', link: '/guide/user-manual' },
             { text: '版本与发布', link: '/releases' },
+            { text: '许可证与告知', link: '/legal' },
           ],
         },
       ],
@@ -68,6 +75,7 @@ export default defineConfig({
             { text: 'API 与扩展', link: '/api' },
             { text: '管理员手册', link: '/guide/user-manual' },
             { text: '版本与发布', link: '/releases' },
+            { text: '许可证与告知', link: '/legal' },
           ],
         },
       ],

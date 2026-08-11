@@ -153,6 +153,8 @@ PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
 
 ## 发布后检查
 
+正式部署应检出不可变 release tag，并核对根 `RELEASE_METADATA.json`；源码 release 的完整 commit 与 archive SHA-256 以 GitHub Release 附件 `RELEASE_MANIFEST.json` 为准。生产入口必须能取得 `/legal/LICENSE.txt`、`/legal/NOTICE.txt`、`/legal/THIRD_PARTY_NOTICES.md` 与 `/legal/RELEASE_SBOM.spdx.json`。PB09 不发布预构建 PHP/Nginx 镜像。
+
 - 确认服务器没有使用开发 Compose，三端均由生产 Compose 构建并运行。
 - 确认 `/`、`/admin/`、`/mobile/`、`/pc/` 和 `/api/` 的入口分别符合路由契约。
 - 登录并确认管理端菜单与当前角色一致。

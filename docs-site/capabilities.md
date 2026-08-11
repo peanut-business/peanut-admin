@@ -38,7 +38,7 @@ Peanut Admin 面向需要“管理后台 + 用户 PC/H5/小程序 + 可部署后
 - SaaS/多租户尚未实现；现有设计文档只是 PB09 后的独立路线图。
 - 仓库不附带真实短信、支付、微信、对象存储或 OAuth 凭据；生产可用必须完成平台登记和低风险 smoke。
 - 当前不是正式 `1.0.0` 发布。版本与依赖事实见[版本与发布](/releases)。
-- 应用仓许可证和 provenance 仍待 PB09 前明确；当前包元数据为 `proprietary/UNLICENSED`。
+- 应用暂时采用专有 / All Rights Reserved，版权主体显示为“花生科技”；包元数据为 `proprietary/UNLICENSED`，第三方组件按各自许可证告知。
 
 ## 下一步
 

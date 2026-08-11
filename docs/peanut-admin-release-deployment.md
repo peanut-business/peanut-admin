@@ -149,6 +149,8 @@ docker compose up -d --no-build
 
 `scripts/package-release.sh` 仅保留为管理端 + PHP 的原生制品工具，不是完整三端生产部署方案。生产环境以 Docker Compose 为唯一推荐入口。
 
+正式部署应检出不可变 release tag，并核对根 `RELEASE_METADATA.json`；源码 release 的完整 commit 与 archive SHA-256 以 GitHub Release 附件 `RELEASE_MANIFEST.json` 为准。生产 Nginx 镜像把根许可证、NOTICE、第三方告知、SPDX SBOM、CHANGELOG 与 release metadata 放在 `/legal/`，PHP 镜像保留同一份 `legal/` 目录。PB09 不发布预构建镜像，这些镜像由部署端从 source tag 本地构建。
+
 ## 品牌与官网发布
 
 首次安装前，脚手架默认品牌来自 `server/config/brand.json` 与 `server/public/brand/`，运行 `node scripts/sync-brand-assets.mjs` 后再构建。安装完成后只通过管理端“应用设置 → 网站设置”修改产品名称、各端 logo/favicon、slogan、版权、官网和 GitHub 地址；不要手改生成文件。
