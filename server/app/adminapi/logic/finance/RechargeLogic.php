@@ -5,16 +5,16 @@ namespace app\adminapi\logic\finance;
 
 use app\common\enum\AccountLogEnum;
 use app\common\enum\RefundEnum;
-use app\common\logic\AccountLogLogic;
 use app\common\logic\BaseLogic;
 use app\common\model\finance\RechargeOrder;
-use app\common\model\member\Member;
 use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\FileService;
-use app\common\service\RefundGatewayService;
+use app\common\service\MemberBalanceService;
+use app\common\service\payment\contract\RefundGatewayInterface;
+use app\common\service\payment\PaymentServiceFactory;
+use app\common\service\XlsxExportService;
 use think\facade\Db;
-use ZipArchive;
 
 /** 充值记录查询、首次退款和失败重试。 */
 class RechargeLogic extends BaseLogic
@@ -88,34 +88,24 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('订单已发起退款,退款失败请到退款记录重新退款');
             }
 
-            /** @var Member $member */
-            $member = Member::lock(true)->findOrEmpty((int)$order->user_id);
-            self::assertRefundBalance($member, (float)$order->order_amount);
-
-            $amount = round((float)$order->order_amount, 2);
-            $afterMoney = round((float)$member->user_money - $amount, 2);
-            $afterRecharge = round((float)$member->total_recharge_amount - $amount, 2);
+            $amountCents = MemberBalanceService::moneyToCents((string)$order->order_amount);
+            $amount = $amountCents / 100;
 
             $order->refund_status = RechargeOrder::REFUND_STATUS_STARTED;
             $order->save();
 
-            $member->user_money = $afterMoney;
-            $member->balance = $afterMoney;
-            $member->total_recharge_amount = $afterRecharge;
-            $member->save();
-
-            if (AccountLogLogic::add(
-                (int)$member->id,
+            MemberBalanceService::applyInTransaction(
+                (int)$order->user_id,
                 AccountLogEnum::USER_MONEY_DEC_RECHARGE_REFUND,
                 AccountLogEnum::DEC,
-                $amount,
+                $amountCents,
                 (string)$order->sn,
                 '充值订单退款',
                 [],
-                $adminId
-            ) === false) {
-                throw new \RuntimeException('账户流水记录失败');
-            }
+                $adminId,
+                -$amountCents,
+                '退款失败:用户余额已不足退款金额'
+            );
 
             /** @var RefundRecord $record */
             $record = RefundRecord::create([
@@ -244,13 +234,6 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    private static function assertRefundBalance(Member $member, float $amount): void
-    {
-        if ($member->isEmpty() || (float)$member->user_money < $amount) {
-            throw new \RuntimeException('退款失败:用户余额已不足退款金额');
-        }
-    }
-
     private static function createRefundLog(
         RechargeOrder $order,
         RefundRecord $record,
@@ -278,19 +261,24 @@ class RechargeLogic extends BaseLogic
         $result = null;
         $gatewayError = null;
         try {
-            $result = RefundGatewayService::refund(
+            $channel = match ((int)$order->pay_way) {
+                RechargeOrder::PAY_WAY_WECHAT => 'wechat',
+                RechargeOrder::PAY_WAY_ALIPAY => 'alipay',
+                default => throw new \RuntimeException('支付方式异常'),
+            };
+            $result = (new PaymentServiceFactory())->refund($channel)->refund(
                 $order->getData(),
                 (string)$log->sn,
-                (float)$record->refund_amount
+                MemberBalanceService::moneyToCents((string)$record->refund_amount)
             );
         } catch (\Throwable $e) {
             $message = $e->getMessage() !== '' ? $e->getMessage() : '支付渠道退款失败';
-            if ((int)$e->getCode() === RefundGatewayService::ERROR_RESULT_UNKNOWN) {
+            if ((int)$e->getCode() === RefundGatewayInterface::ERROR_RESULT_UNKNOWN) {
                 // 请求可能已被渠道受理，保持退款中交由 refund:reconcile 查询收敛。
                 $result = [
-                    'status' => RefundGatewayService::STATUS_PENDING,
+                    'status' => RefundGatewayInterface::STATUS_PENDING,
                     'transaction_id' => '',
-                    'raw' => ['message' => $message],
+                    'receipt' => ['message' => $message],
                 ];
             } else {
                 $gatewayError = $message;
@@ -315,8 +303,8 @@ class RechargeLogic extends BaseLogic
                 $lockedRecord->refund_status = RefundEnum::REFUND_ERROR;
                 $message = $gatewayError;
             } else {
-                $message = self::encodeGatewayResult($result['raw'] ?? $result);
-                if (($result['status'] ?? '') === RefundGatewayService::STATUS_SUCCESS) {
+                $message = self::encodeGatewayResult($result['receipt'] ?? []);
+                if (($result['status'] ?? '') === RefundGatewayInterface::STATUS_SUCCESS) {
                     $lockedLog->refund_status = RefundEnum::REFUND_SUCCESS;
                     $lockedRecord->refund_status = RefundEnum::REFUND_SUCCESS;
                     $lockedOrder->refund_transaction_id = (string)($result['transaction_id'] ?? '');
@@ -469,9 +457,18 @@ class RechargeLogic extends BaseLogic
             ->limit($offset, $limit)
             ->select()
             ->toArray();
-        $uri = self::createXlsx(
-            self::formatRows($rows),
-            (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME)
+        $uri = XlsxExportService::create(
+            (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
+            ['充值单号', '用户昵称', '充值金额', '支付方式', '支付状态', '支付时间', '下单时间'],
+            array_map(static fn(array $row): array => [
+                $row['sn'],
+                $row['nickname'],
+                (float)$row['order_amount'],
+                $row['pay_way_text'],
+                $row['pay_status_text'],
+                $row['pay_time'],
+                $row['create_time'],
+            ], self::formatRows($rows))
         );
 
         return [
@@ -480,92 +477,4 @@ class RechargeLogic extends BaseLogic
         ];
     }
 
-    private static function createXlsx(array $rows, string $requestedName): string
-    {
-        if (!class_exists(ZipArchive::class)) {
-            throw new \RuntimeException('服务器未安装 ZipArchive 扩展，无法导出 XLSX');
-        }
-
-        $name = trim($requestedName) !== '' ? trim($requestedName) : self::EXPORT_DEFAULT_NAME;
-        $name = preg_replace('/[\\\\\/:*?"<>|]+/u', '_', $name) ?: self::EXPORT_DEFAULT_NAME;
-        $name = preg_replace('/\.xlsx$/i', '', $name) ?: self::EXPORT_DEFAULT_NAME;
-        $fileName = $name . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.xlsx';
-        $directory = public_path('storage/exports');
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            throw new \RuntimeException('导出目录创建失败');
-        }
-        $path = rtrim($directory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
-
-        $sheetRows = [['充值单号', '用户昵称', '充值金额', '支付方式', '支付状态', '支付时间', '下单时间']];
-        foreach ($rows as $row) {
-            $sheetRows[] = [
-                $row['sn'], $row['nickname'], (float)$row['order_amount'],
-                $row['pay_way_text'], $row['pay_status_text'],
-                $row['pay_time'], $row['create_time'],
-            ];
-        }
-
-        $zip = new ZipArchive();
-        if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new \RuntimeException('导出文件创建失败');
-        }
-        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
-            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
-            . '<Default Extension="xml" ContentType="application/xml"/>'
-            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
-            . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
-            . '</Types>');
-        $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
-            . '</Relationships>');
-        $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
-            . 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            . '<sheets><sheet name="充值记录" sheetId="1" r:id="rId1"/></sheets></workbook>');
-        $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
-            . '</Relationships>');
-        $zip->addFromString('xl/worksheets/sheet1.xml', self::worksheetXml($sheetRows));
-        $zip->close();
-
-        return 'storage/exports/' . $fileName;
-    }
-
-    private static function worksheetXml(array $rows): string
-    {
-        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
-        foreach ($rows as $rowIndex => $row) {
-            $number = $rowIndex + 1;
-            $xml .= '<row r="' . $number . '">';
-            foreach (array_values($row) as $columnIndex => $value) {
-                $cell = self::columnName($columnIndex + 1) . $number;
-                if (is_int($value) || is_float($value)) {
-                    $numeric = rtrim(rtrim(number_format((float)$value, 2, '.', ''), '0'), '.');
-                    $xml .= '<c r="' . $cell . '"><v>' . $numeric . '</v></c>';
-                    continue;
-                }
-                $text = preg_replace('/[^\x09\x0A\x0D\x20-\x{D7FF}\x{E000}-\x{FFFD}]/u', '', (string)$value) ?? '';
-                $xml .= '<c r="' . $cell . '" t="inlineStr"><is><t xml:space="preserve">'
-                    . htmlspecialchars($text, ENT_QUOTES | ENT_XML1, 'UTF-8')
-                    . '</t></is></c>';
-            }
-            $xml .= '</row>';
-        }
-        return $xml . '</sheetData></worksheet>';
-    }
-
-    private static function columnName(int $number): string
-    {
-        $name = '';
-        while ($number > 0) {
-            $number--;
-            $name = chr(65 + ($number % 26)) . $name;
-            $number = intdiv($number, 26);
-        }
-        return $name;
-    }
 }

@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\log;
 
+use app\adminapi\service\OperationLogService;
 use app\common\logic\BaseLogic;
 use app\common\model\log\OperationLog;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
+use think\facade\Db;
 
 class OperationLogLogic extends BaseLogic
 {
@@ -112,10 +114,21 @@ class OperationLogLogic extends BaseLogic
         return ['url' => FileService::getFileUrl($uri), 'file_name' => basename($uri)];
     }
 
-    /** 清空全部日志 */
-    public static function clear(): void
+    /** 清空旧日志并原子保留本次清理审计；审计写入失败时删除整体回滚。 */
+    public static function clear(int $adminId, string $username, string $ip): int
     {
-        // 无条件 delete 需显式 true
-        OperationLog::where('id', '>', 0)->delete();
+        return Db::transaction(function () use ($adminId, $username, $ip): int {
+            $count = (int)OperationLog::where('id', '>', 0)->count();
+            OperationLog::where('id', '>', 0)->delete();
+            OperationLogService::record(
+                $adminId,
+                $username,
+                $ip,
+                'log/clear',
+                'POST',
+                ['cleared_count' => $count]
+            );
+            return $count;
+        });
     }
 }

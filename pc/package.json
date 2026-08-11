@@ -1,6 +1,16 @@
 {
   "name": "peanut-admin-pc",
+  "version": "1.0.0",
+  "description": "Peanut Admin PC client",
   "private": true,
+  "author": "花生科技",
+  "homepage": "https://github.com/peanut-business/peanut-admin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peanut-business/peanut-admin.git",
+    "directory": "pc"
+  },
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "nuxt dev --port 3100",

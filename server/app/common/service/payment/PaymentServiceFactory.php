@@ -9,8 +9,11 @@ use app\common\service\payment\callback\WechatCallbackParser;
 use app\common\service\payment\contract\CallbackParserInterface;
 use app\common\service\payment\contract\PaymentTransportInterface;
 use app\common\service\payment\contract\PrepayGatewayInterface;
+use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\gateway\AlipayGateway;
+use app\common\service\payment\gateway\AlipayRefundGateway;
 use app\common\service\payment\gateway\WechatPayGateway;
+use app\common\service\payment\gateway\WechatRefundGateway;
 use app\common\service\payment\transport\CurlPaymentTransport;
 
 /** Peanut 自有支付边界工厂，不承载参考系统的路由或参数兼容。 */
@@ -43,6 +46,15 @@ final class PaymentServiceFactory
         return match (strtolower(trim($channel))) {
             'wechat' => new WechatCallbackParser($this->config),
             'alipay' => new AlipayCallbackParser($this->config),
+            default => throw new \RuntimeException('支付渠道不受支持'),
+        };
+    }
+
+    public function refund(string $channel): RefundGatewayInterface
+    {
+        return match (strtolower(trim($channel))) {
+            'wechat' => new WechatRefundGateway($this->config, $this->transport),
+            'alipay' => new AlipayRefundGateway($this->config, $this->transport),
             default => throw new \RuntimeException('支付渠道不受支持'),
         };
     }

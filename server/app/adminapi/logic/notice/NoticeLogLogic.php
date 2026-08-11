@@ -11,6 +11,14 @@ use app\common\model\notice\NoticeLog;
  */
 class NoticeLogLogic extends BaseLogic
 {
+    private const SAFE_FIELDS = [
+        'l.id', 'l.template_id', 'l.scene_id', 'l.channel', 'l.provider',
+        'l.receiver', 'l.title', 'l.content', 'l.is_verified', 'l.check_count',
+        'l.verified_time', 'l.status', 'l.error', 'l.send_time', 'l.create_time',
+        't.name as template_name', 't.code as template_code',
+        's.name as scene_name', 's.code as scene_code',
+    ];
+
     /**
      * 列表（分页）
      * @param array<string,mixed> $params
@@ -20,7 +28,7 @@ class NoticeLogLogic extends BaseLogic
         $query = NoticeLog::alias('l')
             ->leftJoin('notice_template t', 't.id = l.template_id')
             ->leftJoin('notice_scene s', 's.id = l.scene_id')
-            ->field('l.*, t.name as template_name, t.code as template_code, s.name as scene_name, s.code as scene_code');
+            ->field(self::SAFE_FIELDS);
 
         if (!empty($params['receiver'])) {
             $query->whereLike('l.receiver', '%' . $params['receiver'] . '%');
@@ -61,7 +69,7 @@ class NoticeLogLogic extends BaseLogic
         $log = NoticeLog::alias('l')
             ->leftJoin('notice_template t', 't.id = l.template_id')
             ->leftJoin('notice_scene s', 's.id = l.scene_id')
-            ->field('l.*, t.name as template_name, t.code as template_code, s.name as scene_name, s.code as scene_code')
+            ->field(self::SAFE_FIELDS)
             ->where('l.id', $id)
             ->findOrEmpty();
 

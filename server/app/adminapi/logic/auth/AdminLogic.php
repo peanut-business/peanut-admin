@@ -14,8 +14,8 @@ use app\common\model\auth\SystemRole;
 use app\common\model\dept\Dept;
 use app\common\model\dept\Jobs;
 use app\common\service\FileService;
+use app\common\service\XlsxExportService;
 use think\facade\Db;
-use ZipArchive;
 
 class AdminLogic extends BaseLogic
 {
@@ -348,34 +348,10 @@ class AdminLogic extends BaseLogic
             ->select()
             ->toArray();
         $rows = self::formatRows($rows);
-        $uri = self::createXlsx($rows, (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME));
-
-        return [
-            'url' => FileService::getFileUrl($uri),
-            'file_name' => basename($uri),
-        ];
-    }
-
-    private static function createXlsx(array $rows, string $requestedName): string
-    {
-        if (!class_exists(ZipArchive::class)) {
-            throw new \RuntimeException('服务器未安装 ZipArchive 扩展，无法导出 XLSX');
-        }
-
-        $name = trim($requestedName) !== '' ? trim($requestedName) : self::EXPORT_DEFAULT_NAME;
-        $name = preg_replace('/[\\\\\/:*?"<>|]+/u', '_', $name) ?: self::EXPORT_DEFAULT_NAME;
-        $name = preg_replace('/\.xlsx$/i', '', $name) ?: self::EXPORT_DEFAULT_NAME;
-        $fileName = $name . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.xlsx';
-        $directory = public_path('storage/exports');
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            throw new \RuntimeException('导出目录创建失败');
-        }
-        $path = rtrim($directory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
-
-        $headers = ['账号', '名称', '角色', '部门', '创建时间', '最近登录时间', '最近登录IP', '状态'];
-        $sheetRows = [$headers];
-        foreach ($rows as $row) {
-            $sheetRows[] = [
+        $uri = XlsxExportService::create(
+            (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
+            ['账号', '名称', '角色', '部门', '创建时间', '最近登录时间', '最近登录IP', '状态'],
+            array_map(static fn(array $row): array => [
                 $row['account'],
                 $row['name'],
                 $row['role_name'],
@@ -384,67 +360,13 @@ class AdminLogic extends BaseLogic
                 $row['login_time'],
                 $row['login_ip'],
                 $row['disable_desc'],
-            ];
-        }
+            ], $rows)
+        );
 
-        $zip = new ZipArchive();
-        if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new \RuntimeException('导出文件创建失败');
-        }
-
-        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
-            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
-            . '<Default Extension="xml" ContentType="application/xml"/>'
-            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
-            . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
-            . '</Types>');
-        $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
-            . '</Relationships>');
-        $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
-            . 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            . '<sheets><sheet name="管理员列表" sheetId="1" r:id="rId1"/></sheets></workbook>');
-        $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
-            . '</Relationships>');
-        $zip->addFromString('xl/worksheets/sheet1.xml', self::worksheetXml($sheetRows));
-        $zip->close();
-
-        return 'storage/exports/' . $fileName;
-    }
-
-    private static function worksheetXml(array $rows): string
-    {
-        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
-        foreach ($rows as $rowIndex => $row) {
-            $number = $rowIndex + 1;
-            $xml .= '<row r="' . $number . '">';
-            foreach (array_values($row) as $columnIndex => $value) {
-                $cell = self::columnName($columnIndex + 1) . $number;
-                $text = preg_replace('/[^\x09\x0A\x0D\x20-\x{D7FF}\x{E000}-\x{FFFD}]/u', '', (string)$value) ?? '';
-                $text = htmlspecialchars($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
-                $xml .= '<c r="' . $cell . '" t="inlineStr"><is><t xml:space="preserve">'
-                    . $text . '</t></is></c>';
-            }
-            $xml .= '</row>';
-        }
-        return $xml . '</sheetData></worksheet>';
-    }
-
-    private static function columnName(int $number): string
-    {
-        $name = '';
-        while ($number > 0) {
-            $number--;
-            $name = chr(65 + ($number % 26)) . $name;
-            $number = intdiv($number, 26);
-        }
-        return $name;
+        return [
+            'url' => FileService::getFileUrl($uri),
+            'file_name' => basename($uri),
+        ];
     }
 
     private static function formatRows(array $rows): array

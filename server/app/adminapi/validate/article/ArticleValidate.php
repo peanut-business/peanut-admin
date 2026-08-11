@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\validate\article;
 
 use app\common\model\article\Article;
+use app\common\model\article\ArticleCate;
 use think\Validate;
 
 class ArticleValidate extends Validate
@@ -11,7 +12,7 @@ class ArticleValidate extends Validate
     protected $rule = [
         'id'         => 'require|checkArticle',
         'title'      => 'require|length:1,255',
-        'cid'        => 'require',
+        'cid'        => 'require|integer|gt:0|checkCategory',
         'is_show'    => 'require|in:0,1',
         'page_no'    => 'integer|gt:0',
         'page_size'  => 'integer|gt:0|pageSizeMax',
@@ -50,6 +51,11 @@ class ArticleValidate extends Validate
     protected function checkArticle($value): bool|string
     {
         return Article::findOrEmpty($value)->isEmpty() ? '资讯不存在' : true;
+    }
+
+    protected function checkCategory($value): bool|string
+    {
+        return ArticleCate::findOrEmpty($value)->isEmpty() ? '所属栏目必须存在' : true;
     }
 
     protected function pageSizeMax($value): bool|string

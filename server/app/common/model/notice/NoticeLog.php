@@ -12,6 +12,7 @@ class NoticeLog extends BaseModel
 {
     protected $name = 'notice_log';
     protected $updateTime = false;
+    protected $hidden = ['verify_code_hash', 'extra'];
 
     /** 状态：待发送 */
     public const STATUS_PENDING = 0;

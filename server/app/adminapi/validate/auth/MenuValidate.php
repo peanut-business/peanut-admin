@@ -8,10 +8,18 @@ use think\Validate;
 class MenuValidate extends Validate
 {
     protected $rule = [
-        'id'   => 'require|integer|gt:0',
-        'name' => 'require|max:50',
-        'type' => 'require|in:M,C,A',
-        'pid'  => 'integer|egt:0',
+        'id'         => 'require|integer|gt:0',
+        'name'       => 'require|max:50',
+        'type'       => 'require|in:M,C,A',
+        'pid'        => 'integer|egt:0',
+        'icon'       => 'max:100',
+        'sort'       => 'integer',
+        'perms'      => 'max:100',
+        'paths'      => 'max:200',
+        'component'  => 'max:200',
+        'is_cache'   => 'in:0,1',
+        'is_show'    => 'in:0,1',
+        'is_disable' => 'in:0,1',
     ];
 
     protected $message = [
@@ -23,7 +31,10 @@ class MenuValidate extends Validate
     ];
 
     protected $scene = [
-        'add'  => ['name', 'type', 'pid'],
-        'edit' => ['id', 'name', 'type', 'pid'],
+        'add'    => ['name', 'type', 'pid', 'icon', 'sort', 'perms', 'paths', 'component', 'is_cache', 'is_show', 'is_disable'],
+        'edit'   => ['id', 'name', 'type', 'pid', 'icon', 'sort', 'perms', 'paths', 'component', 'is_cache', 'is_show', 'is_disable'],
+        'detail' => ['id'],
+        'delete' => ['id'],
+        'status' => ['id', 'is_disable' => 'require|in:0,1'],
     ];
 }

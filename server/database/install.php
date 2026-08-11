@@ -14,15 +14,7 @@ const REQUIRED_CONFIG = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'];
 
 function loadConfig(string $serverDir): array
 {
-    $fileConfig = [];
-    $envFile = $serverDir . '/.env';
-    if (is_file($envFile)) {
-        $parsed = parse_ini_file($envFile, false, INI_SCANNER_RAW);
-        if ($parsed === false) {
-            throw new RuntimeException('无法解析 server/.env');
-        }
-        $fileConfig = $parsed;
-    }
+    $fileConfig = loadFileConfig($serverDir);
 
     $config = [];
     foreach (REQUIRED_CONFIG as $name) {
@@ -36,6 +28,77 @@ function loadConfig(string $serverDir): array
         $config[$name] = (string)$value;
     }
     return $config;
+}
+
+/** @return array<string, mixed> */
+function loadFileConfig(string $serverDir): array
+{
+    $envFile = $serverDir . '/.env';
+    if (!is_file($envFile)) {
+        return [];
+    }
+    $parsed = parse_ini_file($envFile, false, INI_SCANNER_RAW);
+    if ($parsed === false) {
+        throw new RuntimeException('无法解析 server/.env');
+    }
+    return $parsed;
+}
+
+function initialAdminPassword(string $serverDir): string
+{
+    $environment = getenv('ADMIN_INITIAL_PASSWORD');
+    $password = $environment !== false && $environment !== ''
+        ? $environment
+        : (loadFileConfig($serverDir)['ADMIN_INITIAL_PASSWORD'] ?? '');
+    validateInitialAdminPassword((string)$password);
+    return (string)$password;
+}
+
+function validateInitialAdminPassword(string $password): void
+{
+    if (strlen($password) < 12
+        || preg_match('/[A-Za-z]/', $password) !== 1
+        || preg_match('/\d/', $password) !== 1) {
+        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字');
+    }
+}
+
+function replaceInitialAdminSeed(string $sql, string $password, ?string $salt = null): string
+{
+    validateInitialAdminPassword($password);
+    $salt ??= bin2hex(random_bytes(8));
+    if (preg_match('/^[a-f0-9]{16}$/', $salt) !== 1) {
+        throw new RuntimeException('管理员初始盐格式错误');
+    }
+
+    $seed = "VALUES (1,'admin','超级管理员', MD5(CONCAT(MD5('admin123456'),'abcd1234')), 'abcd1234', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());";
+    if (substr_count($sql, $seed) !== 1) {
+        throw new RuntimeException('管理员 seed 与安装合同不一致');
+    }
+    $digest = md5(md5($password) . $salt);
+    $replacement = "VALUES (1,'admin','超级管理员', '{$digest}', '{$salt}', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());";
+    return str_replace($seed, $replacement, $sql);
+}
+
+/** @return array<string, string> */
+function brandWebsiteDefaults(string $serverDir): array
+{
+    $path = $serverDir . '/config/brand.json';
+    $json = file_get_contents($path);
+    $manifest = is_string($json) ? json_decode($json, true) : null;
+    if (!is_array($manifest)
+        || ($manifest['schema_version'] ?? null) !== 1
+        || !is_array($manifest['website'] ?? null)) {
+        throw new RuntimeException('品牌默认配置格式错误');
+    }
+    $website = [];
+    foreach ($manifest['website'] as $field => $value) {
+        if (!is_string($field) || !is_string($value)) {
+            throw new RuntimeException('品牌默认字段必须是字符串');
+        }
+        $website[$field] = $value;
+    }
+    return $website;
 }
 
 function sqlFiles(string $databaseDir): array
@@ -63,12 +126,15 @@ function expectedTables(array $files): array
     return $names;
 }
 
-function executeSqlFiles(PDO $pdo, array $files): void
+function executeSqlFiles(PDO $pdo, array $files, string $adminPassword): void
 {
     foreach ($files as $file) {
         $sql = file_get_contents($file);
         if ($sql === false) {
             throw new RuntimeException('无法读取 SQL 文件：' . basename($file));
+        }
+        if (basename($file) === 'init.sql') {
+            $sql = replaceInitialAdminSeed($sql, $adminPassword);
         }
         try {
             $pdo->exec($sql);
@@ -79,6 +145,29 @@ function executeSqlFiles(PDO $pdo, array $files): void
                 $exception
             );
         }
+    }
+}
+
+/** @param array<string, string> $website */
+function seedBrandDefaults(PDO $pdo, array $website): void
+{
+    $statement = $pdo->prepare(
+        'INSERT INTO pa_config (type, name, value, create_time, update_time) '
+        . "VALUES ('website', ?, ?, ?, ?) "
+        . 'ON DUPLICATE KEY UPDATE value = VALUES(value), update_time = VALUES(update_time)'
+    );
+    $now = time();
+    $pdo->beginTransaction();
+    try {
+        foreach ($website as $field => $value) {
+            $statement->execute([$field, $value, $now, $now]);
+        }
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
     }
 }
 
@@ -182,7 +271,10 @@ function main(): int
             return 0;
         }
 
-        executeSqlFiles($pdo, $files);
+        $adminPassword = initialAdminPassword($serverDir);
+        $brandDefaults = brandWebsiteDefaults($serverDir);
+        executeSqlFiles($pdo, $files, $adminPassword);
+        seedBrandDefaults($pdo, $brandDefaults);
 
         $actualStatement = $pdo->prepare(
             'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME'
@@ -214,6 +306,7 @@ function main(): int
             'tables' => count($actual),
             'expected_tables' => count($expected),
             'default_admin' => $defaultAdmin,
+            'admin_username' => 'admin',
             'active_menus' => $activeMenus,
             'configs' => $configCount,
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
@@ -225,9 +318,11 @@ function main(): int
     return 0;
 }
 
-try {
-    exit(main());
-} catch (Throwable $exception) {
-    fwrite(STDERR, '安装失败：' . $exception->getMessage() . PHP_EOL);
-    exit(1);
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    try {
+        exit(main());
+    } catch (Throwable $exception) {
+        fwrite(STDERR, '安装失败：' . $exception->getMessage() . PHP_EOL);
+        exit(1);
+    }
 }

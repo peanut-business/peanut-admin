@@ -11,40 +11,17 @@
           label-position="top"
           style="max-width: 560px"
         >
-          <el-form-item prop="name" :label="$t('systemConfig.field.name')">
-            <el-input
-              v-model="form.name"
-              :placeholder="$t('systemConfig.field.name.placeholder')"
-            />
-          </el-form-item>
-          <el-form-item prop="logo" :label="$t('systemConfig.field.logo')">
-            <el-input
-              v-model="form.logo"
-              :placeholder="$t('systemConfig.field.logo.placeholder')"
-            />
-          </el-form-item>
           <el-form-item
-            prop="favicon"
-            :label="$t('systemConfig.field.favicon')"
+            v-for="field in fields"
+            :key="field.key"
+            :prop="field.key"
+            :label="$t(`systemConfig.field.${field.key}`)"
           >
             <el-input
-              v-model="form.favicon"
-              :placeholder="$t('systemConfig.field.favicon.placeholder')"
-            />
-          </el-form-item>
-          <el-form-item
-            prop="copyright"
-            :label="$t('systemConfig.field.copyright')"
-          >
-            <el-input
-              v-model="form.copyright"
-              :placeholder="$t('systemConfig.field.copyright.placeholder')"
-            />
-          </el-form-item>
-          <el-form-item prop="icp" :label="$t('systemConfig.field.icp')">
-            <el-input
-              v-model="form.icp"
-              :placeholder="$t('systemConfig.field.icp.placeholder')"
+              v-model="form[field.key]"
+              :type="field.multiline ? 'textarea' : 'text'"
+              :rows="field.multiline ? 3 : undefined"
+              :placeholder="$t('systemConfig.field.placeholder')"
             />
           </el-form-item>
           <el-form-item>
@@ -68,6 +45,7 @@
   import { ElMessage } from 'element-plus';
   import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
+  import { useBrandStore } from '@/store';
   import {
     getWebsiteConfig,
     saveWebsiteConfig,
@@ -78,17 +56,34 @@
   const { loading, setLoading } = useLoading(true);
   const submitLoading = ref(false);
   const formRef = ref<FormInstance>();
+  const brandStore = useBrandStore();
 
-  const form = reactive<WebsiteConfig>({
-    name: '',
-    logo: '',
-    favicon: '',
-    copyright: '',
-    icp: '',
-  });
+  const form = reactive<WebsiteConfig>({ ...brandStore.website });
+
+  const fields: { key: keyof WebsiteConfig; multiline?: boolean }[] = [
+    { key: 'name' },
+    { key: 'web_logo' },
+    { key: 'web_favicon' },
+    { key: 'login_image' },
+    { key: 'shop_name' },
+    { key: 'shop_logo' },
+    { key: 'pc_logo' },
+    { key: 'pc_title' },
+    { key: 'pc_ico' },
+    { key: 'pc_desc', multiline: true },
+    { key: 'pc_keywords', multiline: true },
+    { key: 'h5_favicon' },
+    { key: 'slogan', multiline: true },
+    { key: 'copyright' },
+    { key: 'official_url' },
+    { key: 'github_url' },
+  ];
 
   const rules = {
     name: [{ required: true, message: t('systemConfig.field.name.required') }],
+    shop_name: [
+      { required: true, message: t('systemConfig.field.shop_name.required') },
+    ],
   };
 
   const fetchData = async () => {
@@ -108,6 +103,7 @@
     submitLoading.value = true;
     try {
       await saveWebsiteConfig({ ...form });
+      brandStore.replace({ ...form });
       ElMessage.success(t('systemConfig.tip.success'));
     } finally {
       submitLoading.value = false;

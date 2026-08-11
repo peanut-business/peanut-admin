@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\model\article;
 
 use app\common\model\BaseModel;
-use app\common\service\FileService;
+use app\common\service\ProductAssetReferenceService;
 use think\model\concern\SoftDelete;
 
 class Article extends BaseModel
@@ -28,13 +28,13 @@ class Article extends BaseModel
     /** 封面图访问 URL */
     public function getImageAttr($value): string
     {
-        return $value ? FileService::getFileUrl($value) : '';
+        return $value ? ProductAssetReferenceService::forRead((string)$value) : '';
     }
 
-    /** 封面图存相对 uri */
+    /** local 封面存相对 URI；云/CDN 封面保留绝对来源。 */
     public function setImageAttr($value): string
     {
-        return $value ? FileService::setFileUrl($value) : '';
+        return $value ? ProductAssetReferenceService::forStorage((string)$value) : '';
     }
 
     /** 富文本内相对图片、视频地址补全当前文件域名。 */
@@ -45,12 +45,13 @@ class Article extends BaseModel
         }
         return (string) preg_replace_callback(
             '/(<(?:img|video)\b[^>]*?\bsrc=["\'])(?!https?:\/\/)([^"\']+)(["\'][^>]*>)/is',
-            static fn(array $matches): string => $matches[1] . FileService::getFileUrl($matches[2]) . $matches[3],
+            static fn(array $matches): string => $matches[1]
+                . ProductAssetReferenceService::forRead($matches[2]) . $matches[3],
             (string) $value
         );
     }
 
-    /** 富文本入库时去除当前存储引擎域名。 */
+    /** 富文本入库时仅去除同源 local storage 域名。 */
     public function setContentAttr($value): string
     {
         if (empty($value)) {
@@ -58,7 +59,8 @@ class Article extends BaseModel
         }
         return (string) preg_replace_callback(
             '/(<(?:img|video)\b[^>]*?\bsrc=["\'])(https?:\/\/[^"\']+)(["\'][^>]*>)/is',
-            static fn(array $matches): string => $matches[1] . FileService::setFileUrl($matches[2]) . $matches[3],
+            static fn(array $matches): string => $matches[1]
+                . ProductAssetReferenceService::forStorage($matches[2]) . $matches[3],
             (string) $value
         );
     }

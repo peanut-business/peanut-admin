@@ -10,8 +10,6 @@ export interface OfficialAccountConfig {
   app_secret_configured: boolean;
   url: string;
   token: string;
-  encoding_aes_key: string;
-  encryption_type: 1 | 2 | 3;
   business_domain: string;
   js_secure_domain: string;
   web_auth_domain: string;
@@ -27,8 +25,6 @@ export type OfficialAccountConfigForm = Pick<
   | 'app_id'
   | 'app_secret'
   | 'token'
-  | 'encoding_aes_key'
-  | 'encryption_type'
 >;
 
 export function getOfficialAccountConfig() {

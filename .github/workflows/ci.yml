@@ -47,6 +47,54 @@ jobs:
       - name: Check PHP syntax
         run: find server/app server/config server/database server/route -type f -name '*.php' -print0 | xargs -0 -n1 php -l
 
+      - name: Test website settings contract
+        working-directory: server
+        run: php tests/Productization/WebsiteConfigServiceTest.php
+
+      - name: Test scaffold brand bootstrap
+        working-directory: server
+        run: php tests/Productization/BrandScaffoldTest.php
+
+      - name: Test secure installer bootstrap
+        working-directory: server
+        run: php tests/Productization/InstallerBootstrapTest.php
+
+      - name: Test admin permission Host
+        working-directory: server
+        run: php tests/Productization/AdminPermissionHostTest.php
+
+      - name: Test reference codes Host ownership
+        working-directory: server
+        run: php tests/Productization/ReferenceCodesHostTest.php
+
+      - name: Test file media Host ownership
+        working-directory: server
+        run: php tests/Productization/FileMediaHostTest.php
+
+      - name: Test operations Host ownership
+        working-directory: server
+        run: php tests/Productization/OpsHostTest.php
+
+      - name: Test member finance Host ownership
+        working-directory: server
+        run: php tests/Productization/MemberFinanceHostTest.php
+
+      - name: Test content decoration Host ownership
+        working-directory: server
+        run: php tests/Productization/ContentDecorationHostTest.php
+
+      - name: Test notification Host ownership
+        working-directory: server
+        run: php tests/Productization/NotificationHostTest.php
+
+      - name: Test payment Host ownership
+        working-directory: server
+        run: php tests/Productization/PaymentHostTest.php
+
+      - name: Test OAuth and channel Host ownership
+        working-directory: server
+        run: php tests/Productization/OAuthChannelHostTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest
@@ -73,9 +121,21 @@ jobs:
           HUSKY: '0'
         run: pnpm install --frozen-lockfile
 
+      - name: Check generated brand files
+        run: node scripts/sync-brand-assets.mjs --check
+
       - name: Build
         working-directory: web
         run: pnpm run build
+
+      - name: Test permission policy
+        working-directory: web
+        shell: bash
+        run: |
+          test_output="$(mktemp -d)"
+          ./node_modules/.bin/tsc --target ES2020 --module commonjs --moduleResolution node --strict --skipLibCheck \
+            --outDir "${test_output}" src/core/permission-policy.ts tests/Productization/permission-policy.test.ts
+          node "${test_output}/tests/Productization/permission-policy.test.js"
 
   pc:
     name: PC

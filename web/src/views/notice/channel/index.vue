@@ -107,68 +107,6 @@
           </el-form>
         </el-tab-pane>
       </el-tabs>
-
-      <el-divider />
-
-      <!-- 邮件渠道 -->
-      <h3 class="section-title">
-        {{ $t('notice.channel.mail') }}
-        <el-tag
-          :type="detail.status?.mail ? 'success' : 'danger'"
-          style="margin-left: 8px; vertical-align: middle"
-        >
-          {{
-            detail.status?.mail
-              ? $t('notice.channel.status.enabled')
-              : $t('notice.channel.status.disabled')
-          }}
-        </el-tag>
-      </h3>
-
-      <el-form :model="mailForm" label-position="top" style="max-width: 520px">
-        <el-form-item :label="$t('notice.channel.host')">
-          <el-input v-model="mailForm.host" clearable />
-        </el-form-item>
-        <el-form-item :label="$t('notice.channel.port')">
-          <el-input-number
-            v-model="mailForm.port"
-            :min="1"
-            :max="65535"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item :label="$t('notice.channel.username')">
-          <el-input v-model="mailForm.username" clearable />
-        </el-form-item>
-        <el-form-item :label="$t('notice.channel.password')">
-          <el-input
-            v-model="mailForm.password"
-            type="password"
-            clearable
-            show-password
-          />
-        </el-form-item>
-        <el-form-item :label="$t('notice.channel.from_name')">
-          <el-input v-model="mailForm.from_name" clearable />
-        </el-form-item>
-        <el-form-item :label="$t('notice.channel.encryption')">
-          <el-select v-model="mailForm.encryption" style="width: 180px">
-            <el-option label="SSL" value="ssl" />
-            <el-option label="TLS (STARTTLS)" value="tls" />
-            <el-option label="None" value="none" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            v-permission="['notice/channel/save']"
-            type="primary"
-            :loading="saving.mail"
-            @click="saveSection('mail_smtp', mailForm)"
-          >
-            {{ $t('notice.channel.save') }}
-          </el-button>
-        </el-form-item>
-      </el-form>
     </el-card>
   </div>
 </template>
@@ -183,7 +121,6 @@
     NoticeChannelDetail,
     SmsAliyunConfig,
     SmsTencentConfig,
-    MailSmtpConfig,
     ChannelSection,
   } from '@/api/notice';
 
@@ -206,15 +143,7 @@
     region: 'ap-guangzhou',
     status: 0,
   });
-  const mailForm = reactive<MailSmtpConfig>({
-    host: '',
-    port: 465,
-    username: '',
-    password: '',
-    from_name: '',
-    encryption: 'ssl',
-  });
-  const saving = reactive({ aliyun: false, tencent: false, mail: false });
+  const saving = reactive({ aliyun: false, tencent: false });
 
   const fetchDetail = async () => {
     const res = await getNoticeChannelDetail();
@@ -223,7 +152,6 @@
     const d = data;
     Object.assign(aliyunForm, d.sms_aliyun ?? {});
     Object.assign(tencentForm, d.sms_tencent ?? {});
-    Object.assign(mailForm, d.mail_smtp ?? {});
   };
 
   const providerName = (provider?: string) => {
@@ -236,14 +164,13 @@
     sms_default: 'aliyun',
     sms_aliyun: 'aliyun',
     sms_tencent: 'tencent',
-    mail_smtp: 'mail',
   };
 
   const saveSection = async (
     section: ChannelSection,
     form: Record<string, unknown>
   ) => {
-    const loadingKey = sectionLoadingKey[section] ?? 'mail';
+    const loadingKey = sectionLoadingKey[section];
     saving[loadingKey] = true;
     try {
       await saveNoticeChannel(section, { ...form });

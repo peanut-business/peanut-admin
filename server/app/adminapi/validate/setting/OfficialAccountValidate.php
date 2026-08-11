@@ -14,8 +14,6 @@ class OfficialAccountValidate extends Validate
         'app_id' => 'require|max:128|checkNotBlank',
         'app_secret' => 'require|max:255|checkNotBlank',
         'token' => 'max:255',
-        'encoding_aes_key' => 'max:43',
-        'encryption_type' => 'require|in:1,2,3',
     ];
 
     protected $message = [
@@ -27,9 +25,6 @@ class OfficialAccountValidate extends Validate
         'app_secret.require' => 'AppSecret 不能为空',
         'app_secret.max' => 'AppSecret 不能超过 255 个字符',
         'token.max' => 'Token 不能超过 255 个字符',
-        'encoding_aes_key.max' => 'EncodingAESKey 不能超过 43 个字符',
-        'encryption_type.require' => '消息加密方式不能为空',
-        'encryption_type.in' => '消息加密方式无效',
     ];
 
     protected function checkNotBlank(mixed $value): bool|string

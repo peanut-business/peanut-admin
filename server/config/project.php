@@ -1,29 +1,26 @@
 <?php
 
+$brandManifest = json_decode((string)file_get_contents(__DIR__ . '/brand.json'), true);
+$defaultImage = is_array($brandManifest['default_image'] ?? null)
+    ? $brandManifest['default_image']
+    : throw new RuntimeException('品牌默认图片配置格式错误');
+
 return [
     'version' => env('project.version', '1.0.0'),
-    'website' => [
-        'name' => env('project.web_name', 'Peanut Admin'),
-        'url'  => env('project.web_url', ''),
-    ],
     'based' => 'Vue 3.x、Element Plus、ThinkPHP 8、MySQL',
-    'channel' => [
-        'website' => env('project.channel_website', ''),
-        'gitee'   => env('project.channel_gitee', ''),
-    ],
-    // 工作台使用 Peanut 自有本地资源，不引用参考项目素材。
+    // 用途化的中性默认资源；品牌 logo/favicon 由 config/brand.json 拥有。
     'default_image' => [
-        'admin_avatar'     => 'favicon.ico',
-        'menu_admin'       => 'favicon.ico',
-        'menu_role'        => 'favicon.ico',
-        'menu_dept'        => 'favicon.ico',
-        'menu_dict'        => 'favicon.ico',
-        'menu_generator'   => 'favicon.ico',
-        'menu_file'        => 'favicon.ico',
-        'menu_auth'        => 'favicon.ico',
-        'menu_web'         => 'favicon.ico',
-        'project_docs'     => 'favicon.ico',
-        'technical_support' => 'favicon.ico',
-        'user_avatar'       => 'favicon.ico',
+        'admin_avatar'      => $defaultImage['admin_avatar'],
+        'menu_admin'        => $defaultImage['menu'],
+        'menu_role'         => $defaultImage['menu'],
+        'menu_dept'         => $defaultImage['menu'],
+        'menu_dict'         => $defaultImage['menu'],
+        'menu_generator'    => $defaultImage['menu'],
+        'menu_file'         => $defaultImage['menu'],
+        'menu_auth'         => $defaultImage['menu'],
+        'menu_web'          => $defaultImage['menu'],
+        'project_docs'      => $defaultImage['project_docs'],
+        'technical_support' => $defaultImage['technical_support'],
+        'user_avatar'       => $defaultImage['user_avatar'],
     ],
 ];

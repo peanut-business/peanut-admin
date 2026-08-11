@@ -7,7 +7,8 @@ use app\common\enum\RefundEnum;
 use app\common\model\finance\RechargeOrder;
 use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
-use app\common\service\RefundGatewayService;
+use app\common\service\payment\contract\RefundGatewayInterface;
+use app\common\service\payment\PaymentServiceFactory;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
@@ -49,7 +50,12 @@ class RefundReconcile extends Command
 
             $checked++;
             try {
-                $result = RefundGatewayService::query(
+                $channel = match ((int)$order->pay_way) {
+                    RechargeOrder::PAY_WAY_WECHAT => 'wechat',
+                    RechargeOrder::PAY_WAY_ALIPAY => 'alipay',
+                    default => throw new \RuntimeException('支付方式异常'),
+                };
+                $result = (new PaymentServiceFactory())->refund($channel)->query(
                     $order->getData(),
                     (string)$log->sn
                 );
@@ -63,12 +69,12 @@ class RefundReconcile extends Command
             }
 
             $gatewayStatus = (string)($result['status'] ?? '');
-            if ($gatewayStatus === RefundGatewayService::STATUS_PENDING) {
+            if ($gatewayStatus === RefundGatewayInterface::STATUS_PENDING) {
                 continue;
             }
             if (!in_array($gatewayStatus, [
-                RefundGatewayService::STATUS_SUCCESS,
-                RefundGatewayService::STATUS_FAILED,
+                RefundGatewayInterface::STATUS_SUCCESS,
+                RefundGatewayInterface::STATUS_FAILED,
             ], true)) {
                 Log::warning(sprintf(
                     '[refund:reconcile] 未知渠道状态 record_id=%d status=%s',
@@ -107,10 +113,10 @@ class RefundReconcile extends Command
                     continue;
                 }
 
-                $finalStatus = $gatewayStatus === RefundGatewayService::STATUS_SUCCESS
+                $finalStatus = $gatewayStatus === RefundGatewayInterface::STATUS_SUCCESS
                     ? RefundEnum::REFUND_SUCCESS
                     : RefundEnum::REFUND_ERROR;
-                $message = self::encodeGatewayResult($result['raw'] ?? $result);
+                $message = self::encodeGatewayResult($result['receipt'] ?? []);
                 $lockedLog->refund_status = $finalStatus;
                 $lockedLog->refund_msg = $message;
                 $lockedRecord->refund_status = $finalStatus;

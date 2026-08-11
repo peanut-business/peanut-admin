@@ -1,8 +1,14 @@
 <template>
-  <footer class="footer">Peanut Admin</footer>
+  <footer class="footer">
+    © {{ new Date().getFullYear() }} {{ brandStore.website.copyright }}
+  </footer>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+  import { useBrandStore } from '@/store';
+
+  const brandStore = useBrandStore();
+</script>
 
 <style lang="less" scoped>
   .footer {

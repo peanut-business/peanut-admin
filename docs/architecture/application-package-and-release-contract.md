@@ -1,13 +1,13 @@
 # Peanut Admin 应用、核心包与发布契约
 
-> 状态：Accepted Target，两个核心包已发布，应用领域迁移尚未完成
+> 状态：Accepted Target，两个核心包已发布，PB04–PB08A 已收口
 > 日期：2026-08-11
 
 ## 1. 产品与仓库边界
 
 `peanut-business/peanut-admin` 是可运行的演示应用和新应用模板。开发者克隆模板后形成一个独立应用，在应用仓完成品牌、配置和业务开发。生产部署的是这个已存在的应用 release，不是在服务器再次克隆模板创建应用。
 
-`peanut-opensource/peanut-admin` 是可复用核心能力仓。本应用的 LikeAdmin 业务能力已经独立验收，但目前仍实现在应用内部；迁移完成前不能把目标架构描述为当前事实。
+`peanut-opensource/peanut-admin` 是产品无关基础设施与公开契约仓。本应用的 LikeAdmin 业务能力已经独立验收，其中会员/财务、内容/装修、支付/OAuth 等产品领域继续由应用 Module 唯一拥有；核心同名或相邻候选能力未经固定资格和下游决策前不能视为替换基线。当前所有权与迁移门禁见 `docs/architecture/pb03-ownership-and-migration-gates.md`。
 
 ## 2. 前端基线
 
@@ -23,12 +23,12 @@
 
 | 生态 | 唯一公开包 | 内部入口与模块 |
 |---|---|---|
-| PHP | `peanut-admin/core` | kernel、认证、权限、数据权限、设置、文件、任务及核心业务域 |
+| PHP | `peanut-admin/core` | kernel、认证/权限/数据权限原语，以及获批的设置、文件、任务、通知、集成安全和运维基础设施；不包含应用产品实体 |
 | Frontend | `@peanut-admin/admin` | `./core`、`./shell` 和领域入口服务管理端；`./client`、`./client/nuxt`、`./client/uniapp` 服务 PC 与 UniApp 的 DTO、API 契约、认证会话、业务状态机、规则及端适配器 |
 
 管理应用安装 PHP 与 Frontend 两个包；PC 和 UniApp 只消费 Frontend 包的无 UI client 子路径，并分别注入 Nuxt `$fetch`/cookie 与 `uni.request`/storage 适配器。`./client` 不得依赖 Element Plus、管理端页面或 UniApp 组件。测试工具、starter 和示例留在核心 monorepo 内。新模块默认进入上述包的内部目录；只有真实第二消费者要求独立安装、API 稳定且需要独立发布节奏时才允许重新评估拆包。
 
-应用后端只保留 HTTP 装配、项目配置、应用专属模块和覆盖实现。应用管理端只保留启动入口、品牌主题、菜单装配、项目页面与覆盖注册。不得复制核心业务规则形成双实现。
+应用后端保留 HTTP 装配、项目配置、应用产品 Module 和覆盖实现。应用管理端保留启动入口、品牌主题、菜单装配、产品页面与覆盖注册。核心 owner 的规则不得在应用复制；应用 owner 的产品规则也不得反向放入核心形成双实现。
 
 ## 4. 标准覆盖协议
 
@@ -68,7 +68,7 @@ Docker 多阶段构建一次完成：
 4. 安装后端 Composer 生产依赖并运行 PHP-FPM。
 5. 由 Nginx 统一暴露 `/admin/`、`/mobile/`、`/pc/`、`/api/` 和 `/storage/`。
 
-三个静态客户端只写入自己的目录，不覆盖后端 public 根文件。生产宿主机只需要 Git、Docker 和 Compose；Node、PHP、Composer 均由构建或运行容器提供。宝塔反代 `127.0.0.1:18092`，Cloudflare 代理服务器域名。
+三个静态客户端只写入自己的目录，不覆盖后端 public 根文件。生产宿主机只需要 Git、Docker 和 Compose；Node、PHP、Composer 均由构建或运行容器提供。反向代理、回环端口和公开域名由目标部署环境显式配置，不作为脚手架默认值。
 
 ## 6. 迁移顺序
 
@@ -77,7 +77,10 @@ Docker 多阶段构建一次完成：
 3. [已完成 2026-08-11] 后端与管理端标准覆盖 Host 已落地；认证与权限已消费公开包。
 4. [已完成 2026-08-11] 管理端迁移到 Element Plus，并通过真实 Chromium 代表业务域验收。
 5. [已完成 2026-08-11] PC 与 UniApp 已迁移共用请求、认证和错误处理到无 UI client 子路径。
-6. [进行中] 按系统、会员、内容、通知、支付迁移核心业务域，每域删除应用内重复实现并做一次最低业务验收。
-7. 全部完成后，模板应用才切换为完全依赖核心包的正式基线。
+6. [已完成 2026-08-11] PB03 已固定核心通用能力、应用产品 Module、唯一实现、Host/override、测试 owner 和逐领域停止线。
+7. [已完成 2026-08-11] 系统基础设施 PB04、会员/财务 PB05、内容/装修 PB06、通知/支付/OAuth/渠道 PB07 均固定应用唯一 Host；核心相邻候选无采用授权且语义不等价。OAuth 使用固定 API callback bridge，旧 Channel/AES 写入口退出。
+8. [已完成 2026-08-11] PB08A 中性脚手架、品牌单一事实源和官网+文档门户实现及静态门禁。
+9. [已完成 2026-08-11] PB08B 唯一正式候选集成验收通过；脱敏总摘要见 `output/playwright/pb08b/summary.json`。
+10. [执行中 2026-08-11] PB09 法律候选 `f3e6834…` 已按用户决定形成专有根许可证、NOTICE、第三方告知、SPDX SBOM、CHANGELOG 与 release metadata，一次静态门禁通过且未重复 PB08B。当前进入功能分支 → `dev` → `main`、`v1.0.0`、GitHub Release 与官网正式状态；PB09 完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
 
 SaaS 多租户仍是 `docs/design/saas-roadmap/` 中的路线图，不属于当前发布能力。

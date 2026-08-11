@@ -1,0 +1,20 @@
+Peanut Admin Proprietary License
+
+Copyright (c) 2026 花生科技. All rights reserved.
+
+Peanut Admin and its original source code, documentation, brand assets, and
+other original materials in this repository are proprietary and confidential
+unless a file or component is expressly identified as third-party material.
+
+No permission is granted to use, copy, modify, publish, distribute, sublicense,
+sell, host, or create derivative works from the proprietary materials, in whole
+or in part, except under a separate written agreement with 花生科技 or as
+otherwise required by applicable law.
+
+Third-party components are licensed by their respective copyright holders under
+their own terms. Those terms are not restricted by this proprietary license.
+See NOTICE, THIRD_PARTY_NOTICES.md, RELEASE_SBOM.spdx.json, and license files
+provided with the applicable third-party components.
+
+THE PROPRIETARY MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND,
+EXPRESS OR IMPLIED, TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW.

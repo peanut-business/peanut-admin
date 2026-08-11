@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <view class="logo-area">
-      <image :src="logo || '/static/logo.png'" class="logo" mode="aspectFit" />
+      <image :src="logo" class="logo" mode="aspectFit" />
       <view class="app-name">{{ appName }}</view>
     </view>
 
@@ -20,20 +20,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getConfig } from '@/api/index'
+import { computed, onMounted } from 'vue'
+import { useAppStore } from '@/store/app'
+import { resolveBrandLogo, resolveBrandName, resolveBrandSlogan } from '@/utils/brand'
 
-const logo = ref('')
-const appName = ref('peanut')
-const version = ref('1.0.0')
-const intro = ref('感谢使用本产品，我们致力于为您提供最优质的服务体验。')
+const appStore = useAppStore()
+const website = computed(() => appStore.config?.website)
+const logo = computed(() => resolveBrandLogo(website.value))
+const appName = computed(() => resolveBrandName(website.value))
+const version = computed(() => appStore.config?.version || '1.0.0')
+const intro = computed(() => resolveBrandSlogan(website.value))
 
 onMounted(async () => {
   try {
-    const config = await getConfig()
-    appName.value = config.website.shop_name
-    logo.value = config.website.shop_logo
-    version.value = config.version
+    await appStore.loadConfig()
   } catch (error) {
     console.error('Failed to load config:', error)
   }

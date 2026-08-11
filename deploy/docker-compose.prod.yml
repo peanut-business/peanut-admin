@@ -41,7 +41,13 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     command: ["/usr/local/bin/peanut-php-entrypoint"]
-    environment: *app-environment
+    depends_on:
+      mysql:
+        condition: service_healthy
+        required: false
+    environment:
+      <<: *app-environment
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
     volumes:
       - php-runtime:/var/www/peanut-admin/server/runtime
       - php-storage:/var/www/peanut-admin/server/public/storage
@@ -70,7 +76,7 @@ services:
       php:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget -Y off -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 6

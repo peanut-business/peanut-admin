@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { completeWechatOAuth, type OAuthResult } from '@/api/oauth'
+import { completeWechatOAuth, consumeOAuthCompletion, type OAuthResult } from '@/api/oauth'
 import { useUserStore } from '@/store/user'
 
 const userStore = useUserStore()
@@ -42,12 +42,12 @@ const mobile = ref('')
 const verificationCode = ref('')
 const loading = ref(false)
 
-onLoad((query) => {
-  const params = query as Record<string, string | undefined>
-  ticket.value = String(params.ticket || '')
-  needProfile.value = params.need_profile === '1' || params.need_profile === 'true'
-  needMobile.value = params.need_mobile === '1' || params.need_mobile === 'true'
-  returnPath.value = safePath(params.return_path)
+onLoad(() => {
+  const state = consumeOAuthCompletion()
+  ticket.value = state?.ticket || ''
+  needProfile.value = state?.need_profile || false
+  needMobile.value = state?.need_mobile || false
+  returnPath.value = safePath(state?.return_path)
 })
 
 async function handleComplete() {

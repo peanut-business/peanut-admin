@@ -1,7 +1,7 @@
 <template>
   <div class="login-form-wrapper">
     <div class="login-form-title">{{ $t('login.form.title') }}</div>
-    <div class="login-form-sub-title">{{ $t('login.form.title') }}</div>
+    <div class="login-form-sub-title">{{ brandStore.website.slogan }}</div>
     <div class="login-form-error-msg">{{ errorMessage }}</div>
     <el-form
       ref="loginForm"
@@ -40,14 +40,6 @@
         </el-input>
       </el-form-item>
       <div class="login-form-actions">
-        <div class="login-form-password-actions">
-          <el-checkbox v-model="loginConfig.rememberPassword">
-            {{ $t('login.form.rememberPassword') }}
-          </el-checkbox>
-          <el-link type="primary">{{
-            $t('login.form.forgetPassword')
-          }}</el-link>
-        </div>
         <el-button
           class="login-form-button"
           type="primary"
@@ -55,9 +47,6 @@
           :loading="loading"
         >
           {{ $t('login.form.login') }}
-        </el-button>
-        <el-button text class="login-form-button login-form-register-btn">
-          {{ $t('login.form.register') }}
         </el-button>
       </div>
     </el-form>
@@ -70,8 +59,7 @@
   import { ElMessage, type FormInstance } from 'element-plus';
   import { Lock, User } from '@element-plus/icons-vue';
   import { useI18n } from 'vue-i18n';
-  import { useStorage } from '@vueuse/core';
-  import { useUserStore } from '@/store';
+  import { useBrandStore, useUserStore } from '@/store';
   import useLoading from '@/hooks/loading';
   import type { LoginData } from '@/api/user';
 
@@ -80,16 +68,12 @@
   const errorMessage = ref('');
   const { loading, setLoading } = useLoading();
   const userStore = useUserStore();
+  const brandStore = useBrandStore();
   const loginForm = ref<FormInstance>();
 
-  const loginConfig = useStorage('login-config-v2', {
-    rememberPassword: true,
-    username: 'admin', // 演示默认值
-    password: 'admin123456', // demo default value
-  });
   const userInfo = reactive({
-    username: loginConfig.value.username,
-    password: loginConfig.value.password,
+    username: 'admin',
+    password: '',
   });
 
   const handleSubmit = async () => {
@@ -113,12 +97,6 @@
         },
       });
       ElMessage.success(t('login.form.login.success'));
-      const { rememberPassword } = loginConfig.value;
-      const { username, password } = userInfo;
-      // 实际生产环境需要进行加密存储。
-      // The actual production environment requires encrypted storage.
-      loginConfig.value.username = rememberPassword ? username : '';
-      loginConfig.value.password = rememberPassword ? password : '';
     } catch (err) {
       errorMessage.value = (err as Error).message;
     } finally {
@@ -152,11 +130,6 @@
       line-height: 32px;
     }
 
-    &-password-actions {
-      display: flex;
-      justify-content: space-between;
-    }
-
     &-actions {
       display: flex;
       flex-direction: column;
@@ -168,8 +141,5 @@
       margin-left: 0;
     }
 
-    &-register-btn {
-      color: var(--el-text-color-secondary) !important;
-    }
   }
 </style>

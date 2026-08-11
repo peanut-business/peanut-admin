@@ -76,6 +76,10 @@ final class WechatPayGateway implements PrepayGatewayInterface
             ['Accept: application/json', 'Content-Type: application/json', 'Authorization: ' . $authorization],
             $body
         );
+        PaymentCrypto::verifyWechatResponse(
+            $response,
+            (string)$this->config['wx_pay_platform_cert_path']
+        );
         $decoded = json_decode($response->body(), true);
         if ($response->statusCode() < 200 || $response->statusCode() >= 300 || !is_array($decoded)) {
             $message = is_array($decoded) ? (string)($decoded['message'] ?? $decoded['code'] ?? '') : '';
@@ -89,7 +93,10 @@ final class WechatPayGateway implements PrepayGatewayInterface
         if ((int)($this->config['wx_pay_status'] ?? 0) !== 1) {
             throw new \RuntimeException('微信支付未开启');
         }
-        foreach (['wx_pay_appid', 'wx_pay_mch_id', 'wx_pay_cert_path', 'wx_pay_cert_key_path'] as $key) {
+        foreach ([
+            'wx_pay_appid', 'wx_pay_mch_id', 'wx_pay_cert_path',
+            'wx_pay_cert_key_path', 'wx_pay_platform_cert_path',
+        ] as $key) {
             if (trim((string)($this->config[$key] ?? '')) === '') {
                 throw new \RuntimeException('微信支付配置不完整:' . $key);
             }
@@ -98,13 +105,7 @@ final class WechatPayGateway implements PrepayGatewayInterface
 
     private function merchantCertificateSerial(): string
     {
-        $certificate = PaymentCrypto::fileOrValue((string)$this->config['wx_pay_cert_path']);
-        $info = openssl_x509_parse($certificate);
-        $serial = is_array($info) ? strtoupper((string)($info['serialNumberHex'] ?? '')) : '';
-        if ($serial === '') {
-            throw new \RuntimeException('无法读取微信支付商户证书序列号');
-        }
-        return $serial;
+        return PaymentCrypto::certificateSerial((string)$this->config['wx_pay_cert_path']);
     }
 
     private function clientPayload(string $scene, array $response, $privateKey): array

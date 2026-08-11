@@ -60,6 +60,11 @@ class XlsxExportService
             $xml .= '<row r="' . $rowNumber . '">';
             foreach (array_values((array)$row) as $columnIndex => $value) {
                 $cell = self::columnName($columnIndex + 1) . $rowNumber;
+                if (is_int($value) || is_float($value)) {
+                    $numeric = rtrim(rtrim(number_format((float)$value, 10, '.', ''), '0'), '.');
+                    $xml .= '<c r="' . $cell . '"><v>' . $numeric . '</v></c>';
+                    continue;
+                }
                 $xml .= '<c r="' . $cell . '" t="inlineStr"><is><t xml:space="preserve">'
                     . self::xml((string)$value) . '</t></is></c>';
             }

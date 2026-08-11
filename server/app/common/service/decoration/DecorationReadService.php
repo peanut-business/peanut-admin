@@ -16,13 +16,7 @@ class DecorationReadService
         if ($page->isEmpty()) {
             throw new \RuntimeException('装修页面不存在');
         }
-        $result = $page->toArray();
-        $data = json_decode((string)$result['data'], true, 512, JSON_THROW_ON_ERROR);
-        $meta = trim((string)($result['meta'] ?? '')) === ''
-            ? [] : json_decode((string)$result['meta'], true, 512, JSON_THROW_ON_ERROR);
-        $result['data'] = DecorationSchemaService::resourcesForRead($data);
-        $result['meta'] = DecorationSchemaService::resourcesForRead($meta);
-        return $result;
+        return self::formatPage($page->toArray());
     }
 
     public static function tabbar(bool $visibleOnly = false): array
@@ -38,5 +32,15 @@ class DecorationReadService
             $list[] = DecorationSchemaService::resourcesForRead($item);
         }
         return ['style' => is_array($style) ? $style : [], 'list' => $list];
+    }
+
+    public static function formatPage(array $page): array
+    {
+        $data = json_decode((string)$page['data'], true, 512, JSON_THROW_ON_ERROR);
+        $meta = trim((string)($page['meta'] ?? '')) === ''
+            ? [] : json_decode((string)$page['meta'], true, 512, JSON_THROW_ON_ERROR);
+        $page['data'] = DecorationSchemaService::resourcesForRead($data);
+        $page['meta'] = DecorationSchemaService::resourcesForRead($meta);
+        return $page;
     }
 }

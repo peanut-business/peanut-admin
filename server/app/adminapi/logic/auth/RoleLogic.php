@@ -112,7 +112,15 @@ class RoleLogic extends BaseLogic
     {
         Db::startTrans();
         try {
-            SystemRole::destroy($id);
+            $role = SystemRole::where('id', $id)->lock(true)->findOrEmpty();
+            if ($role->isEmpty()) {
+                throw new \RuntimeException('角色不存在');
+            }
+            if (AdminRole::where('role_id', $id)->count() > 0) {
+                throw new \RuntimeException('有管理员在使用该角色，不允许删除');
+            }
+
+            $role->delete();
             SystemRoleMenu::where('role_id', $id)->delete();
             Db::commit();
             return true;

@@ -103,14 +103,15 @@ class UploadService
             throw $e;
         }
 
+        $storage = $driver->getEngineName();
         return [
             'id'   => $file->id,
             'cid'  => $file->cid,
             'type' => $file->type,
             'name' => $file->name,
             'uri'  => $uri,
-            'storage' => $driver->getEngineName(),
-            'url'  => FileService::getFileUrl($uri),
+            'storage' => $storage,
+            'url'  => FileService::getFileUrl($uri, $storage),
         ];
     }
 }
