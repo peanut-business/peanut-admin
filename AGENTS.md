@@ -45,6 +45,10 @@
 
 设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。**后端代码中没有任何多租户实现。** 不要在现有代码里查找 Tenant / pa_tenant 相关逻辑。
 
+- 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
+- 当前开发顺序：`docs/plans/saas-enhancement-development-plan.md`
+- 跨应用实例管理 Release、授权、升级、健康和备份的运营平台已明确为独立应用；它不属于核心包，也不是 SaaS Host 内的租户控制面
+
 ### 2.3 产品化正式基线 — ✅ 完成
 
 - 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
