@@ -7,7 +7,7 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-Peanut Admin 应用 `1.0.0` 已正式发布。annotated tag `v1.0.0` 指向 `main` 提交 `0d3c848b8e2bb622a868924145ce810a8946f173`，同 tag GitHub Release 于 2026-08-11 发布；既有应用与官网域名的正式部署和一次最低 smoke 仍在执行。
+Peanut Admin 应用 `1.0.0` 已正式发布。annotated tag `v1.0.0` 指向 `main` 提交 `0d3c848b8e2bb622a868924145ce810a8946f173`，同 tag GitHub Release 于 2026-08-11 发布；既有应用与官网已经部署，数据库迁移账本前滚到 28 条，生产容器健康，一次最低线上 smoke 已封存。
 
 ## 公开运行依赖
 
@@ -33,6 +33,7 @@ Peanut Admin 应用 `1.0.0` 已正式发布。annotated tag `v1.0.0` 指向 `mai
 - 外部 `RELEASE_MANIFEST.json` SHA-256：`616fcd7dfd2edcebe8773f6860493c4fdfb912cc3cdfb4373c39f85972419989`
 - 应用暂时采用专有 / All Rights Reserved，版权主体显示为“花生科技”；Release 同时附带根许可证、NOTICE、第三方清单和 SPDX SBOM。
 - 功能分支 PR #10 的五组 CI 一次通过；`dev` → `main` 阶段 PR #11 的分支保护检查也全部通过。
+- 应用仓当前保持 private；GitHub Release 链接对已获授权的 GitHub 身份可见，匿名访客会得到 404。官网、应用和法律资产本身不依赖该登录态。
 - 真实短信、支付、微信/OAuth 凭据和平台登记只在对应部署 smoke 后才能宣称生产可用。
 - SaaS/多租户是产品化正式基线后的独立阶段，本 release 不包含。
 

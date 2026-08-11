@@ -71,6 +71,8 @@ Docker Desktop 可通过 `docker buildx inspect --bootstrap` 查看 `moby.host-g
 
 2026-08-11 已把服务器从历史功能分支升级到 `dev`，完成数据库/存储备份、24 条迁移账本接管、生产 API 路由修复和三端镜像更新。当前四个服务健康/运行，真实 Chromium 已通过管理端登录、文章页、UniApp H5、Nuxt PC 与文档站 smoke；证据见 `output/playwright/production-baseline/final-summary.json`。
 
+2026-08-11 PB09 正式部署检出不可变 `v1.0.0@0d3c848…`，在部署端从源码构建 PHP/Nginx 镜像；数据库与 `php-storage` 配对备份后，迁移账本从 24 条一次前滚到 28 条，再以 `up -d --no-build` 切换。MySQL/PHP/Nginx 健康且 cron 运行；一次最低外部 smoke 覆盖应用健康、管理端/PC/H5 HTTP、`RELEASE_METADATA.json`、法律资产和官网版本页，不重复 PB08B 浏览器矩阵。
+
 以上只记录已封存的验收范围，不是模板域名、IP、数据库地址或云平台默认值。
 
 ## HTTPS 反向代理
@@ -149,7 +151,7 @@ docker compose up -d --no-build
 
 `scripts/package-release.sh` 仅保留为管理端 + PHP 的原生制品工具，不是完整三端生产部署方案。生产环境以 Docker Compose 为唯一推荐入口。
 
-正式部署应检出不可变 release tag，并核对根 `RELEASE_METADATA.json`；源码 release 的完整 commit 与 archive SHA-256 以 GitHub Release 附件 `RELEASE_MANIFEST.json` 为准。生产 Nginx 镜像把根许可证、NOTICE、第三方告知、SPDX SBOM、CHANGELOG 与 release metadata 放在 `/legal/`，PHP 镜像保留同一份 `legal/` 目录。PB09 不发布预构建镜像，这些镜像由部署端从 source tag 本地构建。
+正式部署应检出不可变 release tag，并核对根 `RELEASE_METADATA.json`；源码 release 的完整 commit 与 archive SHA-256 以 GitHub Release 附件 `RELEASE_MANIFEST.json` 为准。生产 Nginx 镜像保持源码文件名，把 `/legal/LICENSE`、`/legal/NOTICE`、`/legal/THIRD_PARTY_NOTICES.md`、`/legal/RELEASE_SBOM.spdx.json`、`/legal/CHANGELOG.md` 与 `/legal/RELEASE_METADATA.json` 放入公开目录；PHP 镜像保留同一份 `legal/` 目录。官网静态站为下载友好另使用 `.txt` 后缀。PB09 不发布预构建镜像，这些镜像由部署端从 source tag 本地构建。
 
 ## 品牌与官网发布
 
