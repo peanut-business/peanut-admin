@@ -1,6 +1,6 @@
 # PB09 正式基线发布合同
 
-> 状态：Candidate Ready；许可证门禁已通过
+> 状态：Release Published；正式部署与封存待完成
 >
 > 目标应用版本：`1.0.0`
 >
@@ -12,18 +12,18 @@
 
 PB09 把已经通过 PB03–PB08B 的技术候选发布为 Peanut Admin 应用正式基线。它只负责应用仓版本身份、法律文件、分支合入、tag、release manifest、发布记录和官网版本状态，不重新迁移领域能力、不修改核心 Runtime、不发布新核心包，也不开始 SaaS。
 
-`docs/architecture/pb09-license-provenance-gate.md` 是硬前置。当前必须先提交并推送功能分支及合格的 PB09 准备文档，避免 35 个本地提交丢失；根 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md` 尚未通过前，仍禁止合入 `dev/main`、打 tag、创建 GitHub Release、发布镜像、正式部署或声明正式基线完成。
+`docs/architecture/pb09-license-provenance-gate.md` 是硬前置，现已通过。功能分支备份、PR #10 → `dev`、PR #11 → `main`、annotated `v1.0.0` 与同 tag GitHub Release 均已按顺序完成；正式部署和里程碑封存完成前仍不得宣布 PB09 全部完成。
 
 ## 2. 当前发布事实
 
 | 项目 | 2026-08-11 当前事实 | PB09 含义 |
 |---|---|---|
 | 应用基线 | `origin/dev=bc2e75ac6217d7defc44cd2b8e0c9e85a7cefc62` | PB03–PB08B 工作以它为起点，不改写历史 |
-| 当前工作分支 | `feat/pb04-permission-host`，法律候选 `f3e6834…`，领先 `origin/dev` 37 个提交 | 必须先按功能分支 → `dev` 合入，不能直接从功能分支发布 |
-| 集成/稳定分支 | `origin/main=114acb3ea7b23e486a54007b79258e52a1fd0a0e` 是 `origin/dev` 祖先；`origin/dev` 是当前 HEAD 祖先 | 没有反向分叉；仍须走 `dev` → `main` 的阶段合入 |
-| 应用 tag | 当前没有应用 tag | `v1.0.0` 必须只在最终 `main` 发布提交创建一次 |
+| 发布候选 | 法律候选 `f3e6834…` 经 PR #10 合入 `dev=3b1d7b651a49d77024067f8038d1f3539e7bfc31` | 五组功能 PR CI 一次通过 |
+| 集成/稳定分支 | PR #11 把冻结 `dev` 合入 `main=0d3c848b8e2bb622a868924145ce810a8946f173` | `dev/main` 文件树一致；分支保护 push/PR 检查全部通过 |
+| 应用 tag | annotated `v1.0.0` 指向 `0d3c848b8e2bb622a868924145ce810a8946f173` | tag 只创建并推送一次，没有移动或回写 |
 | manifest 版本 | Web、PC、UniApp、docs-site 均为 `1.0.0`；Composer 应用包不内嵌 version | `1.0.0` 是已存在但未发布的应用版本身份，不再引入第二个版本号 |
-| 公开状态 | README 与官网明确写“应用 1.0.0 尚未发布” | 只有 Git tag、GitHub Release 和版本文档均完成后才能删除该声明 |
+| 公开状态 | GitHub Release `https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0` 已发布 | 后置状态提交把 README/官网改为真实 `1.0.0`；正式域名部署仍待完成 |
 | 核心依赖 | Composer `peanut-admin/core@0.1.0-alpha.2`；Web/PC `@peanut-admin/admin@0.1.0-alpha.3`；UniApp `@peanut-admin/admin@0.1.0-alpha.4` | PB09 原样发布已验收锁，不顺带统一或升级核心版本 |
 | 技术候选 | PB08B 总证据绑定候选谱系 `4442229…`，当前后续提交只同步 PB08B 文档 | 法律/发布元数据变化可继承技术证据；任何 Runtime/依赖/迁移变化都使继承失效并停止 |
 
@@ -88,9 +88,11 @@ release manifest 只能由最终不可变 tag 的内容生成；commit/tag 或�
 
 ## 7. 当前停止线
 
-本合同已获用户授权连续执行，许可证门禁已经通过：
+本合同的发布身份阶段已经完成：
 
 - 用户已决定应用暂时专有 / All Rights Reserved，版权主体显示为“花生科技”，并确认仓库、贡献身份与 AI 辅助成果的发布和再许可权；
 - 根 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`、`RELEASE_SBOM.spdx.json`、`CHANGELOG.md` 与无自引用的 `RELEASE_METADATA.json` 已在候选 `f3e6834…` 形成；
 - 一次法律静态门禁通过，未重跑 PB08B；功能分支远端备份已完成，当前只需推送候选后创建到 `dev` 的 PR；
-- tag 后的 `RELEASE_MANIFEST.json` 尚未生成；在功能分支 → `dev` → `main` 和 GitHub Release 完成前，不得把 manifest 中已有的 `1.0.0` 当成已经发布。
+- annotated `v1.0.0`、GitHub Release 与六个附件已发布；规范源码 SHA-256 为 `069a34f98db1d604ddc64a342a10e17a81db450094d303db455a8b32ae114847`，外部 manifest SHA-256 为 `616fcd7dfd2edcebe8773f6860493c4fdfb912cc3cdfb4373c39f85972419989`；
+- GitHub 返回的六个 asset digest 与本地 manifest 一致，Release 非 draft、非 prerelease；没有预构建镜像、新核心包或 SaaS 声明；
+- 当前只剩后置发布状态提交、既有应用与官网域名部署、一次版本页/链接/最低 smoke 及最终封存。

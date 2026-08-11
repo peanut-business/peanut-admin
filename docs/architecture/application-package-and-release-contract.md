@@ -81,6 +81,6 @@ Docker 多阶段构建一次完成：
 7. [已完成 2026-08-11] 系统基础设施 PB04、会员/财务 PB05、内容/装修 PB06、通知/支付/OAuth/渠道 PB07 均固定应用唯一 Host；核心相邻候选无采用授权且语义不等价。OAuth 使用固定 API callback bridge，旧 Channel/AES 写入口退出。
 8. [已完成 2026-08-11] PB08A 中性脚手架、品牌单一事实源和官网+文档门户实现及静态门禁。
 9. [已完成 2026-08-11] PB08B 唯一正式候选集成验收通过；脱敏总摘要见 `output/playwright/pb08b/summary.json`。
-10. [执行中 2026-08-11] PB09 法律候选 `f3e6834…` 已按用户决定形成专有根许可证、NOTICE、第三方告知、SPDX SBOM、CHANGELOG 与 release metadata，一次静态门禁通过且未重复 PB08B。当前进入功能分支 → `dev` → `main`、`v1.0.0`、GitHub Release 与官网正式状态；PB09 完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
+10. [执行中 2026-08-11] PB09 法律候选 `f3e6834…` 的一次静态门禁通过；PR #10/11 已依次合入 `dev/main`，annotated `v1.0.0` 与同 tag GitHub Release 已发布，六个附件摘要一致且没有预构建镜像、新核心包或 SaaS 声明。当前只剩既有应用/官网正式部署、一次最低 smoke 与 PB09 封存；完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
 
 SaaS 多租户仍是 `docs/design/saas-roadmap/` 中的路线图，不属于当前发布能力。
