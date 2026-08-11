@@ -81,6 +81,6 @@ Docker 多阶段构建一次完成：
 7. [已完成 2026-08-11] 系统基础设施 PB04、会员/财务 PB05、内容/装修 PB06、通知/支付/OAuth/渠道 PB07 均固定应用唯一 Host；核心相邻候选无采用授权且语义不等价。OAuth 使用固定 API callback bridge，旧 Channel/AES 写入口退出。
 8. [已完成 2026-08-11] PB08A 中性脚手架、品牌单一事实源和官网+文档门户实现及静态门禁。
 9. [已完成 2026-08-11] PB08B 唯一正式候选集成验收通过；脱敏总摘要见 `output/playwright/pb08b/summary.json`。
-10. [待决策] 明确应用许可证/provenance、根 `LICENSE`、`NOTICE` 与第三方清单后才进入 PB09；PB09 完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
+10. [执行中 2026-08-11] `docs/architecture/pb09-license-provenance-gate.md` 已冻结应用来源、依赖库存、分发物告知落点、写入白名单和停止线；初始 95 个本地未知依赖的 SPDX 已补证清零。用户已决定应用暂时专有 / All Rights Reserved、版权主体显示为“花生科技”，并确认仓库、贡献身份与 AI 辅助成果的发布和再许可权。当前先推送功能分支备份，再生成根法律文件及实际 release 告知；法律门禁通过后才允许功能分支 → `dev` → `main`、`v1.0.0`、GitHub Release 与官网正式状态。PB09 完成后模板应用才成为依赖两个公开包、同时拥有明确产品 Module 的正式基线。
 
 SaaS 多租户仍是 `docs/design/saas-roadmap/` 中的路线图，不属于当前发布能力。
