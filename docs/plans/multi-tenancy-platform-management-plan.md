@@ -52,22 +52,22 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 
 ### 当前恢复指针
 
-更新时间：2026-08-12。当前阶段为 `MT00-C`，恢复时以远端 PR 和精确提交为准：
+更新时间：2026-08-12。当前阶段为 `MT00-CAP06`，恢复时以远端 PR 和精确提交为准：
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
-| Tenant refresh 门禁修复 | 已完成并合入 Core `dev` | [Core PR #6](https://github.com/peanut-opensource/peanut-admin/pull/6)；merge `fa5ab328375b8fa88e763ae2202c1833bbfd95c6` |
-| Admin Web Alpha.4 发布事实 | 已完成并合入 Core `dev` | [Core PR #5](https://github.com/peanut-opensource/peanut-admin/pull/5)；merge `d7cdc1e905afd629e3ef87ba842e9fda8494329d` |
-| CAP01 HumanWorkflow 源码候选 | 已完成静态源码验收，正在集成 | source `3972c9aefcd55ac71d07a47739a99d23bb0ae30c`；tree `d6dbde37907d1dd43b00057fc16fbd1a8d6dd052`；[Core PR #7](https://github.com/peanut-opensource/peanut-admin/pull/7) |
-| CAP01 状态文档收口 | 已提交，随 Core PR #7 集成 | `9312ba0` |
+| CAP01–CAP04 Core Runtime | 已完成并合入 Core `dev` | Core PR #7、#9、#10、#14；禁止重复验收 |
+| CAP05 产品中性 fixture 修复 | 已完成并合入 Core `dev` | [Core PR #16](https://github.com/peanut-opensource/peanut-admin/pull/16)；source `14010993e47f5e3082ab8f0b53456f282b71f086`；tree `3fa7e79730ec9ed8f0349dc1c0d24fa72cfda54f` |
+| CAP05 双投影资格 | 已通过并合入 Core `dev` | Composer `ca30576a…e5c0e`；npm `5d010762…8c80`；Core PR #17 merge `3ca731804eb8291408e03c0ae18299d2b7db1cb7` |
+| CAP06 Peanut Admin 私有采用 | 合同已授权，等待实现 | `docs/architecture/cap06-private-downstream-adoption-contract.md` |
 
 中断后恢复步骤：
 
 1. 读取两个仓库根 `AGENTS.md`，确认工作目录仍为 `peanut-admin` 和 `peanut-admin-core`。
-2. `fetch --prune` 后查看 Core PR #7；若仍在运行，只等待现有门禁，不重新触发。
-3. PR #7 通过后合入 Core `dev`，把最终 merge commit 记录为 CAP02 的唯一前置提交。
-4. 不重复 PR #6、PR #5、CAP01 四十路径静态验收或已经通过的门禁。
-5. CAP02 只能先形成独立合同，再按合同白名单实现；不得并行启动 CAP03/CAP04。
+2. 先合入 CAP06 合同提交，不修改依赖、Runtime 或 split 仓。
+3. 按 CAP06 白名单生成 Composer split 候选、精确锁定两个投影并执行唯一产品采用流。
+4. 通过后回写 Core adoption record，再进入独立 Alpha.5 发布决策。
+5. 不重复 CAP01–CAP05、两个投影或任何已通过门禁；CAP06 未通过前不启动 MT01。
 
 ## 5. MT00：关闭当前在途工作
 
