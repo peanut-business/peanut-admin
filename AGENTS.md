@@ -58,7 +58,7 @@
 - PB07 已完成：通知、支付、OAuth 与外部渠道均固定应用唯一 Host；旧 Channel CRUD、重复凭据和未实现的公众号 AES 配置入口已退出，PC/公众号通过固定 API bridge 回跳；核心相邻候选未获下游采用授权
 - PB08A 实现已完成：品牌单一 Runtime、中性安装默认、四端消费、包元数据、官网与文档门户均已落地；静态官网门禁通过，唯一桌面/移动 Chromium 验收归 PB08B
 - PB08B 已完成：候选 `4442229…` 通过 registry 构建、弱凭据/24→28/空库、Compose/HTTP/镜像/Host、唯一桌面/移动 Chromium 与文档一致性；总摘要见 `output/playwright/pb08b/summary.json`
-- PB09 法律候选 `f3e6834…` 已按专有 / All Rights Reserved、“花生科技”和发布授权决定生成根法律文件、第三方告知及 SPDX SBOM；一次静态门禁通过，当前进入功能分支 PR → `dev` → `main` → `v1.0.0`/Release/正式部署
+- PB09 法律门禁、PR #10/11、`dev/main` 合入、annotated `v1.0.0` 与 GitHub Release 已完成；规范源码/manifest 摘要和六个附件一致，当前只剩既有应用/官网正式部署、一次最低 smoke 与最终封存
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
 - 产品化阶段通过后才将 `dev` 合入 `main`；SaaS 作为后续独立目标
 
