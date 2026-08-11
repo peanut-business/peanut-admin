@@ -1,7 +1,8 @@
 # SaaS Roadmap — 设计资料归档
 
 > 当前权威摘要：[`../saas-enhancement-blueprint.md`](../saas-enhancement-blueprint.md)
-> 当前实施顺序：[`../../plans/saas-enhancement-development-plan.md`](../../plans/saas-enhancement-development-plan.md)
+> 当前实施顺序：[`../../plans/multi-tenancy-platform-management-plan.md`](../../plans/multi-tenancy-platform-management-plan.md)
+> 完整 SaaS 未来规划：[`../../plans/saas-enhancement-development-plan.md`](../../plans/saas-enhancement-development-plan.md)
 
 本目录收录 Peanut Admin **未来升级为多租户 SaaS 底座**的设计资料。这些文档不是当前基础版(对标 LikeAdmin 1.9.4)的一部分,而是下一阶段方向的设计输入。
 

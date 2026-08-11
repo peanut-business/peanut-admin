@@ -46,7 +46,7 @@
 设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。**后端代码中没有任何多租户实现。** 不要在现有代码里查找 Tenant / pa_tenant 相关逻辑。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
-- 当前开发顺序：`docs/plans/saas-enhancement-development-plan.md`
+- 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
 - 跨应用实例管理 Release、授权、升级、健康和备份的运营平台已明确为独立应用；它不属于核心包，也不是 SaaS Host 内的租户控制面
 
 ### 2.3 产品化正式基线 — ✅ 完成
@@ -64,7 +64,7 @@
 - PB08B 已完成：候选 `4442229…` 通过 registry 构建、弱凭据/24→28/空库、Compose/HTTP/镜像/Host、唯一桌面/移动 Chromium 与文档一致性；总摘要见 `output/playwright/pb08b/summary.json`
 - PB09 已完成：法律门禁、PR #10/#11、`dev/main` 合入、annotated `v1.0.0`、GitHub Release、既有应用与官网部署、24→28 前滚和一次最低线上 smoke 均已封存；生产运行镜像由不可变 tag 源码在部署端构建，不发布预构建镜像
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
-- 产品化正式基线已经进入 `main`；下一阶段只执行已获授权的媒体项目通用能力合同，SaaS 仍是其后的独立目标且尚未开始
+- 产品化正式基线已经进入 `main`；下一阶段先完成已获授权的媒体项目通用能力合同，再按当前计划推进多租户和必要的平台管理；完整 SaaS 商业化暂缓
 
 ---
 
