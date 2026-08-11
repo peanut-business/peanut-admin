@@ -94,6 +94,32 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 
 Gate 失败时只允许继续合同、数据和 fixture 准备，不允许复制旧 Runtime 绕过。
 
+### PA-DCS-ADOPT-01 承接状态
+
+当前状态：`UNKNOWN`。唯一 Peanut 承接 owner 为本计划的 Peanut Admin
+主执行任务；DCS 不另行选择或拼装候选。候选形成前，下列身份不得使用分支名、
+移动 HEAD 或推测值代替：
+
+| 候选身份 | 当前值 |
+| --- | --- |
+| 源仓库 | `UNKNOWN` |
+| 40 位 source commit | `UNKNOWN` |
+| 40 位 source tree | `UNKNOWN` |
+| Generator digest | `UNKNOWN` |
+| Composer 版本与不可变来源 | `UNKNOWN` |
+| npm 版本与不可变来源 | `UNKNOWN` |
+| 完整生成参数 | `UNKNOWN` |
+
+进入可承接阶段后，Peanut owner 只提名一个候选，并同时给出：
+
+- Module 扩展和产品 namespace/API prefix/migration owner 的生成证据；
+- Tenant、Client、权限、数据、缓存、文件和任务隔离证据；
+- 空库安装、确定性生成、版本升级、失败停止和回滚/恢复证据；
+- DCS 专用最小 Host、Module 删除能力和浏览器 smoke 结果。
+
+候选失败时由 Peanut 修复并重新执行本 Gate。DCS 可以继续合同、数据清洗、
+fixture、迁移映射和验收矩阵，但不得回退、复制或继续扩展旧 Runtime。
+
 ## 7. MT02：Standalone 采用默认 Tenant
 
 - 安装器创建默认 Tenant、Account、TenantMember 和首个 owner。
@@ -142,8 +168,11 @@ PM01 不包含套餐价格、订阅、计费、试用、续费、商业配额或
 - DCS D1 的领域合同、数据清洗、fixture、迁移映射和验收矩阵现在可以继续。
 - D1 正式 Runtime 必须等待 MT01 中的 DCS 专用 `PA-DCS-ADOPT-01` 通过。
 - D1 不等待 PM01 全部能力，更不等待 SAAS-FUTURE。
+- 完整 SaaS 商业化不是 D1 前置；D1 只等待上述最小可消费脚手架承接 Gate。
 - DCS 新主项目从批准模板生成；旧 Runtime 不作为正式实现基线。
 - DCS 的 Tenant 与经营主体关系必须在正式表结构前单独冻结。
+- Peanut Admin 当前产品化主任务是 `PA-DCS-ADOPT-01` 的唯一承接 owner；候选
+  未形成前保持 `UNKNOWN`，不得由 DCS 自行选择替代版本。
 
 ## 12. OP01–OP02：独立运营平台
 
