@@ -1,6 +1,6 @@
 # Peanut Admin 产品化正式基线计划
 
-> 状态：执行中
+> 状态：已完成
 >
 > 更新日期：2026-08-11
 >
@@ -44,7 +44,7 @@
 | PB07 | 通知、渠道、支付与 OAuth 域收口 | 已完成 | 四个验证码 scene、支付状态机、OAuth 身份绑定、固定回跳和外部渠道均由应用唯一 Host 与测试 owner 固定 |
 | PB08A | 脚手架产品化与官方网站 | 完成（浏览器证据并入 PB08B） | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；静态门禁通过 |
 | PB08B | 正式候选集成验收 | 已完成 | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致均通过 |
-| PB09 | 发布正式基线 | 执行中（Release 已发布，正式部署/封存待完成） | `v1.0.0`、manifest、GitHub Release 已完整；待既有应用/官网部署、一次最低 smoke 与最终状态封存 |
+| PB09 | 发布正式基线 | 已完成 | `v1.0.0`、manifest、GitHub Release、既有应用/官网部署、24→28 前滚、一次最低线上 smoke 与最终状态均已封存 |
 | SAAS01 | SaaS 多租户实现 | 后续独立阶段 | PB09 后按 `docs/design/saas-roadmap/` 重新冻结执行契约 |
 
 ## 4. 领域迁移工作流
@@ -131,6 +131,8 @@ PB09 前置许可证与来源合同见 `docs/architecture/pb09-license-provenanc
 PB09 正式发布合同见 `docs/architecture/pb09-formal-release-contract.md`。法律候选经 PR #10 合入 `dev=3b1d7b651a49d77024067f8038d1f3539e7bfc31`，再经 PR #11 合入 `main=0d3c848b8e2bb622a868924145ce810a8946f173`；两次合入的文件树一致。annotated `v1.0.0` 与同 tag GitHub Release 已创建；规范源码附件 SHA-256 为 `069a34f…`，外部 `RELEASE_MANIFEST.json` SHA-256 为 `616fcd7…`，并附 LICENSE、NOTICE、第三方告知与 SPDX SBOM。未发布预构建镜像、新核心包或 SaaS 声明。
 
 PB09 法律候选 `f3e6834…` 已生成专有根 `LICENSE`、`NOTICE`、第三方告知、SPDX 2.3 SBOM、`CHANGELOG.md` 与无自引用的 `RELEASE_METADATA.json`；五个 manifests 使用 `proprietary/UNLICENSED` 并显示“花生科技”。一次静态门禁证明五锁图 3,191 个依赖条目无未知许可证、33 个生产 Composer 包和非默认许可证均有来源告知、法律文件哈希及 28 条 migration 清单一致、Docker 与官网均可取得法律资产。VitePress 下载链接失败只修正扩展名并在允许的一次失败组重跑中通过；未重复 PB08B。许可证、分支、tag 与 GitHub Release 门禁至此通过，下一步仅为既有应用/官网正式部署、一次版本链接/最低 smoke 和 PB09 封存。
+
+PB09 正式部署与封存现已完成：生产服务器检出不可变 `v1.0.0@0d3c848…`，数据库和 `php-storage` 配对备份位于 `/home/ubuntu/backups/peanut-admin/pb09-v1.0.0-20260811T074800Z`；由 tag 源码在部署端构建 PHP/Nginx 镜像，迁移账本一次前滚 24→28 后再切换，MySQL/PHP/Nginx 健康且 cron 运行。应用入口 `https://peanut-admin.007345.xyz` 与 Cloudflare Pages 官方站 `https://peanut-admin-docs.pages.dev` 已上线；最低外部 smoke 覆盖健康页、三端 HTTP、应用/官网 release metadata 和法律资产。匿名 GitHub Release URL 因应用仓保持 private 返回 404，已用授权 GitHub API 确认 Release 非 draft、非 prerelease、tag/名称/发布时间正确；这是一项公开访客限制，不改仓库可见性，也不移动 tag 或创建补丁版本。PB09 至此完成；没有发布预构建镜像、新核心包或 SaaS 声明。
 
 ## 6. 并行规则
 
