@@ -1,7 +1,7 @@
 {
   "run": "26080101",
   "prefix": "C0126080101",
-  "system": "Peanut Admin v2",
+  "system": "Peanut Admin",
   "resolved_targets": {
     "category_ids": [6, 7, 8],
     "article_ids": [2],

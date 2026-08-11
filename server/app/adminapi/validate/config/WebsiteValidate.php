@@ -8,18 +8,6 @@ use think\Validate;
 class WebsiteValidate extends Validate
 {
     protected $rule = [
-        'name' => 'require|max:60',
-        'web_favicon' => 'max:500',
-        'web_logo' => 'max:500',
-        'login_image' => 'max:500',
-        'shop_name' => 'require|max:60',
-        'shop_logo' => 'max:500',
-        'pc_logo' => 'max:500',
-        'pc_title' => 'max:120',
-        'pc_ico' => 'max:500',
-        'pc_desc' => 'max:500',
-        'pc_keywords' => 'max:500',
-        'h5_favicon' => 'max:500',
         'config' => 'array|checkCopyright',
         'service_title' => 'require|max:100',
         'service_content' => 'max:200000',
@@ -35,19 +23,12 @@ class WebsiteValidate extends Validate
     ];
 
     protected $message = [
-        'name.require' => '网站名称不能为空',
-        'name.max'     => '网站名称最多 60 个字符',
-        'shop_name.require' => '商城名称不能为空',
         'config.array' => '备案配置格式错误',
         'default_avatar.require' => '默认头像不能为空',
         'login_way.require' => '至少启用一种登录方式',
     ];
 
     protected $scene = [
-        'website' => [
-            'name', 'web_favicon', 'web_logo', 'login_image', 'shop_name', 'shop_logo',
-            'pc_logo', 'pc_title', 'pc_ico', 'pc_desc', 'pc_keywords', 'h5_favicon',
-        ],
         'copyright' => ['config'],
         'agreement' => ['service_title', 'service_content', 'privacy_title', 'privacy_content'],
         'statistics' => ['clarity_code'],

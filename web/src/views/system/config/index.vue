@@ -1,72 +1,51 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.config']" />
-    <a-card class="general-card" :title="$t('menu.system.config')">
-      <a-spin :loading="loading" style="width: 100%">
-        <a-form
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.config') }}</template>
+      <div v-loading="loading" style="width: 100%">
+        <el-form
           ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical"
+          label-position="top"
           style="max-width: 560px"
         >
-          <a-form-item field="name" :label="$t('systemConfig.field.name')">
-            <a-input
-              v-model="form.name"
-              :placeholder="$t('systemConfig.field.name.placeholder')"
-            />
-          </a-form-item>
-          <a-form-item field="logo" :label="$t('systemConfig.field.logo')">
-            <a-input
-              v-model="form.logo"
-              :placeholder="$t('systemConfig.field.logo.placeholder')"
-            />
-          </a-form-item>
-          <a-form-item
-            field="favicon"
-            :label="$t('systemConfig.field.favicon')"
+          <el-form-item
+            v-for="field in fields"
+            :key="field.key"
+            :prop="field.key"
+            :label="$t(`systemConfig.field.${field.key}`)"
           >
-            <a-input
-              v-model="form.favicon"
-              :placeholder="$t('systemConfig.field.favicon.placeholder')"
+            <el-input
+              v-model="form[field.key]"
+              :type="field.multiline ? 'textarea' : 'text'"
+              :rows="field.multiline ? 3 : undefined"
+              :placeholder="$t('systemConfig.field.placeholder')"
             />
-          </a-form-item>
-          <a-form-item
-            field="copyright"
-            :label="$t('systemConfig.field.copyright')"
-          >
-            <a-input
-              v-model="form.copyright"
-              :placeholder="$t('systemConfig.field.copyright.placeholder')"
-            />
-          </a-form-item>
-          <a-form-item field="icp" :label="$t('systemConfig.field.icp')">
-            <a-input
-              v-model="form.icp"
-              :placeholder="$t('systemConfig.field.icp.placeholder')"
-            />
-          </a-form-item>
-          <a-form-item>
-            <a-button
+          </el-form-item>
+          <el-form-item>
+            <el-button
               type="primary"
               :loading="submitLoading"
               @click="handleSubmit"
             >
               {{ $t('systemConfig.operation.save') }}
-            </a-button>
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-card>
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
+  import { useBrandStore } from '@/store';
   import {
     getWebsiteConfig,
     saveWebsiteConfig,
@@ -77,17 +56,34 @@
   const { loading, setLoading } = useLoading(true);
   const submitLoading = ref(false);
   const formRef = ref<FormInstance>();
+  const brandStore = useBrandStore();
 
-  const form = reactive<WebsiteConfig>({
-    name: '',
-    logo: '',
-    favicon: '',
-    copyright: '',
-    icp: '',
-  });
+  const form = reactive<WebsiteConfig>({ ...brandStore.website });
+
+  const fields: { key: keyof WebsiteConfig; multiline?: boolean }[] = [
+    { key: 'name' },
+    { key: 'web_logo' },
+    { key: 'web_favicon' },
+    { key: 'login_image' },
+    { key: 'shop_name' },
+    { key: 'shop_logo' },
+    { key: 'pc_logo' },
+    { key: 'pc_title' },
+    { key: 'pc_ico' },
+    { key: 'pc_desc', multiline: true },
+    { key: 'pc_keywords', multiline: true },
+    { key: 'h5_favicon' },
+    { key: 'slogan', multiline: true },
+    { key: 'copyright' },
+    { key: 'official_url' },
+    { key: 'github_url' },
+  ];
 
   const rules = {
     name: [{ required: true, message: t('systemConfig.field.name.required') }],
+    shop_name: [
+      { required: true, message: t('systemConfig.field.shop_name.required') },
+    ],
   };
 
   const fetchData = async () => {
@@ -102,12 +98,13 @@
   fetchData();
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       await saveWebsiteConfig({ ...form });
-      Message.success(t('systemConfig.tip.success'));
+      brandStore.replace({ ...form });
+      ElMessage.success(t('systemConfig.tip.success'));
     } finally {
       submitLoading.value = false;
     }

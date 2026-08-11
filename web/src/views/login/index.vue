@@ -1,8 +1,12 @@
 <template>
   <div class="container">
     <div class="logo">
-      <img alt="logo" src="/favicon.svg" style="width: 32px; height: 32px" />
-      <div class="logo-text">Peanut Admin</div>
+      <img
+        alt="logo"
+        :src="brandStore.website.web_logo"
+        style="width: 32px; height: 32px"
+      />
+      <div class="logo-text">{{ brandStore.website.name }}</div>
     </div>
     <LoginBanner />
     <div class="content">
@@ -20,6 +24,9 @@
   import Footer from '@/components/footer/index.vue';
   import LoginBanner from './components/banner.vue';
   import LoginForm from './components/login-form.vue';
+  import { useBrandStore } from '@/store';
+
+  const brandStore = useBrandStore();
 </script>
 
 <style lang="less" scoped>

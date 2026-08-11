@@ -1,0 +1,21 @@
+Peanut Admin 1.0.0
+Copyright (c) 2026 花生科技. All rights reserved.
+
+Peanut Admin is proprietary software. The repository package manifests use
+proprietary/UNLICENSED semantics and do not license the application under
+Apache-2.0. The separately published peanut-admin/core Composer package and
+@peanut-admin/admin npm package remain Apache-2.0 licensed.
+
+The publisher has confirmed that it owns or has obtained the rights needed to
+publish and relicense the repository code, documentation, brand assets, the
+xing.gu and xingkoo contributions, and AI-assisted results under this policy.
+
+This distribution includes or builds upon third-party materials. Their licenses
+and source references are recorded in THIRD_PARTY_NOTICES.md and the SPDX 2.3
+inventory RELEASE_SBOM.spdx.json. ThinkPHP's upstream notice is also retained at
+server/LICENSE.txt. Third-party rights are not restricted by the Peanut Admin
+proprietary license.
+
+Project: https://github.com/peanut-business/peanut-admin
+Third-party notices: THIRD_PARTY_NOTICES.md
+Machine-readable SBOM: RELEASE_SBOM.spdx.json

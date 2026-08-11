@@ -1,162 +1,147 @@
 <template>
   <div class="navbar">
     <div class="left-side">
-      <a-space>
-        <img alt="logo" src="/favicon.svg" style="width: 28px; height: 28px" />
-        <a-typography-title
-          :style="{ margin: 0, fontSize: '18px' }"
-          :heading="5"
-        >
-          Peanut Admin
-        </a-typography-title>
-        <icon-menu-fold
-          v-if="!topMenu && appStore.device === 'mobile'"
-          style="font-size: 22px; cursor: pointer"
-          @click="toggleDrawerMenu"
+      <el-space class="left-content" :size="12" alignment="center">
+        <img
+          alt="logo"
+          :src="brandStore.website.web_logo"
+          style="width: 28px; height: 28px"
         />
-      </a-space>
+        <h5 class="brand-title">{{ brandStore.website.name }}</h5>
+        <el-button
+          v-if="!topMenu && appStore.device === 'mobile'"
+          class="mobile-menu-button"
+          text
+          circle
+          @click="toggleDrawerMenu"
+        >
+          <el-icon><Menu /></el-icon>
+        </el-button>
+      </el-space>
     </div>
     <div class="center-side">
-      <Menu v-if="topMenu" />
+      <MenuComponent v-if="topMenu" />
     </div>
     <ul class="right-side">
       <li>
-        <a-tooltip :content="$t('settings.search')">
-          <a-button class="nav-btn" type="outline" :shape="'circle'">
-            <template #icon>
-              <icon-search />
-            </template>
-          </a-button>
-        </a-tooltip>
+        <el-tooltip :content="$t('settings.search')">
+          <el-button class="nav-btn" plain circle>
+            <el-icon><Search /></el-icon>
+          </el-button>
+        </el-tooltip>
       </li>
       <li>
-        <a-tooltip :content="$t('settings.language')">
-          <a-button
-            class="nav-btn"
-            type="outline"
-            :shape="'circle'"
-            @click="setDropDownVisible"
-          >
-            <template #icon>
-              <icon-language />
+        <el-tooltip :content="$t('settings.language')">
+          <el-dropdown trigger="click" @command="handleLocaleChange">
+            <el-button class="nav-btn" plain circle>
+              <el-icon><Platform /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-for="item in locales"
+                  :key="item.value"
+                  :command="item.value"
+                >
+                  <el-icon v-if="item.value === currentLocale"
+                    ><Check
+                  /></el-icon>
+                  <span v-else class="dropdown-icon-placeholder" />
+                  {{ item.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
             </template>
-          </a-button>
-        </a-tooltip>
-        <a-dropdown trigger="click" @select="changeLocale as any">
-          <div ref="triggerBtn" class="trigger-btn"></div>
-          <template #content>
-            <a-doption
-              v-for="item in locales"
-              :key="item.value"
-              :value="item.value"
-            >
-              <template #icon>
-                <icon-check v-show="item.value === currentLocale" />
-              </template>
-              {{ item.label }}
-            </a-doption>
-          </template>
-        </a-dropdown>
+          </el-dropdown>
+        </el-tooltip>
       </li>
       <li>
-        <a-tooltip
+        <el-tooltip
           :content="
             theme === 'light'
               ? $t('settings.navbar.theme.toDark')
               : $t('settings.navbar.theme.toLight')
           "
         >
-          <a-button
-            class="nav-btn"
-            type="outline"
-            :shape="'circle'"
-            @click="handleToggleTheme"
-          >
-            <template #icon>
-              <icon-moon-fill v-if="theme === 'dark'" />
-              <icon-sun-fill v-else />
-            </template>
-          </a-button>
-        </a-tooltip>
+          <el-button class="nav-btn" plain circle @click="handleToggleTheme">
+            <el-icon><Moon v-if="theme === 'dark'" /><Sunny v-else /></el-icon>
+          </el-button>
+        </el-tooltip>
       </li>
       <li>
-        <a-tooltip
+        <el-tooltip
           :content="
             isFullscreen
               ? $t('settings.navbar.screen.toExit')
               : $t('settings.navbar.screen.toFull')
           "
         >
-          <a-button
-            class="nav-btn"
-            type="outline"
-            :shape="'circle'"
-            @click="toggleFullScreen"
-          >
-            <template #icon>
-              <icon-fullscreen-exit v-if="isFullscreen" />
-              <icon-fullscreen v-else />
-            </template>
-          </a-button>
-        </a-tooltip>
+          <el-button class="nav-btn" plain circle @click="toggleFullScreen">
+            <el-icon>
+              <ScaleToOriginal v-if="isFullscreen" />
+              <FullScreen v-else />
+            </el-icon>
+          </el-button>
+        </el-tooltip>
       </li>
       <li>
-        <a-tooltip :content="$t('settings.title')">
-          <a-button
-            class="nav-btn"
-            type="outline"
-            :shape="'circle'"
-            @click="setVisible"
-          >
-            <template #icon>
-              <icon-settings />
-            </template>
-          </a-button>
-        </a-tooltip>
+        <el-tooltip :content="$t('settings.title')">
+          <el-button class="nav-btn" plain circle @click="setVisible">
+            <el-icon><Setting /></el-icon>
+          </el-button>
+        </el-tooltip>
       </li>
       <li>
-        <a-dropdown trigger="click">
-          <a-avatar
+        <el-dropdown trigger="click" @command="handleUserCommand">
+          <el-avatar
             :size="32"
             :style="{ marginRight: '8px', cursor: 'pointer' }"
           >
             <img alt="avatar" :src="avatar" />
-          </a-avatar>
-          <template #content>
-            <a-doption>
-              <a-space @click="$router.push({ name: 'Setting' })">
-                <icon-settings />
-                <span>
-                  {{ $t('navbar.userSettings') }}
-                </span>
-              </a-space>
-            </a-doption>
-            <a-doption>
-              <a-space @click="handleLogout">
-                <icon-export />
-                <span>
-                  {{ $t('navbar.logout') }}
-                </span>
-              </a-space>
-            </a-doption>
+          </el-avatar>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="settings">
+                <el-icon><Setting /></el-icon>
+                <span>{{ $t('navbar.userSettings') }}</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="logout">
+                <el-icon><SwitchButton /></el-icon>
+                <span>{{ $t('navbar.logout') }}</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
           </template>
-        </a-dropdown>
+        </el-dropdown>
       </li>
     </ul>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { computed, ref, inject } from 'vue';
+  import { computed, inject } from 'vue';
   import { useDark, useToggle, useFullscreen } from '@vueuse/core';
-  import { useAppStore, useUserStore } from '@/store';
+  import { useRouter } from 'vue-router';
+  import {
+    Check,
+    FullScreen,
+    Menu,
+    Moon,
+    Platform,
+    ScaleToOriginal,
+    Search,
+    Setting,
+    Sunny,
+    SwitchButton,
+  } from '@element-plus/icons-vue';
+  import { useAppStore, useBrandStore, useUserStore } from '@/store';
   import { LOCALE_OPTIONS } from '@/locale';
   import useLocale from '@/hooks/locale';
   import useUser from '@/hooks/user';
-  import Menu from '@/components/menu/index.vue';
+  import MenuComponent from '@/components/menu/index.vue';
 
   const appStore = useAppStore();
+  const brandStore = useBrandStore();
   const userStore = useUserStore();
+  const router = useRouter();
   const { logout } = useUser();
   const { changeLocale, currentLocale } = useLocale();
   const { isFullscreen, toggle: toggleFullScreen } = useFullscreen();
@@ -169,13 +154,13 @@
   });
   const topMenu = computed(() => appStore.topMenu && appStore.menu);
   const isDark = useDark({
-    selector: 'body',
-    attribute: 'arco-theme',
+    selector: 'html',
+    attribute: 'class',
     valueDark: 'dark',
-    valueLight: 'light',
-    storageKey: 'arco-theme',
+    valueLight: '',
+    storageKey: 'element-theme',
     onChanged(dark: boolean) {
-      // overridden default behavior
+      // Keep the application store and Element Plus theme class in sync.
       appStore.toggleTheme(dark);
     },
   });
@@ -186,17 +171,17 @@
   const setVisible = () => {
     appStore.updateSettings({ globalSettings: true });
   };
-  const triggerBtn = ref();
-  const handleLogout = () => {
-    logout();
+  const handleLocaleChange = (value: string) => {
+    changeLocale(value);
   };
-  const setDropDownVisible = () => {
-    const event = new MouseEvent('click', {
-      view: window,
-      bubbles: true,
-      cancelable: true,
-    });
-    triggerBtn.value.dispatchEvent(event);
+  const handleUserCommand = (command: string) => {
+    if (command === 'settings') {
+      router.push({ name: 'Setting' });
+      return;
+    }
+    if (command === 'logout') {
+      logout();
+    }
   };
   const toggleDrawerMenu = inject('toggleDrawerMenu') as () => void;
 </script>
@@ -206,14 +191,30 @@
     display: flex;
     justify-content: space-between;
     height: 100%;
-    background-color: var(--color-bg-2);
-    border-bottom: 1px solid var(--color-border);
+    background-color: var(--el-bg-color);
+    border-bottom: 1px solid var(--el-border-color);
   }
 
   .left-side {
     display: flex;
     align-items: center;
     padding-left: 20px;
+  }
+
+  .left-content {
+    display: inline-flex;
+  }
+
+  .brand-title {
+    margin: 0;
+    color: var(--el-text-color-primary);
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .mobile-menu-button {
+    font-size: 22px;
+    cursor: pointer;
   }
 
   .center-side {
@@ -224,28 +225,22 @@
     display: flex;
     padding-right: 20px;
     list-style: none;
-    :deep(.locale-select) {
-      border-radius: 20px;
-    }
     li {
       display: flex;
       align-items: center;
       padding: 0 10px;
     }
 
-    a {
-      color: var(--color-text-1);
-      text-decoration: none;
-    }
     .nav-btn {
-      border-color: rgb(var(--gray-2));
-      color: rgb(var(--gray-8));
+      border-color: var(--el-border-color);
+      color: var(--el-text-color-regular);
       font-size: 16px;
     }
-    .trigger-btn {
-      position: absolute;
-      bottom: 14px;
-      margin-left: 14px;
+
+    .dropdown-icon-placeholder {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
     }
   }
 </style>

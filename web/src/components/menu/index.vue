@@ -1,21 +1,95 @@
 <script lang="tsx">
-  import { defineComponent, ref, h, compile, computed } from 'vue';
+  import {
+    computed,
+    defineComponent,
+    h,
+    nextTick,
+    ref,
+    type Component,
+  } from 'vue';
   import { useI18n } from 'vue-i18n';
   import { useRoute, useRouter, RouteRecordRaw } from 'vue-router';
   import type { RouteMeta } from 'vue-router';
+  import {
+    ElButton,
+    ElIcon,
+    ElMenu,
+    ElMenuItem,
+    ElSubMenu,
+    type MenuInstance,
+  } from 'element-plus';
+  import {
+    Back,
+    Bell,
+    Briefcase,
+    Brush,
+    Clock,
+    Connection,
+    CreditCard,
+    DataAnalysis,
+    Document,
+    Folder,
+    Grid,
+    Key,
+    Lightning,
+    Menu as MenuIcon,
+    Monitor,
+    Notebook,
+    Postcard,
+    PriceTag,
+    Search,
+    Service,
+    Setting,
+    Share,
+    Tools,
+    User,
+  } from '@element-plus/icons-vue';
   import { useAppStore } from '@/store';
   import { listenerRouteChange } from '@/utils/route-listener';
   import { openWindow, regexUrl } from '@/utils';
   import useMenuTree from './use-menu-tree';
 
+  const iconMap: Record<string, Component> = {
+    'icon-apps': Grid,
+    'icon-bar-chart': DataAnalysis,
+    'icon-brush': Brush,
+    'icon-code': Tools,
+    'icon-clock-circle': Clock,
+    'icon-customer-service': Service,
+    'icon-dashboard': Monitor,
+    'icon-desktop': Monitor,
+    'icon-file': Document,
+    'icon-fingerprint': Key,
+    'icon-folder': Folder,
+    'icon-history': Clock,
+    'icon-idcard': Postcard,
+    'icon-menu': MenuIcon,
+    'icon-mind-mapping': Connection,
+    'icon-notification': Bell,
+    'icon-palette': Brush,
+    'icon-payment': CreditCard,
+    'icon-search': Search,
+    'icon-settings': Setting,
+    'icon-share-alt': Share,
+    'icon-storage': Folder,
+    'icon-tag': PriceTag,
+    'icon-thunderbolt': Lightning,
+    'icon-tool': Tools,
+    'icon-undo': Back,
+    'icon-user': User,
+    'icon-user-group': Briefcase,
+    'icon-book': Notebook,
+  };
+
   export default defineComponent({
-    emit: ['collapse'],
+    emits: ['collapse'],
     setup() {
       const { t } = useI18n();
       const appStore = useAppStore();
       const router = useRouter();
       const route = useRoute();
       const { menuTree } = useMenuTree();
+      const menuRef = ref<MenuInstance>();
       const collapsed = computed({
         get() {
           if (appStore.device === 'desktop') return appStore.menuCollapse;
@@ -29,18 +103,41 @@
       const topMenu = computed(() => appStore.topMenu);
       const openKeys = ref<string[]>([]);
       const selectedKey = ref<string[]>([]);
+      const submenuKeys = new Set<string>();
+      const showCollapseButton = computed(
+        () => appStore.device !== 'mobile' && !topMenu.value
+      );
+
+      const updateSelectedKey = (key?: string) => {
+        selectedKey.value = key ? [key] : [];
+        nextTick(() => {
+          if (key) menuRef.value?.updateActiveIndex(key);
+        });
+      };
+
+      const syncMenuState = () => {
+        nextTick(() => {
+          const activeKey = selectedKey.value[0];
+          if (activeKey) menuRef.value?.updateActiveIndex(activeKey);
+          if (!collapsed.value) {
+            openKeys.value.forEach((key) => {
+              if (submenuKeys.has(key)) menuRef.value?.open(key);
+            });
+          }
+        });
+      };
 
       const goto = (item: RouteRecordRaw) => {
         // Open external link
         if (regexUrl.test(item.path)) {
           openWindow(item.path);
-          selectedKey.value = [item.name as string];
+          updateSelectedKey(item.name as string);
           return;
         }
         // Eliminate external link side effects
         const { hideInMenu, activeMenu } = item.meta as RouteMeta;
         if (route.name === item.name && !hideInMenu && !activeMenu) {
-          selectedKey.value = [item.name as string];
+          updateSelectedKey(item.name as string);
           return;
         }
         // Trigger router change
@@ -48,6 +145,7 @@
           name: item.name,
         });
       };
+
       const findMenuOpenKeys = (target: string) => {
         const result: string[] = [];
         let isFind = false;
@@ -69,6 +167,7 @@
         });
         return result;
       };
+
       listenerRouteChange((newRoute) => {
         const { requiresAuth, activeMenu, hideInMenu } = newRoute.meta;
         if (requiresAuth && (!hideInMenu || activeMenu)) {
@@ -79,82 +178,144 @@
           const keySet = new Set([...menuOpenKeys, ...openKeys.value]);
           openKeys.value = [...keySet];
 
-          selectedKey.value = [
-            activeMenu || menuOpenKeys[menuOpenKeys.length - 1],
-          ];
+          updateSelectedKey(
+            (activeMenu || menuOpenKeys[menuOpenKeys.length - 1]) as
+              | string
+              | undefined
+          );
+          syncMenuState();
         }
       }, true);
+
       const setCollapse = (val: boolean) => {
-        if (appStore.device === 'desktop')
-          appStore.updateSettings({ menuCollapse: val });
+        if (appStore.device === 'desktop') {
+          collapsed.value = val;
+          syncMenuState();
+        }
       };
 
+      const handleOpen = (key: string) => {
+        if (!openKeys.value.includes(key)) {
+          openKeys.value = [...openKeys.value, key];
+        }
+      };
+
+      const handleClose = (key: string) => {
+        openKeys.value = openKeys.value.filter((item) => item !== key);
+      };
+
+      const renderIcon = (iconName?: unknown) => {
+        if (!iconName) return null;
+        const icon = iconMap[String(iconName)] || MenuIcon;
+        return h(ElIcon, { class: 'menu-icon' }, { default: () => h(icon) });
+      };
+
+      const renderLabel = (item: RouteRecordRaw) => [
+        renderIcon(item.meta?.icon),
+        h('span', null, t(item.meta?.locale || '')),
+      ];
+
       const renderSubMenu = () => {
-        function travel(_route: RouteRecordRaw[], nodes = []) {
-          if (_route) {
-            _route.forEach((element) => {
-              // This is demo, modify nodes as needed
-              const icon = element?.meta?.icon
-                ? () => h(compile(`<${element?.meta?.icon}/>`))
-                : null;
-              const node =
-                element?.children && element?.children.length !== 0 ? (
-                  <a-sub-menu
-                    key={element?.name}
-                    v-slots={{
-                      icon,
-                      title: () => h(compile(t(element?.meta?.locale || ''))),
-                    }}
-                  >
-                    {travel(element?.children)}
-                  </a-sub-menu>
-                ) : (
-                  <a-menu-item
-                    key={element?.name}
-                    v-slots={{ icon }}
-                    onClick={() => goto(element)}
-                  >
-                    {t(element?.meta?.locale || '')}
-                  </a-menu-item>
-                );
-              nodes.push(node as never);
-            });
-          }
-          return nodes;
+        submenuKeys.clear();
+        function travel(_route: RouteRecordRaw[]): any[] {
+          if (!_route) return [];
+          return _route.map((element) => {
+            const index = element.name as string;
+            if (element.children?.length) {
+              submenuKeys.add(index);
+              return h(
+                ElSubMenu,
+                { key: index, index },
+                {
+                  title: () => renderLabel(element),
+                  default: () => travel(element.children as RouteRecordRaw[]),
+                }
+              );
+            }
+            return h(
+              ElMenuItem,
+              {
+                key: index,
+                index,
+                onClick: () => goto(element),
+              },
+              () => renderLabel(element)
+            );
+          });
         }
         return travel(menuTree.value);
       };
 
-      return () => (
-        <a-menu
-          mode={topMenu.value ? 'horizontal' : 'vertical'}
-          v-model:collapsed={collapsed.value}
-          v-model:open-keys={openKeys.value}
-          show-collapse-button={appStore.device !== 'mobile'}
-          auto-open={false}
-          selected-keys={selectedKey.value}
-          auto-open-selected={true}
-          level-indent={34}
-          style="height: 100%;width:100%;"
-          onCollapse={setCollapse}
-        >
-          {renderSubMenu()}
-        </a-menu>
-      );
+      return () =>
+        h('div', { class: 'menu-container' }, [
+          h(
+            ElMenu,
+            {
+              ref: menuRef,
+              class: 'peanut-menu',
+              mode: topMenu.value ? 'horizontal' : 'vertical',
+              collapse: collapsed.value,
+              defaultOpeneds: openKeys.value,
+              defaultActive: selectedKey.value[0] || '',
+              collapseTransition: false,
+              style: { height: '100%', width: '100%' },
+              onOpen: handleOpen,
+              onClose: handleClose,
+            },
+            { default: () => renderSubMenu() }
+          ),
+          showCollapseButton.value
+            ? h(
+                ElButton,
+                {
+                  'class': 'collapse-button',
+                  'text': true,
+                  'title': t('settings.menu'),
+                  'aria-label': t('settings.menu'),
+                  'onClick': () => setCollapse(!collapsed.value),
+                },
+                {
+                  default: () =>
+                    h(ElIcon, null, {
+                      default: () => h(collapsed.value ? MenuIcon : Back),
+                    }),
+                }
+              )
+            : null,
+        ]);
     },
   });
 </script>
 
 <style lang="less" scoped>
-  :deep(.arco-menu-inner) {
-    .arco-menu-inline-header {
-      display: flex;
-      align-items: center;
-    }
-    .arco-icon {
-      &:not(.arco-icon-down) {
-        font-size: 18px;
-      }
+  .menu-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+  }
+
+  .peanut-menu {
+    min-height: 0;
+    flex: 1;
+    border-right: none;
+  }
+
+  .collapse-button {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 0;
+    color: var(--el-text-color-secondary);
+  }
+
+  :deep(.el-menu--horizontal) {
+    border-bottom: none;
+  }
+
+  :deep(.el-menu-item),
+  :deep(.el-sub-menu__title) {
+    .el-icon {
+      font-size: 18px;
     }
   }
 </style>

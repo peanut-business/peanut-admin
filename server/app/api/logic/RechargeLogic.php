@@ -5,13 +5,13 @@ namespace app\api\logic;
 
 use app\common\enum\AccountLogEnum;
 use app\common\enum\UserTerminalEnum;
-use app\common\logic\AccountLogLogic;
 use app\common\logic\BaseLogic;
 use app\common\model\finance\PaymentScene;
 use app\common\model\finance\RechargeOrder;
 use app\common\model\member\Member;
 use app\common\model\oauth\OAuthIdentity;
 use app\common\service\ConfigService;
+use app\common\service\MemberBalanceService;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\PaymentEvent;
 use app\common\service\payment\dto\PrepayRequest;
@@ -289,34 +289,22 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('支付交易流水已被使用');
             }
 
-            /** @var Member $member */
-            $member = Member::lock(true)->findOrEmpty((int)$order->user_id);
-            if ($member->isEmpty()) {
-                throw new \RuntimeException('用户不存在');
-            }
-
-            $balanceCents = self::moneyToCents((string)$member->user_money) + $orderCents;
-            $totalCents = self::moneyToCents((string)$member->total_recharge_amount) + $orderCents;
-            $member->user_money = self::centsToMoney($balanceCents);
-            $member->balance = self::centsToMoney($balanceCents);
-            $member->total_recharge_amount = self::centsToMoney($totalCents);
-            $member->save();
+            MemberBalanceService::applyInTransaction(
+                (int)$order->user_id,
+                AccountLogEnum::USER_MONEY_INC_RECHARGE,
+                AccountLogEnum::INC,
+                $orderCents,
+                (string)$order->sn,
+                '用户充值',
+                [],
+                0,
+                $orderCents
+            );
 
             $order->pay_status = RechargeOrder::PAY_STATUS_PAID;
             $order->pay_time = time();
             $order->transaction_id = $transactionId;
             $order->save();
-
-            if (AccountLogLogic::add(
-                (int)$member->id,
-                AccountLogEnum::USER_MONEY_INC_RECHARGE,
-                AccountLogEnum::INC,
-                $orderCents / 100,
-                (string)$order->sn,
-                '用户充值'
-            ) === false) {
-                throw new \RuntimeException('账户流水记录失败');
-            }
 
             Db::commit();
             return true;

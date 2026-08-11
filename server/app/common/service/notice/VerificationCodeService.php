@@ -6,10 +6,6 @@ namespace app\common\service\notice;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\notice\NoticeLog;
 use app\common\model\notice\NoticeScene;
-use app\common\service\ConfigService;
-use app\common\service\notice\driver\sms\AliyunSms;
-use app\common\service\notice\driver\sms\SmsDriver;
-use app\common\service\notice\driver\sms\TencentSms;
 use think\facade\Db;
 
 /**
@@ -53,59 +49,57 @@ class VerificationCodeService
             return false;
         }
 
-        $provider = strtolower(trim((string) ConfigService::get('notice', 'sms_default', '')));
-        $config = $this->providerConfig($provider);
-        if ($config === null) {
-            return false;
-        }
-
-        $driver = $this->makeDriver($provider, $config);
-        if ($driver === null) {
-            $this->error = '短信服务商不受支持';
-            return false;
-        }
-
         $code = (string) random_int(
             10 ** (NoticeSceneEnum::CODE_LENGTH - 1),
             (10 ** NoticeSceneEnum::CODE_LENGTH) - 1
         );
-        $content = $this->render($templateContent, ['code' => $code]);
+        $content = $this->render($templateContent, ['code' => '****']);
         $sendTime = time();
 
-        $log = NoticeLog::create([
-            'template_id' => 0,
-            'scene_id' => (int) $scene->id,
-            'channel' => NoticeLog::CHANNEL_SMS,
-            'receiver' => $mobile,
-            'title' => (string) $scene->name,
-            'content' => $content,
-            'status' => NoticeLog::STATUS_PENDING,
-            'error' => '',
-            'extra' => $this->encodeExtra($templateId, []),
-            'send_time' => $sendTime,
-            'verify_code' => $code,
-            'is_verified' => NoticeLog::VERIFIED_NO,
-            'check_count' => 0,
-            'verified_time' => 0,
-            'provider' => $provider,
-        ]);
-
-        try {
-            $success = $driver->send($mobile, $templateId, ['code' => $code]);
-            $result = $driver->getResult();
-            $this->error = $success ? '' : $driver->getError();
-        } catch (\Throwable $exception) {
-            $success = false;
-            $result = [];
-            $this->error = $exception->getMessage();
+        $log = null;
+        $result = NoticeChannelService::sendSms(
+            $mobile,
+            $templateId,
+            ['code' => $code],
+            function (string $provider) use (
+                &$log,
+                $scene,
+                $mobile,
+                $content,
+                $sendTime,
+                $code,
+                $templateId
+            ): void {
+                $log = NoticeLog::create([
+                    'template_id' => 0,
+                    'scene_id' => (int)$scene->id,
+                    'channel' => NoticeLog::CHANNEL_SMS,
+                    'receiver' => $mobile,
+                    'title' => (string)$scene->name,
+                    'content' => $content,
+                    'status' => NoticeLog::STATUS_PENDING,
+                    'error' => '',
+                    'extra' => $this->encodeExtra($templateId, []),
+                    'send_time' => $sendTime,
+                    'verify_code_hash' => VerificationCodeSecret::hash($code),
+                    'is_verified' => NoticeLog::VERIFIED_NO,
+                    'check_count' => 0,
+                    'verified_time' => 0,
+                    'provider' => $provider,
+                ]);
+            }
+        );
+        $this->error = $result['error'];
+        if ($log === null) {
+            return false;
         }
-
-        $log->status = $success ? NoticeLog::STATUS_SUCCESS : NoticeLog::STATUS_FAIL;
-        $log->error = $success ? '' : $this->error;
-        $log->extra = $this->encodeExtra($templateId, $result);
+        $log->provider = $result['provider'];
+        $log->status = $result['success'] ? NoticeLog::STATUS_SUCCESS : NoticeLog::STATUS_FAIL;
+        $log->error = $result['error'];
+        $log->extra = $this->encodeExtra($templateId, $result['result']);
         $log->save();
 
-        return $success;
+        return $result['success'];
     }
 
     public function verify(string $sceneCode, string $mobile, string $code): bool
@@ -132,13 +126,12 @@ class VerificationCodeService
                 ->where('channel', NoticeLog::CHANNEL_SMS)
                 ->where('receiver', $mobile)
                 ->where('status', NoticeLog::STATUS_SUCCESS)
-                ->where('is_verified', NoticeLog::VERIFIED_NO)
                 ->order('send_time', 'desc')
                 ->order('id', 'desc')
                 ->lock(true)
                 ->findOrEmpty();
 
-            if ($log->isEmpty()) {
+            if ($log->isEmpty() || (int)$log->is_verified === NoticeLog::VERIFIED_YES) {
                 $this->error = '验证码不存在或已使用';
                 return false;
             }
@@ -150,7 +143,7 @@ class VerificationCodeService
                 return false;
             }
 
-            if (!hash_equals((string) $log->verify_code, $code)) {
+            if (!VerificationCodeSecret::matches($code, (string)$log->verify_code_hash)) {
                 $log->save();
                 $this->error = '验证码不正确';
                 return false;
@@ -176,44 +169,6 @@ class VerificationCodeService
             ->where('status', NoticeLog::STATUS_SUCCESS)
             ->where('send_time', '>', time() - self::SEND_INTERVAL)
             ->count() > 0;
-    }
-
-    /** @return array<string,mixed>|null */
-    private function providerConfig(string $provider): ?array
-    {
-        if (!in_array($provider, [NoticeLog::PROVIDER_ALIYUN, NoticeLog::PROVIDER_TENCENT], true)) {
-            $this->error = '短信服务商未配置';
-            return null;
-        }
-
-        $raw = ConfigService::get('notice', 'sms_' . $provider, '');
-        $config = is_array($raw) ? $raw : (json_decode((string) $raw, true) ?? []);
-        if ((int) ($config['status'] ?? 0) !== 1) {
-            $this->error = '短信服务未开启';
-            return null;
-        }
-
-        $required = $provider === NoticeLog::PROVIDER_ALIYUN
-            ? ['access_key_id', 'access_key_secret', 'sign_name']
-            : ['secret_id', 'secret_key', 'sdk_app_id', 'sign_name'];
-        foreach ($required as $field) {
-            if (trim((string) ($config[$field] ?? '')) === '') {
-                $this->error = '短信服务商配置不完整';
-                return null;
-            }
-        }
-
-        return $config;
-    }
-
-    /** @param array<string,mixed> $config */
-    private function makeDriver(string $provider, array $config): ?SmsDriver
-    {
-        return match ($provider) {
-            NoticeLog::PROVIDER_ALIYUN => new AliyunSms($config),
-            NoticeLog::PROVIDER_TENCENT => new TencentSms($config),
-            default => null,
-        };
     }
 
     /** @param array<string,string> $variables */

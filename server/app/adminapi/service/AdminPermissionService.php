@@ -6,7 +6,7 @@ namespace app\adminapi\service;
 use app\common\model\auth\Admin;
 use app\common\model\auth\SystemMenu;
 use app\common\model\auth\SystemRoleMenu;
-use PeanutAdmin\Kernel\Authorization\EffectivePermissionSet;
+use app\common\service\CoreServiceOverrides;
 
 /**
  * 管理端菜单、按钮与 API 权限的单一计算入口。
@@ -16,7 +16,9 @@ class AdminPermissionService
     /** Peanut 的轻量状态接口复用 LikeAdmin 的管理员编辑权限。 */
     private const ACCESS_ALIASES = [
         'admin/status' => 'admin/edit',
+        'dept/status' => 'dept/edit',
         'jobs/status' => 'jobs/edit',
+        'menu/status' => 'menu/edit',
         'finance/account-log/lists' => 'finance.account_log/lists',
         'finance/recharge/lists' => 'recharge.recharge/lists',
         'finance/recharge/refund' => 'recharge.recharge/refund',
@@ -94,37 +96,24 @@ class AdminPermissionService
      */
     public static function canAccess(Admin|array $admin, string $accessUri): bool
     {
-        if (self::isRoot($admin)) {
-            return true;
-        }
-
-        $accessUri = strtolower(trim($accessUri, '/'));
-        $accessUri = self::ACCESS_ALIASES[$accessUri] ?? $accessUri;
-        $registered = new EffectivePermissionSet(array_map(
-            'strtolower',
-            SystemMenu::where('is_disable', 0)
-                ->where('perms', '<>', '')
-                ->column('perms')
-        ));
-
-        if (!$registered->allows($accessUri)) {
-            return true;
-        }
-
         $menuIds = self::assignedMenuIds($admin);
-        if (empty($menuIds)) {
-            return false;
-        }
-
-        $owned = new EffectivePermissionSet(array_map(
-            'strtolower',
-            SystemMenu::whereIn('id', $menuIds)
+        $registered = SystemMenu::where('is_disable', 0)
+            ->where('perms', '<>', '')
+            ->column('perms');
+        $owned = empty($menuIds)
+            ? []
+            : SystemMenu::whereIn('id', $menuIds)
                 ->where('is_disable', 0)
                 ->where('perms', '<>', '')
-                ->column('perms')
-        ));
+                ->column('perms');
 
-        return $owned->allows($accessUri);
+        return CoreServiceOverrides::adminPermissionPolicy()->canAccess(
+            self::isRoot($admin),
+            $accessUri,
+            $registered,
+            $owned,
+            self::ACCESS_ALIASES
+        );
     }
 
     private static function assignedMenuIds(Admin|array $admin): array

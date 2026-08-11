@@ -1,162 +1,192 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.menu']" />
-    <a-card class="general-card" :title="$t('menu.system.menu')">
-      <a-row style="margin-bottom: 16px">
-        <a-col :span="12">
-          <a-space>
-            <a-button type="primary" @click="handleAdd()">
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.menu') }}</template>
+      <el-row style="margin-bottom: 16px">
+        <el-col :span="12">
+          <el-space>
+            <el-button type="primary" @click="handleAdd()">
               <template #icon><icon-plus /></template>
               {{ $t('systemMenu.operation.create') }}
-            </a-button>
-            <a-button @click="fetchData">
+            </el-button>
+            <el-button @click="fetchData">
               <template #icon><icon-refresh /></template>
               {{ $t('systemMenu.operation.refresh') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-      <a-table
+            </el-button>
+          </el-space>
+        </el-col>
+      </el-row>
+      <el-table
         row-key="id"
         :loading="loading"
-        :columns="columns"
         :data="renderData"
-        :pagination="false"
-        :bordered="{ cell: true }"
-        :default-expand-all-rows="true"
+        border
+        default-expand-all
+        :tree-props="{ children: 'children' }"
       >
-        <template #type="{ record }">
-          <a-tag :color="typeColor[record.type as MenuType]">
-            {{ $t(`systemMenu.type.${record.type}`) }}
-          </a-tag>
-        </template>
-        <template #is_disable="{ record }">
-          <a-switch
-            :model-value="record.is_disable === 0"
-            @change="(v) => handleStatus(record, v as boolean)"
-          />
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-if="record.type !== 'A'"
-              type="text"
-              size="small"
-              @click="handleAdd(record)"
-            >
-              {{ $t('systemMenu.operation.addChild') }}
-            </a-button>
-            <a-button type="text" size="small" @click="handleEdit(record)">
-              {{ $t('systemMenu.operation.edit') }}
-            </a-button>
-            <a-popconfirm
-              :content="$t('systemMenu.delete.confirm')"
-              @ok="handleDelete(record)"
-            >
-              <a-button type="text" status="danger" size="small">
-                {{ $t('systemMenu.operation.delete') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+        <el-table-column prop="name" :label="$t('systemMenu.columns.name')" />
+        <el-table-column :label="$t('systemMenu.columns.type')" width="90">
+          <template #default="{ row }">
+            <el-tag :type="typeColor[row.type as MenuType] as any">{{
+              $t(`systemMenu.type.${row.type}`)
+            }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="icon"
+          :label="$t('systemMenu.columns.icon')"
+          width="140"
+        />
+        <el-table-column prop="perms" :label="$t('systemMenu.columns.perms')" />
+        <el-table-column
+          prop="sort"
+          :label="$t('systemMenu.columns.sort')"
+          width="80"
+        />
+        <el-table-column :label="$t('systemMenu.columns.status')" width="90">
+          <template #default="{ row }">
+            <el-switch
+              :model-value="row.is_disable === 0"
+              @change="(v: string | number | boolean) => handleStatus(row, v as boolean)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('systemMenu.columns.operations')"
+          width="220"
+        >
+          <template #default="{ row }">
+            <el-space>
+              <el-button
+                v-if="row.type !== 'A'"
+                link
+                size="small"
+                @click="handleAdd(row)"
+                >{{ $t('systemMenu.operation.addChild') }}</el-button
+              >
+              <el-button link size="small" @click="handleEdit(row)">{{
+                $t('systemMenu.operation.edit')
+              }}</el-button>
+              <el-popconfirm
+                :title="$t('systemMenu.delete.confirm')"
+                @confirm="handleDelete(row)"
+              >
+                <template #reference>
+                  <el-button link type="danger" size="small">{{
+                    $t('systemMenu.operation.delete')
+                  }}</el-button>
+                </template>
+              </el-popconfirm>
+            </el-space>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="
         isEdit
           ? $t('systemMenu.modal.editTitle')
           : $t('systemMenu.modal.addTitle')
       "
-      :ok-loading="submitLoading"
-      :mask-closable="false"
-      @ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item field="type" :label="$t('systemMenu.field.type')">
-          <a-radio-group v-model="form.type" type="button">
-            <a-radio value="M">{{ $t('systemMenu.type.M') }}</a-radio>
-            <a-radio value="C">{{ $t('systemMenu.type.C') }}</a-radio>
-            <a-radio value="A">{{ $t('systemMenu.type.A') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="pid" :label="$t('systemMenu.field.pid')">
-          <a-tree-select
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item prop="type" :label="$t('systemMenu.field.type')">
+          <el-radio-group v-model="form.type">
+            <el-radio-button label="M">{{
+              $t('systemMenu.type.M')
+            }}</el-radio-button>
+            <el-radio-button label="C">{{
+              $t('systemMenu.type.C')
+            }}</el-radio-button>
+            <el-radio-button label="A">{{
+              $t('systemMenu.type.A')
+            }}</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item prop="pid" :label="$t('systemMenu.field.pid')">
+          <el-tree-select
             v-model="form.pid"
             :data="parentTree"
-            :field-names="{ key: 'id', title: 'name', children: 'children' }"
+            :props="{ value: 'id', label: 'name', children: 'children' }"
             :placeholder="$t('systemMenu.field.pid.placeholder')"
-            allow-clear
+            clearable
           />
-        </a-form-item>
-        <a-form-item field="name" :label="$t('systemMenu.field.name')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="name" :label="$t('systemMenu.field.name')">
+          <el-input
             v-model="form.name"
             :placeholder="$t('systemMenu.field.name.placeholder')"
           />
-        </a-form-item>
-        <a-form-item
+        </el-form-item>
+        <el-form-item
           v-if="form.type !== 'A'"
-          field="icon"
+          prop="icon"
           :label="$t('systemMenu.field.icon')"
         >
-          <a-input
+          <el-input
             v-model="form.icon"
             :placeholder="$t('systemMenu.field.icon.placeholder')"
           />
-        </a-form-item>
-        <a-form-item
+        </el-form-item>
+        <el-form-item
           v-if="form.type !== 'M'"
-          field="paths"
+          prop="paths"
           :label="$t('systemMenu.field.paths')"
         >
-          <a-input
+          <el-input
             v-model="form.paths"
             :placeholder="$t('systemMenu.field.paths.placeholder')"
           />
-        </a-form-item>
-        <a-form-item
+        </el-form-item>
+        <el-form-item
           v-if="form.type === 'C'"
-          field="component"
+          prop="component"
           :label="$t('systemMenu.field.component')"
         >
-          <a-input
+          <el-input
             v-model="form.component"
             :placeholder="$t('systemMenu.field.component.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="perms" :label="$t('systemMenu.field.perms')">
-          <a-input
+        </el-form-item>
+        <el-form-item prop="perms" :label="$t('systemMenu.field.perms')">
+          <el-input
             v-model="form.perms"
             :placeholder="$t('systemMenu.field.perms.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="sort" :label="$t('systemMenu.field.sort')">
-          <a-input-number v-model="form.sort" :min="0" style="width: 160px" />
-        </a-form-item>
-        <a-form-item :label="$t('systemMenu.field.flags')">
-          <a-space size="large">
-            <a-checkbox v-model="showChecked">
+        </el-form-item>
+        <el-form-item prop="sort" :label="$t('systemMenu.field.sort')">
+          <el-input-number v-model="form.sort" :min="0" style="width: 160px" />
+        </el-form-item>
+        <el-form-item :label="$t('systemMenu.field.flags')">
+          <el-space size="large">
+            <el-checkbox v-model="showChecked">
               {{ $t('systemMenu.field.isShow') }}
-            </a-checkbox>
-            <a-checkbox v-model="cacheChecked">
+            </el-checkbox>
+            <el-checkbox v-model="cacheChecked">
               {{ $t('systemMenu.field.isCache') }}
-            </a-checkbox>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+            </el-checkbox>
+          </el-space>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="modalVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"
+          >保存</el-button
+        >
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, ref, reactive } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import {
     getMenuList,
@@ -174,28 +204,10 @@
   const renderData = ref<MenuRecord[]>([]);
 
   const typeColor: Record<MenuType, string> = {
-    M: 'arcoblue',
-    C: 'green',
-    A: 'gray',
+    M: 'primary',
+    C: 'success',
+    A: 'info',
   };
-
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('systemMenu.columns.name'), dataIndex: 'name' },
-    { title: t('systemMenu.columns.type'), slotName: 'type', width: 90 },
-    { title: t('systemMenu.columns.icon'), dataIndex: 'icon', width: 140 },
-    { title: t('systemMenu.columns.perms'), dataIndex: 'perms' },
-    { title: t('systemMenu.columns.sort'), dataIndex: 'sort', width: 80 },
-    {
-      title: t('systemMenu.columns.status'),
-      slotName: 'is_disable',
-      width: 90,
-    },
-    {
-      title: t('systemMenu.columns.operations'),
-      slotName: 'operations',
-      width: 220,
-    },
-  ]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -285,8 +297,8 @@
   };
 
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return;
     submitLoading.value = true;
     try {
       if (isEdit.value) {
@@ -294,7 +306,7 @@
       } else {
         await addMenu(form);
       }
-      Message.success(t('systemMenu.tip.success'));
+      ElMessage.success(t('systemMenu.tip.success'));
       modalVisible.value = false;
       await fetchData();
     } finally {
@@ -304,14 +316,14 @@
 
   const handleDelete = async (record: MenuRecord) => {
     await deleteMenu(record.id);
-    Message.success(t('systemMenu.tip.success'));
+    ElMessage.success(t('systemMenu.tip.success'));
     await fetchData();
   };
 
   const handleStatus = async (record: MenuRecord, enabled: boolean) => {
     await updateMenuStatus(record.id, enabled ? 0 : 1);
     record.is_disable = enabled ? 0 : 1;
-    Message.success(t('systemMenu.tip.success'));
+    ElMessage.success(t('systemMenu.tip.success'));
   };
 </script>
 

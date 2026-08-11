@@ -1,65 +1,61 @@
 <template>
   <span v-if="canBrowse" class="file-picker-trigger">
-    <a-button :size="size" @click="open">
-      <template #icon><icon-folder /></template>
+    <el-button :size="elementSize" :icon="Folder" @click="open">
       {{ buttonText }}
-    </a-button>
+    </el-button>
   </span>
 
-  <a-modal
-    v-model:visible="visible"
+  <el-dialog
+    v-model="visible"
     :title="title"
     width="860px"
-    :ok-button-props="{ disabled: selected.length === 0 }"
-    @ok="confirm"
-    @cancel="close"
+    destroy-on-close
+    @close="close"
   >
-    <a-space direction="vertical" fill>
-      <a-space wrap>
-        <a-select v-model="cid" style="width: 190px" @change="refresh">
-          <a-option value="">全部分类</a-option>
-          <a-option :value="0">未分组</a-option>
-          <a-option
+    <div class="picker-content">
+      <div class="picker-filters">
+        <el-select v-model="cid" style="width: 190px" @change="refresh">
+          <el-option label="全部分类" value="" />
+          <el-option label="未分组" :value="0" />
+          <el-option
             v-for="item in flatCategories"
             :key="item.id"
             :value="item.id"
-          >
-            {{ `${'  '.repeat(item.depth)}${item.name}` }}
-          </a-option>
-        </a-select>
-        <a-select v-model="source" style="width: 140px" @change="refresh">
-          <a-option value="">全部来源</a-option>
-          <a-option :value="0">后台上传</a-option>
-          <a-option :value="1">用户上传</a-option>
-        </a-select>
-        <a-input-search
+            :label="`${'\u3000'.repeat(item.depth)}${item.name}`"
+          />
+        </el-select>
+        <el-select v-model="source" style="width: 140px" @change="refresh">
+          <el-option label="全部来源" value="" />
+          <el-option label="后台上传" :value="0" />
+          <el-option label="用户上传" :value="1" />
+        </el-select>
+        <el-input
           v-model="name"
-          allow-clear
+          clearable
           style="width: 220px"
           placeholder="搜索素材名称"
-          @search="refresh"
+          @keyup.enter="refresh"
           @clear="refresh"
-        />
-        <a-upload
+        >
+          <template #append>
+            <el-button :icon="Search" aria-label="搜索" @click="refresh" />
+          </template>
+        </el-input>
+        <el-upload
           v-if="canUpload"
           :action="uploadUrl[type]"
           :headers="uploadHeaders"
           :data="{ cid: String(cid === '' ? 0 : cid) }"
           :accept="acceptMap[type]"
           :show-file-list="false"
-          @success="onUploadSuccess"
-          @error="onUploadError"
+          :on-success="onUploadSuccess"
+          :on-error="onUploadError"
         >
-          <template #upload-button>
-            <a-button type="primary">
-              <template #icon><icon-upload /></template>
-              上传
-            </a-button>
-          </template>
-        </a-upload>
-      </a-space>
+          <el-button type="primary" :icon="Upload">上传</el-button>
+        </el-upload>
+      </div>
 
-      <a-spin :loading="loading" style="width: 100%">
+      <div v-loading="loading" class="picker-results">
         <div v-if="files.length" class="picker-grid">
           <button
             v-for="item in files"
@@ -71,32 +67,55 @@
           >
             <img v-if="type === 10" :src="item.url" :alt="item.name" />
             <span v-else class="file-icon">
-              <icon-play-circle v-if="type === 20" :size="42" />
-              <icon-file v-else :size="42" />
+              <el-icon :size="42">
+                <VideoPlay v-if="type === 20" />
+                <Document v-else />
+              </el-icon>
             </span>
             <span class="file-name" :title="item.name">{{ item.name }}</span>
-            <icon-check-circle-fill v-if="isSelected(item.id)" class="check" />
+            <el-icon v-if="isSelected(item.id)" class="check"
+              ><Select
+            /></el-icon>
           </button>
         </div>
-        <a-empty v-else />
-      </a-spin>
+        <el-empty v-else />
+      </div>
 
       <div class="picker-footer">
         <span>已选择 {{ selected.length }} / {{ effectiveLimit }}</span>
-        <a-pagination
-          :current="page.current"
+        <el-pagination
+          :current-page="page.current"
           :page-size="page.pageSize"
           :total="page.total"
-          @change="fetchFiles"
+          layout="prev, pager, next"
+          @current-change="fetchFiles"
         />
       </div>
-    </a-space>
-  </a-modal>
+    </div>
+    <template #footer>
+      <el-button @click="close">取消</el-button>
+      <el-button
+        type="primary"
+        :disabled="selected.length === 0"
+        @click="confirm"
+      >
+        确定
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
+  import {
+    Document,
+    Folder,
+    Search,
+    Select,
+    Upload,
+    VideoPlay,
+  } from '@element-plus/icons-vue';
   import { getToken } from '@/utils/auth';
   import { hasPermission } from '@/hooks/permission';
   import {
@@ -130,6 +149,11 @@
   }>();
 
   const visible = ref(false);
+  const elementSize = computed<'small' | 'default' | 'large'>(() => {
+    if (props.size === 'large') return 'large';
+    if (props.size === 'mini' || props.size === 'small') return 'small';
+    return 'default';
+  });
   const canBrowse = computed(
     () => hasPermission('file/lists') && hasPermission('file/cate/lists')
   );
@@ -224,7 +248,7 @@
       return;
     }
     if (selected.value.length >= effectiveLimit.value) {
-      Message.warning(`最多选择 ${effectiveLimit.value} 个素材`);
+      ElMessage.warning(`最多选择 ${effectiveLimit.value} 个素材`);
       return;
     }
     selected.value.push(item);
@@ -237,21 +261,35 @@
     );
     close();
   };
-  const onUploadSuccess = async (fileItem: any) => {
-    const response = fileItem?.response;
+  const onUploadSuccess = async (response: any) => {
     if (!response || response.code !== 20000) {
-      Message.error(response?.msg || '上传失败');
+      ElMessage.error(response?.msg || '上传失败');
       return;
     }
-    Message.success('上传成功');
+    ElMessage.success('上传成功');
     await fetchFiles(1);
   };
-  const onUploadError = () => Message.error('上传失败');
+  const onUploadError = () => ElMessage.error('上传失败');
 </script>
 
 <style scoped lang="less">
   .file-picker-trigger {
     display: inline-flex;
+  }
+  .picker-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .picker-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .picker-results {
+    width: 100%;
+    min-height: 330px;
   }
   .picker-grid {
     display: grid;
@@ -269,13 +307,13 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border: 1px solid var(--color-border-2);
+    border: 1px solid var(--el-border-color);
     border-radius: 6px;
-    background: var(--color-bg-2);
+    background: var(--el-bg-color);
     cursor: pointer;
   }
   .picker-item.selected {
-    border-color: rgb(var(--primary-6));
+    border-color: var(--el-color-primary);
   }
   .picker-item img {
     width: 100%;
@@ -297,7 +335,7 @@
     position: absolute;
     top: 7px;
     right: 7px;
-    color: rgb(var(--primary-6));
+    color: var(--el-color-primary);
   }
   .picker-footer {
     display: flex;

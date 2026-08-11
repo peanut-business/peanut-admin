@@ -7,54 +7,29 @@ use app\common\logic\BaseLogic;
 use app\common\service\ConfigService;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
+use app\common\service\config\PaConfigWebsiteStore;
+use app\common\service\config\WebsiteConfigService;
 
 class ConfigLogic extends BaseLogic
 {
-    protected const WEBSITE_TYPE = 'website';
-    protected const WEBSITE_FIELDS = [
-        'name' => '',
-        'web_favicon' => '',
-        'web_logo' => '',
-        'login_image' => '',
-        'shop_name' => '',
-        'shop_logo' => '',
-        'pc_logo' => '',
-        'pc_title' => '',
-        'pc_ico' => '',
-        'pc_desc' => '',
-        'pc_keywords' => '',
-        'h5_favicon' => '',
-    ];
-
-    protected const WEBSITE_IMAGE_FIELDS = [
-        'web_favicon', 'web_logo', 'login_image', 'shop_logo',
-        'pc_logo', 'pc_ico', 'h5_favicon',
-    ];
-
     public static function getWebsite(): array
     {
-        $stored = ConfigService::get(self::WEBSITE_TYPE);
-        $result = [];
-        foreach (self::WEBSITE_FIELDS as $field => $default) {
-            $value = (string)($stored[$field] ?? $default);
-            $result[$field] = in_array($field, self::WEBSITE_IMAGE_FIELDS, true)
-                ? FileService::getFileUrl($value)
-                : $value;
-        }
-        return $result;
+        return self::websiteService()->get();
     }
 
     public static function saveWebsite(array $params): bool
     {
-        $data = [];
-        foreach (self::WEBSITE_FIELDS as $field => $default) {
-            $value = (string)($params[$field] ?? $default);
-            $data[$field] = in_array($field, self::WEBSITE_IMAGE_FIELDS, true)
-                ? FileService::setFileUrl($value)
-                : trim($value);
-        }
-        ConfigService::setManyAtomic(self::WEBSITE_TYPE, $data);
+        self::websiteService()->save($params);
         return true;
+    }
+
+    private static function websiteService(): WebsiteConfigService
+    {
+        return new WebsiteConfigService(
+            new PaConfigWebsiteStore(),
+            static fn(string $value): string => FileService::getFileUrl($value),
+            static fn(string $value): string => FileService::setFileUrl($value),
+        );
     }
 
     public static function getCopyright(): array

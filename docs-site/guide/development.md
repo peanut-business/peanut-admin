@@ -9,7 +9,7 @@ description: Peanut Admin 的架构、开发约定、客户端命令和生产部
 
 ## 1. 架构与目录
 
-Peanut 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是 server/public/index.php，路由集中在 server/route/app.php。
+Peanut Admin 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是 server/public/index.php，路由集中在 server/route/app.php。
 
 ~~~text
 peanut-admin/
@@ -20,11 +20,11 @@ peanut-admin/
 │   ├── config/              ThinkPHP、数据库、JWT、控制台等配置
 │   ├── route/app.php        管理端和用户端路由
 │   ├── database/init.sql    新环境的一次性全量表结构与种子
-│   ├── database/migrations/ 已有环境的增量 SQL（无自动迁移命令）
+│   ├── database/migrations/ 版本化增量 SQL（由 database/migrate.php 执行）
 │   ├── public/index.php     PHP-FPM/内置服务器入口
 │   ├── public/storage/      本地存储和导出文件的公开目录
 │   └── runtime/             日志、缓存和运行时文件（需可写）
-├── web/                     Arco Design Vue 管理端
+├── web/                     Vue 3 + Element Plus 管理端
 │   └── src/{api,router,views,store,components,...}
 ├── pc/                      Nuxt 3 PC 会员端
 │   ├── pages/、api/、components/、layouts/
@@ -119,9 +119,10 @@ pa_system_menu 的 type 为 M（目录）、C（菜单）或 A（按钮/API 权�
 ## 4. 数据库与迁移
 
 - 数据库默认 MySQL，编码 utf8mb4，表前缀由 DB_PREFIX 控制，默认 pa_；配置来源是 server/config/database.php。
-- 新环境先创建空数据库并配置 server/.env，再执行 `php server/database/install.php`。安装器按顺序执行 server/database/init.sql 和全部 server/database/migrations/*.sql，并校验预期表、菜单、配置及默认管理员；目标库已有任何表时会拒绝运行。
+- 新环境先创建空数据库并配置 server/.env，再执行 `php server/database/install.php`。安装器按顺序执行 server/database/init.sql 和全部 server/database/migrations/*.sql，并校验预期表、菜单、配置及默认管理员；安装成功后会把全部 migration 文件的名称、SHA-256、批次和状态写入 `pa_schema_migration`；目标库已有任何表时会拒绝运行。
 - server/database/init.sql 只保存基础结构和基础种子，不单独代表完整的当前版本。后续业务表和增量字段以 migrations/ 为准，由首次安装器统一收口。
-- 既有环境的增量文件位于 server/database/migrations/，文件名按时间排序。仓库没有迁移记录表或 php think migrate 命令；发布时先备份，再由 DBA 按文件名逐个执行尚未应用的 SQL，并记录版本。
+- `server/database/migrations/20260807_schema_migration_ledger.sql` 创建迁移账本；`php server/database/migrate.php` 只执行账本中未登记的文件，并在运行前校验已登记文件的 SHA-256。没有待执行文件时返回 `up_to_date`，普通成功可以重复运行。
+- 历史安装升级必须先完成数据库和存储备份。首次接管只执行一次 `php server/database/migrate.php --adopt-existing`；脚本会完整校验历史基线，校验通过后登记历史迁移并继续执行未登记文件。基线校验失败或已有失败记录时必须停止并前滚处置，不要绕过账本。
 - server/database/import.php 是读取 .env 后通过 PDO 执行 init.sql 的一次性脚本，文件注释明确提示“用完即删”；优先使用可审计的 mysql 导入命令，除非环境确实需要该脚本。
 - 金额、状态和软删除字段应沿用已有表的类型/命名；涉及旧数据兼容时在迁移中写幂等的 information_schema 检查，并先发布迁移再发布依赖字段的 PHP 代码。
 
@@ -140,11 +141,16 @@ DB_PASS=按环境配置
 DB_PREFIX=pa_
 JWT_SECRET=至少32位随机字符串
 JWT_EXPIRE=7200
+ADMIN_INITIAL_PASSWORD=仅空库首次安装使用的强密码
 ~~~
 
 DB_TYPE、DB_DRIVER、DB_CHARSET 可按 server/config/database.php 的默认值或环境需要设置。管理端锁定参数可通过 ADMIN_TOKEN_EXPIRE、ADMIN_TOKEN_RENEW_BEFORE、ADMIN_PASSWORD_ERROR_TIMES、ADMIN_LOGIN_LOCK_MINUTES 覆盖 server/config/admin_auth.php 的默认值。
 
 网站、支付、存储、渠道、充值和 OAuth 等业务配置主要保存在 pa_config，由管理端设置页面维护；不要把支付私钥、微信 AppSecret、短信密钥、对象存储 Secret、证书内容或 .env 提交到仓库。生产环境使用独立的密钥注入/文件权限方案，并限制 PHP-FPM 用户读取证书目录。配置修改后如遇旧值，使用管理端系统维护页面清理缓存或按发布流程重启 PHP-FPM。
+
+品牌默认值的唯一安装前入口是 `server/config/brand.json`，源资产在 `server/public/brand/`。克隆后、首次安装前可修改这两处，再运行 `node scripts/sync-brand-assets.mjs` 生成 Web、PC、UniApp/H5 与官网的静态 fallback；CI 使用 `node scripts/sync-brand-assets.mjs --check` 防止漂移。安装完成后，品牌只通过管理端“应用设置 → 网站设置”写入 `pa_config(type=website)`，不要手改生成 JSON、复制核心实现或修改 `vendor/`、`node_modules/`。仓库默认 `official_url` 为空，目标部署应显式填写正式官网地址。
+
+通知验证码由 `NoticeChannelService` 统一读取 `pa_config` 的阿里云/腾讯云凭据并选择唯一启用 Provider，`VerificationCodeService` 不得自行解析配置或实例化驱动。验证码只保存 `password_hash`，内容快照固定为 `****`，Provider 回执只保存白名单字段；当前同步发送不自动重试。通用通知模板、邮件/SMTP 没有产品消费者，不得绕过固定 scene 恢复入口。完整边界见应用仓 `docs/architecture/pb07-notification-host-contract.md`。
 
 ## 6. 从 clone 到可登录开发环境
 
@@ -156,7 +162,7 @@ git clone <仓库地址> && cd peanut-admin
 # 后端配置与依赖
 cd server
 cp .env.example .env
-# 编辑 .env，至少填写 DB_* 和 JWT_SECRET
+# 编辑 .env，至少填写 DB_*、JWT_SECRET 和仅首次安装使用的 ADMIN_INITIAL_PASSWORD
 composer install
 cd ..
 
@@ -167,7 +173,7 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 php server/database/install.php
 ~~~
 
-安装器会写入 pa_admin 的默认超级管理员：用户名 admin，初始密码 admin123456（密码哈希和盐由 SQL 固定生成）。安装完成后启动后端和管理端：
+安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。安装完成后启动后端和管理端：
 
 ~~~bash
 # 终端 A：ThinkPHP 开发服务器（server 目录）
@@ -180,15 +186,15 @@ pnpm install
 pnpm dev
 ~~~
 
-打开 `http://localhost:5173`，登录后立即修改默认密码。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
+打开 `http://localhost:5173`，使用安装时提供的密码登录，随后改为个人凭据。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
 
-已有数据库升级时，不要运行首次安装器，也不要再次把 init.sql 当迁移工具；先备份，再按 server/database/migrations/ 文件名顺序执行所需 SQL。例如：
+已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管前先完成数据库和存储备份，然后只执行一次：
 
 ~~~bash
-mysql -u <db-user> -p <db-name> < server/database/migrations/20260802_system_tools_core.sql
+php server/database/migrate.php --adopt-existing
 ~~~
 
-上例文件名仅示范格式，实际应按该环境的迁移记录选择，不要重复执行不兼容的业务变更。
+接管成功后，每次发布只执行 `php server/database/migrate.php`。命令会按文件名处理未登记迁移并校验 SHA-256；失败时保持旧版本运行，核对实际 DDL 后编写前滚修复，不得删除账本记录或改写已登记迁移。
 
 ## 7. 客户端开发与构建命令
 
@@ -238,9 +244,9 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 ### 生产应用仓与多阶段 Compose
 
-生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。开发环境使用独立的 `deploy/docker-compose.dev.yml`，不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
+生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 并填写外部 MySQL 地址后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。开发环境使用独立的 `deploy/docker-compose.dev.yml`，不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
 
-生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 MySQL、PHP-FPM、Nginx 和后端 scheduler；Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
+生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 PHP-FPM、Nginx 和后端 scheduler；生产连接 `.env` 指定且可从容器路由的 MySQL，单机部署可启用 `bundled-db`，Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
 
 无论采用 Docker 还是原生发布包，都必须确保运行用户可写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、正确数据库凭据和 `APP_DEBUG=false`。
 
@@ -308,7 +314,7 @@ server {
 }
 ~~~
 
-宝塔面板的反向代理目标为 `http://127.0.0.1:18082`；Cloudflare 对应 DNS 记录开启代理。PHP-FPM 和 MySQL 不直接暴露到公网。
+宝塔面板的反向代理目标为 `http://127.0.0.1:18092`；Cloudflare 对应 DNS 记录开启代理。宝塔站点的 443 必须安装覆盖应用域名的 Cloudflare Origin CA 或 Let's Encrypt 证书，Cloudflare 使用 `Full (strict)`。PHP-FPM 和 MySQL 不直接暴露到公网。
 
 ### PC 与 uni-app 产物
 
@@ -339,13 +345,17 @@ php think generator:cleanup
 
 server/app/common/service/storage/Driver.php 通过 storage.default 选择 local、qiniu、aliyun 或 qcloud 引擎，配置保存在 pa_config(type=storage)。本地文件写入 server/public/storage/，URI 以 storage/ 开头；云存储 URI 是对象 key，由 FileService 拼接配置的 domain。七牛/阿里云配置 bucket/access_key/secret_key/domain，腾讯 COS 还需要 region。切换默认引擎不会搬迁旧文件，旧云域名配置必须继续有效。新增存储厂商时实现 storage/engine/Server.php 约定、在 Driver 注册，并补充后台验证；不要在 controller 直接调用 SDK。
 
+### 内容与装修
+
+文章、分类、收藏/计数、搜索和移动/PC/Tabbar 装修是应用产品 Module，不迁入核心包。`ProductAssetReferenceService` 是文章与装修资源引用的唯一边界：同源 local `/storage/` 地址保存为相对 URI，云/CDN/外部地址保留绝对 provenance；历史无 provenance 相对资源仍依赖原 Provider 配置，不得猜测来源或批量改写。`DecorationSchemaService` 唯一拥有组件与链接规则，`DecorationReadService` 唯一生成管理端、API、PC 与 UniApp/H5 的读取 DTO；客户端只渲染结果，不复制 Schema 或草稿/发布状态机。对应数据库增量为 `20260811-content-asset-reference.sql`，已有环境应先备份并通过迁移账本执行，再发布依赖扩容字段的代码。
+
 ### 支付
 
-支付入口由 server/app/common/service/payment/PaymentServiceFactory.php 统一选择 wechat 或 alipay。预支付由 PrepayGatewayInterface 实现，回调由 CallbackParserInterface 先验签和标准化，再交给业务 logic（充值结算）更新订单、余额和流水。回调路由是 /api/payment/notify/wechat 与 /api/payment/notify/alipay，必须保持公网 HTTPS、时间戳/证书/公钥配置正确。当前实现只覆盖微信支付和支付宝；新增渠道应增加 gateway、callback parser、配置校验和终端场景，不要绕过工厂直接修改余额。
+支付入口由 server/app/common/service/payment/PaymentServiceFactory.php 统一选择 wechat 或 alipay。预支付、回调 parser 和退款 gateway 都只能由该 Factory 装配，并共用可注入 `PaymentTransportInterface` 与 `PaymentCrypto`；gateway 不得另建 cURL/签名路径。回调先验签和标准化，再交给充值 logic 更新订单、余额和流水；微信商户响应还必须用平台证书校验 timestamp、nonce、serial 和签名，支付宝退款响应必须按原始节点验 RSA2。`user_money` 是权威余额，旧 `balance` 只是兼容镜像；后台调账、可信充值回调和首次充值退款必须在各自领域事务内调用 `MemberBalanceService`，不得直接写余额或 `AccountLogLogic`。回调路由是 /api/payment/notify/wechat 与 /api/payment/notify/alipay，必须保持公网 HTTPS、时间戳/证书/公钥配置正确。完整边界见应用仓 `docs/architecture/pb07-payment-host-contract.md`。
 
 ### 微信 OAuth
 
-OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 mnp_setting，公众号 oa 使用 oa_setting，PC 开放平台 open_pc 使用 open_platform。身份表、一次性 state 和补全票据由 server/database/migrations/20260802_wechat_oauth.sql 创建；浏览器流程通过 /api/oauth/wechat/begin、callback，小程序通过 mini-program，已登录绑定通过 bind。state、completion ticket 都是一次性并有过期时间，补全接口不能当作会员 token。新增 OAuth 提供商应实现 OAuthTransportInterface，保留 provider/client/subject 隔离和一次性票据语义，不要在控制器直接写身份表。
+OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 mnp_setting，公众号 oa 使用 oa_setting，PC 开放平台 open_pc 使用 open_platform。身份表、一次性 state 和补全票据由 server/database/migrations/20260802_wechat_oauth.sql 创建；浏览器流程通过 /api/oauth/wechat/begin、callback，小程序通过 mini-program，已登录绑定通过 bind。`OAuthBrowserCallbackService` 是浏览器回跳唯一映射点：微信分别登记 `/api/oauth/wechat/redirect/pc` 与 `/api/oauth/wechat/redirect/official-account`，再固定桥接到 `/pc/oauth/callback` 与 `/mobile/#/pages/oauth/callback`，禁止客户端或控制器另拼根路径。state、completion ticket 均为 32 字节随机值、SHA-256 存储、600 秒和行锁单次消费；UniApp completion ticket 暂存后读即删，不进入 URL，补全接口不能当作会员 token。旧 Channel CRUD 和公众号 AES 写入口已经退出，当前只支持明文公众号回调。新增 OAuth 提供商应实现 OAuthTransportInterface，保留 provider/client/subject 隔离和一次性票据语义，不要在控制器直接写身份表。完整边界见应用仓 `docs/architecture/pb07-oauth-channel-host-contract.md`。
 
 ## 10. 增加一个业务模块
 
@@ -357,7 +367,7 @@ OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 
 4. **Controller 与路由**：创建 `adminapi/controller/<module>/` 控制器，继承 BaseAdminController；在 `server/route/app.php` 的 `api/admin` 组声明 GET/POST 路由。确认权限标识等于去掉 `api/admin/` 后的路径（必要时增加显式 alias）。
 5. **菜单与角色**：在迁移/种子中写入 M/C/A 菜单、paths、component 和 perms；登录 root 账号检查动态菜单，普通角色授予最小 A 权限。
 6. **客户端**：在 web/src/api/ 增加请求封装，在 web/src/router/routes/modules/ 注册页面并在 web/src/views/ 实现；PC/uni-app 只有确实提供该业务入口时才分别增加 pc/api、pc/pages 或 uniapp/src/api、uniapp/src/pages。
-7. **数据范围和审计**：若有部门/租户/所有者隔离，在 logic 的列表、详情和写操作都加显式范围条件；敏感写操作依赖管理端操作日志中间件，并检查日志脱敏字段。
+7. **数据范围和审计**：若有部门/租户/所有者隔离，在 logic 的列表、详情和写操作都加显式范围条件；敏感写操作统一由 `OperationLogService` 写入，新增支付/API key、证书、验证码或授权字段时必须补充聚焦脱敏用例，不在 controller 另写日志。
 
 最小验收是：迁移在空库/目标升级库各执行一次；登录后访问列表、详情、新增、编辑、删除和无权限场景；确认统一响应、菜单过滤、runtime 日志和上传文件路径均符合约定。不要用生成器产物替代人工审查路由、权限和数据范围。
 

@@ -1,175 +1,173 @@
 <template>
   <div class="container">
     <!-- 搜索栏 -->
-    <a-card :bordered="false" style="margin-bottom: 16px">
-      <a-row :gutter="16" align="center">
-        <a-col :span="6">
-          <a-input
-            v-model="filterForm.receiver"
-            :placeholder="$t('noticeLog.filter.receiver')"
-            allow-clear
-            @press-enter="handleSearch"
+    <el-card shadow="never" style="margin-bottom: 16px">
+      <div class="filter-grid">
+        <el-input
+          v-model="filterForm.receiver"
+          :placeholder="$t('noticeLog.filter.receiver')"
+          clearable
+          @keyup.enter="handleSearch"
+        />
+        <el-select
+          v-model="filterForm.scene_id"
+          :placeholder="$t('noticeLog.filter.scene')"
+          clearable
+          style="width: 100%"
+        >
+          <el-option
+            v-for="scene in sceneOptions"
+            :key="scene.id"
+            :value="String(scene.id)"
+            :label="scene.name"
           />
-        </a-col>
-        <a-col :span="4">
-          <a-select
-            v-model="filterForm.scene_id"
-            :placeholder="$t('noticeLog.filter.scene')"
-            allow-clear
-            style="width: 100%"
-          >
-            <a-option
-              v-for="scene in sceneOptions"
-              :key="scene.id"
-              :value="String(scene.id)"
-            >
-              {{ scene.name }}
-            </a-option>
-          </a-select>
-        </a-col>
-        <a-col :span="4">
-          <a-select
-            v-model="filterForm.channel"
-            :placeholder="$t('noticeLog.filter.channel')"
-            allow-clear
-            style="width: 100%"
-          >
-            <a-option value="1">{{ $t('noticeLog.channel.1') }}</a-option>
-            <a-option value="2">{{ $t('noticeLog.channel.2') }}</a-option>
-            <a-option value="3">{{ $t('noticeLog.channel.3') }}</a-option>
-          </a-select>
-        </a-col>
-        <a-col :span="4">
-          <a-select
-            v-model="filterForm.status"
-            :placeholder="$t('noticeLog.filter.status')"
-            allow-clear
-            style="width: 100%"
-          >
-            <a-option value="0">{{ $t('noticeLog.status.0') }}</a-option>
-            <a-option value="1">{{ $t('noticeLog.status.1') }}</a-option>
-            <a-option value="2">{{ $t('noticeLog.status.2') }}</a-option>
-          </a-select>
-        </a-col>
-        <a-col :span="7">
-          <a-range-picker
-            v-model="filterForm.timeRange"
-            style="width: 100%"
-            :placeholder="[
-              $t('noticeLog.filter.time'),
-              $t('noticeLog.filter.time'),
-            ]"
-          />
-        </a-col>
-        <a-col :flex="1">
-          <a-space>
-            <a-button type="primary" @click="handleSearch">
-              <template #icon><icon-search /></template>
-              {{ $t('noticeLog.form.search') }}
-            </a-button>
-            <a-button @click="handleReset">
-              {{ $t('noticeLog.form.reset') }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
-    </a-card>
+        </el-select>
+        <el-select
+          v-model="filterForm.channel"
+          :placeholder="$t('noticeLog.filter.channel')"
+          clearable
+          style="width: 100%"
+        >
+          <el-option :label="$t('noticeLog.channel.1')" value="1" />
+          <el-option :label="$t('noticeLog.channel.2')" value="2" />
+          <el-option :label="$t('noticeLog.channel.3')" value="3" />
+        </el-select>
+        <el-select
+          v-model="filterForm.status"
+          :placeholder="$t('noticeLog.filter.status')"
+          clearable
+          style="width: 100%"
+        >
+          <el-option :label="$t('noticeLog.status.0')" value="0" />
+          <el-option :label="$t('noticeLog.status.1')" value="1" />
+          <el-option :label="$t('noticeLog.status.2')" value="2" />
+        </el-select>
+        <el-date-picker
+          v-model="filterForm.timeRange"
+          type="datetimerange"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          range-separator="-"
+          style="width: 100%"
+          :start-placeholder="$t('noticeLog.filter.time')"
+          :end-placeholder="$t('noticeLog.filter.time')"
+        />
+        <el-space>
+          <el-button type="primary" :icon="Search" @click="handleSearch">
+            {{ $t('noticeLog.form.search') }}
+          </el-button>
+          <el-button @click="handleReset">
+            {{ $t('noticeLog.form.reset') }}
+          </el-button>
+        </el-space>
+      </div>
+    </el-card>
 
     <!-- 表格 -->
-    <a-card :bordered="false">
-      <a-table
-        :data="tableData"
-        :loading="loading"
-        :pagination="pagination"
-        row-key="id"
-        @page-change="onPageChange"
-      >
-        <template #columns>
-          <a-table-column title="ID" data-index="id" :width="70" />
-          <a-table-column
-            :title="$t('noticeLog.columns.scene')"
-            data-index="scene_name"
-          >
-            <template #cell="{ record }">
-              {{ record.scene_name || record.template_name || '-' }}
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('noticeLog.columns.channel')"
-            data-index="channel"
-            :width="80"
-          >
-            <template #cell="{ record }">
-              <a-tag :color="channelColor(record.channel)">
-                {{ $t(`noticeLog.channel.${record.channel}`) }}
-              </a-tag>
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('noticeLog.columns.receiver')"
-            data-index="receiver"
-          />
-          <a-table-column
-            :title="$t('noticeLog.columns.title')"
-            data-index="title"
-            :ellipsis="true"
-            :tooltip="true"
-          />
-          <a-table-column
-            :title="$t('noticeLog.columns.status')"
-            data-index="status"
-            :width="90"
-          >
-            <template #cell="{ record }">
-              <a-tag :color="statusColor(record.status)">
-                {{ $t(`noticeLog.status.${record.status}`) }}
-              </a-tag>
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('noticeLog.columns.send_time')"
-            data-index="send_time"
-            :width="160"
-          >
-            <template #cell="{ record }">
-              {{ formatTime(record.send_time) }}
-            </template>
-          </a-table-column>
-          <a-table-column
-            :title="$t('noticeLog.columns.operations')"
-            align="center"
-            :width="80"
-          >
-            <template #cell="{ record }">
-              <a-button
-                v-permission="['notice/log/detail']"
-                type="text"
-                size="small"
-                @click="openDetail(record)"
-              >
-                {{ $t('form.detail') }}
-              </a-button>
-            </template>
-          </a-table-column>
-        </template>
-      </a-table>
-    </a-card>
+    <el-card shadow="never">
+      <el-table v-loading="loading" :data="tableData" row-key="id" border>
+        <el-table-column label="ID" prop="id" width="70" />
+        <el-table-column
+          :label="$t('noticeLog.columns.scene')"
+          prop="scene_name"
+        >
+          <template #default="{ row }">
+            {{ row.scene_name || row.template_name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('noticeLog.columns.channel')"
+          prop="channel"
+          width="80"
+        >
+          <template #default="{ row }">
+            <el-tag :type="channelType(row.channel)">
+              {{ $t(`noticeLog.channel.${row.channel}`) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('noticeLog.columns.receiver')"
+          prop="receiver"
+        />
+        <el-table-column
+          :label="$t('noticeLog.columns.title')"
+          prop="title"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          :label="$t('noticeLog.columns.status')"
+          prop="status"
+          width="90"
+        >
+          <template #default="{ row }">
+            <el-tag :type="statusType(row.status)">
+              {{ $t(`noticeLog.status.${row.status}`) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('noticeLog.columns.send_time')"
+          prop="send_time"
+          width="180"
+        >
+          <template #default="{ row }">
+            {{ formatTime(row.send_time) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('noticeLog.columns.operations')"
+          align="center"
+          width="80"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              v-permission="['notice/log/detail']"
+              link
+              type="primary"
+              size="small"
+              @click="openDetail(row)"
+            >
+              {{ $t('form.detail') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          :current-page="pagination.current"
+          :page-size="pagination.pageSize"
+          :total="pagination.total"
+          layout="total, prev, pager, next"
+          @current-change="onPageChange"
+        />
+      </div>
+    </el-card>
 
     <!-- 详情弹窗 -->
-    <a-modal
-      v-model:visible="detailVisible"
+    <el-dialog
+      v-model="detailVisible"
       :title="$t('noticeLog.detail.title')"
-      :footer="false"
-      :width="600"
+      width="600px"
     >
-      <a-descriptions :data="detailItems" bordered :column="1" />
-    </a-modal>
+      <el-descriptions border :column="1">
+        <el-descriptions-item
+          v-for="item in detailItems"
+          :key="item.label"
+          :label="item.label"
+        >
+          {{ item.value }}
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref, computed, onMounted } from 'vue';
   import { useI18n } from 'vue-i18n';
+  import { Search } from '@element-plus/icons-vue';
+  import type { TagProps } from 'element-plus';
   import {
     getNoticeLogList,
     getNoticeSceneList,
@@ -258,10 +256,10 @@
   };
 
   // ─── 工具 ─────────────────────────────────────────────────────────────────────
-  const channelColor = (ch: number) =>
-    ({ 1: 'blue', 2: 'purple', 3: 'orange' }[ch] ?? 'gray');
-  const statusColor = (s: number) =>
-    ({ 0: 'gray', 1: 'green', 2: 'red' }[s] ?? 'gray');
+  const channelType = (channel: number): TagProps['type'] =>
+    (({ 1: 'primary', 2: 'info', 3: 'warning' } as const)[channel] ?? 'info');
+  const statusType = (status: number): TagProps['type'] =>
+    (({ 0: 'info', 1: 'success', 2: 'danger' } as const)[status] ?? 'info');
   const formatTime = (ts: number) =>
     ts ? new Date(ts * 1000).toLocaleString() : '-';
 
@@ -308,3 +306,28 @@
     await fetchData();
   });
 </script>
+
+<style scoped lang="less">
+  .container {
+    padding: 0 20px 20px;
+  }
+
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1.4fr repeat(3, 1fr) 1.6fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 1200px) {
+    .filter-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

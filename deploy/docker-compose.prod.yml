@@ -3,8 +3,8 @@ name: peanut-admin-production
 x-app-environment: &app-environment
   APP_ENV: production
   APP_DEBUG: "false"
-  DB_HOST: mysql
-  DB_PORT: 3306
+  DB_HOST: ${DB_HOST:?set DB_HOST in .env}
+  DB_PORT: ${DB_PORT:-3306}
   DB_NAME: ${DB_NAME:-peanut_admin}
   DB_USER: ${DB_USER:-peanut_admin}
   DB_PASS: ${DB_PASS:?set DB_PASS in .env}
@@ -41,13 +41,16 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     command: ["/usr/local/bin/peanut-php-entrypoint"]
-    environment: *app-environment
-    volumes:
-      - php-runtime:/var/www/peanut-admin/server/runtime
-      - php-storage:/var/www/peanut-admin/server/public/storage
     depends_on:
       mysql:
         condition: service_healthy
+        required: false
+    environment:
+      <<: *app-environment
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+    volumes:
+      - php-runtime:/var/www/peanut-admin/server/runtime
+      - php-storage:/var/www/peanut-admin/server/public/storage
     healthcheck:
       test: ["CMD-SHELL", "test -f /tmp/peanut-ready && php-fpm -t"]
       interval: 10s
@@ -66,14 +69,14 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${HTTP_PORT:-18082}:80"
+      - "127.0.0.1:${HTTP_PORT:-18092}:80"
     volumes:
       - php-storage:/var/www/peanut-admin/server/public/storage:ro
     depends_on:
       php:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget -Y off -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 6
@@ -82,13 +85,14 @@ services:
 
   mysql:
     image: mysql:8.4
+    profiles: [bundled-db]
     restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_DATABASE: ${DB_NAME:-peanut_admin}
       MYSQL_USER: ${DB_USER:-peanut_admin}
       MYSQL_PASSWORD: ${DB_PASS:?set DB_PASS in .env}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
       TZ: Asia/Shanghai
     volumes:
       - mysql-data:/var/lib/mysql

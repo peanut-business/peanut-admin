@@ -1,31 +1,28 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.system', 'menu.system.file']" />
-    <a-card class="general-card" :title="$t('menu.system.file')">
-      <a-tabs
-        v-model:active-key="activeType"
-        type="rounded"
-        @change="onTypeChange"
-      >
-        <a-tab-pane :key="10" :title="$t('systemFile.tab.image')" />
-        <a-tab-pane :key="20" :title="$t('systemFile.tab.video')" />
-        <a-tab-pane :key="30" :title="$t('systemFile.tab.file')" />
-      </a-tabs>
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.system.file') }}</template>
+      <el-tabs v-model="activeType" type="card" @change="onTypeChange">
+        <el-tab-pane :name="10" :label="$t('systemFile.tab.image')" />
+        <el-tab-pane :name="20" :label="$t('systemFile.tab.video')" />
+        <el-tab-pane :name="30" :label="$t('systemFile.tab.file')" />
+      </el-tabs>
 
-      <a-row :gutter="16" class="body">
+      <el-row :gutter="16" class="body">
         <!-- 左侧分类 -->
-        <a-col :flex="'220px'">
+        <el-col :span="4">
           <div class="cate-panel">
             <div class="cate-head">
               <span>{{ $t('systemFile.cate.title') }}</span>
-              <a-button
+              <el-button
                 v-permission="['file/cate/add']"
-                type="text"
-                size="mini"
+                link
+                size="small"
                 @click="handleCateAdd()"
               >
                 <template #icon><icon-plus /></template>
-              </a-button>
+              </el-button>
             </div>
             <ul class="cate-list">
               <li
@@ -50,23 +47,23 @@
                   <span v-permission="['file/cate/edit']">
                     <icon-edit @click="handleCateEdit(c)" />
                   </span>
-                  <a-popconfirm
+                  <el-popconfirm
                     v-permission="['file/cate/delete']"
-                    :content="$t('systemFile.cate.delete.confirm')"
-                    @ok="handleCateDelete(c)"
+                    :title="$t('systemFile.cate.delete.confirm')"
+                    @confirm="handleCateDelete(c)"
                   >
-                    <icon-delete />
-                  </a-popconfirm>
+                    <template #reference><icon-delete /></template>
+                  </el-popconfirm>
                 </span>
               </li>
             </ul>
           </div>
-        </a-col>
+        </el-col>
         <!-- 右侧文件区 -->
-        <a-col :flex="1">
+        <el-col :span="20">
           <div class="toolbar">
-            <a-space>
-              <a-upload
+            <el-space>
+              <el-upload
                 v-permission="[uploadPermission]"
                 :action="uploadUrl[activeType]"
                 :headers="uploadHeaders"
@@ -76,64 +73,62 @@
                 @success="onUploadSuccess"
                 @error="onUploadError"
               >
-                <template #upload-button>
-                  <a-button type="primary">
+                <template #trigger>
+                  <el-button type="primary">
                     <template #icon><icon-upload /></template>
                     {{ $t('systemFile.op.upload') }}
-                  </a-button>
+                  </el-button>
                 </template>
-              </a-upload>
-              <a-input
+              </el-upload>
+              <el-input
                 v-model="searchName"
-                allow-clear
+                clearable
                 style="width: 200px"
                 :placeholder="$t('systemFile.search.placeholder')"
-                @press-enter="() => fetchFiles(1)"
+                @keyup.enter="() => fetchFiles(1)"
                 @clear="() => fetchFiles(1)"
               />
-              <a-select
+              <el-select
                 v-model="searchSource"
-                allow-clear
+                clearable
                 style="width: 140px"
                 :placeholder="$t('systemFile.search.source')"
                 @change="() => fetchFiles(1)"
                 @clear="() => fetchFiles(1)"
               >
-                <a-option :value="0">
-                  {{ $t('systemFile.source.admin') }}
-                </a-option>
-                <a-option :value="1">
-                  {{ $t('systemFile.source.user') }}
-                </a-option>
-              </a-select>
-              <a-button @click="() => fetchFiles(1)">
+                <el-option :value="0" :label="$t('systemFile.source.admin')" />
+                <el-option :value="1" :label="$t('systemFile.source.user')" />
+              </el-select>
+              <el-button @click="() => fetchFiles(1)">
                 <template #icon><icon-search /></template>
-              </a-button>
-            </a-space>
-            <a-space v-if="checkedIds.length">
+              </el-button>
+            </el-space>
+            <el-space v-if="checkedIds.length">
               <span class="selected-tip">
                 {{ $t('systemFile.op.selected', { n: checkedIds.length }) }}
               </span>
-              <a-button
+              <el-button
                 v-permission="['file/move']"
                 size="small"
                 @click="openMove"
               >
                 {{ $t('systemFile.op.move') }}
-              </a-button>
-              <a-popconfirm
+              </el-button>
+              <el-popconfirm
                 v-permission="['file/delete']"
-                :content="$t('systemFile.op.batchDelete.confirm')"
-                @ok="handleBatchDelete"
+                :title="$t('systemFile.op.batchDelete.confirm')"
+                @confirm="handleBatchDelete"
               >
-                <a-button size="small" status="danger">
-                  {{ $t('systemFile.op.delete') }}
-                </a-button>
-              </a-popconfirm>
-            </a-space>
+                <template #reference
+                  ><el-button size="small" type="danger">{{
+                    $t('systemFile.op.delete')
+                  }}</el-button></template
+                >
+              </el-popconfirm>
+            </el-space>
           </div>
 
-          <a-spin :loading="loading" style="width: 100%">
+          <div v-loading="loading" style="width: 100%">
             <div v-if="renderData.length" class="grid">
               <div
                 v-for="item in renderData"
@@ -142,7 +137,7 @@
                 :class="{ checked: checkedIds.includes(item.id) }"
               >
                 <div class="thumb" @click="toggleCheck(item.id)">
-                  <a-checkbox
+                  <el-checkbox
                     class="thumb-check"
                     :model-value="checkedIds.includes(item.id)"
                     @click.stop
@@ -160,134 +155,155 @@
                 </div>
                 <div class="name" :title="item.name">{{ item.name }}</div>
                 <div class="ops">
-                  <a-button type="text" size="mini" @click="previewFile(item)">
+                  <el-button link size="small" @click="previewFile(item)">
                     {{ $t('systemFile.op.preview') }}
-                  </a-button>
-                  <a-button type="text" size="mini" @click="copyUrl(item)">
+                  </el-button>
+                  <el-button link size="small" @click="copyUrl(item)">
                     {{ $t('systemFile.op.copy') }}
-                  </a-button>
-                  <a-button
+                  </el-button>
+                  <el-button
                     v-permission="['file/rename']"
-                    type="text"
-                    size="mini"
+                    link
+                    size="small"
                     @click="handleRename(item)"
                   >
                     {{ $t('systemFile.op.rename') }}
-                  </a-button>
-                  <a-popconfirm
+                  </el-button>
+                  <el-popconfirm
                     v-permission="['file/delete']"
-                    :content="$t('systemFile.op.delete.confirm')"
-                    @ok="handleDelete(item)"
+                    :title="$t('systemFile.op.delete.confirm')"
+                    @confirm="handleDelete(item)"
                   >
-                    <a-button type="text" size="mini" status="danger">
-                      {{ $t('systemFile.op.delete') }}
-                    </a-button>
-                  </a-popconfirm>
+                    <template #reference
+                      ><el-button link size="small" type="danger">{{
+                        $t('systemFile.op.delete')
+                      }}</el-button></template
+                    >
+                  </el-popconfirm>
                 </div>
               </div>
             </div>
-            <a-empty v-else />
-          </a-spin>
+            <el-empty v-else />
+          </div>
 
           <div class="pager">
-            <a-pagination
-              :current="pagination.current"
-              :page-size="pagination.pageSize"
+            <el-pagination
+              v-model:current-page="pagination.current"
+              v-model:page-size="pagination.pageSize"
               :total="pagination.total"
-              show-total
-              @change="fetchFiles"
+              layout="prev, pager, next"
+              @current-change="fetchFiles"
             />
           </div>
-        </a-col>
-      </a-row>
-    </a-card>
+        </el-col>
+      </el-row>
+    </el-card>
     <!-- 分类新增/编辑 -->
-    <a-modal
-      v-model:visible="cateModalVisible"
+    <el-dialog
+      v-model="cateModalVisible"
       :title="
         cateIsEdit
           ? $t('systemFile.cate.editTitle')
           : $t('systemFile.cate.addTitle')
       "
-      :ok-loading="cateSubmitting"
-      :mask-closable="false"
-      @ok="submitCate"
-      @cancel="cateModalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form
+      <el-form
         ref="cateFormRef"
         :model="cateForm"
         :rules="cateRules"
-        layout="vertical"
+        label-position="top"
       >
-        <a-form-item field="name" :label="$t('systemFile.cate.field.name')">
-          <a-input
+        <el-form-item prop="name" :label="$t('systemFile.cate.field.name')">
+          <el-input
             v-model="cateForm.name"
-            :max-length="20"
+            maxlength="20"
             show-word-limit
             :placeholder="$t('systemFile.cate.field.name.placeholder')"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="cateModalVisible = false">取消</el-button
+        ><el-button type="primary" :loading="cateSubmitting" @click="submitCate"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
 
     <!-- 文件重命名 -->
-    <a-modal
-      v-model:visible="renameModalVisible"
+    <el-dialog
+      v-model="renameModalVisible"
       :title="$t('systemFile.op.rename')"
-      :ok-loading="renameSubmitting"
-      :mask-closable="false"
-      @ok="submitRename"
-      @cancel="renameModalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form
+      <el-form
         ref="renameFormRef"
         :model="renameForm"
         :rules="renameRules"
-        layout="vertical"
+        label-position="top"
       >
-        <a-form-item field="name" :label="$t('systemFile.rename.field')">
-          <a-input
+        <el-form-item prop="name" :label="$t('systemFile.rename.field')">
+          <el-input
             v-model="renameForm.name"
             :placeholder="$t('systemFile.rename.placeholder')"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="renameModalVisible = false">取消</el-button
+        ><el-button
+          type="primary"
+          :loading="renameSubmitting"
+          @click="submitRename"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
 
     <!-- 移动分类 -->
-    <a-modal
-      v-model:visible="moveModalVisible"
+    <el-dialog
+      v-model="moveModalVisible"
       :title="$t('systemFile.op.move')"
-      :ok-loading="moveSubmitting"
-      :mask-closable="false"
-      @ok="submitMove"
-      @cancel="moveModalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form :model="{ moveTarget }" layout="vertical">
-        <a-form-item :label="$t('systemFile.move.target')">
-          <a-select
+      <el-form :model="{ moveTarget }" label-position="top">
+        <el-form-item :label="$t('systemFile.move.target')">
+          <el-select
             v-model="moveTarget"
             :placeholder="$t('systemFile.move.placeholder')"
           >
-            <a-option :value="0">{{
-              $t('systemFile.cate.uncategorized')
-            }}</a-option>
-            <a-option v-for="c in flatCateList" :key="c.id" :value="c.id">
+            <el-option
+              :value="0"
+              :label="$t('systemFile.cate.uncategorized')"
+              >{{ $t('systemFile.cate.uncategorized') }}</el-option
+            >
+            <el-option
+              v-for="c in flatCateList"
+              :key="c.id"
+              :value="c.id"
+              :label="`${'  '.repeat(c.depth)}${c.name}`"
+            >
               {{ `${'  '.repeat(c.depth)}${c.name}` }}
-            </a-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer
+        ><el-button @click="moveModalVisible = false">取消</el-button
+        ><el-button type="primary" :loading="moveSubmitting" @click="submitMove"
+          >保存</el-button
+        ></template
+      >
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import { getToken } from '@/utils/auth';
   import useLoading from '@/hooks/loading';
   import {
@@ -402,16 +418,16 @@
   };
   // ---- 上传回调 ----
   const onUploadSuccess = (fileItem: any) => {
-    const res = fileItem?.response;
+    const res = fileItem?.response ?? fileItem;
     if (res && res.code !== 20000) {
-      Message.error(res.msg || t('systemFile.tip.uploadFail'));
+      ElMessage.error(res.msg || t('systemFile.tip.uploadFail'));
       return;
     }
-    Message.success(t('systemFile.tip.uploadOk'));
+    ElMessage.success(t('systemFile.tip.uploadOk'));
     fetchFiles(pagination.current);
   };
   const onUploadError = () => {
-    Message.error(t('systemFile.tip.uploadFail'));
+    ElMessage.error(t('systemFile.tip.uploadFail'));
   };
 
   // ---- 分类弹窗 ----
@@ -423,7 +439,7 @@
   const cateRules = {
     name: [
       { required: true, message: t('systemFile.cate.field.name.required') },
-      { maxLength: 20, message: t('systemFile.cate.field.name.max') },
+      { max: 20, message: t('systemFile.cate.field.name.max') },
     ],
   };
 
@@ -441,8 +457,8 @@
     cateModalVisible.value = true;
   };
   const submitCate = async () => {
-    const err = await cateFormRef.value?.validate();
-    if (err) return;
+    const valid = await cateFormRef.value?.validate().catch(() => false);
+    if (!valid) return;
     cateSubmitting.value = true;
     try {
       if (cateIsEdit.value) {
@@ -454,7 +470,7 @@
           name: cateForm.name,
         });
       }
-      Message.success(t('systemFile.tip.ok'));
+      ElMessage.success(t('systemFile.tip.ok'));
       cateModalVisible.value = false;
       await fetchCate();
     } finally {
@@ -463,7 +479,7 @@
   };
   const handleCateDelete = async (c: FileCateRecord) => {
     await deleteFileCate(c.id);
-    Message.success(t('systemFile.tip.ok'));
+    ElMessage.success(t('systemFile.tip.ok'));
     if (currentCid.value === c.id) currentCid.value = '';
     await fetchCate();
     await fetchFiles(1);
@@ -483,12 +499,12 @@
     renameModalVisible.value = true;
   };
   const submitRename = async () => {
-    const err = await renameFormRef.value?.validate();
-    if (err) return;
+    const valid = await renameFormRef.value?.validate().catch(() => false);
+    if (!valid) return;
     renameSubmitting.value = true;
     try {
       await renameFile(renameForm.id, renameForm.name);
-      Message.success(t('systemFile.tip.ok'));
+      ElMessage.success(t('systemFile.tip.ok'));
       renameModalVisible.value = false;
       await fetchFiles(pagination.current);
     } finally {
@@ -499,12 +515,12 @@
   // ---- 删除 ----
   const handleDelete = async (item: FileRecord) => {
     await deleteFile([item.id]);
-    Message.success(t('systemFile.tip.ok'));
+    ElMessage.success(t('systemFile.tip.ok'));
     await fetchFiles(pagination.current);
   };
   const handleBatchDelete = async () => {
     await deleteFile([...checkedIds.value]);
-    Message.success(t('systemFile.tip.ok'));
+    ElMessage.success(t('systemFile.tip.ok'));
     await fetchFiles(pagination.current);
   };
 
@@ -513,7 +529,7 @@
   };
   const copyUrl = async (item: FileRecord) => {
     await navigator.clipboard.writeText(item.url);
-    Message.success(t('systemFile.tip.copied'));
+    ElMessage.success(t('systemFile.tip.copied'));
   };
 
   // ---- 移动 ----
@@ -528,7 +544,7 @@
     moveSubmitting.value = true;
     try {
       await moveFile([...checkedIds.value], moveTarget.value);
-      Message.success(t('systemFile.tip.ok'));
+      ElMessage.success(t('systemFile.tip.ok'));
       moveModalVisible.value = false;
       await fetchFiles(pagination.current);
     } finally {

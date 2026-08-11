@@ -1,67 +1,72 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.appSetting', 'menu.appSetting.hotSearch']" />
-    <a-card class="general-card" :title="$t('menu.appSetting.hotSearch')">
-      <a-spin :loading="loading" style="width: 100%">
-        <a-form :model="form" layout="vertical" style="max-width: 640px">
-          <a-form-item :label="$t('hotSearch.field.status')">
-            <a-switch
-              v-model="form.status"
-              :checked-value="1"
-              :unchecked-value="0"
-            />
-            <span class="tip">{{ $t('hotSearch.field.status.tip') }}</span>
-          </a-form-item>
+    <el-card
+      v-loading="loading"
+      class="general-card"
+      :header="$t('menu.appSetting.hotSearch')"
+    >
+      <el-form :model="form" label-position="top" style="max-width: 640px">
+        <el-form-item :label="$t('hotSearch.field.status')">
+          <el-switch
+            v-model="form.status"
+            :active-value="1"
+            :inactive-value="0"
+          />
+          <span class="tip">{{ $t('hotSearch.field.status.tip') }}</span>
+        </el-form-item>
 
-          <a-form-item :label="$t('hotSearch.field.words')">
-            <div style="width: 100%">
-              <div
-                v-for="(item, index) in form.data"
-                :key="index"
-                class="word-row"
-              >
-                <a-input
-                  v-model="item.name"
-                  :placeholder="$t('hotSearch.field.word.placeholder')"
-                  style="width: 260px"
-                  allow-clear
-                />
-                <a-input-number
-                  v-model="item.sort"
-                  :min="0"
-                  :placeholder="$t('hotSearch.field.sort')"
-                  style="width: 140px"
-                />
-                <a-button status="danger" type="text" @click="removeRow(index)">
-                  <template #icon><icon-delete /></template>
-                </a-button>
-              </div>
-              <a-button type="outline" size="small" @click="addRow">
-                <template #icon><icon-plus /></template>
-                {{ $t('hotSearch.operation.addWord') }}
-              </a-button>
-            </div>
-          </a-form-item>
-
-          <a-form-item>
-            <a-button
-              type="primary"
-              :loading="submitLoading"
-              @click="handleSubmit"
+        <el-form-item :label="$t('hotSearch.field.words')">
+          <div style="width: 100%">
+            <div
+              v-for="(item, index) in form.data"
+              :key="index"
+              class="word-row"
             >
-              {{ $t('hotSearch.operation.save') }}
-            </a-button>
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-card>
+              <el-input
+                v-model="item.name"
+                :placeholder="$t('hotSearch.field.word.placeholder')"
+                style="width: 260px"
+                clearable
+              />
+              <el-input-number
+                v-model="item.sort"
+                :min="0"
+                :placeholder="$t('hotSearch.field.sort')"
+                style="width: 140px"
+              />
+              <el-button
+                type="danger"
+                link
+                :icon="Delete"
+                @click="removeRow(index)"
+              />
+            </div>
+            <el-button plain size="small" :icon="Plus" @click="addRow">
+              {{ $t('hotSearch.operation.addWord') }}
+            </el-button>
+          </div>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="submitLoading"
+            @click="handleSubmit"
+          >
+            {{ $t('hotSearch.operation.save') }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
+  import { Delete, Plus } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     getHotSearchConfig,
@@ -105,7 +110,7 @@
         data: form.data.filter((item) => item.name.trim() !== ''),
       };
       await saveHotSearchConfig(payload);
-      Message.success(t('hotSearch.tip.success'));
+      ElMessage.success(t('hotSearch.tip.success'));
       await fetchData();
     } finally {
       submitLoading.value = false;

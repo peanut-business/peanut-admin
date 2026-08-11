@@ -6,6 +6,7 @@ namespace app\adminapi\logic\decoration;
 use app\common\logic\BaseLogic;
 use app\common\model\article\Article;
 use app\common\model\decoration\DecoratePage;
+use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
 use think\facade\Db;
 
@@ -24,7 +25,7 @@ class DecorationPageLogic extends BaseLogic
             if ($page->isEmpty() || !in_array((int)$page->type, $allowedTypes, true)) {
                 throw new \RuntimeException('装修页面不存在或无权访问');
             }
-            return self::format($page->toArray());
+            return DecorationReadService::formatPage($page->toArray());
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
             return false;
@@ -34,11 +35,7 @@ class DecorationPageLogic extends BaseLogic
     public static function detailByType(int $type): array|false
     {
         try {
-            $page = DecoratePage::where('type', $type)->findOrEmpty();
-            if ($page->isEmpty()) {
-                throw new \RuntimeException('装修页面不存在');
-            }
-            return self::format($page->toArray());
+            return DecorationReadService::pageByType($type);
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
             return false;
@@ -88,13 +85,4 @@ class DecorationPageLogic extends BaseLogic
             ->select()->toArray();
     }
 
-    private static function format(array $page): array
-    {
-        $data = json_decode((string)$page['data'], true, 512, JSON_THROW_ON_ERROR);
-        $meta = trim((string)($page['meta'] ?? '')) === ''
-            ? [] : json_decode((string)$page['meta'], true, 512, JSON_THROW_ON_ERROR);
-        $page['data'] = DecorationSchemaService::resourcesForRead($data);
-        $page['meta'] = DecorationSchemaService::resourcesForRead($meta);
-        return $page;
-    }
 }

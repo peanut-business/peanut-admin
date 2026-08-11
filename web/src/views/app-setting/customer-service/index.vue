@@ -3,65 +3,65 @@
     <Breadcrumb
       :items="['menu.appSetting', 'menu.appSetting.customerService']"
     />
-    <a-card class="general-card" :title="$t('menu.appSetting.customerService')">
-      <a-spin :loading="loading" style="width: 100%">
-        <a-form :model="form" layout="vertical" style="max-width: 560px">
-          <a-form-item :label="$t('customerService.field.qrCode')">
-            <a-upload
-              :action="uploadAction"
-              :headers="uploadHeaders"
-              :show-file-list="false"
-              list-type="picture-card"
-              accept="image/*"
-              @success="onQrSuccess"
-              @error="onQrError"
-            >
-              <template #upload-button>
-                <div class="qr-uploader">
-                  <img v-if="form.qr_code" :src="form.qr_code" alt="qr" />
-                  <icon-plus v-else />
-                </div>
-              </template>
-            </a-upload>
-          </a-form-item>
-          <a-form-item :label="$t('customerService.field.wechat')">
-            <a-input
-              v-model="form.wechat"
-              :placeholder="$t('customerService.field.wechat.placeholder')"
-            />
-          </a-form-item>
-          <a-form-item :label="$t('customerService.field.phone')">
-            <a-input
-              v-model="form.phone"
-              :placeholder="$t('customerService.field.phone.placeholder')"
-            />
-          </a-form-item>
-          <a-form-item :label="$t('customerService.field.serviceTime')">
-            <a-input
-              v-model="form.service_time"
-              :placeholder="$t('customerService.field.serviceTime.placeholder')"
-            />
-          </a-form-item>
-          <a-form-item>
-            <a-button
-              type="primary"
-              :loading="submitLoading"
-              @click="handleSubmit"
-            >
-              {{ $t('customerService.operation.save') }}
-            </a-button>
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-card>
+    <el-card
+      v-loading="loading"
+      class="general-card"
+      :header="$t('menu.appSetting.customerService')"
+    >
+      <el-form :model="form" label-position="top" style="max-width: 560px">
+        <el-form-item :label="$t('customerService.field.qrCode')">
+          <el-upload
+            class="qr-upload"
+            :action="uploadAction"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            accept="image/*"
+            :on-success="onQrSuccess"
+            :on-error="onQrError"
+          >
+            <div class="qr-uploader">
+              <img v-if="form.qr_code" :src="form.qr_code" alt="qr" />
+              <el-icon v-else><Plus /></el-icon>
+            </div>
+          </el-upload>
+        </el-form-item>
+        <el-form-item :label="$t('customerService.field.wechat')">
+          <el-input
+            v-model="form.wechat"
+            :placeholder="$t('customerService.field.wechat.placeholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="$t('customerService.field.phone')">
+          <el-input
+            v-model="form.phone"
+            :placeholder="$t('customerService.field.phone.placeholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="$t('customerService.field.serviceTime')">
+          <el-input
+            v-model="form.service_time"
+            :placeholder="$t('customerService.field.serviceTime.placeholder')"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="submitLoading"
+            @click="handleSubmit"
+          >
+            {{ $t('customerService.operation.save') }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FileItem } from '@arco-design/web-vue/es/upload/interfaces';
+  import { ElMessage, type UploadProps } from 'element-plus';
+  import { Plus } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import { getToken } from '@/utils/auth';
   import {
@@ -100,26 +100,29 @@
   };
   fetchData();
 
-  const onQrSuccess = (fileItem: FileItem) => {
-    const res = fileItem.response as
+  const onQrSuccess: UploadProps['onSuccess'] = (response) => {
+    const result = response as
       | { code: number; msg: string; data: { url: string } }
       | undefined;
-    if (!res || res.code !== 20000) {
-      Message.error(res?.msg || t('customerService.tip.uploadFail'));
+    if (!result || result.code !== 20000) {
+      ElMessage.error(
+        result?.msg || t('customerService.tip.uploadFail')
+      );
       return;
     }
-    form.qr_code = res.data.url;
-    Message.success(t('customerService.tip.uploadSuccess'));
+    form.qr_code = result.data.url;
+    ElMessage.success(t('customerService.tip.uploadSuccess'));
   };
-  const onQrError = () => {
-    Message.error(t('customerService.tip.uploadFail'));
+
+  const onQrError: UploadProps['onError'] = () => {
+    ElMessage.error(t('customerService.tip.uploadFail'));
   };
 
   const handleSubmit = async () => {
     submitLoading.value = true;
     try {
       await saveCustomerServiceConfig({ ...form });
-      Message.success(t('customerService.tip.success'));
+      ElMessage.success(t('customerService.tip.success'));
     } finally {
       submitLoading.value = false;
     }
@@ -141,8 +144,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    height: 100%;
+    width: 148px;
+    height: 148px;
+    overflow: hidden;
+    border: 1px dashed var(--el-border-color);
+    border-radius: 6px;
 
     img {
       max-width: 100%;

@@ -2,301 +2,379 @@
   <div class="container">
     <Breadcrumb :items="['menu.member', 'menu.member.list']" />
 
-    <a-card class="general-card search-card">
-      <a-form :model="queryParams" layout="inline">
-        <a-form-item field="keyword" :label="$t('member.filter.userInfo')">
-          <a-input
+    <el-card class="general-card search-card">
+      <el-form :model="queryParams" inline>
+        <el-form-item prop="keyword" :label="$t('member.filter.userInfo')">
+          <el-input
             v-model="queryParams.keyword"
             :placeholder="$t('member.filter.keyword')"
             style="width: 240px"
-            allow-clear
-            @press-enter="search"
+            clearable
+            @keyup.enter="search"
           />
-        </a-form-item>
-        <a-form-item :label="$t('member.filter.createTime')">
-          <a-range-picker
+        </el-form-item>
+        <el-form-item :label="$t('member.filter.createTime')">
+          <el-date-picker
             v-model="queryParams.createTime"
+            type="daterange"
             value-format="YYYY-MM-DD"
             style="width: 260px"
-            allow-clear
+            clearable
           />
-        </a-form-item>
-        <a-form-item field="channel" :label="$t('member.filter.channel')">
-          <a-select
+        </el-form-item>
+        <el-form-item prop="channel" :label="$t('member.filter.channel')">
+          <el-select
             v-model="queryParams.channel"
             :placeholder="$t('member.filter.channel.all')"
-            :options="channelOptions"
             style="width: 160px"
-            allow-clear
-          />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="search">
-              <template #icon><icon-search /></template>
+            clearable
+          >
+            <el-option
+              v-for="option in channelOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-space>
+            <el-button type="primary" @click="search">
+              <template #icon><Search /></template>
               {{ $t('member.operation.search') }}
-            </a-button>
-            <a-button @click="resetQuery">
-              <template #icon><icon-refresh /></template>
+            </el-button>
+            <el-button @click="resetQuery">
+              <template #icon><Refresh /></template>
               {{ $t('member.operation.reset') }}
-            </a-button>
-            <a-button @click="openExport">
-              <template #icon><icon-export /></template>
+            </el-button>
+            <el-button @click="openExport">
+              <template #icon><Download /></template>
               {{ $t('member.operation.export') }}
-            </a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+            </el-button>
+          </el-space>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-    <a-card class="general-card" :title="$t('menu.member.list')">
-      <a-row style="margin-bottom: 16px">
-        <a-button
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.member.list') }}</template>
+      <el-row style="margin-bottom: 16px">
+        <el-button
           v-permission="['member/add']"
           type="primary"
           @click="handleAdd"
         >
-          <template #icon><icon-plus /></template>
+          <template #icon><Plus /></template>
           {{ $t('member.operation.add') }}
-        </a-button>
-      </a-row>
-      <a-table
+        </el-button>
+      </el-row>
+      <el-table
+        v-loading="loading"
         row-key="id"
-        :loading="loading"
-        :columns="columns"
         :data="renderData"
-        :pagination="pagination"
-        :bordered="{ cell: true }"
-        :scroll="{ x: 1350 }"
-        @page-change="onPageChange"
-        @page-size-change="onPageSizeChange"
+        border
       >
-        <template #avatar="{ record }">
-          <a-avatar :size="46" :image-url="record.avatar">
-            {{ record.nickname?.slice(0, 1) }}
-          </a-avatar>
-        </template>
-        <template #status="{ record }">
-          <a-tag :color="record.status === 1 ? 'green' : 'red'">
-            {{
-              record.status === 1
-                ? $t('member.status.normal')
-                : $t('member.status.disabled')
-            }}
-          </a-tag>
-        </template>
-        <template #operations="{ record }">
-          <a-space>
-            <a-button
-              v-permission="['user.user/detail']"
-              type="text"
-              size="small"
-              @click="openDetail(record)"
-            >
-              {{ $t('member.operation.detail') }}
-            </a-button>
-            <a-button
-              v-permission="['member/status']"
-              type="text"
-              size="small"
-              :status="record.status === 1 ? 'danger' : 'normal'"
-              @click="handleToggleStatus(record)"
-            >
+        <el-table-column :label="$t('member.columns.avatar')" width="90">
+          <template #default="{ row }">
+            <el-avatar :size="46" :src="row.avatar">
+              {{ row.nickname?.slice(0, 1) }}
+            </el-avatar>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="nickname"
+          :label="$t('member.columns.nickname')"
+          width="140"
+        />
+        <el-table-column
+          prop="account"
+          :label="$t('member.columns.account')"
+          width="160"
+        />
+        <el-table-column
+          prop="mobile"
+          :label="$t('member.columns.mobile')"
+          width="140"
+        />
+        <el-table-column
+          prop="channel"
+          :label="$t('member.columns.channel')"
+          width="130"
+        />
+        <el-table-column
+          prop="create_time"
+          :label="$t('member.columns.createTime')"
+          width="180"
+        />
+        <el-table-column :label="$t('member.columns.status')" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
               {{
-                record.status === 1
-                  ? $t('member.operation.disable')
-                  : $t('member.operation.enable')
+                row.status === 1
+                  ? $t('member.status.normal')
+                  : $t('member.status.disabled')
               }}
-            </a-button>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="balance"
+          :label="$t('member.columns.balance')"
+          width="100"
+        />
+        <el-table-column
+          :label="$t('member.columns.operations')"
+          width="260"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-space>
+              <el-button
+                v-permission="['user.user/detail']"
+                link
+                size="small"
+                @click="openDetail(row)"
+              >
+                {{ $t('member.operation.detail') }}
+              </el-button>
+              <el-button
+                v-permission="['member/status']"
+                link
+                size="small"
+                :type="row.status === 1 ? 'danger' : 'primary'"
+                @click="handleToggleStatus(row)"
+              >
+                {{
+                  row.status === 1
+                    ? $t('member.operation.disable')
+                    : $t('member.operation.enable')
+                }}
+              </el-button>
+            </el-space>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        :page-sizes="[10, 15, 30, 50]"
+        layout="total, sizes, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="onPageChange"
+        @size-change="onPageSizeChange"
+      />
+    </el-card>
 
-    <a-modal
-      v-model:visible="modalVisible"
+    <el-dialog
+      v-model="modalVisible"
       :title="$t('member.modal.addTitle')"
-      :ok-loading="submitLoading"
-      :mask-closable="false"
-      @before-ok="handleSubmit"
-      @cancel="modalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form ref="formRef" :model="form" :rules="formRules" layout="vertical">
-        <a-form-item field="nickname" :label="$t('member.field.nickname')">
-          <a-input
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="formRules"
+        label-position="top"
+      >
+        <el-form-item prop="nickname" :label="$t('member.field.nickname')">
+          <el-input
             v-model="form.nickname"
             :placeholder="$t('member.field.nickname.placeholder')"
           />
-        </a-form-item>
-        <a-form-item field="mobile" :label="$t('member.field.mobile')">
-          <a-input v-model="form.mobile" />
-        </a-form-item>
-        <a-form-item field="email" :label="$t('member.field.email')">
-          <a-input v-model="form.email" />
-        </a-form-item>
-        <a-form-item field="sex" :label="$t('member.field.sex')">
-          <a-radio-group v-model="form.sex">
-            <a-radio :value="0">{{ $t('member.sex.unknown') }}</a-radio>
-            <a-radio :value="1">{{ $t('member.sex.male') }}</a-radio>
-            <a-radio :value="2">{{ $t('member.sex.female') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="tag_ids" :label="$t('member.field.tags')">
-          <a-select v-model="form.tag_ids" multiple allow-clear>
-            <a-option v-for="tag in tagOptions" :key="tag.id" :value="tag.id">
+        </el-form-item>
+        <el-form-item prop="mobile" :label="$t('member.field.mobile')">
+          <el-input v-model="form.mobile" />
+        </el-form-item>
+        <el-form-item prop="email" :label="$t('member.field.email')">
+          <el-input v-model="form.email" />
+        </el-form-item>
+        <el-form-item prop="sex" :label="$t('member.field.sex')">
+          <el-radio-group v-model="form.sex">
+            <el-radio :value="0">{{ $t('member.sex.unknown') }}</el-radio>
+            <el-radio :value="1">{{ $t('member.sex.male') }}</el-radio>
+            <el-radio :value="2">{{ $t('member.sex.female') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item prop="tag_ids" :label="$t('member.field.tags')">
+          <el-select v-model="form.tag_ids" multiple clearable>
+            <el-option
+              v-for="tag in tagOptions"
+              :key="tag.id"
+              :label="tag.name"
+              :value="tag.id"
+            >
               {{ tag.name }}
-            </a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item field="status" :label="$t('member.field.status')">
-          <a-radio-group v-model="form.status">
-            <a-radio :value="1">{{ $t('member.status.normal') }}</a-radio>
-            <a-radio :value="0">{{ $t('member.status.disabled') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item prop="status" :label="$t('member.field.status')">
+          <el-radio-group v-model="form.status">
+            <el-radio :value="1">{{ $t('member.status.normal') }}</el-radio>
+            <el-radio :value="0">{{ $t('member.status.disabled') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="modalVisible = false">
+          {{ $t('userSetting.cancel') }}
+        </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
+          {{ $t('userSetting.save') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
-    <a-drawer
-      v-model:visible="detailDrawerVisible"
-      :width="640"
+    <el-drawer
+      v-model="detailDrawerVisible"
+      size="640px"
       :title="$t('member.detail.title')"
-      unmount-on-close
+      destroy-on-close
     >
-      <a-spin :loading="detailLoading" style="width: 100%">
+      <div v-loading="detailLoading" style="width: 100%">
         <div class="detail-summary">
           <div class="detail-summary-item">
             <span class="detail-label">{{ $t('member.detail.avatar') }}</span>
-            <a-avatar :size="58" :image-url="detail.avatar">
+            <el-avatar :size="58" :src="detail.avatar">
               {{ detail.nickname?.slice(0, 1) }}
-            </a-avatar>
+            </el-avatar>
           </div>
           <div class="detail-summary-item">
             <span class="detail-label">{{ $t('member.detail.balance') }}</span>
             <div>
               ¥{{ Number(detail.user_money || 0).toFixed(2) }}
-              <a-button
+              <el-button
                 v-permission="['user.user/adjustMoney']"
-                type="text"
+                link
                 size="small"
                 @click="openBalanceFromDetail"
               >
                 {{ $t('member.operation.adjustBalance') }}
-              </a-button>
+              </el-button>
             </div>
           </div>
         </div>
 
-        <a-descriptions :column="1" bordered size="large">
-          <a-descriptions-item :label="$t('member.detail.nickname')">
+        <el-descriptions :column="1" border size="large">
+          <el-descriptions-item :label="$t('member.detail.nickname')">
             {{ detail.nickname || '-' }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('member.detail.account')">
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('member.detail.account')">
             {{ detail.account || '-' }}
-            <a-button
+            <el-button
               v-permission="['user.user/edit']"
-              type="text"
-              size="mini"
+              link
+              size="small"
               @click="openFieldEdit('account')"
             >
               {{ $t('member.operation.edit') }}
-            </a-button>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('member.detail.realName')">
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('member.detail.realName')">
             {{ detail.real_name || '-' }}
-            <a-button
+            <el-button
               v-permission="['user.user/edit']"
-              type="text"
-              size="mini"
+              link
+              size="small"
               @click="openFieldEdit('real_name')"
             >
               {{ $t('member.operation.edit') }}
-            </a-button>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('member.detail.sex')">
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('member.detail.sex')">
             {{ detailSexLabel }}
-            <a-button
+            <el-button
               v-permission="['user.user/edit']"
-              type="text"
-              size="mini"
+              link
+              size="small"
               @click="openFieldEdit('sex')"
             >
               {{ $t('member.operation.edit') }}
-            </a-button>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('member.detail.mobile')">
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('member.detail.mobile')">
             {{ detail.mobile || '-' }}
-            <a-button
+            <el-button
               v-permission="['user.user/edit']"
-              type="text"
-              size="mini"
+              link
+              size="small"
               @click="openFieldEdit('mobile')"
             >
               {{ $t('member.operation.edit') }}
-            </a-button>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('member.detail.channel')">
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('member.detail.channel')">
             {{ detail.channel || '-' }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('member.detail.createTime')">
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('member.detail.createTime')">
             {{ detail.create_time || '-' }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('member.detail.loginTime')">
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('member.detail.loginTime')">
             {{ detail.login_time || '-' }}
-          </a-descriptions-item>
-        </a-descriptions>
-      </a-spin>
-    </a-drawer>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </el-drawer>
 
-    <a-modal
-      v-model:visible="fieldModalVisible"
+    <el-dialog
+      v-model="fieldModalVisible"
       :title="$t('member.detail.editTitle', { field: fieldLabel })"
-      :ok-loading="fieldLoading"
-      :mask-closable="false"
-      @before-ok="submitFieldEdit"
+      :close-on-click-modal="false"
     >
-      <a-form :model="fieldForm" layout="vertical">
-        <a-form-item :label="fieldLabel" required>
-          <a-select v-if="fieldForm.field === 'sex'" v-model="fieldForm.value">
-            <a-option :value="0">{{ $t('member.sex.unknown') }}</a-option>
-            <a-option :value="1">{{ $t('member.sex.male') }}</a-option>
-            <a-option :value="2">{{ $t('member.sex.female') }}</a-option>
-          </a-select>
-          <a-input
+      <el-form :model="fieldForm" label-position="top">
+        <el-form-item :label="fieldLabel" required>
+          <el-select
+            v-if="fieldForm.field === 'sex'"
+            v-model="fieldForm.value"
+          >
+            <el-option :value="0" :label="$t('member.sex.unknown')" />
+            <el-option :value="1" :label="$t('member.sex.male')" />
+            <el-option :value="2" :label="$t('member.sex.female')" />
+          </el-select>
+          <el-input
             v-else
             v-model="fieldForm.value"
-            :max-length="fieldForm.field === 'mobile' ? 11 : 32"
+            :maxlength="fieldForm.field === 'mobile' ? 11 : 32"
             show-word-limit
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="fieldModalVisible = false">
+          {{ $t('userSetting.cancel') }}
+        </el-button>
+        <el-button type="primary" :loading="fieldLoading" @click="submitFieldEdit">
+          {{ $t('userSetting.save') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
-    <a-modal
-      v-model:visible="balanceModalVisible"
+    <el-dialog
+      v-model="balanceModalVisible"
       :title="$t('member.balance.modalTitle')"
-      :ok-loading="balanceLoading"
-      :mask-closable="false"
-      @before-ok="handleBalanceSubmit"
-      @cancel="balanceModalVisible = false"
+      :close-on-click-modal="false"
     >
-      <a-form
+      <el-form
         ref="balanceFormRef"
         :model="balanceForm"
         :rules="balanceRules"
-        layout="vertical"
+        label-position="top"
       >
-        <a-form-item :label="$t('member.balance.current')">
+        <el-form-item :label="$t('member.balance.current')">
           ¥{{ Number(detail.user_money || 0).toFixed(2) }}
-        </a-form-item>
-        <a-form-item field="action" :label="$t('member.balance.action')">
-          <a-radio-group v-model="balanceForm.action">
-            <a-radio :value="1">{{ $t('member.balance.increase') }}</a-radio>
-            <a-radio :value="2">{{ $t('member.balance.decrease') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="num" :label="$t('member.field.amount')">
-          <a-input-number
+        </el-form-item>
+        <el-form-item prop="action" :label="$t('member.balance.action')">
+          <el-radio-group v-model="balanceForm.action">
+            <el-radio :value="1">{{
+              $t('member.balance.increase')
+            }}</el-radio>
+            <el-radio :value="2">{{
+              $t('member.balance.decrease')
+            }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item prop="num" :label="$t('member.field.amount')">
+          <el-input-number
             v-model="balanceForm.num"
             :placeholder="$t('member.field.amount.placeholder')"
             style="width: 100%"
@@ -304,33 +382,43 @@
             :min="0.01"
             :step="1"
           />
-        </a-form-item>
-        <a-form-item :label="$t('member.balance.after')">
+        </el-form-item>
+        <el-form-item :label="$t('member.balance.after')">
           ¥{{ adjustedBalance.toFixed(2) }}
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('member.field.remark')">
-          <a-textarea
+        </el-form-item>
+        <el-form-item prop="remark" :label="$t('member.field.remark')">
+          <el-input
+            type="textarea"
             v-model="balanceForm.remark"
             :placeholder="$t('member.field.remark.placeholder')"
-            :max-length="128"
+            maxlength="128"
             show-word-limit
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="balanceModalVisible = false">
+          {{ $t('userSetting.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="balanceLoading"
+          @click="handleBalanceSubmit"
+        >
+          {{ $t('userSetting.save') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
-    <a-modal
-      v-model:visible="exportVisible"
+    <el-dialog
+      v-model="exportVisible"
       :title="$t('member.export.title')"
-      :ok-text="$t('member.export.confirm')"
-      :ok-loading="exportLoading"
-      :mask-closable="false"
+      :close-on-click-modal="false"
       width="540px"
-      @before-ok="handleExport"
     >
-      <a-spin :loading="exportInfoLoading" style="width: 100%">
-        <a-form :model="exportForm" layout="vertical">
-          <a-alert type="info" style="margin-bottom: 16px">
+      <div v-loading="exportInfoLoading" style="width: 100%">
+        <el-form :model="exportForm" label-position="top">
+          <el-alert type="info" style="margin-bottom: 16px">
             {{
               $t('member.export.summary', {
                 count: exportInfo.count,
@@ -345,47 +433,54 @@
                 count: exportInfo.all_max_size,
               })
             }}
-          </a-alert>
-          <a-form-item field="page_type" :label="$t('member.export.range')">
-            <a-radio-group v-model="exportForm.page_type">
-              <a-radio :value="0">{{ $t('member.export.all') }}</a-radio>
-              <a-radio :value="1">{{ $t('member.export.pages') }}</a-radio>
-            </a-radio-group>
-          </a-form-item>
-          <a-form-item
+          </el-alert>
+          <el-form-item prop="page_type" :label="$t('member.export.range')">
+            <el-radio-group v-model="exportForm.page_type">
+              <el-radio :value="0">{{ $t('member.export.all') }}</el-radio>
+              <el-radio :value="1">{{ $t('member.export.pages') }}</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item
             v-if="exportForm.page_type === 1"
             :label="$t('member.export.pageRange')"
           >
-            <a-space>
-              <a-input-number
+            <el-space>
+              <el-input-number
                 v-model="exportForm.page_start"
                 :min="1"
                 :max="exportInfo.sum_page || 1"
               />
               <span>{{ $t('member.export.to') }}</span>
-              <a-input-number
+              <el-input-number
                 v-model="exportForm.page_end"
                 :min="exportForm.page_start"
                 :max="exportInfo.sum_page || 1"
               />
-            </a-space>
-          </a-form-item>
-          <a-form-item field="file_name" :label="$t('member.export.fileName')">
-            <a-input v-model="exportForm.file_name" :max-length="100" />
-          </a-form-item>
-        </a-form>
-      </a-spin>
-    </a-modal>
+            </el-space>
+          </el-form-item>
+          <el-form-item prop="file_name" :label="$t('member.export.fileName')">
+            <el-input v-model="exportForm.file_name" maxlength="100" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="exportVisible = false">
+          {{ $t('userSetting.cancel') }}
+        </el-button>
+        <el-button type="primary" :loading="exportLoading" @click="handleExport">
+          {{ $t('member.export.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { TableColumnData } from '@arco-design/web-vue/es/table/interface';
-  import type { SelectOptionData } from '@arco-design/web-vue/es/select/interface';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
+  import { Download, Plus, Refresh, Search } from '@element-plus/icons-vue';
+  import { ElMessage } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import useLoading from '@/hooks/loading';
   import { hasPermission } from '@/hooks/permission';
   import {
@@ -417,7 +512,7 @@
     channel: '' as number | '',
     createTime: [] as string[],
   });
-  const channelOptions = computed<SelectOptionData[]>(() => [
+  const channelOptions = computed(() => [
     { value: 1, label: t('member.channel.wechatMmp') },
     { value: 2, label: t('member.channel.wechatOa') },
     { value: 3, label: t('member.channel.h5') },
@@ -429,30 +524,7 @@
     current: 1,
     pageSize: 15,
     total: 0,
-    showTotal: true,
-    showPageSize: true,
   });
-  const columns = computed<TableColumnData[]>(() => [
-    { title: t('member.columns.avatar'), slotName: 'avatar', width: 90 },
-    { title: t('member.columns.nickname'), dataIndex: 'nickname', width: 140 },
-    { title: t('member.columns.account'), dataIndex: 'account', width: 160 },
-    { title: t('member.columns.mobile'), dataIndex: 'mobile', width: 140 },
-    { title: t('member.columns.channel'), dataIndex: 'channel', width: 130 },
-    {
-      title: t('member.columns.createTime'),
-      dataIndex: 'create_time',
-      width: 180,
-    },
-    { title: t('member.columns.status'), slotName: 'status', width: 90 },
-    { title: t('member.columns.balance'), dataIndex: 'balance', width: 100 },
-    {
-      title: t('member.columns.operations'),
-      slotName: 'operations',
-      width: 260,
-      fixed: 'right',
-    },
-  ]);
-
   const listParams = (page = pagination.current): MemberListParams => ({
     keyword: queryParams.keyword || undefined,
     channel: queryParams.channel === '' ? undefined : queryParams.channel,
@@ -515,12 +587,12 @@
     modalVisible.value = true;
   };
   const handleSubmit = async () => {
-    const err = await formRef.value?.validate();
-    if (err) return false;
+    const valid = await formRef.value?.validate().catch(() => false);
+    if (!valid) return false;
     submitLoading.value = true;
     try {
       await addMember({ ...form });
-      Message.success(t('member.tip.success'));
+      ElMessage.success(t('member.tip.success'));
       modalVisible.value = false;
       await fetchData(pagination.current);
       return true;
@@ -533,7 +605,7 @@
     await updateMemberStatus(record.id, next);
     record.status = next;
     record.is_disable = next === 1 ? 0 : 1;
-    Message.success(t('member.tip.success'));
+    ElMessage.success(t('member.tip.success'));
   };
 
   const emptyDetail = (): MemberDetail => ({
@@ -600,7 +672,7 @@
   };
   const submitFieldEdit = async () => {
     if (fieldForm.value === '') {
-      Message.warning(t('member.detail.valueRequired'));
+      ElMessage.warning(t('member.detail.valueRequired'));
       return false;
     }
     fieldLoading.value = true;
@@ -610,7 +682,7 @@
         field: fieldForm.field,
         value: fieldForm.value,
       });
-      Message.success(t('member.tip.success'));
+      ElMessage.success(t('member.tip.success'));
       fieldModalVisible.value = false;
       await Promise.all([refreshDetail(), fetchData(pagination.current)]);
       return true;
@@ -645,10 +717,10 @@
     balanceModalVisible.value = true;
   };
   const handleBalanceSubmit = async () => {
-    const err = await balanceFormRef.value?.validate();
-    if (err) return false;
+    const valid = await balanceFormRef.value?.validate().catch(() => false);
+    if (!valid) return false;
     if (balanceForm.num <= 0) {
-      Message.warning(t('member.field.amount.positive'));
+      ElMessage.warning(t('member.field.amount.positive'));
       return false;
     }
     balanceLoading.value = true;
@@ -659,7 +731,7 @@
         num: balanceForm.num,
         remark: balanceForm.remark,
       });
-      Message.success(t('member.tip.success'));
+      ElMessage.success(t('member.tip.success'));
       balanceModalVisible.value = false;
       await Promise.all([refreshDetail(), fetchData(pagination.current)]);
       return true;
@@ -710,7 +782,7 @@
       exportForm.page_type === 1 &&
       exportForm.page_end < exportForm.page_start
     ) {
-      Message.error(t('member.export.invalidRange'));
+      ElMessage.error(t('member.export.invalidRange'));
       return false;
     }
     exportLoading.value = true;
@@ -726,7 +798,8 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
-      Message.success(t('member.export.success'));
+      ElMessage.success(t('member.export.success'));
+      exportVisible.value = false;
       return true;
     } finally {
       exportLoading.value = false;
@@ -761,7 +834,7 @@
     justify-content: space-around;
     padding: 24px;
     margin-bottom: 20px;
-    background: var(--color-fill-2);
+    background: var(--el-fill-color-light);
     border-radius: 4px;
   }
 
@@ -773,6 +846,6 @@
   }
 
   .detail-label {
-    color: var(--color-text-2);
+    color: var(--el-text-color-regular);
   }
 </style>

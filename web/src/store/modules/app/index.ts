@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
-import { Notification } from '@arco-design/web-vue';
-import type { NotificationReturn } from '@arco-design/web-vue/es/notification/interface';
+import { ElNotification, type NotificationHandle } from 'element-plus';
 import type { RouteRecordRaw } from 'vue-router';
 import defaultSettings from '@/config/settings.json';
 import { getMenuList } from '@/api/user';
@@ -33,10 +32,10 @@ const useAppStore = defineStore('app', {
     toggleTheme(dark: boolean) {
       if (dark) {
         this.theme = 'dark';
-        document.body.setAttribute('arco-theme', 'dark');
+        document.documentElement.classList.add('dark');
       } else {
         this.theme = 'light';
-        document.body.removeAttribute('arco-theme');
+        document.documentElement.classList.remove('dark');
       }
     },
     toggleDevice(device: string) {
@@ -50,28 +49,27 @@ const useAppStore = defineStore('app', {
       this.serverMenuLoaded = true;
     },
     async fetchServerMenuConfig() {
-      let notifyInstance: NotificationReturn | null = null;
+      let notifyInstance: NotificationHandle | null = null;
       try {
-        notifyInstance = Notification.info({
-          id: 'menuNotice', // Keep the instance id the same
-          content: 'loading',
-          closable: true,
+        notifyInstance = ElNotification.info({
+          message: 'loading',
+          showClose: true,
         });
         const { data } = await getMenuList();
         this.setServerMenu(data);
-        notifyInstance = Notification.success({
-          id: 'menuNotice',
-          content: 'success',
-          closable: true,
+        notifyInstance.close();
+        notifyInstance = ElNotification.success({
+          message: 'success',
+          showClose: true,
         });
       } catch (error) {
         this.serverMenu = [];
         this.serverMenuLoaded = true;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        notifyInstance = Notification.error({
-          id: 'menuNotice',
-          content: 'error',
-          closable: true,
+        notifyInstance?.close();
+        notifyInstance = ElNotification.error({
+          message: 'error',
+          showClose: true,
         });
       }
     },

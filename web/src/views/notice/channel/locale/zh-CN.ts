@@ -6,7 +6,6 @@ export default {
 
   // 渠道配置
   'notice.channel.sms': '短信渠道',
-  'notice.channel.mail': '邮件渠道',
   'notice.channel.sms.default': '默认服务商',
   'notice.channel.aliyun': '阿里云',
   'notice.channel.tencent': '腾讯云',
@@ -17,12 +16,6 @@ export default {
   'notice.channel.secret_key': 'SecretKey',
   'notice.channel.sdk_app_id': 'SDK AppID',
   'notice.channel.region': '地域',
-  'notice.channel.host': 'SMTP 主机',
-  'notice.channel.port': '端口',
-  'notice.channel.username': '发件人邮箱',
-  'notice.channel.password': '邮箱密码/授权码',
-  'notice.channel.from_name': '发件人名称',
-  'notice.channel.encryption': '加密方式',
   'notice.channel.status.enabled': '已配置',
   'notice.channel.status.disabled': '未配置',
   'notice.channel.save': '保存配置',

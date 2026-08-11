@@ -1,6 +1,6 @@
 # Peanut Admin 生产发布与部署
 
-生产部署只采用一条主路径：服务器拉取已经开发完成的应用仓，使用 Docker Compose 构建并启动，宝塔反代本机端口，Cloudflare 代理服务器域名。服务器不是用模板创建新应用的地方。
+生产部署只采用一条主路径：服务器拉取已经开发完成的应用仓，使用 Docker Compose 构建并启动，再由目标环境的 HTTPS 反向代理接入。服务器不是用模板创建新应用的地方。
 
 ## 发布内容
 
@@ -36,7 +36,7 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-编辑 `.env`，至少替换 `DB_PASS`、`MYSQL_ROOT_PASSWORD` 和 `JWT_SECRET`。该文件已被 Git 和 Docker 构建上下文排除。
+编辑 `.env`，至少填写数据库的 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASS`，替换 `JWT_SECRET`；空库首次安装还必须填写 `ADMIN_INITIAL_PASSWORD`。示例的 `DB_HOST=mysql` 对应可选 `bundled-db` profile，外部 MySQL 部署必须改为可从 PHP 容器访问的地址。该文件已被 Git 和 Docker 构建上下文排除。
 
 然后只执行：
 
@@ -44,13 +44,13 @@ chmod 600 .env
 docker compose up -d --build
 ```
 
-Compose 会启动 MySQL、PHP-FPM、Nginx 和定时任务。空数据库由 PHP 入口安全初始化；已有完整数据库不会重复安装。首次安装后的管理员账号为 `admin / admin123456`，登录后立即修改密码。
+Compose 默认只启动 PHP-FPM、Nginx 和定时任务，并连接 `.env` 指定的 MySQL。空数据库由 PHP 入口安全初始化，并将全部 migrations 记入 `pa_schema_migration`；已有完整数据库不会重复安装。首次空库安装必须设置 `ADMIN_INITIAL_PASSWORD`，管理员用户名为 `admin`，密码不会写入日志或响应；首次登录后应改为个人凭据。
 
 最低检查：
 
 ```bash
 docker compose ps
-curl -fsS http://127.0.0.1:18082/healthz
+curl -fsS http://127.0.0.1:18092/healthz
 ```
 
 ### 可选构建代理
@@ -69,17 +69,25 @@ Docker Desktop 可通过 `docker buildx inspect --bootstrap` 查看 `moby.host-g
 
 2026-08-07 在独立 Compose 项目和全新 MySQL 卷中完成一次生产构建与启动：`/healthz`、`/admin/`、`/mobile/`、`/pc/` 均返回 HTTP 200；首次安装生成 42 张表、1 个默认超级管理员、170 个菜单和 59 项配置。验证后已删除测试容器、网络和卷。
 
-## 宝塔与 Cloudflare
+2026-08-11 已把服务器从历史功能分支升级到 `dev`，完成数据库/存储备份、24 条迁移账本接管、生产 API 路由修复和三端镜像更新。当前四个服务健康/运行，真实 Chromium 已通过管理端登录、文章页、UniApp H5、Nuxt PC 与文档站 smoke；证据见 `output/playwright/production-baseline/final-summary.json`。
 
-宝塔创建站点并将全部请求反向代理到：
+以上只记录已封存的验收范围，不是模板域名、IP、数据库地址或云平台默认值。
+
+## HTTPS 反向代理
+
+Compose 默认只监听宿主机回环地址。可使用 Nginx、宝塔或等价入口，把应用域名的请求反向代理到：
 
 ```text
-http://127.0.0.1:18082
+http://127.0.0.1:18092
 ```
 
-Compose 只监听宿主机回环地址，不直接暴露 PHP-FPM、MySQL 或 PC 容器端口。宝塔负责公网 80/443 和源站证书。
+不要直接暴露 PHP-FPM、MySQL 或 PC 容器端口。外层入口负责公网 80/443、有效证书、Host 与外部 HTTPS scheme 转发。
 
-Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开启代理。Cloudflare 访问宝塔，宝塔再访问本机 `18082`；本方案不需要 Cloudflare Tunnel 容器。
+如使用 Cloudflare，将应用域名的 A/AAAA 记录指向源站并开启代理，再由源站反向代理到本机 `18092`；本方案不要求 Cloudflare Tunnel 容器。
+
+站点 443 必须安装覆盖实际应用域名的有效证书，否则 HTTPS 可能落到默认站点。可使用 Cloudflare Origin CA，也可使用自动续期的 Let's Encrypt 证书；使用 Cloudflare 时加密模式应为 **Full (strict)**，不要使用 Flexible。源站 80/443 应只接受可信来源，且不得绕过代理策略对外提供服务。
+
+应用与文档站可以使用独立域名或同站分区；若文档站发布到 Cloudflare Pages，它不经过应用服务器，也不安装应用源站证书。同一个 DNS 名称不要同时绑定 Pages 和应用源站。
 
 ## Redis
 
@@ -89,16 +97,70 @@ Cloudflare 中将应用域名的 A/AAAA 记录指向服务器公网地址并开�
 docker compose --profile redis up -d
 ```
 
-## 后续升级
+## 可选内置 MySQL
 
-升级由应用 release tag 驱动。正式升级前先备份 MySQL 与 `php-storage` 卷，阅读该版本迁移清单并执行尚未应用的迁移，再重建容器：
+模板支持连接外部数据库，也支持单机部署的内置数据库 profile。启用内置数据库时将 `DB_HOST` 设为 `mysql`：
 
 ```bash
-git fetch --tags
-git checkout <release-tag>
-docker compose up -d --build
+docker compose --profile bundled-db up -d --build
 ```
+
+若应用和 MySQL 位于两台可互通的机器，不能使用 Docker 服务名通信；必须填写数据库服务器对应用服务器可路由的 IP/主机名，并在 MySQL 侧授权来源地址。公网服务器不得填写只能在开发局域网访问的地址。
+
+## 后续升级
+
+默认沿用服务器当前稳定发布分支。正式升级前先备份 MySQL 与 `php-storage` 卷。升级顺序固定为：拉取代码、构建新镜像、用新镜像迁移数据库，迁移成功后才切换运行容器：
+
+```bash
+git pull --ff-only
+docker compose build
+docker compose run --rm --no-deps php php server/database/migrate.php
+docker compose up -d --no-build
+```
+
+包含 PB06 的版本会由迁移账本执行 `20260811-content-asset-reference.sql`，扩充文章封面和 Tabbar 图标列以保存完整云/CDN URL。必须保持“先迁移、后切换”顺序；该迁移不搬迁素材对象，也不改写历史相对 URI。
+
+包含 PB07 通知切片的版本会执行 `20260811-notification-host-security.sql`：历史验证码立即失效并从内容快照脱敏，`verify_code` 原位改为 `verify_code_hash`，同时撤销已退出的通用模板写权限菜单。迁移不删除 `pa_notice_template` 历史数据；升级后必须在通知渠道页确认唯一短信 Provider 和四个固定 scene 配置，不能期待旧验证码继续可用。
+
+PB07 支付切片不新增数据库结构，但微信预支付、退款请求和退款查询现在都要求响应带有效的平台证书签名。升级前确认 `wx_pay_platform_cert_path` 指向 PHP-FPM 可读且与微信响应 serial 匹配的当前平台证书；证书缺失、过期或不匹配会 fail closed。部署 smoke 只能使用真实商户沙箱/低风险订单验证，不能关闭验签或手工改成功状态。
+
+PB07 OAuth/渠道切片会执行 `20260811-oauth-channel-host.sql`，删除旧 `channel` 微信/QQ 九字段和 `oa_setting` 中未实现的 AES 两字段；这些行可能包含敏感凭据，迁移前必须完成数据库备份。迁移不删除当前公众号、小程序、开放平台、菜单、回复、OAuth 身份或会员数据。反向代理必须正确传递外部 HTTPS scheme/Host；微信开放平台登记 `/api/oauth/wechat/redirect/pc`，公众号网页授权登记 `/api/oauth/wechat/redirect/official-account`。只有真实凭据、微信平台域名/白名单和一次低风险回跳通过后，才能声明生产 OAuth 可用；当前封存验收没有调用真实微信。
+
+历史安装首次升级时，把普通迁移命令替换为只执行一次的历史接管；接管成功后再启动新容器：
+
+```bash
+docker compose build
+docker compose run --rm --no-deps php php server/database/migrate.php --adopt-existing
+docker compose up -d --no-build
+```
+
+接管会先完整校验历史基线，再登记历史迁移并执行未登记文件。`php` 服务继承镜像工作目录 `/var/www/peanut-admin`，所以命令使用 `server/database/migrate.php`；在 server 工作目录中等价于 `php database/migrate.php`。迁移只处理账本中未登记的文件，并校验 SHA-256；无待执行文件时返回 `up_to_date`。迁移失败时不要启动新容器：MySQL DDL 不能假定事务回滚，应核对已执行结构、备份和失败记录，编写前滚修复后再继续。历史接管命令不可在后续发布中重复执行。
+
+### 回滚停止线
+
+- 数据库迁移只前滚，不提供自动 down migration；不要删除账本记录、改写已登记 SQL，或假定 MySQL DDL 会随事务完整回滚。
+- 只有新迁移对旧应用保持向后兼容时，才可把应用镜像切回上一版本；切回前确认后台任务、缓存和三端静态资源与旧版本匹配。
+- 如果迁移已产生旧应用不能读取的结构或数据，立即停止写流量，不启动旧镜像；只能修复并继续前滚，或恢复发布前同一时点的数据库与 `php-storage` 成对备份。
+- 真实支付、通知或 OAuth 外部状态不能靠数据库恢复撤销；恢复前先停止对应回调/任务并人工对账。
+
+需要严格锁版或回滚时，再使用 release tag；这不是首次部署和日常升级的必需步骤。
 
 `--skip-if-installed` 只避免容器重启时重复执行首次安装，不代替版本化数据库迁移。自动升级管理将在独立运营平台实现前保持手动。
 
 `scripts/package-release.sh` 仅保留为管理端 + PHP 的原生制品工具，不是完整三端生产部署方案。生产环境以 Docker Compose 为唯一推荐入口。
+
+正式部署应检出不可变 release tag，并核对根 `RELEASE_METADATA.json`；源码 release 的完整 commit 与 archive SHA-256 以 GitHub Release 附件 `RELEASE_MANIFEST.json` 为准。生产 Nginx 镜像把根许可证、NOTICE、第三方告知、SPDX SBOM、CHANGELOG 与 release metadata 放在 `/legal/`，PHP 镜像保留同一份 `legal/` 目录。PB09 不发布预构建镜像，这些镜像由部署端从 source tag 本地构建。
+
+## 品牌与官网发布
+
+首次安装前，脚手架默认品牌来自 `server/config/brand.json` 与 `server/public/brand/`，运行 `node scripts/sync-brand-assets.mjs` 后再构建。安装完成后只通过管理端“应用设置 → 网站设置”修改产品名称、各端 logo/favicon、slogan、版权、官网和 GitHub 地址；不要手改生成文件。
+
+官方网站与文档门户位于 `docs-site/`。发布前以目标站点地址构建 sitemap，并把 `.vitepress/dist/` 交给静态托管平台：
+
+```bash
+cd docs-site
+pnpm install --frozen-lockfile
+PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
+```
+
+域名、Pages 项目名、账号和令牌由目标环境提供，不写入模板默认值。应用网站设置中的 `official_url` 应在站点可访问后再填写。

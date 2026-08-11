@@ -1,134 +1,132 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['menu.user', 'menu.user.setting']" />
-    <a-card class="general-card" :title="$t('menu.user.setting')">
-      <a-tabs default-active-key="1" type="rounded">
-        <a-tab-pane key="1" :title="$t('userSetting.tab.basicInformation')">
-          <a-spin :loading="loading" style="width: 100%">
-            <a-form
+    <el-card class="general-card">
+      <template #header>{{ $t('menu.user.setting') }}</template>
+      <el-tabs model-value="1">
+        <el-tab-pane name="1" :label="$t('userSetting.tab.basicInformation')">
+          <div v-loading="loading" class="form-loading">
+            <el-form
               ref="basicRef"
               :model="basicForm"
               :rules="basicRules"
-              layout="vertical"
+              label-position="top"
               style="max-width: 480px; margin-top: 8px"
             >
-              <a-form-item
-                field="avatar"
+              <el-form-item
+                prop="avatar"
                 :label="$t('userSetting.label.avatar')"
               >
-                <a-upload
+                <el-upload
                   :action="uploadAction"
                   :headers="uploadHeaders"
                   :show-file-list="false"
-                  list-type="picture-card"
                   accept="image/*"
-                  @success="onAvatarSuccess"
-                  @error="onAvatarError"
+                  :on-success="onAvatarSuccess"
+                  :on-error="onAvatarError"
                 >
-                  <template #upload-button>
-                    <a-avatar :size="88" shape="square">
-                      <img
-                        v-if="basicForm.avatar"
-                        :src="avatarUrl"
-                        alt="avatar"
-                      />
-                      <icon-plus v-else />
-                    </a-avatar>
-                  </template>
-                </a-upload>
-              </a-form-item>
-              <a-form-item
-                field="username"
+                  <el-avatar :size="88" shape="square" :src="avatarUrl">
+                    <el-icon><Plus /></el-icon>
+                  </el-avatar>
+                </el-upload>
+              </el-form-item>
+              <el-form-item
+                prop="username"
                 :label="$t('userSetting.label.name')"
               >
-                <a-input v-model="username" disabled />
-              </a-form-item>
-              <a-form-item
-                field="nickname"
+                <el-input v-model="username" disabled />
+              </el-form-item>
+              <el-form-item
+                prop="nickname"
                 :label="$t('userSetting.basicInfo.form.label.nickname')"
               >
-                <a-input
+                <el-input
                   v-model="basicForm.nickname"
                   :placeholder="
                     $t('userSetting.basicInfo.placeholder.nickname')
                   "
                 />
-              </a-form-item>
-              <a-form-item>
-                <a-button
+              </el-form-item>
+              <el-form-item>
+                <el-button
                   type="primary"
                   :loading="basicLoading"
                   @click="saveBasic"
                 >
                   {{ $t('userSetting.save') }}
-                </a-button>
-              </a-form-item>
-            </a-form>
-          </a-spin>
-        </a-tab-pane>
-        <a-tab-pane key="2" :title="$t('userSetting.tab.securitySettings')">
-          <a-form
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane name="2" :label="$t('userSetting.tab.securitySettings')">
+          <el-form
             ref="pwdRef"
             :model="pwdForm"
             :rules="pwdRules"
-            layout="vertical"
+            label-position="top"
             style="max-width: 480px; margin-top: 8px"
           >
-            <a-form-item
-              field="password_old"
+            <el-form-item
+              prop="password_old"
               :label="$t('userSetting.security.oldPassword')"
             >
-              <a-input-password
+              <el-input
                 v-model="pwdForm.password_old"
+                type="password"
+                show-password
                 :placeholder="
                   $t('userSetting.security.oldPassword.placeholder')
                 "
               />
-            </a-form-item>
-            <a-form-item
-              field="password"
+            </el-form-item>
+            <el-form-item
+              prop="password"
               :label="$t('userSetting.security.newPassword')"
             >
-              <a-input-password
+              <el-input
                 v-model="pwdForm.password"
+                type="password"
+                show-password
                 :placeholder="
                   $t('userSetting.security.newPassword.placeholder')
                 "
               />
-            </a-form-item>
-            <a-form-item
-              field="password_confirm"
+            </el-form-item>
+            <el-form-item
+              prop="password_confirm"
               :label="$t('userSetting.security.confirmPassword')"
             >
-              <a-input-password
+              <el-input
                 v-model="pwdForm.password_confirm"
+                type="password"
+                show-password
                 :placeholder="
                   $t('userSetting.security.confirmPassword.placeholder')
                 "
               />
-            </a-form-item>
-            <a-form-item>
-              <a-button
+            </el-form-item>
+            <el-form-item>
+              <el-button
                 type="primary"
                 :loading="pwdLoading"
                 @click="savePassword"
               >
                 {{ $t('userSetting.save') }}
-              </a-button>
-            </a-form-item>
-          </a-form>
-        </a-tab-pane>
-      </a-tabs>
-    </a-card>
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { Message } from '@arco-design/web-vue';
-  import type { FormInstance } from '@arco-design/web-vue/es/form';
-  import type { FileItem } from '@arco-design/web-vue/es/upload/interfaces';
+  import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+  import { Plus } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import { useUserStore } from '@/store';
   import { getToken } from '@/utils/auth';
@@ -160,7 +158,7 @@
   }>({ nickname: '', avatar: '', avatarUrl: '' });
   const avatarUrl = computed(() => basicForm.avatarUrl || basicForm.avatar);
 
-  const basicRules = {
+  const basicRules: FormRules = {
     nickname: [
       {
         required: true,
@@ -176,15 +174,15 @@
     password: '',
     password_confirm: '',
   });
-  const pwdRules = {
+  const pwdRules: FormRules = {
     password_old: [
       { required: true, message: t('userSetting.security.error.oldRequired') },
     ],
     password: [
       { required: true, message: t('userSetting.security.error.newRequired') },
       {
-        minLength: 6,
-        maxLength: 32,
+        min: 6,
+        max: 32,
         message: t('userSetting.security.error.length'),
       },
     ],
@@ -194,9 +192,13 @@
         message: t('userSetting.security.error.confirmRequired'),
       },
       {
-        validator: (value: string, cb: (msg?: string) => void) => {
+        validator: (
+          _rule: unknown,
+          value: string,
+          cb: (error?: Error) => void
+        ) => {
           if (value !== pwdForm.password) {
-            cb(t('userSetting.security.error.mismatch'));
+            cb(new Error(t('userSetting.security.error.mismatch')));
           } else {
             cb();
           }
@@ -219,23 +221,22 @@
   };
   fetchData();
 
-  const onAvatarSuccess = (fileItem: FileItem) => {
-    const res = fileItem.response;
+  const onAvatarSuccess = (res: any) => {
     if (!res || res.code !== 20000) {
-      Message.error(res?.msg || t('userSetting.avatar.uploadFail'));
+      ElMessage.error(res?.msg || t('userSetting.avatar.uploadFail'));
       return;
     }
     basicForm.avatar = res.data.uri;
     basicForm.avatarUrl = res.data.url;
-    Message.success(t('userSetting.avatar.uploadSuccess'));
+    ElMessage.success(t('userSetting.avatar.uploadSuccess'));
   };
   const onAvatarError = () => {
-    Message.error(t('userSetting.avatar.uploadFail'));
+    ElMessage.error(t('userSetting.avatar.uploadFail'));
   };
 
   const saveBasic = async () => {
-    const err = await basicRef.value?.validate();
-    if (err) return;
+    const valid = await basicRef.value?.validate().catch(() => false);
+    if (!valid) return;
     basicLoading.value = true;
     try {
       const payload: EditSelfForm = {
@@ -247,15 +248,15 @@
         name: basicForm.nickname,
         avatar: basicForm.avatarUrl,
       });
-      Message.success(t('userSetting.saveSuccess'));
+      ElMessage.success(t('userSetting.saveSuccess'));
     } finally {
       basicLoading.value = false;
     }
   };
 
   const savePassword = async () => {
-    const err = await pwdRef.value?.validate();
-    if (err) return;
+    const valid = await pwdRef.value?.validate().catch(() => false);
+    if (!valid) return;
     pwdLoading.value = true;
     try {
       const payload: EditSelfForm = {
@@ -266,7 +267,7 @@
         password_old: pwdForm.password_old,
       };
       await editAdminSelf(payload);
-      Message.success(t('userSetting.security.success'));
+      ElMessage.success(t('userSetting.security.success'));
       pwdRef.value?.resetFields();
     } finally {
       pwdLoading.value = false;
@@ -283,5 +284,9 @@
 <style scoped lang="less">
   .container {
     padding: 0 20px 20px 20px;
+  }
+
+  .form-loading {
+    min-height: 240px;
   }
 </style>

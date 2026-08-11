@@ -5,7 +5,7 @@ namespace app\common\service\decoration;
 
 use app\common\enum\decoration\DecorationEnum;
 use app\common\model\article\Article;
-use app\common\service\FileService;
+use app\common\service\ProductAssetReferenceService;
 
 /** 业务装修 Schema、链接语义与资源 URI 的单一边界。 */
 class DecorationSchemaService
@@ -306,13 +306,9 @@ class DecorationSchemaService
             return $value;
         }
         if ($absolute) {
-            return FileService::getFileUrl($value);
+            return ProductAssetReferenceService::forRead($value);
         }
-        $uri = FileService::setFileUrl($value);
-        if (preg_match('#^https?://#i', $uri)) {
-            $uri = (string)parse_url($uri, PHP_URL_PATH);
-        }
-        return ltrim($uri, '/');
+        return ProductAssetReferenceService::forStorage($value);
     }
 
     private static function binary(mixed $value, string $label): void

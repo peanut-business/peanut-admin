@@ -1,30 +1,33 @@
 <template>
   <div v-if="!appStore.navbar" class="fixed-settings" @click="setVisible">
-    <a-button type="primary">
+    <el-button type="primary">
       <template #icon>
-        <icon-settings />
+        <Setting />
       </template>
-    </a-button>
+    </el-button>
   </div>
-  <a-drawer
-    :width="300"
-    unmount-on-close
-    :visible="visible"
-    :cancel-text="$t('settings.close')"
-    :ok-text="$t('settings.copySettings')"
-    @ok="copySettings"
-    @cancel="cancel"
+  <el-drawer
+    v-model="visible"
+    size="300px"
+    destroy-on-close
+    :title="$t('settings.title')"
   >
-    <template #title> {{ $t('settings.title') }} </template>
     <Block :options="contentOpts" :title="$t('settings.content')" />
     <Block :options="othersOpts" :title="$t('settings.otherSettings')" />
-    <a-alert>{{ $t('settings.alertContent') }}</a-alert>
-  </a-drawer>
+    <el-alert>{{ $t('settings.alertContent') }}</el-alert>
+    <template #footer>
+      <el-button @click="cancel">{{ $t('settings.close') }}</el-button>
+      <el-button type="primary" @click="copySettings">
+        {{ $t('settings.copySettings') }}
+      </el-button>
+    </template>
+  </el-drawer>
 </template>
 
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import { Message } from '@arco-design/web-vue';
+  import { ElMessage } from 'element-plus';
+  import { Setting } from '@element-plus/icons-vue';
   import { useI18n } from 'vue-i18n';
   import { useClipboard } from '@vueuse/core';
   import { useAppStore } from '@/store';
@@ -35,7 +38,6 @@
   const appStore = useAppStore();
   const { t } = useI18n();
   const { copy } = useClipboard();
-  const visible = computed(() => appStore.globalSettings);
   const contentOpts = computed(() => [
     { name: 'settings.navbar', key: 'navbar', defaultVal: appStore.navbar },
     {
@@ -74,10 +76,20 @@
     appStore.updateSettings({ globalSettings: false });
     emit('cancel');
   };
+  const visible = computed({
+    get: () => appStore.globalSettings,
+    set: (value: boolean) => {
+      if (value) {
+        appStore.updateSettings({ globalSettings: true });
+      } else {
+        cancel();
+      }
+    },
+  });
   const copySettings = async () => {
     const text = JSON.stringify(appStore.$state, null, 2);
     await copy(text);
-    Message.success(t('settings.copySettings.message'));
+    ElMessage.success(t('settings.copySettings.message'));
   };
   const setVisible = () => {
     appStore.updateSettings({ globalSettings: true });

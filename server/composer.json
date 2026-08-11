@@ -1,22 +1,18 @@
 {
-    "name": "topthink/think",
-    "description": "the new thinkphp framework",
+    "name": "peanut-business/peanut-admin",
+    "description": "Peanut Admin application backend",
     "type": "project",
     "keywords": [
-        "framework",
+        "admin",
+        "scaffold",
         "thinkphp",
-        "ORM"
+        "vue"
     ],
-    "homepage": "https://www.thinkphp.cn/",
-    "license": "Apache-2.0",
+    "homepage": "https://github.com/peanut-business/peanut-admin",
+    "license": "proprietary",
     "authors": [
         {
-            "name": "liu21st",
-            "email": "liu21st@gmail.com"
-        },
-        {
-            "name": "yunwuxin",
-            "email": "448901948@qq.com"
+            "name": "花生科技"
         }
     ],
     "require": {
@@ -26,7 +22,7 @@
         "topthink/think-filesystem": "^2.0|^3.0",
         "firebase/php-jwt": "^6.10",
         "dragonmantank/cron-expression": "^3.3",
-        "qiniu/php-sdk": "7.4",
+        "qiniu/php-sdk": "^7.4",
         "aliyuncs/oss-sdk-php": "^2.4",
         "qcloud/cos-sdk-v5": "^2.5",
         "peanut-admin/core": "0.1.0-alpha.2"
@@ -38,9 +34,6 @@
     "autoload": {
         "psr-4": {
             "app\\": "app"
-        },
-        "psr-0": {
-            "": "extend/"
         }
     },
     "config": {

@@ -1,7 +1,7 @@
 # C01 文章分类双系统最低充分验收计划
 
 > 目标：用一组隔离夹具和一条连续状态流覆盖 `C01-01`～`C01-10`，不为单个编号重复建数、重复登录或重复验收同一行为。  
-> 系统：LikeAdmin 1.9.4 与 Peanut Admin v2。  
+> 系统：LikeAdmin 1.9.4 与 Peanut Admin。
 > 状态：已执行完成；C01-01～C01-10 均已取得最低充分证据，双端夹具已精确清理。  
 > 契约：`docs/likeadmin-article-category-contract.md`。
 

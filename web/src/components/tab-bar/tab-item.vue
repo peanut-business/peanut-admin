@@ -1,64 +1,65 @@
 <template>
-  <a-dropdown
-    trigger="contextMenu"
-    :popup-max-height="false"
-    @select="actionSelect"
-  >
-    <span
-      class="arco-tag arco-tag-size-medium arco-tag-checked"
-      :class="{ 'link-activated': itemData.fullPath === $route.fullPath }"
+  <el-dropdown trigger="contextmenu" @command="actionSelect">
+    <el-tag
+      :class="{ 'link-activated': itemData.fullPath === route.fullPath }"
+      :closable="index !== 0"
       @click="goto(itemData)"
+      @close="tagClose(itemData, index)"
     >
       <span class="tag-link">
         {{ $t(itemData.title) }}
       </span>
-      <span
-        class="arco-icon-hover arco-tag-icon-hover arco-icon-hover-size-medium arco-tag-close-btn"
-        @click.stop="tagClose(itemData, index)"
-      >
-        <icon-close />
-      </span>
-    </span>
-    <template #content>
-      <a-doption :disabled="disabledReload" :value="Eaction.reload">
-        <icon-refresh />
-        <span>重新加载</span>
-      </a-doption>
-      <a-doption
-        class="sperate-line"
-        :disabled="disabledCurrent"
-        :value="Eaction.current"
-      >
-        <icon-close />
-        <span>关闭当前标签页</span>
-      </a-doption>
-      <a-doption :disabled="disabledLeft" :value="Eaction.left">
-        <icon-to-left />
-        <span>关闭左侧标签页</span>
-      </a-doption>
-      <a-doption
-        class="sperate-line"
-        :disabled="disabledRight"
-        :value="Eaction.right"
-      >
-        <icon-to-right />
-        <span>关闭右侧标签页</span>
-      </a-doption>
-      <a-doption :value="Eaction.others">
-        <icon-swap />
-        <span>关闭其它标签页</span>
-      </a-doption>
-      <a-doption :value="Eaction.all">
-        <icon-folder-delete />
-        <span>关闭全部标签页</span>
-      </a-doption>
+    </el-tag>
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item :disabled="disabledReload" :command="Eaction.reload">
+          <el-icon><Refresh /></el-icon>
+          <span>重新加载</span>
+        </el-dropdown-item>
+        <el-dropdown-item
+          class="sperate-line"
+          :disabled="disabledCurrent"
+          :command="Eaction.current"
+        >
+          <el-icon><Close /></el-icon>
+          <span>关闭当前标签页</span>
+        </el-dropdown-item>
+        <el-dropdown-item :disabled="disabledLeft" :command="Eaction.left">
+          <el-icon><DArrowLeft /></el-icon>
+          <span>关闭左侧标签页</span>
+        </el-dropdown-item>
+        <el-dropdown-item
+          class="sperate-line"
+          :disabled="disabledRight"
+          :command="Eaction.right"
+        >
+          <el-icon><DArrowRight /></el-icon>
+          <span>关闭右侧标签页</span>
+        </el-dropdown-item>
+        <el-dropdown-item :command="Eaction.others">
+          <el-icon><Switch /></el-icon>
+          <span>关闭其它标签页</span>
+        </el-dropdown-item>
+        <el-dropdown-item :command="Eaction.all">
+          <el-icon><FolderDelete /></el-icon>
+          <span>关闭全部标签页</span>
+        </el-dropdown-item>
+      </el-dropdown-menu>
     </template>
-  </a-dropdown>
+  </el-dropdown>
 </template>
 
 <script lang="ts" setup>
   import { PropType, computed } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
+  import {
+    Close,
+    DArrowLeft,
+    DArrowRight,
+    FolderDelete,
+    Refresh,
+    Switch,
+  } from '@element-plus/icons-vue';
   import { useTabBarStore } from '@/store';
   import type { TagProps } from '@/store/modules/tab-bar/types';
   import { DEFAULT_ROUTE_NAME, REDIRECT_ROUTE_NAME } from '@/router/constants';
@@ -169,32 +170,22 @@
 
 <style scoped lang="less">
   .tag-link {
-    color: var(--color-text-2);
+    color: var(--el-text-color-regular);
     text-decoration: none;
   }
   .link-activated {
-    color: rgb(var(--link-6));
+    color: var(--el-color-primary);
     .tag-link {
-      color: rgb(var(--link-6));
+      color: var(--el-color-primary);
     }
-    & + .arco-tag-close-btn {
-      color: rgb(var(--link-6));
+    :deep(.el-tag__close) {
+      color: var(--el-color-primary);
     }
   }
-  :deep(.arco-dropdown-option-content) {
-    span {
-      margin-left: 10px;
-    }
-  }
-  .arco-dropdown-open {
-    .tag-link {
-      color: rgb(var(--danger-6));
-    }
-    .arco-tag-close-btn {
-      color: rgb(var(--danger-6));
-    }
+  :deep(.el-dropdown-menu__item .el-icon) {
+    margin-right: 10px;
   }
   .sperate-line {
-    border-bottom: 1px solid var(--color-neutral-3);
+    border-bottom: 1px solid var(--el-border-color-lighter);
   }
 </style>

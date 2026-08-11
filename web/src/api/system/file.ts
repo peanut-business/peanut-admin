@@ -74,7 +74,7 @@ export function deleteFile(ids: number[]) {
   return axios.post('/api/admin/file/delete', { ids });
 }
 
-// 上传地址（供 a-upload 直接使用）
+// 上传地址（供上传组件直接使用）
 export const uploadUrl: Record<FileType, string> = {
   10: '/api/admin/upload/image',
   20: '/api/admin/upload/video',

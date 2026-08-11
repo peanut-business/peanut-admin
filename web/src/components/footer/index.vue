@@ -1,8 +1,14 @@
 <template>
-  <a-layout-footer class="footer">Peanut Admin</a-layout-footer>
+  <footer class="footer">
+    © {{ new Date().getFullYear() }} {{ brandStore.website.copyright }}
+  </footer>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+  import { useBrandStore } from '@/store';
+
+  const brandStore = useBrandStore();
+</script>
 
 <style lang="less" scoped>
   .footer {
@@ -10,7 +16,7 @@
     align-items: center;
     justify-content: center;
     height: 40px;
-    color: var(--color-text-2);
+    color: var(--el-text-color-secondary);
     text-align: center;
   }
 </style>

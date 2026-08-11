@@ -1,16 +1,17 @@
 <template>
-  <a-breadcrumb class="container-breadcrumb">
-    <a-breadcrumb-item>
-      <icon-apps />
-    </a-breadcrumb-item>
-    <a-breadcrumb-item v-for="item in items" :key="item">
+  <el-breadcrumb class="container-breadcrumb" separator="/">
+    <el-breadcrumb-item>
+      <el-icon><Grid /></el-icon>
+    </el-breadcrumb-item>
+    <el-breadcrumb-item v-for="item in items" :key="item">
       {{ $t(item) }}
-    </a-breadcrumb-item>
-  </a-breadcrumb>
+    </el-breadcrumb-item>
+  </el-breadcrumb>
 </template>
 
 <script lang="ts" setup>
-  import { PropType } from 'vue';
+  import type { PropType } from 'vue';
+  import { Grid } from '@element-plus/icons-vue';
 
   defineProps({
     items: {
@@ -25,10 +26,10 @@
 <style scoped lang="less">
   .container-breadcrumb {
     margin: 16px 0;
-    :deep(.arco-breadcrumb-item) {
-      color: rgb(var(--gray-6));
+    :deep(.el-breadcrumb__inner) {
+      color: var(--el-text-color-secondary);
       &:last-child {
-        color: rgb(var(--gray-8));
+        color: var(--el-text-color-primary);
       }
     }
   }

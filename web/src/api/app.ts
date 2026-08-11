@@ -38,28 +38,6 @@ export function saveCustomerServiceConfig(data: CustomerServiceConfig) {
   return axios.post('/api/admin/setting/customer-service/save', data);
 }
 
-// ─── 支付配置 ────────────────────────────────────────────────────────────────
-export interface PayConfig {
-  wx_pay_status: number;
-  wx_pay_appid: string;
-  wx_pay_mch_id: string;
-  wx_pay_secret: string;
-  wx_pay_cert_path: string;
-  wx_pay_cert_key_path: string;
-  ali_pay_status: number;
-  ali_pay_app_id: string;
-  ali_pay_private_key: string;
-  ali_pay_public_key: string;
-}
-
-export function getPayConfig() {
-  return axios.get<PayConfig>('/api/admin/setting/pay/config');
-}
-
-export function savePayConfig(data: PayConfig) {
-  return axios.post('/api/admin/setting/pay/save', data);
-}
-
 // ─── 渠道配置 ────────────────────────────────────────────────────────────────
 export interface WebPageConfig {
   status: 0 | 1;
@@ -103,26 +81,6 @@ export function saveMiniProgramConfig(
   >
 ) {
   return axios.post('/api/admin/setting/mini-program/save', data);
-}
-
-export interface ChannelConfig {
-  wechat_open_status: number;
-  wechat_open_appid: string;
-  wechat_open_secret: string;
-  wechat_oa_status: number;
-  wechat_oa_appid: string;
-  wechat_oa_secret: string;
-  qq_status: number;
-  qq_appid: string;
-  qq_secret: string;
-}
-
-export function getChannelConfig() {
-  return axios.get<ChannelConfig>('/api/admin/setting/channel/config');
-}
-
-export function saveChannelConfig(data: ChannelConfig) {
-  return axios.post('/api/admin/setting/channel/save', data);
 }
 
 // ─── 页面装修 ────────────────────────────────────────────────────────────────

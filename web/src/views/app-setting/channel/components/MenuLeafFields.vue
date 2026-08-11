@@ -1,29 +1,30 @@
 <template>
-  <a-form-item :label="$t('channel.menu.type')">
-    <a-select v-model="type">
-      <a-option value="click">{{ $t('channel.menu.typeClick') }}</a-option>
-      <a-option value="view">{{ $t('channel.menu.typeView') }}</a-option>
-      <a-option value="miniprogram">
-        {{ $t('channel.menu.typeMiniprogram') }}
-      </a-option>
-    </a-select>
-  </a-form-item>
-  <a-form-item v-if="type === 'click'" :label="$t('channel.menu.key')">
-    <a-input v-model="keyValue" :max-length="128" />
-  </a-form-item>
-  <a-form-item v-if="type === 'view'" :label="$t('channel.menu.url')">
-    <a-input v-model="url" :max-length="1024" />
-  </a-form-item>
+  <el-form-item :label="$t('channel.menu.type')">
+    <el-select v-model="type">
+      <el-option :label="$t('channel.menu.typeClick')" value="click" />
+      <el-option :label="$t('channel.menu.typeView')" value="view" />
+      <el-option
+        :label="$t('channel.menu.typeMiniprogram')"
+        value="miniprogram"
+      />
+    </el-select>
+  </el-form-item>
+  <el-form-item v-if="type === 'click'" :label="$t('channel.menu.key')">
+    <el-input v-model="keyValue" :maxlength="128" />
+  </el-form-item>
+  <el-form-item v-if="type === 'view'" :label="$t('channel.menu.url')">
+    <el-input v-model="url" :maxlength="1024" />
+  </el-form-item>
   <template v-if="type === 'miniprogram'">
-    <a-form-item :label="$t('channel.menu.fallbackUrl')">
-      <a-input v-model="url" :max-length="1024" />
-    </a-form-item>
-    <a-form-item :label="$t('channel.menu.appId')">
-      <a-input v-model="appid" :max-length="128" />
-    </a-form-item>
-    <a-form-item :label="$t('channel.menu.pagePath')">
-      <a-input v-model="pagepath" :max-length="512" />
-    </a-form-item>
+    <el-form-item :label="$t('channel.menu.fallbackUrl')">
+      <el-input v-model="url" :maxlength="1024" />
+    </el-form-item>
+    <el-form-item :label="$t('channel.menu.appId')">
+      <el-input v-model="appid" :maxlength="128" />
+    </el-form-item>
+    <el-form-item :label="$t('channel.menu.pagePath')">
+      <el-input v-model="pagepath" :maxlength="512" />
+    </el-form-item>
   </template>
 </template>
 
