@@ -50,6 +50,25 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 | OP02 | 独立运营平台首个实例管理闭环 | 未开始 |
 | SAAS-FUTURE | 套餐、订阅、计费等完整 SaaS | 暂缓 |
 
+### 当前恢复指针
+
+更新时间：2026-08-12。当前阶段为 `MT00-C`，恢复时以远端 PR 和精确提交为准：
+
+| 项目 | 状态 | 固定证据 |
+| --- | --- | --- |
+| Tenant refresh 门禁修复 | 已完成并合入 Core `dev` | [Core PR #6](https://github.com/peanut-opensource/peanut-admin/pull/6)；merge `fa5ab328375b8fa88e763ae2202c1833bbfd95c6` |
+| Admin Web Alpha.4 发布事实 | 已完成并合入 Core `dev` | [Core PR #5](https://github.com/peanut-opensource/peanut-admin/pull/5)；merge `d7cdc1e905afd629e3ef87ba842e9fda8494329d` |
+| CAP01 HumanWorkflow 源码候选 | 已完成静态源码验收，正在集成 | source `3972c9aefcd55ac71d07a47739a99d23bb0ae30c`；tree `d6dbde37907d1dd43b00057fc16fbd1a8d6dd052`；[Core PR #7](https://github.com/peanut-opensource/peanut-admin/pull/7) |
+| CAP01 状态文档收口 | 已提交，随 Core PR #7 集成 | `9312ba0` |
+
+中断后恢复步骤：
+
+1. 读取两个仓库根 `AGENTS.md`，确认工作目录仍为 `peanut-admin` 和 `peanut-admin-core`。
+2. `fetch --prune` 后查看 Core PR #7；若仍在运行，只等待现有门禁，不重新触发。
+3. PR #7 通过后合入 Core `dev`，把最终 merge commit 记录为 CAP02 的唯一前置提交。
+4. 不重复 PR #6、PR #5、CAP01 四十路径静态验收或已经通过的门禁。
+5. CAP02 只能先形成独立合同，再按合同白名单实现；不得并行启动 CAP03/CAP04。
+
 ## 5. MT00：关闭当前在途工作
 
 - 完成核心媒体/工作流候选的资格、文档事实收口、发布与独立下游采用。
