@@ -127,8 +127,8 @@ PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
 
 Peanut Admin 应用版权主体显示为“花生科技”，package manifests 使用 `proprietary/UNLICENSED` 语义；两个公开核心包仍为 Apache-2.0。源码使用边界见 [LICENSE](LICENSE)，来源与第三方告知见 [NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，完整五锁图依赖库存见 [RELEASE_SBOM.spdx.json](RELEASE_SBOM.spdx.json)。
 
-应用 `1.0.0` 当前是拟发布候选；只有最终 `main` 上的 annotated `v1.0.0` 与同 tag GitHub Release 创建后才视为正式发布。变更与停止线见 [CHANGELOG.md](CHANGELOG.md)。
+应用 `1.0.0` 已在最终 `main` 提交 `0d3c848…` 创建 annotated `v1.0.0` 与正式 [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0)。变更与停止线见 [CHANGELOG.md](CHANGELOG.md)，附件摘要见 Release 的 `RELEASE_MANIFEST.json`。
 
 ## 目标架构
 
-管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime、官网/文档门户和 PB08B 正式候选集成验收已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。PB09 的许可证策略、发布授权、根法律文件、第三方告知和 SBOM 已形成，正在进入功能分支 → `dev` → `main` 的正式发布流程；当前仍不得宣称应用 `1.0.0` 已发布。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
+管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime、官网/文档门户和 PB08B 正式候选集成验收已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。PB09 的许可证策略、发布授权、根法律文件、第三方告知、SBOM、`dev`/`main` 合入、annotated tag 和 GitHub Release 已完成；既有应用/官网域名的正式部署与一次最低 smoke 仍在执行。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
