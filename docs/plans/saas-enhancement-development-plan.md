@@ -1,12 +1,14 @@
-# Peanut Admin SaaS 增强开发计划
+# Peanut Admin 完整 SaaS 增强开发计划（暂缓）
 
-> 状态：待执行  
+> 状态：未来规划，当前不执行
 > 前置基线：Peanut Admin v1.0.0 产品化基线完成  
 > 权威架构：`docs/design/saas-enhancement-blueprint.md`
 
+> 2026-08-11 决策：当前只推进多租户能力和必要的平台管理，不推进套餐、订阅、计费、试用、续费等完整 SaaS 商业化。本文件保留未来完整 SaaS 路线；当前唯一执行顺序改由 `docs/plans/multi-tenancy-platform-management-plan.md` 管理。
+
 ## 1. 执行原则
 
-- 先完成当前已授权的媒体通用能力资格、发布与下游采用，再启动 SaaS01，避免同时移动核心依赖和租户边界。
+- 未来获得完整 SaaS 商业化授权后，先确认当前核心能力、发布与下游采用基线，再冻结新的 SaaS 执行合同。
 - 先冻结业务知识图谱、数据归属和不变量，再写 migration/Runtime/UI。
 - Core 只保留跨产品通用实现；应用持有产品业务；独立运营平台单独立项。
 - Standalone 和 SaaS Host 共用一个内核、一套业务 Service 和一条 Release 线。
