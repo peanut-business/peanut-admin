@@ -1,6 +1,6 @@
 # PB09 许可证与来源门禁
 
-> 状态：Decision Recorded；法律文件实施中
+> 状态：Passed；发布候选 `f3e6834…`
 >
 > 日期：2026-08-11
 >
@@ -20,10 +20,10 @@ PB03–PB08B 已证明当前候选具备产品边界、可安装升级、公开 
 
 ## 2. 当前可证明事实
 
-### 2.1 应用专有策略已决定，根法律文件待生成
+### 2.1 应用专有策略与根法律文件
 
-1. 仓库根没有 `LICENSE`、`NOTICE` 或 `THIRD_PARTY_NOTICES.md`。
-2. 用户已决定应用暂时采用专有 / All Rights Reserved；`server/composer.json` 使用 `proprietary`，`web`、`pc`、`uniapp`、`docs-site` 使用 `UNLICENSED`，不得改写为 Apache-2.0。根法律文件生成前，这些字段仍只是未授权公开复用的安全占位。
+1. 仓库根 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md` 与 `RELEASE_SBOM.spdx.json` 已形成；应用专有条款不限制第三方许可证已经授予的权利。
+2. 用户已决定应用暂时采用专有 / All Rights Reserved；`server/composer.json` 使用 `proprietary`，`web`、`pc`、`uniapp`、`docs-site` 使用 `UNLICENSED`，不得改写为 Apache-2.0。
 3. `server/LICENSE.txt` 只陈述 ThinkPHP 的 Apache-2.0 条件和 ThinkPHP 权利人，不能被当作整个 Peanut Admin 应用的许可证。
 4. 两个公开核心包属于独立核心仓并声明 Apache-2.0；应用消费它们不把应用自身自动变成 Apache-2.0。
 
@@ -91,7 +91,7 @@ PB09 前的正式第三方清单必须区分“会进入最终分发物的生产
 
 ## 5. 决策后的写入白名单
 
-取得明确决定后，许可证门禁只允许写入下列范围：
+取得明确决定后，许可证门禁只允许写入下列范围；候选 `f3e6834…` 的实际写集符合该范围：
 
 - 根 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`；
 - 根 `CHANGELOG.md`、无自引用的 `RELEASE_METADATA.json`，以及 tag 后作为 GitHub Release 附件生成的 `RELEASE_MANIFEST.json`；
@@ -114,7 +114,9 @@ PB09 前的正式第三方清单必须区分“会进入最终分发物的生产
 6. 一次静态一致性检查确认根文件、五个 manifest/lock、README/官网/发布文档没有互相矛盾；只对法律文件落点做一次产物级静态检查，不重跑 PB08B 的安装、业务或浏览器验收；
 7. 本计划和应用发布合同更新为“许可证门禁通过、PB09 可开始”。
 
-任一条件失败时，只做一次只读定位并停止。通过本门禁也只代表 PB09 可以开始，不代表已经合并、发布或完成产品化正式基线。
+一次静态门禁结果：五个 manifest 保持 `proprietary/UNLICENSED` 且作者显示为“花生科技”；五锁图 3,191 个依赖条目进入 SPDX 2.3 SBOM，许可证结论无 `NOASSERTION`；根法律文件与 `RELEASE_METADATA.json` 的 SHA-256、28 条 migration 清单、Docker `/legal/` 和官网法律入口一致。VitePress 首次因两个 `.md` 下载链接被识别为站内路由而失败，按合同只修正下载扩展名，失败组一次重跑通过；未运行 PB08B 的业务、数据库、Compose 或浏览器验收。
+
+本门禁已通过，只授权继续 PB09 的功能分支 PR → `dev` → `main` → tag/Release/部署顺序；它不代表应用已经发布或产品化正式基线已经完成。
 
 ## 7. 证据索引
 

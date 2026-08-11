@@ -44,7 +44,7 @@
 | PB07 | 通知、渠道、支付与 OAuth 域收口 | 已完成 | 四个验证码 scene、支付状态机、OAuth 身份绑定、固定回跳和外部渠道均由应用唯一 Host 与测试 owner 固定 |
 | PB08A | 脚手架产品化与官方网站 | 完成（浏览器证据并入 PB08B） | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；静态门禁通过 |
 | PB08B | 正式候选集成验收 | 已完成 | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致均通过 |
-| PB09 | 发布正式基线 | 执行中（许可证决定已记录，法律文件门禁实施中） | `LICENSE`、`NOTICE`、第三方清单通过后，`dev` 合入并推送 `main`；`v1.0.0`、manifest 与发布记录完整 |
+| PB09 | 发布正式基线 | 执行中（许可证门禁通过，候选待 PR） | `dev` 合入并推送 `main`；`v1.0.0`、manifest、GitHub Release、正式部署与发布记录完整 |
 | SAAS01 | SaaS 多租户实现 | 后续独立阶段 | PB09 后按 `docs/design/saas-roadmap/` 重新冻结执行契约 |
 
 ## 4. 领域迁移工作流
@@ -128,7 +128,9 @@ PB09 前置许可证与来源合同见 `docs/architecture/pb09-license-provenanc
 
 初始 Web 48 与 docs-site 47 个本地未知平台锁条目现已全部由 npm 精确版本元数据及上游许可证补证；连同当前平台已安装的 4 个同族条目，Web 相关族 50 个为 MIT 49/0BSD 1，docs-site 相关族 49 个均为 MIT。`@tybys/wasm-util` 与 `@napi-rs/lzma` 平台包未提供可引用的版权行，正式清单只记录其官方 author/repository/SPDX，不猜测署名。生产 Dockerfile 最终只分发 33 个 `--no-dev` Composer vendor 包和三端静态产物；根许可/第三方告知与实际发布所需 SBOM 正在生成。PB09 默认不发布预构建镜像，因此不新增容器 registry；Compose 在部署端本地构建的运行镜像不是独立 release artifact。
 
-PB09 正式发布合同见 `docs/architecture/pb09-formal-release-contract.md`。应用四个前端/文档 manifest 已统一为尚未发布的 `1.0.0`，仓库当前没有应用 tag，因此正式身份固定为最终 `main` 提交上的 annotated `v1.0.0` 与同 tag GitHub Release。当前功能分支领先 `origin/dev` 35 个提交，先提交并推送当前功能分支作为远端备份；法律文件门禁通过后，再按功能分支 → `dev`、`dev` → `main` 串行合入。PB09 默认只发布完整源码 release，生产 Compose 从 tag 本地构建镜像，不新增预构建镜像/registry。最终候选提交须生成 `CHANGELOG.md` 与无自引用的 `RELEASE_METADATA.json`，tag 后再生成带完整 commit/制品 SHA-256 的 `RELEASE_MANIFEST.json` 附件；只执行合同规定的法律静态检查、既有 CI 与一次版本页链接 smoke。
+PB09 正式发布合同见 `docs/architecture/pb09-formal-release-contract.md`。应用四个前端/文档 manifest 已统一为尚未发布的 `1.0.0`，仓库当前没有应用 tag，因此正式身份固定为最终 `main` 提交上的 annotated `v1.0.0` 与同 tag GitHub Release。法律候选 `f3e6834…` 相对 `origin/dev` 领先 37 个提交；功能分支远端备份已完成，许可证门禁通过后按功能分支 → `dev`、`dev` → `main` 串行合入。PB09 默认只发布完整源码 release，生产 Compose 从 tag 本地构建镜像，不新增预构建镜像/registry。最终候选提交已生成 `CHANGELOG.md` 与无自引用的 `RELEASE_METADATA.json`，tag 后再生成带完整 commit/制品 SHA-256 的 `RELEASE_MANIFEST.json` 附件；只执行合同规定的法律静态检查、既有 CI 与一次版本页链接 smoke。
+
+PB09 法律候选 `f3e6834…` 已生成专有根 `LICENSE`、`NOTICE`、第三方告知、SPDX 2.3 SBOM、`CHANGELOG.md` 与无自引用的 `RELEASE_METADATA.json`；五个 manifests 使用 `proprietary/UNLICENSED` 并显示“花生科技”。一次静态门禁证明五锁图 3,191 个依赖条目无未知许可证、33 个生产 Composer 包和非默认许可证均有来源告知、法律文件哈希及 28 条 migration 清单一致、Docker 与官网均可取得法律资产。VitePress 下载链接失败只修正扩展名并在允许的一次失败组重跑中通过；未重复 PB08B。许可证门禁至此通过，下一步仅为功能分支 PR → `dev`。
 
 ## 6. 并行规则
 

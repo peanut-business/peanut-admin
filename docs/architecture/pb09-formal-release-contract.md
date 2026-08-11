@@ -1,6 +1,6 @@
 # PB09 正式基线发布合同
 
-> 状态：Authorized for branch backup；法律文件门禁实施中
+> 状态：Candidate Ready；许可证门禁已通过
 >
 > 目标应用版本：`1.0.0`
 >
@@ -19,7 +19,7 @@ PB09 把已经通过 PB03–PB08B 的技术候选发布为 Peanut Admin 应用�
 | 项目 | 2026-08-11 当前事实 | PB09 含义 |
 |---|---|---|
 | 应用基线 | `origin/dev=bc2e75ac6217d7defc44cd2b8e0c9e85a7cefc62` | PB03–PB08B 工作以它为起点，不改写历史 |
-| 当前工作分支 | `feat/pb04-permission-host`，`HEAD=b3b468f17b0c481410e25bfea6f6e821ad5b486b`，领先 `origin/dev` 35 个提交，另有未提交的 PB09 前置文档 | 必须先按功能分支 → `dev` 合入，不能直接从功能分支发布 |
+| 当前工作分支 | `feat/pb04-permission-host`，法律候选 `f3e6834…`，领先 `origin/dev` 37 个提交 | 必须先按功能分支 → `dev` 合入，不能直接从功能分支发布 |
 | 集成/稳定分支 | `origin/main=114acb3ea7b23e486a54007b79258e52a1fd0a0e` 是 `origin/dev` 祖先；`origin/dev` 是当前 HEAD 祖先 | 没有反向分叉；仍须走 `dev` → `main` 的阶段合入 |
 | 应用 tag | 当前没有应用 tag | `v1.0.0` 必须只在最终 `main` 发布提交创建一次 |
 | manifest 版本 | Web、PC、UniApp、docs-site 均为 `1.0.0`；Composer 应用包不内嵌 version | `1.0.0` 是已存在但未发布的应用版本身份，不再引入第二个版本号 |
@@ -88,9 +88,9 @@ release manifest 只能由最终不可变 tag 的内容生成；commit/tag 或�
 
 ## 7. 当前停止线
 
-本合同已获用户授权连续执行，但法律文件门禁尚在实施：
+本合同已获用户授权连续执行，许可证门禁已经通过：
 
 - 用户已决定应用暂时专有 / All Rights Reserved，版权主体显示为“花生科技”，并确认仓库、贡献身份与 AI 辅助成果的发布和再许可权；
-- 根 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`、`CHANGELOG.md`、`RELEASE_METADATA.json` 尚不存在；tag 后的 `RELEASE_MANIFEST.json` 也尚未生成；
-- 当前 PB09 前置文档尚未提交，功能分支也未 push；必须先完成该远端备份；
-- 备份完成后继续生成法律文件并执行一次静态门禁；门禁通过前不得合入 `dev/main`、tag、release 或正式部署，也不得把 manifest 中已有的 `1.0.0` 当成已经发布。
+- 根 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`、`RELEASE_SBOM.spdx.json`、`CHANGELOG.md` 与无自引用的 `RELEASE_METADATA.json` 已在候选 `f3e6834…` 形成；
+- 一次法律静态门禁通过，未重跑 PB08B；功能分支远端备份已完成，当前只需推送候选后创建到 `dev` 的 PR；
+- tag 后的 `RELEASE_MANIFEST.json` 尚未生成；在功能分支 → `dev` → `main` 和 GitHub Release 完成前，不得把 manifest 中已有的 `1.0.0` 当成已经发布。
