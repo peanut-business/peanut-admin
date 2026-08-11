@@ -12,7 +12,7 @@
 
 PB09 把已经通过 PB03–PB08B 的技术候选发布为 Peanut Admin 应用正式基线。它只负责应用仓版本身份、法律文件、分支合入、tag、release manifest、发布记录和官网版本状态，不重新迁移领域能力、不修改核心 Runtime、不发布新核心包，也不开始 SaaS。
 
-`docs/architecture/pb09-license-provenance-gate.md` 是硬前置，现已通过。功能分支备份、PR #10 → `dev`、PR #11 → `main`、annotated `v1.0.0` 与同 tag GitHub Release 均已按顺序完成；正式部署和里程碑封存完成前仍不得宣布 PB09 全部完成。
+`docs/architecture/pb09-license-provenance-gate.md` 是硬前置，已经通过。功能分支备份、PR #10 → `dev`、PR #11 → `main`、annotated `v1.0.0`、同 tag GitHub Release、正式部署和里程碑封存均已按顺序完成；后续媒体通用能力与 SaaS 不属于本 release。
 
 ## 2. 当前发布事实
 
@@ -23,7 +23,7 @@ PB09 把已经通过 PB03–PB08B 的技术候选发布为 Peanut Admin 应用�
 | 集成/稳定分支 | PR #11 把冻结 `dev` 合入 `main=0d3c848b8e2bb622a868924145ce810a8946f173` | `dev/main` 文件树一致；分支保护 push/PR 检查全部通过 |
 | 应用 tag | annotated `v1.0.0` 指向 `0d3c848b8e2bb622a868924145ce810a8946f173` | tag 只创建并推送一次，没有移动或回写 |
 | manifest 版本 | Web、PC、UniApp、docs-site 均为 `1.0.0`；Composer 应用包不内嵌 version | `1.0.0` 是已存在但未发布的应用版本身份，不再引入第二个版本号 |
-| 公开状态 | GitHub Release `https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0` 已发布 | 后置状态提交把 README/官网改为真实 `1.0.0`；正式域名部署仍待完成 |
+| 公开状态 | GitHub Release `https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0`、应用域名与官网均已部署 | 应用仓保持 private，Release 仅对获授权 GitHub 身份可见；公开访客访问该 CTA 会得到 404 |
 | 核心依赖 | Composer `peanut-admin/core@0.1.0-alpha.2`；Web/PC `@peanut-admin/admin@0.1.0-alpha.3`；UniApp `@peanut-admin/admin@0.1.0-alpha.4` | PB09 原样发布已验收锁，不顺带统一或升级核心版本 |
 | 技术候选 | PB08B 总证据绑定候选谱系 `4442229…`，当前后续提交只同步 PB08B 文档 | 法律/发布元数据变化可继承技术证据；任何 Runtime/依赖/迁移变化都使继承失效并停止 |
 
@@ -86,13 +86,15 @@ release manifest 只能由最终不可变 tag 的内容生成；commit/tag 或�
 
 任何 gate 失败后最多做一次只读诊断，然后停止发布；不得删除或移动已 push 的 tag 来掩盖失败。若 tag 已公开但 release 需要撤回，保留 tag 和审计记录，发布更正/撤回说明，后续修复使用新 patch 版本。
 
-## 7. 当前停止线
+## 7. 完成记录与停止线
 
-本合同的发布身份阶段已经完成：
+本合同已经完成：
 
 - 用户已决定应用暂时专有 / All Rights Reserved，版权主体显示为“花生科技”，并确认仓库、贡献身份与 AI 辅助成果的发布和再许可权；
 - 根 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`、`RELEASE_SBOM.spdx.json`、`CHANGELOG.md` 与无自引用的 `RELEASE_METADATA.json` 已在候选 `f3e6834…` 形成；
-- 一次法律静态门禁通过，未重跑 PB08B；功能分支远端备份已完成，当前只需推送候选后创建到 `dev` 的 PR；
+- 一次法律静态门禁通过，未重跑 PB08B；PR #10 合入 `dev`，PR #11 合入 `main`，后置发布状态由 PR #12/#13 同步；
 - annotated `v1.0.0`、GitHub Release 与六个附件已发布；规范源码 SHA-256 为 `069a34f98db1d604ddc64a342a10e17a81db450094d303db455a8b32ae114847`，外部 manifest SHA-256 为 `616fcd7dfd2edcebe8773f6860493c4fdfb912cc3cdfb4373c39f85972419989`；
 - GitHub 返回的六个 asset digest 与本地 manifest 一致，Release 非 draft、非 prerelease；没有预构建镜像、新核心包或 SaaS 声明；
-- 当前只剩后置发布状态提交、既有应用与官网域名部署、一次版本页/链接/最低 smoke 及最终封存。
+- 生产服务器检出不可变 `v1.0.0@0d3c848…`，配对备份后由 tag 源码构建镜像，迁移账本一次前滚到 28 条，再切换 PHP/Nginx/cron；容器与 MySQL 健康；
+- 应用 `https://peanut-admin.007345.xyz` 和官网 `https://peanut-admin-docs.pages.dev` 已部署。一次最低外部 smoke 与一次只读归因确认健康页、三端入口、两处 release metadata 和法律资产可取；授权 GitHub API 确认 Release 存在。应用仓保持 private，因此匿名 GitHub CTA 返回 404，记录为可见性限制而非伪装为公开 release；
+- PB09 至此封存。禁止移动 `v1.0.0`、回写 tag 或把后续媒体通用能力/SaaS 冒充为本 release 内容。
