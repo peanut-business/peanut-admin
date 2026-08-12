@@ -52,7 +52,7 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 
 ### 当前恢复指针
 
-更新时间：2026-08-12 19:18 CST。当前并行阶段为 `MT00-ALPHA5` 与
+更新时间：2026-08-12 19:33 CST。当前并行阶段为 `MT00-ALPHA5` 与
 `MT01-GENERATOR`，恢复时以远端 PR 和精确提交为准：
 
 | 项目 | 状态 | 固定证据 |
@@ -63,22 +63,23 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 | CAP06 MySQL 8.4 / Collaboration 修复 | 已完成并固定 | Core source `0f3c0a530f2b6369bf5883b2508f40a79501ed98` / tree `691cf4812d08dc4a3927a78331be3267aa1e9c77`；Core PR #18–#23 |
 | CAP06 Peanut Admin 私有采用 | 已完成 | 应用 PR #23 实现、PR #24 最终五组 CI；`dev` `bafdf5b5aeb34d63e3b6c21a29817e688783ed21`；Core adoption record PR #24 merge `76fa36e461ca73cb9a4e8367cbcc3d71e4672ba7`；不宣称跨 Tenant Article 隔离或全局事务 |
 | Alpha.5 发布合同/Composer | 已完成 | Core PR #26/#27/#32/#33 已全绿合入；source `0f3c0a530f2b6369bf5883b2508f40a79501ed98`、split `ef06da45c9e77ae4b194bfc1f859ec007aa0e022` 均有 annotated `v0.1.0-alpha.5`；Packagist `peanut-admin/core@0.1.0-alpha.5` 已公开 |
-| Alpha.5 npm 外部身份 | 修复 PR 在途 | 固定 artifact `aeeff105df4960db6a70da7ee5597da9a85abdaa` / `packages/web` tree `562043a0a294392a66ea0a305de6554d02646bc8`。run `31589966713` 在 `npm publish` 前因 gzip wrapper 摘要跨平台漂移失败，Registry 仍无 Alpha.5；Core PR #37 head `bd62142a98802cad9400f14422ee659cd6ddbae1` 改用稳定 tar payload SHA-256 `5850166a…eb6`，六项中仅 `quality` 超时未完成，禁止合入或再次 dispatch |
+| Alpha.5 npm 外部身份 | Trusted Publisher 阻塞 | Core PR #37 已全绿合入，merge `cf16e0ce1277fe1977c78876c94c1fdb744f158a`。唯一修复 run `31591456284` 通过固定 artifact/payload Gate并签名 provenance，但 npm PUT 返回 404/无权限；Registry 确认 Alpha.5 不存在。Chrome 登录态停在物理 security key；未读取/保存认证材料。禁止再次 dispatch，直到 package owner 完成 exact Trusted Publisher 绑定 |
 | MT01 Generator 参数化 | 已全绿合入 | Core PR #28/#29；实现 head `880fb0147252b8441f703c120cd5d00ee4678483`，merge `6f24e7ab42e37b56066a3b3be8833a54f087eb3`；content anchor `30202d73f46c6ab83bf57bd5ce64c24bba9569ec` / tree `d9ca2c39a3b1c3ffa69c26915e5b75732d2f7c35`；683 files；digest `b994a19e…6a96` |
 | MT01 Generator integration 修复合同 | 已全绿合入 | Core PR #35 merge `f95eec217d9e6fe154928105752ab88632e504fd`；首次集成失败提交 `0aae10e` 不得作为通过证据 |
-| MT01 Generator integration fixture | 实现 PR 在途 | Core PR #36 head `a891d93d2f1bc75cbebca23a89bdbfea76bd45e3`；净写集仅 `tests/project-generator/run.php`、`static-contract.php`；六项中仅 `quality` 超时未完成。全绿合入后，各运行一次 Generator 与 PHP 8.3 static 组 |
+| MT01 Generator integration fixture | 唯一实现 PR 在途 | Core PR #36 head `f259bd6227b5c418f78a44c82e58fc5ea5a77bdb`；净写集仅 `tests/project-generator/run.php`、`static-contract.php`；已吸收 #34 必要一行并关闭 #34。六项中仅 `quality` 长时运行。全绿合入后，各运行一次 Generator 与 PHP 8.3 static 组 |
+| MT01 Generated Host 下一切片 | 合同 PR 在途 | Core PR #38 / commit `7e0c178bfaee727ffaf2c70bc1fe65a26f0eeec7`；八路径白名单、唯一 MySQL 8.4 集成组、外部 `fixture.record` 挂载/卸载、fail-closed 与原子失败注入已冻结；首次 `quality` 仅因 runner curl 60，失败 job 已唯一重跑且仍在运行 |
 
 中断后恢复步骤：
 
 1. 读取两个仓库根 `AGENTS.md`，确认工作目录仍为 `peanut-admin` 和 `peanut-admin-core`。
 2. CAP06 已完成；不得重复其真实 MySQL Gate、CAP01–CAP05 或已通过 CI。
-3. Core PR #36/#37 只在各自最新 head 的六项声明检查全部
+3. Core PR #36/#38 只在各自最新 head 的六项声明检查全部
    `COMPLETED/SUCCESS` 后手动合入；禁止 auto-merge、短轮询或借用旧 head 结果。
 4. #36 全绿合入后从最新 Core `dev` 重建 integration 三文件记录，各运行一次
    `php tests/project-generator/run.php` 与默认 PHP 8.3 static 组。不得把 PR CI
    冒充 MT01 Gate，也不得重复 CAP 或已通过 Generator 检查。
-5. #37 全绿合入后才允许再次单次 dispatch npm publication workflow；成功后完成
-   npm clean Registry probe、GitHub prerelease 和最终身份记录。Composer 不再重复。
+5. npm 发布不得再次 dispatch；先由 package owner 完成 exact repository/workflow/
+   environment Trusted Publisher 绑定。绑定后才可新建外部动作合同；Composer 不再重复。
 6. Alpha.5 只阻塞最终版本/Registry 字段和 `PA-DCS-ADOPT-01` 提名；MT01 的空库、
    fail-closed、失败注入、example 删除和 Admin Web fixture 可继续独立推进。
 7. 不启动 MT02；不重复 CAP01–CAP06、CAP06 MySQL 或任何已绿检查。
