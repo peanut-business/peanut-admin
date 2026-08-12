@@ -29,8 +29,11 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 
 - Peanut Admin Core 已有 Tenant、TenantMember、PlatformOperator、认证、RBAC、typed-target 数据权限、TenantModule、审计和 Host 组合实现。
 - 已发布的 Core Alpha 包和固定资格仅证明精确版本能力，不等于当前移动分支可直接作为所有产品生产基线。
-- Peanut Admin 应用仓仍未接入 Tenant Runtime。
-- 核心项目生成器已经存在，但当前模板仍带固定包快照；尚未冻结公司级正式承接版本。
+- Peanut Admin 应用仓已接入默认 Tenant、可信管理端 TenantContext、Article
+  Tenant-first Runtime、首批非 SQL Tenant 边界和实例内 Tenant 治理；这不表示
+  MT02–MT04 已整体完成。
+- 核心项目生成器已经固定公司级 MT01 承接版本；Generator 只创建新项目，禁止
+  覆盖更新已有项目，后续升级仍需独立追加式升级合同。
 - DCS 正式主项目必须从批准的 Peanut 模板新建；旧 DCS/POS Runtime 只作业务规则、契约、样本、迁移和验收参考。
 - DCS D1 不需要等待完整 SaaS，只需要通过 Peanut 最小承接 Gate。
 
@@ -43,12 +46,12 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 
 | 阶段 | 目标 | 状态 |
 | --- | --- | --- |
-| MT00 | 关闭在途核心能力和包/文档事实冲突 | 进行中 |
-| MT01 | 冻结公司级 Core/Generator 承接基线 | 进行中（合同与首个实现切片） |
-| MT02 | Peanut Admin 采用单默认 Tenant | 并行启动（独立实现切片；最终 Gate 等 MT01） |
-| MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 未开始 |
-| PM01 | 完成本实例 Tenant 平台管理 | 未开始 |
-| MT04 | 完成多租户前端和应用 Host 闭环 | 未开始 |
+| MT00 | 关闭在途核心能力和包/文档事实冲突 | 已完成 |
+| MT01 | 冻结公司级 Core/Generator 承接基线 | 已完成；DCS Product-only 条件采用 |
+| MT02 | Peanut Admin 采用单默认 Tenant | 进行中（Bootstrap/Article 已完成） |
+| MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 进行中（首批独立切片已完成） |
+| PM01 | 完成本实例 Tenant 平台管理 | 进行中（治理/身份边界已完成） |
+| MT04 | 完成多租户前端和应用 Host 闭环 | 进行中（可信上下文/Standalone UI 已完成） |
 | MT05 | 双模式安装、升级、下游和浏览器验收 | 未开始 |
 | MT06 | 发布多租户稳定基线 | 未开始 |
 | OP01 | 独立运营平台协议和项目立项 | 未开始 |
@@ -57,8 +60,8 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 
 ### 当前恢复指针
 
-更新时间：2026-08-12 19:33 CST。当前并行阶段为 `MT00-ALPHA5` 与
-`MT01-GENERATOR`，恢复时以远端 PR 和精确提交为准：
+更新时间：2026-08-13 03:44 CST。`MT00-ALPHA5` 与 `MT01-GENERATOR`
+已经收口；恢复时以远端 PR、Registry 和精确提交为准：
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
@@ -67,31 +70,26 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | CAP05 双投影资格 | 已通过并合入 Core `dev` | Composer `ca30576a…e5c0e`；npm `5d010762…8c80`；Core PR #17 merge `3ca731804eb8291408e03c0ae18299d2b7db1cb7` |
 | CAP06 MySQL 8.4 / Collaboration 修复 | 已完成并固定 | Core source `0f3c0a530f2b6369bf5883b2508f40a79501ed98` / tree `691cf4812d08dc4a3927a78331be3267aa1e9c77`；Core PR #18–#23 |
 | CAP06 Peanut Admin 私有采用 | 已完成 | 应用 PR #23 实现、PR #24 最终五组 CI；`dev` `bafdf5b5aeb34d63e3b6c21a29817e688783ed21`；Core adoption record PR #24 merge `76fa36e461ca73cb9a4e8367cbcc3d71e4672ba7`；不宣称跨 Tenant Article 隔离或全局事务 |
-| Alpha.5 发布合同/Composer | 已完成 | Core PR #26/#27/#32/#33 已全绿合入；source `0f3c0a530f2b6369bf5883b2508f40a79501ed98`、split `ef06da45c9e77ae4b194bfc1f859ec007aa0e022` 均有 annotated `v0.1.0-alpha.5`；Packagist `peanut-admin/core@0.1.0-alpha.5` 已公开 |
-| Alpha.5 npm 外部身份 | Trusted Publisher 阻塞 | Core PR #37 已全绿合入，merge `cf16e0ce1277fe1977c78876c94c1fdb744f158a`。唯一修复 run `31591456284` 通过固定 artifact/payload Gate并签名 provenance，但 npm PUT 返回 404/无权限；Registry 确认 Alpha.5 不存在。Chrome 登录态停在物理 security key；未读取/保存认证材料。禁止再次 dispatch，直到 package owner 完成 exact Trusted Publisher 绑定 |
-| MT01 Generator 参数化 | 已全绿合入 | Core PR #28/#29；实现 head `880fb0147252b8441f703c120cd5d00ee4678483`，merge `6f24e7ab42e37b56066a3b3be8833a54f087eb3`；content anchor `30202d73f46c6ab83bf57bd5ce64c24bba9569ec` / tree `d9ca2c39a3b1c3ffa69c26915e5b75732d2f7c35`；683 files；digest `b994a19e…6a96` |
-| MT01 Generator integration 修复合同 | 已全绿合入 | Core PR #35 merge `f95eec217d9e6fe154928105752ab88632e504fd`；首次集成失败提交 `0aae10e` 不得作为通过证据 |
-| MT01 Generator integration fixture | 唯一实现 PR 在途 | Core PR #36 head `f259bd6227b5c418f78a44c82e58fc5ea5a77bdb`；净写集仅 `tests/project-generator/run.php`、`static-contract.php`；已吸收 #34 必要一行并关闭 #34。六项中仅 `quality` 长时运行。全绿合入后，各运行一次 Generator 与 PHP 8.3 static 组 |
-| MT01 Generated Host 下一切片 | 合同 PR 在途 | Core PR #38 / commit `7e0c178bfaee727ffaf2c70bc1fe65a26f0eeec7`；八路径白名单、唯一 MySQL 8.4 集成组、外部 `fixture.record` 挂载/卸载、fail-closed 与原子失败注入已冻结；首次 `quality` 仅因 runner curl 60，失败 job 已唯一重跑且仍在运行 |
+| Alpha.5 Composer 公共发布 | 已完成 | `peanut-admin/core@0.1.0-alpha.5` 已由 Packagist 固定到 split `ef06da45c9e77ae4b194bfc1f859ec007aa0e022`；2026-08-13 全新临时 consumer 精确安装并加载 `PeanutAdmin\Kernel\Package` 通过 |
+| Alpha.5 npm provenance 公共发布 | 已完成 | `@peanut-admin/admin@0.1.0-alpha.5` 已公开，`alpha=0.1.0-alpha.5`、`latest=0.1.0-alpha.2`；Registry integrity `sha512-brHwkDH1Ym1EHFEBJDu+L956Wq3rwtxTaeaIvwPL7mMk8KKur82nqRnp/yk7RSnmScl/XeXMaj2HrTeQqTiOIQ==`，SLSA attestation 绑定 GitHub Actions OIDC。2026-08-13 全新 consumer 安装、31 signatures、20 attestations 和 15 exports 验证通过；发布 run `31595501585` 的 publish 步骤成功，紧随其后的即时可见性 E404 是 Registry 传播竞态，不是重新发布依据 |
+| MT01 固定 Core/Generator 身份 | 已完成 | Core `dev`/merge `cc9595e4a685ba5376b374d06084b71928f7f38c`，tree `3ae3abea248571e93dda54eb1564c0f8b954a250`；Generator `sha256-git-blob-manifest-v1`，683 files，digest `d30b740be7160864ac8128a43e7b160f45e46dffad3cd120c05e74bc3428afc6`；最终 reseal Core PR #59 六项最新-head checks 全绿后合入 |
+| MT01 Generator 与安装 | 已完成 | 参数化/确定性/移除 example/只创建不覆盖由 Core PR #29/#36 固定；新生成项目空库 install/migrate/start 由 Core PR #50 一次聚焦组证明 |
+| MT01 Generated Host | 已完成 | Core PR #49 的 MySQL 8.4 聚焦组证明外部 `fixture.record` Module、可信 Tenant/Client、同形跨 Tenant 拒绝、Module/permission/Data Provider fail-closed、幂等及领域/audit/outbox 原子失败注入；禁止重复运行 |
+| MT01 Admin Web | 已完成 | Core PR #57 一次桌面 Chromium smoke 证明登录、双 Tenant 选择、外部 Module 页面及跨 Tenant/未知资源同形 404；六项最新-head checks 全绿后合入，禁止重复运行 |
+| PA-DCS-ADOPT-01 nomination | 已完成 | DCS PR #2 readiness harness；PR #3 merge `b29495df90db97763ad9abd322e718401af9c6c6` 注入唯一 source/tree、Generator、Composer/npm 和 canonical parameters，结果仅为 `CANDIDATE_INPUT_READY_NOT_ADOPTION_PASS` |
+| PA-DCS-ADOPT-01 decision | `CONDITIONAL`，Product-only 可消费 | DCS PR #4 merge `a2e10655f451a26bbd9b82b817bd7f31c88a2337` 完成 A–D 正式裁决；允许另行批准后创建首个 D1 Product-only Host，不批准 D1 业务代码、Pricing/Inventory/Trade/POS/设备/支付/生产或完整 SaaS |
 
 中断后恢复步骤：
 
 1. 读取两个仓库根 `AGENTS.md`，确认工作目录仍为 `peanut-admin` 和 `peanut-admin-core`。
 2. CAP06 已完成；不得重复其真实 MySQL Gate、CAP01–CAP05 或已通过 CI。
-3. Core PR #36/#38 只在各自最新 head 的六项声明检查全部
-   `COMPLETED/SUCCESS` 后手动合入；禁止 auto-merge、短轮询或借用旧 head 结果。
-4. #36 全绿合入后从最新 Core `dev` 重建 integration 三文件记录，各运行一次
-   `php tests/project-generator/run.php` 与默认 PHP 8.3 static 组。不得把 PR CI
-   冒充 MT01 Gate，也不得重复 CAP 或已通过 Generator 检查。
-5. npm 发布不得再次 dispatch；先由 package owner 完成 exact repository/workflow/
-   environment Trusted Publisher 绑定。绑定后才可新建外部动作合同；Composer 不再重复。
-6. Alpha.5 只阻塞最终版本/Registry 字段和 `PA-DCS-ADOPT-01` 提名；MT01 的空库、
-   fail-closed、失败注入、example 删除和 Admin Web fixture 可继续独立推进。
-7. MT02 可并行推进不依赖最终 Generator/npm/Registry 身份的独立切片：默认
-   Tenant/Account/TenantMember/owner bootstrap 与现有管理员/RBAC 映射，以及
-   Article `tenant_id` 迁移、回填和 Tenant-first 读写。它们必须使用独立 owner、
-   worktree 和 PR。MT01 仅阻塞 MT02 的共享候选集成、最终整体验收与完成声明。
-   不重复 CAP01–CAP06、CAP06 MySQL 或任何已绿检查。
+3. Alpha.5、Generator、Generated Host、空库、Admin Web 和 PA-DCS nomination/
+   decision 已完成；不得重复 publish、dispatch 或运行这些 Gate。
+4. DCS 后续只消费 PR #4 的 `CONDITIONAL` 边界：先单独批准 D1 Product-only，
+   再从固定参数创建新 Host 并冻结实际 Module/manifest/migration/API/permission
+   写集；不得复制旧 Runtime，也不得把 adoption 当作 D1 业务实现 PASS。
+5. Peanut Admin 下一关键路径是 MT02/MT03/PM01/MT04 未完成项；各 owner 继续用
+   独立 PR，阶段末再做一次集中集成验收。不得重复 CAP01–CAP06 或 MT01 Gate。
 
 ## 5. MT00：关闭当前在途工作
 
@@ -124,29 +122,31 @@ Tenant bootstrap、管理员/RBAC 映射、Article 所有权迁移和 Tenant-fir
 
 ### PA-DCS-ADOPT-01 承接状态
 
-当前状态：`UNKNOWN`。唯一 Peanut 承接 owner 为本计划的 Peanut Admin
-主执行任务；DCS 不另行选择或拼装候选。候选形成前，下列身份不得使用分支名、
-移动 HEAD 或推测值代替：
+当前状态：`CONDITIONAL`，仅允许首个 DCS Product-only 纵向切片进入单独 D1
+批准。唯一 Peanut 承接 owner 已完成候选提名与 A–D 裁决；DCS 不另行选择或拼装
+候选。下列身份不得使用分支名、移动 HEAD 或推测值代替：
 
 | 候选身份 | 当前值 |
 | --- | --- |
-| 源仓库 | `UNKNOWN` |
-| 40 位 source commit | `UNKNOWN` |
-| 40 位 source tree | `UNKNOWN` |
-| Generator digest | `UNKNOWN` |
-| Composer 版本与不可变来源 | `UNKNOWN` |
-| npm 版本与不可变来源 | `UNKNOWN` |
-| 完整生成参数 | `UNKNOWN` |
+| 源仓库 | `https://github.com/peanut-opensource/peanut-admin` |
+| 40 位 source commit | `cc9595e4a685ba5376b374d06084b71928f7f38c` |
+| 40 位 source tree | `3ae3abea248571e93dda54eb1564c0f8b954a250` |
+| Generator digest | `d30b740be7160864ac8128a43e7b160f45e46dffad3cd120c05e74bc3428afc6` |
+| Composer 版本与不可变来源 | `peanut-admin/core@0.1.0-alpha.5` / split `ef06da45c9e77ae4b194bfc1f859ec007aa0e022` |
+| npm 版本与不可变来源 | `@peanut-admin/admin@0.1.0-alpha.5` / Registry integrity 见恢复指针 |
+| 完整生成参数 | DCS PR #3 `readiness/pa-dcs-adopt-01/candidate-lock.json`，canonical SHA-256 `228631df989fe3ddc6d05441ad404878d6b309bdc324cb3f71fd1a3e179c7429` |
 
-进入可承接阶段后，Peanut owner 只提名一个候选，并同时给出：
+Peanut owner 已只提名一个候选并给出：
 
 - Module 扩展和产品 namespace/API prefix/migration owner 的生成证据；
 - Tenant、Client、权限、数据、缓存、文件和任务隔离证据；
 - 空库安装、确定性生成、版本升级、失败停止和回滚/恢复证据；
 - DCS 专用最小 Host、Module 删除能力和浏览器 smoke 结果。
 
-候选失败时由 Peanut 修复并重新执行本 Gate。DCS 可以继续合同、数据清洗、
-fixture、迁移映射和验收矩阵，但不得回退、复制或继续扩展旧 Runtime。
+正式裁决固定于 DCS PR #4。它允许 DCS 在**另行批准 D1 后**创建新 Host 并实现
+Product-only 纵向切片；不批准 D1 业务代码本身，也不批准其他领域、生产或完整
+SaaS。候选身份变化或触发安全停止线时，由 Peanut 重新提名并裁决。DCS 不得回退、
+复制或继续扩展旧 Runtime。
 
 ## 7. MT02：Standalone 采用默认 Tenant
 
@@ -202,13 +202,14 @@ PM01 不包含套餐价格、订阅、计费、试用、续费、商业配额或
 ## 11. DCS 承接规则
 
 - DCS D1 的领域合同、数据清洗、fixture、迁移映射和验收矩阵现在可以继续。
-- D1 正式 Runtime 必须等待 MT01 中的 DCS 专用 `PA-DCS-ADOPT-01` 通过。
+- D1 正式 Runtime 必须取得 MT01 中 DCS 专用 `PA-DCS-ADOPT-01` 的 `PASS` 或
+  明确覆盖 Product-only 的 `CONDITIONAL`，并另行取得 D1 业务实现批准。
 - D1 不等待 PM01 全部能力，更不等待 SAAS-FUTURE。
 - 完整 SaaS 商业化不是 D1 前置；D1 只等待上述最小可消费脚手架承接 Gate。
 - DCS 新主项目从批准模板生成；旧 Runtime 不作为正式实现基线。
 - DCS 的 Tenant 与经营主体关系必须在正式表结构前单独冻结。
-- Peanut Admin 当前产品化主任务是 `PA-DCS-ADOPT-01` 的唯一承接 owner；候选
-  未形成前保持 `UNKNOWN`，不得由 DCS 自行选择替代版本。
+- Peanut Admin 产品化主任务已完成唯一候选和 `CONDITIONAL` 裁决；DCS 不得自行
+  选择替代版本，后续身份变化必须重新提名和裁决。
 
 ## 12. OP01–OP02：独立运营平台
 
