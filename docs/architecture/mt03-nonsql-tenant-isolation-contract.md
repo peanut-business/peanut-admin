@@ -176,4 +176,13 @@ MT02、MySQL、全量测试、浏览器或其他 owner 测试。失败后最多�
 
 ## 9. 首片实施证据
 
-待实现 PR 全绿并合入后填写；合同 PR 不预填未来结果。
+- 合同 PR #35 的 PHP 8.3、Web、PC、UniApp、Docs site 五项声明检查全部成功，已人工
+  合入 `dev`；merge commit `f86b283962888296aa2394563fc7b5866f788c2e`。
+- 首片新增显式可信 scope、版本化 cache key/tag、受 MySQL 64-byte 限制约束的 lock name、
+  无全局 clear/raw store 的最小 cache port，以及内存隔离 fixture；尚未宣称既有业务调用方接入。
+- 本地依赖严格从既有 `server/composer.lock` 恢复，未修改 Composer manifest/lock；PHP 8.3.24
+  下 `MT03-CACHE-LOCK-001` 唯一行为组一次通过。
+- 同一组证明两个 Tenant 的相同 logical key/tag/lock seed 物理名不同且稳定，Tenant A 删除不
+  影响 Tenant B；无效 scope、伪造 payload 形状和非法 logical name 在 store 调用前 fail closed。
+- 白名单 PHP 文件使用 PHP 8.3 聚焦 lint；最终精确写集和 `git diff --check` 通过。未运行 CAP、
+  MT02、MySQL、全量测试或浏览器，也未修改 Article、bootstrap/install 或其他 owner 文件。
