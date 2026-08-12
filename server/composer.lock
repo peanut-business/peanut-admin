@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c53e822385c836412d6b0bb547c6b49f",
+    "content-hash": "ee4c68570fcd68041e6a5b8d60d06831",
     "packages": [
         {
             "name": "aliyuncs/oss-sdk-php",
@@ -1149,16 +1149,16 @@
         },
         {
             "name": "peanut-admin/core",
-            "version": "0.1.0-alpha.2",
+            "version": "dev-candidate-alpha5-cap06",
             "source": {
                 "type": "git",
                 "url": "https://github.com/peanut-opensource/peanut-admin-core.git",
-                "reference": "330e76787ba754e1c7c11c2204c1c7f1e9560bb1"
+                "reference": "ef06da45c9e77ae4b194bfc1f859ec007aa0e022"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core/zipball/330e76787ba754e1c7c11c2204c1c7f1e9560bb1",
-                "reference": "330e76787ba754e1c7c11c2204c1c7f1e9560bb1",
+                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core/zipball/ef06da45c9e77ae4b194bfc1f859ec007aa0e022",
+                "reference": "ef06da45c9e77ae4b194bfc1f859ec007aa0e022",
                 "shasum": ""
             },
             "require": {
@@ -1176,28 +1176,46 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "PeanutAdmin\\Kernel\\": "kernel/src/",
-                    "PeanutAdmin\\TaskJob\\": "task-job/src/",
-                    "PeanutAdmin\\Settings\\": "settings/src/",
-                    "PeanutAdmin\\FileMedia\\": "file-media/src/",
-                    "PeanutAdmin\\OpsConsole\\": "ops-console/src/",
-                    "PeanutAdmin\\ImportExport\\": "import-export/src/",
+                    "PeanutAdmin\\ArtifactRevision\\": "artifact-revision/src/",
+                    "PeanutAdmin\\Collaboration\\": "collaboration/src/",
                     "PeanutAdmin\\DataPermission\\": "data-permission/src/",
-                    "PeanutAdmin\\ReferenceCodes\\": "reference-codes/src/",
+                    "PeanutAdmin\\EntitlementQuota\\": "entitlement-quota/src/",
+                    "PeanutAdmin\\FileMedia\\": "file-media/src/",
+                    "PeanutAdmin\\ImportExport\\": "import-export/src/",
+                    "PeanutAdmin\\IntegrationSecurity\\": "integration-security/src/",
+                    "PeanutAdmin\\Kernel\\": "kernel/src/",
                     "PeanutAdmin\\NotificationSms\\": "notification-sms/src/",
-                    "PeanutAdmin\\IntegrationSecurity\\": "integration-security/src/"
+                    "PeanutAdmin\\OpsConsole\\": "ops-console/src/",
+                    "PeanutAdmin\\ReferenceCodes\\": "reference-codes/src/",
+                    "PeanutAdmin\\Settings\\": "settings/src/",
+                    "PeanutAdmin\\TaskJob\\": "task-job/src/",
+                    "PeanutAdmin\\Workflow\\": "workflow/src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "PeanutAdmin\\ArtifactRevision\\Tests\\": "artifact-revision/tests/",
+                    "PeanutAdmin\\Collaboration\\Tests\\": "collaboration/tests/",
+                    "PeanutAdmin\\DataPermission\\Tests\\": "data-permission/tests/",
+                    "PeanutAdmin\\EntitlementQuota\\Tests\\": "entitlement-quota/tests/",
+                    "PeanutAdmin\\FileMedia\\Tests\\": "file-media/tests/",
+                    "PeanutAdmin\\Kernel\\Tests\\": "kernel/tests/",
+                    "PeanutAdmin\\ReferenceCodes\\Tests\\": "reference-codes/tests/",
+                    "PeanutAdmin\\Settings\\Tests\\": "settings/tests/",
+                    "PeanutAdmin\\Testing\\": "testing/src/",
+                    "PeanutAdmin\\Testing\\Tests\\": "testing/tests/",
+                    "PeanutAdmin\\Workflow\\Tests\\": "workflow/tests/"
+                }
+            },
             "license": [
                 "Apache-2.0"
             ],
             "description": "Peanut Admin reusable administration runtime packages",
             "support": {
-                "issues": "https://github.com/peanut-opensource/peanut-admin-core/issues",
-                "source": "https://github.com/peanut-opensource/peanut-admin-core/tree/v0.1.0-alpha.2"
+                "source": "https://github.com/peanut-opensource/peanut-admin-core/tree/candidate-alpha5-cap06",
+                "issues": "https://github.com/peanut-opensource/peanut-admin-core/issues"
             },
-            "time": "2026-08-08T09:14:23+00:00"
+            "time": "2026-08-12T07:17:29+00:00"
         },
         {
             "name": "psr/container",
@@ -2421,10 +2439,17 @@
             "time": "2025-06-12T09:18:19+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "peanut-admin/core",
+            "version": "dev-candidate-alpha5-cap06",
+            "alias": "0.1.0-alpha.5",
+            "alias_normalized": "0.1.0.0-alpha5"
+        }
+    ],
     "minimum-stability": "stable",
     "stability-flags": {
-        "peanut-admin/core": 15
+        "peanut-admin/core": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
