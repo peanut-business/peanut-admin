@@ -233,6 +233,71 @@ port 已真实连接 ThinkPHP store，不表示登录或 storage 调用方已经
 - 白名单 PHP 8.3 lint、精确写集和 `git diff --check` 通过；未修改 Composer manifest/lock，
   未运行首片、CAP、MT02、MySQL、全量或浏览器，也未触碰其他 owner 文件。
 
+## 12. Crontab Tenant ownership 与可信调度上下文切片
+
+本切片只接入真实存在的 `pa_crontab -> app\command\Crontab -> Console::call` 同步调度链。
+仓库当前没有 queue worker、job payload/lease，也没有 Tenant 业务导入 Runtime；Generator 的
+schema import/archive 继续归 Generated Host/Generator owner，本切片不虚构或修改这些入口。
+同步 `XlsxExportService` 的 Tenant artifact 路径、owner metadata 与聚焦清理另立导出切片。
+
+`pa_crontab.tenant_id` 由 migration 从唯一 active Tenant 回填并收紧为非空。管理端 CRUD 只接受
+请求中已经验证的 Core `TenantContext`，忽略 payload 内任何 `tenant_id`。调度器保留实例级扫描锁，
+但只扫描 active Tenant 的 owner row；每次执行由可信调度 owner 从持久化 `tenant_id + job id +
+claim window` 注入不可变 `TenantScope`，再以 Tenant namespace 的 MySQL advisory lock 认领和派发。
+扫描、CAS、错误、耗时、重试、停止和删除都同时带 `tenant_id + id` predicate。
+
+`Console::call` 前由 `ScheduledTenantContext` 安装 scope，handler 结束后在 `finally` 清除。命令必须
+在任何副作用前显式读取该 scope；当前只有无业务写的 `crontab:demo` 完成采用。已有
+`refund:reconcile` 仍访问尚未 Tenant 化的 finance 表，`generator:cleanup` 属于 Generator owner，
+两者在 handler 前 fail closed。前者的解除条件是 finance owner 完成相关 order/refund 表的
+Tenant-first repository 并使命令消费 `ScheduledTenantContext`；后者的解除条件是 Ops/Generator
+owner 明确 instance-owned schedule 模型及独立可信系统上下文，不能伪装为 Tenant job。
+
+本切片精确白名单：
+
+- `server/database/migrations/20260812_crontab_tenant_ownership.sql`；
+- `server/app/common/service/crontab/CrontabTenantContext.php`；
+- `server/app/common/service/crontab/CrontabTenantRepository.php`；
+- `server/app/common/service/crontab/CrontabTenantLock.php`；
+- `server/app/common/service/crontab/ScheduledTenantContext.php`；
+- `server/app/common/service/crontab/CrontabSchedulerService.php`；
+- `server/app/common/service/CrontabCommandService.php`；
+- `server/app/common/model/Crontab.php`；
+- `server/app/command/Crontab.php`、`server/app/command/CrontabDemo.php`；
+- `server/app/adminapi/controller/crontab/CrontabController.php`；
+- `server/app/adminapi/logic/crontab/CrontabLogic.php`；
+- `server/tests/Multitenancy/CrontabTenantIsolationTest.php`；
+- `.github/workflows/ci.yml` 仅登记 `MT03-CRONTAB-TENANT-ISOLATION-001`；
+- 本节边界、解除条件与实施证据。
+
+唯一最低验证使用 PHP 8.3 与 MySQL 8.4 临时库，一次证明 migration 在缺失/非唯一 active Tenant
+时无 schema 副作用地拒绝；两个 Tenant 的同名任务列表、详情、修改、删除、重试和错误清理
+互不影响；payload 不能伪造 owner；相同 job ID/lock seed 产生不同 MySQL lock name 并可独立持有；
+缺失 scope、owner 不一致或未采用命令均在 handler 副作用前拒绝，且 scope 不泄漏到下一任务。
+
+```bash
+cd server
+DB_HOST=127.0.0.1 DB_PORT=3306 MYSQL_ROOT_PASSWORD=mt02_root \
+  /opt/homebrew/opt/php@8.3/bin/php tests/Multitenancy/CrontabTenantIsolationTest.php
+```
+
+不重复 cache/file/Article/bootstrap/CAP 组，不运行全量、浏览器或其他 owner 测试。本切片通过只
+表示 Crontab 真实 Runtime 的 Tenant 隔离 development-complete，不表示 queue、导入导出、audit
+或 MT03 整体完成。
+
+### 实施证据
+
+- PHP 8.3.24 与 MySQL 8.4 下 `MT03-CRONTAB-TENANT-ISOLATION-001` 唯一聚焦组通过；本地依赖
+  仅由既有 `server/composer.lock` 恢复，未修改 Composer manifest/lock。
+- migration 对缺少 `pa_tenant` 或多个 active Tenant 的库在增加字段前拒绝；唯一 active Tenant
+  完成回填、非空约束、Tenant identity/scheduler 索引和外键收紧。
+- 两个 Tenant 的同名任务列表、详情、删除和错误重试互不影响；payload `tenant_id`、command 和
+  params 不能覆盖持久化 owner row，相同 job seed 的 MySQL advisory lock 可独立持有。
+- 调度派发前安装由持久化 owner row 签发的不可变 `TenantScope`，handler 后清除；缺失/错配 owner
+  和未采用的 `refund:reconcile`、`generator:cleanup` 均在 handler 副作用前 fail closed。
+- 白名单 PHP 8.3 lint、精确写集与 `git diff --check` 通过；未运行 cache/file/Article/bootstrap、
+  CAP、全量或浏览器，也未触碰 Generator、Article、file、cache、bootstrap/install owner。
+
 ## 11. 文件对象与分类 Tenant ownership 切片
 
 本切片只接入当前唯一生产链 `UploadController -> UploadService -> storage Driver/engine -> pa_file`

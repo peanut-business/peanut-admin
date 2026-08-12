@@ -5,10 +5,11 @@ namespace app\adminapi\logic\crontab;
 
 use app\common\enum\CrontabEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\Crontab;
+use app\common\service\crontab\CrontabTenantRepository;
 use Cron\CronExpression;
 use app\common\service\CrontabCommandService;
 use think\facade\Db;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /**
  * 定时任务逻辑层
@@ -16,7 +17,7 @@ use think\facade\Db;
 class CrontabLogic extends BaseLogic
 {
     /** 分页列表：支持 name(模糊) / status 过滤 */
-    public static function lists(array $params): array
+    public static function lists(TenantContext $context, array $params): array
     {
         $where = [];
         if (!empty($params['name'])) {
@@ -29,8 +30,8 @@ class CrontabLogic extends BaseLogic
         $pageNo   = max(1, (int) ($params['page_no'] ?? 1));
         $pageSize = min(100, max(1, (int) ($params['page_size'] ?? 15)));
 
-        $count = Crontab::where($where)->count();
-        $lists = Crontab::where($where)
+        $count = CrontabTenantRepository::schedules($context)->where($where)->count();
+        $lists = CrontabTenantRepository::schedules($context)->where($where)
             ->append(['type_desc', 'status_desc'])
             ->order(['id' => 'desc'])
             ->page($pageNo, $pageSize)
@@ -40,16 +41,16 @@ class CrontabLogic extends BaseLogic
         return compact('lists', 'count', 'pageNo', 'pageSize');
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        return Crontab::findOrEmpty($id)->toArray();
+        return CrontabTenantRepository::find($context, $id)?->toArray() ?? [];
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
         try {
             CrontabCommandService::assertAllowed(trim((string)$params['command']));
-            Crontab::create([
+            CrontabTenantRepository::create($context, [
                 'name'       => (string) $params['name'],
                 'type'       => (int) $params['type'],
                 'command'    => (string) $params['command'],
@@ -67,12 +68,13 @@ class CrontabLogic extends BaseLogic
         }
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
         try {
             CrontabCommandService::assertAllowed(trim((string)$params['command']));
-            Db::transaction(function () use ($params): void {
-                $crontab = Crontab::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
+            Db::transaction(function () use ($context, $params): void {
+                $crontab = CrontabTenantRepository::schedules($context)
+                    ->where('id', (int)$params['id'])->lock(true)->findOrEmpty();
                 if ($crontab->isEmpty()) {
                     throw new \RuntimeException('定时任务不存在');
                 }
@@ -94,10 +96,10 @@ class CrontabLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): bool
+    public static function delete(TenantContext $context, int $id): bool
     {
-        $crontab = Crontab::findOrEmpty($id);
-        if ($crontab->isEmpty()) {
+        $crontab = CrontabTenantRepository::find($context, $id);
+        if ($crontab === null) {
             self::setError('定时任务不存在');
             return false;
         }
@@ -106,11 +108,11 @@ class CrontabLogic extends BaseLogic
     }
 
     /** 运行 / 停止 */
-    public static function operate(int $id, string $operate): bool
+    public static function operate(TenantContext $context, int $id, string $operate): bool
     {
         try {
-            $crontab = Crontab::findOrEmpty($id);
-            if ($crontab->isEmpty()) {
+            $crontab = CrontabTenantRepository::find($context, $id);
+            if ($crontab === null) {
                 throw new \Exception('定时任务不存在');
             }
             if ($operate === 'start') {
