@@ -6,6 +6,7 @@ namespace app\adminapi\controller\file;
 use app\adminapi\controller\BaseAdminController;
 use app\common\enum\FileEnum;
 use app\common\service\UploadService;
+use app\common\service\file\FileTenantContext;
 
 class UploadController extends BaseAdminController
 {
@@ -33,7 +34,12 @@ class UploadController extends BaseAdminController
                 throw new \InvalidArgumentException('目标分类无效');
             }
             $cid = (int)$cidValue;
-            $res = UploadService::$method($cid, $this->adminId, FileEnum::SOURCE_ADMIN);
+            $res = UploadService::$method(
+                FileTenantContext::member($this->request),
+                $cid,
+                $this->adminId,
+                FileEnum::SOURCE_ADMIN
+            );
             return $this->success('上传成功', $res);
         } catch (\Throwable $e) {
             return $this->fail($e->getMessage());

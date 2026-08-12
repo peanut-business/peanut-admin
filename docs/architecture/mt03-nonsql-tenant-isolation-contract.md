@@ -232,3 +232,44 @@ port 已真实连接 ThinkPHP store，不表示登录或 storage 调用方已经
 - fixture 使用唯一 run ID，并在 `finally` 仅删除两个派生物理 key；结束后两个 key 均不存在。
 - 白名单 PHP 8.3 lint、精确写集和 `git diff --check` 通过；未修改 Composer manifest/lock，
   未运行首片、CAP、MT02、MySQL、全量或浏览器，也未触碰其他 owner 文件。
+
+## 11. 文件对象与分类 Tenant ownership 切片
+
+本切片只接入当前唯一生产链 `UploadController -> UploadService -> storage Driver/engine -> pa_file`
+以及 `FileController -> FileLogic/FileCateLogic`。上传目录由可信 `TenantContext` 派生为
+`tenants/v1/<tenant_id>/uploads/...`；分类、素材列表、移动、重命名、软删与物理对象清理均先经
+Tenant-first repository。对象删除只接受当前 Tenant row 中持久化的 URI，并再次校验 Tenant
+namespace；请求字段不能提供或改写对象 key。
+
+当前应用没有文件私有临时下载 grant、容量 ledger 或文件 retention command。唯一 token 下载是
+Generator archive，属于 Generated Host/Generator owner；本切片不虚构文件下载能力，也不修改
+Generator。将来出现真实文件 grant/retention Runtime 时，必须另立采用白名单与聚焦 fixture。
+
+本切片精确白名单：
+
+- `server/database/migrations/20260812_file_tenant_ownership.sql`；
+- `server/app/common/service/file/FileTenantContext.php`；
+- `server/app/common/service/file/FileTenantRepository.php`；
+- `server/app/common/service/file/FileObjectNamespace.php`；
+- `server/app/common/service/UploadService.php`；
+- `server/app/adminapi/controller/file/UploadController.php`；
+- `server/app/adminapi/controller/file/FileController.php`；
+- `server/app/adminapi/logic/file/FileLogic.php`；
+- `server/app/adminapi/logic/file/FileCateLogic.php`；
+- `server/tests/Multitenancy/FileTenantIsolationTest.php`；
+- `.github/workflows/ci.yml` 仅登记 `MT03-FILE-TENANT-OWNERSHIP-001`；
+- 本节实施边界与证据。
+
+唯一最低验证：
+
+```bash
+cd server
+DB_HOST=127.0.0.1 DB_PORT=3306 MYSQL_ROOT_PASSWORD=mt02_root \
+  /opt/homebrew/opt/php@8.3/bin/php tests/Multitenancy/FileTenantIsolationTest.php
+```
+
+fixture 使用 MySQL 8.4 临时库和本线独占对象目录，一次证明：缺 `pa_tenant` 或非唯一 active Tenant
+时 migration 在 schema 副作用前 fail closed；唯一 active Tenant（非硬编码 `id=1`）完成回填、
+非空与索引收紧；两个 Tenant 的同名分类、文件名和对象 seed 不互见；跨 Tenant 与不存在 ID
+拒绝形状相同；删除分类子树只软删当前 Tenant row 并只移除当前 Tenant 对象。外围不使用
+`allowed=false`，伪造 `tenant_id` 或外 Tenant URI 均不能改变可信 ownership。
