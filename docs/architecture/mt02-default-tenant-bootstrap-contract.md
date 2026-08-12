@@ -147,3 +147,19 @@ CAP、Article、全量浏览器、生产、Generator 或 MT02 整体验收。失
 实现 PR 全部声明检查成功并合入 `dev` 后，只能声明本独立切片
 development-complete。MT01 固定候选、Article owner、Tenant-aware Runtime、真实升级矩阵
 及最终 MT02 Gate 未共同完成前，不得声明 MT02 complete、qualified 或 release-ready。
+
+## 9. 实施证据
+
+- 实现分支基线为合同合入后的 `dev` `1107c10351a9d57fb34c0f135dd3f979efb5a79e`；
+  Core 公共 API 保持锁定 Composer split `ef06da45c9e77ae4b194bfc1f859ec007aa0e022`，
+  未修改 manifest/lock 或 Core 仓。
+- `20260812-default-tenant-bootstrap.sql` 只拥有应用旧管理员/RBAC/岗位的 Tenant
+  ownership、映射表和 bootstrap identity；Core 表全部由公共 `KernelSchema` 建立。
+- `DefaultTenantBootstrap` 复用 Core `BootstrapService`、PDO Repository、
+  `PasswordHasher` 与嵌套 transaction/savepoint；未知/部分 Core 状态、旧关系孤儿、
+  部门环、root 歧义和不可信 owner credential 均 fail closed。
+- `MT02-BOOTSTRAP-001` 使用 `/opt/homebrew/opt/php@8.3/bin/php` 和 MySQL 8.4
+  唯一运行一次并通过：真实空库 installer、三管理员/两角色/两级部门/岗位 fixture
+  前滚、幂等重放，以及缺 email、错密码、第二 root、孤儿关系和部门环拒绝。
+- 未运行 Article、CAP01–CAP06、全量浏览器、生产、Generator 或 MT02 整体验收；
+  本结果仅为独立 bootstrap/RBAC mapping 切片 development-complete 候选。

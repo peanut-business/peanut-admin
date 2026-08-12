@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use app\common\service\tenant\DefaultTenantBootstrap;
+
 /**
  * Peanut Admin fresh-database installer.
  *
@@ -52,6 +54,18 @@ function initialAdminPassword(string $serverDir): string
         : (loadFileConfig($serverDir)['ADMIN_INITIAL_PASSWORD'] ?? '');
     validateInitialAdminPassword((string)$password);
     return (string)$password;
+}
+
+function initialAdminEmail(string $serverDir): string
+{
+    $environment = getenv('ADMIN_INITIAL_EMAIL');
+    $email = $environment !== false && $environment !== ''
+        ? $environment
+        : (loadFileConfig($serverDir)['ADMIN_INITIAL_EMAIL'] ?? '');
+    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('ADMIN_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    return strtolower((string)$email);
 }
 
 function validateInitialAdminPassword(string $password): void
@@ -146,6 +160,35 @@ function executeSqlFiles(PDO $pdo, array $files, string $adminPassword): void
             );
         }
     }
+}
+
+function executeSqlFile(PDO $pdo, string $file): void
+{
+    $sql = file_get_contents($file);
+    if ($sql === false) {
+        throw new RuntimeException('无法读取 SQL 文件：' . basename($file));
+    }
+    try {
+        $pdo->exec($sql);
+    } catch (Throwable $exception) {
+        throw new RuntimeException(
+            '执行 SQL 文件失败：' . basename($file) . '；' . $exception->getMessage(),
+            0,
+            $exception
+        );
+    }
+}
+
+function defaultTenantBootstrap(PDO $pdo, string $serverDir, string $password): DefaultTenantBootstrap
+{
+    $autoload = $serverDir . '/vendor/autoload.php';
+    if (!is_file($autoload)) {
+        throw new RuntimeException('缺少 Composer autoload，无法执行默认 Tenant bootstrap');
+    }
+    require_once $autoload;
+    $bootstrap = new DefaultTenantBootstrap($pdo);
+    $bootstrap->prepare(initialAdminEmail($serverDir), $password);
+    return $bootstrap;
 }
 
 /** @param array<string, string> $website */
@@ -273,7 +316,27 @@ function main(): int
 
         $adminPassword = initialAdminPassword($serverDir);
         $brandDefaults = brandWebsiteDefaults($serverDir);
-        executeSqlFiles($pdo, $files, $adminPassword);
+        $mt02Migration = '20260812-default-tenant-bootstrap.sql';
+        $mt02File = $databaseDir . '/migrations/' . $mt02Migration;
+        $initFile = array_shift($files);
+        if (!is_string($initFile) || !is_file($mt02File)) {
+            throw new RuntimeException('缺少 MT02 默认 Tenant migration');
+        }
+        $beforeMt02 = array_values(array_filter(
+            $files,
+            static fn(string $file): bool => basename($file) < $mt02Migration
+        ));
+        $afterMt02 = array_values(array_filter(
+            $files,
+            static fn(string $file): bool => basename($file) > $mt02Migration
+        ));
+        executeSqlFiles($pdo, [$initFile, ...$beforeMt02], $adminPassword);
+        $tenantBootstrap = defaultTenantBootstrap($pdo, $serverDir, $adminPassword);
+        executeSqlFile($pdo, $mt02File);
+        $tenantBootstrap->complete();
+        foreach ($afterMt02 as $file) {
+            executeSqlFile($pdo, $file);
+        }
         seedBrandDefaults($pdo, $brandDefaults);
 
         $actualStatement = $pdo->prepare(
@@ -298,7 +361,7 @@ function main(): int
             ], JSON_UNESCAPED_UNICODE));
         }
 
-        recordInstalledMigrations($pdo, array_slice($files, 1));
+        recordInstalledMigrations($pdo, [...$beforeMt02, $mt02File, ...$afterMt02]);
 
         echo json_encode([
             'database' => $database,

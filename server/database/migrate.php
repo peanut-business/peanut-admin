@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use app\common\service\tenant\DefaultTenantBootstrap;
+
 /**
  * Peanut Admin manual database migration runner.
  *
@@ -39,6 +41,44 @@ function migrationConfig(string $serverDir): array
         $config[$name] = (string)$value;
     }
     return $config;
+}
+
+/** @return array<string, mixed> */
+function migrationFileConfig(string $serverDir): array
+{
+    $envFile = $serverDir . '/.env';
+    if (!is_file($envFile)) {
+        return [];
+    }
+    $parsed = parse_ini_file($envFile, false, INI_SCANNER_RAW);
+    if ($parsed === false) {
+        throw new RuntimeException('无法解析 server/.env');
+    }
+    return $parsed;
+}
+
+function initialAdminEmailForMigration(string $serverDir): string
+{
+    $environment = getenv('ADMIN_INITIAL_EMAIL');
+    $email = $environment !== false && $environment !== ''
+        ? $environment
+        : (migrationFileConfig($serverDir)['ADMIN_INITIAL_EMAIL'] ?? '');
+    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('ADMIN_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    return strtolower((string)$email);
+}
+
+function initialAdminPasswordForMigration(string $serverDir): string
+{
+    $environment = getenv('ADMIN_INITIAL_PASSWORD');
+    $password = $environment !== false && $environment !== ''
+        ? $environment
+        : (migrationFileConfig($serverDir)['ADMIN_INITIAL_PASSWORD'] ?? '');
+    if (!is_string($password) || $password === '') {
+        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 不能为空');
+    }
+    return $password;
 }
 
 function migrationFiles(string $databaseDir): array
@@ -204,7 +244,12 @@ function appliedMigrations(PDO $pdo, array $files): array
     return $applied;
 }
 
-function applyPendingMigrations(PDO $pdo, array $files): array
+function applyPendingMigrations(
+    PDO $pdo,
+    array $files,
+    ?callable $before = null,
+    ?callable $after = null
+): array
 {
     $applied = appliedMigrations($pdo, $files);
     $pending = array_values(array_filter(
@@ -231,9 +276,15 @@ function applyPendingMigrations(PDO $pdo, array $files): array
     $completed = [];
     foreach ($pending as $file) {
         $name = basename($file);
-        $start->execute([$name, migrationChecksum($file), $batch, time()]);
         try {
+            if ($before !== null) {
+                $before($name);
+            }
+            $start->execute([$name, migrationChecksum($file), $batch, time()]);
             $pdo->exec(migrationSql($file));
+            if ($after !== null) {
+                $after($name);
+            }
             $finish->execute([time(), $name]);
             $completed[] = $name;
         } catch (Throwable $exception) {
@@ -269,7 +320,32 @@ function migrateMain(): int
         if (!migrationTableExists($pdo)) {
             throw new RuntimeException('迁移账本不存在；历史安装请先执行 --adopt-existing');
         }
-        $completed = applyPendingMigrations($pdo, $files);
+        $autoload = dirname($databaseDir) . '/vendor/autoload.php';
+        if (!is_file($autoload)) {
+            throw new RuntimeException('缺少 Composer autoload，无法执行数据库迁移');
+        }
+        require_once $autoload;
+        $tenantBootstrap = null;
+        $completed = applyPendingMigrations(
+            $pdo,
+            $files,
+            static function (string $name) use ($pdo, &$tenantBootstrap): void {
+                if ($name !== DefaultTenantBootstrap::MIGRATION) {
+                    return;
+                }
+                $serverDir = dirname(__DIR__);
+                $tenantBootstrap = new DefaultTenantBootstrap($pdo);
+                $tenantBootstrap->prepare(initialAdminEmailForMigration($serverDir), initialAdminPasswordForMigration($serverDir));
+            },
+            static function (string $name) use (&$tenantBootstrap): void {
+                if ($name === DefaultTenantBootstrap::MIGRATION) {
+                    if (!$tenantBootstrap instanceof DefaultTenantBootstrap) {
+                        throw new RuntimeException('MT02_BOOTSTRAP_NOT_PREPARED');
+                    }
+                    $tenantBootstrap->complete();
+                }
+            }
+        );
         $total = (int)$pdo->query(
             "SELECT COUNT(*) FROM pa_schema_migration WHERE status = 'applied'"
         )->fetchColumn();
