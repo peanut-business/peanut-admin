@@ -7,10 +7,12 @@ use app\common\enum\notice\NoticeSceneEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
 use app\common\service\notice\VerificationCodeService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 class SmsLogic extends BaseLogic
 {
-    public static function sendCode(array $params): bool
+    public static function sendCode(TenantContext|TenantSystemContext $context, array $params): bool
     {
         $scene = (string) $params['scene'];
         $mobile = (string) $params['mobile'];
@@ -22,7 +24,7 @@ class SmsLogic extends BaseLogic
         }
 
         $service = new VerificationCodeService();
-        if (!$service->send($scene, $mobile)) {
+        if (!$service->send($context, $scene, $mobile)) {
             self::setError($service->getError());
             return false;
         }

@@ -10,6 +10,8 @@ use app\common\model\member\Member;
 use app\common\service\FileService;
 use app\common\service\ConfigService;
 use app\common\service\notice\VerificationCodeService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 class LoginLogic extends BaseLogic
 {
@@ -98,13 +100,13 @@ class LoginLogic extends BaseLogic
         }
     }
 
-    public static function mobileLogin(array $params): array|false
+    public static function mobileLogin(TenantContext|TenantSystemContext $context, array $params): array|false
     {
         try {
             self::assertLoginWayEnabled(2);
             $mobile = (string) $params['mobile'];
             $service = new VerificationCodeService();
-            if (!$service->verify(NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
+            if (!$service->verify($context, NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
                 throw new \RuntimeException($service->getError());
             }
 
@@ -136,7 +138,7 @@ class LoginLogic extends BaseLogic
         }
     }
 
-    public static function resetPassword(array $params): bool
+    public static function resetPassword(TenantContext|TenantSystemContext $context, array $params): bool
     {
         try {
             $member = Member::where('mobile', (string) $params['mobile'])->findOrEmpty();
@@ -146,6 +148,7 @@ class LoginLogic extends BaseLogic
 
             $service = new VerificationCodeService();
             if (!$service->verify(
+                $context,
                 NoticeSceneEnum::RESET_PASSWORD,
                 (string) $params['mobile'],
                 (string) $params['code']

@@ -3,11 +3,20 @@ declare(strict_types=1);
 
 namespace app\adminapi\validate\notice;
 
-use app\common\model\notice\NoticeScene;
+use app\common\service\notice\NoticeTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
 
 class NoticeSceneValidate extends Validate
 {
+    private ?TenantContext $tenantContext = null;
+
+    public function forTenant(TenantContext $context): self
+    {
+        $this->tenantContext = $context;
+        return $this;
+    }
+
     protected $rule = [
         'id'              => 'require|integer|gt:0|checkScene',
         'sms_template_id' => 'max:100|checkTemplateId',
@@ -30,7 +39,10 @@ class NoticeSceneValidate extends Validate
 
     protected function checkScene($value): bool|string
     {
-        return NoticeScene::findOrEmpty((int) $value)->isEmpty()
+        return NoticeTenantRepository::scenes($this->requireContext())
+            ->where('id', (int) $value)
+            ->findOrEmpty()
+            ->isEmpty()
             ? '通知场景不存在'
             : true;
     }
@@ -55,5 +67,10 @@ class NoticeSceneValidate extends Validate
         return str_contains($content, '${code}')
             ? true
             : '短信内容必须包含 ${code} 变量';
+    }
+
+    private function requireContext(): TenantContext
+    {
+        return $this->tenantContext ?? throw new \RuntimeException('缺少可信租户上下文');
     }
 }

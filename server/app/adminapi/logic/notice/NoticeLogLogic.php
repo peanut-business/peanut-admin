@@ -5,6 +5,8 @@ namespace app\adminapi\logic\notice;
 
 use app\common\logic\BaseLogic;
 use app\common\model\notice\NoticeLog;
+use app\common\service\notice\NoticeTenantContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /**
  * 通知发送日志 Logic（只读）
@@ -23,12 +25,14 @@ class NoticeLogLogic extends BaseLogic
      * 列表（分页）
      * @param array<string,mixed> $params
      */
-    public static function lists(array $params): array
+    public static function lists(TenantContext $context, array $params): array
     {
+        $tenantId = NoticeTenantContext::tenantId($context);
         $query = NoticeLog::alias('l')
-            ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.id = l.scene_id')
-            ->field(self::SAFE_FIELDS);
+            ->leftJoin('notice_template t', 't.tenant_id = l.tenant_id AND t.id = l.template_id')
+            ->leftJoin('notice_scene s', 's.tenant_id = l.tenant_id AND s.id = l.scene_id')
+            ->field(self::SAFE_FIELDS)
+            ->where('l.tenant_id', $tenantId);
 
         if (!empty($params['receiver'])) {
             $query->whereLike('l.receiver', '%' . $params['receiver'] . '%');
@@ -64,12 +68,14 @@ class NoticeLogLogic extends BaseLogic
     /**
      * 日志详情
      */
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
+        $tenantId = NoticeTenantContext::tenantId($context);
         $log = NoticeLog::alias('l')
-            ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.id = l.scene_id')
+            ->leftJoin('notice_template t', 't.tenant_id = l.tenant_id AND t.id = l.template_id')
+            ->leftJoin('notice_scene s', 's.tenant_id = l.tenant_id AND s.id = l.scene_id')
             ->field(self::SAFE_FIELDS)
+            ->where('l.tenant_id', $tenantId)
             ->where('l.id', $id)
             ->findOrEmpty();
 

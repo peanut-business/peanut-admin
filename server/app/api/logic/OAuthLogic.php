@@ -18,6 +18,8 @@ use app\common\service\oauth\WechatOAuthTransport;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
 use think\facade\Db;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 微信 OAuth 登录、身份归一、绑定与受限首登补全。 */
 class OAuthLogic extends BaseLogic
@@ -131,7 +133,7 @@ class OAuthLogic extends BaseLogic
         }
     }
 
-    public static function complete(array $params): array|false
+    public static function complete(TenantContext|TenantSystemContext $context, array $params): array|false
     {
         $rawTicket = trim((string)($params['ticket'] ?? ''));
         if ($rawTicket === '') {
@@ -175,6 +177,7 @@ class OAuthLogic extends BaseLogic
                 }
                 $verification = new VerificationCodeService();
                 if (!$verification->verify(
+                    $context,
                     NoticeSceneEnum::BIND_MOBILE,
                     $mobile,
                     (string)($params['code'] ?? '')

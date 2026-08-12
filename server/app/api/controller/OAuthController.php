@@ -6,6 +6,7 @@ namespace app\api\controller;
 use app\api\logic\OAuthLogic;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
+use app\common\service\notice\NoticeTenantContext;
 
 class OAuthController extends BaseApiController
 {
@@ -70,7 +71,10 @@ class OAuthController extends BaseApiController
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.complete');
         $params['code'] = (string)($params['verification_code'] ?? '');
-        $result = OAuthLogic::complete($params);
+        $result = OAuthLogic::complete(
+            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
+            $params
+        );
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
     }
 
