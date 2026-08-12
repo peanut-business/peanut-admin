@@ -127,6 +127,10 @@ jobs:
         working-directory: server
         run: php tests/Multitenancy/FileTenantIsolationTest.php
 
+      - name: Test PM01 platform operator boundary
+        working-directory: server
+        run: php tests/Multitenancy/PlatformOperatorBoundaryTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest
