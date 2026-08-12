@@ -4,6 +4,10 @@ declare(strict_types=1);
 namespace app\adminapi\http\middleware;
 
 use app\adminapi\service\OperationLogService;
+use app\common\service\audit\OperationLogDiagnostics;
+use app\common\service\audit\OperationLogTenantContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\facade\Log;
 
 /**
  * 操作日志中间件（原生 TP 风格）
@@ -20,15 +24,21 @@ class OperationLogMiddleware
     public function handle($request, \Closure $next)
     {
         try {
+            $context = OperationLogTenantContext::member($request);
+        } catch (\Throwable $exception) {
+            Log::warning('operation_log_tenant_context_unavailable', OperationLogDiagnostics::attributes(null));
+            throw $exception;
+        }
+        try {
             return $next($request);
         } finally {
             if (in_array(strtoupper((string)$request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
-                $this->record($request);
+                $this->record($context, $request);
             }
         }
     }
 
-    protected function record($request): void
+    protected function record(TenantContext $context, $request): void
     {
         $uri = strtolower(trim($request->pathinfo(), '/'));
         foreach ($this->except as $skip) {
@@ -41,6 +51,7 @@ class OperationLogMiddleware
 
         try {
             OperationLogService::record(
+                $context,
                 (int)($adminInfo['id'] ?? 0),
                 (string)($adminInfo['username'] ?? ''),
                 (string)$request->ip(),
@@ -48,7 +59,10 @@ class OperationLogMiddleware
                 (string)$request->method(),
                 $request->post()
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            Log::error('operation_log_write_failed', OperationLogDiagnostics::attributes($context) + [
+                'exception' => $exception::class,
+            ]);
             // 记录日志失败不得影响主流程
         }
     }

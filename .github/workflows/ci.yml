@@ -127,6 +127,10 @@ jobs:
         working-directory: server
         run: php tests/Multitenancy/FileTenantIsolationTest.php
 
+      - name: Test MT03 operation log tenant attribution
+        working-directory: server
+        run: php tests/Multitenancy/OperationLogTenantIsolationTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest

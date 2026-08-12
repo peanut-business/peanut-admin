@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\service;
 
-use app\common\model\log\OperationLog;
+use app\common\service\audit\OperationLogTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 管理端操作日志的唯一写入与脱敏入口。 */
 final class OperationLogService
@@ -25,6 +26,7 @@ final class OperationLogService
     ];
 
     public static function record(
+        TenantContext $context,
         int $adminId,
         string $username,
         string $ip,
@@ -32,7 +34,7 @@ final class OperationLogService
         string $method,
         mixed $params
     ): void {
-        OperationLog::create([
+        OperationLogTenantRepository::create($context, [
             'admin_id' => $adminId,
             'username' => $username,
             'ip' => $ip,
