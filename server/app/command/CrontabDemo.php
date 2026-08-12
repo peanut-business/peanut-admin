@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\common\service\crontab\ScheduledTenantContext;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
@@ -22,7 +23,12 @@ class CrontabDemo extends Command
 
     protected function execute(Input $input, Output $output)
     {
-        $msg = '[crontab:demo] executed at ' . date('Y-m-d H:i:s');
+        $scope = ScheduledTenantContext::require();
+        $msg = sprintf(
+            '[crontab:demo] tenant_id=%d executed at %s',
+            $scope->tenantId(),
+            date('Y-m-d H:i:s')
+        );
         Log::info($msg);
         $output->writeln($msg);
         return 0;
