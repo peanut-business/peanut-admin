@@ -127,6 +127,10 @@ jobs:
         working-directory: server
         run: php tests/Multitenancy/FileTenantIsolationTest.php
 
+      - name: Test MT03 operation log tenant attribution
+        working-directory: server
+        run: php tests/Multitenancy/OperationLogTenantIsolationTest.php
+
       - name: Test MT03 crontab tenant isolation
         working-directory: server
         run: php tests/Multitenancy/CrontabTenantIsolationTest.php

@@ -10,13 +10,31 @@ class XlsxExportService
 {
     public static function create(string $name, array $headings, array $rows): string
     {
+        return self::createInDirectory($name, $headings, $rows, '');
+    }
+
+    public static function createInDirectory(
+        string $name,
+        array $headings,
+        array $rows,
+        string $relativeDirectory
+    ): string
+    {
         if (!class_exists(ZipArchive::class)) {
             throw new \RuntimeException('服务器未安装 ZipArchive 扩展，无法导出 XLSX');
         }
         $name = preg_replace('/[\\\\\/:*?"<>|]+/u', '_', trim($name)) ?: '导出数据';
         $name = preg_replace('/\.xlsx$/i', '', $name) ?: '导出数据';
         $fileName = $name . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.xlsx';
-        $directory = public_path('storage/exports');
+        $relativeDirectory = trim(str_replace('\\', '/', $relativeDirectory), '/');
+        if ($relativeDirectory !== ''
+            && (!preg_match('#^[a-zA-Z0-9][a-zA-Z0-9/_-]*$#', $relativeDirectory)
+                || str_contains($relativeDirectory, '..'))) {
+            throw new \InvalidArgumentException('导出目录非法');
+        }
+        $relativePath = 'storage/exports'
+            . ($relativeDirectory === '' ? '' : '/' . $relativeDirectory);
+        $directory = public_path($relativePath);
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
             throw new \RuntimeException('导出目录创建失败');
         }
@@ -48,7 +66,7 @@ class XlsxExportService
         array_unshift($rows, $headings);
         $zip->addFromString('xl/worksheets/sheet1.xml', self::worksheet($rows));
         $zip->close();
-        return 'storage/exports/' . $fileName;
+        return $relativePath . '/' . $fileName;
     }
 
     private static function worksheet(array $rows): string
