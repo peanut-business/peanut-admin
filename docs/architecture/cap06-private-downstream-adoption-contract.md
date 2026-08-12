@@ -2,7 +2,7 @@
 
 > 任务：`P1-CROSS-PRODUCT-DOWNSTREAM-001`
 >
-> 状态：实施已授权
+> 状态：已完成
 >
 > 下游 owner：Peanut Admin 应用仓
 
@@ -14,16 +14,16 @@ Registry 版本或本地目录：
 | 身份 | 固定值 |
 | --- | --- |
 | Core 源仓 | `peanut-opensource/peanut-admin` |
-| Source commit | `db348c783ff8620fd77615294c946a36bca25a49` |
-| Source tree | `2511693481eaa811656e462a5e6640003a208836` |
-| 资格与修复记录 | CAP05 `3ca731804eb8291408e03c0ae18299d2b7db1cb7`；Core PR #18–#21；rollover PR #22 |
+| Source commit | `0f3c0a530f2b6369bf5883b2508f40a79501ed98` |
+| Source tree | `691cf4812d08dc4a3927a78331be3267aa1e9c77` |
+| 资格与修复记录 | CAP05 `3ca731804eb8291408e03c0ae18299d2b7db1cb7`；Core PR #18–#23；rollover PR #22 |
 | Composer 候选 | `peanut-admin/core@0.1.0-alpha.5` |
-| Composer 投影 | 694 files / 14 PSR-4 roots / SHA-256 `d079bf25aafa90c039481eabee722191012f4d2b88e39696acdc350930dd3d6a` |
+| Composer 投影 | 694 files / 14 PSR-4 roots / SHA-256 `8779231b00f8bd634635c246d569e896e36183f0d0ece8807584a8aa2632dcbd` |
 | npm 候选 | `@peanut-admin/admin@0.1.0-alpha.5` |
 | npm 投影 | 72 files / 15 exports / SHA-256 `5d01076276a4599682b65fcfde812f5fe201c3e597f2fab38b8ef23cbabe8c80` |
 | 下游基线 | `peanut-business/peanut-admin@09eeb747c3fbe4f261da4fa6900d777796ab717f` |
 
-CAP05 资格记录与两项 CAP06 MySQL 8.4 修复的固定 rollover 记录共同构成本合同
+CAP05 资格记录、两项 CAP06 MySQL 8.4 修复和 Collaboration revision guard 的固定记录共同构成本合同
 前置。CAP06 不重新运行 CAP01–CAP05、未受影响的 npm 投影或已通过的仓库门禁。
 
 ## 2. 不可变消费方式
@@ -105,3 +105,21 @@ CAP06 通过只证明 Peanut Admin 在单默认 Tenant 下可以通过公共 API
 精确 Core 候选。它不证明跨 Tenant Article 隔离或四 Runtime 全局原子事务，不发布
 包，不形成 `PA-DCS-ADOPT-01`，不宣称 MT01、MT02、多租户或 SaaS 已完成。下一阶段
 先单独批准 Alpha.5 公共发布，再以 Registry 版本和正式 Generator 执行 MT01 Gate。
+
+## 7. 完成记录
+
+- Core source/tree 固定为上表值；generated Composer split 固定为 commit
+  `ef06da45c9e77ae4b194bfc1f859ec007aa0e022` / tree
+  `e7beef2fe583ec6778e92b0d88702b1065fdb419`；npm 保持同 source commit 的
+  `packages/web` 子目录。
+- 应用实现 commit `d27e4b0ca2a17d5c0758bf743a6aead796276fdc` 通过唯一一次真实
+  MySQL 聚焦 Gate；最终 `dev` 为 `bafdf5b5aeb34d63e3b6c21a29817e688783ed21`
+  / tree `8193d219f2109f8d7b7ea0366a575cc2956715e4`。
+- 应用 PR #23 的 PHP 8.3 Composer strict validation 失败，不作为最终 CI
+  证据；最小 follow-up PR #24 在合入前 PHP 8.3、Web、PC、UniApp、Docs
+  site 五组全部通过，且没有重复 MySQL Gate。
+- Core adoption record 由 Core PR #24 合入 `dev`，merge
+  `76fa36e461ca73cb9a4e8367cbcc3d71e4672ba7`；其六组现有 CI 全部通过。
+- 结论仅为单默认 Tenant 的私有顺序消费证明；跨 Tenant Article 隔离仍归
+  MT02，四 Runtime 全局事务仍不在本合同内。下一 Gate 是独立 Alpha.5
+  公共发布决策。
