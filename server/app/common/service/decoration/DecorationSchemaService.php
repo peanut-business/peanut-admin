@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\decoration;
 
 use app\common\enum\decoration\DecorationEnum;
-use app\common\model\article\Article;
+use app\common\service\article\ArticleTenantRepository;
 use app\common\service\ProductAssetReferenceService;
 
 /** 业务装修 Schema、链接语义与资源 URI 的单一边界。 */
@@ -31,7 +31,7 @@ class DecorationSchemaService
         6 => ['#FD498F', '#FA444D', 'white'],
     ];
 
-    public static function validatePage(int $type, mixed $data, mixed $meta): void
+    public static function validatePage(object $context, int $type, mixed $data, mixed $meta): void
     {
         if (!in_array($type, DecorationEnum::ALL_TYPES, true)) {
             throw new \RuntimeException('装修页面类型无效');
@@ -46,11 +46,11 @@ class DecorationSchemaService
         if (!is_array($data) || array_is_list($data) === false) {
             throw new \RuntimeException('页面组件必须为数组');
         }
-        self::validateComponentSet($type, $data);
+        self::validateComponentSet($context, $type, $data);
         self::validateMeta($type, $meta);
     }
 
-    public static function validateTabbar(array $style, array $items): void
+    public static function validateTabbar(object $context, array $style, array $items): void
     {
         self::color((string)($style['default_color'] ?? ''), 'Tabbar 默认颜色');
         self::color((string)($style['selected_color'] ?? ''), 'Tabbar 选中颜色');
@@ -71,7 +71,7 @@ class DecorationSchemaService
                 throw new \RuntimeException('Tabbar 显示状态无效');
             }
             $visible += $isShow;
-            self::validateLink($item['link'] ?? null);
+            self::validateLink($context, $item['link'] ?? null);
             foreach (['selected', 'unselected'] as $field) {
                 if (!is_string($item[$field] ?? null)) {
                     throw new \RuntimeException('Tabbar 图标格式无效');
@@ -99,7 +99,7 @@ class DecorationSchemaService
         return self::transformResources($value, true);
     }
 
-    public static function validateLink(mixed $link): void
+    public static function validateLink(object $context, mixed $link): void
     {
         if (!is_array($link)) {
             throw new \RuntimeException('装修链接格式无效');
@@ -115,7 +115,8 @@ class DecorationSchemaService
         if ($type === 'article') {
             $articleId = filter_var($target, FILTER_VALIDATE_INT);
             if ($articleId === false || $articleId <= 0
-                || Article::where(['id' => $articleId, 'is_show' => 1])->findOrEmpty()->isEmpty()) {
+                || ArticleTenantRepository::articles($context)
+                    ->where(['id' => $articleId, 'is_show' => 1])->findOrEmpty()->isEmpty()) {
                 throw new \RuntimeException('文章链接必须指向存在且可见的文章');
             }
         }
@@ -135,7 +136,7 @@ class DecorationSchemaService
         }
     }
 
-    private static function validateComponentSet(int $type, array $components): void
+    private static function validateComponentSet(object $context, int $type, array $components): void
     {
         $expected = self::COMPONENTS[$type];
         $names = array_map(static fn($item) => is_array($item) ? (string)($item['name'] ?? '') : '', $components);
@@ -152,7 +153,7 @@ class DecorationSchemaService
             if (in_array($name, self::FIXED_COMPONENTS, true) && (int)($component['disabled'] ?? 0) !== 1) {
                 throw new \RuntimeException($name . ' 为固定组件，必须保持锁定');
             }
-            self::validateComponent($name, $component['content']);
+            self::validateComponent($context, $name, $component['content']);
         }
     }
 
@@ -169,7 +170,7 @@ class DecorationSchemaService
         }
     }
 
-    private static function validateComponent(string $name, array $content): void
+    private static function validateComponent(object $context, string $name, array $content): void
     {
         if (in_array($name, self::FIXED_COMPONENTS, true)) {
             if ($content !== []) {
@@ -181,12 +182,12 @@ class DecorationSchemaService
             self::binary($content['enabled'] ?? null, '轮播图启用状态');
             self::oneOfInt($content['style'] ?? null, [1, 2], '轮播图样式');
             self::oneOfInt($content['bg_style'] ?? null, [1, 2], '轮播图背景样式');
-            self::validateItems($content['data'] ?? null, 1, 5, true);
+            self::validateItems($context, $content['data'] ?? null, 1, 5, true);
             return;
         }
         if (in_array($name, ['middle-banner', 'user-banner'], true)) {
             self::binary($content['enabled'] ?? null, '广告启用状态');
-            self::validateItems($content['data'] ?? null, 1, 5, true);
+            self::validateItems($context, $content['data'] ?? null, 1, 5, true);
             return;
         }
         if ($name === 'nav') {
@@ -194,7 +195,7 @@ class DecorationSchemaService
             self::oneOfInt($content['style'] ?? null, [1, 2], '导航样式');
             self::rangeInt($content['per_line'] ?? null, 1, 5, '每行导航数');
             self::rangeInt($content['show_line'] ?? null, 1, 2, '导航显示行数');
-            self::validateItems($content['data'] ?? null, 1, 100, true);
+            self::validateItems($context, $content['data'] ?? null, 1, 100, true);
             return;
         }
         if ($name === 'my-service') {
@@ -202,7 +203,7 @@ class DecorationSchemaService
             if (mb_strlen(trim((string)($content['title'] ?? ''))) > 20) {
                 throw new \RuntimeException('服务标题最多 20 个字');
             }
-            self::validateItems($content['data'] ?? null, 1, 100, true);
+            self::validateItems($context, $content['data'] ?? null, 1, 100, true);
             return;
         }
         if ($name === 'customer-service') {
@@ -220,13 +221,13 @@ class DecorationSchemaService
         }
         if ($name === 'pc-banner') {
             self::binary($content['enabled'] ?? null, 'PC Banner 启用状态');
-            self::validateItems($content['data'] ?? null, 1, 10, false);
+            self::validateItems($context, $content['data'] ?? null, 1, 10, false);
             return;
         }
         throw new \RuntimeException('未知装修组件');
     }
 
-    private static function validateItems(mixed $items, int $min, int $max, bool $showAllowed): void
+    private static function validateItems(object $context, mixed $items, int $min, int $max, bool $showAllowed): void
     {
         if (!is_array($items) || count($items) < $min || count($items) > $max) {
             throw new \RuntimeException("装修组件条目必须为 {$min}～{$max} 项");
@@ -235,7 +236,7 @@ class DecorationSchemaService
             if (!is_array($item) || !is_string($item['image'] ?? null) || !is_string($item['name'] ?? null)) {
                 throw new \RuntimeException('装修组件条目格式无效');
             }
-            self::validateLink($item['link'] ?? null);
+            self::validateLink($context, $item['link'] ?? null);
             if ($showAllowed && isset($item['is_show'])) {
                 self::binary($item['is_show'], '条目显示状态');
             }

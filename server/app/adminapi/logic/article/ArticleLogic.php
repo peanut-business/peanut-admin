@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\adminapi\logic\article;
 
 use app\common\logic\BaseLogic;
-use app\common\model\article\Article;
-use app\common\model\article\ArticleCate;
+use app\common\service\article\ArticleTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 文章管理 Logic。 */
 class ArticleLogic extends BaseLogic
@@ -14,7 +14,7 @@ class ArticleLogic extends BaseLogic
     private const PAGE_SIZE_MAX = 25000;
 
     /** 分页列表。 */
-    public static function lists(array $params): array|false
+    public static function lists(TenantContext $context, array $params): array|false
     {
         try {
             if (in_array((int) ($params['export'] ?? 0), [1, 2], true)) {
@@ -27,7 +27,7 @@ class ArticleLogic extends BaseLogic
                 ? self::PAGE_SIZE_MAX
                 : max(1, min(self::PAGE_SIZE_MAX, (int) ($params['page_size'] ?? self::PAGE_SIZE_DEFAULT)));
 
-            $query = Article::field(self::fields());
+            $query = ArticleTenantRepository::articles($context)->field(self::fields());
             if (!empty($params['title'])) {
                 $query->whereLike('title', '%' . $params['title'] . '%');
             }
@@ -49,7 +49,7 @@ class ArticleLogic extends BaseLogic
             }
 
             $lists = $query->page($pageNo, $pageSize)->select()->toArray();
-            $cateNames = self::cateNames(array_column($lists, 'cid'));
+            $cateNames = self::cateNames($context, array_column($lists, 'cid'));
             foreach ($lists as &$row) {
                 $row = self::formatRow($row, $cateNames);
             }
@@ -68,25 +68,31 @@ class ArticleLogic extends BaseLogic
         }
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        $article = Article::field(self::fields())->findOrEmpty($id);
+        $article = ArticleTenantRepository::articles($context)->field(self::fields())->where('id', $id)->findOrEmpty();
         if ($article->isEmpty()) {
             return [];
         }
-        return self::formatRow($article->toArray(), self::cateNames([(int) $article['cid']]));
+        return self::formatRow($article->toArray(), self::cateNames($context, [(int) $article['cid']]));
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
-        Article::create(self::writeData($params));
+        self::requireCategory($context, (int) $params['cid']);
+        ArticleTenantRepository::createArticle($context, self::writeData($params));
         return true;
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
         try {
-            Article::update(['id' => (int) $params['id']] + self::writeData($params));
+            self::requireCategory($context, (int) $params['cid']);
+            $article = ArticleTenantRepository::articles($context)->where('id', (int) $params['id'])->findOrEmpty();
+            if ($article->isEmpty()) {
+                throw new \RuntimeException('资讯不存在');
+            }
+            $article->save(self::writeData($params));
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -94,15 +100,24 @@ class ArticleLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): bool
+    public static function delete(TenantContext $context, int $id): bool
     {
-        Article::destroy($id);
+        $article = ArticleTenantRepository::articles($context)->where('id', $id)->findOrEmpty();
+        if ($article->isEmpty()) {
+            self::setError('资讯不存在');
+            return false;
+        }
+        $article->delete();
         return true;
     }
 
-    public static function updateStatus(int $id, int $isShow): bool
+    public static function updateStatus(TenantContext $context, int $id, int $isShow): bool
     {
-        Article::update(['id' => $id, 'is_show' => $isShow]);
+        $updated = ArticleTenantRepository::articles($context)->where('id', $id)->update(['is_show' => $isShow]);
+        if ($updated !== 1) {
+            self::setError('资讯不存在');
+            return false;
+        }
         return true;
     }
 
@@ -132,10 +147,17 @@ class ArticleLogic extends BaseLogic
     }
 
     /** @return array<int,string> */
-    private static function cateNames(array $ids): array
+    private static function cateNames(TenantContext $context, array $ids): array
     {
         $ids = array_values(array_unique(array_map('intval', $ids)));
-        return $ids === [] ? [] : ArticleCate::whereIn('id', $ids)->column('name', 'id');
+        return $ids === [] ? [] : ArticleTenantRepository::categories($context)->whereIn('id', $ids)->column('name', 'id');
+    }
+
+    private static function requireCategory(TenantContext $context, int $id): void
+    {
+        if (ArticleTenantRepository::categories($context)->where('id', $id)->findOrEmpty()->isEmpty()) {
+            throw new \RuntimeException('所属栏目必须存在');
+        }
     }
 
     private static function formatRow(array $row, array $cateNames): array

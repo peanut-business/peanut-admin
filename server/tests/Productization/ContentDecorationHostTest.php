@@ -81,20 +81,20 @@ expectContentDecoration(
     'article category ownership validation is missing'
 );
 expectContentDecoration(
-    str_contains($articleValidate, 'ArticleCate::findOrEmpty'),
-    'article category existence is not checked'
+    str_contains($articleValidate, 'ArticleTenantRepository::categories'),
+    'article category existence bypasses Tenant-first ownership'
 );
 
 $categoryLogic = (string)file_get_contents(
     $serverRoot . '/app/adminapi/logic/article/ArticleCateLogic.php'
 );
-expectContentDecoration(str_contains($categoryLogic, "ArticleCate::where('id', \$id)->lock(true)"), 'category delete must lock the category');
-expectContentDecoration(str_contains($categoryLogic, "Article::where('cid', \$id)->lock(true)"), 'occupied category delete must fail closed');
+expectContentDecoration(str_contains($categoryLogic, 'ArticleTenantRepository::categories'), 'category delete bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($categoryLogic, 'ArticleTenantRepository::articles'), 'occupied category check bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($categoryLogic, 'lock(true)'), 'category delete must lock tenant-owned rows');
 
 $articleLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/article/ArticleLogic.php');
-foreach (['Article::create', 'Article::update', 'Article::destroy'] as $writer) {
-    expectContentDecoration(str_contains($articleLogic, $writer), 'article lifecycle owner is missing: ' . $writer);
-}
+expectContentDecoration(str_contains($articleLogic, 'ArticleTenantRepository::createArticle'), 'article create bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($articleLogic, 'ArticleTenantRepository::articles'), 'article mutation bypasses Tenant-first ownership');
 
 $pageLogic = (string)file_get_contents(
     $serverRoot . '/app/adminapi/logic/decoration/DecorationPageLogic.php'
