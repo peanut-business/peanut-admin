@@ -5,13 +5,17 @@ namespace app\adminapi\controller\log;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\log\OperationLogLogic;
+use app\common\service\audit\OperationLogTenantContext;
 
 class OperationLogController extends BaseAdminController
 {
     public function lists()
     {
         try {
-            $res = OperationLogLogic::lists($this->request->get());
+            $res = OperationLogLogic::lists(
+                OperationLogTenantContext::member($this->request),
+                $this->request->get()
+            );
         } catch (\Throwable $e) {
             return $this->fail($e->getMessage());
         }
@@ -24,6 +28,7 @@ class OperationLogController extends BaseAdminController
     public function clear()
     {
         OperationLogLogic::clear(
+            OperationLogTenantContext::member($this->request),
             $this->adminId,
             (string)($this->adminInfo['username'] ?? ''),
             (string)$this->request->ip()
