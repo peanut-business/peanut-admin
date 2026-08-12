@@ -127,6 +127,10 @@ jobs:
         working-directory: server
         run: php tests/Multitenancy/FileTenantIsolationTest.php
 
+      - name: Test MT03 crontab tenant isolation
+        working-directory: server
+        run: php tests/Multitenancy/CrontabTenantIsolationTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest
