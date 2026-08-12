@@ -36,4 +36,3 @@ final class OperationLogTenantContext
             && $context->requestId !== '';
     }
 }
-

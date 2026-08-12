@@ -53,4 +53,3 @@ ALTER TABLE `pa_operation_log`
   ADD KEY `idx_operation_log_tenant_created` (`tenant_id`, `create_time`, `id`),
   ADD CONSTRAINT `fk_operation_log_tenant`
     FOREIGN KEY (`tenant_id`) REFERENCES `pa_tenant` (`id`) ON DELETE RESTRICT;
-

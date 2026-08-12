@@ -31,4 +31,3 @@ final class OperationLogTenantRepository
         return $row->toArray();
     }
 }
-
