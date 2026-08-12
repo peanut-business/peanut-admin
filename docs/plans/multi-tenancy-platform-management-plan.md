@@ -59,16 +59,17 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 | CAP01–CAP04 Core Runtime | 已完成并合入 Core `dev` | Core PR #7、#9、#10、#14；禁止重复验收 |
 | CAP05 产品中性 fixture 修复 | 已完成并合入 Core `dev` | [Core PR #16](https://github.com/peanut-opensource/peanut-admin/pull/16)；source `14010993e47f5e3082ab8f0b53456f282b71f086`；tree `3fa7e79730ec9ed8f0349dc1c0d24fa72cfda54f` |
 | CAP05 双投影资格 | 已通过并合入 Core `dev` | Composer `ca30576a…e5c0e`；npm `5d010762…8c80`；Core PR #17 merge `3ca731804eb8291408e03c0ae18299d2b7db1cb7` |
-| CAP06 MySQL 8.4 修复 | 已完成，rollover 记录验收中 | Core source `db348c783ff8620fd77615294c946a36bca25a49` / tree `2511693481eaa811656e462a5e6640003a208836`；PR #18–#22 |
-| CAP06 Peanut Admin 私有采用 | 合同已更新，等待 generated split 与单默认 Tenant 验收 | Composer `d079bf25…dd3d6a`；retained npm `5d010762…8c80`；不宣称跨 Tenant Article 隔离或全局事务 |
+| CAP06 MySQL 8.4 / Collaboration 修复 | 已完成并固定 | Core source `0f3c0a530f2b6369bf5883b2508f40a79501ed98` / tree `691cf4812d08dc4a3927a78331be3267aa1e9c77`；Core PR #18–#23 |
+| CAP06 Peanut Admin 私有采用 | 已完成 | 应用 PR #23 实现、PR #24 最终五组 CI；`dev` `bafdf5b5aeb34d63e3b6c21a29817e688783ed21`；Core adoption record PR #24 merge `76fa36e461ca73cb9a4e8367cbcc3d71e4672ba7`；不宣称跨 Tenant Article 隔离或全局事务 |
+| Alpha.5 公共发布 | 预检/决策中 | CAP06 已解除前置；发布前仍须固定新候选、Registry 唯一性、owner/凭据、provenance 与隔离 consumer probes |
 
 中断后恢复步骤：
 
 1. 读取两个仓库根 `AGENTS.md`，确认工作目录仍为 `peanut-admin` 和 `peanut-admin-core`。
-2. 先合入 CAP06 合同提交，不修改依赖、Runtime 或 split 仓。
-3. 按 CAP06 白名单生成 Composer split 候选、精确锁定两个投影并执行唯一产品采用流。
-4. 通过后回写 Core adoption record，再进入独立 Alpha.5 发布决策。
-5. 不重复 CAP01–CAP05、两个投影或任何已通过门禁；CAP06 未通过前不启动 MT01。
+2. CAP06 已完成；不得重复其真实 MySQL Gate、CAP01–CAP05 或已通过 CI。
+3. 从独立 Alpha.5 公共发布决策恢复，先固定不可变候选与实时外部权限/版本事实。
+4. 发布完成并把应用切换到 Registry 精确版本后，冻结 MT01 合同和唯一候选身份。
+5. MT01 以前只保留已完成的 Generator 差距审计，不启动 MT02 写操作。
 
 ## 5. MT00：关闭当前在途工作
 
