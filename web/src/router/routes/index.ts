@@ -1,4 +1,5 @@
 import type { RouteRecordNormalized } from 'vue-router';
+import { deploymentMode, routesForDeployment } from '@/core/deployment-mode';
 
 const modules = import.meta.glob('./modules/*.ts', { eager: true });
 const externalModules = import.meta.glob('./externalModules/*.ts', {
@@ -17,9 +18,14 @@ function formatModules(_modules: any, result: RouteRecordNormalized[]) {
   return result;
 }
 
-export const appRoutes: RouteRecordNormalized[] = formatModules(modules, []);
+const mode = deploymentMode(import.meta.env.VITE_DEPLOYMENT_MODE);
 
-export const appExternalRoutes: RouteRecordNormalized[] = formatModules(
-  externalModules,
-  []
-);
+export const appRoutes: RouteRecordNormalized[] = routesForDeployment(
+  formatModules(modules, []),
+  mode
+) as RouteRecordNormalized[];
+
+export const appExternalRoutes: RouteRecordNormalized[] = routesForDeployment(
+  formatModules(externalModules, []),
+  mode
+) as RouteRecordNormalized[];
