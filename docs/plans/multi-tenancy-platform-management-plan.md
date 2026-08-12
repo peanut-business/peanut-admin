@@ -39,7 +39,7 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 | 阶段 | 目标 | 状态 |
 | --- | --- | --- |
 | MT00 | 关闭在途核心能力和包/文档事实冲突 | 进行中 |
-| MT01 | 冻结公司级 Core/Generator 承接基线 | 未开始 |
+| MT01 | 冻结公司级 Core/Generator 承接基线 | 进行中（合同与首个实现切片） |
 | MT02 | Peanut Admin 采用单默认 Tenant | 未开始 |
 | MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 未开始 |
 | PM01 | 完成本实例 Tenant 平台管理 | 未开始 |
@@ -52,7 +52,8 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 
 ### 当前恢复指针
 
-更新时间：2026-08-12。当前阶段为 `MT00-CAP06`，恢复时以远端 PR 和精确提交为准：
+更新时间：2026-08-12 17:05 CST。当前并行阶段为 `MT00-ALPHA5` 与
+`MT01-GENERATOR`，恢复时以远端 PR 和精确提交为准：
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
@@ -61,15 +62,26 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 | CAP05 双投影资格 | 已通过并合入 Core `dev` | Composer `ca30576a…e5c0e`；npm `5d010762…8c80`；Core PR #17 merge `3ca731804eb8291408e03c0ae18299d2b7db1cb7` |
 | CAP06 MySQL 8.4 / Collaboration 修复 | 已完成并固定 | Core source `0f3c0a530f2b6369bf5883b2508f40a79501ed98` / tree `691cf4812d08dc4a3927a78331be3267aa1e9c77`；Core PR #18–#23 |
 | CAP06 Peanut Admin 私有采用 | 已完成 | 应用 PR #23 实现、PR #24 最终五组 CI；`dev` `bafdf5b5aeb34d63e3b6c21a29817e688783ed21`；Core adoption record PR #24 merge `76fa36e461ca73cb9a4e8367cbcc3d71e4672ba7`；不宣称跨 Tenant Article 隔离或全局事务 |
-| Alpha.5 公共发布 | 预检/决策中 | CAP06 已解除前置；发布前仍须固定新候选、Registry 唯一性、owner/凭据、provenance 与隔离 consumer probes |
+| Alpha.5 发布合同/provenance | 合同已合入，资格 PR 在途 | Core `dev` `3a21580db0602e4f16593a7214308e4f403b1f8f`；publication PR #26、provenance contract PR #27 已全绿后合入；资格 PR #32 固定 artifact `aeeff105df4960db6a70da7ee5597da9a85abdaa`、`packages/web` tree `562043a0a294392a66ea0a305de6554d02646bc8`、72 files、15 exports、SHA-256 `0397260512cb167f3705ddc89d6c03553420339d342ad2f7348ecb52eb7b86a3` |
+| Alpha.5 外部身份 | 局部阻塞 | GitHub `npm-release` environment 已建立且仅允许 `dev`；npm 身份 `xingkoo` 对 public 包有权限，`latest=alpha.2`、`alpha=alpha.4`；npm 网站绑定 exact workflow/environment 需要账号再认证，禁止猜测或记录密码；只阻塞 npm 发布与最终 Registry probe |
+| MT01 Generator 合同 | PR 在途 | Core PR #28，合同 commit `852e5dca4e333a023a5ec3b7ee52abe46384a115`；最终 Registry 字段保持 `PENDING_ALPHA5`，`PA-DCS-ADOPT-01` 保持 `UNKNOWN` |
+| MT01 Generator 实现 | PR 在途 | Core PR #29 head `6d0eba97d745e83314bd6e2f4d69ee96713796cb`；净写集仅 `ProjectGenerator.php` 与 `tests/project-generator/run.php`；参数化、example 完整移除、确定性 fixture 与 Generator digest 身份已实现，自动化组延期给 integration owner |
+| MT01 Generator integration | 合同 PR 在途 | Core PR #30 / commit `ba25b8958f06cb8e977ecbf496d154d5586d0fbf`；实现全绿合入后只 reseal `source-baseline.json`，并各运行一次 `run.php` 与 PHP 8.3 static group |
 
 中断后恢复步骤：
 
 1. 读取两个仓库根 `AGENTS.md`，确认工作目录仍为 `peanut-admin` 和 `peanut-admin-core`。
 2. CAP06 已完成；不得重复其真实 MySQL Gate、CAP01–CAP05 或已通过 CI。
-3. 从独立 Alpha.5 公共发布决策恢复，先固定不可变候选与实时外部权限/版本事实。
-4. 发布完成并把应用切换到 Registry 精确版本后，冻结 MT01 合同和唯一候选身份。
-5. MT01 以前只保留已完成的 Generator 差距审计，不启动 MT02 写操作。
+3. 对 Core #28/#32 只在各自最新 head 的六项声明检查全部
+   `COMPLETED/SUCCESS` 后手动合入；禁止 auto-merge 或借用旧 head 结果。
+4. #28 合入后线性更新 #29；其全绿合入后按 #30 integration 合同 reseal 并
+   只运行一次两个 Generator 组。不得把 PR CI 冒充 MT01 Gate。
+5. #32 合入后新增 exact-commit OIDC workflow；npm trusted publisher 完成再认证并
+   绑定 exact workflow 与 `npm-release` environment 后才允许发布。随后完成
+   Composer/npm clean Registry probes 与最终身份注入。
+6. Alpha.5 只阻塞最终版本/Registry 字段和 `PA-DCS-ADOPT-01` 提名；MT01 的空库、
+   fail-closed、失败注入、example 删除和 Admin Web fixture 可继续独立推进。
+7. 不启动 MT02；不重复 CAP01–CAP06、CAP06 MySQL 或任何已绿检查。
 
 ## 5. MT00：关闭当前在途工作
 
