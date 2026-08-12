@@ -127,6 +127,18 @@ jobs:
         working-directory: server
         run: php tests/Multitenancy/FileTenantIsolationTest.php
 
+      - name: Test MT03 operation log tenant attribution
+        working-directory: server
+        run: php tests/Multitenancy/OperationLogTenantIsolationTest.php
+
+      - name: Test MT03 crontab tenant isolation
+        working-directory: server
+        run: php tests/Multitenancy/CrontabTenantIsolationTest.php
+
+      - name: Test MT03 hot-search tenant ownership
+        working-directory: server
+        run: php tests/Multitenancy/HotSearchTenantIsolationTest.php
+
       - name: Test PM01 platform operator boundary
         working-directory: server
         run: php tests/Multitenancy/PlatformOperatorBoundaryTest.php

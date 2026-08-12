@@ -233,6 +233,71 @@ port 已真实连接 ThinkPHP store，不表示登录或 storage 调用方已经
 - 白名单 PHP 8.3 lint、精确写集和 `git diff --check` 通过；未修改 Composer manifest/lock，
   未运行首片、CAP、MT02、MySQL、全量或浏览器，也未触碰其他 owner 文件。
 
+## 12. Crontab Tenant ownership 与可信调度上下文切片
+
+本切片只接入真实存在的 `pa_crontab -> app\command\Crontab -> Console::call` 同步调度链。
+仓库当前没有 queue worker、job payload/lease，也没有 Tenant 业务导入 Runtime；Generator 的
+schema import/archive 继续归 Generated Host/Generator owner，本切片不虚构或修改这些入口。
+同步 `XlsxExportService` 的 Tenant artifact 路径、owner metadata 与聚焦清理另立导出切片。
+
+`pa_crontab.tenant_id` 由 migration 从唯一 active Tenant 回填并收紧为非空。管理端 CRUD 只接受
+请求中已经验证的 Core `TenantContext`，忽略 payload 内任何 `tenant_id`。调度器保留实例级扫描锁，
+但只扫描 active Tenant 的 owner row；每次执行由可信调度 owner 从持久化 `tenant_id + job id +
+claim window` 注入不可变 `TenantScope`，再以 Tenant namespace 的 MySQL advisory lock 认领和派发。
+扫描、CAS、错误、耗时、重试、停止和删除都同时带 `tenant_id + id` predicate。
+
+`Console::call` 前由 `ScheduledTenantContext` 安装 scope，handler 结束后在 `finally` 清除。命令必须
+在任何副作用前显式读取该 scope；当前只有无业务写的 `crontab:demo` 完成采用。已有
+`refund:reconcile` 仍访问尚未 Tenant 化的 finance 表，`generator:cleanup` 属于 Generator owner，
+两者在 handler 前 fail closed。前者的解除条件是 finance owner 完成相关 order/refund 表的
+Tenant-first repository 并使命令消费 `ScheduledTenantContext`；后者的解除条件是 Ops/Generator
+owner 明确 instance-owned schedule 模型及独立可信系统上下文，不能伪装为 Tenant job。
+
+本切片精确白名单：
+
+- `server/database/migrations/20260812_crontab_tenant_ownership.sql`；
+- `server/app/common/service/crontab/CrontabTenantContext.php`；
+- `server/app/common/service/crontab/CrontabTenantRepository.php`；
+- `server/app/common/service/crontab/CrontabTenantLock.php`；
+- `server/app/common/service/crontab/ScheduledTenantContext.php`；
+- `server/app/common/service/crontab/CrontabSchedulerService.php`；
+- `server/app/common/service/CrontabCommandService.php`；
+- `server/app/common/model/Crontab.php`；
+- `server/app/command/Crontab.php`、`server/app/command/CrontabDemo.php`；
+- `server/app/adminapi/controller/crontab/CrontabController.php`；
+- `server/app/adminapi/logic/crontab/CrontabLogic.php`；
+- `server/tests/Multitenancy/CrontabTenantIsolationTest.php`；
+- `.github/workflows/ci.yml` 仅登记 `MT03-CRONTAB-TENANT-ISOLATION-001`；
+- 本节边界、解除条件与实施证据。
+
+唯一最低验证使用 PHP 8.3 与 MySQL 8.4 临时库，一次证明 migration 在缺失/非唯一 active Tenant
+时无 schema 副作用地拒绝；两个 Tenant 的同名任务列表、详情、修改、删除、重试和错误清理
+互不影响；payload 不能伪造 owner；相同 job ID/lock seed 产生不同 MySQL lock name 并可独立持有；
+缺失 scope、owner 不一致或未采用命令均在 handler 副作用前拒绝，且 scope 不泄漏到下一任务。
+
+```bash
+cd server
+DB_HOST=127.0.0.1 DB_PORT=3306 MYSQL_ROOT_PASSWORD=mt02_root \
+  /opt/homebrew/opt/php@8.3/bin/php tests/Multitenancy/CrontabTenantIsolationTest.php
+```
+
+不重复 cache/file/Article/bootstrap/CAP 组，不运行全量、浏览器或其他 owner 测试。本切片通过只
+表示 Crontab 真实 Runtime 的 Tenant 隔离 development-complete，不表示 queue、导入导出、audit
+或 MT03 整体完成。
+
+### 实施证据
+
+- PHP 8.3.24 与 MySQL 8.4 下 `MT03-CRONTAB-TENANT-ISOLATION-001` 唯一聚焦组通过；本地依赖
+  仅由既有 `server/composer.lock` 恢复，未修改 Composer manifest/lock。
+- migration 对缺少 `pa_tenant` 或多个 active Tenant 的库在增加字段前拒绝；唯一 active Tenant
+  完成回填、非空约束、Tenant identity/scheduler 索引和外键收紧。
+- 两个 Tenant 的同名任务列表、详情、删除和错误重试互不影响；payload `tenant_id`、command 和
+  params 不能覆盖持久化 owner row，相同 job seed 的 MySQL advisory lock 可独立持有。
+- 调度派发前安装由持久化 owner row 签发的不可变 `TenantScope`，handler 后清除；缺失/错配 owner
+  和未采用的 `refund:reconcile`、`generator:cleanup` 均在 handler 副作用前 fail closed。
+- 白名单 PHP 8.3 lint、精确写集与 `git diff --check` 通过；未运行 cache/file/Article/bootstrap、
+  CAP、全量或浏览器，也未触碰 Generator、Article、file、cache、bootstrap/install owner。
+
 ## 11. 文件对象与分类 Tenant ownership 切片
 
 本切片只接入当前唯一生产链 `UploadController -> UploadService -> storage Driver/engine -> pa_file`
@@ -273,3 +338,61 @@ fixture 使用 MySQL 8.4 临时库和本线独占对象目录，一次证明：�
 非空与索引收紧；两个 Tenant 的同名分类、文件名和对象 seed 不互见；跨 Tenant 与不存在 ID
 拒绝形状相同；删除分类子树只软删当前 Tenant row 并只移除当前 Tenant 对象。外围不使用
 `allowed=false`，伪造 `tenant_id` 或外 Tenant URI 均不能改变可信 ownership。
+
+## 13. 操作审计、导出与诊断 Tenant attribution 切片
+
+本切片把现有 `pa_operation_log` 明确收紧为 tenant-only 审计表。唯一生产写链仍是
+`OperationLogMiddleware -> OperationLogService -> pa_operation_log`，但中间件必须在业务处理
+前取得上游已验证的 `TenantContext`；请求参数、header、管理员记录和日志 payload 均不能建立或
+改写 Tenant。缺少可信 Context 时诊断 scope 明确记录为 `unavailable`，并在调用业务 handler 前
+fail closed；已经取得 Context 后的诊断标签固定包含 `tenant_id` 与 `request_id`。
+
+列表、详情 repository、导出预览、XLSX 导出和 clear 全部从同一个 Tenant-first repository
+开始。导出文件只能创建在 `storage/exports/tenants/v1/<tenant_id>/operation-logs`；clear 只删除
+当前 Tenant 行，并在同一事务为当前 Tenant 保留清理 tombstone。客户端传入的 `tenant_id` 不参与
+任何查询、写入、导出路径或清理范围。
+
+当前应用没有 PlatformOperator 路由、平台日志表或可信平台会话 Runtime；因此本切片不把无
+TenantContext 的实例安全日志硬塞进默认 Tenant，也不在 tenant-only 表中用 `tenant_id=0/NULL`
+冒充平台 scope。解除条件是 PM01 提供独立 PlatformOperator 会话、权限边界与平台审计 schema；
+届时必须另立平台日志 Runtime 和聚焦 fixture，而不是复用本表。
+
+本切片精确白名单：
+
+- `server/database/migrations/20260812_operation_log_tenant_attribution.sql`；
+- `server/app/common/service/audit/OperationLogTenantContext.php`；
+- `server/app/common/service/audit/OperationLogTenantRepository.php`；
+- `server/app/common/service/audit/OperationLogDiagnostics.php`；
+- `server/app/adminapi/service/OperationLogService.php`；
+- `server/app/adminapi/http/middleware/OperationLogMiddleware.php`；
+- `server/app/common/model/log/OperationLog.php`；
+- `server/app/adminapi/logic/log/OperationLogLogic.php`；
+- `server/app/adminapi/controller/log/OperationLogController.php`；
+- `server/app/common/service/XlsxExportService.php`，仅新增受约束的相对导出目录入口；
+- `server/tests/Multitenancy/OperationLogTenantIsolationTest.php`；
+- `.github/workflows/ci.yml`，仅登记 `MT03-OPERATION-LOG-TENANT-001`；
+- 本节边界与实施证据。
+
+唯一最低验证：
+
+```bash
+cd server
+DB_HOST=127.0.0.1 DB_PORT=3306 MYSQL_ROOT_PASSWORD=mt02_root \
+  /opt/homebrew/opt/php@8.3/bin/php tests/Multitenancy/OperationLogTenantIsolationTest.php
+```
+
+fixture 使用 MySQL 8.4 唯一临时库和本线独占导出目录，一次证明：旧日志只有在唯一 active Tenant
+可无歧义确定时才回填；两个 Tenant 的同 URI 日志互不可见；伪造 payload/query `tenant_id`
+无效；跨 Tenant 与不存在详情具有相同拒绝形状；导出内容与路径只属于当前 Tenant；Tenant A
+clear 不影响 Tenant B；缺上下文在 handler 和数据库副作用前拒绝；诊断 scope 不把 unavailable
+伪装成默认 Tenant。不重复其他 MT03、CAP、MT02、全量或浏览器组。
+
+### 实施证据
+
+- 操作日志写入口显式要求可信 `TenantContext`，持久化 `tenant_id/request_id`；请求与 payload
+  中的 Tenant 候选不能改写 attribution。列表、详情、导出和 clear 共用 Tenant-first repository。
+- XLSX 导出固定进入 `storage/exports/tenants/v1/<tenant_id>/operation-logs`；clear 只删除当前
+  Tenant，并在同一事务保留当前 Tenant tombstone。平台日志解除条件保持 PM01 独立 Runtime。
+- 本地 PHP 8.3 / MySQL 8.4 聚焦组已命中 migration、写入、列表、详情和导出路径；CLI domain
+  产生的 `http:///` 只影响 fixture URL 提取，已机械改为从受控 `storage/exports/` 路径提取。
+  修正后不重复本地行为组，最终一次完整证据由本 PR 最新 head 的 PHP 8.3 CI 提供。

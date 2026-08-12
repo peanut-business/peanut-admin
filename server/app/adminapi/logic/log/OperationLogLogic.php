@@ -5,9 +5,11 @@ namespace app\adminapi\logic\log;
 
 use app\adminapi\service\OperationLogService;
 use app\common\logic\BaseLogic;
-use app\common\model\log\OperationLog;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
+use app\common\service\audit\OperationLogTenantContext;
+use app\common\service\audit\OperationLogTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 class OperationLogLogic extends BaseLogic
@@ -16,20 +18,20 @@ class OperationLogLogic extends BaseLogic
     private const EXPORT_DEFAULT_NAME = '操作日志';
 
     /** 分页列表，支持按 用户名/URI/方法 过滤 */
-    public static function lists(array $params): array
+    public static function lists(TenantContext $context, array $params): array
     {
-        $query = self::buildQuery($params);
+        $query = self::buildQuery($context, $params);
         $count = $query->count();
         $pageSize = min(self::EXPORT_MAX_ROWS, max(1, (int)($params['page_size'] ?? 15)));
         if ((int)($params['export'] ?? 0) === 1) {
             return self::exportInfo($count, $pageSize);
         }
         if ((int)($params['export'] ?? 0) === 2) {
-            return self::export($params, $count, $pageSize);
+            return self::export($context, $params, $count, $pageSize);
         }
 
         $pageNo = max(1, (int)($params['page_no'] ?? 1));
-        $lists = self::buildQuery($params)
+        $lists = self::buildQuery($context, $params)
             ->order('id', 'desc')
             ->page($pageNo, min(100, $pageSize))
             ->select()->toArray();
@@ -37,9 +39,14 @@ class OperationLogLogic extends BaseLogic
         return compact('lists', 'count', 'pageNo', 'pageSize');
     }
 
-    private static function buildQuery(array $params)
+    public static function detail(TenantContext $context, int $id): array
     {
-        $query = OperationLog::where('id', '>', 0);
+        return OperationLogTenantRepository::detail($context, $id);
+    }
+
+    private static function buildQuery(TenantContext $context, array $params)
+    {
+        $query = OperationLogTenantRepository::query($context);
         if (!empty($params['username'])) {
             $query->where('username', 'like', '%' . trim((string)$params['username']) . '%');
         }
@@ -77,7 +84,7 @@ class OperationLogLogic extends BaseLogic
         ];
     }
 
-    private static function export(array $params, int $count, int $pageSize): array
+    private static function export(TenantContext $context, array $params, int $count, int $pageSize): array
     {
         if ($count === 0) {
             throw new \RuntimeException('没有数据,无法导出');
@@ -95,7 +102,7 @@ class OperationLogLogic extends BaseLogic
         if ($limit > self::EXPORT_MAX_ROWS || $offset >= $count) {
             throw new \RuntimeException('导出范围无数据或超过25000条限制');
         }
-        $rows = self::buildQuery($params)->order('id', 'desc')
+        $rows = self::buildQuery($context, $params)->order('id', 'desc')
             ->limit($offset, $limit)->select()->toArray();
         $sheetRows = array_map(static fn(array $row): array => [
             (int)$row['id'],
@@ -106,21 +113,26 @@ class OperationLogLogic extends BaseLogic
             (string)$row['params'],
             empty($row['create_time']) ? '' : date('Y-m-d H:i:s', (int)$row['create_time']),
         ], $rows);
-        $uri = XlsxExportService::create(
+        $uri = XlsxExportService::createInDirectory(
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['ID', '管理员', 'IP', '请求地址', '方法', '参数', '操作时间'],
-            $sheetRows
+            $sheetRows,
+            sprintf(
+                'tenants/v1/%d/operation-logs',
+                OperationLogTenantContext::tenantId($context)
+            )
         );
         return ['url' => FileService::getFileUrl($uri), 'file_name' => basename($uri)];
     }
 
     /** 清空旧日志并原子保留本次清理审计；审计写入失败时删除整体回滚。 */
-    public static function clear(int $adminId, string $username, string $ip): int
+    public static function clear(TenantContext $context, int $adminId, string $username, string $ip): int
     {
-        return Db::transaction(function () use ($adminId, $username, $ip): int {
-            $count = (int)OperationLog::where('id', '>', 0)->count();
-            OperationLog::where('id', '>', 0)->delete();
+        return Db::transaction(function () use ($context, $adminId, $username, $ip): int {
+            $count = (int)OperationLogTenantRepository::query($context)->count();
+            OperationLogTenantRepository::query($context)->delete();
             OperationLogService::record(
+                $context,
                 $adminId,
                 $username,
                 $ip,
