@@ -59,6 +59,10 @@ use app\adminapi\controller\article\ArticleCateController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
+use app\platform\controller\PlatformSessionController;
+use app\platform\controller\PlatformTenantBoundaryController;
+use app\platform\http\middleware\PlatformLoginMiddleware;
+use app\platform\http\middleware\PlatformPermissionMiddleware;
 use think\facade\Route;
 
 // ─── 免登录路由（不挂任何鉴权中间件） ──────────────────────────────────────
@@ -66,6 +70,16 @@ Route::post('api/user/login',  [LoginController::class, 'login']);
 Route::post('api/user/logout', [LoginController::class, 'logout']);
 Route::post('admin/login/login',  [LoginController::class, 'login']);
 Route::post('admin/login/logout', [LoginController::class, 'logout']);
+
+// Instance-local platform control plane. It never shares admin sessions, RBAC or routes.
+Route::post('api/platform/session/login', [PlatformSessionController::class, 'login']);
+Route::post('api/platform/session/refresh', [PlatformSessionController::class, 'refresh']);
+Route::post('api/platform/session/logout', [PlatformSessionController::class, 'logout']);
+Route::get('api/platform/session/info', [PlatformSessionController::class, 'info'])
+    ->middleware(PlatformLoginMiddleware::class);
+Route::get('api/platform/tenants/capabilities', [PlatformTenantBoundaryController::class, 'capabilities'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
 
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
 Route::group(function () {
