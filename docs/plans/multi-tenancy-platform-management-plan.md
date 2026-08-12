@@ -59,7 +59,7 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 | CAP01–CAP04 Core Runtime | 已完成并合入 Core `dev` | Core PR #7、#9、#10、#14；禁止重复验收 |
 | CAP05 产品中性 fixture 修复 | 已完成并合入 Core `dev` | [Core PR #16](https://github.com/peanut-opensource/peanut-admin/pull/16)；source `14010993e47f5e3082ab8f0b53456f282b71f086`；tree `3fa7e79730ec9ed8f0349dc1c0d24fa72cfda54f` |
 | CAP05 双投影资格 | 已通过并合入 Core `dev` | Composer `ca30576a…e5c0e`；npm `5d010762…8c80`；Core PR #17 merge `3ca731804eb8291408e03c0ae18299d2b7db1cb7` |
-| CAP06 Peanut Admin 私有采用 | 合同已授权，等待实现 | `docs/architecture/cap06-private-downstream-adoption-contract.md` |
+| CAP06 Peanut Admin 私有采用 | 合同已澄清，等待单默认 Tenant 实现验收 | `docs/architecture/cap06-private-downstream-adoption-contract.md`；不宣称跨 Tenant Article 隔离或全局事务 |
 
 中断后恢复步骤：
 
@@ -125,6 +125,9 @@ fixture、迁移映射和验收矩阵，但不得回退、复制或继续扩展�
 - 安装器创建默认 Tenant、Account、TenantMember 和首个 owner。
 - 现有管理员、角色、部门和岗位映射到租户模型。
 - 为业务表按所有权账本增加并回填 `tenant_id`，再收紧非空和复合唯一约束。
+- Article 必须正式增加并回填 `tenant_id`，所有读取和写入改为 Tenant-first 查询；
+  验收同 ID/可见状态下的跨 Tenant Article 拒绝，并为租户所有权建立必要的复合唯一
+  约束和索引。CAP06 的单默认 Tenant 采用证据不得替代本项验收。
 - Standalone 默认隐藏 Tenant 选择和平台入口，保持现有业务结果不变。
 - 禁止维护单租户/多租户两套业务 Service 或长期双字段兼容。
 

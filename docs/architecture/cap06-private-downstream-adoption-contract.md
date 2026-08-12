@@ -44,18 +44,29 @@ dist-tag 或稳定兼容承诺。公共 Alpha.5 发布后，应用必须切换�
 
 ## 3. 唯一产品采用流
 
-应用以既有 Article 作为产品资源，只增加 Host adapter，不复制 Core Runtime：
+CAP06 是**单默认 Tenant 下的 Alpha.5 私有真实顺序消费证明**。应用以既有
+Article 作为产品资源，只增加 Host adapter，不复制 Core Runtime：
 
 1. 由可信 `TenantContext`、现有管理权限策略和 Article typed-target 可见性共同形成
    `AuthorizedOperationContext`；任一缺失均 fail closed。
 2. 为 Article 创建不可变 `ArtifactRevision`，开启 Collaboration 会话并发布冻结版本。
 3. 在同一 Article target 上执行 EntitlementQuota reserve/commit。
 4. Workflow 只引用已发布 revision 的 key/digest，完成一次最小审批流。
-5. 另一个 Tenant 或没有权限/不可见 target 的调用必须返回同一非枚举拒绝形状，
-   且不得产生 revision、quota、workflow、audit 或 idempotency 的部分写入。
+5. 没有权限、Article 不存在或 target 不可见的调用必须返回同一非枚举拒绝形状；
+   拒绝必须发生在任何 Core 写入前，不得产生 revision、collaboration、quota、
+   workflow、audit 或 idempotency 写入。
 
 该采用流是产品 Host 证据，不新增公开路由、页面、业务 migration、通用 Runtime、
 双字段或兼容层。MT02 才负责把完整应用迁移到默认 Tenant；CAP06 不提前实施 MT02。
+
+Article 当前没有 `tenant_id`，因此 CAP06 不证明真实跨 Tenant Article 隔离。Article
+租户所有权、Tenant-first 查询、跨 Tenant Article 拒绝以及相应复合唯一约束和索引
+由 MT02 实施并验收；MT02 以前不得声称这些隔离已完成。
+
+Revision、Collaboration、Quota 和 Workflow 各自在自身公共 API 的事务边界内提交。
+CAP06 只证明按该顺序真实消费，不宣称四个 Runtime 组成一个全局原子事务。后序失败
+不得伪报成功；对 Core 已公开支持的可撤销状态（例如 pending quota reservation）
+执行确定性补偿。若未来需要全局 Saga 或事务协调器，必须另立合同，CAP06 不实现。
 
 ## 4. 精确写集
 
@@ -78,8 +89,9 @@ PC、UniApp、路由、Controller、现有业务表、安装器、生产部署�
 
 1. 静态核对两个 lock 的 source commit、split commit、版本、路径与两个 CAP05 digest。
 2. 在独立 MySQL 数据库只执行一次
-   `server/tests/Productization/CrossProductDownstreamAdoptionTest.php`，覆盖一条正向流、
-   一条跨 Tenant 拒绝和一条无权限/不可见 target 拒绝。
+   `server/tests/Productization/CrossProductDownstreamAdoptionTest.php`，覆盖一条单默认
+   Tenant 正向顺序流，以及权限缺失和 Article 不存在/不可见的同形前置拒绝；拒绝
+   场景必须证明任何 Core 写入均未发生，不得以权限开关冒充跨 Tenant Article 隔离。
 3. PR 自动 CI 负责既有 PHP lint 与 Web 类型/构建兼容；本地不重复同组验证。
 4. 通过后在 Core adoption record 中固定应用 commit/tree、两个 lock 来源、split
    commit/tree、命令和结果。
@@ -89,6 +101,7 @@ PC、UniApp、路由、Controller、现有业务表、安装器、生产部署�
 
 ## 6. 停止线
 
-CAP06 通过只证明 Peanut Admin 可以私有消费该精确 Core 候选。它不发布包，
-不形成 `PA-DCS-ADOPT-01`，不宣称 MT01、MT02、多租户或 SaaS 已完成。下一阶段先
-单独批准 Alpha.5 公共发布，再以 Registry 版本和正式 Generator 执行 MT01 Gate。
+CAP06 通过只证明 Peanut Admin 在单默认 Tenant 下可以通过公共 API 真实顺序消费该
+精确 Core 候选。它不证明跨 Tenant Article 隔离或四 Runtime 全局原子事务，不发布
+包，不形成 `PA-DCS-ADOPT-01`，不宣称 MT01、MT02、多租户或 SaaS 已完成。下一阶段
+先单独批准 Alpha.5 公共发布，再以 Registry 版本和正式 Generator 执行 MT01 Gate。
