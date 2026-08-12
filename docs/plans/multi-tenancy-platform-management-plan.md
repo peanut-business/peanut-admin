@@ -57,8 +57,8 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 
 ### 当前恢复指针
 
-更新时间：2026-08-12 19:33 CST。当前并行阶段为 `MT00-ALPHA5` 与
-`MT01-GENERATOR`，恢复时以远端 PR 和精确提交为准：
+更新时间：2026-08-13 01:03 CST。当前并行阶段为 `MT01-ADMIN-WEB`、
+`MT02`、`MT03` 与 `PM01`，恢复时以远端 PR 和精确提交为准：
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
@@ -71,22 +71,26 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | Alpha.5 npm 外部身份 | Trusted Publisher 阻塞 | Core PR #37 已全绿合入，merge `cf16e0ce1277fe1977c78876c94c1fdb744f158a`。唯一修复 run `31591456284` 通过固定 artifact/payload Gate并签名 provenance，但 npm PUT 返回 404/无权限；Registry 确认 Alpha.5 不存在。Chrome 登录态停在物理 security key；未读取/保存认证材料。禁止再次 dispatch，直到 package owner 完成 exact Trusted Publisher 绑定 |
 | MT01 Generator 参数化 | 已全绿合入 | Core PR #28/#29；实现 head `880fb0147252b8441f703c120cd5d00ee4678483`，merge `6f24e7ab42e37b56066a3b3be8833a54f087eb3`；content anchor `30202d73f46c6ab83bf57bd5ce64c24bba9569ec` / tree `d9ca2c39a3b1c3ffa69c26915e5b75732d2f7c35`；683 files；digest `b994a19e…6a96` |
 | MT01 Generator integration 修复合同 | 已全绿合入 | Core PR #35 merge `f95eec217d9e6fe154928105752ab88632e504fd`；首次集成失败提交 `0aae10e` 不得作为通过证据 |
-| MT01 Generator integration fixture | 唯一实现 PR 在途 | Core PR #36 head `f259bd6227b5c418f78a44c82e58fc5ea5a77bdb`；净写集仅 `tests/project-generator/run.php`、`static-contract.php`；已吸收 #34 必要一行并关闭 #34。六项中仅 `quality` 长时运行。全绿合入后，各运行一次 Generator 与 PHP 8.3 static 组 |
-| MT01 Generated Host 下一切片 | 合同 PR 在途 | Core PR #38 / commit `7e0c178bfaee727ffaf2c70bc1fe65a26f0eeec7`；八路径白名单、唯一 MySQL 8.4 集成组、外部 `fixture.record` 挂载/卸载、fail-closed 与原子失败注入已冻结；首次 `quality` 仅因 runner curl 60，失败 job 已唯一重跑且仍在运行 |
+| MT01 Generator integration | 已完成 | Core `dev` 已含参数化、deterministic/static 与 archive reseal；受控内容 anchor `2f8b3c027ef4f6066aa417dc10ebd56823fac047` / tree `67b3d68e2061ec6f7f066b50cee0fe1400ff5ed2`，683 files，digest `d30b740b…8afc6`；已通过组禁止重复 |
+| MT01 Generated Host 安全 Gate | 已完成 | Core PR #49 六项全绿后 merge `b69837fa65546f62bc916660b6875ae6441113a6`；MySQL 8.4 `MT01-GENERATED-HOST-INTEGRATION-001` 单次通过，证明 Tenant/Client、Module/permission/typed-target fail-closed 与 domain/audit/outbox/idempotency 无部分写；禁止重复 |
+| MT01 archive identity / 空库安装 | 已完成 | Core PR #51 单文件 reseal merge `9e519b6e672314d3e34751bcba0aab6b6d4c2bec`；PR #50 六项全绿后 merge `db5d810b4a1aa323b6085843e684d524c1747f2a`；固定 `9e519b6e…` 的空库安装、migration、启动与 non-overwrite group 通过；禁止重复 |
+| MT01 Admin Web smoke | 接口合同已合入，实现在途 | Core PR #52 六项全绿后 merge `fdba656c7a2bb8ea917530480235e1faecc4ef8d`，冻结六路径 preparation/smoke owner；PR #47 head `78815a8719544ec1879b0a87433a3a4c4ba25d56` 仍 Draft，仅拥有两个外部 Module 页面 fixture。缺失输入是可持续生成目录与脱敏两 Tenant fixture metadata；解除条件是六路径候选与 #47 两文件在同一最新 `dev` 候选组合并首次通过 `MT01-ADMIN-WEB-SMOKE-001` |
+| MT02 Article Tenant-first | 独立切片已完成 | 应用 PR #37 merge/head `4dc4bcacb44b63c7464e48b1415be2172ec2d3f2`；`ArticleTenantIsolationTest` MySQL 8.4 通过，远端 CI run `31610901375` completed/success；只声明 Article 切片，不声明 MT02 整体完成，禁止重复该组 |
 
 中断后恢复步骤：
 
 1. 读取两个仓库根 `AGENTS.md`，确认工作目录仍为 `peanut-admin` 和 `peanut-admin-core`。
 2. CAP06 已完成；不得重复其真实 MySQL Gate、CAP01–CAP05 或已通过 CI。
-3. Core PR #36/#38 只在各自最新 head 的六项声明检查全部
-   `COMPLETED/SUCCESS` 后手动合入；禁止 auto-merge、短轮询或借用旧 head 结果。
-4. #36 全绿合入后从最新 Core `dev` 重建 integration 三文件记录，各运行一次
-   `php tests/project-generator/run.php` 与默认 PHP 8.3 static 组。不得把 PR CI
-   冒充 MT01 Gate，也不得重复 CAP 或已通过 Generator 检查。
+3. Generated Host、Generator、archive reseal、空库安装和 Article Gate 已通过，禁止
+   重跑。Admin Web 只从 Core `dev@fdba656c...` 后的六路径 preparation owner 与 PR #47
+   两文件组合候选继续，首次运行唯一 `./scripts/test-mt01-admin-web-smoke`。
+4. Admin Web 若缺可持续生成目录、脱敏 fixture metadata 或真实 backend list/detail
+   接口，只阻塞本 smoke；不得复制 Generated Host backend、拦截 `/api/**` 或修改其
+   已封存五文件。格式/CI 失败不扩大到 MT02/MT03/PM01 owner。
 5. npm 发布不得再次 dispatch；先由 package owner 完成 exact repository/workflow/
    environment Trusted Publisher 绑定。绑定后才可新建外部动作合同；Composer 不再重复。
-6. Alpha.5 只阻塞最终版本/Registry 字段和 `PA-DCS-ADOPT-01` 提名；MT01 的空库、
-   fail-closed、失败注入、example 删除和 Admin Web fixture 可继续独立推进。
+6. Alpha.5 npm 只阻塞最终 npm Registry 字段和 `PA-DCS-ADOPT-01` 提名；Composer、
+   Generator、Generated Host 与空库证据均已固定。Admin Web fixture 继续独立推进。
 7. MT02 可并行推进不依赖最终 Generator/npm/Registry 身份的独立切片：默认
    Tenant/Account/TenantMember/owner bootstrap 与现有管理员/RBAC 映射，以及
    Article `tenant_id` 迁移、回填和 Tenant-first 读写。它们必须使用独立 owner、
