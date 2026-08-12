@@ -3,9 +3,13 @@ declare(strict_types=1);
 
 namespace app\adminapi\http\middleware;
 
+use app\adminapi\http\AdminRequest;
+use app\adminapi\service\AdminTenantContextResolver;
 use app\adminapi\service\AdminTokenService;
 use app\common\model\auth\Admin;
 use app\common\service\JsonService;
+use PDO;
+use think\facade\Db;
 
 /**
  * 登录中间件（原生 TP 风格）
@@ -16,6 +20,13 @@ use app\common\service\JsonService;
  */
 class LoginMiddleware
 {
+    private ?AdminTenantContextResolver $tenantContexts;
+
+    public function __construct(?AdminTenantContextResolver $tenantContexts = null)
+    {
+        $this->tenantContexts = $tenantContexts;
+    }
+
     public function handle($request, \Closure $next)
     {
         $token = AdminTokenService::tokenFromRequest($request);
@@ -55,6 +66,30 @@ class LoginMiddleware
         $request->adminInfo       = $adminInfo;
         $request->adminId         = $adminId;
 
+        try {
+            $request->tenantContext = $this->tenantContexts()->resolve(
+                $session,
+                $adminId,
+                $token,
+                AdminRequest::requestId($request),
+            );
+        } catch (\Throwable) {
+            return JsonService::fail('租户上下文不可用', null, 40300);
+        }
+
         return $next($request);
+    }
+
+    private function tenantContexts(): AdminTenantContextResolver
+    {
+        if ($this->tenantContexts !== null) {
+            return $this->tenantContexts;
+        }
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
+        }
+
+        return $this->tenantContexts = new AdminTenantContextResolver($pdo);
     }
 }
