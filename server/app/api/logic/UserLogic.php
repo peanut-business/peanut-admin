@@ -108,7 +108,7 @@ class UserLogic extends BaseLogic
     }
 
     /** 绑定手机号 */
-    public static function bindMobile(int $memberId, array $params): bool
+    public static function bindMobile(TenantContext $context, int $memberId, array $params): bool
     {
         try {
             $mobile = $params['mobile'] ?? '';
@@ -127,7 +127,7 @@ class UserLogic extends BaseLogic
                 ? NoticeSceneEnum::BIND_MOBILE
                 : NoticeSceneEnum::CHANGE_MOBILE;
             $service = new VerificationCodeService();
-            if (!$service->verify($scene, $mobile, (string) ($params['code'] ?? ''))) {
+            if (!$service->verify($context, $scene, $mobile, (string) ($params['code'] ?? ''))) {
                 throw new \Exception($service->getError());
             }
             Member::update(['mobile' => $mobile], ['id' => $memberId]);

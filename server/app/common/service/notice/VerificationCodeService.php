@@ -5,7 +5,8 @@ namespace app\common\service\notice;
 
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\notice\NoticeLog;
-use app\common\model\notice\NoticeScene;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\facade\Db;
 
 /**
@@ -18,8 +19,13 @@ class VerificationCodeService
 
     private string $error = '';
 
-    public function send(string $sceneCode, string $mobile): bool
+    public function __construct(private readonly NoticeSmsSender $sender = new ApplicationNoticeSmsSender())
     {
+    }
+
+    public function send(TenantContext|TenantSystemContext $context, string $sceneCode, string $mobile): bool
+    {
+        NoticeTenantContext::verificationTenantId($context, 'notice.verification.send');
         $this->error = '';
         if (!$this->validMobile($mobile)) {
             $this->error = '手机号格式不正确';
@@ -31,13 +37,14 @@ class VerificationCodeService
             return false;
         }
 
-        $scene = NoticeScene::where('code', $sceneCode)->findOrEmpty();
-        if ($scene->isEmpty() || (int) $scene->sms_status !== NoticeScene::STATUS_ENABLED) {
+        $scene = NoticeTenantRepository::scenes($context, 'notice.verification.send')
+            ->where('code', $sceneCode)->findOrEmpty();
+        if ($scene->isEmpty() || (int) $scene->sms_status !== $scene::STATUS_ENABLED) {
             $this->error = '验证码场景未启用';
             return false;
         }
 
-        if ($this->sentRecently($mobile)) {
+        if ($this->sentRecently($context, $mobile)) {
             $this->error = '同一手机号1分钟只能发送1条短信';
             return false;
         }
@@ -57,12 +64,13 @@ class VerificationCodeService
         $sendTime = time();
 
         $log = null;
-        $result = NoticeChannelService::sendSms(
+        $result = $this->sender->send(
             $mobile,
             $templateId,
             ['code' => $code],
             function (string $provider) use (
                 &$log,
+                $context,
                 $scene,
                 $mobile,
                 $content,
@@ -70,7 +78,7 @@ class VerificationCodeService
                 $code,
                 $templateId
             ): void {
-                $log = NoticeLog::create([
+                $log = NoticeTenantRepository::createLog($context, [
                     'template_id' => 0,
                     'scene_id' => (int)$scene->id,
                     'channel' => NoticeLog::CHANNEL_SMS,
@@ -86,7 +94,7 @@ class VerificationCodeService
                     'check_count' => 0,
                     'verified_time' => 0,
                     'provider' => $provider,
-                ]);
+                ], 'notice.verification.send');
             }
         );
         $this->error = $result['error'];
@@ -102,8 +110,14 @@ class VerificationCodeService
         return $result['success'];
     }
 
-    public function verify(string $sceneCode, string $mobile, string $code): bool
+    public function verify(
+        TenantContext|TenantSystemContext $context,
+        string $sceneCode,
+        string $mobile,
+        string $code
+    ): bool
     {
+        NoticeTenantContext::verificationTenantId($context, 'notice.verification.verify');
         $this->error = '';
         if (!$this->validMobile($mobile)) {
             $this->error = '手机号格式不正确';
@@ -115,14 +129,16 @@ class VerificationCodeService
             return false;
         }
 
-        $scene = NoticeScene::where('code', $sceneCode)->findOrEmpty();
+        $scene = NoticeTenantRepository::scenes($context, 'notice.verification.verify')
+            ->where('code', $sceneCode)->findOrEmpty();
         if ($scene->isEmpty()) {
             $this->error = '验证码场景不存在';
             return false;
         }
 
-        return Db::transaction(function () use ($scene, $mobile, $code): bool {
-            $log = NoticeLog::where('scene_id', (int) $scene->id)
+        return Db::transaction(function () use ($context, $scene, $mobile, $code): bool {
+            $log = NoticeTenantRepository::logs($context, 'notice.verification.verify')
+                ->where('scene_id', (int) $scene->id)
                 ->where('channel', NoticeLog::CHANNEL_SMS)
                 ->where('receiver', $mobile)
                 ->where('status', NoticeLog::STATUS_SUCCESS)
@@ -161,9 +177,10 @@ class VerificationCodeService
         return $this->error;
     }
 
-    private function sentRecently(string $mobile): bool
+    private function sentRecently(TenantContext|TenantSystemContext $context, string $mobile): bool
     {
-        return NoticeLog::where('channel', NoticeLog::CHANNEL_SMS)
+        return NoticeTenantRepository::logs($context, 'notice.verification.send')
+            ->where('channel', NoticeLog::CHANNEL_SMS)
             ->where('receiver', $mobile)
             ->where('scene_id', '>', 0)
             ->where('status', NoticeLog::STATUS_SUCCESS)

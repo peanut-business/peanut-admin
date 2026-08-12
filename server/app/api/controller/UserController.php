@@ -5,6 +5,7 @@ namespace app\api\controller;
 
 use app\api\logic\UserLogic;
 use app\common\service\article\ArticleTenantContext;
+use app\common\service\notice\NoticeTenantContext;
 
 class UserController extends BaseApiController
 {
@@ -66,7 +67,11 @@ class UserController extends BaseApiController
             'code'   => $this->request->post('code/s', ''),
         ];
 
-        $result = UserLogic::bindMobile($this->memberId, $params);
+        $result = UserLogic::bindMobile(
+            NoticeTenantContext::member($this->request),
+            $this->memberId,
+            $params
+        );
         if ($result === false) {
             return $this->fail(UserLogic::getError());
         }

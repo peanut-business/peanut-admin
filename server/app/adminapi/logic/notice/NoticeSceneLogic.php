@@ -4,13 +4,14 @@ declare(strict_types=1);
 namespace app\adminapi\logic\notice;
 
 use app\common\logic\BaseLogic;
-use app\common\model\notice\NoticeScene;
+use app\common\service\notice\NoticeTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class NoticeSceneLogic extends BaseLogic
 {
-    public static function lists(): array
+    public static function lists(TenantContext $context): array
     {
-        $list = NoticeScene::field([
+        $list = NoticeTenantRepository::scenes($context)->field([
             'id', 'code', 'name', 'description', 'recipient', 'variables',
             'sms_template_id', 'sms_content', 'sms_status', 'update_time',
         ])->order('id', 'asc')->select()->toArray();
@@ -18,15 +19,17 @@ class NoticeSceneLogic extends BaseLogic
         return ['list' => $list, 'total' => count($list)];
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        return NoticeScene::findOrEmpty($id)->toArray();
+        return NoticeTenantRepository::scenes($context)->where('id', $id)->findOrEmpty()->toArray();
     }
 
-    public static function save(array $params): bool
+    public static function save(TenantContext $context, array $params): bool
     {
         try {
-            $scene = NoticeScene::findOrEmpty((int) $params['id']);
+            $scene = NoticeTenantRepository::scenes($context)
+                ->where('id', (int) $params['id'])
+                ->findOrEmpty();
             if ($scene->isEmpty()) {
                 throw new \RuntimeException('通知场景不存在');
             }

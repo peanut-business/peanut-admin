@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\LoginLogic;
+use app\common\service\notice\NoticeTenantContext;
 
 class LoginController extends BaseApiController
 {
@@ -61,7 +62,10 @@ class LoginController extends BaseApiController
             return $this->fail('手机号或验证码格式不正确');
         }
 
-        $result = LoginLogic::mobileLogin($params);
+        $result = LoginLogic::mobileLogin(
+            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
+            $params
+        );
         return $result === false
             ? $this->fail(LoginLogic::getError())
             : $this->data($result);
@@ -80,7 +84,10 @@ class LoginController extends BaseApiController
             return $this->fail('手机号、验证码或新密码格式不正确');
         }
 
-        return LoginLogic::resetPassword($params)
+        return LoginLogic::resetPassword(
+            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
+            $params
+        )
             ? $this->success('密码已重置')
             : $this->fail(LoginLogic::getError());
     }
