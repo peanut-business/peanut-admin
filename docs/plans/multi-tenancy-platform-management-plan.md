@@ -36,11 +36,16 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 
 ## 4. 执行顺序
 
+下表规定最终集成和完成声明顺序，不是阶段级串行锁。Gate 只阻塞直接依赖其
+缺失输入的交付物；文件 owner 不重叠、可独立回滚且不消费该输入的合同、迁移、
+Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失输入、受影响交付物
+和解除条件，并同时列出仍可推进项。
+
 | 阶段 | 目标 | 状态 |
 | --- | --- | --- |
 | MT00 | 关闭在途核心能力和包/文档事实冲突 | 进行中 |
 | MT01 | 冻结公司级 Core/Generator 承接基线 | 进行中（合同与首个实现切片） |
-| MT02 | Peanut Admin 采用单默认 Tenant | 未开始 |
+| MT02 | Peanut Admin 采用单默认 Tenant | 并行启动（独立实现切片；最终 Gate 等 MT01） |
 | MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 未开始 |
 | PM01 | 完成本实例 Tenant 平台管理 | 未开始 |
 | MT04 | 完成多租户前端和应用 Host 闭环 | 未开始 |
@@ -82,7 +87,11 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
    environment Trusted Publisher 绑定。绑定后才可新建外部动作合同；Composer 不再重复。
 6. Alpha.5 只阻塞最终版本/Registry 字段和 `PA-DCS-ADOPT-01` 提名；MT01 的空库、
    fail-closed、失败注入、example 删除和 Admin Web fixture 可继续独立推进。
-7. 不启动 MT02；不重复 CAP01–CAP06、CAP06 MySQL 或任何已绿检查。
+7. MT02 可并行推进不依赖最终 Generator/npm/Registry 身份的独立切片：默认
+   Tenant/Account/TenantMember/owner bootstrap 与现有管理员/RBAC 映射，以及
+   Article `tenant_id` 迁移、回填和 Tenant-first 读写。它们必须使用独立 owner、
+   worktree 和 PR。MT01 仅阻塞 MT02 的共享候选集成、最终整体验收与完成声明。
+   不重复 CAP01–CAP06、CAP06 MySQL 或任何已绿检查。
 
 ## 5. MT00：关闭当前在途工作
 
@@ -108,6 +117,10 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 8. 明确生成器不覆盖更新已有项目，并记录后续升级方案。
 
 Gate 失败时只允许继续合同、数据和 fixture 准备，不允许复制旧 Runtime 绕过。
+
+本 Gate 的未完成项只阻塞最终公司级承接身份、`PA-DCS-ADOPT-01` 提名以及依赖
+这些证据的 MT02 集成验收；不阻塞 MT02 中已有稳定 Core 公共 API 可支持的默认
+Tenant bootstrap、管理员/RBAC 映射、Article 所有权迁移和 Tenant-first Runtime。
 
 ### PA-DCS-ADOPT-01 承接状态
 
@@ -136,6 +149,11 @@ Gate 失败时只允许继续合同、数据和 fixture 准备，不允许复制
 fixture、迁移映射和验收矩阵，但不得回退、复制或继续扩展旧 Runtime。
 
 ## 7. MT02：Standalone 采用默认 Tenant
+
+并行边界：本阶段可以在 MT01 最终 Gate 前以独立 PR 实现不依赖最终包/Registry
+身份的切片。最终集成候选、跨阶段整体验收和“MT02 完成”声明仍需等待 MT01 所需
+公共 API 与固定身份可用。任何新发现的阻塞必须精确到缺失 API、schema owner、
+文件冲突或验收输入，不得重新升级为阶段级冻结。
 
 - 安装器创建默认 Tenant、Account、TenantMember 和首个 owner。
 - 现有管理员、角色、部门和岗位映射到租户模型。
