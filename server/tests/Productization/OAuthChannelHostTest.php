@@ -56,9 +56,13 @@ foreach ([
 ] as $marker) {
     expectOAuthChannelHost(str_contains($oauthLogic, $marker), 'OAuth invariant missing: ' . $marker);
 }
+$oauthWithoutAllowedContextTypes = str_replace([
+    'PeanutAdmin\\Kernel\\Auth\\TenantContext',
+    'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+], '', $oauthLogic);
 expectOAuthChannelHost(
-    !str_contains($oauthLogic, 'PeanutAdmin\\'),
-    'application OAuth owner deep imports core'
+    !str_contains($oauthWithoutAllowedContextTypes, 'PeanutAdmin\\'),
+    'application OAuth owner imports core outside trusted notification context types'
 );
 
 $routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
