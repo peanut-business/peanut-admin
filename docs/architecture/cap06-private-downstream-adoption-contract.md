@@ -14,17 +14,17 @@ Registry 版本或本地目录：
 | 身份 | 固定值 |
 | --- | --- |
 | Core 源仓 | `peanut-opensource/peanut-admin` |
-| Source commit | `14010993e47f5e3082ab8f0b53456f282b71f086` |
-| Source tree | `3fa7e79730ec9ed8f0349dc1c0d24fa72cfda54f` |
-| CAP05 资格记录合并 | `3ca731804eb8291408e03c0ae18299d2b7db1cb7` |
+| Source commit | `db348c783ff8620fd77615294c946a36bca25a49` |
+| Source tree | `2511693481eaa811656e462a5e6640003a208836` |
+| 资格与修复记录 | CAP05 `3ca731804eb8291408e03c0ae18299d2b7db1cb7`；Core PR #18–#21；rollover PR #22 |
 | Composer 候选 | `peanut-admin/core@0.1.0-alpha.5` |
-| Composer 投影 | 694 files / 14 PSR-4 roots / SHA-256 `ca30576ae9f671197c0050fea8a42e7d7e61b5c0f43abebd69aec99cd43e5c0e` |
+| Composer 投影 | 694 files / 14 PSR-4 roots / SHA-256 `d079bf25aafa90c039481eabee722191012f4d2b88e39696acdc350930dd3d6a` |
 | npm 候选 | `@peanut-admin/admin@0.1.0-alpha.5` |
 | npm 投影 | 72 files / 15 exports / SHA-256 `5d01076276a4599682b65fcfde812f5fe201c3e597f2fab38b8ef23cbabe8c80` |
 | 下游基线 | `peanut-business/peanut-admin@09eeb747c3fbe4f261da4fa6900d777796ab717f` |
 
-CAP05 资格记录是本合同的唯一前置。CAP06 不重新运行 CAP01–CAP05、两个投影
-或已通过的仓库门禁。
+CAP05 资格记录与两项 CAP06 MySQL 8.4 修复的固定 rollover 记录共同构成本合同
+前置。CAP06 不重新运行 CAP01–CAP05、未受影响的 npm 投影或已通过的仓库门禁。
 
 ## 2. 不可变消费方式
 
@@ -35,7 +35,7 @@ Composer 投影发布到生成型 split 仓
 锁定 `dev-candidate-alpha5-cap06#<split-commit> as 0.1.0-alpha.5`。
 
 npm 直接使用 GitHub 的固定 source commit 和子目录：
-`github:peanut-opensource/peanut-admin#14010993e47f5e3082ab8f0b53456f282b71f086&path:packages/web`。
+`github:peanut-opensource/peanut-admin#db348c783ff8620fd77615294c946a36bca25a49&path:packages/web`。
 `pnpm-lock.yaml` 必须记录同一 commit 的 codeload tarball 与 `packages/web` 路径。
 
 以上来源只服务于 CAP06 私有采用。它们不创建 tag、Release、Registry 版本、
@@ -87,7 +87,7 @@ PC、UniApp、路由、Controller、现有业务表、安装器、生产部署�
 
 ## 5. 最低充分验收
 
-1. 静态核对两个 lock 的 source commit、split commit、版本、路径与两个 CAP05 digest。
+1. 静态核对两个 lock 的 source commit、split commit、版本、路径与 rollover Composer / retained npm digest。
 2. 在独立 MySQL 数据库只执行一次
    `server/tests/Productization/CrossProductDownstreamAdoptionTest.php`，覆盖一条单默认
    Tenant 正向顺序流，以及权限缺失和 Article 不存在/不可见的同形前置拒绝；拒绝
