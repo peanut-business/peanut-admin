@@ -5,15 +5,16 @@ namespace app\adminapi\logic\file;
 
 use app\common\enum\FileEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\file\File;
-use app\common\model\file\FileCate;
+use app\common\service\file\FileObjectNamespace;
+use app\common\service\file\FileTenantRepository;
 use app\common\service\storage\Driver;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 class FileLogic extends BaseLogic
 {
     /** 分页列表：按 type / 分类子树 / source / name 组合过滤，追加 url。 */
-    public static function lists(array $params): array
+    public static function lists(TenantContext $context, array $params): array
     {
         $type = self::integerValue($params['type'] ?? null, '文件类型无效');
         if (!FileEnum::isValidType($type)) {
@@ -27,7 +28,7 @@ class FileLogic extends BaseLogic
             if ($cid < 0) {
                 throw new \InvalidArgumentException('文件分类无效');
             }
-            $categoryIds = $cid === 0 ? [0] : FileCateLogic::subtreeIds($cid, $type);
+            $categoryIds = $cid === 0 ? [0] : FileCateLogic::subtreeIds($context, $cid, $type);
         }
         if (array_key_exists('source', $params) && $params['source'] !== '') {
             $source = self::integerValue($params['source'], '上传来源无效');
@@ -43,8 +44,8 @@ class FileLogic extends BaseLogic
         $pageNo   = max(1, (int)($params['page_no'] ?? 1));
         $pageSize = min(100, max(1, (int)($params['page_size'] ?? 15)));
 
-        $countQuery = File::where($where);
-        $listQuery = File::where($where);
+        $countQuery = FileTenantRepository::files($context)->where($where);
+        $listQuery = FileTenantRepository::files($context)->where($where);
         if ($categoryIds !== null) {
             $countQuery->whereIn('cid', $categoryIds);
             $listQuery->whereIn('cid', $categoryIds);
@@ -62,10 +63,10 @@ class FileLogic extends BaseLogic
     }
 
     /** 批量移动到分类 */
-    public static function move(array $ids, int $cid): void
+    public static function move(TenantContext $context, array $ids, int $cid): void
     {
         $ids = self::normalizeIds($ids);
-        $rows = File::whereIn('id', $ids)->select()->toArray();
+        $rows = FileTenantRepository::files($context)->whereIn('id', $ids)->select()->toArray();
         if (count($rows) !== count($ids)) {
             throw new \InvalidArgumentException('包含不存在的素材');
         }
@@ -74,7 +75,7 @@ class FileLogic extends BaseLogic
             throw new \InvalidArgumentException('目标分类无效');
         }
         if ($cid > 0) {
-            $category = FileCate::find($cid);
+            $category = FileTenantRepository::findCategory($context, $cid);
             if (!$category) {
                 throw new \InvalidArgumentException('目标分类不存在');
             }
@@ -86,11 +87,11 @@ class FileLogic extends BaseLogic
             }
         }
 
-        File::whereIn('id', $ids)->update(['cid' => $cid]);
+        FileTenantRepository::files($context)->whereIn('id', $ids)->update(['cid' => $cid]);
     }
 
     /** 重命名 */
-    public static function rename(int $id, string $name): void
+    public static function rename(TenantContext $context, int $id, string $name): void
     {
         $name = trim($name);
         if ($id <= 0 || $name === '') {
@@ -99,7 +100,7 @@ class FileLogic extends BaseLogic
         if (mb_strlen($name) > 20) {
             throw new \InvalidArgumentException('名称最多 20 个字符');
         }
-        $file = File::find($id);
+        $file = FileTenantRepository::findFile($context, $id);
         if (!$file) {
             throw new \InvalidArgumentException('素材不存在');
         }
@@ -110,10 +111,10 @@ class FileLogic extends BaseLogic
      * 批量删除：每个素材的软删记录与存储删除成对提交；失败立即中止并返回失败。
      * 已完成的前序素材保持已删除，不会留下指向已删除对象的活动记录。
      */
-    public static function delete(array $ids): array
+    public static function delete(TenantContext $context, array $ids): array
     {
         $ids = self::normalizeIds($ids);
-        $rows = File::whereIn('id', $ids)->order(['id' => 'asc'])->select();
+        $rows = FileTenantRepository::files($context)->whereIn('id', $ids)->order(['id' => 'asc'])->select();
         if ($rows->count() !== count($ids)) {
             throw new \InvalidArgumentException('包含不存在的素材');
         }
@@ -122,6 +123,7 @@ class FileLogic extends BaseLogic
         foreach ($rows as $row) {
             $fileId = (int)$row['id'];
             $uri = (string)$row['uri'];
+            FileObjectNamespace::assertOwnedUri($context, $uri);
             $storage = trim((string)($row['storage'] ?? ''));
             Db::startTrans();
             try {

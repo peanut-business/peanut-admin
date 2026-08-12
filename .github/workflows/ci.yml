@@ -123,6 +123,10 @@ jobs:
         working-directory: server
         run: php tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php
 
+      - name: Test MT03 file tenant ownership
+        working-directory: server
+        run: php tests/Multitenancy/FileTenantIsolationTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest
