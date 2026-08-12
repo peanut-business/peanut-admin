@@ -39,7 +39,7 @@ final class ArticleCapabilityAuthorization
         if ($articleId === false
             || !$this->trusted($tenant)
             || !($this->permissionPolicy)($tenant, $operation, (string) $articleId)
-            || !$this->visible((int) $articleId)) {
+            || !$this->visible($tenant->tenantId, (int) $articleId)) {
             throw self::denied();
         }
 
@@ -78,14 +78,14 @@ final class ArticleCapabilityAuthorization
             && $tenant->requestId !== '';
     }
 
-    private function visible(int $articleId): bool
+    private function visible(int $tenantId, int $articleId): bool
     {
         try {
             $statement = $this->pdo->prepare(
-                'SELECT 1 FROM `pa_article` WHERE `id` = :id AND `is_show` = 1 '
+                'SELECT 1 FROM `pa_article` WHERE `tenant_id` = :tenant_id AND `id` = :id AND `is_show` = 1 '
                 . 'AND (`delete_time` IS NULL OR `delete_time` = 0) LIMIT 1'
             );
-            $statement->execute(['id' => $articleId]);
+            $statement->execute(['tenant_id' => $tenantId, 'id' => $articleId]);
 
             return $statement->fetchColumn() !== false;
         } catch (Throwable) {

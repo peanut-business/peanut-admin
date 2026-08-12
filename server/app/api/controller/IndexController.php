@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\IndexLogic;
+use app\common\service\article\ArticleTenantContext;
 
 class IndexController extends BaseApiController
 {
@@ -12,7 +13,7 @@ class IndexController extends BaseApiController
     /** 首页数据 */
     public function index()
     {
-        $result = IndexLogic::getIndexData();
+        $result = IndexLogic::getIndexData(ArticleTenantContext::read($this->request, 'article.index'));
         return $this->data($result);
     }
 

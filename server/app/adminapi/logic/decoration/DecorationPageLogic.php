@@ -4,11 +4,12 @@ declare(strict_types=1);
 namespace app\adminapi\logic\decoration;
 
 use app\common\logic\BaseLogic;
-use app\common\model\article\Article;
+use app\common\service\article\ArticleTenantRepository;
 use app\common\model\decoration\DecoratePage;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
 use think\facade\Db;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DecorationPageLogic extends BaseLogic
 {
@@ -42,7 +43,7 @@ class DecorationPageLogic extends BaseLogic
         }
     }
 
-    public static function save(array $params, array $allowedTypes): bool
+    public static function save(TenantContext $context, array $params, array $allowedTypes): bool
     {
         try {
             $type = (int)$params['type'];
@@ -51,7 +52,7 @@ class DecorationPageLogic extends BaseLogic
             }
             $data = $params['data'];
             $meta = $params['meta'] ?? [];
-            DecorationSchemaService::validatePage($type, $data, $meta);
+            DecorationSchemaService::validatePage($context, $type, $data, $meta);
 
             Db::transaction(function () use ($params, $type, $data, $meta): void {
                 $page = DecoratePage::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
@@ -78,9 +79,9 @@ class DecorationPageLogic extends BaseLogic
         }
     }
 
-    public static function articleOptions(int $limit): array
+    public static function articleOptions(TenantContext $context, int $limit): array
     {
-        return Article::field(['id', 'title', 'image', 'abstract'])
+        return ArticleTenantRepository::articles($context)->field(['id', 'title', 'image', 'abstract'])
             ->where('is_show', 1)->order('id', 'desc')->limit($limit)
             ->select()->toArray();
     }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\adminapi\logic\article;
 
 use app\common\logic\BaseLogic;
-use app\common\model\article\Article;
-use app\common\model\article\ArticleCate;
+use app\common\service\article\ArticleTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 /**
@@ -17,7 +17,7 @@ class ArticleCateLogic extends BaseLogic
     private const PAGE_SIZE_MAX = 25000;
 
     /** 分页列表（含文章数） */
-    public static function lists(array $params): array|false
+    public static function lists(TenantContext $context, array $params): array|false
     {
         try {
             if (in_array((int) ($params['export'] ?? 0), [1, 2], true)) {
@@ -30,7 +30,7 @@ class ArticleCateLogic extends BaseLogic
                 ? self::PAGE_SIZE_MAX
                 : max(1, min(self::PAGE_SIZE_MAX, (int) ($params['page_size'] ?? self::PAGE_SIZE_DEFAULT)));
 
-            $query = ArticleCate::field([
+            $query = ArticleTenantRepository::categories($context)->field([
                 'id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time',
             ]);
             $count = (int) (clone $query)->count();
@@ -45,7 +45,7 @@ class ArticleCateLogic extends BaseLogic
             }
 
             $lists = $query->page($pageNo, $pageSize)->select()->toArray();
-            $articleCounts = self::articleCounts(array_column($lists, 'id'));
+            $articleCounts = self::articleCounts($context, array_column($lists, 'id'));
             foreach ($lists as &$row) {
                 $row = self::formatRow($row);
                 $row['article_count'] = $articleCounts[(int) $row['id']] ?? 0;
@@ -66,9 +66,9 @@ class ArticleCateLogic extends BaseLogic
     }
 
     /** 下拉用：全部启用分类 */
-    public static function all(): array
+    public static function all(TenantContext $context): array
     {
-        $lists = ArticleCate::where('is_show', 1)
+        $lists = ArticleTenantRepository::categories($context)->where('is_show', 1)
             ->field(['id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time'])
             ->order(['sort' => 'desc', 'id' => 'desc'])
             ->select()
@@ -77,17 +77,17 @@ class ArticleCateLogic extends BaseLogic
         return array_map([self::class, 'formatRow'], $lists);
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        $articleCate = ArticleCate::field([
+        $articleCate = ArticleTenantRepository::categories($context)->field([
             'id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time',
-        ])->findOrEmpty($id);
+        ])->where('id', $id)->findOrEmpty();
         return $articleCate->isEmpty() ? [] : self::formatRow($articleCate->toArray());
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
-        ArticleCate::create([
+        ArticleTenantRepository::createCategory($context, [
             'name'    => $params['name'],
             'sort'    => (int) ($params['sort'] ?? 0),
             'is_show' => (int) ($params['is_show'] ?? 1),
@@ -95,16 +95,19 @@ class ArticleCateLogic extends BaseLogic
         return true;
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
         try {
             $data = [
-                'id'      => (int) $params['id'],
                 'name'    => $params['name'],
                 'sort'    => (int) ($params['sort'] ?? 0),
                 'is_show' => (int) $params['is_show'],
             ];
-            ArticleCate::update($data);
+            $category = ArticleTenantRepository::categories($context)->where('id', (int) $params['id'])->findOrEmpty();
+            if ($category->isEmpty()) {
+                throw new \RuntimeException('资讯分类不存在');
+            }
+            $category->save($data);
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -112,16 +115,16 @@ class ArticleCateLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): bool
+    public static function delete(TenantContext $context, int $id): bool
     {
         Db::startTrans();
         try {
-            $articleCate = ArticleCate::where('id', $id)->lock(true)->findOrEmpty();
+            $articleCate = ArticleTenantRepository::categories($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($articleCate->isEmpty()) {
                 throw new \RuntimeException('资讯分类不存在');
             }
 
-            if (!Article::where('cid', $id)->lock(true)->findOrEmpty()->isEmpty()) {
+            if (!ArticleTenantRepository::articles($context)->where('cid', $id)->lock(true)->findOrEmpty()->isEmpty()) {
                 throw new \RuntimeException('资讯分类已使用，请先删除绑定该资讯分类的资讯');
             }
 
@@ -135,20 +138,24 @@ class ArticleCateLogic extends BaseLogic
         }
     }
 
-    public static function updateStatus(int $id, int $isShow): bool
+    public static function updateStatus(TenantContext $context, int $id, int $isShow): bool
     {
-        ArticleCate::update(['id' => $id, 'is_show' => $isShow]);
+        $updated = ArticleTenantRepository::categories($context)->where('id', $id)->update(['is_show' => $isShow]);
+        if ($updated !== 1) {
+            self::setError('资讯分类不存在');
+            return false;
+        }
         return true;
     }
 
     /** @return array<int,int> */
-    private static function articleCounts(array $categoryIds): array
+    private static function articleCounts(TenantContext $context, array $categoryIds): array
     {
         if ($categoryIds === []) {
             return [];
         }
 
-        $rows = Article::whereIn('cid', $categoryIds)
+        $rows = ArticleTenantRepository::articles($context)->whereIn('cid', $categoryIds)
             ->field('cid, COUNT(*) AS article_count')
             ->group('cid')
             ->select()

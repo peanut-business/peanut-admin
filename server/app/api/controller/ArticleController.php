@@ -5,6 +5,7 @@ namespace app\api\controller;
 
 use app\api\logic\ArticleLogic;
 use app\common\validate\ListsValidate;
+use app\common\service\article\ArticleTenantContext;
 
 class ArticleController extends BaseApiController
 {
@@ -22,14 +23,15 @@ class ArticleController extends BaseApiController
             'page_size' => $this->request->get('page_size/d', 15),
         ];
 
-        $result = ArticleLogic::lists($params, $this->memberId);
+        $context = ArticleTenantContext::read($this->request, 'article.lists');
+        $result = ArticleLogic::lists($context, $params, $this->memberId);
         return $this->dataLists($result['lists'], $result['count'], $result['page_no'], $result['page_size']);
     }
 
     /** 文章分类 */
     public function cate()
     {
-        $result = ArticleLogic::cate();
+        $result = ArticleLogic::cate(ArticleTenantContext::read($this->request, 'article.cate'));
         return $this->data($result);
     }
 
@@ -37,7 +39,8 @@ class ArticleController extends BaseApiController
     public function detail()
     {
         $id     = $this->request->get('id/d', 0);
-        $result = ArticleLogic::detail($id, $this->memberId);
+        $context = ArticleTenantContext::read($this->request, 'article.detail');
+        $result = ArticleLogic::detail($context, $id, $this->memberId);
 
         if ($result === []) {
             return $this->fail('文章不存在或已下架');
@@ -50,7 +53,7 @@ class ArticleController extends BaseApiController
     public function addCollect()
     {
         $id = $this->request->post('id/d', 0);
-        if (!ArticleLogic::addCollect($id, $this->memberId)) {
+        if (!ArticleLogic::addCollect(ArticleTenantContext::member($this->request), $id, $this->memberId)) {
             return $this->fail(ArticleLogic::getError());
         }
         return $this->success('操作成功');
@@ -60,7 +63,7 @@ class ArticleController extends BaseApiController
     public function cancelCollect()
     {
         $id = $this->request->post('id/d', 0);
-        ArticleLogic::cancelCollect($id, $this->memberId);
+        ArticleLogic::cancelCollect(ArticleTenantContext::member($this->request), $id, $this->memberId);
         return $this->success('操作成功');
     }
 
@@ -73,7 +76,7 @@ class ArticleController extends BaseApiController
             'page_size' => $this->request->get('page_size/d', 15),
         ];
 
-        $result = ArticleLogic::collectLists($this->memberId, $params);
+        $result = ArticleLogic::collectLists(ArticleTenantContext::member($this->request), $this->memberId, $params);
         return $this->dataLists($result['lists'], $result['count'], $result['page_no'], $result['page_size']);
     }
 }

@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace app\api\logic;
 
 use app\common\logic\BaseLogic;
-use app\common\model\article\Article;
-use app\common\model\article\ArticleCate;
+use app\common\service\article\ArticleTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\service\ConfigService;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
@@ -85,13 +86,13 @@ class IndexLogic extends BaseLogic
     }
 
     /** 首页数据 */
-    public static function getIndexData(): array
+    public static function getIndexData(TenantContext|TenantSystemContext $context): array
     {
         $field = [
             'id', 'title', 'desc', 'abstract', 'image', 'author',
             'click_actual', 'click_virtual', 'create_time',
         ];
-        $articles = Article::field($field)
+        $articles = ArticleTenantRepository::articles($context)->field($field)
             ->where('is_show', 1)
             ->order('id', 'desc')
             ->limit(20)

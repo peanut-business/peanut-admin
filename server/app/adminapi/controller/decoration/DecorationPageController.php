@@ -7,6 +7,7 @@ use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\decoration\DecorationPageLogic;
 use app\adminapi\validate\decoration\DecorationPageValidate;
 use app\common\enum\decoration\DecorationEnum;
+use app\common\service\article\ArticleTenantContext;
 
 class DecorationPageController extends BaseAdminController
 {
@@ -44,7 +45,10 @@ class DecorationPageController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, DecorationPageValidate::class . '.article');
-        return $this->data(DecorationPageLogic::articleOptions((int)($params['limit'] ?? 20)));
+        return $this->data(DecorationPageLogic::articleOptions(
+            ArticleTenantContext::member($this->request),
+            (int)($params['limit'] ?? 20)
+        ));
     }
 
     private function detail(array $allowedTypes)
@@ -59,7 +63,7 @@ class DecorationPageController extends BaseAdminController
     {
         $params = $this->request->post();
         $this->validate($params, DecorationPageValidate::class . '.save');
-        $result = DecorationPageLogic::save($params, $allowedTypes);
+        $result = DecorationPageLogic::save(ArticleTenantContext::member($this->request), $params, $allowedTypes);
         return $result ? $this->success('保存成功') : $this->fail(DecorationPageLogic::getError());
     }
 }

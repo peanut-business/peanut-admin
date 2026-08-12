@@ -9,6 +9,7 @@ use app\common\service\ConfigService;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
 use think\facade\Db;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DecorationTabbarLogic extends BaseLogic
 {
@@ -17,10 +18,10 @@ class DecorationTabbarLogic extends BaseLogic
         return DecorationReadService::tabbar(false);
     }
 
-    public static function save(array $style, array $items): bool
+    public static function save(TenantContext $context, array $style, array $items): bool
     {
         try {
-            DecorationSchemaService::validateTabbar($style, $items);
+            DecorationSchemaService::validateTabbar($context, $style, $items);
             Db::transaction(function () use ($style, $items): void {
                 ConfigService::set('tabbar', 'style', $style);
                 DecorateTabbar::where('id', '>', 0)->delete();

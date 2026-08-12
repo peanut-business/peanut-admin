@@ -7,13 +7,14 @@ use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
 use app\common\model\article\ArticleCollect;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\service\FileService;
 use app\common\service\notice\VerificationCodeService;
 
 class UserLogic extends BaseLogic
 {
     /** 用户中心（首屏数据） */
-    public static function center(int $memberId): array
+    public static function center(TenantContext $context, int $memberId): array
     {
         $member = Member::field(['id', 'sn', 'nickname', 'avatar', 'mobile', 'balance', 'points', 'create_time'])
             ->findOrEmpty($memberId);
@@ -25,7 +26,9 @@ class UserLogic extends BaseLogic
         $data               = $member->toArray();
         $data['avatar']     = FileService::getFileUrl((string) $data['avatar']);
         $data['collect_num'] = ArticleCollect::alias('c')
-            ->join('article a', 'c.article_id = a.id')
+            ->join('article a', 'c.tenant_id = a.tenant_id AND c.article_id = a.id')
+            ->where('c.tenant_id', $context->tenantId)
+            ->where('a.tenant_id', $context->tenantId)
             ->where('c.member_id', $memberId)
             ->where('c.status', 1)
             ->where('a.is_show', 1)

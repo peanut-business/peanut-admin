@@ -4,13 +4,14 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\UserLogic;
+use app\common\service\article\ArticleTenantContext;
 
 class UserController extends BaseApiController
 {
     /** 用户中心 */
     public function center()
     {
-        $data = UserLogic::center($this->memberId);
+        $data = UserLogic::center(ArticleTenantContext::member($this->request), $this->memberId);
         return $this->data($data);
     }
 

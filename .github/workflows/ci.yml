@@ -17,6 +17,22 @@ jobs:
   php:
     name: PHP 8.3
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: mt02_root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pmt02_root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: mt02_root
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,6 +99,10 @@ jobs:
         working-directory: server
         run: php tests/Productization/ContentDecorationHostTest.php
 
+      - name: Test MT02 Article tenant isolation
+        working-directory: server
+        run: php tests/Multitenancy/ArticleTenantIsolationTest.php
+
       - name: Test notification Host ownership
         working-directory: server
         run: php tests/Productization/NotificationHostTest.php
@@ -94,6 +114,14 @@ jobs:
       - name: Test OAuth and channel Host ownership
         working-directory: server
         run: php tests/Productization/OAuthChannelHostTest.php
+
+      - name: Test MT03 tenant cache and lock isolation
+        working-directory: server
+        run: php tests/Multitenancy/TenantCacheLockIsolationTest.php
+
+      - name: Test MT03 ThinkPHP tenant cache adapter
+        working-directory: server
+        run: php tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php
 
   web:
     name: Web
