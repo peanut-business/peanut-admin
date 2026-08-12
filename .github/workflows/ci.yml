@@ -119,6 +119,10 @@ jobs:
         working-directory: server
         run: php tests/Multitenancy/TenantCacheLockIsolationTest.php
 
+      - name: Test MT03 ThinkPHP tenant cache adapter
+        working-directory: server
+        run: php tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php
+
   web:
     name: Web
     runs-on: ubuntu-latest

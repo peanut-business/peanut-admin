@@ -12,6 +12,12 @@ final class TenantCache
     ) {
     }
 
+    /** Production assembly: the caller must already hold an upstream-verified scope. */
+    public static function thinkPhp(TenantScope $scope): self
+    {
+        return new self($scope, new ThinkPhpTenantCacheStore());
+    }
+
     public function get(string $logicalKey, mixed $default = null): mixed
     {
         return $this->store->get(TenantNamespace::cacheKey($this->scope, $logicalKey), $default);

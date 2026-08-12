@@ -186,3 +186,49 @@ MT02、MySQL、全量测试、浏览器或其他 owner 测试。失败后最多�
   影响 Tenant B；无效 scope、伪造 payload 形状和非法 logical name 在 store 调用前 fail closed。
 - 白名单 PHP 文件使用 PHP 8.3 聚焦 lint；最终精确写集和 `git diff --check` 通过。未运行 CAP、
   MT02、MySQL、全量测试或浏览器，也未修改 Article、bootstrap/install 或其他 owner 文件。
+
+## 10. ThinkPHP Cache adapter 采用切片
+
+PR #36 合入后的只读调用链核对确认：`AdminLoginAttemptService` 在账号查询前只持有请求 IP，
+没有可信 TenantContext；该计数继续属于实例级预认证安全边界，不能从 account 参数、header 或
+IP 猜 Tenant。`StorageLogic` 直接读取实例级 `pa_config(type=storage)`，其两个固定失效 key
+没有对应 cache read；在 storage provider 配置仍归实例所有时也不能伪装成 Tenant cache。
+
+因此本切片不改这两个现有 owner，而实现紧邻 ThinkPHP `Cache` facade 的真实 store adapter：
+`TenantCache::thinkPhp(TenantScope)` 是唯一生产装配入口，调用者必须先显式持有上游验证的
+`TenantScope`；adapter 只提供 get/set/delete，不提供 clear、flush、枚举或 raw store。
+
+精确解除条件：登录失败计数只有在统一认证 owner 提供“账号查找前、不可由请求候选建立”的
+可信 Tenant resolution 后才能另立采用切片；storage cache 只有在配置 owner 明确把 provider
+配置从 instance-owned 改为 tenant-owned，并在 controller/logic 前注入可信 TenantScope 后才能
+采用。条件未满足时保留实例语义，不以 MT03 名义修改两条调用链。
+
+本切片白名单仅为：
+
+- `server/app/common/service/tenant/TenantCache.php`；
+- `server/app/common/service/tenant/ThinkPhpTenantCacheStore.php`；
+- `server/tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php`；
+- `.github/workflows/ci.yml` 中登记 `MT03-THINKPHP-CACHE-ADAPTER-001`；
+- 本文第 10 节与实施证据。
+
+唯一最低验证使用 PHP 8.3 和当前 ThinkPHP file cache store，以唯一 run ID 写入两个 Tenant 的
+同名 logical key，证明读写及清理互不影响、无/伪造 scope fail closed、adapter 没有全局操作，
+并在 `finally` 只清理自己的两个物理 key：
+
+```bash
+cd server
+/opt/homebrew/opt/php@8.3/bin/php tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php
+```
+
+该切片不重复首片行为组，不运行 CAP、MT02、MySQL、全量或浏览器；通过只表示 Tenant cache
+port 已真实连接 ThinkPHP store，不表示登录或 storage 调用方已经 Tenant 化，也不表示 MT03 完成。
+
+### 实施证据
+
+- PHP 8.3.24 下 `MT03-THINKPHP-CACHE-ADAPTER-001` 唯一行为组一次通过；真实 ThinkPHP
+  file cache store 中两个 Tenant 的同名 logical key 独立读写，Tenant A 清理未影响 Tenant B。
+- 无 scope 和 payload-shaped 数组不能通过 `TenantCache::thinkPhp(TenantScope)` 类型边界；
+  adapter 只实现最小 get/set/delete port，没有 clear、flush、枚举或 raw store。
+- fixture 使用唯一 run ID，并在 `finally` 仅删除两个派生物理 key；结束后两个 key 均不存在。
+- 白名单 PHP 8.3 lint、精确写集和 `git diff --check` 通过；未修改 Composer manifest/lock，
+  未运行首片、CAP、MT02、MySQL、全量或浏览器，也未触碰其他 owner 文件。
