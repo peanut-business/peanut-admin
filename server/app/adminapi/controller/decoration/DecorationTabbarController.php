@@ -6,13 +6,15 @@ namespace app\adminapi\controller\decoration;
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\decoration\DecorationTabbarLogic;
 use app\adminapi\validate\decoration\DecorationTabbarValidate;
-use app\common\service\article\ArticleTenantContext;
+use app\common\service\decoration\DecorationTenantContext;
 
 class DecorationTabbarController extends BaseAdminController
 {
     public function detail()
     {
-        return $this->data(DecorationTabbarLogic::detail());
+        return $this->data(DecorationTabbarLogic::detail(
+            DecorationTenantContext::member($this->request)
+        ));
     }
 
     public function save()
@@ -20,7 +22,7 @@ class DecorationTabbarController extends BaseAdminController
         $params = $this->request->post();
         $this->validate($params, DecorationTabbarValidate::class);
         $result = DecorationTabbarLogic::save(
-            ArticleTenantContext::member($this->request),
+            DecorationTenantContext::member($this->request),
             (array)$params['style'],
             (array)$params['list']
         );

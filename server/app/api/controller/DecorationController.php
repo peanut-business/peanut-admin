@@ -34,7 +34,19 @@ class DecorationController extends BaseApiController
 
     public function tabbar()
     {
-        return $this->data(DecorationReadService::tabbar(true));
+        try {
+            $context = DecorationTenantContext::read(
+                $this->request,
+                DecorationTenantContext::CONFIG_OPERATION
+            );
+            return $this->data(DecorationReadService::tabbar(
+                $context,
+                true,
+                DecorationTenantContext::CONFIG_OPERATION
+            ));
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 
     public function pcPage()
