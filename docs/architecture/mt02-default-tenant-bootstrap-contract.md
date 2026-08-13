@@ -58,8 +58,10 @@ Position/Job 公共模型；岗位不得伪装成 Role 或 Department，继续�
 | 管理员部门 | 旧多部门关系完整保留在应用关系表；最小有效 `dept_id` 成为 Core `primary_department_id` |
 | 岗位 | `pa_jobs` 与 `pa_admin_jobs` 增加并回填非空 `tenant_id`；关系不映射成 Core 授权对象 |
 
-三个映射表以 `(tenant_id, legacy_id)` 为唯一旧端身份，并分别唯一约束 Core
-`account_id/member_id`、`role_id`、`department_id`。旧主表及关系表均增加非空
+三个映射表以 `(tenant_id, legacy_id)` 为唯一旧端身份，并分别在 Tenant 内唯一约束
+Core `account_id/member_id`、`role_id`、`department_id`。全局 Account 可通过各自的
+TenantMember 加入多个 Tenant，因此 legacy Admin 的 Account 映射唯一键必须是
+`(tenant_id, account_id)`，不得使用全局 `account_id` 唯一键。旧主表及关系表均增加非空
 `tenant_id` 和必要的 `(tenant_id, id/关联键)` 索引；不得使用 `tenant_id=0/NULL`
 表达平台或未知归属。
 
@@ -127,6 +129,12 @@ Core member role/primary department 与旧关系一致、无跨 Tenant 或孤儿
 - `.github/workflows/ci.yml`，仅登记 `MT02-BOOTSTRAP-001` 聚焦组；
 - 本文的实施证据段。
 
+MT05 同 Account 跨 Tenant 验收发现的约束修复只允许修改：
+
+- 新增 `server/database/migrations/20260813-legacy-admin-account-tenant-scope.sql`；
+- `server/tests/Multitenancy/PlatformTenantLifecycleApiTest.php`；
+- 本文的约束说明、白名单与实施证据。
+
 禁止修改 `server/database/init.sql`、Article 任一 model/logic/controller/validator/schema、
 `docs/likeadmin-parity-report.md`、Core 仓、Generator、Generated Host、Admin Web、
 manifest/lock、发布 workflow、MT03、PM01、MT04 和 CAP01–CAP06 Gate 文件。白名单不足
@@ -176,3 +184,9 @@ development-complete。MT01 固定候选、Article owner、Tenant-aware Runtime�
   前滚、幂等重放，以及缺 email、错密码、第二 root、孤儿关系和部门环拒绝。
 - 未运行 Article、CAP01–CAP06、全量浏览器、生产、Generator 或 MT02 整体验收；
   本结果仅为独立 bootstrap/RBAC mapping 切片 development-complete 候选。
+- MT05 浏览器候选 `61e697ba6f0c1fa65798aa60fd949a4ce265def6` 首次证明同一
+  Account 为第二个 Tenant 建立 owner 兼容 Admin 时，被旧全局
+  `uk_legacy_admin_account(account_id)` 错误拒绝。后续最小修复保留索引名，将其改为
+  `(tenant_id, account_id)`，并由 `PlatformTenantLifecycleApiTest` 直接证明同一 Account
+  可在两个 Tenant 各有独立 TenantMember 和兼容 Admin 映射；该修复通过后才重冻
+  MT05 候选并仅重跑浏览器失败组。

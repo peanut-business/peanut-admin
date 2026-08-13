@@ -148,11 +148,16 @@ CREATE TABLE pa_legacy_admin_tenant_map (
   account_id BIGINT UNSIGNED NOT NULL,
   tenant_member_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME(3) NOT NULL,
-  PRIMARY KEY (tenant_id, legacy_admin_id), UNIQUE KEY uk_account (account_id),
+  PRIMARY KEY (tenant_id, legacy_admin_id), UNIQUE KEY uk_legacy_admin_account (account_id),
   UNIQUE KEY uk_member (tenant_id, tenant_member_id)
 ) ENGINE=InnoDB;
 INSERT INTO pa_system_menu (is_disable) VALUES (0), (0), (1);
 SQL);
+    $constraintMigration = file_get_contents(
+        dirname(__DIR__, 2) . '/database/migrations/20260813-legacy-admin-account-tenant-scope.sql'
+    );
+    lifecycleExpect(is_string($constraintMigration), 'Tenant-scoped legacy Admin migration is unreadable');
+    $pdo->exec($constraintMigration);
 
     $transactions = new PdoTransactionManager($pdo);
     $bootstrap = new BootstrapService(
@@ -237,6 +242,33 @@ SQL);
     lifecycleExpect(
         (int)$pdo->query("SELECT COUNT(*) FROM pa_system_role_menu WHERE tenant_id={$tenantId}")->fetchColumn() === 2,
         'owner compatibility role did not receive the enabled Admin menu catalog'
+    );
+
+    $secondCandidate = $service->provision(
+        'pm01-lifecycle-token',
+        'beta-http',
+        'Beta HTTP',
+        'alpha-owner@example.test',
+        null,
+        'Alpha Owner',
+        'pm01-http-second-tenant'
+    );
+    $secondTenantId = (int)$secondCandidate['tenant_id'];
+    lifecycleExpect(
+        (int)$secondCandidate['account_id'] === (int)$candidate['account_id'],
+        'same owner email must reuse the Account across Tenants'
+    );
+    lifecycleExpect(
+        (int)$secondCandidate['member_id'] !== (int)$candidate['member_id'],
+        'same Account must receive a distinct TenantMember in each Tenant'
+    );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_legacy_admin_tenant_map WHERE account_id={$candidate['account_id']}")->fetchColumn() === 2,
+        'same Account must map to one compatibility Admin per Tenant'
+    );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_legacy_admin_tenant_map WHERE tenant_id={$secondTenantId} AND account_id={$candidate['account_id']} AND tenant_member_id={$secondCandidate['member_id']}")->fetchColumn() === 1,
+        'second Tenant owner Admin mapping is missing'
     );
 
     $tenantCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn();
