@@ -13,5 +13,6 @@ declare module 'vue-router' {
     noAffix?: boolean; // if set true, the tag will not affix in the tab-bar
     ignoreCache?: boolean; // if set true, the page will not be cached
     controlPlane?: 'tenant-selection' | 'platform'; // hidden and unregistered in Standalone deployments
+    instanceTool?: boolean; // registered only when deployment mode is explicitly Standalone
   }
 }
