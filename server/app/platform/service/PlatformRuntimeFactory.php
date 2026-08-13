@@ -15,12 +15,14 @@ use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
+use PeanutAdmin\Kernel\Platform\Application\PlatformWorkspaceQueryService;
 use think\facade\Config;
 use think\facade\Db;
 
 final class PlatformRuntimeFactory
 {
     private static ?PlatformOperatorSessionService $sessions = null;
+    private static ?PlatformTenantQueryService $tenantQueries = null;
 
     public static function sessions(): PlatformOperatorSessionService
     {
@@ -57,6 +59,27 @@ final class PlatformRuntimeFactory
     public static function identities(): CorePlatformOperatorIdentityPort
     {
         return new CorePlatformOperatorIdentityPort(self::sessions());
+    }
+
+    public static function tenantQueries(): PlatformTenantQueryService
+    {
+        if (self::$tenantQueries !== null) {
+            return self::$tenantQueries;
+        }
+
+        return self::$tenantQueries = new PlatformTenantQueryService(
+            self::sessions(),
+            new PlatformWorkspaceQueryService(self::pdo())
+        );
+    }
+
+    private static function pdo(): PDO
+    {
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE');
+        }
+        return $pdo;
     }
 
     private function __construct()
