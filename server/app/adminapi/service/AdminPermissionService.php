@@ -7,6 +7,10 @@ use app\common\model\auth\Admin;
 use app\common\model\auth\SystemMenu;
 use app\common\model\auth\SystemRoleMenu;
 use app\common\service\CoreServiceOverrides;
+use PeanutAdmin\ImportExport\Application\ImportExportService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\AuthorizationDecision;
+use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 
 /**
  * 管理端菜单、按钮与 API 权限的单一计算入口。
@@ -116,6 +120,37 @@ class AdminPermissionService
         );
     }
 
+    /** Builds the Core authorization input only after the trusted admin boundary permits it. */
+    public static function authorizedAsyncExport(
+        TenantContext $tenantContext,
+        Admin|array $admin,
+    ): AuthorizedOperationContext {
+        if ($tenantContext->tenantId < 1
+            || $tenantContext->accountId < 1
+            || $tenantContext->memberId < 1
+            || $tenantContext->authorizationRevision < 1
+            || $tenantContext->sessionKey === ''
+            || $tenantContext->clientKey === ''
+            || $tenantContext->requestId === ''
+            || !self::canAccess($admin, 'log/export')
+        ) {
+            throw new \DomainException('ASYNC_EXPORT_PERMISSION_DENIED');
+        }
+
+        return AuthorizedOperationContext::fromDecision(AuthorizationDecision::allow(
+            $tenantContext,
+            ImportExportService::RESOURCE_KEY,
+            'create',
+            [],
+            hash('sha256', implode("\0", [
+                (string)$tenantContext->tenantId,
+                (string)$tenantContext->memberId,
+                (string)$tenantContext->authorizationRevision,
+                'log/export',
+            ])),
+        ));
+    }
+
     private static function assignedMenuIds(Admin|array $admin): array
     {
         $roleIds = self::roleIds($admin);
@@ -123,7 +158,12 @@ class AdminPermissionService
             return [];
         }
 
-        $menuIds = SystemRoleMenu::whereIn('role_id', $roleIds)->column('menu_id');
+        $query = SystemRoleMenu::whereIn('role_id', $roleIds);
+        $tenantId = (int)($admin instanceof Admin ? $admin->getData('tenant_id') : ($admin['tenant_id'] ?? 0));
+        if ($tenantId > 0) {
+            $query->where('tenant_id', $tenantId);
+        }
+        $menuIds = $query->column('menu_id');
         return array_values(array_unique(array_map('intval', $menuIds)));
     }
 

@@ -6,6 +6,12 @@ use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
 use app\common\model\Crontab;
 use app\common\service\XlsxExportService;
+use app\common\service\async\TaskImportExportRuntime;
+use app\common\service\export\AppFileMediaGateway;
+use app\common\service\export\OperationLogExportProvider;
+use app\command\TenantTaskWorker;
+use PeanutAdmin\ImportExport\Application\ImportExportService;
+use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -20,6 +26,24 @@ function expectTaskHost(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $app = new think\App();
 $app->initialize();
+
+expectTaskHost(class_exists(TaskImportExportRuntime::class), 'application async Runtime is missing');
+expectTaskHost(class_exists(TenantTaskWorker::class), 'Tenant worker command is missing');
+expectTaskHost(is_subclass_of(OperationLogExportProvider::class, \PeanutAdmin\ImportExport\Contract\DataProvider::class), 'operation-log export provider does not implement the Core contract');
+expectTaskHost(is_subclass_of(AppFileMediaGateway::class, \PeanutAdmin\ImportExport\File\FileMediaGateway::class), 'private file gateway does not implement the Core contract');
+expectTaskHost(class_exists(TrustedJobPublisher::class) && class_exists(ImportExportService::class), 'locked Core async contracts are unavailable');
+
+$migrationSource = (string)file_get_contents($serverRoot . '/database/migrations/20260813_task_import_export.sql');
+expectTaskHost(str_contains($migrationSource, 'pa_task_job'), 'Task/Job schema is not owned by the application migration');
+expectTaskHost(str_contains($migrationSource, 'pa_import_export_operation'), 'Import/Export schema is not owned by the application migration');
+expectTaskHost(str_contains($migrationSource, 'pa_file_object'), 'private file metadata schema is not owned by the application migration');
+expectTaskHost(!str_contains($migrationSource, 'public/storage'), 'async migration refers to public storage');
+
+$runtimeSource = (string)file_get_contents($serverRoot . '/app/common/service/async/TaskImportExportRuntime.php');
+expectTaskHost(str_contains($runtimeSource, 'TrustedJobPublisher'), 'Host does not use the trusted Core publisher');
+expectTaskHost(str_contains($runtimeSource, 'AdminAsyncAuthorization'), 'worker does not revalidate async authorization');
+$gatewaySource = (string)file_get_contents($serverRoot . '/app/common/service/export/AppFileMediaGateway.php');
+expectTaskHost(!str_contains($gatewaySource, "'/public/"), 'private gateway writes below public/');
 
 $suffix = strtolower(substr(bin2hex(random_bytes(8)), 0, 16));
 $taskName = 'PB04任务' . $suffix;
