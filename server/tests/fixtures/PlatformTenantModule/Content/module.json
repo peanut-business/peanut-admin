@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "key": "fixture.content",
+  "name": "Fixture Content",
+  "description": "PM01 TenantModule service fixture",
+  "version": "1.0.0",
+  "kernel_constraint": "^1.0",
+  "license": "Apache-2.0",
+  "dependencies": [],
+  "backend": {
+    "provider": "Fixture\\Fixture\\Content\\ModuleProvider",
+    "config_schema": "Resources/config.schema.json"
+  },
+  "frontend": {
+    "entry": "web/src/modules/fixture-content/index.ts"
+  },
+  "database": { "owned_tables": [] },
+  "contracts": { "exports": [], "events": [] },
+  "tenant": {
+    "enableable": true,
+    "disable_behavior": "reject_new_operations",
+    "requires": []
+  }
+}
