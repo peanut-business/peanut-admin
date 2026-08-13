@@ -339,11 +339,11 @@ async function tenantRecord(page, config, platformToken, code) {
 
 async function activateTenantThroughUi(page, config, code) {
   const row = page.getByRole('row').filter({ hasText: code });
-  const responsePromise = page.waitForResponse((response) => response.url().includes('/api/platform/tenants/activate'));
   await row.getByRole('button', { name: 'Activate', exact: true }).click();
   const messageBox = page.locator('.el-message-box').filter({ hasText: `activate` });
   await messageBox.locator('input').fill(`${config.runId} acceptance activation`);
-  await messageBox.getByRole('button', { name: 'Activate', exact: true }).click();
+  const responsePromise = page.waitForResponse((response) => response.url().includes('/api/platform/tenants/activate'));
+  await messageBox.locator('.el-button--primary').click();
   const body = await responseBody(await responsePromise);
   if (body.code !== 20000) fail(`Tenant ${code} activation failed: ${body.msg || body.code}`);
   await row.getByText('active', { exact: true }).waitFor();

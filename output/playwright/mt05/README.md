@@ -25,6 +25,10 @@ Before starting the API, provide independent high-entropy
 or short; the public login response intentionally remains a generic credential
 denial. Verify these deployment inputs before spending the one browser run.
 
+Each candidate environment must also hold a project resource lease covering its
+database, API/Web ports, Vite cache directories, and evidence output directory.
+Use `scripts/project-resource-lease` before creating any mutable resource.
+
 ## Preparation checks (no browser)
 
 ```bash
