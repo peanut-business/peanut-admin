@@ -9,6 +9,11 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 Peanut Admin 应用 `1.1.0` 是当前稳定多租户基线。它以同一 release 支持 Standalone 与 `multi-tenant`，数据库迁移账本为 50 条；MT05 已完成 Standalone 空库、`v1.0.0` 前滚、多租户空库和平台到租户的真实浏览器闭环。正式身份为 annotated `v1.1.0` 与同 tag GitHub Release。
 
+官方运行环境已同步到该稳定版本：应用在 `oracle3` 运行
+[`v1.1.0`](https://peanut-admin.007345.xyz)，生产账本为 50 条；官方文档由 Cloudflare Pages
+独立发布到 [peanut-admin-doc.007345.xyz](https://peanut-admin-doc.007345.xyz)。两者不是同一
+部署目标，文档站更新不会重启或改动应用容器。
+
 ## 公开运行依赖
 
 | 生态 | 包 | 应用当前锁定事实 |
