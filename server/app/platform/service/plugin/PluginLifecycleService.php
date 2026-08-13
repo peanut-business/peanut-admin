@@ -590,7 +590,10 @@ SQL);
 
     private function json(mixed $value): string
     {
-        return (string)json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        return (string)json_encode(
+            $this->canonicalJsonValue($value),
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES
+        );
     }
 
     private function jsonColumn(mixed $value): string
@@ -603,6 +606,21 @@ SQL);
         } catch (\JsonException) {
             return '';
         }
+    }
+
+    private function canonicalJsonValue(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+        if (array_is_list($value)) {
+            return array_map(fn(mixed $item): mixed => $this->canonicalJsonValue($item), $value);
+        }
+        ksort($value, SORT_STRING);
+        foreach ($value as $key => $item) {
+            $value[$key] = $this->canonicalJsonValue($item);
+        }
+        return $value;
     }
 
     private function now(): string
