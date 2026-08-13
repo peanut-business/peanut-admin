@@ -24,6 +24,7 @@ class OAuthController extends BaseApiController
             $scene
         );
         $result = OAuthLogic::begin(
+            MemberTenantContext::system($this->request, 'member.oauth-begin'),
             $scene,
             (string)$params['return_path'],
             $callbackUrl
