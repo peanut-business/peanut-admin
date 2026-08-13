@@ -36,7 +36,6 @@ $requiredTables = [
     'pa_plugin_installation',
     'pa_plugin_module',
     'pa_module_migration',
-    'pa_permission',
     'pa_protected_resource',
     'pa_target_type',
     'pa_resource_operation',
@@ -54,18 +53,29 @@ foreach ($requiredTables as $table) {
     pluginMigrationTableSql($sql, $table);
 }
 
-$permissionSql = pluginMigrationTableSql($sql, 'pa_permission');
 pluginMigrationExpect(
-    pluginMigrationNormalize($permissionSql) === pluginMigrationNormalize(KernelSchema::createSql('pa_permission')),
-    'pa_permission lifecycle schema drifted from Core KernelSchema'
+    !str_contains($sql, 'CREATE TABLE `pa_permission`'),
+    'lifecycle migration must adopt the existing Core pa_permission table'
 );
-$permissionOffset = strpos($sql, 'CREATE TABLE `pa_permission`');
 foreach (['pa_resource_operation_target_type', 'pa_resource_operation_permission', 'pa_menu_definition'] as $table) {
     pluginMigrationExpect(
-        $permissionOffset !== false && $permissionOffset < strpos($sql, "CREATE TABLE `{$table}`"),
-        "pa_permission must precede {$table}"
+        str_contains(pluginMigrationTableSql($sql, $table), 'REFERENCES `pa_permission` (`id`)'),
+        "{$table} must reference adopted Core pa_permission"
     );
 }
+$runner = (string)file_get_contents(dirname(__DIR__, 2) . '/database/migrate.php');
+pluginMigrationExpect(
+    str_contains($runner, "assertPluginLifecyclePermissionSchema(\$pdo)"),
+    'migration runner does not fail closed on the adopted Core pa_permission schema'
+);
+pluginMigrationExpect(
+    str_contains($runner, "--repair-failed="),
+    'migration runner lacks an auditable failed-ledger recovery entry point'
+);
+pluginMigrationExpect(
+    str_contains($runner, "'status' => \$checkOnly ? 'recovery_ready' : 'recovered'"),
+    'migration runner lacks a non-mutating recovery assertion mode'
+);
 foreach (['deployment', 'tenant', 'target'] as $scope) {
     pluginMigrationExpect(
         str_contains($sql, "CONSTRAINT `chk_setting_{$scope}_storage`"),

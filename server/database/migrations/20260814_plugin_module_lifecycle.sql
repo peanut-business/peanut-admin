@@ -59,28 +59,6 @@ CREATE TABLE `pa_module_migration` (
   ))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `pa_permission` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `key` VARCHAR(160) NOT NULL,
-  `module_key` VARCHAR(96) NOT NULL,
-  `type` VARCHAR(32) NOT NULL,
-  `name` VARCHAR(160) NOT NULL,
-  `description` VARCHAR(500) NULL,
-  `risk_level` VARCHAR(16) NOT NULL DEFAULT 'normal',
-  `status` VARCHAR(32) NOT NULL DEFAULT 'active',
-  `manifest_version` VARCHAR(32) NOT NULL,
-  `created_at` DATETIME(3) NOT NULL,
-  `updated_at` DATETIME(3) NOT NULL,
-  `retired_at` DATETIME(3) NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_permission_key` (`key`),
-  KEY `idx_permission_module` (`module_key`, `status`, `type`),
-  CONSTRAINT `chk_permission_type` CHECK (`type` IN ('menu', 'action', 'api')),
-  CONSTRAINT `chk_permission_risk` CHECK (`risk_level` IN ('normal', 'sensitive', 'critical')),
-  CONSTRAINT `chk_permission_status` CHECK (`status` IN ('active', 'retired')),
-  CONSTRAINT `chk_permission_retired` CHECK ((`status` = 'retired' AND `retired_at` IS NOT NULL) OR `status` <> 'retired')
-) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
 CREATE TABLE `pa_protected_resource` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `key` VARCHAR(160) NOT NULL,
