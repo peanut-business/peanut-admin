@@ -266,7 +266,7 @@ function migrationSplitTableDefinitions(string $body): array
 
 function migrationNormalizeDefinition(string $definition): string
 {
-    $definition = strtolower(str_replace('_utf8mb4', '', trim($definition)));
+    $definition = strtolower(str_replace(['_utf8mb4', '`'], '', trim($definition)));
     $definition = preg_replace("/default\\s+'([0-9]+)'/", 'default $1', $definition) ?? $definition;
     $definition = preg_replace('/\\s+default\\s+null/', ' null', $definition) ?? $definition;
     $check = stripos($definition, 'check');
@@ -287,7 +287,7 @@ function migrationNormalizeDefinition(string $definition): string
             $definition = $prefix . $expression . ')';
         }
     }
-    return preg_replace('/\\s+/', '', str_replace('`', '', $definition)) ?? $definition;
+    return preg_replace('/\\s+/', '', $definition) ?? $definition;
 }
 
 function migrationNormalizeCreateSql(string $sql): string
