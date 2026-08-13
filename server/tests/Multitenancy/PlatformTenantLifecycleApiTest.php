@@ -4,6 +4,8 @@ declare(strict_types=1);
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use app\platform\service\TenantGovernanceService;
+use app\platform\service\PdoTenantOwnerAdminProvisioner;
+use app\platform\service\TenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
@@ -85,6 +87,72 @@ try {
     foreach (ModuleSchema::tableNames() as $table) {
         $pdo->exec(ModuleSchema::createSql($table));
     }
+    $pdo->exec(<<<'SQL'
+CREATE TABLE pa_system_menu (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  is_disable TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_system_role (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  `desc` VARCHAR(255) NOT NULL,
+  sort SMALLINT NOT NULL DEFAULT 0,
+  create_time INT UNSIGNED NOT NULL,
+  update_time INT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_role_tenant_id (tenant_id, id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_system_role_menu (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  role_id INT UNSIGNED NOT NULL,
+  menu_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_role_menu_tenant (tenant_id, role_id, menu_id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_admin (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  username VARCHAR(50) NOT NULL,
+  nickname VARCHAR(50) NOT NULL,
+  password VARCHAR(64) NOT NULL,
+  salt VARCHAR(16) NOT NULL,
+  avatar VARCHAR(255) NOT NULL,
+  root TINYINT NOT NULL,
+  disable TINYINT NOT NULL,
+  login_time INT UNSIGNED NOT NULL,
+  login_ip VARCHAR(45) NOT NULL,
+  multipoint_login TINYINT NOT NULL,
+  create_time INT UNSIGNED NOT NULL,
+  update_time INT UNSIGNED NOT NULL,
+  delete_time INT UNSIGNED NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_admin_tenant_id (tenant_id, id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_admin_role (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  admin_id INT UNSIGNED NOT NULL,
+  role_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_admin_role_tenant (tenant_id, admin_id, role_id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_legacy_role_tenant_map (
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  legacy_role_id INT UNSIGNED NOT NULL,
+  role_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (tenant_id, legacy_role_id), UNIQUE KEY uk_core_role (tenant_id, role_id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_legacy_admin_tenant_map (
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  legacy_admin_id INT UNSIGNED NOT NULL,
+  account_id BIGINT UNSIGNED NOT NULL,
+  tenant_member_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (tenant_id, legacy_admin_id), UNIQUE KEY uk_account (account_id),
+  UNIQUE KEY uk_member (tenant_id, tenant_member_id)
+) ENGINE=InnoDB;
+INSERT INTO pa_system_menu (is_disable) VALUES (0), (0), (1);
+SQL);
 
     $transactions = new PdoTransactionManager($pdo);
     $bootstrap = new BootstrapService(
@@ -114,8 +182,10 @@ try {
     );
     $service = new TenantGovernanceService(
         new LifecycleIdentity(new PlatformOperatorIdentity($platform->operatorId, $platform->accountId)),
+        $transactions,
         $bootstrap,
-        new PlatformTenantAdminService($pdo, $modules)
+        new PlatformTenantAdminService($pdo, $modules),
+        new PdoTenantOwnerAdminProvisioner($pdo)
     );
 
     lifecycleRejects(static fn() => $service->provision(
@@ -156,6 +226,54 @@ try {
         (int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_audit_event WHERE tenant_id={$tenantId} AND request_id='pm01-http-provision:owner-activation'")->fetchColumn() === 1,
         'owner activation Tenant audit is missing'
     );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_admin WHERE tenant_id={$tenantId} AND root=0 AND disable=0")->fetchColumn() === 1,
+        'provision did not establish the compatible non-root Admin principal'
+    );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_legacy_admin_tenant_map WHERE tenant_id={$tenantId} AND account_id={$candidate['account_id']} AND tenant_member_id={$candidate['member_id']}")->fetchColumn() === 1,
+        'owner Admin mapping does not point to the Core Account and TenantMember'
+    );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_system_role_menu WHERE tenant_id={$tenantId}")->fetchColumn() === 2,
+        'owner compatibility role did not receive the enabled Admin menu catalog'
+    );
+
+    $tenantCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn();
+    $adminCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_admin')->fetchColumn();
+    $failingOwnerAdmins = new class($pdo) implements TenantOwnerAdminProvisioner {
+        private PdoTenantOwnerAdminProvisioner $delegate;
+        public function __construct(PDO $pdo) { $this->delegate = new PdoTenantOwnerAdminProvisioner($pdo); }
+        public function provision(
+            int $tenantId,
+            int $accountId,
+            int $memberId,
+            int $coreRoleId,
+            string $tenantCode,
+            string $displayName
+        ): int {
+            $this->delegate->provision($tenantId, $accountId, $memberId, $coreRoleId, $tenantCode, $displayName);
+            throw new RuntimeException('injected owner Admin failure');
+        }
+    };
+    $failingService = new TenantGovernanceService(
+        new LifecycleIdentity(new PlatformOperatorIdentity($platform->operatorId, $platform->accountId)),
+        $transactions,
+        $bootstrap,
+        new PlatformTenantAdminService($pdo, $modules),
+        $failingOwnerAdmins
+    );
+    lifecycleRejects(static fn() => $failingService->provision(
+        'pm01-lifecycle-token',
+        'rollback-http',
+        'Rollback HTTP',
+        'rollback-owner@example.test',
+        'RollbackOwnerPassword2026',
+        'Rollback Owner',
+        'pm01-http-rollback'
+    ));
+    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn() === $tenantCount, 'owner Admin failure left a partial Core Tenant');
+    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_admin')->fetchColumn() === $adminCount, 'owner Admin failure left a partial Admin principal');
 
     lifecycleRejects(static fn() => $service->transition(
         'pm01-lifecycle-token',
