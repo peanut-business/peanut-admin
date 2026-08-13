@@ -13,7 +13,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev:custom": "uni -p",
-    "dev:h5": "uni",
+    "dev:h5": "../scripts/local-client-dev mobile",
     "dev:h5:ssr": "uni --ssr",
     "dev:mp-alipay": "uni -p mp-alipay",
     "dev:mp-baidu": "uni -p mp-baidu",

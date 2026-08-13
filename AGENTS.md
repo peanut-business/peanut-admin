@@ -6,6 +6,11 @@
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
 
+本项目数据库、缓存、队列、对象存储、外部服务、域名、容器消费入口与本地固定端口的
+版本化机器可读资源登记为 `resources/project-resources.json`。连接、启动、迁移、测试或
+部署前必须先读取该文件并显式选择资源 ID、环境和登记地址；CompanyOS 登记仅作为上游
+allocation 来源证据，不能替代本项目登记。
+
 ---
 
 ## 1. 项目身份
@@ -136,9 +141,14 @@ peanut-admin/
 - 初始管理员账号为 `admin`；密码必须在空库安装时通过
   `ADMIN_INITIAL_PASSWORD` 显式提供，仓库没有可供当前环境复用的共享默认密码。
   历史 parity 证据中出现的旧密码仅用于追溯，不是现行登录指引。
-- 管理端 API：`http://127.0.0.1:8000/`（`php think run --port=8000`）
-- 前端 Dev：`http://localhost:5173`（`pnpm dev`，位于 `web/`）
+- 管理端 API 登记默认值：`http://127.0.0.1:20180/`（由 `scripts/local-stack.sh dev-up` 托管）
+- 前端 Dev 登记默认值：`http://127.0.0.1:20181`（`pnpm dev`，位于 `web/`）
 - API 前缀：`admin/*`（管理端），`api/*`（前端/小程序）
+- 日常开发统一从 `scripts/local-stack.sh dev-up` 启动：API 使用 CompanyOS 登记的宿主
+  `/opt/homebrew/bin/php` 8.3.24 与 `/usr/local/bin/composer` 2.8.10；development Compose
+  不含 PHP 服务，容器通过 `host.docker.internal:${PHP_PORT}` 访问宿主 API。所有本地
+  监听从 `.local/stack.env` 或 `PEANUT_LOCAL_ENV_FILE` 读取，`201xx` 只是项目登记默认值。
+  Docker PHP 只用于 local-production-preview、生产构建和明确要求的容器等价 Gate。
 
 ---
 

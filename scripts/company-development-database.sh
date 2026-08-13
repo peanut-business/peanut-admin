@@ -8,7 +8,8 @@ remote_dir=/Users/xing/.config/peanut-admin
 remote_env="$remote_dir/development-db.env"
 remote_compose="$remote_dir/docker-compose.mac-14.yml"
 local_state="$repo_dir/.local"
-local_env="$local_state/stack.env"
+local_env=${PEANUT_LOCAL_ENV_FILE:-"$local_state/stack.env"}
+local_state=$(dirname "$local_env")
 
 case "${1:-}" in
     provision)

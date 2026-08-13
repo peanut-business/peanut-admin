@@ -64,20 +64,23 @@ PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 
 ### 3. 安装与启动
 
+本项目日常开发的唯一默认入口是 `scripts/local-stack.sh`。它使用 CompanyOS 登记的
+`/opt/homebrew/bin/php` 8.3.24 与 `/usr/local/bin/composer` 2.8.10 托管宿主 API，Web、PC、
+Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅用于本机生产模式
+预览、生产构建和显式容器等价 Gate。
+
 ```bash
-cd server
-composer install
-cd ..
-php server/database/install.php
-
-# 终端 A：API
-cd server && php think run --host 0.0.0.0 --port 8000
-
-# 终端 B：管理端
-cd web && pnpm install --frozen-lockfile && pnpm dev
+./scripts/local-stack.sh dev-up
+./scripts/local-stack.sh status
 ```
 
-打开 `http://localhost:5173/admin/`，使用账号 `admin` 和安装时提供的密码登录。
+登记的默认入口为 `http://127.0.0.1:20187/admin/`；API、Web、Mobile、MySQL、PC、Docs 与
+本地生产预览的登记默认端口依次为 `20180`、`20181`、`20182`、`20183`、`20185`、
+`20186`、`20190`。除唯一数据库 `20183` 外，本地监听均从 `.local/stack.env`（或
+`PEANUT_LOCAL_ENV_FILE`）读取；每个 clone/worktree 可覆盖，`ensure_env` 不会重写已有值。
+非秘密示例见 `deploy/local-stack.env.example`。停止时运行
+`./scripts/local-stack.sh dev-down`，该命令会同时停止容器和受 PID/日志管理的宿主 PHP。
+使用账号 `admin` 和安装时提供的密码登录。
 安装器只接受空数据库；已有安装必须按[部署与升级文档](https://peanut-admin-doc.007345.xyz/deployment)
 执行备份和前滚迁移，不能重新运行空库安装器。
 
