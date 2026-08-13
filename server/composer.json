@@ -15,12 +15,6 @@
             "name": "花生科技"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/peanut-opensource/peanut-admin-core.git"
-        }
-    ],
     "require": {
         "php": "^8.3",
         "topthink/framework": "^8.0",
@@ -31,7 +25,7 @@
         "qiniu/php-sdk": "^7.4",
         "aliyuncs/oss-sdk-php": "^2.4",
         "qcloud/cos-sdk-v5": "^2.5",
-        "peanut-admin/core": "dev-candidate-alpha5-cap06 as 0.1.0-alpha.5"
+        "peanut-admin/core": "0.1.0-alpha.5"
     },
     "require-dev": {
         "topthink/think-dumper": "^1.0",

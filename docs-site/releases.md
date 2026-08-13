@@ -7,16 +7,16 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-Peanut Admin 应用 `1.0.0` 已正式发布。annotated tag `v1.0.0` 指向 `main` 提交 `0d3c848b8e2bb622a868924145ce810a8946f173`，同 tag GitHub Release 于 2026-08-11 发布；既有应用与官网已经部署，数据库迁移账本前滚到 28 条，生产容器健康，一次最低线上 smoke 已封存。
+Peanut Admin 应用 `1.1.0` 是当前稳定多租户发布候选。它以同一 release 支持 Standalone 与 `multi-tenant`，数据库迁移账本为 50 条；MT05 已完成 Standalone 空库、`v1.0.0` 前滚、多租户空库和平台到租户的真实浏览器闭环。发布完成时的正式身份为 annotated `v1.1.0` 与同 tag GitHub Release。
 
 ## 公开运行依赖
 
 | 生态 | 包 | 应用当前锁定事实 |
 |---|---|---|
-| Composer | `peanut-admin/core` | `0.1.0-alpha.2` |
-| npm | `@peanut-admin/admin` | 管理端/PC 为 Alpha.3，UniApp 为 Alpha.4 |
+| Composer | `peanut-admin/core` | `0.1.0-alpha.5`（Packagist） |
+| npm | `@peanut-admin/admin` | `0.1.0-alpha.5`（Web/PC/UniApp，npm Registry） |
 
-内部领域目录不是独立包。核心本地 `dev` 带 `v0.1.0-alpha.4` tag，UniApp lock 已解析 npm Alpha.4；核心状态文档与发布事实仍有待独立核心任务收敛的差异，因此这里不推断新的采用授权。
+内部领域目录不是独立包。应用只消费上述两个公开总包；Core/Generator 的公司级固定身份与 DCS Product-only 条件采用边界独立记录，不因应用版本发布而扩大授权。
 
 ## 已验证范围
 
@@ -28,14 +28,13 @@ Peanut Admin 应用 `1.0.0` 已正式发布。annotated tag `v1.0.0` 指向 `mai
 
 ## 正式发布身份
 
-- [Peanut Admin v1.0.0 GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0)
-- 规范源码附件 `peanut-admin-1.0.0.tar.gz` SHA-256：`069a34f98db1d604ddc64a342a10e17a81db450094d303db455a8b32ae114847`
-- 外部 `RELEASE_MANIFEST.json` SHA-256：`616fcd7dfd2edcebe8773f6860493c4fdfb912cc3cdfb4373c39f85972419989`
+- [Peanut Admin v1.1.0 GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0)
+- 规范源码附件、完整 commit、各附件 SHA-256 与外部 manifest 摘要以该 Release 的 `RELEASE_MANIFEST.json` 和 Release notes 为准。
 - 应用暂时采用专有 / All Rights Reserved，版权主体显示为“花生科技”；Release 同时附带根许可证、NOTICE、第三方清单和 SPDX SBOM。
 - 功能分支 PR #10 的五组 CI 一次通过；`dev` → `main` 阶段 PR #11 的分支保护检查也全部通过。
 - 应用仓当前保持 private；GitHub Release 链接对已获授权的 GitHub 身份可见，匿名访客会得到 404。官网、应用和法律资产本身不依赖该登录态。
 - 真实短信、支付、微信/OAuth 凭据和平台登记只在对应部署 smoke 后才能宣称生产可用。
-- SaaS/多租户是产品化正式基线后的独立阶段，本 release 不包含。
+- 本 release 包含稳定多租户脚手架，但不包含订阅计费或跨实例运营平台。
 
 ## 获取源码与变更
 
@@ -44,4 +43,4 @@ Peanut Admin 应用 `1.0.0` 已正式发布。annotated tag `v1.0.0` 指向 `mai
 - [开发指南](/guide/development)
 - [许可证与第三方告知](/legal)
 
-[Changelog](/legal/CHANGELOG.txt)、部署升级文档与 GitHub Release 均指向正式 `1.0.0`；完整附件哈希以 Release 的 `RELEASE_MANIFEST.json` 为准。
+[Changelog](/legal/CHANGELOG.txt)、部署升级文档与 GitHub Release 均指向正式 `1.1.0`；完整附件哈希以 Release 的 `RELEASE_MANIFEST.json` 为准。

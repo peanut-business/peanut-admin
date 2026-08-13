@@ -17,8 +17,8 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.40(typescript@4.9.5))
       '@peanut-admin/admin':
-        specifier: github:peanut-opensource/peanut-admin#0f3c0a530f2b6369bf5883b2508f40a79501ed98&path:packages/web
-        version: https://codeload.github.com/peanut-opensource/peanut-admin/tar.gz/0f3c0a530f2b6369bf5883b2508f40a79501ed98#path:packages/web(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))
       '@vueuse/core':
         specifier: ^9.3.0
         version: 9.13.0(vue@3.5.40(typescript@4.9.5))
@@ -572,9 +572,8 @@ packages:
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
 
-  '@peanut-admin/admin@https://codeload.github.com/peanut-opensource/peanut-admin/tar.gz/0f3c0a530f2b6369bf5883b2508f40a79501ed98#path:packages/web':
-    resolution: {path: packages/web, tarball: https://codeload.github.com/peanut-opensource/peanut-admin/tar.gz/0f3c0a530f2b6369bf5883b2508f40a79501ed98}
-    version: 0.1.0-alpha.5
+  '@peanut-admin/admin@0.1.0-alpha.5':
+    resolution: {integrity: sha512-brHwkDH1Ym1EHFEBJDu+L956Wq3rwtxTaeaIvwPL7mMk8KKur82nqRnp/yk7RSnmScl/XeXMaj2HrTeQqTiOIQ==}
     peerDependencies:
       element-plus: ^2.14.3
       pinia: '>=2.0.23 <5'
@@ -4873,7 +4872,7 @@ snapshots:
 
   '@nolyfill/is-core-module@1.0.39': {}
 
-  '@peanut-admin/admin@https://codeload.github.com/peanut-opensource/peanut-admin/tar.gz/0f3c0a530f2b6369bf5883b2508f40a79501ed98#path:packages/web(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))':
+  '@peanut-admin/admin@0.1.0-alpha.5(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))':
     dependencies:
       openapi-fetch: 0.17.0
       vue: 3.5.40(typescript@4.9.5)

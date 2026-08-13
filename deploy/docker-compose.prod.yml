@@ -10,6 +10,9 @@ x-app-environment: &app-environment
   DB_PASS: ${DB_PASS:?set DB_PASS in .env}
   DB_PREFIX: pa_
   JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+  DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE to standalone or multi-tenant}
+  TENANT_IDENTIFIER_HMAC_KEY: ${TENANT_IDENTIFIER_HMAC_KEY:?set TENANT_IDENTIFIER_HMAC_KEY in .env}
+  PLATFORM_IDENTIFIER_HMAC_KEY: ${PLATFORM_IDENTIFIER_HMAC_KEY:?set PLATFORM_IDENTIFIER_HMAC_KEY in .env}
 
 x-logging: &default-logging
   driver: json-file
@@ -48,6 +51,9 @@ services:
     environment:
       <<: *app-environment
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+      ADMIN_INITIAL_EMAIL: ${ADMIN_INITIAL_EMAIL:-}
+      PLATFORM_INITIAL_EMAIL: ${PLATFORM_INITIAL_EMAIL:-}
+      PLATFORM_INITIAL_PASSWORD: ${PLATFORM_INITIAL_PASSWORD:-}
     volumes:
       - php-runtime:/var/www/peanut-admin/server/runtime
       - php-storage:/var/www/peanut-admin/server/public/storage

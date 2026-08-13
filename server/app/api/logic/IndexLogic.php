@@ -60,7 +60,7 @@ class IndexLogic extends BaseLogic
                 DecorationEnum::SYSTEM_THEME,
                 DecorationTenantContext::CONFIG_OPERATION
             ),
-            'version'  => '1.0.0',
+            'version'  => (string) config('project.version', '1.1.0'),
         ];
     }
 
