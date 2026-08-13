@@ -46,6 +46,7 @@ services:
     volumes:
       - ../server:/workspace/server
       - ./docker/container.env:/workspace/server/.env:ro
+      - ./docker/php-upload.ini:/usr/local/etc/php/conf.d/peanut-upload.ini:ro
       - ./docker/php-development-entrypoint.sh:/usr/local/bin/peanut-development-entrypoint:ro
     ports:
       - "${PHP_PORT:-8000}:8000"
