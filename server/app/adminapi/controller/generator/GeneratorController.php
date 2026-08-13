@@ -7,11 +7,17 @@ use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\generator\GeneratorLogic;
 use app\adminapi\service\generator\GeneratorArchiveService;
 use app\adminapi\validate\generator\GeneratorValidate;
+use app\common\service\instance\InstanceToolAccessGuard;
+use app\common\service\JsonService;
+use think\response\Json;
 
 class GeneratorController extends BaseAdminController
 {
     public function sourceTables()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->get();
         $this->validate($params, GeneratorValidate::class . '.source');
         $result = GeneratorLogic::sourceTables($params);
@@ -20,6 +26,9 @@ class GeneratorController extends BaseAdminController
 
     public function lists()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->get();
         $this->validate($params, GeneratorValidate::class . '.lists');
         $result = GeneratorLogic::lists($this->adminId, $params);
@@ -28,6 +37,9 @@ class GeneratorController extends BaseAdminController
 
     public function detail()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->get();
         $this->validate($params, GeneratorValidate::class . '.id');
         $result = GeneratorLogic::detail($this->adminId, (int) $params['id']);
@@ -36,6 +48,9 @@ class GeneratorController extends BaseAdminController
 
     public function import()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->post();
         $this->validate($params, GeneratorValidate::class . '.import');
         $result = GeneratorLogic::importTables($this->adminId, $params['table_names']);
@@ -44,6 +59,9 @@ class GeneratorController extends BaseAdminController
 
     public function sync()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->post();
         $this->validate($params, GeneratorValidate::class . '.id');
         $result = GeneratorLogic::sync($this->adminId, (int) $params['id']);
@@ -52,6 +70,9 @@ class GeneratorController extends BaseAdminController
 
     public function update()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->post();
         $this->validate($params, GeneratorValidate::class . '.update');
         $result = GeneratorLogic::update($this->adminId, $params);
@@ -60,6 +81,9 @@ class GeneratorController extends BaseAdminController
 
     public function delete()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->post();
         $this->validate($params, GeneratorValidate::class . '.ids');
         $result = GeneratorLogic::delete($this->adminId, $params['ids']);
@@ -68,6 +92,9 @@ class GeneratorController extends BaseAdminController
 
     public function preview()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->post();
         $this->validate($params, GeneratorValidate::class . '.id');
         $result = GeneratorLogic::preview($this->adminId, (int) $params['id']);
@@ -76,6 +103,9 @@ class GeneratorController extends BaseAdminController
 
     public function generate()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->post();
         $this->validate($params, GeneratorValidate::class . '.ids');
         $result = GeneratorLogic::generate($this->adminId, $params['ids']);
@@ -84,6 +114,9 @@ class GeneratorController extends BaseAdminController
 
     public function download()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         $params = $this->request->get();
         $this->validate($params, GeneratorValidate::class . '.download');
         $file = GeneratorLogic::consumeDownload($this->adminId, (string) $params['token']);
@@ -102,6 +135,17 @@ class GeneratorController extends BaseAdminController
 
     public function models()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) return $denial;
+
         return $this->data(GeneratorLogic::models($this->adminId));
+    }
+
+    private function instanceToolAccessDenial(): ?Json
+    {
+        $guard = InstanceToolAccessGuard::fromConfiguredValue(config('deployment.mode'));
+        return $guard->allows()
+            ? null
+            : JsonService::fail('实例级开发工具仅在 standalone 部署中可用', null, 40300);
     }
 }

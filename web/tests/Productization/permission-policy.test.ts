@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router';
 
 import { evaluateRequiredPermissions } from '../../src/core/permission-policy';
 import {
+  allowsInstanceTools,
   deploymentMode,
   routesForDeployment,
 } from '../../src/core/deployment-mode';
@@ -86,6 +87,13 @@ expect(
 expect(
   deploymentMode('invalid') === 'standalone',
   'invalid deployment mode did not fail closed'
+);
+expect(
+  allowsInstanceTools('standalone') &&
+    !allowsInstanceTools(undefined) &&
+    !allowsInstanceTools('invalid') &&
+    !allowsInstanceTools('multi-tenant'),
+  'instance tools must require explicit standalone mode'
 );
 expect(
   routesForDeployment(fixtureRoutes, deploymentMode('multi-tenant')).length ===
