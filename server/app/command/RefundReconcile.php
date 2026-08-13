@@ -10,6 +10,7 @@ use app\common\model\refund\RefundRecord;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\crontab\ScheduledTenantContext;
+use app\common\service\diagnostics\TenantDiagnosticAttributes;
 use app\common\service\finance\FinanceTenantRepository;
 use think\console\Command;
 use think\console\Input;
@@ -28,6 +29,7 @@ class RefundReconcile extends Command
     protected function execute(Input $input, Output $output)
     {
         $scope = ScheduledTenantContext::require();
+        $diagnostics = TenantDiagnosticAttributes::fromScope($scope);
         $records = FinanceTenantRepository::records($scope)
             ->where('order_type', RefundEnum::ORDER_TYPE_RECHARGE)
             ->where('refund_status', RefundEnum::REFUND_ING)
@@ -45,10 +47,9 @@ class RefundReconcile extends Command
             /** @var RechargeOrder $order */
             $order = FinanceTenantRepository::orders($scope)->findOrEmpty((int)$record->order_id);
             if ($log->isEmpty() || $order->isEmpty()) {
-                Log::warning(sprintf(
-                    '[refund:reconcile] 关联数据缺失 record_id=%d',
-                    (int)$record->id
-                ));
+                Log::warning('refund_reconcile_related_data_missing', $diagnostics + [
+                    'record_id' => (int)$record->id,
+                ]);
                 continue;
             }
 
@@ -64,11 +65,10 @@ class RefundReconcile extends Command
                     (string)$log->sn
                 );
             } catch (\Throwable $e) {
-                Log::warning(sprintf(
-                    '[refund:reconcile] 渠道查询失败 record_id=%d: %s',
-                    (int)$record->id,
-                    $e->getMessage()
-                ));
+                Log::warning('refund_reconcile_gateway_query_failed', $diagnostics + [
+                    'record_id' => (int)$record->id,
+                    'exception' => $e::class,
+                ]);
                 continue;
             }
 
@@ -80,11 +80,9 @@ class RefundReconcile extends Command
                 RefundGatewayInterface::STATUS_SUCCESS,
                 RefundGatewayInterface::STATUS_FAILED,
             ], true)) {
-                Log::warning(sprintf(
-                    '[refund:reconcile] 未知渠道状态 record_id=%d status=%s',
-                    (int)$record->id,
-                    $gatewayStatus
-                ));
+                Log::warning('refund_reconcile_gateway_status_unknown', $diagnostics + [
+                    'record_id' => (int)$record->id,
+                ]);
                 continue;
             }
 
@@ -136,11 +134,10 @@ class RefundReconcile extends Command
                 $settled++;
             } catch (\Throwable $e) {
                 Db::rollback();
-                Log::warning(sprintf(
-                    '[refund:reconcile] 状态落库失败 record_id=%d: %s',
-                    (int)$record->id,
-                    $e->getMessage()
-                ));
+                Log::warning('refund_reconcile_persist_failed', $diagnostics + [
+                    'record_id' => (int)$record->id,
+                    'exception' => $e::class,
+                ]);
             }
         }
 
