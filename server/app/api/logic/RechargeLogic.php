@@ -12,13 +12,13 @@ use app\common\model\oauth\OAuthIdentity;
 use app\common\service\ConfigService;
 use app\common\service\MemberBalanceService;
 use app\common\service\finance\FinanceTenantRepository;
-use app\common\service\finance\VerifiedPaymentTenantResolver;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\PaymentEvent;
 use app\common\service\payment\dto\PrepayRequest;
 use think\facade\Db;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 用户充值订单和幂等入账状态机。 */
 class RechargeLogic extends BaseLogic
@@ -191,7 +191,7 @@ class RechargeLogic extends BaseLogic
                 $openid,
                 $clientIp
             );
-            $result = (new PaymentServiceFactory())->prepay($channel)->prepay($request);
+            $result = PaymentServiceFactory::forTenant($context, $channel)->prepay($channel)->prepay($request);
             return [
                 'order' => self::formatOrder($order),
                 'payment' => $result->toArray(),
@@ -235,7 +235,7 @@ class RechargeLogic extends BaseLogic
      * 可信渠道回调的唯一入账入口。
      * @param PaymentEvent|array{order_sn:string,pay_way:int,transaction_id:string,amount_cents?:int,amount?:string|float|int,currency:string,status?:string} $payment
      */
-    public static function settle(PaymentEvent|array $payment): bool
+    public static function settle(TenantSystemContext $context, PaymentEvent|array $payment): bool
     {
         Db::startTrans();
         try {
@@ -263,7 +263,9 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('支付状态尚未成功');
             }
 
-            $context = VerifiedPaymentTenantResolver::resolve($orderSn);
+            if (FinanceTenantContext::tenantId($context) < 1) {
+                throw new \RuntimeException('支付回调租户无效');
+            }
 
             /** @var RechargeOrder $order */
             $order = FinanceTenantRepository::orders($context)->where('sn', $orderSn)->lock(true)->findOrEmpty();

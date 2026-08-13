@@ -279,7 +279,7 @@ class RechargeLogic extends BaseLogic
                 RechargeOrder::PAY_WAY_ALIPAY => 'alipay',
                 default => throw new \RuntimeException('支付方式异常'),
             };
-            $result = (new PaymentServiceFactory())->refund($channel)->refund(
+            $result = PaymentServiceFactory::forTenant($context, $channel)->refund($channel)->refund(
                 $order->getData(),
                 (string)$log->sn,
                 MemberBalanceService::moneyToCents((string)$record->refund_amount)

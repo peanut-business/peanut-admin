@@ -7,7 +7,7 @@ use app\api\logic\OAuthLogic;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\member\MemberTenantContext;
-use app\common\service\notice\NoticeTenantContext;
+use app\common\service\external\ExternalTenantResolver;
 
 class OAuthController extends BaseApiController
 {
@@ -23,12 +23,23 @@ class OAuthController extends BaseApiController
             (string)$this->request->domain(),
             $scene
         );
-        $result = OAuthLogic::begin(
-            MemberTenantContext::system($this->request, 'member.oauth-begin'),
-            $scene,
-            (string)$params['return_path'],
-            $callbackUrl
-        );
+        try {
+            $resolver = ExternalTenantResolver::production();
+            $provider = ExternalTenantResolver::oauthProvider($scene);
+            $clientId = trim((string)($params['client_id'] ?? ''));
+            $resolution = $clientId === ''
+                ? $resolver->onlyActiveBinding($provider, 'oauth.begin', $this->operationId())
+                : $resolver->clientIdentity($provider, $clientId, 'oauth.begin', $this->operationId());
+            $result = OAuthLogic::begin(
+                $resolution->context,
+                $scene,
+                (string)$params['return_path'],
+                $callbackUrl,
+                $resolution->binding,
+            );
+        } catch (\Throwable) {
+            return $this->fail('微信授权请求无效');
+        }
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
     }
 
@@ -52,12 +63,22 @@ class OAuthController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.callback');
-        $result = OAuthLogic::callback(
-            MemberTenantContext::system($this->request, 'member.oauth-callback'),
-            (string)$params['scene'],
-            (string)$params['code'],
-            (string)$params['state']
-        );
+        try {
+            $resolution = ExternalTenantResolver::production()->oauthState(
+                ExternalTenantResolver::oauthProvider((string)$params['scene']),
+                (string)$params['state'],
+                $this->operationId(),
+            );
+            $result = OAuthLogic::callback(
+                $resolution->context,
+                (string)$params['scene'],
+                (string)$params['code'],
+                (string)$params['state'],
+                $resolution->binding,
+            );
+        } catch (\Throwable) {
+            return $this->fail('微信授权请求无效');
+        }
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
     }
 
@@ -65,10 +86,29 @@ class OAuthController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.mnp');
-        $result = OAuthLogic::miniProgramLogin(
-            MemberTenantContext::system($this->request, 'member.oauth-mini-program'),
-            (string)$params['code']
-        );
+        try {
+            $resolver = ExternalTenantResolver::production();
+            $clientId = trim((string)($params['client_id'] ?? ''));
+            $resolution = $clientId === ''
+                ? $resolver->onlyActiveBinding(
+                    ExternalTenantResolver::WECHAT_MINI_PROGRAM,
+                    'oauth.mini-program',
+                    $this->operationId(),
+                )
+                : $resolver->clientIdentity(
+                    ExternalTenantResolver::WECHAT_MINI_PROGRAM,
+                    $clientId,
+                    'oauth.mini-program',
+                    $this->operationId(),
+                );
+            $result = OAuthLogic::miniProgramLogin(
+                $resolution->context,
+                (string)$params['code'],
+                $resolution->binding,
+            );
+        } catch (\Throwable) {
+            return $this->fail('微信授权请求无效');
+        }
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
     }
 
@@ -77,10 +117,15 @@ class OAuthController extends BaseApiController
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.complete');
         $params['code'] = (string)($params['verification_code'] ?? '');
-        $result = OAuthLogic::complete(
-            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
-            $params
-        );
+        try {
+            $resolution = ExternalTenantResolver::production()->oauthTicket(
+                (string)$params['ticket'],
+                $this->operationId(),
+            );
+            $result = OAuthLogic::complete($resolution->context, $params);
+        } catch (\Throwable) {
+            return $this->fail('微信授权请求无效');
+        }
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
     }
 
@@ -95,5 +140,11 @@ class OAuthController extends BaseApiController
             (string)$params['code']
         );
         return $result ? $this->success('绑定成功') : $this->fail(OAuthLogic::getError());
+    }
+
+    private function operationId(): string
+    {
+        $requestId = trim((string)$this->request->header('X-Request-Id', ''));
+        return $requestId !== '' ? $requestId : bin2hex(random_bytes(16));
     }
 }

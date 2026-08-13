@@ -5,7 +5,6 @@ use app\api\logic\RechargeLogic as ApiRechargeLogic;
 use app\common\model\finance\RechargeOrder;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
-use app\common\service\finance\VerifiedPaymentTenantResolver;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -129,10 +128,10 @@ try {
     expectFinanceTenant((int)$betaOrder->tenant_id === 202, 'payload forged order Tenant ownership');
     expectFinanceTenant(FinanceTenantRepository::orders($alpha)->where('id', (int)$betaOrder->id)->findOrEmpty()->isEmpty(), 'Alpha read Beta order');
 
-    $system = VerifiedPaymentTenantResolver::resolve('RC-BETA-22');
-    expectFinanceTenant(FinanceTenantContext::tenantId($system) === 202, 'verified callback did not resolve Beta Tenant');
+    $system = FinanceTenantContext::externalPayment(202, 'fixture:RC-BETA-22');
+    expectFinanceTenant(FinanceTenantContext::tenantId($system) === 202, 'verified callback did not carry Beta Tenant');
     $betaBefore = (string)MemberTenantRepository::members($beta)->where('id', 22)->value('user_money');
-    expectFinanceTenant(ApiRechargeLogic::settle([
+    expectFinanceTenant(ApiRechargeLogic::settle($system, [
         'order_sn' => 'RC-BETA-22', 'pay_way' => 2, 'transaction_id' => 'TX-BETA-22',
         'amount_cents' => 500, 'currency' => 'CNY', 'status' => 'success',
     ]), 'verified callback settlement failed: ' . ApiRechargeLogic::getError());
