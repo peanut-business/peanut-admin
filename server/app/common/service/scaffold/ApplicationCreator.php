@@ -1,0 +1,614 @@
+<?php
+declare(strict_types=1);
+
+namespace app\common\service\scaffold;
+
+use RuntimeException;
+
+final class ApplicationCreator
+{
+    private const CLASSIFICATIONS = ['managed', 'generated-managed', 'app-owned', 'excluded'];
+    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'package', 'sbom', 'third-party-notices'];
+    private const VARIABLES = ['PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
+
+    /** @param array{commit:string,tree:string}|null $sourceIdentity */
+    public function __construct(
+        private readonly string $sourceRoot,
+        private readonly string $inventoryPath,
+        private readonly ?array $sourceIdentity = null,
+    ) {
+    }
+
+    /** @return array<string,mixed> */
+    public function create(string $productName, string $slug, string $packageIdentity, string $target): array
+    {
+        $parameters = $this->validateParameters($productName, $slug, $packageIdentity);
+        $inventory = $this->loadInventory();
+        $identity = $this->sourceIdentity ?? $this->gitIdentity();
+        $target = $this->validateTarget($target);
+        $parent = dirname($target);
+        $stage = $parent . DIRECTORY_SEPARATOR . '.' . basename($target) . '.create-' . bin2hex(random_bytes(6));
+        if (!mkdir($stage, 0775, false)) {
+            throw new RuntimeException('CREATE_APP_STAGE_FAILED');
+        }
+
+        try {
+            $files = [];
+            foreach ($inventory['files'] as $entry) {
+                if ($entry['classification'] === 'excluded') {
+                    continue;
+                }
+                $source = $this->sourcePath((string)$entry['path']);
+                $actualSourceDigest = hash_file('sha256', $source);
+                if (!is_string($actualSourceDigest) || !hash_equals((string)$entry['source_sha256'], $actualSourceDigest)) {
+                    throw new RuntimeException('CREATE_APP_SOURCE_DIGEST_MISMATCH: ' . $entry['path']);
+                }
+                $content = file_get_contents($source);
+                if (!is_string($content)) {
+                    throw new RuntimeException('CREATE_APP_SOURCE_READ_FAILED: ' . $entry['path']);
+                }
+                $content = $this->transform($content, $entry, $parameters);
+                $destination = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, (string)$entry['target']);
+                $this->writeFile($destination, $content, (int)$entry['mode']);
+                $files[] = [
+                    'path' => $entry['target'],
+                    'sha256' => hash('sha256', $content),
+                    'classification' => $entry['classification'],
+                    'owner' => $entry['owner'],
+                    'source' => $entry['path'],
+                ];
+            }
+            usort($files, static fn(array $a, array $b): int => strcmp((string)$a['path'], (string)$b['path']));
+            $this->assertNoUnresolvedVariables($stage);
+            $manifest = $this->writeApplicationManifest($stage, $inventory, $identity, $parameters, $files);
+
+            if (is_dir($target) && !rmdir($target)) {
+                throw new RuntimeException('CREATE_APP_TARGET_NOT_EMPTY');
+            }
+            if (!rename($stage, $target)) {
+                throw new RuntimeException('CREATE_APP_TARGET_COMMIT_FAILED');
+            }
+            return $manifest;
+        } catch (\Throwable $exception) {
+            $this->deleteTree($stage);
+            throw $exception;
+        }
+    }
+
+    /** @return array<string,string> */
+    private function validateParameters(string $productName, string $slug, string $packageIdentity): array
+    {
+        $productName = trim($productName);
+        if ($productName === '' || strlen($productName) > 80 || preg_match('/[\x00-\x1F\x7F{}]/', $productName) === 1) {
+            throw new RuntimeException('CREATE_APP_PRODUCT_NAME_INVALID');
+        }
+        if (preg_match('/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/D', $slug) !== 1 || strlen($slug) > 63) {
+            throw new RuntimeException('CREATE_APP_SLUG_INVALID');
+        }
+        if (preg_match('/^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/D', $packageIdentity) !== 1
+            || strlen($packageIdentity) > 120) {
+            throw new RuntimeException('CREATE_APP_PACKAGE_IDENTITY_INVALID');
+        }
+        return ['PRODUCT_NAME' => $productName, 'SLUG' => $slug, 'PACKAGE_IDENTITY' => $packageIdentity];
+    }
+
+    /** @return array<string,mixed> */
+    private function loadInventory(): array
+    {
+        $raw = file_get_contents($this->inventoryPath);
+        try {
+            $inventory = is_string($raw) ? json_decode($raw, true, 512, JSON_THROW_ON_ERROR) : null;
+        } catch (\JsonException $exception) {
+            throw new RuntimeException('CREATE_APP_INVENTORY_INVALID_JSON', 0, $exception);
+        }
+        if (!is_array($inventory) || ($inventory['schema_version'] ?? null) !== 1
+            || !is_string($inventory['template_version'] ?? null)
+            || !is_array($inventory['variables'] ?? null)
+            || !is_array($inventory['files'] ?? null)) {
+            throw new RuntimeException('CREATE_APP_INVENTORY_SCHEMA_INVALID');
+        }
+        $variables = $inventory['variables'];
+        sort($variables, SORT_STRING);
+        if ($variables !== self::VARIABLES) {
+            throw new RuntimeException('CREATE_APP_INVENTORY_UNKNOWN_VARIABLE');
+        }
+        $seenSource = [];
+        $seenTarget = [];
+        foreach ($inventory['files'] as $index => &$entry) {
+            if (!is_array($entry)) {
+                throw new RuntimeException('CREATE_APP_INVENTORY_ENTRY_INVALID: ' . $index);
+            }
+            $path = ScaffoldManifest::path((string)($entry['path'] ?? ''));
+            $target = ScaffoldManifest::path((string)($entry['target'] ?? $path));
+            $classification = (string)($entry['classification'] ?? '');
+            $transform = (string)($entry['transform'] ?? 'copy');
+            if (isset($seenSource[$path]) || isset($seenTarget[$target])) {
+                throw new RuntimeException('CREATE_APP_INVENTORY_DUPLICATE_PATH: ' . $path);
+            }
+            if (!in_array($classification, self::CLASSIFICATIONS, true)
+                || !in_array($transform, self::TRANSFORMS, true)
+                || !is_string($entry['owner'] ?? null)
+                || !in_array($entry['mode'] ?? null, [0644, 0755], true)) {
+                throw new RuntimeException('CREATE_APP_INVENTORY_ENTRY_INVALID: ' . $path);
+            }
+            if ($classification !== 'excluded'
+                && (!is_string($entry['source_sha256'] ?? null)
+                    || preg_match('/^[a-f0-9]{64}$/D', $entry['source_sha256']) !== 1)) {
+                throw new RuntimeException('CREATE_APP_INVENTORY_DIGEST_INVALID: ' . $path);
+            }
+            $seenSource[$path] = true;
+            $seenTarget[$target] = true;
+            $entry['path'] = $path;
+            $entry['target'] = $target;
+        }
+        unset($entry);
+        return $inventory;
+    }
+
+    /** @return array{commit:string,tree:string} */
+    private function gitIdentity(): array
+    {
+        $status = $this->git(['status', '--porcelain=v1', '--untracked-files=all']);
+        if ($status !== '') {
+            throw new RuntimeException('CREATE_APP_SOURCE_NOT_CLEAN');
+        }
+        $commit = $this->git(['rev-parse', 'HEAD']);
+        $tree = $this->git(['rev-parse', 'HEAD^{tree}']);
+        if (preg_match('/^[a-f0-9]{40}$/D', $commit) !== 1 || preg_match('/^[a-f0-9]{40}$/D', $tree) !== 1) {
+            throw new RuntimeException('CREATE_APP_SOURCE_IDENTITY_INVALID');
+        }
+        return ['commit' => $commit, 'tree' => $tree];
+    }
+
+    /** @param list<string> $arguments */
+    private function git(array $arguments): string
+    {
+        $command = ['git', '-C', $this->sourceRoot, ...$arguments];
+        $pipes = [];
+        $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        if (!is_resource($process)) {
+            throw new RuntimeException('CREATE_APP_GIT_UNAVAILABLE');
+        }
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        if (proc_close($process) !== 0 || !is_string($stdout)) {
+            throw new RuntimeException('CREATE_APP_GIT_FAILED: ' . trim((string)$stderr));
+        }
+        return trim($stdout);
+    }
+
+    private function validateTarget(string $target): string
+    {
+        if ($target === '' || str_contains($target, "\0") || !str_starts_with($target, DIRECTORY_SEPARATOR)
+            || in_array('..', explode(DIRECTORY_SEPARATOR, $target), true)) {
+            throw new RuntimeException('CREATE_APP_TARGET_PATH_INVALID');
+        }
+        $cursor = DIRECTORY_SEPARATOR;
+        foreach (array_filter(explode(DIRECTORY_SEPARATOR, $target), 'strlen') as $segment) {
+            $cursor = rtrim($cursor, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $segment;
+            if (is_link($cursor)) {
+                throw new RuntimeException('CREATE_APP_TARGET_SYMLINK_REJECTED');
+            }
+        }
+        $parent = realpath(dirname($target));
+        if ($parent === false || !is_dir($parent)) {
+            throw new RuntimeException('CREATE_APP_TARGET_PARENT_INVALID');
+        }
+        $resolved = $parent . DIRECTORY_SEPARATOR . basename($target);
+        if (is_file($resolved) || (is_dir($resolved) && (scandir($resolved) ?: []) !== ['.', '..'])) {
+            throw new RuntimeException('CREATE_APP_TARGET_NOT_EMPTY');
+        }
+        $source = realpath($this->sourceRoot);
+        if ($source === false || $resolved === $source || str_starts_with($resolved . DIRECTORY_SEPARATOR, $source . DIRECTORY_SEPARATOR)) {
+            throw new RuntimeException('CREATE_APP_TARGET_INSIDE_SOURCE');
+        }
+        return $resolved;
+    }
+
+    private function sourcePath(string $relative): string
+    {
+        $path = $this->sourceRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+        return ScaffoldPathGuard::existingFileWithin($this->sourceRoot, $path, 'CREATE_APP_SOURCE_PATH_INVALID');
+    }
+
+    /** @param array<string,mixed> $entry @param array<string,string> $parameters */
+    private function transform(string $content, array $entry, array $parameters): string
+    {
+        return match ($entry['transform']) {
+            'copy' => $content,
+            'text' => $this->textTransform($content, $parameters, (string)$entry['path']),
+            'brand' => $this->brandManifest($parameters),
+            'brand-asset' => $this->brandAsset((string)$entry['path'], $parameters),
+            'changelog' => $this->render($this->changelog(), $parameters),
+            'ci' => $this->ciTransform($content),
+            'docs-page' => $this->render($this->docsPage((string)$entry['path']), $parameters),
+            'environment-guard' => $this->environmentGuard($content),
+            'release-metadata' => $this->releaseMetadata($parameters),
+            'resources' => $this->resourceRegistry($parameters),
+            'readme' => $this->render($this->readme(), $parameters),
+            'license' => $this->render($this->license(), $parameters),
+            'package' => $this->packageTransform($content, $parameters),
+            'sbom' => $this->sbom($content, $parameters),
+            'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
+            default => throw new RuntimeException('CREATE_APP_INVENTORY_TRANSFORM_UNKNOWN'),
+        };
+    }
+
+    /** @param array<string,string> $parameters */
+    private function textTransform(string $content, array $parameters, string $path): string
+    {
+        $content = str_replace(
+            ['Peanut Admin', 'peanut-business/peanut-admin', 'https://peanut-admin.007345.xyz', 'https://peanut-admin-doc.007345.xyz', '花生科技'],
+            [$parameters['PRODUCT_NAME'], $parameters['PACKAGE_IDENTITY'], 'https://example.invalid', 'https://docs.example.invalid', 'application owner'],
+            $content
+        );
+        if ($path === 'server/database/init.sql') {
+            $content = str_replace(
+                ["-- 超级管理员（密码：admin123456）", "MD5(CONCAT(MD5('admin123456'),'abcd1234'))", '系统预置角色（仅菜单管理权限，演示用）'],
+                ['-- 超级管理员（密码必须由安装器注入）', "MD5(CONCAT(MD5('__INSTALLER_MUST_REPLACE__'),'abcd1234'))", '系统预置最小权限角色'],
+                $content
+            );
+        }
+        if ($path === 'server/database/install.php') {
+            $content = str_replace("MD5(CONCAT(MD5('admin123456'),'abcd1234'))", "MD5(CONCAT(MD5('__INSTALLER_MUST_REPLACE__'),'abcd1234'))", $content);
+        }
+        if ($path === 'server/tests/Productization/InstallerBootstrapTest.php') {
+            $content = str_replace(
+                ["MD5(CONCAT(MD5('admin123456')", '密码：admin123456', 'known password expression must not reach the database', 'installer must only replace the executable seed'],
+                ["MD5(CONCAT(MD5('__INSTALLER_MUST_REPLACE__')", '密码必须由安装器注入', 'placeholder password expression must not reach the database', 'installer must preserve the neutral seed comment'],
+                $content
+            );
+        }
+        if ($path === 'server/app/adminapi/logic/WorkbenchLogic.php') {
+            $content = preg_replace("/'(today_sales|total_sales|today_visitor|total_visitor|today_new_user|total_new_user|order_num|order_sum)' => [0-9]+,/", "'$1' => 0,", $content) ?? $content;
+        }
+        return $content;
+    }
+
+    /** @param array<string,string> $parameters */
+    private function packageTransform(string $content, array $parameters): string
+    {
+        return str_replace(
+            ['peanut-business/peanut-admin', 'peanut-admin-web', 'peanut-admin-pc', 'peanut-admin-uniapp', 'peanut-admin-docs'],
+            [$parameters['PACKAGE_IDENTITY'], $parameters['SLUG'] . '-web', $parameters['SLUG'] . '-pc', $parameters['SLUG'] . '-uniapp', $parameters['SLUG'] . '-docs'],
+            $this->textTransform($content, $parameters, 'package')
+        );
+    }
+
+    /** @param array<string,string> $parameters */
+    private function brandAsset(string $path, array $parameters): string
+    {
+        if (str_ends_with($path, '/favicon.svg')) {
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img">'
+                . '<title>' . htmlspecialchars($parameters['PRODUCT_NAME'], ENT_XML1) . '</title>'
+                . '<rect width="32" height="32" rx="8" fill="#165DFF"/>'
+                . '<path d="M8 16 16 8l8 8-8 8Z" fill="#fff"/>'
+                . '<circle cx="23.5" cy="23.5" r="3" fill="#34D399"/></svg>' . "\n";
+        }
+        if (str_ends_with($path, '/logo.svg')) {
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">'
+                . '<title>' . htmlspecialchars($parameters['PRODUCT_NAME'], ENT_XML1) . '</title>'
+                . '<rect width="64" height="64" rx="16" fill="#165DFF"/>'
+                . '<path d="M16 32 32 16l16 16-16 16Z" fill="#fff"/>'
+                . '<circle cx="47.5" cy="47.5" r="5.5" fill="#34D399"/></svg>' . "\n";
+        }
+        return $this->textTransform((string)file_get_contents($this->sourcePath($path)), $parameters, $path);
+    }
+
+    private function ciTransform(string $content): string
+    {
+        $content = preg_replace('/  stale-facts:\n.*?(?=  changes:\n)/s', '', $content) ?? $content;
+        $content = preg_replace('/^      create_app:.*\n/m', '', $content) ?? $content;
+        $content = str_replace('server web pc uniapp docs_site create_app', 'server web pc uniapp docs_site', $content);
+        $content = preg_replace('/^          matches .*create_app=true.*\n/m', '', $content) ?? $content;
+        $content = preg_replace('/\n  create-app:\n.*?(?=  php:\n)/s', "\n", $content) ?? $content;
+        return $content;
+    }
+
+    private function environmentGuard(string $content): string
+    {
+        $content = preg_replace('/const PEANUT_DATABASE_RESOURCES = \[.*?\n\];\n/s', '', $content, 1) ?? $content;
+        $replacement = <<<'PHP'
+function guardedDatabaseConfig(): array
+{
+    $environment = requiredEnvironment('APP_ENV');
+    $deploymentTarget = requiredEnvironment('PEANUT_DEPLOYMENT_TARGET');
+    $resourceId = requiredEnvironment('PEANUT_DATABASE_RESOURCE_ID');
+    $registryPath = dirname(__DIR__, 2) . '/resources/project-resources.json';
+    $raw = file_get_contents($registryPath);
+    $registry = is_string($raw) ? json_decode($raw, true) : null;
+    $databases = is_array($registry) ? ($registry['resources']['databases'] ?? null) : null;
+    if (!is_array($databases)) {
+        throw new RuntimeException('项目数据库资源登记无效');
+    }
+    $registered = null;
+    foreach ($databases as $database) {
+        if (is_array($database) && ($database['stable_resource_id'] ?? null) === $resourceId) {
+            $registered = $database;
+            break;
+        }
+    }
+    if (!is_array($registered)) {
+        throw new RuntimeException("数据库资源 {$resourceId} 未登记");
+    }
+    $environments = $registered['environments'] ?? [$registered['environment'] ?? null];
+    if (!is_array($environments) || (!in_array($environment, $environments, true) && !in_array($deploymentTarget, $environments, true))) {
+        throw new RuntimeException("数据库资源 {$resourceId} 未登记为 {$environment}/{$deploymentTarget}");
+    }
+    $actual = [
+        'host' => requiredEnvironment('DB_HOST'),
+        'port' => requiredEnvironment('DB_PORT'),
+        'database' => requiredEnvironment('DB_NAME'),
+    ];
+    $endpoints = [];
+    foreach (['upstream_endpoint', 'container_endpoint'] as $key) {
+        if (is_array($registered[$key] ?? null)) {
+            $endpoints[] = $registered[$key];
+        }
+    }
+    if (isset($registered['host'], $registered['port'])) {
+        $endpoints[] = ['host' => $registered['host'], 'port' => $registered['port']];
+    }
+    $endpointMatch = false;
+    foreach ($endpoints as $endpoint) {
+        if ((string)($endpoint['host'] ?? '') === $actual['host'] && (string)($endpoint['port'] ?? '') === $actual['port']) {
+            $endpointMatch = true;
+            break;
+        }
+    }
+    if (!$endpointMatch || !hash_equals((string)($registered['database'] ?? ''), $actual['database'])) {
+        throw new RuntimeException("数据库资源 {$resourceId} 的地址或 database 不匹配登记值");
+    }
+    if (!in_array(requiredEnvironment('DEPLOYMENT_MODE'), ['standalone', 'multi-tenant'], true)) {
+        throw new RuntimeException('DEPLOYMENT_MODE 只允许 standalone 或 multi-tenant');
+    }
+    return [
+        'environment' => $environment,
+        'deployment_target' => $deploymentTarget,
+        'resource_id' => $resourceId,
+        ...$actual,
+        'user' => requiredEnvironment('DB_USER'),
+        'password' => requiredEnvironment('DB_PASS'),
+    ];
+}
+PHP;
+        $content = preg_replace('/function guardedDatabaseConfig\(\): array\n\{.*?\n\}\n\nfunction guardedConnection/s', $replacement . "\n\nfunction guardedConnection", $content, 1) ?? $content;
+        return $content;
+    }
+
+    private function docsPage(string $path): string
+    {
+        return match ($path) {
+            'docs-site/index.md' => "---\nlayout: home\nhero:\n  name: \"{{PRODUCT_NAME}}\"\n  text: \"Application documentation\"\n---\n\nThis site belongs to the generated application.\n",
+            'docs-site/getting-started.md' => "# Getting started\n\nRegister resources in `resources/project-resources.json`, configure `server/.env`, then install dependencies. A fresh database install requires an explicit `ADMIN_INITIAL_PASSWORD`.\n",
+            'docs-site/deployment.md' => "# Deployment\n\nUse the checked-in Compose and Docker sources. Register every deployment resource before connecting it; do not inherit the scaffold source environment.\n",
+            'docs-site/api.md' => "# API and extensions\n\nApplication HTTP adapters and product modules are app-owned. Use `server/config/peanut.php` and `web/src/peanut.overrides.ts` as the stable Core Host extension entries.\n",
+            'docs-site/releases.md' => "# Releases\n\nCreate application releases from immutable application commits. Regenerate legal metadata and dependency inventory for each release.\n",
+            'docs-site/legal.md' => "# Legal\n\nReview the generated root legal files before redistribution. Dependency changes require a refreshed SBOM and third-party notices.\n",
+            'docs-site/404.md' => "# Page not found\n\nReturn to the [documentation home](/).\n",
+            default => "# {{PRODUCT_NAME}} documentation\n\nThis page is app-owned. Replace it with product-specific documentation.\n",
+        };
+    }
+
+    /** @param array<string,string> $parameters */
+    private function releaseMetadata(array $parameters): string
+    {
+        $metadata = [
+            'schema_version' => 1,
+            'product' => $parameters['PRODUCT_NAME'],
+            'application_identity' => $parameters['PACKAGE_IDENTITY'],
+            'version' => '0.1.0',
+            'status' => 'generated-application-baseline',
+            'release_policy' => 'replace this metadata from an immutable application release candidate before publishing',
+            'public_runtime_dependencies' => [
+                'composer' => 'peanut-admin/core@0.1.0-alpha.5',
+                'frontend' => '@peanut-admin/admin@0.1.0-alpha.5',
+            ],
+        ];
+        return json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    /** @param array<string,string> $parameters */
+    private function sbom(string $content, array $parameters): string
+    {
+        $content = $this->textTransform($content, $parameters, 'RELEASE_SBOM.spdx.json');
+        $content = str_replace(
+            [' 1.1.0 release dependency SBOM', '/releases/tag/v1.1.0/sbom', '@1.1.0'],
+            [' 0.1.0 generated dependency SBOM', '/sbom/generated-0.1.0', '@0.1.0'],
+            $content
+        );
+        $document = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        if (!is_array($document)) {
+            throw new RuntimeException('CREATE_APP_SBOM_INVALID');
+        }
+        $document['creationInfo']['comment'] = 'Generated application baseline; regenerate from application lockfiles before release.';
+        return json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    /** @param array<string,string> $parameters */
+    private function thirdPartyNotices(string $content, array $parameters): string
+    {
+        $content = $this->textTransform($content, $parameters, 'THIRD_PARTY_NOTICES.md');
+        $content = str_replace(' 1.1.0 on 2026-08-13', ' generated application baseline', $content);
+        $content = preg_replace('/Copyright \(c\) 2026 花生科技\. All rights reserved\./', 'Copyright holder: application owner. All rights reserved.', $content) ?? $content;
+        return $content;
+    }
+
+    /** @param array<string,string> $parameters */
+    private function brandManifest(array $parameters): string
+    {
+        $brand = [
+            'schema_version' => 1,
+            'website' => [
+                'name' => $parameters['PRODUCT_NAME'], 'web_favicon' => 'brand/favicon.svg', 'web_logo' => 'brand/logo.svg',
+                'login_image' => 'brand/login-background.svg', 'shop_name' => $parameters['PRODUCT_NAME'], 'shop_logo' => 'brand/logo.svg',
+                'pc_logo' => 'brand/logo.svg', 'pc_title' => $parameters['PRODUCT_NAME'], 'pc_ico' => 'brand/favicon.svg',
+                'pc_desc' => $parameters['PRODUCT_NAME'] . ' application', 'pc_keywords' => $parameters['PRODUCT_NAME'],
+                'h5_favicon' => 'brand/favicon.svg', 'slogan' => 'A maintainable application baseline', 'copyright' => '',
+                'official_url' => '', 'github_url' => '',
+            ],
+            'default_image' => [
+                'admin_avatar' => 'brand/avatar-admin.svg', 'user_avatar' => 'brand/avatar-member.svg', 'menu' => 'brand/menu.svg',
+                'project_docs' => 'brand/docs.svg', 'technical_support' => 'brand/support.svg',
+            ],
+        ];
+        return json_encode($brand, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    /** @param array<string,string> $parameters */
+    private function resourceRegistry(array $parameters): string
+    {
+        $registry = [
+            'schema_version' => 1,
+            'project_id' => $parameters['SLUG'],
+            'authority' => [
+                'owner' => $parameters['PRODUCT_NAME'] . ' maintainers', 'source' => 'this versioned file',
+                'credentials_policy' => 'references only; secrets are never stored in Git',
+                'allocation_status' => 'unallocated; register environment-specific resources before connection or startup',
+            ],
+            'resources' => [
+                'tooling' => [],
+                'databases' => [[
+                    'stable_resource_id' => $parameters['SLUG'] . '-mysql84-ci', 'purpose' => 'GitHub Actions server checks',
+                    'environments' => ['ci'], 'owner' => 'generated GitHub Actions workflow', 'host' => '127.0.0.1', 'port' => 3306,
+                    'database' => null, 'schema' => 'pa_ table prefix', 'namespace' => $parameters['SLUG'] . '-ci',
+                    'service_type' => 'mysql:8.4 service container', 'credential_ref' => 'ephemeral workflow environment variables',
+                    'data_source' => 'fresh ephemeral CI database', 'freshness_requirement' => 'new service container per job',
+                    'health_check' => 'mysqladmin ping', 'fallback' => 'none', 'cleanup_responsibility' => 'GitHub Actions job teardown',
+                ]],
+                'local_listeners' => [], 'containers' => [], 'optional_services' => [],
+                'external_services' => [],
+                'queues' => ['status' => 'not_registered'], 'object_storage' => ['status' => 'not_registered'],
+            ],
+        ];
+        return json_encode($registry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    /** @param array<string,string> $parameters */
+    private function readme(): string
+    {
+        return "# {{PRODUCT_NAME}}\n\nApplication identity: `{{PACKAGE_IDENTITY}}` (`{{SLUG}}`).\n\n"
+            . "This repository was generated from a versioned application scaffold. Application business code and the stable Host override files are app-owned; `.peanut/application-manifest.json` records the exact boundary and managed baseline.\n\n"
+            . "Before connecting a database or starting a service, register the environment resources in `resources/project-resources.json`. A fresh install requires explicit `ADMIN_INITIAL_PASSWORD`; no shared default password is supplied.\n";
+    }
+
+    /** @param array<string,string> $parameters */
+    private function license(): string
+    {
+        return "{{PRODUCT_NAME}}\n\nCopyright holder: application owner. All rights reserved.\n\n"
+            . "Third-party components retain their own licenses; review THIRD_PARTY_NOTICES.md and RELEASE_SBOM.spdx.json before redistribution.\n";
+    }
+
+    private function changelog(): string
+    {
+        return "# Changelog\n\n## 0.1.0\n\n- Initial generated application baseline for {{PRODUCT_NAME}}.\n";
+    }
+
+    private function writeFile(string $path, string $content, int $mode): void
+    {
+        $directory = dirname($path);
+        if (!is_dir($directory) && !mkdir($directory, 0775, true)) {
+            throw new RuntimeException('CREATE_APP_DIRECTORY_FAILED: ' . $directory);
+        }
+        if (file_put_contents($path, $content) === false || !chmod($path, $mode)) {
+            throw new RuntimeException('CREATE_APP_WRITE_FAILED: ' . $path);
+        }
+    }
+
+    private function assertNoUnresolvedVariables(string $root): void
+    {
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $file) {
+            if (!$file->isFile() || $file->getSize() > 5_000_000) {
+                continue;
+            }
+            $content = file_get_contents($file->getPathname());
+            if (is_string($content) && preg_match('/{{[A-Z][A-Z0-9_]*}}/', $content) === 1) {
+                throw new RuntimeException('CREATE_APP_UNKNOWN_TEMPLATE_VARIABLE: ' . $file->getPathname());
+            }
+        }
+    }
+
+    /** @param array<string,string> $parameters */
+    private function render(string $value, array $parameters): string
+    {
+        $rendered = strtr($value, array_combine(
+            array_map(static fn(string $key): string => '{{' . $key . '}}', array_keys($parameters)),
+            array_values($parameters)
+        ) ?: []);
+        if (preg_match('/{{[A-Z][A-Z0-9_]*}}/', $rendered) === 1) {
+            throw new RuntimeException('CREATE_APP_UNKNOWN_TEMPLATE_VARIABLE');
+        }
+        return $rendered;
+    }
+
+    /** @param array<string,mixed> $inventory @param array{commit:string,tree:string} $identity @param array<string,string> $parameters @param list<array<string,mixed>> $files */
+    private function writeApplicationManifest(string $stage, array $inventory, array $identity, array $parameters, array $files): array
+    {
+        $baselineRoot = '.peanut/scaffold-baseline/' . $inventory['template_version'] . '/files';
+        foreach ($files as &$file) {
+            if (!in_array($file['classification'], ['managed', 'generated-managed'], true)) {
+                continue;
+            }
+            $source = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, (string)$file['path']);
+            $baseline = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $baselineRoot . '/' . $file['path']);
+            $content = file_get_contents($source);
+            if (!is_string($content)) {
+                throw new RuntimeException('CREATE_APP_BASELINE_READ_FAILED');
+            }
+            $this->writeFile($baseline, $content, 0644);
+            $file['baseline_path'] = $baselineRoot . '/' . $file['path'];
+        }
+        unset($file);
+        $managed = array_values(array_filter($files, static fn(array $file): bool => in_array($file['classification'], ['managed', 'generated-managed'], true)));
+        $appOwned = array_values(array_filter($files, static fn(array $file): bool => $file['classification'] === 'app-owned'));
+        $manifest = [
+            'schema_version' => 1,
+            'protocol' => 'peanut.application-scaffold.v1',
+            'application' => ['name' => $parameters['PRODUCT_NAME'], 'slug' => $parameters['SLUG'], 'package_identity' => $parameters['PACKAGE_IDENTITY']],
+            'template' => [
+                'version' => $inventory['template_version'], 'inventory_sha256' => hash_file('sha256', $this->inventoryPath),
+                'source_commit' => $identity['commit'], 'source_tree' => $identity['tree'],
+            ],
+            'ownership' => [
+                'managed_default' => 'three-way against the recorded baseline; never overwrite a locally changed file without an explicit later apply decision',
+                'app_owned_default' => 'preserve; future scaffold versions do not take ownership by default',
+                'metadata' => ['path' => '.peanut/application-manifest.json', 'classification' => 'generated-managed'],
+                'baseline_root' => $baselineRoot,
+            ],
+            'digests' => [
+                'managed_tree_sha256' => $this->treeDigest($managed),
+                'app_owned_tree_sha256' => $this->treeDigest($appOwned),
+            ],
+            'files' => $files,
+        ];
+        $manifestPath = $stage . '/.peanut/application-manifest.json';
+        $this->writeFile($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n", 0644);
+        return $manifest;
+    }
+
+    /** @param list<array<string,mixed>> $files */
+    private function treeDigest(array $files): string
+    {
+        $rows = array_map(static fn(array $file): string => $file['path'] . "\0" . $file['sha256'], $files);
+        sort($rows, SORT_STRING);
+        return hash('sha256', implode("\n", $rows));
+    }
+
+    private function deleteTree(string $path): void
+    {
+        if (!file_exists($path) && !is_link($path)) {
+            return;
+        }
+        if (is_dir($path) && !is_link($path)) {
+            foreach (array_diff(scandir($path) ?: [], ['.', '..']) as $entry) {
+                $this->deleteTree($path . DIRECTORY_SEPARATOR . $entry);
+            }
+            rmdir($path);
+            return;
+        }
+        unlink($path);
+    }
+}
