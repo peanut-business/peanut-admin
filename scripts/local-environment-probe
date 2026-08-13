@@ -16,32 +16,50 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parent.parent
-EXPECTED_DATABASE = {
-    "resource_id": "peanut-admin-mysql84-development",
-    "host": "192.168.192.2",
-    "port": 20183,
-    "database": "peanut_admin_development",
-}
-EXPECTED_PORTS = {
-    "development_gateway": 8080,
-    "development_php": 8000,
-    "development_admin": 5173,
-    "development_pc": 3100,
-    "development_mobile": 5174,
-    "development_docs": 4173,
-    "production_preview_gateway": 18092,
-}
-PORT_ENV_NAMES = {
-    "development_gateway": "DEV_HTTP_PORT",
-    "development_php": "PHP_PORT",
-    "development_admin": "VITE_PORT",
-    "development_pc": "PC_PORT",
-    "development_mobile": "MOBILE_PORT",
-    "development_docs": "DOCS_PORT",
-    "production_preview_gateway": "HTTP_PORT",
-}
+REGISTRY_PATH = REPO / "resources/project-resources.json"
+
+
+def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str, str]]:
+    registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    databases = [
+        item
+        for item in registry["resources"]["databases"]
+        if "development" in item["environments"]
+    ]
+    if len(databases) != 1:
+        raise ValueError("resource registry must select one development database")
+    database = databases[0]
+    endpoint = database["container_endpoint"]
+    expected_database = {
+        "resource_id": database["stable_resource_id"],
+        "endpoint_id": endpoint["endpoint_id"],
+        "consumer": "container",
+        "host": endpoint["host"],
+        "port": int(endpoint["port"]),
+        "database": database["database"],
+    }
+    port_names = {
+        "DEV_HTTP_PORT": "development_gateway",
+        "PHP_PORT": "development_php",
+        "VITE_PORT": "development_admin",
+        "PC_PORT": "development_pc",
+        "MOBILE_PORT": "development_mobile",
+        "DOCS_PORT": "development_docs",
+        "HTTP_PORT": "production_preview_gateway",
+    }
+    expected_ports = {
+        port_names[item["port_env"]]: int(item["port"])
+        for item in registry["resources"]["local_listeners"]
+    }
+    port_env_names = {value: key for key, value in port_names.items()}
+    return expected_database, expected_ports, port_env_names
+
+
+EXPECTED_DATABASE, EXPECTED_PORTS, PORT_ENV_NAMES = registered_expectations()
 SAFE_ENV_NAMES = set(PORT_ENV_NAMES.values()) | {
     "PEANUT_DATABASE_RESOURCE_ID",
+    "PEANUT_DATABASE_ENDPOINT_ID",
+    "PEANUT_DATABASE_CONSUMER",
     "DB_HOST",
     "DB_PORT",
     "DB_NAME",
@@ -151,23 +169,17 @@ class Probe:
         prod_nginx = self.text("deploy/nginx/peanut-admin.conf")
         dockerfile = self.text("deploy/docker/production.Dockerfile")
 
-        database_fragments = [
-            f"PEANUT_DATABASE_RESOURCE_ID {EXPECTED_DATABASE['resource_id']}",
-            f"DB_HOST {EXPECTED_DATABASE['host']}",
-            f"DB_PORT {EXPECTED_DATABASE['port']}",
-            f"DB_NAME {EXPECTED_DATABASE['database']}",
-        ]
-        local_stack_ok = all(fragment in local_stack for fragment in database_fragments)
-        guard_occurrences = guard.count("'peanut-admin-mysql84-development' => [")
+        local_stack_ok = "project-resource-registry" in local_stack
         guard_ok = (
-            guard_occurrences == 2
-            and guard.count("'host' => '192.168.192.2'") == 2
-            and guard.count("'port' => '20183'") == 2
-            and guard.count("'database' => 'peanut_admin_development'") == 2
+            "resources/project-resources.json" in guard
+            and "PEANUT_DATABASE_ENDPOINT_ID" in guard
+            and "PEANUT_DATABASE_CONSUMER" in guard
         )
         target_ok = (
             "PEANUT_DEPLOYMENT_TARGET: local-development" in dev_compose
             and "PEANUT_DEPLOYMENT_TARGET=local-production-preview" in local_stack
+            and "PEANUT_DATABASE_ENDPOINT_ID:" in dev_compose
+            and "PEANUT_DATABASE_CONSUMER:" in dev_compose
         )
         self.add(
             "config.database_registry",
@@ -180,22 +192,20 @@ class Probe:
         )
 
         port_fragments = {
-            "development_gateway": "${DEV_HTTP_PORT:-8080}:80",
-            "development_php": "${PHP_PORT:-8000}:8000",
-            "development_admin": "${VITE_PORT:-5173}:5173",
-            "development_pc": "${PC_PORT:-3100}:3100",
-            "development_mobile": "${MOBILE_PORT:-5174}:5174",
-            "development_docs": "${DOCS_PORT:-4173}:4173",
-            "production_preview_gateway": "${HTTP_PORT:-18092}:80",
+            "development_gateway": "${DEV_HTTP_PORT:?set the registered development gateway port}:80",
+            "development_php": "${PHP_PORT:?set the registered PHP port}:8000",
+            "development_admin": "${VITE_PORT:?set the registered admin port}:5173",
+            "development_pc": "${PC_PORT:?set the registered PC port}:3100",
+            "development_mobile": "${MOBILE_PORT:?set the registered mobile port}:5174",
+            "development_docs": "${DOCS_PORT:?set the registered docs port}:4173",
+            "production_preview_gateway": "${HTTP_PORT:?set the registered HTTP port}:80",
         }
         port_sources = {
             **{key: dev_compose for key in list(port_fragments)[:6]},
             "production_preview_gateway": prod_compose,
         }
         ports_ok = all(fragment in port_sources[name] for name, fragment in port_fragments.items())
-        ports_ok = ports_ok and all(
-            f"{PORT_ENV_NAMES[name]}={port}" in local_stack for name, port in EXPECTED_PORTS.items()
-        )
+        ports_ok = ports_ok and "local-stack-env" in local_stack
         self.add(
             "config.fixed_ports",
             ports_ok,
@@ -317,6 +327,8 @@ class Probe:
         if self.env_file.is_file():
             env_ok = (
                 safe_environment.get("PEANUT_DATABASE_RESOURCE_ID") == EXPECTED_DATABASE["resource_id"]
+                and safe_environment.get("PEANUT_DATABASE_ENDPOINT_ID") == EXPECTED_DATABASE["endpoint_id"]
+                and safe_environment.get("PEANUT_DATABASE_CONSUMER") == EXPECTED_DATABASE["consumer"]
                 and safe_environment.get("DB_HOST") == EXPECTED_DATABASE["host"]
                 and safe_environment.get("DB_PORT") == str(EXPECTED_DATABASE["port"])
                 and safe_environment.get("DB_NAME") == EXPECTED_DATABASE["database"]
@@ -552,6 +564,7 @@ class Probe:
                 "id": EXPECTED_DATABASE["resource_id"],
                 "environment": "development/local-production-preview",
                 "address": f"{EXPECTED_DATABASE['host']}:{EXPECTED_DATABASE['port']}/{EXPECTED_DATABASE['database']}",
+                "endpoint_id": EXPECTED_DATABASE["endpoint_id"],
             },
             "summary": {"passed": passed, "failed": failed, "skipped": skipped},
             "checks": self.checks,

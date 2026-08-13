@@ -14,13 +14,13 @@ JSON 报告写入标准输出，简洁摘要写入标准错误；任一检查失
 检查以下合同：
 
 - 固定端口监听与 development/production-preview HTTP 入口；
-- 唯一开发数据库资源 `peanut-admin-mysql84-development`（
-  `192.168.192.2:20183/peanut_admin_development`）及 migration ledger current；
+- 项目登记 `resources/project-resources.json` 中唯一开发数据库的容器消费入口及
+  migration ledger current；
 - 两套 Nginx 的 `client_max_body_size`，两套 PHP Runtime 的
   `upload_max_filesize`、`post_max_size`、`max_file_uploads`；
 - 图片 10 MiB、文件 50 MiB、视频 200 MiB 业务上限与传输层上限的大小关系；
 - development 与 production-preview 的 `/storage/` 显式路由；
-- 两套本地运行模式使用相同数据库资源、上传配置和固定端口合同。
+- 两套本地运行模式使用项目登记选择的相同数据库资源、容器入口、上传配置和固定端口合同。
 
 若本地 env 文件不在默认的 `.local/stack.env`，可显式指定：
 

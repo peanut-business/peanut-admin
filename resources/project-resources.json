@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "project_id": "peanut-admin",
+  "authority": {
+    "owner": "Peanut Admin maintainers",
+    "source": "this versioned file",
+    "company_allocation_evidence": "/Users/xing/Documents/company-os/resources/development-infrastructure.yaml",
+    "credentials_policy": "references only; secrets are never stored in Git"
+  },
+  "resources": {
+    "databases": [
+      {
+        "stable_resource_id": "peanut-admin-mysql84-development",
+        "purpose": "shared development and local production-mode preview database",
+        "environments": [
+          "development",
+          "local-production-preview"
+        ],
+        "owner": "Peanut Admin project; allocation source mac-14 CompanyOS registry",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "database": "peanut_admin_development",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development",
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-mysql84-development-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-mysql84-development-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "persistent Peanut Admin development data on mac-14",
+        "freshness_requirement": "server/database/environment-guard.php --current must pass before application readiness",
+        "health_check": {
+          "allocation": "scripts/company-development-database.sh status",
+          "host_connection": "scripts/local-stack.sh database-host-status",
+          "container_connection": "scripts/local-stack.sh database-status"
+        },
+        "fallback": "none",
+        "lifecycle": "persistent",
+        "cleanup_responsibility": "Peanut Admin project owner; explicit owner gate required",
+        "backup_responsibility": "Peanut Admin project owner before each migration"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-bundled-mysql84",
+        "purpose": "production-server bundled database profile",
+        "environments": [
+          "production"
+        ],
+        "owner": "Peanut Admin production deployment owner",
+        "service_type": "mysql",
+        "version": "8.4",
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin",
+        "upstream_endpoint": null,
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-production-bundled-mysql84-compose",
+          "host": "mysql",
+          "port": 3306,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "deployment-local Compose network"
+        },
+        "credential_ref": "production deployment secret provider",
+        "data_source": "production deployment bundled MySQL volume",
+        "freshness_requirement": "backup and explicit migration must precede production application readiness",
+        "health_check": {
+          "allocation": "docker compose --profile bundled-db ps mysql",
+          "host_connection": null,
+          "container_connection": "php server/database/environment-guard.php --current"
+        },
+        "fallback": "none",
+        "lifecycle": "persistent",
+        "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate",
+        "backup_responsibility": "production deployment owner before each migration"
+      }
+    ],
+    "local_listeners": [
+      {
+        "stable_resource_id": "peanut-admin-local-development-gateway",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 8080,
+        "port_env": "DEV_HTTP_PORT",
+        "service_type": "http",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "local development Compose stack",
+        "freshness_requirement": "current worktree",
+        "health_check": "GET /admin/",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-php",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 8000,
+        "port_env": "PHP_PORT",
+        "service_type": "http",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "local development PHP container",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-admin",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 5173,
+        "port_env": "VITE_PORT",
+        "service_type": "vite",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "web source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-pc",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 3100,
+        "port_env": "PC_PORT",
+        "service_type": "nuxt",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "pc source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-mobile",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 5174,
+        "port_env": "MOBILE_PORT",
+        "service_type": "vite-uniapp",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "uniapp source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-docs",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "port_env": "DOCS_PORT",
+        "service_type": "vitepress",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "docs-site source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "GET /",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-production-preview-gateway",
+        "environment": "local-production-preview",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 18092,
+        "port_env": "HTTP_PORT",
+        "service_type": "http",
+        "namespace": "peanut-admin-production",
+        "credential_ref": null,
+        "data_source": "local production-mode Compose stack",
+        "freshness_requirement": "current worktree image",
+        "health_check": "GET /healthz",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh prod-down"
+      }
+    ],
+    "containers": [
+      {
+        "stable_resource_id": "peanut-admin-development-php-container",
+        "purpose": "development backend runtime",
+        "environment": "development",
+        "owner": "deploy/docker-compose.dev.yml",
+        "host": "Docker Desktop local engine",
+        "port": 8000,
+        "database": "peanut_admin_development via peanut-admin-mysql84-development-docker-direct",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-development",
+        "service_type": "PHP 8.3 development image",
+        "credential_ref": ".local/stack.env generated from the registered external credential reference",
+        "data_source": "current server worktree",
+        "freshness_requirement": "current worktree and current migration ledger",
+        "health_check": "php database/environment-guard.php --current",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-development-ui-containers",
+        "purpose": "development admin, PC, mobile, docs and Nginx gateway runtimes",
+        "environment": "development",
+        "owner": "deploy/docker-compose.dev.yml",
+        "host": "Docker Desktop local engine",
+        "port": "registered local_listeners entries",
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-development",
+        "service_type": "Node.js 20.19.4 and Nginx 1.27 containers",
+        "credential_ref": null,
+        "data_source": "current web, pc, uniapp and docs-site worktrees",
+        "freshness_requirement": "current worktree",
+        "health_check": "scripts/local-environment-probe",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-production-preview-containers",
+        "purpose": "local production-mode PHP, Nginx and cron preview runtimes",
+        "environment": "local-production-preview",
+        "owner": "deploy/docker-compose.prod.yml",
+        "host": "Docker Desktop local engine",
+        "port": 18092,
+        "database": "peanut_admin_development via peanut-admin-mysql84-development-docker-direct",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production",
+        "service_type": "Peanut Admin production PHP/Nginx images",
+        "credential_ref": ".local/stack.env generated from the registered external credential reference",
+        "data_source": "current worktree images",
+        "freshness_requirement": "current image and current migration ledger",
+        "health_check": "scripts/local-environment-probe",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh prod-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-bundled-mysql84-container",
+        "purpose": "optional production bundled database runtime",
+        "environment": "production",
+        "owner": "deploy/docker-compose.prod.yml bundled-db profile",
+        "host": "production deployment container engine",
+        "port": 3306,
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production",
+        "service_type": "mysql:8.4",
+        "credential_ref": "production deployment secret provider",
+        "data_source": "production bundled MySQL volume",
+        "freshness_requirement": "explicit migration ledger current check",
+        "health_check": "mysqladmin ping plus php server/database/environment-guard.php --current",
+        "fallback": "none",
+        "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate"
+      }
+    ],
+    "optional_services": [
+      {
+        "stable_resource_id": "peanut-admin-local-redis-experiment",
+        "purpose": "opt-in local experiments only",
+        "environments": [
+          "development",
+          "local-production-preview"
+        ],
+        "owner": "invoking developer",
+        "host": "Compose service redis",
+        "port": 6379,
+        "database": null,
+        "schema": null,
+        "namespace": "must be assigned by the invoking experiment",
+        "service_type": "redis:7-alpine",
+        "credential_ref": null,
+        "data_source": "ephemeral local experiment",
+        "freshness_requirement": "not applicable",
+        "health_check": "redis-cli ping",
+        "fallback": "none",
+        "cleanup_responsibility": "invoking lease owner"
+      }
+    ],
+    "external_services": [
+      {
+        "stable_resource_id": "peanut-admin-github-repository",
+        "purpose": "source control and CI",
+        "environments": [
+          "development",
+          "production"
+        ],
+        "owner": "peanut-business GitHub organization",
+        "host": "github.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-business/peanut-admin",
+        "service_type": "GitHub",
+        "credential_ref": "developer gh/SSH credential provider",
+        "data_source": "git@github.com:peanut-business/peanut-admin.git",
+        "freshness_requirement": "fetch origin/dev before implementation",
+        "health_check": "git ls-remote origin",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-domain",
+        "purpose": "published Peanut Admin application",
+        "environments": [
+          "production"
+        ],
+        "owner": "Peanut Admin production deployment owner",
+        "host": "peanut-admin.007345.xyz",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin",
+        "service_type": "HTTPS domain",
+        "credential_ref": "production deployment secret provider",
+        "data_source": "production deployment",
+        "freshness_requirement": "release-specific smoke evidence",
+        "health_check": "GET /healthz",
+        "fallback": "none",
+        "cleanup_responsibility": "production deployment owner"
+      }
+    ],
+    "queues": {
+      "status": "not_applicable",
+      "reason": "the current product has no registered queue service"
+    },
+    "object_storage": {
+      "status": "not_applicable",
+      "reason": "the current product defaults to application-managed file storage; external object storage has no project allocation"
+    }
+  }
+}

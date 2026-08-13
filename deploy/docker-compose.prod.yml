@@ -6,6 +6,8 @@ x-app-environment: &app-environment
   PHP_APP_DEBUG: "false"
   PEANUT_DEPLOYMENT_TARGET: ${PEANUT_DEPLOYMENT_TARGET:?set local-production-preview or production}
   PEANUT_DATABASE_RESOURCE_ID: ${PEANUT_DATABASE_RESOURCE_ID:?set the registered production database resource id}
+  PEANUT_DATABASE_ENDPOINT_ID: ${PEANUT_DATABASE_ENDPOINT_ID:?set the registered container database endpoint id}
+  PEANUT_DATABASE_CONSUMER: ${PEANUT_DATABASE_CONSUMER:?set the registered database consumer}
   DB_HOST: ${DB_HOST:?set DB_HOST in .env}
   DB_PORT: ${DB_PORT:-3306}
   DB_NAME: ${DB_NAME:-peanut_admin}
@@ -85,7 +87,7 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${HTTP_PORT:-18092}:80"
+      - "127.0.0.1:${HTTP_PORT:?set the registered HTTP port}:80"
     volumes:
       - php-storage:/var/www/peanut-admin/server/public/storage:ro
     depends_on:
