@@ -7,6 +7,7 @@ use app\api\logic\ArticleLogic;
 use app\api\logic\IndexLogic;
 use app\api\logic\PcLogic;
 use app\common\service\article\ArticleTenantContext;
+use app\common\service\decoration\DecorationTenantContext;
 
 /**
  * PC 端聚合接口（部分端点返回更丰富的字段或不同格式）
@@ -18,7 +19,10 @@ class PcController extends BaseApiController
     /** PC 配置 */
     public function config()
     {
-        $result = IndexLogic::getConfigData();
+        $result = IndexLogic::getConfigData(DecorationTenantContext::read(
+            $this->request,
+            DecorationTenantContext::CONFIG_OPERATION
+        ));
         return $this->data($result);
     }
 

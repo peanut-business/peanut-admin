@@ -14,11 +14,12 @@ use app\common\service\config\PaConfigWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
+use app\common\service\decoration\DecorationTenantContext;
 
 class IndexLogic extends BaseLogic
 {
     /** 全局配置（uniapp / H5 用） */
-    public static function getConfigData(): array
+    public static function getConfigData(TenantContext|TenantSystemContext $context): array
     {
         $domain    = request()->domain();
         $website = self::websiteService()->get();
@@ -50,7 +51,11 @@ class IndexLogic extends BaseLogic
             ],
             'web_page' => $webPage,
             'tabbar'   => DecorationReadService::tabbar(true),
-            'theme'    => DecorationReadService::pageByType(DecorationEnum::SYSTEM_THEME),
+            'theme'    => DecorationReadService::pageByType(
+                $context,
+                DecorationEnum::SYSTEM_THEME,
+                DecorationTenantContext::CONFIG_OPERATION
+            ),
             'version'  => '1.0.0',
         ];
     }
@@ -107,7 +112,11 @@ class IndexLogic extends BaseLogic
 
         return [
             'article' => $articles,
-            'decorate' => DecorationReadService::pageByType(DecorationEnum::MOBILE_HOME),
+            'decorate' => DecorationReadService::pageByType(
+                $context,
+                DecorationEnum::MOBILE_HOME,
+                DecorationTenantContext::ARTICLE_INDEX_OPERATION
+            ),
         ];
     }
 }

@@ -5,6 +5,7 @@ namespace app\api\controller;
 
 use app\api\logic\IndexLogic;
 use app\common\service\article\ArticleTenantContext;
+use app\common\service\decoration\DecorationTenantContext;
 
 class IndexController extends BaseApiController
 {
@@ -20,7 +21,10 @@ class IndexController extends BaseApiController
     /** 全局配置 */
     public function config()
     {
-        $result = IndexLogic::getConfigData();
+        $result = IndexLogic::getConfigData(DecorationTenantContext::read(
+            $this->request,
+            DecorationTenantContext::CONFIG_OPERATION
+        ));
         return $this->data($result);
     }
 
