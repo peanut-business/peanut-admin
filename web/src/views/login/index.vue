@@ -22,9 +22,9 @@
 
 <script lang="ts" setup>
   import Footer from '@/components/footer/index.vue';
+  import { useBrandStore } from '@/store';
   import LoginBanner from './components/banner.vue';
   import LoginForm from './components/login-form.vue';
-  import { useBrandStore } from '@/store';
 
   const brandStore = useBrandStore();
 </script>

@@ -9,7 +9,7 @@ export default defineConfig({
   title: website.name,
   description: website.slogan,
   cleanUrls: true,
-  lastUpdated: true,
+  lastUpdated: process.env.VITEPRESS_DISABLE_GIT !== 'true',
   sitemap: canonicalUrl ? { hostname: canonicalUrl } : undefined,
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/favicon.svg' }],

@@ -32,7 +32,7 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000/api',
+        target: process.env.NUXT_DEV_PROXY_TARGET || 'http://127.0.0.1:8000/api',
         changeOrigin: true,
       },
     },

@@ -9,11 +9,13 @@ server/public/uploads/
 # Production deployment secrets
 deploy/production.env
 /.env
+/.local/
 
 # Web
 web/node_modules/
 web/dist/
 web/.eslintcache
+**/.pnpm-store/
 
 # System
 .DS_Store
