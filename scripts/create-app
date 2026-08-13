@@ -1,0 +1,46 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+use app\common\service\scaffold\ApplicationCreator;
+
+$root = dirname(__DIR__);
+require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
+require $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
+require $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
+
+function createAppUsage(): never
+{
+    fwrite(STDERR, "Usage: php scripts/create-app --name=<product> --slug=<slug> --package=<vendor/name> --target=/absolute/path\n");
+    exit(64);
+}
+
+$options = [];
+foreach (array_slice($argv, 1) as $argument) {
+    if (preg_match('/^--(name|slug|package|target)=(.*)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
+        createAppUsage();
+    }
+    $options[$matches[1]] = $matches[2];
+}
+foreach (['name', 'slug', 'package', 'target'] as $required) {
+    if (!isset($options[$required]) || $options[$required] === '') {
+        createAppUsage();
+    }
+}
+
+try {
+    $manifest = (new ApplicationCreator($root, $root . '/scaffold/application-template-inventory.json'))->create(
+        $options['name'], $options['slug'], $options['package'], $options['target']
+    );
+    fwrite(STDOUT, json_encode([
+        'status' => 'created',
+        'target' => $options['target'],
+        'template_version' => $manifest['template']['version'],
+        'source_commit' => $manifest['template']['source_commit'],
+        'managed_tree_sha256' => $manifest['digests']['managed_tree_sha256'],
+        'app_owned_tree_sha256' => $manifest['digests']['app_owned_tree_sha256'],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n");
+} catch (Throwable $exception) {
+    fwrite(STDERR, json_encode(['status' => 'error', 'error' => $exception->getMessage()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+    exit(1);
+}

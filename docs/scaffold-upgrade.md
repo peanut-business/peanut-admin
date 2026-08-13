@@ -1,5 +1,9 @@
 # 脚手架升级预检
 
+新应用由 `scripts/create-app` 创建，并在 `.peanut/application-manifest.json` 记录完整
+`managed` / `generated-managed` / `app-owned` 分类和逐文件生成基线。该创建 manifest 是
+未来跨版本 apply/三方合并的输入身份；当前 preflight 仍不执行 apply 或 recovery。
+
 首个纵向切片只处理应用仓中的脚手架和 Host 文件。它不安装 Plugin、不运行 Module 或数据库迁移、不连接生产，也不修改项目业务文件。
 
 每个 release 在 `scaffold/releases/<version>/scaffold-manifest.json` 固定受管文件路径、该 release 的基线 SHA-256、策略和执行 owner。策略为：

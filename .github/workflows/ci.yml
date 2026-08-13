@@ -29,6 +29,7 @@ jobs:
       pc: ${{ steps.paths.outputs.pc }}
       uniapp: ${{ steps.paths.outputs.uniapp }}
       docs_site: ${{ steps.paths.outputs.docs_site }}
+      create_app: ${{ steps.paths.outputs.create_app }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,7 +41,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            for output in server web pc uniapp docs_site; do
+            for output in server web pc uniapp docs_site create_app; do
               echo "${output}=true" >> "$GITHUB_OUTPUT"
             done
             exit 0
@@ -51,11 +52,31 @@ jobs:
             grep -Eq "$1" <<< "$changed"
           }
 
-          matches '^(server/|scripts/ci-server-check\.sh$|scripts/check-admin-api-permissions\.php$)' && echo 'server=true' >> "$GITHUB_OUTPUT" || echo 'server=false' >> "$GITHUB_OUTPUT"
+          server_changed="$(grep -E '^server/' <<< "$changed" | grep -Ev '^(server/app/common/service/scaffold/ApplicationCreator\.php|server/tests/Productization/CreateApplicationTest\.php)$' || true)"
+          [[ -n "$server_changed" || "$(grep -E '^(scripts/ci-server-check\.sh|scripts/check-admin-api-permissions\.php)$' <<< "$changed" || true)" != "" ]] && echo 'server=true' >> "$GITHUB_OUTPUT" || echo 'server=false' >> "$GITHUB_OUTPUT"
           matches '^(web/|scripts/sync-brand-assets\.mjs$)' && echo 'web=true' >> "$GITHUB_OUTPUT" || echo 'web=false' >> "$GITHUB_OUTPUT"
           matches '^pc/' && echo 'pc=true' >> "$GITHUB_OUTPUT" || echo 'pc=false' >> "$GITHUB_OUTPUT"
           matches '^uniapp/' && echo 'uniapp=true' >> "$GITHUB_OUTPUT" || echo 'uniapp=false' >> "$GITHUB_OUTPUT"
           matches '^docs-site/' && echo 'docs_site=true' >> "$GITHUB_OUTPUT" || echo 'docs_site=false' >> "$GITHUB_OUTPUT"
+          matches '^(scaffold/application-template-inventory\.json|scripts/create-app|scripts/build-application-template-inventory|server/app/common/service/scaffold/ApplicationCreator\.php|server/tests/Productization/CreateApplicationTest\.php|docs/create-application\.md)$' && echo 'create_app=true' >> "$GITHUB_OUTPUT" || echo 'create_app=false' >> "$GITHUB_OUTPUT"
+
+  create-app:
+    name: Create app
+    needs: changes
+    if: needs.changes.outputs.create_app == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Verify inventory and create-app contract
+        run: |
+          php scripts/build-application-template-inventory --check
+          php server/tests/Productization/CreateApplicationTest.php
 
   php:
     name: PHP 8.3
