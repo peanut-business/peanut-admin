@@ -12,6 +12,16 @@ make_secret() {
     openssl rand -hex "$1"
 }
 
+set_env_value() {
+    name=$1
+    value=$2
+    temporary=$(mktemp "$state_dir/stack.env.XXXXXX")
+    awk -F= -v name="$name" '$1 != name { print }' "$env_file" > "$temporary"
+    printf '%s=%s\n' "$name" "$value" >> "$temporary"
+    chmod 600 "$temporary"
+    mv "$temporary" "$env_file"
+}
+
 ensure_env() {
     umask 077
     mkdir -p "$state_dir"
@@ -29,9 +39,10 @@ ensure_env() {
             printf '%s\n' 'PC_PORT=3100'
             printf '%s\n' 'MOBILE_PORT=5174'
             printf '%s\n' 'DOCS_PORT=4173'
-            printf '%s\n' 'DB_HOST=mysql'
-            printf '%s\n' 'DB_PORT=3306'
-            printf '%s\n' 'DB_NAME=peanut_admin'
+            printf '%s\n' 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-mysql84-development'
+            printf '%s\n' 'DB_HOST=192.168.192.2'
+            printf '%s\n' 'DB_PORT=20183'
+            printf '%s\n' 'DB_NAME=peanut_admin_development'
             printf '%s\n' 'DB_USER=peanut_admin'
             printf 'DB_PASS=%s\n' "$db_pass"
             printf 'MYSQL_ROOT_PASSWORD=%s\n' "$root_pass"
@@ -49,6 +60,13 @@ ensure_env() {
     grep -q '^DEPLOYMENT_MODE=' "$env_file" || printf '%s\n' 'DEPLOYMENT_MODE=standalone' >> "$env_file"
     grep -q '^TENANT_IDENTIFIER_HMAC_KEY=' "$env_file" || printf 'TENANT_IDENTIFIER_HMAC_KEY=%s\n' "$(make_secret 32)" >> "$env_file"
     grep -q '^PLATFORM_IDENTIFIER_HMAC_KEY=' "$env_file" || printf 'PLATFORM_IDENTIFIER_HMAC_KEY=%s\n' "$(make_secret 32)" >> "$env_file"
+    set_env_value PEANUT_DATABASE_RESOURCE_ID peanut-admin-mysql84-development
+    set_env_value DB_HOST 192.168.192.2
+    set_env_value DB_PORT 20183
+    set_env_value DB_NAME peanut_admin_development
+    if ! grep -q '^DB_USER=peanut_admin_development$' "$env_file"; then
+        "$repo_dir/scripts/company-development-database.sh" sync-credentials
+    fi
 }
 
 compose_dev() {
@@ -56,7 +74,8 @@ compose_dev() {
 }
 
 compose_prod() {
-    docker compose --env-file "$env_file" -f "$prod_compose" "$@"
+    PEANUT_DEPLOYMENT_TARGET=local-production-preview \
+        docker compose --env-file "$env_file" -f "$prod_compose" "$@"
 }
 
 show_urls() {
@@ -66,36 +85,37 @@ show_urls() {
         'Mobile:      http://127.0.0.1:8080/mobile/' \
         'Docs:        http://127.0.0.1:4173/' \
         'Production:  http://127.0.0.1:18092/admin/'
+    printf '%s\n' 'Database:    peanut-admin-mysql84-development @ 192.168.192.2:20183/peanut_admin_development'
 }
 
 case "${1:-}" in
     dev-up)
         ensure_env
-        compose_dev up -d
+        compose_dev up -d --remove-orphans
         show_urls
         ;;
     dev-build)
         ensure_env
-        compose_dev up -d --build
+        compose_dev up -d --build --remove-orphans
         show_urls
         ;;
     dev-down)
         ensure_env
-        compose_dev down
+        compose_dev down --remove-orphans
         ;;
     prod-up)
         ensure_env
-        compose_prod --profile bundled-db up -d
+        compose_prod up -d
         show_urls
         ;;
     prod-build)
         ensure_env
-        compose_prod --profile bundled-db up -d --build
+        compose_prod up -d --build
         show_urls
         ;;
     prod-down)
         ensure_env
-        compose_prod --profile bundled-db down
+        compose_prod down
         ;;
     status)
         ensure_env
@@ -107,8 +127,12 @@ case "${1:-}" in
         ensure_env
         awk -F= '/^(ADMIN_INITIAL_EMAIL|ADMIN_INITIAL_PASSWORD)=/ {print $1 "=" $2}' "$env_file"
         ;;
+    database-status)
+        ensure_env
+        compose_dev run --rm --no-deps php php database/environment-guard.php --current
+        ;;
     *)
-        printf 'Usage: %s {dev-up|dev-build|dev-down|prod-up|prod-build|prod-down|status|credentials}\n' "$0" >&2
+        printf 'Usage: %s {dev-up|dev-build|dev-down|prod-up|prod-build|prod-down|status|credentials|database-status}\n' "$0" >&2
         exit 2
         ;;
 esac

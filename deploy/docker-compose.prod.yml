@@ -4,6 +4,8 @@ x-app-environment: &app-environment
   APP_ENV: production
   APP_DEBUG: "false"
   PHP_APP_DEBUG: "false"
+  PEANUT_DEPLOYMENT_TARGET: ${PEANUT_DEPLOYMENT_TARGET:?set local-production-preview or production}
+  PEANUT_DATABASE_RESOURCE_ID: ${PEANUT_DATABASE_RESOURCE_ID:?set the registered production database resource id}
   DB_HOST: ${DB_HOST:?set DB_HOST in .env}
   DB_PORT: ${DB_PORT:-3306}
   DB_NAME: ${DB_NAME:-peanut_admin}

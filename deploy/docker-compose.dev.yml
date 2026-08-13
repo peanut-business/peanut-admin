@@ -16,22 +16,27 @@ services:
       context: ..
       dockerfile: deploy/docker/php-development.Dockerfile
     working_dir: /workspace/server
-    command: ["sh", "-c", "test -f vendor/autoload.php || composer install --no-interaction --prefer-dist; attempts=0; until php database/install.php --skip-if-installed || php database/migrate.php; do attempts=$$((attempts + 1)); [ $$attempts -ge 30 ] && exit 1; sleep 2; done; php database/migrate.php && exec php think run --host=0.0.0.0 --port=8000"]
+    command: ["/usr/local/bin/peanut-development-entrypoint"]
     environment:
       APP_ENV: development
       APP_DEBUG: ${APP_DEBUG:-true}
       PHP_APP_DEBUG: ${APP_DEBUG:-true}
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-peanut_admin}
-      DB_USER: ${DB_USER:-peanut_admin}
-      DB_PASS: ${DB_PASS:-peanut_admin_change_me}
+      PEANUT_DEPLOYMENT_TARGET: local-development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE}
+      TENANT_IDENTIFIER_HMAC_KEY: ${TENANT_IDENTIFIER_HMAC_KEY:?set TENANT_IDENTIFIER_HMAC_KEY}
+      PLATFORM_IDENTIFIER_HMAC_KEY: ${PLATFORM_IDENTIFIER_HMAC_KEY:?set PLATFORM_IDENTIFIER_HMAC_KEY}
+      PEANUT_DATABASE_RESOURCE_ID: ${PEANUT_DATABASE_RESOURCE_ID:?set the registered database resource id}
+      DB_HOST: ${DB_HOST:?set the registered database host}
+      DB_PORT: ${DB_PORT:?set the registered database port}
+      DB_NAME: ${DB_NAME:?set the registered database name}
+      DB_USER: ${DB_USER:?set the registered database user}
+      DB_PASS: ${DB_PASS:?set the database password}
       DB_PREFIX: ${DB_PREFIX:-pa_}
-      PHP_DB_HOST: mysql
-      PHP_DB_PORT: 3306
-      PHP_DB_NAME: ${DB_NAME:-peanut_admin}
-      PHP_DB_USER: ${DB_USER:-peanut_admin}
-      PHP_DB_PASS: ${DB_PASS:-peanut_admin_change_me}
+      PHP_DB_HOST: ${DB_HOST:?set the registered database host}
+      PHP_DB_PORT: ${DB_PORT:?set the registered database port}
+      PHP_DB_NAME: ${DB_NAME:?set the registered database name}
+      PHP_DB_USER: ${DB_USER:?set the registered database user}
+      PHP_DB_PASS: ${DB_PASS:?set the database password}
       PHP_DB_PREFIX: ${DB_PREFIX:-pa_}
       JWT_SECRET: ${JWT_SECRET:-development-only-secret}
       PHP_JWT_SECRET: ${JWT_SECRET:-development-only-secret}
@@ -41,12 +46,9 @@ services:
     volumes:
       - ../server:/workspace/server
       - ./docker/container.env:/workspace/server/.env:ro
+      - ./docker/php-development-entrypoint.sh:/usr/local/bin/peanut-development-entrypoint:ro
     ports:
       - "${PHP_PORT:-8000}:8000"
-    depends_on:
-      mysql:
-        condition: service_healthy
-
   web:
     image: node:20.19.4-bookworm-slim
     working_dir: /workspace/web
@@ -122,29 +124,12 @@ services:
       - pc
       - mobile
 
-  mysql:
-    image: mysql:8.4
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    environment:
-      MYSQL_DATABASE: ${DB_NAME:-peanut_admin}
-      MYSQL_USER: ${DB_USER:-peanut_admin}
-      MYSQL_PASSWORD: ${DB_PASS:-peanut_admin_change_me}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_change_me}
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
   # Redis is opt-in for experiments; no application service depends on it.
   redis:
     image: redis:7-alpine
     profiles: [redis]
 
 volumes:
-  mysql-data:
   web-node-modules:
   pc-node-modules:
   mobile-node-modules:

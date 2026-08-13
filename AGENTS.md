@@ -29,7 +29,7 @@
 
 - 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 数据库：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 24 migrations
+- 数据库：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 50 migrations
 
 **独立验证结果（非 Codex 自报）：**
 
@@ -82,7 +82,12 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 - 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
 - 已完成：生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
 - 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`
-- 当前生产服务器使用 `bundled-db` MySQL profile；局域网 `192.168.192.2` 是开发/历史验收数据库，公网服务器不可直接路由该地址
+- 日常开发和本机生产模式预览只使用 CompanyOS 已登记的
+  `peanut-admin-mysql84-development`：`192.168.192.2:20183/peanut_admin_development`；
+  本机不运行 Peanut Admin MySQL。历史 `192.168.192.2:3306/peanut_admin` 没有迁移
+  账本，不得连接。线上生产服务器继续使用自身 `bundled-db` MySQL，公网服务器不可
+  直接路由局域网地址；两类资源由 `PEANUT_DEPLOYMENT_TARGET` 和
+  `PEANUT_DATABASE_RESOURCE_ID` 门禁隔离
 - 已完成 PB03：`docs/architecture/pb03-ownership-and-migration-gates.md` 已冻结核心通用基础设施、应用产品 Module、唯一实现、Host/override、测试 owner 与逐领域停止线
 - PB04 已完成：网站设置、权限 Host、管理员/RBAC CRUD、字典、文件素材、任务/导入导出与日志/维护均形成应用唯一实现、核心候选停止线及测试 owner
 - PB05 已完成：会员/标签、权威余额、兼容镜像、分类流水、充值入账与退款形成应用唯一 Runtime；核心 Tenant membership 与 R01/R02 候选未经采用授权
