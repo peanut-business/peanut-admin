@@ -60,6 +60,7 @@ use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\platform\controller\PlatformSessionController;
+use app\platform\controller\PlatformAccessController;
 use app\platform\controller\PlatformTenantBoundaryController;
 use app\platform\controller\PlatformTenantController;
 use app\platform\controller\PlatformTenantModuleController;
@@ -107,6 +108,36 @@ Route::post('api/platform/tenants/modules/enable', [PlatformTenantModuleControll
 Route::post('api/platform/tenants/modules/disable', [PlatformTenantModuleController::class, 'disable'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.module.manage');
+Route::post('api/platform/operators/create', [PlatformAccessController::class, 'createOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.create');
+Route::post('api/platform/operators/update', [PlatformAccessController::class, 'updateOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.update');
+Route::post('api/platform/operators/roles/replace', [PlatformAccessController::class, 'replaceOperatorRoles'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.role.assign');
+Route::post('api/platform/operators/activate', [PlatformAccessController::class, 'activateOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.lifecycle');
+Route::post('api/platform/operators/suspend', [PlatformAccessController::class, 'suspendOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.lifecycle');
+Route::post('api/platform/operators/close', [PlatformAccessController::class, 'closeOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.lifecycle');
+Route::post('api/platform/roles/create', [PlatformAccessController::class, 'createRole'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.create');
+Route::post('api/platform/roles/update', [PlatformAccessController::class, 'updateRole'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.update');
+Route::post('api/platform/roles/archive', [PlatformAccessController::class, 'archiveRole'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.archive');
+Route::post('api/platform/roles/permissions/replace', [PlatformAccessController::class, 'replaceRolePermissions'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.permission.assign');
 
 // Multi-tenant Admin session boundary. Core owns selection challenges and atomic old-session revocation.
 Route::post('api/tenant/session/login', [TenantSessionController::class, 'login']);
