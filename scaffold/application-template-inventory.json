@@ -52,6 +52,14 @@
             "source_sha256": "136019cc2ab49ec3fe137c8199fd7bc6cb638abb7c0838ab301777ad8817f128"
         },
         {
+            "path": ".github/workflows/core-upgrade-compatibility.yml",
+            "target": ".github/workflows/core-upgrade-compatibility.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": ".gitignore",
             "target": ".gitignore",
             "classification": "managed",
@@ -731,6 +739,14 @@
         {
             "path": "docs/core-packages-release-status.md",
             "target": "docs/core-packages-release-status.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/core-upgrade-compatibility.md",
+            "target": "docs/core-upgrade-compatibility.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3264,7 +3280,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "049e5c5be77d228c76a55aac8f6b2e159df8cf063495205e94a5463cb4be9bfa"
+            "source_sha256": "8b4302f69979f870349162a59018247d88df3da623f1fc340c556fcd800809a0"
         },
         {
             "path": "scaffold/releases/v1.1.0/files/server/config/brand.json",
@@ -3337,6 +3353,14 @@
         {
             "path": "scripts/company-development-database.sh",
             "target": "scripts/company-development-database.sh",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scripts/core-upgrade-compatibility",
+            "target": "scripts/core-upgrade-compatibility",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -8728,6 +8752,62 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "a62ae9ce36c728f0e6f9d64331fba0d382f0e051d99ef6044c7866d2823e744e"
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha2.lock",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha2.lock",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/fixture.json",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/fixture.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/php-probe.php",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/php-probe.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha4-lock.yaml",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha4-lock.yaml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha5-lock.yaml",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha5-lock.yaml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/web-probe.ts",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/web-probe.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/tests/fixtures/mt02/default-tenant-upgrade.sql",

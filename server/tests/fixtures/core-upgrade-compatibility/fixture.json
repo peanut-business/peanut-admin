@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "fixture": {
+    "application_name": "Core Upgrade Fixture",
+    "slug": "core-upgrade-fixture",
+    "package_identity": "peanut-fixtures/core-upgrade-fixture",
+    "template_version": "1.0.0",
+    "source_commit": "e358dd7df44d317040f0629df59bb880a17e6c49",
+    "source_tree": "172865d8b8057caa8a017ac591618cd914af30a5",
+    "inventory_sha256": "067f9a8d96f5fbd1fd082807da6ab46fee453a110101858a64580c5d2401f5eb",
+    "generated_manifest_sha256": "b19b04d55670c01c3e9130d3a23d65e05e5e0112255c2a525bfad3fd6e6b181a",
+    "managed_tree_sha256": "ed2dd179fd296f44cce7d8e56a51dd355bf89db9f9bd4b2e81b734b1078fa48a",
+    "app_owned_tree_sha256": "dfe62a4c22258a8a0d8149756375e3e36025ca541826a0b6e2c8210ea4245bbd",
+    "application_source_sha256": "d8de680eac371d708dfcb7c0f02cf6e0169e9b83edc6251d70b81eb7600e3283",
+    "app_owned_with_probes_sha256": "4521bfe200ccb91809f95f4f67f5be4794692c887db7d035112dd38b9a2d5ff1"
+  },
+  "php": {
+    "package": "peanut-admin/core",
+    "old_version": "0.1.0-alpha.2",
+    "old_source_reference": "330e76787ba754e1c7c11c2204c1c7f1e9560bb1",
+    "old_split_tag_object": "673f285395e105221a9973c44b74c9322c5c420f",
+    "old_split_commit": "330e76787ba754e1c7c11c2204c1c7f1e9560bb1",
+    "old_split_tree": "93928d91b701c2bc44c6043107ebf405399d5d19",
+    "new_version": "0.1.0-alpha.5",
+    "new_source_reference": "ef06da45c9e77ae4b194bfc1f859ec007aa0e022",
+    "new_monorepo_tag_object": "03f2db17248d9773d3f5a8ad492586a2a7f7f4fd",
+    "new_monorepo_commit": "0f3c0a530f2b6369bf5883b2508f40a79501ed98",
+    "new_monorepo_tree": "691cf4812d08dc4a3927a78331be3267aa1e9c77",
+    "new_split_tag_object": "86fde66ec2595ae5aea89662338b21a3c3a15645",
+    "new_split_commit": "ef06da45c9e77ae4b194bfc1f859ec007aa0e022",
+    "new_split_tree": "e7beef2fe583ec6778e92b0d88702b1065fdb419"
+  },
+  "web": {
+    "package": "@peanut-admin/admin",
+    "old_version": "0.1.0-alpha.4",
+    "old_integrity": "sha512-xAS6exBoXhmykN2vuU4kRUr2JypySiRJLEVKua0Dx6+ySVDL5yvym+7UiY14896tZBIamIz6VJ7pmmdFroaLGQ==",
+    "old_shasum": "b237df40068bc8b6ecf8856a02c54c33e3f231af",
+    "new_version": "0.1.0-alpha.5",
+    "new_integrity": "sha512-brHwkDH1Ym1EHFEBJDu+L956Wq3rwtxTaeaIvwPL7mMk8KKur82nqRnp/yk7RSnmScl/XeXMaj2HrTeQqTiOIQ==",
+    "new_shasum": "da623d6cfda367a0763031c99f994440a698bef0"
+  },
+  "known_release_identity_defect": {
+    "ecosystem": "composer",
+    "monorepo_tag": "v0.1.0-alpha.4",
+    "tag_object": "bacb7f716c8e70eafe11e584b558ff59b95ad19a",
+    "commit": "7fbd445d8fa547830b7782a7ac147d9ed414e0fd",
+    "tree": "0db325a6778e212ced8925bdefd6ec7f52556aa4",
+    "embedded_package_version": "0.1.0-alpha.2",
+    "packagist_version": null,
+    "policy": "A future PHP release identity must use the same version in the monorepo release tag, packages/php/composer.json, generated split tag and Packagist. Alpha.5 is the passing reference identity; the recorded alpha.4 mismatch is evidence, never a consumable package identity."
+  },
+  "allowed_upgrade_changes": [
+    "server/composer.json",
+    "server/composer.lock",
+    "web/package.json",
+    "web/pnpm-lock.yaml"
+  ],
+  "app_owned_probes": [
+    "server/tests/Productization/CoreUpgradeCompatibilityProbe.php",
+    "web/src/core/core-upgrade-compatibility-probe.ts"
+  ]
+}

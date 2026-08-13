@@ -37,9 +37,18 @@ function excluded(string $path): bool
         || in_array($path, [
             'AGENTS.md', 'AGENT_EXECUTION_RULES.md',
             'scripts/create-app', 'scripts/build-application-template-inventory',
+            'scripts/core-upgrade-compatibility',
             'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
             'server/app/common/service/scaffold/ApplicationCreator.php',
             'server/tests/Productization/CreateApplicationTest.php',
+            '.github/workflows/core-upgrade-compatibility.yml',
+            'server/tests/fixtures/core-upgrade-compatibility/fixture.json',
+            'server/tests/fixtures/core-upgrade-compatibility/php-probe.php',
+            'server/tests/fixtures/core-upgrade-compatibility/web-probe.ts',
+            'server/tests/fixtures/core-upgrade-compatibility/composer-alpha2.lock',
+            'server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock',
+            'server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha4-lock.yaml',
+            'server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha5-lock.yaml',
         ], true)
         || str_starts_with($path, 'plugins/fixture.delivery-record/')
         || str_starts_with($path, 'server/app/Modules/Fixture/DeliveryRecord/')
