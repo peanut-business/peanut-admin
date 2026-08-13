@@ -26,7 +26,7 @@ class AuthMiddleware
         $path      = strtolower(trim($request->pathinfo(), '/'));
         $accessUri = preg_replace('#^api/admin/#', '', $path);
 
-        if (!AdminPermissionService::canAccess($adminInfo, $accessUri)) {
+        if (!AdminPermissionService::canAccess($request->tenantContext ?? null, $adminInfo, $accessUri)) {
             return JsonService::fail('暂无访问权限', null, 40300);
         }
 

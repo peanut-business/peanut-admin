@@ -9,7 +9,7 @@ use app\adminapi\validate\auth\MenuValidate;
 
 class MenuController extends BaseAdminController
 {
-    public function route()  { return $this->data(MenuLogic::getMenuByAdminId($this->adminId)); }
+    public function route()  { return $this->data(MenuLogic::getMenuByAdminId($this->request->tenantContext ?? null, $this->adminId)); }
     public function lists()  { return $this->data(MenuLogic::getAll()); }
     public function all()    { return $this->data(MenuLogic::getAllSimple()); }
     public function detail() { $params = ['id' => (int)$this->request->get('id')]; $this->validate($params, MenuValidate::class . '.detail'); return $this->data(MenuLogic::detail($params['id'])); }
