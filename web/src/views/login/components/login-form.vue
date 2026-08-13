@@ -23,6 +23,20 @@
           </template>
         </el-input>
       </el-form-item>
+      <el-form-item v-if="tenantChoices.length > 0" prop="tenantId">
+        <el-select
+          v-model="userInfo.tenantId"
+          :placeholder="$t('login.form.tenant.placeholder')"
+          style="width: 100%"
+        >
+          <el-option
+            v-for="tenant in tenantChoices"
+            :key="tenant.tenant_id"
+            :label="tenant.tenant_name"
+            :value="tenant.tenant_id"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item
         prop="password"
         :rules="[{ required: true, message: $t('login.form.password.errMsg') }]"
@@ -62,6 +76,7 @@
   import { useBrandStore, useUserStore } from '@/store';
   import useLoading from '@/hooks/loading';
   import type { LoginData } from '@/api/user';
+  import type { TenantChoice, TenantSelection } from '@/core/tenant-session';
 
   const router = useRouter();
   const { t } = useI18n();
@@ -74,7 +89,10 @@
   const userInfo = reactive({
     username: 'admin',
     password: '',
+    tenantId: undefined as number | undefined,
+    challengeToken: undefined as string | undefined,
   });
+  const tenantChoices = ref<TenantChoice[]>([]);
 
   const handleSubmit = async () => {
     if (loading.value) return;
@@ -82,7 +100,13 @@
     if (!valid) return;
     setLoading(true);
     try {
-      await userStore.login({ ...userInfo } as LoginData);
+      const outcome = await userStore.login({ ...userInfo } as LoginData);
+      if (outcome?.state === 'tenant_selection_required') {
+        tenantChoices.value = (outcome as TenantSelection).tenants;
+        userInfo.challengeToken = (outcome as TenantSelection).challenge_token;
+        userInfo.tenantId = tenantChoices.value[0]?.tenant_id;
+        return;
+      }
       const { redirect, ...othersQuery } = router.currentRoute.value.query;
       const redirectRoute =
         typeof redirect === 'string' &&

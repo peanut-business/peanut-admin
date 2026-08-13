@@ -7,4 +7,5 @@ export default {
   'login.form.userName.placeholder': 'Username: admin',
   'login.form.password.placeholder': 'Password: admin',
   'login.form.login': 'login',
+  'login.form.tenant.placeholder': 'Select a Tenant',
 };

@@ -7,4 +7,5 @@ export default {
   'login.form.userName.placeholder': '用户名：admin',
   'login.form.password.placeholder': '密码：admin',
   'login.form.login': '登录',
+  'login.form.tenant.placeholder': '请选择租户',
 };
