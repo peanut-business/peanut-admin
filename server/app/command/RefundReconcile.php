@@ -60,7 +60,7 @@ class RefundReconcile extends Command
                     RechargeOrder::PAY_WAY_ALIPAY => 'alipay',
                     default => throw new \RuntimeException('支付方式异常'),
                 };
-                $result = (new PaymentServiceFactory())->refund($channel)->query(
+                $result = PaymentServiceFactory::forTenant($scope, $channel)->refund($channel)->query(
                     $order->getData(),
                     (string)$log->sn
                 );

@@ -7,14 +7,19 @@ use app\common\enum\channel\OfficialAccountEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\channel\OfficialAccountReply;
 use think\facade\Db;
+use app\common\service\external\ExternalTenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use app\common\service\member\MemberTenantContext;
 
 class OfficialAccountReplyLogic extends BaseLogic
 {
-    public static function lists(array $params): array
+    public static function lists(TenantContext $context, array $params): array
     {
         $pageNo = max(1, (int)($params['page_no'] ?? 1));
         $pageSize = min(100, max(1, (int)($params['page_size'] ?? 15)));
-        $query = OfficialAccountReply::field([
+        $tenantId = MemberTenantContext::tenantId($context);
+        $query = OfficialAccountReply::where('tenant_id', $tenantId)->field([
             'id', 'name', 'keyword', 'reply_type', 'matching_type',
             'content_type', 'content', 'status', 'sort', 'create_time', 'update_time',
         ]);
@@ -27,18 +32,19 @@ class OfficialAccountReplyLogic extends BaseLogic
         return ['list' => $list, 'total' => $total, 'page_no' => $pageNo, 'page_size' => $pageSize];
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        $reply = OfficialAccountReply::findOrEmpty($id);
+        $reply = OfficialAccountReply::where('tenant_id', MemberTenantContext::tenantId($context))->findOrEmpty($id);
         return $reply->isEmpty() ? [] : $reply->toArray();
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
         try {
-            Db::transaction(function () use ($params): void {
+            Db::transaction(function () use ($context, $params): void {
                 $data = self::normalize($params);
-                self::disableOtherSingletons($data['reply_type'], $data['status']);
+                $data['tenant_id'] = MemberTenantContext::tenantId($context);
+                self::disableOtherSingletons($data['tenant_id'], $data['reply_type'], $data['status']);
                 OfficialAccountReply::create($data);
             });
             return true;
@@ -48,16 +54,17 @@ class OfficialAccountReplyLogic extends BaseLogic
         }
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
         try {
-            Db::transaction(function () use ($params): void {
-                $reply = OfficialAccountReply::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
+            Db::transaction(function () use ($context, $params): void {
+                $tenantId = MemberTenantContext::tenantId($context);
+                $reply = OfficialAccountReply::where(['tenant_id' => $tenantId, 'id' => (int)$params['id']])->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
                     throw new \RuntimeException('自动回复不存在');
                 }
                 $data = self::normalize($params);
-                self::disableOtherSingletons($data['reply_type'], $data['status'], (int)$reply->id);
+                self::disableOtherSingletons($tenantId, $data['reply_type'], $data['status'], (int)$reply->id);
                 $reply->save($data);
             });
             return true;
@@ -67,11 +74,11 @@ class OfficialAccountReplyLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): bool
+    public static function delete(TenantContext $context, int $id): bool
     {
         try {
-            Db::transaction(function () use ($id): void {
-                $reply = OfficialAccountReply::where('id', $id)->lock(true)->findOrEmpty();
+            Db::transaction(function () use ($context, $id): void {
+                $reply = OfficialAccountReply::where(['tenant_id' => MemberTenantContext::tenantId($context), 'id' => $id])->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
                     throw new \RuntimeException('自动回复不存在');
                 }
@@ -84,15 +91,16 @@ class OfficialAccountReplyLogic extends BaseLogic
         }
     }
 
-    public static function updateStatus(int $id, int $status): bool
+    public static function updateStatus(TenantContext $context, int $id, int $status): bool
     {
         try {
-            Db::transaction(function () use ($id, $status): void {
-                $reply = OfficialAccountReply::where('id', $id)->lock(true)->findOrEmpty();
+            Db::transaction(function () use ($context, $id, $status): void {
+                $tenantId = MemberTenantContext::tenantId($context);
+                $reply = OfficialAccountReply::where(['tenant_id' => $tenantId, 'id' => $id])->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
                     throw new \RuntimeException('自动回复不存在');
                 }
-                self::disableOtherSingletons((int)$reply->reply_type, $status, $id);
+                self::disableOtherSingletons($tenantId, (int)$reply->reply_type, $status, $id);
                 $reply->status = $status;
                 $reply->save();
             });
@@ -103,11 +111,12 @@ class OfficialAccountReplyLogic extends BaseLogic
         }
     }
 
-    public static function resolve(array $message): ?array
+    public static function resolve(TenantSystemContext $context, array $message): ?array
     {
+        $tenantId = ExternalTenantContext::tenantId($context);
         $messageType = strtolower((string)($message['MsgType'] ?? ''));
         if ($messageType === 'event' && strtolower((string)($message['Event'] ?? '')) === 'subscribe') {
-            return self::activeSingleton(OfficialAccountEnum::REPLY_SUBSCRIBE);
+            return self::activeSingleton($tenantId, OfficialAccountEnum::REPLY_SUBSCRIBE);
         }
         if ($messageType !== 'text') {
             return null;
@@ -115,6 +124,7 @@ class OfficialAccountReplyLogic extends BaseLogic
 
         $content = (string)($message['Content'] ?? '');
         $keywords = OfficialAccountReply::where([
+            'tenant_id' => $tenantId,
             'reply_type' => OfficialAccountEnum::REPLY_KEYWORD,
             'status' => 1,
         ])->order(['sort' => 'asc', 'id' => 'asc'])->select();
@@ -127,17 +137,17 @@ class OfficialAccountReplyLogic extends BaseLogic
                 return $reply->toArray();
             }
         }
-        return self::activeSingleton(OfficialAccountEnum::REPLY_DEFAULT);
+        return self::activeSingleton($tenantId, OfficialAccountEnum::REPLY_DEFAULT);
     }
 
-    private static function activeSingleton(int $type): ?array
+    private static function activeSingleton(int $tenantId, int $type): ?array
     {
-        $reply = OfficialAccountReply::where(['reply_type' => $type, 'status' => 1])
+        $reply = OfficialAccountReply::where(['tenant_id' => $tenantId, 'reply_type' => $type, 'status' => 1])
             ->order('id', 'desc')->findOrEmpty();
         return $reply->isEmpty() ? null : $reply->toArray();
     }
 
-    private static function disableOtherSingletons(int $type, int $status, int $exceptId = 0): void
+    private static function disableOtherSingletons(int $tenantId, int $type, int $status, int $exceptId = 0): void
     {
         if ($status !== 1 || !in_array($type, [
             OfficialAccountEnum::REPLY_SUBSCRIBE,
@@ -145,7 +155,7 @@ class OfficialAccountReplyLogic extends BaseLogic
         ], true)) {
             return;
         }
-        $query = OfficialAccountReply::where('reply_type', $type)->where('status', 1);
+        $query = OfficialAccountReply::where('tenant_id', $tenantId)->where('reply_type', $type)->where('status', 1);
         if ($exceptId > 0) {
             $query->where('id', '<>', $exceptId);
         }

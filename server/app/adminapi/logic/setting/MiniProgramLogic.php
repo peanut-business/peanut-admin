@@ -4,25 +4,28 @@ declare(strict_types=1);
 namespace app\adminapi\logic\setting;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
 use app\common\service\FileService;
+use app\common\service\external\ExternalChannelBindingService;
+use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 微信小程序基础配置。 */
 class MiniProgramLogic extends BaseLogic
 {
     protected const CONFIG_TYPE = 'mnp_setting';
 
-    public static function getConfig(): array
+    public static function getConfig(TenantContext $context): array
     {
-        $qrCode = (string) ConfigService::get(self::CONFIG_TYPE, 'qr_code', '');
-        $secret = (string)ConfigService::get(self::CONFIG_TYPE, 'app_secret', '');
+        $stored = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_MINI_PROGRAM);
+        $qrCode = (string)($stored['qr_code'] ?? '');
+        $secret = (string)($stored['app_secret'] ?? '');
         $domains = self::domainConfig();
 
         return [
-            'name'                 => (string) ConfigService::get(self::CONFIG_TYPE, 'name', ''),
-            'original_id'          => (string) ConfigService::get(self::CONFIG_TYPE, 'original_id', ''),
+            'name'                 => (string)($stored['name'] ?? ''),
+            'original_id'          => (string)($stored['original_id'] ?? ''),
             'qr_code'              => FileService::getFileUrl($qrCode),
-            'app_id'               => (string) ConfigService::get(self::CONFIG_TYPE, 'app_id', ''),
+            'app_id'               => (string)($stored['app_id'] ?? ''),
             'app_secret'           => $secret !== '' ? '******' : '',
             'app_secret_configured'=> $secret !== '',
             'request_domain'       => $domains['https'],
@@ -34,22 +37,29 @@ class MiniProgramLogic extends BaseLogic
         ];
     }
 
-    public static function setConfig(array $params): bool
+    public static function setConfig(TenantContext $context, array $params): bool
     {
-        $currentSecret = (string)ConfigService::get(self::CONFIG_TYPE, 'app_secret', '');
+        $current = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_MINI_PROGRAM);
+        $currentSecret = (string)($current['app_secret'] ?? '');
         $incomingSecret = trim((string)$params['app_secret']);
         $secret = $incomingSecret === '******' ? $currentSecret : $incomingSecret;
         if ($secret === '') {
             self::setError('AppSecret 不能为空');
             return false;
         }
-        ConfigService::setManyAtomic(self::CONFIG_TYPE, [
+        $data = [
             'name'        => trim((string) ($params['name'] ?? '')),
             'original_id' => trim((string) ($params['original_id'] ?? '')),
             'qr_code'     => self::relativeQrCode((string) ($params['qr_code'] ?? '')),
             'app_id'      => trim((string) $params['app_id']),
             'app_secret'  => $secret,
-        ]);
+        ];
+        ExternalChannelBindingService::update(
+            $context,
+            ExternalTenantResolver::WECHAT_MINI_PROGRAM,
+            $data,
+            $data['app_id'],
+        );
         return true;
     }
 

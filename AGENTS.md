@@ -29,7 +29,7 @@
 
 - 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 当前数据库入口：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 52 migrations；下表中的 24 条账本是 parity 完成时的历史证据，`v1.1.0` 发布制品固定为 50 条
+- 当前数据库入口：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 53 migrations；下表中的 24 条账本是 parity 完成时的历史证据，`v1.1.0` 发布制品固定为 50 条
 
 **独立验证结果（非 Codex 自报）：**
 
@@ -115,7 +115,7 @@ peanut-admin/
 │   ├── database/
 │   │   ├── install.php  # 一键安装（空库 → 全量初始化）
 │   │   ├── init.sql     # 基础表 + 种子数据
-│   │   └── migrations/  # 当前 52 个版本化迁移；v1.1.0 固定 50 个
+│   │   └── migrations/  # 当前 53 个版本化迁移；v1.1.0 固定 50 个
 │   └── .env             # DB/JWT 配置（不提交）
 ├── web/             # 管理端前端（Vue3 + Element Plus）
 ├── pc/              # PC 消费端（Nuxt3）
