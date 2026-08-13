@@ -504,7 +504,15 @@ SQL);
         $directories[] = $root . '/Database/Migrations';
         $directories[] = $root . '/database/migrations';
         $files = [];
-        foreach (array_unique($directories) as $directory) {
+        $resolvedDirectories = [];
+        foreach ($directories as $directory) {
+            $resolved = realpath($directory);
+            if ($resolved === false || isset($resolvedDirectories[$resolved])) {
+                continue;
+            }
+            $resolvedDirectories[$resolved] = true;
+        }
+        foreach (array_keys($resolvedDirectories) as $directory) {
             if (!is_dir($directory)) {
                 continue;
             }
