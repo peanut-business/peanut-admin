@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-11
+> Last updated: 2026-08-13
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -23,7 +23,7 @@
 
 ---
 
-## 2. 当前状态（2026-08-10）
+## 2. 当前状态（2026-08-13）
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 
@@ -51,6 +51,18 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 边界和可信管理端 TenantContext 等独立切片；这不表示 MT02–MT04 或 PM01 已整体完成。
 判断完成度和领取下一切片前，必须读取当前权威计划并核对远端 `dev`，不得继续沿用
 “完全未实现”或某个局部 PR 已代表阶段完成的旧判断。
+
+截至应用 `dev@84e78aed5b5738755fbfd14d3af86cfd75f1e9c0`：
+
+- MT00、MT01 已完成，Core/Generator 与 DCS Product-only 条件采用身份已经固定；
+- MT02 已完成默认 Tenant、旧管理员/RBAC/组织映射，以及 Article、字典、装修、
+  会员/标签/余额等首批 Tenant-first SQL 域；
+- MT03 已完成缓存/锁端口、文件、Crontab、操作日志与后台 diagnostics、通知、OAuth、
+  导入导出、热搜、客服、交易设置、充值退款和 Tabbar 等独立隔离切片；
+- PM01 已形成 PlatformOperator、Tenant 生命周期、首 owner、TenantModule 和平台端
+  HTTP/Web 主链；MT04 已形成 Tenant 选择/切换/撤销、Admin Host bridge 和 Standalone UI；
+- MT05 浏览器及安装/升级集中验收 harness 已合入但尚未针对固定候选运行；MT05
+  集中验收和 MT06 稳定发布均不得写成已完成。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
 - 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`

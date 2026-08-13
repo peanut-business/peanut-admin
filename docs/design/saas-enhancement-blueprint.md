@@ -1,7 +1,7 @@
 # Peanut Admin SaaS 增强蓝图
 
-> 状态：架构基线 v1  
-> 日期：2026-08-11  
+> 状态：架构基线 v1（实现事实同步）
+> 日期：2026-08-13
 > 适用范围：Peanut Admin 核心包、脚手架生成的业务应用、应用内 SaaS Host 模式，以及未来独立运营平台
 
 > 当前实施优先级：先完成多租户能力、应用实例内的最小 Tenant 平台管理，以及独立运营平台所需的实例管理边界；套餐、订阅、计费、试用、续费等完整 SaaS 商业化能力暂不实施。当前执行计划见 `docs/plans/multi-tenancy-platform-management-plan.md`，本文其余 SaaS 内容作为未来架构预留。
@@ -244,14 +244,24 @@ PlatformOperator 只拥有明确的 `platform.*` 权限。它不能读取商品�
 
 ## 9. 当前实现事实
 
-截至 2026-08-11：
+截至 2026-08-13，应用 `dev@84e78aed5b5738755fbfd14d3af86cfd75f1e9c0`：
 
-- Peanut Admin v1.0.0 产品化基线已完成；应用仓仍是单租户产品 Host，没有接入 Tenant Runtime。
-- 独立的 Peanut Admin Core 仓已有 Tenant、TenantMember、PlatformOperator、TenantContext、TenantModule、授权、审计及相应迁移/测试实现；这些代码不在本应用仓 `server/` 中。
-- 核心包的存在不等于 Peanut Admin 应用已经成为 SaaS Host；下游采用、业务表租户化和真实 Host 验收仍未完成。
-- 当前项目生成器仍复制核心包快照；应在正式 SaaS 稳定版前切换为 Registry 依赖消费。
-- 独立运营平台尚未立项和实现，本蓝图只冻结边界与管理协议方向。
-- SaaS roadmap 目录中的 LikeAdmin/Likeshop、旧多包和超级管理员方案均为历史输入，不是现行实施合同。
+- Peanut Admin v1.0.0 产品化基线保持稳定；应用仓已接入默认 Tenant、可信
+  TenantContext、Tenant 选择/切换/撤销、PlatformOperator、Tenant 生命周期、首 owner
+  和 TenantModule，不再是“完全未接入 Tenant Runtime”的单租户 Host。
+- 默认 Tenant/RBAC/组织映射和 Article、字典、装修、会员、文件、通知、OAuth、任务、
+  日志等多批应用 Runtime 已按 Tenant-first 或显式实例 owner 边界落地；这些独立切片
+  不能替代 MT05 的同一固定候选集中验收。
+- Core/Generator 公司级 MT01 基线和 Composer/npm Alpha.5 已固定，DCS 已获得
+  Product-only `CONDITIONAL` 采用结论；Generator 仍只创建新项目，不覆盖更新已有项目。
+- PM01 与 MT04 的后端和管理端主链已形成；MT05 浏览器及安装/升级 harness 已合入，
+  但固定候选执行尚未开始，因此当前 `dev` 仍不能称为稳定多租户 Release。
+- 公众号回复等需要外部回调可信 Tenant 路由的领域尚未形成完整闭包；不得仅添加
+  `tenant_id` 伪装完成隔离，也不以该非代表域阻塞当前 MT05 代表业务闭环。
+- 独立运营平台尚未立项和实现，本蓝图只冻结边界与管理协议方向；它不属于当前
+  MT06 稳定多租户脚手架的业务实现范围。
+- SaaS roadmap 目录中的 LikeAdmin/Likeshop、旧多包和超级管理员方案均为历史输入，
+  不是现行实施合同。
 
 ## 10. 历史方案取舍
 
