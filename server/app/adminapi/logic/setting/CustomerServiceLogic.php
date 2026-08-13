@@ -4,19 +4,15 @@ declare(strict_types=1);
 namespace app\adminapi\logic\setting;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
-use app\common\service\FileService;
+use app\common\service\customer_service\CustomerServiceTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /**
- * 客服设置 Logic（纯配置）
- *
- * type = customer_service
- * 字段：qr_code（客服二维码，存相对 uri）、wechat、phone、service_time
+ * Tenant-owned 客服设置。
+ * 真实用户客服页继续由 Decoration Runtime 唯一消费；本设置只服务既有管理入口。
  */
 class CustomerServiceLogic extends BaseLogic
 {
-    protected const CONFIG_TYPE = 'customer_service';
-
     /** @var array<string,string> 字段白名单 => 默认值 */
     protected const FIELDS = [
         'qr_code'      => '',
@@ -25,20 +21,12 @@ class CustomerServiceLogic extends BaseLogic
         'service_time' => '',
     ];
 
-    /** 读取配置：qr_code 转为可访问 URL 回显 */
-    public static function getConfig(): array
+    public static function getConfig(TenantContext $context): array
     {
-        $stored = ConfigService::get(self::CONFIG_TYPE);
-        $result = [];
-        foreach (self::FIELDS as $field => $default) {
-            $result[$field] = $stored[$field] ?? $default;
-        }
-        $result['qr_code'] = FileService::getFileUrl($result['qr_code']);
-        return $result;
+        return CustomerServiceTenantRepository::read($context, self::FIELDS);
     }
 
-    /** 保存配置：qr_code 存相对 uri */
-    public static function setConfig(array $params): bool
+    public static function setConfig(TenantContext $context, array $params): bool
     {
         $data = [];
         foreach (self::FIELDS as $field => $default) {
@@ -46,10 +34,8 @@ class CustomerServiceLogic extends BaseLogic
                 $data[$field] = (string) $params[$field];
             }
         }
-        if (isset($data['qr_code'])) {
-            $data['qr_code'] = FileService::setFileUrl($data['qr_code']);
-        }
-        ConfigService::setMany(self::CONFIG_TYPE, $data);
+        unset($data['tenant_id']);
+        CustomerServiceTenantRepository::save($context, $data);
         return true;
     }
 }
