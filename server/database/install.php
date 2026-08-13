@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use app\common\service\tenant\DefaultTenantBootstrap;
+
 /**
  * Peanut Admin fresh-database installer.
  *
@@ -54,6 +56,18 @@ function initialAdminPassword(string $serverDir): string
     return (string)$password;
 }
 
+function initialAdminEmail(string $serverDir): string
+{
+    $environment = getenv('ADMIN_INITIAL_EMAIL');
+    $email = $environment !== false && $environment !== ''
+        ? $environment
+        : (loadFileConfig($serverDir)['ADMIN_INITIAL_EMAIL'] ?? '');
+    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('ADMIN_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    return strtolower((string)$email);
+}
+
 function validateInitialAdminPassword(string $password): void
 {
     if (strlen($password) < 12
@@ -61,6 +75,43 @@ function validateInitialAdminPassword(string $password): void
         || preg_match('/\d/', $password) !== 1) {
         throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字');
     }
+}
+
+/** @return array{email:string,password:string}|null */
+function initialPlatformCredentials(string $serverDir, string $adminEmail): ?array
+{
+    $fileConfig = loadFileConfig($serverDir);
+    $environmentMode = getenv('DEPLOYMENT_MODE');
+    $mode = $environmentMode !== false && $environmentMode !== ''
+        ? $environmentMode
+        : ($fileConfig['DEPLOYMENT_MODE'] ?? '');
+    if ($mode !== 'multi-tenant') {
+        return null;
+    }
+
+    $environmentEmail = getenv('PLATFORM_INITIAL_EMAIL');
+    $email = $environmentEmail !== false && $environmentEmail !== ''
+        ? $environmentEmail
+        : ($fileConfig['PLATFORM_INITIAL_EMAIL'] ?? '');
+    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    $email = strtolower((string)$email);
+    if (hash_equals($adminEmail, $email)) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须与 ADMIN_INITIAL_EMAIL 不同');
+    }
+
+    $environmentPassword = getenv('PLATFORM_INITIAL_PASSWORD');
+    $password = $environmentPassword !== false && $environmentPassword !== ''
+        ? $environmentPassword
+        : ($fileConfig['PLATFORM_INITIAL_PASSWORD'] ?? '');
+    if (strlen((string)$password) < 12
+        || preg_match('/[A-Za-z]/', (string)$password) !== 1
+        || preg_match('/\d/', (string)$password) !== 1) {
+        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字');
+    }
+
+    return ['email' => $email, 'password' => (string)$password];
 }
 
 function replaceInitialAdminSeed(string $sql, string $password, ?string $salt = null): string
@@ -146,6 +197,47 @@ function executeSqlFiles(PDO $pdo, array $files, string $adminPassword): void
             );
         }
     }
+}
+
+function executeSqlFile(PDO $pdo, string $file): void
+{
+    $sql = file_get_contents($file);
+    if ($sql === false) {
+        throw new RuntimeException('无法读取 SQL 文件：' . basename($file));
+    }
+    try {
+        $pdo->exec($sql);
+    } catch (Throwable $exception) {
+        throw new RuntimeException(
+            '执行 SQL 文件失败：' . basename($file) . '；' . $exception->getMessage(),
+            0,
+            $exception
+        );
+    }
+}
+
+/** @param array{email:string,password:string}|null $platformCredentials */
+function defaultTenantBootstrap(
+    PDO $pdo,
+    string $serverDir,
+    string $email,
+    string $password,
+    ?array $platformCredentials
+): DefaultTenantBootstrap
+{
+    $autoload = $serverDir . '/vendor/autoload.php';
+    if (!is_file($autoload)) {
+        throw new RuntimeException('缺少 Composer autoload，无法执行默认 Tenant bootstrap');
+    }
+    require_once $autoload;
+    $bootstrap = new DefaultTenantBootstrap($pdo);
+    $bootstrap->prepare(
+        $email,
+        $password,
+        $platformCredentials['email'] ?? null,
+        $platformCredentials['password'] ?? null
+    );
+    return $bootstrap;
 }
 
 /** @param array<string, string> $website */
@@ -272,8 +364,36 @@ function main(): int
         }
 
         $adminPassword = initialAdminPassword($serverDir);
+        $adminEmail = initialAdminEmail($serverDir);
+        $platformCredentials = initialPlatformCredentials($serverDir, $adminEmail);
         $brandDefaults = brandWebsiteDefaults($serverDir);
-        executeSqlFiles($pdo, $files, $adminPassword);
+        $mt02Migration = '20260812-default-tenant-bootstrap.sql';
+        $mt02File = $databaseDir . '/migrations/' . $mt02Migration;
+        $initFile = array_shift($files);
+        if (!is_string($initFile) || !is_file($mt02File)) {
+            throw new RuntimeException('缺少 MT02 默认 Tenant migration');
+        }
+        $beforeMt02 = array_values(array_filter(
+            $files,
+            static fn(string $file): bool => basename($file) < $mt02Migration
+        ));
+        $afterMt02 = array_values(array_filter(
+            $files,
+            static fn(string $file): bool => basename($file) > $mt02Migration
+        ));
+        executeSqlFiles($pdo, [$initFile, ...$beforeMt02], $adminPassword);
+        $tenantBootstrap = defaultTenantBootstrap(
+            $pdo,
+            $serverDir,
+            $adminEmail,
+            $adminPassword,
+            $platformCredentials
+        );
+        executeSqlFile($pdo, $mt02File);
+        $tenantBootstrap->complete();
+        foreach ($afterMt02 as $file) {
+            executeSqlFile($pdo, $file);
+        }
         seedBrandDefaults($pdo, $brandDefaults);
 
         $actualStatement = $pdo->prepare(
@@ -298,7 +418,7 @@ function main(): int
             ], JSON_UNESCAPED_UNICODE));
         }
 
-        recordInstalledMigrations($pdo, array_slice($files, 1));
+        recordInstalledMigrations($pdo, [...$beforeMt02, $mt02File, ...$afterMt02]);
 
         echo json_encode([
             'database' => $database,

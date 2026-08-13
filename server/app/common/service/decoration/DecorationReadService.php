@@ -3,26 +3,35 @@ declare(strict_types=1);
 
 namespace app\common\service\decoration;
 
-use app\common\model\decoration\DecoratePage;
 use app\common\model\decoration\DecorateTabbar;
-use app\common\service\ConfigService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 管理端与各客户端共享的只读消费 DTO。 */
 class DecorationReadService
 {
-    public static function pageByType(int $type): array
+    public static function pageByType(
+        TenantContext|TenantSystemContext $context,
+        int $type,
+        string $operation = ''
+    ): array
     {
-        $page = DecoratePage::where('type', $type)->findOrEmpty();
+        $page = DecorationTenantRepository::pages($context, $operation)
+            ->where('type', $type)->findOrEmpty();
         if ($page->isEmpty()) {
             throw new \RuntimeException('装修页面不存在');
         }
         return self::formatPage($page->toArray());
     }
 
-    public static function tabbar(bool $visibleOnly = false): array
-    {
-        $style = json_decode((string)ConfigService::get('tabbar', 'style', '{}'), true);
-        $rows = DecorateTabbar::order(['position' => 'asc', 'id' => 'asc'])->select()->toArray();
+    public static function tabbar(
+        TenantContext|TenantSystemContext $context,
+        bool $visibleOnly = false,
+        string $operation = ''
+    ): array {
+        $style = DecorationTabbarTenantRepository::readStyle($context, $operation);
+        $rows = DecorationTabbarTenantRepository::items($context, $operation)
+            ->order(['position' => 'asc', 'id' => 'asc'])->select()->toArray();
         $list = [];
         foreach ($rows as $item) {
             if ($visibleOnly && (int)$item['is_show'] !== 1) {
@@ -31,7 +40,7 @@ class DecorationReadService
             $item['link'] = json_decode((string)$item['link'], true) ?: [];
             $list[] = DecorationSchemaService::resourcesForRead($item);
         }
-        return ['style' => is_array($style) ? $style : [], 'list' => $list];
+        return ['style' => $style, 'list' => $list];
     }
 
     public static function formatPage(array $page): array

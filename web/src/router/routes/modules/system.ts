@@ -110,6 +110,7 @@ const SYSTEM: AppRouteRecordRaw = {
         locale: 'menu.system.maintenance',
         requiresAuth: true,
         roles: ['admin'],
+        instanceTool: true,
       },
     },
     {

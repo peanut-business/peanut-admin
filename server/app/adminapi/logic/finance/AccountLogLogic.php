@@ -7,6 +7,8 @@ use app\common\enum\AccountLogEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\MemberBalanceLog;
 use app\common\service\FileService;
+use app\common\service\member\MemberTenantContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /**
  * 账户流水（余额变动）Logic（只读）
@@ -22,7 +24,7 @@ class AccountLogLogic extends BaseLogic
      * @param array<string,mixed> $params
      * @return array{lists:array,count:int,pageNo:int,pageSize:int}|false
      */
-    public static function lists(array $params): array|false
+    public static function lists(TenantContext $context, array $params): array|false
     {
         try {
             if (in_array((int)($params['export'] ?? 0), [1, 2], true)) {
@@ -35,8 +37,11 @@ class AccountLogLogic extends BaseLogic
                 ? self::PAGE_SIZE_MAX
                 : max(1, (int)($params['page_size'] ?? 15));
 
+            $tenantId = MemberTenantContext::tenantId($context);
             $query = MemberBalanceLog::alias('al')
-                ->join('member u', 'u.id = al.member_id')
+                ->where('al.tenant_id', $tenantId)
+                ->join('member u', 'u.tenant_id = al.tenant_id AND u.id = al.member_id')
+                ->where('u.tenant_id', $tenantId)
                 ->field(
                     'u.nickname,u.account,u.sn,u.avatar,u.mobile,'
                     . 'al.action,al.change_amount,al.left_amount,'

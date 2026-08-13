@@ -4,9 +4,10 @@ declare(strict_types=1);
 namespace app\common\service;
 
 use app\common\enum\FileEnum;
-use app\common\model\file\File;
-use app\common\model\file\FileCate;
+use app\common\service\file\FileObjectNamespace;
+use app\common\service\file\FileTenantRepository;
 use app\common\service\storage\Driver;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\file\UploadedFile;
 
 /**
@@ -15,26 +16,26 @@ use think\file\UploadedFile;
  */
 class UploadService
 {
-    public static function image(int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function image(TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
-        return self::save(FileEnum::IMAGE, $cid, $sourceId, $source);
+        return self::save($context, FileEnum::IMAGE, $cid, $sourceId, $source);
     }
 
-    public static function video(int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function video(TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
-        return self::save(FileEnum::VIDEO, $cid, $sourceId, $source);
+        return self::save($context, FileEnum::VIDEO, $cid, $sourceId, $source);
     }
 
-    public static function file(int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function file(TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
-        return self::save(FileEnum::FILE, $cid, $sourceId, $source);
+        return self::save($context, FileEnum::FILE, $cid, $sourceId, $source);
     }
 
     /**
      * @param int $type FileEnum::IMAGE|VIDEO|FILE
      * @throws \Exception 校验失败
      */
-    protected static function save(int $type, int $cid, int $sourceId, int $source): array
+    protected static function save(TenantContext $context, int $type, int $cid, int $sourceId, int $source): array
     {
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');
@@ -46,7 +47,7 @@ class UploadService
             throw new \InvalidArgumentException('目标分类无效');
         }
         if ($cid > 0) {
-            $category = FileCate::find($cid);
+            $category = FileTenantRepository::findCategory($context, $cid);
             if (!$category) {
                 throw new \InvalidArgumentException('目标分类不存在');
             }
@@ -78,7 +79,7 @@ class UploadService
         $name = mb_substr((string)pathinfo($originName, PATHINFO_FILENAME), 0, 120) . '.' . $ext;
 
         // 交由存储引擎上传：local 落盘 public/storage/，云引擎上传至对应 bucket
-        $subDir = FileEnum::SAVE_DIR[$type];
+        $subDir = FileObjectNamespace::directory($context, $type);
         $driver = new Driver();
         $driver->setUploadFile($uploaded);
         if (!$driver->upload($subDir)) {
@@ -87,7 +88,7 @@ class UploadService
         $uri = $driver->buildUri($subDir);
 
         try {
-            $file = File::create([
+            $file = FileTenantRepository::createFile($context, [
                 'cid'       => $cid,
                 'source_id' => $sourceId,
                 'source'    => $source,

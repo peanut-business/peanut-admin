@@ -10,6 +10,7 @@ const DEV_TOOLS: AppRouteRecordRaw = {
     requiresAuth: true,
     icon: 'icon-code',
     order: 0,
+    instanceTool: true,
   },
   children: [
     {

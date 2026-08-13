@@ -36,7 +36,7 @@ class LoginController extends BaseAdminController
         if ($admin->isEmpty()) return $this->fail('管理员不存在');
 
         $roleNames = $admin->roles->column('name');
-        $accessData = AdminPermissionService::accessData($admin);
+        $accessData = AdminPermissionService::accessData($this->request->tenantContext ?? null, $admin);
 
         return $this->data([
             'id'          => $admin->id,

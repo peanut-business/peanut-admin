@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\logic\auth;
 
 use app\adminapi\service\AdminLoginAttemptService;
+use app\adminapi\service\AdminLoginTenantGuard;
 use app\adminapi\service\AdminTokenService;
 use app\common\logic\BaseLogic;
 use app\common\model\auth\Admin;
@@ -29,6 +30,13 @@ class LoginLogic extends BaseLogic
         }
         if ((int)$admin->disable === 1) {
             self::setError('账号已禁用');
+            return false;
+        }
+
+        try {
+            (new AdminLoginTenantGuard())->assertAllowed((int)$admin->id);
+        } catch (\Throwable) {
+            self::setError('租户不可用');
             return false;
         }
 

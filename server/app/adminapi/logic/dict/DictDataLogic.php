@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace app\adminapi\logic\dict;
 
 use app\common\logic\BaseLogic;
-use app\common\model\dict\DictData;
-use app\common\model\dict\DictType;
+use app\common\service\dict\DictTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DictDataLogic extends BaseLogic
 {
     /** 分页列表：按 type_id 过滤，支持 name(模糊) / is_disable */
-    public static function lists(array $params): array
+    public static function lists(TenantContext $context, array $params): array
     {
         $where = [];
         if (!empty($params['type_id'])) {
@@ -26,8 +26,9 @@ class DictDataLogic extends BaseLogic
         $pageNo   = max(1, (int)($params['page_no'] ?? 1));
         $pageSize = min(100, max(1, (int)($params['page_size'] ?? 15)));
 
-        $count = DictData::where($where)->count();
-        $lists = DictData::where($where)
+        $query = DictTenantRepository::data($context)->where($where);
+        $count = (clone $query)->count();
+        $lists = $query
             ->order(['sort' => 'desc', 'id' => 'desc'])
             ->page($pageNo, $pageSize)
             ->select()
@@ -37,29 +38,31 @@ class DictDataLogic extends BaseLogic
     }
 
     /** 按类型标识取全部启用数据项（业务前端常用：下拉/枚举） */
-    public static function byType(string $typeValue): array
+    public static function byType(TenantContext $context, string $typeValue): array
     {
-        return DictData::where('type_value', $typeValue)
+        return DictTenantRepository::data($context)->where('type_value', $typeValue)
             ->where('is_disable', 0)
             ->field('id,name,value,sort')
             ->order(['sort' => 'desc', 'id' => 'desc'])
             ->select()->toArray();
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        return DictData::findOrEmpty($id)->toArray();
+        return DictTenantRepository::data($context)->where('id', $id)->findOrEmpty()->toArray();
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
-        $type = DictType::findOrEmpty((int)$params['type_id']);
+        $type = DictTenantRepository::types($context)
+            ->where('id', (int)$params['type_id'])
+            ->findOrEmpty();
         if ($type->isEmpty()) {
             self::setError('字典类型不存在');
             return false;
         }
         try {
-            DictData::create([
+            DictTenantRepository::createData($context, [
                 'name'       => (string)$params['name'],
                 'value'      => (string)$params['value'],
                 'type_id'    => (int)$params['type_id'],
@@ -75,10 +78,12 @@ class DictDataLogic extends BaseLogic
         }
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
         try {
-            $data = DictData::findOrEmpty((int)$params['id']);
+            $data = DictTenantRepository::data($context)
+                ->where('id', (int)$params['id'])
+                ->findOrEmpty();
             if ($data->isEmpty()) {
                 throw new \RuntimeException('字典数据不存在');
             }
@@ -95,9 +100,9 @@ class DictDataLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): bool
+    public static function delete(TenantContext $context, int $id): bool
     {
-        $data = DictData::findOrEmpty($id);
+        $data = DictTenantRepository::data($context)->where('id', $id)->findOrEmpty();
         if ($data->isEmpty()) {
             self::setError('字典数据不存在');
             return false;
@@ -106,9 +111,9 @@ class DictDataLogic extends BaseLogic
         return true;
     }
 
-    public static function updateStatus(int $id, int $isDisable): bool
+    public static function updateStatus(TenantContext $context, int $id, int $isDisable): bool
     {
-        $data = DictData::findOrEmpty($id);
+        $data = DictTenantRepository::data($context)->where('id', $id)->findOrEmpty();
         if ($data->isEmpty()) {
             self::setError('字典数据不存在');
             return false;

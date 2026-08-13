@@ -1,0 +1,286 @@
+<?php
+declare(strict_types=1);
+
+use app\common\service\tenant\DefaultTenantBootstrap;
+use app\platform\identity\PlatformOperatorAccountBoundary;
+use app\platform\service\PlatformOperatorSessionService;
+use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\PlatformAuthService;
+use PeanutAdmin\Kernel\Auth\SystemClock;
+use PeanutAdmin\Kernel\Auth\TokenIssuer;
+use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
+use PeanutAdmin\Kernel\Identity\PasswordHasher;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
+
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require dirname(__DIR__, 2) . '/database/install.php';
+
+function mt05BootstrapExpect(bool $condition, string $message): void
+{
+    if (!$condition) {
+        throw new RuntimeException($message);
+    }
+}
+
+function mt05BootstrapAdminConnection(): PDO
+{
+    $host = getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1');
+    $port = getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463');
+    $password = getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev');
+    return new PDO(
+        "mysql:host={$host};port={$port};charset=utf8mb4",
+        'root',
+        $password,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
+    );
+}
+
+function mt05BootstrapDatabase(PDO $admin, string $database): PDO
+{
+    $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
+    $host = getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1');
+    $port = getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463');
+    $password = getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev');
+    return new PDO(
+        "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+        'root',
+        $password,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
+        ]
+    );
+}
+
+function mt05BootstrapUseDatabase(string $database): void
+{
+    putenv('DB_HOST=' . (getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1')));
+    putenv('DB_PORT=' . (getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463')));
+    putenv('DB_NAME=' . $database);
+    putenv('DB_USER=root');
+    putenv('DB_PASS=' . (getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev')));
+}
+
+function mt05BootstrapInstall(PDO $pdo, string $serverDir, string $adminPassword): void
+{
+    $files = sqlFiles($serverDir . '/database');
+    $mt02File = $serverDir . '/database/migrations/' . DefaultTenantBootstrap::MIGRATION;
+    $initFile = array_shift($files);
+    mt05BootstrapExpect(is_string($initFile), 'init fixture missing');
+    $before = array_values(array_filter(
+        $files,
+        static fn(string $file): bool => basename($file) < DefaultTenantBootstrap::MIGRATION
+    ));
+    $after = array_values(array_filter(
+        $files,
+        static fn(string $file): bool => basename($file) > DefaultTenantBootstrap::MIGRATION
+    ));
+    executeSqlFiles($pdo, [$initFile, ...$before], $adminPassword);
+    $adminEmail = initialAdminEmail($serverDir);
+    $bootstrap = defaultTenantBootstrap(
+        $pdo,
+        $serverDir,
+        $adminEmail,
+        $adminPassword,
+        initialPlatformCredentials($serverDir, $adminEmail)
+    );
+    executeSqlFile($pdo, $mt02File);
+    $bootstrap->complete();
+    foreach ($after as $file) {
+        executeSqlFile($pdo, $file);
+    }
+}
+
+function mt05BootstrapPrepareMigration(PDO $pdo, string $serverDir, string $adminPassword): void
+{
+    $files = sqlFiles($serverDir . '/database');
+    $initFile = array_shift($files);
+    mt05BootstrapExpect(is_string($initFile), 'init fixture missing');
+    $before = array_values(array_filter(
+        $files,
+        static fn(string $file): bool => basename($file) < DefaultTenantBootstrap::MIGRATION
+    ));
+    executeSqlFiles($pdo, [$initFile, ...$before], $adminPassword);
+    recordInstalledMigrations($pdo, $before);
+}
+
+function mt05BootstrapPlatformSessions(PDO $pdo): PlatformOperatorSessionService
+{
+    $permissions = new PdoPlatformAuthorizationRepository($pdo);
+    return new PlatformOperatorSessionService(
+        new PlatformAuthService(
+            new PdoTransactionManager($pdo),
+            new PdoPlatformAuthRepository($pdo),
+            new PasswordHasher(),
+            new SystemClock(),
+            new TokenIssuer(),
+            str_repeat('h', 32)
+        ),
+        new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
+        $permissions,
+        new PlatformOperatorAccountBoundary($pdo)
+    );
+}
+
+/** @return array{exit:int,output:string} */
+function mt05BootstrapRunMigration(string $serverDir): array
+{
+    $command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($serverDir . '/database/migrate.php');
+    $output = [];
+    $exit = 0;
+    exec($command . ' 2>&1', $output, $exit);
+    return ['exit' => $exit, 'output' => implode("\n", $output)];
+}
+
+$serverDir = dirname(__DIR__, 2);
+$admin = mt05BootstrapAdminConnection();
+$run = strtolower(bin2hex(random_bytes(5)));
+$databases = [];
+$adminEmail = 'owner+' . $run . '@example.test';
+$adminPassword = 'TenantOwner2026';
+$platformEmail = 'platform+' . $run . '@example.test';
+$platformPassword = 'PlatformOperator2026';
+
+try {
+    foreach ([
+        'missing_email' => ['', $platformPassword],
+        'weak_password' => [$platformEmail, 'weak-password'],
+        'same_email' => [$adminEmail, $platformPassword],
+    ] as $case => [$candidateEmail, $candidatePassword]) {
+        putenv('DEPLOYMENT_MODE=multi-tenant');
+        putenv('PLATFORM_INITIAL_EMAIL=' . $candidateEmail);
+        putenv('PLATFORM_INITIAL_PASSWORD=' . $candidatePassword);
+        $failed = false;
+        try {
+            initialPlatformCredentials($serverDir, $adminEmail);
+        } catch (RuntimeException $exception) {
+            $failed = true;
+            mt05BootstrapExpect(
+                !str_contains($exception->getMessage(), $platformPassword),
+                "{$case} exposed the platform password"
+            );
+        }
+        mt05BootstrapExpect($failed, "{$case} must fail closed");
+    }
+
+    $installName = 'pa_mt05_platform_install_' . $run;
+    $databases[] = $installName;
+    $install = mt05BootstrapDatabase($admin, $installName);
+    mt05BootstrapUseDatabase($installName);
+    putenv('ADMIN_INITIAL_EMAIL=' . $adminEmail);
+    putenv('ADMIN_INITIAL_PASSWORD=' . $adminPassword);
+    putenv('DEPLOYMENT_MODE=multi-tenant');
+    putenv('PLATFORM_INITIAL_EMAIL=' . $platformEmail);
+    putenv('PLATFORM_INITIAL_PASSWORD=' . $platformPassword);
+    ob_start();
+    $installCode = main();
+    $installOutput = (string)ob_get_clean();
+    mt05BootstrapExpect($installCode === 0, 'multi-tenant fresh installer failed');
+    mt05BootstrapExpect(
+        !str_contains($installOutput, $adminPassword)
+            && !str_contains($installOutput, $platformPassword),
+        'installer output exposed a bootstrap password'
+    );
+
+    $identity = $install->query(<<<'SQL'
+SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id
+FROM pa_platform_operator po
+CROSS JOIN pa_default_tenant_bootstrap b
+JOIN pa_tenant_member tm ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id
+WHERE po.status = 'active' AND b.id = 1
+SQL)->fetch();
+    mt05BootstrapExpect(is_array($identity), 'multi-tenant identities missing');
+    mt05BootstrapExpect(
+        (int)$identity['platform_account_id'] !== (int)$identity['owner_account_id'],
+        'platform operator and default owner reused one Account'
+    );
+    mt05BootstrapExpect(
+        (int)$install->query(
+            'SELECT COUNT(*) FROM pa_tenant_member WHERE account_id=' . (int)$identity['platform_account_id']
+        )->fetchColumn() === 0,
+        'platform operator became a TenantMember'
+    );
+    $authentication = mt05BootstrapPlatformSessions($install)->login(
+        $platformEmail,
+        $platformPassword,
+        '127.0.0.1',
+        'MT05 bootstrap fixture',
+        'mt05-platform-login'
+    );
+    mt05BootstrapExpect(
+        str_starts_with($authentication->tokens->access->expose(), 'pa_pat_'),
+        'fresh multi-tenant platform operator cannot login'
+    );
+
+    putenv('ADMIN_INITIAL_EMAIL');
+    putenv('ADMIN_INITIAL_PASSWORD');
+    putenv('PLATFORM_INITIAL_EMAIL');
+    putenv('PLATFORM_INITIAL_PASSWORD');
+    $migration = mt05BootstrapRunMigration($serverDir);
+    mt05BootstrapExpect($migration['exit'] === 0, 'up-to-date multi-tenant migration must not require bootstrap credentials');
+    mt05BootstrapExpect(
+        !str_contains($migration['output'], $adminPassword)
+            && !str_contains($migration['output'], $platformPassword),
+        'migration output exposed a bootstrap password'
+    );
+
+    $migrateName = 'pa_mt05_platform_migrate_' . $run;
+    $databases[] = $migrateName;
+    $migrate = mt05BootstrapDatabase($admin, $migrateName);
+    mt05BootstrapUseDatabase($migrateName);
+    mt05BootstrapPrepareMigration($migrate, $serverDir, $adminPassword);
+    putenv('ADMIN_INITIAL_EMAIL=' . $adminEmail);
+    putenv('ADMIN_INITIAL_PASSWORD=' . $adminPassword);
+    putenv('DEPLOYMENT_MODE=multi-tenant');
+    putenv('PLATFORM_INITIAL_EMAIL=' . $platformEmail);
+    putenv('PLATFORM_INITIAL_PASSWORD=' . $platformPassword);
+    $migration = mt05BootstrapRunMigration($serverDir);
+    mt05BootstrapExpect($migration['exit'] === 0, 'multi-tenant first migration failed');
+    mt05BootstrapExpect(
+        !str_contains($migration['output'], $adminPassword)
+            && !str_contains($migration['output'], $platformPassword),
+        'first migration output exposed a bootstrap password'
+    );
+    $migratedIdentity = $migrate->query(<<<'SQL'
+SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id
+FROM pa_platform_operator po
+CROSS JOIN pa_default_tenant_bootstrap b
+JOIN pa_tenant_member tm ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id
+WHERE po.status = 'active' AND b.id = 1
+SQL)->fetch();
+    mt05BootstrapExpect(
+        is_array($migratedIdentity)
+            && (int)$migratedIdentity['platform_account_id'] !== (int)$migratedIdentity['owner_account_id'],
+        'multi-tenant migration reused the owner Account for PlatformOperator'
+    );
+
+    $standaloneName = 'pa_mt05_standalone_' . $run;
+    $databases[] = $standaloneName;
+    $standalone = mt05BootstrapDatabase($admin, $standaloneName);
+    mt05BootstrapUseDatabase($standaloneName);
+    putenv('ADMIN_INITIAL_EMAIL=' . $adminEmail);
+    putenv('ADMIN_INITIAL_PASSWORD=' . $adminPassword);
+    putenv('DEPLOYMENT_MODE=standalone');
+    mt05BootstrapInstall($standalone, $serverDir, $adminPassword);
+    $shared = $standalone->query(<<<'SQL'
+SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id
+FROM pa_platform_operator po
+CROSS JOIN pa_default_tenant_bootstrap b
+JOIN pa_tenant_member tm ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id
+WHERE po.status = 'active' AND b.id = 1
+SQL)->fetch();
+    mt05BootstrapExpect(
+        is_array($shared) && (int)$shared['platform_account_id'] === (int)$shared['owner_account_id'],
+        'standalone bootstrap compatibility changed'
+    );
+
+    echo "MT05-PLATFORM-BOOTSTRAP-001 passed\n";
+} finally {
+    foreach ($databases as $database) {
+        $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
+    }
+}

@@ -45,7 +45,7 @@
 | PB08A | 脚手架产品化与官方网站 | 完成（浏览器证据并入 PB08B） | 四端/安装/元数据/文档品牌单一事实源；中性脚手架；官网+文档门户；静态门禁通过 |
 | PB08B | 正式候选集成验收 | 已完成 | 空库、升级、覆盖、registry 安装、Docker、真实浏览器和文档一致均通过 |
 | PB09 | 发布正式基线 | 已完成 | `v1.0.0`、manifest、GitHub Release、既有应用/官网部署、24→28 前滚、一次最低线上 smoke 与最终状态均已封存 |
-| SAAS01 | SaaS 多租户实现 | 后续独立阶段 | PB09 后按 `docs/design/saas-roadmap/` 重新冻结执行契约 |
+| MT01 | 多租户与必要平台管理 | 后续独立阶段 | PB09 与当前核心能力收口后按 `docs/plans/multi-tenancy-platform-management-plan.md` 执行；完整 SaaS 商业化暂缓 |
 
 ## 4. 领域迁移工作流
 

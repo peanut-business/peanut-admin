@@ -1,7 +1,10 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-11
+> Last updated: 2026-08-13
+
+执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
+路线，执行规则由该独立文档维护。
 
 ---
 
@@ -20,7 +23,7 @@
 
 ---
 
-## 2. 当前状态（2026-08-10）
+## 2. 当前状态（2026-08-13）
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 
@@ -41,9 +44,38 @@
 - `output/playwright/v02/summary.json` — **本会话独立验证，可信**
 - `output/playwright/v02/*.png` — 9 组截图 + 登录截图
 
-### 2.2 SaaS / 多租户设计 — 🗺️ Roadmap Only，未实现
+### 2.2 SaaS / 多租户设计与实现 — 🚧 分阶段进行中
 
-设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。**后端代码中没有任何多租户实现。** 不要在现有代码里查找 Tenant / pa_tenant 相关逻辑。
+设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。后端已经合入默认 Tenant
+bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、PlatformOperator
+边界和可信管理端 TenantContext 等独立切片；这不表示 MT02–MT04 或 PM01 已整体完成。
+判断完成度和领取下一切片前，必须读取当前权威计划并核对远端 `dev`，不得继续沿用
+“完全未实现”或某个局部 PR 已代表阶段完成的旧判断。
+
+截至 MT05 最终代码候选 `074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8`
+（tree `1a2df02e97414b5c236a842adf17804fb33e4699`）：
+
+- MT00、MT01 已完成，Core/Generator 与 DCS Product-only 条件采用身份已经固定；
+- MT02 已完成默认 Tenant、旧管理员/RBAC/组织映射，以及 Article、字典、装修、
+  会员/标签/余额等首批 Tenant-first SQL 域；
+- MT03 已完成缓存/锁端口、文件、Crontab、操作日志与后台 diagnostics、通知、OAuth、
+  导入导出、热搜、客服、交易设置、充值退款、Tabbar、同步 XLSX、会员上传和实例工具
+  边界等独立隔离切片；
+- PM01 已形成 PlatformOperator、Tenant 生命周期、首 owner、TenantModule 和平台端
+  HTTP/Web 主链；MT04 已形成 Tenant 选择/切换/撤销、Admin Host bridge 和 Standalone UI；
+- 管理员、角色、部门和岗位 CRUD 已 Tenant-first，并由数据库复合 Tenant 外键保护；
+- MT05 浏览器候选 `2def481…` 的真实浏览器矩阵已通过，证据为
+  `/private/tmp/pa-mt05-evidence/final-browser-2def481/summary.json`；旧候选
+  `5bd3e78…` 的三模式安装/升级证据早于两条新增 migration，不能覆盖最终候选。
+  PR #99 修正合法部署枚举 `multi-tenant` 后，最终候选的 Standalone 空库、`v1.0.0`
+  前滚和多租户空库均以 50 条 migration/81 张表通过；MT02–MT05 已完成。MT06
+  `v1.1.0` 发布候选已从 `dev@b06bb766…` 形成，正在收口版本/Registry lock、生产双模式
+  环境接线、发布 metadata/法律制品和用户文档；正式 `main`、tag、Release 与一次安装
+  验证尚未完成。
+
+- 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
+- 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
+- 跨应用实例管理 Release、授权、升级、健康和备份的运营平台已明确为独立应用；它不属于核心包，也不是 SaaS Host 内的租户控制面
 
 ### 2.3 产品化正式基线 — ✅ 完成
 
@@ -60,7 +92,7 @@
 - PB08B 已完成：候选 `4442229…` 通过 registry 构建、弱凭据/24→28/空库、Compose/HTTP/镜像/Host、唯一桌面/移动 Chromium 与文档一致性；总摘要见 `output/playwright/pb08b/summary.json`
 - PB09 已完成：法律门禁、PR #10/#11、`dev/main` 合入、annotated `v1.0.0`、GitHub Release、既有应用与官网部署、24→28 前滚和一次最低线上 smoke 均已封存；生产运行镜像由不可变 tag 源码在部署端构建，不发布预构建镜像
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
-- 产品化正式基线已经进入 `main`；下一阶段只执行已获授权的媒体项目通用能力合同，SaaS 仍是其后的独立目标且尚未开始
+- 产品化正式基线已经进入 `main`；下一阶段先完成已获授权的媒体项目通用能力合同，再按当前计划推进多租户和必要的平台管理；完整 SaaS 商业化暂缓
 
 ---
 
@@ -121,3 +153,12 @@ LikeAdmin 到 Peanut Admin 的刻意改名，**不是缺失**：
 3. 不要创建带产品版本后缀的名称、路径或文件名
 4. SaaS 相关实现需求 → 先查阅 `docs/design/saas-roadmap/` 再动手
 5. DB 变更：新建 `server/database/migrations/YYYYMMDD-<描述>.sql`，不要直接修改 `init.sql`
+
+## 7. Gate 依赖与并行推进
+
+- 阶段编号只规定最终完成声明和集成验收的顺序，不自动禁止后续阶段开始。
+- 任何“阻塞”必须写明被阻塞的具体交付物、缺失输入和解除条件；不得只用“前一阶段未完成”冻结整个后续阶段。
+- 不依赖缺失输入、文件 owner 不重叠且可独立回滚的合同、迁移、Runtime、fixture 和测试准备应并行推进。
+- 外部发布、Registry 身份或单个 CI Gate 只阻塞直接消费该身份或证据的候选填值、最终验收和完成声明，不冻结无依赖实现。
+- 后续阶段可以形成独立 PR，但在其真实前置尚未满足时不得合入共享集成候选、执行最终 Gate 或声称阶段完成。
+- 每次设置停止线时同时列出“仍可并行项”；若没有可并行项，必须记录具体代码或数据依赖，而不是沿用阶段序号推断。

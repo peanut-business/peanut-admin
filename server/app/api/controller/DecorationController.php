@@ -5,6 +5,7 @@ namespace app\api\controller;
 
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
+use app\common\service\decoration\DecorationTenantContext;
 
 class DecorationController extends BaseApiController
 {
@@ -17,7 +18,15 @@ class DecorationController extends BaseApiController
             return $this->fail('移动端装修页面类型无效');
         }
         try {
-            return $this->data(DecorationReadService::pageByType($type));
+            $context = DecorationTenantContext::read(
+                $this->request,
+                DecorationTenantContext::MOBILE_PAGE_OPERATION
+            );
+            return $this->data(DecorationReadService::pageByType(
+                $context,
+                $type,
+                DecorationTenantContext::MOBILE_PAGE_OPERATION
+            ));
         } catch (\Throwable $e) {
             return $this->fail($e->getMessage());
         }
@@ -25,13 +34,33 @@ class DecorationController extends BaseApiController
 
     public function tabbar()
     {
-        return $this->data(DecorationReadService::tabbar(true));
+        try {
+            $context = DecorationTenantContext::read(
+                $this->request,
+                DecorationTenantContext::CONFIG_OPERATION
+            );
+            return $this->data(DecorationReadService::tabbar(
+                $context,
+                true,
+                DecorationTenantContext::CONFIG_OPERATION
+            ));
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 
     public function pcPage()
     {
         try {
-            return $this->data(DecorationReadService::pageByType(DecorationEnum::PC_HOME));
+            $context = DecorationTenantContext::read(
+                $this->request,
+                DecorationTenantContext::PC_PAGE_OPERATION
+            );
+            return $this->data(DecorationReadService::pageByType(
+                $context,
+                DecorationEnum::PC_HOME,
+                DecorationTenantContext::PC_PAGE_OPERATION
+            ));
         } catch (\Throwable $e) {
             return $this->fail($e->getMessage());
         }

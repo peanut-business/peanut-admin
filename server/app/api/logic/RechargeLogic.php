@@ -8,25 +8,28 @@ use app\common\enum\UserTerminalEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\finance\PaymentScene;
 use app\common\model\finance\RechargeOrder;
-use app\common\model\member\Member;
 use app\common\model\oauth\OAuthIdentity;
 use app\common\service\ConfigService;
 use app\common\service\MemberBalanceService;
+use app\common\service\finance\FinanceTenantRepository;
+use app\common\service\finance\VerifiedPaymentTenantResolver;
+use app\common\service\member\MemberTenantRepository;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\PaymentEvent;
 use app\common\service\payment\dto\PrepayRequest;
 use think\facade\Db;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 用户充值订单和幂等入账状态机。 */
 class RechargeLogic extends BaseLogic
 {
     private const MAX_AMOUNT_CENTS = 99999999;
 
-    public static function config(int $memberId, int $terminal): array|false
+    public static function config(TenantContext $context, int $memberId, int $terminal): array|false
     {
         try {
             self::assertTerminal($terminal);
-            $member = Member::findOrEmpty($memberId);
+            $member = MemberTenantRepository::members($context)->findOrEmpty($memberId);
             if ($member->isEmpty()) {
                 throw new \RuntimeException('用户不存在');
             }
@@ -57,7 +60,7 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    public static function create(int $memberId, array $params): array|false
+    public static function create(TenantContext $context, int $memberId, array $params): array|false
     {
         try {
             $terminal = (int)$params['terminal'];
@@ -77,7 +80,7 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('充值金额超过单次上限');
             }
 
-            $member = Member::findOrEmpty($memberId);
+            $member = MemberTenantRepository::members($context)->findOrEmpty($memberId);
             if ($member->isEmpty()) {
                 throw new \RuntimeException('用户不存在');
             }
@@ -90,7 +93,7 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('当前终端暂无可用支付方式');
             }
 
-            $order = RechargeOrder::create([
+            $order = FinanceTenantRepository::createOrder($context, [
                 'sn' => RechargeOrder::generateSn(),
                 'user_id' => $memberId,
                 'pay_sn' => '',
@@ -111,12 +114,12 @@ class RechargeLogic extends BaseLogic
     }
 
     /** 锁定本人未支付订单并固化本次支付渠道和请求号。 */
-    public static function prepareAttempt(int $memberId, int $orderId, int $payWay): array|false
+    public static function prepareAttempt(TenantContext $context, int $memberId, int $orderId, int $payWay): array|false
     {
         Db::startTrans();
         try {
             /** @var RechargeOrder $order */
-            $order = RechargeOrder::lock(true)->findOrEmpty($orderId);
+            $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty($orderId);
             self::assertOwnedUnpaid($order, $memberId);
             $terminal = (int)$order->order_terminal;
             if (!PaymentScene::supports($terminal, $payWay)) {
@@ -149,6 +152,7 @@ class RechargeLogic extends BaseLogic
 
     /** 创建真实渠道预支付参数；渠道调用通过 PaymentServiceFactory 边界完成。 */
     public static function prepay(
+        TenantContext $context,
         int $memberId,
         int $orderId,
         int $payWay,
@@ -156,7 +160,7 @@ class RechargeLogic extends BaseLogic
         string $clientIp = '',
         string $openid = ''
     ): array|false {
-        $order = self::prepareAttempt($memberId, $orderId, $payWay);
+        $order = self::prepareAttempt($context, $memberId, $orderId, $payWay);
         if ($order === false) {
             return false;
         }
@@ -198,10 +202,10 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    public static function detail(int $memberId, int $orderId): array|false
+    public static function detail(TenantContext $context, int $memberId, int $orderId): array|false
     {
         try {
-            $order = RechargeOrder::where(['id' => $orderId, 'user_id' => $memberId])->findOrEmpty();
+            $order = FinanceTenantRepository::orders($context)->where(['id' => $orderId, 'user_id' => $memberId])->findOrEmpty();
             if ($order->isEmpty()) {
                 throw new \RuntimeException('充值订单不存在');
             }
@@ -212,11 +216,11 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    public static function lists(int $memberId, array $params): array
+    public static function lists(TenantContext $context, int $memberId, array $params): array
     {
         $pageNo = max(1, (int)($params['page_no'] ?? 1));
         $pageSize = max(1, min(100, (int)($params['page_size'] ?? 15)));
-        $query = RechargeOrder::where('user_id', $memberId);
+        $query = FinanceTenantRepository::orders($context)->where('user_id', $memberId);
         $count = $query->count();
         $rows = $query->order('id', 'desc')->page($pageNo, $pageSize)->select()->toArray();
         return [
@@ -259,8 +263,10 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('支付状态尚未成功');
             }
 
+            $context = VerifiedPaymentTenantResolver::resolve($orderSn);
+
             /** @var RechargeOrder $order */
-            $order = RechargeOrder::where('sn', $orderSn)->lock(true)->findOrEmpty();
+            $order = FinanceTenantRepository::orders($context)->where('sn', $orderSn)->lock(true)->findOrEmpty();
             if ($order->isEmpty()) {
                 throw new \RuntimeException('充值订单不存在');
             }
@@ -283,13 +289,14 @@ class RechargeLogic extends BaseLogic
                 return true;
             }
 
-            $conflict = RechargeOrder::where('transaction_id', $transactionId)
+            $conflict = FinanceTenantRepository::orders($context)->where('transaction_id', $transactionId)
                 ->where('id', '<>', (int)$order->id)->lock(true)->findOrEmpty();
             if (!$conflict->isEmpty()) {
                 throw new \RuntimeException('支付交易流水已被使用');
             }
 
             MemberBalanceService::applyInTransaction(
+                $context,
                 (int)$order->user_id,
                 AccountLogEnum::USER_MONEY_INC_RECHARGE,
                 AccountLogEnum::INC,

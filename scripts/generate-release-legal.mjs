@@ -12,13 +12,17 @@ const checkOnly = process.argv.includes('--check')
 
 const expectedCounts = {
   composer: 37,
-  web: 1041,
-  pc: 931,
-  uniapp: 1008,
+  web: 1015,
+  pc: 926,
+  uniapp: 1013,
   'docs-site': 174,
 }
 
 const readJson = (relativePath) => JSON.parse(readFileSync(resolve(rootDir, relativePath), 'utf8'))
+const releaseMetadata = readJson('RELEASE_METADATA.json')
+const releaseVersion = releaseMetadata.version
+const releaseTag = releaseMetadata.expected_tag
+const releaseDate = releaseMetadata.release_date
 
 const normalizeLicense = (license, name, version) => {
   if ((name === 'trim' && version === '0.0.1') ||
@@ -198,7 +202,7 @@ if (unresolved.length > 0) {
 const rootPackage = {
   name: 'Peanut Admin',
   SPDXID: 'SPDXRef-Package-Peanut-Admin',
-  versionInfo: '1.0.0',
+  versionInfo: releaseVersion,
   downloadLocation: 'https://github.com/peanut-business/peanut-admin',
   filesAnalyzed: false,
   licenseConcluded: 'LicenseRef-Peanut-Admin-Proprietary',
@@ -208,7 +212,7 @@ const rootPackage = {
   externalRefs: [{
     referenceCategory: 'PACKAGE-MANAGER',
     referenceType: 'purl',
-    referenceLocator: 'pkg:github/peanut-business/peanut-admin@1.0.0',
+    referenceLocator: `pkg:github/peanut-business/peanut-admin@${releaseVersion}`,
   }],
 }
 
@@ -217,10 +221,10 @@ const sbom = {
   spdxVersion: 'SPDX-2.3',
   dataLicense: 'CC0-1.0',
   SPDXID: 'SPDXRef-DOCUMENT',
-  name: 'Peanut Admin 1.0.0 release dependency SBOM',
-  documentNamespace: 'https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0/sbom',
+  name: `Peanut Admin ${releaseVersion} release dependency SBOM`,
+  documentNamespace: `https://github.com/peanut-business/peanut-admin/releases/tag/${releaseTag}/sbom`,
   creationInfo: {
-    created: '2026-08-11T00:00:00Z',
+    created: `${releaseDate}T00:00:00Z`,
     creators: ['Organization: 花生科技', 'Tool: scripts/generate-release-legal.mjs'],
     licenseListVersion: '3.27',
   },
@@ -276,7 +280,7 @@ const notableRows = notablePackages
 
 const notices = `# Peanut Admin Third-Party Notices
 
-Generated for Peanut Admin 1.0.0 on 2026-08-11.
+Generated for Peanut Admin ${releaseVersion} on ${releaseDate}.
 
 Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. All rights reserved. Third-party components remain governed by their own licenses. Nothing in the Peanut Admin proprietary license restricts rights granted by those third-party licenses.
 
@@ -294,8 +298,8 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | Arco Design Pro Vue | MIT | The initial management client used Arco Design Pro Vue material; applicable upstream MIT attribution is retained. Source: https://github.com/arco-design/arco-design-pro-vue |
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at \`server/LICENSE.txt\`. Source: https://github.com/top-think/framework |
-| \`peanut-admin/core\` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.2. Source: https://github.com/peanut-opensource/peanut-admin |
-| \`@peanut-admin/admin\` | Apache-2.0 | npm core package locked at Alpha.3 for Web/PC and Alpha.4 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin |
+| \`peanut-admin/core\` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.5. Source: https://github.com/peanut-opensource/peanut-admin-core |
+| \`@peanut-admin/admin\` | Apache-2.0 | npm core package locked at 0.1.0-alpha.5 for Web, PC and UniApp. Source: https://github.com/peanut-opensource/peanut-admin |
 
 ## License handling
 

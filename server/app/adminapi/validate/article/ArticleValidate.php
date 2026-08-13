@@ -3,12 +3,19 @@ declare(strict_types=1);
 
 namespace app\adminapi\validate\article;
 
-use app\common\model\article\Article;
-use app\common\model\article\ArticleCate;
+use app\common\service\article\ArticleTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
 
 class ArticleValidate extends Validate
 {
+    private ?TenantContext $tenantContext = null;
+
+    public function forTenant(TenantContext $context): self
+    {
+        $this->tenantContext = $context;
+        return $this;
+    }
     protected $rule = [
         'id'         => 'require|checkArticle',
         'title'      => 'require|length:1,255',
@@ -50,12 +57,14 @@ class ArticleValidate extends Validate
 
     protected function checkArticle($value): bool|string
     {
-        return Article::findOrEmpty($value)->isEmpty() ? '资讯不存在' : true;
+        return ArticleTenantRepository::articles($this->requireContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
+            ? '资讯不存在' : true;
     }
 
     protected function checkCategory($value): bool|string
     {
-        return ArticleCate::findOrEmpty($value)->isEmpty() ? '所属栏目必须存在' : true;
+        return ArticleTenantRepository::categories($this->requireContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
+            ? '所属栏目必须存在' : true;
     }
 
     protected function pageSizeMax($value): bool|string
@@ -63,5 +72,10 @@ class ArticleValidate extends Validate
         return (int) $value > 25000
             ? '已超出系统限制数量，请分页查询或导出，当前最多记录数为：25000'
             : true;
+    }
+
+    private function requireContext(): TenantContext
+    {
+        return $this->tenantContext ?? throw new \RuntimeException('缺少可信租户上下文');
     }
 }

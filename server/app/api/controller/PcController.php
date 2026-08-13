@@ -6,6 +6,8 @@ namespace app\api\controller;
 use app\api\logic\ArticleLogic;
 use app\api\logic\IndexLogic;
 use app\api\logic\PcLogic;
+use app\common\service\article\ArticleTenantContext;
+use app\common\service\decoration\DecorationTenantContext;
 
 /**
  * PC 端聚合接口（部分端点返回更丰富的字段或不同格式）
@@ -17,21 +19,24 @@ class PcController extends BaseApiController
     /** PC 配置 */
     public function config()
     {
-        $result = IndexLogic::getConfigData();
+        $result = IndexLogic::getConfigData(DecorationTenantContext::read(
+            $this->request,
+            DecorationTenantContext::CONFIG_OPERATION
+        ));
         return $this->data($result);
     }
 
     /** PC 首页 */
     public function index()
     {
-        $result = PcLogic::getIndexData();
+        $result = PcLogic::getIndexData(ArticleTenantContext::read($this->request, 'article.pc-index'));
         return $this->data($result);
     }
 
     /** PC 资讯中心（同 article/lists） */
     public function infoCenter()
     {
-        return $this->data(ArticleLogic::infoCenter());
+        return $this->data(ArticleLogic::infoCenter(ArticleTenantContext::read($this->request, 'article.info-center')));
     }
 
     /** PC 文章详情 */
@@ -39,6 +44,7 @@ class PcController extends BaseApiController
     {
         $id     = $this->request->get('id/d', 0);
         $source = $this->request->get('source/s', 'default');
-        return $this->data(ArticleLogic::pcDetail($this->memberId, $id, $source));
+        $context = ArticleTenantContext::read($this->request, 'article.pc-detail');
+        return $this->data(ArticleLogic::pcDetail($context, $this->memberId, $id, $source));
     }
 }

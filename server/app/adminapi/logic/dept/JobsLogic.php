@@ -8,6 +8,9 @@ use app\common\model\auth\AdminJobs;
 use app\common\model\dept\Jobs;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
+use app\common\service\org\OrgTenantContext;
+use app\common\service\org\OrgTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 class JobsLogic extends BaseLogic
@@ -18,10 +21,24 @@ class JobsLogic extends BaseLogic
     /** 将 Peanut 旧版 is_disable 请求转换为 LikeAdmin status 契约。 */
     public static function normalizeInput(array $params): array
     {
+        $params = OrgTenantContext::withoutPayloadTenant($params);
         if (!array_key_exists('status', $params) && array_key_exists('is_disable', $params)) {
             $params['status'] = (int)$params['is_disable'] === 0 ? 1 : 0;
         }
         return $params;
+    }
+
+    public static function validationRules(string $scene): array
+    {
+        $rules = [
+            'id' => 'require|integer|gt:0', 'name' => 'require|length:1,50',
+            'code' => 'require|max:64', 'sort' => 'integer|egt:0',
+            'remark' => 'max:200', 'status' => 'require|in:0,1',
+        ];
+        if ($scene === 'add') {
+            unset($rules['id']);
+        }
+        return $rules;
     }
 
     /**
@@ -29,11 +46,11 @@ class JobsLogic extends BaseLogic
      *
      * @return array|false
      */
-    public static function lists(array $params): array|false
+    public static function lists(TenantContext $context, array $params): array|false
     {
         $params = self::normalizeInput($params);
         try {
-            $count = self::buildListQuery($params)->count();
+            $count = self::buildListQuery($context, $params)->count();
             $pageSize = (int)($params['page_size'] ?? 15);
             $pageSize = max(1, min(self::EXPORT_MAX_ROWS, $pageSize));
 
@@ -41,11 +58,11 @@ class JobsLogic extends BaseLogic
                 return self::exportInfo($count, $pageSize);
             }
             if ((int)($params['export'] ?? 0) === 2) {
-                return self::export($params, $count, $pageSize);
+                return self::export($context, $params, $count, $pageSize);
             }
 
             $pageNo = max(1, (int)($params['page_no'] ?? 1));
-            $rows = self::buildListQuery($params)
+            $rows = self::buildListQuery($context, $params)
                 ->append(['status_desc'])
                 ->page($pageNo, $pageSize)
                 ->select()
@@ -64,32 +81,32 @@ class JobsLogic extends BaseLogic
     }
 
     /** 全部正常岗位（供选择器使用）。 */
-    public static function all(): array
+    public static function all(TenantContext $context): array
     {
-        return Jobs::where('status', 1)
+        return self::jobs($context)->where('status', 1)
             ->field('id,name,code,status,is_disable')
             ->order(['sort' => 'desc', 'id' => 'desc'])
             ->select()
             ->toArray();
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        $jobs = Jobs::findOrEmpty($id);
+        $jobs = self::jobs($context)->where('id', $id)->findOrEmpty();
         if ($jobs->isEmpty()) {
             return [];
         }
         return self::formatRows([$jobs->append(['status_desc'])->toArray()])[0];
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
         Db::startTrans();
         try {
-            self::assertUnique((string)$params['name'], (string)$params['code']);
+            self::assertUnique($context, (string)$params['name'], (string)$params['code']);
             $status = (int)$params['status'];
-            Jobs::create([
+            OrgTenantRepository::create($context, Jobs::class, [
                 'name'       => trim((string)$params['name']),
                 'code'       => trim((string)$params['code']),
                 'sort'       => (int)($params['sort'] ?? 0),
@@ -106,17 +123,17 @@ class JobsLogic extends BaseLogic
         }
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
         Db::startTrans();
         try {
             $id = (int)$params['id'];
-            $jobs = Jobs::where('id', $id)->lock(true)->findOrEmpty();
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($jobs->isEmpty()) {
                 throw new \RuntimeException('岗位不存在');
             }
-            self::assertUnique((string)$params['name'], (string)$params['code'], $id);
+            self::assertUnique($context, (string)$params['name'], (string)$params['code'], $id);
             $status = (int)$params['status'];
             $jobs->save([
                 'name'       => trim((string)$params['name']),
@@ -135,15 +152,15 @@ class JobsLogic extends BaseLogic
         }
     }
 
-    public static function delete(int $id): bool
+    public static function delete(TenantContext $context, int $id): bool
     {
         Db::startTrans();
         try {
-            $jobs = Jobs::where('id', $id)->lock(true)->findOrEmpty();
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($jobs->isEmpty()) {
                 throw new \RuntimeException('岗位不存在');
             }
-            if (AdminJobs::where('jobs_id', $id)->count() > 0) {
+            if (OrgTenantRepository::query($context, AdminJobs::class)->where('jobs_id', $id)->count() > 0) {
                 throw new \RuntimeException('已关联管理员，暂不可删除');
             }
             $jobs->delete();
@@ -156,11 +173,11 @@ class JobsLogic extends BaseLogic
         }
     }
 
-    public static function updateStatus(int $id, int $status): bool
+    public static function updateStatus(TenantContext $context, int $id, int $status): bool
     {
         Db::startTrans();
         try {
-            $jobs = Jobs::where('id', $id)->lock(true)->findOrEmpty();
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($jobs->isEmpty()) {
                 throw new \RuntimeException('岗位不存在');
             }
@@ -177,9 +194,9 @@ class JobsLogic extends BaseLogic
         }
     }
 
-    private static function buildListQuery(array $params)
+    private static function buildListQuery(TenantContext $context, array $params)
     {
-        $query = Jobs::where([]);
+        $query = self::jobs($context);
         if (!empty($params['code'])) {
             $query->where('code', trim((string)$params['code']));
         }
@@ -192,10 +209,10 @@ class JobsLogic extends BaseLogic
         return $query->order(['sort' => 'desc', 'id' => 'desc']);
     }
 
-    private static function assertUnique(string $name, string $code, int $exceptId = 0): void
+    private static function assertUnique(TenantContext $context, string $name, string $code, int $exceptId = 0): void
     {
-        $nameQuery = Jobs::where('name', trim($name));
-        $codeQuery = Jobs::where('code', trim($code));
+        $nameQuery = self::jobs($context)->where('name', trim($name));
+        $codeQuery = self::jobs($context)->where('code', trim($code));
         if ($exceptId > 0) {
             $nameQuery->where('id', '<>', $exceptId);
             $codeQuery->where('id', '<>', $exceptId);
@@ -223,7 +240,7 @@ class JobsLogic extends BaseLogic
         ];
     }
 
-    private static function export(array $params, int $count, int $pageSize): array
+    private static function export(TenantContext $context, array $params, int $count, int $pageSize): array
     {
         if ($count === 0) {
             throw new \RuntimeException('没有数据，无法导出');
@@ -246,13 +263,14 @@ class JobsLogic extends BaseLogic
             $limit = min($count, self::EXPORT_MAX_ROWS);
         }
 
-        $rows = self::buildListQuery($params)
+        $rows = self::buildListQuery($context, $params)
             ->append(['status_desc'])
             ->limit($offset, $limit)
             ->select()
             ->toArray();
         $rows = self::formatRows($rows);
-        $uri = XlsxExportService::create(
+        $uri = XlsxExportService::createForTenant(
+            $context,
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['岗位编码', '岗位名称', '备注', '状态', '添加时间'],
             array_map(static fn(array $row): array => [
@@ -283,6 +301,11 @@ class JobsLogic extends BaseLogic
         }
         unset($row);
         return $rows;
+    }
+
+    private static function jobs(TenantContext $context)
+    {
+        return OrgTenantRepository::query($context, Jobs::class);
     }
 
     private static function formatTime($value): string

@@ -7,14 +7,17 @@ use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\finance\RechargeLogic;
 use app\adminapi\validate\finance\RechargeValidate;
 use app\common\service\JsonService;
+use app\common\service\finance\FinanceTenantContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class RechargeController extends BaseAdminController
 {
     public function lists()
     {
         $params = $this->request->get();
-        $this->validate($params, RechargeValidate::class . '.lists');
-        $result = RechargeLogic::lists($params);
+        $context = FinanceTenantContext::member($this->request);
+        $this->validateForTenant($context, $params, 'lists');
+        $result = RechargeLogic::lists($context, $params);
         if ($result === false) {
             return $this->fail(RechargeLogic::getError());
         }
@@ -27,16 +30,23 @@ class RechargeController extends BaseAdminController
     public function refund()
     {
         $params = $this->request->post();
-        $this->validate($params, RechargeValidate::class . '.refund');
-        [$flag, $message] = RechargeLogic::refund($params, $this->adminId);
+        $context = FinanceTenantContext::member($this->request);
+        $this->validateForTenant($context, $params, 'refund');
+        [$flag, $message] = RechargeLogic::refund($context, $params, $this->adminId);
         return $flag ? $this->success($message) : $this->fail($message);
     }
 
     public function refundAgain()
     {
         $params = $this->request->post();
-        $this->validate($params, RechargeValidate::class . '.again');
-        [$flag, $message] = RechargeLogic::refundAgain($params, $this->adminId);
+        $context = FinanceTenantContext::member($this->request);
+        $this->validateForTenant($context, $params, 'again');
+        [$flag, $message] = RechargeLogic::refundAgain($context, $params, $this->adminId);
         return $flag ? $this->success($message) : $this->fail($message);
+    }
+
+    private function validateForTenant(TenantContext $context, array $data, string $scene): void
+    {
+        (new RechargeValidate())->forTenant($context)->scene($scene)->failException(true)->check($data);
     }
 }

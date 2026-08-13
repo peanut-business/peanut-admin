@@ -7,16 +7,17 @@ use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
-use app\common\model\oauth\OAuthAttempt;
-use app\common\model\oauth\OAuthCompletionTicket;
-use app\common\model\oauth\OAuthIdentity;
-use app\common\model\oauth\OAuthPrincipal;
 use app\common\service\ConfigService;
 use app\common\service\FileService;
 use app\common\service\notice\VerificationCodeService;
+use app\common\service\oauth\OAuthTenantContext;
+use app\common\service\oauth\OAuthTenantRepository;
 use app\common\service\oauth\WechatOAuthTransport;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
+use app\common\service\member\MemberTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\facade\Db;
 
 /** 微信 OAuth 登录、身份归一、绑定与受限首登补全。 */
@@ -33,6 +34,7 @@ class OAuthLogic extends BaseLogic
     ];
 
     public static function begin(
+        TenantSystemContext $context,
         string $scene,
         string $returnPath,
         string $redirectUri,
@@ -45,7 +47,7 @@ class OAuthLogic extends BaseLogic
             self::assertReturnPath($returnPath);
             $config = self::sceneConfig($scene);
             $state = bin2hex(random_bytes(32));
-            OAuthAttempt::create([
+            OAuthTenantRepository::createAttempt($context, [
                 'state_hash' => hash('sha256', $state),
                 'scene' => $scene,
                 'return_path' => $returnPath,
@@ -69,6 +71,7 @@ class OAuthLogic extends BaseLogic
     }
 
     public static function callback(
+        TenantSystemContext $context,
         string $scene,
         string $code,
         string $state,
@@ -78,10 +81,10 @@ class OAuthLogic extends BaseLogic
             if (!in_array($scene, ['oa', 'open_pc'], true)) {
                 throw new \RuntimeException('微信授权场景无效');
             }
-            $returnPath = self::consumeAttempt($scene, $state);
+            $returnPath = self::consumeAttempt($context, $scene, $state);
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange($scene, self::sceneConfig($scene), $code);
-            $result = self::loginWithProfile($scene, $profile);
+            $result = self::loginWithProfile($context, $scene, $profile);
             $result['return_path'] = $returnPath;
             return $result;
         } catch (\Throwable $e) {
@@ -91,13 +94,14 @@ class OAuthLogic extends BaseLogic
     }
 
     public static function miniProgramLogin(
+        TenantSystemContext $context,
         string $code,
         ?OAuthTransportInterface $transport = null
     ): array|false {
         try {
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange('mnp', self::sceneConfig('mnp'), $code);
-            return self::loginWithProfile('mnp', $profile);
+            return self::loginWithProfile($context, 'mnp', $profile);
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
             return false;
@@ -105,6 +109,7 @@ class OAuthLogic extends BaseLogic
     }
 
     public static function bind(
+        TenantContext $context,
         int $memberId,
         string $scene,
         string $code,
@@ -114,13 +119,13 @@ class OAuthLogic extends BaseLogic
             if (!in_array($scene, ['mnp', 'oa'], true)) {
                 throw new \RuntimeException('该微信场景不支持账号绑定');
             }
-            $member = Member::findOrEmpty($memberId);
+            $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
             if ($member->isEmpty() || !(int)$member->status) {
                 throw new \RuntimeException('用户不存在或已禁用');
             }
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange($scene, self::sceneConfig($scene), $code);
-            [$bound] = self::resolveIdentity($scene, $profile, $memberId);
+            [$bound] = self::resolveIdentity($context, $scene, $profile, $memberId);
             if ((int)$bound->id !== $memberId) {
                 throw new \RuntimeException('微信身份已绑定其他用户');
             }
@@ -131,7 +136,7 @@ class OAuthLogic extends BaseLogic
         }
     }
 
-    public static function complete(array $params): array|false
+    public static function complete(TenantContext|TenantSystemContext $context, array $params): array|false
     {
         $rawTicket = trim((string)($params['ticket'] ?? ''));
         if ($rawTicket === '') {
@@ -141,13 +146,14 @@ class OAuthLogic extends BaseLogic
 
         Db::startTrans();
         try {
-            $ticket = OAuthCompletionTicket::where('token_hash', hash('sha256', $rawTicket))
+            $ticket = OAuthTenantRepository::completionTickets($context)
+                ->where('token_hash', hash('sha256', $rawTicket))
                 ->lock(true)->findOrEmpty();
             if ($ticket->isEmpty() || !empty($ticket->used_at) || (int)$ticket->expires_at < time()) {
                 throw new \RuntimeException('登录补全票据无效或已过期');
             }
             /** @var Member $member */
-            $member = Member::lock(true)->findOrEmpty((int)$ticket->member_id);
+            $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty((int)$ticket->member_id);
             if ($member->isEmpty() || !(int)$member->status) {
                 throw new \RuntimeException('用户不存在或已禁用');
             }
@@ -168,13 +174,14 @@ class OAuthLogic extends BaseLogic
                 if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                     throw new \RuntimeException('手机号格式错误');
                 }
-                $occupied = Member::where('mobile', $mobile)
+                $occupied = MemberTenantRepository::members($context)->where('mobile', $mobile)
                     ->where('id', '<>', (int)$member->id)->lock(true)->findOrEmpty();
                 if (!$occupied->isEmpty()) {
                     throw new \RuntimeException('手机号已被其他账号绑定');
                 }
                 $verification = new VerificationCodeService();
                 if (!$verification->verify(
+                    $context,
                     NoticeSceneEnum::BIND_MOBILE,
                     $mobile,
                     (string)($params['code'] ?? '')
@@ -199,9 +206,9 @@ class OAuthLogic extends BaseLogic
         }
     }
 
-    private static function loginWithProfile(string $scene, OAuthProfile $profile): array
+    private static function loginWithProfile(TenantSystemContext $context, string $scene, OAuthProfile $profile): array
     {
-        [$member, $created] = self::resolveIdentity($scene, $profile, null);
+        [$member, $created] = self::resolveIdentity($context, $scene, $profile, null);
         if (!(int)$member->status) {
             throw new \RuntimeException('账号已被禁用');
         }
@@ -209,7 +216,7 @@ class OAuthLogic extends BaseLogic
         $needMobile = (int)ConfigService::get('login', 'coerce_mobile', 0) === 1
             && trim((string)$member->mobile) === '';
         if ($needProfile || $needMobile) {
-            return self::completionResult($member, $needProfile, $needMobile);
+            return self::completionResult($context, $member, $needProfile, $needMobile);
         }
         $member->login_time = time();
         $member->login_ip = request()->ip();
@@ -219,6 +226,7 @@ class OAuthLogic extends BaseLogic
 
     /** @return array{0:Member,1:bool} */
     private static function resolveIdentity(
+        TenantContext|TenantSystemContext $context,
         string $scene,
         OAuthProfile $profile,
         ?int $bindingMemberId
@@ -226,10 +234,11 @@ class OAuthLogic extends BaseLogic
         $sceneMeta = self::SCENES[$scene];
         $config = self::sceneConfig($scene);
         $clientKey = $scene . ':' . (string)$config['app_id'];
+        $tenantId = OAuthTenantContext::tenantId($context);
         $lockSeed = $profile->unionId() !== ''
             ? 'union:' . $profile->unionId()
             : 'identity:' . $clientKey . ':' . $profile->subject();
-        $lockName = 'peanut:oauth:' . substr(hash('sha256', $lockSeed), 0, 48);
+        $lockName = 'peanut:oauth:' . substr(hash('sha256', $tenantId . ':' . $lockSeed), 0, 48);
         $lockRows = Db::query('SELECT GET_LOCK(:name, 5) AS acquired', ['name' => $lockName]);
         if ((int)($lockRows[0]['acquired'] ?? 0) !== 1) {
             throw new \RuntimeException('微信登录正在处理中，请稍后重试');
@@ -238,7 +247,7 @@ class OAuthLogic extends BaseLogic
         try {
             Db::startTrans();
             try {
-                $identity = OAuthIdentity::where([
+                $identity = OAuthTenantRepository::identities($context)->where([
                     'provider' => self::PROVIDER,
                     'client_key' => $clientKey,
                     'subject' => $profile->subject(),
@@ -247,11 +256,11 @@ class OAuthLogic extends BaseLogic
                     if ($bindingMemberId !== null && (int)$identity->member_id !== $bindingMemberId) {
                         throw new \RuntimeException('微信身份已绑定其他用户');
                     }
-                    $member = Member::lock(true)->findOrEmpty((int)$identity->member_id);
+                    $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty((int)$identity->member_id);
                     if ($member->isEmpty()) {
                         throw new \RuntimeException('微信身份关联用户不存在');
                     }
-                    $principalId = self::assertPrincipalOwnership($profile, (int)$member->id);
+                    $principalId = self::assertPrincipalOwnership($context, $profile, (int)$member->id);
                     if ($principalId !== null && (int)$identity->principal_id !== $principalId) {
                         $identity->principal_id = $principalId;
                         $identity->save();
@@ -263,7 +272,7 @@ class OAuthLogic extends BaseLogic
 
                 $principal = null;
                 if ($profile->unionId() !== '') {
-                    $principal = OAuthPrincipal::where([
+                    $principal = OAuthTenantRepository::principals($context)->where([
                         'provider' => self::PROVIDER,
                         'union_scope' => self::UNION_SCOPE,
                         'union_id' => $profile->unionId(),
@@ -272,7 +281,7 @@ class OAuthLogic extends BaseLogic
 
                 $created = false;
                 if ($bindingMemberId !== null) {
-                    $member = Member::lock(true)->findOrEmpty($bindingMemberId);
+                    $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty($bindingMemberId);
                     if ($member->isEmpty()) {
                         throw new \RuntimeException('用户不存在');
                     }
@@ -281,24 +290,24 @@ class OAuthLogic extends BaseLogic
                         throw new \RuntimeException('微信联合身份已归属其他用户，不能自动合并账号');
                     }
                 } elseif ($principal !== null && !$principal->isEmpty()) {
-                    $member = Member::lock(true)->findOrEmpty((int)$principal->member_id);
+                    $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty((int)$principal->member_id);
                     if ($member->isEmpty()) {
                         throw new \RuntimeException('微信联合身份关联用户不存在');
                     }
                 } else {
-                    $member = self::createMember($profile, (int)$sceneMeta['terminal']);
+                    $member = self::createMember($context, $profile, (int)$sceneMeta['terminal']);
                     $created = true;
                 }
 
                 if ($profile->unionId() !== '' && ($principal === null || $principal->isEmpty())) {
-                    $principal = OAuthPrincipal::create([
+                    $principal = OAuthTenantRepository::createPrincipal($context, [
                         'provider' => self::PROVIDER,
                         'union_scope' => self::UNION_SCOPE,
                         'union_id' => $profile->unionId(),
                         'member_id' => (int)$member->id,
                     ]);
                 }
-                $sameClient = OAuthIdentity::where([
+                $sameClient = OAuthTenantRepository::identities($context)->where([
                     'provider' => self::PROVIDER,
                     'client_key' => $clientKey,
                     'member_id' => (int)$member->id,
@@ -306,7 +315,7 @@ class OAuthLogic extends BaseLogic
                 if (!$sameClient->isEmpty()) {
                     throw new \RuntimeException('当前用户已绑定该微信应用的其他身份');
                 }
-                OAuthIdentity::create([
+                OAuthTenantRepository::createIdentity($context, [
                     'provider' => self::PROVIDER,
                     'client_key' => $clientKey,
                     'subject' => $profile->subject(),
@@ -331,12 +340,16 @@ class OAuthLogic extends BaseLogic
         }
     }
 
-    private static function assertPrincipalOwnership(OAuthProfile $profile, int $memberId): ?int
+    private static function assertPrincipalOwnership(
+        TenantContext|TenantSystemContext $context,
+        OAuthProfile $profile,
+        int $memberId
+    ): ?int
     {
         if ($profile->unionId() === '') {
             return null;
         }
-        $principal = OAuthPrincipal::where([
+        $principal = OAuthTenantRepository::principals($context)->where([
             'provider' => self::PROVIDER,
             'union_scope' => self::UNION_SCOPE,
             'union_id' => $profile->unionId(),
@@ -345,7 +358,7 @@ class OAuthLogic extends BaseLogic
             throw new \RuntimeException('微信联合身份归属冲突，不能自动合并账号');
         }
         if ($principal->isEmpty()) {
-            $principal = OAuthPrincipal::create([
+            $principal = OAuthTenantRepository::createPrincipal($context, [
                 'provider' => self::PROVIDER,
                 'union_scope' => self::UNION_SCOPE,
                 'union_id' => $profile->unionId(),
@@ -355,13 +368,13 @@ class OAuthLogic extends BaseLogic
         return (int)$principal->id;
     }
 
-    private static function createMember(OAuthProfile $profile, int $terminal): Member
+    private static function createMember(TenantContext|TenantSystemContext $context, OAuthProfile $profile, int $terminal): Member
     {
-        $sn = Member::generateSn();
+        $sn = Member::generateSn($context);
         do {
             $account = 'wx_' . strtolower(bin2hex(random_bytes(6)));
-        } while (Member::withTrashed()->where('account', $account)->count() > 0);
-        return Member::create([
+        } while (MemberTenantRepository::members($context)->withTrashed()->where('account', $account)->count() > 0);
+        return MemberTenantRepository::createMember($context, [
             'sn' => $sn,
             'account' => $account,
             'password' => '',
@@ -392,10 +405,15 @@ class OAuthLogic extends BaseLogic
         }
     }
 
-    private static function completionResult(Member $member, bool $needProfile, bool $needMobile): array
+    private static function completionResult(
+        TenantContext|TenantSystemContext $context,
+        Member $member,
+        bool $needProfile,
+        bool $needMobile
+    ): array
     {
         $raw = bin2hex(random_bytes(32));
-        OAuthCompletionTicket::create([
+        OAuthTenantRepository::createCompletionTicket($context, [
             'token_hash' => hash('sha256', $raw),
             'member_id' => (int)$member->id,
             'need_profile' => $needProfile ? 1 : 0,
@@ -433,7 +451,11 @@ class OAuthLogic extends BaseLogic
         ];
     }
 
-    private static function consumeAttempt(string $scene, string $state): string
+    private static function consumeAttempt(
+        TenantSystemContext $context,
+        string $scene,
+        string $state
+    ): string
     {
         $state = trim($state);
         if ($state === '') {
@@ -441,7 +463,8 @@ class OAuthLogic extends BaseLogic
         }
         Db::startTrans();
         try {
-            $attempt = OAuthAttempt::where('state_hash', hash('sha256', $state))
+            $attempt = OAuthTenantRepository::attempts($context)
+                ->where('state_hash', hash('sha256', $state))
                 ->lock(true)->findOrEmpty();
             if ($attempt->isEmpty() || (string)$attempt->scene !== $scene
                 || !empty($attempt->used_at) || (int)$attempt->expires_at < time()) {

@@ -11,10 +11,15 @@ use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
+use app\common\service\finance\FinanceTenantContext;
+use app\common\service\finance\FinanceTenantRepository;
+use app\common\service\tenant\TenantLockNamespace;
+use app\common\service\tenant\TenantScope;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
 use think\facade\Db;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 充值记录查询、首次退款和失败重试。 */
 class RechargeLogic extends BaseLogic
@@ -25,10 +30,10 @@ class RechargeLogic extends BaseLogic
     /**
      * @return array{lists:array,count:int,page_no:int,page_size:int,extend:array}|array|false
      */
-    public static function lists(array $params): array|false
+    public static function lists(TenantContext $context, array $params): array|false
     {
         try {
-            $count = self::buildListQuery($params)->count();
+            $count = self::buildListQuery($context, $params)->count();
             $pageSize = max(1, min(
                 self::EXPORT_MAX_ROWS,
                 (int)($params['page_size'] ?? $params['limit'] ?? 25)
@@ -38,7 +43,7 @@ class RechargeLogic extends BaseLogic
                 return self::exportInfo($count, $pageSize);
             }
             if ((int)($params['export'] ?? 0) === 2) {
-                return self::export($params, $count, $pageSize);
+                return self::export($context, $params, $count, $pageSize);
             }
 
             $pageType = (int)($params['page_type'] ?? 1);
@@ -49,7 +54,7 @@ class RechargeLogic extends BaseLogic
                 $pageSize = self::EXPORT_MAX_ROWS;
             }
 
-            $rows = self::buildListQuery($params)
+            $rows = self::buildListQuery($context, $params)
                 ->order('ro.id', 'desc')
                 ->page($pageNo, $pageSize)
                 ->select()
@@ -72,15 +77,15 @@ class RechargeLogic extends BaseLogic
      * 首次全额退款。资格检查在行锁内再次执行，防止并发重复扣款。
      * @return array{0:bool,1:string}
      */
-    public static function refund(array $params, int $adminId): array
+    public static function refund(TenantContext $context, array $params, int $adminId): array
     {
         Db::startTrans();
         try {
             /** @var RechargeOrder $order */
-            $order = RechargeOrder::lock(true)->findOrEmpty((int)$params['recharge_id']);
+            $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$params['recharge_id']);
             self::assertRefundableOrder($order);
 
-            $existing = RefundRecord::where([
+            $existing = FinanceTenantRepository::records($context)->where([
                 'order_type' => RefundEnum::ORDER_TYPE_RECHARGE,
                 'order_id' => (int)$order->id,
             ])->lock(true)->findOrEmpty();
@@ -95,6 +100,7 @@ class RechargeLogic extends BaseLogic
             $order->save();
 
             MemberBalanceService::applyInTransaction(
+                $context,
                 (int)$order->user_id,
                 AccountLogEnum::USER_MONEY_DEC_RECHARGE_REFUND,
                 AccountLogEnum::DEC,
@@ -108,7 +114,7 @@ class RechargeLogic extends BaseLogic
             );
 
             /** @var RefundRecord $record */
-            $record = RefundRecord::create([
+            $record = FinanceTenantRepository::createRecord($context, [
                 'sn' => RefundRecord::generateSn(),
                 'user_id' => (int)$order->user_id,
                 'order_id' => (int)$order->id,
@@ -122,7 +128,7 @@ class RechargeLogic extends BaseLogic
                 'refund_status' => RefundEnum::REFUND_ING,
                 'refund_msg' => '',
             ]);
-            $log = self::createRefundLog($order, $record, $amount, $adminId);
+            $log = self::createRefundLog($context, $order, $record, $amount, $adminId);
 
             Db::commit();
         } catch (\Throwable $e) {
@@ -132,17 +138,17 @@ class RechargeLogic extends BaseLogic
         }
 
         // 渠道调用必须发生在本地原子业务事务提交后，避免渠道已受理而本地整体回滚。
-        return self::requestGatewayRefund($order, $record, $log);
+        return self::requestGatewayRefund($context, $order, $record, $log);
     }
 
     /**
      * 失败退款重试：复用 record，只新建 log，不再调整任何账户金额。
      * @return array{0:bool,1:string}
      */
-    public static function refundAgain(array $params, int $adminId): array
+    public static function refundAgain(TenantContext $context, array $params, int $adminId): array
     {
         $recordId = (int)$params['record_id'];
-        $retryLock = self::retryLockName($recordId);
+        $retryLock = self::retryLockName($context, $recordId);
         if (!self::acquireRetryLock($retryLock)) {
             $message = '退款正在处理中，请勿重复操作';
             self::setError($message);
@@ -153,7 +159,7 @@ class RechargeLogic extends BaseLogic
             Db::startTrans();
             try {
                 /** @var RefundRecord $record */
-                $record = RefundRecord::lock(true)->findOrEmpty($recordId);
+                $record = FinanceTenantRepository::records($context)->lock(true)->findOrEmpty($recordId);
                 if ($record->isEmpty()) {
                     throw new \RuntimeException('退款记录不存在');
                 }
@@ -165,7 +171,7 @@ class RechargeLogic extends BaseLogic
                 }
 
                 /** @var RechargeOrder $order */
-                $order = RechargeOrder::lock(true)->findOrEmpty((int)$record->order_id);
+                $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$record->order_id);
                 if ($order->isEmpty()) {
                     throw new \RuntimeException('充值订单不存在');
                 }
@@ -175,6 +181,7 @@ class RechargeLogic extends BaseLogic
                 $record->save();
 
                 $log = self::createRefundLog(
+                    $context,
                     $order,
                     $record,
                     (float)$record->refund_amount,
@@ -188,15 +195,19 @@ class RechargeLogic extends BaseLogic
             }
 
             // 重试同样先提交 ERROR -> ING 和本次日志，再在事务外请求渠道。
-            return self::requestGatewayRefund($order, $record, $log);
+            return self::requestGatewayRefund($context, $order, $record, $log);
         } finally {
             self::releaseRetryLock($retryLock);
         }
     }
 
-    private static function retryLockName(int $recordId): string
+    private static function retryLockName(TenantContext $context, int $recordId): string
     {
-        return 'peanut:recharge_refund_retry:' . $recordId;
+        $scope = TenantScope::fromTrustedContext(
+            FinanceTenantContext::tenantId($context),
+            $context->requestId,
+        );
+        return (new TenantLockNamespace($scope))->name('recharge:refund-retry:' . $recordId);
     }
 
     /** MySQL 会话级互斥覆盖完整渠道调用周期，避免快速失败时排队请求再次获准。 */
@@ -235,12 +246,13 @@ class RechargeLogic extends BaseLogic
     }
 
     private static function createRefundLog(
+        TenantContext $context,
         RechargeOrder $order,
         RefundRecord $record,
         float $amount,
         int $adminId
     ): RefundLog {
-        return RefundLog::create([
+        return FinanceTenantRepository::createLog($context, [
             'sn' => RefundLog::generateSn(),
             'record_id' => (int)$record->id,
             'user_id' => (int)$order->user_id,
@@ -254,6 +266,7 @@ class RechargeLogic extends BaseLogic
 
     /** @return array{0:bool,1:string} */
     private static function requestGatewayRefund(
+        TenantContext $context,
         RechargeOrder $order,
         RefundRecord $record,
         RefundLog $log
@@ -289,11 +302,11 @@ class RechargeLogic extends BaseLogic
         Db::startTrans();
         try {
             /** @var RefundRecord $lockedRecord */
-            $lockedRecord = RefundRecord::lock(true)->findOrEmpty((int)$record->id);
+            $lockedRecord = FinanceTenantRepository::records($context)->lock(true)->findOrEmpty((int)$record->id);
             /** @var RefundLog $lockedLog */
-            $lockedLog = RefundLog::lock(true)->findOrEmpty((int)$log->id);
+            $lockedLog = FinanceTenantRepository::logs($context)->lock(true)->findOrEmpty((int)$log->id);
             /** @var RechargeOrder $lockedOrder */
-            $lockedOrder = RechargeOrder::lock(true)->findOrEmpty((int)$order->id);
+            $lockedOrder = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$order->id);
             if ($lockedRecord->isEmpty() || $lockedLog->isEmpty() || $lockedOrder->isEmpty()) {
                 throw new \RuntimeException('退款结果关联数据不存在');
             }
@@ -340,10 +353,12 @@ class RechargeLogic extends BaseLogic
         return json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
     }
 
-    private static function buildListQuery(array $params)
+    private static function buildListQuery(TenantContext $context, array $params)
     {
-        $query = RechargeOrder::alias('ro')
-            ->join('member u', 'u.id = ro.user_id')
+        $tenantId = FinanceTenantContext::tenantId($context);
+        $query = FinanceTenantRepository::orders($context, 'ro')
+            ->join('member u', 'u.tenant_id = ro.tenant_id AND u.id = ro.user_id')
+            ->where('u.tenant_id', $tenantId)
             ->field(
                 'ro.id,ro.sn,ro.order_amount,ro.pay_way,ro.pay_time,'
                 . 'ro.pay_status,ro.create_time,ro.refund_status,'
@@ -425,7 +440,7 @@ class RechargeLogic extends BaseLogic
         ];
     }
 
-    private static function export(array $params, int $count, int $pageSize): array
+    private static function export(TenantContext $context, array $params, int $count, int $pageSize): array
     {
         if ($count === 0) {
             throw new \RuntimeException('没有数据,无法导出');
@@ -452,12 +467,13 @@ class RechargeLogic extends BaseLogic
             $limit = min($count, self::EXPORT_MAX_ROWS);
         }
 
-        $rows = self::buildListQuery($params)
+        $rows = self::buildListQuery($context, $params)
             ->order('ro.id', 'desc')
             ->limit($offset, $limit)
             ->select()
             ->toArray();
-        $uri = XlsxExportService::create(
+        $uri = XlsxExportService::createForTenant(
+            $context,
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['充值单号', '用户昵称', '充值金额', '支付方式', '支付状态', '支付时间', '下单时间'],
             array_map(static fn(array $row): array => [

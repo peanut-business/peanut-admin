@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\model\oauth;
 
 use app\common\model\BaseModel;
+use app\common\service\oauth\OAuthTenantRepository;
 
 /** 按 provider + client + subject 隔离的外部身份。 */
 class OAuthIdentity extends BaseModel
@@ -12,10 +13,6 @@ class OAuthIdentity extends BaseModel
 
     public static function subjectForMember(int $memberId, int $terminal): string
     {
-        return (string)self::where([
-            'provider' => 'wechat',
-            'member_id' => $memberId,
-            'terminal' => $terminal,
-        ])->value('subject');
+        return OAuthTenantRepository::subjectForOwnedMember($memberId, $terminal);
     }
 }

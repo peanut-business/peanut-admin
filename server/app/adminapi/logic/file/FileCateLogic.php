@@ -5,25 +5,25 @@ namespace app\adminapi\logic\file;
 
 use app\common\enum\FileEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\file\File;
-use app\common\model\file\FileCate;
+use app\common\service\file\FileTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 class FileCateLogic extends BaseLogic
 {
     /** 某类型下的稳定分类树（同级按 id 升序）。 */
-    public static function lists(int $type): array
+    public static function lists(TenantContext $context, int $type): array
     {
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');
         }
-        $categories = FileCate::where('type', $type)
+        $categories = FileTenantRepository::categories($context)->where('type', $type)
             ->order(['id' => 'asc'])
             ->select()->toArray();
         return linear_to_tree($categories);
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
         $name = trim((string)($params['name'] ?? ''));
         if ($name === '') {
@@ -40,7 +40,7 @@ class FileCateLogic extends BaseLogic
             return false;
         }
         if ($pid > 0) {
-            $parent = FileCate::find($pid);
+            $parent = FileTenantRepository::findCategory($context, $pid);
             if (!$parent) {
                 self::setError('父分类不存在');
                 return false;
@@ -51,7 +51,7 @@ class FileCateLogic extends BaseLogic
             }
         }
         try {
-            FileCate::create([
+            FileTenantRepository::createCategory($context, [
                 'pid'  => $pid,
                 'type' => (int)$params['type'],
                 'name' => $name,
@@ -63,14 +63,14 @@ class FileCateLogic extends BaseLogic
         }
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
         $name = trim((string)($params['name'] ?? ''));
         if ($name === '') {
             self::setError('分类名称不能为空');
             return false;
         }
-        $category = FileCate::find((int)($params['id'] ?? 0));
+        $category = FileTenantRepository::findCategory($context, (int)($params['id'] ?? 0));
         if (!$category) {
             self::setError('分类不存在');
             return false;
@@ -85,24 +85,24 @@ class FileCateLogic extends BaseLogic
     }
 
     /** 删除分类子树、其中素材及存储对象，并返回三者结果。 */
-    public static function delete(int $id): array
+    public static function delete(TenantContext $context, int $id): array
     {
         if ($id <= 0) {
             throw new \InvalidArgumentException('分类 ID 无效');
         }
-        $root = FileCate::find($id);
+        $root = FileTenantRepository::findCategory($context, $id);
         if (!$root) {
             throw new \InvalidArgumentException('分类不存在');
         }
-        $categoryIds = self::subtreeIds($id, (int)$root->type);
-        $fileIds = array_map('intval', File::whereIn('cid', $categoryIds)->column('id'));
+        $categoryIds = self::subtreeIds($context, $id, (int)$root->type);
+        $fileIds = array_map('intval', FileTenantRepository::files($context)->whereIn('cid', $categoryIds)->column('id'));
         $fileResult = empty($fileIds)
             ? ['files_deleted' => 0, 'storage_deleted' => 0]
-            : FileLogic::delete($fileIds);
+            : FileLogic::delete($context, $fileIds);
 
         Db::startTrans();
         try {
-            $categories = FileCate::whereIn('id', $categoryIds)->select();
+            $categories = FileTenantRepository::categories($context)->whereIn('id', $categoryIds)->select();
             if ($categories->count() !== count($categoryIds)) {
                 throw new \RuntimeException('分类记录删除不完整');
             }
@@ -125,12 +125,12 @@ class FileCateLogic extends BaseLogic
     }
 
     /** 校验根分类类型并返回包含自身的稳定子树 ID。 */
-    public static function subtreeIds(int $id, int $type): array
+    public static function subtreeIds(TenantContext $context, int $id, int $type): array
     {
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');
         }
-        $categories = FileCate::order(['id' => 'asc'])
+        $categories = FileTenantRepository::categories($context)->order(['id' => 'asc'])
             ->field(['id', 'pid', 'type'])
             ->select()
             ->toArray();

@@ -7,11 +7,21 @@ use app\common\enum\RefundEnum;
 use app\common\model\finance\RechargeOrder;
 use app\common\model\member\Member;
 use app\common\model\refund\RefundRecord;
+use app\common\service\finance\FinanceTenantRepository;
+use app\common\service\member\MemberTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
 
 /** 充值列表、首次退款和失败重试参数验证。 */
 class RechargeValidate extends Validate
 {
+    private ?TenantContext $tenantContext = null;
+
+    public function forTenant(TenantContext $context): self
+    {
+        $this->tenantContext = $context;
+        return $this;
+    }
     protected $rule = [
         'sn' => 'max:64',
         'pay_way' => 'in:1,2,3',
@@ -74,7 +84,7 @@ class RechargeValidate extends Validate
 
     protected function checkRecharge($value): bool|string
     {
-        $order = RechargeOrder::findOrEmpty((int)$value);
+        $order = FinanceTenantRepository::orders($this->requireContext())->findOrEmpty((int)$value);
         if ($order->isEmpty()) {
             return '充值订单不存在';
         }
@@ -85,7 +95,7 @@ class RechargeValidate extends Validate
             return '订单已发起退款,退款失败请到退款记录重新退款';
         }
 
-        $member = Member::findOrEmpty((int)$order->user_id);
+        $member = MemberTenantRepository::members($this->requireContext())->findOrEmpty((int)$order->user_id);
         if ($member->isEmpty() || (float)$member->user_money < (float)$order->order_amount) {
             return '退款失败:用户余额已不足退款金额';
         }
@@ -95,7 +105,7 @@ class RechargeValidate extends Validate
 
     protected function checkRecord($value): bool|string
     {
-        $record = RefundRecord::findOrEmpty((int)$value);
+        $record = FinanceTenantRepository::records($this->requireContext())->findOrEmpty((int)$value);
         if ($record->isEmpty()) {
             return '退款记录不存在';
         }
@@ -107,5 +117,10 @@ class RechargeValidate extends Validate
         }
 
         return true;
+    }
+
+    private function requireContext(): TenantContext
+    {
+        return $this->tenantContext ?? throw new \RuntimeException('缺少可信租户上下文');
     }
 }

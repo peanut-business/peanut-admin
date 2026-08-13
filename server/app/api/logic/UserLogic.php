@@ -7,15 +7,17 @@ use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
 use app\common\model\article\ArticleCollect;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\service\FileService;
 use app\common\service\notice\VerificationCodeService;
+use app\common\service\member\MemberTenantRepository;
 
 class UserLogic extends BaseLogic
 {
     /** 用户中心（首屏数据） */
-    public static function center(int $memberId): array
+    public static function center(TenantContext $context, int $memberId): array
     {
-        $member = Member::field(['id', 'sn', 'nickname', 'avatar', 'mobile', 'balance', 'points', 'create_time'])
+        $member = MemberTenantRepository::members($context)->field(['id', 'sn', 'nickname', 'avatar', 'mobile', 'balance', 'points', 'create_time'])
             ->findOrEmpty($memberId);
 
         if ($member->isEmpty()) {
@@ -25,7 +27,9 @@ class UserLogic extends BaseLogic
         $data               = $member->toArray();
         $data['avatar']     = FileService::getFileUrl((string) $data['avatar']);
         $data['collect_num'] = ArticleCollect::alias('c')
-            ->join('article a', 'c.article_id = a.id')
+            ->join('article a', 'c.tenant_id = a.tenant_id AND c.article_id = a.id')
+            ->where('c.tenant_id', $context->tenantId)
+            ->where('a.tenant_id', $context->tenantId)
             ->where('c.member_id', $memberId)
             ->where('c.status', 1)
             ->where('a.is_show', 1)
@@ -36,9 +40,9 @@ class UserLogic extends BaseLogic
     }
 
     /** 个人信息 */
-    public static function info(int $memberId): array
+    public static function info(TenantContext $context, int $memberId): array
     {
-        $member = Member::field(['id', 'sn', 'account', 'nickname', 'avatar', 'sex', 'birthday', 'mobile', 'email', 'balance', 'points', 'create_time'])
+        $member = MemberTenantRepository::members($context)->field(['id', 'sn', 'account', 'nickname', 'avatar', 'sex', 'birthday', 'mobile', 'email', 'balance', 'points', 'create_time'])
             ->findOrEmpty($memberId);
 
         if ($member->isEmpty()) {
@@ -56,7 +60,7 @@ class UserLogic extends BaseLogic
      * 更新用户信息
      * params: field(nickname|avatar|sex|birthday|email), value
      */
-    public static function setInfo(int $memberId, array $params): bool
+    public static function setInfo(TenantContext $context, int $memberId, array $params): bool
     {
         try {
             $allowed = ['nickname', 'avatar', 'sex', 'birthday', 'email'];
@@ -71,7 +75,9 @@ class UserLogic extends BaseLogic
                 $value = FileService::setFileUrl((string) $value);
             }
 
-            Member::update([$field => $value], ['id' => $memberId]);
+            if (MemberTenantRepository::members($context)->where('id', $memberId)->update([$field => $value]) !== 1) {
+                throw new \Exception('用户不存在');
+            }
             return true;
         } catch (\Exception $e) {
             self::setError($e->getMessage());
@@ -80,10 +86,10 @@ class UserLogic extends BaseLogic
     }
 
     /** 修改密码（需要旧密码） */
-    public static function changePassword(int $memberId, array $params): bool
+    public static function changePassword(TenantContext $context, int $memberId, array $params): bool
     {
         try {
-            $member = Member::findOrEmpty($memberId);
+            $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
             if ($member->isEmpty()) {
                 throw new \Exception('用户不存在');
             }
@@ -96,7 +102,7 @@ class UserLogic extends BaseLogic
             $newSalt     = substr(md5((string) time()), 0, 8);
             $newPassword = md5(md5($params['password']) . $newSalt) . ':' . $newSalt;
 
-            Member::update(['password' => $newPassword], ['id' => $memberId]);
+            MemberTenantRepository::members($context)->where('id', $memberId)->update(['password' => $newPassword]);
             return true;
         } catch (\Exception $e) {
             self::setError($e->getMessage());
@@ -105,18 +111,18 @@ class UserLogic extends BaseLogic
     }
 
     /** 绑定手机号 */
-    public static function bindMobile(int $memberId, array $params): bool
+    public static function bindMobile(TenantContext $context, int $memberId, array $params): bool
     {
         try {
             $mobile = $params['mobile'] ?? '';
             if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                 throw new \Exception('手机号格式错误');
             }
-            if (Member::where('mobile', $mobile)->where('id', '<>', $memberId)->count()) {
+            if (MemberTenantRepository::members($context)->where('mobile', $mobile)->where('id', '<>', $memberId)->count()) {
                 throw new \Exception('手机号已被其他账号绑定');
             }
 
-            $member = Member::findOrEmpty($memberId);
+            $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
             if ($member->isEmpty()) {
                 throw new \Exception('用户不存在');
             }
@@ -124,10 +130,10 @@ class UserLogic extends BaseLogic
                 ? NoticeSceneEnum::BIND_MOBILE
                 : NoticeSceneEnum::CHANGE_MOBILE;
             $service = new VerificationCodeService();
-            if (!$service->verify($scene, $mobile, (string) ($params['code'] ?? ''))) {
+            if (!$service->verify($context, $scene, $mobile, (string) ($params['code'] ?? ''))) {
                 throw new \Exception($service->getError());
             }
-            Member::update(['mobile' => $mobile], ['id' => $memberId]);
+            MemberTenantRepository::members($context)->where('id', $memberId)->update(['mobile' => $mobile]);
             return true;
         } catch (\Exception $e) {
             self::setError($e->getMessage());

@@ -11,6 +11,11 @@ export default function setupPermissionGuard(router: Router) {
     const appStore = useAppStore();
     const userStore = useUserStore();
     const Permission = usePermission();
+    if (to.meta.controlPlane === 'platform') {
+      next();
+      NProgress.done();
+      return;
+    }
     if (appStore.menuFromServer) {
       if (
         !appStore.serverMenuLoaded &&

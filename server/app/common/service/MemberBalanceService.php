@@ -6,12 +6,17 @@ namespace app\common\service;
 use app\common\enum\AccountLogEnum;
 use app\common\logic\AccountLogLogic;
 use app\common\model\member\Member;
+use app\common\service\member\MemberTenantRepository;
+use app\common\service\finance\FinanceTenantContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 会员余额、兼容镜像和分类流水的唯一写入入口。 */
 final class MemberBalanceService
 {
     /** 调用方必须已开启包含其领域状态变更的数据库事务。 */
     public static function applyInTransaction(
+        TenantContext|TenantSystemContext $context,
         int $memberId,
         int $changeType,
         int $action,
@@ -23,6 +28,9 @@ final class MemberBalanceService
         int $rechargeDeltaCents = 0,
         string $insufficientMessage = ''
     ): Member {
+        if ($context instanceof TenantSystemContext) {
+            FinanceTenantContext::tenantId($context);
+        }
         if ($amountCents <= 0) {
             throw new \InvalidArgumentException('调整金额必须大于零');
         }
@@ -31,7 +39,7 @@ final class MemberBalanceService
         }
 
         /** @var Member $member */
-        $member = Member::lock(true)->findOrEmpty($memberId);
+        $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty($memberId);
         if ($member->isEmpty()) {
             throw new \RuntimeException($insufficientMessage !== '' ? $insufficientMessage : '用户不存在');
         }
@@ -63,6 +71,7 @@ final class MemberBalanceService
         $member->save();
 
         if (AccountLogLogic::add(
+            $context,
             $memberId,
             $changeType,
             $action,

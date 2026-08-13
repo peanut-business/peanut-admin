@@ -8,6 +8,9 @@ use app\common\logic\BaseLogic;
 use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\FileService;
+use app\common\service\finance\FinanceTenantContext;
+use app\common\service\finance\FinanceTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 退款统计、记录和操作日志查询。 */
 class RefundLogic extends BaseLogic
@@ -15,9 +18,9 @@ class RefundLogic extends BaseLogic
     private const PAGE_SIZE_MAX = 25000;
 
     /** Peanut 按实际退款金额汇总；当前全额退款时与参考订单金额口径一致。 */
-    public static function stat(): array
+    public static function stat(TenantContext $context): array
     {
-        $records = RefundRecord::field('refund_amount,refund_status')->select()->toArray();
+        $records = FinanceTenantRepository::records($context)->field('refund_amount,refund_status')->select()->toArray();
         $total = $ing = $success = $error = 0.0;
 
         foreach ($records as $record) {
@@ -42,14 +45,14 @@ class RefundLogic extends BaseLogic
     /**
      * @return array{lists:array,count:int,page_no:int,page_size:int,extend:array}|false
      */
-    public static function lists(array $params): array|false
+    public static function lists(TenantContext $context, array $params): array|false
     {
         try {
             if (in_array((int)($params['export'] ?? 0), [1, 2], true)) {
                 throw new \RuntimeException('该列表不支持导出');
             }
 
-            $extendQuery = self::buildBaseQuery($params, false);
+            $extendQuery = self::buildBaseQuery($context, $params, false);
             $extendRows = $extendQuery->fieldRaw(
                 'count(r.id) as total'
                 . ',count(if(r.refund_status=' . RefundEnum::REFUND_ING . ',1,null)) as ing'
@@ -58,7 +61,7 @@ class RefundLogic extends BaseLogic
             )->select()->toArray();
             $extend = $extendRows[0] ?? [];
 
-            $query = self::buildBaseQuery($params, true);
+            $query = self::buildBaseQuery($context, $params, true);
             $count = (clone $query)->count();
             $pageType = (int)($params['page_type'] ?? 1);
             $pageNo = $pageType === 0
@@ -110,9 +113,9 @@ class RefundLogic extends BaseLogic
     }
 
     /** 最新日志在前；支付渠道原始报文不对管理页面暴露。 */
-    public static function refundLog(int $recordId): array
+    public static function refundLog(TenantContext $context, int $recordId): array
     {
-        $lists = (new RefundLog())
+        $lists = FinanceTenantRepository::logs($context)
             ->order(['id' => 'desc'])
             ->where('record_id', $recordId)
             ->hidden(['refund_msg'])
@@ -132,9 +135,12 @@ class RefundLogic extends BaseLogic
         return $lists;
     }
 
-    private static function buildBaseQuery(array $params, bool $withStatus)
+    private static function buildBaseQuery(TenantContext $context, array $params, bool $withStatus)
     {
-        $query = RefundRecord::alias('r')->join('member u', 'u.id = r.user_id');
+        $tenantId = FinanceTenantContext::tenantId($context);
+        $query = FinanceTenantRepository::records($context, 'r')
+            ->join('member u', 'u.tenant_id = r.tenant_id AND u.id = r.user_id')
+            ->where('u.tenant_id', $tenantId);
 
         if (!empty($params['sn'])) {
             $query->where('r.sn', trim((string)$params['sn']));

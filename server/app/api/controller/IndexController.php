@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\IndexLogic;
+use app\common\service\article\ArticleTenantContext;
+use app\common\service\decoration\DecorationTenantContext;
 
 class IndexController extends BaseApiController
 {
@@ -12,14 +14,17 @@ class IndexController extends BaseApiController
     /** 首页数据 */
     public function index()
     {
-        $result = IndexLogic::getIndexData();
+        $result = IndexLogic::getIndexData(ArticleTenantContext::read($this->request, 'article.index'));
         return $this->data($result);
     }
 
     /** 全局配置 */
     public function config()
     {
-        $result = IndexLogic::getConfigData();
+        $result = IndexLogic::getConfigData(DecorationTenantContext::read(
+            $this->request,
+            DecorationTenantContext::CONFIG_OPERATION
+        ));
         return $this->data($result);
     }
 

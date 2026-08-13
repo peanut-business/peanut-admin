@@ -5,10 +5,19 @@ namespace app\adminapi\validate\member;
 
 use app\common\enum\AccountLogEnum;
 use app\common\model\member\Member;
+use app\common\service\member\MemberTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
 
 class MemberValidate extends Validate
 {
+    private ?TenantContext $tenantContext = null;
+
+    public function forTenant(TenantContext $context): self
+    {
+        $this->tenantContext = $context;
+        return $this;
+    }
     protected $rule = [
         'id'       => 'require|integer|gt:0|checkMember',
         'nickname' => 'require|max:50',
@@ -59,7 +68,8 @@ class MemberValidate extends Validate
 
     protected function checkMember($value): bool|string
     {
-        return Member::find($value) ? true : '用户不存在！';
+        return MemberTenantRepository::members($this->requireContext())->where('id', (int)$value)->findOrEmpty()->isEmpty()
+            ? '用户不存在！' : true;
     }
 
     protected function checkField($value, $rule, array $data): bool|string
@@ -69,7 +79,7 @@ class MemberValidate extends Validate
         }
 
         if ($value === 'account') {
-            $exists = Member::where('id', '<>', (int)($data['id'] ?? 0))
+            $exists = MemberTenantRepository::members($this->requireContext())->where('id', '<>', (int)($data['id'] ?? 0))
                 ->where('account', (string)($data['value'] ?? ''))
                 ->findOrEmpty();
             if (!$exists->isEmpty()) {
@@ -82,7 +92,7 @@ class MemberValidate extends Validate
             if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                 return '手机号码格式错误';
             }
-            $exists = Member::where('id', '<>', (int)($data['id'] ?? 0))
+            $exists = MemberTenantRepository::members($this->requireContext())->where('id', '<>', (int)($data['id'] ?? 0))
                 ->where('mobile', $mobile)
                 ->findOrEmpty();
             if (!$exists->isEmpty()) {
@@ -95,8 +105,8 @@ class MemberValidate extends Validate
 
     protected function checkMoney($value, $rule, array $data): bool|string
     {
-        $member = Member::find((int)($data['user_id'] ?? 0));
-        if (!$member) {
+        $member = MemberTenantRepository::members($this->requireContext())->where('id', (int)($data['user_id'] ?? 0))->findOrEmpty();
+        if ($member->isEmpty()) {
             return '用户不存在';
         }
         if ((int)($data['action'] ?? 0) === AccountLogEnum::INC) {
@@ -106,5 +116,10 @@ class MemberValidate extends Validate
             return '用户可用余额仅剩' . $member->user_money;
         }
         return true;
+    }
+
+    private function requireContext(): TenantContext
+    {
+        return $this->tenantContext ?? throw new \RuntimeException('缺少可信租户上下文');
     }
 }

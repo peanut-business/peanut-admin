@@ -5,13 +5,13 @@ namespace app\adminapi\controller\auth;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\auth\RoleLogic;
-use app\adminapi\validate\auth\RoleValidate;
+use app\common\service\org\OrgTenantContext;
 
 class RoleController extends BaseAdminController
 {
     public function lists()
     {
-        $result = RoleLogic::lists($this->request->get());
+        $result = RoleLogic::lists(OrgTenantContext::member($this->request), $this->request->get());
         return $this->dataLists(
             $result['lists'],
             $result['count'],
@@ -22,21 +22,21 @@ class RoleController extends BaseAdminController
 
     public function all()
     {
-        return $this->data(RoleLogic::getAll());
+        return $this->data(RoleLogic::getAll(OrgTenantContext::member($this->request)));
     }
 
     public function detail()
     {
         $params = $this->request->get();
-        $this->validate($params, RoleValidate::class . '.detail');
-        return $this->data(RoleLogic::detail((int)$params['id']));
+        $this->validate($params, ['id' => 'require|integer|gt:0']);
+        return $this->data(RoleLogic::detail(OrgTenantContext::member($this->request), (int)$params['id']));
     }
 
     public function add()
     {
         $params = $this->roleParams();
-        $this->validate($params, RoleValidate::class . '.add');
-        $result = RoleLogic::add($params);
+        $this->validate($params, RoleLogic::validationRules('add'));
+        $result = RoleLogic::add(OrgTenantContext::member($this->request), $params);
         return $result
             ? $this->success('操作成功')
             : $this->fail(RoleLogic::getError());
@@ -45,8 +45,8 @@ class RoleController extends BaseAdminController
     public function edit()
     {
         $params = $this->roleParams();
-        $this->validate($params, RoleValidate::class . '.edit');
-        $result = RoleLogic::edit($params);
+        $this->validate($params, RoleLogic::validationRules('edit'));
+        $result = RoleLogic::edit(OrgTenantContext::member($this->request), $params);
         return $result
             ? $this->success('操作成功')
             : $this->fail(RoleLogic::getError());
@@ -55,8 +55,8 @@ class RoleController extends BaseAdminController
     public function delete()
     {
         $params = $this->request->post();
-        $this->validate($params, RoleValidate::class . '.delete');
-        $result = RoleLogic::delete((int)$params['id']);
+        $this->validate($params, ['id' => 'require|integer|gt:0']);
+        $result = RoleLogic::delete(OrgTenantContext::member($this->request), (int)$params['id']);
         return $result
             ? $this->success('操作成功')
             : $this->fail(RoleLogic::getError());

@@ -5,6 +5,7 @@ namespace app\adminapi\controller\setting;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\setting\TransactionSettingsLogic;
+use app\common\service\transaction\TransactionSettingTenantContext;
 
 /**
  * 交易设置
@@ -13,7 +14,9 @@ class TransactionSettingsController extends BaseAdminController
 {
     public function getConfig()
     {
-        return $this->data(TransactionSettingsLogic::getConfig());
+        return $this->data(TransactionSettingsLogic::getConfig(
+            TransactionSettingTenantContext::member($this->request)
+        ));
     }
 
     public function setConfig()
@@ -40,7 +43,10 @@ class TransactionSettingsController extends BaseAdminController
             }
         }
 
-        TransactionSettingsLogic::setConfig($post);
+        TransactionSettingsLogic::setConfig(
+            TransactionSettingTenantContext::member($this->request),
+            $post
+        );
         return $this->success('操作成功', [], 1, 1);
     }
 }

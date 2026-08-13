@@ -9,7 +9,10 @@ use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
 use app\common\service\FileService;
 use app\common\service\ConfigService;
+use app\common\service\member\MemberTenantRepository;
 use app\common\service\notice\VerificationCodeService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 class LoginLogic extends BaseLogic
 {
@@ -17,19 +20,19 @@ class LoginLogic extends BaseLogic
      * 账号注册
      * params: account, password, scene(默认h5)
      */
-    public static function register(array $params): bool
+    public static function register(TenantSystemContext $context, array $params): bool
     {
         try {
             self::assertLoginWayEnabled(1);
-            if (Member::where('account', $params['account'])->count()) {
+            if (MemberTenantRepository::members($context)->where('account', $params['account'])->count()) {
                 throw new \Exception('账号已被注册');
             }
 
             $salt     = substr(md5((string) time()), 0, 8);
             $password = md5(md5($params['password']) . $salt);
-            $sn       = Member::generateSn();
+            $sn       = Member::generateSn($context);
 
-            Member::create([
+            MemberTenantRepository::createMember($context, [
                 'sn'       => $sn,
                 'account'  => $params['account'],
                 'password' => $password . ':' . $salt,  // 存 hash:salt
@@ -53,12 +56,12 @@ class LoginLogic extends BaseLogic
      * 账号/手机号 + 密码登录
      * params: account(账号或手机号), password, terminal
      */
-    public static function login(array $params): array|false
+    public static function login(TenantSystemContext $context, array $params): array|false
     {
         try {
             self::assertLoginWayEnabled(1);
             /** @var Member|null $member */
-            $member = Member::where(function ($q) use ($params) {
+            $member = MemberTenantRepository::members($context)->where(function ($q) use ($params) {
                 $q->where('account', $params['account'])
                   ->whereOr('mobile', $params['account']);
             })->find();
@@ -98,20 +101,20 @@ class LoginLogic extends BaseLogic
         }
     }
 
-    public static function mobileLogin(array $params): array|false
+    public static function mobileLogin(TenantContext|TenantSystemContext $context, array $params): array|false
     {
         try {
             self::assertLoginWayEnabled(2);
             $mobile = (string) $params['mobile'];
             $service = new VerificationCodeService();
-            if (!$service->verify(NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
+            if (!$service->verify($context, NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
                 throw new \RuntimeException($service->getError());
             }
 
-            $member = Member::where('mobile', $mobile)->findOrEmpty();
+            $member = MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty();
             if ($member->isEmpty()) {
-                $sn = Member::generateSn();
-                $member = Member::create([
+                $sn = Member::generateSn($context);
+                $member = MemberTenantRepository::createMember($context, [
                     'sn'       => $sn,
                     'account'  => $mobile,
                     'password' => '',
@@ -136,16 +139,17 @@ class LoginLogic extends BaseLogic
         }
     }
 
-    public static function resetPassword(array $params): bool
+    public static function resetPassword(TenantContext|TenantSystemContext $context, array $params): bool
     {
         try {
-            $member = Member::where('mobile', (string) $params['mobile'])->findOrEmpty();
+            $member = MemberTenantRepository::members($context)->where('mobile', (string) $params['mobile'])->findOrEmpty();
             if ($member->isEmpty()) {
                 throw new \RuntimeException('手机号未绑定账号');
             }
 
             $service = new VerificationCodeService();
             if (!$service->verify(
+                $context,
                 NoticeSceneEnum::RESET_PASSWORD,
                 (string) $params['mobile'],
                 (string) $params['code']

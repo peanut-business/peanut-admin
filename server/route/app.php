@@ -59,6 +59,14 @@ use app\adminapi\controller\article\ArticleCateController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
+use app\platform\controller\PlatformSessionController;
+use app\platform\controller\PlatformAccessController;
+use app\platform\controller\PlatformTenantBoundaryController;
+use app\platform\controller\PlatformTenantController;
+use app\platform\controller\PlatformTenantModuleController;
+use app\platform\http\middleware\PlatformLoginMiddleware;
+use app\platform\http\middleware\PlatformPermissionMiddleware;
+use app\tenant\controller\TenantSessionController;
 use think\facade\Route;
 
 // ─── 免登录路由（不挂任何鉴权中间件） ──────────────────────────────────────
@@ -66,6 +74,76 @@ Route::post('api/user/login',  [LoginController::class, 'login']);
 Route::post('api/user/logout', [LoginController::class, 'logout']);
 Route::post('admin/login/login',  [LoginController::class, 'login']);
 Route::post('admin/login/logout', [LoginController::class, 'logout']);
+
+// Instance-local platform control plane. It never shares admin sessions, RBAC or routes.
+Route::post('api/platform/session/login', [PlatformSessionController::class, 'login']);
+Route::post('api/platform/session/refresh', [PlatformSessionController::class, 'refresh']);
+Route::post('api/platform/session/logout', [PlatformSessionController::class, 'logout']);
+Route::get('api/platform/session/info', [PlatformSessionController::class, 'info'])
+    ->middleware(PlatformLoginMiddleware::class);
+Route::get('api/platform/tenants/capabilities', [PlatformTenantBoundaryController::class, 'capabilities'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/tenants', [PlatformTenantController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/tenants/detail', [PlatformTenantController::class, 'detail'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::post('api/platform/tenants/provision', [PlatformTenantController::class, 'provision'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+Route::post('api/platform/tenants/activate', [PlatformTenantController::class, 'activate'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
+Route::post('api/platform/tenants/suspend', [PlatformTenantController::class, 'suspend'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
+Route::post('api/platform/tenants/close', [PlatformTenantController::class, 'close'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
+Route::post('api/platform/tenants/modules/enable', [PlatformTenantModuleController::class, 'enable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.module.manage');
+Route::post('api/platform/tenants/modules/disable', [PlatformTenantModuleController::class, 'disable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.module.manage');
+Route::post('api/platform/operators/create', [PlatformAccessController::class, 'createOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.create');
+Route::post('api/platform/operators/update', [PlatformAccessController::class, 'updateOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.update');
+Route::post('api/platform/operators/roles/replace', [PlatformAccessController::class, 'replaceOperatorRoles'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.role.assign');
+Route::post('api/platform/operators/activate', [PlatformAccessController::class, 'activateOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.lifecycle');
+Route::post('api/platform/operators/suspend', [PlatformAccessController::class, 'suspendOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.lifecycle');
+Route::post('api/platform/operators/close', [PlatformAccessController::class, 'closeOperator'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.lifecycle');
+Route::post('api/platform/roles/create', [PlatformAccessController::class, 'createRole'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.create');
+Route::post('api/platform/roles/update', [PlatformAccessController::class, 'updateRole'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.update');
+Route::post('api/platform/roles/archive', [PlatformAccessController::class, 'archiveRole'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.archive');
+Route::post('api/platform/roles/permissions/replace', [PlatformAccessController::class, 'replaceRolePermissions'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.permission.assign');
+
+// Multi-tenant Admin session boundary. Core owns selection challenges and atomic old-session revocation.
+Route::post('api/tenant/session/login', [TenantSessionController::class, 'login']);
+Route::post('api/tenant/session/select', [TenantSessionController::class, 'select']);
+Route::post('api/tenant/session/switch', [TenantSessionController::class, 'switchChallenge']);
+Route::post('api/tenant/session/logout', [TenantSessionController::class, 'logout']);
 
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
 Route::group(function () {
@@ -192,6 +270,9 @@ Route::group('api/admin', function () {
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);
     Route::post('log/clear', [OperationLogController::class, 'clear']);
+    Route::post('log/export', [OperationLogController::class, 'export']);
+    Route::get('log/export/status', [OperationLogController::class, 'exportStatus']);
+    Route::get('log/export/download', [OperationLogController::class, 'exportDownload']);
 
     // 系统配置 - 网站设置
     Route::get('config/website',      [ConfigController::class, 'getWebsite']);
@@ -380,8 +461,6 @@ Route::get('api/article/detail',  [ApiArticleController::class, 'detail']);
 
 Route::get('api/search/hotLists', [ApiSearchController::class, 'hotLists']);
 
-Route::post('api/upload/image',   [ApiUploadController::class, 'image']);
-
 // 装修消费（匿名只读，保存后立即生效）
 Route::get('api/decoration/mobile', [ApiDecorationController::class, 'mobilePage']);
 Route::get('api/decoration/tabbar', [ApiDecorationController::class, 'tabbar']);
@@ -399,6 +478,9 @@ Route::get('api/pc/articleDetail',  [ApiPcController::class, 'articleDetail']);
 
 // ─── 需登录接口（挂 CheckTokenMiddleware） ──────────────────────────────────
 Route::group('api', function () {
+    // 用户上传必须由会员 token 注入可信 TenantContext 和会员 owner。
+    Route::post('upload/image', [ApiUploadController::class, 'image']);
+
     // 用户信息
     Route::get('user/center',         [ApiUserController::class, 'center']);
     Route::get('user/info',           [ApiUserController::class, 'info']);

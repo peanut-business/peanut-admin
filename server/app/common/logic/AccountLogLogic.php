@@ -6,11 +6,16 @@ namespace app\common\logic;
 use app\common\enum\AccountLogEnum;
 use app\common\model\member\Member;
 use app\common\model\member\MemberBalanceLog;
+use app\common\service\member\MemberTenantRepository;
+use app\common\service\finance\FinanceTenantContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 统一记录用户账户流水，供余额调整、充值和退款复用。 */
 class AccountLogLogic extends BaseLogic
 {
     public static function add(
+        TenantContext|TenantSystemContext $context,
         int $memberId,
         int $changeType,
         int $action,
@@ -20,7 +25,10 @@ class AccountLogLogic extends BaseLogic
         array $extra = [],
         int $adminId = 0
     ): MemberBalanceLog|false {
-        $member = Member::findOrEmpty($memberId);
+        if ($context instanceof TenantSystemContext) {
+            FinanceTenantContext::tenantId($context);
+        }
+        $member = MemberTenantRepository::members($context)->findOrEmpty($memberId);
         if ($member->isEmpty()) {
             return false;
         }
@@ -31,8 +39,8 @@ class AccountLogLogic extends BaseLogic
         }
 
         $leftAmount = (float)$member->user_money;
-        return MemberBalanceLog::create([
-            'sn' => MemberBalanceLog::generateSn(),
+        return MemberTenantRepository::createBalanceLog($context, [
+            'sn' => MemberBalanceLog::generateSn($context),
             'member_id' => $memberId,
             'change_object' => $changeObject,
             'change_type' => $changeType,

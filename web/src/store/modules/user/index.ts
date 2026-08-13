@@ -6,6 +6,15 @@ import {
   LoginData,
 } from '@/api/user';
 import { setToken, clearToken } from '@/utils/auth';
+import {
+  selectTenant,
+  tenantLogin,
+  tenantLogout,
+} from '@/api/tenant-session';
+import {
+  isMultiTenantDeployment,
+  isTenantAccessToken,
+} from '@/core/tenant-session';
 import { removeRouteListener } from '@/utils/route-listener';
 import { UserState } from './types';
 import useAppStore from '../app';
@@ -60,6 +69,31 @@ const useUserStore = defineStore('user', {
     // Login
     async login(loginForm: LoginData) {
       try {
+        if (isMultiTenantDeployment()) {
+          if (loginForm.challengeToken && loginForm.tenantId) {
+            const authenticated = await selectTenant(
+              loginForm.challengeToken,
+              loginForm.tenantId
+            );
+            setToken(authenticated.access_token);
+            return authenticated;
+          }
+          const outcome = await tenantLogin(
+            loginForm.username,
+            loginForm.password
+          );
+          if (outcome.state === 'tenant_selection_required') {
+            if (!loginForm.tenantId) return outcome;
+            const authenticated = await selectTenant(
+              outcome.challenge_token,
+              loginForm.tenantId
+            );
+            setToken(authenticated.access_token);
+            return authenticated;
+          }
+          setToken(outcome.access_token);
+          return outcome;
+        }
         const res = await userLogin(loginForm);
         setToken(res.data.token);
       } catch (err) {
@@ -77,7 +111,12 @@ const useUserStore = defineStore('user', {
     // Logout
     async logout() {
       try {
-        await userLogout();
+        const token = localStorage.getItem('token');
+        if (isTenantAccessToken(token)) {
+          await tenantLogout(token as string);
+        } else {
+          await userLogout();
+        }
       } finally {
         this.logoutCallBack();
       }

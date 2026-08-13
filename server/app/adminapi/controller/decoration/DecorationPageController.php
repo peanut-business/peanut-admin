@@ -7,12 +7,16 @@ use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\decoration\DecorationPageLogic;
 use app\adminapi\validate\decoration\DecorationPageValidate;
 use app\common\enum\decoration\DecorationEnum;
+use app\common\service\decoration\DecorationTenantContext;
 
 class DecorationPageController extends BaseAdminController
 {
     public function mobileLists()
     {
-        return $this->data(DecorationPageLogic::lists(DecorationEnum::MOBILE_TYPES));
+        return $this->data(DecorationPageLogic::lists(
+            DecorationTenantContext::member($this->request),
+            DecorationEnum::MOBILE_TYPES
+        ));
     }
 
     public function mobileDetail()
@@ -32,7 +36,10 @@ class DecorationPageController extends BaseAdminController
 
     public function pcLists()
     {
-        return $this->data(DecorationPageLogic::lists([DecorationEnum::PC_HOME]));
+        return $this->data(DecorationPageLogic::lists(
+            DecorationTenantContext::member($this->request),
+            [DecorationEnum::PC_HOME]
+        ));
     }
 
     public function pcSave()
@@ -44,14 +51,21 @@ class DecorationPageController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, DecorationPageValidate::class . '.article');
-        return $this->data(DecorationPageLogic::articleOptions((int)($params['limit'] ?? 20)));
+        return $this->data(DecorationPageLogic::articleOptions(
+            DecorationTenantContext::member($this->request),
+            (int)($params['limit'] ?? 20)
+        ));
     }
 
     private function detail(array $allowedTypes)
     {
         $params = $this->request->get();
         $this->validate($params, DecorationPageValidate::class . '.detail');
-        $result = DecorationPageLogic::detail((int)$params['id'], $allowedTypes);
+        $result = DecorationPageLogic::detail(
+            DecorationTenantContext::member($this->request),
+            (int)$params['id'],
+            $allowedTypes
+        );
         return $result === false ? $this->fail(DecorationPageLogic::getError()) : $this->data($result);
     }
 
@@ -59,7 +73,11 @@ class DecorationPageController extends BaseAdminController
     {
         $params = $this->request->post();
         $this->validate($params, DecorationPageValidate::class . '.save');
-        $result = DecorationPageLogic::save($params, $allowedTypes);
+        $result = DecorationPageLogic::save(
+            DecorationTenantContext::member($this->request),
+            $params,
+            $allowedTypes
+        );
         return $result ? $this->success('保存成功') : $this->fail(DecorationPageLogic::getError());
     }
 }

@@ -5,6 +5,7 @@ namespace app\common\model\article;
 
 use app\common\model\BaseModel;
 use app\common\service\ProductAssetReferenceService;
+use app\common\service\article\ArticleTenantRepository;
 use think\model\concern\SoftDelete;
 
 class Article extends BaseModel
@@ -16,7 +17,8 @@ class Article extends BaseModel
     /** 关联分类 */
     public function cate()
     {
-        return $this->belongsTo(ArticleCate::class, 'cid', 'id');
+        return $this->belongsTo(ArticleCate::class, 'cid', 'id')
+            ->where('tenant_id', (int)$this->tenant_id);
     }
 
     /** 管理端与公共端统一浏览量口径。 */
@@ -66,9 +68,10 @@ class Article extends BaseModel
     }
 
     /** 可见文章详情；读取即累计一次真实浏览量。 */
-    public static function getArticleDetailArr(int $id): array
+    public static function getArticleDetailArr(object $context, int $id): array
     {
-        $article = self::where(['id' => $id, 'is_show' => 1])->findOrEmpty();
+        $article = ArticleTenantRepository::articles($context)
+            ->where(['id' => $id, 'is_show' => 1])->findOrEmpty();
         if ($article->isEmpty()) {
             return [];
         }

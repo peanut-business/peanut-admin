@@ -4,24 +4,26 @@ declare(strict_types=1);
 namespace app\adminapi\logic\decoration;
 
 use app\common\logic\BaseLogic;
-use app\common\model\article\Article;
-use app\common\model\decoration\DecoratePage;
+use app\common\service\article\ArticleTenantRepository;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
+use app\common\service\decoration\DecorationTenantRepository;
 use think\facade\Db;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DecorationPageLogic extends BaseLogic
 {
-    public static function lists(array $allowedTypes): array
+    public static function lists(TenantContext $context, array $allowedTypes): array
     {
-        return DecoratePage::field(['id', 'type', 'name', 'update_time'])
+        return DecorationTenantRepository::pages($context)
+            ->field(['id', 'type', 'name', 'update_time'])
             ->whereIn('type', $allowedTypes)->order('type', 'asc')->select()->toArray();
     }
 
-    public static function detail(int $id, array $allowedTypes): array|false
+    public static function detail(TenantContext $context, int $id, array $allowedTypes): array|false
     {
         try {
-            $page = DecoratePage::findOrEmpty($id);
+            $page = DecorationTenantRepository::pages($context)->where('id', $id)->findOrEmpty();
             if ($page->isEmpty() || !in_array((int)$page->type, $allowedTypes, true)) {
                 throw new \RuntimeException('装修页面不存在或无权访问');
             }
@@ -32,17 +34,17 @@ class DecorationPageLogic extends BaseLogic
         }
     }
 
-    public static function detailByType(int $type): array|false
+    public static function detailByType(TenantContext $context, int $type): array|false
     {
         try {
-            return DecorationReadService::pageByType($type);
+            return DecorationReadService::pageByType($context, $type);
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
             return false;
         }
     }
 
-    public static function save(array $params, array $allowedTypes): bool
+    public static function save(TenantContext $context, array $params, array $allowedTypes): bool
     {
         try {
             $type = (int)$params['type'];
@@ -51,10 +53,11 @@ class DecorationPageLogic extends BaseLogic
             }
             $data = $params['data'];
             $meta = $params['meta'] ?? [];
-            DecorationSchemaService::validatePage($type, $data, $meta);
+            DecorationSchemaService::validatePage($context, $type, $data, $meta);
 
-            Db::transaction(function () use ($params, $type, $data, $meta): void {
-                $page = DecoratePage::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
+            Db::transaction(function () use ($context, $params, $type, $data, $meta): void {
+                $page = DecorationTenantRepository::pages($context)
+                    ->where('id', (int)$params['id'])->lock(true)->findOrEmpty();
                 if ($page->isEmpty()) {
                     throw new \RuntimeException('装修页面不存在');
                 }
@@ -78,9 +81,9 @@ class DecorationPageLogic extends BaseLogic
         }
     }
 
-    public static function articleOptions(int $limit): array
+    public static function articleOptions(TenantContext $context, int $limit): array
     {
-        return Article::field(['id', 'title', 'image', 'abstract'])
+        return ArticleTenantRepository::articles($context)->field(['id', 'title', 'image', 'abstract'])
             ->where('is_show', 1)->order('id', 'desc')->limit($limit)
             ->select()->toArray();
     }

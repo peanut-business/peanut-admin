@@ -1,5 +1,9 @@
 # SaaS Roadmap — 设计资料归档
 
+> 当前权威摘要：[`../saas-enhancement-blueprint.md`](../saas-enhancement-blueprint.md)
+> 当前实施顺序：[`../../plans/multi-tenancy-platform-management-plan.md`](../../plans/multi-tenancy-platform-management-plan.md)
+> 完整 SaaS 未来规划：[`../../plans/saas-enhancement-development-plan.md`](../../plans/saas-enhancement-development-plan.md)
+
 本目录收录 Peanut Admin **未来升级为多租户 SaaS 底座**的设计资料。这些文档不是当前基础版(对标 LikeAdmin 1.9.4)的一部分,而是下一阶段方向的设计输入。
 
 > 背景:当前产品仓 = 对标 LikeAdmin 标准版的管理端底座(克隆安装即可部署一个应用)。
@@ -27,3 +31,5 @@
 - `kernel-contracts/`:来自 `peanut-opensource/peanut-admin` 分支 `feature/new-backend-tp8`(commit `90da97b`)
 
 > 注意:这些是**设计资料**,不代表当前基础版已实现租户能力。当前 `server/` 里没有 `pa_tenant` 表、没有平台/租户分层。实现 SaaS 是独立的后续目标。
+
+> 运营平台边界：跨应用实例管理 Release、版本、授权、升级、健康和备份的运营平台是**独立应用**，不属于核心包，也不属于某个 SaaS Host 的平台后台。SaaS Host 内的 `PlatformOperator` 只治理本实例 Tenant，不能成为跨实例或跨租户超级管理员。

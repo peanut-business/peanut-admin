@@ -8,4 +8,8 @@ use app\common\model\BaseModel;
 class DecoratePage extends BaseModel
 {
     protected $name = 'decorate_page';
+    protected $type = [
+        'tenant_id' => 'integer',
+        'type' => 'integer',
+    ];
 }

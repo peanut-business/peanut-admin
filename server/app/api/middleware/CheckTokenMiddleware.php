@@ -6,6 +6,8 @@ namespace app\api\middleware;
 use app\api\service\UserTokenService;
 use app\common\model\member\Member;
 use app\common\service\JsonService;
+use app\common\service\member\MemberTenantContext;
+use app\common\service\member\MemberTenantRepository;
 
 /**
  * 用户端登录中间件
@@ -31,7 +33,12 @@ class CheckTokenMiddleware
             return JsonService::fail('登录超时，请重新登录', null, 40100);
         }
 
-        $member = Member::findOrEmpty($memberId);
+        try {
+            $context = MemberTenantContext::member($request);
+        } catch (\Throwable) {
+            return JsonService::fail('缺少可信租户上下文', null, 40300);
+        }
+        $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
         if ($member->isEmpty()) {
             return JsonService::fail('账号不存在', null, 40100);
         }

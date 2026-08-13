@@ -6,6 +6,8 @@ namespace app\api\controller;
 use app\api\logic\OAuthLogic;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
+use app\common\service\member\MemberTenantContext;
+use app\common\service\notice\NoticeTenantContext;
 
 class OAuthController extends BaseApiController
 {
@@ -22,6 +24,7 @@ class OAuthController extends BaseApiController
             $scene
         );
         $result = OAuthLogic::begin(
+            MemberTenantContext::system($this->request, 'member.oauth-begin'),
             $scene,
             (string)$params['return_path'],
             $callbackUrl
@@ -50,6 +53,7 @@ class OAuthController extends BaseApiController
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.callback');
         $result = OAuthLogic::callback(
+            MemberTenantContext::system($this->request, 'member.oauth-callback'),
             (string)$params['scene'],
             (string)$params['code'],
             (string)$params['state']
@@ -61,7 +65,10 @@ class OAuthController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.mnp');
-        $result = OAuthLogic::miniProgramLogin((string)$params['code']);
+        $result = OAuthLogic::miniProgramLogin(
+            MemberTenantContext::system($this->request, 'member.oauth-mini-program'),
+            (string)$params['code']
+        );
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
     }
 
@@ -70,7 +77,10 @@ class OAuthController extends BaseApiController
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.complete');
         $params['code'] = (string)($params['verification_code'] ?? '');
-        $result = OAuthLogic::complete($params);
+        $result = OAuthLogic::complete(
+            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
+            $params
+        );
         return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
     }
 
@@ -79,6 +89,7 @@ class OAuthController extends BaseApiController
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.bind');
         $result = OAuthLogic::bind(
+            MemberTenantContext::member($this->request),
             $this->memberId,
             (string)$params['scene'],
             (string)$params['code']

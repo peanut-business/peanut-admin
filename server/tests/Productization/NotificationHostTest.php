@@ -30,9 +30,20 @@ foreach (['new AliyunSms', 'new TencentSms', "lock(true)", 'safeReceipt', 'sanit
 $verificationService = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/VerificationCodeService.php'
 );
-foreach (['NoticeChannelService::sendSms', "['code' => '****']", 'verify_code_hash'] as $marker) {
+foreach (['$this->sender->send', "['code' => '****']", 'verify_code_hash', 'NoticeTenantRepository::createLog'] as $marker) {
     expectNotificationHost(str_contains($verificationService, $marker), 'verification boundary missing: ' . $marker);
 }
+$applicationSender = (string)file_get_contents(
+    $serverRoot . '/app/common/service/notice/ApplicationNoticeSmsSender.php'
+);
+expectNotificationHost(
+    str_contains($applicationSender, 'NoticeChannelService::sendSms'),
+    'tenant-owned notification flow does not delegate to the application credential Host'
+);
+expectNotificationHost(
+    !str_contains($channelService, 'tenant_id'),
+    'application-owned provider credential Host was tenantized'
+);
 expectNotificationHost(
     !str_contains($verificationService, "->where('is_verified', NoticeLog::VERIFIED_NO)"),
     'verification can fall back to an older code after the latest code is consumed'
@@ -108,8 +119,27 @@ foreach ([
     expectNotificationHost(($evidence['cleanup'] ?? false) === true, 'M01 fixtures were not cleaned: ' . $evidenceFile);
 }
 
-foreach ([$channelService, $verificationService, $logLogic] as $source) {
-    expectNotificationHost(!str_contains($source, 'PeanutAdmin\\'), 'application notification owner deep imports core');
+expectNotificationHost(
+    !str_contains($channelService, 'PeanutAdmin\\'),
+    'application-owned channel credential Host deep imports core'
+);
+$tenantSources = [$verificationService, $logLogic, (string)file_get_contents(
+    $serverRoot . '/app/common/service/notice/NoticeTenantRepository.php'
+)];
+foreach ($tenantSources as $source) {
+    $withoutAllowedContextTypes = str_replace([
+        'PeanutAdmin\\Kernel\\Auth\\TenantContext',
+        'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+    ], '', $source);
+    expectNotificationHost(
+        !str_contains($withoutAllowedContextTypes, 'PeanutAdmin\\'),
+        'tenant-owned notification Runtime imports core outside trusted context types'
+    );
+}
+foreach ([$verificationService, $applicationSender] as $source) {
+    foreach (['ConfigService::get', 'new AliyunSms', 'new TencentSms'] as $forbidden) {
+        expectNotificationHost(!str_contains($source, $forbidden), 'tenant Runtime copied provider credential ownership');
+    }
 }
 
 echo "PB07-NOTIFICATION-HOST-001 passed\n";

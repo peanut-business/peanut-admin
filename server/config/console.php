@@ -9,5 +9,7 @@ return [
         'crontab:demo'    => \app\command\CrontabDemo::class,
         'refund:reconcile' => \app\command\RefundReconcile::class,
         'generator:cleanup' => \app\command\GeneratorCleanup::class,
+        'tenant-task:work' => \app\command\TenantTaskWorker::class,
+        'module:install'   => \app\command\ModuleInstall::class,
     ],
 ];

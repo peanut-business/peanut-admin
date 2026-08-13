@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c53e822385c836412d6b0bb547c6b49f",
+    "content-hash": "4bc73b3994623418c180c7bcbaa5c16c",
     "packages": [
         {
             "name": "aliyuncs/oss-sdk-php",
@@ -1149,16 +1149,16 @@
         },
         {
             "name": "peanut-admin/core",
-            "version": "0.1.0-alpha.2",
+            "version": "0.1.0-alpha.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/peanut-opensource/peanut-admin-core.git",
-                "reference": "330e76787ba754e1c7c11c2204c1c7f1e9560bb1"
+                "reference": "ef06da45c9e77ae4b194bfc1f859ec007aa0e022"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core/zipball/330e76787ba754e1c7c11c2204c1c7f1e9560bb1",
-                "reference": "330e76787ba754e1c7c11c2204c1c7f1e9560bb1",
+                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core/zipball/ef06da45c9e77ae4b194bfc1f859ec007aa0e022",
+                "reference": "ef06da45c9e77ae4b194bfc1f859ec007aa0e022",
                 "shasum": ""
             },
             "require": {
@@ -1179,12 +1179,16 @@
                     "PeanutAdmin\\Kernel\\": "kernel/src/",
                     "PeanutAdmin\\TaskJob\\": "task-job/src/",
                     "PeanutAdmin\\Settings\\": "settings/src/",
+                    "PeanutAdmin\\Workflow\\": "workflow/src/",
                     "PeanutAdmin\\FileMedia\\": "file-media/src/",
                     "PeanutAdmin\\OpsConsole\\": "ops-console/src/",
                     "PeanutAdmin\\ImportExport\\": "import-export/src/",
+                    "PeanutAdmin\\Collaboration\\": "collaboration/src/",
                     "PeanutAdmin\\DataPermission\\": "data-permission/src/",
                     "PeanutAdmin\\ReferenceCodes\\": "reference-codes/src/",
                     "PeanutAdmin\\NotificationSms\\": "notification-sms/src/",
+                    "PeanutAdmin\\ArtifactRevision\\": "artifact-revision/src/",
+                    "PeanutAdmin\\EntitlementQuota\\": "entitlement-quota/src/",
                     "PeanutAdmin\\IntegrationSecurity\\": "integration-security/src/"
                 }
             },
@@ -1195,9 +1199,9 @@
             "description": "Peanut Admin reusable administration runtime packages",
             "support": {
                 "issues": "https://github.com/peanut-opensource/peanut-admin-core/issues",
-                "source": "https://github.com/peanut-opensource/peanut-admin-core/tree/v0.1.0-alpha.2"
+                "source": "https://github.com/peanut-opensource/peanut-admin-core/tree/v0.1.0-alpha.5"
             },
-            "time": "2026-08-08T09:14:23+00:00"
+            "time": "2026-08-12T07:17:29+00:00"
         },
         {
             "name": "psr/container",

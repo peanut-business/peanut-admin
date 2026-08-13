@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace app\api\logic;
 
 use app\common\logic\BaseLogic;
-use app\common\model\article\Article;
-use app\common\model\article\ArticleCate;
+use app\common\service\article\ArticleTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\service\ConfigService;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
@@ -13,11 +14,12 @@ use app\common\service\config\PaConfigWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
+use app\common\service\decoration\DecorationTenantContext;
 
 class IndexLogic extends BaseLogic
 {
     /** 全局配置（uniapp / H5 用） */
-    public static function getConfigData(): array
+    public static function getConfigData(TenantContext|TenantSystemContext $context): array
     {
         $domain    = request()->domain();
         $website = self::websiteService()->get();
@@ -48,9 +50,17 @@ class IndexLogic extends BaseLogic
                 'clarity_code' => (string)ConfigService::get('site_statistics', 'clarity_code', ''),
             ],
             'web_page' => $webPage,
-            'tabbar'   => DecorationReadService::tabbar(true),
-            'theme'    => DecorationReadService::pageByType(DecorationEnum::SYSTEM_THEME),
-            'version'  => '1.0.0',
+            'tabbar'   => DecorationReadService::tabbar(
+                $context,
+                true,
+                DecorationTenantContext::CONFIG_OPERATION
+            ),
+            'theme'    => DecorationReadService::pageByType(
+                $context,
+                DecorationEnum::SYSTEM_THEME,
+                DecorationTenantContext::CONFIG_OPERATION
+            ),
+            'version'  => (string) config('project.version', '1.1.0'),
         ];
     }
 
@@ -85,13 +95,13 @@ class IndexLogic extends BaseLogic
     }
 
     /** 首页数据 */
-    public static function getIndexData(): array
+    public static function getIndexData(TenantContext|TenantSystemContext $context): array
     {
         $field = [
             'id', 'title', 'desc', 'abstract', 'image', 'author',
             'click_actual', 'click_virtual', 'create_time',
         ];
-        $articles = Article::field($field)
+        $articles = ArticleTenantRepository::articles($context)->field($field)
             ->where('is_show', 1)
             ->order('id', 'desc')
             ->limit(20)
@@ -106,7 +116,11 @@ class IndexLogic extends BaseLogic
 
         return [
             'article' => $articles,
-            'decorate' => DecorationReadService::pageByType(DecorationEnum::MOBILE_HOME),
+            'decorate' => DecorationReadService::pageByType(
+                $context,
+                DecorationEnum::MOBILE_HOME,
+                DecorationTenantContext::ARTICLE_INDEX_OPERATION
+            ),
         ];
     }
 }
