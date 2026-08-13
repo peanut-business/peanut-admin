@@ -257,8 +257,11 @@ PlatformOperator 只拥有明确的 `platform.*` 权限。它不能读取商品�
   这些独立切片不能替代 MT05 的同一固定候选集中验收。
 - Core/Generator 公司级 MT01 基线和 Composer/npm Alpha.5 已固定，DCS 已获得
   Product-only `CONDITIONAL` 采用结论；Generator 仍只创建新项目，不覆盖更新已有项目。
-- PM01 与 MT04 的后端和管理端主链已形成；MT05 浏览器及安装/升级 harness 已合入，
-  代码候选已经固定但执行尚未开始，因此当前候选仍不能称为稳定多租户 Release。
+- PM01 与 MT04 的后端和管理端主链已形成；MT05 浏览器及安装/升级 harness 已合入。
+  首次固定候选执行已发现两个 blocker：多租户空库把 PlatformOperator 与默认 Tenant
+  owner 投影到同一 Account，且浏览器 Gate 缺少可部署 TenantModule 的安装命令/配置。
+  前者违反“PlatformOperator 不隐式成为 TenantMember”的身份边界；两项修复均在途，
+  必须合入后重冻候选并重跑两个 Gate，当前不得称为稳定多租户 Release。
 - 公众号回复等需要外部回调可信 Tenant 路由的领域尚未形成完整闭包；不得仅添加
   `tenant_id` 伪装完成隔离，也不以该非代表域阻塞当前 MT05 代表业务闭环。
 - 独立运营平台尚未立项和实现，本蓝图只冻结边界与管理协议方向；它不属于当前
