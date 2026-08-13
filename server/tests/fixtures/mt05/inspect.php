@@ -44,7 +44,7 @@ try {
         'MT05_MODE_INVALID'
     );
     expectInvariant(
-        in_array($deploymentMode, ['standalone', 'multitenant'], true),
+        in_array($deploymentMode, ['standalone', 'multi-tenant'], true),
         'MT05_DEPLOYMENT_MODE_INVALID'
     );
     expectInvariant(preg_match('/^[0-9a-f]{40}$/', $candidate) === 1, 'MT05_CANDIDATE_INVALID');
