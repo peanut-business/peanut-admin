@@ -6,6 +6,7 @@ namespace app\adminapi\controller\finance;
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\finance\RefundLogic;
 use app\adminapi\validate\finance\RefundValidate;
+use app\common\service\finance\FinanceTenantContext;
 
 /**
  * 退款控制器
@@ -15,7 +16,7 @@ class RefundController extends BaseAdminController
     /** 退款统计（四个金额汇总） */
     public function stat()
     {
-        return $this->data(RefundLogic::stat());
+        return $this->data(RefundLogic::stat(FinanceTenantContext::member($this->request)));
     }
 
     /** 退款记录列表（分页） */
@@ -23,7 +24,7 @@ class RefundController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, RefundValidate::class . '.record');
-        $result = RefundLogic::lists($params);
+        $result = RefundLogic::lists(FinanceTenantContext::member($this->request), $params);
         return $result === false
             ? $this->fail(RefundLogic::getError())
             : $this->data($result);
@@ -35,6 +36,9 @@ class RefundController extends BaseAdminController
         $params = $this->request->get();
         $this->validate($params, RefundValidate::class . '.log');
         $recordId = (int)$params['record_id'];
-        return $this->data(RefundLogic::refundLog($recordId));
+        return $this->data(RefundLogic::refundLog(
+            FinanceTenantContext::member($this->request),
+            $recordId
+        ));
     }
 }

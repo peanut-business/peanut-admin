@@ -9,6 +9,8 @@ use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
+use app\common\service\crontab\ScheduledTenantContext;
+use app\common\service\finance\FinanceTenantRepository;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
@@ -25,7 +27,9 @@ class RefundReconcile extends Command
 
     protected function execute(Input $input, Output $output)
     {
-        $records = RefundRecord::where('order_type', RefundEnum::ORDER_TYPE_RECHARGE)
+        $scope = ScheduledTenantContext::require();
+        $records = FinanceTenantRepository::records($scope)
+            ->where('order_type', RefundEnum::ORDER_TYPE_RECHARGE)
             ->where('refund_status', RefundEnum::REFUND_ING)
             ->order('id', 'asc')
             ->select();
@@ -34,12 +38,12 @@ class RefundReconcile extends Command
         $settled = 0;
         foreach ($records as $record) {
             /** @var RefundLog $log */
-            $log = RefundLog::where('record_id', (int)$record->id)
+            $log = FinanceTenantRepository::logs($scope)->where('record_id', (int)$record->id)
                 ->where('refund_status', RefundEnum::REFUND_ING)
                 ->order('id', 'desc')
                 ->findOrEmpty();
             /** @var RechargeOrder $order */
-            $order = RechargeOrder::findOrEmpty((int)$record->order_id);
+            $order = FinanceTenantRepository::orders($scope)->findOrEmpty((int)$record->order_id);
             if ($log->isEmpty() || $order->isEmpty()) {
                 Log::warning(sprintf(
                     '[refund:reconcile] 关联数据缺失 record_id=%d',
@@ -87,16 +91,16 @@ class RefundReconcile extends Command
             Db::startTrans();
             try {
                 /** @var RefundRecord $lockedRecord */
-                $lockedRecord = RefundRecord::where('id', (int)$record->id)
+                $lockedRecord = FinanceTenantRepository::records($scope)->where('id', (int)$record->id)
                     ->lock(true)
                     ->findOrEmpty();
                 /** @var RefundLog $lockedLog */
-                $lockedLog = RefundLog::where('record_id', (int)$record->id)
+                $lockedLog = FinanceTenantRepository::logs($scope)->where('record_id', (int)$record->id)
                     ->order('id', 'desc')
                     ->lock(true)
                     ->findOrEmpty();
                 /** @var RechargeOrder $lockedOrder */
-                $lockedOrder = RechargeOrder::where('id', (int)$lockedRecord->order_id)
+                $lockedOrder = FinanceTenantRepository::orders($scope)->where('id', (int)$lockedRecord->order_id)
                     ->lock(true)
                     ->findOrEmpty();
 
