@@ -19,7 +19,6 @@ use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
 use think\facade\Db;
-use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 充值记录查询、首次退款和失败重试。 */
 class RechargeLogic extends BaseLogic
@@ -30,7 +29,7 @@ class RechargeLogic extends BaseLogic
     /**
      * @return array{lists:array,count:int,page_no:int,page_size:int,extend:array}|array|false
      */
-    public static function lists(TenantContext $context, array $params): array|false
+    public static function lists(object $context, array $params): array|false
     {
         try {
             $count = self::buildListQuery($context, $params)->count();
@@ -77,7 +76,7 @@ class RechargeLogic extends BaseLogic
      * 首次全额退款。资格检查在行锁内再次执行，防止并发重复扣款。
      * @return array{0:bool,1:string}
      */
-    public static function refund(TenantContext $context, array $params, int $adminId): array
+    public static function refund(object $context, array $params, int $adminId): array
     {
         Db::startTrans();
         try {
@@ -145,7 +144,7 @@ class RechargeLogic extends BaseLogic
      * 失败退款重试：复用 record，只新建 log，不再调整任何账户金额。
      * @return array{0:bool,1:string}
      */
-    public static function refundAgain(TenantContext $context, array $params, int $adminId): array
+    public static function refundAgain(object $context, array $params, int $adminId): array
     {
         $recordId = (int)$params['record_id'];
         $retryLock = self::retryLockName($context, $recordId);
@@ -201,7 +200,7 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    private static function retryLockName(TenantContext $context, int $recordId): string
+    private static function retryLockName(object $context, int $recordId): string
     {
         $scope = TenantScope::fromTrustedContext(
             FinanceTenantContext::tenantId($context),
@@ -246,7 +245,7 @@ class RechargeLogic extends BaseLogic
     }
 
     private static function createRefundLog(
-        TenantContext $context,
+        object $context,
         RechargeOrder $order,
         RefundRecord $record,
         float $amount,
@@ -266,7 +265,7 @@ class RechargeLogic extends BaseLogic
 
     /** @return array{0:bool,1:string} */
     private static function requestGatewayRefund(
-        TenantContext $context,
+        object $context,
         RechargeOrder $order,
         RefundRecord $record,
         RefundLog $log
@@ -353,7 +352,7 @@ class RechargeLogic extends BaseLogic
         return json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
     }
 
-    private static function buildListQuery(TenantContext $context, array $params)
+    private static function buildListQuery(object $context, array $params)
     {
         $tenantId = FinanceTenantContext::tenantId($context);
         $query = FinanceTenantRepository::orders($context, 'ro')
@@ -440,7 +439,7 @@ class RechargeLogic extends BaseLogic
         ];
     }
 
-    private static function export(TenantContext $context, array $params, int $count, int $pageSize): array
+    private static function export(object $context, array $params, int $count, int $pageSize): array
     {
         if ($count === 0) {
             throw new \RuntimeException('没有数据,无法导出');
