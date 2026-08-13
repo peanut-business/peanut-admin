@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// The fast CI fixture scanner executes every PHP fixture directly. This inspector
+// is active only when the MT05 harness supplies an explicit matrix mode.
+if (getenv('MT05_MODE') === false || getenv('MT05_MODE') === '') {
+    return;
+}
+
 function requiredEnvironment(string $name): string
 {
     $value = getenv($name);
