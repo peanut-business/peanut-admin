@@ -28,9 +28,31 @@ final class DefaultTenantBootstrap
     public function __construct(private readonly PDO $pdo) {}
 
     /** @return array{tenant_id:int,account_id:int,member_id:int,operator_id:int,status:string} */
-    public function prepare(string $email, string $password): array
+    public function prepare(
+        string $email,
+        string $password,
+        ?string $platformEmail = null,
+        ?string $platformPassword = null
+    ): array
     {
         $email = EmailAddress::fromString($email)->value();
+        if (($platformEmail === null) !== ($platformPassword === null)) {
+            throw new RuntimeException('MT05_PLATFORM_CREDENTIALS_INCOMPLETE');
+        }
+        $separatePlatformOperator = $platformEmail !== null;
+        $platformEmail = $separatePlatformOperator
+            ? EmailAddress::fromString($platformEmail)->value()
+            : $email;
+        $platformPassword = $separatePlatformOperator ? $platformPassword : $password;
+        if ($separatePlatformOperator && hash_equals($email, $platformEmail)) {
+            throw new RuntimeException('MT05_PLATFORM_OWNER_EMAIL_CONFLICT');
+        }
+        if ($separatePlatformOperator
+            && (strlen($platformPassword) < 12
+                || preg_match('/[A-Za-z]/', $platformPassword) !== 1
+                || preg_match('/\d/', $platformPassword) !== 1)) {
+            throw new RuntimeException('MT05_PLATFORM_PASSWORD_INVALID');
+        }
         $owner = $this->preflightLegacy($password);
         $this->ensureCoreSchema();
 
@@ -46,20 +68,27 @@ final class DefaultTenantBootstrap
         $operatorCount = $this->count('pa_platform_operator');
         if ($tenantCount === 0 && $operatorCount === 0) {
             $this->prepared = (new PdoTransactionManager($this->pdo))->run(
-                function () use ($email, $password, $owner): array {
+                function () use (
+                    $email,
+                    $password,
+                    $owner,
+                    $platformEmail,
+                    $platformPassword,
+                    $separatePlatformOperator
+                ): array {
                     $bootstrap = $this->bootstrapService();
                     $platform = $bootstrap->bootstrapPlatformOwner(
-                        $email,
-                        $password,
-                        (string)$owner['nickname'],
-                        'mt02-platform-bootstrap'
+                        $platformEmail,
+                        $platformPassword,
+                        $separatePlatformOperator ? 'Platform Operator' : (string)$owner['nickname'],
+                        $separatePlatformOperator ? 'mt05-platform-bootstrap' : 'mt02-platform-bootstrap'
                     );
                     $candidate = $bootstrap->provisionTenantOwnerCandidate(
                         $platform->operatorId,
                         'default',
                         'Peanut Admin',
                         $email,
-                        null,
+                        $separatePlatformOperator ? $password : null,
                         (string)$owner['nickname'],
                         'mt02-default-owner'
                     );
@@ -83,7 +112,14 @@ final class DefaultTenantBootstrap
                 }
             );
         } else {
-            $this->prepared = $this->recoverPrepared($email, $password, $owner);
+            $this->prepared = $this->recoverPrepared(
+                $email,
+                $password,
+                $owner,
+                $platformEmail,
+                $platformPassword,
+                $separatePlatformOperator
+            );
         }
 
         return $this->prepared + ['status' => 'prepared'];
@@ -205,13 +241,20 @@ SQL);
     }
 
     /** @param array<string,mixed> $owner @return array{tenant_id:int,account_id:int,member_id:int,operator_id:int} */
-    private function recoverPrepared(string $email, string $password, array $owner): array
+    private function recoverPrepared(
+        string $email,
+        string $password,
+        array $owner,
+        string $platformEmail,
+        string $platformPassword,
+        bool $separatePlatformOperator
+    ): array
     {
         if ($this->count('pa_tenant') !== 1 || $this->count('pa_platform_operator') !== 1) {
             throw new RuntimeException('MT02_CORE_STATE_AMBIGUOUS');
         }
         $statement = $this->pdo->prepare(<<<'SQL'
-SELECT t.id AS tenant_id, a.id AS account_id, tm.id AS member_id, po.id AS operator_id,
+SELECT t.id AS tenant_id, a.id AS account_id, tm.id AS member_id,
        c.secret_hash, tm.display_name
 FROM pa_tenant t
 JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
@@ -221,7 +264,6 @@ JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
 JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
 JOIN pa_credential c ON c.account_id = a.id AND c.identifier_type = 'email'
   AND c.identifier_normalized = :email AND c.status = 'active'
-JOIN pa_platform_operator po ON po.account_id = a.id AND po.status = 'active'
 WHERE t.code = 'default' AND t.status = 'active'
 SQL);
         $statement->execute(['email' => $email]);
@@ -231,11 +273,28 @@ SQL);
             || (string)$rows[0]['display_name'] !== (string)$owner['nickname']) {
             throw new RuntimeException('MT02_CORE_STATE_UNTRUSTED');
         }
+        $platformStatement = $this->pdo->prepare(<<<'SQL'
+SELECT po.id AS operator_id, po.account_id, c.secret_hash
+FROM pa_platform_operator po
+JOIN pa_account a ON a.id = po.account_id AND a.status = 'active'
+JOIN pa_credential c ON c.account_id = a.id AND c.identifier_type = 'email'
+  AND c.identifier_normalized = :email AND c.status = 'active'
+WHERE po.status = 'active'
+SQL);
+        $platformStatement->execute(['email' => $platformEmail]);
+        $platformRows = $platformStatement->fetchAll(PDO::FETCH_ASSOC);
+        if (count($platformRows) !== 1
+            || !password_verify($platformPassword, (string)$platformRows[0]['secret_hash'])
+            || ($separatePlatformOperator
+                ? (int)$platformRows[0]['account_id'] === (int)$rows[0]['account_id']
+                : (int)$platformRows[0]['account_id'] !== (int)$rows[0]['account_id'])) {
+            throw new RuntimeException('MT02_CORE_STATE_UNTRUSTED');
+        }
         return [
             'tenant_id' => (int)$rows[0]['tenant_id'],
             'account_id' => (int)$rows[0]['account_id'],
             'member_id' => (int)$rows[0]['member_id'],
-            'operator_id' => (int)$rows[0]['operator_id'],
+            'operator_id' => (int)$platformRows[0]['operator_id'],
         ];
     }
 

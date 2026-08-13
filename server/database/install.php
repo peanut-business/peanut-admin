@@ -77,6 +77,43 @@ function validateInitialAdminPassword(string $password): void
     }
 }
 
+/** @return array{email:string,password:string}|null */
+function initialPlatformCredentials(string $serverDir, string $adminEmail): ?array
+{
+    $fileConfig = loadFileConfig($serverDir);
+    $environmentMode = getenv('DEPLOYMENT_MODE');
+    $mode = $environmentMode !== false && $environmentMode !== ''
+        ? $environmentMode
+        : ($fileConfig['DEPLOYMENT_MODE'] ?? '');
+    if ($mode !== 'multi-tenant') {
+        return null;
+    }
+
+    $environmentEmail = getenv('PLATFORM_INITIAL_EMAIL');
+    $email = $environmentEmail !== false && $environmentEmail !== ''
+        ? $environmentEmail
+        : ($fileConfig['PLATFORM_INITIAL_EMAIL'] ?? '');
+    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    $email = strtolower((string)$email);
+    if (hash_equals($adminEmail, $email)) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须与 ADMIN_INITIAL_EMAIL 不同');
+    }
+
+    $environmentPassword = getenv('PLATFORM_INITIAL_PASSWORD');
+    $password = $environmentPassword !== false && $environmentPassword !== ''
+        ? $environmentPassword
+        : ($fileConfig['PLATFORM_INITIAL_PASSWORD'] ?? '');
+    if (strlen((string)$password) < 12
+        || preg_match('/[A-Za-z]/', (string)$password) !== 1
+        || preg_match('/\d/', (string)$password) !== 1) {
+        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字');
+    }
+
+    return ['email' => $email, 'password' => (string)$password];
+}
+
 function replaceInitialAdminSeed(string $sql, string $password, ?string $salt = null): string
 {
     validateInitialAdminPassword($password);
@@ -179,7 +216,14 @@ function executeSqlFile(PDO $pdo, string $file): void
     }
 }
 
-function defaultTenantBootstrap(PDO $pdo, string $serverDir, string $password): DefaultTenantBootstrap
+/** @param array{email:string,password:string}|null $platformCredentials */
+function defaultTenantBootstrap(
+    PDO $pdo,
+    string $serverDir,
+    string $email,
+    string $password,
+    ?array $platformCredentials
+): DefaultTenantBootstrap
 {
     $autoload = $serverDir . '/vendor/autoload.php';
     if (!is_file($autoload)) {
@@ -187,7 +231,12 @@ function defaultTenantBootstrap(PDO $pdo, string $serverDir, string $password): 
     }
     require_once $autoload;
     $bootstrap = new DefaultTenantBootstrap($pdo);
-    $bootstrap->prepare(initialAdminEmail($serverDir), $password);
+    $bootstrap->prepare(
+        $email,
+        $password,
+        $platformCredentials['email'] ?? null,
+        $platformCredentials['password'] ?? null
+    );
     return $bootstrap;
 }
 
@@ -315,6 +364,8 @@ function main(): int
         }
 
         $adminPassword = initialAdminPassword($serverDir);
+        $adminEmail = initialAdminEmail($serverDir);
+        $platformCredentials = initialPlatformCredentials($serverDir, $adminEmail);
         $brandDefaults = brandWebsiteDefaults($serverDir);
         $mt02Migration = '20260812-default-tenant-bootstrap.sql';
         $mt02File = $databaseDir . '/migrations/' . $mt02Migration;
@@ -331,7 +382,13 @@ function main(): int
             static fn(string $file): bool => basename($file) > $mt02Migration
         ));
         executeSqlFiles($pdo, [$initFile, ...$beforeMt02], $adminPassword);
-        $tenantBootstrap = defaultTenantBootstrap($pdo, $serverDir, $adminPassword);
+        $tenantBootstrap = defaultTenantBootstrap(
+            $pdo,
+            $serverDir,
+            $adminEmail,
+            $adminPassword,
+            $platformCredentials
+        );
         executeSqlFile($pdo, $mt02File);
         $tenantBootstrap->complete();
         foreach ($afterMt02 as $file) {

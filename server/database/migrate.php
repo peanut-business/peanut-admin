@@ -81,6 +81,43 @@ function initialAdminPasswordForMigration(string $serverDir): string
     return $password;
 }
 
+/** @return array{email:string,password:string}|null */
+function initialPlatformCredentialsForMigration(string $serverDir, string $adminEmail): ?array
+{
+    $fileConfig = migrationFileConfig($serverDir);
+    $environmentMode = getenv('DEPLOYMENT_MODE');
+    $mode = $environmentMode !== false && $environmentMode !== ''
+        ? $environmentMode
+        : ($fileConfig['DEPLOYMENT_MODE'] ?? '');
+    if ($mode !== 'multi-tenant') {
+        return null;
+    }
+
+    $environmentEmail = getenv('PLATFORM_INITIAL_EMAIL');
+    $email = $environmentEmail !== false && $environmentEmail !== ''
+        ? $environmentEmail
+        : ($fileConfig['PLATFORM_INITIAL_EMAIL'] ?? '');
+    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    $email = strtolower((string)$email);
+    if (hash_equals($adminEmail, $email)) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须与 ADMIN_INITIAL_EMAIL 不同');
+    }
+
+    $environmentPassword = getenv('PLATFORM_INITIAL_PASSWORD');
+    $password = $environmentPassword !== false && $environmentPassword !== ''
+        ? $environmentPassword
+        : ($fileConfig['PLATFORM_INITIAL_PASSWORD'] ?? '');
+    if (strlen((string)$password) < 12
+        || preg_match('/[A-Za-z]/', (string)$password) !== 1
+        || preg_match('/\d/', (string)$password) !== 1) {
+        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字');
+    }
+
+    return ['email' => $email, 'password' => (string)$password];
+}
+
 function migrationFiles(string $databaseDir): array
 {
     $files = glob($databaseDir . '/migrations/*.sql') ?: [];
@@ -334,8 +371,16 @@ function migrateMain(): int
                     return;
                 }
                 $serverDir = dirname(__DIR__);
+                $adminEmail = initialAdminEmailForMigration($serverDir);
+                $adminPassword = initialAdminPasswordForMigration($serverDir);
+                $platformCredentials = initialPlatformCredentialsForMigration($serverDir, $adminEmail);
                 $tenantBootstrap = new DefaultTenantBootstrap($pdo);
-                $tenantBootstrap->prepare(initialAdminEmailForMigration($serverDir), initialAdminPasswordForMigration($serverDir));
+                $tenantBootstrap->prepare(
+                    $adminEmail,
+                    $adminPassword,
+                    $platformCredentials['email'] ?? null,
+                    $platformCredentials['password'] ?? null
+                );
             },
             static function (string $name) use (&$tenantBootstrap): void {
                 if ($name === DefaultTenantBootstrap::MIGRATION) {
