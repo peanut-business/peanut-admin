@@ -60,6 +60,8 @@ ensure_env() {
     grep -q '^DEPLOYMENT_MODE=' "$env_file" || printf '%s\n' 'DEPLOYMENT_MODE=standalone' >> "$env_file"
     grep -q '^TENANT_IDENTIFIER_HMAC_KEY=' "$env_file" || printf 'TENANT_IDENTIFIER_HMAC_KEY=%s\n' "$(make_secret 32)" >> "$env_file"
     grep -q '^PLATFORM_IDENTIFIER_HMAC_KEY=' "$env_file" || printf 'PLATFORM_IDENTIFIER_HMAC_KEY=%s\n' "$(make_secret 32)" >> "$env_file"
+    grep -q '^ADMIN_INITIAL_EMAIL=..' "$env_file" || set_env_value ADMIN_INITIAL_EMAIL admin@example.com
+    grep -q '^ADMIN_INITIAL_PASSWORD=..' "$env_file" || set_env_value ADMIN_INITIAL_PASSWORD "Local$(make_secret 8)9"
     set_env_value PEANUT_DATABASE_RESOURCE_ID peanut-admin-mysql84-development
     set_env_value DB_HOST 192.168.192.2
     set_env_value DB_PORT 20183
