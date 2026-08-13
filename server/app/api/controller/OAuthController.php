@@ -24,12 +24,20 @@ class OAuthController extends BaseApiController
             $scene
         );
         try {
-            $resolver = ExternalTenantResolver::production();
             $provider = ExternalTenantResolver::oauthProvider($scene);
             $clientId = trim((string)($params['client_id'] ?? ''));
             $resolution = $clientId === ''
-                ? $resolver->onlyActiveBinding($provider, 'oauth.begin', $this->operationId())
-                : $resolver->clientIdentity($provider, $clientId, 'oauth.begin', $this->operationId());
+                ? ExternalTenantResolver::production()->onlyActiveBinding(
+                    $provider,
+                    'oauth.begin',
+                    $this->operationId(),
+                )
+                : ExternalTenantResolver::production()->clientIdentity(
+                    $provider,
+                    $clientId,
+                    'oauth.begin',
+                    $this->operationId(),
+                );
             $result = OAuthLogic::begin(
                 $resolution->context,
                 $scene,

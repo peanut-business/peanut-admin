@@ -16,8 +16,6 @@ use app\common\service\payment\gateway\WechatPayGateway;
 use app\common\service\payment\gateway\WechatRefundGateway;
 use app\common\service\payment\transport\CurlPaymentTransport;
 use app\common\service\external\ExternalTenantResolver;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** Peanut 自有支付边界工厂，不承载参考系统的路由或参数兼容。 */
 final class PaymentServiceFactory
@@ -36,7 +34,7 @@ final class PaymentServiceFactory
     }
 
     public static function forTenant(
-        TenantContext|TenantSystemContext $context,
+        object $context,
         string $channel,
         ?PaymentTransportInterface $transport = null,
     ): self {

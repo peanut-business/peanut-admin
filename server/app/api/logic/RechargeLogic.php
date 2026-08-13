@@ -11,6 +11,7 @@ use app\common\model\finance\RechargeOrder;
 use app\common\model\oauth\OAuthIdentity;
 use app\common\service\ConfigService;
 use app\common\service\MemberBalanceService;
+use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\payment\PaymentServiceFactory;
