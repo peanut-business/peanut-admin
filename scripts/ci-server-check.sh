@@ -60,6 +60,15 @@ if [[ -z "$base" ]]; then
   exit 2
 fi
 
+# A dev-to-main promotion is an integration pointer movement, not a feature
+# slice. Its behavior groups have already passed on their individual dev PRs
+# and in the fixed-candidate qualification; repeating every historical matcher
+# here both violates gate ownership and can select obsolete baseline tests.
+promotion=0
+if [[ "${CI_BASE_BRANCH:-}" == main && "${CI_HEAD_BRANCH:-}" == dev ]]; then
+  promotion=1
+fi
+
 changed_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-changed-server.XXXXXX")"
 changed_php_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-changed-php.XXXXXX")"
 selected_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-focused-tests.XXXXXX")"
@@ -116,6 +125,11 @@ done < "$changed_file"
 while IFS= read -r path; do
   [[ -n "$path" ]] && php -l "$path"
 done < "$changed_php_file"
+
+if [[ "$promotion" == 1 ]]; then
+  echo 'Focused server gates: dev-to-main promotion; PHP lint only'
+  exit 0
+fi
 
 if [[ ! -s "$selected_file" ]]; then
   echo 'Focused server gates: no behavior test mapped; syntax and manifest checks only'

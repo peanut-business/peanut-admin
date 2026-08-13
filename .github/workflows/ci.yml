@@ -102,6 +102,8 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           CI_BASE_REF: ${{ github.event.pull_request.base.sha }}
+          CI_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          CI_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: ./scripts/ci-server-check.sh --fast
 
       - name: Run stage server gates
