@@ -1,35 +1,57 @@
-# 脚手架升级预检
+# 脚手架升级执行器
 
-新应用由 `scripts/create-app` 创建，并在 `.peanut/application-manifest.json` 记录完整
-`managed` / `generated-managed` / `app-owned` 分类和逐文件生成基线。该创建 manifest 是
-未来跨版本 apply/三方合并的输入身份；当前 preflight 仍不执行 apply 或 recovery。
+`scripts/scaffold-upgrade` 为 `scripts/create-app` 创建的独立应用提供可执行的
+`preflight → apply → verify → recover/rollback` 闭环。它只管理 application manifest
+中标记为 `managed` 或 `generated-managed` 的文件；`app-owned` 业务、数据库、页面和
+Host/override 文件永远不进入默认写集。
 
-首个纵向切片只处理应用仓中的脚手架和 Host 文件。它不安装 Plugin、不运行 Module 或数据库迁移、不连接生产，也不修改项目业务文件。
+## 不可变版本身份
 
-每个 release 在 `scaffold/releases/<version>/scaffold-manifest.json` 固定受管文件路径、该 release 的基线 SHA-256、策略和执行 owner。策略为：
+完整 release 位于 `scaffold/releases/<version>/`。manifest 固定 source commit/tree、
+create-app inventory digest、逐文件模板 digest、mode、classification、policy 和 owner；
+`scripts/build-scaffold-release --check` 会从固定 commit 的 Git archive 真实运行该版本的
+create-app，再逐字验证完整 managed 生成树。
 
-- `managed`：项目未修改且上游变化时计划自动替换；
-- `merge`：仅项目修改时进入后续执行器的人工合并队列；
-- `preserve`：项目修改或策略要求时保留；
-- `generated`：未修改时计划重新生成，项目修改时要求人工确认；
-- `deprecated`：只报告迁移提示，不静默删除；
-- `manual`：始终交给人工步骤。
+- `v1.0.0`：正式 create-app 最终 commit `14412607ba36f1816e39f7117f77eea4a9e7419e`，
+  tree `172865d8b8057caa8a017ac591618cd914af30a5`。
+- `v1.1.0`：本执行器的下一 scaffold release；精确 commit/tree 记录在其 manifest，且由
+  release builder 从该固定 tree 生成。
 
-运行 dry-run：
+历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
+schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没有静默覆盖历史证据。
+
+## 命令
 
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
-  --from-manifest=/absolute/path/to/old/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/new/scaffold-manifest.json
+  --from-manifest=/absolute/path/to/scaffold/releases/v1.0.0/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.0/scaffold-manifest.json
+
+php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+php scripts/scaffold-upgrade verify --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+# rollback 是 recover 的等价别名
 ```
 
-命令以旧 release 基线、项目当前文件和新 release 基线做三方判定。双方修改、受管文件缺失、rename 目标已存在或路径类型冲突会令计划状态变为 `blocked`，退出码为 `2`；路径越界、符号链接或 manifest 错误退出 `1`。它不会覆盖项目文件。
+preflight 以 from release、当前项目和 to release 形成稳定三方 plan。managed 文件仅在项目
+仍等于旧基线时替换；generated-managed 以应用 manifest 的 name/slug/package identity
+确定性重放；项目单独修改的 managed 文件保留，双方修改、缺失、类型冲突和新增路径冲突
+均 blocked。app-owned 文件只记录 preservation 摘要，不写入。
 
-输出位于项目的 `.peanut/upgrades/`：
+apply 只接受 ready、candidate 自校验通过、release checksum 未漂移、application manifest
+锁和项目逐文件状态未变化的 plan。它持项目锁，在 0700 recovery 目录保存受影响路径的
+存在/缺失、SHA-256、mode 和完整内容，再通过同目录 staging + 原子 rename 替换文件。
+每步向 `.peanut/upgrades/ledger.ndjson` append 事件；同 candidate 已成功 apply/verify 时重复
+apply 幂等。
 
-- `plans/<candidate>.json`：稳定的跨 Host/backend/frontend 执行协议；
-- `backups/<candidate>/files/` 和 `recovery.json`：受管文件可恢复副本与恢复清单；
-- `ledger.ndjson`：append-only 候选账本。同一输入重复 dry-run 使用同一 candidate，不追加重复记录。
+verify 精确核对目标 template commit/tree、每个 managed 文件及 mode、managed 摘要和
+app-owned pre-apply 摘要，成功后才 append `verified`。recover/rollback 从 recovery manifest
+真实恢复旧 application manifest、文件内容、mode、原缺失/新增状态；重复恢复幂等。
 
-当前仍需人工处理：所有双方修改冲突、`merge` 队列、deprecated 迁移提示，以及未来 apply 执行器落地前的实际文件替换。
+父路径或目标符号链接、硬链接、路径穿越、未知 schema/policy/transform、manifest/artifact
+checksum 漂移全部 fail-closed。apply 不运行数据库 migration、Plugin install、Composer/npm
+依赖升级或任何服务；这些必须作为独立发布步骤执行。

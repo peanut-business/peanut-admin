@@ -1,6 +1,6 @@
 {
     "schema_version": 1,
-    "template_version": "1.0.0",
+    "template_version": "1.1.0",
     "protocol": "peanut.create-app-inventory.v1",
     "variables": [
         "PACKAGE_IDENTITY",
@@ -43,13 +43,22 @@
             "source_sha256": "67651758afcda7aed90f8fb1e461222c5fd3d40ab7e3b9bd492d57df6e8e7d93"
         },
         {
+            "path": ".gitattributes",
+            "target": ".gitattributes",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "source_sha256": "1180e468df50ba1387571e7426197614268683d8f6bb64e32d782401bca4e1ce"
+        },
+        {
             "path": ".github/workflows/ci.yml",
             "target": ".github/workflows/ci.yml",
             "classification": "managed",
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "136019cc2ab49ec3fe137c8199fd7bc6cb638abb7c0838ab301777ad8817f128"
+            "source_sha256": "d31964d6043a751aecfe535a77b03d53cd140ea9c1919d2d19ec19d541aef75f"
         },
         {
             "path": ".gitignore",
@@ -3267,32 +3276,16 @@
             "source_sha256": "049e5c5be77d228c76a55aac8f6b2e159df8cf063495205e94a5463cb4be9bfa"
         },
         {
-            "path": "scaffold/releases/v1.1.0/files/server/config/brand.json",
-            "target": "scaffold/releases/v1.1.0/files/server/config/brand.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "scaffold/releases/v1.1.0/files/web/src/generated/brand.json",
-            "target": "scaffold/releases/v1.1.0/files/web/src/generated/brand.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "scaffold/releases/v1.1.0/scaffold-manifest.json",
-            "target": "scaffold/releases/v1.1.0/scaffold-manifest.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
             "path": "scripts/build-application-template-inventory",
             "target": "scripts/build-application-template-inventory",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scripts/build-scaffold-release",
+            "target": "scripts/build-scaffold-release",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3445,13 +3438,49 @@
             "mode": 493
         },
         {
+            "path": "scripts/scaffold-runtime/ScaffoldManifest.php",
+            "target": "scripts/scaffold-runtime/ScaffoldManifest.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "2547d40837420202f5db1bec966493e079886266edfd1be97f5d7f12db1a39f0"
+        },
+        {
+            "path": "scripts/scaffold-runtime/ScaffoldPathGuard.php",
+            "target": "scripts/scaffold-runtime/ScaffoldPathGuard.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "9eaf143ccbe329f559be77d2574f4548d1f72382265501b58b95281805e10f2a"
+        },
+        {
+            "path": "scripts/scaffold-runtime/ScaffoldUpgradeLedger.php",
+            "target": "scripts/scaffold-runtime/ScaffoldUpgradeLedger.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "db03fb1fa3c5ca489173a57e48a8f26f5e69d03ddda2f7f9bd2095fd3145effb"
+        },
+        {
+            "path": "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+            "target": "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "48bbd0c4d22299b4735817430dfbdbf0722b17452d6979564a6ab241844ac186"
+        },
+        {
             "path": "scripts/scaffold-upgrade",
             "target": "scripts/scaffold-upgrade",
             "classification": "managed",
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "0dd7af84d4086531cda3150ade745251b627f8123cb1f2e203987e7e28580d25"
+            "source_sha256": "989a8634ef63cda1574b40e070511a57ff23893fd6401bc20b27c8359b2a88c8"
         },
         {
             "path": "scripts/sync-brand-assets.mjs",
@@ -6592,38 +6621,34 @@
         {
             "path": "server/app/common/service/scaffold/ScaffoldManifest.php",
             "target": "server/app/common/service/scaffold/ScaffoldManifest.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "ae765d9dd1a801a94fde0651b3233ee7a951a5c88c579c1bb62e6ac82763cfad"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/scaffold/ScaffoldPathGuard.php",
             "target": "server/app/common/service/scaffold/ScaffoldPathGuard.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "70c16066bea60cb3ffba4c8fdb3f29f0b50ef7271b00f72d0e16fe6828f43332"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/scaffold/ScaffoldUpgradeLedger.php",
             "target": "server/app/common/service/scaffold/ScaffoldUpgradeLedger.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "4aef33004f035361fa65a875ed6fb1a05e272e26f6a20be4669e967b38b25092"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/scaffold/ScaffoldUpgradeRunner.php",
             "target": "server/app/common/service/scaffold/ScaffoldUpgradeRunner.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "680b81a9c5246d95f7655d1cf00d7129967dde5454e7c3847060f50eb7c0d951"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/storage/Driver.php",
@@ -8678,11 +8703,10 @@
         {
             "path": "server/tests/Productization/ScaffoldUpgradeRunnerTest.php",
             "target": "server/tests/Productization/ScaffoldUpgradeRunnerTest.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "73dde1013b6bed7af86db7cd0d9f64c02a5094d68ab30e3b52fc816046e60ac8"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/tests/Productization/TaskImportExportHostTest.php",
