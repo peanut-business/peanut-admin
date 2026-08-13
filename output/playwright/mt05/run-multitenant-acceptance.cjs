@@ -286,6 +286,29 @@ async function requestJson(page, config, method, route, token, payload, expected
   return body.data;
 }
 
+async function requestTenantSession(page, config, method, route, token, payload) {
+  const response = await page.request.fetch(apiUrl(config, route), {
+    method,
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'X-Request-Id': `${config.runId}-${route.replace(/[^a-z0-9]+/gi, '-').slice(-48)}`,
+    },
+    ...(payload === undefined ? {} : { data: payload }),
+  });
+  const body = await responseBody(response);
+  if (!response.ok() || response.status() !== 200) {
+    fail(`${method} ${route} expected HTTP 200, got ${response.status()}`);
+  }
+  if (!body || typeof body !== 'object' || !body.data || typeof body.data !== 'object') {
+    fail(`${method} ${route} omitted the Tenant session data envelope`);
+  }
+  if (!body.meta || typeof body.meta.request_id !== 'string' || body.meta.request_id === '') {
+    fail(`${method} ${route} omitted the Tenant session request identity`);
+  }
+  return body.data;
+}
+
 async function expectRejected(page, config, method, route, token, payload, name) {
   const response = await page.request.fetch(apiUrl(config, route), {
     method,
@@ -444,10 +467,12 @@ async function writeRepresentativeArticle(page, config, token, suffix) {
 }
 
 async function switchTenant(page, config, oldToken, targetTenantId) {
-  const selection = await requestJson(page, config, 'POST', '/api/tenant/session/switch', oldToken, {});
+  const selection = await requestTenantSession(
+    page, config, 'POST', '/api/tenant/session/switch', oldToken, {}
+  );
   const target = selection.tenants.find((tenant) => Number(tenant.tenant_id) === Number(targetTenantId));
   if (!target) fail('switch challenge omitted the target Tenant');
-  const authenticated = await requestJson(page, config, 'POST', '/api/tenant/session/select', '', {
+  const authenticated = await requestTenantSession(page, config, 'POST', '/api/tenant/session/select', '', {
     challenge_token: selection.challenge_token,
     tenant_id: targetTenantId,
   });
