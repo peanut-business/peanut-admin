@@ -87,6 +87,12 @@ Route::get('api/platform/tenants', [PlatformTenantController::class, 'lists'])
 Route::get('api/platform/tenants/detail', [PlatformTenantController::class, 'detail'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::post('api/platform/tenants/provision', [PlatformTenantController::class, 'provision'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+Route::post('api/platform/tenants/activate', [PlatformTenantController::class, 'activate'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
 
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
 Route::group(function () {
