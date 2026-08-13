@@ -11,3 +11,9 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string;
   readonly VITE_DEPLOYMENT_MODE?: 'standalone' | 'multi-tenant';
 }
+
+declare module 'virtual:peanut-plugin-contributions' {
+  import type { PluginFrontendContribution } from '@/core/plugin-contribution-policy';
+  const contributions: PluginFrontendContribution[];
+  export default contributions;
+}

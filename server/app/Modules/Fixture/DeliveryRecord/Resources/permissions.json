@@ -1,0 +1,4 @@
+[
+  {"key": "fixture.delivery-record.read", "type": "api", "name": "Read delivery records", "risk_level": "normal"},
+  {"key": "fixture.delivery-record.create", "type": "action", "name": "Create delivery records", "risk_level": "sensitive"}
+]

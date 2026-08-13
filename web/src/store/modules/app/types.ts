@@ -13,6 +13,8 @@ export interface ServerMenuRecord {
   is_cache?: number;
   is_show?: number;
   is_disable?: number;
+  module_key?: string;
+  required_permission?: string;
   children?: ServerMenuRecord[];
 }
 
@@ -33,5 +35,6 @@ export interface AppState {
   menuFromServer: boolean;
   serverMenuLoaded: boolean;
   serverMenu: RouteRecordRaw[];
+  enabledTenantModules: string[];
   [key: string]: unknown;
 }

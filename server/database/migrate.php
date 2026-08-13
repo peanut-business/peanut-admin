@@ -16,6 +16,14 @@ use app\common\service\tenant\DefaultTenantBootstrap;
 const MIGRATION_REQUIRED_CONFIG = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'];
 const LEGACY_BASELINE_THROUGH = '20260802_wechat_oauth.sql';
 const LEDGER_MIGRATION = '20260807_schema_migration_ledger.sql';
+const PLUGIN_LIFECYCLE_MIGRATION = '20260814_plugin_module_lifecycle.sql';
+const PLUGIN_LIFECYCLE_FAILED_CHECKSUM = 'fcd2375acc48d4b1ca58861fe5d3cb4e750062aa31a98e46e9b4563ebe08cfc4';
+const PLUGIN_LIFECYCLE_FAILED_ERROR = "SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'pa_permission' already exists";
+const PLUGIN_LIFECYCLE_ADOPTED_PREFIX = [
+    'pa_plugin_installation',
+    'pa_plugin_module',
+    'pa_module_migration',
+];
 
 function migrationConfig(string $serverDir): array
 {
@@ -165,6 +173,272 @@ function migrationChecksum(string $file): string
         throw new RuntimeException('无法计算迁移校验值：' . basename($file));
     }
     return $checksum;
+}
+
+/** @return array<string, string> */
+function migrationCreateTableStatements(string $file): array
+{
+    $sql = migrationSql($file);
+    preg_match_all('/CREATE\s+TABLE\s+`([^`]+)`\s*\(.*?\n\)\s+ENGINE=.*?;/is', $sql, $matches, PREG_SET_ORDER);
+    $statements = [];
+    foreach ($matches as $match) {
+        $statements[(string)$match[1]] = (string)$match[0];
+    }
+    if ($statements === [] || trim(implode("\n\n", array_values($statements))) !== trim($sql)) {
+        throw new RuntimeException('迁移只允许包含可审计的 CREATE TABLE 语句：' . basename($file));
+    }
+    return $statements;
+}
+
+function migrationTableExistsByName(PDO $pdo, string $table): bool
+{
+    $statement = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name=?'
+    );
+    $statement->execute([$table]);
+    return (int)$statement->fetchColumn() === 1;
+}
+
+function migrationStripOuterParentheses(string $expression): string
+{
+    $expression = trim($expression);
+    while (str_starts_with($expression, '(') && str_ends_with($expression, ')')) {
+        $depth = 0;
+        $quote = false;
+        $wraps = true;
+        $length = strlen($expression);
+        for ($index = 0; $index < $length; $index++) {
+            $character = $expression[$index];
+            if ($character === "'" && ($index === 0 || $expression[$index - 1] !== '\\')) {
+                $quote = !$quote;
+                continue;
+            }
+            if ($quote) {
+                continue;
+            }
+            if ($character === '(') {
+                $depth++;
+            } elseif ($character === ')') {
+                $depth--;
+                if ($depth === 0 && $index !== $length - 1) {
+                    $wraps = false;
+                    break;
+                }
+            }
+        }
+        if (!$wraps || $depth !== 0) {
+            break;
+        }
+        $expression = trim(substr($expression, 1, -1));
+    }
+    return $expression;
+}
+
+/** @return list<string> */
+function migrationSplitTableDefinitions(string $body): array
+{
+    $definitions = [];
+    $start = 0;
+    $depth = 0;
+    $quote = false;
+    $length = strlen($body);
+    for ($index = 0; $index < $length; $index++) {
+        $character = $body[$index];
+        if ($character === "'" && ($index === 0 || $body[$index - 1] !== '\\')) {
+            $quote = !$quote;
+            continue;
+        }
+        if ($quote) {
+            continue;
+        }
+        if ($character === '(') {
+            $depth++;
+        } elseif ($character === ')') {
+            $depth--;
+        } elseif ($character === ',' && $depth === 0) {
+            $definitions[] = trim(substr($body, $start, $index - $start));
+            $start = $index + 1;
+        }
+    }
+    $definitions[] = trim(substr($body, $start));
+    return $definitions;
+}
+
+function migrationNormalizeDefinition(string $definition): string
+{
+    $definition = strtolower(str_replace(['_utf8mb4', '`'], '', trim($definition)));
+    $definition = preg_replace("/default\\s+'([0-9]+)'/", 'default $1', $definition) ?? $definition;
+    $definition = preg_replace('/\\s+default\\s+null/', ' null', $definition) ?? $definition;
+    $check = stripos($definition, 'check');
+    if ($check !== false) {
+        $open = strpos($definition, '(', $check);
+        if ($open !== false && str_ends_with(trim($definition), ')')) {
+            $prefix = substr($definition, 0, $open + 1);
+            $expression = migrationStripOuterParentheses(substr(trim($definition), $open + 1, -1));
+            do {
+                $previous = $expression;
+                $expression = preg_replace(
+                    "/\\(\\s*([a-z0-9_]+)\\s*(=|<>|is\\s+not\\s+null)\\s*('[^']*')?\\s*\\)/i",
+                    '$1 $2 $3',
+                    $expression
+                ) ?? $expression;
+            } while ($expression !== $previous);
+            $expression = migrationStripOuterParentheses($expression);
+            $definition = $prefix . $expression . ')';
+        }
+    }
+    return preg_replace('/\\s+/', '', $definition) ?? $definition;
+}
+
+function migrationNormalizeCreateSql(string $sql): string
+{
+    $sql = trim($sql, " \t\r\n;");
+    $open = strpos($sql, '(');
+    $engine = strripos($sql, ') ENGINE=');
+    if ($open === false || $engine === false || $engine <= $open) {
+        throw new RuntimeException('无法归一化 CREATE TABLE 语句');
+    }
+    $head = migrationNormalizeDefinition(substr($sql, 0, $open));
+    $columns = [];
+    $constraints = [];
+    foreach (migrationSplitTableDefinitions(substr($sql, $open + 1, $engine - $open - 1)) as $definition) {
+        if (str_starts_with(ltrim($definition), '`')) {
+            $columns[] = migrationNormalizeDefinition($definition);
+        } else {
+            $constraints[] = migrationNormalizeDefinition($definition);
+        }
+    }
+    sort($constraints, SORT_STRING);
+    $suffix = strtolower(substr($sql, $engine + 1));
+    $suffix = str_replace('default character set', 'default charset', $suffix);
+    $suffix = migrationNormalizeDefinition($suffix);
+    return $head . '(' . implode(',', [...$columns, ...$constraints]) . ')' . $suffix;
+}
+
+function migrationAssertExactTable(PDO $pdo, string $table, string $expectedSql, bool $mustBeEmpty): void
+{
+    if (!migrationTableExistsByName($pdo, $table)) {
+        throw new RuntimeException("恢复要求的表不存在：{$table}");
+    }
+    $actual = $pdo->query("SHOW CREATE TABLE `{$table}`")->fetch(PDO::FETCH_NUM);
+    if (!is_array($actual) || !isset($actual[1])
+        || !hash_equals(
+            hash('sha256', migrationNormalizeCreateSql($expectedSql)),
+            hash('sha256', migrationNormalizeCreateSql((string)$actual[1]))
+        )) {
+        throw new RuntimeException("恢复表结构与固定候选不一致：{$table}");
+    }
+    if ($mustBeEmpty && (int)$pdo->query("SELECT COUNT(*) FROM `{$table}`")->fetchColumn() !== 0) {
+        throw new RuntimeException("恢复表包含数据，拒绝采用：{$table}");
+    }
+}
+
+function assertPluginLifecyclePermissionSchema(PDO $pdo): void
+{
+    if (!class_exists(\PeanutAdmin\Kernel\Persistence\Schema\KernelSchema::class)) {
+        throw new RuntimeException('缺少 Core KernelSchema，无法核验 pa_permission');
+    }
+    migrationAssertExactTable(
+        $pdo,
+        'pa_permission',
+        \PeanutAdmin\Kernel\Persistence\Schema\KernelSchema::createSql('pa_permission'),
+        false
+    );
+}
+
+function assertMigrationPrerequisites(PDO $pdo, string $name): void
+{
+    if ($name === PLUGIN_LIFECYCLE_MIGRATION) {
+        assertPluginLifecyclePermissionSchema($pdo);
+    }
+}
+
+function repairPluginLifecycleMigration(PDO $pdo, string $file, bool $checkOnly = false): array
+{
+    $rowStatement = $pdo->prepare(
+        'SELECT migration,checksum,batch,status,started_at,applied_at,error '
+        . 'FROM pa_schema_migration WHERE migration=? FOR UPDATE'
+    );
+    $rowStatement->execute([PLUGIN_LIFECYCLE_MIGRATION]);
+    $row = $rowStatement->fetch();
+    if (!is_array($row)
+        || (string)$row['status'] !== 'failed'
+        || !hash_equals(PLUGIN_LIFECYCLE_FAILED_CHECKSUM, (string)$row['checksum'])
+        || !hash_equals(PLUGIN_LIFECYCLE_FAILED_ERROR, (string)$row['error'])
+        || $row['applied_at'] !== null) {
+        throw new RuntimeException('failed ledger 不符合已知 PR #116 恢复身份，拒绝修复');
+    }
+
+    $statements = migrationCreateTableStatements($file);
+    foreach (PLUGIN_LIFECYCLE_ADOPTED_PREFIX as $table) {
+        if (!isset($statements[$table])) {
+            throw new RuntimeException("修正候选缺少恢复前缀：{$table}");
+        }
+        migrationAssertExactTable($pdo, $table, $statements[$table], true);
+        unset($statements[$table]);
+    }
+    assertPluginLifecyclePermissionSchema($pdo);
+    foreach (array_keys($statements) as $table) {
+        if (migrationTableExistsByName($pdo, $table)) {
+            throw new RuntimeException("恢复后缀表已存在，拒绝盲目续跑：{$table}");
+        }
+    }
+
+    if ($checkOnly) {
+        return [
+            'migration' => PLUGIN_LIFECYCLE_MIGRATION,
+            'previous_checksum' => PLUGIN_LIFECYCLE_FAILED_CHECKSUM,
+            'checksum' => migrationChecksum($file),
+            'adopted_empty_tables' => PLUGIN_LIFECYCLE_ADOPTED_PREFIX,
+            'adopted_core_tables' => ['pa_permission'],
+            'pending_tables' => array_keys($statements),
+        ];
+    }
+
+    $newChecksum = migrationChecksum($file);
+    $running = $pdo->prepare(
+        "UPDATE pa_schema_migration SET checksum=?,status='running',started_at=?,applied_at=NULL,"
+        . "error='PR116_SCHEMA_RECOVERY_VALIDATED' WHERE migration=? AND status='failed' AND checksum=? AND error=?"
+    );
+    $running->execute([
+        $newChecksum,
+        time(),
+        PLUGIN_LIFECYCLE_MIGRATION,
+        PLUGIN_LIFECYCLE_FAILED_CHECKSUM,
+        PLUGIN_LIFECYCLE_FAILED_ERROR,
+    ]);
+    if ($running->rowCount() !== 1) {
+        throw new RuntimeException('failed ledger 恢复声明发生竞争，拒绝继续');
+    }
+
+    try {
+        foreach ($statements as $statement) {
+            $pdo->exec($statement);
+        }
+        $finish = $pdo->prepare(
+            "UPDATE pa_schema_migration SET status='applied',applied_at=?,error='' "
+            . "WHERE migration=? AND status='running' AND checksum=?"
+        );
+        $finish->execute([time(), PLUGIN_LIFECYCLE_MIGRATION, $newChecksum]);
+        if ($finish->rowCount() !== 1) {
+            throw new RuntimeException('failed ledger 恢复完成写入发生竞争');
+        }
+    } catch (Throwable $exception) {
+        $message = substr($exception->getMessage(), 0, 900);
+        $failed = $pdo->prepare(
+            "UPDATE pa_schema_migration SET status='failed',error=? WHERE migration=? AND checksum=?"
+        );
+        $failed->execute(['PR116_SCHEMA_RECOVERY_FAILED: ' . $message, PLUGIN_LIFECYCLE_MIGRATION, $newChecksum]);
+        throw $exception;
+    }
+    return [
+        'migration' => PLUGIN_LIFECYCLE_MIGRATION,
+        'previous_checksum' => PLUGIN_LIFECYCLE_FAILED_CHECKSUM,
+        'checksum' => $newChecksum,
+        'adopted_empty_tables' => PLUGIN_LIFECYCLE_ADOPTED_PREFIX,
+        'adopted_core_tables' => ['pa_permission'],
+        'created_tables' => array_keys($statements),
+    ];
 }
 
 function expectedLegacyTables(string $databaseDir, array $files): array
@@ -317,6 +591,7 @@ function applyPendingMigrations(
             if ($before !== null) {
                 $before($name);
             }
+            assertMigrationPrerequisites($pdo, $name);
             $start->execute([$name, migrationChecksum($file), $batch, time()]);
             $pdo->exec(migrationSql($file));
             if ($after !== null) {
@@ -362,6 +637,24 @@ function migrateMain(): int
             throw new RuntimeException('缺少 Composer autoload，无法执行数据库迁移');
         }
         require_once $autoload;
+        $repairArguments = array_values(array_filter(
+            $_SERVER['argv'] ?? [],
+            static fn(string $argument): bool => str_starts_with($argument, '--repair-failed=')
+        ));
+        if ($repairArguments !== []) {
+            if ($repairArguments !== ['--repair-failed=' . PLUGIN_LIFECYCLE_MIGRATION]) {
+                throw new RuntimeException('只支持固定 PR #116 lifecycle failed migration 恢复');
+            }
+            $file = $databaseDir . '/migrations/' . PLUGIN_LIFECYCLE_MIGRATION;
+            $checkOnly = in_array('--check', $_SERVER['argv'] ?? [], true);
+            $recovery = repairPluginLifecycleMigration($pdo, $file, $checkOnly);
+            echo json_encode([
+                'database' => $config['DB_NAME'],
+                'status' => $checkOnly ? 'recovery_ready' : 'recovered',
+                'recovery' => $recovery,
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
+            return 0;
+        }
         $tenantBootstrap = null;
         $completed = applyPendingMigrations(
             $pdo,

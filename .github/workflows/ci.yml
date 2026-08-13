@@ -177,10 +177,13 @@ jobs:
           ./node_modules/.bin/tsc --target ES2020 --module commonjs --moduleResolution node --strict --skipLibCheck \
             --outDir "${test_output}" \
             src/core/permission-policy.ts \
+            src/core/plugin-contribution-policy.ts \
             src/views/system/dept/parent-options.ts \
             tests/Productization/permission-policy.test.ts \
+            tests/Productization/plugin-contribution.test.ts \
             tests/Productization/department-parent-options.test.ts
           node "${test_output}/tests/Productization/permission-policy.test.js"
+          node "${test_output}/tests/Productization/plugin-contribution.test.js"
           node "${test_output}/tests/Productization/department-parent-options.test.js"
 
   pc:

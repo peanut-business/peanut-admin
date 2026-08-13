@@ -51,13 +51,35 @@ pm01ModuleHttpExpect(
     'default Module roots must be an explicit empty deployment input'
 );
 $runtime = (string)file_get_contents(dirname(__DIR__, 2) . '/app/platform/service/PlatformRuntimeFactory.php');
+$registryFactory = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/app/platform/service/plugin/PluginModuleRegistryFactory.php'
+);
 $routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+$adminBridge = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/app/adminapi/service/CoreTenantModuleAdminBridge.php'
+);
+$serverMenuMapper = (string)file_get_contents(
+    dirname(__DIR__, 3) . '/web/src/store/modules/app/server-menu.ts'
+);
 pm01ModuleHttpExpect(
     str_contains($runtime, "'MODULE_REGISTRY_UNAVAILABLE'")
-        && str_contains($runtime, 'DeployedTenantModuleRegistry::compile')
-        && str_contains($runtime, 'ModuleBoundaryChecker')
+        && str_contains($runtime, 'PluginModuleRegistryFactory')
+        && str_contains($registryFactory, 'DeployedTenantModuleRegistry::compile')
+        && str_contains($registryFactory, 'ModuleBoundaryChecker')
         && str_contains($runtime, 'VerifiedTenantModuleRepository'),
     'production Module runtime lost fail-closed deployment verification'
+);
+pm01ModuleHttpExpect(
+    str_contains($adminBridge, 'PdoMenuCatalogRepository')
+        && str_contains($adminBridge, 'PdoTenantAuthorizationRepository')
+        && str_contains($adminBridge, 'MenuRegistry')
+        && str_contains($adminBridge, "'module_key' => \$definition->moduleKey")
+        && str_contains($adminBridge, "'required_permission' => \$definition->requiredPermission")
+        && str_contains($serverMenuMapper, 'tenantModuleKey:')
+        && str_contains($serverMenuMapper, 'requiredPermissions:')
+        && str_contains($serverMenuMapper, 'path: menu.module_key')
+        && str_contains($serverMenuMapper, '!menu.module_key &&'),
+    'Core TenantModule menu/member Permission compatibility bridge is missing'
 );
 pm01ModuleHttpExpect(
     str_contains($routes, "Route::post('api/platform/tenants/modules/enable'")

@@ -99,10 +99,16 @@ while IFS= read -r path; do
   fi
 
   case "$path" in
+    server/app/platform/service/plugin/*|server/app/command/Plugin*.php|server/app/Modules/Fixture/DeliveryRecord/*|server/config/modules.php|server/resources/schemas/plugin.schema.json|server/database/migrations/20260814_plugin_module_lifecycle.sql)
+      select_test server/tests/Productization/PluginArtifactContractTest.php
+      select_test server/tests/Productization/PluginModuleContractTest.php
+      select_test server/tests/Productization/PluginLifecycleMigrationContractTest.php
+      ;;
     server/app/platform/controller/PlatformTenantController.php|server/app/platform/service/PlatformTenantQueryService.php|server/tests/Multitenancy/PlatformTenantReadApiTest.php)
       select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php
       ;;
     server/app/platform/service/PlatformRuntimeFactory.php)
+      select_test server/tests/Multitenancy/PlatformTenantModuleHttpWiringTest.php
       select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php
       select_test server/tests/Multitenancy/PlatformOperatorBoundaryTest.php
       ;;
