@@ -14,6 +14,11 @@ The real run covers:
 
 The final fixture Tenant intentionally remains suspended. The script does not delete data, start services, install packages, or mutate application source.
 
+Both Web URLs must include the repository's fixed `/admin/` public base. When
+running the multi-tenant and Standalone Vite servers concurrently from one
+checkout, give each server a distinct `cacheDir`; sharing `node_modules/.vite`
+lets the two optimizers race and can leave the SPA blank with dependency 504s.
+
 ## Preparation checks (no browser)
 
 ```bash
@@ -34,8 +39,8 @@ MT05_OPERATOR_EMAIL='<operator email>' \
 MT05_OPERATOR_PASSWORD='<operator password>' \
 MT05_OWNER_PASSWORD='<unique fixture password>' \
 node output/playwright/mt05/run-multitenant-acceptance.cjs \
-  --base-url http://127.0.0.1:5173/ \
-  --standalone-base-url http://127.0.0.1:5174/ \
+  --base-url http://127.0.0.1:5173/admin/ \
+  --standalone-base-url http://127.0.0.1:5174/admin/ \
   --api-base-url http://127.0.0.1:8000/ \
   --module-key vendor.module-key \
   --module-config '{"required_property":"candidate-value"}' \

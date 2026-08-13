@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "deployment": {
-    "multi_tenant_base_url": "http://127.0.0.1:5173/",
-    "standalone_base_url": "http://127.0.0.1:5174/",
+    "multi_tenant_base_url": "http://127.0.0.1:5173/admin/",
+    "standalone_base_url": "http://127.0.0.1:5174/admin/",
     "api_base_url": "http://127.0.0.1:8000/"
   },
   "module": {

@@ -103,6 +103,14 @@ function normalizeUrl(value, name) {
   return url.toString();
 }
 
+function normalizeAdminWebUrl(value, name) {
+  const normalized = normalizeUrl(value, name);
+  if (!new URL(normalized).pathname.endsWith('/admin/')) {
+    fail(`${name} must include the deployed /admin/ base path`);
+  }
+  return normalized;
+}
+
 function defaultRunId() {
   return `mt05-${new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').toLowerCase()}-${process.pid}`;
 }
@@ -135,8 +143,8 @@ function buildConfiguration(cli) {
   return {
     fixture,
     fixturePath,
-    baseUrl: normalizeUrl(cli.baseUrl || fixture.deployment.multi_tenant_base_url, '--base-url'),
-    standaloneBaseUrl: normalizeUrl(
+    baseUrl: normalizeAdminWebUrl(cli.baseUrl || fixture.deployment.multi_tenant_base_url, '--base-url'),
+    standaloneBaseUrl: normalizeAdminWebUrl(
       cli.standaloneBaseUrl || fixture.deployment.standalone_base_url,
       '--standalone-base-url'
     ),
