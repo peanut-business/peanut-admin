@@ -43,6 +43,7 @@ use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
+use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Platform\Application\PlatformWorkspaceQueryService;
 use think\facade\Config;
@@ -54,6 +55,7 @@ final class PlatformRuntimeFactory
     private static ?PlatformTenantQueryService $tenantQueries = null;
     private static ?TenantGovernanceService $tenantGovernance = null;
     private static ?PlatformTenantModuleService $tenantModules = null;
+    private static ?PlatformAccessAdminService $platformAccess = null;
 
     public static function sessions(): PlatformOperatorSessionService
     {
@@ -102,6 +104,11 @@ final class PlatformRuntimeFactory
             self::sessions(),
             new PlatformWorkspaceQueryService(self::pdo())
         );
+    }
+
+    public static function platformAccess(): PlatformAccessAdminService
+    {
+        return self::$platformAccess ??= new PlatformAccessAdminService(self::pdo());
     }
 
     public static function tenantGovernance(): TenantGovernanceService
