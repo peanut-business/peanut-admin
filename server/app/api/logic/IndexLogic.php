@@ -50,7 +50,11 @@ class IndexLogic extends BaseLogic
                 'clarity_code' => (string)ConfigService::get('site_statistics', 'clarity_code', ''),
             ],
             'web_page' => $webPage,
-            'tabbar'   => DecorationReadService::tabbar(true),
+            'tabbar'   => DecorationReadService::tabbar(
+                $context,
+                true,
+                DecorationTenantContext::CONFIG_OPERATION
+            ),
             'theme'    => DecorationReadService::pageByType(
                 $context,
                 DecorationEnum::SYSTEM_THEME,

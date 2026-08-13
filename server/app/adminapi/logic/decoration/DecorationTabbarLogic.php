@@ -4,38 +4,30 @@ declare(strict_types=1);
 namespace app\adminapi\logic\decoration;
 
 use app\common\logic\BaseLogic;
-use app\common\model\decoration\DecorateTabbar;
-use app\common\service\ConfigService;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
+use app\common\service\decoration\DecorationTabbarTenantRepository;
 use think\facade\Db;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DecorationTabbarLogic extends BaseLogic
 {
-    public static function detail(): array
+    public static function detail(TenantContext $context): array
     {
-        return DecorationReadService::tabbar(false);
+        return DecorationReadService::tabbar($context, false);
     }
 
     public static function save(TenantContext $context, array $style, array $items): bool
     {
         try {
             DecorationSchemaService::validateTabbar($context, $style, $items);
-            Db::transaction(function () use ($style, $items): void {
-                ConfigService::set('tabbar', 'style', $style);
-                DecorateTabbar::where('id', '>', 0)->delete();
-                foreach ($items as $position => $item) {
-                    $item = DecorationSchemaService::resourcesForStorage($item);
-                    DecorateTabbar::create([
-                        'position' => $position,
-                        'name' => trim((string)$item['name']),
-                        'selected' => (string)$item['selected'],
-                        'unselected' => (string)$item['unselected'],
-                        'link' => json_encode($item['link'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
-                        'is_show' => (int)$item['is_show'],
-                    ]);
-                }
+            Db::transaction(function () use ($context, $style, $items): void {
+                DecorationTabbarTenantRepository::replace($context, $style, array_map(
+                    static function (array $item): array {
+                        return DecorationSchemaService::resourcesForStorage($item);
+                    },
+                    $items
+                ));
             });
             return true;
         } catch (\Throwable $e) {
