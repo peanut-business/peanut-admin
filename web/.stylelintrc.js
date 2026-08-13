@@ -6,6 +6,12 @@ module.exports = {
     'stylelint-config-recommended-vue',
   ],
   defaultSeverity: 'warning',
+  overrides: [
+    {
+      files: ['**/*.less'],
+      customSyntax: 'postcss-less',
+    },
+  ],
   plugins: ['stylelint-order'],
   rules: {
     'at-rule-no-unknown': [
