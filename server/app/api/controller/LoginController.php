@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\LoginLogic;
+use app\common\service\member\MemberTenantContext;
 use app\common\service\notice\NoticeTenantContext;
 
 class LoginController extends BaseApiController
@@ -22,7 +23,7 @@ class LoginController extends BaseApiController
             return $this->fail('账号和密码不能为空');
         }
 
-        $result = LoginLogic::register($params);
+        $result = LoginLogic::register(MemberTenantContext::system($this->request, 'member.register'), $params);
         if ($result === false) {
             return $this->fail(LoginLogic::getError());
         }
@@ -43,7 +44,7 @@ class LoginController extends BaseApiController
             return $this->fail('账号和密码不能为空');
         }
 
-        $result = LoginLogic::login($params);
+        $result = LoginLogic::login(MemberTenantContext::system($this->request, 'member.login'), $params);
         if ($result === false) {
             return $this->fail(LoginLogic::getError());
         }

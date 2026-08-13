@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\common\model\member;
 
 use app\common\model\BaseModel;
+use app\common\service\member\MemberTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\model\concern\SoftDelete;
 
 class MemberBalanceLog extends BaseModel
@@ -14,11 +16,11 @@ class MemberBalanceLog extends BaseModel
     protected $deleteTime = 'delete_time';
 
     /** 生成 20 位数字流水号。 */
-    public static function generateSn(): string
+    public static function generateSn(TenantContext $context): string
     {
         do {
             $sn = date('YmdHis') . str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        } while (self::withTrashed()->where('sn', $sn)->count() > 0);
+        } while (MemberTenantRepository::balanceLogs($context)->withTrashed()->where('sn', $sn)->count() > 0);
 
         return $sn;
     }
