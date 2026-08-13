@@ -213,7 +213,18 @@ function contractCheck(config) {
     results.push({ file: relativePath, checked: needles.length, missing });
   }
   const failures = results.filter((result) => result.missing.length > 0);
-  process.stdout.write(`${JSON.stringify({ ok: failures.length === 0, mode: 'contract-check', results }, null, 2)}\n`);
+  const requiredApiEnvironment = config.fixture.required_api_environment;
+  if (!Array.isArray(requiredApiEnvironment)
+      || requiredApiEnvironment.length === 0
+      || requiredApiEnvironment.some((name) => typeof name !== 'string' || name === '')) {
+    fail('fixture required_api_environment must be a non-empty string list');
+  }
+  process.stdout.write(`${JSON.stringify({
+    ok: failures.length === 0,
+    mode: 'contract-check',
+    required_api_environment: requiredApiEnvironment,
+    results,
+  }, null, 2)}\n`);
   if (failures.length) process.exitCode = 1;
 }
 

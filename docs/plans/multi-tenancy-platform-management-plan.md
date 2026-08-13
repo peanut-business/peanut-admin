@@ -52,7 +52,7 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 开发完成；固定候选待 MT05 集中验收 |
 | PM01 | 完成本实例 Tenant 平台管理 | 开发完成；固定候选待 MT05 浏览器联调 |
 | MT04 | 完成多租户前端和应用 Host 闭环 | 开发完成；固定候选待 MT05 浏览器联调 |
-| MT05 | 双模式安装、升级、下游和浏览器验收 | 进行中（安装/升级已通过；浏览器部署 harness 修复在途） |
+| MT05 | 双模式安装、升级、下游和浏览器验收 | 进行中（安装/升级已通过；API 认证部署 preflight 修复在途） |
 | MT06 | 发布多租户稳定基线 | 未开始 |
 | OP01 | 独立运营平台协议和项目立项 | 未开始 |
 | OP02 | 独立运营平台首个实例管理闭环 | 未开始 |
@@ -64,10 +64,13 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 `5bd3e78d71e41d8a52c4f3e7dda47c71f67985a4`（tree
 `f7a465150f1ac6e31764543b2ae0489d4bddd165`）的安装/升级矩阵已通过：Standalone
 空库、`v1.0.0` 前滚和多租户空库均成功，多租户安装建立独立 PlatformOperator。
-浏览器业务矩阵未通过：首次调用缺少 `/admin/` public base；修正输入后的唯一失败组
-重跑又因两个并行 Vite 实例共享 `node_modules/.vite` 优化缓存而返回关键依赖 504，
-SPA 保持空白，业务断言未开始。必须先合入 harness fail-fast/部署隔离修复，再从新
-`dev` 重冻候选；安装/升级 Gate 不得重复，只运行一次新候选浏览器 Gate：
+浏览器业务矩阵仍未通过。public base 与并行 Vite cache 隔离已由 PR #91 修复；新
+候选 `8ae2f81cfa6357c78b9f135255c87b0b5fc261c6`（tree
+`41b34634b17476a1333bd8c31a3bbcdf707eb5c7`）随后真实渲染平台登录页，但 API 启动
+遗漏 `PLATFORM_IDENTIFIER_HMAC_KEY`，认证按设计 fail closed，唯一失败组重跑仍停在
+平台登录；Tenant 认证所需 `TENANT_IDENTIFIER_HMAC_KEY` 也尚未进入部署 preflight。
+必须先合入两项 HMAC 必填部署合同，再从新 `dev` 重冻候选；安装/升级 Gate 不得
+重复，只运行一次新候选浏览器 Gate：
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
@@ -89,6 +92,7 @@ SPA 保持空白，业务断言未开始。必须先合入 harness fail-fast/部
 | MT03 后台 diagnostics | 已完成 | 应用 PR #79 merge `72d14679356bced34dd291e0d4cb0588f78a72cd`；退款对账和定时演示日志携带可信 Tenant 与稳定 correlation，未改变业务状态机 |
 | MT05 候选前安全收口 | 已完成 | PR #81 实例工具边界、#82 Article collect/member 复合 FK、#83 同步 XLSX Tenant namespace、#85 会员上传可信上下文、#86 Admin/Role/Dept/Jobs Tenant-first CRUD 均在最新 head 快速 CI 通过后合入 |
 | MT05 安装/升级固定候选 | 三模式 Gate 已通过；尚非完整 qualification | commit `5bd3e78d71e41d8a52c4f3e7dda47c71f67985a4`；tree `f7a465150f1ac6e31764543b2ae0489d4bddd165`；证据 `/private/tmp/pa-mt05-evidence/final-install-5bd3e78`；浏览器失败证据 `/private/tmp/pa-mt05-evidence/final-browser-5bd3e78*`。harness 修复合入后重冻新候选且只运行浏览器 Gate，不重复安装/升级 |
+| MT05 浏览器候选 | 部署配置缺失，禁止 qualification | commit `8ae2f81cfa6357c78b9f135255c87b0b5fc261c6`；tree `41b34634b17476a1333bd8c31a3bbcdf707eb5c7`；证据 `/private/tmp/pa-mt05-evidence/final-browser-8ae2f81*`。平台身份/密码 hash 正确，但 API 未提供 `PLATFORM_IDENTIFIER_HMAC_KEY`；两项认证 HMAC preflight 修复合入前不得再运行浏览器 |
 
 中断后恢复步骤：
 
@@ -99,11 +103,11 @@ SPA 保持空白，业务断言未开始。必须先合入 harness fail-fast/部
 4. DCS 后续只消费 PR #4 的 `CONDITIONAL` 边界：先单独批准 D1 Product-only，
    再从固定参数创建新 Host 并冻结实际 Module/manifest/migration/API/permission
    写集；不得复制旧 Runtime，也不得把 adoption 当作 D1 业务实现 PASS。
-5. Peanut Admin 当前关键路径依次为：合入浏览器 harness public-base fail-fast 与并行
-   Vite cache 隔离规则，从最新 `dev` 重冻精确 commit/tree，再只运行一次浏览器业务
-   Gate。候选 `5bd3e78…` 的安装/升级 Gate 已通过，禁止重复；不得重复 CAP01–CAP06、
-   MT01、Tabbar 或已通过业务聚焦 Gate。
-6. 浏览器 harness 修复在途时，OP01 独立协议/仓库边界和不依赖候选身份的文档/fixture
+5. Peanut Admin 当前关键路径依次为：合入 Platform/Tenant 两项 identifier HMAC 部署
+   preflight，从最新 `dev` 重冻精确 commit/tree，在服务启动前验证配置长度、平台身份
+   和公开健康端点，再只运行一次浏览器业务 Gate。候选 `5bd3e78…` 的安装/升级 Gate
+   已通过，禁止重复；不得重复 CAP01–CAP06、MT01、Tabbar 或已通过业务聚焦 Gate。
+6. 认证部署 preflight 修复在途时，OP01 独立协议/仓库边界和不依赖候选身份的文档/fixture
    可继续并行；MT05 最终 qualification 与 MT06 被阻塞，解除条件是修复合入、新候选
    重冻及浏览器 Gate 通过。
 7. 性能与 Recovery 作为阶段末后续项登记，不阻塞当前业务稳定候选；只有发现 Tenant
@@ -122,7 +126,7 @@ SPA 保持空白，业务断言未开始。必须先合入 harness fail-fast/部
 | MT03 | cache/lock、文件、任务、日志/diagnostics、OAuth、导入导出、同步 XLSX、会员上传和实例工具边界均已有 Tenant 隔离实现 | 代码开发闭合；集中候选尚未共同验证 | 在固定候选上执行两个 MT05 harness 各一次，不扩大到 Performance/Recovery |
 | PM01 | PlatformOperator 独立认证/RBAC/session、Tenant lifecycle、首 owner、TenantModule service/HTTP/Web 与平台 mutation Host 已合入 | 需要在 MT05 同一浏览器候选验证完整业务链 | 使用固定候选执行浏览器 harness 一次 |
 | MT04 | 可信 TenantContext、Tenant 选择/切换/撤销、Admin bridge、Web session、Standalone UI、平台/Tenant 导航和实例工具 guard 已合入 | 需要验证旧 token、上下文清理和双模式入口的真实浏览器闭环 | 使用固定候选执行浏览器 harness 一次 |
-| MT05 | Runtime blocker 已修复；候选 `5bd3e78…` 的 Standalone 空库、v1.0.0 前滚、多租户空库三模式 Gate 已通过 | 浏览器部署的 public base 与并行 Vite cache 隔离合同需修复；完整平台→Tenant 浏览器矩阵未通过 | 合入最小 harness 修复，从最新 `dev` 重冻候选，只运行一次浏览器 Gate；禁止重复安装/升级 |
+| MT05 | Runtime blocker 已修复；候选 `5bd3e78…` 的 Standalone 空库、v1.0.0 前滚、多租户空库三模式 Gate 已通过；PR #91 已修复 Web public base 和 Vite cache 隔离合同 | API 启动缺少 Platform/Tenant identifier HMAC 部署 preflight；完整平台→Tenant 浏览器矩阵未通过 | 合入两项 HMAC 必填合同，从最新 `dev` 重冻候选，只运行一次浏览器 Gate；禁止重复安装/升级 |
 | MT06 | 未开始 | 稳定候选、版本一致性、发布 manifest、应用 lock、tag/Release 和最低发布验证均缺 | 只在 MT05 通过后固定一个候选并走单入口发布 |
 | OP01 | 未开始 | 独立仓库、协议、身份、签名任务、数据边界和项目立项均缺 | MT06 前可并行冻结独立运营平台协议与仓库边界，不写业务实例 Runtime |
 | OP02 | 未开始 | Release/实例/升级/健康/备份首个闭环均缺 | OP01 合入后在独立仓库实现一个签名升级任务纵向切片 |
