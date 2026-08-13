@@ -7,7 +7,6 @@ use app\adminapi\service\OperationLogService;
 use app\common\logic\BaseLogic;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
-use app\common\service\audit\OperationLogTenantContext;
 use app\common\service\audit\OperationLogTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
@@ -113,14 +112,12 @@ class OperationLogLogic extends BaseLogic
             (string)$row['params'],
             empty($row['create_time']) ? '' : date('Y-m-d H:i:s', (int)$row['create_time']),
         ], $rows);
-        $uri = XlsxExportService::createInDirectory(
+        $uri = XlsxExportService::createForTenant(
+            $context,
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['ID', '管理员', 'IP', '请求地址', '方法', '参数', '操作时间'],
             $sheetRows,
-            sprintf(
-                'tenants/v1/%d/operation-logs',
-                OperationLogTenantContext::tenantId($context)
-            )
+            'operation-logs'
         );
         return ['url' => FileService::getFileUrl($uri), 'file_name' => basename($uri)];
     }

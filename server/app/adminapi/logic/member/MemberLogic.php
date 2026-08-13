@@ -149,7 +149,8 @@ class MemberLogic extends BaseLogic
             ->toArray();
         $rows = self::hydrateTags($context, $rows);
         $rows = self::formatRows($rows);
-        $uri = XlsxExportService::create(
+        $uri = XlsxExportService::createForTenant(
+            $context,
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['用户编号', '用户昵称', '账号', '手机号码', '注册来源', '注册时间'],
             array_map(static fn(array $row): array => [
