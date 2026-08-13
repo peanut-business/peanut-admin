@@ -93,6 +93,9 @@ Route::post('api/platform/tenants/provision', [PlatformTenantController::class, 
 Route::post('api/platform/tenants/activate', [PlatformTenantController::class, 'activate'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
+Route::post('api/platform/tenants/suspend', [PlatformTenantController::class, 'suspend'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
 
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
 Route::group(function () {

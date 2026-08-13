@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\platform\controller;
 
 use app\common\service\JsonService;
+use app\platform\http\PlatformRequest;
 use app\platform\service\PlatformRuntimeFactory;
 use app\platform\validate\PlatformTenantLifecycleValidate;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
@@ -66,6 +67,34 @@ final class PlatformTenantController extends BasePlatformController
             return JsonService::fail(
                 'Tenant activation was rejected.',
                 ['error_code' => 'TENANT_ACTIVATION_REJECTED'],
+                40900
+            );
+        }
+    }
+
+    public function suspend()
+    {
+        if ($this->platformContext === null) {
+            return JsonService::fail('Platform authentication is required.', null, 40100);
+        }
+
+        $params = $this->request->post();
+        $this->validate($params, PlatformTenantLifecycleValidate::class . '.suspend');
+        try {
+            return $this->data(PlatformRuntimeFactory::tenantGovernance()->transition(
+                PlatformRequest::bearerToken($this->request),
+                (int)$params['tenant_id'],
+                (int)$params['expected_revision'],
+                TenantStatus::Suspended,
+                trim((string)$params['change_reason']),
+                $this->platformContext->core->requestId
+            ));
+        } catch (AdminAccessException $exception) {
+            return $this->accessFailure($exception);
+        } catch (\DomainException|\InvalidArgumentException) {
+            return JsonService::fail(
+                'Tenant suspension was rejected.',
+                ['error_code' => 'TENANT_SUSPENSION_REJECTED'],
                 40900
             );
         }
