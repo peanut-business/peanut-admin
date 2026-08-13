@@ -8,6 +8,7 @@ on:
       - 'scaffold/application-template-inventory.json'
       - 'scripts/build-application-template-inventory'
       - 'scripts/core-upgrade-compatibility'
+      - 'scripts/select-legacy-pre-alpha5-fixture'
       - 'server/tests/fixtures/core-upgrade-compatibility/**'
       - 'docs/core-upgrade-compatibility.md'
   workflow_dispatch:

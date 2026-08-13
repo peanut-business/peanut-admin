@@ -29,6 +29,9 @@ function inventoryGitFiles(string $root): array
 
 function excluded(string $path): bool
 {
+    if (str_starts_with($path, 'server/tests/fixtures/core-upgrade-compatibility/')) {
+        return true;
+    }
     return str_starts_with($path, 'output/')
         || (str_starts_with($path, 'docs/') && !in_array($path, [
             'docs/peanut-admin-development-guide.md',
@@ -42,13 +45,6 @@ function excluded(string $path): bool
             'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
             'server/tests/Productization/CreateApplicationTest.php',
             '.github/workflows/core-upgrade-compatibility.yml',
-            'server/tests/fixtures/core-upgrade-compatibility/fixture.json',
-            'server/tests/fixtures/core-upgrade-compatibility/php-probe.fixture',
-            'server/tests/fixtures/core-upgrade-compatibility/web-probe.ts',
-            'server/tests/fixtures/core-upgrade-compatibility/composer-alpha2.lock',
-            'server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock',
-            'server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha4-lock.yaml',
-            'server/tests/fixtures/core-upgrade-compatibility/pnpm-alpha5-lock.yaml',
             'server/tests/Productization/ScaffoldUpgradeRunnerTest.php',
         ], true)
         || str_starts_with($path, 'server/app/common/service/scaffold/')

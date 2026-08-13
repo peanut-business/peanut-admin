@@ -19,8 +19,8 @@ COMPOSER_BIN="${PEANUT_COMPOSER:-composer}"
 PHP_BIN="${PEANUT_PHP:-php}"
 PNPM_BIN="${PEANUT_PNPM:-pnpm}"
 
-cache_input=""
-output_input=""
+cache_input=''
+output_input=''
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cache) [[ $# -ge 2 ]] || usage; cache_input="$2"; shift 2 ;;
@@ -37,9 +37,7 @@ canonical_empty_target() {
   base="$(basename "$input")"
   [[ -d "$parent" ]] || die "$label parent does not exist: $parent"
   physical="$(cd "$parent" && pwd -P)/$base"
-  if [[ -L "$input" ]]; then
-    die "$label must not be a symlink: $input"
-  fi
+  [[ ! -L "$input" ]] || die "$label must not be a symlink: $input"
   if [[ -e "$physical" ]]; then
     [[ -d "$physical" ]] || die "$label must be a directory"
     [[ -z "$(find "$physical" -mindepth 1 -print -quit)" ]] || die "$label must be empty: $physical"
@@ -54,15 +52,18 @@ case "$CACHE/" in "$OUTPUT/"*) die 'cache must not be inside output' ;; esac
 case "$OUTPUT/" in "$CACHE/"*) die 'output must not be inside cache' ;; esac
 mkdir -p "$CACHE" "$OUTPUT"
 
-for command in git jq "$PHP_BIN" "$COMPOSER_BIN" "$PNPM_BIN" npm node; do
+for command in git jq "$PHP_BIN" "$COMPOSER_BIN" "$PNPM_BIN" npm node shasum; do
   command -v "$command" >/dev/null 2>&1 || die "required command is unavailable: $command"
 done
-jq -e '.schema_version == 1' "$METADATA" >/dev/null || die 'fixture metadata is invalid'
+jq -e '.schema_version == 2' "$METADATA" >/dev/null || die 'fixture metadata is invalid'
 
-SOURCE_COMMIT="$(jq -r '.fixture.source_commit' "$METADATA")"
-SOURCE_TREE="$(jq -r '.fixture.source_tree' "$METADATA")"
-APP="$OUTPUT/application"
-SOURCE="$CACHE/create-app-source"
+CURRENT_COMMIT="$(jq -r '.current_create_app.source_commit' "$METADATA")"
+CURRENT_TREE="$(jq -r '.current_create_app.source_tree' "$METADATA")"
+CURRENT_SOURCE="$CACHE/current-create-app-source"
+CURRENT_APP="$OUTPUT/current-create-app"
+LEGACY_WORK="$CACHE/legacy-selection"
+LEGACY_COMMIT="$(jq -r '.legacy_pre_alpha5.source_commit' "$METADATA")"
+LEGACY_APP="$LEGACY_WORK/$LEGACY_COMMIT"
 CORE_MONOREPO="$CACHE/core-monorepo"
 CORE_SPLIT="$CACHE/core-split"
 COMPOSER_CACHE="$CACHE/composer"
@@ -71,150 +72,178 @@ WORKTREE_ADDED=0
 
 cleanup() {
   if [[ "$WORKTREE_ADDED" == 1 ]]; then
-    git -C "$ROOT" worktree remove "$SOURCE" >/dev/null 2>&1 || true
+    git -C "$ROOT" worktree remove "$CURRENT_SOURCE" >/dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT INT TERM
-
-[[ "$(git -C "$ROOT" rev-parse "${SOURCE_COMMIT}^{commit}")" == "$SOURCE_COMMIT" ]] || die 'create-app source commit is unavailable'
-[[ "$(git -C "$ROOT" rev-parse "${SOURCE_COMMIT}^{tree}")" == "$SOURCE_TREE" ]] || die 'create-app source tree changed'
-git -C "$ROOT" worktree add --detach "$SOURCE" "$SOURCE_COMMIT" >/dev/null
-WORKTREE_ADDED=1
-
-"$PHP_BIN" "$SOURCE/scripts/create-app" \
-  --name="$(jq -r '.fixture.application_name' "$METADATA")" \
-  --slug="$(jq -r '.fixture.slug' "$METADATA")" \
-  --package="$(jq -r '.fixture.package_identity' "$METADATA")" \
-  --target="$APP" >"$OUTPUT/create-app.json"
-
-MANIFEST="$APP/.peanut/application-manifest.json"
-[[ "$(jq -r '.template.version' "$MANIFEST")" == "$(jq -r '.fixture.template_version' "$METADATA")" ]] || die 'generated template version changed'
-[[ "$(jq -r '.template.source_commit' "$MANIFEST")" == "$SOURCE_COMMIT" ]] || die 'generated source commit changed'
-[[ "$(jq -r '.template.source_tree' "$MANIFEST")" == "$SOURCE_TREE" ]] || die 'generated source tree changed'
-[[ "$(jq -r '.template.inventory_sha256' "$MANIFEST")" == "$(jq -r '.fixture.inventory_sha256' "$METADATA")" ]] || die 'generated inventory changed'
 
 check_expected_digest() {
   local key="$1" actual="$2" expected
   expected="$(jq -r "$key" "$METADATA")"
   [[ "$expected" =~ ^[a-f0-9]{64}$ ]] || die "fixed digest is missing: $key"
-  [[ "$expected" == "$actual" ]] || die "fixed digest mismatch: $key"
+  [[ "$expected" == "$actual" ]] || die "fixed digest mismatch: $key expected=$expected actual=$actual"
 }
 
-manifest_sha="$(shasum -a 256 "$MANIFEST" | awk '{print $1}')"
-check_expected_digest '.fixture.generated_manifest_sha256' "$manifest_sha"
-check_expected_digest '.fixture.managed_tree_sha256' "$(jq -r '.digests.managed_tree_sha256' "$MANIFEST")"
-check_expected_digest '.fixture.app_owned_tree_sha256' "$(jq -r '.digests.app_owned_tree_sha256' "$MANIFEST")"
+[[ "$(git -C "$ROOT" rev-parse "${CURRENT_COMMIT}^{commit}")" == "$CURRENT_COMMIT" ]] || die 'current create-app source commit is unavailable'
+[[ "$(git -C "$ROOT" rev-parse "${CURRENT_COMMIT}^{tree}")" == "$CURRENT_TREE" ]] || die 'current create-app source tree changed'
+git -C "$ROOT" worktree add --detach "$CURRENT_SOURCE" "$CURRENT_COMMIT" >/dev/null
+WORKTREE_ADDED=1
+"$PHP_BIN" "$CURRENT_SOURCE/scripts/create-app" \
+  --name="$(jq -r '.current_create_app.application_name' "$METADATA")" \
+  --slug="$(jq -r '.current_create_app.slug' "$METADATA")" \
+  --package="$(jq -r '.current_create_app.package_identity' "$METADATA")" \
+  --target="$CURRENT_APP" >"$OUTPUT/create-app.json"
 
-mkdir -p "$APP/server/tests/Productization" "$APP/web/src/core"
-cp "$FIXTURE/php-probe.fixture" "$APP/server/tests/Productization/CoreUpgradeCompatibilityProbe.php"
-cp "$FIXTURE/web-probe.ts" "$APP/web/src/core/core-upgrade-compatibility-probe.ts"
+CURRENT_MANIFEST="$CURRENT_APP/.peanut/application-manifest.json"
+[[ "$(jq -r '.template.version' "$CURRENT_MANIFEST")" == "$(jq -r '.current_create_app.template_version' "$METADATA")" ]] || die 'current template version changed'
+[[ "$(jq -r '.template.source_commit' "$CURRENT_MANIFEST")" == "$CURRENT_COMMIT" ]] || die 'current generated source commit changed'
+[[ "$(jq -r '.template.source_tree' "$CURRENT_MANIFEST")" == "$CURRENT_TREE" ]] || die 'current generated source tree changed'
+[[ "$(jq -r '.template.inventory_sha256' "$CURRENT_MANIFEST")" == "$(jq -r '.current_create_app.inventory_sha256' "$METADATA")" ]] || die 'current generated inventory changed'
+current_manifest_sha="$(shasum -a 256 "$CURRENT_MANIFEST" | awk '{print $1}')"
+check_expected_digest '.current_create_app.generated_manifest_sha256' "$current_manifest_sha"
+check_expected_digest '.current_create_app.managed_tree_sha256' "$(jq -r '.digests.managed_tree_sha256' "$CURRENT_MANIFEST")"
+check_expected_digest '.current_create_app.app_owned_tree_sha256' "$(jq -r '.digests.app_owned_tree_sha256' "$CURRENT_MANIFEST")"
+
+mkdir -p "$CURRENT_APP/web/src/core"
+cp "$FIXTURE/web-probe.ts" "$CURRENT_APP/web/src/core/core-upgrade-compatibility-probe.ts"
+
+"$ROOT/scripts/select-legacy-pre-alpha5-fixture" \
+  --head "$(jq -r '.legacy_pre_alpha5.selection_head' "$METADATA")" \
+  --work-dir "$LEGACY_WORK" >"$OUTPUT/legacy-selection.json"
+jq -e --slurpfile expected "$METADATA" '
+  ($expected[0]) as $expected |
+  .name == $expected.legacy_pre_alpha5.name
+  and .selection_head == $expected.legacy_pre_alpha5.selection_head
+  and .source_commit == $expected.legacy_pre_alpha5.source_commit
+  and .source_tree == $expected.legacy_pre_alpha5.source_tree
+  and .archive_sha256 == $expected.legacy_pre_alpha5.archive_sha256
+  and .composer_json_sha256 == $expected.legacy_pre_alpha5.composer_json_sha256
+  and .composer_lock_sha256 == $expected.legacy_pre_alpha5.composer_lock_sha256
+  and .version == $expected.php.old_version
+  and .source_reference == $expected.php.old_source_reference
+  and .public_psr4_root_count == 10
+  and .overlay_files == []
+' "$OUTPUT/legacy-selection.json" >/dev/null || die 'legacy-pre-alpha5 selector identity changed'
 
 tree_digest() {
-  local mode="$1"
-  "$PHP_BIN" -r '
+  local root="$1" mode="$2" manifest="${3:-}"
+  "$PHP_BIN" /dev/stdin "$root" "$mode" "$manifest" <<'PHP'
+<?php
 $root = $argv[1];
 $mode = $argv[2];
-$manifest = json_decode((string) file_get_contents($root . "/.peanut/application-manifest.json"), true, 512, JSON_THROW_ON_ERROR);
-$allowed = ["server/composer.json", "server/composer.lock", "web/package.json", "web/pnpm-lock.yaml"];
-$excludedSegments = ["vendor", "node_modules", "dist", "runtime", ".cache", ".pnpm-store"];
+$manifestPath = $argv[3];
+$allowed = ['server/composer.json', 'server/composer.lock', 'web/package.json', 'web/pnpm-lock.yaml'];
+$excluded = ['vendor', 'node_modules', 'dist', 'runtime', '.cache', '.pnpm-store', 'output', '.peanut'];
 $paths = [];
-if ($mode === "app-owned") {
-    foreach ($manifest["files"] as $file) {
-        if (($file["classification"] ?? null) === "app-owned") $paths[] = $file["path"];
+if ($mode === 'current-app-owned') {
+    $manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
+    foreach ($manifest['files'] as $file) {
+        if (($file['classification'] ?? null) === 'app-owned') $paths[] = $file['path'];
     }
-    $paths[] = "server/tests/Productization/CoreUpgradeCompatibilityProbe.php";
-    $paths[] = "web/src/core/core-upgrade-compatibility-probe.ts";
+    $paths[] = 'web/src/core/core-upgrade-compatibility-probe.ts';
+} elseif ($mode === 'legacy-host') {
+    $paths = [
+        'server/app/common/contract/AdminPermissionPolicy.php',
+        'server/app/common/service/CoreServiceOverrides.php',
+        'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
+        'server/tests/Productization/AdminPermissionHostTest.php',
+    ];
+} elseif ($mode === 'empty-overlay') {
+    echo hash('sha256', '');
+    exit(0);
 } else {
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
     foreach ($iterator as $file) {
         if (!$file->isFile() || $file->isLink()) continue;
-        $path = str_replace(DIRECTORY_SEPARATOR, "/", substr($file->getPathname(), strlen($root) + 1));
+        $path = str_replace(DIRECTORY_SEPARATOR, '/', substr($file->getPathname(), strlen($root) + 1));
         if (in_array($path, $allowed, true)) continue;
-        $segments = explode("/", $path);
-        if (array_intersect($excludedSegments, $segments) !== []) continue;
+        if (array_intersect($excluded, explode('/', $path)) !== []) continue;
         $paths[] = $path;
     }
 }
 $rows = [];
 foreach (array_values(array_unique($paths)) as $path) {
-    $absolute = $root . "/" . $path;
+    $absolute = $root . '/' . $path;
     if (!is_file($absolute)) { fwrite(STDERR, "missing digest input: {$path}\n"); exit(1); }
-    $rows[] = $path . "\0" . hash_file("sha256", $absolute);
+    $rows[] = $path . "\0" . hash_file('sha256', $absolute);
 }
 sort($rows, SORT_STRING);
-echo hash("sha256", implode("\n", $rows));
-' "$APP" "$mode"
+echo hash('sha256', implode("\n", $rows));
+PHP
 }
 
-app_owned_before="$(tree_digest app-owned)"
-source_before="$(tree_digest source)"
-check_expected_digest '.fixture.app_owned_with_probes_sha256' "$app_owned_before"
-check_expected_digest '.fixture.application_source_sha256' "$source_before"
+current_app_owned_before="$(tree_digest "$CURRENT_APP" current-app-owned "$CURRENT_MANIFEST")"
+current_source_before="$(tree_digest "$CURRENT_APP" source)"
+legacy_host_before="$(tree_digest "$LEGACY_APP" legacy-host)"
+legacy_source_before="$(tree_digest "$LEGACY_APP" source)"
+legacy_overlay_before="$(tree_digest "$LEGACY_APP" empty-overlay)"
+printf 'current_app_owned_with_probe_sha256=%s\ncurrent_application_source_sha256=%s\nlegacy_app_owned_host_sha256=%s\nlegacy_application_source_sha256=%s\nlegacy_overlay_sha256=%s\n' \
+  "$current_app_owned_before" "$current_source_before" "$legacy_host_before" "$legacy_source_before" "$legacy_overlay_before" >"$OUTPUT/source-digests.txt"
+check_expected_digest '.current_create_app.app_owned_with_probe_sha256' "$current_app_owned_before"
+check_expected_digest '.current_create_app.application_source_sha256' "$current_source_before"
+check_expected_digest '.legacy_pre_alpha5.app_owned_host_sha256' "$legacy_host_before"
+check_expected_digest '.legacy_pre_alpha5.application_source_sha256' "$legacy_source_before"
+check_expected_digest '.legacy_pre_alpha5.overlay_sha256' "$legacy_overlay_before"
 
 set_json_version() {
-  local manifest="$1" expression="$2" version="$3" temporary
-  temporary="${manifest}.tmp"
+  local manifest="$1" expression="$2" version="$3" temporary="${manifest}.tmp"
   jq "$expression = \$version" --arg version "$version" "$manifest" >"$temporary"
   mv "$temporary" "$manifest"
 }
 
 assert_php_identity() {
-  local version="$1" reference="$2"
-  "$PHP_BIN" -r '
-$lock = json_decode((string) file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
-$wantedVersion = $argv[2]; $wantedReference = $argv[3];
-foreach ($lock["packages"] as $package) {
-    if (($package["name"] ?? null) !== "peanut-admin/core") continue;
-    if (($package["version"] ?? null) !== $wantedVersion
-        || ($package["dist"]["reference"] ?? null) !== $wantedReference
-        || ($package["source"]["reference"] ?? null) !== $wantedReference) exit(1);
-    exit(0);
+  local app="$1" version="$2" reference="$3"
+  "$PHP_BIN" /dev/stdin "$app/server/composer.lock" "$app/server/vendor/composer/installed.json" "$version" "$reference" <<'PHP'
+<?php
+[$script, $lockPath, $installedPath, $version, $reference] = $argv;
+foreach ([$lockPath, $installedPath] as $path) {
+    $document = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+    $packages = $document['packages'] ?? $document;
+    $found = false;
+    foreach ($packages as $package) {
+        if (($package['name'] ?? null) !== 'peanut-admin/core') continue;
+        $found = ($package['version'] ?? null) === $version
+            && ($package['dist']['reference'] ?? null) === $reference;
+        if ($path === $lockPath) $found = $found && ($package['source']['reference'] ?? null) === $reference;
+    }
+    if (!$found) exit(1);
 }
-exit(1);
-' "$APP/server/composer.lock" "$version" "$reference" || die "Composer lock identity mismatch for $version"
-  "$PHP_BIN" -r '
-$installed = json_decode((string) file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
-$packages = $installed["packages"] ?? $installed;
-foreach ($packages as $package) {
-    if (($package["name"] ?? null) === "peanut-admin/core"
-        && ($package["version"] ?? null) === $argv[2]
-        && ($package["dist"]["reference"] ?? null) === $argv[3]) exit(0);
-}
-exit(1);
-' "$APP/server/vendor/composer/installed.json" "$version" "$reference" || die "installed Composer identity mismatch for $version"
+PHP
+  [[ $? == 0 ]] || die "Composer identity mismatch for $version"
 }
 
 assert_web_identity() {
   local version="$1" integrity="$2"
-  [[ "$(jq -r '.version' "$APP/web/node_modules/@peanut-admin/admin/package.json")" == "$version" ]] || die "installed npm version mismatch for $version"
-  rg -F "resolution: {integrity: $integrity}" "$APP/web/pnpm-lock.yaml" >/dev/null || die "pnpm integrity mismatch for $version"
+  [[ "$(jq -r '.version' "$CURRENT_APP/web/node_modules/@peanut-admin/admin/package.json")" == "$version" ]] || die "installed npm version mismatch for $version"
+  rg -F "resolution: {integrity: $integrity}" "$CURRENT_APP/web/pnpm-lock.yaml" >/dev/null || die "pnpm integrity mismatch for $version"
 }
 
 php_public_entry_gate() {
-  local phase="$1" php_manifest="$APP/server/vendor/peanut-admin/core/composer.json"
-  "$PHP_BIN" -r '
-$root = $argv[1]; $manifest = json_decode((string) file_get_contents($argv[2]), true, 512, JSON_THROW_ON_ERROR);
-$prefixes = array_keys($manifest["autoload"]["psr-4"] ?? []);
-$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . "/server", FilesystemIterator::SKIP_DOTS));
+  local scan_root="$1" phase="$2" php_manifest="$LEGACY_APP/server/vendor/peanut-admin/core/composer.json"
+  "$PHP_BIN" /dev/stdin "$scan_root" "$php_manifest" <<'PHP'
+<?php
+$root = $argv[1];
+$manifest = json_decode((string) file_get_contents($argv[2]), true, 512, JSON_THROW_ON_ERROR);
+$prefixes = array_keys($manifest['autoload']['psr-4'] ?? []);
+$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/server', FilesystemIterator::SKIP_DOTS));
 foreach ($iterator as $file) {
-    if (!$file->isFile() || $file->getExtension() !== "php" || str_contains($file->getPathname(), "/vendor/")) continue;
+    if (!$file->isFile() || $file->getExtension() !== 'php' || str_contains($file->getPathname(), '/vendor/')) continue;
     $content = (string) file_get_contents($file->getPathname());
-    if (preg_match("#(?:vendor/peanut-admin|packages/php|peanut-admin/core/.*/src/)#i", $content)) exit(1);
-    preg_match_all("/\\b(?:use|new|extends|implements|instanceof)\\s+(PeanutAdmin\\\\[A-Za-z0-9_\\\\]+)/", $content, $matches);
+    if (preg_match('#(?:vendor/peanut-admin|packages/php|peanut-admin/core/.*/src/)#i', $content)) exit(1);
+    preg_match_all('/\b(?:use|new|extends|implements|instanceof)\s+\\\\?(PeanutAdmin\\\\[A-Za-z0-9_\\\\]+)/', $content, $matches);
     foreach ($matches[1] as $class) {
         $ok = false;
-        foreach ($prefixes as $prefix) if (str_starts_with($class . "\\\\", $prefix)) { $ok = true; break; }
+        foreach ($prefixes as $prefix) if (str_starts_with($class . '\\', $prefix)) { $ok = true; break; }
         if (!$ok) { fwrite(STDERR, "undeclared Composer namespace: {$class}\n"); exit(1); }
     }
 }
-' "$APP" "$php_manifest" || die "Composer public namespace gate failed during $phase"
+PHP
   jq -S '.autoload["psr-4"] | keys' "$php_manifest" >"$OUTPUT/${phase}-composer-namespaces.json"
-  printf '%s\n' "$phase" >"$OUTPUT/public-entry-${phase}.passed"
 }
 
 web_public_entry_gate() {
-  local phase="$1" npm_manifest="$APP/web/node_modules/@peanut-admin/admin/package.json"
-  node - "$APP" "$npm_manifest" <<'NODE'
+  local phase="$1" npm_manifest="$CURRENT_APP/web/node_modules/@peanut-admin/admin/package.json"
+  node /dev/stdin "$CURRENT_APP" "$npm_manifest" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
 const root = process.argv[2];
@@ -240,23 +269,21 @@ function visit(current) {
 for (const relative of roots) visit(path.join(root, relative));
 NODE
   jq -S '.exports | keys' "$npm_manifest" >"$OUTPUT/${phase}-npm-exports.json"
-  printf '%s\n' "$phase" >"$OUTPUT/public-entry-${phase}.passed"
 }
 
 run_php_phase() {
   local phase="$1" version="$2" reference="$3"
-  COMPOSER_CACHE_DIR="$COMPOSER_CACHE" "$COMPOSER_BIN" install --working-dir "$APP/server" --no-interaction --no-progress --prefer-dist
-  assert_php_identity "$version" "$reference"
-  "$PHP_BIN" "$APP/server/tests/Productization/CoreUpgradeCompatibilityProbe.php"
-  "$PHP_BIN" "$APP/server/tests/Productization/AdminPermissionHostTest.php"
-  php_public_entry_gate "$phase"
+  COMPOSER_CACHE_DIR="$COMPOSER_CACHE" "$COMPOSER_BIN" install --working-dir "$LEGACY_APP/server" --no-interaction --no-progress --prefer-dist
+  assert_php_identity "$LEGACY_APP" "$version" "$reference"
+  "$PHP_BIN" "$LEGACY_APP/server/tests/Productization/AdminPermissionHostTest.php"
+  php_public_entry_gate "$LEGACY_APP" "$phase"
 }
 
 run_web_phase() {
   local phase="$1" version="$2" integrity="$3"
-  (cd "$APP/web" && HUSKY=0 "$PNPM_BIN" install --frozen-lockfile --store-dir "$PNPM_STORE")
+  (cd "$CURRENT_APP/web" && HUSKY=0 "$PNPM_BIN" install --frozen-lockfile --store-dir "$PNPM_STORE")
   assert_web_identity "$version" "$integrity"
-  (cd "$APP/web" && "$PNPM_BIN" run type:check && "$PNPM_BIN" run build)
+  (cd "$CURRENT_APP/web" && "$PNPM_BIN" run type:check && "$PNPM_BIN" run build)
   web_public_entry_gate "$phase"
 }
 
@@ -269,128 +296,99 @@ web_old_integrity="$(jq -r '.web.old_integrity' "$METADATA")"
 web_new="$(jq -r '.web.new_version' "$METADATA")"
 web_new_integrity="$(jq -r '.web.new_integrity' "$METADATA")"
 
-set_json_version "$APP/server/composer.json" '.require["peanut-admin/core"]' "$php_old"
-cp "$FIXTURE/composer-alpha2.lock" "$APP/server/composer.lock"
-set_json_version "$APP/web/package.json" '.dependencies["@peanut-admin/admin"]' "$web_old"
-cp "$FIXTURE/pnpm-alpha4-lock.yaml" "$APP/web/pnpm-lock.yaml"
 run_php_phase php-alpha2 "$php_old" "$php_old_ref"
+set_json_version "$CURRENT_APP/web/package.json" '.dependencies["@peanut-admin/admin"]' "$web_old"
+cp "$FIXTURE/pnpm-alpha4-lock.yaml" "$CURRENT_APP/web/pnpm-lock.yaml"
 run_web_phase web-alpha4 "$web_old" "$web_old_integrity"
 
-old_app_owned="$(tree_digest app-owned)"
-old_source="$(tree_digest source)"
-[[ "$old_app_owned" == "$app_owned_before" && "$old_source" == "$source_before" ]] || die 'old consumer phase changed application-owned or business source'
+[[ "$(tree_digest "$LEGACY_APP" legacy-host)" == "$legacy_host_before" ]] || die 'old PHP phase changed app-owned Host files'
+[[ "$(tree_digest "$LEGACY_APP" source)" == "$legacy_source_before" ]] || die 'old PHP phase changed legacy application source'
+[[ "$(tree_digest "$CURRENT_APP" current-app-owned "$CURRENT_MANIFEST")" == "$current_app_owned_before" ]] || die 'old Web phase changed current app-owned source'
+[[ "$(tree_digest "$CURRENT_APP" source)" == "$current_source_before" ]] || die 'old Web phase changed current application source'
 
-set_json_version "$APP/server/composer.json" '.require["peanut-admin/core"]' "$php_new"
-cp "$FIXTURE/composer-alpha5.lock" "$APP/server/composer.lock"
-set_json_version "$APP/web/package.json" '.dependencies["@peanut-admin/admin"]' "$web_new"
-cp "$FIXTURE/pnpm-alpha5-lock.yaml" "$APP/web/pnpm-lock.yaml"
+set_json_version "$LEGACY_APP/server/composer.json" '.require["peanut-admin/core"]' "$php_new"
+cp "$FIXTURE/composer-alpha5.lock" "$LEGACY_APP/server/composer.lock"
 run_php_phase php-alpha5 "$php_new" "$php_new_ref"
+php_public_entry_gate "$CURRENT_APP" current-create-app-php-alpha5
+set_json_version "$CURRENT_APP/web/package.json" '.dependencies["@peanut-admin/admin"]' "$web_new"
+cp "$FIXTURE/pnpm-alpha5-lock.yaml" "$CURRENT_APP/web/pnpm-lock.yaml"
 run_web_phase web-alpha5 "$web_new" "$web_new_integrity"
 
-new_app_owned="$(tree_digest app-owned)"
-new_source="$(tree_digest source)"
-[[ "$new_app_owned" == "$app_owned_before" && "$new_source" == "$source_before" ]] || die 'upgrade changed application-owned or business source'
-jq -e --slurp '.[0] - .[1] == []' \
-  "$OUTPUT/php-alpha2-composer-namespaces.json" \
-  "$OUTPUT/php-alpha5-composer-namespaces.json" >/dev/null || die 'alpha.5 removed an alpha.2 public Composer namespace'
-jq -e --slurp '.[0] - .[1] == []' \
-  "$OUTPUT/web-alpha4-npm-exports.json" \
-  "$OUTPUT/web-alpha5-npm-exports.json" >/dev/null || die 'alpha.5 removed an alpha.4 installed npm export'
+[[ "$(tree_digest "$LEGACY_APP" legacy-host)" == "$legacy_host_before" ]] || die 'PHP upgrade changed app-owned Host files'
+[[ "$(tree_digest "$LEGACY_APP" source)" == "$legacy_source_before" ]] || die 'PHP upgrade changed legacy application source'
+[[ "$(tree_digest "$LEGACY_APP" empty-overlay)" == "$legacy_overlay_before" ]] || die 'PHP upgrade changed legacy overlay'
+[[ "$(tree_digest "$CURRENT_APP" current-app-owned "$CURRENT_MANIFEST")" == "$current_app_owned_before" ]] || die 'Web upgrade changed current app-owned source'
+[[ "$(tree_digest "$CURRENT_APP" source)" == "$current_source_before" ]] || die 'Web upgrade changed current application source'
+jq -e --slurp '.[0] - .[1] == []' "$OUTPUT/php-alpha2-composer-namespaces.json" "$OUTPUT/php-alpha5-composer-namespaces.json" >/dev/null || die 'alpha.5 removed an alpha.2 public Composer namespace'
+jq -e --slurp '.[0] - .[1] == []' "$OUTPUT/web-alpha4-npm-exports.json" "$OUTPUT/web-alpha5-npm-exports.json" >/dev/null || die 'alpha.5 removed an alpha.4 installed npm export'
 
 git init -q "$CORE_MONOREPO"
 git -C "$CORE_MONOREPO" remote add origin https://github.com/peanut-opensource/peanut-admin.git
 git -C "$CORE_MONOREPO" fetch -q --depth=1 origin tag v0.1.0-alpha.4 tag v0.1.0-alpha.5
-alpha4_tag="$(jq -r '.known_release_identity_defect.tag_object' "$METADATA")"
-alpha4_commit="$(jq -r '.known_release_identity_defect.commit' "$METADATA")"
-alpha4_tree="$(jq -r '.known_release_identity_defect.tree' "$METADATA")"
-[[ "$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.4)" == "$alpha4_tag" ]] || die 'core alpha.4 tag object changed'
-[[ "$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.4^{commit})" == "$alpha4_commit" ]] || die 'core alpha.4 commit changed'
-[[ "$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.4^{tree})" == "$alpha4_tree" ]] || die 'core alpha.4 tree changed'
-embedded_alpha4="$(git -C "$CORE_MONOREPO" show v0.1.0-alpha.4:packages/php/composer.json | jq -r '.version')"
-[[ "$embedded_alpha4" == "$(jq -r '.known_release_identity_defect.embedded_package_version' "$METADATA")" ]] || die 'recorded alpha.4 embedded PHP identity changed'
+for field in tag_object commit tree; do
+  expected="$(jq -r ".known_release_identity_defect.${field}" "$METADATA")"
+  case "$field" in
+    tag_object) actual="$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.4)" ;;
+    commit) actual="$(git -C "$CORE_MONOREPO" rev-parse 'v0.1.0-alpha.4^{commit}')" ;;
+    tree) actual="$(git -C "$CORE_MONOREPO" rev-parse 'v0.1.0-alpha.4^{tree}')" ;;
+  esac
+  [[ "$actual" == "$expected" ]] || die "core alpha.4 $field changed"
+done
+[[ "$(git -C "$CORE_MONOREPO" show v0.1.0-alpha.4:packages/php/composer.json | jq -r '.version')" == "$(jq -r '.known_release_identity_defect.embedded_package_version' "$METADATA")" ]] || die 'recorded alpha.4 embedded PHP identity changed'
 if COMPOSER_CACHE_DIR="$COMPOSER_CACHE" "$COMPOSER_BIN" show peanut-admin/core 0.1.0-alpha.4 --all --format=json >/dev/null 2>&1; then
-  die 'Packagist unexpectedly exposes alpha.4; release identity policy and fixture require review'
+  die 'Packagist unexpectedly exposes alpha.4; release identity policy requires review'
 fi
-
-alpha5_tag="$(jq -r '.php.new_monorepo_tag_object' "$METADATA")"
-alpha5_commit="$(jq -r '.php.new_monorepo_commit' "$METADATA")"
-alpha5_tree="$(jq -r '.php.new_monorepo_tree' "$METADATA")"
-[[ "$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.5)" == "$alpha5_tag" ]] || die 'core alpha.5 tag object changed'
-[[ "$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.5^{commit})" == "$alpha5_commit" ]] || die 'core alpha.5 commit changed'
-[[ "$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.5^{tree})" == "$alpha5_tree" ]] || die 'core alpha.5 tree changed'
-[[ "$(git -C "$CORE_MONOREPO" show v0.1.0-alpha.5:packages/php/composer.json | jq -r '.version')" == "$php_new" ]] || die 'core alpha.5 embedded PHP package version mismatches its release tag'
+for field in tag_object commit tree; do
+  expected="$(jq -r ".php.new_monorepo_${field}" "$METADATA")"
+  case "$field" in
+    tag_object) actual="$(git -C "$CORE_MONOREPO" rev-parse v0.1.0-alpha.5)" ;;
+    commit) actual="$(git -C "$CORE_MONOREPO" rev-parse 'v0.1.0-alpha.5^{commit}')" ;;
+    tree) actual="$(git -C "$CORE_MONOREPO" rev-parse 'v0.1.0-alpha.5^{tree}')" ;;
+  esac
+  [[ "$actual" == "$expected" ]] || die "core alpha.5 $field changed"
+done
+[[ "$(git -C "$CORE_MONOREPO" show v0.1.0-alpha.5:packages/php/composer.json | jq -r '.version')" == "$php_new" ]] || die 'core alpha.5 embedded PHP identity mismatches tag'
 
 git init -q "$CORE_SPLIT"
 git -C "$CORE_SPLIT" remote add origin https://github.com/peanut-opensource/peanut-admin-core.git
 git -C "$CORE_SPLIT" fetch -q --depth=1 origin tag v0.1.0-alpha.2 tag v0.1.0-alpha.5
 for side in old new; do
   version="$(jq -r ".php.${side}_version" "$METADATA")"
-  tag_object="$(jq -r ".php.${side}_split_tag_object" "$METADATA")"
-  commit="$(jq -r ".php.${side}_split_commit" "$METADATA")"
-  tree="$(jq -r ".php.${side}_split_tree" "$METADATA")"
-  [[ "$(git -C "$CORE_SPLIT" rev-parse "v${version}")" == "$tag_object" ]] || die "Composer split tag object changed for $version"
-  [[ "$(git -C "$CORE_SPLIT" rev-parse "v${version}^{commit}")" == "$commit" ]] || die "Composer split commit changed for $version"
-  [[ "$(git -C "$CORE_SPLIT" rev-parse "v${version}^{tree}")" == "$tree" ]] || die "Composer split tree changed for $version"
+  [[ "$(git -C "$CORE_SPLIT" rev-parse "v${version}")" == "$(jq -r ".php.${side}_split_tag_object" "$METADATA")" ]] || die "Composer split tag changed for $version"
+  [[ "$(git -C "$CORE_SPLIT" rev-parse "v${version}^{commit}")" == "$(jq -r ".php.${side}_split_commit" "$METADATA")" ]] || die "Composer split commit changed for $version"
+  [[ "$(git -C "$CORE_SPLIT" rev-parse "v${version}^{tree}")" == "$(jq -r ".php.${side}_split_tree" "$METADATA")" ]] || die "Composer split tree changed for $version"
   [[ "$(git -C "$CORE_SPLIT" show "v${version}:composer.json" | jq -r '.version')" == "$version" ]] || die "Composer split metadata mismatches tag $version"
 done
 
 for side in old new; do
   version="$(jq -r ".php.${side}_version" "$METADATA")"
   reference="$(jq -r ".php.${side}_source_reference" "$METADATA")"
-  packagist_identity="$OUTPUT/packagist-${version}.json"
-  COMPOSER_CACHE_DIR="$COMPOSER_CACHE" "$COMPOSER_BIN" show peanut-admin/core "$version" --all --format=json >"$packagist_identity"
-  jq -e --arg version "$version" --arg reference "$reference" \
-    '.versions == [$version] and .source.reference == $reference and .dist.reference == $reference' \
-    "$packagist_identity" >/dev/null || die "Packagist identity mismatches monorepo/split release identity for $version"
+  identity="$OUTPUT/packagist-${version}.json"
+  COMPOSER_CACHE_DIR="$COMPOSER_CACHE" "$COMPOSER_BIN" show peanut-admin/core "$version" --all --format=json >"$identity"
+  jq -e --arg version "$version" --arg reference "$reference" '.versions == [$version] and .source.reference == $reference and .dist.reference == $reference' "$identity" >/dev/null || die "Packagist identity mismatch for $version"
 done
 
-old_exports="$OUTPUT/npm-alpha4-exports.json"
-new_exports="$OUTPUT/npm-alpha5-exports.json"
-npm view "@peanut-admin/admin@${web_old}" exports --json | jq -S 'keys' >"$old_exports"
-npm view "@peanut-admin/admin@${web_new}" exports --json | jq -S 'keys' >"$new_exports"
-jq -e --slurp '.[0] - .[1] == []' "$old_exports" "$new_exports" >/dev/null || die 'alpha.5 removed an alpha.4 public npm export'
+npm view "@peanut-admin/admin@${web_old}" exports --json | jq -S 'keys' >"$OUTPUT/npm-alpha4-exports.json"
+npm view "@peanut-admin/admin@${web_new}" exports --json | jq -S 'keys' >"$OUTPUT/npm-alpha5-exports.json"
+jq -e --slurp '.[0] - .[1] == []' "$OUTPUT/npm-alpha4-exports.json" "$OUTPUT/npm-alpha5-exports.json" >/dev/null || die 'alpha.5 removed an alpha.4 Registry npm export'
 for side in old new; do
   version="$(jq -r ".web.${side}_version" "$METADATA")"
   integrity="$(jq -r ".web.${side}_integrity" "$METADATA")"
   shasum="$(jq -r ".web.${side}_shasum" "$METADATA")"
-  npm_identity="$OUTPUT/npm-${version}.json"
-  npm view "@peanut-admin/admin@${version}" version dist.integrity dist.shasum --json >"$npm_identity"
-  jq -e --arg version "$version" --arg integrity "$integrity" --arg shasum "$shasum" \
-    '.version == $version and .["dist.integrity"] == $integrity and .["dist.shasum"] == $shasum' \
-    "$npm_identity" >/dev/null || die "npm Registry identity changed for $version"
+  identity="$OUTPUT/npm-${version}.json"
+  npm view "@peanut-admin/admin@${version}" version dist.integrity dist.shasum --json >"$identity"
+  jq -e --arg version "$version" --arg integrity "$integrity" --arg shasum "$shasum" '.version == $version and .["dist.integrity"] == $integrity and .["dist.shasum"] == $shasum' "$identity" >/dev/null || die "npm Registry identity changed for $version"
 done
 
-"$PHP_BIN" -r '
-$metadata = json_decode((string) file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
-$summary = [
-  "schema_version" => 1,
-  "status" => "passed",
-  "fixture" => [
-    "template_version" => $metadata["fixture"]["template_version"],
-    "source_commit" => $metadata["fixture"]["source_commit"],
-    "source_tree" => $metadata["fixture"]["source_tree"],
-    "generated_manifest_sha256" => $argv[3],
-    "application_source_sha256" => $argv[4],
-    "app_owned_with_probes_sha256" => $argv[5],
-  ],
-  "php" => [
-    "old" => $metadata["php"]["old_version"], "old_source_reference" => $metadata["php"]["old_source_reference"],
-    "new" => $metadata["php"]["new_version"], "new_source_reference" => $metadata["php"]["new_source_reference"],
-    "old_split_commit" => $metadata["php"]["old_split_commit"], "new_split_commit" => $metadata["php"]["new_split_commit"],
-    "status" => "passed",
-  ],
-  "web" => [
-    "old" => $metadata["web"]["old_version"], "new" => $metadata["web"]["new_version"],
-    "old_integrity" => $metadata["web"]["old_integrity"], "old_shasum" => $metadata["web"]["old_shasum"],
-    "new_integrity" => $metadata["web"]["new_integrity"], "new_shasum" => $metadata["web"]["new_shasum"],
-    "status" => "passed",
-  ],
-  "public_entry_gate" => "passed",
-  "source_diff_gate" => "passed",
-  "known_php_release_identity_defect" => $metadata["known_release_identity_defect"],
-  "not_covered" => ["database", "services", "ports", "containers", "browser", "full PC build", "full UniApp build", "publication"],
-];
-file_put_contents($argv[2], json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
-' "$METADATA" "$OUTPUT/summary.json" "$manifest_sha" "$source_before" "$app_owned_before"
+jq -n \
+  --arg current_commit "$CURRENT_COMMIT" --arg current_tree "$CURRENT_TREE" --arg current_manifest "$current_manifest_sha" \
+  --arg current_source "$current_source_before" --arg current_app_owned "$current_app_owned_before" \
+  --arg legacy_commit "$LEGACY_COMMIT" --arg legacy_tree "$(jq -r '.legacy_pre_alpha5.source_tree' "$METADATA")" \
+  --arg legacy_archive "$(jq -r '.legacy_pre_alpha5.archive_sha256' "$METADATA")" --arg legacy_source "$legacy_source_before" \
+  --arg legacy_host "$legacy_host_before" --arg legacy_overlay "$legacy_overlay_before" \
+  --arg php_old "$php_old" --arg php_old_ref "$php_old_ref" --arg php_new "$php_new" --arg php_new_ref "$php_new_ref" \
+  --arg web_old "$web_old" --arg web_old_integrity "$web_old_integrity" --arg web_new "$web_new" --arg web_new_integrity "$web_new_integrity" \
+  --argjson defect "$(jq '.known_release_identity_defect' "$METADATA")" \
+  '{schema_version:2,status:"passed",current_create_app:{source_commit:$current_commit,source_tree:$current_tree,generated_manifest_sha256:$current_manifest,application_source_sha256:$current_source,app_owned_with_probe_sha256:$current_app_owned},legacy_pre_alpha5:{source_commit:$legacy_commit,source_tree:$legacy_tree,archive_sha256:$legacy_archive,application_source_sha256:$legacy_source,app_owned_host_sha256:$legacy_host,overlay_sha256:$legacy_overlay,overlay_files:[]},php:{old:$php_old,old_source_reference:$php_old_ref,new:$php_new,new_source_reference:$php_new_ref,status:"passed"},web:{old:$web_old,old_integrity:$web_old_integrity,new:$web_new,new_integrity:$web_new_integrity,status:"passed"},public_entry_gate:"passed",source_diff_gate:"passed",known_php_release_identity_defect:$defect,not_covered:["database","services","ports","containers","browser","full PC build","full UniApp build","publication"]}' >"$OUTPUT/summary.json"
 
-printf 'CORE-UPGRADE-COMPATIBILITY-001 passed; summary=%s\n' "$OUTPUT/summary.json"
+printf 'CORE-UPGRADE-COMPATIBILITY-002 passed; summary=%s\n' "$OUTPUT/summary.json"

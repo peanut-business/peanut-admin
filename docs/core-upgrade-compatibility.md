@@ -1,38 +1,26 @@
 # 核心包升级兼容矩阵
 
-本 Gate 固定由正式 `scripts/create-app` 模板 `1.0.0` 生成的旧应用输入，并证明核心包升级只改变四个依赖文件：
+本 Gate 使用两个诚实且相互独立的旧起点，不把它们伪称为统一平台版本：
 
-- PHP：公开 Packagist 身份 `peanut-admin/core` 从 `0.1.0-alpha.2` 升级到 `0.1.0-alpha.5`；
-- Web：公开 npm 身份 `@peanut-admin/admin` 从 `0.1.0-alpha.4` 升级到 `0.1.0-alpha.5`。
+- PHP `legacy-pre-alpha5`：`scripts/select-legacy-pre-alpha5-fixture` 从应用 Git 第一父历史机器筛选最新合格 tree。固定结果是 commit `4808a82f408f10945de1be8348ebc2ea05bc4fb9`、tree `35e7c827ee72feeecdff5e42e34cdfcf945527df`；它原生锁定公开 Packagist `peanut-admin/core@0.1.0-alpha.2`，只使用该版 10 个公开 PSR-4 root，并包含真实 app-owned `CoreServiceOverrides`/Host 测试。该输入不是 create-app 生成物，overlay 为空；机器证据分别记录 Git archive、应用源码、Host 文件和空 overlay 摘要。
+- Web/current boundary：正式 create-app `1.1.0` 从 `8f11f431791e01dc45d57729e279c97bc40a80bb` 生成当前应用，只承担生成 manifest/source 边界、完整 Web runtime 与全客户端公开入口扫描。Web 从公开 npm `@peanut-admin/admin@0.1.0-alpha.4` 升到 `0.1.0-alpha.5`。
 
-这两个旧起点不同，不构成统一的“平台 alpha.4”。`server/tests/fixtures/core-upgrade-compatibility/fixture.json`
-固定 create-app 源 commit/tree、两个 Registry 身份、Composer split commit/tree、npm integrity、允许变化文件和
-app-owned 探针。两个 lockfile 版本也作为 fixture 提交，CI 不解析 `latest`、移动分支或 path repository。
+PHP 在历史应用的干净 archive 中先按原生 manifest/lock 安装 Alpha.2、运行原生 `AdminPermissionHostTest.php`，随后只替换 `server/composer.json` 和 `server/composer.lock` 为固定 Alpha.5，再运行同一 Host 测试。Web 在 current create-app 中先按固定 Alpha.4 lock 安装、typecheck/build/consumer，随后只替换 `web/package.json` 和 `web/pnpm-lock.yaml` 为固定 Alpha.5 并重复同一组检查。两侧业务源码和 app-owned 摘要必须逐字节不变。
 
-`scripts/core-upgrade-compatibility` 在干净临时目录重建应用，然后依次执行旧版干净安装、公开 Host/consumer
-探针、Web typecheck/build、只替换约束和 lock 的升级，以及完全相同的新版检查。业务/app-owned 摘要和排除
-四个依赖文件后的应用源码摘要在 before/after 必须逐字节相同。公共入口 Gate 从真实 Composer PSR-4 与 npm
-`exports` 元数据解析允许集合，并拒绝 `vendor`/`node_modules` 内部路径、`src` deep import、跨包相对源码引用。
-PC 和 UniApp 当前通过 `./client`、`./client/nuxt`、`./client/uniapp` 正式 exports 消费 UI core；它们只由同一
-公共入口 Gate 覆盖，不虚构额外的独立升级矩阵。
+公共入口 Gate 从真实安装包解析 Composer PSR-4 与 npm `exports`，拒绝 `vendor`/`node_modules` 内部路径、包内 `src` deep import 和相对跨包源码引用；Alpha.5 不得移除旧应用实际依赖的公开 Composer root 或 Alpha.4 已发布 npm export。PC 与 UniApp 不另造升级矩阵，只纳入 current create-app 的真实 import 扫描。
 
 ## 已知 PHP 发布身份完整性缺陷
 
-核心 monorepo `v0.1.0-alpha.4` 固定到 commit
-`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`，但该 tag 内 `packages/php/composer.json` 仍声明
-`0.1.0-alpha.2`，Packagist 也没有 `peanut-admin/core@0.1.0-alpha.4`。机器 Gate 必须真实观察到这个缺陷，
-并禁止把它当作可消费 PHP 身份。未来 PHP 发布必须保证 monorepo release tag、内嵌 package metadata、生成的
-Composer split tag 和 Packagist version 一致；本应用 Gate 不修改核心仓，也不发布或重打 tag。
+核心 monorepo `v0.1.0-alpha.4` 固定到 commit `7fbd445d8fa547830b7782a7ac147d9ed414e0fd`，但 tag 内 `packages/php/composer.json` 仍声明 `0.1.0-alpha.2`，Packagist 也没有 `peanut-admin/core@0.1.0-alpha.4`。机器 Gate 必须真实观察到这个缺陷，并禁止把它当作可消费 PHP 身份。未来 PHP 发布必须保证 monorepo tag、内嵌 package metadata、Composer split tag 和 Packagist version 一致；本 Gate 不修改核心仓、tag 或 Registry。
 
 ## 本地执行
 
-先按项目租约规则 claim 唯一 cache/output，再运行：
+按项目租约规则为固定 candidate claim 唯一 cache/output，再运行：
 
 ```bash
 scripts/core-upgrade-compatibility \
-  --cache /private/tmp/peanut-admin-core-upgrade-cache-<run-id> \
-  --output /private/tmp/peanut-admin-core-upgrade-output-<run-id>
+  --cache /private/tmp/peanut-admin-core-upgrade-cache-<candidate> \
+  --output /private/tmp/peanut-admin-core-upgrade-output-<candidate>
 ```
 
-本 Gate 不连接数据库、端口、服务、浏览器或容器。输出仅包含可再生的临时 consumer 与 `summary.json`；
-不得把 vendor、node_modules、dist、缓存或原始安装日志提交到仓库。
+输入会强制规范化到物理绝对路径，并拒绝 symlink、非空、嵌套或相同 cache/output。本 Gate 不连接数据库、端口、服务、浏览器或容器，也不提交 vendor、node_modules、dist、缓存或原始安装日志。

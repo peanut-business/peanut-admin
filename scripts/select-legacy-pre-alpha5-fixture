@@ -56,7 +56,7 @@ for commit in $(git -C "$ROOT" rev-list --first-parent "$HEAD_COMMIT"); do
   git -C "$ROOT" archive --format=tar --output="$archive" "$commit"
   tar -xf "$archive" -C "$candidate"
 
-  if ! php - "$candidate" <<'PHP'
+  if ! php /dev/stdin "$candidate" <<'PHP'
 <?php
 $root = $argv[1];
 $lock = json_decode((string) file_get_contents($root . '/server/composer.lock'), true, 512, JSON_THROW_ON_ERROR);

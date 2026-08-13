@@ -58,7 +58,7 @@
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "d31964d6043a751aecfe535a77b03d53cd140ea9c1919d2d19ec19d541aef75f"
+            "source_sha256": "5d4e83c8e58a62ccbf7e7916ba9e9004f914d5a9be6862f100a1b0b27758fd89"
         },
         {
             "path": ".github/workflows/core-upgrade-compatibility.yml",
@@ -3505,6 +3505,14 @@
             "transform": "text",
             "mode": 493,
             "source_sha256": "989a8634ef63cda1574b40e070511a57ff23893fd6401bc20b27c8359b2a88c8"
+        },
+        {
+            "path": "scripts/select-legacy-pre-alpha5-fixture",
+            "target": "scripts/select-legacy-pre-alpha5-fixture",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "scripts/sync-brand-assets.mjs",
@@ -8778,14 +8786,6 @@
             "source_sha256": "a62ae9ce36c728f0e6f9d64331fba0d382f0e051d99ef6044c7866d2823e744e"
         },
         {
-            "path": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha2.lock",
-            "target": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha2.lock",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
             "path": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
             "target": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
             "classification": "excluded",
@@ -8796,14 +8796,6 @@
         {
             "path": "server/tests/fixtures/core-upgrade-compatibility/fixture.json",
             "target": "server/tests/fixtures/core-upgrade-compatibility/fixture.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/fixtures/core-upgrade-compatibility/php-probe.fixture",
-            "target": "server/tests/fixtures/core-upgrade-compatibility/php-probe.fixture",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
