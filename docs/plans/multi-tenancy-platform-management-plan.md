@@ -1,7 +1,7 @@
 # Peanut Admin 多租户与平台管理计划
 
 > 状态：当前权威执行计划  
-> 日期：2026-08-11  
+> 日期：2026-08-13
 > 架构基线：`docs/design/saas-enhancement-blueprint.md`
 
 ## 1. 当前目标
@@ -48,11 +48,11 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | --- | --- | --- |
 | MT00 | 关闭在途核心能力和包/文档事实冲突 | 已完成 |
 | MT01 | 冻结公司级 Core/Generator 承接基线 | 已完成；DCS Product-only 条件采用 |
-| MT02 | Peanut Admin 采用单默认 Tenant | 进行中（Bootstrap/Article 已完成） |
-| MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 进行中（首批独立切片已完成） |
-| PM01 | 完成本实例 Tenant 平台管理 | 进行中（治理/身份边界已完成） |
-| MT04 | 完成多租户前端和应用 Host 闭环 | 进行中（可信上下文/Standalone UI 已完成） |
-| MT05 | 双模式安装、升级、下游和浏览器验收 | 未开始 |
+| MT02 | Peanut Admin 采用单默认 Tenant | 部分完成（默认映射及多批 SQL 域已合入） |
+| MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 部分完成（主要隔离及 diagnostics 已合入，实例工具边界收尾中） |
+| PM01 | 完成本实例 Tenant 平台管理 | 部分完成（后端、HTTP 和 Web 主链已合入，待集中联调） |
+| MT04 | 完成多租户前端和应用 Host 闭环 | 部分完成（选择/切换/撤销/导航主链已合入，待集中联调） |
+| MT05 | 双模式安装、升级、下游和浏览器验收 | 进行中（harness 已开始，固定候选尚未执行） |
 | MT06 | 发布多租户稳定基线 | 未开始 |
 | OP01 | 独立运营平台协议和项目立项 | 未开始 |
 | OP02 | 独立运营平台首个实例管理闭环 | 未开始 |
@@ -60,8 +60,9 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 
 ### 当前恢复指针
 
-更新时间：2026-08-13 03:44 CST。`MT00-ALPHA5` 与 `MT01-GENERATOR`
-已经收口；恢复时以远端 PR、Registry 和精确提交为准：
+更新时间：2026-08-13 13:47 CST。应用固定事实基线为
+`dev@84e78aed5b5738755fbfd14d3af86cfd75f1e9c0`；`MT00-ALPHA5` 与
+`MT01-GENERATOR` 已收口，MT02–MT04/PM01 已进入集中验收前收尾：
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
@@ -78,6 +79,9 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | MT01 Admin Web | 已完成 | Core PR #57 一次桌面 Chromium smoke 证明登录、双 Tenant 选择、外部 Module 页面及跨 Tenant/未知资源同形 404；六项最新-head checks 全绿后合入，禁止重复运行 |
 | PA-DCS-ADOPT-01 nomination | 已完成 | DCS PR #2 readiness harness；PR #3 merge `b29495df90db97763ad9abd322e718401af9c6c6` 注入唯一 source/tree、Generator、Composer/npm 和 canonical parameters，结果仅为 `CANDIDATE_INPUT_READY_NOT_ADOPTION_PASS` |
 | PA-DCS-ADOPT-01 decision | `CONDITIONAL`，Product-only 可消费 | DCS PR #4 merge `a2e10655f451a26bbd9b82b817bd7f31c88a2337` 完成 A–D 正式裁决；允许另行批准后创建首个 D1 Product-only Host，不批准 D1 业务代码、Pricing/Inventory/Trade/POS/设备/支付/生产或完整 SaaS |
+| MT02–MT04 / PM01 应用主链 | 部分完成，已进入收尾 | 应用 PR #39/#37/#53/#55/#56 完成默认 Tenant、Article、字典、装修页、会员；PR #38/#40/#42–#45/#62/#64/#66/#68/#69/#71/#72/#76 完成缓存、文件、任务、日志、通知、OAuth、导出、设置、财务、RBAC 和 Tabbar 等隔离；PR #41/#46/#47/#48/#54/#57–#61/#63/#70/#73–#75 完成 PlatformOperator、Tenant 生命周期/首 owner/TenantModule、Tenant session 与平台 Web/HTTP 主链 |
+| MT05 集中验收准备 | 进行中，未执行固定候选 | 浏览器 harness PR #78 merge `a44d25ab583152f646d55fecd9d8ab4c74117020`；安装/升级 harness PR #77 merge `84e78aed5b5738755fbfd14d3af86cfd75f1e9c0`。两者只证明 harness 可用，不等于 MT05 Gate 通过 |
+| MT03 后台 diagnostics | 已完成 | 应用 PR #79 merge `72d14679356bced34dd291e0d4cb0588f78a72cd`；退款对账和定时演示日志携带可信 Tenant 与稳定 correlation，未改变业务状态机 |
 
 中断后恢复步骤：
 
@@ -88,8 +92,11 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 4. DCS 后续只消费 PR #4 的 `CONDITIONAL` 边界：先单独批准 D1 Product-only，
    再从固定参数创建新 Host 并冻结实际 Module/manifest/migration/API/permission
    写集；不得复制旧 Runtime，也不得把 adoption 当作 D1 业务实现 PASS。
-5. Peanut Admin 下一关键路径是 MT02/MT03/PM01/MT04 未完成项；各 owner 继续用
-   独立 PR，阶段末再做一次集中集成验收。不得重复 CAP01–CAP06 或 MT01 Gate。
+5. Peanut Admin 当前关键路径是收口 MT04 实例工具访问边界，随后从同一 `dev`
+   固定候选，只运行一次安装/升级和
+   浏览器集中验收。不得重复 CAP01–CAP06、MT01、Tabbar 或已通过业务聚焦 Gate。
+6. 性能与 Recovery 作为阶段末后续项登记，不阻塞当前业务稳定候选；只有发现 Tenant
+   隔离、安全、Schema/数据完整性或核心业务失败时才阻塞对应候选。
 
 ### 当前未完成闭包
 
@@ -100,18 +107,18 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | --- | --- | --- | --- |
 | MT00 | Alpha.5 Composer/npm、Core/Generator 身份和 DCS 条件采用已固定 | 无；禁止重复发布、资格和 clean-consumer Gate | 无 |
 | MT01 | Generator、空库、Generated Host、Admin Web 和唯一候选身份已固定 | 无；Generator 仍只创建新项目，已有项目升级归 MT05 | 无 |
-| MT02 | 默认 Tenant/Account/TenantMember/owner、旧管理员/RBAC/部门/岗位映射和 Article Tenant-first 已合入 | 其余业务表的 ownership 分类、回填、非空/复合约束和 Tenant-first Runtime 尚未闭合；不得只凭 Article 声称完成 | 建立一次完整业务表 ownership ledger，并按不重叠领域批量实现首批剩余 SQL 表，而不是每表先开合同 |
-| MT03 | Tenant cache/lock port、ThinkPHP adapter、文件、Crontab、operation log、hot search、notice 已有独立隔离切片 | 队列、导入导出、异步上下文、剩余业务 cache/lock、事件/搜索、完整 audit/diagnostics 和其余 SQL 调用方尚未统一验收 | 以真实调用方为单位接入 queue/import-export/context propagation，并复用一次跨 Tenant fixture |
-| PM01 | Tenant governance service、PlatformOperator 独立认证/RBAC/session 边界已合入 | provision/activate/suspend/close、首 owner、TenantModule、平台审计的真实 HTTP/持久化闭环，以及暂停后拒绝新会话和业务写入尚未共同证明 | 将既有 governance service 接到一个平台 Tenant lifecycle API 纵向切片并记录平台审计 |
-| MT04 | 管理端可信 TenantContext 与 Standalone 隐藏控制面已合入 | 多租户登录后 Tenant 选择、可信切换、撤销、旧上下文清理、平台/租户导航和真实 UI 闭环尚缺 | 完成 Tenant 选择/切换/撤销的后端与 Admin Web 单一纵向切片 |
-| MT05 | 未开始 | Standalone 空库、v1.0.0 前滚、多租户空库、真实下游和阶段末浏览器矩阵均缺 | MT02–MT04/PM01 共享候选形成后运行一次集中安装/升级/浏览器 harness |
+| MT02 | 默认 Tenant/Account/TenantMember/owner、旧管理员/RBAC/部门/岗位映射，以及 Article、字典、装修页/Tabbar、会员/标签/余额等代表 SQL 域已合入 | 仍需用当前 schema/调用方做一次 ownership ledger 收口；未列入代表业务的外部渠道回调不得以伪 `tenant_id` 方式补齐 | 不另开审计 PR；在 MT05 candidate 固定前由主控生成一次代码证据矩阵，真实安全缺口才转实现 owner |
+| MT03 | cache/lock、文件、Crontab、operation log、后台 diagnostics、hot search、notice、OAuth、导入导出、客服、交易设置、充值退款和 Tabbar 已有 Tenant 隔离实现 | 实例级全局工具访问边界正在独立收口；集中候选尚未共同验证 | 合入 instance-tool 业务 PR，不扩大到性能、Recovery 或外部 APM |
+| PM01 | PlatformOperator 独立认证/RBAC/session、Tenant provision/activate/suspend/close、首 owner、TenantModule service/HTTP/Web 与平台访问 mutation Host 已合入 | 需要在 MT05 同一浏览器候选验证平台建 Tenant/owner、开模块、暂停及会话拒绝的完整业务链 | 不再拆普通功能 PR；消费已合入平台主链，由 MT05 浏览器 harness 验证一次 |
+| MT04 | 可信 TenantContext、Tenant 选择/切换/撤销、Admin request bridge、Web session、Standalone UI 和平台/Tenant 导航主链已合入 | 需要验证旧 token 撤销、切换后上下文清理、平台/租户入口及 Standalone 隐藏的真实浏览器闭环；实例工具 guard 尚在实现 | 合入 instance-tool guard 后进入 MT05，不再重复已有 session/bridge 聚焦组 |
+| MT05 | 浏览器与安装/升级 harness 已合入 | 尚未针对同一固定候选执行 Standalone 空库、v1.0.0 前滚、多租户空库和完整平台→Tenant 浏览器矩阵 | 合入 instance-tool 安全收尾 PR，固定一个 `dev` commit，依次运行两个 harness 各一次 |
 | MT06 | 未开始 | 稳定候选、版本一致性、发布 manifest、应用 lock、tag/Release 和最低发布验证均缺 | 只在 MT05 通过后固定一个候选并走单入口发布 |
 | OP01 | 未开始 | 独立仓库、协议、身份、签名任务、数据边界和项目立项均缺 | MT06 前可并行冻结独立运营平台协议与仓库边界，不写业务实例 Runtime |
 | OP02 | 未开始 | Release/实例/升级/健康/备份首个闭环均缺 | OP01 合入后在独立仓库实现一个签名升级任务纵向切片 |
 
-旧应用 PR #49 已在 PR #50 的新权威指针合入后关闭。Core PR #53 尚未合入，
-只能视为 current-schema direct-install 的候选修复；任何 MT05 clean-install 计划不得把
-其 `installSql()` 当作 `dev` 已有事实。
+旧应用 PR #49 已在 PR #50 的新权威指针合入后关闭。Core PR #53 已在全部声明检查
+成功后合入为 `5e105f15b58ef8e271905283bfa07c34ce6d8b7c`，current-schema
+`installSql()` 可作为 MT05 clean-install 的已合入输入；不得再按旧状态等待或重复其 Gate。
 
 ## 5. MT00：关闭当前在途工作
 
