@@ -53,6 +53,7 @@ final class ApplicationCreator
                 $files[] = [
                     'path' => $entry['target'],
                     'sha256' => hash('sha256', $content),
+                    'mode' => $entry['mode'],
                     'classification' => $entry['classification'],
                     'owner' => $entry['owner'],
                     'source' => $entry['path'],
@@ -301,9 +302,11 @@ final class ApplicationCreator
     {
         $content = preg_replace('/  stale-facts:\n.*?(?=  changes:\n)/s', '', $content) ?? $content;
         $content = preg_replace('/^      create_app:.*\n/m', '', $content) ?? $content;
-        $content = str_replace('server web pc uniapp docs_site create_app', 'server web pc uniapp docs_site', $content);
+        $content = preg_replace('/^      scaffold_upgrade:.*\n/m', '', $content) ?? $content;
+        $content = str_replace('server web pc uniapp docs_site create_app scaffold_upgrade', 'server web pc uniapp docs_site', $content);
         $content = preg_replace('/^          matches .*create_app=true.*\n/m', '', $content) ?? $content;
         $content = preg_replace('/\n  create-app:\n.*?(?=  php:\n)/s', "\n", $content) ?? $content;
+        $content = preg_replace('/\n  scaffold-upgrade:\n.*?(?=  php:\n)/s', "\n", $content) ?? $content;
         return $content;
     }
 

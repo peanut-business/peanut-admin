@@ -15,8 +15,8 @@ php scripts/create-app \
 identity 必须包含 vendor/name。路径穿越、符号链接目标、非空目标、inventory 漂移、未知
 变量与未知 transform 均 fail-closed。
 
-`scaffold/application-template-inventory.json` 对模板 checkout 的每个 Git 跟踪文件给出唯一
-分类：
+`scaffold/application-template-inventory.json` 对每个可生成的模板源文件给出唯一分类；
+`scaffold/**` 中的 source-only inventory、release artifact 与历史证据本身不递归进入应用：
 
 - `managed`：框架与交付基础设施。创建时把逐文件基线复制到
   `.peanut/scaffold-baseline/<template>/files/`；后续升级只能以该基线做显式三方决策。
@@ -25,8 +25,9 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 - `excluded`：Peanut Admin 的历史证据、发布记录、内部设计/治理、缓存/构建/依赖、凭据和本机基础设施。
 
 生成的 `.peanut/application-manifest.json` 固定模板版本、源 commit/tree、参数、每个生成文件
-的 SHA-256、分类、owner、managed/app-owned 树摘要与 managed baseline 路径。它是后续
-scaffold apply/三方合并工作的输入；本入口不实现 apply、recovery 或跨版本兼容性证明。
+的 SHA-256、mode、分类、owner、managed/app-owned 树摘要与 managed baseline 路径。它是
+后续 scaffold plan/apply/verify/recovery 的项目锁与三方输入；执行合同和命令见
+`docs/scaffold-upgrade.md`。
 
 生成结果没有 `.git`，可直接执行 `git init` 成为独立仓库。连接任何资源前，应用 owner
 必须先补全 `resources/project-resources.json`；初始管理员密码仍只允许在空库安装时通过
