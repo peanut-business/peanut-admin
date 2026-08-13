@@ -53,7 +53,7 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | PM01 | 完成本实例 Tenant 平台管理 | 已完成 |
 | MT04 | 完成多租户前端和应用 Host 闭环 | 已完成 |
 | MT05 | 双模式安装、升级、下游和浏览器验收 | 已完成 |
-| MT06 | 发布多租户稳定基线 | 进行中；稳定候选已固定，`v1.1.0` 发布候选在途 |
+| MT06 | 发布多租户稳定基线 | 已完成；`v1.1.0` 已正式发布并完成一次干净安装验证 |
 | OP01 | 独立运营平台协议和项目立项 | 未开始 |
 | OP02 | 独立运营平台首个实例管理闭环 | 未开始 |
 | SAAS-FUTURE | 套餐、订阅、计费等完整 SaaS | 暂缓 |
@@ -75,12 +75,16 @@ PR #99 修正 harness 的 `multi-tenant` 合法枚举后，最终候选 run
 `mt05-074fce5-install` 的三个 mode 均为 50 条 migration、81 张表并通过，且多租户
 PlatformOperator Account `1` 与默认 owner Account `2` 分离。证据在
 `/private/tmp/pa-mt05-evidence/final-install-074fce5`。浏览器、安装/升级、CAP、MT01 和
-既有业务 Gate 均不得重复。当前唯一关键路径是 MT06 `v1.1.0` 稳定发布。发布候选从
-`dev@b06bb766db5b583b98036abccaf92f444078b8f9` 建立，统一应用版本、Composer/npm
+既有业务 Gate 均不得重复。MT06 `v1.1.0` 已完成：PR #101 将版本、Composer/npm
 Alpha.5 Registry locks、50 条 migration/MT05 qualification metadata、生产双模式环境
-接线、法律制品和用户文档；只运行最低发布 preflight/静态/lock 身份与现有路径 CI，不
-重复 MT05 或业务 Gate。候选全绿后依次执行 `dev → main → annotated v1.1.0 → GitHub
-Release → 一次安装验证`。
+接线、法律制品和用户文档合入 `dev`；PR #103 修正 `dev → main` promotion 快速 Gate，
+PR #102 在最新 head 六项检查全部成功后合入 `main/dev@c6a165fbc223bcca1332235d3a31c9d2ede55a06`
+（tree `3bff64f613b200d00bb92c95b52ded88fb960fb5`）。annotated `v1.1.0` tag object 为
+`0f4fffd731cbcb632f9fb6b293e31671857410a5`，同 tag GitHub Release 已发布；规范源码归档
+SHA-256 `73398b2504ad7b41f759f5593efd32a91df56fd4e2ed06d1ffa4af9c84a36334`，外部
+`RELEASE_MANIFEST.json` SHA-256 `7edd5b2e3baaae06d657fc45856633b8f27ad97fe5669fd2c9642587313fa0a9`。
+发布后一次干净验证已从规范归档精确安装 Composer Alpha.5、npm Alpha.5 并加载 Core，
+同时确认源码 metadata 为 `1.1.0`/50 migrations。MT00–MT06 至此完成。
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
@@ -137,7 +141,7 @@ Release → 一次安装验证`。
 | PM01 | PlatformOperator、Tenant lifecycle、首 owner、TenantModule HTTP/Web 与 mutation Host 已通过真实浏览器业务链 | 无 | 无 |
 | MT04 | Tenant 选择/切换/撤销、旧上下文清理、双模式入口和实例工具 guard 已通过真实浏览器业务链 | 无 | 无 |
 | MT05 | 三模式安装/升级与完整平台→Tenant 浏览器矩阵均已通过 | 无；两组证据绑定各自固定候选，禁止重复 | 无 |
-| MT06 | 版本确定为 `1.1.0`；MT05 稳定输入已固定；发布候选已形成 | `main`、annotated tag、GitHub Release 和一次安装验证尚缺 | 候选 CI 全绿后按单入口发布并同步最终身份 |
+| MT06 | `main/dev`、annotated `v1.1.0`、GitHub Release、Alpha.5 locks、发布 metadata/法律资产与一次干净安装验证均已固定 | 无 | 无；按当前授权停止，不进入 OP01/OP02 |
 | OP01 | 未开始 | 独立仓库、协议、身份、签名任务、数据边界和项目立项均缺 | MT06 前可并行冻结独立运营平台协议与仓库边界，不写业务实例 Runtime |
 | OP02 | 未开始 | Release/实例/升级/健康/备份首个闭环均缺 | OP01 合入后在独立仓库实现一个签名升级任务纵向切片 |
 
