@@ -78,6 +78,13 @@ while IFS= read -r path; do
   fi
 
   case "$path" in
+    server/app/platform/controller/PlatformTenantController.php|server/app/platform/service/PlatformTenantQueryService.php|server/tests/Multitenancy/PlatformTenantReadApiTest.php)
+      select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php
+      ;;
+    server/app/platform/service/PlatformRuntimeFactory.php)
+      select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php
+      select_test server/tests/Multitenancy/PlatformOperatorBoundaryTest.php
+      ;;
     *dict*|*Dict*) select_test server/tests/Multitenancy/DictTenantIsolationTest.php ;;
     *article*) select_test server/tests/Multitenancy/ArticleTenantIsolationTest.php ;;
     *notice*|*notification*) select_test server/tests/Multitenancy/NoticeTenantIsolationTest.php ;;

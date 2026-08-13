@@ -61,6 +61,7 @@ use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\platform\controller\PlatformSessionController;
 use app\platform\controller\PlatformTenantBoundaryController;
+use app\platform\controller\PlatformTenantController;
 use app\platform\http\middleware\PlatformLoginMiddleware;
 use app\platform\http\middleware\PlatformPermissionMiddleware;
 use think\facade\Route;
@@ -78,6 +79,12 @@ Route::post('api/platform/session/logout', [PlatformSessionController::class, 'l
 Route::get('api/platform/session/info', [PlatformSessionController::class, 'info'])
     ->middleware(PlatformLoginMiddleware::class);
 Route::get('api/platform/tenants/capabilities', [PlatformTenantBoundaryController::class, 'capabilities'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/tenants', [PlatformTenantController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/tenants/detail', [PlatformTenantController::class, 'detail'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
 
