@@ -144,9 +144,9 @@ function pm01ModuleCompiler(string $schemaPath): ModuleRegistryCompiler
     );
 }
 
-$host = getenv('MYSQL_HOST') ?: '127.0.0.1';
-$port = getenv('MYSQL_PORT') ?: '33463';
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
+$host = getenv('DB_HOST') ?: getenv('MYSQL_HOST') ?: '127.0.0.1';
+$port = getenv('DB_PORT') ?: getenv('MYSQL_PORT') ?: '3306';
+$password = getenv('MYSQL_ROOT_PASSWORD') ?: getenv('DB_PASS') ?: 'peanut_admin_root_dev';
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
     'root',
