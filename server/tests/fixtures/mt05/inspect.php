@@ -137,6 +137,35 @@ SQL);
     expectInvariant((string)$owner['member_status'] === 'active', 'MT05_OWNER_MEMBER_NOT_ACTIVE');
     expectInvariant((int)$owner['owner_role_count'] === 1, 'MT05_OWNER_ROLE_INVALID');
 
+    $platformOperator = null;
+    if ($mode === 'multitenant-empty') {
+        $platformOperators = $pdo->query(<<<'SQL'
+SELECT po.id, po.account_id, po.display_name, po.status, a.status AS account_status
+FROM pa_platform_operator po
+JOIN pa_account a ON a.id = po.account_id
+WHERE po.status = 'active'
+ORDER BY po.id
+SQL)->fetchAll();
+        expectInvariant(count($platformOperators) === 1, 'MT05_PLATFORM_OPERATOR_COUNT_INVALID');
+        $platformOperator = $platformOperators[0];
+        expectInvariant(
+            (int)$platformOperator['account_id'] !== (int)$owner['owner_account_id'],
+            'MT05_PLATFORM_OPERATOR_REUSES_DEFAULT_OWNER_ACCOUNT'
+        );
+        expectInvariant(
+            (string)$platformOperator['account_status'] === 'active',
+            'MT05_PLATFORM_OPERATOR_ACCOUNT_NOT_ACTIVE'
+        );
+        $platformMembershipStatement = $pdo->prepare(
+            'SELECT COUNT(*) FROM pa_tenant_member WHERE account_id = ?'
+        );
+        $platformMembershipStatement->execute([(int)$platformOperator['account_id']]);
+        expectInvariant(
+            (int)$platformMembershipStatement->fetchColumn() === 0,
+            'MT05_PLATFORM_OPERATOR_HAS_TENANT_MEMBERSHIP'
+        );
+    }
+
     $moduleInstallationCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_module_installation')->fetchColumn();
     $tenantModuleCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_module')->fetchColumn();
     $enabledTenantModuleCount = (int)$pdo->query(
@@ -159,7 +188,7 @@ SQL)->fetchColumn();
     expectInvariant($invalidTenantModules === 0, 'MT05_TENANT_MODULE_STATUS_INVALID');
     expectInvariant($orphanTenantModules === 0, 'MT05_TENANT_MODULE_REFERENCE_INVALID');
 
-    echo json_encode([
+    $result = [
         'schema_version' => 1,
         'candidate_commit' => $candidate,
         'run_id' => $runId,
@@ -182,7 +211,14 @@ SQL)->fetchColumn();
             'orphan_tenant_module_count' => $orphanTenantModules,
         ],
         'status' => 'passed',
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
+    ];
+    if ($platformOperator !== null) {
+        $result['platform_operator'] = $platformOperator;
+    }
+    echo json_encode(
+        $result,
+        JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR
+    ), PHP_EOL;
 } catch (Throwable $exception) {
     fwrite(STDERR, 'MT05 invariant failure: ' . $exception->getMessage() . PHP_EOL);
     exit(1);

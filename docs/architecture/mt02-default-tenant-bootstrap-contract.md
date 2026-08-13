@@ -50,7 +50,7 @@ Position/Job 公共模型；岗位不得伪装成 Role 或 Department，继续�
 
 | 旧事实 | Core/应用投影 |
 | --- | --- |
-| 首个 root 管理员 | 同一个 Account 同时得到独立 PlatformOperator 和默认 Tenant 的 active owner TenantMember；平台身份不隐式提供 Tenant 权限 |
+| 首个 root 管理员 | Standalone 空库和 v1.0.0 前滚的兼容投影中，同一个 Account 同时得到 PlatformOperator 和默认 Tenant 的 active owner TenantMember；平台会话仍不隐式提供 Tenant 权限 |
 | 其他管理员 | 每个旧 `pa_admin.id` 一个 Account 和一个 TenantMember；`disable=0` 且未删除映射 active，否则映射 suspended/left；不创建可猜测凭据 |
 | 角色 | 每个旧角色映射一个 `pa_role`，key 固定为 `legacy.role.<旧 id>`；名称、描述和删除状态确定性投影 |
 | 管理员角色 | 映射到同 Tenant 的 `pa_member_role`；root owner 额外持有唯一内置 `core.tenant-owner` |
@@ -63,6 +63,13 @@ Position/Job 公共模型；岗位不得伪装成 Role 或 Department，继续�
 `tenant_id` 和必要的 `(tenant_id, id/关联键)` 索引；不得使用 `tenant_id=0/NULL`
 表达平台或未知归属。
 
+MT05 集中验收发现，把上述同 Account 兼容投影继续用于 `multi-tenant` 空库安装会让
+实例平台身份同时成为默认 Tenant owner，违反 PlatformOperator 不成为 TenantMember
+的边界。该行为已作为 MT05 blocker 修正合同：多租户空库必须使用独立的
+`PLATFORM_INITIAL_EMAIL`/`PLATFORM_INITIAL_PASSWORD` 创建唯一 active
+PlatformOperator；其 Account 必须不同于 `ADMIN_INITIAL_*` 创建的默认 Tenant owner，
+且不得有任何 TenantMember。Standalone 空库和 v1.0.0 前滚继续保持本节原有兼容行为。
+
 ## 4. 凭据与失败关闭
 
 安装/升级必须显式提供 `ADMIN_INITIAL_EMAIL` 与既有 `ADMIN_INITIAL_PASSWORD`。
@@ -70,6 +77,12 @@ adapter 先按旧 `pa_admin.password/salt` 算法验证密码确实属于首个 
 交给 Core `PasswordHasher`/bootstrap 创建 email credential；旧 hash 不复制进 Core。
 邮箱无效、密码不匹配、输入缺失、旧凭据歧义或已有 Core credential 冲突均拒绝，
 错误不得回显 hash、盐、密码或其他账号存在性。
+
+`DEPLOYMENT_MODE=multi-tenant` 的空库安装还必须显式提供
+`PLATFORM_INITIAL_EMAIL` 与 `PLATFORM_INITIAL_PASSWORD`，不得回退复用
+`ADMIN_INITIAL_*`。平台输入只创建平台 Account/Credential/PlatformOperator；Tenant
+owner 输入只创建默认 Tenant owner Account/Credential/TenantMember。Standalone 与
+v1.0.0 前滚不消费平台初始凭据，保持现有兼容路径。
 
 非 owner 管理员只创建无凭据 Account 和 TenantMember，仍走旧登录链；不得把 username
 猜成邮箱、生成共享密码或建立 `@invalid` 凭据。统一登录切换归后续明确合同。
