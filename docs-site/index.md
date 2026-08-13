@@ -70,4 +70,4 @@ features:
 
 ## 发布边界
 
-Peanut Admin 应用 `1.1.0` 发布完成时以 annotated `v1.1.0` 与同 tag GitHub Release 作为正式身份。Composer `peanut-admin/core` 与 npm `@peanut-admin/admin` 是仅有的公开运行依赖；内部领域目录不是独立包。既有应用与官网域名的部署状态以[版本与发布](/releases)记录为准；本版本是稳定多租户脚手架，不宣称包含完整 SaaS 商业能力。
+Peanut Admin 应用 `1.1.0` 已以 annotated `v1.1.0` 与同 tag GitHub Release 正式发布。Composer `peanut-admin/core` 与 npm `@peanut-admin/admin` 是仅有的公开运行依赖；内部领域目录不是独立包。既有应用与官网域名的部署状态以[版本与发布](/releases)记录为准；本版本是稳定多租户脚手架，不宣称包含完整 SaaS 商业能力。
