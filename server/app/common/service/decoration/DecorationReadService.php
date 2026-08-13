@@ -3,16 +3,22 @@ declare(strict_types=1);
 
 namespace app\common\service\decoration;
 
-use app\common\model\decoration\DecoratePage;
 use app\common\model\decoration\DecorateTabbar;
 use app\common\service\ConfigService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 管理端与各客户端共享的只读消费 DTO。 */
 class DecorationReadService
 {
-    public static function pageByType(int $type): array
+    public static function pageByType(
+        TenantContext|TenantSystemContext $context,
+        int $type,
+        string $operation = ''
+    ): array
     {
-        $page = DecoratePage::where('type', $type)->findOrEmpty();
+        $page = DecorationTenantRepository::pages($context, $operation)
+            ->where('type', $type)->findOrEmpty();
         if ($page->isEmpty()) {
             throw new \RuntimeException('装修页面不存在');
         }

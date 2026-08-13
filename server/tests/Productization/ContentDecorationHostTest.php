@@ -104,6 +104,7 @@ $tabbarLogic = (string)file_get_contents(
 );
 expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::formatPage'), 'admin page detail bypasses shared read DTO');
 expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::pageByType'), 'admin type detail bypasses shared read DTO');
+expectContentDecoration(str_contains($pageLogic, 'DecorationTenantRepository::pages'), 'admin decoration page bypasses Tenant-first ownership');
 expectContentDecoration(!str_contains($pageLogic, 'resourcesForRead'), 'admin page keeps duplicate resource formatting');
 expectContentDecoration(str_contains($tabbarLogic, 'DecorationReadService::tabbar(false)'), 'admin tabbar bypasses shared read DTO');
 
@@ -118,6 +119,14 @@ foreach ([
         'client-facing decoration bypasses the shared read DTO: ' . $relativePath
     );
 }
+
+$decorationRead = (string)file_get_contents(
+    $serverRoot . '/app/common/service/decoration/DecorationReadService.php'
+);
+expectContentDecoration(
+    str_contains($decorationRead, 'DecorationTenantRepository::pages'),
+    'shared decoration page read bypasses Tenant-first ownership'
+);
 
 $assetMigration = (string)file_get_contents(
     $serverRoot . '/database/migrations/20260811-content-asset-reference.sql'

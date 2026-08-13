@@ -125,7 +125,14 @@ fi
 test_count=0
 while IFS= read -r test_file; do
   [[ -z "$test_file" ]] && continue
-  php "$test_file"
+  if [[ "$test_file" == 'server/tests/Multitenancy/TenantGovernanceTest.php' ]]; then
+    MYSQL_HOST="${MYSQL_HOST:-${DB_HOST:-127.0.0.1}}" \
+      MYSQL_PORT="${MYSQL_PORT:-${DB_PORT:-33463}}" \
+      MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-${DB_PASS:-peanut_admin_root_dev}}" \
+      php "$test_file"
+  else
+    php "$test_file"
+  fi
   test_count=$((test_count + 1))
 done < <(sort -u "$selected_file")
 
