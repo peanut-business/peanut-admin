@@ -36,11 +36,12 @@ function excluded(string $path): bool
         ], true))
         || in_array($path, [
             'AGENTS.md', 'AGENT_EXECUTION_RULES.md',
-            'scripts/create-app', 'scripts/build-application-template-inventory',
+            'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
             'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
-            'server/app/common/service/scaffold/ApplicationCreator.php',
             'server/tests/Productization/CreateApplicationTest.php',
+            'server/tests/Productization/ScaffoldUpgradeRunnerTest.php',
         ], true)
+        || str_starts_with($path, 'server/app/common/service/scaffold/')
         || str_starts_with($path, 'plugins/fixture.delivery-record/')
         || str_starts_with($path, 'server/app/Modules/Fixture/DeliveryRecord/')
         || str_starts_with($path, 'web/src/modules/fixture-delivery-record/')
@@ -71,6 +72,9 @@ function classification(string $path): string
         'deploy/local-stack.env.example',
     ], true)) {
         return 'excluded';
+    }
+    if ($path === 'scripts/scaffold-upgrade' || str_starts_with($path, 'scripts/scaffold-runtime/')) {
+        return 'managed';
     }
     if (str_starts_with($path, 'docs-site/')
         || str_starts_with($path, 'server/app/') || str_starts_with($path, 'server/database/')
@@ -116,10 +120,13 @@ function transform(string $path, string $classification): string
 $entries = [];
 foreach (inventoryGitFiles($root) as $path) {
     $absolute = $root . '/' . $path;
+    $classification = classification($path);
+    if (!file_exists($absolute) && $classification === 'excluded') {
+        continue;
+    }
     if ((!is_file($absolute) && $path !== 'scaffold/application-template-inventory.json') || is_link($absolute)) {
         throw new RuntimeException('inventory only supports regular files: ' . $path);
     }
-    $classification = classification($path);
     $entry = [
         'path' => $path,
         'target' => $path,
@@ -136,7 +143,7 @@ foreach (inventoryGitFiles($root) as $path) {
 
 $inventory = [
     'schema_version' => 1,
-    'template_version' => '1.0.0',
+    'template_version' => '1.1.0',
     'protocol' => 'peanut.create-app-inventory.v1',
     'variables' => ['PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],
     'untracked_exclusions' => [

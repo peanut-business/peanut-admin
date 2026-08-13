@@ -1,6 +1,6 @@
 {
     "schema_version": 1,
-    "template_version": "1.0.0",
+    "template_version": "1.1.0",
     "protocol": "peanut.create-app-inventory.v1",
     "variables": [
         "PACKAGE_IDENTITY",
@@ -43,13 +43,22 @@
             "source_sha256": "67651758afcda7aed90f8fb1e461222c5fd3d40ab7e3b9bd492d57df6e8e7d93"
         },
         {
+            "path": ".gitattributes",
+            "target": ".gitattributes",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "source_sha256": "1180e468df50ba1387571e7426197614268683d8f6bb64e32d782401bca4e1ce"
+        },
+        {
             "path": ".github/workflows/ci.yml",
             "target": ".github/workflows/ci.yml",
             "classification": "managed",
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "136019cc2ab49ec3fe137c8199fd7bc6cb638abb7c0838ab301777ad8817f128"
+            "source_sha256": "b7a1defbeb4f893b89c4c8f2cabd8ed8c4359f45984ec3423f16d24ce23c8c97"
         },
         {
             "path": ".gitignore",
@@ -3267,24 +3276,2192 @@
             "source_sha256": "049e5c5be77d228c76a55aac8f6b2e159df8cf063495205e94a5463cb4be9bfa"
         },
         {
-            "path": "scaffold/releases/v1.1.0/files/server/config/brand.json",
-            "target": "scaffold/releases/v1.1.0/files/server/config/brand.json",
+            "path": "scaffold/legacy/brand-preflight-v1.1.0/README.md",
+            "target": "scaffold/legacy/brand-preflight-v1.1.0/README.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
             "mode": 420
         },
         {
-            "path": "scaffold/releases/v1.1.0/files/web/src/generated/brand.json",
-            "target": "scaffold/releases/v1.1.0/files/web/src/generated/brand.json",
+            "path": "scaffold/legacy/brand-preflight-v1.1.0/files/server/config/brand.json",
+            "target": "scaffold/legacy/brand-preflight-v1.1.0/files/server/config/brand.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
             "mode": 420
         },
         {
-            "path": "scaffold/releases/v1.1.0/scaffold-manifest.json",
-            "target": "scaffold/releases/v1.1.0/scaffold-manifest.json",
+            "path": "scaffold/legacy/brand-preflight-v1.1.0/files/web/src/generated/brand.json",
+            "target": "scaffold/legacy/brand-preflight-v1.1.0/files/web/src/generated/brand.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/legacy/brand-preflight-v1.1.0/scaffold-manifest.json",
+            "target": "scaffold/legacy/brand-preflight-v1.1.0/scaffold-manifest.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/.dockerignore",
+            "target": "scaffold/releases/v1.0.0/files/.dockerignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/.env.example",
+            "target": "scaffold/releases/v1.0.0/files/.env.example",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/.github/workflows/ci.yml",
+            "target": "scaffold/releases/v1.0.0/files/.github/workflows/ci.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/.gitignore",
+            "target": "scaffold/releases/v1.0.0/files/.gitignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/CHANGELOG.md",
+            "target": "scaffold/releases/v1.0.0/files/CHANGELOG.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/LICENSE",
+            "target": "scaffold/releases/v1.0.0/files/LICENSE",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/NOTICE",
+            "target": "scaffold/releases/v1.0.0/files/NOTICE",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/README.md",
+            "target": "scaffold/releases/v1.0.0/files/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/RELEASE_METADATA.json",
+            "target": "scaffold/releases/v1.0.0/files/RELEASE_METADATA.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/RELEASE_SBOM.spdx.json",
+            "target": "scaffold/releases/v1.0.0/files/RELEASE_SBOM.spdx.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/THIRD_PARTY_NOTICES.md",
+            "target": "scaffold/releases/v1.0.0/files/THIRD_PARTY_NOTICES.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/compose.yaml",
+            "target": "scaffold/releases/v1.0.0/files/compose.yaml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/VERSIONS.md",
+            "target": "scaffold/releases/v1.0.0/files/deploy/VERSIONS.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/docker-compose.prod.yml",
+            "target": "scaffold/releases/v1.0.0/files/deploy/docker-compose.prod.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/docker/container.env",
+            "target": "scaffold/releases/v1.0.0/files/deploy/docker/container.env",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/docker/php-entrypoint.sh",
+            "target": "scaffold/releases/v1.0.0/files/deploy/docker/php-entrypoint.sh",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/docker/php-upload.ini",
+            "target": "scaffold/releases/v1.0.0/files/deploy/docker/php-upload.ini",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/docker/production.Dockerfile",
+            "target": "scaffold/releases/v1.0.0/files/deploy/docker/production.Dockerfile",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/nginx/peanut-admin.conf",
+            "target": "scaffold/releases/v1.0.0/files/deploy/nginx/peanut-admin.conf",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/deploy/production.env.example",
+            "target": "scaffold/releases/v1.0.0/files/deploy/production.env.example",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/docs-site/generated/brand.json",
+            "target": "scaffold/releases/v1.0.0/files/docs-site/generated/brand.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/docs/peanut-admin-development-guide.md",
+            "target": "scaffold/releases/v1.0.0/files/docs/peanut-admin-development-guide.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/docs/peanut-admin-release-deployment.md",
+            "target": "scaffold/releases/v1.0.0/files/docs/peanut-admin-release-deployment.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/docs/peanut-admin-user-manual.md",
+            "target": "scaffold/releases/v1.0.0/files/docs/peanut-admin-user-manual.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/.gitignore",
+            "target": "scaffold/releases/v1.0.0/files/pc/.gitignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/api/oauth.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/api/oauth.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/api/recharge.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/api/recharge.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/app.vue",
+            "target": "scaffold/releases/v1.0.0/files/pc/app.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/composables/useRequest.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/composables/useRequest.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/generated/brand.json",
+            "target": "scaffold/releases/v1.0.0/files/pc/generated/brand.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/layouts/default.vue",
+            "target": "scaffold/releases/v1.0.0/files/pc/layouts/default.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/layouts/user.vue",
+            "target": "scaffold/releases/v1.0.0/files/pc/layouts/user.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/middleware/auth.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/middleware/auth.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/nuxt.config.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/nuxt.config.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/package-lock.json",
+            "target": "scaffold/releases/v1.0.0/files/pc/package-lock.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/package.json",
+            "target": "scaffold/releases/v1.0.0/files/pc/package.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/avatar-admin.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/avatar-admin.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/avatar-member.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/avatar-member.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/docs.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/docs.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/favicon.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/favicon.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/login-background.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/login-background.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/logo.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/logo.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/menu.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/menu.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/public/brand/support.svg",
+            "target": "scaffold/releases/v1.0.0/files/pc/public/brand/support.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/stores/app.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/stores/app.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/stores/user.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/stores/user.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/tailwind.config.ts",
+            "target": "scaffold/releases/v1.0.0/files/pc/tailwind.config.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/pc/tsconfig.json",
+            "target": "scaffold/releases/v1.0.0/files/pc/tsconfig.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/plugins.lock",
+            "target": "scaffold/releases/v1.0.0/files/plugins.lock",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/resources/project-resources.json",
+            "target": "scaffold/releases/v1.0.0/files/resources/project-resources.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/check-admin-api-permissions.php",
+            "target": "scaffold/releases/v1.0.0/files/scripts/check-admin-api-permissions.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/check-local-runtime-contract",
+            "target": "scaffold/releases/v1.0.0/files/scripts/check-local-runtime-contract",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/check-stale-facts.sh",
+            "target": "scaffold/releases/v1.0.0/files/scripts/check-stale-facts.sh",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/ci-server-check.sh",
+            "target": "scaffold/releases/v1.0.0/files/scripts/ci-server-check.sh",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/local-client-dev",
+            "target": "scaffold/releases/v1.0.0/files/scripts/local-client-dev",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/mt05/README.md",
+            "target": "scaffold/releases/v1.0.0/files/scripts/mt05/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/mt05/run-install-upgrade",
+            "target": "scaffold/releases/v1.0.0/files/scripts/mt05/run-install-upgrade",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/package-release.sh",
+            "target": "scaffold/releases/v1.0.0/files/scripts/package-release.sh",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/project-resource-lease",
+            "target": "scaffold/releases/v1.0.0/files/scripts/project-resource-lease",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/project-resource-registry",
+            "target": "scaffold/releases/v1.0.0/files/scripts/project-resource-registry",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/scaffold-upgrade",
+            "target": "scaffold/releases/v1.0.0/files/scripts/scaffold-upgrade",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/scripts/sync-brand-assets.mjs",
+            "target": "scaffold/releases/v1.0.0/files/scripts/sync-brand-assets.mjs",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/.env.example",
+            "target": "scaffold/releases/v1.0.0/files/server/.env.example",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/.gitignore",
+            "target": "scaffold/releases/v1.0.0/files/server/.gitignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/.travis.yml",
+            "target": "scaffold/releases/v1.0.0/files/server/.travis.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/LICENSE.txt",
+            "target": "scaffold/releases/v1.0.0/files/server/LICENSE.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/README.md",
+            "target": "scaffold/releases/v1.0.0/files/server/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/composer.json",
+            "target": "scaffold/releases/v1.0.0/files/server/composer.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/composer.lock",
+            "target": "scaffold/releases/v1.0.0/files/server/composer.lock",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/admin_api_access.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/admin_api_access.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/admin_auth.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/admin_auth.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/app.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/app.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/async.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/async.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/brand.json",
+            "target": "scaffold/releases/v1.0.0/files/server/config/brand.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/cache.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/cache.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/console.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/console.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/cookie.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/cookie.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/database.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/database.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/deployment.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/deployment.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/filesystem.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/filesystem.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/jwt.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/jwt.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/lang.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/lang.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/log.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/log.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/middleware.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/middleware.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/modules.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/modules.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/platform_auth.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/platform_auth.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/project.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/project.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/route.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/route.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/session.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/session.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/tenant_auth.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/tenant_auth.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/trace.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/trace.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/config/view.php",
+            "target": "scaffold/releases/v1.0.0/files/server/config/view.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/extend/.gitignore",
+            "target": "scaffold/releases/v1.0.0/files/server/extend/.gitignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/fixtures/plugin-module-lifecycle/run.php",
+            "target": "scaffold/releases/v1.0.0/files/server/fixtures/plugin-module-lifecycle/run.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/.htaccess",
+            "target": "scaffold/releases/v1.0.0/files/server/public/.htaccess",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/avatar-admin.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/avatar-admin.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/avatar-member.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/avatar-member.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/docs.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/docs.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/favicon.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/favicon.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/login-background.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/login-background.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/logo.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/logo.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/menu.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/menu.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/brand/support.svg",
+            "target": "scaffold/releases/v1.0.0/files/server/public/brand/support.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/favicon.ico",
+            "target": "scaffold/releases/v1.0.0/files/server/public/favicon.ico",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/index.php",
+            "target": "scaffold/releases/v1.0.0/files/server/public/index.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/robots.txt",
+            "target": "scaffold/releases/v1.0.0/files/server/public/robots.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/router.php",
+            "target": "scaffold/releases/v1.0.0/files/server/public/router.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/public/static/.gitignore",
+            "target": "scaffold/releases/v1.0.0/files/server/public/static/.gitignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/resources/schemas/plugin.schema.json",
+            "target": "scaffold/releases/v1.0.0/files/server/resources/schemas/plugin.schema.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/route/app.php",
+            "target": "scaffold/releases/v1.0.0/files/server/route/app.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/think",
+            "target": "scaffold/releases/v1.0.0/files/server/think",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/server/view/README.md",
+            "target": "scaffold/releases/v1.0.0/files/server/view/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/.gitignore",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/.gitignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/index.html",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/index.html",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/package-lock.json",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/package-lock.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/package.json",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/package.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/packages/pages/404/404.vue",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/packages/pages/404/404.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/packages/pages/user_wallet/user_wallet.vue",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/packages/pages/user_wallet/user_wallet.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/shims-uni.d.ts",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/shims-uni.d.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/src/generated/brand.json",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/src/generated/brand.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/tsconfig.json",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/tsconfig.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/uniapp/vite.config.ts",
+            "target": "scaffold/releases/v1.0.0/files/uniapp/vite.config.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.env.development",
+            "target": "scaffold/releases/v1.0.0/files/web/.env.development",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.env.example",
+            "target": "scaffold/releases/v1.0.0/files/web/.env.example",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.env.production",
+            "target": "scaffold/releases/v1.0.0/files/web/.env.production",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.eslintignore",
+            "target": "scaffold/releases/v1.0.0/files/web/.eslintignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.eslintrc.js",
+            "target": "scaffold/releases/v1.0.0/files/web/.eslintrc.js",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.gitignore",
+            "target": "scaffold/releases/v1.0.0/files/web/.gitignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.husky/commit-msg",
+            "target": "scaffold/releases/v1.0.0/files/web/.husky/commit-msg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.husky/pre-commit",
+            "target": "scaffold/releases/v1.0.0/files/web/.husky/pre-commit",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.prettierignore",
+            "target": "scaffold/releases/v1.0.0/files/web/.prettierignore",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.prettierrc.js",
+            "target": "scaffold/releases/v1.0.0/files/web/.prettierrc.js",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/.stylelintrc.js",
+            "target": "scaffold/releases/v1.0.0/files/web/.stylelintrc.js",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/babel.config.js",
+            "target": "scaffold/releases/v1.0.0/files/web/babel.config.js",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/commitlint.config.js",
+            "target": "scaffold/releases/v1.0.0/files/web/commitlint.config.js",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/components.d.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/components.d.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/config/plugin/compress.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/config/plugin/compress.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/config/plugin/imagemin.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/config/plugin/imagemin.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/config/plugin/visualizer.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/config/plugin/visualizer.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/config/utils/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/config/utils/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/config/vite.config.base.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/config/vite.config.base.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/config/vite.config.dev.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/config/vite.config.dev.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/config/vite.config.prod.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/config/vite.config.prod.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/index.html",
+            "target": "scaffold/releases/v1.0.0/files/web/index.html",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/package.json",
+            "target": "scaffold/releases/v1.0.0/files/web/package.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/pnpm-lock.yaml",
+            "target": "scaffold/releases/v1.0.0/files/web/pnpm-lock.yaml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/avatar-admin.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/avatar-admin.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/avatar-member.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/avatar-member.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/docs.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/docs.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/favicon.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/favicon.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/login-background.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/login-background.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/logo.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/logo.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/menu.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/menu.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/public/brand/support.svg",
+            "target": "scaffold/releases/v1.0.0/files/web/public/brand/support.svg",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/App.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/App.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/app.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/app.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/article.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/article.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/decoration.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/decoration.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/finance.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/finance.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/interceptor.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/interceptor.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/member.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/member.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/notice.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/notice.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/official-account.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/official-account.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/platform.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/platform.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system-settings.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system-settings.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/admin.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/admin.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/config.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/config.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/crontab.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/crontab.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/dept.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/dept.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/dict.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/dict.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/file.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/file.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/generator.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/generator.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/jobs.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/jobs.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/log.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/log.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/menu.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/menu.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/role.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/role.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/storage.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/storage.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/system/system.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/system/system.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/tenant-session.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/tenant-session.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/user.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/user.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/api/workbench.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/api/workbench.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/assets/style/breakpoint.less",
+            "target": "scaffold/releases/v1.0.0/files/web/src/assets/style/breakpoint.less",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/assets/style/global.less",
+            "target": "scaffold/releases/v1.0.0/files/web/src/assets/style/global.less",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/assets/world.json",
+            "target": "scaffold/releases/v1.0.0/files/web/src/assets/world.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/breadcrumb/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/breadcrumb/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/chart/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/chart/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/file-picker/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/file-picker/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/footer/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/footer/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/global-setting/block.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/global-setting/block.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/global-setting/form-wrapper.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/global-setting/form-wrapper.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/global-setting/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/global-setting/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/menu/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/menu/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/menu/use-menu-tree.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/menu/use-menu-tree.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/navbar/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/navbar/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/tab-bar/index.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/tab-bar/index.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/tab-bar/readme.md",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/tab-bar/readme.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/components/tab-bar/tab-item.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/components/tab-bar/tab-item.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/config/settings.json",
+            "target": "scaffold/releases/v1.0.0/files/web/src/config/settings.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/core/deployment-mode.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/core/deployment-mode.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/core/permission-policy.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/core/permission-policy.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/core/platform-session.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/core/platform-session.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/core/plugin-contribution-policy.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/core/plugin-contribution-policy.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/core/runtime.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/core/runtime.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/core/tenant-session.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/core/tenant-session.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/directive/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/directive/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/directive/permission/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/directive/permission/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/env.d.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/env.d.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/generated/brand.json",
+            "target": "scaffold/releases/v1.0.0/files/web/src/generated/brand.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/chart-option.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/chart-option.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/loading.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/loading.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/locale.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/locale.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/permission.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/permission.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/request.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/request.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/responsive.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/responsive.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/themes.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/themes.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/user.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/user.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/hooks/visible.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/hooks/visible.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/layout/default-layout.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/layout/default-layout.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/layout/page-layout.vue",
+            "target": "scaffold/releases/v1.0.0/files/web/src/layout/page-layout.vue",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/locale/en-US.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/locale/en-US.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/locale/en-US/settings.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/locale/en-US/settings.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/locale/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/locale/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/locale/zh-CN.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/locale/zh-CN.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/locale/zh-CN/settings.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/locale/zh-CN/settings.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/main.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/main.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/app-menus/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/app-menus/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/constants.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/constants.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/guard/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/guard/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/guard/permission.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/guard/permission.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/guard/userLoginInfo.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/guard/userLoginInfo.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/base.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/base.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/app-setting.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/app-setting.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/article.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/article.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/dashboard.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/dashboard.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/decoration.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/decoration.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/dev-tools.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/dev-tools.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/finance.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/finance.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/member.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/member.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/notice.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/notice.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/platform.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/platform.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/system.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/system.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/user.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/modules/user.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/plugin-contributions.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/plugin-contributions.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/routes/types.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/routes/types.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/router/typings.d.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/router/typings.d.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/app/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/app/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/app/server-menu.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/app/server-menu.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/app/types.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/app/types.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/brand/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/brand/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/tab-bar/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/tab-bar/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/tab-bar/types.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/tab-bar/types.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/user/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/user/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/store/modules/user/types.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/store/modules/user/types.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/types/echarts.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/types/echarts.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/types/global.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/types/global.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/types/mock.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/types/mock.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/auth.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/auth.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/env.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/env.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/event.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/event.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/index.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/index.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/is.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/is.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/monitor.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/monitor.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/route-listener.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/route-listener.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/src/utils/setup-mock.ts",
+            "target": "scaffold/releases/v1.0.0/files/web/src/utils/setup-mock.ts",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/files/web/tsconfig.json",
+            "target": "scaffold/releases/v1.0.0/files/web/tsconfig.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "scaffold/releases/v1.0.0/scaffold-manifest.json",
+            "target": "scaffold/releases/v1.0.0/scaffold-manifest.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3293,6 +5470,14 @@
         {
             "path": "scripts/build-application-template-inventory",
             "target": "scripts/build-application-template-inventory",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scripts/build-scaffold-release",
+            "target": "scripts/build-scaffold-release",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3445,13 +5630,49 @@
             "mode": 493
         },
         {
+            "path": "scripts/scaffold-runtime/ScaffoldManifest.php",
+            "target": "scripts/scaffold-runtime/ScaffoldManifest.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "2547d40837420202f5db1bec966493e079886266edfd1be97f5d7f12db1a39f0"
+        },
+        {
+            "path": "scripts/scaffold-runtime/ScaffoldPathGuard.php",
+            "target": "scripts/scaffold-runtime/ScaffoldPathGuard.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "9eaf143ccbe329f559be77d2574f4548d1f72382265501b58b95281805e10f2a"
+        },
+        {
+            "path": "scripts/scaffold-runtime/ScaffoldUpgradeLedger.php",
+            "target": "scripts/scaffold-runtime/ScaffoldUpgradeLedger.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "db03fb1fa3c5ca489173a57e48a8f26f5e69d03ddda2f7f9bd2095fd3145effb"
+        },
+        {
+            "path": "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+            "target": "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "093d1d166ee216dc6cd77d99e1a125eb20dfdf2be011119c388f421b40bb78ac"
+        },
+        {
             "path": "scripts/scaffold-upgrade",
             "target": "scripts/scaffold-upgrade",
             "classification": "managed",
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "0dd7af84d4086531cda3150ade745251b627f8123cb1f2e203987e7e28580d25"
+            "source_sha256": "989a8634ef63cda1574b40e070511a57ff23893fd6401bc20b27c8359b2a88c8"
         },
         {
             "path": "scripts/sync-brand-assets.mjs",
@@ -6592,38 +8813,34 @@
         {
             "path": "server/app/common/service/scaffold/ScaffoldManifest.php",
             "target": "server/app/common/service/scaffold/ScaffoldManifest.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "ae765d9dd1a801a94fde0651b3233ee7a951a5c88c579c1bb62e6ac82763cfad"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/scaffold/ScaffoldPathGuard.php",
             "target": "server/app/common/service/scaffold/ScaffoldPathGuard.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "70c16066bea60cb3ffba4c8fdb3f29f0b50ef7271b00f72d0e16fe6828f43332"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/scaffold/ScaffoldUpgradeLedger.php",
             "target": "server/app/common/service/scaffold/ScaffoldUpgradeLedger.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "4aef33004f035361fa65a875ed6fb1a05e272e26f6a20be4669e967b38b25092"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/scaffold/ScaffoldUpgradeRunner.php",
             "target": "server/app/common/service/scaffold/ScaffoldUpgradeRunner.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "680b81a9c5246d95f7655d1cf00d7129967dde5454e7c3847060f50eb7c0d951"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/app/common/service/storage/Driver.php",
@@ -8678,11 +10895,10 @@
         {
             "path": "server/tests/Productization/ScaffoldUpgradeRunnerTest.php",
             "target": "server/tests/Productization/ScaffoldUpgradeRunnerTest.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "73dde1013b6bed7af86db7cd0d9f64c02a5094d68ab30e3b52fc816046e60ac8"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/tests/Productization/TaskImportExportHostTest.php",

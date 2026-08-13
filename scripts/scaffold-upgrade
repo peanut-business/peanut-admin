@@ -5,41 +5,45 @@ declare(strict_types=1);
 use app\common\service\scaffold\ScaffoldUpgradeRunner;
 
 $root = dirname(__DIR__);
-require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
-require $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
-require $root . '/server/app/common/service/scaffold/ScaffoldUpgradeLedger.php';
-require $root . '/server/app/common/service/scaffold/ScaffoldUpgradeRunner.php';
+require $root . '/scripts/scaffold-runtime/ScaffoldPathGuard.php';
+require $root . '/scripts/scaffold-runtime/ScaffoldManifest.php';
+require $root . '/scripts/scaffold-runtime/ScaffoldUpgradeLedger.php';
+require $root . '/scripts/scaffold-runtime/ScaffoldUpgradeRunner.php';
 
 function usage(): never
 {
-    fwrite(STDERR, "Usage: php scripts/scaffold-upgrade preflight --project-root=<path> --from-manifest=<path> --to-manifest=<path>\n");
+    fwrite(STDERR, "Usage:\n"
+        . "  php scripts/scaffold-upgrade preflight --project-root=<path> --from-manifest=<path> --to-manifest=<path>\n"
+        . "  php scripts/scaffold-upgrade apply|verify|recover|rollback --project-root=<path> --plan=<path>\n");
     exit(64);
 }
 
-if (($argv[1] ?? null) !== 'preflight') {
-    usage();
-}
+$command = $argv[1] ?? null;
+if (!in_array($command, ['preflight', 'apply', 'verify', 'recover', 'rollback'], true)) usage();
 $options = [];
 foreach (array_slice($argv, 2) as $argument) {
-    if (preg_match('/^--(project-root|from-manifest|to-manifest)=(.+)$/D', $argument, $matches) !== 1) {
+    if (preg_match('/^--(project-root|from-manifest|to-manifest|plan)=(.+)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
         usage();
     }
     $options[$matches[1]] = $matches[2];
 }
-foreach (['project-root', 'from-manifest', 'to-manifest'] as $required) {
+$requiredOptions = $command === 'preflight' ? ['project-root', 'from-manifest', 'to-manifest'] : ['project-root', 'plan'];
+foreach ($requiredOptions as $required) {
     if (!isset($options[$required]) || !is_string($options[$required]) || $options[$required] === '') {
         usage();
     }
 }
 
 try {
-    $plan = (new ScaffoldUpgradeRunner())->preflight(
-        $options['project-root'],
-        $options['from-manifest'],
-        $options['to-manifest'],
-    );
-    fwrite(STDOUT, json_encode($plan, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
-    exit($plan['status'] === 'ready' ? 0 : 2);
+    $runner = new ScaffoldUpgradeRunner();
+    $result = match ($command) {
+        'preflight' => $runner->preflight($options['project-root'], $options['from-manifest'], $options['to-manifest']),
+        'apply' => $runner->apply($options['project-root'], $options['plan']),
+        'verify' => $runner->verify($options['project-root'], $options['plan']),
+        'recover', 'rollback' => $runner->recover($options['project-root'], $options['plan']),
+    };
+    fwrite(STDOUT, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    exit(($result['status'] ?? null) === 'blocked' ? 2 : 0);
 } catch (Throwable $exception) {
     fwrite(STDERR, json_encode([
         'status' => 'error',
