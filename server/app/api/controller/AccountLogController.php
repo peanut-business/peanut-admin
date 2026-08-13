@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\AccountLogLogic;
+use app\common\service\member\MemberTenantContext;
 
 class AccountLogController extends BaseApiController
 {
@@ -15,7 +16,7 @@ class AccountLogController extends BaseApiController
             'page_size' => $this->request->get('page_size/d', 15),
         ];
 
-        $result = AccountLogLogic::lists($this->memberId, $params);
+        $result = AccountLogLogic::lists(MemberTenantContext::member($this->request), $this->memberId, $params);
         return $this->dataLists($result['lists'], $result['count'], $result['page_no'], $result['page_size']);
     }
 }

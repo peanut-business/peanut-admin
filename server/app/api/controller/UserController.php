@@ -5,7 +5,7 @@ namespace app\api\controller;
 
 use app\api\logic\UserLogic;
 use app\common\service\article\ArticleTenantContext;
-use app\common\service\notice\NoticeTenantContext;
+use app\common\service\member\MemberTenantContext;
 
 class UserController extends BaseApiController
 {
@@ -19,7 +19,7 @@ class UserController extends BaseApiController
     /** 个人信息 */
     public function info()
     {
-        $data = UserLogic::info($this->memberId);
+        $data = UserLogic::info(MemberTenantContext::member($this->request), $this->memberId);
         return $this->data($data);
     }
 
@@ -31,7 +31,7 @@ class UserController extends BaseApiController
             'value' => $this->request->post('value', ''),
         ];
 
-        $result = UserLogic::setInfo($this->memberId, $params);
+        $result = UserLogic::setInfo(MemberTenantContext::member($this->request), $this->memberId, $params);
         if ($result === false) {
             return $this->fail(UserLogic::getError());
         }
@@ -51,7 +51,7 @@ class UserController extends BaseApiController
             return $this->fail('旧密码和新密码不能为空');
         }
 
-        $result = UserLogic::changePassword($this->memberId, $params);
+        $result = UserLogic::changePassword(MemberTenantContext::member($this->request), $this->memberId, $params);
         if ($result === false) {
             return $this->fail(UserLogic::getError());
         }
@@ -67,11 +67,7 @@ class UserController extends BaseApiController
             'code'   => $this->request->post('code/s', ''),
         ];
 
-        $result = UserLogic::bindMobile(
-            NoticeTenantContext::member($this->request),
-            $this->memberId,
-            $params
-        );
+        $result = UserLogic::bindMobile(MemberTenantContext::member($this->request), $this->memberId, $params);
         if ($result === false) {
             return $this->fail(UserLogic::getError());
         }

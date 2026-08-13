@@ -7,6 +7,7 @@ use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\finance\AccountLogLogic;
 use app\adminapi\validate\finance\AccountLogValidate;
 use app\common\enum\AccountLogEnum;
+use app\common\service\member\MemberTenantContext;
 
 class AccountLogController extends BaseAdminController
 {
@@ -14,7 +15,7 @@ class AccountLogController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, AccountLogValidate::class . '.lists');
-        $result = AccountLogLogic::lists($params);
+        $result = AccountLogLogic::lists(MemberTenantContext::member($this->request), $params);
         if ($result === false) {
             return $this->fail(AccountLogLogic::getError());
         }
