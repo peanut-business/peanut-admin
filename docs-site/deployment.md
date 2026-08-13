@@ -63,6 +63,12 @@ Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。使用 Nginx、�
 
 文档站若发布到 Cloudflare Pages，不经过应用服务器。应用与文档可使用独立域名或同站分区；同一个 DNS 名称不要同时绑定 Pages 和应用源站。
 
+当前官方环境中，应用 `v1.1.0` 部署在 SSH Host `oracle3`，公网入口为
+[peanut-admin.007345.xyz](https://peanut-admin.007345.xyz)；文档站由 Cloudflare Pages 项目
+`peanut-admin-docs` 独立托管在
+[peanut-admin-doc.007345.xyz](https://peanut-admin-doc.007345.xyz)。`oracle3` 只承载应用
+Compose 与持久数据，不承载文档站静态文件。
+
 ## 已有应用升级
 
 升级必须先备份数据库和 `php-storage` 卷，再按“构建 → 迁移 → 切换”执行，不能先启动依赖新结构的应用代码：
@@ -81,6 +87,11 @@ TenantMember/owner、租户化 RBAC/组织及代表业务所有权。运行迁�
 `DEPLOYMENT_MODE`、两项 HMAC 与 `ADMIN_INITIAL_EMAIL`；选择多租户时同时准备独立
 PlatformOperator 输入。先在成对备份上验证迁移，再执行“构建 → 迁移 → 切换”；任何
 Tenant 所有权、复合外键或身份映射失败都必须保持旧流量并停止切换。
+
+官方 `oracle3` 环境已于 2026-08-13 按上述顺序完成前滚：迁移账本为 50 条且无失败记录，
+默认 Tenant/Account/bootstrap 均完成，运行容器使用 `peanut-admin-php:v1.1.0` 与
+`peanut-admin-nginx:v1.1.0`。发布后只执行了一次最低充分检查：容器健康、四个 Web 入口、
+release metadata 和管理员登录；没有重复全量浏览器或性能测试。
 
 包含 PB07 通知切片的版本会执行 `20260811-notification-host-security.sql`：历史验证码立即失效并从内容快照脱敏，`verify_code` 原位改为 `verify_code_hash`，同时撤销已退出的通用模板写权限菜单。迁移不删除 `pa_notice_template` 历史数据；升级后必须在通知渠道页确认唯一短信 Provider 和四个固定 scene 配置，不能期待旧验证码继续可用。
 
@@ -172,6 +183,13 @@ PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
 ```
 
 省略 `PEANUT_DOCS_SITE_URL` 仍可本地构建。域名、静态托管项目名、账号和令牌由目标环境提供，不写成模板默认值；站点可访问后再在网站设置中填写 `official_url`。
+
+官方文档站使用以下固定发布目标：
+
+```bash
+PEANUT_DOCS_SITE_URL=https://peanut-admin-doc.007345.xyz pnpm build
+npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --branch=main
+```
 
 ## 发布后检查
 
