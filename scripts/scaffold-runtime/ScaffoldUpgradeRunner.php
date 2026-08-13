@@ -152,6 +152,7 @@ final class ScaffoldUpgradeRunner
                     } elseif (file_exists($target)) {
                         if (!is_file($target) || is_link($target)) throw new RuntimeException('SCAFFOLD_RECOVERY_PATH_COLLISION: ' . $relative);
                         unlink($target);
+                        $this->pruneEmptyParents(dirname($target), $root);
                     }
                 }
                 if (!$this->recoveryMatches($root, $recovery)) throw new RuntimeException('SCAFFOLD_RECOVERY_VERIFY_FAILED');
@@ -213,7 +214,7 @@ final class ScaffoldUpgradeRunner
     {
         return ['path' => $path, 'classification' => $file['classification'] ?? 'managed', 'owner' => $file['owner'] ?? 'host',
             'policy' => $file['policy'] ?? 'managed', 'transform' => $file['transform'] ?? 'copy', 'mode' => $file['mode'] ?? 0644,
-            'source' => $file['source'] ?? null, 'source_sha256' => $file['source_sha256'] ?? null, 'action' => $action,
+            'source' => $file['source'] ?? null, 'template_sha256' => $file['template_sha256'] ?? null, 'action' => $action,
             'reason' => $reason, 'conflict' => $conflict, 'current' => $current, 'target_sha256' => $target];
     }
 
@@ -402,6 +403,13 @@ final class ScaffoldUpgradeRunner
     {
         ScaffoldPathGuard::ensureDirectory(dirname($path)); $tmp=dirname($path).'/.'.basename($path).'.stage-'.bin2hex(random_bytes(6));
         if (file_put_contents($tmp,$content,LOCK_EX)===false || !chmod($tmp,$mode) || !rename($tmp,$path)) { @unlink($tmp); throw new RuntimeException('SCAFFOLD_ATOMIC_WRITE_FAILED: '.$path); }
+    }
+    private function pruneEmptyParents(string $directory,string $root): void
+    {
+        while($directory!==$root&&str_starts_with($directory,$root.DIRECTORY_SEPARATOR)){
+            if(!is_dir($directory)||is_link($directory)||(scandir($directory)?:[])!==['.','..']||!rmdir($directory))return;
+            $directory=dirname($directory);
+        }
     }
     private function writeJsonAtomic(string $path, array $data, int $mode): void { $this->writeFileAtomic($path,json_encode($data,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n",$mode); }
     private function relative(string $root,string $path): string { return str_replace(DIRECTORY_SEPARATOR,'/',substr($path,strlen($root)+1)); }
