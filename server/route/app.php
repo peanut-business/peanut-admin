@@ -232,6 +232,9 @@ Route::group('api/admin', function () {
     // 操作日志
     Route::get('log/lists',  [OperationLogController::class, 'lists']);
     Route::post('log/clear', [OperationLogController::class, 'clear']);
+    Route::post('log/export', [OperationLogController::class, 'export']);
+    Route::get('log/export/status', [OperationLogController::class, 'exportStatus']);
+    Route::get('log/export/download', [OperationLogController::class, 'exportDownload']);
 
     // 系统配置 - 网站设置
     Route::get('config/website',      [ConfigController::class, 'getWebsite']);
