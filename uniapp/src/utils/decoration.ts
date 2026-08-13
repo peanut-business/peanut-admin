@@ -82,6 +82,32 @@ export function getDecorationItems(component: DecorationComponent | undefined): 
   return Array.isArray(data) ? (data as DecorationItem[]) : []
 }
 
+export function getDecorationMeta(page: DecorationPage | null | undefined): Record<string, unknown> {
+  const meta = page && Array.isArray(page.meta)
+    ? page.meta.find((item) => item.name === 'page-meta')
+    : undefined
+  return meta?.content || {}
+}
+
+export function isDecorationComponentEnabled(component: DecorationComponent): boolean {
+  if (component.disabled === 1) return true
+  return Number(component.content?.enabled ?? 1) === 1
+}
+
+export function applyDecorationPageMeta(page: DecorationPage | null | undefined) {
+  const meta = getDecorationMeta(page)
+  const title = typeof meta.title === 'string' ? meta.title.trim() : ''
+  if (title) uni.setNavigationBarTitle({ title })
+
+  const backgroundColor = typeof meta.bg_color === 'string' ? meta.bg_color : ''
+  if (/^#[0-9a-f]{6}$/i.test(backgroundColor)) {
+    uni.setNavigationBarColor({
+      frontColor: Number(meta.text_color) === 2 ? '#000000' : '#ffffff',
+      backgroundColor,
+    })
+  }
+}
+
 export function getDecorationTheme(value: unknown): DecorationTheme | null {
   if (!value || typeof value !== 'object') return null
   const wrapper = value as { data?: unknown }

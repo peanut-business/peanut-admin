@@ -9,8 +9,16 @@ export interface DecorationLink {
   query?: {
     app_id?: string;
     env_version?: 'develop' | 'trial' | 'release';
+    web_url?: string;
     [key: string]: unknown;
   };
+}
+
+export interface DecorationArticleOption {
+  id: number;
+  title: string;
+  image: string;
+  abstract?: string;
 }
 
 export interface DecorationItem {
@@ -89,7 +97,7 @@ export function saveMobileDecoration(data: DecorationSavePayload) {
 }
 
 export function getDecorationArticleOptions(limit = 50) {
-  return axios.get<Array<{ id: number; title: string; image: string }>>(
+  return axios.get<DecorationArticleOption[]>(
     '/api/admin/decoration/mobile/article',
     { params: { limit } }
   );

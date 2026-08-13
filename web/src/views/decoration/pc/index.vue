@@ -107,7 +107,21 @@
                         <el-option label="自定义链接" value="custom" />
                         <el-option label="小程序" value="mini_program" />
                       </el-select>
-                      <el-input v-model="item.link.target" placeholder="目标" />
+                      <el-select
+                        v-if="item.link.target_type === 'article'"
+                        v-model="item.link.target"
+                        filterable
+                        placeholder="选择可见文章"
+                        style="width: 220px"
+                      >
+                        <el-option
+                          v-for="article in articleOptions"
+                          :key="article.id"
+                          :label="article.title"
+                          :value="String(article.id)"
+                        />
+                      </el-select>
+                      <el-input v-else v-model="item.link.target" placeholder="目标" />
                       <template
                         v-if="
                           item.link.target_type === 'mini_program' &&
@@ -126,6 +140,10 @@
                           <el-option label="体验版" value="trial" />
                           <el-option label="正式版" value="release" />
                         </el-select>
+                        <el-input
+                          v-model="item.link.query.web_url"
+                          placeholder="PC 回退网址（http/https）"
+                        />
                       </template>
                     </el-space>
                   </el-form-item>
@@ -138,8 +156,11 @@
               <el-divider>展示样式</el-divider>
               <el-form :model="banner.styles" inline>
                 <el-form-item label="位置"
-                  ><el-input v-model="banner.styles.position"
-                /></el-form-item>
+                  ><el-select v-model="banner.styles.position"
+                    ><el-option label="绝对定位" value="absolute" /><el-option
+                      label="相对定位"
+                      value="relative" /></el-select
+                ></el-form-item>
                 <el-form-item label="左偏移"
                   ><el-input v-model="banner.styles.left"
                 /></el-form-item>
@@ -178,8 +199,10 @@
   import {
     getPcDecorationLists,
     getPcDecorationDetail,
+    getDecorationArticleOptions,
     savePcDecoration,
     type DecorationComponent,
+    type DecorationArticleOption,
     type DecorationItem,
     type DecorationPage,
   } from '@/api/decoration';
@@ -196,6 +219,7 @@
 
   const loading = ref(true);
   const submitLoading = ref(false);
+  const articleOptions = ref<DecorationArticleOption[]>([]);
   const previewIndex = ref(0);
   const page = reactive<DecorationPage>({
     id: 0,
@@ -228,6 +252,10 @@
       marginTop: String(styles.top || '0'),
     };
   });
+  const loadArticleOptions = async () => {
+    const { data } = await getDecorationArticleOptions();
+    articleOptions.value = data;
+  };
 
   const ensureQuery = (item: DecorationItem) => {
     item.link.query ||= {};
@@ -256,6 +284,7 @@
     }
   };
   load();
+  loadArticleOptions();
 
   const addItem = () => {
     if (!banner.value || items.value.length >= 10) return;

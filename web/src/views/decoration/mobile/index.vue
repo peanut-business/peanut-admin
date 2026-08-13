@@ -402,6 +402,7 @@
                       ></el-form-item>
                       <ItemEditor
                         :items="items(component)"
+                        :article-options="articleOptions"
                         :show-enabled="true"
                         :max="100"
                         @image="(item, urls) => setItemImage(item, urls)"
@@ -468,6 +469,7 @@
                       </el-form-item>
                       <ItemEditor
                         :items="items(component)"
+                        :article-options="articleOptions"
                         :show-enabled="component.name !== 'banner'"
                         :show-background="component.name === 'banner'"
                         :max="component.name === 'nav' ? 100 : 5"
@@ -511,8 +513,10 @@
   import {
     getMobileDecorationLists,
     getMobileDecorationDetail,
+    getDecorationArticleOptions,
     saveMobileDecoration,
     type DecorationComponent,
+    type DecorationArticleOption,
     type DecorationItem,
     type DecorationPage,
   } from '@/api/decoration';
@@ -551,6 +555,10 @@
     components: { FilePicker },
     props: {
       items: { type: Array as PropType<DecorationItem[]>, required: true },
+      articleOptions: {
+        type: Array as PropType<DecorationArticleOption[]>,
+        default: () => [],
+      },
       showEnabled: { type: Boolean, default: false },
       showBackground: { type: Boolean, default: false },
       max: { type: Number, default: 5 },
@@ -575,7 +583,10 @@
             <el-option label="自定义链接" value="custom" />
             <el-option label="小程序" value="mini_program" />
               </el-select>
-              <el-input v-model="item.link.target" placeholder="目标" />
+              <el-select v-if="item.link.target_type === 'article'" v-model="item.link.target" filterable placeholder="选择可见文章" style="width: 220px">
+                <el-option v-for="article in articleOptions" :key="article.id" :label="article.title" :value="String(article.id)" />
+              </el-select>
+              <el-input v-else v-model="item.link.target" placeholder="目标" />
               <template v-if="item.link.target_type === 'mini_program' && item.link.query">
                 <el-input v-model="item.link.query.app_id" placeholder="小程序 AppID" />
                 <el-select v-model="item.link.query.env_version" style="width: 130px">
@@ -617,6 +628,7 @@
   const styleOptions = binaryOptions;
   const loading = ref(false);
   const submitLoading = ref(false);
+  const articleOptions = ref<DecorationArticleOption[]>([]);
   const activeType = ref(1);
   const page = reactive<DecorationPage>({
     id: 0,
@@ -661,7 +673,9 @@
   const isMetaComponent = (component: MutableComponent) =>
     component.name === 'page-meta';
   const hasEnabled = (component: MutableComponent) =>
-    ['banner', 'middle-banner', 'user-banner', 'nav'].includes(component.name);
+    ['banner', 'middle-banner', 'user-banner', 'nav', 'my-service'].includes(
+      component.name
+    );
   const ensureQueries = () => {
     components.value.forEach((component) => {
       items(component).forEach((item) => {
@@ -728,7 +742,12 @@
       loading.value = false;
     }
   };
+  const loadArticleOptions = async () => {
+    const { data } = await getDecorationArticleOptions();
+    articleOptions.value = data;
+  };
   loadPageByType(activeType.value);
+  loadArticleOptions();
 
   const moveComponent = (index: number, offset: number) => {
     const list = components.value;

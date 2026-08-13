@@ -138,7 +138,22 @@
                       <el-option label="自定义链接" value="custom" />
                       <el-option label="小程序" value="mini_program" />
                     </el-select>
+                    <el-select
+                      v-if="item.link.target_type === 'article'"
+                      v-model="item.link.target"
+                      filterable
+                      placeholder="选择可见文章"
+                      style="width: 220px"
+                    >
+                      <el-option
+                        v-for="article in articleOptions"
+                        :key="article.id"
+                        :label="article.title"
+                        :value="String(article.id)"
+                      />
+                    </el-select>
                     <el-input
+                      v-else
                       v-model="item.link.target"
                       placeholder="目标"
                       :disabled="index === 0"
@@ -199,8 +214,10 @@
   import FilePicker from '@/components/file-picker/index.vue';
   import {
     getDecorationTabbar,
+    getDecorationArticleOptions,
     saveDecorationTabbar,
     type DecorationLink,
+    type DecorationArticleOption,
     type DecorationTabbar,
     type DecorationTabbarItem,
   } from '@/api/decoration';
@@ -224,6 +241,7 @@
   });
   const loading = ref(true);
   const submitLoading = ref(false);
+  const articleOptions = ref<DecorationArticleOption[]>([]);
   const visibleItems = computed(() =>
     form.list.filter((item) => item.is_show === 1)
   );
@@ -246,7 +264,12 @@
       loading.value = false;
     }
   };
+  const loadArticleOptions = async () => {
+    const { data } = await getDecorationArticleOptions();
+    articleOptions.value = data;
+  };
   load();
+  loadArticleOptions();
 
   const addItem = () => {
     if (form.list.length >= 5) return;

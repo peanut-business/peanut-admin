@@ -35,6 +35,8 @@
 </template>
 
 <script setup lang="ts">
+import type { CSSProperties } from 'vue'
+
 definePageMeta({ layout: 'default' })
 
 const appStore = useAppStore()
@@ -83,7 +85,23 @@ const bannerItems = computed(() => {
   if (!component || component.content.enabled === 0 || !Array.isArray(component.content.data)) return []
   return component.content.data.filter((item) => item.is_show === undefined || item.is_show === 1)
 })
-const bannerStyle = computed(() => bannerComponent.value?.styles || {})
+const safeCssLength = (value: unknown, fallback: string, allowNegative = false) => {
+  const candidate = String(value ?? '')
+  const pattern = allowNegative
+    ? /^-?\d+(?:\.\d+)?(?:px|%)$/
+    : /^\d+(?:\.\d+)?(?:px|%)$/
+  return pattern.test(candidate) ? candidate : fallback
+}
+const bannerStyle = computed<CSSProperties>(() => {
+  const styles = bannerComponent.value?.styles || {}
+  return {
+    position: styles.position === 'absolute' ? 'absolute' : 'relative',
+    left: safeCssLength(styles.left, '0px', true),
+    top: safeCssLength(styles.top, '0px', true),
+    width: safeCssLength(styles.width, '100%'),
+    height: safeCssLength(styles.height, '340px'),
+  }
+})
 
 function executeDecorationLink(link: DecorationLink) {
   if (!link || typeof link.target !== 'string' && typeof link.target !== 'number') return
