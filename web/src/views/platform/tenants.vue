@@ -6,7 +6,7 @@
         ><p>Instance-local platform control plane</p></div
       >
       <div
-        ><el-button type="primary" @click="provisionVisible = true"
+        ><el-button type="primary" @click="openProvisionDialog"
           >Provision Tenant</el-button
         ><el-button @click="logout">Logout</el-button></div
       >
@@ -185,6 +185,18 @@
     change_reason: '',
   });
 
+  const resetProvisionForm = () => {
+    form.tenant_code = '';
+    form.tenant_name = '';
+    form.owner_email = '';
+    form.owner_display_name = '';
+    form.initial_password = '';
+  };
+  const openProvisionDialog = () => {
+    resetProvisionForm();
+    provisionVisible.value = true;
+  };
+
   const load = async () => {
     loading.value = true;
     error.value = '';
@@ -201,10 +213,12 @@
     try {
       await provisionTenant({ ...form });
       provisionVisible.value = false;
+      resetProvisionForm();
       await load();
     } catch (reason) {
       error.value = (reason as Error).message;
     } finally {
+      form.initial_password = '';
       saving.value = false;
     }
   };
