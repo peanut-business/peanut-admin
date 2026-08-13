@@ -210,7 +210,7 @@ while IFS=$'\t' read -r MODE ACTION DEPLOYMENT_MODE BASELINE_REF; do
   [[ "$MODE" != 'mode' ]] || continue
   [[ -n "$MODE" ]] || continue
   case "$MODE:$ACTION:$DEPLOYMENT_MODE:$BASELINE_REF" in
-    standalone-empty:candidate-install:standalone:-|v1-forward:v1-forward:standalone:v1.0.0|multitenant-empty:candidate-install:multitenant:-) ;;
+    standalone-empty:candidate-install:standalone:-|v1-forward:v1-forward:standalone:v1.0.0|multitenant-empty:candidate-install:multi-tenant:-) ;;
     *) die "unsupported matrix row: $MODE/$ACTION/$DEPLOYMENT_MODE/$BASELINE_REF" ;;
   esac
 
