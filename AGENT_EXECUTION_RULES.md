@@ -38,6 +38,8 @@
 ## 5. Git、并发和工作树
 
 - 同一文件同一时刻只有一个 owner。共享数据库、容器、缓存、服务和其他可变资源也必须有唯一 owner 和项目隔离。
+- 本项目任何会启动数据库、监听端口、服务、浏览器、容器、缓存或一次性 Gate 的任务，必须先通过 `scripts/project-resource-lease claim` 原子登记全部资源；未成功 claim 不得启动。登记至少包含 owner/thread、固定 candidate、Gate、worktree，以及实际使用的 DB、端口、cache/output 路径。长任务在过期前 `renew`，成功、失败或停止后立即 `release`；只允许 `prune-expired` 清理过期登记。凭据不得作为资源值。动态租约位于本仓 Git common-dir，不提交，所有 Peanut Admin worktree 共享；聊天中的 owner 声明不能替代登记。
+- 真实 Gate 前先用 `scripts/project-resource-lease list/show` 核对唯一 owner，再验证服务、数据库和输出目录与租约及固定 candidate 一致。候选变化后必须释放旧租约并重新 claim；不得沿用旧候选的数据库、服务、缓存或证据。资源冲突只阻塞该资源使用者，不冻结不依赖它的工作。
 - 长任务和并行写任务使用独立分支与 worktree；临时目录不得成为长期事实源。来源不明或包含未提交修改的工作树不得清理。
 - PR 合入后立即释放对应 owner，并清理其临时 worktree、本地分支和远端分支；仓库应开启“合入后自动删除分支”。清理前必须同时确认 PR 已合入、当前分支 tip 仍等于该 PR 的最终 head、worktree 干净且没有活跃 owner。未合入、tip 已变化、脏工作树、主工作树、detached 追溯项和明确保留的取证分支不得删除。
 - 禁止 `git add .`、`git commit -a`、`git reset --hard` 和盲目覆盖。暂存后检查文件清单并运行 `git diff --cached --check`。
