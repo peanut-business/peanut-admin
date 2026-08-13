@@ -52,7 +52,7 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | MT03 | 完成 SQL、缓存、文件、任务和审计隔离 | 开发完成；固定候选待 MT05 集中验收 |
 | PM01 | 完成本实例 Tenant 平台管理 | 开发完成；固定候选待 MT05 浏览器联调 |
 | MT04 | 完成多租户前端和应用 Host 闭环 | 开发完成；固定候选待 MT05 浏览器联调 |
-| MT05 | 双模式安装、升级、下游和浏览器验收 | 进行中（首次候选发现两个 blocker；修复在途，候选需重冻并重跑两个 Gate） |
+| MT05 | 双模式安装、升级、下游和浏览器验收 | 进行中（安装/升级已通过；浏览器部署 harness 修复在途） |
 | MT06 | 发布多租户稳定基线 | 未开始 |
 | OP01 | 独立运营平台协议和项目立项 | 未开始 |
 | OP02 | 独立运营平台首个实例管理闭环 | 未开始 |
@@ -60,13 +60,14 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 
 ### 当前恢复指针
 
-更新时间：2026-08-13。MT05 首次代码候选
-`fafb1ae095e78ff6b12be660fc50b2987a331144`（tree
-`9ded9f5ee80aa8d864a35175cecb965bf4f0cb49`）已在集中验收中发现两个 blocker，不能
-作为 qualification 或稳定候选：多租户空库错误复用同一 Account 承载 PlatformOperator
-与默认 Tenant owner；浏览器 Gate 缺少可部署 TenantModule 的安装命令/配置输入。
-两项 Runtime 修复及其 harness 接线均在途；全部合入后必须重冻一个新的精确
-commit/tree，并在该新候选上重新运行安装/升级与浏览器 Gate 各一次：
+更新时间：2026-08-13。MT05 固定候选
+`5bd3e78d71e41d8a52c4f3e7dda47c71f67985a4`（tree
+`f7a465150f1ac6e31764543b2ae0489d4bddd165`）的安装/升级矩阵已通过：Standalone
+空库、`v1.0.0` 前滚和多租户空库均成功，多租户安装建立独立 PlatformOperator。
+浏览器业务矩阵未通过：首次调用缺少 `/admin/` public base；修正输入后的唯一失败组
+重跑又因两个并行 Vite 实例共享 `node_modules/.vite` 优化缓存而返回关键依赖 504，
+SPA 保持空白，业务断言未开始。必须先合入 harness fail-fast/部署隔离修复，再从新
+`dev` 重冻候选；安装/升级 Gate 不得重复，只运行一次新候选浏览器 Gate：
 
 | 项目 | 状态 | 固定证据 |
 | --- | --- | --- |
@@ -84,10 +85,10 @@ commit/tree，并在该新候选上重新运行安装/升级与浏览器 Gate �
 | PA-DCS-ADOPT-01 nomination | 已完成 | DCS PR #2 readiness harness；PR #3 merge `b29495df90db97763ad9abd322e718401af9c6c6` 注入唯一 source/tree、Generator、Composer/npm 和 canonical parameters，结果仅为 `CANDIDATE_INPUT_READY_NOT_ADOPTION_PASS` |
 | PA-DCS-ADOPT-01 decision | `CONDITIONAL`，Product-only 可消费 | DCS PR #4 merge `a2e10655f451a26bbd9b82b817bd7f31c88a2337` 完成 A–D 正式裁决；允许另行批准后创建首个 D1 Product-only Host，不批准 D1 业务代码、Pricing/Inventory/Trade/POS/设备/支付/生产或完整 SaaS |
 | MT02–MT04 / PM01 应用主链 | 部分完成，已进入收尾 | 应用 PR #39/#37/#53/#55/#56 完成默认 Tenant、Article、字典、装修页、会员；PR #38/#40/#42–#45/#62/#64/#66/#68/#69/#71/#72/#76 完成缓存、文件、任务、日志、通知、OAuth、导出、设置、财务、RBAC 和 Tabbar 等隔离；PR #41/#46/#47/#48/#54/#57–#61/#63/#70/#73–#75 完成 PlatformOperator、Tenant 生命周期/首 owner/TenantModule、Tenant session 与平台 Web/HTTP 主链 |
-| MT05 集中验收准备 | 修复在途，首次候选未通过 | 浏览器 harness PR #78 merge `a44d25ab583152f646d55fecd9d8ab4c74117020`；安装/升级 harness PR #77 merge `84e78aed5b5738755fbfd14d3af86cfd75f1e9c0`。首次执行暴露平台/owner 同 Account 与缺少可部署 TenantModule 安装入口两项 blocker；旧输出不得作为 Gate 通过证据 |
+| MT05 集中验收准备 | Runtime blocker 已修复；浏览器部署 harness 修复在途 | 浏览器 harness PR #78 merge `a44d25ab583152f646d55fecd9d8ab4c74117020`；安装/升级 harness PR #77 merge `84e78aed5b5738755fbfd14d3af86cfd75f1e9c0`；Module 安装 PR #89 merge `82b372822296238aa158450fa579f61bbb53bf3b`；PlatformOperator bootstrap PR #90 merge `0e662c1a797f837f46d9e9e9943a8dffb39fe03c`；harness 接线 PR #88 merge `5bd3e78d71e41d8a52c4f3e7dda47c71f67985a4` |
 | MT03 后台 diagnostics | 已完成 | 应用 PR #79 merge `72d14679356bced34dd291e0d4cb0588f78a72cd`；退款对账和定时演示日志携带可信 Tenant 与稳定 correlation，未改变业务状态机 |
 | MT05 候选前安全收口 | 已完成 | PR #81 实例工具边界、#82 Article collect/member 复合 FK、#83 同步 XLSX Tenant namespace、#85 会员上传可信上下文、#86 Admin/Role/Dept/Jobs Tenant-first CRUD 均在最新 head 快速 CI 通过后合入 |
-| MT05 首次固定代码候选 | 已发现 blocker，禁止 qualification | commit `fafb1ae095e78ff6b12be660fc50b2987a331144`；tree `9ded9f5ee80aa8d864a35175cecb965bf4f0cb49`；必须由两项 Runtime 修复和 harness 接线合入后的新 commit/tree 替代，禁止沿用旧 summary |
+| MT05 安装/升级固定候选 | 三模式 Gate 已通过；尚非完整 qualification | commit `5bd3e78d71e41d8a52c4f3e7dda47c71f67985a4`；tree `f7a465150f1ac6e31764543b2ae0489d4bddd165`；证据 `/private/tmp/pa-mt05-evidence/final-install-5bd3e78`；浏览器失败证据 `/private/tmp/pa-mt05-evidence/final-browser-5bd3e78*`。harness 修复合入后重冻新候选且只运行浏览器 Gate，不重复安装/升级 |
 
 中断后恢复步骤：
 
@@ -98,14 +99,13 @@ commit/tree，并在该新候选上重新运行安装/升级与浏览器 Gate �
 4. DCS 后续只消费 PR #4 的 `CONDITIONAL` 边界：先单独批准 D1 Product-only，
    再从固定参数创建新 Host 并冻结实际 Module/manifest/migration/API/permission
    写集；不得复制旧 Runtime，也不得把 adoption 当作 D1 业务实现 PASS。
-5. Peanut Admin 当前关键路径依次为：合入独立 PlatformOperator 初始凭据修复、合入
-   可部署 TenantModule 安装命令/配置、合入对应 harness 接线、从最新 `dev` 重冻一个
-   精确 commit/tree，再在该同一候选上重跑安装/升级与浏览器 Gate 各一次。旧候选
-   `fafb1ae…` 和旧 summary 不得沿用；不得重复 CAP01–CAP06、MT01、Tabbar 或已通过
-   业务聚焦 Gate。
-6. 两项 blocker 修复在途时，OP01 独立协议/仓库边界和不依赖候选身份的文档/fixture
-   可继续并行；MT05 最终 qualification、MT06 候选和依赖平台初始身份或已部署 Module
-   的验收被阻塞，解除条件是两项 Runtime 修复与 harness 接线合入并完成新候选重冻。
+5. Peanut Admin 当前关键路径依次为：合入浏览器 harness public-base fail-fast 与并行
+   Vite cache 隔离规则，从最新 `dev` 重冻精确 commit/tree，再只运行一次浏览器业务
+   Gate。候选 `5bd3e78…` 的安装/升级 Gate 已通过，禁止重复；不得重复 CAP01–CAP06、
+   MT01、Tabbar 或已通过业务聚焦 Gate。
+6. 浏览器 harness 修复在途时，OP01 独立协议/仓库边界和不依赖候选身份的文档/fixture
+   可继续并行；MT05 最终 qualification 与 MT06 被阻塞，解除条件是修复合入、新候选
+   重冻及浏览器 Gate 通过。
 7. 性能与 Recovery 作为阶段末后续项登记，不阻塞当前业务稳定候选；只有发现 Tenant
    隔离、安全、Schema/数据完整性或核心业务失败时才阻塞对应候选。
 
@@ -122,7 +122,7 @@ commit/tree，并在该新候选上重新运行安装/升级与浏览器 Gate �
 | MT03 | cache/lock、文件、任务、日志/diagnostics、OAuth、导入导出、同步 XLSX、会员上传和实例工具边界均已有 Tenant 隔离实现 | 代码开发闭合；集中候选尚未共同验证 | 在固定候选上执行两个 MT05 harness 各一次，不扩大到 Performance/Recovery |
 | PM01 | PlatformOperator 独立认证/RBAC/session、Tenant lifecycle、首 owner、TenantModule service/HTTP/Web 与平台 mutation Host 已合入 | 需要在 MT05 同一浏览器候选验证完整业务链 | 使用固定候选执行浏览器 harness 一次 |
 | MT04 | 可信 TenantContext、Tenant 选择/切换/撤销、Admin bridge、Web session、Standalone UI、平台/Tenant 导航和实例工具 guard 已合入 | 需要验证旧 token、上下文清理和双模式入口的真实浏览器闭环 | 使用固定候选执行浏览器 harness 一次 |
-| MT05 | 两个 harness 已合入并在首次候选执行中发现平台/owner 同 Account 与缺少可部署 TenantModule 安装入口两项 blocker | 两项修复在途；旧候选与旧 summary 禁止 qualification；Standalone 空库、v1.0.0 前滚、多租户空库和完整平台→Tenant 浏览器矩阵需在新候选共同重跑 | 依次合入两项 Runtime 修复和 harness 接线，从最新 `dev` 重冻精确候选，再对该候选运行两个 Gate 各一次 |
+| MT05 | Runtime blocker 已修复；候选 `5bd3e78…` 的 Standalone 空库、v1.0.0 前滚、多租户空库三模式 Gate 已通过 | 浏览器部署的 public base 与并行 Vite cache 隔离合同需修复；完整平台→Tenant 浏览器矩阵未通过 | 合入最小 harness 修复，从最新 `dev` 重冻候选，只运行一次浏览器 Gate；禁止重复安装/升级 |
 | MT06 | 未开始 | 稳定候选、版本一致性、发布 manifest、应用 lock、tag/Release 和最低发布验证均缺 | 只在 MT05 通过后固定一个候选并走单入口发布 |
 | OP01 | 未开始 | 独立仓库、协议、身份、签名任务、数据边界和项目立项均缺 | MT06 前可并行冻结独立运营平台协议与仓库边界，不写业务实例 Runtime |
 | OP02 | 未开始 | Release/实例/升级/健康/备份首个闭环均缺 | OP01 合入后在独立仓库实现一个签名升级任务纵向切片 |
