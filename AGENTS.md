@@ -52,8 +52,8 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 判断完成度和领取下一切片前，必须读取当前权威计划并核对远端 `dev`，不得继续沿用
 “完全未实现”或某个局部 PR 已代表阶段完成的旧判断。
 
-截至 MT05 固定代码候选 `fafb1ae095e78ff6b12be660fc50b2987a331144`
-（tree `9ded9f5ee80aa8d864a35175cecb965bf4f0cb49`）：
+截至 MT05 最终代码候选 `074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8`
+（tree `1a2df02e97414b5c236a842adf17804fb33e4699`）：
 
 - MT00、MT01 已完成，Core/Generator 与 DCS Product-only 条件采用身份已经固定；
 - MT02 已完成默认 Tenant、旧管理员/RBAC/组织映射，以及 Article、字典、装修、
@@ -64,8 +64,12 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 - PM01 已形成 PlatformOperator、Tenant 生命周期、首 owner、TenantModule 和平台端
   HTTP/Web 主链；MT04 已形成 Tenant 选择/切换/撤销、Admin Host bridge 和 Standalone UI；
 - 管理员、角色、部门和岗位 CRUD 已 Tenant-first，并由数据库复合 Tenant 外键保护；
-- MT05 浏览器及安装/升级集中验收 harness 已合入，候选已经固定但尚未运行；MT05
-  集中验收和 MT06 稳定发布均不得写成已完成。
+- MT05 浏览器候选 `2def481…` 的真实浏览器矩阵已通过，证据为
+  `/private/tmp/pa-mt05-evidence/final-browser-2def481/summary.json`；旧候选
+  `5bd3e78…` 的三模式安装/升级证据早于两条新增 migration，不能覆盖最终候选。
+  PR #99 修正合法部署枚举 `multi-tenant` 后，最终候选的 Standalone 空库、`v1.0.0`
+  前滚和多租户空库均以 50 条 migration/81 张表通过；MT02–MT05 已完成。MT06
+  `v1.1.0` 稳定发布尚未完成。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
 - 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
