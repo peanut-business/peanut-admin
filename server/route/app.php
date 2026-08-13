@@ -461,8 +461,6 @@ Route::get('api/article/detail',  [ApiArticleController::class, 'detail']);
 
 Route::get('api/search/hotLists', [ApiSearchController::class, 'hotLists']);
 
-Route::post('api/upload/image',   [ApiUploadController::class, 'image']);
-
 // 装修消费（匿名只读，保存后立即生效）
 Route::get('api/decoration/mobile', [ApiDecorationController::class, 'mobilePage']);
 Route::get('api/decoration/tabbar', [ApiDecorationController::class, 'tabbar']);
@@ -480,6 +478,9 @@ Route::get('api/pc/articleDetail',  [ApiPcController::class, 'articleDetail']);
 
 // ─── 需登录接口（挂 CheckTokenMiddleware） ──────────────────────────────────
 Route::group('api', function () {
+    // 用户上传必须由会员 token 注入可信 TenantContext 和会员 owner。
+    Route::post('upload/image', [ApiUploadController::class, 'image']);
+
     // 用户信息
     Route::get('user/center',         [ApiUserController::class, 'center']);
     Route::get('user/info',           [ApiUserController::class, 'info']);
