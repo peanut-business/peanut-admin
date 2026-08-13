@@ -78,6 +78,7 @@ while IFS= read -r path; do
   fi
 
   case "$path" in
+    *dict*|*Dict*) select_test server/tests/Multitenancy/DictTenantIsolationTest.php ;;
     *article*) select_test server/tests/Multitenancy/ArticleTenantIsolationTest.php ;;
     *notice*|*notification*) select_test server/tests/Multitenancy/NoticeTenantIsolationTest.php ;;
     *crontab*) select_test server/tests/Multitenancy/CrontabTenantIsolationTest.php ;;
