@@ -62,6 +62,7 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\platform\controller\PlatformSessionController;
 use app\platform\controller\PlatformTenantBoundaryController;
 use app\platform\controller\PlatformTenantController;
+use app\platform\controller\PlatformTenantModuleController;
 use app\platform\http\middleware\PlatformLoginMiddleware;
 use app\platform\http\middleware\PlatformPermissionMiddleware;
 use app\tenant\controller\TenantSessionController;
@@ -100,6 +101,12 @@ Route::post('api/platform/tenants/suspend', [PlatformTenantController::class, 's
 Route::post('api/platform/tenants/close', [PlatformTenantController::class, 'close'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
+Route::post('api/platform/tenants/modules/enable', [PlatformTenantModuleController::class, 'enable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.module.manage');
+Route::post('api/platform/tenants/modules/disable', [PlatformTenantModuleController::class, 'disable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.module.manage');
 
 // Multi-tenant Admin session boundary. Core owns selection challenges and atomic old-session revocation.
 Route::post('api/tenant/session/login', [TenantSessionController::class, 'login']);
