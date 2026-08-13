@@ -7,6 +7,7 @@ import NProgress from 'nprogress'; // progress bar
 
 import { useUserStore } from '@/store';
 import { isLogin } from '@/utils/auth';
+import { hasPlatformSession } from '@/core/platform-session';
 import { WHITE_LIST } from '../constants';
 
 function loginQuery(to: RouteLocationNormalized): LocationQueryRaw {
@@ -23,6 +24,11 @@ export default function setupUserLoginInfoGuard(router: Router) {
   router.beforeEach(async (to, from, next) => {
     NProgress.start();
     const userStore = useUserStore();
+    if (to.meta.controlPlane === 'platform') {
+      if (to.name === 'PlatformLogin' || hasPlatformSession()) next();
+      else next({ name: 'PlatformLogin' });
+      return;
+    }
     if (WHITE_LIST.some((route) => route.name === to.name)) {
       next();
       return;
