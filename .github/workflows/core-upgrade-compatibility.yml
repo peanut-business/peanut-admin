@@ -54,7 +54,7 @@ jobs:
             --lease "$lease" \
             --owner "github-actions-${GITHUB_RUN_ID}" \
             --thread "${GITHUB_REPOSITORY}/${GITHUB_RUN_ID}" \
-            --candidate "$GITHUB_SHA" \
+            --candidate "${{ github.event.pull_request.head.sha || github.sha }}" \
             --gate core-upgrade-compatibility \
             --ttl 3600 \
             --resource external-service=peanut-admin-packagist-registry \

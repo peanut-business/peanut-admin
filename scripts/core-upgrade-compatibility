@@ -186,7 +186,8 @@ check_expected_digest '.legacy_pre_alpha5.application_source_sha256' "$legacy_so
 check_expected_digest '.legacy_pre_alpha5.overlay_sha256' "$legacy_overlay_before"
 
 set_json_version() {
-  local manifest="$1" expression="$2" version="$3" temporary="${manifest}.tmp"
+  local manifest="$1" expression="$2" version="$3" temporary
+  temporary="${manifest}.tmp"
   jq "$expression = \$version" --arg version "$version" "$manifest" >"$temporary"
   mv "$temporary" "$manifest"
 }
