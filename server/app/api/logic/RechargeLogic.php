@@ -11,21 +11,20 @@ use app\common\model\finance\RechargeOrder;
 use app\common\model\oauth\OAuthIdentity;
 use app\common\service\ConfigService;
 use app\common\service\MemberBalanceService;
+use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
-use app\common\service\finance\VerifiedPaymentTenantResolver;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\PaymentEvent;
 use app\common\service\payment\dto\PrepayRequest;
 use think\facade\Db;
-use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 用户充值订单和幂等入账状态机。 */
 class RechargeLogic extends BaseLogic
 {
     private const MAX_AMOUNT_CENTS = 99999999;
 
-    public static function config(TenantContext $context, int $memberId, int $terminal): array|false
+    public static function config(object $context, int $memberId, int $terminal): array|false
     {
         try {
             self::assertTerminal($terminal);
@@ -60,7 +59,7 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    public static function create(TenantContext $context, int $memberId, array $params): array|false
+    public static function create(object $context, int $memberId, array $params): array|false
     {
         try {
             $terminal = (int)$params['terminal'];
@@ -114,7 +113,7 @@ class RechargeLogic extends BaseLogic
     }
 
     /** 锁定本人未支付订单并固化本次支付渠道和请求号。 */
-    public static function prepareAttempt(TenantContext $context, int $memberId, int $orderId, int $payWay): array|false
+    public static function prepareAttempt(object $context, int $memberId, int $orderId, int $payWay): array|false
     {
         Db::startTrans();
         try {
@@ -152,7 +151,7 @@ class RechargeLogic extends BaseLogic
 
     /** 创建真实渠道预支付参数；渠道调用通过 PaymentServiceFactory 边界完成。 */
     public static function prepay(
-        TenantContext $context,
+        object $context,
         int $memberId,
         int $orderId,
         int $payWay,
@@ -191,7 +190,7 @@ class RechargeLogic extends BaseLogic
                 $openid,
                 $clientIp
             );
-            $result = (new PaymentServiceFactory())->prepay($channel)->prepay($request);
+            $result = PaymentServiceFactory::forTenant($context, $channel)->prepay($channel)->prepay($request);
             return [
                 'order' => self::formatOrder($order),
                 'payment' => $result->toArray(),
@@ -202,7 +201,7 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    public static function detail(TenantContext $context, int $memberId, int $orderId): array|false
+    public static function detail(object $context, int $memberId, int $orderId): array|false
     {
         try {
             $order = FinanceTenantRepository::orders($context)->where(['id' => $orderId, 'user_id' => $memberId])->findOrEmpty();
@@ -216,7 +215,7 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    public static function lists(TenantContext $context, int $memberId, array $params): array
+    public static function lists(object $context, int $memberId, array $params): array
     {
         $pageNo = max(1, (int)($params['page_no'] ?? 1));
         $pageSize = max(1, min(100, (int)($params['page_size'] ?? 15)));
@@ -235,7 +234,7 @@ class RechargeLogic extends BaseLogic
      * 可信渠道回调的唯一入账入口。
      * @param PaymentEvent|array{order_sn:string,pay_way:int,transaction_id:string,amount_cents?:int,amount?:string|float|int,currency:string,status?:string} $payment
      */
-    public static function settle(PaymentEvent|array $payment): bool
+    public static function settle(object $context, PaymentEvent|array $payment): bool
     {
         Db::startTrans();
         try {
@@ -263,7 +262,9 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('支付状态尚未成功');
             }
 
-            $context = VerifiedPaymentTenantResolver::resolve($orderSn);
+            if (FinanceTenantContext::tenantId($context) < 1) {
+                throw new \RuntimeException('支付回调租户无效');
+            }
 
             /** @var RechargeOrder $order */
             $order = FinanceTenantRepository::orders($context)->where('sn', $orderSn)->lock(true)->findOrEmpty();

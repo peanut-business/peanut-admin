@@ -451,8 +451,8 @@ Route::get('api/oauth/wechat/redirect/pc', [ApiOAuthController::class, 'redirect
 Route::get('api/oauth/wechat/redirect/official-account', [ApiOAuthController::class, 'redirectOfficialAccount']);
 
 // 支付渠道回调：匿名入口，但业务处理前必须完成渠道验签。
-Route::post('api/payment/notify/wechat', [ApiPaymentNotifyController::class, 'wechat']);
-Route::post('api/payment/notify/alipay', [ApiPaymentNotifyController::class, 'alipay']);
+Route::post('api/payment/notify/wechat/:binding', [ApiPaymentNotifyController::class, 'wechat']);
+Route::post('api/payment/notify/alipay/:binding', [ApiPaymentNotifyController::class, 'alipay']);
 
 Route::get('api/article/cate',    [ApiArticleController::class, 'cate'])
     ->middleware(PublicArticleTenantMiddleware::class, 'article.cate');
@@ -472,8 +472,8 @@ Route::get('api/decoration/pc', [ApiDecorationController::class, 'pcPage'])
     ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.pc-page');
 
 // 微信公众号服务器回调（微信平台调用，必须免登录）
-Route::get('api/wechat/official-account/callback', [ApiOfficialAccountController::class, 'verify']);
-Route::post('api/wechat/official-account/callback', [ApiOfficialAccountController::class, 'callback']);
+Route::get('api/wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'verify']);
+Route::post('api/wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'callback']);
 
 // PC 端聚合（公开）
 Route::get('api/pc/config',         [ApiPcController::class, 'config'])

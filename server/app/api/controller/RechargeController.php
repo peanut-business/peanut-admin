@@ -6,6 +6,7 @@ namespace app\api\controller;
 use app\api\logic\RechargeLogic;
 use app\api\validate\RechargeValidate;
 use app\common\service\finance\FinanceTenantContext;
+use app\common\service\external\ExternalTenantResolver;
 class RechargeController extends BaseApiController
 {
     public function config()
@@ -30,10 +31,19 @@ class RechargeController extends BaseApiController
         $this->validate($params, RechargeValidate::class . '.prepay');
         $payWay = (int)$params['pay_way'];
         $channel = $payWay === 2 ? 'wechat' : 'alipay';
+        $context = FinanceTenantContext::member($this->request);
+        $provider = $channel === 'wechat'
+            ? ExternalTenantResolver::WECHAT_PAYMENT
+            : ExternalTenantResolver::ALIPAY_PAYMENT;
+        try {
+            $callbackKey = ExternalTenantResolver::production()->bindingForTenant($context, $provider)->callbackKey;
+        } catch (\Throwable) {
+            return $this->fail('支付渠道未启用或配置不完整');
+        }
         $notifyUrl = rtrim((string)$this->request->domain(), '/')
-            . '/api/payment/notify/' . $channel;
+            . '/api/payment/notify/' . $channel . '/' . $callbackKey;
         $result = RechargeLogic::prepay(
-            FinanceTenantContext::member($this->request),
+            $context,
             $this->memberId,
             (int)$params['order_id'],
             $payWay,

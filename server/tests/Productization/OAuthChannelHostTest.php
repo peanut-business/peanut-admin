@@ -53,6 +53,7 @@ foreach ([
     '->lock(true)',
     '?OAuthTransportInterface $transport = null',
     'new WechatOAuthTransport()',
+    'ExternalTenantBinding $binding',
 ] as $marker) {
     expectOAuthChannelHost(str_contains($oauthLogic, $marker), 'OAuth invariant missing: ' . $marker);
 }

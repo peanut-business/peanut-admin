@@ -4,29 +4,38 @@ declare(strict_types=1);
 namespace app\adminapi\logic\setting;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
 use app\common\service\FileService;
+use app\common\service\external\ExternalChannelBindingService;
+use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\facade\Db;
 
 class OfficialAccountLogic extends BaseLogic
 {
     private const CONFIG_TYPE = 'oa_setting';
 
-    public static function getConfig(): array
+    public static function getConfig(TenantContext $context): array
     {
-        $qrCode = (string)ConfigService::get(self::CONFIG_TYPE, 'qr_code', '');
-        $secret = (string)ConfigService::get(self::CONFIG_TYPE, 'app_secret', '');
+        $stored = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK);
+        $qrCode = (string)($stored['qr_code'] ?? '');
+        $secret = (string)($stored['app_secret'] ?? '');
         $domain = rtrim((string)request()->domain(), '/');
         $authority = self::authority($domain);
 
         return [
-            'name' => (string)ConfigService::get(self::CONFIG_TYPE, 'name', ''),
-            'original_id' => (string)ConfigService::get(self::CONFIG_TYPE, 'original_id', ''),
+            'name' => (string)($stored['name'] ?? ''),
+            'original_id' => (string)($stored['original_id'] ?? ''),
             'qr_code' => FileService::getFileUrl($qrCode),
-            'app_id' => (string)ConfigService::get(self::CONFIG_TYPE, 'app_id', ''),
+            'app_id' => (string)($stored['app_id'] ?? ''),
             'app_secret' => $secret !== '' ? '******' : '',
             'app_secret_configured' => $secret !== '',
-            'url' => $domain . '/api/wechat/official-account/callback',
-            'token' => (string)ConfigService::get(self::CONFIG_TYPE, 'token', ''),
+            'url' => $domain . '/api/wechat/official-account/callback/'
+                . ExternalTenantResolver::production()->bindingForTenant(
+                    $context,
+                    ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
+                    false,
+                )->callbackKey,
+            'token' => (string)($stored['token'] ?? ''),
             'business_domain' => $authority,
             'js_secure_domain' => $authority,
             'web_auth_domain' => $authority,
@@ -34,23 +43,38 @@ class OfficialAccountLogic extends BaseLogic
         ];
     }
 
-    public static function setConfig(array $params): bool
+    public static function setConfig(TenantContext $context, array $params): bool
     {
-        $currentSecret = (string)ConfigService::get(self::CONFIG_TYPE, 'app_secret', '');
+        $current = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK);
+        $currentSecret = (string)($current['app_secret'] ?? '');
         $incomingSecret = trim((string)$params['app_secret']);
         $secret = $incomingSecret === '******' ? $currentSecret : $incomingSecret;
         if ($secret === '') {
             self::setError('AppSecret 不能为空');
             return false;
         }
-        ConfigService::setManyAtomic(self::CONFIG_TYPE, [
+        $data = [
             'name' => trim((string)($params['name'] ?? '')),
             'original_id' => trim((string)($params['original_id'] ?? '')),
             'qr_code' => self::relativeFile((string)($params['qr_code'] ?? '')),
             'app_id' => trim((string)$params['app_id']),
             'app_secret' => $secret,
             'token' => trim((string)($params['token'] ?? '')),
-        ]);
+        ];
+        Db::transaction(function () use ($context, $data): void {
+            ExternalChannelBindingService::update(
+                $context,
+                ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
+                $data,
+                $data['original_id'] !== '' ? $data['original_id'] : $data['app_id'],
+            );
+            ExternalChannelBindingService::update(
+                $context,
+                ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH,
+                ['app_id' => $data['app_id'], 'app_secret' => $data['app_secret']],
+                $data['app_id'],
+            );
+        });
         return true;
     }
 
