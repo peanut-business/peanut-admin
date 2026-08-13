@@ -234,25 +234,76 @@ function migrationStripOuterParentheses(string $expression): string
     return $expression;
 }
 
+/** @return list<string> */
+function migrationSplitTableDefinitions(string $body): array
+{
+    $definitions = [];
+    $start = 0;
+    $depth = 0;
+    $quote = false;
+    $length = strlen($body);
+    for ($index = 0; $index < $length; $index++) {
+        $character = $body[$index];
+        if ($character === "'" && ($index === 0 || $body[$index - 1] !== '\\')) {
+            $quote = !$quote;
+            continue;
+        }
+        if ($quote) {
+            continue;
+        }
+        if ($character === '(') {
+            $depth++;
+        } elseif ($character === ')') {
+            $depth--;
+        } elseif ($character === ',' && $depth === 0) {
+            $definitions[] = trim(substr($body, $start, $index - $start));
+            $start = $index + 1;
+        }
+    }
+    $definitions[] = trim(substr($body, $start));
+    return $definitions;
+}
+
+function migrationNormalizeDefinition(string $definition): string
+{
+    $definition = strtolower(str_replace('_utf8mb4', '', trim($definition)));
+    $definition = preg_replace("/default\\s+'([0-9]+)'/", 'default $1', $definition) ?? $definition;
+    $definition = preg_replace('/\\s+default\\s+null/', ' null', $definition) ?? $definition;
+    $check = stripos($definition, 'check');
+    if ($check !== false) {
+        $open = strpos($definition, '(', $check);
+        if ($open !== false && str_ends_with(trim($definition), ')')) {
+            $prefix = substr($definition, 0, $open + 1);
+            $expression = migrationStripOuterParentheses(substr(trim($definition), $open + 1, -1));
+            $definition = $prefix . $expression . ')';
+        }
+    }
+    return preg_replace('/\\s+/', '', str_replace('`', '', $definition)) ?? $definition;
+}
+
 function migrationNormalizeCreateSql(string $sql): string
 {
-    $sql = strtolower(str_replace(['`', '_utf8mb4'], '', trim($sql, " \t\r\n;")));
-    $sql = str_replace('default character set', 'default charset', $sql);
-    $sql = preg_replace("/default\\s+'([0-9]+)'/", 'default $1', $sql) ?? $sql;
-    $sql = preg_replace('/\\s+default\\s+null/', ' null', $sql) ?? $sql;
-    $sql = preg_replace_callback('/check\\s*\\((.*)\\)(?=\\s*[,)]|\\s*engine)/is', static function (array $match): string {
-        $expression = migrationStripOuterParentheses((string)$match[1]);
-        do {
-            $previous = $expression;
-            $expression = preg_replace(
-                "/\\(\\s*([a-z0-9_]+)\\s*(=|<>|is\\s+not\\s+null)\\s*('[^']*'|[a-z0-9_]+)?\\s*\\)/i",
-                '$1 $2 $3',
-                $expression
-            ) ?? $expression;
-        } while ($expression !== $previous);
-        return 'check(' . migrationStripOuterParentheses($expression) . ')';
-    }, $sql) ?? $sql;
-    return preg_replace('/\\s+/', '', $sql) ?? $sql;
+    $sql = trim($sql, " \t\r\n;");
+    $open = strpos($sql, '(');
+    $engine = strripos($sql, ') ENGINE=');
+    if ($open === false || $engine === false || $engine <= $open) {
+        throw new RuntimeException('无法归一化 CREATE TABLE 语句');
+    }
+    $head = migrationNormalizeDefinition(substr($sql, 0, $open));
+    $columns = [];
+    $constraints = [];
+    foreach (migrationSplitTableDefinitions(substr($sql, $open + 1, $engine - $open - 1)) as $definition) {
+        if (str_starts_with(ltrim($definition), '`')) {
+            $columns[] = migrationNormalizeDefinition($definition);
+        } else {
+            $constraints[] = migrationNormalizeDefinition($definition);
+        }
+    }
+    sort($constraints, SORT_STRING);
+    $suffix = strtolower(substr($sql, $engine + 1));
+    $suffix = str_replace('default character set', 'default charset', $suffix);
+    $suffix = migrationNormalizeDefinition($suffix);
+    return $head . '(' . implode(',', [...$columns, ...$constraints]) . ')' . $suffix;
 }
 
 function migrationAssertExactTable(PDO $pdo, string $table, string $expectedSql, bool $mustBeEmpty): void
