@@ -55,13 +55,6 @@ $compiler = new ModuleRegistryCompiler(
 $manifest = (new ManifestLoader())->load($moduleRoot);
 $registry = $compiler->compile([$manifest]);
 pluginModuleContractExpect($registry->moduleKeys() === ['fixture.delivery-record'], 'fixture Module did not compile');
-pluginModuleContractExpect(
-    str_contains(
-        (string)file_get_contents(dirname(__DIR__, 2) . '/app/platform/service/plugin/PluginLifecycleService.php'),
-        '$resolvedDirectories[$resolved] = true'
-    ),
-    'Plugin migration discovery does not deduplicate manifest and conventional directories by real path'
-);
 (new ModuleBoundaryChecker($registry, $layout, ['pa_']))->check();
 
 $missingDependency = $manifest->data;

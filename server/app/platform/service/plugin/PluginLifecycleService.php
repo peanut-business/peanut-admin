@@ -507,12 +507,16 @@ SQL);
         $resolvedDirectories = [];
         foreach ($directories as $directory) {
             $resolved = realpath($directory);
-            if ($resolved === false || isset($resolvedDirectories[$resolved])) {
+            if ($resolved === false) {
                 continue;
             }
-            $resolvedDirectories[$resolved] = true;
+            $identity = self::migrationDirectoryIdentity($resolved);
+            if (isset($resolvedDirectories[$identity])) {
+                continue;
+            }
+            $resolvedDirectories[$identity] = $resolved;
         }
-        foreach (array_keys($resolvedDirectories) as $directory) {
+        foreach (array_values($resolvedDirectories) as $directory) {
             if (!is_dir($directory)) {
                 continue;
             }
@@ -526,6 +530,18 @@ SQL);
         }
         ksort($files, SORT_STRING);
         return $files;
+    }
+
+    private static function migrationDirectoryIdentity(string $directory): string
+    {
+        $stat = stat($directory);
+        if (!is_array($stat) || !isset($stat['dev'], $stat['ino'])) {
+            throw new PluginLifecycleException(
+                'MODULE_MIGRATION_INVALID',
+                "Migration directory identity is unavailable: {$directory}"
+            );
+        }
+        return (string)$stat['dev'] . ':' . (string)$stat['ino'];
     }
 
     /** @return array<string,mixed>|false */
