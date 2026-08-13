@@ -5,11 +5,72 @@ namespace app\platform\controller;
 
 use app\common\service\JsonService;
 use app\platform\service\PlatformRuntimeFactory;
+use app\platform\validate\PlatformTenantLifecycleValidate;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
+use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 final class PlatformTenantController extends BasePlatformController
 {
+    public function provision()
+    {
+        if ($this->platformContext === null) {
+            return JsonService::fail('Platform authentication is required.', null, 40100);
+        }
+
+        $params = $this->request->post();
+        $this->validate($params, PlatformTenantLifecycleValidate::class . '.provision');
+        try {
+            return $this->data(PlatformRuntimeFactory::tenantGovernance()->provision(
+                PlatformRequest::bearerToken($this->request),
+                trim((string)$params['tenant_code']),
+                trim((string)$params['tenant_name']),
+                trim((string)$params['owner_email']),
+                isset($params['initial_password']) && (string)$params['initial_password'] !== ''
+                    ? (string)$params['initial_password']
+                    : null,
+                trim((string)$params['owner_display_name']),
+                $this->platformContext->core->requestId
+            ));
+        } catch (AdminAccessException $exception) {
+            return $this->accessFailure($exception);
+        } catch (\DomainException|\InvalidArgumentException) {
+            return JsonService::fail(
+                'Tenant provisioning was rejected.',
+                ['error_code' => 'TENANT_PROVISION_REJECTED'],
+                40900
+            );
+        }
+    }
+
+    public function activate()
+    {
+        if ($this->platformContext === null) {
+            return JsonService::fail('Platform authentication is required.', null, 40100);
+        }
+
+        $params = $this->request->post();
+        $this->validate($params, PlatformTenantLifecycleValidate::class . '.activate');
+        try {
+            return $this->data(PlatformRuntimeFactory::tenantGovernance()->transition(
+                PlatformRequest::bearerToken($this->request),
+                (int)$params['tenant_id'],
+                (int)$params['expected_revision'],
+                TenantStatus::Active,
+                trim((string)$params['change_reason']),
+                $this->platformContext->core->requestId
+            ));
+        } catch (AdminAccessException $exception) {
+            return $this->accessFailure($exception);
+        } catch (\DomainException|\InvalidArgumentException) {
+            return JsonService::fail(
+                'Tenant activation was rejected.',
+                ['error_code' => 'TENANT_ACTIVATION_REJECTED'],
+                40900
+            );
+        }
+    }
+
     public function lists()
     {
         if ($this->platformContext === null) {
