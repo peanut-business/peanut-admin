@@ -104,6 +104,10 @@
                 <el-icon><Setting /></el-icon>
                 <span>{{ $t('navbar.userSettings') }}</span>
               </el-dropdown-item>
+              <el-dropdown-item v-if="tenantSession" command="tenant-switch">
+                <el-icon><Switch /></el-icon>
+                <span>{{ $t('navbar.tenantSwitch') }}</span>
+              </el-dropdown-item>
               <el-dropdown-item command="logout">
                 <el-icon><SwitchButton /></el-icon>
                 <span>{{ $t('navbar.logout') }}</span>
@@ -113,11 +117,36 @@
         </el-dropdown>
       </li>
     </ul>
+    <el-dialog
+      v-model="tenantSwitchVisible"
+      :title="$t('navbar.tenantSwitch')"
+      width="420px"
+      destroy-on-close
+    >
+      <el-select
+        v-model="selectedTenantId"
+        :placeholder="$t('navbar.tenantSelect')"
+        style="width: 100%"
+      >
+        <el-option
+          v-for="tenant in tenantChoices"
+          :key="tenant.tenant_id"
+          :label="tenant.tenant_name"
+          :value="tenant.tenant_id"
+        />
+      </el-select>
+      <template #footer>
+        <el-button @click="tenantSwitchVisible = false">{{ $t('navbar.cancel') }}</el-button>
+        <el-button type="primary" :loading="tenantSwitching" @click="confirmTenantSwitch">
+          {{ $t('navbar.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { computed, inject } from 'vue';
+  import { computed, inject, ref } from 'vue';
   import { useDark, useToggle, useFullscreen } from '@vueuse/core';
   import { useRouter } from 'vue-router';
   import {
@@ -130,6 +159,7 @@
     Search,
     Setting,
     Sunny,
+    Switch,
     SwitchButton,
   } from '@element-plus/icons-vue';
   import { useAppStore, useBrandStore, useUserStore } from '@/store';
@@ -137,6 +167,9 @@
   import useLocale from '@/hooks/locale';
   import useUser from '@/hooks/user';
   import MenuComponent from '@/components/menu/index.vue';
+  import { selectTenant, tenantSwitch } from '@/api/tenant-session';
+  import type { TenantChoice } from '@/core/tenant-session';
+  import { getToken, setToken } from '@/utils/auth';
 
   const appStore = useAppStore();
   const brandStore = useBrandStore();
@@ -153,6 +186,12 @@
     return appStore.theme;
   });
   const topMenu = computed(() => appStore.topMenu && appStore.menu);
+  const tenantSession = computed(() => getToken()?.startsWith('pa_tat_') === true);
+  const tenantSwitchVisible = ref(false);
+  const tenantSwitching = ref(false);
+  const tenantChoices = ref<TenantChoice[]>([]);
+  const tenantChallenge = ref('');
+  const selectedTenantId = ref<number>();
   const isDark = useDark({
     selector: 'html',
     attribute: 'class',
@@ -174,9 +213,40 @@
   const handleLocaleChange = (value: string) => {
     changeLocale(value);
   };
+  const beginTenantSwitch = async () => {
+    const token = getToken();
+    if (!token) return;
+    const selection = await tenantSwitch(token);
+    tenantChallenge.value = selection.challenge_token;
+    tenantChoices.value = selection.tenants;
+    selectedTenantId.value = selection.tenants[0]?.tenant_id;
+    tenantSwitchVisible.value = true;
+  };
+  const confirmTenantSwitch = async () => {
+    if (!tenantChallenge.value || !selectedTenantId.value) return;
+    tenantSwitching.value = true;
+    try {
+      const authenticated = await selectTenant(
+        tenantChallenge.value,
+        selectedTenantId.value
+      );
+      setToken(authenticated.access_token);
+      tenantSwitchVisible.value = false;
+      userStore.resetInfo();
+      appStore.clearServerMenu();
+      await userStore.info();
+      window.location.reload();
+    } finally {
+      tenantSwitching.value = false;
+    }
+  };
   const handleUserCommand = (command: string) => {
     if (command === 'settings') {
       router.push({ name: 'Setting' });
+      return;
+    }
+    if (command === 'tenant-switch') {
+      void beginTenantSwitch();
       return;
     }
     if (command === 'logout') {
