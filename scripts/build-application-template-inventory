@@ -41,6 +41,10 @@ function excluded(string $path): bool
             'server/app/common/service/scaffold/ApplicationCreator.php',
             'server/tests/Productization/CreateApplicationTest.php',
         ], true)
+        || str_starts_with($path, 'plugins/fixture.delivery-record/')
+        || str_starts_with($path, 'server/app/Modules/Fixture/DeliveryRecord/')
+        || str_starts_with($path, 'web/src/modules/fixture-delivery-record/')
+        || $path === 'web/tests/Productization/plugin-contribution.test.ts'
         || str_starts_with($path, 'scaffold/')
         || str_starts_with($path, 'server/tests/fixtures/scaffold-upgrade/');
 }
