@@ -12,8 +12,8 @@ function expectPermissionMigration(bool $condition, string $message): void
 
 $host = getenv('DB_HOST') ?: (getenv('MYSQL_HOST') ?: '127.0.0.1');
 $port = (int)(getenv('DB_PORT') ?: (getenv('MYSQL_PORT') ?: 3306));
-$user = getenv('DB_USER') ?: 'root';
-$password = getenv('DB_PASS') ?: (getenv('MYSQL_ROOT_PASSWORD') ?: '');
+$user = 'root';
+$password = getenv('MYSQL_ROOT_PASSWORD') ?: '';
 $database = 'peanut_admin_permission_' . strtolower(bin2hex(random_bytes(6)));
 $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
