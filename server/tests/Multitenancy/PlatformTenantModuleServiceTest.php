@@ -44,7 +44,7 @@ use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
-require __DIR__ . '/../Fixtures/PlatformTenantModule/Content/ModuleProvider.php';
+require __DIR__ . '/../fixtures/PlatformTenantModule/Content/ModuleProvider.php';
 
 function pm01ModuleExpect(bool $condition, string $message): void
 {
@@ -201,7 +201,7 @@ try {
     );
     $credential = $authentication->tokens->access->expose();
 
-    $moduleRoot = realpath(__DIR__ . '/../Fixtures/PlatformTenantModule/Content');
+    $moduleRoot = realpath(__DIR__ . '/../fixtures/PlatformTenantModule/Content');
     $kernelRoot = dirname((new ReflectionClass(ModuleProvider::class))->getFileName(), 3);
     $registry = DeployedTenantModuleRegistry::compile(
         $pdo,
