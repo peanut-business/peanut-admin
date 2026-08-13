@@ -121,7 +121,11 @@
                           :value="String(article.id)"
                         />
                       </el-select>
-                      <el-input v-else v-model="item.link.target" placeholder="目标" />
+                      <el-input
+                        v-else
+                        v-model="item.link.target"
+                        placeholder="目标"
+                      />
                       <template
                         v-if="
                           item.link.target_type === 'mini_program' &&
