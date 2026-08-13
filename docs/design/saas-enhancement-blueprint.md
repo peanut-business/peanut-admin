@@ -244,9 +244,9 @@ PlatformOperator 只拥有明确的 `platform.*` 权限。它不能读取商品�
 
 ## 9. 当前实现事实
 
-截至 2026-08-13，MT05 固定代码候选
-`fafb1ae095e78ff6b12be660fc50b2987a331144`（tree
-`9ded9f5ee80aa8d864a35175cecb965bf4f0cb49`）：
+截至 2026-08-13，MT05 最终代码候选
+`074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8`（tree
+`1a2df02e97414b5c236a842adf17804fb33e4699`）：
 
 - Peanut Admin v1.0.0 产品化基线保持稳定；应用仓已接入默认 Tenant、可信
   TenantContext、Tenant 选择/切换/撤销、PlatformOperator、Tenant 生命周期、首 owner
@@ -254,14 +254,14 @@ PlatformOperator 只拥有明确的 `platform.*` 权限。它不能读取商品�
 - 默认 Tenant/RBAC/组织映射和 Article、字典、装修、会员、文件、通知、OAuth、任务、
   日志等多批应用 Runtime 已按 Tenant-first 或显式实例 owner 边界落地；Admin/Role/
   Dept/Jobs CRUD、同步 XLSX、会员上传和实例工具也已收紧到可信 Tenant 或部署模式边界。
-  这些独立切片不能替代 MT05 的同一固定候选集中验收。
+  这些独立切片已经由 MT05 固定候选集中验收，不再以单个 PR 数量代替阶段证据。
 - Core/Generator 公司级 MT01 基线和 Composer/npm Alpha.5 已固定，DCS 已获得
   Product-only `CONDITIONAL` 采用结论；Generator 仍只创建新项目，不覆盖更新已有项目。
-- PM01 与 MT04 的后端和管理端主链已形成；MT05 浏览器及安装/升级 harness 已合入。
-  首次固定候选执行已发现两个 blocker：多租户空库把 PlatformOperator 与默认 Tenant
-  owner 投影到同一 Account，且浏览器 Gate 缺少可部署 TenantModule 的安装命令/配置。
-  前者违反“PlatformOperator 不隐式成为 TenantMember”的身份边界；两项修复均在途，
-  必须合入后重冻候选并重跑两个 Gate，当前不得称为稳定多租户 Release。
+- PM01 与 MT04 的后端和管理端主链已形成，父候选 `2def481…` 真实浏览器矩阵已通过双 Tenant、
+  首 owner、TenantModule、Tenant 切换、RBAC、Article、旧 token 与暂停拒绝，以及
+  Standalone 隐藏平台入口。PR #99 修正 harness 部署枚举后，最终候选的 Standalone
+  空库、`v1.0.0` 前滚和多租户空库均以 50 条 migration/81 张表通过，PlatformOperator
+  与默认 owner Account 分离。MT02–MT05 已完成；当前只剩 MT06 `v1.1.0` 稳定发布。
 - 公众号回复等需要外部回调可信 Tenant 路由的领域尚未形成完整闭包；不得仅添加
   `tenant_id` 伪装完成隔离，也不以该非代表域阻塞当前 MT05 代表业务闭环。
 - 独立运营平台尚未立项和实现，本蓝图只冻结边界与管理协议方向；它不属于当前
