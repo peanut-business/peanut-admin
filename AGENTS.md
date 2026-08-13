@@ -52,16 +52,19 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 判断完成度和领取下一切片前，必须读取当前权威计划并核对远端 `dev`，不得继续沿用
 “完全未实现”或某个局部 PR 已代表阶段完成的旧判断。
 
-截至应用 `dev@84e78aed5b5738755fbfd14d3af86cfd75f1e9c0`：
+截至 MT05 固定代码候选 `fafb1ae095e78ff6b12be660fc50b2987a331144`
+（tree `9ded9f5ee80aa8d864a35175cecb965bf4f0cb49`）：
 
 - MT00、MT01 已完成，Core/Generator 与 DCS Product-only 条件采用身份已经固定；
 - MT02 已完成默认 Tenant、旧管理员/RBAC/组织映射，以及 Article、字典、装修、
   会员/标签/余额等首批 Tenant-first SQL 域；
 - MT03 已完成缓存/锁端口、文件、Crontab、操作日志与后台 diagnostics、通知、OAuth、
-  导入导出、热搜、客服、交易设置、充值退款和 Tabbar 等独立隔离切片；
+  导入导出、热搜、客服、交易设置、充值退款、Tabbar、同步 XLSX、会员上传和实例工具
+  边界等独立隔离切片；
 - PM01 已形成 PlatformOperator、Tenant 生命周期、首 owner、TenantModule 和平台端
   HTTP/Web 主链；MT04 已形成 Tenant 选择/切换/撤销、Admin Host bridge 和 Standalone UI；
-- MT05 浏览器及安装/升级集中验收 harness 已合入但尚未针对固定候选运行；MT05
+- 管理员、角色、部门和岗位 CRUD 已 Tenant-first，并由数据库复合 Tenant 外键保护；
+- MT05 浏览器及安装/升级集中验收 harness 已合入，候选已经固定但尚未运行；MT05
   集中验收和 MT06 稳定发布均不得写成已完成。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
