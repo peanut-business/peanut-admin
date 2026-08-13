@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "release": {"version": "1.1.0"},
+  "files": [
+    {"path": "managed.txt", "source": "files/managed.txt", "content_sha256": "7a82501046d5c5eedacec76fafa3828af5353ff5a6a866b8c124cc28f6a97ec8", "policy": "managed", "owner": "host"},
+    {"path": "preserve.txt", "source": "files/preserve.txt", "content_sha256": "9b3db753edf50b4506ebe16bc0f28d04dfc05bdaadff85785e0808d9e04736a0", "policy": "preserve", "owner": "backend"},
+    {"path": "merge.txt", "source": "files/merge.txt", "content_sha256": "72a9e1dcb383d091d690ac5d4229694b784645c4ccf89ca6c585b9cea7fb69a6", "policy": "merge", "owner": "frontend"},
+    {"path": "conflict.txt", "source": "files/conflict.txt", "content_sha256": "fc2624eea6ac446f7adb7dc7b588fc0547c49753f0f73766020f8eddeb040ad2", "policy": "managed", "owner": "host"},
+    {"path": "deprecated.txt", "policy": "deprecated", "owner": "backend", "migration_hint": "Move custom behavior to extensions/backend before removal."},
+    {"path": "renamed-new.txt", "source": "files/renamed-new.txt", "content_sha256": "baf6c3969fa50b92b93479c3bc3e8c6c6822b74b1b1071ee4564b31e951055f4", "policy": "managed", "owner": "host"}
+  ],
+  "renames": [
+    {"from": "renamed-old.txt", "to": "renamed-new.txt", "owner": "host"}
+  ]
+}
