@@ -42,6 +42,7 @@
     "web/src/views/platform/tenants.vue": [
       "Provision Tenant",
       "Activate",
+      "ElMessageBox.prompt",
       "Suspend",
       "Enable",
       "Module key",
