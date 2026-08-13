@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "key": "fixture.delivery-record",
+  "name": "Fixture Delivery Record",
+  "description": "Tenant-owned delivery record fixture for plugin and Module lifecycle qualification",
+  "version": "1.0.0",
+  "kernel_constraint": "^1.0",
+  "license": "proprietary",
+  "php_package": "peanut-business/fixture-delivery-record",
+  "web_package": "@peanut-admin/fixture-delivery-record",
+  "dependencies": [],
+  "backend": {
+    "provider": "app\\Modules\\Fixture\\DeliveryRecord\\ModuleProvider",
+    "migrations": "Database/Migrations",
+    "menus": "Resources/menus.json",
+    "permissions": "Resources/permissions.json",
+    "setting_definitions": "Resources/setting-definitions.json"
+  },
+  "frontend": {
+    "entry": "web/src/modules/fixture-delivery-record/contribution.ts"
+  },
+  "database": {
+    "owned_tables": ["pa_fixture_delivery_record"]
+  },
+  "contracts": {
+    "exports": ["app\\Modules\\Fixture\\DeliveryRecord\\Contracts\\DeliveryRecordCommands"],
+    "events": []
+  },
+  "tenant": {
+    "enableable": true,
+    "disable_behavior": "reject_new_operations",
+    "requires": []
+  }
+}

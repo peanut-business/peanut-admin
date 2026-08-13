@@ -20,9 +20,16 @@ class AdminPermissionService
 {
     public static function accessData(mixed $tenantContext, Admin|array $admin): array
     {
+        $moduleAccess = (new CoreTenantModuleAdminBridge())->accessData($tenantContext);
         return [
-            'menu'        => self::menusForAdmin($tenantContext, $admin),
-            'permissions' => self::buttonPermissionsForAdmin($tenantContext, $admin),
+            'menu'        => [
+                ...self::legacyMenusForAdmin($tenantContext, $admin),
+                ...$moduleAccess['menu'],
+            ],
+            'permissions' => array_values(array_unique([
+                ...self::legacyButtonPermissionsForAdmin($tenantContext, $admin),
+                ...$moduleAccess['permissions'],
+            ])),
         ];
     }
 
@@ -43,6 +50,14 @@ class AdminPermissionService
      * M/C 菜单取管理员全部角色授权联集；超级管理员取全部启用菜单。
      */
     public static function menusForAdmin(mixed $tenantContext, Admin|array $admin): array
+    {
+        return [
+            ...self::legacyMenusForAdmin($tenantContext, $admin),
+            ...(new CoreTenantModuleAdminBridge())->accessData($tenantContext)['menu'],
+        ];
+    }
+
+    private static function legacyMenusForAdmin(mixed $tenantContext, Admin|array $admin): array
     {
         $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
         if ($tenantId === null) {
@@ -70,6 +85,14 @@ class AdminPermissionService
      * 前端按钮权限只返回已授权、已启用的 A 类型权限字符。
      */
     public static function buttonPermissionsForAdmin(mixed $tenantContext, Admin|array $admin): array
+    {
+        return array_values(array_unique([
+            ...self::legacyButtonPermissionsForAdmin($tenantContext, $admin),
+            ...(new CoreTenantModuleAdminBridge())->accessData($tenantContext)['permissions'],
+        ]));
+    }
+
+    private static function legacyButtonPermissionsForAdmin(mixed $tenantContext, Admin|array $admin): array
     {
         $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
         if ($tenantId === null) {

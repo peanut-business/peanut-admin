@@ -1,0 +1,16 @@
+[
+  {
+    "key": "fixture.delivery-record.list",
+    "scope": "tenant",
+    "parent_key": null,
+    "type": "page",
+    "name": "Delivery Records",
+    "route_name": "fixture-delivery-record-list",
+    "route_path": "/app/fixtures/delivery-records",
+    "component_key": "fixture.delivery-record.list",
+    "required_permission": "fixture.delivery-record.read",
+    "icon": "List",
+    "sort_order": 900,
+    "client_keys": ["admin-web"]
+  }
+]

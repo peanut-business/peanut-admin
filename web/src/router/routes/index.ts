@@ -4,6 +4,7 @@ import {
   deploymentMode,
   routesForDeployment,
 } from '@/core/deployment-mode';
+import { pluginRoutes } from './plugin-contributions';
 
 const modules = import.meta.glob('./modules/*.ts', { eager: true });
 const externalModules = import.meta.glob('./externalModules/*.ts', {
@@ -27,7 +28,7 @@ const mode = deploymentMode(configuredMode);
 const instanceToolsAllowed = allowsInstanceTools(configuredMode);
 
 export const appRoutes: RouteRecordNormalized[] = routesForDeployment(
-  formatModules(modules, []),
+  [...formatModules(modules, []), ...pluginRoutes],
   mode,
   instanceToolsAllowed
 ) as RouteRecordNormalized[];

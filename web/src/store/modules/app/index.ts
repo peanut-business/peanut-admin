@@ -46,6 +46,14 @@ const useAppStore = defineStore('app', {
     },
     setServerMenu(menu: ServerMenuRecord[]) {
       this.serverMenu = mapServerMenu(menu);
+      this.enabledTenantModules = Array.from(
+        new Set(
+          this.serverMenu
+            .flatMap((route) => [route, ...(route.children || [])])
+            .map((route) => route.meta?.tenantModuleKey)
+            .filter((key): key is string => typeof key === 'string')
+        )
+      );
       this.serverMenuLoaded = true;
     },
     async fetchServerMenuConfig() {
@@ -75,6 +83,7 @@ const useAppStore = defineStore('app', {
     },
     clearServerMenu() {
       this.serverMenu = [];
+      this.enabledTenantModules = [];
       this.serverMenuLoaded = false;
     },
   },

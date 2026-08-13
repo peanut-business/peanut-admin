@@ -14,5 +14,6 @@
   "tabBar": false,
   "menuFromServer": true,
   "serverMenuLoaded": false,
-  "serverMenu": []
+  "serverMenu": [],
+  "enabledTenantModules": []
 }
