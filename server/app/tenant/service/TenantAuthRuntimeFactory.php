@@ -17,11 +17,20 @@ use think\facade\Db;
 final class TenantAuthRuntimeFactory
 {
     private static ?TenantAuthEndpoint $endpoint = null;
+    private static ?TenantAuthService $service = null;
 
     public static function endpoint(): TenantAuthEndpoint
     {
         if (self::$endpoint !== null) {
             return self::$endpoint;
+        }
+        return self::$endpoint = new TenantAuthEndpoint(self::service());
+    }
+
+    public static function service(): TenantAuthService
+    {
+        if (self::$service !== null) {
+            return self::$service;
         }
         $key = trim((string)Config::get('tenant_auth.identifier_hmac_key', ''));
         if (strlen($key) < 32) {
@@ -32,14 +41,14 @@ final class TenantAuthRuntimeFactory
             throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
         }
 
-        return self::$endpoint = new TenantAuthEndpoint(new TenantAuthService(
+        return self::$service = new TenantAuthService(
             new PdoTransactionManager($pdo),
             new PdoTenantAuthRepository($pdo),
             new PasswordHasher(),
             new SystemClock(),
             new TokenIssuer(),
             $key
-        ));
+        );
     }
 
     private function __construct()
