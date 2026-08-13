@@ -40,7 +40,14 @@ platformClient.interceptors.request.use((config) => {
 async function data<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
   const response = await request;
   if (response.data.code !== 20000) {
-    throw new Error(response.data.msg || 'Platform request rejected');
+    const errorCode =
+      response.data.data &&
+      typeof response.data.data === 'object' &&
+      'error_code' in response.data.data
+        ? String(response.data.data.error_code)
+        : '';
+    const message = response.data.msg || 'Platform request rejected';
+    throw new Error(errorCode ? `[${errorCode}] ${message}` : message);
   }
   return response.data.data;
 }
@@ -90,5 +97,26 @@ export function transitionTenant(
       expected_revision: tenant.revision,
       change_reason: changeReason,
     })
+  );
+}
+
+export function enableTenantModule(payload: {
+  tenant_id: number;
+  module_key: string;
+  config: Record<string, unknown>;
+  change_reason: string;
+}) {
+  return data(
+    platformClient.post('/api/platform/tenants/modules/enable', payload)
+  );
+}
+
+export function disableTenantModule(payload: {
+  tenant_id: number;
+  module_key: string;
+  change_reason: string;
+}) {
+  return data(
+    platformClient.post('/api/platform/tenants/modules/disable', payload)
   );
 }
