@@ -11,6 +11,15 @@ permissions:
   contents: read
 
 jobs:
+  stale-facts:
+    name: Stale facts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Reject retired current guidance
+        run: ./scripts/check-stale-facts.sh
+
   changes:
     name: Changed paths
     runs-on: ubuntu-latest

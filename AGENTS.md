@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-13
+> Last updated: 2026-08-14
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -29,7 +29,7 @@
 
 - 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 数据库：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 50 migrations
+- 当前数据库入口：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 51 migrations；下表中的 24 条账本是 parity 完成时的历史证据，`v1.1.0` 发布制品固定为 50 条
 
 **独立验证结果（非 Codex 自报）：**
 
@@ -44,13 +44,12 @@
 - `output/playwright/v02/summary.json` — **本会话独立验证，可信**
 - `output/playwright/v02/*.png` — 9 组截图 + 登录截图
 
-### 2.2 SaaS / 多租户设计与实现 — 🚧 分阶段进行中
+### 2.2 多租户与平台管理 — ✅ MT00–MT06 已完成
 
-设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。后端已经合入默认 Tenant
-bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、PlatformOperator
-边界和可信管理端 TenantContext 等独立切片；这不表示 MT02–MT04 或 PM01 已整体完成。
-判断完成度和领取下一切片前，必须读取当前权威计划并核对远端 `dev`，不得继续沿用
-“完全未实现”或某个局部 PR 已代表阶段完成的旧判断。
+设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。默认 Tenant、可信管理端
+TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双模式 Host 已完成；
+完成身份与验收范围以本节下方的 `v1.1.0` 事实和当前权威计划为准。判断后续范围前仍须
+核对远端 `dev`，不得继续沿用“完全未实现”或“MT02–MT04 尚未整体完成”的旧判断。
 
 截至 MT05 最终代码候选 `074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8`
 （tree `1a2df02e97414b5c236a842adf17804fb33e4699`）：
@@ -82,12 +81,17 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 - 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
 - 已完成：生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
 - 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`
-- 日常开发和本机生产模式预览只使用 CompanyOS 已登记的
-  `peanut-admin-mysql84-development`：`192.168.192.2:20183/peanut_admin_development`；
-  本机不运行 Peanut Admin MySQL。历史 `192.168.192.2:3306/peanut_admin` 没有迁移
-  账本，不得连接。线上生产服务器继续使用自身 `bundled-db` MySQL，公网服务器不可
-  直接路由局域网地址；两类资源由 `PEANUT_DEPLOYMENT_TARGET` 和
-  `PEANUT_DATABASE_RESOURCE_ID` 门禁隔离
+- 日常开发和本机生产模式预览只使用 CompanyOS 登记的
+  `peanut-admin-mysql84-development`（development）：
+  `192.168.192.2:20183/peanut_admin_development`，MySQL `8.4.10`。凭据引用为
+  `mac-14:/Users/xing/.config/peanut-admin/development-db.env`，不得把密钥写入仓库。
+  CompanyOS 机器可读事实源为
+  `/Users/xing/Documents/company-os/resources/development-infrastructure.yaml`，使用规则为
+  同目录 `development-infrastructure.md`；使用前仍须按登记要求核验目标实况。旧开发
+  端口 `3306` 与旧库名 `peanut_admin` 的组合没有迁移账本，不得连接或作为现行指引。
+  本机不运行 Peanut Admin MySQL。当前生产服务器使用自身 `bundled-db` MySQL profile，
+  不能路由开发局域网地址；两类资源由 `PEANUT_DEPLOYMENT_TARGET` 和
+  `PEANUT_DATABASE_RESOURCE_ID` 门禁隔离。
 - 已完成 PB03：`docs/architecture/pb03-ownership-and-migration-gates.md` 已冻结核心通用基础设施、应用产品 Module、唯一实现、Host/override、测试 owner 与逐领域停止线
 - PB04 已完成：网站设置、权限 Host、管理员/RBAC CRUD、字典、文件素材、任务/导入导出与日志/维护均形成应用唯一实现、核心候选停止线及测试 owner
 - PB05 已完成：会员/标签、权威余额、兼容镜像、分类流水、充值入账与退款形成应用唯一 Runtime；核心 Tenant membership 与 R01/R02 候选未经采用授权
@@ -97,7 +101,7 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 - PB08B 已完成：候选 `4442229…` 通过 registry 构建、弱凭据/24→28/空库、Compose/HTTP/镜像/Host、唯一桌面/移动 Chromium 与文档一致性；总摘要见 `output/playwright/pb08b/summary.json`
 - PB09 已完成：法律门禁、PR #10/#11、`dev/main` 合入、annotated `v1.0.0`、GitHub Release、既有应用与官网部署、24→28 前滚和一次最低线上 smoke 均已封存；生产运行镜像由不可变 tag 源码在部署端构建，不发布预构建镜像
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
-- 产品化正式基线已经进入 `main`；下一阶段先完成已获授权的媒体项目通用能力合同，再按当前计划推进多租户和必要的平台管理；完整 SaaS 商业化暂缓
+- 产品化正式基线与多租户稳定脚手架均已进入 `main`；完整 SaaS 商业化暂缓，独立运营平台需另行立项，当前没有由本文件授权的下一业务阶段
 
 ---
 
@@ -111,7 +115,7 @@ peanut-admin/
 │   ├── database/
 │   │   ├── install.php  # 一键安装（空库 → 全量初始化）
 │   │   ├── init.sql     # 基础表 + 种子数据
-│   │   └── migrations/  # 24 个增量迁移
+│   │   └── migrations/  # 当前 51 个版本化迁移；v1.1.0 固定 50 个
 │   └── .env             # DB/JWT 配置（不提交）
 ├── web/             # 管理端前端（Vue3 + Element Plus）
 ├── pc/              # PC 消费端（Nuxt3）
@@ -127,9 +131,11 @@ peanut-admin/
 
 ---
 
-## 4. 默认凭据（开发环境）
+## 4. 开发入口与安装身份
 
-- 管理员账号：`admin` / `admin123456`
+- 初始管理员账号为 `admin`；密码必须在空库安装时通过
+  `ADMIN_INITIAL_PASSWORD` 显式提供，仓库没有可供当前环境复用的共享默认密码。
+  历史 parity 证据中出现的旧密码仅用于追溯，不是现行登录指引。
 - 管理端 API：`http://127.0.0.1:8000/`（`php think run --port=8000`）
 - 前端 Dev：`http://localhost:5173`（`pnpm dev`，位于 `web/`）
 - API 前缀：`admin/*`（管理端），`api/*`（前端/小程序）
