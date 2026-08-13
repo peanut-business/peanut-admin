@@ -11,9 +11,9 @@ use think\facade\Db;
 
 class MenuLogic extends BaseLogic
 {
-    public static function getMenuByAdminId(int $adminId): array
+    public static function getMenuByAdminId(mixed $tenantContext, int $adminId): array
     {
-        return AdminPermissionService::menusForAdminId($adminId);
+        return AdminPermissionService::menusForAdminId($tenantContext, $adminId);
     }
 
     public static function getAll(): array
