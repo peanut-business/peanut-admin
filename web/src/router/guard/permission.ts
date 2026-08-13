@@ -4,6 +4,9 @@ import NProgress from 'nprogress'; // progress bar
 import usePermission from '@/hooks/permission';
 import { useUserStore, useAppStore } from '@/store';
 import { appRoutes } from '../routes';
+import { pluginRoutes } from '../routes/plugin-contributions';
+import { routesForTenantModules } from '@/core/plugin-contribution-policy';
+import { permissionEvaluator } from '@/core/runtime';
 import { WHITE_LIST, NOT_FOUND, DEFAULT_ROUTE_NAME } from '../constants';
 
 export default function setupPermissionGuard(router: Router) {
@@ -11,6 +14,24 @@ export default function setupPermissionGuard(router: Router) {
     const appStore = useAppStore();
     const userStore = useUserStore();
     const Permission = usePermission();
+    if (to.meta.tenantModuleKey) {
+      const enabledModules = appStore.enabledTenantModules;
+      const accessible = routesForTenantModules(
+        [{ moduleKey: to.meta.tenantModuleKey, routes: pluginRoutes }],
+        enabledModules,
+        userStore.permissions,
+        permissionEvaluator
+      ).some((route) =>
+        route.path === to.path || route.children?.some((child) =>
+          `${route.path}/${child.path}`.replace(/\/{2,}/g, '/') === to.path
+        )
+      );
+      if (!accessible) {
+        next(NOT_FOUND);
+        NProgress.done();
+        return;
+      }
+    }
     if (to.meta.controlPlane === 'platform') {
       next();
       NProgress.done();

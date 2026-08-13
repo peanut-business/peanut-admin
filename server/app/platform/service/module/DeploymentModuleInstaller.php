@@ -3,18 +3,11 @@ declare(strict_types=1);
 
 namespace app\platform\service\module;
 
+use app\platform\service\plugin\PluginModuleRegistryFactory;
+use app\platform\service\plugin\PluginLockResolver;
 use PDO;
-use PeanutAdmin\DataPermission\Persistence\Schema\DataPermissionSchema;
-use PeanutAdmin\Kernel\Authorization\Persistence\Schema\AuthorizationSchema;
-use PeanutAdmin\Kernel\Idempotency\IdempotencySchema;
-use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
-use PeanutAdmin\Kernel\Module\ModuleBoundaryChecker;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use PeanutAdmin\Kernel\Module\ModuleHostLayout;
-use PeanutAdmin\Kernel\Module\ModuleProvider;
-use PeanutAdmin\Kernel\Module\ModuleRegistryCompiler;
-use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 /** Registers one explicitly deployed Module manifest in the deployment ledger. */
 final readonly class DeploymentModuleInstaller
@@ -93,61 +86,20 @@ SQL);
     /** @param array<string,mixed> $deploymentConfig */
     private function registry(array $deploymentConfig): DeployedTenantModuleRegistry
     {
-        $roots = is_array($deploymentConfig['roots'] ?? null)
-            ? array_values($deploymentConfig['roots'])
-            : [];
-        if ($roots === [] || !array_is_list($roots)) {
-            throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'No deployed Module roots are configured.');
-        }
-
-        $resolvedRoots = [];
-        foreach ($roots as $root) {
-            if (!is_string($root) || trim($root) === '') {
-                throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'A deployed Module root is invalid.');
+        $factory = new PluginModuleRegistryFactory($this->pdo, $this->serverRoot);
+        $lockPath = trim((string)($deploymentConfig['plugin_lock'] ?? ''));
+        if ($lockPath !== '') {
+            $candidate = str_starts_with($lockPath, DIRECTORY_SEPARATOR)
+                ? $lockPath
+                : $this->serverRoot . '/' . ltrim($lockPath, '/');
+            if (is_file($candidate)) {
+                return $factory->fromPluginLock(
+                    new PluginLockResolver($this->serverRoot, $lockPath),
+                    $deploymentConfig
+                );
             }
-            $candidate = str_starts_with($root, DIRECTORY_SEPARATOR)
-                ? $root
-                : $this->serverRoot . '/' . ltrim($root, '/');
-            $resolved = realpath($candidate);
-            if ($resolved === false || !is_dir($resolved)) {
-                throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'A deployed Module root is unavailable.');
-            }
-            $resolvedRoots[] = $resolved;
         }
-
-        $kernelVersion = trim((string)($deploymentConfig['kernel_version'] ?? ''));
-        $frontend = is_array($deploymentConfig['frontend_components'] ?? null)
-            ? array_values($deploymentConfig['frontend_components'])
-            : [];
-        $clients = is_array($deploymentConfig['registered_client_keys'] ?? null)
-            ? array_values($deploymentConfig['registered_client_keys'])
-            : [];
-        if ($kernelVersion === '' || $clients === [] || !array_is_list($frontend) || !array_is_list($clients)) {
-            throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
-        }
-
-        $kernelRoot = dirname((new \ReflectionClass(ModuleProvider::class))->getFileName(), 3);
-        $layout = new ModuleHostLayout('server/app/Modules', 'app\\Modules', 'web/src/modules');
-        $compiler = new ModuleRegistryCompiler(
-            new OpisManifestSchemaValidator($kernelRoot . '/resources/schemas/module-manifest.schema.json'),
-            new StrictVersionConstraintMatcher(),
-            new ReflectionContractInspector(),
-            $kernelVersion,
-            $frontend,
-            $layout,
-            [
-                ...KernelSchema::tableNames(),
-                ...AuthorizationSchema::tableNames(),
-                ...ModuleSchema::tableNames(),
-                ...IdempotencySchema::tableNames(),
-                ...DataPermissionSchema::tableNames(),
-            ],
-            $clients
-        );
-        $registry = DeployedTenantModuleRegistry::compile($this->pdo, $resolvedRoots, $compiler);
-        (new ModuleBoundaryChecker($registry->compiled(), $layout, ['pa_']))->check();
-
-        return $registry;
+        return $factory->fromDeploymentConfig($deploymentConfig);
     }
 
     /** @return array{key:string,version:string,schema:int,digest:string,status:string} */

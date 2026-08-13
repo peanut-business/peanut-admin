@@ -14,5 +14,7 @@ declare module 'vue-router' {
     ignoreCache?: boolean; // if set true, the page will not be cached
     controlPlane?: 'tenant-selection' | 'platform'; // hidden and unregistered in Standalone deployments
     instanceTool?: boolean; // registered only when deployment mode is explicitly Standalone
+    tenantModuleKey?: string; // deployment presence is not Tenant enablement
+    requiredPermissions?: string | string[]; // member authorization is checked separately
   }
 }

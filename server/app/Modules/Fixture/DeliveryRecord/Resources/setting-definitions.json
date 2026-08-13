@@ -1,0 +1,19 @@
+[
+  {
+    "key": "retention-days",
+    "name": "Retention days",
+    "description": "Number of days fixture delivery records remain available",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3650
+    },
+    "required": false,
+    "secret": false,
+    "allowed_scopes": ["tenant"],
+    "target_resource_key": null,
+    "target_operation": null,
+    "default": 30
+  }
+]

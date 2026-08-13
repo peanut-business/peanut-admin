@@ -45,12 +45,21 @@ export default function mapServerMenu(
 
       return {
         ...staticRoute,
+        path: menu.module_key
+          ? normalizePath(menu.paths || staticRoute.path)
+          : staticRoute.path,
         meta: {
           ...staticRoute.meta,
           icon: menu.icon || staticRoute.meta?.icon,
+          tenantModuleKey:
+            menu.module_key && menu.module_key !== 'core'
+              ? menu.module_key
+              : staticRoute.meta?.tenantModuleKey,
+          requiredPermissions:
+            menu.required_permission || staticRoute.meta?.requiredPermissions,
           hideInMenu:
             Number(menu.is_show ?? 1) === 0 ||
-            staticRoute.meta?.hideInMenu === true,
+            (!menu.module_key && staticRoute.meta?.hideInMenu === true),
         },
         children,
       } as RouteRecordRaw;
