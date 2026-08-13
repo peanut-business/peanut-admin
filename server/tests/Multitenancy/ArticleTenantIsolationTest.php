@@ -45,6 +45,182 @@ function deniedShape(callable $operation): array
     throw new RuntimeException('Article capability denial was expected.');
 }
 
+function createArticleCollectMemberFkSchema(PDO $pdo): void
+{
+    $pdo->exec(<<<'SQL'
+CREATE TABLE pa_tenant (
+  id BIGINT UNSIGNED NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_member (
+  id INT UNSIGNED NOT NULL,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_member_tenant_id (tenant_id, id),
+  CONSTRAINT fk_collect_gate_member_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+CREATE TABLE pa_article (
+  id INT UNSIGNED NOT NULL,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_article_tenant_id (tenant_id, id),
+  CONSTRAINT fk_collect_gate_article_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+CREATE TABLE pa_article_collect (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  member_id INT UNSIGNED NOT NULL,
+  article_id INT UNSIGNED NOT NULL,
+  status TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_article_collect_tenant_member_article (tenant_id, member_id, article_id),
+  CONSTRAINT fk_article_collect_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_article_collect_tenant_article FOREIGN KEY (tenant_id, article_id) REFERENCES pa_article (tenant_id, id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active');
+INSERT INTO pa_member (id, tenant_id) VALUES (501, 101), (502, 202);
+INSERT INTO pa_article (id, tenant_id) VALUES (21, 101), (22, 202);
+SQL);
+}
+
+function expectArticleCollectConstraintFailure(PDO $pdo, string $sql, string $message): void
+{
+    try {
+        $pdo->exec($sql);
+    } catch (PDOException $exception) {
+        expectArticleTenant($exception->getCode() === '23000', $message . ': unexpected SQLSTATE ' . $exception->getCode());
+        return;
+    }
+    throw new RuntimeException($message . ': insert unexpectedly succeeded');
+}
+
+function runArticleCollectMemberFkGate(): void
+{
+    $serverRoot = dirname(__DIR__, 2);
+    $host = getenv('DB_HOST') ?: '127.0.0.1';
+    $port = (int)(getenv('DB_PORT') ?: 3306);
+    $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+    $runId = strtolower(bin2hex(random_bytes(5)));
+    $databases = [
+        'success' => 'peanut_mt02_collect_member_ok_' . $runId,
+        'cross' => 'peanut_mt02_collect_member_cross_' . $runId,
+        'orphan' => 'peanut_mt02_collect_member_orphan_' . $runId,
+    ];
+    $admin = new PDO(
+        "mysql:host={$host};port={$port};charset=utf8mb4",
+        'root',
+        $password,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
+    );
+    $migration = (string)file_get_contents(
+        $serverRoot . '/database/migrations/20260813_article_collect_member_tenant_fk.sql'
+    );
+    expectArticleTenant($migration !== '', 'Article collection member migration is missing');
+
+    try {
+        foreach ($databases as $database) {
+            $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        }
+
+        $connections = [];
+        foreach ($databases as $key => $database) {
+            $connections[$key] = new PDO(
+                "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+                'root',
+                $password,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                    PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
+                ]
+            );
+            createArticleCollectMemberFkSchema($connections[$key]);
+        }
+
+        $connections['cross']->exec(
+            'ALTER TABLE pa_article_collect DROP FOREIGN KEY fk_article_collect_tenant_article'
+        );
+        $connections['cross']->exec(
+            'INSERT INTO pa_article_collect (tenant_id, member_id, article_id) VALUES (101, 502, 22)'
+        );
+        $connections['orphan']->exec(
+            'SET FOREIGN_KEY_CHECKS=0; '
+            . 'INSERT INTO pa_article_collect (tenant_id, member_id, article_id) VALUES (101, 999, 999); '
+            . 'SET FOREIGN_KEY_CHECKS=1'
+        );
+
+        foreach (['cross', 'orphan'] as $invalidCase) {
+            $before = (int)$connections[$invalidCase]->query(<<<'SQL'
+SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
+WHERE CONSTRAINT_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'pa_article_collect'
+  AND CONSTRAINT_NAME = 'fk_article_collect_tenant_member'
+SQL)->fetchColumn();
+            expectArticleTenant($before === 0, $invalidCase . ' fixture unexpectedly has the member foreign key');
+            try {
+                $connections[$invalidCase]->exec($migration);
+                throw new RuntimeException($invalidCase . ' historical collection unexpectedly passed preflight');
+            } catch (PDOException $exception) {
+                expectArticleTenant(
+                    str_contains($exception->getMessage(), 'pa_mt02_article_collect_membership_preflight_failed'),
+                    $invalidCase . ' preflight failed for the wrong reason'
+                );
+            }
+            $after = (int)$connections[$invalidCase]->query(<<<'SQL'
+SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
+WHERE CONSTRAINT_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'pa_article_collect'
+  AND CONSTRAINT_NAME = 'fk_article_collect_tenant_member'
+SQL)->fetchColumn();
+            expectArticleTenant($after === 0, $invalidCase . ' preflight changed the schema before rejecting history');
+        }
+
+        $connections['success']->exec(
+            'INSERT INTO pa_article_collect (tenant_id, member_id, article_id) VALUES (101, 501, 21)'
+        );
+        $connections['success']->exec($migration);
+        $constraint = $connections['success']->query(<<<'SQL'
+SELECT UNIQUE_CONSTRAINT_NAME
+FROM information_schema.REFERENTIAL_CONSTRAINTS
+WHERE CONSTRAINT_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'pa_article_collect'
+  AND CONSTRAINT_NAME = 'fk_article_collect_tenant_member'
+SQL)->fetchColumn();
+        expectArticleTenant(
+            $constraint === 'uk_member_tenant_id',
+            'Article collection member foreign key does not target the composite Tenant identity'
+        );
+        expectArticleCollectConstraintFailure(
+            $connections['success'],
+            'INSERT INTO pa_article_collect (tenant_id, member_id, article_id) VALUES (101, 502, 21)',
+            'cross-Tenant member collection was not rejected'
+        );
+        expectArticleCollectConstraintFailure(
+            $connections['success'],
+            'INSERT INTO pa_article_collect (tenant_id, member_id, article_id) VALUES (101, 501, 22)',
+            'cross-Tenant Article collection was not rejected'
+        );
+        expectArticleTenant(
+            (int)$connections['success']->query(
+                'SELECT COUNT(*) FROM pa_article_collect WHERE tenant_id=101 AND member_id=501 AND article_id=21'
+            )->fetchColumn() === 1,
+            'existing valid Article collection changed after migration'
+        );
+
+        echo "MT02-ARTICLE-COLLECT-MEMBER-TENANT-FK-001 passed\n";
+    } finally {
+        foreach ($databases as $database) {
+            $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
+        }
+    }
+}
+
+if (in_array('--collect-member-fk', $argv ?? [], true)) {
+    runArticleCollectMemberFkGate();
+    exit(0);
+}
+
 $serverRoot = dirname(__DIR__, 2);
 foreach ([
     'app/common/service/article/ArticleTenantContext.php',
