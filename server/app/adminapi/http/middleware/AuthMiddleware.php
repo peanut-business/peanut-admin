@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\http\middleware;
 
+use app\adminapi\service\AdminApiAccessRegistry;
 use app\adminapi\service\AdminPermissionService;
 use app\common\service\JsonService;
 
@@ -10,8 +11,8 @@ use app\common\service\JsonService;
  * 权限中间件（原生 TP 风格）
  *
  * 必须在 LoginMiddleware 之后执行（依赖 $request->adminInfo）。
- * root=1 的超级管理员放行；未登记的 URI 放行；已登记 URI 按角色→菜单→perms 校验。
- * 访问标识由 URL path 推导（去掉 api/admin/ 前缀），例如 api/admin/menu/lists → menu/lists。
+ * 只有版本化 authenticated 元数据或启用的精确权限节点可以放行。
+ * root 只绕过角色授权，不能绕过路由登记、登录、TenantContext 或身份边界。
  */
 class AuthMiddleware
 {
@@ -22,8 +23,12 @@ class AuthMiddleware
             return JsonService::fail('请先登录', null, 40100);
         }
 
-        // 由请求路径推导访问标识：strip 掉入口 api/admin/ 前缀
-        $path      = strtolower(trim($request->pathinfo(), '/'));
+        $path = strtolower(trim($request->pathinfo(), '/'));
+        if (AdminApiAccessRegistry::isAuthenticatedOnly((string)$request->method(), $path)) {
+            return $next($request);
+        }
+
+        // 权限字符使用 api/admin/ 之后的精确路径，不做 URI alias 展开。
         $accessUri = preg_replace('#^api/admin/#', '', $path);
 
         if (!AdminPermissionService::canAccess($request->tenantContext ?? null, $adminInfo, $accessUri)) {

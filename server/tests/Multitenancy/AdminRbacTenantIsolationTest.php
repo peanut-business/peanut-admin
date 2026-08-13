@@ -115,7 +115,9 @@ try {
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_admin (id,tenant_id,username,nickname) VALUES
   (1,101,'alpha-admin','Alpha Admin'),
-  (2,202,'beta-admin','Beta Admin');
+  (2,202,'beta-admin','Beta Admin'),
+  (3,101,'alpha-root','Alpha Root');
+UPDATE pa_admin SET root=1 WHERE id=3;
 INSERT INTO pa_system_role (id,tenant_id,name) VALUES
   (11,101,'Alpha Role'),
   (22,202,'Beta Role');
@@ -177,6 +179,19 @@ SQL);
     expectRbacTenant(
         AdminPermissionService::canAccess($alphaContext, $forgedAdmin, 'alpha/read'),
         'same-Tenant role permission was denied'
+    );
+    $rootAdmin = ['id' => 3, 'tenant_id' => 101, 'root' => 1];
+    expectRbacTenant(
+        AdminPermissionService::canAccess($alphaContext, $rootAdmin, 'alpha/read'),
+        'root did not bypass role ownership for a registered same-Tenant permission'
+    );
+    expectRbacTenant(
+        AdminPermissionService::canAccess($alphaContext, $rootAdmin, 'unregistered/read') === false,
+        'root bypassed route registration'
+    );
+    expectRbacTenant(
+        AdminPermissionService::canAccess($betaContext, $rootAdmin, 'beta/read') === false,
+        'root bypassed the TenantContext boundary'
     );
     $menus = AdminPermissionService::menusForAdmin($alphaContext, $forgedAdmin);
     expectRbacTenant(

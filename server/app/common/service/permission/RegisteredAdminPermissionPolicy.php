@@ -7,7 +7,7 @@ use app\common\contract\AdminPermissionPolicy;
 use PeanutAdmin\Kernel\Authorization\EffectivePermissionSet;
 
 /**
- * 只有已登记的权限字符参与 RBAC；未登记 URI 按 LikeAdmin 业务规则放行。
+ * Exact registered permissions only. Registration is checked before root bypass.
  */
 final class RegisteredAdminPermissionPolicy implements AdminPermissionPolicy
 {
@@ -15,17 +15,14 @@ final class RegisteredAdminPermissionPolicy implements AdminPermissionPolicy
         bool $isRoot,
         string $accessUri,
         iterable $registeredPermissions,
-        iterable $grantedPermissions,
-        array $aliases = []
+        iterable $grantedPermissions
     ): bool {
-        if ($isRoot) {
-            return true;
-        }
-
         $normalized = strtolower(trim($accessUri, '/'));
-        $normalized = $aliases[$normalized] ?? $normalized;
         $registered = new EffectivePermissionSet($this->normalize($registeredPermissions));
         if (!$registered->allows($normalized)) {
+            return false;
+        }
+        if ($isRoot) {
             return true;
         }
 

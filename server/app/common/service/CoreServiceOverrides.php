@@ -13,7 +13,7 @@ use PeanutAdmin\Kernel\Override\ServiceOverrideSlot;
 final class CoreServiceOverrides
 {
     public const ADMIN_PERMISSION_POLICY = 'authorization.permission.service.policy';
-    public const CONTRACT_VERSION = '1.0.0';
+    public const CONTRACT_VERSION = '2.0.0';
 
     private static ?ServiceOverrideRegistry $registry = null;
 

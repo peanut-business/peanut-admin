@@ -10,6 +10,8 @@ if [[ "$mode" != '--fast' && "$mode" != '--full' ]]; then
   exit 2
 fi
 
+php scripts/check-admin-api-permissions.php
+
 lint_php() {
   local path
   for path in "$@"; do
@@ -29,6 +31,9 @@ if [[ "$mode" == '--full' ]]; then
     server/tests/Productization/BrandScaffoldTest.php
     server/tests/Productization/InstallerBootstrapTest.php
     server/tests/Productization/AdminPermissionHostTest.php
+    server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php
+    server/tests/Multitenancy/AdminApiPermissionMigrationTest.php
+    server/tests/Multitenancy/AdminRbacTenantIsolationTest.php
     server/tests/Productization/ReferenceCodesHostTest.php
     server/tests/Productization/FileMediaHostTest.php
     server/tests/Productization/OpsHostTest.php
@@ -122,6 +127,13 @@ while IFS= read -r path; do
     server/app/adminapi/*auth*|server/app/common/*auth*|server/app/common/*permission*)
       select_test server/tests/Productization/AdminPermissionHostTest.php
       select_test server/tests/Productization/AdminRbacCrudTest.php
+      select_test server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php
+      ;;
+    server/config/admin_api_access.php|server/route/app.php|scripts/check-admin-api-permissions.php|server/database/migrations/*admin*permission*)
+      select_test server/tests/Productization/AdminPermissionHostTest.php
+      select_test server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php
+      select_test server/tests/Multitenancy/AdminApiPermissionMigrationTest.php
+      select_test server/tests/Multitenancy/AdminRbacTenantIsolationTest.php
       ;;
     server/database/install.php|server/database/migrate.php|server/database/migrations/*tenant*)
       select_test server/tests/Productization/DefaultTenantBootstrapTest.php

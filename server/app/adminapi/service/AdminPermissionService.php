@@ -18,20 +18,6 @@ use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
  */
 class AdminPermissionService
 {
-    /** Peanut 的轻量状态接口复用 LikeAdmin 的管理员编辑权限。 */
-    private const ACCESS_ALIASES = [
-        'admin/status' => 'admin/edit',
-        'dept/status' => 'dept/edit',
-        'jobs/status' => 'jobs/edit',
-        'menu/status' => 'menu/edit',
-        'finance/account-log/lists' => 'finance.account_log/lists',
-        'finance/recharge/lists' => 'recharge.recharge/lists',
-        'finance/recharge/refund' => 'recharge.recharge/refund',
-        'finance/recharge/refundagain' => 'recharge.recharge/refundagain',
-        'finance/refund/record' => 'finance.refund/record',
-        'finance/refund/log' => 'finance.refund/log',
-    ];
-
     public static function accessData(mixed $tenantContext, Admin|array $admin): array
     {
         return [
@@ -107,10 +93,7 @@ class AdminPermissionService
         return array_values(array_unique($permissions));
     }
 
-    /**
-     * LikeAdmin 1.9.4 现状：只有登记在启用菜单 perms 中的 URI 才参与 RBAC；
-     * 未登记 URI 直接放行，而不是默认拒绝。
-     */
+    /** Unregistered, disabled and cross-Tenant permission paths fail closed. */
     public static function canAccess(mixed $tenantContext, Admin|array $admin, string $accessUri): bool
     {
         $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
@@ -133,7 +116,6 @@ class AdminPermissionService
             $accessUri,
             $registered,
             $owned,
-            self::ACCESS_ALIASES
         );
     }
 
