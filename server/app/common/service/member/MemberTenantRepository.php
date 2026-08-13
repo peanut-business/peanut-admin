@@ -7,6 +7,7 @@ use app\common\model\member\Member;
 use app\common\model\member\MemberBalanceLog;
 use app\common\model\member\MemberTag;
 use app\common\model\member\MemberTagRelation;
+use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -44,8 +45,11 @@ final class MemberTenantRepository
         return MemberTag::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
     }
 
-    public static function createBalanceLog(TenantContext $context, array $data): MemberBalanceLog
+    public static function createBalanceLog(TenantContext|TenantSystemContext $context, array $data): MemberBalanceLog
     {
+        if ($context instanceof TenantSystemContext) {
+            FinanceTenantContext::tenantId($context);
+        }
         unset($data['tenant_id']);
         return MemberBalanceLog::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
     }

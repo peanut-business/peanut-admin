@@ -5,13 +5,14 @@ namespace app\api\controller;
 
 use app\api\logic\RechargeLogic;
 use app\api\validate\RechargeValidate;
+use app\common\service\finance\FinanceTenantContext;
 class RechargeController extends BaseApiController
 {
     public function config()
     {
         $params = ['terminal' => $this->request->get('terminal')];
         $this->validate($params, RechargeValidate::class . '.config');
-        $result = RechargeLogic::config($this->memberId, (int)$params['terminal']);
+        $result = RechargeLogic::config(FinanceTenantContext::member($this->request), $this->memberId, (int)$params['terminal']);
         return $result === false ? $this->fail(RechargeLogic::getError()) : $this->data($result);
     }
 
@@ -19,7 +20,7 @@ class RechargeController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, RechargeValidate::class . '.create');
-        $result = RechargeLogic::create($this->memberId, $params);
+        $result = RechargeLogic::create(FinanceTenantContext::member($this->request), $this->memberId, $params);
         return $result === false ? $this->fail(RechargeLogic::getError()) : $this->data($result);
     }
 
@@ -32,6 +33,7 @@ class RechargeController extends BaseApiController
         $notifyUrl = rtrim((string)$this->request->domain(), '/')
             . '/api/payment/notify/' . $channel;
         $result = RechargeLogic::prepay(
+            FinanceTenantContext::member($this->request),
             $this->memberId,
             (int)$params['order_id'],
             $payWay,
@@ -46,7 +48,7 @@ class RechargeController extends BaseApiController
     {
         $params = ['order_id' => $this->request->get('order_id')];
         $this->validate($params, RechargeValidate::class . '.detail');
-        $result = RechargeLogic::detail($this->memberId, (int)$params['order_id']);
+        $result = RechargeLogic::detail(FinanceTenantContext::member($this->request), $this->memberId, (int)$params['order_id']);
         return $result === false ? $this->fail(RechargeLogic::getError()) : $this->data($result);
     }
 
@@ -57,7 +59,7 @@ class RechargeController extends BaseApiController
             'page_size' => $this->request->get('page_size/d', 15),
         ];
         $this->validate($params, RechargeValidate::class . '.lists');
-        $result = RechargeLogic::lists($this->memberId, $params);
+        $result = RechargeLogic::lists(FinanceTenantContext::member($this->request), $this->memberId, $params);
         return $this->dataLists(
             $result['lists'],
             $result['count'],

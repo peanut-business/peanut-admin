@@ -14,6 +14,7 @@ class RefundLog extends BaseModel
 {
     protected $name = 'refund_log';
 
+    /** Provider request identity remains globally unique across Tenants. */
     public static function generateSn(): string
     {
         do {

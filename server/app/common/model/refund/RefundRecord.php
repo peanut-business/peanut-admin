@@ -13,6 +13,7 @@ class RefundRecord extends BaseModel
 {
     protected $name = 'refund_record';
 
+    /** Merchant-facing refund number remains globally unique across Tenants. */
     public static function generateSn(): string
     {
         do {

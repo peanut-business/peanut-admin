@@ -8,6 +8,7 @@ class CrontabCommandService
 {
     private const TENANT_AWARE_COMMANDS = [
         'crontab:demo',
+        'refund:reconcile',
     ];
 
     public static function allowedCommands(): array
