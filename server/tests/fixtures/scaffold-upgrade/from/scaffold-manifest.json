@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "release": {"version": "1.0.0"},
+  "files": [
+    {"path": "managed.txt", "source": "files/managed.txt", "content_sha256": "dc694dd05a0b6f0463dcff5aa59598d6d80ae51aee18ef97e0d31e9413fedcde", "policy": "managed", "owner": "host"},
+    {"path": "preserve.txt", "source": "files/preserve.txt", "content_sha256": "9b3db753edf50b4506ebe16bc0f28d04dfc05bdaadff85785e0808d9e04736a0", "policy": "preserve", "owner": "backend"},
+    {"path": "merge.txt", "source": "files/merge.txt", "content_sha256": "72a9e1dcb383d091d690ac5d4229694b784645c4ccf89ca6c585b9cea7fb69a6", "policy": "merge", "owner": "frontend"},
+    {"path": "conflict.txt", "source": "files/conflict.txt", "content_sha256": "9d3d1dfef61a70a58b7e861a44574ad9b7cc4a8b313ffe135328748d45f18470", "policy": "managed", "owner": "host"},
+    {"path": "deprecated.txt", "source": "files/deprecated.txt", "content_sha256": "e2d76f27a350966893038b8019dd7d11d13dd3182412b5a4b23dd35c21bca0cd", "policy": "managed", "owner": "backend"},
+    {"path": "deleted.txt", "source": "files/deleted.txt", "content_sha256": "5505d566fd2db7fd057ca0c1f082b2ba0180062bbffc97fc1d50f6eace3c8e80", "policy": "managed", "owner": "host"},
+    {"path": "renamed-old.txt", "source": "files/renamed-old.txt", "content_sha256": "99b5b82dec191e48fc9b584768c988f4aa03f3b9aa41f7504d77d247d2ebfbc1", "policy": "managed", "owner": "host"}
+  ],
+  "renames": []
+}
