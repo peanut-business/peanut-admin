@@ -112,6 +112,9 @@ while IFS= read -r path; do
       select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php
       select_test server/tests/Multitenancy/PlatformOperatorBoundaryTest.php
       ;;
+    server/app/common/service/external/*|server/app/api/controller/PaymentNotifyController.php|server/app/api/controller/OfficialAccountController.php|server/app/api/controller/OAuthController.php|server/database/migrations/20260814_external_callback_tenant_routing.sql)
+      select_test server/tests/Multitenancy/ExternalCallbackTenantRoutingTest.php
+      ;;
     *dict*|*Dict*) select_test server/tests/Multitenancy/DictTenantIsolationTest.php ;;
     *article*) select_test server/tests/Multitenancy/ArticleTenantIsolationTest.php ;;
     *decoration*|*Decoration*) select_test server/tests/Productization/LegacyDecorationRuntimeConvergenceTest.php ;;

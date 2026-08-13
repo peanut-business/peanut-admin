@@ -2,6 +2,8 @@ import defaultBrand from './generated/brand.json'
 
 const runtimeEnv =
   (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {}
+const devProxyOrigin = runtimeEnv.NUXT_DEV_PROXY_ORIGIN || 'http://127.0.0.1'
+const devProxyTarget = runtimeEnv.NUXT_DEV_PROXY_TARGET || `${devProxyOrigin}/api`
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
@@ -35,15 +37,15 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       '/api': {
-        target: runtimeEnv.NUXT_DEV_PROXY_TARGET || 'http://127.0.0.1:8000/api',
+        target: devProxyTarget,
         changeOrigin: false,
       },
       '/brand': {
-        target: `${runtimeEnv.NUXT_DEV_PROXY_ORIGIN || 'http://127.0.0.1:8000'}/brand`,
+        target: `${devProxyOrigin}/brand`,
         changeOrigin: false,
       },
       '/storage': {
-        target: `${runtimeEnv.NUXT_DEV_PROXY_ORIGIN || 'http://127.0.0.1:8000'}/storage`,
+        target: `${devProxyOrigin}/storage`,
         changeOrigin: false,
       },
     },

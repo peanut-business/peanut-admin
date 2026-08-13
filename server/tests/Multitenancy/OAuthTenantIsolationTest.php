@@ -157,7 +157,7 @@ try {
 
     expectOAuthTenant(str_contains($migration, 'pa_config OAuth switches and channel credentials remain instance-owned'), 'instance OAuth configuration boundary is missing');
     $controller = (string)file_get_contents($serverRoot . '/app/api/controller/OAuthController.php');
-    expectOAuthTenant(str_contains($controller, "MemberTenantContext::system(\$this->request, 'member.oauth-begin')"), 'OAuth begin does not require trusted Tenant context');
+    expectOAuthTenant(str_contains($controller, 'ExternalTenantResolver::production()->onlyActiveBinding('), 'OAuth begin does not use the trusted external binding resolver');
 } finally {
     foreach ($databases as $database) $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

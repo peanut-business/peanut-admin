@@ -17,12 +17,13 @@ class OAuthValidate extends Validate
         'avatar' => 'max:1000',
         'mobile' => 'max:20',
         'verification_code' => 'max:12',
+        'client_id' => 'max:191',
     ];
 
     protected $scene = [
-        'begin' => ['scene', 'return_path'],
+        'begin' => ['scene', 'return_path', 'client_id'],
         'callback' => ['scene', 'code', 'state'],
-        'mnp' => ['code'],
+        'mnp' => ['code', 'client_id'],
         'bind' => ['scene', 'code'],
         'complete' => ['ticket', 'nickname', 'avatar', 'mobile', 'verification_code'],
     ];

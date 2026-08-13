@@ -4,25 +4,25 @@ declare(strict_types=1);
 namespace app\api\logic;
 
 use app\adminapi\logic\setting\OfficialAccountReplyLogic;
-use app\common\service\ConfigService;
 use app\common\service\wechat\OfficialAccountService;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 class OfficialAccountLogic
 {
-    public static function verify(array $params): bool
+    public static function verify(array $params, array $config): bool
     {
         return OfficialAccountService::verifySignature(
-            (string)ConfigService::get('oa_setting', 'token', ''),
+            (string)($config['token'] ?? ''),
             (string)($params['timestamp'] ?? ''),
             (string)($params['nonce'] ?? ''),
             (string)($params['signature'] ?? '')
         );
     }
 
-    public static function handlePlain(string $xml): string
+    public static function handlePlain(TenantSystemContext $context, string $xml): string
     {
         $message = OfficialAccountService::parsePlainMessage($xml);
-        $reply = OfficialAccountReplyLogic::resolve($message);
+        $reply = OfficialAccountReplyLogic::resolve($context, $message);
         if ($reply === null || trim((string)($reply['content'] ?? '')) === '') {
             return 'success';
         }

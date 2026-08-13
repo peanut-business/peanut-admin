@@ -46,22 +46,17 @@ php server/database/install.php
 
 ## 启动服务
 
-终端 A 启动 ThinkPHP 后端：
+日常开发使用登记的宿主 PHP/Composer，并由项目脚本统一管理 PID、日志和健康：
 
 ```bash
-cd server
-php think run --host 0.0.0.0 --port 8000
+./scripts/local-stack.sh dev-up
+./scripts/local-stack.sh status
 ```
 
-终端 B 启动管理端前端：
-
-```bash
-cd web
-pnpm install
-pnpm dev
-```
-
-打开 `http://localhost:5173`，使用管理员 `admin` 和安装时提供的密码登录；首次登录后请改为个人凭据。
+默认打开 `http://127.0.0.1:20187/admin/`，使用管理员 `admin` 和安装时提供的密码登录；
+首次登录后请改为个人凭据。本地监听来自 `.local/stack.env`（或
+`PEANUT_LOCAL_ENV_FILE`），其他 clone/worktree 可覆盖登记默认端口。停止服务运行
+`./scripts/local-stack.sh dev-down`。
 
 ## 下一步
 

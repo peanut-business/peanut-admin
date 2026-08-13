@@ -15,7 +15,7 @@
   "scripts": {
     "sync:legal": "node scripts/sync-legal-assets.mjs",
     "predev": "pnpm sync:legal",
-    "dev": "vitepress dev .",
+    "dev": "../scripts/local-client-dev docs",
     "prebuild": "pnpm sync:legal",
     "build": "vitepress build .",
     "preview": "vitepress preview ."
