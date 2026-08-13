@@ -78,12 +78,17 @@ git diff --name-only "$base...HEAD" -- server > "$changed_file"
 
 select_test() {
   local path="$1"
-  [[ -f "$path" ]] && printf '%s\n' "$path" >> "$selected_file"
+  if [[ -f "$path" ]]; then
+    printf '%s\n' "$path" >> "$selected_file"
+  fi
 }
 
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
-  [[ "$path" == *.php ]] && printf '%s\n' "$path" >> "$changed_php_file"
+  # Deleted PHP files are valid convergence changes, but cannot be linted.
+  if [[ "$path" == *.php && -f "$path" ]]; then
+    printf '%s\n' "$path" >> "$changed_php_file"
+  fi
   if [[ "$path" == server/tests/*.php || "$path" == server/tests/*/*.php ]]; then
     select_test "$path"
   fi
