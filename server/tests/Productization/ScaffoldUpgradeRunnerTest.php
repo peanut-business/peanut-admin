@@ -65,6 +65,11 @@ try{
     $apply=$runner->apply($from,scaffoldPlanPath($from,$plan));$verify=$runner->verify($from,scaffoldPlanPath($from,$plan));
     scaffoldExpect($apply['status']==='applied'&&$verify['status']==='verified','apply and verify must complete');
     scaffoldExpect(hash_equals($appOwnedDigest,(string)hash_file('sha256',$from.'/'.$appOwnedPath)),'app-owned customization must remain byte-identical');
+    $toIdentity=json_decode((string)file_get_contents($toRelease),true,512,JSON_THROW_ON_ERROR)['release'];
+    $toSource=$temporary.'/to-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$toSource]);scaffoldRun(['git','checkout','--quiet','--detach',$toIdentity['source_commit']],$toSource);
+    $toApplication=$temporary.'/to-app';scaffoldFresh($toSource,$toApplication);$toApplicationManifest=json_decode((string)file_get_contents($toApplication.'/.peanut/application-manifest.json'),true,512,JSON_THROW_ON_ERROR);
+    scaffoldExpect($toApplicationManifest['template']['source_tree']===$toIdentity['source_tree'],'target create-app tree must match the release source tree');
+    foreach($toApplicationManifest['files'] as $file){if(!in_array($file['classification'],['managed','generated-managed'],true))continue;$upgraded=$from.'/'.$file['path'];$generated=$toApplication.'/'.$file['path'];scaffoldExpect(is_file($upgraded)&&hash_equals((string)hash_file('sha256',$generated),(string)hash_file('sha256',$upgraded))&&((fileperms($generated)&0777)===(fileperms($upgraded)&0777)),'upgraded managed tree must exactly equal target create-app: '.$file['path']);}
     $again=$runner->apply($from,scaffoldPlanPath($from,$plan));scaffoldExpect($again['idempotent']===true,'successful candidate apply must be idempotent');
 
     $blocked=$temporary.'/blocked';scaffoldCopy($temporary.'/from-app',$blocked);
