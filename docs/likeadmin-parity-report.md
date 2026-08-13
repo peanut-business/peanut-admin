@@ -30,7 +30,14 @@
 | LikeAdmin 1.9.4 | `http://127.0.0.1:5174/admin/` | 前端 5174、Docker API 80 已运行 |
 | Peanut Admin | `http://127.0.0.1:5175/` | 前端 5175、后端 8000 已运行 |
 
-Peanut 的权威数据库不是本机临时库，而是局域网 `mac-2014` 上的 `192.168.192.2:3306/peanut_admin`。2026-08-01 已确认 `peanut-mysql`、`peanut-redis` 正常运行并使用 `unless-stopped` 重启策略，Docker Desktop 已启用自动启动；非交互 SSH 使用 `/usr/local/bin/docker`。
+本报告下方的数据库与运行结果封存的是 2026-08-01 parity 验收现场，不是当前开发
+环境说明。该现场当时使用 `mac-2014` 上的旧 3306 端口与 `peanut_admin` 库；此资源
+后来退出，且没有当前迁移账本，不得连接或复用。现行开发资源只以根 `AGENTS.md` 和
+CompanyOS `resources/development-infrastructure.yaml` 为准：资源
+`peanut-admin-mysql84-development`，地址
+`192.168.192.2:20183/peanut_admin_development`。报告中的表数、菜单数、配置数及脚本
+输出仍保留为对应固定日期的历史证据，不能替代 `v1.1.0` 的 50 条 migration 发布身份，
+也不能替代发布后 `dev` 的当前迁移清单。
 
 F01 验收前发现 LikeAdmin 前端进程的 `VITE_APP_BASE_URL` 指向未运行的 `127.0.0.1:8001`，而实际 Docker API 监听 80。已重启同一 5174 前端进程并将 API 基址修正为 `127.0.0.1:80`，真实页面和 API 请求恢复正常。
 

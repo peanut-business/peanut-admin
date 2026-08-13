@@ -29,9 +29,9 @@ PlatformOperator 只治理本实例 Tenant，不拥有租户业务数据权限�
 
 - Peanut Admin Core 已有 Tenant、TenantMember、PlatformOperator、认证、RBAC、typed-target 数据权限、TenantModule、审计和 Host 组合实现。
 - 已发布的 Core Alpha 包和固定资格仅证明精确版本能力，不等于当前移动分支可直接作为所有产品生产基线。
-- Peanut Admin 应用仓已接入默认 Tenant、可信管理端 TenantContext、Article
-  Tenant-first Runtime、首批非 SQL Tenant 边界和实例内 Tenant 治理；这不表示
-  MT02–MT04 已整体完成。
+- Peanut Admin 应用仓的默认 Tenant、可信管理端 TenantContext、代表 SQL/非 SQL
+  Tenant 隔离、实例内 Tenant 治理和双模式 Host 已完成；MT02–MT06 已由下方固定
+  候选、Release 和一次干净安装证据闭合。
 - 核心项目生成器已经固定公司级 MT01 承接版本；Generator 只创建新项目，禁止
   覆盖更新已有项目，后续升级仍需独立追加式升级合同。
 - DCS 正式主项目必须从批准的 Peanut 模板新建；旧 DCS/POS Runtime 只作业务规则、契约、样本、迁移和验收参考。
@@ -119,9 +119,9 @@ SHA-256 `73398b2504ad7b41f759f5593efd32a91df56fd4e2ed06d1ffa4af9c84a36334`，外
 4. DCS 后续只消费 PR #4 的 `CONDITIONAL` 边界：先单独批准 D1 Product-only，
    再从固定参数创建新 Host 并冻结实际 Module/manifest/migration/API/permission
    写集；不得复制旧 Runtime，也不得把 adoption 当作 D1 业务实现 PASS。
-5. Peanut Admin 当前关键路径是 MT06 `v1.1.0`：固定版本、依赖、migration 与 qualification
-   metadata，完成最低发布 preflight 后走 `dev → main → annotated tag → GitHub Release →
-   一次安装验证`。MT05 两组、CAP01–CAP06、MT01、Tabbar 和既有业务 Gate 均不得重复。
+5. MT06 `v1.1.0` 已完成 `dev → main → annotated tag → GitHub Release → 一次安装验证`。
+   当前授权在此停止；不要重复 MT05 两组、CAP01–CAP06、MT01、Tabbar、发布或既有业务
+   Gate，也不要在本仓开始 OP01/OP02。
 6. DCS W0/D0 是旧固定 Core 的真实外部采用；
    当前 Alpha.5/MT01 候选仍只有 Product-only `CONDITIONAL` 裁决，不得写成 D1 已落地。
 7. 性能与 Recovery 作为阶段末后续项登记，不阻塞当前业务稳定候选；只有发现 Tenant
@@ -142,7 +142,7 @@ SHA-256 `73398b2504ad7b41f759f5593efd32a91df56fd4e2ed06d1ffa4af9c84a36334`，外
 | MT04 | Tenant 选择/切换/撤销、旧上下文清理、双模式入口和实例工具 guard 已通过真实浏览器业务链 | 无 | 无 |
 | MT05 | 三模式安装/升级与完整平台→Tenant 浏览器矩阵均已通过 | 无；两组证据绑定各自固定候选，禁止重复 | 无 |
 | MT06 | `main/dev`、annotated `v1.1.0`、GitHub Release、Alpha.5 locks、发布 metadata/法律资产与一次干净安装验证均已固定 | 无 | 无；按当前授权停止，不进入 OP01/OP02 |
-| OP01 | 未开始 | 独立仓库、协议、身份、签名任务、数据边界和项目立项均缺 | MT06 前可并行冻结独立运营平台协议与仓库边界，不写业务实例 Runtime |
+| OP01 | 未开始 | 独立仓库、协议、身份、签名任务、数据边界和项目立项均缺 | 需新的独立项目授权；不在 Peanut Admin 仓实现 |
 | OP02 | 未开始 | Release/实例/升级/健康/备份首个闭环均缺 | OP01 合入后在独立仓库实现一个签名升级任务纵向切片 |
 
 旧应用 PR #49 已在 PR #50 的新权威指针合入后关闭。Core PR #53 已在全部声明检查
