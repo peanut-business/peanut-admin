@@ -15,8 +15,8 @@ php scripts/create-app \
 identity 必须包含 vendor/name。路径穿越、符号链接目标、非空目标、inventory 漂移、未知
 变量与未知 transform 均 fail-closed。
 
-`scaffold/application-template-inventory.json` 对模板 checkout 的每个 Git 跟踪文件给出唯一
-分类：
+`scaffold/application-template-inventory.json` 对每个可生成的模板源文件给出唯一分类；
+`scaffold/**` 中的 source-only inventory、release artifact 与历史证据本身不递归进入应用：
 
 - `managed`：框架与交付基础设施。创建时把逐文件基线复制到
   `.peanut/scaffold-baseline/<template>/files/`；后续升级只能以该基线做显式三方决策。

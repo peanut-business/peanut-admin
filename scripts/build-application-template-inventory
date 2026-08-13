@@ -21,7 +21,8 @@ function inventoryGitFiles(string $root): array
         throw new RuntimeException('git ls-files failed: ' . trim((string)$stderr));
     }
     $files = array_values(array_filter(explode("\n", trim($stdout)), 'strlen'));
-    $files = array_values(array_filter($files, static fn(string $path): bool => $path !== 'scaffold/application-template-inventory.json'));
+    $files = array_values(array_filter($files, static fn(string $path): bool => $path !== 'scaffold/application-template-inventory.json'
+        && !str_starts_with($path, 'scaffold/')));
     sort($files, SORT_STRING);
     return $files;
 }
