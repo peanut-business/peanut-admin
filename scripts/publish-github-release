@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+REPOSITORY="peanut-business/peanut-admin"
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/publish-github-release <version> [--prepare-only] [--output <absolute-dir>]
+
+Creates the deterministic source archive, legal assets, external manifest and
+release notes from annotated tag v<version>. Without --prepare-only, publishes
+the six explicit assets as one GitHub Release after all identity checks pass.
+EOF
+}
+
+[[ $# -ge 1 ]] || { usage >&2; exit 2; }
+VERSION="$1"
+shift
+PREPARE_ONLY=0
+OUTPUT_DIR=''
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --prepare-only) PREPARE_ONLY=1; shift ;;
+    --output) [[ $# -ge 2 ]] || { usage >&2; exit 2; }; OUTPUT_DIR="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) printf 'publish-github-release: unknown option: %s\n' "$1" >&2; exit 2 ;;
+  esac
+done
+
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+  printf 'publish-github-release: version must be stable semver without a v prefix\n' >&2
+  exit 2
+}
+TAG="v$VERSION"
+if [[ -z "$OUTPUT_DIR" ]]; then
+  OUTPUT_DIR="$(mktemp -d "/private/tmp/peanut-admin-$VERSION-release.XXXXXX")"
+fi
+[[ "$OUTPUT_DIR" == /* ]] || {
+  printf 'publish-github-release: --output must be an absolute path\n' >&2
+  exit 2
+}
+[[ ! -e "$OUTPUT_DIR" || -d "$OUTPUT_DIR" ]] || {
+  printf 'publish-github-release: output is not a directory: %s\n' "$OUTPUT_DIR" >&2
+  exit 2
+}
+mkdir -p "$OUTPUT_DIR"
+[[ -z "$(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]] || {
+  printf 'publish-github-release: output directory must be empty: %s\n' "$OUTPUT_DIR" >&2
+  exit 2
+}
+
+cd "$ROOT_DIR"
+[[ "$(git cat-file -t "$TAG" 2>/dev/null || true)" == tag ]] || {
+  printf 'publish-github-release: annotated tag is missing: %s\n' "$TAG" >&2
+  exit 1
+}
+TAG_OBJECT="$(git rev-parse "$TAG^{tag}")"
+COMMIT="$(git rev-parse "$TAG^{commit}")"
+REMOTE_TAG_OBJECT="$(git ls-remote --tags origin "refs/tags/$TAG" | awk '{print $1}')"
+REMOTE_COMMIT="$(git ls-remote --tags origin "refs/tags/$TAG^{}" | awk '{print $1}')"
+[[ "$REMOTE_TAG_OBJECT" == "$TAG_OBJECT" && "$REMOTE_COMMIT" == "$COMMIT" ]] || {
+  printf 'publish-github-release: local and origin tag identities differ\n' >&2
+  exit 1
+}
+
+if [[ "$PREPARE_ONLY" != 1 ]]; then
+  [[ "$COMMIT" == "$(git rev-parse origin/main^{commit})" ]] || {
+    printf 'publish-github-release: tag does not resolve to current origin/main\n' >&2
+    exit 1
+  }
+  EXISTING="$(gh api "repos/$REPOSITORY/releases/tags/$TAG" --silent 2>/dev/null && printf yes || printf no)"
+  [[ "$EXISTING" == no ]] || {
+    printf 'publish-github-release: GitHub Release already exists: %s\n' "$TAG" >&2
+    exit 1
+  }
+fi
+
+ARCHIVE="$OUTPUT_DIR/peanut-admin-$VERSION.tar.gz"
+git archive --format=tar --prefix="peanut-admin-$VERSION/" "$TAG" | gzip -n > "$ARCHIVE"
+git show "$TAG:LICENSE" > "$OUTPUT_DIR/peanut-admin-$VERSION-LICENSE.txt"
+git show "$TAG:NOTICE" > "$OUTPUT_DIR/peanut-admin-$VERSION-NOTICE.txt"
+git show "$TAG:THIRD_PARTY_NOTICES.md" > "$OUTPUT_DIR/peanut-admin-$VERSION-THIRD-PARTY-NOTICES.md"
+git show "$TAG:RELEASE_SBOM.spdx.json" > "$OUTPUT_DIR/peanut-admin-$VERSION-SBOM.spdx.json"
+
+export VERSION TAG OUTPUT_DIR TAG_OBJECT COMMIT
+node <<'NODE'
+const fs = require('node:fs')
+const cp = require('node:child_process')
+const crypto = require('node:crypto')
+const { VERSION, TAG, OUTPUT_DIR, TAG_OBJECT, COMMIT } = process.env
+const fromTag = (path) => cp.execFileSync('git', ['show', `${TAG}:${path}`], { encoding: 'utf8' })
+const metadataText = fromTag('RELEASE_METADATA.json')
+const metadata = JSON.parse(metadataText)
+if (metadata.version !== VERSION || metadata.expected_tag !== TAG) {
+  throw new Error('tag and embedded release metadata differ')
+}
+const names = [
+  `peanut-admin-${VERSION}.tar.gz`,
+  `peanut-admin-${VERSION}-LICENSE.txt`,
+  `peanut-admin-${VERSION}-NOTICE.txt`,
+  `peanut-admin-${VERSION}-THIRD-PARTY-NOTICES.md`,
+  `peanut-admin-${VERSION}-SBOM.spdx.json`,
+]
+const digest = (value) => crypto.createHash('sha256').update(value).digest('hex')
+const artifacts = Object.fromEntries(names.map((name) => {
+  const content = fs.readFileSync(`${OUTPUT_DIR}/${name}`)
+  return [name, { size_bytes: content.length, sha256: digest(content) }]
+}))
+const manifest = {
+  schema_version: 1,
+  product: metadata.product,
+  version: VERSION,
+  tag: TAG,
+  tag_type: 'annotated',
+  tag_object: TAG_OBJECT,
+  commit: COMMIT,
+  released_at: `${metadata.release_date}T00:00:00Z`,
+  repository: metadata.repository,
+  license: {
+    type: metadata.license.type,
+    copyright_holder_display: metadata.license.copyright_holder_display,
+  },
+  normative_artifact: `peanut-admin-${VERSION}.tar.gz`,
+  artifacts,
+  embedded_metadata: {
+    path: 'RELEASE_METADATA.json',
+    sha256: digest(Buffer.from(metadataText)),
+  },
+  technical_qualification: metadata.technical_qualification,
+  public_runtime_dependencies: metadata.public_runtime_dependencies,
+  exclusions: {
+    prebuilt_images: !metadata.normative_artifact.prebuilt_images_published,
+    new_core_package_release: !metadata.normative_artifact.new_core_packages_published,
+    saas: !metadata.normative_artifact.saas_included,
+  },
+  self_reference_policy: 'This manifest intentionally omits its own digest. Its SHA-256 is recorded in the GitHub Release notes.',
+}
+fs.writeFileSync(`${OUTPUT_DIR}/RELEASE_MANIFEST.json`, `${JSON.stringify(manifest, null, 2)}\n`)
+
+const changelog = fromTag('CHANGELOG.md')
+const header = `## [${VERSION}]`
+const start = changelog.indexOf(header)
+if (start < 0) throw new Error(`${header} is missing from CHANGELOG.md`)
+const tail = changelog.slice(start)
+const next = tail.indexOf('\n## [', header.length)
+const section = (next < 0 ? tail : tail.slice(0, next)).trim()
+const archiveSha = artifacts[`peanut-admin-${VERSION}.tar.gz`].sha256
+const manifestSha = digest(fs.readFileSync(`${OUTPUT_DIR}/RELEASE_MANIFEST.json`))
+const notes = `# Peanut Admin ${VERSION}\n\nImmutable source: annotated tag \`${TAG}\` at commit \`${COMMIT}\`.\n\n${section}\n\n## Artifacts and verification\n\n- Normative deterministic source archive: \`peanut-admin-${VERSION}.tar.gz\`\n  - SHA-256: \`${archiveSha}\`\n- External release manifest: \`RELEASE_MANIFEST.json\`\n  - SHA-256: \`${manifestSha}\`\n\n\`RELEASE_MANIFEST.json\` records hashes and sizes for every other attached artifact. GitHub-generated source archives are convenience downloads; the attached deterministic archive is normative.\n`
+fs.writeFileSync(`${OUTPUT_DIR}/release-notes.md`, notes)
+NODE
+
+[[ "$(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type f | wc -l | tr -d ' ')" == 7 ]] || {
+  printf 'publish-github-release: unexpected output file count\n' >&2
+  exit 1
+}
+(cd "$OUTPUT_DIR" && shasum -a 256 \
+  "peanut-admin-$VERSION.tar.gz" \
+  "peanut-admin-$VERSION-LICENSE.txt" \
+  "peanut-admin-$VERSION-NOTICE.txt" \
+  "peanut-admin-$VERSION-THIRD-PARTY-NOTICES.md" \
+  "peanut-admin-$VERSION-SBOM.spdx.json" \
+  RELEASE_MANIFEST.json)
+
+if [[ "$PREPARE_ONLY" == 1 ]]; then
+  printf 'prepared=%s\n' "$OUTPUT_DIR"
+  exit 0
+fi
+
+gh release create "$TAG" \
+  "$OUTPUT_DIR/peanut-admin-$VERSION.tar.gz" \
+  "$OUTPUT_DIR/peanut-admin-$VERSION-LICENSE.txt" \
+  "$OUTPUT_DIR/peanut-admin-$VERSION-NOTICE.txt" \
+  "$OUTPUT_DIR/peanut-admin-$VERSION-THIRD-PARTY-NOTICES.md" \
+  "$OUTPUT_DIR/peanut-admin-$VERSION-SBOM.spdx.json" \
+  "$OUTPUT_DIR/RELEASE_MANIFEST.json" \
+  --repo "$REPOSITORY" \
+  --verify-tag \
+  --title "Peanut Admin v$VERSION" \
+  --notes-file "$OUTPUT_DIR/release-notes.md" \
+  --latest
+printf 'published=%s\nartifacts=%s\n' "$TAG" "$OUTPUT_DIR"

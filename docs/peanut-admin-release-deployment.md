@@ -147,6 +147,24 @@ docker compose up -d --no-build
 
 需要严格锁版或回滚时，再使用 release tag；这不是首次部署和日常升级的必需步骤。
 
+### 1.1.0 双模式与身份输入
+
+`1.1.0` 的 Standalone 和多租户能力来自同一 release。部署必须显式设置
+`DEPLOYMENT_MODE=standalone` 或 `DEPLOYMENT_MODE=multi-tenant`；缺失或未知值不会自动
+回退为 Standalone。两种模式都必须设置彼此独立、至少 32 字节且发布后保持稳定的
+`TENANT_IDENTIFIER_HMAC_KEY` 和 `PLATFORM_IDENTIFIER_HMAC_KEY`。
+
+首次安装和首次将历史库纳入 Tenant Account 模型时提供 `ADMIN_INITIAL_EMAIL`，空库还要
+提供合格的 `ADMIN_INITIAL_PASSWORD`。多租户模式另需提供与管理员邮箱不同的
+`PLATFORM_INITIAL_EMAIL` 和合格的 `PLATFORM_INITIAL_PASSWORD`，以建立独立
+PlatformOperator；它不会成为默认 TenantMember。上述秘密只能存放在受控部署环境或
+Secret 中，不得写入 Git、日志或发布制品。
+
+从 `v1.0.0` 前滚到 `v1.1.0` 会把迁移账本从 28 条推进到 50 条，并建立默认 Tenant、
+Account/TenantMember/owner、租户化 RBAC/组织和代表业务所有权。升级前成对备份数据库与
+`php-storage`，固定部署模式和身份输入，严格按“构建 → 迁移 → 切换”执行。Tenant
+所有权、身份映射或复合外键校验失败时保持旧流量，不得先切换新代码。
+
 `--skip-if-installed` 只避免容器重启时重复执行首次安装，不代替版本化数据库迁移。自动升级管理将在独立运营平台实现前保持手动。
 
 `scripts/package-release.sh` 仅保留为管理端 + PHP 的原生制品工具，不是完整三端生产部署方案。生产环境以 Docker Compose 为唯一推荐入口。

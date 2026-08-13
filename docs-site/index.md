@@ -43,7 +43,7 @@ features:
 <div class="home-proof">
   <p class="eyebrow">CURRENT BASELINE</p>
   <h2>从可运行模板，到可维护的产品 Host</h2>
-  <p>Peanut Admin 已完成管理端、会员与财务、内容与装修、通知、支付、OAuth/渠道等应用领域收口。当前文档只描述仓库中已经交付的能力；多租户 SaaS 仍是后续独立阶段。</p>
+  <p>Peanut Admin 1.1.0 已完成 Standalone 与多租户双模式、实例内 Tenant 平台管理、可信租户会话及代表业务隔离。当前文档只描述仓库中已经交付的能力；订阅计费与跨实例运营平台仍是独立后续阶段。</p>
   <div class="home-proof-actions">
     <a href="/capabilities">查看能力与边界</a>
     <a href="/deployment">部署与升级</a>
@@ -70,4 +70,4 @@ features:
 
 ## 发布边界
 
-Peanut Admin 应用 `1.0.0` 已在 annotated `v1.0.0` 与同 tag GitHub Release 正式发布。Composer `peanut-admin/core` 与 npm `@peanut-admin/admin` 是仅有的公开运行依赖；内部领域目录不是独立包。既有应用与官网域名的部署状态以[版本与发布](/releases)记录为准；SaaS 仍是独立后续阶段，本站不会宣称已经实现。
+Peanut Admin 应用 `1.1.0` 发布完成时以 annotated `v1.1.0` 与同 tag GitHub Release 作为正式身份。Composer `peanut-admin/core` 与 npm `@peanut-admin/admin` 是仅有的公开运行依赖；内部领域目录不是独立包。既有应用与官网域名的部署状态以[版本与发布](/releases)记录为准；本版本是稳定多租户脚手架，不宣称包含完整 SaaS 商业能力。

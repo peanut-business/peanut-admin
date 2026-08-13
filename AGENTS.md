@@ -69,7 +69,9 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
   `5bd3e78…` 的三模式安装/升级证据早于两条新增 migration，不能覆盖最终候选。
   PR #99 修正合法部署枚举 `multi-tenant` 后，最终候选的 Standalone 空库、`v1.0.0`
   前滚和多租户空库均以 50 条 migration/81 张表通过；MT02–MT05 已完成。MT06
-  `v1.1.0` 稳定发布尚未完成。
+  `v1.1.0` 发布候选已从 `dev@b06bb766…` 形成，正在收口版本/Registry lock、生产双模式
+  环境接线、发布 metadata/法律制品和用户文档；正式 `main`、tag、Release 与一次安装
+  验证尚未完成。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
 - 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`

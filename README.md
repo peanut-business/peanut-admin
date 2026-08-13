@@ -9,9 +9,9 @@
 - PC package name：`peanut-admin-pc`
 - 集成分支：`dev`；稳定分支：`main`
 - LikeAdmin parity：已完成并独立验证，证据见 `output/playwright/v02/`；后续不重复验收
-- 数据库基线：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 28 个 migrations
-- 当前候选数据库门禁：空库安装后共 43 张表、28 条 `applied` 账本记录、167 个菜单、62 项配置和唯一 root 管理员
-- SaaS 多租户：仅为 `docs/design/saas-roadmap/` 中的 roadmap 设计，当前代码尚未实现
+- 数据库基线：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 50 个 migrations
+- 当前稳定基线：同一 `1.1.0` release 支持 `standalone` 与 `multi-tenant`；空库与 `v1.0.0` 前滚均已通过 81 张表、50 条迁移账本的集中验收
+- 多租户边界：已交付 Tenant 隔离、实例内 PlatformOperator/Tenant 生命周期、租户会话与代表业务闭环；订阅计费和跨实例运营平台不在本 release 内
 
 ## 技术栈
 
@@ -127,7 +127,7 @@ PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
 
 Peanut Admin 应用版权主体显示为“花生科技”，package manifests 使用 `proprietary/UNLICENSED` 语义；两个公开核心包仍为 Apache-2.0。源码使用边界见 [LICENSE](LICENSE)，来源与第三方告知见 [NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，完整五锁图依赖库存见 [RELEASE_SBOM.spdx.json](RELEASE_SBOM.spdx.json)。
 
-应用 `1.0.0` 已在最终 `main` 提交 `0d3c848…` 创建 annotated `v1.0.0` 与正式 [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0)。变更与停止线见 [CHANGELOG.md](CHANGELOG.md)，附件摘要见 Release 的 `RELEASE_MANIFEST.json`。
+应用 `1.1.0` 的变更、升级要求和边界见 [CHANGELOG.md](CHANGELOG.md)；正式发布后以 annotated [`v1.1.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0) 与同 tag GitHub Release 为不可变身份，附件摘要见 Release 的 `RELEASE_MANIFEST.json`。历史 `v1.0.0` 保持不变。
 
 ## 目标架构
 

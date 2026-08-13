@@ -2,10 +2,10 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "Peanut Admin 1.0.0 release dependency SBOM",
-  "documentNamespace": "https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0/sbom",
+  "name": "Peanut Admin 1.1.0 release dependency SBOM",
+  "documentNamespace": "https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0/sbom",
   "creationInfo": {
-    "created": "2026-08-11T00:00:00Z",
+    "created": "2026-08-13T00:00:00Z",
     "creators": [
       "Organization: 花生科技",
       "Tool: scripts/generate-release-legal.mjs"
@@ -31,7 +31,7 @@
     {
       "name": "Peanut Admin",
       "SPDXID": "SPDXRef-Package-Peanut-Admin",
-      "versionInfo": "1.0.0",
+      "versionInfo": "1.1.0",
       "downloadLocation": "https://github.com/peanut-business/peanut-admin",
       "filesAnalyzed": false,
       "licenseConcluded": "LicenseRef-Peanut-Admin-Proprietary",
@@ -42,7 +42,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:github/peanut-business/peanut-admin@1.0.0"
+          "referenceLocator": "pkg:github/peanut-business/peanut-admin@1.1.0"
         }
       ]
     },
@@ -333,8 +333,8 @@
     },
     {
       "name": "peanut-admin/core",
-      "SPDXID": "SPDXRef-Package-composer-df13eacf59cb431a5a2c",
-      "versionInfo": "0.1.0-alpha.2",
+      "SPDXID": "SPDXRef-Package-composer-1706c6317332924328a6",
+      "versionInfo": "0.1.0-alpha.5",
       "downloadLocation": "https://github.com/peanut-opensource/peanut-admin-core.git",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
@@ -346,7 +346,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.2"
+          "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.5"
         }
       ]
     },
@@ -4151,25 +4151,6 @@
       ]
     },
     {
-      "name": "@babel/generator",
-      "SPDXID": "SPDXRef-Package-pc-fc5f6a3c0d232b8b2119",
-      "versionInfo": "8.0.0",
-      "downloadLocation": "https://registry.npmmirror.com/@babel/generator/-/generator-8.0.0.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40babel/generator@8.0.0"
-        }
-      ]
-    },
-    {
       "name": "@babel/helper-annotate-as-pure",
       "SPDXID": "SPDXRef-Package-pc-0665c9b8165ab42a2714",
       "versionInfo": "7.29.7",
@@ -4398,25 +4379,6 @@
       ]
     },
     {
-      "name": "@babel/helper-string-parser",
-      "SPDXID": "SPDXRef-Package-pc-e9beffe996078d5fe508",
-      "versionInfo": "8.0.0",
-      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-string-parser/-/helper-string-parser-8.0.0.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40babel/helper-string-parser@8.0.0"
-        }
-      ]
-    },
-    {
       "name": "@babel/helper-validator-identifier",
       "SPDXID": "SPDXRef-Package-pc-19917cddd9e635e82f8a",
       "versionInfo": "7.29.7",
@@ -4432,25 +4394,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/%40babel/helper-validator-identifier@7.29.7"
-        }
-      ]
-    },
-    {
-      "name": "@babel/helper-validator-identifier",
-      "SPDXID": "SPDXRef-Package-pc-a5149dc2c4af05aad506",
-      "versionInfo": "8.0.4",
-      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-validator-identifier/-/helper-validator-identifier-8.0.4.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40babel/helper-validator-identifier@8.0.4"
         }
       ]
     },
@@ -4508,25 +4451,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/%40babel/parser@7.29.8"
-        }
-      ]
-    },
-    {
-      "name": "@babel/parser",
-      "SPDXID": "SPDXRef-Package-pc-132cd520dbbf7a42e189",
-      "versionInfo": "8.0.4",
-      "downloadLocation": "https://registry.npmmirror.com/@babel/parser/-/parser-8.0.4.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40babel/parser@8.0.4"
         }
       ]
     },
@@ -4641,25 +4565,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/%40babel/types@7.29.8"
-        }
-      ]
-    },
-    {
-      "name": "@babel/types",
-      "SPDXID": "SPDXRef-Package-pc-1b5f65c905d9690c7389",
-      "versionInfo": "8.0.4",
-      "downloadLocation": "https://registry.npmmirror.com/@babel/types/-/types-8.0.4.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40babel/types@8.0.4"
         }
       ]
     },
@@ -7192,9 +7097,9 @@
     },
     {
       "name": "@peanut-admin/admin",
-      "SPDXID": "SPDXRef-Package-pc-da96faa738a2d8442e32",
-      "versionInfo": "0.1.0-alpha.3",
-      "downloadLocation": "https://registry.npmmirror.com/@peanut-admin/admin/-/admin-0.1.0-alpha.3.tgz",
+      "SPDXID": "SPDXRef-Package-pc-11e7381024b46ce5da1b",
+      "versionInfo": "0.1.0-alpha.5",
+      "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.5.tgz",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "Apache-2.0",
@@ -7205,7 +7110,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.3"
+          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.5"
         }
       ]
     },
@@ -8369,25 +8274,6 @@
       ]
     },
     {
-      "name": "@types/jsesc",
-      "SPDXID": "SPDXRef-Package-pc-9f41672db904dcac6ea5",
-      "versionInfo": "2.5.1",
-      "downloadLocation": "https://registry.npmmirror.com/@types/jsesc/-/jsesc-2.5.1.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40types/jsesc@2.5.1"
-        }
-      ]
-    },
-    {
       "name": "@types/lodash",
       "SPDXID": "SPDXRef-Package-pc-9bdb1f2b98332074bdb3",
       "versionInfo": "4.17.25",
@@ -8859,25 +8745,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/%40vue/devtools-api@6.6.4"
-        }
-      ]
-    },
-    {
-      "name": "@vue/devtools-api",
-      "SPDXID": "SPDXRef-Package-pc-26d54d0e7f3011ee60ad",
-      "versionInfo": "8.2.1",
-      "downloadLocation": "https://registry.npmmirror.com/@vue/devtools-api/-/devtools-api-8.2.1.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40vue/devtools-api@8.2.1"
         }
       ]
     },
@@ -9581,25 +9448,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/ast-walker-scope@0.8.3"
-        }
-      ]
-    },
-    {
-      "name": "ast-walker-scope",
-      "SPDXID": "SPDXRef-Package-pc-771310bfd34f959951c6",
-      "versionInfo": "0.9.0",
-      "downloadLocation": "https://registry.npmmirror.com/ast-walker-scope/-/ast-walker-scope-0.9.0.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/ast-walker-scope@0.9.0"
         }
       ]
     },
@@ -13329,9 +13177,9 @@
     },
     {
       "name": "glob",
-      "SPDXID": "SPDXRef-Package-pc-c4126c4f9145fc0ca50f",
-      "versionInfo": "10.4.5",
-      "downloadLocation": "https://registry.npmmirror.com/glob/-/glob-10.4.5.tgz",
+      "SPDXID": "SPDXRef-Package-pc-761ef1ab4c60e85243d0",
+      "versionInfo": "10.5.0",
+      "downloadLocation": "https://registry.npmjs.org/glob/-/glob-10.5.0.tgz",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "ISC",
@@ -13342,7 +13190,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/glob@10.4.5"
+          "referenceLocator": "pkg:npm/glob@10.5.0"
         }
       ]
     },
@@ -14563,6 +14411,25 @@
       ]
     },
     {
+      "name": "isomorphic.js",
+      "SPDXID": "SPDXRef-Package-pc-38fb7dc0e63431441b47",
+      "versionInfo": "0.2.5",
+      "downloadLocation": "https://registry.npmjs.org/isomorphic.js/-/isomorphic.js-0.2.5.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/isomorphic.js@0.2.5"
+        }
+      ]
+    },
+    {
       "name": "jackspeak",
       "SPDXID": "SPDXRef-Package-pc-4f38a08c12d97526f781",
       "versionInfo": "3.4.3",
@@ -14920,6 +14787,25 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/lazystream@1.0.1"
+        }
+      ]
+    },
+    {
+      "name": "lib0",
+      "SPDXID": "SPDXRef-Package-pc-083b4838e827c9ed7162",
+      "versionInfo": "0.2.117",
+      "downloadLocation": "https://registry.npmjs.org/lib0/-/lib0-0.2.117.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lib0@0.2.117"
         }
       ]
     },
@@ -17257,25 +17143,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/pinia@2.3.1"
-        }
-      ]
-    },
-    {
-      "name": "pinia",
-      "SPDXID": "SPDXRef-Package-pc-0fa68719162e0a4454bc",
-      "versionInfo": "4.0.2",
-      "downloadLocation": "https://registry.npmmirror.com/pinia/-/pinia-4.0.2.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pinia@4.0.2"
         }
       ]
     },
@@ -21251,25 +21118,6 @@
       ]
     },
     {
-      "name": "vue-router",
-      "SPDXID": "SPDXRef-Package-pc-4a6bc4816a3cc68a763d",
-      "versionInfo": "5.2.0",
-      "downloadLocation": "https://registry.npmmirror.com/vue-router/-/vue-router-5.2.0.tgz",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/vue-router@5.2.0"
-        }
-      ]
-    },
-    {
       "name": "vue-tsc",
       "SPDXID": "SPDXRef-Package-pc-2f74955d37169b2f684e",
       "versionInfo": "2.2.12",
@@ -21517,6 +21365,44 @@
       ]
     },
     {
+      "name": "y-protocols",
+      "SPDXID": "SPDXRef-Package-pc-ed4e780b2cbb0d6738a1",
+      "versionInfo": "1.0.7",
+      "downloadLocation": "https://registry.npmjs.org/y-protocols/-/y-protocols-1.0.7.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/y-protocols@1.0.7"
+        }
+      ]
+    },
+    {
+      "name": "y-websocket",
+      "SPDXID": "SPDXRef-Package-pc-cea347b675b15bb9fac0",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmjs.org/y-websocket/-/y-websocket-3.1.0.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/y-websocket@3.1.0"
+        }
+      ]
+    },
+    {
       "name": "y18n",
       "SPDXID": "SPDXRef-Package-pc-6ec4823cfcc7fd6f3574",
       "versionInfo": "5.0.8",
@@ -21665,6 +21551,25 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/yargs-parser@22.0.0"
+        }
+      ]
+    },
+    {
+      "name": "yjs",
+      "SPDXID": "SPDXRef-Package-pc-2ba75f4eac530be83de1",
+      "versionInfo": "13.6.32",
+      "downloadLocation": "https://registry.npmjs.org/yjs/-/yjs-13.6.32.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin pc locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/yjs@13.6.32"
         }
       ]
     },
@@ -26591,9 +26496,9 @@
     },
     {
       "name": "@peanut-admin/admin",
-      "SPDXID": "SPDXRef-Package-uniapp-b0dd60ec97b9bd900615",
-      "versionInfo": "0.1.0-alpha.4",
-      "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.4.tgz",
+      "SPDXID": "SPDXRef-Package-uniapp-b022bb8795a4e97c9009",
+      "versionInfo": "0.1.0-alpha.5",
+      "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.5.tgz",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "Apache-2.0",
@@ -26604,7 +26509,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.4"
+          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.5"
         }
       ]
     },
@@ -34228,6 +34133,25 @@
       ]
     },
     {
+      "name": "isomorphic.js",
+      "SPDXID": "SPDXRef-Package-uniapp-d31cd40a3947441a1866",
+      "versionInfo": "0.2.5",
+      "downloadLocation": "https://registry.npmjs.org/isomorphic.js/-/isomorphic.js-0.2.5.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin uniapp locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/isomorphic.js@0.2.5"
+        }
+      ]
+    },
+    {
       "name": "istanbul-lib-coverage",
       "SPDXID": "SPDXRef-Package-uniapp-710d8964e4079886bc33",
       "versionInfo": "3.2.2",
@@ -35155,6 +35079,25 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/leven@3.1.0"
+        }
+      ]
+    },
+    {
+      "name": "lib0",
+      "SPDXID": "SPDXRef-Package-uniapp-8d56cc4797ba3830ab55",
+      "versionInfo": "0.2.117",
+      "downloadLocation": "https://registry.npmjs.org/lib0/-/lib0-0.2.117.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin uniapp locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lib0@0.2.117"
         }
       ]
     },
@@ -40802,6 +40745,44 @@
       ]
     },
     {
+      "name": "y-protocols",
+      "SPDXID": "SPDXRef-Package-uniapp-38be57948d416c88cdf2",
+      "versionInfo": "1.0.7",
+      "downloadLocation": "https://registry.npmjs.org/y-protocols/-/y-protocols-1.0.7.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin uniapp locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/y-protocols@1.0.7"
+        }
+      ]
+    },
+    {
+      "name": "y-websocket",
+      "SPDXID": "SPDXRef-Package-uniapp-27cc7d9d7ebcf358f0d9",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmjs.org/y-websocket/-/y-websocket-3.1.0.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin uniapp locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/y-websocket@3.1.0"
+        }
+      ]
+    },
+    {
       "name": "y18n",
       "SPDXID": "SPDXRef-Package-uniapp-62c915dd8a21effd8d09",
       "versionInfo": "5.0.8",
@@ -40893,6 +40874,25 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/yargs-parser@20.2.9"
+        }
+      ]
+    },
+    {
+      "name": "yjs",
+      "SPDXID": "SPDXRef-Package-uniapp-0ec8ca7cffde25d29ef1",
+      "versionInfo": "13.6.32",
+      "downloadLocation": "https://registry.npmjs.org/yjs/-/yjs-13.6.32.tgz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin uniapp locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/yjs@13.6.32"
         }
       ]
     },
@@ -42646,9 +42646,9 @@
     },
     {
       "name": "@peanut-admin/admin",
-      "SPDXID": "SPDXRef-Package-web-7e05aa50749efd75b350",
-      "versionInfo": "0.1.0-alpha.3",
-      "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.3",
+      "SPDXID": "SPDXRef-Package-web-985a5b442791ddb63748",
+      "versionInfo": "0.1.0-alpha.5",
+      "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.5",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "Apache-2.0",
@@ -42659,7 +42659,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.3"
+          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.5"
         }
       ]
     },
@@ -43975,25 +43975,6 @@
       ]
     },
     {
-      "name": "@vue-macros/common",
-      "SPDXID": "SPDXRef-Package-web-beb30182e4b15258a6e4",
-      "versionInfo": "3.1.4",
-      "downloadLocation": "https://registry.npmjs.org/%40vue-macros%2Fcommon/3.1.4",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40vue-macros/common@3.1.4"
-        }
-      ]
-    },
-    {
       "name": "@vue/babel-helper-vue-transform-on",
       "SPDXID": "SPDXRef-Package-web-36154e9b6effebee8e65",
       "versionInfo": "1.5.0",
@@ -44142,63 +44123,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/%40vue/devtools-api@6.6.4"
-        }
-      ]
-    },
-    {
-      "name": "@vue/devtools-api",
-      "SPDXID": "SPDXRef-Package-web-fd5d4c8908d314cfa671",
-      "versionInfo": "8.2.1",
-      "downloadLocation": "https://registry.npmjs.org/%40vue%2Fdevtools-api/8.2.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40vue/devtools-api@8.2.1"
-        }
-      ]
-    },
-    {
-      "name": "@vue/devtools-kit",
-      "SPDXID": "SPDXRef-Package-web-10ec013a6ba000adc6fb",
-      "versionInfo": "8.2.1",
-      "downloadLocation": "https://registry.npmjs.org/%40vue%2Fdevtools-kit/8.2.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40vue/devtools-kit@8.2.1"
-        }
-      ]
-    },
-    {
-      "name": "@vue/devtools-shared",
-      "SPDXID": "SPDXRef-Package-web-7e075e7341868ae32c50",
-      "versionInfo": "8.2.1",
-      "downloadLocation": "https://registry.npmjs.org/%40vue%2Fdevtools-shared/8.2.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40vue/devtools-shared@8.2.1"
         }
       ]
     },
@@ -45039,44 +44963,6 @@
       ]
     },
     {
-      "name": "ast-kit",
-      "SPDXID": "SPDXRef-Package-web-db4d27283795dc82e35e",
-      "versionInfo": "2.2.0",
-      "downloadLocation": "https://registry.npmjs.org/ast-kit/2.2.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/ast-kit@2.2.0"
-        }
-      ]
-    },
-    {
-      "name": "ast-walker-scope",
-      "SPDXID": "SPDXRef-Package-web-46516079d083d917da4b",
-      "versionInfo": "0.9.0",
-      "downloadLocation": "https://registry.npmjs.org/ast-walker-scope/0.9.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/ast-walker-scope@0.9.0"
-        }
-      ]
-    },
-    {
       "name": "astral-regex",
       "SPDXID": "SPDXRef-Package-web-a711418a347e3db0b0b3",
       "versionInfo": "1.0.0",
@@ -45339,25 +45225,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/baseline-browser-mapping@2.11.3"
-        }
-      ]
-    },
-    {
-      "name": "birpc",
-      "SPDXID": "SPDXRef-Package-web-09f3406792749068d7d0",
-      "versionInfo": "2.9.0",
-      "downloadLocation": "https://registry.npmjs.org/birpc/2.9.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/birpc@2.9.0"
         }
       ]
     },
@@ -45913,25 +45780,6 @@
       ]
     },
     {
-      "name": "chokidar",
-      "SPDXID": "SPDXRef-Package-web-49843f28c31f4083f1f1",
-      "versionInfo": "5.0.0",
-      "downloadLocation": "https://registry.npmjs.org/chokidar/5.0.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/chokidar@5.0.0"
-        }
-      ]
-    },
-    {
       "name": "class-utils",
       "SPDXID": "SPDXRef-Package-web-09ab9cbb10316b611ffd",
       "versionInfo": "0.3.6",
@@ -46308,44 +46156,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/concat-map@0.0.1"
-        }
-      ]
-    },
-    {
-      "name": "confbox",
-      "SPDXID": "SPDXRef-Package-web-2e92e9cc81645341837f",
-      "versionInfo": "0.1.8",
-      "downloadLocation": "https://registry.npmjs.org/confbox/0.1.8",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/confbox@0.1.8"
-        }
-      ]
-    },
-    {
-      "name": "confbox",
-      "SPDXID": "SPDXRef-Package-web-954bcfe8816b00b74b73",
-      "versionInfo": "0.2.4",
-      "downloadLocation": "https://registry.npmjs.org/confbox/0.2.4",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/confbox@0.2.4"
         }
       ]
     },
@@ -48877,25 +48687,6 @@
       ]
     },
     {
-      "name": "exsolve",
-      "SPDXID": "SPDXRef-Package-web-8b2e5133bec142f89585",
-      "versionInfo": "1.1.1",
-      "downloadLocation": "https://registry.npmjs.org/exsolve/1.1.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/exsolve@1.1.1"
-        }
-      ]
-    },
-    {
       "name": "extend",
       "SPDXID": "SPDXRef-Package-web-1587bfbc2a59b64e4ab1",
       "versionInfo": "3.0.2",
@@ -50393,25 +50184,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/he@1.2.0"
-        }
-      ]
-    },
-    {
-      "name": "hookable",
-      "SPDXID": "SPDXRef-Package-web-2e98cc47e4ab7ea39ba1",
-      "versionInfo": "5.5.3",
-      "downloadLocation": "https://registry.npmjs.org/hookable/5.5.3",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/hookable@5.5.3"
         }
       ]
     },
@@ -52202,6 +51974,25 @@
       ]
     },
     {
+      "name": "isomorphic.js",
+      "SPDXID": "SPDXRef-Package-web-3146f9631ce05121290f",
+      "versionInfo": "0.2.5",
+      "downloadLocation": "https://registry.npmjs.org/isomorphic.js/0.2.5",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/isomorphic.js@0.2.5"
+        }
+      ]
+    },
+    {
       "name": "js-tokens",
       "SPDXID": "SPDXRef-Package-web-1da020c146a3e9949f19",
       "versionInfo": "10.0.0",
@@ -52696,6 +52487,25 @@
       ]
     },
     {
+      "name": "lib0",
+      "SPDXID": "SPDXRef-Package-web-62fabee87e54373f2acc",
+      "versionInfo": "0.2.117",
+      "downloadLocation": "https://registry.npmjs.org/lib0/0.2.117",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lib0@0.2.117"
+        }
+      ]
+    },
+    {
       "name": "lilconfig",
       "SPDXID": "SPDXRef-Package-web-5005574043a59a5a4667",
       "versionInfo": "2.1.0",
@@ -52787,25 +52597,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/load-json-file@4.0.0"
-        }
-      ]
-    },
-    {
-      "name": "local-pkg",
-      "SPDXID": "SPDXRef-Package-web-e30ccc223de7c2f268fe",
-      "versionInfo": "1.2.1",
-      "downloadLocation": "https://registry.npmjs.org/local-pkg/1.2.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/local-pkg@1.2.1"
         }
       ]
     },
@@ -53281,25 +53072,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/magic-string@0.30.21"
-        }
-      ]
-    },
-    {
-      "name": "magic-string-ast",
-      "SPDXID": "SPDXRef-Package-web-d8c1afd2984d13826392",
-      "versionInfo": "1.0.3",
-      "downloadLocation": "https://registry.npmjs.org/magic-string-ast/1.0.3",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/magic-string-ast@1.0.3"
         }
       ]
     },
@@ -53969,25 +53741,6 @@
       ]
     },
     {
-      "name": "mlly",
-      "SPDXID": "SPDXRef-Package-web-5a6141c00428b58d40f2",
-      "versionInfo": "1.8.2",
-      "downloadLocation": "https://registry.npmjs.org/mlly/1.8.2",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/mlly@1.8.2"
-        }
-      ]
-    },
-    {
       "name": "mockjs",
       "SPDXID": "SPDXRef-Package-web-627b17832a36bb92dc26",
       "versionInfo": "1.1.0",
@@ -54079,25 +53832,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/muggle-string@0.3.1"
-        }
-      ]
-    },
-    {
-      "name": "muggle-string",
-      "SPDXID": "SPDXRef-Package-web-1cb4dca02e7de0d8efa3",
-      "versionInfo": "0.4.1",
-      "downloadLocation": "https://registry.npmjs.org/muggle-string/0.4.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/muggle-string@0.4.1"
         }
       ]
     },
@@ -54383,25 +54117,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/normalize-wheel-es@1.2.0"
-        }
-      ]
-    },
-    {
-      "name": "nostics",
-      "SPDXID": "SPDXRef-Package-web-9ef12dc5a711f07b5acb",
-      "versionInfo": "1.2.0",
-      "downloadLocation": "https://registry.npmjs.org/nostics/1.2.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/nostics@1.2.0"
         }
       ]
     },
@@ -55318,44 +55033,6 @@
       ]
     },
     {
-      "name": "pathe",
-      "SPDXID": "SPDXRef-Package-web-fcb6e7dbea37eaea7016",
-      "versionInfo": "2.0.3",
-      "downloadLocation": "https://registry.npmjs.org/pathe/2.0.3",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pathe@2.0.3"
-        }
-      ]
-    },
-    {
-      "name": "perfect-debounce",
-      "SPDXID": "SPDXRef-Package-web-cebf8f2d2bb423677881",
-      "versionInfo": "2.1.0",
-      "downloadLocation": "https://registry.npmjs.org/perfect-debounce/2.1.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/perfect-debounce@2.1.0"
-        }
-      ]
-    },
-    {
       "name": "picocolors",
       "SPDXID": "SPDXRef-Package-web-f2f7eb7c2f18e0dbd415",
       "versionInfo": "0.2.1",
@@ -55504,63 +55181,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/pinia@2.3.1"
-        }
-      ]
-    },
-    {
-      "name": "pinia",
-      "SPDXID": "SPDXRef-Package-web-8617caa020aaaad1127b",
-      "versionInfo": "4.0.2",
-      "downloadLocation": "https://registry.npmjs.org/pinia/4.0.2",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pinia@4.0.2"
-        }
-      ]
-    },
-    {
-      "name": "pkg-types",
-      "SPDXID": "SPDXRef-Package-web-57ac2e5c31c8cad6d3f2",
-      "versionInfo": "1.3.1",
-      "downloadLocation": "https://registry.npmjs.org/pkg-types/1.3.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pkg-types@1.3.1"
-        }
-      ]
-    },
-    {
-      "name": "pkg-types",
-      "SPDXID": "SPDXRef-Package-web-b2cc0b9c16d6851e5285",
-      "versionInfo": "2.3.1",
-      "downloadLocation": "https://registry.npmjs.org/pkg-types/2.3.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pkg-types@2.3.1"
         }
       ]
     },
@@ -56116,25 +55736,6 @@
       ]
     },
     {
-      "name": "quansync",
-      "SPDXID": "SPDXRef-Package-web-1aa6cbbec08df423c3b8",
-      "versionInfo": "0.2.11",
-      "downloadLocation": "https://registry.npmjs.org/quansync/0.2.11",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/quansync@0.2.11"
-        }
-      ]
-    },
-    {
       "name": "query-string",
       "SPDXID": "SPDXRef-Package-web-79f8500d3bb6e94ec29a",
       "versionInfo": "8.2.0",
@@ -56302,25 +55903,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/readable-stream@3.6.2"
-        }
-      ]
-    },
-    {
-      "name": "readdirp",
-      "SPDXID": "SPDXRef-Package-web-21755e756ef2cb0e5ca2",
-      "versionInfo": "5.1.1",
-      "downloadLocation": "https://registry.npmjs.org/readdirp/5.1.1",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/readdirp@5.1.1"
         }
       ]
     },
@@ -57043,25 +56625,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/sax@1.6.1"
-        }
-      ]
-    },
-    {
-      "name": "scule",
-      "SPDXID": "SPDXRef-Package-web-3228fbc3dd23f6966468",
-      "versionInfo": "1.3.0",
-      "downloadLocation": "https://registry.npmjs.org/scule/1.3.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/scule@1.3.0"
         }
       ]
     },
@@ -59251,25 +58814,6 @@
       ]
     },
     {
-      "name": "ufo",
-      "SPDXID": "SPDXRef-Package-web-5955d0aac9e257ad86aa",
-      "versionInfo": "1.6.4",
-      "downloadLocation": "https://registry.npmjs.org/ufo/1.6.4",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/ufo@1.6.4"
-        }
-      ]
-    },
-    {
       "name": "unbox-primitive",
       "SPDXID": "SPDXRef-Package-web-18b7468d73da7bfa1abc",
       "versionInfo": "1.1.0",
@@ -59532,44 +59076,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/universalify@2.0.1"
-        }
-      ]
-    },
-    {
-      "name": "unplugin",
-      "SPDXID": "SPDXRef-Package-web-82a34048eb842003eb23",
-      "versionInfo": "3.3.0",
-      "downloadLocation": "https://registry.npmjs.org/unplugin/3.3.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/unplugin@3.3.0"
-        }
-      ]
-    },
-    {
-      "name": "unplugin-utils",
-      "SPDXID": "SPDXRef-Package-web-23dcefff905627a106b4",
-      "versionInfo": "0.3.2",
-      "downloadLocation": "https://registry.npmjs.org/unplugin-utils/0.3.2",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/unplugin-utils@0.3.2"
         }
       ]
     },
@@ -60068,25 +59574,6 @@
       ]
     },
     {
-      "name": "vue-router",
-      "SPDXID": "SPDXRef-Package-web-b28a26b47be3c9d08a8e",
-      "versionInfo": "5.2.0",
-      "downloadLocation": "https://registry.npmjs.org/vue-router/5.2.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/vue-router@5.2.0"
-        }
-      ]
-    },
-    {
       "name": "vue-template-compiler",
       "SPDXID": "SPDXRef-Package-web-a91e1def3c1db8451521",
       "versionInfo": "2.7.16",
@@ -60121,25 +59608,6 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/vue-tsc@1.8.27"
-        }
-      ]
-    },
-    {
-      "name": "webpack-virtual-modules",
-      "SPDXID": "SPDXRef-Package-web-bbadac2cf3ab7c8abab2",
-      "versionInfo": "0.6.2",
-      "downloadLocation": "https://registry.npmjs.org/webpack-virtual-modules/0.6.2",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/webpack-virtual-modules@0.6.2"
         }
       ]
     },
@@ -60429,6 +59897,44 @@
       ]
     },
     {
+      "name": "y-protocols",
+      "SPDXID": "SPDXRef-Package-web-b4f7b93b2696f0f30f93",
+      "versionInfo": "1.0.7",
+      "downloadLocation": "https://registry.npmjs.org/y-protocols/1.0.7",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/y-protocols@1.0.7"
+        }
+      ]
+    },
+    {
+      "name": "y-websocket",
+      "SPDXID": "SPDXRef-Package-web-a4f8a48405582a04a5ce",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmjs.org/y-websocket/3.1.0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/y-websocket@3.1.0"
+        }
+      ]
+    },
+    {
       "name": "y18n",
       "SPDXID": "SPDXRef-Package-web-afe9b9be2c15ef270b76",
       "versionInfo": "5.0.8",
@@ -60524,25 +60030,6 @@
       ]
     },
     {
-      "name": "yaml",
-      "SPDXID": "SPDXRef-Package-web-b5659580b78a3fbfb810",
-      "versionInfo": "2.9.0",
-      "downloadLocation": "https://registry.npmjs.org/yaml/2.9.0",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "ISC",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "SOURCE",
-      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/yaml@2.9.0"
-        }
-      ]
-    },
-    {
       "name": "yargs",
       "SPDXID": "SPDXRef-Package-web-b9fa7bf69081d949976b",
       "versionInfo": "17.7.3",
@@ -60615,6 +60102,25 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:npm/yargs-parser@21.1.1"
+        }
+      ]
+    },
+    {
+      "name": "yjs",
+      "SPDXID": "SPDXRef-Package-web-0c01515a35cbc823c084",
+      "versionInfo": "13.6.32",
+      "downloadLocation": "https://registry.npmjs.org/yjs/13.6.32",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "SOURCE",
+      "packageComment": "Peanut Admin web locked dependency; release scope: static-build-input.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/yjs@13.6.32"
         }
       ]
     },
@@ -60770,7 +60276,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-composer-df13eacf59cb431a5a2c",
+      "relatedSpdxElement": "SPDXRef-Package-composer-1706c6317332924328a6",
       "comment": "composer; runtime"
     },
     {
@@ -61976,12 +61482,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-fc5f6a3c0d232b8b2119",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-0665c9b8165ab42a2714",
       "comment": "pc; static-build-input"
     },
@@ -62054,19 +61554,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-e9beffe996078d5fe508",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-19917cddd9e635e82f8a",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-a5149dc2c4af05aad506",
       "comment": "pc; static-build-input"
     },
     {
@@ -62085,12 +61573,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-216e16f3eeb04d9c4c1f",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-132cd520dbbf7a42e189",
       "comment": "pc; static-build-input"
     },
     {
@@ -62127,12 +61609,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-6f3ad1f4252260b56daa",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-1b5f65c905d9690c7389",
       "comment": "pc; static-build-input"
     },
     {
@@ -62936,7 +62412,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-da96faa738a2d8442e32",
+      "relatedSpdxElement": "SPDXRef-Package-pc-11e7381024b46ce5da1b",
       "comment": "pc; static-build-input"
     },
     {
@@ -63308,12 +62784,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-9f41672db904dcac6ea5",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-9bdb1f2b98332074bdb3",
       "comment": "pc; static-build-input"
     },
@@ -63459,12 +62929,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-2174bccac5d8c60ea160",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-26d54d0e7f3011ee60ad",
       "comment": "pc; static-build-input"
     },
     {
@@ -63687,12 +63151,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-8b64577af4cab08ceed9",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-771310bfd34f959951c6",
       "comment": "pc; static-build-input"
     },
     {
@@ -64874,7 +64332,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-c4126c4f9145fc0ca50f",
+      "relatedSpdxElement": "SPDXRef-Package-pc-761ef1ab4c60e85243d0",
       "comment": "pc; static-build-input"
     },
     {
@@ -65264,6 +64722,12 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-pc-38fb7dc0e63431441b47",
+      "comment": "pc; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-4f38a08c12d97526f781",
       "comment": "pc; static-build-input"
     },
@@ -65373,6 +64837,12 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-f7b2a7df918ca64a21f3",
+      "comment": "pc; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-pc-083b4838e827c9ed7162",
       "comment": "pc; static-build-input"
     },
     {
@@ -66111,12 +65581,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-d014f6b58f9e496f3584",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-0fa68719162e0a4454bc",
       "comment": "pc; static-build-input"
     },
     {
@@ -67376,12 +66840,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-pc-4a6bc4816a3cc68a763d",
-      "comment": "pc; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-2f74955d37169b2f684e",
       "comment": "pc; static-build-input"
     },
@@ -67460,6 +66918,18 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-pc-ed4e780b2cbb0d6738a1",
+      "comment": "pc; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-pc-cea347b675b15bb9fac0",
+      "comment": "pc; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-6ec4823cfcc7fd6f3574",
       "comment": "pc; static-build-input"
     },
@@ -67503,6 +66973,12 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-pc-0c6414fbb7cbe4065069",
+      "comment": "pc; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-pc-2ba75f4eac530be83de1",
       "comment": "pc; static-build-input"
     },
     {
@@ -69062,7 +68538,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-uniapp-b0dd60ec97b9bd900615",
+      "relatedSpdxElement": "SPDXRef-Package-uniapp-b022bb8795a4e97c9009",
       "comment": "uniapp; static-build-input"
     },
     {
@@ -71474,6 +70950,12 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-uniapp-d31cd40a3947441a1866",
+      "comment": "uniapp; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-uniapp-710d8964e4079886bc33",
       "comment": "uniapp; development-or-build"
     },
@@ -71764,6 +71246,12 @@
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-uniapp-e1af94582f7600c8d389",
       "comment": "uniapp; development-or-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-uniapp-8d56cc4797ba3830ab55",
+      "comment": "uniapp; static-build-input"
     },
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
@@ -73550,6 +73038,18 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-uniapp-38be57948d416c88cdf2",
+      "comment": "uniapp; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-uniapp-27cc7d9d7ebcf358f0d9",
+      "comment": "uniapp; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-uniapp-62c915dd8a21effd8d09",
       "comment": "uniapp; development-or-build"
     },
@@ -73576,6 +73076,12 @@
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-uniapp-8137a59998af6707b30f",
       "comment": "uniapp; development-or-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-uniapp-0ec8ca7cffde25d29ef1",
+      "comment": "uniapp; static-build-input"
     },
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
@@ -74132,7 +73638,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-7e05aa50749efd75b350",
+      "relatedSpdxElement": "SPDXRef-Package-web-985a5b442791ddb63748",
       "comment": "web; static-build-input"
     },
     {
@@ -74552,12 +74058,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-beb30182e4b15258a6e4",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-36154e9b6effebee8e65",
       "comment": "web; static-build-input"
     },
@@ -74601,24 +74101,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-f7e0561ad5cde5932c2e",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-fd5d4c8908d314cfa671",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-10ec013a6ba000adc6fb",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-7e075e7341868ae32c50",
       "comment": "web; static-build-input"
     },
     {
@@ -74888,18 +74370,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-db4d27283795dc82e35e",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-46516079d083d917da4b",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-a711418a347e3db0b0b3",
       "comment": "web; static-build-input"
     },
@@ -74979,12 +74449,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-cd3ed13633962c1b40ce",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-09f3406792749068d7d0",
       "comment": "web; static-build-input"
     },
     {
@@ -75164,12 +74628,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-49843f28c31f4083f1f1",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-09ab9cbb10316b611ffd",
       "comment": "web; static-build-input"
     },
@@ -75285,18 +74743,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-b4d088d9ba912d8c82ee",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-2e92e9cc81645341837f",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-954bcfe8816b00b74b73",
       "comment": "web; static-build-input"
     },
     {
@@ -76100,12 +75546,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-8b2e5133bec142f89585",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-1587bfbc2a59b64e4ab1",
       "comment": "web; static-build-input"
     },
@@ -76575,12 +76015,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-738442bec74cb462de18",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-2e98cc47e4ab7ea39ba1",
       "comment": "web; static-build-input"
     },
     {
@@ -77150,6 +76584,12 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-web-3146f9631ce05121290f",
+      "comment": "web; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-1da020c146a3e9949f19",
       "comment": "web; static-build-input"
     },
@@ -77306,6 +76746,12 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-web-62fabee87e54373f2acc",
+      "comment": "web; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-5005574043a59a5a4667",
       "comment": "web; static-build-input"
     },
@@ -77331,12 +76777,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-1d9b2f011fd68fb7221c",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-e30ccc223de7c2f268fe",
       "comment": "web; static-build-input"
     },
     {
@@ -77487,12 +76927,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-6c05460dd3e3ab4259f5",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-d8c1afd2984d13826392",
       "comment": "web; static-build-input"
     },
     {
@@ -77708,12 +77142,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-5a6141c00428b58d40f2",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-627b17832a36bb92dc26",
       "comment": "web; static-build-input"
     },
@@ -77739,12 +77167,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-333d055d3ffad9946e13",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-1cb4dca02e7de0d8efa3",
       "comment": "web; static-build-input"
     },
     {
@@ -77835,12 +77257,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-12efe3000fd47299ddf4",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-9ef12dc5a711f07b5acb",
       "comment": "web; static-build-input"
     },
     {
@@ -78134,18 +77550,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-fcb6e7dbea37eaea7016",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-cebf8f2d2bb423677881",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-f2f7eb7c2f18e0dbd415",
       "comment": "web; static-build-input"
     },
@@ -78189,24 +77593,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-b7fdf680c0aa334c595c",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-8617caa020aaaad1127b",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-57ac2e5c31c8cad6d3f2",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-b2cc0b9c16d6851e5285",
       "comment": "web; static-build-input"
     },
     {
@@ -78386,12 +77772,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-1aa6cbbec08df423c3b8",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-79f8500d3bb6e94ec29a",
       "comment": "web; static-build-input"
     },
@@ -78441,12 +77821,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-597a575a17bc514fb94f",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-21755e756ef2cb0e5ca2",
       "comment": "web; static-build-input"
     },
     {
@@ -78675,12 +78049,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-6b256ed1295d67646f57",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-3228fbc3dd23f6966468",
       "comment": "web; static-build-input"
     },
     {
@@ -79376,12 +78744,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-5955d0aac9e257ad86aa",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-18b7468d73da7bfa1abc",
       "comment": "web; static-build-input"
     },
@@ -79461,18 +78823,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-e060667f5c9230a06ac4",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-82a34048eb842003eb23",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-23dcefff905627a106b4",
       "comment": "web; static-build-input"
     },
     {
@@ -79634,12 +78984,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-b28a26b47be3c9d08a8e",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-a91e1def3c1db8451521",
       "comment": "web; static-build-input"
     },
@@ -79647,12 +78991,6 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-42dc719672740e70c4bd",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-bbadac2cf3ab7c8abab2",
       "comment": "web; static-build-input"
     },
     {
@@ -79748,6 +79086,18 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-web-b4f7b93b2696f0f30f93",
+      "comment": "web; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-web-a4f8a48405582a04a5ce",
+      "comment": "web; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-afe9b9be2c15ef270b76",
       "comment": "web; static-build-input"
     },
@@ -79778,12 +79128,6 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-b5659580b78a3fbfb810",
-      "comment": "web; static-build-input"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-b9fa7bf69081d949976b",
       "comment": "web; static-build-input"
     },
@@ -79803,6 +79147,12 @@
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-web-9f8ee7429b0cc7410314",
+      "comment": "web; static-build-input"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-web-0c01515a35cbc823c084",
       "comment": "web; static-build-input"
     },
     {

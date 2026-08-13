@@ -1,6 +1,6 @@
 # Peanut Admin Third-Party Notices
 
-Generated for Peanut Admin 1.0.0 on 2026-08-11.
+Generated for Peanut Admin 1.1.0 on 2026-08-13.
 
 Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. All rights reserved. Third-party components remain governed by their own licenses. Nothing in the Peanut Admin proprietary license restricts rights granted by those third-party licenses.
 
@@ -18,8 +18,8 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | Arco Design Pro Vue | MIT | The initial management client used Arco Design Pro Vue material; applicable upstream MIT attribution is retained. Source: https://github.com/arco-design/arco-design-pro-vue |
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at `server/LICENSE.txt`. Source: https://github.com/top-think/framework |
-| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.2. Source: https://github.com/peanut-opensource/peanut-admin |
-| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at Alpha.3 for Web/PC and Alpha.4 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin |
+| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.5. Source: https://github.com/peanut-opensource/peanut-admin-core |
+| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.5 for Web, PC and UniApp. Source: https://github.com/peanut-opensource/peanut-admin |
 
 ## License handling
 
@@ -50,7 +50,7 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | pc | `CC-BY-4.0` | 1 |
 | pc | `CC0-1.0` | 3 |
 | pc | `ISC` | 52 |
-| pc | `MIT` | 803 |
+| pc | `MIT` | 798 |
 | pc | `MIT OR Apache-2.0` | 1 |
 | pc | `MIT OR CC0-1.0` | 1 |
 | pc | `MIT-0` | 3 |
@@ -62,7 +62,7 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | uniapp | `CC-BY-4.0` | 1 |
 | uniapp | `CC0-1.0` | 1 |
 | uniapp | `ISC` | 48 |
-| uniapp | `MIT` | 876 |
+| uniapp | `MIT` | 881 |
 | uniapp | `MIT AND Zlib` | 1 |
 | uniapp | `MIT OR CC0-1.0` | 1 |
 | web | `0BSD` | 3 |
@@ -73,9 +73,9 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | web | `CC-BY-3.0` | 1 |
 | web | `CC-BY-4.0` | 1 |
 | web | `CC0-1.0` | 3 |
-| web | `ISC` | 53 |
+| web | `ISC` | 52 |
 | web | `LicenseRef-BSD-ambiguous` | 1 |
-| web | `MIT` | 910 |
+| web | `MIT` | 885 |
 | web | `MIT OR Apache-2.0` | 2 |
 | web | `MIT OR CC0-1.0` | 5 |
 | web | `Python-2.0` | 1 |
@@ -101,7 +101,7 @@ These 33 packages are installed with `composer install --no-dev` in the producti
 | `opis/json-schema` | `2.6.0` | `Apache-2.0` | https://github.com/opis/json-schema.git |
 | `opis/string` | `2.1.0` | `Apache-2.0` | https://github.com/opis/string.git |
 | `opis/uri` | `1.1.0` | `Apache-2.0` | https://github.com/opis/uri.git |
-| `peanut-admin/core` | `0.1.0-alpha.2` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core.git |
+| `peanut-admin/core` | `0.1.0-alpha.5` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core.git |
 | `psr/container` | `2.0.2` | `MIT` | https://github.com/php-fig/container.git |
 | `psr/http-client` | `1.0.3` | `MIT` | https://github.com/php-fig/http-client.git |
 | `psr/http-factory` | `1.1.0` | `MIT` | https://github.com/php-fig/http-factory.git |

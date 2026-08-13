@@ -16,6 +16,20 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 Node.js、pnpm 和 Composer 只在开发机或 Docker 构建容器中使用。三个前端均构建为静态目录，生产运行时不需要 Node.js。原生发布包仍可作为不使用 Docker 时的备选。
 
+## 部署模式与身份输入
+
+`1.1.0` 的 Standalone 和多租户能力来自同一 release。每个部署必须显式设置
+`DEPLOYMENT_MODE=standalone` 或 `DEPLOYMENT_MODE=multi-tenant`；缺失值或其他拼写会按
+fail-closed 处理。两种模式都要为 `TENANT_IDENTIFIER_HMAC_KEY` 与
+`PLATFORM_IDENTIFIER_HMAC_KEY` 提供彼此独立、至少 32 字节的稳定随机值，发布后不能随意
+更换，否则现有身份索引无法继续匹配。
+
+首次安装和首次把历史库纳入 Tenant Account 模型时提供 `ADMIN_INITIAL_EMAIL`。空库还要
+提供 `ADMIN_INITIAL_PASSWORD`。多租户模式另需提供与管理员邮箱不同的
+`PLATFORM_INITIAL_EMAIL` 和至少 12 位、同时含字母与数字的
+`PLATFORM_INITIAL_PASSWORD`；它们只建立独立 PlatformOperator，不会把该身份加入默认
+Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不写进 Git 或日志。
+
 ## Docker 生产部署（推荐）
 
 生产和开发 Compose 严格分离。根目录 `compose.yaml` 是生产入口，并引用 `deploy/docker-compose.prod.yml`；开发环境使用 `deploy/docker-compose.dev.yml`，不要混用。首次部署时拉取已经存在的应用仓、复制受保护的环境文件，然后只执行一条构建并启动命令：
@@ -25,7 +39,9 @@ git clone git@github.com:peanut-business/peanut-admin.git /srv/peanut-admin
 cd /srv/peanut-admin
 cp .env.example .env
 chmod 600 .env
-# 编辑 .env，填写数据库、JWT_SECRET；空库还要填写 ADMIN_INITIAL_PASSWORD
+# 编辑 .env，填写数据库、JWT_SECRET、部署模式、两项 HMAC；
+# 空库还要填写 ADMIN_INITIAL_EMAIL / ADMIN_INITIAL_PASSWORD；
+# multi-tenant 另填 PLATFORM_INITIAL_EMAIL / PLATFORM_INITIAL_PASSWORD
 
 docker compose up -d --build
 ```
@@ -59,6 +75,12 @@ docker compose up -d --no-build
 ```
 
 包含 PB06 的版本会由迁移账本执行 `20260811-content-asset-reference.sql`，扩充文章封面和 Tabbar 图标列以保存完整云/CDN URL。必须保持“先迁移、后切换”顺序；该迁移不搬迁素材对象，也不改写历史相对 URI。
+
+从 `v1.0.0` 升级到 `v1.1.0` 会把账本从 28 条前滚到 50 条，并建立默认 Tenant、Account/
+TenantMember/owner、租户化 RBAC/组织及代表业务所有权。运行迁移前必须固定目标
+`DEPLOYMENT_MODE`、两项 HMAC 与 `ADMIN_INITIAL_EMAIL`；选择多租户时同时准备独立
+PlatformOperator 输入。先在成对备份上验证迁移，再执行“构建 → 迁移 → 切换”；任何
+Tenant 所有权、复合外键或身份映射失败都必须保持旧流量并停止切换。
 
 包含 PB07 通知切片的版本会执行 `20260811-notification-host-security.sql`：历史验证码立即失效并从内容快照脱敏，`verify_code` 原位改为 `verify_code_hash`，同时撤销已退出的通用模板写权限菜单。迁移不删除 `pa_notice_template` 历史数据；升级后必须在通知渠道页确认唯一短信 Provider 和四个固定 scene 配置，不能期待旧验证码继续可用。
 

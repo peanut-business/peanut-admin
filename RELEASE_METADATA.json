@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "1.0.0",
-  "expected_tag": "v1.0.0",
-  "release_date": "2026-08-11",
+  "version": "1.1.0",
+  "expected_tag": "v1.1.0",
+  "release_date": "2026-08-13",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "proprietary",
@@ -26,26 +26,26 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.2",
-    "web_pc_npm": "@peanut-admin/admin@0.1.0-alpha.3",
-    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.4"
+    "composer": "peanut-admin/core@0.1.0-alpha.5",
+    "web_pc_npm": "@peanut-admin/admin@0.1.0-alpha.5",
+    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.5"
   },
   "lockfiles": {
-    "server/composer.lock": "441134a51cb1d53057a83bc0d5c9fcfc0e442978b048fbec8d447f50d6236450",
-    "web/pnpm-lock.yaml": "b46c84eca5df1d6630cb15ef48044fa086f2b492d2d41eff8b630b5ef0e2cf01",
-    "pc/package-lock.json": "6b9eb5e57e66d0476d040b7e6449a67245edea2300581f882f309ca3a5093f33",
-    "uniapp/package-lock.json": "4da2f515f4397095ffcf8dd370fcb6f523faf4f47bee89eae97875fbea18bdd7",
+    "server/composer.lock": "d7da2c611c7d74dea47f8256bb08841857c8433be56905dfdce78542875d17d3",
+    "web/pnpm-lock.yaml": "1ec634ac6b9a680806d6aa40640e52b4ba9df2a0d2554b7d67b0c46ed4ecab90",
+    "pc/package-lock.json": "5c9bb037f72b3ed6bd3ab763c14aa8bc3270de4c251f20729fbf715407376633",
+    "uniapp/package-lock.json": "f2d709b386d6b3b80ee9f9799b35883cd3cc2d7b9973f9bdfe762c0f4f4b37d5",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
-    "NOTICE": "de8b6049f46b251c30b795f8a1705ca58ac3e9ca072bdb275a9de2714f0208c3",
-    "THIRD_PARTY_NOTICES.md": "d13a21ce7f5f358d57f11173ff69d619a3b2f645116322c670c5eca98379d6e3",
-    "RELEASE_SBOM.spdx.json": "50ed38f2ef731bf8c007ad3c5ec778c3618f124b3e19c0f7c14aa3dc8db6533d"
+    "NOTICE": "89b87de8750121870acc0babfd1692f6b384717442acb62bf96ecd97529a4106",
+    "THIRD_PARTY_NOTICES.md": "bef655f82d74d37607d8f4695666dd84e92bd1b1d87f15d111c2ec1a06657268",
+    "RELEASE_SBOM.spdx.json": "5060b598409a3ea557641a0c616c63daba2605014089bb23e732d9a9f84cf14a"
   },
   "migrations": {
-    "count": 28,
-    "ordered_path_list_sha256": "8c15af00854bdd8ef3df2db732f114151f2cafeae0b0afd0f9f1613d8921aefd",
+    "count": 50,
+    "ordered_path_list_sha256": "99844e7bd440c6172b5760367230c822d0edc7962fa56b78b526025eea33d31d",
     "ordered_files": [
       "server/database/migrations/20260728_admin_auth_parity.sql",
       "server/database/migrations/20260728_admin_management_parity.sql",
@@ -74,17 +74,56 @@
       "server/database/migrations/20260811-brand-scaffold-defaults.sql",
       "server/database/migrations/20260811-content-asset-reference.sql",
       "server/database/migrations/20260811-notification-host-security.sql",
-      "server/database/migrations/20260811-oauth-channel-host.sql"
+      "server/database/migrations/20260811-oauth-channel-host.sql",
+      "server/database/migrations/20260812-default-tenant-bootstrap.sql",
+      "server/database/migrations/20260812_article_tenant_ownership.sql",
+      "server/database/migrations/20260812_crontab_tenant_ownership.sql",
+      "server/database/migrations/20260812_file_tenant_ownership.sql",
+      "server/database/migrations/20260812_member_tenant_ownership.sql",
+      "server/database/migrations/20260812_notice_tenant_ownership.sql",
+      "server/database/migrations/20260812_operation_log_tenant_attribution.sql",
+      "server/database/migrations/20260813-legacy-admin-account-fk-index.sql",
+      "server/database/migrations/20260813-legacy-admin-account-tenant-scope.sql",
+      "server/database/migrations/20260813_article_collect_member_tenant_fk.sql",
+      "server/database/migrations/20260813_customer_service_tenant_ownership.sql",
+      "server/database/migrations/20260813_decorate_page_tenant_ownership.sql",
+      "server/database/migrations/20260813_decorate_tabbar_tenant_ownership.sql",
+      "server/database/migrations/20260813_dict_tenant_ownership.sql",
+      "server/database/migrations/20260813_hot_search_tenant_ownership.sql",
+      "server/database/migrations/20260813_oauth_tenant_ownership.sql",
+      "server/database/migrations/20260813_org_tenant_integrity.sql",
+      "server/database/migrations/20260813_recharge_refund_tenant_ownership.sql",
+      "server/database/migrations/20260813_task_import_export.sql",
+      "server/database/migrations/20260813_tenant_auth_client_key.sql",
+      "server/database/migrations/20260813_tenant_module_management.sql",
+      "server/database/migrations/20260813_transaction_setting_tenant_ownership.sql"
     ]
   },
   "technical_qualification": {
-    "phase": "PB08B",
+    "phase": "MT05",
     "result": "pass",
-    "candidate_commit": "44422297af1f7b6144428091d0fceebf526143e5",
-    "browser_runtime_commit": "c93445f7cdc97a28a195849bc96a02f05cd7dbc3",
-    "summary_path": "output/playwright/pb08b/summary.json",
-    "summary_sha256": "b444ecc000dd35987adf7608484a5aa42093a1808e5b69ae39c8ccdad5e242c2",
-    "release_delta": "Legal files, release metadata, legal asset publication and documentation only; application Runtime, dependencies and migrations are unchanged."
+    "final_candidate_commit": "074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8",
+    "final_candidate_tree": "1a2df02e97414b5c236a842adf17804fb33e4699",
+    "install_upgrade": {
+      "candidate_commit": "074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8",
+      "run_id": "mt05-074fce5-install",
+      "migrations": 50,
+      "tables": 81,
+      "modes": [
+        "standalone-empty",
+        "v1-forward",
+        "multitenant-empty"
+      ],
+      "summary_sha256": "9460e256d0494c693a398f1e28742d432809460173294a82601ddebd2d3b07ae",
+      "evidence": "PR #100 qualification record plus run summary SHA-256"
+    },
+    "browser": {
+      "candidate_commit": "2def4819d038ae991a7dbd0e38858540ebef82be",
+      "run_id": "mt05-2def481-browser",
+      "summary_sha256": "402773ce98021c151e2f287a4937bd797102c823fe22b37f82e85a071abf6814",
+      "evidence": "PR #100 qualification record plus run summary SHA-256"
+    },
+    "release_delta": "Version and public dependency identities, production deployment environment wiring, legal inventory and user-facing release documentation only; qualified Tenant business behavior and migration files are unchanged."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }
