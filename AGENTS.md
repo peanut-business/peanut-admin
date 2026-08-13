@@ -44,9 +44,13 @@
 - `output/playwright/v02/summary.json` — **本会话独立验证，可信**
 - `output/playwright/v02/*.png` — 9 组截图 + 登录截图
 
-### 2.2 SaaS / 多租户设计 — 🗺️ Roadmap Only，未实现
+### 2.2 SaaS / 多租户设计与实现 — 🚧 分阶段进行中
 
-设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。**后端代码中没有任何多租户实现。** 不要在现有代码里查找 Tenant / pa_tenant 相关逻辑。
+设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。后端已经合入默认 Tenant
+bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、PlatformOperator
+边界和可信管理端 TenantContext 等独立切片；这不表示 MT02–MT04 或 PM01 已整体完成。
+判断完成度和领取下一切片前，必须读取当前权威计划并核对远端 `dev`，不得继续沿用
+“完全未实现”或某个局部 PR 已代表阶段完成的旧判断。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
 - 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
