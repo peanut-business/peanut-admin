@@ -5663,7 +5663,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "e823800a47cddeabb2260c95bee52b13b6a73b9f8b5311343c3748294cc691e5"
+            "source_sha256": "48bbd0c4d22299b4735817430dfbdbf0722b17452d6979564a6ab241844ac186"
         },
         {
             "path": "scripts/scaffold-upgrade",

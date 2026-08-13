@@ -139,7 +139,10 @@ final class ScaffoldUpgradeRunner
             $manifestPath = ScaffoldPathGuard::projectPath($root, '.peanut/upgrades/backups/' . $plan['candidate'] . '/recovery.json');
             if (!is_file($manifestPath)) throw new RuntimeException('SCAFFOLD_RECOVERY_NOT_FOUND');
             $recovery = json_decode((string)file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
-            if (!is_array($recovery) || ($recovery['candidate'] ?? null) !== $plan['candidate']) throw new RuntimeException('SCAFFOLD_RECOVERY_INVALID');
+            if (!is_array($recovery) || ($recovery['candidate'] ?? null) !== $plan['candidate'] || !is_array($recovery['files'] ?? null)
+                || !hash_equals((string)($recovery['pre_tree_sha256'] ?? ''), 'sha256:' . hash('sha256', self::canonicalJson($recovery['files'])))) {
+                throw new RuntimeException('SCAFFOLD_RECOVERY_INVALID');
+            }
             $already = $this->recoveryMatches($root, $recovery);
             if (!$already) {
                 foreach ($recovery['files'] as $relative => $state) {
@@ -288,6 +291,8 @@ final class ScaffoldUpgradeRunner
         if (!is_array($data) || ($data['protocol'] ?? null) !== 'peanut.scaffold-upgrade-plan.v2' || preg_match('/^scaffold-[a-f0-9]{24}$/D', (string)($data['candidate'] ?? '')) !== 1) throw new RuntimeException('SCAFFOLD_PLAN_INVALID');
         $expected='scaffold-'.substr(hash('sha256',self::canonicalJson([$data['identity']??null,$data['actions']??null])),0,24);
         if(!hash_equals($expected,$data['candidate']))throw new RuntimeException('SCAFFOLD_PLAN_CHECKSUM_DRIFT');
+        $expectedStatus=count(array_filter($data['actions'],static fn(array $action):bool=>($action['conflict']??null)===true))===0?'ready':'blocked';
+        if(($data['status']??null)!==$expectedStatus)throw new RuntimeException('SCAFFOLD_PLAN_STATUS_DRIFT');
         return $data;
     }
 

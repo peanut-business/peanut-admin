@@ -82,6 +82,10 @@ try{
     $stalePlan=$runner->preflight($stale,$fromRelease,$toRelease);file_put_contents($stale.'/README.md',(string)file_get_contents($stale.'/README.md')."\nchanged after plan\n");
     scaffoldFails(fn()=>$runner->apply($stale,scaffoldPlanPath($stale,$stalePlan)),'SCAFFOLD_PLAN_PROJECT_CHANGED');
 
+    $tampered=$temporary.'/tampered';scaffoldFresh($source,$tampered);$tamperedPlan=$runner->preflight($tampered,$fromRelease,$toRelease);$tamperedPath=scaffoldPlanPath($tampered,$tamperedPlan);
+    $tamperedData=json_decode((string)file_get_contents($tamperedPath),true,512,JSON_THROW_ON_ERROR);$tamperedData['actions'][0]['mode']=0600;file_put_contents($tamperedPath,json_encode($tamperedData,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+    scaffoldFails(fn()=>$runner->apply($tampered,$tamperedPath),'SCAFFOLD_PLAN_CHECKSUM_DRIFT');
+
     $fault=$temporary.'/fault';scaffoldFresh($source,$fault);
     $faultBefore=scaffoldFileTree($fault);$faultPlan=$runner->preflight($fault,$fromRelease,$toRelease);
     putenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS=1');scaffoldFails(fn()=>$runner->apply($fault,scaffoldPlanPath($fault,$faultPlan)),'SCAFFOLD_FAULT_INJECTED');putenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS');
