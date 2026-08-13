@@ -275,6 +275,14 @@ function migrationNormalizeDefinition(string $definition): string
         if ($open !== false && str_ends_with(trim($definition), ')')) {
             $prefix = substr($definition, 0, $open + 1);
             $expression = migrationStripOuterParentheses(substr(trim($definition), $open + 1, -1));
+            do {
+                $previous = $expression;
+                $expression = preg_replace(
+                    "/\\(\\s*([a-z0-9_]+)\\s*(=|<>|is\\s+not\\s+null)\\s*('[^']*')?\\s*\\)/i",
+                    '$1 $2 $3',
+                    $expression
+                ) ?? $expression;
+            } while ($expression !== $previous);
             $definition = $prefix . $expression . ')';
         }
     }
