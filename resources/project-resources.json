@@ -8,6 +8,49 @@
     "credentials_policy": "references only; secrets are never stored in Git"
   },
   "resources": {
+    "tooling": [
+      {
+        "stable_resource_id": "peanut-admin-host-php-development",
+        "purpose": "default daily development API runtime",
+        "environments": ["development"],
+        "owner": "Peanut Admin project; CompanyOS engineering-tooling allocation",
+        "host": "macbookpro-arm64",
+        "port": 8000,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-development",
+        "service_type": "PHP CLI development server",
+        "version": "8.3.24",
+        "command": "/opt/homebrew/bin/php",
+        "credential_ref": null,
+        "data_source": "current server worktree",
+        "freshness_requirement": "verify registered binary identity before start",
+        "health_check": "scripts/local-php-runtime status",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-host-composer-development",
+        "purpose": "locked PHP dependency installation for daily development",
+        "environments": ["development"],
+        "owner": "Peanut Admin project; CompanyOS engineering-tooling allocation",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-development",
+        "service_type": "Composer CLI",
+        "version": "2.8.10",
+        "runtime": "PHP 8.3.24",
+        "command": "/usr/local/bin/composer",
+        "credential_ref": "local Composer provider configuration when required",
+        "data_source": "server/composer.lock",
+        "freshness_requirement": "composer install --frozen lock semantics before API start when vendor is absent",
+        "health_check": "/usr/local/bin/composer --version",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      }
+    ],
     "databases": [
       {
         "stable_resource_id": "peanut-admin-mysql84-development",
@@ -116,7 +159,7 @@
         "service_type": "http",
         "namespace": "peanut-admin-development",
         "credential_ref": null,
-        "data_source": "local development PHP container",
+        "data_source": "registered macbookpro-arm64 host PHP runtime",
         "freshness_requirement": "current worktree",
         "health_check": "TCP connect",
         "fallback": "none",
@@ -205,26 +248,8 @@
     ],
     "containers": [
       {
-        "stable_resource_id": "peanut-admin-development-php-container",
-        "purpose": "development backend runtime",
-        "environment": "development",
-        "owner": "deploy/docker-compose.dev.yml",
-        "host": "Docker Desktop local engine",
-        "port": 8000,
-        "database": "peanut_admin_development via peanut-admin-mysql84-development-docker-direct",
-        "schema": "pa_ table prefix",
-        "namespace": "peanut-admin-development",
-        "service_type": "PHP 8.3 development image",
-        "credential_ref": ".local/stack.env generated from the registered external credential reference",
-        "data_source": "current server worktree",
-        "freshness_requirement": "current worktree and current migration ledger",
-        "health_check": "php database/environment-guard.php --current",
-        "fallback": "none",
-        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
-      },
-      {
         "stable_resource_id": "peanut-admin-development-ui-containers",
-        "purpose": "development admin, PC, mobile, docs and Nginx gateway runtimes",
+        "purpose": "development admin, PC, mobile, docs and Nginx gateway runtimes; API targets host.docker.internal:8000",
         "environment": "development",
         "owner": "deploy/docker-compose.dev.yml",
         "host": "Docker Desktop local engine",

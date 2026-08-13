@@ -55,7 +55,9 @@ MySQL。历史 `192.168.192.2:3306/peanut_admin` 没有迁移账本，不是当�
 ./scripts/local-stack.sh database-host-status
 ```
 
-`dev-up` 会从项目登记生成容器专用入口配置并连接登记资源；空库使用当前安装器创建完整 schema 和种子，已有库执行
+`dev-up` 会用登记的 `/opt/homebrew/bin/php` 启动并跟踪宿主 API，宿主 PHP 直接连接登记
+数据库；Web、PC、Mobile 与 Nginx 容器通过 `host.docker.internal:8000` 访问 API，并显式
+清空代理、把宿主 API 与数据库地址放入 `NO_PROXY`。空库使用当前安装器创建完整 schema 和种子，已有库执行
 `database/migrate.php`。服务开始监听前还会验证迁移文件集合、SHA-256、唯一 root
 管理员、菜单、配置和默认 Tenant bootstrap。任何缺失、额外、失败或被改写的迁移都会
 阻止启动。
@@ -69,3 +71,5 @@ MySQL。历史 `192.168.192.2:3306/peanut_admin` 没有迁移账本，不是当�
 它标记为 `local-production-preview` 并连接同一个公司开发库；真正线上配置必须标记为
 `production` 并使用生产数据库资源 ID。生产容器不会自动执行待处理迁移，发布流程必须
 先备份、显式运行 `database/migrate.php`，然后应用启动门禁确认数据库与发布代码一致。
+Docker PHP 只用于此生产模式预览、生产构建和明确要求容器等价性的 Gate，不是日常
+`dev-up` 的后端 Runtime。

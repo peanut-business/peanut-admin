@@ -38,13 +38,16 @@ $localStack = (string)file_get_contents($root . '/scripts/local-stack.sh');
 $probe = (string)file_get_contents($root . '/scripts/local-environment-probe');
 $guard = (string)file_get_contents($root . '/server/database/environment-guard.php');
 $devCompose = (string)file_get_contents($root . '/deploy/docker-compose.dev.yml');
+$hostRuntime = (string)file_get_contents($root . '/scripts/local-php-runtime');
 
 $expect(str_contains($rootInstructions, 'resources/project-resources.json'), 'root AGENTS.md does not reference the registry');
 $expect(str_contains($localStack, 'project-resource-registry'), 'local stack does not consume the registry');
 $expect(str_contains($probe, 'resources/project-resources.json'), 'probe does not consume the registry');
-$expect(str_contains($guard, 'resources/project-resources.json'), 'database guard does not consume the registry');
-$expect(str_contains($devCompose, 'PEANUT_DATABASE_ENDPOINT_ID'), 'development Compose lacks an endpoint identity gate');
-$expect(str_contains($devCompose, 'PEANUT_DATABASE_CONSUMER'), 'development Compose lacks a consumer identity gate');
+$expect(str_contains($hostRuntime, '/opt/homebrew/bin/php'), 'daily development does not use registered host PHP');
+$expect(str_contains($hostRuntime, '/usr/local/bin/composer'), 'daily development does not use registered Composer');
+$expect(!preg_match('/(?m)^\s{2}php:\s*$/', $devCompose), 'development Compose still defines a PHP service');
+$expect(str_contains($devCompose, 'host.docker.internal'), 'development containers do not target host PHP');
+$expect(str_contains($devCompose, 'NO_PROXY'), 'development containers do not bypass proxies for host PHP');
 $expect(!str_contains($localStack, 'DB_HOST=192.168.192.2'), 'local stack contains a database host magic value');
 
 echo "database resource registry contract passed\n";

@@ -29,11 +29,11 @@ def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str,
     if len(databases) != 1:
         raise ValueError("resource registry must select one development database")
     database = databases[0]
-    endpoint = database["container_endpoint"]
+    endpoint = database["upstream_endpoint"]
     expected_database = {
         "resource_id": database["stable_resource_id"],
         "endpoint_id": endpoint["endpoint_id"],
-        "consumer": "container",
+        "consumer": "host",
         "host": endpoint["host"],
         "port": int(endpoint["port"]),
         "database": database["database"],
@@ -162,29 +162,31 @@ class Probe:
 
     def static_checks(self) -> None:
         local_stack = self.text("scripts/local-stack.sh")
-        guard = self.text("server/database/environment-guard.php")
         dev_compose = self.text("deploy/docker-compose.dev.yml")
         prod_compose = self.text("deploy/docker-compose.prod.yml")
         dev_nginx = self.text("deploy/nginx/development.conf")
         prod_nginx = self.text("deploy/nginx/peanut-admin.conf")
         dockerfile = self.text("deploy/docker/production.Dockerfile")
 
+        host_runtime = self.text("scripts/local-php-runtime")
         local_stack_ok = "project-resource-registry" in local_stack
-        guard_ok = (
-            "resources/project-resources.json" in guard
-            and "PEANUT_DATABASE_ENDPOINT_ID" in guard
-            and "PEANUT_DATABASE_CONSUMER" in guard
+        runtime_ok = (
+            "/opt/homebrew/bin/php" in host_runtime
+            and "/usr/local/bin/composer" in host_runtime
+            and "php-runtime.pid" in host_runtime
+            and "php-runtime.log" in host_runtime
         )
         target_ok = (
-            "PEANUT_DEPLOYMENT_TARGET: local-development" in dev_compose
+            "database-env --deployment-target local-development --consumer host" in local_stack
             and "PEANUT_DEPLOYMENT_TARGET=local-production-preview" in local_stack
-            and "PEANUT_DATABASE_ENDPOINT_ID:" in dev_compose
-            and "PEANUT_DATABASE_CONSUMER:" in dev_compose
+            and "host.docker.internal" in dev_compose
+            and "NO_PROXY:" in dev_compose
+            and re.search(r"(?m)^\s{2}php:\s*$", dev_compose) is None
         )
         self.add(
             "config.database_registry",
-            local_stack_ok and guard_ok and target_ok,
-            "development and local production preview use the single registered database",
+            local_stack_ok and runtime_ok and target_ok,
+            "daily development uses registered host PHP and the single registered database",
             {
                 **EXPECTED_DATABASE,
                 "environments": ["local-development", "local-production-preview"],
@@ -193,15 +195,20 @@ class Probe:
 
         port_fragments = {
             "development_gateway": "${DEV_HTTP_PORT:?set the registered development gateway port}:80",
-            "development_php": "${PHP_PORT:?set the registered PHP port}:8000",
+            "development_php": "host.docker.internal:${PHP_PORT:?set the registered host PHP port}",
             "development_admin": "${VITE_PORT:?set the registered admin port}:5173",
             "development_pc": "${PC_PORT:?set the registered PC port}:3100",
             "development_mobile": "${MOBILE_PORT:?set the registered mobile port}:5174",
             "development_docs": "${DOCS_PORT:?set the registered docs port}:4173",
-            "production_preview_gateway": "${HTTP_PORT:?set the registered HTTP port}:80",
+            "production_preview_gateway": "${HTTP_PORT:-18092}:80",
         }
         port_sources = {
-            **{key: dev_compose for key in list(port_fragments)[:6]},
+            "development_gateway": dev_compose,
+            "development_php": dev_compose,
+            "development_admin": dev_compose,
+            "development_pc": dev_compose,
+            "development_mobile": dev_compose,
+            "development_docs": dev_compose,
             "production_preview_gateway": prod_compose,
         }
         ports_ok = all(fragment in port_sources[name] for name, fragment in port_fragments.items())
@@ -240,7 +247,9 @@ class Probe:
                 "max_file_uploads": int(self.directive(ini, "max_file_uploads")),
             }
             php_source_ok = (
-                "./docker/php-upload.ini:/usr/local/etc/php/conf.d/peanut-upload.ini:ro" in dev_compose
+                "-d upload_max_filesize=200M" in host_runtime
+                and "-d post_max_size=210M" in host_runtime
+                and "-d max_file_uploads=20" in host_runtime
                 and "COPY deploy/docker/php-upload.ini "
                 "/usr/local/etc/php/conf.d/peanut-upload.ini" in dockerfile
             )
@@ -254,7 +263,7 @@ class Probe:
             "config.php_upload_limits",
             php_source_ok and bool(php_limits),
             (
-                "development and production PHP load the shared upload limits"
+                "host development and production-preview PHP load the required upload limits"
                 if php_source_ok
                 else f"PHP upload configuration invalid: {php_error}"
             ),
@@ -477,12 +486,21 @@ class Probe:
         )
         runtime_php: dict[str, dict[str, Any]] = {}
         php_errors: dict[str, str] = {}
-        for name, compose_file in {
-            "development": "deploy/docker-compose.dev.yml",
-            "local_production_preview": "deploy/docker-compose.prod.yml",
-        }.items():
+        runtime_commands = {
+            "development": [
+                "/opt/homebrew/bin/php",
+                "-d", "upload_max_filesize=200M",
+                "-d", "post_max_size=210M",
+                "-d", "max_file_uploads=20",
+                "-r", php_code,
+            ],
+            "local_production_preview": self.compose_command(
+                "deploy/docker-compose.prod.yml", "exec", "-T", "php", "php", "-r", php_code
+            ),
+        }
+        for name, command in runtime_commands.items():
             ok, output = self.run_command(
-                self.compose_command(compose_file, "exec", "-T", "php", "php", "-r", php_code)
+                command
             )
             if ok:
                 try:
@@ -502,21 +520,12 @@ class Probe:
         self.add(
             "runtime.php_upload_limits",
             php_ok,
-            "both PHP runtimes apply upload/post/count limits",
+            "host development and production-preview PHP apply upload/post/count limits",
             {"values": runtime_php, "errors": php_errors} if php_errors else {"values": runtime_php},
         )
 
         migration_ok, migration_output = self.run_command(
-            self.compose_command(
-                "deploy/docker-compose.dev.yml",
-                "exec",
-                "-T",
-                "php",
-                "php",
-                "database/environment-guard.php",
-                "--current",
-            ),
-            timeout=30,
+            [str(REPO / "scripts/local-stack.sh"), "database-host-status"], timeout=30
         )
         migration_details: dict[str, Any] = {}
         if migration_ok:

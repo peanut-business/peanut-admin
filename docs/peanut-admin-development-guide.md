@@ -168,20 +168,16 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 php server/database/install.php
 ~~~
 
-安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。安装完成后启动后端和管理端：
+安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。项目日常开发统一使用 CompanyOS 登记的宿主 PHP 8.3.24 与 Composer 2.8.10；启动完整开发栈：
 
 ~~~bash
-# 终端 A：ThinkPHP 开发服务器（server 目录）
-cd server
-php think run --host 0.0.0.0 --port 8000
-
-# 终端 B：web 管理端
-cd web
-pnpm install
-pnpm dev
+./scripts/local-stack.sh dev-up
+./scripts/local-stack.sh status
 ~~~
 
-打开 http://localhost:5173，使用安装时提供的密码登录，随后改为个人凭据。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
+打开 `http://127.0.0.1:8080/admin/`，使用安装时提供的密码登录，随后改为个人凭据。
+宿主 API 固定监听 8000；Web/PC/Mobile/Docs/Nginx 容器通过
+`host.docker.internal:8000` 绕过代理访问它。停止使用 `./scripts/local-stack.sh dev-down`。
 
 已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管时先完成数据库和存储备份，然后只执行一次：
 
@@ -204,7 +200,7 @@ php server/database/migrate.php
 ~~~bash
 cd web
 pnpm install
-pnpm dev                 # Vite，开发代理 /api → 127.0.0.1:8000
+pnpm dev                 # 纯本机模式：Vite 开发代理 /api → 127.0.0.1:8000
 pnpm run type:check
 pnpm build               # vue-tsc + Vite 生产构建，产物 dist/
 pnpm preview             # 构建后本地预览
@@ -247,7 +243,7 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 生产服务器部署已经存在的应用 release，不在服务器用模板创建新应用。宿主机只安装 Git、Docker Engine 和 Compose；拉取代码、配置 `deploy/production.env` 后执行一次 `docker compose ... up -d --build`。完整首次部署、宝塔反代和 Cloudflare 设置见 `docs/peanut-admin-release-deployment.md`。
 
-生产 Compose 内部运行 MySQL、PHP-FPM、Nginx 和定时任务；Redis 为可选 profile。管理端、PC、H5 和 API 共用一个 Nginx 入口，分别位于 `/admin/`、`/pc/`、`/mobile/` 和 `/api/`。宿主机不安装 Node.js、PHP 或 Composer。
+生产 Compose 内部运行 MySQL、PHP-FPM、Nginx 和定时任务；Redis 为可选 profile。管理端、PC、H5 和 API 共用一个 Nginx 入口，分别位于 `/admin/`、`/pc/`、`/mobile/` 和 `/api/`。生产宿主机不安装 Node.js、PHP 或 Composer；这不改变日常开发默认使用本机 PHP 的合同。
 
 PHP 运行用户必须能写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、独立数据库密码和 `APP_DEBUG=false`。首次空库由容器入口初始化；历史已有库首次升级必须先备份并接管一次，之后由 `migrate.php` 执行未登记迁移。
 

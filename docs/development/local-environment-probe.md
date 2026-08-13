@@ -14,13 +14,14 @@ JSON 报告写入标准输出，简洁摘要写入标准错误；任一检查失
 检查以下合同：
 
 - 固定端口监听与 development/production-preview HTTP 入口；
-- 项目登记 `resources/project-resources.json` 中唯一开发数据库的容器消费入口及
+- 项目登记 `resources/project-resources.json` 中唯一开发数据库的宿主消费入口及
   migration ledger current；
-- 两套 Nginx 的 `client_max_body_size`，两套 PHP Runtime 的
+- 两套 Nginx 的 `client_max_body_size`，宿主 PHP 与生产预览 PHP Runtime 的
   `upload_max_filesize`、`post_max_size`、`max_file_uploads`；
 - 图片 10 MiB、文件 50 MiB、视频 200 MiB 业务上限与传输层上限的大小关系；
 - development 与 production-preview 的 `/storage/` 显式路由；
-- 两套本地运行模式使用项目登记选择的相同数据库资源、容器入口、上传配置和固定端口合同。
+- 日常开发使用登记的宿主 PHP/Composer，容器通过 `host.docker.internal:8000` 绕过代理
+  访问 API；生产预览保留 Docker PHP。两套模式使用相同数据库资源与固定端口合同。
 
 若本地 env 文件不在默认的 `.local/stack.env`，可显式指定：
 

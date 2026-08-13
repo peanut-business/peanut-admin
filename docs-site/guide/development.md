@@ -173,20 +173,16 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 php server/database/install.php
 ~~~
 
-安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。安装完成后启动后端和管理端：
+安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。日常开发统一使用登记的宿主 PHP 8.3.24 与 Composer 2.8.10：
 
 ~~~bash
-# 终端 A：ThinkPHP 开发服务器（server 目录）
-cd server
-php think run --host 0.0.0.0 --port 8000
-
-# 终端 B：web 管理端
-cd web
-pnpm install
-pnpm dev
+./scripts/local-stack.sh dev-up
+./scripts/local-stack.sh status
 ~~~
 
-打开 `http://localhost:5173`，使用安装时提供的密码登录，随后改为个人凭据。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
+打开 `http://127.0.0.1:8080/admin/`，使用安装时提供的密码登录，随后改为个人凭据。
+宿主 API 固定监听 8000；Web/PC/Mobile/Docs/Nginx 容器通过
+`host.docker.internal:8000` 绕过代理访问它。停止使用 `./scripts/local-stack.sh dev-down`。
 
 已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管前先完成数据库和存储备份，然后只执行一次：
 
@@ -203,7 +199,7 @@ php server/database/migrate.php --adopt-existing
 ~~~bash
 cd web
 pnpm install
-pnpm dev                 # Vite，开发代理 /api → 127.0.0.1:8000
+pnpm dev                 # 纯本机模式：Vite 开发代理 /api → 127.0.0.1:8000
 pnpm run type:check
 pnpm build               # vue-tsc + Vite 生产构建，产物 dist/
 pnpm preview             # 构建后本地预览
@@ -244,7 +240,7 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 ### 生产应用仓与多阶段 Compose
 
-生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 并填写外部 MySQL 地址后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。开发环境使用独立的 `deploy/docker-compose.dev.yml`，不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
+生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 并填写外部 MySQL 地址后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。日常开发的 `deploy/docker-compose.dev.yml` 不含 PHP 服务，API 由宿主 PHP 托管；不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
 
 生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 PHP-FPM、Nginx 和后端 scheduler；生产连接 `.env` 指定且可从容器路由的 MySQL，单机部署可启用 `bundled-db`，Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
 

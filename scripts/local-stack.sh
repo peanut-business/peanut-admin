@@ -50,6 +50,11 @@ ensure_env() {
         while IFS='=' read -r name value; do
             set_env_value "$name" "$value"
         done
+    # Daily development uses the registered host endpoint and host PHP runtime.
+    "$resource_registry" database-env --deployment-target local-development --consumer host |
+        while IFS='=' read -r name value; do
+            set_env_value "$name" "$value"
+        done
     if ! grep -q '^DB_USER=peanut_admin_development$' "$env_file" ||
         ! grep -q '^DB_PASS=..' "$env_file"; then
         "$repo_dir/scripts/company-development-database.sh" sync-credentials
@@ -99,17 +104,28 @@ show_urls() {
 case "${1:-}" in
     dev-up)
         ensure_env
-        compose_dev up -d --remove-orphans
+        "$repo_dir/scripts/local-php-runtime" start
+        if ! compose_dev up -d --remove-orphans; then
+            "$repo_dir/scripts/local-php-runtime" stop
+            exit 1
+        fi
         show_urls
         ;;
     dev-build)
         ensure_env
-        compose_dev up -d --build --remove-orphans
+        "$repo_dir/scripts/local-php-runtime" start
+        if ! compose_dev up -d --build --remove-orphans; then
+            "$repo_dir/scripts/local-php-runtime" stop
+            exit 1
+        fi
         show_urls
         ;;
     dev-down)
         ensure_env
-        compose_dev down --remove-orphans
+        compose_status=0
+        compose_dev down --remove-orphans || compose_status=$?
+        "$repo_dir/scripts/local-php-runtime" stop
+        exit "$compose_status"
         ;;
     prod-up)
         ensure_env
@@ -127,6 +143,7 @@ case "${1:-}" in
         ;;
     status)
         ensure_env
+        "$repo_dir/scripts/local-php-runtime" status
         compose_dev ps
         compose_prod ps
         show_urls
@@ -137,7 +154,8 @@ case "${1:-}" in
         ;;
     database-status)
         ensure_env
-        compose_dev run --rm --no-deps php php database/environment-guard.php --current
+        "$repo_dir/scripts/local-php-runtime" status
+        "$0" database-host-status
         ;;
     database-host-status)
         ensure_env
@@ -154,7 +172,8 @@ case "${1:-}" in
         mkdir -p "$repo_dir/output/local-diagnostics"
         log_file="$repo_dir/output/local-diagnostics/backend-live.log"
         printf 'Backend log: %s\n' "$log_file"
-        compose_dev logs --no-color --since "${LOG_SINCE:-10m}" -f php nginx | tee -a "$log_file"
+        "$repo_dir/scripts/local-php-runtime" logs
+        compose_dev logs --no-color --since "${LOG_SINCE:-10m}" -f nginx web pc mobile docs | tee -a "$log_file"
         ;;
     *)
         printf 'Usage: %s {dev-up|dev-build|dev-down|prod-up|prod-build|prod-down|status|credentials|database-host-status|database-status|logs}\n' "$0" >&2
