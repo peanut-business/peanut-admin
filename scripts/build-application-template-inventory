@@ -43,7 +43,7 @@ function excluded(string $path): bool
             'server/tests/Productization/CreateApplicationTest.php',
             '.github/workflows/core-upgrade-compatibility.yml',
             'server/tests/fixtures/core-upgrade-compatibility/fixture.json',
-            'server/tests/fixtures/core-upgrade-compatibility/php-probe.php',
+            'server/tests/fixtures/core-upgrade-compatibility/php-probe.fixture',
             'server/tests/fixtures/core-upgrade-compatibility/web-probe.ts',
             'server/tests/fixtures/core-upgrade-compatibility/composer-alpha2.lock',
             'server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock',

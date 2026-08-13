@@ -106,7 +106,7 @@ check_expected_digest '.fixture.managed_tree_sha256' "$(jq -r '.digests.managed_
 check_expected_digest '.fixture.app_owned_tree_sha256' "$(jq -r '.digests.app_owned_tree_sha256' "$MANIFEST")"
 
 mkdir -p "$APP/server/tests/Productization" "$APP/web/src/core"
-cp "$FIXTURE/php-probe.php" "$APP/server/tests/Productization/CoreUpgradeCompatibilityProbe.php"
+cp "$FIXTURE/php-probe.fixture" "$APP/server/tests/Productization/CoreUpgradeCompatibilityProbe.php"
 cp "$FIXTURE/web-probe.ts" "$APP/web/src/core/core-upgrade-compatibility-probe.ts"
 
 tree_digest() {

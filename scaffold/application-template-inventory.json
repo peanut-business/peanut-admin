@@ -8778,8 +8778,8 @@
             "mode": 420
         },
         {
-            "path": "server/tests/fixtures/core-upgrade-compatibility/php-probe.php",
-            "target": "server/tests/fixtures/core-upgrade-compatibility/php-probe.php",
+            "path": "server/tests/fixtures/core-upgrade-compatibility/php-probe.fixture",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/php-probe.fixture",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
