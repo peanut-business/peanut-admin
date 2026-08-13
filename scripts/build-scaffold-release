@@ -45,6 +45,12 @@ function releaseOwner(string $path): string
     if(str_starts_with($path,'web/')||str_starts_with($path,'pc/')||str_starts_with($path,'uniapp/')||str_starts_with($path,'docs-site/'))return 'frontend';
     return 'host';
 }
+function releaseAssertTracked(string $root,string $path): void
+{
+    $relative=substr($path,strlen($root)+1);
+    if($relative===$path)throw new RuntimeException('SCAFFOLD_RELEASE_OUTPUT_OUTSIDE_REPOSITORY');
+    releaseRun(['git','-C',$root,'ls-files','--error-unmatch','--',$relative]);
+}
 
 $commit=trim(releaseRun(['git','-C',$root,'rev-parse',$options['source-commit'].'^{commit}']));
 if(!hash_equals($options['source-commit'],$commit))throw new RuntimeException('SCAFFOLD_RELEASE_SOURCE_NOT_COMMIT');
@@ -87,4 +93,5 @@ try {
     $manifestPath=rtrim($options['output'],'/').'/scaffold-manifest.json';
     if($check){if(!is_file($manifestPath)||!hash_equals($json,(string)file_get_contents($manifestPath)))throw new RuntimeException('SCAFFOLD_RELEASE_MANIFEST_STALE'); echo "SCAFFOLD-RELEASE-{$options['version']} verified\n";}
     else{releaseWrite($manifestPath,$json,0644);echo "wrote {$manifestPath} with ".count($files)." managed files\n";}
+    if($check){foreach($files as $file)releaseAssertTracked($root,rtrim($options['output'],'/').'/'.$file['source']);releaseAssertTracked($root,$manifestPath);}
 } finally { releaseDelete($temporary); }

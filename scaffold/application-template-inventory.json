@@ -58,7 +58,7 @@
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "b7a1defbeb4f893b89c4c8f2cabd8ed8c4359f45984ec3423f16d24ce23c8c97"
+            "source_sha256": "d31964d6043a751aecfe535a77b03d53cd140ea9c1919d2d19ec19d541aef75f"
         },
         {
             "path": ".gitignore",

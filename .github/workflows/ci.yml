@@ -53,7 +53,7 @@ jobs:
             grep -Eq "$1" <<< "$changed"
           }
 
-          server_changed="$(grep -E '^server/' <<< "$changed" | grep -Ev '^(server/app/common/service/scaffold/|server/tests/Productization/(CreateApplicationTest|ScaffoldUpgradeRunnerTest)\.php)$' || true)"
+          server_changed="$(grep -E '^server/' <<< "$changed" | grep -Ev '^(server/app/common/service/scaffold/.*|server/tests/Productization/(CreateApplicationTest|ScaffoldUpgradeRunnerTest)\.php)$' || true)"
           [[ -n "$server_changed" || "$(grep -E '^(scripts/ci-server-check\.sh|scripts/check-admin-api-permissions\.php)$' <<< "$changed" || true)" != "" ]] && echo 'server=true' >> "$GITHUB_OUTPUT" || echo 'server=false' >> "$GITHUB_OUTPUT"
           matches '^(web/|scripts/sync-brand-assets\.mjs$)' && echo 'web=true' >> "$GITHUB_OUTPUT" || echo 'web=false' >> "$GITHUB_OUTPUT"
           matches '^pc/' && echo 'pc=true' >> "$GITHUB_OUTPUT" || echo 'pc=false' >> "$GITHUB_OUTPUT"
