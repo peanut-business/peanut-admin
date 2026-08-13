@@ -9,6 +9,7 @@ use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\module\VerifiedTenantModuleRepository;
 use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\TenantGovernanceService;
+use app\platform\service\TenantOwnerAdminProvisioner;
 use Opis\JsonSchema\Validator;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -215,11 +216,24 @@ try {
     );
     $governance = new TenantGovernanceService(
         new CorePlatformOperatorIdentityPort($sessions),
+        new PdoTransactionManager($pdo),
         $bootstrap,
         new PlatformTenantAdminService(
             $pdo,
             new TenantModuleManager($registry->compiled(), $repository, $validator)
-        )
+        ),
+        new class implements TenantOwnerAdminProvisioner {
+            public function provision(
+                int $tenantId,
+                int $accountId,
+                int $memberId,
+                int $coreRoleId,
+                string $tenantCode,
+                string $displayName
+            ): int {
+                return 1;
+            }
+        }
     );
     $service = new PlatformTenantModuleService($sessions, $governance, $registry, $validator);
 
