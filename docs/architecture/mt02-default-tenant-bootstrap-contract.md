@@ -132,6 +132,9 @@ Core member role/primary department 与旧关系一致、无跨 Tenant 或孤儿
 MT05 同 Account 跨 Tenant 验收发现的约束修复只允许修改：
 
 - 新增 `server/database/migrations/20260813-legacy-admin-account-tenant-scope.sql`；
+- 新增 `server/database/migrations/20260813-legacy-admin-account-fk-index.sql`，在已合入
+  migration 无法替换外键所需索引时，先增加非唯一 `account_id` 前导索引，再完成
+  Tenant-scoped 唯一键替换；
 - `server/tests/Multitenancy/PlatformTenantLifecycleApiTest.php`；
 - 本文的约束说明、白名单与实施证据。
 
@@ -190,3 +193,7 @@ development-complete。MT01 固定候选、Article owner、Tenant-aware Runtime�
   `(tenant_id, account_id)`，并由 `PlatformTenantLifecycleApiTest` 直接证明同一 Account
   可在两个 Tenant 各有独立 TenantMember 和兼容 Admin 映射；该修复通过后才重冻
   MT05 候选并仅重跑浏览器失败组。
+- PR #96 合入后的新候选空库安装发现 MySQL 8.4 错误 1553：旧唯一索引同时是
+  `fk_legacy_admin_account` 所需的前导索引，无法直接删除。修复使用紧随其后的 migration
+  先建立专用非唯一外键索引，再替换唯一键；聚焦 fixture 增加真实 Account 外键并按顺序
+  执行两条 migration，确保该安装路径不再漏检。

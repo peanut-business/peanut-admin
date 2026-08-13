@@ -149,10 +149,16 @@ CREATE TABLE pa_legacy_admin_tenant_map (
   tenant_member_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME(3) NOT NULL,
   PRIMARY KEY (tenant_id, legacy_admin_id), UNIQUE KEY uk_legacy_admin_account (account_id),
-  UNIQUE KEY uk_member (tenant_id, tenant_member_id)
+  UNIQUE KEY uk_member (tenant_id, tenant_member_id),
+  CONSTRAINT fk_legacy_admin_account FOREIGN KEY (account_id) REFERENCES pa_account (id)
 ) ENGINE=InnoDB;
 INSERT INTO pa_system_menu (is_disable) VALUES (0), (0), (1);
 SQL);
+    $foreignKeyIndexMigration = file_get_contents(
+        dirname(__DIR__, 2) . '/database/migrations/20260813-legacy-admin-account-fk-index.sql'
+    );
+    lifecycleExpect(is_string($foreignKeyIndexMigration), 'legacy Admin Account foreign-key index migration is unreadable');
+    $pdo->exec($foreignKeyIndexMigration);
     $constraintMigration = file_get_contents(
         dirname(__DIR__, 2) . '/database/migrations/20260813-legacy-admin-account-tenant-scope.sql'
     );
