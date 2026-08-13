@@ -183,11 +183,42 @@ try {
         'Tenant activation platform audit is missing'
     );
 
+    $closed = $service->transition(
+        'pm01-lifecycle-token',
+        $tenantId,
+        (int)$active['revision'],
+        TenantStatus::Closed,
+        'customer instance retired',
+        'pm01-http-close'
+    );
+    lifecycleExpect($closed['status'] === 'closed' && (int)$closed['revision'] === 3, 'Tenant closure result is incorrect');
+    lifecycleExpect(
+        $pdo->query("SELECT status FROM pa_tenant WHERE id={$tenantId}")->fetchColumn() === 'closed',
+        'Tenant closure was not persisted'
+    );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_platform_audit_event WHERE request_id='pm01-http-close' AND event_type='tenant.closed'")->fetchColumn() === 1,
+        'Tenant closure platform audit is missing'
+    );
+    lifecycleRejects(static fn() => $service->transition(
+        'pm01-lifecycle-token',
+        $tenantId,
+        (int)$closed['revision'],
+        TenantStatus::Active,
+        'closed tenants are terminal',
+        'pm01-http-closed-reactivation'
+    ));
+    lifecycleExpect(
+        $pdo->query("SELECT status FROM pa_tenant WHERE id={$tenantId}")->fetchColumn() === 'closed',
+        'rejected closed Tenant transition changed persisted state'
+    );
+
     $route = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
     lifecycleExpect(
         str_contains($route, "Route::post('api/platform/tenants/provision'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner'")
             && str_contains($route, "Route::post('api/platform/tenants/activate'")
+            && str_contains($route, "Route::post('api/platform/tenants/close'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle'"),
         'platform lifecycle HTTP routes lost their dedicated permissions'
     );

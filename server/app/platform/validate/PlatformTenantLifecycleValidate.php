@@ -28,5 +28,6 @@ final class PlatformTenantLifecycleValidate extends Validate
         ],
         'activate' => ['tenant_id', 'expected_revision', 'change_reason'],
         'suspend' => ['tenant_id', 'expected_revision', 'change_reason'],
+        'close' => ['tenant_id', 'expected_revision', 'change_reason'],
     ];
 }

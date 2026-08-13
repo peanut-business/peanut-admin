@@ -100,6 +100,34 @@ final class PlatformTenantController extends BasePlatformController
         }
     }
 
+    public function close()
+    {
+        if ($this->platformContext === null) {
+            return JsonService::fail('Platform authentication is required.', null, 40100);
+        }
+
+        $params = $this->request->post();
+        $this->validate($params, PlatformTenantLifecycleValidate::class . '.close');
+        try {
+            return $this->data(PlatformRuntimeFactory::tenantGovernance()->transition(
+                PlatformRequest::bearerToken($this->request),
+                (int)$params['tenant_id'],
+                (int)$params['expected_revision'],
+                TenantStatus::Closed,
+                trim((string)$params['change_reason']),
+                $this->platformContext->core->requestId
+            ));
+        } catch (AdminAccessException $exception) {
+            return $this->accessFailure($exception);
+        } catch (\DomainException|\InvalidArgumentException) {
+            return JsonService::fail(
+                'Tenant closure was rejected.',
+                ['error_code' => 'TENANT_CLOSURE_REJECTED'],
+                40900
+            );
+        }
+    }
+
     public function lists()
     {
         if ($this->platformContext === null) {

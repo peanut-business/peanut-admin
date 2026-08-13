@@ -97,6 +97,9 @@ Route::post('api/platform/tenants/activate', [PlatformTenantController::class, '
 Route::post('api/platform/tenants/suspend', [PlatformTenantController::class, 'suspend'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
+Route::post('api/platform/tenants/close', [PlatformTenantController::class, 'close'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
 
 // Multi-tenant Admin session boundary. Core owns selection challenges and atomic old-session revocation.
 Route::post('api/tenant/session/login', [TenantSessionController::class, 'login']);
