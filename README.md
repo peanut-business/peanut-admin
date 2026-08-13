@@ -1,134 +1,145 @@
 # Peanut Admin
 
-基于 ThinkPHP 8、Vue 3 与 Element Plus 的企业后台管理应用模板。LikeAdmin 1.9.4 标准版 parity 已按仓库封存合同完成；应用暂时采用专有 / All Rights Reserved，第三方组件继续受各自许可证约束。
+Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的企业应用脚手架。
+同一份 `1.1.0` release 同时支持单实例（`standalone`）和多租户（`multi-tenant`）部署，
+覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
 
-## 项目身份与当前基线
+[在线应用](https://peanut-admin.007345.xyz) ·
+[文档中心](https://peanut-admin-doc.007345.xyz) ·
+[v1.1.0 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0) ·
+[更新日志](CHANGELOG.md)
 
-- 产品名称：Peanut Admin（无版本后缀）
-- GitHub 仓库：`peanut-business/peanut-admin`
-- PC package name：`peanut-admin-pc`
-- 集成分支：`dev`；稳定分支：`main`
-- LikeAdmin parity：已完成并独立验证，证据见 `output/playwright/v02/`；后续不重复验收
-- 数据库基线：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 50 个 migrations
-- 当前稳定基线：同一 `1.1.0` release 支持 `standalone` 与 `multi-tenant`；空库与 `v1.0.0` 前滚均已通过 81 张表、50 条迁移账本的集中验收
-- 多租户边界：已交付 Tenant 隔离、实例内 PlatformOperator/Tenant 生命周期、租户会话与代表业务闭环；订阅计费和跨实例运营平台不在本 release 内
+## 当前稳定能力
+
+- 管理后台：菜单、角色、管理员、部门、岗位、字典、文件、定时任务、日志和系统设置。
+- 业务模块：会员、标签、余额、通知、充值退款、文章、装修、热门搜索和客服设置。
+- 多端应用：Vue 3 管理端、Nuxt 3 PC、UniApp H5/小程序。
+- 多租户：默认 Tenant、可信 TenantContext、Tenant-first 数据访问、缓存/文件/任务/审计隔离。
+- 实例内平台管理：独立 PlatformOperator、Tenant 生命周期、首个 owner 和 TenantModule 管理。
+- 交付：空库安装、`v1.0.0 → v1.1.0` 前滚、50 条迁移账本和 Docker Compose 生产部署。
+
+`1.1.0` 是稳定多租户应用脚手架，不包含套餐、订阅、计费、试用、发票、应用市场或
+跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并完成平台登记。
 
 ## 技术栈
 
 | 层 | 技术 |
-|---|---|
-| 后端 | ThinkPHP 8、PHP 8.3、JWT（firebase/php-jwt） |
+| --- | --- |
+| 后端 | ThinkPHP 8、PHP 8.3、JWT |
 | 管理端 | Vue 3、Element Plus、Vite、TypeScript |
 | PC | Nuxt 3、Element Plus |
 | H5 / 小程序 | UniApp |
-| 数据库 | MySQL 8 |
+| 数据库 | MySQL 8.0.36+ / 8.4 |
+| 生产运行 | Docker Compose、Nginx、PHP-FPM |
 
 ## 快速开始
 
-### 1. 克隆项目
+### 1. 准备环境
+
+- PHP 8.3、Composer 2.8
+- MySQL 8.0.36+ 或 8.4
+- Node.js 20/22、pnpm 9
+
+### 2. 获取源码与配置
 
 ```bash
-git clone <repo-url> && cd peanut-admin
+git clone git@github.com:peanut-business/peanut-admin.git
+cd peanut-admin
+cp server/.env.example server/.env
 ```
 
-### 2. 初始化数据库
+编辑 `server/.env`，至少填写数据库连接、`JWT_SECRET` 和下列安装身份：
 
-```bash
-mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```dotenv
+DEPLOYMENT_MODE=standalone
+ADMIN_INITIAL_EMAIL=admin@example.com
+ADMIN_INITIAL_PASSWORD=<至少 12 位且同时包含字母和数字>
+TENANT_IDENTIFIER_HMAC_KEY=<至少 32 字节的稳定随机值>
+PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 ```
 
-### 3. 配置后端
+多租户部署把 `DEPLOYMENT_MODE` 改为 `multi-tenant`，并额外提供与管理员不同的
+`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`。HMAC 生成后必须稳定保存；随意更换
+会使既有身份索引失配。
+
+### 3. 安装与启动
 
 ```bash
 cd server
-cp .env.example .env   # 填写 DB_* / JWT_SECRET / ADMIN_INITIAL_PASSWORD
 composer install
 cd ..
 php server/database/install.php
-```
 
-安装器只接受空数据库。首次安装前必须通过环境变量或 `server/.env` 显式设置至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器不会回显密码。它按顺序执行基础结构和全部迁移，并校验完整表结构、菜单、配置及管理员 `admin`。已有数据库不得运行首次安装器：先完成数据库与存储备份，尚未进入迁移账本的历史安装只执行一次 `php server/database/migrate.php --adopt-existing`，已接管环境及后续发布执行 `php server/database/migrate.php`。不要手工改写账本或已登记迁移。
-
-### 4. 启动
-
-```bash
-# 后端（端口 8000）
+# 终端 A：API
 cd server && php think run --host 0.0.0.0 --port 8000
 
-# 前端（端口 5173，/api/* 自动代理到 :8000）
-cd web && pnpm install && pnpm dev
+# 终端 B：管理端
+cd web && pnpm install --frozen-lockfile && pnpm dev
 ```
 
-浏览器打开 `http://localhost:5173/admin/`，使用账号 `admin` 和安装时提供的 `ADMIN_INITIAL_PASSWORD` 登录（**首次登录后建议立即改为个人凭据**）。
+打开 `http://localhost:5173/admin/`，使用账号 `admin` 和安装时提供的密码登录。
+安装器只接受空数据库；已有安装必须按[部署与升级文档](https://peanut-admin-doc.007345.xyz/deployment)
+执行备份和前滚迁移，不能重新运行空库安装器。
+
+## 生产入口
+
+| 入口 | 地址 |
+| --- | --- |
+| 应用首页 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
+| PC 客户端 | https://peanut-admin.007345.xyz/pc/ |
+| H5 客户端 | https://peanut-admin.007345.xyz/mobile/ |
+| 官方文档 | https://peanut-admin-doc.007345.xyz |
+
+生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。首次部署、
+`standalone`/`multi-tenant` 配置、数据库备份、前滚顺序和回滚停止线见
+[部署与升级](https://peanut-admin-doc.007345.xyz/deployment)。
 
 ## 目录结构
 
-```
+```text
 peanut-admin/
-├── server/                  # ThinkPHP 8 后端
-│   ├── app/
-│   │   ├── adminapi/        # 管理后台 API（controller / logic）
-│   │   ├── api/             # 用户端 API
-│   │   └── common/          # 公共 model / service / enum
-│   ├── config/              # 框架配置
-│   ├── database/install.php # 空数据库首次安装器
-│   ├── database/init.sql    # 基础结构和种子
-│   ├── database/migrations/ # 增量业务迁移
-│   └── route/app.php        # 全部路由
-├── web/                     # Vue 3 + Element Plus 管理端
-    └── src/
-        ├── api/             # axios 请求封装
-        ├── views/           # 页面组件
-        └── router/          # 前端路由
-├── pc/                      # Nuxt 3 PC 客户端
-├── uniapp/                  # UniApp H5 / 小程序客户端
-└── docs-site/               # 独立 VitePress 文档站
+├── server/       # ThinkPHP 后端、数据库安装器与迁移
+├── web/          # Vue 3 管理端
+├── pc/           # Nuxt 3 PC 客户端
+├── uniapp/       # UniApp H5 / 小程序
+├── docs-site/    # VitePress 官方文档站
+├── deploy/       # Docker 与 Nginx 生产配置
+└── docs/         # 架构、开发和发布文档
 ```
 
-## 已实现模块
+## API 与扩展
 
-**系统管理**：菜单、角色、管理员（含个人中心）、部门、岗位、字典、文件管理、定时任务、操作日志、系统维护、网站配置、存储设置（本地 / 七牛 / 阿里 OSS / 腾讯 COS）
-
-**会员**：会员列表（CRUD + 余额调整）、会员标签
-
-**通知**：短信渠道、四个固定验证码场景、发送日志
-
-**财务**：账户流水、充值记录、退款记录
-
-**内容**：文章分类、文章管理
-
-**应用设置**：支付配置（微信 / 支付宝）、渠道配置（公众号 / 小程序 / 开放平台 / H5）、页面装修、热门搜索、客服设置、交易设置
-
-## API 规范
-
-- 响应格式：`{"code": 20000, "msg": "ok", "data": {...}}`
+- 响应：`{"code": 20000, "msg": "ok", "data": {...}}`
 - 认证：`Authorization: Bearer <token>`
-- 未登录：`40100`，无权限：`40300`，业务错误：`40000`
+- 常用错误码：未登录 `40100`、无权限 `40300`、业务错误 `40000`
+- 扩展业务应通过应用 Module/Host 接入，不复制 Core Runtime。
 
-## 生产部署
+完整的认证、权限、公开包和外部回调边界见
+[API 与扩展](https://peanut-admin-doc.007345.xyz/api)。
 
-生产部署面向已经存在的应用仓，不在服务器重新克隆模板创建应用。服务器只安装 Git 和 Docker，拉取应用 release、在根目录 `.env` 配置可从容器路由的 MySQL 后执行 `docker compose up -d --build`；宿主机不需要 Node.js、PHP 或 Composer。同一 Compose 构建分别生成 PHP 运行镜像和包含管理端 `web/`、PC 端 `pc/`、UniApp H5 `uniapp/` 静态产物的 Nginx 镜像。单机部署可使用 `bundled-db` profile。
+## 文档
 
-同一入口分别提供 `/admin/`（管理端静态 SPA）、`/pc/`（Nuxt 静态 SPA）、`/mobile/`（UniApp H5）、`/api/`（ThinkPHP）和 `/storage/`。三个前端都写入各自子目录，不覆盖后端 public 根文件。完整命令、版本范围和首次部署流程见 `docs/peanut-admin-release-deployment.md`。
+- [开始使用](https://peanut-admin-doc.007345.xyz/getting-started)
+- [管理员手册](https://peanut-admin-doc.007345.xyz/guide/user-manual)
+- [开发指南](https://peanut-admin-doc.007345.xyz/guide/development)
+- [部署与升级](https://peanut-admin-doc.007345.xyz/deployment)
+- [版本与发布](https://peanut-admin-doc.007345.xyz/releases)
 
-## 文档站
-
-Peanut Admin 官方网站与文档门户位于 `docs-site/`。站点包含产品首页、能力与场景、快速开始、开发、部署升级、API/扩展、管理员手册和版本信息；构建使用：
+文档源码位于 `docs-site/`，由 Cloudflare Pages 项目 `peanut-admin-docs` 发布到
+`peanut-admin-doc.007345.xyz`：
 
 ```bash
 cd docs-site
 pnpm install --frozen-lockfile
-PEANUT_DOCS_SITE_URL=https://docs.example.com pnpm build
+PEANUT_DOCS_SITE_URL=https://peanut-admin-doc.007345.xyz pnpm build
+npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --branch=main
 ```
 
-`PEANUT_DOCS_SITE_URL` 只用于生成目标环境的 sitemap canonical host；省略时仍可完成本地构建。部署平台、项目名和公开域名由目标环境决定，不作为脚手架默认值提交。
+## 版本与许可证
 
-## 许可证与发布告知
+当前稳定版本为 [`v1.1.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0)。
+发布附件包含源码归档、Release manifest、许可证、第三方告知和 SPDX SBOM。
 
-Peanut Admin 应用版权主体显示为“花生科技”，package manifests 使用 `proprietary/UNLICENSED` 语义；两个公开核心包仍为 Apache-2.0。源码使用边界见 [LICENSE](LICENSE)，来源与第三方告知见 [NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，完整五锁图依赖库存见 [RELEASE_SBOM.spdx.json](RELEASE_SBOM.spdx.json)。
-
-应用 `1.1.0` 的变更、升级要求和边界见 [CHANGELOG.md](CHANGELOG.md)；正式发布后以 annotated [`v1.1.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0) 与同 tag GitHub Release 为不可变身份，附件摘要见 Release 的 `RELEASE_MANIFEST.json`。历史 `v1.0.0` 保持不变。
-
-## 目标架构
-
-管理端 Element Plus、两个公开核心包、标准覆盖 Host、PC/UniApp 无 UI client、三端 Docker、品牌单一 Runtime、官网/文档门户和 PB08B 正式候选集成验收已经完成。产品无关且已获采用授权的能力由核心包拥有；会员/财务、内容/装修、支付/OAuth 等产品领域由应用 Module 唯一拥有。PB09 的许可证策略、发布授权、根法律文件、第三方告知、SBOM、`dev`/`main` 合入、annotated tag、GitHub Release、既有应用/官网部署和一次最低线上 smoke 均已完成；产品化正式基线至此封存。契约见 `docs/architecture/application-package-and-release-contract.md`，执行队列见 `docs/productization-baseline-plan.md`。
+Peanut Admin 应用当前采用专有 / All Rights Reserved 许可；公开 Core 包维持 Apache-2.0。
+具体边界见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
