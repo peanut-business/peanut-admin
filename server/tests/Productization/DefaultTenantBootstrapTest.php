@@ -15,9 +15,9 @@ function mt02Expect(bool $condition, string $message): void
 
 function mt02AdminConnection(): PDO
 {
-    $host = getenv('MYSQL_HOST') ?: '127.0.0.1';
-    $port = getenv('MYSQL_PORT') ?: '33463';
-    $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
+    $host = getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1');
+    $port = getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463');
+    $password = getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev');
     return new PDO(
         "mysql:host={$host};port={$port};charset=utf8mb4",
         'root',
@@ -29,9 +29,9 @@ function mt02AdminConnection(): PDO
 function mt02Database(PDO $admin, string $database): PDO
 {
     $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
-    $host = getenv('MYSQL_HOST') ?: '127.0.0.1';
-    $port = getenv('MYSQL_PORT') ?: '33463';
-    $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
+    $host = getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1');
+    $port = getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463');
+    $password = getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev');
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
         'root',
@@ -102,11 +102,11 @@ try {
     $freshName = 'pa_mt02_fresh_' . $run;
     $databases[] = $freshName;
     $fresh = mt02Database($admin, $freshName);
-    putenv('DB_HOST=' . (getenv('MYSQL_HOST') ?: '127.0.0.1'));
-    putenv('DB_PORT=' . (getenv('MYSQL_PORT') ?: '33463'));
+    putenv('DB_HOST=' . (getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1')));
+    putenv('DB_PORT=' . (getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463')));
     putenv('DB_NAME=' . $freshName);
     putenv('DB_USER=root');
-    putenv('DB_PASS=' . (getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev'));
+    putenv('DB_PASS=' . (getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev')));
     putenv('ADMIN_INITIAL_EMAIL=' . $ownerEmail);
     putenv('ADMIN_INITIAL_PASSWORD=' . $ownerPassword);
     ob_start();
