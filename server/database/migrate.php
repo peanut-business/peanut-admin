@@ -283,6 +283,7 @@ function migrationNormalizeDefinition(string $definition): string
                     $expression
                 ) ?? $expression;
             } while ($expression !== $previous);
+            $expression = migrationStripOuterParentheses($expression);
             $definition = $prefix . $expression . ')';
         }
     }
