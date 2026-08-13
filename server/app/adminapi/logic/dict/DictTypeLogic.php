@@ -4,14 +4,14 @@ declare(strict_types=1);
 namespace app\adminapi\logic\dict;
 
 use app\common\logic\BaseLogic;
-use app\common\model\dict\DictType;
-use app\common\model\dict\DictData;
+use app\common\service\dict\DictTenantRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 class DictTypeLogic extends BaseLogic
 {
     /** 分页列表：支持 name(模糊) / type(模糊) / is_disable 过滤 */
-    public static function lists(array $params): array
+    public static function lists(TenantContext $context, array $params): array
     {
         $where = [];
         if (!empty($params['name'])) {
@@ -27,8 +27,9 @@ class DictTypeLogic extends BaseLogic
         $pageNo   = max(1, (int)($params['page_no'] ?? 1));
         $pageSize = min(100, max(1, (int)($params['page_size'] ?? 15)));
 
-        $count = DictType::where($where)->count();
-        $lists = DictType::where($where)
+        $query = DictTenantRepository::types($context)->where($where);
+        $count = (clone $query)->count();
+        $lists = $query
             ->order(['id' => 'desc'])
             ->page($pageNo, $pageSize)
             ->select()
@@ -38,27 +39,27 @@ class DictTypeLogic extends BaseLogic
     }
 
     /** 全部启用类型（供选择器用） */
-    public static function all(): array
+    public static function all(TenantContext $context): array
     {
-        return DictType::where('is_disable', 0)
+        return DictTenantRepository::types($context)->where('is_disable', 0)
             ->field('id,name,type')
             ->order(['id' => 'desc'])
             ->select()->toArray();
     }
 
-    public static function detail(int $id): array
+    public static function detail(TenantContext $context, int $id): array
     {
-        return DictType::findOrEmpty($id)->toArray();
+        return DictTenantRepository::types($context)->where('id', $id)->findOrEmpty()->toArray();
     }
 
-    public static function add(array $params): bool
+    public static function add(TenantContext $context, array $params): bool
     {
-        if (self::typeExists((string)$params['type'])) {
+        if (self::typeExists($context, (string)$params['type'])) {
             self::setError('字典类型标识已存在');
             return false;
         }
         try {
-            DictType::create([
+            DictTenantRepository::createType($context, [
                 'name'       => (string)$params['name'],
                 'type'       => (string)$params['type'],
                 'is_disable' => (int)($params['is_disable'] ?? 0),
@@ -71,15 +72,18 @@ class DictTypeLogic extends BaseLogic
         }
     }
 
-    public static function edit(array $params): bool
+    public static function edit(TenantContext $context, array $params): bool
     {
-        if (self::typeExists((string)$params['type'], (int)$params['id'])) {
+        if (self::typeExists($context, (string)$params['type'], (int)$params['id'])) {
             self::setError('字典类型标识已存在');
             return false;
         }
         try {
-            Db::transaction(function () use ($params): void {
-                $type = DictType::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
+            Db::transaction(function () use ($context, $params): void {
+                $type = DictTenantRepository::types($context)
+                    ->where('id', (int)$params['id'])
+                    ->lock(true)
+                    ->findOrEmpty();
                 if ($type->isEmpty()) {
                     throw new \RuntimeException('字典类型不存在');
                 }
@@ -88,7 +92,7 @@ class DictTypeLogic extends BaseLogic
                 $type->is_disable = (int)($params['is_disable'] ?? 0);
                 $type->remark = (string)($params['remark'] ?? '');
                 $type->save();
-                DictData::where('type_id', (int)$type->id)
+                DictTenantRepository::data($context)->where('type_id', (int)$type->id)
                     ->update(['type_value' => (string)$type->type]);
             });
             return true;
@@ -99,15 +103,19 @@ class DictTypeLogic extends BaseLogic
     }
 
     /** 被数据占用时拒绝删除，避免无意级联丢失业务枚举。 */
-    public static function delete(int $id): bool
+    public static function delete(TenantContext $context, int $id): bool
     {
         try {
-            Db::transaction(function () use ($id): void {
-                $type = DictType::where('id', $id)->lock(true)->findOrEmpty();
+            Db::transaction(function () use ($context, $id): void {
+                $type = DictTenantRepository::types($context)->where('id', $id)->lock(true)->findOrEmpty();
                 if ($type->isEmpty()) {
                     throw new \RuntimeException('字典类型不存在');
                 }
-                if (!DictData::where('type_id', $id)->lock(true)->findOrEmpty()->isEmpty()) {
+                if (!DictTenantRepository::data($context)
+                    ->where('type_id', $id)
+                    ->lock(true)
+                    ->findOrEmpty()
+                    ->isEmpty()) {
                     throw new \RuntimeException('字典类型已被数据项使用，请先删除数据项');
                 }
                 $type->delete();
@@ -119,9 +127,9 @@ class DictTypeLogic extends BaseLogic
         }
     }
 
-    public static function updateStatus(int $id, int $isDisable): bool
+    public static function updateStatus(TenantContext $context, int $id, int $isDisable): bool
     {
-        $type = DictType::findOrEmpty($id);
+        $type = DictTenantRepository::types($context)->where('id', $id)->findOrEmpty();
         if ($type->isEmpty()) {
             self::setError('字典类型不存在');
             return false;
@@ -132,9 +140,9 @@ class DictTypeLogic extends BaseLogic
     }
 
     /** 类型标识唯一性检查（排除自身；软删除记录不参与） */
-    protected static function typeExists(string $type, int $exceptId = 0): bool
+    protected static function typeExists(TenantContext $context, string $type, int $exceptId = 0): bool
     {
-        $q = DictType::where('type', $type);
+        $q = DictTenantRepository::types($context)->where('type', $type);
         if ($exceptId > 0) {
             $q->where('id', '<>', $exceptId);
         }

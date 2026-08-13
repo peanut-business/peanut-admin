@@ -61,7 +61,8 @@ $dataLogic = $sources['app/adminapi/logic/dict/DictDataLogic.php'];
 expectReferenceCodes(str_contains($typeLogic, 'Db::transaction('), 'type mutations must retain a transaction');
 expectReferenceCodes(str_contains($typeLogic, '->lock(true)'), 'type mutations must retain row locks');
 expectReferenceCodes(
-    preg_match("/DictData::where\('type_id'.*?->update\(\['type_value'/s", $typeLogic) === 1,
+    str_contains($typeLogic, "DictTenantRepository::data(\$context)->where('type_id'")
+        && str_contains($typeLogic, "->update(['type_value'"),
     'type rename must synchronize data.type_value'
 );
 expectReferenceCodes(
