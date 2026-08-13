@@ -33,7 +33,15 @@ export default defineNuxtConfig({
     devProxy: {
       '/api': {
         target: process.env.NUXT_DEV_PROXY_TARGET || 'http://127.0.0.1:8000/api',
-        changeOrigin: true,
+        changeOrigin: false,
+      },
+      '/brand': {
+        target: `${process.env.NUXT_DEV_PROXY_ORIGIN || 'http://127.0.0.1:8000'}/brand`,
+        changeOrigin: false,
+      },
+      '/storage': {
+        target: `${process.env.NUXT_DEV_PROXY_ORIGIN || 'http://127.0.0.1:8000'}/storage`,
+        changeOrigin: false,
       },
     },
   },

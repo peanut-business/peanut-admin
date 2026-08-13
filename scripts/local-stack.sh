@@ -131,8 +131,15 @@ case "${1:-}" in
         ensure_env
         compose_dev run --rm --no-deps php php database/environment-guard.php --current
         ;;
+    logs)
+        ensure_env
+        mkdir -p "$repo_dir/output/local-diagnostics"
+        log_file="$repo_dir/output/local-diagnostics/backend-live.log"
+        printf 'Backend log: %s\n' "$log_file"
+        compose_dev logs --no-color --since "${LOG_SINCE:-10m}" -f php nginx | tee -a "$log_file"
+        ;;
     *)
-        printf 'Usage: %s {dev-up|dev-build|dev-down|prod-up|prod-build|prod-down|status|credentials|database-status}\n' "$0" >&2
+        printf 'Usage: %s {dev-up|dev-build|dev-down|prod-up|prod-build|prod-down|status|credentials|database-status|logs}\n' "$0" >&2
         exit 2
         ;;
 esac

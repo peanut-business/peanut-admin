@@ -72,6 +72,7 @@ services:
       <<: *node-environment
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
       NUXT_DEV_PROXY_TARGET: http://php:8000/api
+      NUXT_DEV_PROXY_ORIGIN: http://php:8000
     volumes:
       - ../pc:/workspace/pc
       - pc-node-modules:/workspace/pc/node_modules
