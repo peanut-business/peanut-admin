@@ -40,7 +40,6 @@ use app\adminapi\controller\generator\GeneratorController;
 use app\adminapi\controller\system\SystemController;
 use app\adminapi\controller\setting\StorageController;
 use app\adminapi\controller\setting\HotSearchController;
-use app\adminapi\controller\setting\CustomerServiceController;
 use app\adminapi\controller\setting\PayConfigController;
 use app\adminapi\controller\setting\RechargeSettingController;
 use app\adminapi\controller\setting\TransactionSettingsController;
@@ -358,10 +357,6 @@ Route::group('api/admin', function () {
     // 应用设置 - 热门搜索
     Route::get('setting/hot-search/config',  [HotSearchController::class, 'getConfig']);
     Route::post('setting/hot-search/save',   [HotSearchController::class, 'setConfig']);
-
-    // 应用设置 - 客服设置
-    Route::get('setting/customer-service/config', [CustomerServiceController::class, 'getConfig']);
-    Route::post('setting/customer-service/save',  [CustomerServiceController::class, 'setConfig']);
 
     // 应用设置 - 支付配置
     Route::get('setting/pay/config',  [PayConfigController::class, 'getConfig']);

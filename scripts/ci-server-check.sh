@@ -35,6 +35,7 @@ if [[ "$mode" == '--full' ]]; then
     server/tests/Productization/MemberFinanceHostTest.php
     server/tests/Multitenancy/MemberTenantIsolationTest.php
     server/tests/Productization/ContentDecorationHostTest.php
+    server/tests/Productization/LegacyDecorationRuntimeConvergenceTest.php
     server/tests/Productization/NotificationHostTest.php
     server/tests/Productization/PaymentHostTest.php
     server/tests/Productization/OAuthChannelHostTest.php
@@ -97,6 +98,7 @@ while IFS= read -r path; do
       ;;
     *dict*|*Dict*) select_test server/tests/Multitenancy/DictTenantIsolationTest.php ;;
     *article*) select_test server/tests/Multitenancy/ArticleTenantIsolationTest.php ;;
+    *decoration*|*Decoration*) select_test server/tests/Productization/LegacyDecorationRuntimeConvergenceTest.php ;;
     *member*|*Member*|*account_log*|*AccountLog*) select_test server/tests/Multitenancy/MemberTenantIsolationTest.php ;;
     *notice*|*notification*) select_test server/tests/Multitenancy/NoticeTenantIsolationTest.php ;;
     *crontab*) select_test server/tests/Multitenancy/CrontabTenantIsolationTest.php ;;
