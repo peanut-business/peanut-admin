@@ -1,6 +1,30 @@
 <?php
 declare(strict_types=1);
 
+const PEANUT_DATABASE_RESOURCES = [
+    'local-development' => [
+        'peanut-admin-mysql84-development' => [
+            'host' => '192.168.192.2',
+            'port' => '20183',
+            'database' => 'peanut_admin_development',
+        ],
+    ],
+    'local-production-preview' => [
+        'peanut-admin-mysql84-development' => [
+            'host' => '192.168.192.2',
+            'port' => '20183',
+            'database' => 'peanut_admin_development',
+        ],
+    ],
+    'production' => [
+        'peanut-admin-production-bundled-mysql84' => [
+            'host' => 'mysql',
+            'port' => '3306',
+            'database' => 'peanut_admin',
+        ],
+    ],
+];
+
 function requiredEnvironment(string $name): string
 {
     $value = getenv($name);
@@ -8,49 +32,6 @@ function requiredEnvironment(string $name): string
         throw new RuntimeException("缺少环境配置：{$name}");
     }
     return trim($value);
-}
-
-/** @return array{stable_resource_id:string,database:string,container_endpoint:array{endpoint_id:string,host:string,port:int},upstream_endpoint?:array{endpoint_id:string,host:string,port:int}} */
-function registeredDatabase(string $deploymentTarget, string $resourceId, string $consumer): array
-{
-    $registryPath = dirname(__DIR__, 2) . '/resources/project-resources.json';
-    $contents = @file_get_contents($registryPath);
-    if ($contents === false) {
-        throw new RuntimeException('无法读取项目资源登记');
-    }
-    try {
-        $registry = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
-    } catch (JsonException $exception) {
-        throw new RuntimeException('项目资源登记不是有效 JSON', 0, $exception);
-    }
-    if (($registry['schema_version'] ?? null) !== 1 || ($registry['project_id'] ?? null) !== 'peanut-admin') {
-        throw new RuntimeException('项目资源登记版本或项目身份不匹配');
-    }
-    $environment = $deploymentTarget === 'local-development' ? 'development' : $deploymentTarget;
-    $matches = array_values(array_filter(
-        $registry['resources']['databases'] ?? [],
-        static fn (mixed $item): bool => is_array($item)
-            && ($item['stable_resource_id'] ?? null) === $resourceId
-            && in_array($environment, $item['environments'] ?? [], true)
-    ));
-    if (count($matches) !== 1) {
-        throw new RuntimeException("数据库资源 {$resourceId} 未唯一登记为 {$deploymentTarget} 目标资源");
-    }
-    $database = $matches[0];
-    $endpointKey = $consumer === 'host' ? 'upstream_endpoint' : 'container_endpoint';
-    $endpoint = $database[$endpointKey] ?? null;
-    if (!is_array($endpoint) || !in_array($consumer, $endpoint['consumers'] ?? [], true)) {
-        throw new RuntimeException("数据库资源 {$resourceId} 缺少 {$consumer} 消费入口");
-    }
-    foreach (['endpoint_id', 'host', 'port'] as $field) {
-        if (!isset($endpoint[$field]) || trim((string)$endpoint[$field]) === '') {
-            throw new RuntimeException("数据库资源 {$resourceId} 的 {$consumer} 消费入口缺少 {$field}");
-        }
-    }
-    if (!isset($database['database']) || trim((string)$database['database']) === '') {
-        throw new RuntimeException("数据库资源 {$resourceId} 缺少 database");
-    }
-    return $database;
 }
 
 /** @return array{environment:string,deployment_target:string,resource_id:string,host:string,port:string,database:string,user:string,password:string} */
@@ -66,30 +47,15 @@ function guardedDatabaseConfig(): array
         throw new RuntimeException("APP_ENV={$environment} 与部署目标 {$deploymentTarget} 不匹配");
     }
     $resourceId = requiredEnvironment('PEANUT_DATABASE_RESOURCE_ID');
-    $consumer = requiredEnvironment('PEANUT_DATABASE_CONSUMER');
-    if (!in_array($consumer, ['host', 'container'], true)) {
-        throw new RuntimeException("不支持的数据库消费者：{$consumer}");
-    }
-    if ($deploymentTarget === 'production' && $consumer !== 'container') {
-        throw new RuntimeException('生产 bundled-db 资源只登记了容器消费入口');
-    }
-    $registered = registeredDatabase($deploymentTarget, $resourceId, $consumer);
-    $endpointKey = $consumer === 'host' ? 'upstream_endpoint' : 'container_endpoint';
-    $endpoint = $registered[$endpointKey];
-    $endpointId = requiredEnvironment('PEANUT_DATABASE_ENDPOINT_ID');
-    if (!hash_equals((string)$endpoint['endpoint_id'], $endpointId)) {
-        throw new RuntimeException("数据库资源 {$resourceId} 的 {$consumer} 消费入口不匹配登记值");
+    $expected = PEANUT_DATABASE_RESOURCES[$deploymentTarget][$resourceId] ?? null;
+    if (!is_array($expected)) {
+        throw new RuntimeException("数据库资源 {$resourceId} 未登记为 {$deploymentTarget} 目标资源");
     }
 
     $actual = [
         'host' => requiredEnvironment('DB_HOST'),
         'port' => requiredEnvironment('DB_PORT'),
         'database' => requiredEnvironment('DB_NAME'),
-    ];
-    $expected = [
-        'host' => (string)$endpoint['host'],
-        'port' => (string)$endpoint['port'],
-        'database' => (string)$registered['database'],
     ];
     foreach ($expected as $name => $value) {
         if (!hash_equals($value, $actual[$name])) {
