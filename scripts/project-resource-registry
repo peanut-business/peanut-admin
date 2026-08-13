@@ -88,28 +88,54 @@ def main() -> int:
             for item in registry["resources"].get("tooling", [])
         }
         expected_tooling = {
-            "peanut-admin-host-php-development": ("/opt/homebrew/bin/php", "8.3.24"),
+            "peanut-admin-host-php-development": ("/opt/homebrew/bin/php", "8.3.24", 20180),
             "peanut-admin-host-composer-development": ("/usr/local/bin/composer", "2.8.10"),
         }
-        for resource_id, (command, version) in expected_tooling.items():
+        for resource_id, expected in expected_tooling.items():
+            command, version, *port = expected
             item = tooling.get(resource_id)
             if not isinstance(item, dict) or item.get("command") != command or item.get("version") != version:
                 fail(f"tooling resource {resource_id} does not match the fixed contract")
+            if port and item.get("port") != port[0]:
+                fail(f"tooling resource {resource_id} does not use registered port {port[0]}")
+        expected_ports = {
+            "DEV_HTTP_PORT": 20187,
+            "PHP_PORT": 20180,
+            "VITE_PORT": 20181,
+            "MOBILE_PORT": 20182,
+            "PC_PORT": 20185,
+            "DOCS_PORT": 20186,
+            "HTTP_PORT": 20190,
+        }
+        registered_ports = {
+            item.get("port_env"): item.get("port")
+            for item in registry["resources"].get("local_listeners", [])
+        }
+        if registered_ports != expected_ports:
+            fail(f"local listener ports do not match the fixed project block: {registered_ports}")
+        redis = [
+            item
+            for item in registry["resources"].get("optional_services", [])
+            if item.get("stable_resource_id") == "peanut-admin-local-redis-experiment"
+        ]
+        if len(redis) != 1 or redis[0].get("port_env") != "REDIS_PORT" or redis[0].get("port") != 20184:
+            fail("optional Redis does not reserve the fixed project port 20184")
         print(f"registry={REGISTRY_PATH}")
         print("status=valid")
         return 0
 
-    database = database_for_target(registry, args.deployment_target)
-    consumer = args.consumer if args.command == "database-env" else "container"
-    endpoint = endpoint_for_consumer(database, consumer)
-    values: dict[str, str | int] = {
-        "PEANUT_DATABASE_RESOURCE_ID": database["stable_resource_id"],
-        "PEANUT_DATABASE_ENDPOINT_ID": endpoint["endpoint_id"],
-        "PEANUT_DATABASE_CONSUMER": consumer,
-        "DB_HOST": endpoint["host"],
-        "DB_PORT": endpoint["port"],
-        "DB_NAME": database["database"],
-    }
+    values: dict[str, str | int] = {}
+    if args.command == "database-env":
+        database = database_for_target(registry, args.deployment_target)
+        endpoint = endpoint_for_consumer(database, args.consumer)
+        values = {
+            "PEANUT_DATABASE_RESOURCE_ID": database["stable_resource_id"],
+            "PEANUT_DATABASE_ENDPOINT_ID": endpoint["endpoint_id"],
+            "PEANUT_DATABASE_CONSUMER": args.consumer,
+            "DB_HOST": endpoint["host"],
+            "DB_PORT": endpoint["port"],
+            "DB_NAME": database["database"],
+        }
     if args.command == "local-stack-env":
         environments = {
             "local-development"
@@ -127,6 +153,10 @@ def main() -> int:
             )
             if environment == args.deployment_target:
                 values[item["port_env"]] = item["port"]
+        if args.deployment_target == "local-development":
+            for item in registry["resources"].get("optional_services", []):
+                if "development" in item.get("environments", []) and item.get("port_env"):
+                    values[item["port_env"]] = item["port"]
     emit(values)
     return 0
 

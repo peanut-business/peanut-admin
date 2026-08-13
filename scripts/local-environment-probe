@@ -216,8 +216,8 @@ class Probe:
         self.add(
             "config.fixed_ports",
             ports_ok,
-            "local stack declares the registered fixed ports",
-            {"ports": EXPECTED_PORTS},
+            "local stack declares env-backed listeners with registered defaults",
+            {"registered_default_ports": EXPECTED_PORTS},
         )
 
         enum = self.text("server/app/common/enum/FileEnum.php")
@@ -343,14 +343,15 @@ class Probe:
                 and safe_environment.get("DB_NAME") == EXPECTED_DATABASE["database"]
                 and safe_environment.get("DEPLOYMENT_MODE") == "standalone"
                 and all(
-                    safe_environment.get(env_name, str(EXPECTED_PORTS[name])) == str(EXPECTED_PORTS[name])
+                    safe_environment.get(env_name, str(EXPECTED_PORTS[name])).isdigit()
+                    and 1 <= int(safe_environment.get(env_name, str(EXPECTED_PORTS[name]))) <= 65535
                     for name, env_name in PORT_ENV_NAMES.items()
                 )
             )
             self.add(
                 "config.local_environment",
                 env_ok,
-                "local environment selects the registered database and fixed ports",
+                "local environment selects the registered database and valid env-backed listener ports",
                 {"path": str(self.env_file), "safe_values": safe_environment},
             )
         elif self.mode == "full":

@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__, 3);
 $registryPath = $root . '/resources/project-resources.json';
-$registry = json_decode((string)file_get_contents($registryPath), true, 512, JSON_THROW_ON_ERROR);
+$registryJson = (string)file_get_contents($registryPath);
+$registry = json_decode($registryJson, true, 512, JSON_THROW_ON_ERROR);
 
 $expect = static function (bool $condition, string $message): void {
     if (!$condition) {
@@ -49,5 +50,23 @@ $expect(!preg_match('/(?m)^\s{2}php:\s*$/', $devCompose), 'development Compose s
 $expect(str_contains($devCompose, 'host.docker.internal'), 'development containers do not target host PHP');
 $expect(str_contains($devCompose, 'NO_PROXY'), 'development containers do not bypass proxies for host PHP');
 $expect(!str_contains($localStack, 'DB_HOST=192.168.192.2'), 'local stack contains a database host magic value');
+$registeredPorts = [];
+foreach ($registry['resources']['local_listeners'] ?? [] as $listener) {
+    $registeredPorts[$listener['port_env']] = $listener['port'];
+}
+$expect($registeredPorts === [
+    'DEV_HTTP_PORT' => 20187,
+    'PHP_PORT' => 20180,
+    'VITE_PORT' => 20181,
+    'PC_PORT' => 20185,
+    'MOBILE_PORT' => 20182,
+    'DOCS_PORT' => 20186,
+    'HTTP_PORT' => 20190,
+], 'registered local listener ports do not match the Peanut Admin project block');
+$redis = array_values(array_filter(
+    $registry['resources']['optional_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-local-redis-experiment'
+));
+$expect(count($redis) === 1 && $redis[0]['port_env'] === 'REDIS_PORT' && $redis[0]['port'] === 20184, 'registered Redis port is invalid');
 
 echo "database resource registry contract passed\n";

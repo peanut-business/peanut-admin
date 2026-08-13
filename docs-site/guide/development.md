@@ -37,7 +37,7 @@ peanut-admin/
 └── docs/                    项目文档
 ~~~
 
-三个客户端都以 `/api` 为后端前缀：`web/config/vite.config.dev.ts`、`pc/nuxt.config.ts` 和 `uniapp/vite.config.ts` 的开发代理均指向 `http://127.0.0.1:8000`。生产多阶段镜像将 web 管理端放在 `/admin/`、uniapp H5 放在 `/mobile/`、Nuxt PC 放在 `/pc/`；API 统一走 `/api/`。
+三个客户端都以 `/api` 为后端前缀：`web/config/vite.config.dev.ts`、`pc/nuxt.config.ts` 和 `uniapp/vite.config.ts` 的纯本机开发代理均读取 `PHP_PORT`（登记默认 `20180`）。生产多阶段镜像将 web 管理端放在 `/admin/`、uniapp H5 放在 `/mobile/`、Nuxt PC 放在 `/pc/`；API 统一走 `/api/`。
 
 后端路由大致分为：
 
@@ -180,9 +180,11 @@ php server/database/install.php
 ./scripts/local-stack.sh status
 ~~~
 
-打开 `http://127.0.0.1:8080/admin/`，使用安装时提供的密码登录，随后改为个人凭据。
-宿主 API 固定监听 8000；Web/PC/Mobile/Docs/Nginx 容器通过
-`host.docker.internal:8000` 绕过代理访问它。停止使用 `./scripts/local-stack.sh dev-down`。
+默认打开 `http://127.0.0.1:20187/admin/`，使用安装时提供的密码登录，随后改为个人凭据。
+宿主 API 登记默认端口为 `20180`；Web/PC/Mobile/Docs/Nginx 容器通过
+`host.docker.internal:${PHP_PORT}` 绕过代理访问它。本地监听统一来自 `.local/stack.env`
+（或 `PEANUT_LOCAL_ENV_FILE`），可按 clone/worktree 覆盖，示例见
+`deploy/local-stack.env.example`。停止使用 `./scripts/local-stack.sh dev-down`。
 
 已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管前先完成数据库和存储备份，然后只执行一次：
 
@@ -199,7 +201,7 @@ php server/database/migrate.php --adopt-existing
 ~~~bash
 cd web
 pnpm install
-pnpm dev                 # 纯本机模式：Vite 开发代理 /api → 127.0.0.1:8000
+pnpm dev                 # 纯本机模式读取 VITE_PORT/PHP_PORT；登记默认 20181/20180
 pnpm run type:check
 pnpm build               # vue-tsc + Vite 生产构建，产物 dist/
 pnpm preview             # 构建后本地预览
@@ -212,13 +214,13 @@ pnpm preview             # 构建后本地预览
 ~~~bash
 cd pc
 npm install
-npm run dev              # Nuxt 开发服务器，脚本固定 --port 3100
+npm run dev              # 读取 PC_PORT/PHP_PORT；登记默认 20185/20180
 npm run typecheck
 npm run build
 npm run preview
 ~~~
 
-pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址，开发时 `/api` 代理到 8000。生产使用 `npm run generate` 生成静态 SPA，由 Nginx 挂载在 `/pc/`。
+pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址，开发时 `/api` 代理到当前 `PHP_PORT`。生产使用 `npm run generate` 生成静态 SPA，由 Nginx 挂载在 `/pc/`。
 
 ### uniapp/ 多端会员端
 
@@ -388,7 +390,7 @@ cd web && pnpm run type:check
 | 40100 | 请求是否带 Authorization: Bearer；pa_admin_session/会员令牌是否过期；登录 IP 是否变化。 |
 | 40300 或菜单为空 | pa_system_menu.is_disable、角色关联和 perms 是否与实际 /api/admin/... 路径一致；非 root 未登记 URI 当前会放行，不能据此判断权限已配置。 |
 | 数据库连接失败/表不存在 | .env 的 DB_*、DB_PREFIX 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认目标迁移已执行。 |
-| 前端请求 404/CORS | 开发代理是否指向 8000；生产是否将 `/api/` 送到 ThinkPHP，并确认 `/admin/`、`/mobile/`、`/pc/` 分别命中对应客户端；检查各客户端 API base 配置。 |
+| 前端请求 404/CORS | 开发代理是否指向当前 `PHP_PORT`；生产是否将 `/api/` 送到 ThinkPHP，并确认 `/admin/`、`/mobile/`、`/pc/` 分别命中对应客户端；检查各客户端 API base 配置。 |
 | 上传/导出失败或文件 404 | PHP-FPM 对 server/runtime/、server/public/storage/ 的写权限；Nginx /storage/ alias；ZipArchive 是否安装。 |
 | 支付/OAuth 失败 | 先确认 pa_config 中对应开关、AppID、证书/公钥、回调 HTTPS 和平台白名单；查看 server/runtime/log/，不要关闭验签。 |
 | 定时任务不执行 | 系统 cron 是否每分钟调用 php think crontab；pa_crontab.status、表达式、error、数据库 GET_LOCK；命令是否在 server/config/console.php 注册。 |

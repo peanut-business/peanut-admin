@@ -2,6 +2,8 @@ import { mergeConfig } from 'vite';
 import eslint from 'vite-plugin-eslint';
 import baseConfig from './vite.config.base';
 
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1';
+
 export default mergeConfig(
   {
     mode: 'development',
@@ -12,15 +14,15 @@ export default mergeConfig(
       },
       proxy: {
         '/api': {
-          target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000',
+          target: apiProxyTarget,
           changeOrigin: false,
         },
         '/brand': {
-          target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000',
+          target: apiProxyTarget,
           changeOrigin: false,
         },
         '/storage': {
-          target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000',
+          target: apiProxyTarget,
           changeOrigin: false,
         },
       },

@@ -53,8 +53,10 @@ php server/database/install.php
 ./scripts/local-stack.sh status
 ```
 
-打开 `http://127.0.0.1:8080/admin/`，使用管理员 `admin` 和安装时提供的密码登录；
-首次登录后请改为个人凭据。停止服务运行 `./scripts/local-stack.sh dev-down`。
+默认打开 `http://127.0.0.1:20187/admin/`，使用管理员 `admin` 和安装时提供的密码登录；
+首次登录后请改为个人凭据。本地监听来自 `.local/stack.env`（或
+`PEANUT_LOCAL_ENV_FILE`），其他 clone/worktree 可覆盖登记默认端口。停止服务运行
+`./scripts/local-stack.sh dev-down`。
 
 ## 下一步
 

@@ -74,8 +74,11 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 ./scripts/local-stack.sh status
 ```
 
-默认入口为 `http://127.0.0.1:8080/admin/`；API、Web、PC、Mobile、Docs 与生产预览固定
-端口依次为 `8000`、`5173`、`3100`、`5174`、`4173`、`18092`。停止时运行
+登记的默认入口为 `http://127.0.0.1:20187/admin/`；API、Web、Mobile、MySQL、PC、Docs 与
+本地生产预览的登记默认端口依次为 `20180`、`20181`、`20182`、`20183`、`20185`、
+`20186`、`20190`。除唯一数据库 `20183` 外，本地监听均从 `.local/stack.env`（或
+`PEANUT_LOCAL_ENV_FILE`）读取；每个 clone/worktree 可覆盖，`ensure_env` 不会重写已有值。
+非秘密示例见 `deploy/local-stack.env.example`。停止时运行
 `./scripts/local-stack.sh dev-down`，该命令会同时停止容器和受 PID/日志管理的宿主 PHP。
 使用账号 `admin` 和安装时提供的密码登录。
 安装器只接受空数据库；已有安装必须按[部署与升级文档](https://peanut-admin-doc.007345.xyz/deployment)

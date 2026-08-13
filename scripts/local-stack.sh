@@ -4,7 +4,8 @@ set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 state_dir="$repo_dir/.local"
-env_file="$state_dir/stack.env"
+env_file=${PEANUT_LOCAL_ENV_FILE:-"$state_dir/stack.env"}
+env_dir=$(dirname "$env_file")
 dev_compose="$repo_dir/deploy/docker-compose.dev.yml"
 prod_compose="$repo_dir/deploy/docker-compose.prod.yml"
 resource_registry="$repo_dir/scripts/project-resource-registry"
@@ -16,16 +17,22 @@ make_secret() {
 set_env_value() {
     name=$1
     value=$2
-    temporary=$(mktemp "$state_dir/stack.env.XXXXXX")
+    temporary=$(mktemp "$env_dir/stack.env.XXXXXX")
     awk -F= -v name="$name" '$1 != name { print }' "$env_file" > "$temporary"
     printf '%s=%s\n' "$name" "$value" >> "$temporary"
     chmod 600 "$temporary"
     mv "$temporary" "$env_file"
 }
 
+set_env_default() {
+    name=$1
+    value=$2
+    grep -q "^${name}=." "$env_file" || set_env_value "$name" "$value"
+}
+
 ensure_env() {
     umask 077
-    mkdir -p "$state_dir"
+    mkdir -p "$state_dir" "$env_dir"
     if [ ! -f "$env_file" ]; then
         {
             printf '%s\n' 'APP_DEBUG=true'
@@ -44,17 +51,15 @@ ensure_env() {
     grep -q '^ADMIN_INITIAL_PASSWORD=..' "$env_file" || set_env_value ADMIN_INITIAL_PASSWORD "Local$(make_secret 8)9"
     "$resource_registry" local-stack-env --deployment-target local-development |
         while IFS='=' read -r name value; do
-            set_env_value "$name" "$value"
+            set_env_default "$name" "$value"
         done
     "$resource_registry" local-stack-env --deployment-target local-production-preview |
         while IFS='=' read -r name value; do
-            set_env_value "$name" "$value"
+            set_env_default "$name" "$value"
         done
     # Daily development uses the registered host endpoint and host PHP runtime.
     "$resource_registry" database-env --deployment-target local-development --consumer host |
-        while IFS='=' read -r name value; do
-            set_env_value "$name" "$value"
-        done
+        while IFS='=' read -r name value; do set_env_value "$name" "$value"; done
     if ! grep -q '^DB_USER=peanut_admin_development$' "$env_file" ||
         ! grep -q '^DB_PASS=..' "$env_file"; then
         "$repo_dir/scripts/company-development-database.sh" sync-credentials
@@ -85,12 +90,18 @@ compose_prod() {
 
 show_urls() {
     development_port=$(awk -F= '$1 == "DEV_HTTP_PORT" { print $2 }' "$env_file")
+    php_port=$(awk -F= '$1 == "PHP_PORT" { print $2 }' "$env_file")
+    admin_port=$(awk -F= '$1 == "VITE_PORT" { print $2 }' "$env_file")
+    pc_port=$(awk -F= '$1 == "PC_PORT" { print $2 }' "$env_file")
+    mobile_port=$(awk -F= '$1 == "MOBILE_PORT" { print $2 }' "$env_file")
     docs_port=$(awk -F= '$1 == "DOCS_PORT" { print $2 }' "$env_file")
     production_port=$(awk -F= '$1 == "HTTP_PORT" { print $2 }' "$env_file")
     printf '%s\n' \
         "Development: http://127.0.0.1:$development_port/admin/" \
-        "PC:          http://127.0.0.1:$development_port/pc/" \
-        "Mobile:      http://127.0.0.1:$development_port/mobile/" \
+        "API direct:  http://127.0.0.1:$php_port/" \
+        "Admin direct:http://127.0.0.1:$admin_port/admin/" \
+        "PC direct:   http://127.0.0.1:$pc_port/pc/" \
+        "Mobile direct:http://127.0.0.1:$mobile_port/mobile/" \
         "Docs:        http://127.0.0.1:$docs_port/" \
         "Production:  http://127.0.0.1:$production_port/admin/"
     database_summary=$("$resource_registry" database-env --deployment-target local-development --consumer container)
@@ -175,8 +186,12 @@ case "${1:-}" in
         "$repo_dir/scripts/local-php-runtime" logs
         compose_dev logs --no-color --since "${LOG_SINCE:-10m}" -f nginx web pc mobile docs | tee -a "$log_file"
         ;;
+    urls)
+        ensure_env
+        show_urls
+        ;;
     *)
-        printf 'Usage: %s {dev-up|dev-build|dev-down|prod-up|prod-build|prod-down|status|credentials|database-host-status|database-status|logs}\n' "$0" >&2
+        printf 'Usage: %s {dev-up|dev-build|dev-down|prod-up|prod-build|prod-down|status|credentials|database-host-status|database-status|logs|urls}\n' "$0" >&2
         exit 2
         ;;
 esac
