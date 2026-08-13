@@ -7,6 +7,7 @@ use app\platform\identity\PlatformOperatorIdentityPort;
 use DateTimeImmutable;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 /**
@@ -19,8 +20,10 @@ final readonly class TenantGovernanceService
 {
     public function __construct(
         private PlatformOperatorIdentityPort $identities,
+        private TransactionManager $transactions,
         private BootstrapService $bootstrap,
-        private PlatformTenantAdminService $administration
+        private PlatformTenantAdminService $administration,
+        private TenantOwnerAdminProvisioner $ownerAdmins
     ) {
     }
 
@@ -35,23 +38,41 @@ final readonly class TenantGovernanceService
         string $requestId
     ): array {
         $operator = $this->identities->requireActive($operatorCredential);
-        $candidate = $this->bootstrap->provisionTenantOwnerCandidate(
-            $operator->operatorId,
+        return $this->transactions->run(function () use (
+            $operator,
             $tenantCode,
             $tenantName,
             $ownerEmail,
             $initialPassword,
             $ownerDisplayName,
             $requestId
-        );
-        $this->bootstrap->activateTenantOwner(
-            $operator->operatorId,
-            $candidate->tenantId,
-            $candidate->memberId,
-            $requestId . ':owner-activation'
-        );
+        ): array {
+            $candidate = $this->bootstrap->provisionTenantOwnerCandidate(
+                $operator->operatorId,
+                $tenantCode,
+                $tenantName,
+                $ownerEmail,
+                $initialPassword,
+                $ownerDisplayName,
+                $requestId
+            );
+            $this->bootstrap->activateTenantOwner(
+                $operator->operatorId,
+                $candidate->tenantId,
+                $candidate->memberId,
+                $requestId . ':owner-activation'
+            );
+            $this->ownerAdmins->provision(
+                $candidate->tenantId,
+                $candidate->accountId,
+                $candidate->memberId,
+                $candidate->roleId,
+                $tenantCode,
+                $ownerDisplayName
+            );
 
-        return $candidate->toArray();
+            return $candidate->toArray();
+        });
     }
 
     /** @return array<string,mixed> */

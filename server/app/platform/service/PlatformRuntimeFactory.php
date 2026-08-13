@@ -107,6 +107,7 @@ final class PlatformRuntimeFactory
 
         return self::$tenantGovernance = new TenantGovernanceService(
             self::identities(),
+            $transactions,
             new BootstrapService(
                 $transactions,
                 new PdoIdentityRepository($pdo),
@@ -116,7 +117,8 @@ final class PlatformRuntimeFactory
                 new PdoAuditRepository($pdo),
                 new PasswordHasher()
             ),
-            new PlatformTenantAdminService($pdo, $modules)
+            new PlatformTenantAdminService($pdo, $modules),
+            new PdoTenantOwnerAdminProvisioner($pdo)
         );
     }
 

@@ -6,6 +6,7 @@ use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use app\platform\identity\UnavailablePlatformOperatorIdentityPort;
 use app\platform\service\TenantGovernanceService;
+use app\platform\service\TenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
@@ -135,17 +136,34 @@ try {
     $validator = new Pm01FixtureConfigValidator();
     $modules = new TenantModuleManager($registry, $moduleRepository, $validator);
     $administration = new PlatformTenantAdminService($pdo, $modules);
+    $transactions = new PdoTransactionManager($pdo);
+    $ownerAdmins = new class implements TenantOwnerAdminProvisioner {
+        public function provision(
+            int $tenantId,
+            int $accountId,
+            int $memberId,
+            int $coreRoleId,
+            string $tenantCode,
+            string $displayName
+        ): int {
+            return 1;
+        }
+    };
     $identity = new PlatformOperatorIdentity($platform->operatorId, $platform->accountId);
     $governance = new TenantGovernanceService(
         new Pm01FixtureIdentity($identity),
+        $transactions,
         $bootstrap,
-        $administration
+        $administration,
+        $ownerAdmins
     );
 
     $failClosed = new TenantGovernanceService(
         new UnavailablePlatformOperatorIdentityPort(),
+        $transactions,
         $bootstrap,
-        $administration
+        $administration,
+        $ownerAdmins
     );
     pm01Rejected(
         static fn() => $failClosed->provision(
