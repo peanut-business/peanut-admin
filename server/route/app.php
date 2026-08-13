@@ -64,6 +64,7 @@ use app\platform\controller\PlatformTenantBoundaryController;
 use app\platform\controller\PlatformTenantController;
 use app\platform\http\middleware\PlatformLoginMiddleware;
 use app\platform\http\middleware\PlatformPermissionMiddleware;
+use app\tenant\controller\TenantSessionController;
 use think\facade\Route;
 
 // ─── 免登录路由（不挂任何鉴权中间件） ──────────────────────────────────────
@@ -96,6 +97,12 @@ Route::post('api/platform/tenants/activate', [PlatformTenantController::class, '
 Route::post('api/platform/tenants/suspend', [PlatformTenantController::class, 'suspend'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
+
+// Multi-tenant Admin session boundary. Core owns selection challenges and atomic old-session revocation.
+Route::post('api/tenant/session/login', [TenantSessionController::class, 'login']);
+Route::post('api/tenant/session/select', [TenantSessionController::class, 'select']);
+Route::post('api/tenant/session/switch', [TenantSessionController::class, 'switchChallenge']);
+Route::post('api/tenant/session/logout', [TenantSessionController::class, 'logout']);
 
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
 Route::group(function () {
