@@ -24,10 +24,8 @@ import localeFinanceAccountLog from '@/views/finance/account-log/locale/en-US';
 import localeFinanceRecharge from '@/views/finance/recharge/locale/en-US';
 import localeFinanceRefund from '@/views/finance/refund/locale/en-US';
 import localeAppHotSearch from '@/views/app-setting/hot-search/locale/en-US';
-import localeAppCustomerService from '@/views/app-setting/customer-service/locale/en-US';
 import localeAppPay from '@/views/app-setting/pay/locale/en-US';
 import localeAppChannel from '@/views/app-setting/channel/locale/en-US';
-import localeAppDecorate from '@/views/app-setting/decorate/locale/en-US';
 import localeAppTransaction from '@/views/app-setting/transaction/locale/en-US';
 import localeArticleCate from '@/views/article/cate/locale/en-US';
 import localeArticleList from '@/views/article/list/locale/en-US';
@@ -75,10 +73,8 @@ export default {
   ...localeFinanceRecharge,
   ...localeFinanceRefund,
   ...localeAppHotSearch,
-  ...localeAppCustomerService,
   ...localeAppPay,
   ...localeAppChannel,
-  ...localeAppDecorate,
   ...localeAppTransaction,
   ...localeArticleCate,
   ...localeArticleList,

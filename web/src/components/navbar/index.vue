@@ -136,8 +136,14 @@
         />
       </el-select>
       <template #footer>
-        <el-button @click="tenantSwitchVisible = false">{{ $t('navbar.cancel') }}</el-button>
-        <el-button type="primary" :loading="tenantSwitching" @click="confirmTenantSwitch">
+        <el-button @click="tenantSwitchVisible = false">
+          {{ $t('navbar.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="tenantSwitching"
+          @click="confirmTenantSwitch"
+        >
           {{ $t('navbar.confirm') }}
         </el-button>
       </template>
@@ -186,7 +192,9 @@
     return appStore.theme;
   });
   const topMenu = computed(() => appStore.topMenu && appStore.menu);
-  const tenantSession = computed(() => getToken()?.startsWith('pa_tat_') === true);
+  const tenantSession = computed(
+    () => getToken()?.startsWith('pa_tat_') === true
+  );
   const tenantSwitchVisible = ref(false);
   const tenantSwitching = ref(false);
   const tenantChoices = ref<TenantChoice[]>([]);
@@ -246,7 +254,7 @@
       return;
     }
     if (command === 'tenant-switch') {
-      void beginTenantSwitch();
+      beginTenantSwitch();
       return;
     }
     if (command === 'logout') {

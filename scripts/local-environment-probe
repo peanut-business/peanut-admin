@@ -1,0 +1,613 @@
+#!/usr/bin/env python3
+"""Read-only Peanut Admin local development environment probe."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import socket
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+
+REPO = Path(__file__).resolve().parent.parent
+EXPECTED_DATABASE = {
+    "resource_id": "peanut-admin-mysql84-development",
+    "host": "192.168.192.2",
+    "port": 20183,
+    "database": "peanut_admin_development",
+}
+EXPECTED_PORTS = {
+    "development_gateway": 8080,
+    "development_php": 8000,
+    "development_admin": 5173,
+    "development_pc": 3100,
+    "development_mobile": 5174,
+    "development_docs": 4173,
+    "production_preview_gateway": 18092,
+}
+PORT_ENV_NAMES = {
+    "development_gateway": "DEV_HTTP_PORT",
+    "development_php": "PHP_PORT",
+    "development_admin": "VITE_PORT",
+    "development_pc": "PC_PORT",
+    "development_mobile": "MOBILE_PORT",
+    "development_docs": "DOCS_PORT",
+    "production_preview_gateway": "HTTP_PORT",
+}
+SAFE_ENV_NAMES = set(PORT_ENV_NAMES.values()) | {
+    "PEANUT_DATABASE_RESOURCE_ID",
+    "DB_HOST",
+    "DB_PORT",
+    "DB_NAME",
+    "DEPLOYMENT_MODE",
+}
+
+
+class Probe:
+    def __init__(self, mode: str, env_file: Path) -> None:
+        self.mode = mode
+        self.env_file = env_file
+        self.checks: list[dict[str, Any]] = []
+        self._environment = self._read_environment(env_file)
+        self._secrets = [
+            value
+            for name, value in self._environment.items()
+            if value
+            and re.search(r"PASS|PASSWORD|SECRET|TOKEN|KEY|CREDENTIAL", name, re.I)
+        ]
+
+    @staticmethod
+    def _read_environment(path: Path) -> dict[str, str]:
+        values: dict[str, str] = {}
+        if not path.is_file():
+            return values
+        for raw_line in path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            name = name.strip()
+            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                values[name] = value.strip().strip("'\"")
+        return values
+
+    def _redact(self, value: str) -> str:
+        result = value
+        for secret in sorted(self._secrets, key=len, reverse=True):
+            if len(secret) >= 4:
+                result = result.replace(secret, "[REDACTED]")
+        return result[:500]
+
+    def add(
+        self,
+        check_id: str,
+        ok: bool,
+        summary: str,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        item: dict[str, Any] = {
+            "id": check_id,
+            "status": "pass" if ok else "fail",
+            "summary": summary,
+        }
+        if details:
+            item["details"] = details
+        self.checks.append(item)
+
+    def skip(self, check_id: str, summary: str) -> None:
+        self.checks.append({"id": check_id, "status": "skipped", "summary": summary})
+
+    @staticmethod
+    def text(relative: str) -> str:
+        return (REPO / relative).read_text(encoding="utf-8")
+
+    @staticmethod
+    def size_bytes(value: str) -> int:
+        match = re.fullmatch(r"\s*(\d+)\s*([kKmMgG]?)\s*", value)
+        if not match:
+            raise ValueError(f"unsupported size: {value}")
+        scale = {"": 1, "k": 1024, "m": 1024**2, "g": 1024**3}
+        return int(match.group(1)) * scale[match.group(2).lower()]
+
+    @staticmethod
+    def directive(text: str, name: str) -> str:
+        match = re.search(rf"(?m)^\s*{re.escape(name)}\s*=\s*([^;#\s]+)", text)
+        if not match:
+            raise ValueError(f"missing {name}")
+        return match.group(1)
+
+    def run_command(self, command: list[str], timeout: int = 20) -> tuple[bool, str]:
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=timeout,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exception:
+            return False, self._redact(str(exception))
+        output = (
+            completed.stdout.strip()
+            if completed.returncode == 0
+            else completed.stderr.strip()
+        )
+        return completed.returncode == 0, self._redact(output)
+
+    def static_checks(self) -> None:
+        local_stack = self.text("scripts/local-stack.sh")
+        guard = self.text("server/database/environment-guard.php")
+        dev_compose = self.text("deploy/docker-compose.dev.yml")
+        prod_compose = self.text("deploy/docker-compose.prod.yml")
+        dev_nginx = self.text("deploy/nginx/development.conf")
+        prod_nginx = self.text("deploy/nginx/peanut-admin.conf")
+        dockerfile = self.text("deploy/docker/production.Dockerfile")
+
+        database_fragments = [
+            f"PEANUT_DATABASE_RESOURCE_ID {EXPECTED_DATABASE['resource_id']}",
+            f"DB_HOST {EXPECTED_DATABASE['host']}",
+            f"DB_PORT {EXPECTED_DATABASE['port']}",
+            f"DB_NAME {EXPECTED_DATABASE['database']}",
+        ]
+        local_stack_ok = all(fragment in local_stack for fragment in database_fragments)
+        guard_occurrences = guard.count("'peanut-admin-mysql84-development' => [")
+        guard_ok = (
+            guard_occurrences == 2
+            and guard.count("'host' => '192.168.192.2'") == 2
+            and guard.count("'port' => '20183'") == 2
+            and guard.count("'database' => 'peanut_admin_development'") == 2
+        )
+        target_ok = (
+            "PEANUT_DEPLOYMENT_TARGET: local-development" in dev_compose
+            and "PEANUT_DEPLOYMENT_TARGET=local-production-preview" in local_stack
+        )
+        self.add(
+            "config.database_registry",
+            local_stack_ok and guard_ok and target_ok,
+            "development and local production preview use the single registered database",
+            {
+                **EXPECTED_DATABASE,
+                "environments": ["local-development", "local-production-preview"],
+            },
+        )
+
+        port_fragments = {
+            "development_gateway": "${DEV_HTTP_PORT:-8080}:80",
+            "development_php": "${PHP_PORT:-8000}:8000",
+            "development_admin": "${VITE_PORT:-5173}:5173",
+            "development_pc": "${PC_PORT:-3100}:3100",
+            "development_mobile": "${MOBILE_PORT:-5174}:5174",
+            "development_docs": "${DOCS_PORT:-4173}:4173",
+            "production_preview_gateway": "${HTTP_PORT:-18092}:80",
+        }
+        port_sources = {
+            **{key: dev_compose for key in list(port_fragments)[:6]},
+            "production_preview_gateway": prod_compose,
+        }
+        ports_ok = all(fragment in port_sources[name] for name, fragment in port_fragments.items())
+        ports_ok = ports_ok and all(
+            f"{PORT_ENV_NAMES[name]}={port}" in local_stack for name, port in EXPECTED_PORTS.items()
+        )
+        self.add(
+            "config.fixed_ports",
+            ports_ok,
+            "local stack declares the registered fixed ports",
+            {"ports": EXPECTED_PORTS},
+        )
+
+        enum = self.text("server/app/common/enum/FileEnum.php")
+        limit_patterns = {
+            "image": r"self::IMAGE\s*=>\s*(\d+)\s*\*\s*1024\s*\*\s*1024",
+            "video": r"self::VIDEO\s*=>\s*(\d+)\s*\*\s*1024\s*\*\s*1024",
+            "file": r"self::FILE\s*=>\s*(\d+)\s*\*\s*1024\s*\*\s*1024",
+        }
+        business_limits: dict[str, int] = {}
+        for name, pattern in limit_patterns.items():
+            match = re.search(pattern, enum)
+            if match:
+                business_limits[name] = int(match.group(1))
+        expected_limits = {"image": 10, "file": 50, "video": 200}
+        self.add(
+            "config.business_upload_limits",
+            business_limits == expected_limits,
+            "application upload limits are image 10 MiB, file 50 MiB, video 200 MiB",
+            {"limits_mib": business_limits},
+        )
+
+        try:
+            ini = self.text("deploy/docker/php-upload.ini")
+            php_limits = {
+                "upload_max_filesize": self.size_bytes(self.directive(ini, "upload_max_filesize")),
+                "post_max_size": self.size_bytes(self.directive(ini, "post_max_size")),
+                "max_file_uploads": int(self.directive(ini, "max_file_uploads")),
+            }
+            php_source_ok = (
+                "./docker/php-upload.ini:/usr/local/etc/php/conf.d/peanut-upload.ini:ro" in dev_compose
+                and "COPY deploy/docker/php-upload.ini "
+                "/usr/local/etc/php/conf.d/peanut-upload.ini" in dockerfile
+            )
+        except (OSError, ValueError) as exception:
+            php_limits = {}
+            php_source_ok = False
+            php_error = str(exception)
+        else:
+            php_error = ""
+        self.add(
+            "config.php_upload_limits",
+            php_source_ok and bool(php_limits),
+            (
+                "development and production PHP load the shared upload limits"
+                if php_source_ok
+                else f"PHP upload configuration invalid: {php_error}"
+            ),
+            {
+                "upload_max_filesize_bytes": php_limits.get("upload_max_filesize"),
+                "post_max_size_bytes": php_limits.get("post_max_size"),
+                "max_file_uploads": php_limits.get("max_file_uploads"),
+            },
+        )
+
+        nginx_limits: dict[str, int] = {}
+        try:
+            nginx_limits = {
+                "development": self.size_bytes(self._nginx_limit(dev_nginx)),
+                "local_production_preview": self.size_bytes(self._nginx_limit(prod_nginx)),
+            }
+        except ValueError as exception:
+            nginx_error = str(exception)
+        else:
+            nginx_error = ""
+        self.add(
+            "config.nginx_upload_limits",
+            len(nginx_limits) == 2,
+            (
+                "development and production-preview Nginx declare request-body limits"
+                if nginx_limits
+                else f"Nginx upload configuration invalid: {nginx_error}"
+            ),
+            {"client_max_body_size_bytes": nginx_limits},
+        )
+
+        maximum_business = max(business_limits.values(), default=0) * 1024**2
+        upload_max = php_limits.get("upload_max_filesize", 0)
+        post_max = php_limits.get("post_max_size", 0)
+        relation_ok = (
+            maximum_business == 200 * 1024**2
+            and upload_max >= maximum_business
+            and post_max > upload_max
+            and all(limit >= post_max for limit in nginx_limits.values())
+            and php_limits.get("max_file_uploads", 0) > 0
+        )
+        self.add(
+            "config.upload_transport_relation",
+            relation_ok,
+            "Nginx >= PHP post > PHP upload >= largest business limit",
+            {
+                "largest_business_limit_bytes": maximum_business,
+                "php_upload_max_bytes": upload_max,
+                "php_post_max_bytes": post_max,
+                "nginx_limits_bytes": nginx_limits,
+            },
+        )
+
+        storage_ok = (
+            re.search(r"location\s+\^~\s+/storage/", dev_nginx) is not None
+            and re.search(r"location\s+\^~\s+/storage/", prod_nginx) is not None
+            and "try_files $uri =404;" in prod_nginx
+        )
+        self.add(
+            "config.storage_routes",
+            storage_ok,
+            "/storage is explicitly routed in development and production preview",
+        )
+
+        safe_environment = {
+            name: self._environment[name]
+            for name in sorted(SAFE_ENV_NAMES)
+            if name in self._environment
+        }
+        if self.env_file.is_file():
+            env_ok = (
+                safe_environment.get("PEANUT_DATABASE_RESOURCE_ID") == EXPECTED_DATABASE["resource_id"]
+                and safe_environment.get("DB_HOST") == EXPECTED_DATABASE["host"]
+                and safe_environment.get("DB_PORT") == str(EXPECTED_DATABASE["port"])
+                and safe_environment.get("DB_NAME") == EXPECTED_DATABASE["database"]
+                and safe_environment.get("DEPLOYMENT_MODE") == "standalone"
+                and all(
+                    safe_environment.get(env_name, str(EXPECTED_PORTS[name])) == str(EXPECTED_PORTS[name])
+                    for name, env_name in PORT_ENV_NAMES.items()
+                )
+            )
+            self.add(
+                "config.local_environment",
+                env_ok,
+                "local environment selects the registered database and fixed ports",
+                {"path": str(self.env_file), "safe_values": safe_environment},
+            )
+        elif self.mode == "full":
+            self.add(
+                "config.local_environment",
+                False,
+                f"local environment file is missing: {self.env_file}",
+            )
+        else:
+            self.skip(
+                "config.local_environment",
+                "local environment file is absent; repository defaults were checked",
+            )
+
+    @staticmethod
+    def _nginx_limit(text: str) -> str:
+        match = re.search(r"(?m)^\s*client_max_body_size\s+([^;\s]+)\s*;", text)
+        if not match:
+            raise ValueError("missing client_max_body_size")
+        return match.group(1)
+
+    def resolved_ports(self) -> dict[str, int]:
+        ports: dict[str, int] = {}
+        for name, expected in EXPECTED_PORTS.items():
+            raw = self._environment.get(PORT_ENV_NAMES[name], str(expected))
+            try:
+                ports[name] = int(raw)
+            except ValueError:
+                ports[name] = -1
+        return ports
+
+    @staticmethod
+    def socket_open(port: int) -> bool:
+        if port < 1:
+            return False
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=1.5):
+                return True
+        except OSError:
+            return False
+
+    @staticmethod
+    def http_status(url: str) -> int | None:
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(
+                self,
+                req: Any,
+                fp: Any,
+                code: int,
+                msg: str,
+                headers: Any,
+                newurl: str,
+            ) -> None:
+                return None
+
+        opener = urllib.request.build_opener(NoRedirect)
+        request = urllib.request.Request(url, headers={"User-Agent": "peanut-admin-local-probe/1"})
+        try:
+            with opener.open(request, timeout=4) as response:
+                response.read(1)
+                return response.status
+        except urllib.error.HTTPError as exception:
+            return exception.code
+        except (urllib.error.URLError, TimeoutError, OSError):
+            return None
+
+    def compose_command(self, compose_file: str, *arguments: str) -> list[str]:
+        command = [
+            "docker",
+            "compose",
+            "--env-file",
+            str(self.env_file),
+            "-f",
+            str(REPO / compose_file),
+            *arguments,
+        ]
+        if compose_file == "deploy/docker-compose.prod.yml":
+            command = ["env", "PEANUT_DEPLOYMENT_TARGET=local-production-preview", *command]
+        return command
+
+    def runtime_checks(self) -> None:
+        ports = self.resolved_ports()
+        listeners = {name: self.socket_open(port) for name, port in ports.items()}
+        self.add(
+            "runtime.fixed_port_listeners",
+            all(listeners.values()),
+            "all registered local ports accept TCP connections",
+            {
+                "listeners": {
+                    name: {"port": ports[name], "listening": value}
+                    for name, value in listeners.items()
+                }
+            },
+        )
+
+        dev_port = ports["development_gateway"]
+        prod_port = ports["production_preview_gateway"]
+        docs_port = ports["development_docs"]
+        entries = {
+            "development_admin": self.http_status(f"http://127.0.0.1:{dev_port}/admin/"),
+            "development_pc": self.http_status(f"http://127.0.0.1:{dev_port}/pc/"),
+            "development_mobile": self.http_status(f"http://127.0.0.1:{dev_port}/mobile/"),
+            "development_docs": self.http_status(f"http://127.0.0.1:{docs_port}/"),
+            "production_preview_health": self.http_status(f"http://127.0.0.1:{prod_port}/healthz"),
+            "production_preview_admin": self.http_status(f"http://127.0.0.1:{prod_port}/admin/"),
+        }
+        entries_ok = all(status is not None and 200 <= status < 400 for status in entries.values())
+        self.add(
+            "runtime.http_entries",
+            entries_ok,
+            "development and production-preview HTTP entries are reachable",
+            {"statuses": entries},
+        )
+
+        storage_statuses = {
+            "development": self.http_status(f"http://127.0.0.1:{dev_port}/storage/.peanut-probe-not-found"),
+            "local_production_preview": self.http_status(
+                f"http://127.0.0.1:{prod_port}/storage/.peanut-probe-not-found"
+            ),
+        }
+        self.add(
+            "runtime.storage_routes",
+            all(status == 404 for status in storage_statuses.values()),
+            "/storage reaches its explicit route and returns 404 for a missing probe object",
+            {"statuses": storage_statuses},
+        )
+
+        php_code = (
+            'echo json_encode(['
+            '"upload_max_filesize"=>ini_get("upload_max_filesize"),'
+            '"post_max_size"=>ini_get("post_max_size"),'
+            '"max_file_uploads"=>(int)ini_get("max_file_uploads")]);'
+        )
+        runtime_php: dict[str, dict[str, Any]] = {}
+        php_errors: dict[str, str] = {}
+        for name, compose_file in {
+            "development": "deploy/docker-compose.dev.yml",
+            "local_production_preview": "deploy/docker-compose.prod.yml",
+        }.items():
+            ok, output = self.run_command(
+                self.compose_command(compose_file, "exec", "-T", "php", "php", "-r", php_code)
+            )
+            if ok:
+                try:
+                    runtime_php[name] = json.loads(output)
+                except json.JSONDecodeError:
+                    php_errors[name] = "PHP returned invalid JSON"
+            else:
+                php_errors[name] = output or "PHP service is unavailable"
+        expected_php = {
+            "upload_max_filesize": "200M",
+            "post_max_size": "210M",
+            "max_file_uploads": 20,
+        }
+        php_ok = len(runtime_php) == 2 and all(
+            values == expected_php for values in runtime_php.values()
+        )
+        self.add(
+            "runtime.php_upload_limits",
+            php_ok,
+            "both PHP runtimes apply upload/post/count limits",
+            {"values": runtime_php, "errors": php_errors} if php_errors else {"values": runtime_php},
+        )
+
+        migration_ok, migration_output = self.run_command(
+            self.compose_command(
+                "deploy/docker-compose.dev.yml",
+                "exec",
+                "-T",
+                "php",
+                "php",
+                "database/environment-guard.php",
+                "--current",
+            ),
+            timeout=30,
+        )
+        migration_details: dict[str, Any] = {}
+        if migration_ok:
+            try:
+                migration_details = json.loads(migration_output)
+            except json.JSONDecodeError:
+                migration_ok = False
+                migration_details = {"error": "migration guard returned invalid JSON"}
+        else:
+            migration_details = {"error": migration_output or "migration guard failed"}
+        allowed_migration_fields = {
+            key: migration_details[key]
+            for key in (
+                "environment",
+                "deployment_target",
+                "resource_id",
+                "host",
+                "port",
+                "database",
+                "status",
+                "migration_count",
+                "latest_migration",
+            )
+            if key in migration_details
+        }
+        if "error" in migration_details:
+            allowed_migration_fields["error"] = migration_details["error"]
+        migration_ok = migration_ok and migration_details.get("status") == "current"
+        self.add(
+            "runtime.database_migrations",
+            migration_ok,
+            "registered development database migration ledger is current",
+            allowed_migration_fields,
+        )
+
+    def report(self) -> dict[str, Any]:
+        failed = sum(check["status"] == "fail" for check in self.checks)
+        passed = sum(check["status"] == "pass" for check in self.checks)
+        skipped = sum(check["status"] == "skipped" for check in self.checks)
+        return {
+            "probe": "peanut-admin-local-environment",
+            "mode": self.mode,
+            "status": "fail" if failed else "pass",
+            "resource": {
+                "id": EXPECTED_DATABASE["resource_id"],
+                "environment": "development/local-production-preview",
+                "address": f"{EXPECTED_DATABASE['host']}:{EXPECTED_DATABASE['port']}/{EXPECTED_DATABASE['database']}",
+            },
+            "summary": {"passed": passed, "failed": failed, "skipped": skipped},
+            "checks": self.checks,
+        }
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config-only",
+        action="store_true",
+        help="check repository configuration without contacting listeners, containers, or the database",
+    )
+    parser.add_argument(
+        "--env-file",
+        type=Path,
+        default=REPO / ".local/stack.env",
+        help="local stack env file (default: .local/stack.env)",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    mode = "config-only" if args.config_only else "full"
+    probe = Probe(mode, args.env_file.resolve())
+    try:
+        probe.static_checks()
+        if args.config_only:
+            for check_id in (
+                "runtime.fixed_port_listeners",
+                "runtime.http_entries",
+                "runtime.storage_routes",
+                "runtime.php_upload_limits",
+                "runtime.database_migrations",
+            ):
+                probe.skip(check_id, "not run in config-only mode")
+        else:
+            probe.runtime_checks()
+    except Exception as exception:  # Keep the report machine-readable on unexpected input errors.
+        probe.add("probe.internal", False, f"probe failed: {probe._redact(str(exception))}")
+
+    report = probe.report()
+    json.dump(report, sys.stdout, ensure_ascii=False, indent=2)
+    sys.stdout.write("\n")
+    counts = report["summary"]
+    print(
+        f"local environment probe: {report['status'].upper()} "
+        f"({counts['passed']} passed, {counts['failed']} failed, {counts['skipped']} skipped)",
+        file=sys.stderr,
+    )
+    for check in report["checks"]:
+        if check["status"] == "fail":
+            print(f"  FAIL {check['id']}: {check['summary']}", file=sys.stderr)
+    return 1 if report["status"] == "fail" else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

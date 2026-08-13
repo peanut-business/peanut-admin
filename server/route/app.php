@@ -21,6 +21,8 @@ use app\api\controller\RechargeController as ApiRechargeController;
 use app\api\controller\PaymentNotifyController as ApiPaymentNotifyController;
 use app\api\controller\OAuthController as ApiOAuthController;
 use app\api\middleware\CheckTokenMiddleware;
+use app\api\middleware\PublicArticleTenantMiddleware;
+use app\api\middleware\PublicDecorationTenantMiddleware;
 use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\member\MemberController;
 use app\adminapi\controller\member\MemberTagController;
@@ -38,7 +40,6 @@ use app\adminapi\controller\generator\GeneratorController;
 use app\adminapi\controller\system\SystemController;
 use app\adminapi\controller\setting\StorageController;
 use app\adminapi\controller\setting\HotSearchController;
-use app\adminapi\controller\setting\CustomerServiceController;
 use app\adminapi\controller\setting\PayConfigController;
 use app\adminapi\controller\setting\RechargeSettingController;
 use app\adminapi\controller\setting\TransactionSettingsController;
@@ -357,10 +358,6 @@ Route::group('api/admin', function () {
     Route::get('setting/hot-search/config',  [HotSearchController::class, 'getConfig']);
     Route::post('setting/hot-search/save',   [HotSearchController::class, 'setConfig']);
 
-    // 应用设置 - 客服设置
-    Route::get('setting/customer-service/config', [CustomerServiceController::class, 'getConfig']);
-    Route::post('setting/customer-service/save',  [CustomerServiceController::class, 'setConfig']);
-
     // 应用设置 - 支付配置
     Route::get('setting/pay/config',  [PayConfigController::class, 'getConfig']);
     Route::post('setting/pay/save',   [PayConfigController::class, 'setConfig']);
@@ -432,8 +429,10 @@ Route::group('api/admin', function () {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── 公开接口（无需 token） ────────────────────────────────────────────────────
-Route::get('api/index/index',   [ApiIndexController::class, 'index']);
-Route::get('api/index/config',  [ApiIndexController::class, 'config']);
+Route::get('api/index/index',   [ApiIndexController::class, 'index'])
+    ->middleware(PublicArticleTenantMiddleware::class, 'article.index');
+Route::get('api/index/config',  [ApiIndexController::class, 'config'])
+    ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
 Route::get('api/index/policy',  [ApiIndexController::class, 'policy']);
 
 Route::post('api/login/register', [ApiLoginController::class, 'register']);
@@ -455,26 +454,36 @@ Route::get('api/oauth/wechat/redirect/official-account', [ApiOAuthController::cl
 Route::post('api/payment/notify/wechat', [ApiPaymentNotifyController::class, 'wechat']);
 Route::post('api/payment/notify/alipay', [ApiPaymentNotifyController::class, 'alipay']);
 
-Route::get('api/article/cate',    [ApiArticleController::class, 'cate']);
-Route::get('api/article/lists',   [ApiArticleController::class, 'lists']);
-Route::get('api/article/detail',  [ApiArticleController::class, 'detail']);
+Route::get('api/article/cate',    [ApiArticleController::class, 'cate'])
+    ->middleware(PublicArticleTenantMiddleware::class, 'article.cate');
+Route::get('api/article/lists',   [ApiArticleController::class, 'lists'])
+    ->middleware(PublicArticleTenantMiddleware::class, 'article.lists');
+Route::get('api/article/detail',  [ApiArticleController::class, 'detail'])
+    ->middleware(PublicArticleTenantMiddleware::class, 'article.detail');
 
 Route::get('api/search/hotLists', [ApiSearchController::class, 'hotLists']);
 
 // 装修消费（匿名只读，保存后立即生效）
-Route::get('api/decoration/mobile', [ApiDecorationController::class, 'mobilePage']);
-Route::get('api/decoration/tabbar', [ApiDecorationController::class, 'tabbar']);
-Route::get('api/decoration/pc', [ApiDecorationController::class, 'pcPage']);
+Route::get('api/decoration/mobile', [ApiDecorationController::class, 'mobilePage'])
+    ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.mobile-page');
+Route::get('api/decoration/tabbar', [ApiDecorationController::class, 'tabbar'])
+    ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
+Route::get('api/decoration/pc', [ApiDecorationController::class, 'pcPage'])
+    ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.pc-page');
 
 // 微信公众号服务器回调（微信平台调用，必须免登录）
 Route::get('api/wechat/official-account/callback', [ApiOfficialAccountController::class, 'verify']);
 Route::post('api/wechat/official-account/callback', [ApiOfficialAccountController::class, 'callback']);
 
 // PC 端聚合（公开）
-Route::get('api/pc/config',         [ApiPcController::class, 'config']);
-Route::get('api/pc/index',          [ApiPcController::class, 'index']);
-Route::get('api/pc/infoCenter',     [ApiPcController::class, 'infoCenter']);
-Route::get('api/pc/articleDetail',  [ApiPcController::class, 'articleDetail']);
+Route::get('api/pc/config',         [ApiPcController::class, 'config'])
+    ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
+Route::get('api/pc/index',          [ApiPcController::class, 'index'])
+    ->middleware(PublicArticleTenantMiddleware::class, 'article.pc-index');
+Route::get('api/pc/infoCenter',     [ApiPcController::class, 'infoCenter'])
+    ->middleware(PublicArticleTenantMiddleware::class, 'article.info-center');
+Route::get('api/pc/articleDetail',  [ApiPcController::class, 'articleDetail'])
+    ->middleware(PublicArticleTenantMiddleware::class, 'article.pc-detail');
 
 // ─── 需登录接口（挂 CheckTokenMiddleware） ──────────────────────────────────
 Route::group('api', function () {

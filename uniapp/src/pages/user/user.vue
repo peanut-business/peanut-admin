@@ -1,37 +1,54 @@
 <template>
   <view class="user-page" :style="pageStyle">
-    <view class="user-header" :style="headerStyle">
-      <view v-if="isLoggedIn" class="user-info" @click="goUserData">
-        <image :src="userInfo.avatar || '/static/avatar.png'" class="avatar" />
-        <view class="info">
-          <view class="nickname">{{ userInfo.nickname || '未设置昵称' }}</view>
-          <view class="mobile">{{ userInfo.mobile || '未绑定手机' }}</view>
+    <view class="page-meta" :class="metaTextClass" data-decoration-role="page-meta">
+      <image v-if="showTitleImage" :src="String(meta.title_img)" class="page-title-image" mode="heightFix" />
+      <text v-else>{{ meta.title || '个人中心' }}</text>
+    </view>
+
+    <template v-for="decorationComponent in renderComponents" :key="decorationComponent.name">
+      <view v-if="decorationComponent.name === 'user-info'" data-decoration-component="user-info">
+        <view class="user-header" :style="headerStyle">
+          <view v-if="isLoggedIn" class="user-info" @click="goUserData">
+            <image :src="userInfo.avatar || '/static/avatar.png'" class="avatar" />
+            <view class="info">
+              <view class="nickname">{{ userInfo.nickname || '未设置昵称' }}</view>
+              <view class="mobile">{{ userInfo.mobile || '未绑定手机' }}</view>
+            </view>
+          </view>
+          <view v-else class="login-prompt" @click="goLogin">点击登录</view>
+        </view>
+        <view v-if="isLoggedIn" class="wallet-card" @click="goWallet">
+          <view class="wallet-item"><view class="amount">{{ userInfo.balance || '0.00' }}</view><view class="label">余额</view></view>
+          <view class="wallet-item"><view class="amount">{{ userInfo.points || 0 }}</view><view class="label">积分</view></view>
         </view>
       </view>
-      <view v-else class="login-prompt" @click="goLogin">点击登录</view>
-    </view>
 
-    <view v-if="isLoggedIn" class="wallet-card" @click="goWallet">
-      <view class="wallet-item"><view class="amount">{{ userInfo.balance || '0.00' }}</view><view class="label">余额</view></view>
-      <view class="wallet-item"><view class="amount">{{ userInfo.points || 0 }}</view><view class="label">积分</view></view>
-    </view>
-
-    <view v-if="userBannerItems.length" class="user-banner-list">
-      <view v-for="item in userBannerItems" :key="`${item.name}-${item.image}`" class="user-banner" @click="executeDecorationLink(item.link)">
-        <image v-if="item.image" :src="item.image" mode="aspectFill" />
-        <text v-if="item.name">{{ item.name }}</text>
-      </view>
-    </view>
-
-    <view v-if="serviceItems.length" class="service-card">
-      <view class="service-title">{{ serviceTitle }}</view>
-      <view class="service-grid">
-        <view v-for="item in serviceItems" :key="`${item.name}-${item.image}`" class="service-item" @click="executeDecorationLink(item.link)">
+      <view
+        v-else-if="decorationComponent.name === 'user-banner' && componentItems(decorationComponent).length"
+        class="user-banner-list"
+        data-decoration-component="user-banner"
+      >
+        <view v-for="item in componentItems(decorationComponent)" :key="`${item.name}-${item.image}`" class="user-banner" @click="executeDecorationLink(item.link)">
           <image v-if="item.image" :src="item.image" mode="aspectFill" />
-          <text>{{ item.name }}</text>
+          <text v-if="item.name">{{ item.name }}</text>
         </view>
       </view>
-    </view>
+
+      <view
+        v-else-if="decorationComponent.name === 'my-service' && componentItems(decorationComponent).length"
+        class="service-card"
+        :class="`service-style-${Number(decorationComponent.content.style || 1)}`"
+        data-decoration-component="my-service"
+      >
+        <view class="service-title">{{ decorationComponent.content.title || '我的服务' }}</view>
+        <view class="service-grid">
+          <view v-for="item in componentItems(decorationComponent)" :key="`${item.name}-${item.image}`" class="service-item" @click="executeDecorationLink(item.link)">
+            <image v-if="item.image" :src="item.image" mode="aspectFill" />
+            <text>{{ item.name }}</text>
+          </view>
+        </view>
+      </view>
+    </template>
 
     <view class="menu-list">
       <view class="menu-item" @click="goCollection"><text class="menu-icon">⭐</text><text class="menu-title">我的收藏</text></view>
@@ -52,10 +69,14 @@ import { useAppStore } from '@/store/app'
 import DecorationTabbar from '@/components/DecorationTabbar.vue'
 import {
   executeDecorationLink,
-  getDecorationComponent,
+  applyDecorationPageMeta,
+  getDecorationComponents,
   getDecorationItems,
+  getDecorationMeta,
   getDecorationTheme,
   getMobileDecoration,
+  isDecorationComponentEnabled,
+  type DecorationComponent,
   type DecorationPage,
   type DecorationItem,
 } from '@/utils/decoration'
@@ -67,21 +88,18 @@ const userInfo = computed(() => userStore.userInfo)
 const decorate = ref<DecorationPage | null>(null)
 const theme = computed(() => getDecorationTheme(appStore.config?.theme))
 
-const profileComponent = computed(() => getDecorationComponent(decorate.value, 'my-service'))
-const serviceItems = computed<DecorationItem[]>(() => getDecorationItems(profileComponent.value).filter((item) => item.is_show === undefined || item.is_show === 1))
-const serviceTitle = computed(() => String(profileComponent.value?.content?.title || '我的服务'))
-const userBannerItems = computed<DecorationItem[]>(() => {
-  const component = getDecorationComponent(decorate.value, 'user-banner')
-  if (Number(component?.content?.enabled ?? 0) !== 1) return []
-  return getDecorationItems(component).filter((item) => item.is_show === undefined || item.is_show === 1)
+const renderComponents = computed(() => getDecorationComponents(decorate.value).filter(isDecorationComponentEnabled))
+const componentItems = (component: DecorationComponent) => getDecorationItems(component)
+  .filter((item) => item.is_show === undefined || item.is_show === 1)
+const meta = computed(() => getDecorationMeta(decorate.value))
+const showTitleImage = computed(() => Number(meta.value.title_type) === 2 && typeof meta.value.title_img === 'string' && meta.value.title_img !== '')
+const metaTextClass = computed(() => Number(meta.value.text_color) === 2 ? 'page-meta-dark' : 'page-meta-light')
+const pageStyle = computed(() => {
+  const style: Record<string, string> = { backgroundColor: '#f5f5f5' }
+  if (Number(meta.value.bg_type) === 1 && typeof meta.value.bg_color === 'string') style.backgroundColor = meta.value.bg_color
+  if (Number(meta.value.bg_type) === 2 && typeof meta.value.bg_image === 'string' && meta.value.bg_image) style.backgroundImage = `url(${meta.value.bg_image})`
+  return style
 })
-const meta = computed(() => {
-  const pageMeta = Array.isArray(decorate.value?.meta) ? decorate.value?.meta.find((item) => item.name === 'page-meta') : undefined
-  return pageMeta?.content || {}
-})
-const pageStyle = computed(() => ({
-  backgroundColor: meta.value.bg_type === 1 && typeof meta.value.bg_color === 'string' ? meta.value.bg_color : '#f5f5f5',
-}))
 const headerStyle = computed(() => ({
   background: `linear-gradient(135deg, ${theme.value?.themeColor1 || '#2979ff'}, ${theme.value?.themeColor2 || '#1d54c4'})`,
 }))
@@ -93,6 +111,7 @@ async function loadProfile() {
       isLoggedIn.value ? getUserCenter() : Promise.resolve(null),
     ])
     decorate.value = page
+    applyDecorationPageMeta(page)
     if (center) userStore.setUserInfo(center)
   } catch (error) {
     console.error('Failed to load profile decoration:', error)
@@ -110,7 +129,11 @@ function goAbout() { uni.navigateTo({ url: '/pages/as_us/as_us' }) }
 </script>
 
 <style scoped>
-.user-page { min-height: 100vh; padding-bottom: calc(120rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.user-page { min-height: 100vh; padding-bottom: calc(120rpx + env(safe-area-inset-bottom)); background-position: center; background-size: cover; box-sizing: border-box; }
+.page-meta { display: flex; min-height: 88rpx; align-items: center; justify-content: center; padding: 12rpx 24rpx; background: v-bind('meta.bg_color || theme?.themeColor1 || "#2979ff"'); font-size: 32rpx; font-weight: 600; box-sizing: border-box; }
+.page-meta-light { color: #fff; }
+.page-meta-dark { color: #000; }
+.page-title-image { height: 52rpx; max-width: 360rpx; }
 .user-header { padding: 60rpx 40rpx 40rpx; }
 .user-info { display: flex; align-items: center; }
 .avatar { width: 120rpx; height: 120rpx; border-radius: 50%; border: 4rpx solid rgb(255 255 255 / 50%); }
@@ -129,6 +152,8 @@ function goAbout() { uni.navigateTo({ url: '/pages/as_us/as_us' }) }
 .user-banner text { position: absolute; left: 20rpx; bottom: 16rpx; color: #fff; text-shadow: 0 1rpx 6rpx rgb(0 0 0 / 50%); }
 .service-title { padding: 24rpx 24rpx 8rpx; font-weight: 600; font-size: 30rpx; }
 .service-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14rpx; padding: 18rpx 24rpx 24rpx; }
+.service-style-2 .service-grid { grid-template-columns: repeat(5, 1fr); }
+.service-style-2 .service-item image { border-radius: 50%; }
 .service-item { display: flex; flex-direction: column; align-items: center; color: #333; font-size: 24rpx; }
 .service-item image { width: 70rpx; height: 70rpx; border-radius: 10rpx; margin-bottom: 8rpx; }
 .menu-item { display: flex; align-items: center; padding: 30rpx 24rpx; border-bottom: 1rpx solid #f5f5f5; }

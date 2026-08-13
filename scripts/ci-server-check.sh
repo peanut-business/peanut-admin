@@ -35,6 +35,7 @@ if [[ "$mode" == '--full' ]]; then
     server/tests/Productization/MemberFinanceHostTest.php
     server/tests/Multitenancy/MemberTenantIsolationTest.php
     server/tests/Productization/ContentDecorationHostTest.php
+    server/tests/Productization/LegacyDecorationRuntimeConvergenceTest.php
     server/tests/Productization/NotificationHostTest.php
     server/tests/Productization/PaymentHostTest.php
     server/tests/Productization/OAuthChannelHostTest.php
@@ -77,12 +78,17 @@ git diff --name-only "$base...HEAD" -- server > "$changed_file"
 
 select_test() {
   local path="$1"
-  [[ -f "$path" ]] && printf '%s\n' "$path" >> "$selected_file"
+  if [[ -f "$path" ]]; then
+    printf '%s\n' "$path" >> "$selected_file"
+  fi
 }
 
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
-  [[ "$path" == *.php ]] && printf '%s\n' "$path" >> "$changed_php_file"
+  # Deleted PHP files are valid convergence changes, but cannot be linted.
+  if [[ "$path" == *.php && -f "$path" ]]; then
+    printf '%s\n' "$path" >> "$changed_php_file"
+  fi
   if [[ "$path" == server/tests/*.php || "$path" == server/tests/*/*.php ]]; then
     select_test "$path"
   fi
@@ -97,6 +103,7 @@ while IFS= read -r path; do
       ;;
     *dict*|*Dict*) select_test server/tests/Multitenancy/DictTenantIsolationTest.php ;;
     *article*) select_test server/tests/Multitenancy/ArticleTenantIsolationTest.php ;;
+    *decoration*|*Decoration*) select_test server/tests/Productization/LegacyDecorationRuntimeConvergenceTest.php ;;
     *member*|*Member*|*account_log*|*AccountLog*) select_test server/tests/Multitenancy/MemberTenantIsolationTest.php ;;
     *notice*|*notification*) select_test server/tests/Multitenancy/NoticeTenantIsolationTest.php ;;
     *crontab*) select_test server/tests/Multitenancy/CrontabTenantIsolationTest.php ;;

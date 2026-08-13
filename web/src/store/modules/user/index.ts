@@ -6,11 +6,7 @@ import {
   LoginData,
 } from '@/api/user';
 import { setToken, clearToken } from '@/utils/auth';
-import {
-  selectTenant,
-  tenantLogin,
-  tenantLogout,
-} from '@/api/tenant-session';
+import { selectTenant, tenantLogin, tenantLogout } from '@/api/tenant-session';
 import {
   isMultiTenantDeployment,
   isTenantAccessToken,
@@ -96,6 +92,7 @@ const useUserStore = defineStore('user', {
         }
         const res = await userLogin(loginForm);
         setToken(res.data.token);
+        return res.data;
       } catch (err) {
         clearToken();
         throw err;

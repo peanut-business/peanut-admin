@@ -34,12 +34,12 @@ const APP_SETTING: AppRouteRecordRaw = {
     },
     {
       path: 'customer-service',
-      name: 'AppSettingCustomerService',
-      component: () => import('@/views/app-setting/customer-service/index.vue'),
+      name: 'LegacyAppSettingCustomerService',
+      component: DEFAULT_LAYOUT,
+      redirect: '/decoration/mobile',
       meta: {
-        locale: 'menu.appSetting.customerService',
         requiresAuth: true,
-        roles: ['admin'],
+        hideInMenu: true,
       },
     },
     {
@@ -64,12 +64,12 @@ const APP_SETTING: AppRouteRecordRaw = {
     },
     {
       path: 'decorate',
-      name: 'AppSettingDecorate',
-      component: () => import('@/views/app-setting/decorate/index.vue'),
+      name: 'LegacyAppSettingDecorate',
+      component: DEFAULT_LAYOUT,
+      redirect: '/decoration/mobile',
       meta: {
-        locale: 'menu.appSetting.decorate',
         requiresAuth: true,
-        roles: ['admin'],
+        hideInMenu: true,
       },
     },
     {

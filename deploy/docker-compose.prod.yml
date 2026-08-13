@@ -3,6 +3,9 @@ name: peanut-admin-production
 x-app-environment: &app-environment
   APP_ENV: production
   APP_DEBUG: "false"
+  PHP_APP_DEBUG: "false"
+  PEANUT_DEPLOYMENT_TARGET: ${PEANUT_DEPLOYMENT_TARGET:?set local-production-preview or production}
+  PEANUT_DATABASE_RESOURCE_ID: ${PEANUT_DATABASE_RESOURCE_ID:?set the registered production database resource id}
   DB_HOST: ${DB_HOST:?set DB_HOST in .env}
   DB_PORT: ${DB_PORT:-3306}
   DB_NAME: ${DB_NAME:-peanut_admin}
@@ -13,6 +16,13 @@ x-app-environment: &app-environment
   DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE to standalone or multi-tenant}
   TENANT_IDENTIFIER_HMAC_KEY: ${TENANT_IDENTIFIER_HMAC_KEY:?set TENANT_IDENTIFIER_HMAC_KEY in .env}
   PLATFORM_IDENTIFIER_HMAC_KEY: ${PLATFORM_IDENTIFIER_HMAC_KEY:?set PLATFORM_IDENTIFIER_HMAC_KEY in .env}
+  PHP_DB_HOST: ${DB_HOST:?set DB_HOST in .env}
+  PHP_DB_PORT: ${DB_PORT:-3306}
+  PHP_DB_NAME: ${DB_NAME:-peanut_admin}
+  PHP_DB_USER: ${DB_USER:-peanut_admin}
+  PHP_DB_PASS: ${DB_PASS:?set DB_PASS in .env}
+  PHP_DB_PREFIX: pa_
+  PHP_JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
 
 x-logging: &default-logging
   driver: json-file

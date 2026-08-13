@@ -20,24 +20,6 @@ export function saveHotSearchConfig(data: HotSearchConfig) {
   return axios.post('/api/admin/setting/hot-search/save', data);
 }
 
-// ─── 客服设置 ────────────────────────────────────────────────────────────────
-export interface CustomerServiceConfig {
-  qr_code: string;
-  wechat: string;
-  phone: string;
-  service_time: string;
-}
-
-export function getCustomerServiceConfig() {
-  return axios.get<CustomerServiceConfig>(
-    '/api/admin/setting/customer-service/config'
-  );
-}
-
-export function saveCustomerServiceConfig(data: CustomerServiceConfig) {
-  return axios.post('/api/admin/setting/customer-service/save', data);
-}
-
 // ─── 渠道配置 ────────────────────────────────────────────────────────────────
 export interface WebPageConfig {
   status: 0 | 1;
@@ -69,9 +51,7 @@ export interface MiniProgramConfig {
 }
 
 export function getMiniProgramConfig() {
-  return axios.get<MiniProgramConfig>(
-    '/api/admin/setting/mini-program/config'
-  );
+  return axios.get<MiniProgramConfig>('/api/admin/setting/mini-program/config');
 }
 
 export function saveMiniProgramConfig(
@@ -81,29 +61,6 @@ export function saveMiniProgramConfig(
   >
 ) {
   return axios.post('/api/admin/setting/mini-program/save', data);
-}
-
-// ─── 页面装修 ────────────────────────────────────────────────────────────────
-export interface BannerItem {
-  image: string;
-  link: string;
-  sort: number;
-}
-
-export interface DecorateConfig {
-  banners: BannerItem[];
-  notice: string;
-  notice_show: number;
-  hot_show: number;
-  news_show: number;
-}
-
-export function getDecorateConfig() {
-  return axios.get<DecorateConfig>('/api/admin/setting/decorate/config');
-}
-
-export function saveDecorateConfig(data: DecorateConfig) {
-  return axios.post('/api/admin/setting/decorate/save', data);
 }
 
 // ─── 交易设置 ────────────────────────────────────────────────────────────────

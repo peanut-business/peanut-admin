@@ -99,7 +99,7 @@ class DecorationSchemaService
         return self::transformResources($value, true);
     }
 
-    public static function validateLink(object $context, mixed $link): void
+    public static function validateLink(object $context, mixed $link, bool $pcTarget = false): void
     {
         if (!is_array($link)) {
             throw new \RuntimeException('装修链接格式无效');
@@ -130,6 +130,9 @@ class DecorationSchemaService
                 || !in_array((string)($query['env_version'] ?? ''), ['develop', 'trial', 'release'], true)) {
                 throw new \RuntimeException('小程序链接必须包含页面、AppID 和环境版本');
             }
+            if ($pcTarget && !self::absoluteHttpUrl((string)($query['web_url'] ?? ''))) {
+                throw new \RuntimeException('PC 小程序链接必须提供 http/https 回退网址');
+            }
         }
         if (isset($link['query']) && !is_array($link['query'])) {
             throw new \RuntimeException('装修链接参数格式无效');
@@ -154,6 +157,9 @@ class DecorationSchemaService
                 throw new \RuntimeException($name . ' 为固定组件，必须保持锁定');
             }
             self::validateComponent($context, $name, $component['content']);
+            if ($name === 'pc-banner') {
+                self::validatePcStyles($component['styles']);
+            }
         }
     }
 
@@ -199,6 +205,7 @@ class DecorationSchemaService
             return;
         }
         if ($name === 'my-service') {
+            self::binary($content['enabled'] ?? null, '服务启用状态');
             self::oneOfInt($content['style'] ?? null, [1, 2], '服务样式');
             if (mb_strlen(trim((string)($content['title'] ?? ''))) > 20) {
                 throw new \RuntimeException('服务标题最多 20 个字');
@@ -221,13 +228,20 @@ class DecorationSchemaService
         }
         if ($name === 'pc-banner') {
             self::binary($content['enabled'] ?? null, 'PC Banner 启用状态');
-            self::validateItems($context, $content['data'] ?? null, 1, 10, false);
+            self::validateItems($context, $content['data'] ?? null, 1, 10, false, true);
             return;
         }
         throw new \RuntimeException('未知装修组件');
     }
 
-    private static function validateItems(object $context, mixed $items, int $min, int $max, bool $showAllowed): void
+    private static function validateItems(
+        object $context,
+        mixed $items,
+        int $min,
+        int $max,
+        bool $showAllowed,
+        bool $pcTarget = false
+    ): void
     {
         if (!is_array($items) || count($items) < $min || count($items) > $max) {
             throw new \RuntimeException("装修组件条目必须为 {$min}～{$max} 项");
@@ -236,9 +250,31 @@ class DecorationSchemaService
             if (!is_array($item) || !is_string($item['image'] ?? null) || !is_string($item['name'] ?? null)) {
                 throw new \RuntimeException('装修组件条目格式无效');
             }
-            self::validateLink($context, $item['link'] ?? null);
+            self::validateLink($context, $item['link'] ?? null, $pcTarget);
             if ($showAllowed && isset($item['is_show'])) {
                 self::binary($item['is_show'], '条目显示状态');
+            }
+        }
+    }
+
+    private static function validatePcStyles(array $styles): void
+    {
+        $allowed = ['position', 'left', 'top', 'width', 'height'];
+        if (array_diff(array_keys($styles), $allowed) !== []
+            || array_diff($allowed, array_keys($styles)) !== []) {
+            throw new \RuntimeException('PC Banner 样式字段无效');
+        }
+        if (!in_array((string)$styles['position'], ['absolute', 'relative'], true)) {
+            throw new \RuntimeException('PC Banner 定位方式无效');
+        }
+        foreach (['left', 'top'] as $field) {
+            if (!preg_match('/^-?\d+(?:\.\d+)?(?:px|%)$/', (string)$styles[$field])) {
+                throw new \RuntimeException('PC Banner 偏移必须使用 px 或 %');
+            }
+        }
+        foreach (['width', 'height'] as $field) {
+            if (!preg_match('/^\d+(?:\.\d+)?(?:px|%)$/', (string)$styles[$field])) {
+                throw new \RuntimeException('PC Banner 尺寸必须使用 px 或 %');
             }
         }
     }

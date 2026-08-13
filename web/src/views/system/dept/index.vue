@@ -136,16 +136,13 @@
       :close-on-click-modal="false"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
-        <el-form-item
-          v-if="form.pid !== 0"
-          prop="pid"
-          :label="$t('systemDept.field.pid')"
-        >
+        <el-form-item prop="pid" :label="$t('systemDept.field.pid')">
           <el-tree-select
             v-model="form.pid"
             :data="parentTree"
             :props="{ value: 'id', label: 'name', children: 'children' }"
             :placeholder="$t('systemDept.field.pid.placeholder')"
+            :disabled="isRootDepartmentEdit"
           />
         </el-form-item>
         <el-form-item prop="name" :label="$t('systemDept.field.name')">
@@ -210,6 +207,11 @@
     type DeptRecord,
     type DeptForm,
   } from '@/api/system/dept';
+  import {
+    buildParentDepartmentOptions,
+    initialParentDepartmentId,
+    ROOT_DEPARTMENT_ID,
+  } from './parent-options';
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);
@@ -260,22 +262,13 @@
 
   fetchData();
 
-  // ---- 上级部门选择树：仅正常部门 ----
-  // field-names 把 id/name 映射到 key/title，运行期结构安全，故用窄化 cast。
-  interface DeptTreeNode {
-    id: number;
-    name: string;
-    children: DeptTreeNode[];
-  }
-  const parentTree = computed(() => {
-    const strip = (nodes: DeptRecord[]): DeptTreeNode[] =>
-      nodes.map((n) => ({
-        id: n.id,
-        name: n.name,
-        children: n.children ? strip(n.children) : [],
-      }));
-    return strip(deptOptions.value);
-  });
+  // ---- 上级部门选择树：顶级选项 + 正常部门 ----
+  const parentTree = computed(() =>
+    buildParentDepartmentOptions(
+      deptOptions.value,
+      t('systemDept.field.pid.root')
+    )
+  );
 
   const loadDeptOptions = async () => {
     const { data } = await getDeptAll();
@@ -285,12 +278,13 @@
   // ---- 弹窗 & 表单 ----
   const modalVisible = ref(false);
   const isEdit = ref(false);
+  const isRootDepartmentEdit = ref(false);
   const submitLoading = ref(false);
   const formRef = ref<FormInstance>();
 
   const defaultForm = (): DeptForm => ({
     id: undefined,
-    pid: undefined,
+    pid: ROOT_DEPARTMENT_ID,
     name: '',
     leader: '',
     mobile: '',
@@ -323,13 +317,15 @@
 
   const handleAdd = async (parent?: DeptRecord) => {
     isEdit.value = false;
+    isRootDepartmentEdit.value = false;
     await loadDeptOptions();
-    resetForm({ pid: parent?.id });
+    resetForm({ pid: initialParentDepartmentId(parent?.id) });
     modalVisible.value = true;
   };
 
   const handleEdit = async (record: DeptRecord) => {
     isEdit.value = true;
+    isRootDepartmentEdit.value = record.pid === ROOT_DEPARTMENT_ID;
     const [{ data }] = await Promise.all([
       getDeptDetail(record.id),
       loadDeptOptions(),
