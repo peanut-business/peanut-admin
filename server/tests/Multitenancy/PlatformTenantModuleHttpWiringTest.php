@@ -1,0 +1,69 @@
+<?php
+declare(strict_types=1);
+
+use app\platform\service\module\OpisManifestSchemaValidator;
+use app\platform\service\module\ReflectionContractInspector;
+use app\platform\service\module\StrictVersionConstraintMatcher;
+use Opis\JsonSchema\Validator;
+use PeanutAdmin\Kernel\Authorization\Persistence\Schema\AuthorizationSchema;
+use PeanutAdmin\Kernel\Migration\ModuleSchema;
+use PeanutAdmin\Kernel\Module\ManifestLoader;
+use PeanutAdmin\Kernel\Module\ModuleHostLayout;
+use PeanutAdmin\Kernel\Module\ModuleProvider;
+use PeanutAdmin\Kernel\Module\ModuleRegistryCompiler;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../fixtures/PlatformTenantModule/Content/ModuleProvider.php';
+
+function pm01ModuleHttpExpect(bool $condition, string $message): void
+{
+    if (!$condition) {
+        throw new RuntimeException($message);
+    }
+}
+
+$matcher = new StrictVersionConstraintMatcher();
+pm01ModuleHttpExpect($matcher->matches('1.0.0', '^1.0'), 'caret version match failed');
+pm01ModuleHttpExpect(!$matcher->matches('2.0.0', '^1.0'), 'caret upper bound failed');
+pm01ModuleHttpExpect(!$matcher->matches('1.0.0', '>=1.0'), 'unsupported constraint was accepted');
+
+$kernelRoot = dirname((new ReflectionClass(ModuleProvider::class))->getFileName(), 3);
+$fixtureRoot = realpath(__DIR__ . '/../fixtures/PlatformTenantModule/Content');
+pm01ModuleHttpExpect(is_string($fixtureRoot), 'Module fixture root is unavailable');
+$document = (new ManifestLoader())->load($fixtureRoot);
+$registry = (new ModuleRegistryCompiler(
+    new OpisManifestSchemaValidator($kernelRoot . '/resources/schemas/module-manifest.schema.json'),
+    $matcher,
+    new ReflectionContractInspector(),
+    '1.0.0',
+    ['fixture.content.page'],
+    new ModuleHostLayout('server/tests/Fixtures', 'Fixture', 'web/src/modules'),
+    [...KernelSchema::tableNames(), ...AuthorizationSchema::tableNames(), ...ModuleSchema::tableNames()],
+    ['admin-web', 'platform-web']
+))->compile([$document]);
+pm01ModuleHttpExpect($registry->moduleKeys() === ['fixture.content'], 'deployed Module did not compile');
+
+$configSource = (string)file_get_contents(dirname(__DIR__, 2) . '/config/modules.php');
+pm01ModuleHttpExpect(
+    str_contains($configSource, "env('PEANUT_MODULE_ROOTS', '')")
+        && str_contains($configSource, "'roots' => \$roots"),
+    'default Module roots must be an explicit empty deployment input'
+);
+$runtime = (string)file_get_contents(dirname(__DIR__, 2) . '/app/platform/service/PlatformRuntimeFactory.php');
+$routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+pm01ModuleHttpExpect(
+    str_contains($runtime, "'MODULE_REGISTRY_UNAVAILABLE'")
+        && str_contains($runtime, 'DeployedTenantModuleRegistry::compile')
+        && str_contains($runtime, 'ModuleBoundaryChecker')
+        && str_contains($runtime, 'VerifiedTenantModuleRepository'),
+    'production Module runtime lost fail-closed deployment verification'
+);
+pm01ModuleHttpExpect(
+    str_contains($routes, "Route::post('api/platform/tenants/modules/enable'")
+        && str_contains($routes, "Route::post('api/platform/tenants/modules/disable'")
+        && substr_count($routes, "PlatformPermissionMiddleware::class, 'platform.tenant.module.manage'") >= 2,
+    'TenantModule routes lost their dedicated platform permission'
+);
+
+echo "PM01-PLATFORM-TENANT-MODULE-HTTP-WIRING-001 passed\n";
