@@ -9,7 +9,19 @@
     "key": "",
     "config": {}
   },
+  "required_api_environment": [
+    "PLATFORM_IDENTIFIER_HMAC_KEY",
+    "TENANT_IDENTIFIER_HMAC_KEY"
+  ],
   "contracts": {
+    "server/config/platform_auth.php": [
+      "PLATFORM_IDENTIFIER_HMAC_KEY",
+      "fail closed"
+    ],
+    "server/config/tenant_auth.php": [
+      "TENANT_IDENTIFIER_HMAC_KEY",
+      "fail closed"
+    ],
     "server/route/app.php": [
       "api/platform/session/login",
       "api/platform/tenants/provision",

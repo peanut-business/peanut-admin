@@ -19,6 +19,12 @@ running the multi-tenant and Standalone Vite servers concurrently from one
 checkout, give each server a distinct `cacheDir`; sharing `node_modules/.vite`
 lets the two optimizers race and can leave the SPA blank with dependency 504s.
 
+Before starting the API, provide independent high-entropy
+`PLATFORM_IDENTIFIER_HMAC_KEY` and `TENANT_IDENTIFIER_HMAC_KEY` values (at least
+32 bytes each). Both authentication paths fail closed when their key is absent
+or short; the public login response intentionally remains a generic credential
+denial. Verify these deployment inputs before spending the one browser run.
+
 ## Preparation checks (no browser)
 
 ```bash
