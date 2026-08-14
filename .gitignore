@@ -29,6 +29,7 @@ web/.claude/
 .codegraph/
 .playwright-cli/
 .playwright-mcp/
+/output/p0e-*/
 
 # Ad-hoc comparison screenshots (not referenced by docs)
 /likeadmin-dept-list.png
