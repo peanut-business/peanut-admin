@@ -168,7 +168,7 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 php server/database/install.php
 ~~~
 
-安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。项目日常开发统一使用 CompanyOS 登记的宿主 PHP 8.3.24 与 Composer 2.8.10；启动完整开发栈：
+安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。项目日常开发统一使用 `resources/project-resources.json` 登记的宿主 PHP 8.3.24 与 Composer 2.8.10；启动完整开发栈：
 
 ~~~bash
 ./scripts/local-stack.sh dev-up

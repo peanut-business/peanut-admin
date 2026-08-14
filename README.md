@@ -76,7 +76,7 @@ PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 
 ### 3. 安装与启动
 
-本项目日常开发的唯一默认入口是 `scripts/local-stack.sh`。它使用 CompanyOS 登记的
+本项目日常开发的唯一默认入口是 `scripts/local-stack.sh`。它使用 Peanut Admin 项目登记的
 `/opt/homebrew/bin/php` 8.3.24 与 `/usr/local/bin/composer` 2.8.10 托管宿主 API，Web、PC、
 Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅用于本机生产模式
 预览、生产构建和显式容器等价 Gate。

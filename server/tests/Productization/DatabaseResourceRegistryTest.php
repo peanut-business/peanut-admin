@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__, 3);
 $registryPath = $root . '/resources/project-resources.json';
+$p0eRegistryPath = $root . '/resources/p0e-runtime-qualification.json';
 $registryJson = (string)file_get_contents($registryPath);
 $registry = json_decode($registryJson, true, 512, JSON_THROW_ON_ERROR);
+$p0eRegistry = json_decode((string)file_get_contents($p0eRegistryPath), true, 512, JSON_THROW_ON_ERROR);
 
 $expect = static function (bool $condition, string $message): void {
     if (!$condition) {
@@ -14,6 +16,9 @@ $expect = static function (bool $condition, string $message): void {
 
 $expect(($registry['schema_version'] ?? null) === 1, 'resource registry schema version is invalid');
 $expect(($registry['project_id'] ?? null) === 'peanut-admin', 'resource registry project id is invalid');
+$expect(($registry['authority']['source'] ?? null) === 'this versioned file', 'project registry is not authoritative');
+$expect(!array_key_exists('company_allocation_evidence', $registry['authority'] ?? []), 'project registry still depends on CompanyOS allocation evidence');
+$expect(!str_contains($registryJson, 'CompanyOS') && !str_contains($registryJson, 'company-os'), 'project registry still references CompanyOS');
 
 $databases = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
@@ -42,7 +47,7 @@ $qualificationDatabases = array_values(array_filter(
 $expect(count($qualificationDatabases) === 1, 'P0-E qualification database registration is missing');
 $qualificationDatabase = $qualificationDatabases[0];
 $requiredQualificationFields = [
-    'purpose', 'owner', 'allocation_resource_id', 'service_type', 'schema', 'allowed_scenarios',
+    'purpose', 'owner', 'runtime_resource_id', 'service_type', 'schema', 'allowed_scenarios',
     'upstream_endpoint', 'container_endpoint', 'credential_ref', 'data_source',
     'freshness_requirement', 'health_check', 'claim_precondition', 'creation_policy',
     'backup_responsibility', 'cleanup_responsibility', 'failure_retention_policy',
@@ -68,6 +73,40 @@ $expect(($qualificationDatabase['failure_retention_policy'] ?? '') !== '', 'P0-E
 $expect(($qualificationDatabase['data_source'] ?? '') !== '', 'P0-E authoritative data source is missing');
 $expect(($qualificationDatabase['freshness_requirement'] ?? '') !== '', 'P0-E freshness requirement is missing');
 $expect(is_array($qualificationDatabase['health_check'] ?? null), 'P0-E health check is missing');
+
+$expect(($p0eRegistry['schema_version'] ?? null) === 1, 'P0-E resource registry schema version is invalid');
+$expect(($p0eRegistry['project_id'] ?? null) === 'peanut-admin', 'P0-E resource registry project id is invalid');
+$expect(($p0eRegistry['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E resource registry Gate changed');
+$expect(!array_key_exists('company_allocation_evidence', $p0eRegistry['authority'] ?? []), 'P0-E registry still depends on CompanyOS allocation evidence');
+$expect(!array_key_exists('company_allocation_resource_id', $p0eRegistry['authority'] ?? []), 'P0-E registry still has a CompanyOS allocation identity');
+$expect(!str_contains((string)json_encode($p0eRegistry), 'CompanyOS') && !str_contains((string)json_encode($p0eRegistry), 'company-os'), 'P0-E registry still references CompanyOS');
+$binding = $p0eRegistry['database_administration_binding'] ?? null;
+$expect(is_array($binding), 'P0-E database administration binding is missing');
+$expect(($binding['database_resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'P0-E binding database resource changed');
+$expect(($binding['runtime_resource_id'] ?? null) === ($qualificationDatabase['runtime_resource_id'] ?? null), 'P0-E binding and project runtime resource diverged');
+$expect(($binding['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-mysql84-remote-admin-cli', 'P0-E binding tooling resource changed');
+$expect(($binding['database'] ?? null) === ($qualificationDatabase['database'] ?? null), 'P0-E binding database template diverged');
+$expect(($binding['namespace'] ?? null) === ($qualificationDatabase['namespace'] ?? null), 'P0-E binding namespace diverged');
+$expect(($binding['version'] ?? null) === ($qualificationDatabase['version'] ?? null), 'P0-E binding version diverged');
+$expect(($binding['port'] ?? null) === ($qualificationDatabase['upstream_endpoint']['port'] ?? null), 'P0-E binding port diverged');
+$expect(($binding['fallback'] ?? null) === 'none', 'P0-E database administration binding must fail closed');
+
+$administrativeTools = array_values(array_filter(
+    $p0eRegistry['resources']['tooling'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-mysql84-remote-admin-cli'
+));
+$expect(count($administrativeTools) === 1, 'P0-E remote MySQL administration tooling registration is missing');
+$administrativeTool = $administrativeTools[0];
+$expect(($administrativeTool['host'] ?? null) === 'mac-14', 'P0-E administration moved off the database resource host');
+$expect(($administrativeTool['version'] ?? null) === '8.4.10', 'P0-E administration client version changed');
+$expect(($administrativeTool['transport'] ?? null) === 'ssh-docker-exec', 'P0-E administration transport changed');
+$expect(($administrativeTool['ssh_command'] ?? null) === '/usr/bin/ssh', 'P0-E SSH command is not absolute');
+$expect(($administrativeTool['docker_command'] ?? null) === '/usr/local/bin/docker', 'P0-E remote Docker command is not absolute');
+$expect(($administrativeTool['container_name'] ?? null) === 'peanut-admin-mysql84-development', 'P0-E administration container changed');
+$expect(($administrativeTool['mysql_command'] ?? null) === '/usr/bin/mysql', 'P0-E MySQL command is not absolute');
+$expect(($administrativeTool['mysqldump_command'] ?? null) === '/usr/bin/mysqldump', 'P0-E mysqldump command is not absolute');
+$expect(str_starts_with((string)($administrativeTool['container_image'] ?? ''), 'mysql:8.4.10@sha256:'), 'P0-E administration image is not immutable');
+$expect(($administrativeTool['fallback'] ?? null) === 'none; host mysql and mysqldump commands are forbidden', 'P0-E administration allowed a host CLI fallback');
 
 foreach (['upstream_endpoint' => 'host', 'container_endpoint' => 'container'] as $key => $consumer) {
     $endpoint = $qualificationDatabase[$key] ?? null;
@@ -161,6 +200,7 @@ $devCompose = (string)file_get_contents($root . '/deploy/docker-compose.dev.yml'
 $hostRuntime = (string)file_get_contents($root . '/scripts/local-php-runtime');
 
 $expect(str_contains($rootInstructions, 'resources/project-resources.json'), 'root AGENTS.md does not reference the registry');
+$expect(str_contains($rootInstructions, 'resources/p0e-runtime-qualification.json'), 'root AGENTS.md does not reference the P0-E source-only registry');
 $expect(str_contains($localStack, 'project-resource-registry'), 'local stack does not consume the registry');
 $expect(str_contains($probe, 'resources/project-resources.json'), 'probe does not consume the registry');
 $expect(str_contains($guardSource, 'PEANUT_RESOURCE_LEASE_PROOF')

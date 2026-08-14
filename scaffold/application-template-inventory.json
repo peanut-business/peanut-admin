@@ -143,7 +143,7 @@
             "owner": "scaffold",
             "transform": "readme",
             "mode": 420,
-            "source_sha256": "781c596db8b3861d877fd0d7cabff3ba66978658506a1041b30711448f39508b"
+            "source_sha256": "bd3e5a92ea6e86dd8ea97f56499d7c141ee29ac7b17d1a5e8bbb2581616bc993"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -199,14 +199,6 @@
             "mode": 420
         },
         {
-            "path": "deploy/docker-compose.mac-14.yml",
-            "target": "deploy/docker-compose.mac-14.yml",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
             "path": "deploy/docker-compose.prod.yml",
             "target": "deploy/docker-compose.prod.yml",
             "classification": "managed",
@@ -214,6 +206,14 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "064420391d9bce30b4c70238ced4854f8d1e57424de3471baf7939a36634eac4"
+        },
+        {
+            "path": "deploy/docker-compose.remote-development.yml",
+            "target": "deploy/docker-compose.remote-development.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "deploy/docker/container.env",
@@ -265,7 +265,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "165d585bc4142052dd67034df99e9e0ab8f46a06e8ca598e2d341e3206b0a006"
+            "source_sha256": "a9925a7a5d8939bbfe3a706a1b9550642c8dc3ff7b4c4ff3b1da9618592388ec"
         },
         {
             "path": "deploy/local-stack.env.example",
@@ -1379,13 +1379,21 @@
             "mode": 420
         },
         {
+            "path": "docs/p0e-runtime-qualification.md",
+            "target": "docs/p0e-runtime-qualification.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "docs/peanut-admin-development-guide.md",
             "target": "docs/peanut-admin-development-guide.md",
             "classification": "managed",
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "f938df467e6be01ffdda4978e6fdf94243b61815435850a2513b2f4fd5312321"
+            "source_sha256": "35a391cc896348a210fa9e351a81d2d12f9a82f3380dd5f9fd106baee21ae598"
         },
         {
             "path": "docs/peanut-admin-release-deployment.md",
@@ -3380,13 +3388,21 @@
             "mode": 420
         },
         {
+            "path": "resources/p0e-runtime-qualification.json",
+            "target": "resources/p0e-runtime-qualification.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "resources/project-resources.json",
             "target": "resources/project-resources.json",
             "classification": "generated-managed",
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "4d6ec52e0f2777e1d95434b473829e6bbe7e935c5e80cd24309414c300b2b931"
+            "source_sha256": "f81397d23abeecee5455f3bb25e1485ef866b5681d216ca9159b9976c72de8d1"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3451,14 +3467,6 @@
         {
             "path": "scripts/combined-upgrade-qualification",
             "target": "scripts/combined-upgrade-qualification",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 493
-        },
-        {
-            "path": "scripts/company-development-database.sh",
-            "target": "scripts/company-development-database.sh",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3540,6 +3548,22 @@
             "source_sha256": "a75fa063e072c6e4869156aab7b80d21fe1ce21112452d7be41db037190b0cda"
         },
         {
+            "path": "scripts/p0e-browser-smoke",
+            "target": "scripts/p0e-browser-smoke",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scripts/p0e-runtime-qualification",
+            "target": "scripts/p0e-runtime-qualification",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
             "path": "scripts/package-release.sh",
             "target": "scripts/package-release.sh",
             "classification": "managed",
@@ -3547,6 +3571,14 @@
             "transform": "text",
             "mode": 493,
             "source_sha256": "1b00a637c6bbd54eaa259f4ffe3602597a205f053f8684fef9299dd426033fe3"
+        },
+        {
+            "path": "scripts/project-development-database.sh",
+            "target": "scripts/project-development-database.sh",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "scripts/project-resource-lease",
@@ -8798,6 +8830,14 @@
             "source_sha256": "1f04767a565d9ed8b78a255549205bee4e5bc748e219c034b82ca7d23f706727"
         },
         {
+            "path": "server/tests/Productization/P0eRuntimeQualificationTest.php",
+            "target": "server/tests/Productization/P0eRuntimeQualificationTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/tests/Productization/PaymentHostTest.php",
             "target": "server/tests/Productization/PaymentHostTest.php",
             "classification": "app-owned",
@@ -9065,6 +9105,22 @@
             "transform": "copy",
             "mode": 420,
             "source_sha256": "800afb800a0e9ed02c4c908c3acf5ba378ecbc49f67ecb4c62217d098f723f0b"
+        },
+        {
+            "path": "server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js",
+            "target": "server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/p0e-runtime-qualification/matrix.json",
+            "target": "server/tests/fixtures/p0e-runtime-qualification/matrix.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/tests/fixtures/scaffold-upgrade/from/files/conflict.txt",

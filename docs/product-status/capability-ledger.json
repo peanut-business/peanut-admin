@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "dev",
-    "commit": "5c5a9a27d9a1ee982838db76ab05da762c8246d5",
+    "branch": "feat/p0e-runtime-qualification",
+    "commit": "a732445c037057ed97cf76846e685f3ddc335397",
     "reviewed_at": "2026-08-14"
   },
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "创建、脚手架升级、Plugin 生命周期与公开核心包兼容合同已经通过；最终 P0-E 运行时闭环和正式发布仍未完成。"
+    "summary": "固定候选 a732445c037057ed97cf76846e685f3ddc335397（tree 2ad602f9020d5edca9fe24a733b450015f2227eb）的 P0-E 10/10 运行时闭环已经通过且零资源残留；正式发布仍未完成。"
   },
   "capabilities": [
     {
@@ -191,41 +191,45 @@
       "name": "P0-E 隔离资源登记",
       "area": "qualification",
       "status": "verified",
-      "summary": "最终运行时验收所需资源已进入版本化登记，但本项不代表 Runtime Gate 已运行。",
+      "summary": "项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。",
       "acceptance": [
         "数据库、服务、端口、cache 与 output 使用稳定资源 ID",
         "凭据只记录引用且不进入仓库",
-        "Gate 执行前可以原子 claim 精确候选资源"
+        "Gate 执行前可以原子 claim 精确候选资源",
+        "项目运行与验收不读取 CompanyOS 或其他外部资源登记仓"
       ],
       "evidence": [
         {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/121"},
-        {"kind": "git", "ref": "68251239d1b0c5a3dc1fb9d25b3ce3c50ae6b9c0"}
+        {"kind": "git", "ref": "68251239d1b0c5a3dc1fb9d25b3ce3c50ae6b9c0"},
+        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"}
       ],
-      "paths": ["resources/project-resources.json"]
+      "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json"]
     },
     {
       "id": "PA-P0E-002",
       "name": "最终生成应用运行时验收",
       "area": "qualification",
-      "status": "in_progress",
-      "summary": "需要在固定候选上完成真实生成、干净依赖安装、数据库安装迁移、服务启动和浏览器验收。",
+      "status": "verified",
+      "summary": "固定候选生成全新 v1.1.3 应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。",
       "acceptance": [
-        "从固定 dev 候选生成全新应用并核对 v1.1.2 模板身份",
+        "从固定 dev 候选生成全新应用并核对 v1.1.3 模板身份",
         "Composer 与 npm 干净安装通过",
         "登记数据库上的空库安装、迁移 current 与清理通过",
         "API、管理端和代表客户端能够启动",
         "真实浏览器登录与代表业务页面通过"
       ],
-      "evidence": [],
+      "evidence": [
+        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"}
+      ],
       "dependencies": ["PA-P0E-001", "PA-SCAFFOLD-001"],
-      "paths": ["docs/testing/local-functional-test-register.md"]
+      "paths": ["docs/p0e-runtime-qualification.md"]
     },
     {
       "id": "PA-P0E-003",
       "name": "最终升级应用运行时验收",
       "area": "qualification",
       "status": "in_progress",
-      "summary": "需要把生成应用从旧 Release 升级到当前 Release，并复验依赖、数据库、服务、浏览器、Plugin 和 app-owned 保持。",
+      "summary": "固定候选的 v1.0/v1.1 数据库前滚、迁移故障恢复，以及当前生成应用的 Plugin 生命周期和双模式浏览器闭环已经通过；旧应用执行完整 scaffold preflight/apply/verify 后的依赖、app-owned、Plugin 与浏览器复验尚未完成。",
       "acceptance": [
         "preflight、apply 与 verify 在固定旧应用上成功",
         "app-owned 业务源码逐字保持",
@@ -233,7 +237,9 @@
         "Plugin install/lifecycle 在升级后应用中通过",
         "故障注入后 recover 能恢复完整旧应用"
       ],
-      "evidence": [],
+      "evidence": [
+        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"}
+      ],
       "dependencies": ["PA-SCAFFOLD-002", "PA-COMPAT-001", "PA-P0E-002"],
       "paths": ["scripts/scaffold-upgrade"]
     },
@@ -254,18 +260,18 @@
     },
     {
       "id": "PA-GOVERNANCE-001",
-      "name": "CompanyOS Gitee clean PR 流程",
+      "name": "外部 CompanyOS 治理流程",
       "area": "governance",
-      "status": "blocked",
-      "summary": "跨仓治理流程仍有已知缺口，不阻塞应用 Runtime，但阻塞完整交付治理闭环。",
+      "status": "retired",
+      "summary": "Peanut Admin 已退出 CompanyOS 资源与治理依赖；项目资源、GitHub PR 和验收事实均由本仓库维护。",
       "acceptance": [
-        "CompanyOS 侧形成可复现的 clean PR 创建与验证流程",
-        "流程不依赖聊天状态或个人未登记环境"
+        "项目运行与验收不读取 CompanyOS 资源登记",
+        "资源、凭据引用、健康检查和 fallback 由 Peanut Admin 自身版本化登记约束"
       ],
-      "evidence": [],
-      "blockers": [
-        "尚无已合入的 CompanyOS clean PR 实现和固定候选证据"
-      ]
+      "evidence": [
+        {"kind": "resource", "ref": "resources/project-resources.json"}
+      ],
+      "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json"]
     },
     {
       "id": "PA-SAAS-001",

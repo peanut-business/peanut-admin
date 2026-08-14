@@ -33,7 +33,7 @@
 本报告下方的数据库与运行结果封存的是 2026-08-01 parity 验收现场，不是当前开发
 环境说明。该现场当时使用 `mac-2014` 上的旧 3306 端口与 `peanut_admin` 库；此资源
 后来退出，且没有当前迁移账本，不得连接或复用。现行开发资源只以根 `AGENTS.md` 和
-CompanyOS `resources/development-infrastructure.yaml` 为准：资源
+`resources/project-resources.json` 为准：资源
 `peanut-admin-mysql84-development`，地址
 `192.168.192.2:20183/peanut_admin_development`。报告中的表数、菜单数、配置数及脚本
 输出仍保留为对应固定日期的历史证据，不能替代 `v1.1.0` 的 50 条 migration 发布身份，

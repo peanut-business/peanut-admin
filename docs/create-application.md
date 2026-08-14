@@ -39,6 +39,8 @@ source-only 或 app-owned 演进无需伪造新的模板身份，而任何 manag
 当前 inventory 采用不可变 `v1.1.3` release。该版本在生产管理端 builder 执行 Vite 前，
 把应用根目录的 `plugins.lock` 精确复制为 `/build/plugins.lock`；Plugin contribution resolver
 仍直接读取这份 lock，缺失或无效内容继续 fail-closed，不会回退到默认或忽略 Plugin 状态。
+生产 PHP 镜像同时携带应用自己的 `resources/project-resources.json`，供启动阶段数据库环境
+门禁读取；登记缺失或与显式部署目标不一致时仍 fail-closed。
 
 生成的 `.peanut/application-manifest.json` 还固定参数、每个生成文件的 SHA-256、mode、分类、
 owner、managed/app-owned 树摘要与 managed baseline 路径。它是

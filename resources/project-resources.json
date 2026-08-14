@@ -4,7 +4,7 @@
   "authority": {
     "owner": "Peanut Admin maintainers",
     "source": "this versioned file",
-    "company_allocation_evidence": "/Users/xing/Documents/company-os/resources/development-infrastructure.yaml",
+    "resource_observation_policy": "validate this registry against the live resource before each stateful operation",
     "credentials_policy": "references only; secrets are never stored in Git",
     "local_port_policy": "registered values are defaults; PEANUT_LOCAL_ENV_FILE or .local/stack.env is the per-clone runtime source and existing overrides are preserved"
   },
@@ -14,7 +14,7 @@
         "stable_resource_id": "peanut-admin-host-php-development",
         "purpose": "default daily development API runtime",
         "environments": ["development"],
-        "owner": "Peanut Admin project; CompanyOS engineering-tooling allocation",
+        "owner": "Peanut Admin project",
         "host": "macbookpro-arm64",
         "bind_address": "0.0.0.0",
         "access_address": "127.0.0.1",
@@ -37,7 +37,7 @@
         "stable_resource_id": "peanut-admin-host-composer-development",
         "purpose": "locked PHP dependency installation for daily development",
         "environments": ["development"],
-        "owner": "Peanut Admin project; CompanyOS engineering-tooling allocation",
+        "owner": "Peanut Admin project",
         "host": "macbookpro-arm64",
         "port": null,
         "database": null,
@@ -63,7 +63,7 @@
           "development",
           "local-production-preview"
         ],
-        "owner": "Peanut Admin project; allocation source mac-14 CompanyOS registry",
+        "owner": "Peanut Admin project; remote host mac-14",
         "service_type": "mysql",
         "version": "8.4.10",
         "database": "peanut_admin_development",
@@ -91,7 +91,7 @@
         "data_source": "persistent Peanut Admin development data on mac-14",
         "freshness_requirement": "server/database/environment-guard.php --current must pass before application readiness",
         "health_check": {
-          "allocation": "scripts/company-development-database.sh status",
+          "allocation": "scripts/project-development-database.sh status",
           "host_connection": "scripts/local-stack.sh database-host-status",
           "container_connection": "scripts/local-stack.sh database-status"
         },
@@ -106,8 +106,8 @@
         "environments": [
           "development"
         ],
-        "owner": "Peanut Admin P0-E project-resource lease owner; allocation source mac-14 CompanyOS registry",
-        "allocation_resource_id": "peanut-admin-mysql84-development",
+        "owner": "Peanut Admin P0-E project-resource lease owner; remote host mac-14",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
         "service_type": "mysql",
         "version": "8.4.10",
         "application_runtime": false,
@@ -149,7 +149,7 @@
         "data_source": "the lease-fixed candidate tree, immutable v1.0.0/v1.1.0 tag trees and Gate-owned synthetic fixtures; persistent development and production data are forbidden",
         "freshness_requirement": "each fixed candidate uses a new lease-bound run_id; every scenario target must be absent or empty before setup, and its ordered migration checksums and ledger must be verified against that candidate before evidence capture",
         "health_check": {
-          "allocation": "scripts/company-development-database.sh status",
+          "allocation": "scripts/project-development-database.sh status",
           "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer <host|container> --resource-id peanut-admin-p0e-mysql84-gate --database-name <exact_lease_database>",
           "database": "after a successful claim, the Gate runner performs a credential-backed ping and SELECT DATABASE(), then verifies the candidate migration ledger"
         },

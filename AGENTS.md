@@ -7,9 +7,10 @@
 路线，执行规则由该独立文档维护。
 
 本项目数据库、缓存、队列、对象存储、外部服务、域名、容器消费入口与本地固定端口的
-版本化机器可读资源登记为 `resources/project-resources.json`。连接、启动、迁移、测试或
-部署前必须先读取该文件并显式选择资源 ID、环境和登记地址；CompanyOS 登记仅作为上游
-allocation 来源证据，不能替代本项目登记。
+版本化机器可读日常资源登记为 `resources/project-resources.json`；仅源仓 P0-E 资格工具及其
+远程管理绑定登记为 `resources/p0e-runtime-qualification.json`。连接、启动、迁移、测试或
+部署前必须先读取对应文件并显式选择资源 ID、环境和登记地址；本项目登记是唯一事实源，
+使用前还必须按登记的健康检查核验真实资源。
 
 ---
 
@@ -86,13 +87,12 @@ TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双
 - 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
 - 已完成：生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
 - 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`
-- 日常开发和本机生产模式预览只使用 CompanyOS 登记的
+- 日常开发和本机生产模式预览只使用 Peanut Admin 项目登记的
   `peanut-admin-mysql84-development`（development）：
   `192.168.192.2:20183/peanut_admin_development`，MySQL `8.4.10`。凭据引用为
   `mac-14:/Users/xing/.config/peanut-admin/development-db.env`，不得把密钥写入仓库。
-  CompanyOS 机器可读事实源为
-  `/Users/xing/Documents/company-os/resources/development-infrastructure.yaml`，使用规则为
-  同目录 `development-infrastructure.md`；使用前仍须按登记要求核验目标实况。旧开发
+  机器可读事实源为 `resources/project-resources.json`；P0-E 专用远程管理工具登记为
+  `resources/p0e-runtime-qualification.json`。使用前仍须按登记要求核验目标实况。旧开发
   端口 `3306` 与旧库名 `peanut_admin` 的组合没有迁移账本，不得连接或作为现行指引。
   本机不运行 Peanut Admin MySQL。当前生产服务器使用自身 `bundled-db` MySQL profile，
   不能路由开发局域网地址；两类资源由 `PEANUT_DEPLOYMENT_TARGET` 和
@@ -153,7 +153,7 @@ peanut-admin/
 - 管理端 API 登记默认值：`http://127.0.0.1:20180/`（由 `scripts/local-stack.sh dev-up` 托管）
 - 前端 Dev 登记默认值：`http://127.0.0.1:20181`（`pnpm dev`，位于 `web/`）
 - API 前缀：`admin/*`（管理端），`api/*`（前端/小程序）
-- 日常开发统一从 `scripts/local-stack.sh dev-up` 启动：API 使用 CompanyOS 登记的宿主
+- 日常开发统一从 `scripts/local-stack.sh dev-up` 启动：API 使用项目登记的宿主
   `/opt/homebrew/bin/php` 8.3.24 与 `/usr/local/bin/composer` 2.8.10；development Compose
   不含 PHP 服务，容器通过 `host.docker.internal:${PHP_PORT}` 访问宿主 API。所有本地
   监听从 `.local/stack.env` 或 `PEANUT_LOCAL_ENV_FILE` 读取，`201xx` 只是项目登记默认值。

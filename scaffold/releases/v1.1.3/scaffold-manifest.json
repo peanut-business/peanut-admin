@@ -3,11 +3,11 @@
     "protocol": "peanut.scaffold-release.v2",
     "release": {
         "version": "1.1.3",
-        "source_commit": "30c70328a59d31a95dc12a3a2b57a996650c05a9",
-        "source_tree": "1ecbddfae8d2f6dfae94423547819e10310ec226",
-        "inventory_sha256": "0b4c24475a79474ea1ca381ee40c534fd2500c15118e934dd180e70988cc8942",
+        "source_commit": "7b1769745fab287da8617a2a8fc3ea8947b0ce7c",
+        "source_tree": "5efcf2f7c79730d4703df8d6c041b9db4a161968",
+        "inventory_sha256": "85be21d21203707fe6f9a13749d8a7edb9fbe7579a0f900cbd12af62b99002b0",
         "inventory_template_version": "1.1.3",
-        "managed_tree_sha256": "79efad54a0c32c3fcde70d13894a473adf0f057e7a60fbcd630018ddf0d42bf1",
+        "managed_tree_sha256": "49c72e21ff7deacc50ee2b28e8c2ac3f1ec783d62ec25c238652a5d3f25466eb",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -198,7 +198,7 @@
         {
             "path": "deploy/docker/production.Dockerfile",
             "source": "files/deploy/docker/production.Dockerfile",
-            "template_sha256": "165d585bc4142052dd67034df99e9e0ab8f46a06e8ca598e2d341e3206b0a006",
+            "template_sha256": "a9925a7a5d8939bbfe3a706a1b9550642c8dc3ff7b4c4ff3b1da9618592388ec",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

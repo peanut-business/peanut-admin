@@ -1,0 +1,1128 @@
+#!/usr/bin/env python3
+"""Run the lease-bound, fixed-candidate P0-E runtime qualification gate."""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import hashlib
+import json
+import os
+import re
+import secrets
+import shlex
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import time
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parent.parent
+FIXTURE_PATH = ROOT / "server/tests/fixtures/p0e-runtime-qualification/matrix.json"
+REGISTRY_PATH = ROOT / "resources/project-resources.json"
+P0E_REGISTRY_PATH = ROOT / "resources/p0e-runtime-qualification.json"
+LEASE_TOOL = ROOT / "scripts/project-resource-lease"
+REGISTRY_TOOL = ROOT / "scripts/project-resource-registry"
+INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
+BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
+PERSISTENT_DATABASE = "peanut_admin_development"
+RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
+ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
+GROUP_RESULT = re.compile(r"^[a-z0-9][a-z0-9.-]{0,63}$")
+
+
+class GateError(RuntimeError):
+    pass
+
+
+def fail(message: str) -> None:
+    raise GateError(message)
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exception:
+        fail(f"cannot read JSON {path}: {exception}")
+    if not isinstance(value, dict):
+        fail(f"JSON root must be an object: {path}")
+    return value
+
+
+def command(
+    arguments: list[str],
+    *,
+    cwd: Path = ROOT,
+    env: dict[str, str] | None = None,
+    log: Path | None = None,
+    capture: bool = False,
+    check: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    merged = os.environ.copy()
+    if env:
+        merged.update(env)
+    if log is not None:
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as stream:
+            result = subprocess.run(
+                arguments,
+                cwd=cwd,
+                env=merged,
+                text=True,
+                stdout=stream,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+    else:
+        result = subprocess.run(
+            arguments,
+            cwd=cwd,
+            env=merged,
+            text=True,
+            capture_output=capture,
+            check=False,
+        )
+    if check and result.returncode != 0:
+        detail = ""
+        if capture:
+            detail = (result.stderr or result.stdout or "").strip()
+        suffix = f": {detail}" if detail else ""
+        fail(f"command failed ({result.returncode}): {arguments[0]}{suffix}")
+    return result
+
+
+def git(*arguments: str) -> str:
+    return command(["git", "-C", str(ROOT), *arguments], capture=True).stdout.strip()
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def required_environment(name: str) -> str:
+    value = os.environ.get(name, "")
+    if not value:
+        fail(f"missing required environment: {name}")
+    return value
+
+
+def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    fixture = read_json(FIXTURE_PATH)
+    registry = read_json(REGISTRY_PATH)
+    p0e_registry = read_json(P0E_REGISTRY_PATH)
+    if fixture.get("schema_version") != 1 or fixture.get("gate") != "p0e-runtime-qualification":
+        fail("unsupported P0-E fixture")
+    db_fixture = fixture.get("database_resource")
+    if not isinstance(db_fixture, dict):
+        fail("fixture database_resource is invalid")
+    databases = registry.get("resources", {}).get("databases", [])
+    matches = [item for item in databases if item.get("stable_resource_id") == RESOURCE_ID]
+    if len(matches) != 1:
+        fail(f"registry must contain exactly one {RESOURCE_ID}")
+    registered = matches[0]
+    if (
+        p0e_registry.get("schema_version") != 1
+        or p0e_registry.get("project_id") != "peanut-admin"
+        or p0e_registry.get("gate") != "p0e-runtime-qualification"
+    ):
+        fail("unsupported P0-E resource registry")
+    binding = p0e_registry.get("database_administration_binding")
+    if not isinstance(binding, dict):
+        fail("P0-E database administration binding is invalid")
+    expected_binding = {
+        "database_resource_id": RESOURCE_ID,
+        "runtime_resource_id": registered.get("runtime_resource_id"),
+        "administrative_tooling_resource_id": ADMIN_TOOLING_ID,
+        "host": "mac-14",
+        "port": registered.get("upstream_endpoint", {}).get("port"),
+        "database": registered.get("database"),
+        "namespace": registered.get("namespace"),
+        "version": registered.get("version"),
+        "fallback": "none",
+    }
+    for key, value in expected_binding.items():
+        if binding.get(key) != value:
+            fail(f"P0-E database administration binding disagrees on {key}")
+    tooling = p0e_registry.get("resources", {}).get("tooling", [])
+    tool_matches = [item for item in tooling if item.get("stable_resource_id") == ADMIN_TOOLING_ID]
+    if len(tool_matches) != 1:
+        fail(f"registry must contain exactly one {ADMIN_TOOLING_ID}")
+    admin_tool = tool_matches[0]
+    expected_tool = {
+        "version": registered.get("version"),
+        "host": "mac-14",
+        "transport": "ssh-docker-exec",
+        "ssh_alias": "mac-14",
+        "ssh_command": "/usr/bin/ssh",
+        "docker_command": "/usr/local/bin/docker",
+        "container_name": "peanut-admin-mysql84-development",
+        "container_image": "mysql:8.4.10@sha256:8dbcf531a03aade657e181b9cf2f1d1803ce621a1d55610cb44cb531ab7d7db6",
+        "mysql_command": "/usr/bin/mysql",
+        "mysqldump_command": "/usr/bin/mysqldump",
+    }
+    for key, value in expected_tool.items():
+        if admin_tool.get(key) != value:
+            fail(f"registered P0-E administrative tooling disagrees on {key}")
+    if admin_tool.get("fallback") != "none; host mysql and mysqldump commands are forbidden":
+        fail("P0-E administrative tooling must forbid a host CLI fallback")
+    expected = {
+        "stable_resource_id": registered.get("stable_resource_id"),
+        "environment": (registered.get("environments") or [None])[0],
+        "host": registered.get("upstream_endpoint", {}).get("host"),
+        "port": registered.get("upstream_endpoint", {}).get("port"),
+        "database_template": registered.get("database"),
+    }
+    for key, value in expected.items():
+        if db_fixture.get(key) != value:
+            fail(f"fixture and resource registry disagree on {key}")
+    if registered.get("application_runtime") is not False or registered.get("fallback") != "none":
+        fail("P0-E registry must remain non-default and fail closed")
+    scenarios = fixture.get("scenarios")
+    if not isinstance(scenarios, dict) or set(scenarios) != set(registered.get("allowed_scenarios", [])):
+        fail("fixture scenarios must exactly match the registered scenario set")
+    groups = fixture.get("groups")
+    if not isinstance(groups, list) or len(groups) != len(set(groups)) or any(
+        not isinstance(item, str) or not GROUP_RESULT.fullmatch(item) for item in groups
+    ):
+        fail("fixture groups are invalid")
+    migrations = sorted((ROOT / "server/database/migrations").glob("*.sql"))
+    if len(migrations) != db_fixture.get("migration_count"):
+        fail(
+            f"candidate migration count {len(migrations)} does not equal the fixed "
+            f"qualification count {db_fixture.get('migration_count')}"
+        )
+    for baseline in fixture.get("baselines", []):
+        resolved = git("rev-parse", f"{baseline}^{{commit}}")
+        if not re.fullmatch(r"[0-9a-f]{40}", resolved):
+            fail(f"baseline tag is unavailable: {baseline}")
+    return fixture, registry, registered, admin_tool
+
+
+def validate_candidate(candidate: str, require_clean: bool, allowed_output: Path | None = None) -> tuple[str, str]:
+    if not re.fullmatch(r"[0-9a-f]{40}", candidate):
+        fail("candidate must be an exact lowercase 40-hex commit")
+    resolved = git("rev-parse", f"{candidate}^{{commit}}")
+    head = git("rev-parse", "HEAD")
+    if resolved != candidate or head != candidate:
+        fail(f"worktree HEAD {head} is not fixed candidate {candidate}")
+    tree = git("rev-parse", f"{candidate}^{{tree}}")
+    if require_clean:
+        status_arguments = ["status", "--porcelain=v1", "--untracked-files=all"]
+        if allowed_output is not None:
+            try:
+                relative_output = allowed_output.relative_to(ROOT)
+            except ValueError:
+                fail("allowed runtime output must be within the candidate worktree")
+            status_arguments.extend(["--", ".", f":(exclude){relative_output.as_posix()}/**"])
+        if git(*status_arguments):
+            fail("fixed candidate worktree is not clean")
+    return head, tree
+
+
+def absolute_path(value: str, label: str, run_id: str) -> Path:
+    path = Path(value)
+    if not path.is_absolute():
+        fail(f"{label} must be absolute")
+    normalized = Path(os.path.realpath(path.parent)) / path.name
+    if run_id not in normalized.name:
+        fail(f"{label} basename must contain exact run_id")
+    if normalized in (Path("/"), Path.home(), ROOT):
+        fail(f"unsafe {label}")
+    return normalized
+
+
+def database_names(fixture: dict[str, Any], run_id: str) -> dict[str, str]:
+    if not re.fullmatch(r"[a-z0-9]{1,11}", run_id):
+        fail("run_id must match ^[a-z0-9]{1,11}$")
+    template = fixture["database_resource"]["database_template"]
+    names = {
+        scenario: template.replace("<run_id>", run_id).replace("<scenario>", scenario)
+        for scenario in fixture["scenarios"]
+    }
+    for name in names.values():
+        if name == PERSISTENT_DATABASE or not re.fullmatch(r"[a-z0-9_]{1,64}", name):
+            fail(f"unsafe generated database name: {name}")
+    return names
+
+
+def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
+    fixture, registry, _, admin_tool = validate_fixture()
+    names = database_names(fixture, args.run_id)
+    paths = {
+        "output-dir": str(absolute_path(args.output_dir, "output-dir", args.run_id)),
+        "backup-dir": str(absolute_path(args.backup_dir, "backup-dir", args.run_id)),
+        "cache-dir": str(absolute_path(args.cache_dir, "cache-dir", args.run_id)),
+    }
+    expected_paths = {
+        "output-dir": str(ROOT / "output" / f"p0e-{args.run_id}"),
+        "backup-dir": str(Path.home() / ".local/state/peanut-admin" / f"p0e-backup-{args.run_id}"),
+        "cache-dir": str(Path.home() / ".cache/peanut-admin" / f"p0e-{args.run_id}"),
+    }
+    if paths != expected_paths:
+        fail(f"output/backup/cache paths must equal the fixed lease proof contract: {expected_paths}")
+    _, tree = validate_candidate(
+        args.candidate,
+        require_clean=require_clean,
+        allowed_output=Path(paths["output-dir"]),
+    )
+    ports = [args.http_port, args.docs_port]
+    if len(set(ports)) != 2 or any(port < 1024 or port > 65535 for port in ports):
+        fail("http/docs ports must be distinct explicit non-privileged ports")
+    registered_ports = {
+        item.get("port_env"): item.get("port")
+        for item in registry.get("resources", {}).get("local_listeners", [])
+    }
+    if args.http_port != registered_ports.get("HTTP_PORT") or args.docs_port != registered_ports.get("DOCS_PORT"):
+        fail("http/docs ports must equal the registered local-production/docs listener ports")
+    compose_project = f"peanut-p0e-{args.run_id}"
+    common_dir_raw = git("rev-parse", "--git-common-dir")
+    common_dir = Path(common_dir_raw)
+    if not common_dir.is_absolute():
+        common_dir = ROOT / common_dir
+    common_dir = Path(os.path.realpath(common_dir))
+    lease_proof_dir = common_dir / "peanut-admin-resource-leases/leases" / args.lease
+    resources: list[tuple[str, str]] = [
+        ("resource-id", RESOURCE_ID),
+        ("environment", "development"),
+        ("deployment-target", "local-production-preview"),
+        ("consumer", "host"),
+        ("consumer", "container"),
+        ("endpoint", f"{fixture['database_resource']['host']}:{fixture['database_resource']['port']}"),
+        ("run-id", args.run_id),
+        ("candidate-tree", tree),
+        *(("mysql-db", value) for value in names.values()),
+        ("deployment-mode", "standalone"),
+        ("deployment-mode", "multi-tenant"),
+        (("port", str(args.http_port))),
+        (("port", str(args.docs_port))),
+        ("http-port", str(args.http_port)),
+        ("docs-port", str(args.docs_port)),
+        ("cache-dir", paths["cache-dir"]),
+        ("output-dir", paths["output-dir"]),
+        ("backup-dir", paths["backup-dir"]),
+        ("compose-project", compose_project),
+        ("browser-session", f"p0e-{args.run_id}"),
+        ("lease-proof-dir", str(lease_proof_dir)),
+    ]
+    return {
+        "schema_version": 1,
+        "gate": fixture["gate"],
+        "candidate": args.candidate,
+        "candidate_tree": tree,
+        "worktree": str(ROOT),
+        "run_id": args.run_id,
+        "resource_id": RESOURCE_ID,
+        "database_admin_tooling": {
+            key: admin_tool[key]
+            for key in (
+                "stable_resource_id", "version", "host", "transport", "ssh_alias",
+                "ssh_command", "docker_command", "container_name", "container_image",
+                "mysql_command", "mysqldump_command", "fallback",
+            )
+        },
+        "environment": "development",
+        "endpoint": f"{fixture['database_resource']['host']}:{fixture['database_resource']['port']}",
+        "databases": names,
+        "ports": {"http": args.http_port, "docs": args.docs_port},
+        "paths": paths,
+        "compose_project": compose_project,
+        "lease_proof_dir": str(lease_proof_dir),
+        "lease_proof_container_path": "/run/peanut-admin/resource-lease",
+        "groups": fixture["groups"],
+        "lease_resources": [{"type": kind, "value": value} for kind, value in resources],
+    }
+
+
+def parse_lease(raw: str) -> tuple[dict[str, str], set[tuple[str, str]]]:
+    metadata: dict[str, str] = {}
+    resources: set[tuple[str, str]] = set()
+    in_resources = False
+    for line in raw.splitlines():
+        if line == "resources":
+            in_resources = True
+            continue
+        fields = line.split("\t", 1)
+        if len(fields) != 2:
+            fail("lease output is malformed")
+        if in_resources:
+            resources.add((fields[0], fields[1]))
+        else:
+            metadata[fields[0]] = fields[1]
+    return metadata, resources
+
+
+def expected_resources(plan_data: dict[str, Any]) -> set[tuple[str, str]]:
+    return {(item["type"], item["value"]) for item in plan_data["lease_resources"]} | {
+        ("gate", plan_data["gate"]),
+        ("worktree", plan_data["worktree"]),
+    }
+
+
+def claim(args: argparse.Namespace, plan_data: dict[str, Any]) -> None:
+    for path in plan_data["paths"].values():
+        if Path(path).exists():
+            fail(f"claim path already exists: {path}")
+    invocation = [
+        str(LEASE_TOOL), "claim", "--lease", args.lease, "--owner", args.owner,
+        "--thread", args.thread, "--candidate", args.candidate, "--gate", plan_data["gate"],
+        "--ttl", str(args.ttl),
+    ]
+    for item in plan_data["lease_resources"]:
+        invocation.extend(["--resource", f"{item['type']}={item['value']}"])
+    command(invocation)
+
+
+def verify_lease(args: argparse.Namespace, plan_data: dict[str, Any]) -> None:
+    raw = command([str(LEASE_TOOL), "show", "--lease", args.lease], capture=True).stdout
+    metadata, resources = parse_lease(raw)
+    now = int(time.time())
+    expected_metadata = {
+        "lease": args.lease,
+        "owner": args.owner,
+        "thread": args.thread,
+        "candidate": args.candidate,
+        "gate": plan_data["gate"],
+        "worktree": plan_data["worktree"],
+        "status": "ACTIVE",
+    }
+    for key, value in expected_metadata.items():
+        if metadata.get(key) != value:
+            fail(f"lease {key} mismatch")
+    if not metadata.get("expires_at", "").isdigit() or int(metadata["expires_at"]) <= now:
+        fail("lease is expired")
+    if resources != expected_resources(plan_data):
+        missing = sorted(expected_resources(plan_data) - resources)
+        extra = sorted(resources - expected_resources(plan_data))
+        fail(f"lease resource set mismatch; missing={missing}, extra={extra}")
+
+
+class Runner:
+    def __init__(self, args: argparse.Namespace, plan_data: dict[str, Any], fixture: dict[str, Any]) -> None:
+        self.args = args
+        self.plan = plan_data
+        self.fixture = fixture
+        self.output = Path(plan_data["paths"]["output-dir"])
+        self.backup = Path(plan_data["paths"]["backup-dir"])
+        self.cache = Path(plan_data["paths"]["cache-dir"])
+        self.checkpoint_path = self.output / "checkpoint.json"
+        self.summary_path = self.output / "summary.json"
+        self.generated = self.cache / "generated-application"
+        self.compose_env = self.cache / "compose.env"
+        self.compose_overlay = self.cache / "compose.lease-proof.yml"
+        self.docs_process: subprocess.Popen[str] | None = None
+        self.created_candidate_vendor = not (ROOT / "server/vendor/autoload.php").exists()
+        self.current_group = "preflight"
+        self.checkpoint: dict[str, Any] = {
+            "schema_version": 1,
+            "candidate": args.candidate,
+            "candidate_tree": plan_data["candidate_tree"],
+            "run_id": args.run_id,
+            "lease": args.lease,
+            "owned_candidate_vendor": self.created_candidate_vendor,
+            "groups": {},
+        }
+
+    def remote_docker(
+        self,
+        arguments: list[str],
+        *,
+        input_bytes: bytes | None = None,
+        stdin: Any = None,
+        stdout: Any = subprocess.PIPE,
+        check: bool = True,
+    ) -> subprocess.CompletedProcess[bytes]:
+        tool = self.plan["database_admin_tooling"]
+        remote_command = shlex.join([tool["docker_command"], *arguments])
+        result = subprocess.run(
+            [
+                tool["ssh_command"], "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+                tool["ssh_alias"], remote_command,
+            ],
+            input=input_bytes,
+            stdin=stdin,
+            stdout=stdout,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if check and result.returncode != 0:
+            detail = result.stderr.decode("utf-8", errors="replace").strip()
+            fail(f"registered remote database administration failed ({result.returncode}): {detail}")
+        return result
+
+    def preflight_database_admin_tooling(self) -> None:
+        tool = self.plan["database_admin_tooling"]
+        ssh_command = Path(tool["ssh_command"])
+        if not ssh_command.is_file() or not os.access(ssh_command, os.X_OK):
+            fail("registered SSH client is unavailable")
+        inspect = self.remote_docker([
+            "inspect", tool["container_name"], "--format",
+            "{{.Config.Image}}|{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}",
+        ]).stdout.decode("utf-8", errors="replace").strip()
+        if inspect != f"{tool['container_image']}|running|healthy":
+            fail("registered MySQL allocation identity or health is not current")
+        probe_script = (
+            'test -x "$1" && test -x "$2" && '
+            '"$1" --version && "$2" --version && printf "user=%s\\n" "$MYSQL_USER"'
+        )
+        probe = self.remote_docker([
+            "exec", tool["container_name"], "/bin/sh", "-ceu", probe_script,
+            "p0e-admin-tooling", tool["mysql_command"], tool["mysqldump_command"],
+        ]).stdout.decode("utf-8", errors="replace")
+        if probe.count(tool["version"]) < 2:
+            fail("registered remote MySQL client version is unavailable")
+        expected_user = required_environment("P0E_DB_USER")
+        if f"user={expected_user}\n" not in probe:
+            fail("P0-E application database identity does not match the registered allocation")
+
+    def remote_mysql(self, sql: str, *, database: str | None = None) -> str:
+        tool = self.plan["database_admin_tooling"]
+        client_script = (
+            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
+            'if [ "$#" -eq 2 ]; then '
+            'exec "$1" --protocol=SOCKET --user=root --batch --raw --skip-column-names "$2"; '
+            'fi; exec "$1" --protocol=SOCKET --user=root --batch --raw --skip-column-names'
+        )
+        arguments = [
+            "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", client_script,
+            "p0e-mysql", tool["mysql_command"],
+        ]
+        if database is not None:
+            arguments.append(database)
+        result = self.remote_docker(arguments, input_bytes=(sql + "\n").encode("utf-8"))
+        return result.stdout.decode("utf-8", errors="strict")
+
+    def remote_dump(self, database: str, destination: Path) -> None:
+        tool = self.plan["database_admin_tooling"]
+        dump_script = (
+            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
+            'exec "$1" --protocol=SOCKET --user=root --single-transaction --routines '
+            '--triggers --no-tablespaces --hex-blob "$2"'
+        )
+        with destination.open("wb") as stream:
+            self.remote_docker([
+                "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", dump_script,
+                "p0e-mysqldump", tool["mysqldump_command"], database,
+            ], stdout=stream)
+
+    def remote_restore(self, database: str, source: Path) -> None:
+        tool = self.plan["database_admin_tooling"]
+        restore_script = (
+            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
+            'exec "$1" --protocol=SOCKET --user=root "$2"'
+        )
+        with source.open("rb") as stream:
+            self.remote_docker([
+                "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", restore_script,
+                "p0e-mysql-restore", tool["mysql_command"], database,
+            ], stdin=stream)
+
+    def initialize(self) -> None:
+        for port in self.plan["ports"].values():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                probe.settimeout(0.5)
+                if probe.connect_ex(("127.0.0.1", int(port))) == 0:
+                    fail(f"lease-bound listener port is already active: {port}")
+        for path in (self.output, self.backup, self.cache):
+            path.mkdir(parents=True, exist_ok=False)
+            path.chmod(0o700)
+        (self.output / "groups").mkdir()
+        self.write_json(self.output / "plan.json", self.plan)
+        self.save_checkpoint()
+
+    def resume(self) -> None:
+        for path in (self.output, self.backup, self.cache):
+            if not path.is_dir():
+                fail(f"resume path is unavailable: {path}")
+        checkpoint = read_json(self.checkpoint_path)
+        for key, expected in {
+            "candidate": self.args.candidate,
+            "candidate_tree": self.plan["candidate_tree"],
+            "run_id": self.args.run_id,
+            "lease": self.args.lease,
+        }.items():
+            if checkpoint.get(key) != expected:
+                fail(f"checkpoint {key} mismatch")
+        self.checkpoint = checkpoint
+        self.created_candidate_vendor = bool(checkpoint.get("owned_candidate_vendor"))
+
+    @staticmethod
+    def write_json(path: Path, value: Any) -> None:
+        temporary = path.with_name(path.name + ".tmp")
+        temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(path)
+
+    def save_checkpoint(self) -> None:
+        self.write_json(self.checkpoint_path, self.checkpoint)
+
+    def group_log(self, group: str) -> Path:
+        return self.output / "groups" / f"{group}.log"
+
+    def run_group(self, group: str, operation: Any) -> None:
+        state = self.checkpoint["groups"].get(group, {})
+        if state.get("status") == "passed":
+            return
+        verify_lease(self.args, self.plan)
+        command([
+            str(LEASE_TOOL), "renew", "--lease", self.args.lease, "--owner", self.args.owner,
+            "--ttl", str(self.args.ttl),
+        ])
+        if state.get("status") in ("failed", "running"):
+            self.prepare_retry(group)
+        self.current_group = group
+        self.checkpoint["groups"][group] = {"status": "running", "started_at": int(time.time())}
+        self.save_checkpoint()
+        operation()
+        self.checkpoint["groups"][group] = {"status": "passed", "finished_at": int(time.time())}
+        self.save_checkpoint()
+
+    def prepare_retry(self, group: str) -> None:
+        scenarios = {
+            "standalone-fresh": ["standalone_fresh"],
+            "multi-tenant-fresh": ["multi_tenant_fresh"],
+            "v1.0-forward": ["v1_0_forward"],
+            "v1.1-forward": ["v1_1_forward"],
+            "migration-fault-restore": ["migration_fault_source", "migration_fault_restore"],
+            "plugin-lifecycle": ["plugin_lifecycle"],
+            "production-compose": ["standalone_browser"],
+        }
+        if group == "generated-application":
+            if self.generated.exists():
+                shutil.rmtree(self.generated)
+            if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
+                shutil.rmtree(ROOT / "server/vendor")
+        if group in ("v1.0-forward", "v1.1-forward"):
+            baseline = "v1.0.0" if group == "v1.0-forward" else "v1.1.0"
+            with contextlib.suppress(FileNotFoundError):
+                shutil.rmtree(self.cache / f"baseline-{baseline}")
+        if group == "production-compose" and self.compose_env.exists() and self.compose_overlay.exists():
+            self.compose("down", "--volumes", "--remove-orphans", check=False)
+        for scenario in scenarios.get(group, []):
+            database = self.plan["databases"][scenario]
+            if self.database_exists(database):
+                self.drop_database(database)
+
+    def db_env(self, database: str, mode: str, consumer: str = "host") -> dict[str, str]:
+        if consumer not in ("host", "container"):
+            fail(f"invalid database consumer: {consumer}")
+        selector = command([
+            str(REGISTRY_TOOL), "database-env", "--deployment-target", "local-development",
+            "--consumer", consumer, "--resource-id", RESOURCE_ID, "--database-name", database,
+        ], capture=True).stdout
+        values: dict[str, str] = {}
+        for line in selector.splitlines():
+            name, separator, value = line.partition("=")
+            if not separator:
+                fail("database selector returned malformed output")
+            values[name] = value
+        if values.get("PEANUT_DATABASE_RESOURCE_ID") != RESOURCE_ID:
+            fail("database selector changed the resource identity")
+        if values.get("DB_NAME") != database or values.get("DB_NAME") == PERSISTENT_DATABASE:
+            fail("database selector returned a forbidden database")
+        values.update({
+            "DB_USER": required_environment("P0E_DB_USER"),
+            "DB_PASS": required_environment("P0E_DB_PASSWORD"),
+            "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
+            "ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
+            "PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
+            "PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
+            "DEPLOYMENT_MODE": mode,
+        })
+        return values
+
+    def database_exists(self, database: str) -> bool:
+        escaped = database.replace("'", "''")
+        result = self.remote_mysql(
+            f"SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='{escaped}'"
+        ).strip()
+        return result == "1"
+
+    def create_database(self, database: str) -> None:
+        if database not in self.plan["databases"].values() or database == PERSISTENT_DATABASE:
+            fail(f"refusing to create unowned database: {database}")
+        if self.database_exists(database):
+            fail(f"lease-owned database must be absent before creation: {database}")
+        user = required_environment("P0E_DB_USER")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,32}", user):
+            fail("P0-E database user is not a safe registered account name")
+        escaped_user = user.replace("'", "''")
+        self.remote_mysql(
+            f"CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci; "
+            f"GRANT ALL PRIVILEGES ON `{database}`.* TO '{escaped_user}'@'%';"
+        )
+
+    def drop_database(self, database: str) -> None:
+        if database not in self.plan["databases"].values() or database == PERSISTENT_DATABASE:
+            fail(f"refusing to drop unowned database: {database}")
+        user = required_environment("P0E_DB_USER")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,32}", user):
+            fail("P0-E database user is not a safe registered account name")
+        escaped_user = user.replace("'", "''")
+        grant_count = self.remote_mysql(
+            "SELECT COUNT(*) FROM information_schema.SCHEMA_PRIVILEGES "
+            f"WHERE TABLE_SCHEMA='{database}' AND "
+            f"GRANTEE=CONCAT(CHAR(39),'{escaped_user}',CHAR(39),'@',CHAR(39),'%',CHAR(39))"
+        ).strip()
+        if grant_count != "0":
+            self.remote_mysql(f"REVOKE ALL PRIVILEGES ON `{database}`.* FROM '{escaped_user}'@'%'")
+        self.remote_mysql(f"DROP DATABASE IF EXISTS `{database}`")
+
+    def install_current(self, database: str, mode: str, log: Path) -> None:
+        command(["php", "server/database/install.php"], env=self.db_env(database, mode), log=log)
+        self.assert_up_to_date(database, mode, log)
+
+    def assert_up_to_date(self, database: str, mode: str, log: Path) -> None:
+        result = command(
+            ["php", "server/database/migrate.php"],
+            env=self.db_env(database, mode),
+            capture=True,
+        )
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write(result.stdout)
+        parsed = json.loads(result.stdout)
+        if parsed.get("status") != "up_to_date" or parsed.get("ledger_count") != self.fixture["database_resource"]["migration_count"]:
+            fail(f"migration idempotency/current assertion failed for {database}")
+
+    def inspect(self, database: str, mode: str, label: str) -> None:
+        inspector_mode = "multitenant-empty" if mode == "multi-tenant" else (
+            "v1-forward" if "forward" in label else "standalone-empty"
+        )
+        env = self.db_env(database, mode) | {
+            "MT05_MODE": inspector_mode,
+            "MT05_DEPLOYMENT_MODE": mode,
+            "MT05_CANDIDATE": self.args.candidate,
+            "MT05_RUN_ID": self.args.run_id,
+        }
+        result = command(["php", str(INSPECTOR)], env=env, capture=True)
+        parsed = json.loads(result.stdout)
+        if parsed.get("status") != "passed" or parsed.get("migration_ledger", {}).get("count") != self.fixture["database_resource"]["migration_count"]:
+            fail(f"database inspection failed for {label}")
+        self.write_json(self.output / "groups" / f"{label}.json", parsed)
+
+    def generated_application(self) -> None:
+        log = self.group_log("generated-application")
+        create_app_excludes = self.cache / "create-app-git-excludes"
+        create_app_excludes.write_text(
+            f"/{self.output.relative_to(ROOT).as_posix()}/\n",
+            encoding="utf-8",
+        )
+        command([
+            "php", "scripts/create-app", "--name=P0E Qualification", "--slug=p0e-qualification",
+            "--package=p0e/qualification", f"--target={self.generated}",
+        ], env={
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "core.excludesFile",
+            "GIT_CONFIG_VALUE_0": str(create_app_excludes),
+        }, log=log)
+        composer_env = {"COMPOSER_CACHE_DIR": str(self.cache / "composer")}
+        command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=self.generated / "server", env=composer_env, log=log)
+        command(["php", "-r", "require 'vendor/autoload.php'; echo 'autoload=ok\\n';"], cwd=self.generated / "server", log=log)
+        if self.created_candidate_vendor:
+            command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=ROOT / "server", env=composer_env, log=log)
+        command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=self.generated / "web", log=log)
+        command(["pnpm", "run", "build"], cwd=self.generated / "web", log=log)
+        command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=self.generated / "pc", log=log)
+        command(["npm", "run", "typecheck"], cwd=self.generated / "pc", log=log)
+        command(["npm", "run", "generate"], cwd=self.generated / "pc", log=log)
+        command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=self.generated / "uniapp", log=log)
+        command(["npm", "run", "type-check"], cwd=self.generated / "uniapp", log=log)
+        command(["npm", "run", "build:h5"], cwd=self.generated / "uniapp", log=log)
+        command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=self.generated / "docs-site", log=log)
+        command(["pnpm", "run", "build"], cwd=self.generated / "docs-site", log=log)
+
+    def fresh(self, scenario: str, group: str, mode: str) -> None:
+        database = self.plan["databases"][scenario]
+        log = self.group_log(group)
+        self.create_database(database)
+        self.install_current(database, mode, log)
+        self.inspect(database, mode, group)
+        self.drop_database(database)
+
+    def forward(self, scenario: str, group: str, baseline: str) -> None:
+        database = self.plan["databases"][scenario]
+        log = self.group_log(group)
+        baseline_root = self.cache / f"baseline-{baseline}"
+        baseline_root.mkdir(parents=True, exist_ok=False)
+        # git archive must stream into tar; use a pipeline without shell interpolation.
+        producer = subprocess.Popen(["git", "-C", str(ROOT), "archive", "--format=tar", baseline, "server"], stdout=subprocess.PIPE)
+        consumer = subprocess.run(["tar", "-xf", "-", "-C", str(baseline_root)], stdin=producer.stdout, check=False)
+        if producer.stdout is not None:
+            producer.stdout.close()
+        producer_status = producer.wait()
+        if producer_status != 0 or consumer.returncode != 0:
+            fail(f"cannot extract baseline {baseline}")
+        baseline_server = baseline_root / "server"
+        if baseline == "v1.1.0":
+            command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=baseline_server, env={"COMPOSER_CACHE_DIR": str(self.cache / "composer")}, log=log)
+        self.create_database(database)
+        env = self.db_env(database, "standalone")
+        command(["php", str(baseline_server / "database/install.php")], env=env, log=log)
+        command(["php", "server/database/migrate.php", "--adopt-existing"], env=env, log=log)
+        self.assert_up_to_date(database, "standalone", log)
+        self.inspect(database, "standalone", group)
+        self.drop_database(database)
+
+    def migration_fault_restore(self) -> None:
+        source = self.plan["databases"]["migration_fault_source"]
+        restore = self.plan["databases"]["migration_fault_restore"]
+        log = self.group_log("migration-fault-restore")
+        dump = self.backup / "migration-fault-source.sql"
+        self.create_database(source)
+        self.install_current(source, "standalone", log)
+        self.remote_dump(source, dump)
+        if dump.stat().st_size < 1024:
+            fail("verified migration backup was not created")
+        backup_digest = sha256(dump)
+        latest = sorted((ROOT / "server/database/migrations").glob("*.sql"))[-1].name
+        self.remote_mysql(
+            "UPDATE pa_schema_migration SET status='failed',error='P0E_INJECTED_MIGRATION_FAULT' "
+            f"WHERE migration='{latest}'",
+            database=source,
+        )
+        failed = command(["php", "server/database/migrate.php"], env=self.db_env(source, "standalone"), log=log, check=False)
+        if failed.returncode == 0:
+            fail("injected migration fault was not rejected")
+        self.create_database(restore)
+        self.remote_restore(restore, dump)
+        self.inspect(restore, "standalone", "migration-fault-restore")
+        self.write_json(self.output / "groups/migration-fault-backup.json", {
+            "schema_version": 1,
+            "source_database": source,
+            "restore_database": restore,
+            "backup_sha256": backup_digest,
+            "backup_bytes": dump.stat().st_size,
+            "fault_migration": latest,
+            "fault_rejected": True,
+            "restore_verified": True,
+        })
+        self.drop_database(source)
+        self.drop_database(restore)
+
+    def plugin_lifecycle(self) -> None:
+        database = self.plan["databases"]["plugin_lifecycle"]
+        log = self.group_log("plugin-lifecycle")
+        self.create_database(database)
+        self.install_current(database, "multi-tenant", log)
+        command(["php", "server/fixtures/plugin-module-lifecycle/run.php"], env=self.db_env(database, "multi-tenant"), log=log)
+        self.inspect(database, "multi-tenant", "plugin-lifecycle")
+        self.drop_database(database)
+
+    def write_compose_env(self, database: str, mode: str) -> None:
+        values = self.db_env(database, mode, consumer="container")
+        values.update({
+            "APP_ENV": "production",
+            "PEANUT_DEPLOYMENT_TARGET": "local-production-preview",
+            "HTTP_PORT": str(self.plan["ports"]["http"]),
+            "JWT_SECRET": secrets.token_hex(32),
+            "TENANT_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
+            "PLATFORM_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
+            "PHP_IMAGE": f"peanut-p0e-php:{self.args.run_id}",
+            "NGINX_IMAGE": f"peanut-p0e-nginx:{self.args.run_id}",
+        })
+        temporary = self.compose_env.with_suffix(".tmp")
+        temporary.write_text("".join(f"{key}={value}\n" for key, value in values.items()), encoding="utf-8")
+        temporary.chmod(0o600)
+        temporary.replace(self.compose_env)
+        proof_dir = Path(self.plan["lease_proof_dir"])
+        if not proof_dir.is_dir():
+            fail(f"active lease proof directory is unavailable: {proof_dir}")
+        overlay = (
+            "services:\n"
+            "  php:\n"
+            "    environment:\n"
+            f"      PEANUT_RESOURCE_LEASE_PROOF: {self.plan['lease_proof_container_path']}\n"
+            "    volumes:\n"
+            "      - type: bind\n"
+            f"        source: {proof_dir}\n"
+            f"        target: {self.plan['lease_proof_container_path']}\n"
+            "        read_only: true\n"
+        )
+        self.compose_overlay.write_text(overlay, encoding="utf-8")
+        self.compose_overlay.chmod(0o600)
+
+    def compose_environment(self) -> dict[str, str]:
+        try:
+            lines = self.compose_env.read_text(encoding="utf-8").splitlines()
+        except OSError as exception:
+            fail(f"cannot read Compose environment {self.compose_env}: {exception}")
+        values: dict[str, str] = {}
+        for line_number, line in enumerate(lines, start=1):
+            name, separator, value = line.partition("=")
+            if not separator or not name or name in values:
+                fail(f"invalid Compose environment at line {line_number}")
+            values[name] = value
+        if not values:
+            fail("Compose environment is empty")
+        return values
+
+    def compose(self, *arguments: str, log: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
+        return command([
+            "docker", "compose", "--project-name", self.plan["compose_project"],
+            "--env-file", str(self.compose_env), "-f", str(ROOT / "deploy/docker-compose.prod.yml"),
+            "-f", str(self.compose_overlay),
+            *arguments,
+        ], env=self.compose_environment(), log=log, capture=log is None, check=check)
+
+    def wait_http(self, url: str, seconds: int = 120) -> None:
+        deadline = time.time() + seconds
+        error = "unavailable"
+        while time.time() < deadline:
+            try:
+                with urllib.request.urlopen(url, timeout=5) as response:
+                    if response.status == 200:
+                        return
+                    error = f"HTTP {response.status}"
+            except Exception as exception:  # bounded readiness probe
+                error = str(exception)
+            time.sleep(2)
+        fail(f"HTTP readiness failed for {url}: {error}")
+
+    def production_compose(self) -> None:
+        database = self.plan["databases"]["standalone_browser"]
+        log = self.group_log("production-compose")
+        self.create_database(database)
+        self.install_current(database, "standalone", log)
+        self.inspect(database, "standalone", "standalone-browser-database")
+        self.write_compose_env(database, "standalone")
+        self.compose("up", "-d", "--build", "php", "nginx", "cron", log=log)
+        self.wait_http(f"http://127.0.0.1:{self.plan['ports']['http']}/healthz")
+        self.write_json(self.output / "groups/production-compose.json", {
+            "schema_version": 1,
+            "compose_project": self.plan["compose_project"],
+            "candidate": self.args.candidate,
+            "mode": "standalone",
+            "health_url": f"http://127.0.0.1:{self.plan['ports']['http']}/healthz",
+            "status": "passed",
+        })
+
+    def start_docs(self) -> None:
+        if self.docs_process is not None and self.docs_process.poll() is None:
+            return
+        log = (self.output / "groups/docs-preview.log").open("a", encoding="utf-8")
+        self.docs_process = subprocess.Popen([
+            "pnpm", "exec", "vitepress", "preview", ".", "--host", "127.0.0.1",
+            "--port", str(self.plan["ports"]["docs"]),
+        ], cwd=self.generated / "docs-site", stdout=log, stderr=subprocess.STDOUT, text=True)
+        self.wait_http(f"http://127.0.0.1:{self.plan['ports']['docs']}/")
+
+    def browser(self, mode: str) -> None:
+        group = f"{mode}-browser"
+        scenario = "standalone_browser" if mode == "standalone" else "multi_tenant_browser"
+        database = self.plan["databases"][scenario]
+        if mode == "multi-tenant":
+            if not self.database_exists(database):
+                self.create_database(database)
+                self.install_current(database, mode, self.group_log(group))
+            self.inspect(database, mode, "multi-tenant-browser-database")
+            self.write_compose_env(database, mode)
+            self.compose("up", "-d", "--no-build", "--force-recreate", "php", "nginx", "cron", log=self.group_log(group))
+            self.wait_http(f"http://127.0.0.1:{self.plan['ports']['http']}/healthz")
+        self.start_docs()
+        env = {
+            "P0E_PLAYWRIGHT_CLI": required_environment("P0E_PLAYWRIGHT_CLI"),
+            "P0E_ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
+            "P0E_PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
+            "P0E_PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
+        }
+        browser_output = self.output / "browser"
+        browser_output.mkdir(exist_ok=True)
+        command([
+            str(BROWSER_RUNNER), "--mode", mode,
+            "--base-url", f"http://127.0.0.1:{self.plan['ports']['http']}",
+            "--docs-url", f"http://127.0.0.1:{self.plan['ports']['docs']}",
+            "--output-dir", str(browser_output),
+            "--session", f"p0e-{self.args.run_id}",
+        ], env=env, log=self.group_log(group))
+
+    def stop_docs(self) -> None:
+        if self.docs_process is None or self.docs_process.poll() is not None:
+            return
+        self.docs_process.send_signal(signal.SIGTERM)
+        try:
+            self.docs_process.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            self.docs_process.kill()
+            self.docs_process.wait(timeout=5)
+        self.docs_process = None
+
+    def cleanup_success(self) -> None:
+        self.stop_docs()
+        if self.compose_env.exists():
+            self.compose("down", "--volumes", "--remove-orphans", "--rmi", "local", check=False)
+        for database in self.plan["databases"].values():
+            self.drop_database(database)
+        residual = [name for name in self.plan["databases"].values() if self.database_exists(name)]
+        if residual:
+            fail(f"lease-owned database cleanup incomplete: {residual}")
+        project = self.plan["compose_project"]
+        docker_residuals = {
+            "containers": command(["docker", "ps", "-aq", "--filter", f"label=com.docker.compose.project={project}"], capture=True).stdout.split(),
+            "volumes": command(["docker", "volume", "ls", "-q", "--filter", f"label=com.docker.compose.project={project}"], capture=True).stdout.split(),
+            "networks": command(["docker", "network", "ls", "-q", "--filter", f"label=com.docker.compose.project={project}"], capture=True).stdout.split(),
+        }
+        for tag in (f"peanut-p0e-php:{self.args.run_id}", f"peanut-p0e-nginx:{self.args.run_id}"):
+            result = command(["docker", "image", "inspect", tag], capture=True, check=False)
+            if result.returncode == 0:
+                docker_residuals.setdefault("images", []).append(tag)
+        if any(docker_residuals.values()):
+            fail(f"compose cleanup residuals remain: {docker_residuals}")
+        for port in self.plan["ports"].values():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                probe.settimeout(0.5)
+                if probe.connect_ex(("127.0.0.1", int(port))) == 0:
+                    fail(f"listener cleanup residual remains on port {port}")
+        with contextlib.suppress(FileNotFoundError):
+            self.compose_env.unlink()
+        shutil.rmtree(self.backup)
+        shutil.rmtree(self.cache)
+        if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
+            shutil.rmtree(ROOT / "server/vendor")
+        self.write_json(self.summary_path, {
+            "schema_version": 1,
+            "status": "passed",
+            "candidate": self.args.candidate,
+            "candidate_tree": self.plan["candidate_tree"],
+            "run_id": self.args.run_id,
+            "resource_id": RESOURCE_ID,
+            "environment": "development",
+            "endpoint": self.plan["endpoint"],
+            "groups": self.checkpoint["groups"],
+            "cleanup": {
+                "database_residual_count": 0,
+                "compose_removed": True,
+                "container_residual_count": 0,
+                "volume_residual_count": 0,
+                "network_residual_count": 0,
+                "image_residual_count": 0,
+                "listener_residual_count": 0,
+                "docs_listener_stopped": True,
+                "backup_removed": True,
+                "cache_removed": True,
+                "output_preserved": str(self.output),
+            },
+        })
+        command([str(LEASE_TOOL), "release", "--lease", self.args.lease, "--owner", self.args.owner])
+        summary = read_json(self.summary_path)
+        summary["cleanup"]["lease_released"] = True
+        self.write_json(self.summary_path, summary)
+
+    def run(self) -> None:
+        self.run_group("generated-application", self.generated_application)
+        self.run_group("standalone-fresh", lambda: self.fresh("standalone_fresh", "standalone-fresh", "standalone"))
+        self.run_group("multi-tenant-fresh", lambda: self.fresh("multi_tenant_fresh", "multi-tenant-fresh", "multi-tenant"))
+        self.run_group("v1.0-forward", lambda: self.forward("v1_0_forward", "v1.0-forward", "v1.0.0"))
+        self.run_group("v1.1-forward", lambda: self.forward("v1_1_forward", "v1.1-forward", "v1.1.0"))
+        self.run_group("migration-fault-restore", self.migration_fault_restore)
+        self.run_group("plugin-lifecycle", self.plugin_lifecycle)
+        self.run_group("production-compose", self.production_compose)
+        self.run_group("standalone-browser", lambda: self.browser("standalone"))
+        self.run_group("multi-tenant-browser", lambda: self.browser("multi-tenant"))
+        required = set(self.fixture["groups"])
+        passed = {name for name, value in self.checkpoint["groups"].items() if value.get("status") == "passed"}
+        if passed != required:
+            fail(f"qualification group closure is incomplete: {sorted(required - passed)}")
+        self.current_group = "cleanup"
+        self.cleanup_success()
+
+    def preserve_failure(self, exception: Exception) -> None:
+        self.stop_docs()
+        state = self.checkpoint["groups"].setdefault(self.current_group, {})
+        state.update({"status": "failed", "failed_at": int(time.time()), "error": str(exception)[:500]})
+        self.save_checkpoint()
+        self.write_json(self.output / "recovery.json", {
+            "schema_version": 1,
+            "status": "failed-preserved",
+            "candidate": self.args.candidate,
+            "candidate_tree": self.plan["candidate_tree"],
+            "run_id": self.args.run_id,
+            "lease": self.args.lease,
+            "failed_group": self.current_group,
+            "passed_groups": sorted(name for name, value in self.checkpoint["groups"].items() if value.get("status") == "passed"),
+            "resume_command": "scripts/p0e-runtime-qualification resume <same fixed arguments>",
+            "databases": self.plan["databases"],
+            "backup_dir": str(self.backup),
+            "cache_dir": str(self.cache),
+            "output_dir": str(self.output),
+        })
+        command([
+            str(LEASE_TOOL), "renew", "--lease", self.args.lease, "--owner", self.args.owner,
+            "--ttl", str(self.args.ttl),
+        ], check=False)
+
+
+def add_fixed_arguments(parser: argparse.ArgumentParser, with_lease: bool = True) -> None:
+    parser.add_argument("--candidate", required=True)
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--backup-dir", required=True)
+    parser.add_argument("--cache-dir", required=True)
+    parser.add_argument("--http-port", required=True, type=int)
+    parser.add_argument("--docs-port", required=True, type=int)
+    if with_lease:
+        parser.add_argument("--lease", required=True)
+        parser.add_argument("--owner", required=True)
+        parser.add_argument("--thread", required=True)
+        parser.add_argument("--ttl", type=int, default=43200)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    plan_parser = subparsers.add_parser("plan", help="validate and print the complete no-resource plan")
+    add_fixed_arguments(plan_parser, with_lease=False)
+    plan_parser.add_argument("--lease", required=True)
+    claim_parser = subparsers.add_parser("claim", help="atomically claim every resource in the fixed plan")
+    add_fixed_arguments(claim_parser)
+    run_parser = subparsers.add_parser("run", help="run a newly claimed qualification")
+    add_fixed_arguments(run_parser)
+    resume_parser = subparsers.add_parser("resume", help="resume only incomplete/failed groups")
+    add_fixed_arguments(resume_parser)
+    args = parser.parse_args()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", args.lease):
+        fail("lease id is invalid")
+    if args.lease != f"p0e-runtime-{args.run_id}":
+        fail("lease id must equal p0e-runtime-<exact run_id>")
+    if hasattr(args, "ttl") and not 60 <= args.ttl <= 86400:
+        fail("ttl must be 60-86400 seconds")
+    if args.command != "plan" and (not args.owner or not args.thread):
+        fail("owner and thread are required")
+    plan_data = plan(args, require_clean=args.command != "plan")
+    if args.command == "plan":
+        print(json.dumps(plan_data, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "claim":
+        claim(args, plan_data)
+        verify_lease(args, plan_data)
+        print(json.dumps({"status": "claimed", "lease": args.lease, "candidate": args.candidate}))
+        return 0
+    verify_lease(args, plan_data)
+    fixture, _, _, _ = validate_fixture()
+    runner = Runner(args, plan_data, fixture)
+    runner.preflight_database_admin_tooling()
+    if args.command == "run":
+        runner.initialize()
+    else:
+        runner.resume()
+    try:
+        runner.run()
+    except Exception as exception:
+        runner.preserve_failure(exception)
+        raise
+    print(json.dumps({"status": "passed", "summary": str(runner.summary_path)}))
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except GateError as exception:
+        print(f"p0e-runtime-qualification: {exception}", file=sys.stderr)
+        sys.exit(1)
