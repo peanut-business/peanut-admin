@@ -37,6 +37,10 @@ function scaffoldFileTree(string $root,bool $includeUpgradeState=false): string
     foreach($iterator as$file){$relative=str_replace('\\','/',substr($file->getPathname(),strlen($root)+1));if(!$includeUpgradeState&&($relative==='.peanut/upgrades'||str_starts_with($relative,'.peanut/upgrades/')))continue;$rows[]=($file->isDir()?'d':'f')."\0".$relative."\0".($file->isFile()?hash_file('sha256',$file->getPathname()):'-')."\0".($file->getPerms()&0777);}
     sort($rows,SORT_STRING);return hash('sha256',implode("\n",$rows));
 }
+function scaffoldOwnedTree(string $root,array $manifest,string $classification): string
+{
+    $rows=[];foreach($manifest['files'] as$file){if(($file['classification']??null)!==$classification)continue;$path=$root.'/'.$file['path'];$rows[]=$file['path']."\0".hash_file('sha256',$path)."\0".(fileperms($path)&0777);}sort($rows,SORT_STRING);return hash('sha256',implode("\n",$rows));
+}
 function scaffoldPlanPath(string $project,array $plan): string{return $project.'/'.$plan['plan_path'];}
 function scaffoldFails(callable $callback,string $message): void
 {
@@ -50,7 +54,7 @@ function scaffoldCopyRelease(string $source,string $target): void { scaffoldCopy
 
 $temporaryRoot=realpath(sys_get_temp_dir());if($temporaryRoot===false)throw new RuntimeException('temp root unavailable');
 $temporary=$temporaryRoot.'/peanut-scaffold-e2e-'.bin2hex(random_bytes(8));mkdir($temporary,0700,true);
-$fromRelease=$root.'/scaffold/releases/v1.0.0/scaffold-manifest.json';$toRelease=$root.'/scaffold/releases/v1.1.0/scaffold-manifest.json';$patchRelease=$root.'/scaffold/releases/v1.1.1/scaffold-manifest.json';$latestRelease=$root.'/scaffold/releases/v1.1.2/scaffold-manifest.json';$nextRelease=$root.'/scaffold/releases/v1.1.3/scaffold-manifest.json';
+$fromRelease=$root.'/scaffold/releases/v1.0.0/scaffold-manifest.json';$toRelease=$root.'/scaffold/releases/v1.1.0/scaffold-manifest.json';$patchRelease=$root.'/scaffold/releases/v1.1.1/scaffold-manifest.json';$latestRelease=$root.'/scaffold/releases/v1.1.2/scaffold-manifest.json';$nextRelease=$root.'/scaffold/releases/v1.1.3/scaffold-manifest.json';$currentRelease=$root.'/scaffold/releases/v1.1.4/scaffold-manifest.json';
 try{
     $source=$temporary.'/from-source';
     scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$source]);
@@ -175,12 +179,33 @@ try{
     $nextRecover=$runner->recover($nextApp,scaffoldPlanPath($nextApp,$nextPlan));
     scaffoldExpect($nextRecover['status']==='recovered'&&hash_equals($nextBefore,scaffoldFileTree($nextApp)),'v1.1.3 recovery must restore the exact v1.1.2 tree');
 
+    $legacyIdentity=json_decode((string)file_get_contents($nextRelease),true,512,JSON_THROW_ON_ERROR)['release'];
+    $legacySource=$temporary.'/legacy-version-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$legacySource]);scaffoldRun(['git','checkout','--quiet','--detach',$legacyIdentity['source_commit']],$legacySource);
+    $legacyApp=$temporary.'/legacy-version-app';scaffoldFresh($legacySource,$legacyApp);
+    $legacyManifestPath=$legacyApp.'/.peanut/application-manifest.json';$legacyManifest=json_decode((string)file_get_contents($legacyManifestPath),true,512,JSON_THROW_ON_ERROR);
+    scaffoldExpect(($legacyManifest['protocol']??null)==='peanut.application-scaffold.v1'&&!isset($legacyManifest['application']['version']),'v1.1.3 fixture must exercise the legacy manifest path');
+    $legacyMetadataPath=$legacyApp.'/RELEASE_METADATA.json';$legacyMetadata=json_decode((string)file_get_contents($legacyMetadataPath),true,512,JSON_THROW_ON_ERROR);$legacyMetadata['version']='2.4.6';file_put_contents($legacyMetadataPath,json_encode($legacyMetadata,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    $legacyAppOwnedDigest=scaffoldOwnedTree($legacyApp,$legacyManifest,'app-owned');$legacyUniappDigest=hash_file('sha256',$legacyApp.'/uniapp/src/manifest.json');
+    $legacyPlan=$runner->preflight($legacyApp,$nextRelease,$currentRelease);
+    scaffoldExpect($legacyPlan['status']==='ready'&&($legacyPlan['identity']['application_version']??null)==='2.4.6','legacy manifest must uniquely adopt RELEASE_METADATA application version');
+    $legacyApply=$runner->apply($legacyApp,scaffoldPlanPath($legacyApp,$legacyPlan));$legacyVerify=$runner->verify($legacyApp,scaffoldPlanPath($legacyApp,$legacyPlan));
+    scaffoldExpect($legacyApply['status']==='applied'&&$legacyVerify['status']==='verified','v1.1.3 to v1.1.4 apply/verify must complete');
+    $legacyApplied=json_decode((string)file_get_contents($legacyManifestPath),true,512,JSON_THROW_ON_ERROR);
+    scaffoldExpect(($legacyApplied['schema_version']??null)===2&&($legacyApplied['protocol']??null)==='peanut.application-scaffold.v2'&&($legacyApplied['application']['version']??null)==='2.4.6','upgrade must normalize the application manifest without changing application.version');
+    scaffoldExpect(hash_equals($legacyAppOwnedDigest,scaffoldOwnedTree($legacyApp,$legacyApplied,'app-owned')),'v1.1.4 upgrade must preserve all app-owned bytes');
+    scaffoldExpect(hash_equals((string)$legacyUniappDigest,(string)hash_file('sha256',$legacyApp.'/uniapp/src/manifest.json')),'upgrade must preserve existing UniApp versionName/versionCode bytes');
+    foreach(['web/package.json','pc/package.json','uniapp/package.json','server/config/project.php']as$versionPath)scaffoldExpect(str_contains((string)file_get_contents($legacyApp.'/'.$versionPath),'2.4.6'),'managed application version surface was not preserved: '.$versionPath);
+
+    $ambiguousApp=$temporary.'/legacy-version-ambiguous';scaffoldFresh($legacySource,$ambiguousApp);$ambiguousMetadataPath=$ambiguousApp.'/RELEASE_METADATA.json';$ambiguousMetadata=json_decode((string)file_get_contents($ambiguousMetadataPath),true,512,JSON_THROW_ON_ERROR);$ambiguousMetadata['application']=['version'=>'9.9.9'];file_put_contents($ambiguousMetadataPath,json_encode($ambiguousMetadata,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    scaffoldFails(fn()=>$runner->preflight($ambiguousApp,$nextRelease,$currentRelease),'SCAFFOLD_LEGACY_APPLICATION_VERSION_AMBIGUOUS');
+
     $fromCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.0.0','--source-commit='.SCAFFOLD_FROM_COMMIT,'--output='.$root.'/scaffold/releases/v1.0.0','--check']);
     $toManifest=json_decode((string)file_get_contents($toRelease),true,512,JSON_THROW_ON_ERROR);$toCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.0','--source-commit='.$toManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.0','--check']);
     $patchManifest=json_decode((string)file_get_contents($patchRelease),true,512,JSON_THROW_ON_ERROR);$patchCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.1','--source-commit='.$patchManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.1','--check']);
     $latestManifest=json_decode((string)file_get_contents($latestRelease),true,512,JSON_THROW_ON_ERROR);$latestCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.2','--source-commit='.$latestManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.2','--check']);
     $nextManifest=json_decode((string)file_get_contents($nextRelease),true,512,JSON_THROW_ON_ERROR);$nextCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.3','--source-commit='.$nextManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.3','--check']);
-    scaffoldExpect(str_contains($fromCheck,'verified')&&str_contains($toCheck,'verified')&&str_contains($patchCheck,'verified')&&str_contains($latestCheck,'verified')&&str_contains($nextCheck,'verified'),'all immutable release trees must exactly regenerate');
+    $currentManifest=json_decode((string)file_get_contents($currentRelease),true,512,JSON_THROW_ON_ERROR);$currentCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.4','--source-commit='.$currentManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.4','--check']);
+    scaffoldExpect(str_contains($fromCheck,'verified')&&str_contains($toCheck,'verified')&&str_contains($patchCheck,'verified')&&str_contains($latestCheck,'verified')&&str_contains($nextCheck,'verified')&&str_contains($currentCheck,'verified'),'all immutable release trees must exactly regenerate');
 }finally{putenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS');scaffoldDelete($temporary);}
 
 echo "SCAFFOLD-UPGRADE-E2E-001 passed\n";

@@ -23,6 +23,7 @@ final class ScaffoldUpgradeRunner
         $identity = [
             'from' => $this->releaseIdentity($from),
             'to' => $this->releaseIdentity($to),
+            'application_version' => $application['application']['version'],
             'application_manifest_sha256' => $applicationDigest,
             'managed_pre_sha256' => $managedState['digest'],
             'app_owned_pre_sha256' => $appOwnedState['digest'],
@@ -125,7 +126,8 @@ final class ScaffoldUpgradeRunner
             $to = ScaffoldManifest::load($plan['manifest_paths']['to']);
             if (($application['template']['version'] ?? null) !== $to->version()
                 || ($application['template']['source_commit'] ?? null) !== $to->release()['source_commit']
-                || ($application['template']['source_tree'] ?? null) !== $to->release()['source_tree']) {
+                || ($application['template']['source_tree'] ?? null) !== $to->release()['source_tree']
+                || ($application['application']['version'] ?? null) !== $plan['identity']['application_version']) {
                 throw new RuntimeException('SCAFFOLD_VERIFY_APPLICATION_IDENTITY_MISMATCH');
             }
             $actualAppOwned = $this->ownershipState($root, ['files' => array_values(array_filter($application['files'], static fn(array $file): bool => $file['classification'] === 'app-owned'))], 'app-owned');
@@ -225,6 +227,10 @@ final class ScaffoldUpgradeRunner
                 $actions[] = $this->action($path, $after, 'conflict', 'managed_file_missing', true, $current, $targetDigest);
                 continue;
             }
+            if (hash_equals($targetDigest, $current['sha256']) && ($current['mode'] ?? null) === ($after['mode'] ?? null)) {
+                $actions[] = $this->action($path, $after, 'preserve', 'already_at_target', false, $current, $targetDigest);
+                continue;
+            }
             $projectChanged = !hash_equals($oldDigest, $current['sha256']);
             $upstreamChanged = !hash_equals($oldDigest, $targetDigest) || ($before['mode'] ?? null) !== ($after['mode'] ?? null);
             if ($projectChanged && $upstreamChanged) $actions[] = $this->action($path, $after, 'conflict', 'both_project_and_upstream_modified', true, $current, $targetDigest);
@@ -249,8 +255,19 @@ final class ScaffoldUpgradeRunner
         $raw = file_get_contents($path);
         if (!is_string($raw) || !hash_equals($file['template_sha256'], hash('sha256', $raw))) throw new RuntimeException('SCAFFOLD_ARTIFACT_DIGEST_MISMATCH: ' . $file['path']);
         $tokens=$manifest->release()['tokens'];
-        if(array_keys($tokens)!==['product_name','slug','package_identity'])throw new RuntimeException('SCAFFOLD_RELEASE_TOKENS_INVALID');
-        return str_replace([$tokens['product_name'],$tokens['slug'],$tokens['package_identity']],[$parameters['PRODUCT_NAME'],$parameters['SLUG'],$parameters['PACKAGE_IDENTITY']],$raw);
+        $expectedKeys=$manifest->supportsApplicationVersion()
+            ? ['product_name','slug','package_identity','application_version']
+            : ['product_name','slug','package_identity'];
+        if(array_keys($tokens)!==$expectedKeys)throw new RuntimeException('SCAFFOLD_RELEASE_TOKENS_INVALID');
+        $values=[
+            'product_name'=>$parameters['PRODUCT_NAME'],
+            'slug'=>$parameters['SLUG'],
+            'package_identity'=>$parameters['PACKAGE_IDENTITY'],
+            'application_version'=>$parameters['APPLICATION_VERSION'],
+        ];
+        $rendered=$raw;
+        foreach($tokens as $key=>$token)$rendered=str_replace($token,$values[$key],$rendered);
+        return $rendered;
     }
 
     private function targetContent(string $root, ScaffoldManifest $manifest, array $action): string
@@ -268,7 +285,12 @@ final class ScaffoldUpgradeRunner
 
     private function parameters(array $application): array
     {
-        return ['PACKAGE_IDENTITY' => (string)$application['application']['package_identity'], 'PRODUCT_NAME' => (string)$application['application']['name'], 'SLUG' => (string)$application['application']['slug']];
+        return [
+            'APPLICATION_VERSION' => (string)$application['application']['version'],
+            'PACKAGE_IDENTITY' => (string)$application['application']['package_identity'],
+            'PRODUCT_NAME' => (string)$application['application']['name'],
+            'SLUG' => (string)$application['application']['slug'],
+        ];
     }
 
     private function releaseIdentity(ScaffoldManifest $manifest): array { return $manifest->release() + ['manifest_sha256' => $manifest->digest()]; }
@@ -279,8 +301,48 @@ final class ScaffoldUpgradeRunner
         $path = ScaffoldPathGuard::projectPath($root, '.peanut/application-manifest.json');
         if (!is_file($path) || is_link($path)) throw new RuntimeException('SCAFFOLD_APPLICATION_MANIFEST_MISSING');
         $raw = file_get_contents($path); $data = is_string($raw) ? json_decode($raw, true, 512, JSON_THROW_ON_ERROR) : null;
-        if (!is_array($data) || ($data['protocol'] ?? null) !== 'peanut.application-scaffold.v1' || !is_array($data['files'] ?? null)) throw new RuntimeException('SCAFFOLD_APPLICATION_MANIFEST_INVALID');
+        if (!is_array($data) || !is_array($data['application'] ?? null) || !is_array($data['files'] ?? null)) {
+            throw new RuntimeException('SCAFFOLD_APPLICATION_MANIFEST_INVALID');
+        }
+        $protocol = $data['protocol'] ?? null;
+        if (($data['schema_version'] ?? null) === 2 && $protocol === 'peanut.application-scaffold.v2') {
+            $version = $data['application']['version'] ?? null;
+        } elseif (($data['schema_version'] ?? null) === 1 && $protocol === 'peanut.application-scaffold.v1') {
+            $version = $this->legacyApplicationVersion($root);
+            $data['application']['version'] = $version;
+        } else {
+            throw new RuntimeException('SCAFFOLD_APPLICATION_MANIFEST_INVALID');
+        }
+        if (preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D', (string)$version) !== 1) {
+            throw new RuntimeException('SCAFFOLD_APPLICATION_VERSION_INVALID');
+        }
         return [$data, 'sha256:' . hash('sha256', (string)$raw)];
+    }
+
+    private function legacyApplicationVersion(string $root): string
+    {
+        $path = ScaffoldPathGuard::projectPath($root, 'RELEASE_METADATA.json');
+        if (!is_file($path) || is_link($path)) {
+            throw new RuntimeException('SCAFFOLD_LEGACY_APPLICATION_VERSION_UNAVAILABLE');
+        }
+        try {
+            $metadata = json_decode((string)file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new RuntimeException('SCAFFOLD_LEGACY_APPLICATION_VERSION_UNAVAILABLE', 0, $exception);
+        }
+        $candidates = [];
+        if (is_array($metadata) && is_string($metadata['version'] ?? null)) {
+            $candidates[] = $metadata['version'];
+        }
+        if (is_array($metadata['application'] ?? null) && is_string($metadata['application']['version'] ?? null)) {
+            $candidates[] = $metadata['application']['version'];
+        }
+        $candidates = array_values(array_unique($candidates, SORT_STRING));
+        if (count($candidates) !== 1
+            || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D', $candidates[0]) !== 1) {
+            throw new RuntimeException('SCAFFOLD_LEGACY_APPLICATION_VERSION_AMBIGUOUS');
+        }
+        return $candidates[0];
     }
 
     private function regularFileState(string $path, string $relative): array
@@ -411,6 +473,9 @@ final class ScaffoldUpgradeRunner
         $appOwned = array_values(array_filter($files, static fn(array $f): bool => $f['classification']==='app-owned'));
         $application['template'] = ['version'=>$to->version(),'inventory_sha256'=>$to->release()['inventory_sha256'],
             'source_commit'=>$to->release()['source_commit'],'source_tree'=>$to->release()['source_tree']];
+        $application['schema_version'] = 2;
+        $application['protocol'] = 'peanut.application-scaffold.v2';
+        $application['application']['version'] = $plan['identity']['application_version'];
         $application['ownership']['baseline_root'] = '.peanut/scaffold-baseline/' . $to->version() . '/files';
         $application['digests'] = ['managed_tree_sha256'=>$this->manifestTreeDigest($managed),'app_owned_tree_sha256'=>$this->manifestTreeDigest($appOwned)];
         $application['files'] = $files;

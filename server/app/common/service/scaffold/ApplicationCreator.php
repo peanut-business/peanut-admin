@@ -9,7 +9,8 @@ final class ApplicationCreator
 {
     private const CLASSIFICATIONS = ['managed', 'generated-managed', 'app-owned', 'excluded'];
     private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices'];
-    private const VARIABLES = ['PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
+    private const VARIABLES = ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
+    private const VERSION_PATTERN = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
 
     /** @param array{commit:string,tree:string}|null $sourceIdentity */
     public function __construct(
@@ -21,10 +22,21 @@ final class ApplicationCreator
     }
 
     /** @return array<string,mixed> */
-    public function create(string $productName, string $slug, string $packageIdentity, string $target): array
+    public function create(
+        string $productName,
+        string $slug,
+        string $packageIdentity,
+        string $target,
+        ?string $applicationVersion = null
+    ): array
     {
-        $parameters = $this->validateParameters($productName, $slug, $packageIdentity);
         $inventory = $this->loadInventory();
+        $parameters = $this->validateParameters(
+            $productName,
+            $slug,
+            $packageIdentity,
+            $applicationVersion ?? (string)$inventory['application']['version']
+        );
         $generationIdentity = $this->validateSourceIdentity($this->sourceIdentity ?? $this->gitIdentity());
         $inventoryDigest = hash_file('sha256', $this->inventoryPath);
         if (!is_string($inventoryDigest) || preg_match('/^[a-f0-9]{64}$/D', $inventoryDigest) !== 1) {
@@ -131,6 +143,10 @@ final class ApplicationCreator
             || ($manifest->release()['inventory_template_version'] ?? null) !== $inventory['template_version']) {
             throw new RuntimeException('CREATE_APP_ADOPTION_VERSION_MISMATCH');
         }
+        if ($manifest->supportsApplicationVersion()
+            && $manifest->defaultApplicationVersion() !== $inventory['application']['version']) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_APPLICATION_VERSION_MISMATCH');
+        }
         return $manifest;
     }
 
@@ -146,7 +162,10 @@ final class ApplicationCreator
     ): void {
         $release = $adoption->release();
         $tokens = $release['tokens'] ?? null;
-        if (!is_array($tokens) || array_keys($tokens) !== ['product_name', 'slug', 'package_identity']) {
+        $expectedTokenKeys = $adoption->supportsApplicationVersion()
+            ? ['product_name', 'slug', 'package_identity', 'application_version']
+            : ['product_name', 'slug', 'package_identity'];
+        if (!is_array($tokens) || array_keys($tokens) !== $expectedTokenKeys) {
             throw new RuntimeException('CREATE_APP_ADOPTION_TOKENS_INVALID');
         }
         foreach ($tokens as $token) {
@@ -161,7 +180,11 @@ final class ApplicationCreator
             'product_name' => $parameters['PRODUCT_NAME'],
             'slug' => $parameters['SLUG'],
             'package_identity' => $parameters['PACKAGE_IDENTITY'],
+            'application_version' => $parameters['APPLICATION_VERSION'],
         ];
+        if (!$adoption->supportsApplicationVersion()) {
+            unset($renderParameters['application_version']);
+        }
         $current = [];
         foreach ($files as $file) {
             if (in_array($file['classification'], ['managed', 'generated-managed'], true)) {
@@ -230,7 +253,12 @@ final class ApplicationCreator
     }
 
     /** @return array<string,string> */
-    private function validateParameters(string $productName, string $slug, string $packageIdentity): array
+    private function validateParameters(
+        string $productName,
+        string $slug,
+        string $packageIdentity,
+        string $applicationVersion
+    ): array
     {
         $productName = trim($productName);
         if ($productName === '' || strlen($productName) > 80 || preg_match('/[\x00-\x1F\x7F{}]/', $productName) === 1) {
@@ -243,7 +271,15 @@ final class ApplicationCreator
             || strlen($packageIdentity) > 120) {
             throw new RuntimeException('CREATE_APP_PACKAGE_IDENTITY_INVALID');
         }
-        return ['PRODUCT_NAME' => $productName, 'SLUG' => $slug, 'PACKAGE_IDENTITY' => $packageIdentity];
+        if (preg_match(self::VERSION_PATTERN, $applicationVersion) !== 1) {
+            throw new RuntimeException('CREATE_APP_APPLICATION_VERSION_INVALID');
+        }
+        return [
+            'APPLICATION_VERSION' => $applicationVersion,
+            'PRODUCT_NAME' => $productName,
+            'SLUG' => $slug,
+            'PACKAGE_IDENTITY' => $packageIdentity,
+        ];
     }
 
     /** @return array<string,mixed> */
@@ -255,8 +291,12 @@ final class ApplicationCreator
         } catch (\JsonException $exception) {
             throw new RuntimeException('CREATE_APP_INVENTORY_INVALID_JSON', 0, $exception);
         }
-        if (!is_array($inventory) || ($inventory['schema_version'] ?? null) !== 1
+        if (!is_array($inventory) || ($inventory['schema_version'] ?? null) !== 2
+            || ($inventory['protocol'] ?? null) !== 'peanut.create-app-inventory.v2'
             || !is_string($inventory['template_version'] ?? null)
+            || !is_array($inventory['application'] ?? null)
+            || array_keys($inventory['application']) !== ['version']
+            || preg_match(self::VERSION_PATTERN, (string)$inventory['application']['version']) !== 1
             || !is_array($inventory['variables'] ?? null)
             || !is_array($inventory['files'] ?? null)) {
             throw new RuntimeException('CREATE_APP_INVENTORY_SCHEMA_INVALID');
@@ -375,7 +415,7 @@ final class ApplicationCreator
             'text' => $this->textTransform($content, $parameters, (string)$entry['path']),
             'brand' => $this->brandManifest($parameters),
             'brand-asset' => $this->brandAsset((string)$entry['path'], $parameters),
-            'changelog' => $this->render($this->changelog(), $parameters),
+            'changelog' => $this->render($this->changelog($parameters['APPLICATION_VERSION']), $parameters),
             'ci' => $this->ciTransform($content),
             'docs-page' => $this->render($this->docsPage((string)$entry['path']), $parameters),
             'environment-guard' => $this->environmentGuard($content),
@@ -384,7 +424,7 @@ final class ApplicationCreator
             'readme' => $this->render($this->readme(), $parameters),
             'license' => $this->render($this->license(), $parameters),
             'modules-config' => $this->modulesConfig($content),
-            'package' => $this->packageTransform($content, $parameters),
+            'package' => $this->packageTransform($content, $parameters, (string)$entry['path']),
             'plugins-lock' => $this->pluginsLock(),
             'sbom' => $this->sbom($content, $parameters),
             'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
@@ -420,17 +460,92 @@ final class ApplicationCreator
         if ($path === 'server/app/adminapi/logic/WorkbenchLogic.php') {
             $content = preg_replace("/'(today_sales|total_sales|today_visitor|total_visitor|today_new_user|total_new_user|order_num|order_sum)' => [0-9]+,/", "'$1' => 0,", $content) ?? $content;
         }
+        if (in_array($path, [
+            'server/config/project.php',
+            'server/app/adminapi/logic/WorkbenchLogic.php',
+            'server/app/api/logic/IndexLogic.php',
+            'uniapp/src/pages/as_us/as_us.vue',
+        ], true)) {
+            $content = $this->replaceVersionLiteral($content, $parameters['APPLICATION_VERSION'], $path);
+        }
+        if ($path === 'uniapp/src/manifest.json') {
+            $content = $this->uniappManifest($content, $parameters['APPLICATION_VERSION']);
+        }
         return $content;
     }
 
     /** @param array<string,string> $parameters */
-    private function packageTransform(string $content, array $parameters): string
+    private function packageTransform(string $content, array $parameters, string $path): string
     {
-        return str_replace(
+        $content = str_replace(
             ['peanut-business/peanut-admin', 'peanut-admin-web', 'peanut-admin-pc', 'peanut-admin-uniapp', 'peanut-admin-docs'],
             [$parameters['PACKAGE_IDENTITY'], $parameters['SLUG'] . '-web', $parameters['SLUG'] . '-pc', $parameters['SLUG'] . '-uniapp', $parameters['SLUG'] . '-docs'],
             $this->textTransform($content, $parameters, 'package')
         );
+        if (!str_ends_with($path, '.json')) {
+            return $content;
+        }
+        try {
+            $document = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new RuntimeException('CREATE_APP_PACKAGE_JSON_INVALID: ' . $path, 0, $exception);
+        }
+        if (!is_array($document)) {
+            throw new RuntimeException('CREATE_APP_PACKAGE_JSON_INVALID: ' . $path);
+        }
+        if (str_ends_with($path, '/package.json') && array_key_exists('version', $document)) {
+            $document['version'] = $parameters['APPLICATION_VERSION'];
+        }
+        if (in_array($path, ['pc/package-lock.json', 'uniapp/package-lock.json'], true)) {
+            if (!array_key_exists('version', $document)
+                || !is_array($document['packages'][''] ?? null)
+                || !array_key_exists('version', $document['packages'][''])) {
+                throw new RuntimeException('CREATE_APP_PACKAGE_LOCK_ROOT_INVALID: ' . $path);
+            }
+            $document['version'] = $parameters['APPLICATION_VERSION'];
+            $document['packages']['']['version'] = $parameters['APPLICATION_VERSION'];
+        }
+        return json_encode(
+            $document,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        ) . "\n";
+    }
+
+    private function replaceVersionLiteral(string $content, string $version, string $path): string
+    {
+        $patterns = match ($path) {
+            'server/config/project.php' => ["/env\('project\.version', '[^']+'\)/"],
+            'server/app/adminapi/logic/WorkbenchLogic.php',
+            'server/app/api/logic/IndexLogic.php' => ["/config\('project\.version', '[^']+'\)/"],
+            'uniapp/src/pages/as_us/as_us.vue' => ["/appStore\.config\?\.version \|\| '[^']+'/"],
+            default => [],
+        };
+        foreach ($patterns as $pattern) {
+            if (preg_match_all($pattern, $content) !== 1) {
+                throw new RuntimeException('CREATE_APP_VERSION_SURFACE_INVALID: ' . $path);
+            }
+            $content = preg_replace_callback(
+                $pattern,
+                static fn(array $matches): string => preg_replace("/'[^']+'(?=\))|'[^']+'$/", "'{$version}'", $matches[0], 1) ?? $matches[0],
+                $content,
+                1
+            ) ?? $content;
+        }
+        return $content;
+    }
+
+    private function uniappManifest(string $content, string $version): string
+    {
+        foreach ([
+            '/("versionName"\s*:\s*)"[^"]+"/' => '$1"' . $version . '"',
+            '/("versionCode"\s*:\s*)"[^"]+"/' => '$1"10"',
+        ] as $pattern => $replacement) {
+            if (preg_match_all($pattern, $content) !== 1) {
+                throw new RuntimeException('CREATE_APP_UNIAPP_VERSION_SURFACE_INVALID');
+            }
+            $content = preg_replace($pattern, $replacement, $content, 1) ?? $content;
+        }
+        return $content;
     }
 
     /** @param array<string,string> $parameters */
@@ -557,7 +672,7 @@ PHP;
             'schema_version' => 1,
             'product' => $parameters['PRODUCT_NAME'],
             'application_identity' => $parameters['PACKAGE_IDENTITY'],
-            'version' => '0.1.0',
+            'version' => $parameters['APPLICATION_VERSION'],
             'status' => 'generated-application-baseline',
             'release_policy' => 'replace this metadata from an immutable application release candidate before publishing',
             'public_runtime_dependencies' => [
@@ -572,15 +687,25 @@ PHP;
     private function sbom(string $content, array $parameters): string
     {
         $content = $this->textTransform($content, $parameters, 'RELEASE_SBOM.spdx.json');
-        $content = str_replace(
-            [' 1.1.0 release dependency SBOM', '/releases/tag/v1.1.0/sbom', '@1.1.0'],
-            [' 0.1.0 generated dependency SBOM', '/sbom/generated-0.1.0', '@0.1.0'],
-            $content
-        );
         $document = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        if (!is_array($document)) {
+        if (!is_array($document) || !is_array($document['packages'] ?? null)) {
             throw new RuntimeException('CREATE_APP_SBOM_INVALID');
         }
+        $rootPackages = 0;
+        foreach ($document['packages'] as &$package) {
+            if (!is_array($package) || ($package['SPDXID'] ?? null) !== 'SPDXRef-Package-Peanut-Admin') {
+                continue;
+            }
+            $package['name'] = $parameters['PRODUCT_NAME'];
+            $package['versionInfo'] = $parameters['APPLICATION_VERSION'];
+            $rootPackages++;
+        }
+        unset($package);
+        if ($rootPackages !== 1) {
+            throw new RuntimeException('CREATE_APP_SBOM_ROOT_PACKAGE_INVALID');
+        }
+        $document['name'] = $parameters['PRODUCT_NAME'] . ' ' . $parameters['APPLICATION_VERSION'] . ' generated dependency SBOM';
+        $document['documentNamespace'] = 'https://example.invalid/' . $parameters['SLUG'] . '/sbom/' . $parameters['APPLICATION_VERSION'];
         $document['creationInfo']['comment'] = 'Generated application baseline; regenerate from application lockfiles before release.';
         return json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
     }
@@ -659,9 +784,9 @@ PHP;
             . "Third-party components retain their own licenses; review THIRD_PARTY_NOTICES.md and RELEASE_SBOM.spdx.json before redistribution.\n";
     }
 
-    private function changelog(): string
+    private function changelog(string $version): string
     {
-        return "# Changelog\n\n## 0.1.0\n\n- Initial generated application baseline for {{PRODUCT_NAME}}.\n";
+        return "# Changelog\n\n## {$version}\n\n- Initial generated application baseline for {{PRODUCT_NAME}}.\n";
     }
 
     private function modulesConfig(string $content): string
@@ -759,9 +884,14 @@ PHP;
         $managed = array_values(array_filter($files, static fn(array $file): bool => in_array($file['classification'], ['managed', 'generated-managed'], true)));
         $appOwned = array_values(array_filter($files, static fn(array $file): bool => $file['classification'] === 'app-owned'));
         $manifest = [
-            'schema_version' => 1,
-            'protocol' => 'peanut.application-scaffold.v1',
-            'application' => ['name' => $parameters['PRODUCT_NAME'], 'slug' => $parameters['SLUG'], 'package_identity' => $parameters['PACKAGE_IDENTITY']],
+            'schema_version' => 2,
+            'protocol' => 'peanut.application-scaffold.v2',
+            'application' => [
+                'name' => $parameters['PRODUCT_NAME'],
+                'slug' => $parameters['SLUG'],
+                'package_identity' => $parameters['PACKAGE_IDENTITY'],
+                'version' => $parameters['APPLICATION_VERSION'],
+            ],
             'template' => $templateIdentity,
             'generation_source' => [
                 'commit' => $generationIdentity['commit'],

@@ -27,6 +27,9 @@ create-app，再逐字验证完整 managed 生成树。
   应用根 `plugins.lock` 精确复制到 `/build/plugins.lock`，并把应用资源登记复制进 PHP Runtime，
   不改变 resolver 或数据库环境门禁的 fail-closed 合同。
   `v1.1.2` 与更早 release 身份保持不变。
+- `v1.1.4`：增加独立 `application.version` 合同与 scaffold release v3 token。新应用默认
+  `0.1.0`，所有 managed 版本表面从该值渲染；该 scaffold identity 不是 Peanut Admin
+  产品 Tag/Release，且不会修改或重封 `v1.1.3`。
 
 历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
 schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没有静默覆盖历史证据。
@@ -36,8 +39,8 @@ schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没�
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
-  --from-manifest=/absolute/path/to/scaffold/releases/v1.1.2/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.3/scaffold-manifest.json
+  --from-manifest=/absolute/path/to/scaffold/releases/v1.1.3/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.4/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
@@ -52,6 +55,11 @@ preflight 以 from release、当前项目和 to release 形成稳定三方 plan�
 仍等于旧基线时替换；generated-managed 以应用 manifest 的 name/slug/package identity
 确定性重放；项目单独修改的 managed 文件保留，双方修改、缺失、类型冲突和新增路径冲突
 均 blocked。app-owned 文件只记录 preservation 摘要，不写入。
+
+应用 manifest v2 的 `application.version` 是升级渲染的唯一版本输入，升级前后保持不变。
+旧 v1 manifest 仅可从根 `RELEASE_METADATA.json` 唯一采用一个合法 SemVer；缺失、无效或
+冲突值会在 preflight fail-closed。旧应用的 UniApp `versionName/versionCode` 与其他
+app-owned 字节不会被 scaffold 升级覆盖或降级。
 
 apply 只接受 ready、candidate 自校验通过、release checksum 未漂移、application manifest
 锁和项目逐文件状态未变化的 plan。它持项目锁，在 0700 recovery 目录保存受影响路径的

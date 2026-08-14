@@ -9,6 +9,7 @@ final class ScaffoldManifest
 {
     private const POLICIES = ['managed', 'generated'];
     private const OWNERS = ['host', 'backend', 'frontend'];
+    private const VERSION_PATTERN = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
 
     /** @param array<string,mixed> $data */
     private function __construct(
@@ -30,8 +31,12 @@ final class ScaffoldManifest
         } catch (\JsonException $exception) {
             throw new RuntimeException('SCAFFOLD_MANIFEST_INVALID_JSON: ' . $exception->getMessage(), 0, $exception);
         }
-        if (!is_array($data) || ($data['schema_version'] ?? null) !== 2
-            || ($data['protocol'] ?? null) !== 'peanut.scaffold-release.v2') {
+        $protocol = $data['protocol'] ?? null;
+        $supported = is_array($data) && (
+            (($data['schema_version'] ?? null) === 2 && $protocol === 'peanut.scaffold-release.v2')
+            || (($data['schema_version'] ?? null) === 3 && $protocol === 'peanut.scaffold-release.v3')
+        );
+        if (!$supported) {
             throw new RuntimeException('SCAFFOLD_MANIFEST_SCHEMA_UNSUPPORTED');
         }
         $release = $data['release'] ?? null;
@@ -42,6 +47,22 @@ final class ScaffoldManifest
             || !self::nonEmptyString($release['inventory_template_version'] ?? null)
             || !is_array($release['tokens'] ?? null)) {
             throw new RuntimeException('SCAFFOLD_MANIFEST_RELEASE_INVALID');
+        }
+        if ($protocol === 'peanut.scaffold-release.v3') {
+            $application = $data['application'] ?? null;
+            if (!is_array($application)
+                || array_keys($application) !== ['version']
+                || preg_match(self::VERSION_PATTERN, (string)$application['version']) !== 1
+                || array_keys($release['tokens']) !== ['product_name', 'slug', 'package_identity', 'application_version']) {
+                throw new RuntimeException('SCAFFOLD_MANIFEST_APPLICATION_INVALID');
+            }
+        } elseif (array_keys($release['tokens']) !== ['product_name', 'slug', 'package_identity']) {
+            throw new RuntimeException('SCAFFOLD_MANIFEST_RELEASE_INVALID');
+        }
+        foreach ($release['tokens'] as $token) {
+            if (!self::nonEmptyString($token)) {
+                throw new RuntimeException('SCAFFOLD_MANIFEST_RELEASE_INVALID');
+            }
         }
         $files = $data['files'] ?? null;
         if (!is_array($files)) {
@@ -77,6 +98,16 @@ final class ScaffoldManifest
     public function version(): string
     {
         return (string)$this->data['release']['version'];
+    }
+
+    public function supportsApplicationVersion(): bool
+    {
+        return $this->data['protocol'] === 'peanut.scaffold-release.v3';
+    }
+
+    public function defaultApplicationVersion(): ?string
+    {
+        return $this->supportsApplicationVersion() ? (string)$this->data['application']['version'] : null;
     }
 
     /** @return array<string,array<string,mixed>> */
