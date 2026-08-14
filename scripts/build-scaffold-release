@@ -5,6 +5,7 @@ declare(strict_types=1);
 const RELEASE_PRODUCT_TOKEN = 'Scaffold Product Token';
 const RELEASE_SLUG_TOKEN = 'scaffold-product-token';
 const RELEASE_PACKAGE_TOKEN = 'scaffold-vendor-token/scaffold-package-token';
+const RELEASE_APPLICATION_VERSION_TOKEN = '999999.999999.999999';
 
 function releaseUsage(): never
 {
@@ -68,7 +69,13 @@ try {
     require $source.'/server/app/common/service/scaffold/ApplicationCreator.php';
     $application=$temporary.'/application';
     $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree]);
-    $manifest=$creator->create(RELEASE_PRODUCT_TOKEN,RELEASE_SLUG_TOKEN,RELEASE_PACKAGE_TOKEN,$application);
+    $manifest=$creator->create(
+        RELEASE_PRODUCT_TOKEN,
+        RELEASE_SLUG_TOKEN,
+        RELEASE_PACKAGE_TOKEN,
+        $application,
+        RELEASE_APPLICATION_VERSION_TOKEN
+    );
     $generationSource=$manifest['generation_source']??null;
     if(($manifest['template']['source_commit']??null)!==$commit||($manifest['template']['source_tree']??null)!==$tree
         ||($generationSource!==null&&(!is_array($generationSource)||($generationSource['commit']??null)!==$commit||($generationSource['tree']??null)!==$tree
@@ -88,10 +95,23 @@ try {
     }
     usort($files,static fn(array $a,array $b):int=>strcmp($a['path'],$b['path']));
     $inventoryRaw=file_get_contents($source.'/scaffold/application-template-inventory.json');
-    $release=['schema_version'=>2,'protocol'=>'peanut.scaffold-release.v2','release'=>[
+    $inventory=json_decode((string)$inventoryRaw,true,512,JSON_THROW_ON_ERROR);
+    $releaseIdentity=[
         'version'=>$options['version'],'source_commit'=>$commit,'source_tree'=>$tree,'inventory_sha256'=>hash('sha256',(string)$inventoryRaw),
         'inventory_template_version'=>$manifest['template']['version'],'managed_tree_sha256'=>$manifest['digests']['managed_tree_sha256'],
-        'tokens'=>['product_name'=>RELEASE_PRODUCT_TOKEN,'slug'=>RELEASE_SLUG_TOKEN,'package_identity'=>RELEASE_PACKAGE_TOKEN]],'files'=>$files,'renames'=>[]];
+    ];
+    if(($inventory['schema_version']??null)===1&&($inventory['protocol']??null)==='peanut.create-app-inventory.v1'){
+        $releaseIdentity['tokens']=['product_name'=>RELEASE_PRODUCT_TOKEN,'slug'=>RELEASE_SLUG_TOKEN,'package_identity'=>RELEASE_PACKAGE_TOKEN];
+        $release=['schema_version'=>2,'protocol'=>'peanut.scaffold-release.v2','release'=>$releaseIdentity,'files'=>$files,'renames'=>[]];
+    }else{
+        $applicationVersion=$inventory['application']['version']??null;
+        if(($inventory['schema_version']??null)!==2||($inventory['protocol']??null)!=='peanut.create-app-inventory.v2'
+            ||!is_string($applicationVersion)||preg_match('/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/D',$applicationVersion)!==1)throw new RuntimeException('SCAFFOLD_RELEASE_APPLICATION_VERSION_INVALID');
+        $releaseIdentity['tokens']=['product_name'=>RELEASE_PRODUCT_TOKEN,'slug'=>RELEASE_SLUG_TOKEN,'package_identity'=>RELEASE_PACKAGE_TOKEN,
+            'application_version'=>RELEASE_APPLICATION_VERSION_TOKEN];
+        $release=['schema_version'=>3,'protocol'=>'peanut.scaffold-release.v3','application'=>['version'=>$applicationVersion],
+            'release'=>$releaseIdentity,'files'=>$files,'renames'=>[]];
+    }
     $json=json_encode($release,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n";
     $manifestPath=rtrim($options['output'],'/').'/scaffold-manifest.json';
     if($check){if(!is_file($manifestPath)||!hash_equals($json,(string)file_get_contents($manifestPath)))throw new RuntimeException('SCAFFOLD_RELEASE_MANIFEST_STALE'); echo "SCAFFOLD-RELEASE-{$options['version']} verified\n";}

@@ -113,7 +113,7 @@ createApplicationExpect(is_string($systemTemporary), 'system temporary directory
 $temporary = $systemTemporary . '/peanut-create-app-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0775, true);
 $inventoryPath = $root . '/scaffold/application-template-inventory.json';
-$releasePath = $root . '/scaffold/releases/v1.1.3/scaffold-manifest.json';
+$releasePath = $root . '/scaffold/releases/v1.1.4/scaffold-manifest.json';
 $identity = ['commit' => str_repeat('a', 40), 'tree' => str_repeat('b', 40)];
 
 try {
@@ -140,6 +140,17 @@ try {
     createApplicationExpect($manifestOther['template'] === $manifestOne['template'], 'all parameter groups must adopt the same release identity');
     createApplicationExpect($manifestOther['generation_source'] === $manifestOne['generation_source'], 'all parameter groups must record the same generation source');
     createApplicationExpect($manifestOther['application']['name'] === 'Beta Workspace', 'second parameter group must be rendered independently');
+    createApplicationExpect(
+        $manifestOne['schema_version'] === 2
+            && $manifestOne['protocol'] === 'peanut.application-scaffold.v2'
+            && $manifestOne['application']['version'] === '0.1.0',
+        'generated application manifest must carry the default application version contract'
+    );
+    createApplicationExpect(
+        ($release['version'] ?? null) === '1.1.4'
+            && (json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['application']['version'] ?? null) === '0.1.0',
+        'scaffold v1.1.4 must expose the independent default application version'
+    );
 
     createApplicationExpect($manifestOne === $manifestTwo, 'same template identity and parameters must produce the same manifest');
     createApplicationExpect(
@@ -205,6 +216,56 @@ try {
     createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '')"), 'generated deployment must not enable an unowned Plugin lock');
     $releaseMetadata = json_decode((string)file_get_contents($first . '/RELEASE_METADATA.json'), true, 512, JSON_THROW_ON_ERROR);
     createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $releaseMetadata['version'] === '0.1.0', 'release metadata must be regenerated for the new application');
+    createApplicationExpect(str_contains((string)file_get_contents($first . '/CHANGELOG.md'), "## 0.1.0\n"), 'changelog must use application.version');
+    $sbom = json_decode((string)file_get_contents($first . '/RELEASE_SBOM.spdx.json'), true, 512, JSON_THROW_ON_ERROR);
+    $sbomRoots = array_values(array_filter(
+        $sbom['packages'] ?? [],
+        static fn(array $package): bool => ($package['SPDXID'] ?? null) === 'SPDXRef-Package-Peanut-Admin'
+    ));
+    createApplicationExpect(
+        count($sbomRoots) === 1
+            && ($sbomRoots[0]['name'] ?? null) === 'Acme Console'
+            && ($sbomRoots[0]['versionInfo'] ?? null) === '0.1.0',
+        'SBOM root package must use application.version'
+    );
+    foreach (['web', 'pc', 'uniapp', 'docs-site'] as $client) {
+        $package = json_decode((string)file_get_contents($first . "/{$client}/package.json"), true, 512, JSON_THROW_ON_ERROR);
+        createApplicationExpect(($package['version'] ?? null) === '0.1.0', "{$client} root package must use application.version");
+        if (in_array($client, ['web', 'pc', 'uniapp'], true)) {
+            createApplicationExpect(
+                ($package['dependencies']['@peanut-admin/admin'] ?? null) === '0.1.0-alpha.5',
+                "{$client} public admin dependency must remain Alpha.5"
+            );
+        }
+    }
+    foreach (['pc', 'uniapp'] as $client) {
+        $lock = json_decode((string)file_get_contents($first . "/{$client}/package-lock.json"), true, 512, JSON_THROW_ON_ERROR);
+        createApplicationExpect(
+            ($lock['version'] ?? null) === '0.1.0' && ($lock['packages']['']['version'] ?? null) === '0.1.0',
+            "{$client} root lock metadata must use application.version"
+        );
+        createApplicationExpect(
+            ($lock['packages']['']['dependencies']['@peanut-admin/admin'] ?? null) === '0.1.0-alpha.5',
+            "{$client} lock root dependency must remain Alpha.5"
+        );
+    }
+    foreach ([
+        'server/config/project.php',
+        'server/app/adminapi/logic/WorkbenchLogic.php',
+        'server/app/api/logic/IndexLogic.php',
+        'uniapp/src/pages/as_us/as_us.vue',
+    ] as $versionSurface) {
+        createApplicationExpect(
+            str_contains((string)file_get_contents($first . '/' . $versionSurface), "'0.1.0'"),
+            $versionSurface . ' fallback must use application.version'
+        );
+    }
+    $uniappManifest = (string)file_get_contents($first . '/uniapp/src/manifest.json');
+    createApplicationExpect(
+        preg_match('/"versionName"\s*:\s*"0\.1\.0"/', $uniappManifest) === 1
+            && preg_match('/"versionCode"\s*:\s*"10"/', $uniappManifest) === 1,
+        'new UniApp must use versionName 0.1.0 and versionCode 10'
+    );
     createApplicationExpect(!str_contains((string)file_get_contents($first . '/server/database/init.sql'), "MD5(CONCAT(MD5('admin123456')"), 'shared default password must be absent');
     createApplicationExpect((string)json_decode((string)file_get_contents($first . '/server/config/brand.json'), true)['website']['name'] === 'Acme Console', 'generated brand identity must be used');
     createApplicationExpect(is_file($first . '/server/config/peanut.php') && is_file($first . '/web/src/peanut.overrides.ts'), 'stable Host override entries must be preserved');
@@ -224,6 +285,7 @@ try {
     file_put_contents($temporary . '/non-empty/keep.txt', 'keep');
     createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty'), 'CREATE_APP_TARGET_NOT_EMPTY');
     createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug'), 'CREATE_APP_SLUG_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'v1'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
     createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape'), 'CREATE_APP_TARGET_PATH_INVALID');
 
     mkdir($temporary . '/outside');
@@ -308,7 +370,7 @@ try {
     createApplicationTamperedReleaseFails(
         $root, $inventoryPath, $identity, $releasePath, $temporary, 'token-keys',
         static function (array &$manifest): void { $manifest['release']['tokens']['extra'] = 'extra-token'; },
-        'CREATE_APP_ADOPTION_TOKENS_INVALID'
+        'CREATE_APP_ADOPTION_MANIFEST_INVALID: SCAFFOLD_MANIFEST_APPLICATION_INVALID'
     );
     createApplicationTamperedReleaseFails(
         $root, $inventoryPath, $identity, $releasePath, $temporary, 'artifact',
@@ -354,6 +416,11 @@ try {
         $root, $inventoryPath, $identity, $releasePath, $temporary, 'managed-tree',
         static function (array &$manifest): void { $manifest['release']['managed_tree_sha256'] = str_repeat('0', 64); },
         'CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'application-version',
+        static function (array &$manifest): void { $manifest['application']['version'] = '0.2.0'; },
+        'CREATE_APP_ADOPTION_APPLICATION_VERSION_MISMATCH'
     );
 
     $unknown = $inventory;

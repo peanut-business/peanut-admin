@@ -11,6 +11,13 @@ php scripts/create-app \
   --target=/absolute/path/to/acme-console
 ```
 
+新应用的独立 `application.version` 默认是 `0.1.0`；需要在首次生成时指定其他 SemVer 时，
+使用 `--application-version=<semver>`。该值不是 Peanut Admin 产品版本，也不是
+`peanut-admin/core` 或 `@peanut-admin/admin` 的依赖版本。生成器以这一值统一写入 release
+metadata、changelog、SBOM 根包、后端版本配置与 API fallback、Web/PC/UniApp/Docs 根
+package、PC/UniApp 根 lock metadata，以及 UniApp manifest/About；默认 UniApp
+`versionName=0.1.0`、`versionCode=10`。
+
 目标必须是不存在或为空的绝对目录。slug 只接受小写 kebab-case；Composer 风格的 package
 identity 必须包含 vendor/name。路径穿越、符号链接目标、非空目标、inventory 漂移、未知
 变量与未知 transform 均 fail-closed。入口按 inventory 的 `template_version` 选择同版本的
@@ -36,13 +43,15 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 source-only 或 app-owned 演进无需伪造新的模板身份，而任何 managed 字节变化仍必须先形成
 新的不可变 scaffold release。
 
-当前 inventory 采用不可变 `v1.1.3` release。该版本在生产管理端 builder 执行 Vite 前，
+当前 inventory 采用不可变 scaffold `v1.1.4` release。该 identity 只属于 scaffold 命名空间，
+不是 Peanut Admin 产品 Tag/Release；既有 `v1.1.3` scaffold identity 保持不变。`v1.1.4`
+在生产管理端 builder 执行 Vite 前，
 把应用根目录的 `plugins.lock` 精确复制为 `/build/plugins.lock`；Plugin contribution resolver
 仍直接读取这份 lock，缺失或无效内容继续 fail-closed，不会回退到默认或忽略 Plugin 状态。
 生产 PHP 镜像同时携带应用自己的 `resources/project-resources.json`，供启动阶段数据库环境
 门禁读取；登记缺失或与显式部署目标不一致时仍 fail-closed。
 
-生成的 `.peanut/application-manifest.json` 还固定参数、每个生成文件的 SHA-256、mode、分类、
+生成的 `.peanut/application-manifest.json` v2 还固定 `application.version`、参数、每个生成文件的 SHA-256、mode、分类、
 owner、managed/app-owned 树摘要与 managed baseline 路径。它是
 后续 scaffold plan/apply/verify/recovery 的项目锁与三方输入；执行合同和命令见
 `docs/scaffold-upgrade.md`。

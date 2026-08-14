@@ -153,9 +153,9 @@ current_identity_matches() {
     --arg version "$CURRENT_VERSION" --arg release_commit "$CURRENT_RELEASE_COMMIT" --arg release_tree "$CURRENT_RELEASE_TREE" \
     --arg release_inventory "$(jq -r '.current_create_app.release_identity.inventory_sha256' "$METADATA")" \
     --arg candidate "$CANDIDATE" --arg candidate_tree "$CANDIDATE_TREE" --arg candidate_inventory "$CURRENT_INVENTORY_SHA256" \
-    '.schema_version == 1
-     and .protocol == "peanut.application-scaffold.v1"
-     and .application == {name:$name,slug:$slug,package_identity:$package}
+    '.schema_version == 2
+     and .protocol == "peanut.application-scaffold.v2"
+     and .application == {name:$name,slug:$slug,package_identity:$package,version:"0.1.0"}
      and .template == {version:$version,inventory_sha256:$release_inventory,source_commit:$release_commit,source_tree:$release_tree}
      and .generation_source == {commit:$candidate,tree:$candidate_tree,inventory_sha256:$candidate_inventory}' "$manifest" >/dev/null
 }
