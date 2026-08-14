@@ -113,7 +113,7 @@ createApplicationExpect(is_string($systemTemporary), 'system temporary directory
 $temporary = $systemTemporary . '/peanut-create-app-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0775, true);
 $inventoryPath = $root . '/scaffold/application-template-inventory.json';
-$releasePath = $root . '/scaffold/releases/v1.1.2/scaffold-manifest.json';
+$releasePath = $root . '/scaffold/releases/v1.1.3/scaffold-manifest.json';
 $identity = ['commit' => str_repeat('a', 40), 'tree' => str_repeat('b', 40)];
 
 try {
@@ -191,6 +191,11 @@ try {
     $generatedLock = json_decode((string)file_get_contents($first . '/plugins.lock'), true, 64, JSON_THROW_ON_ERROR);
     createApplicationExpect($generatedLock === ['schema_version' => 1, 'plugins' => []], 'generated Plugin lock must be explicitly empty');
     createApplicationExpect((new PluginLockResolver($first . '/server', '../plugins.lock'))->all() === [], 'empty generated Plugin lock must resolve without artifacts');
+    $generatedProductionDockerfile = (string)file_get_contents($first . '/deploy/docker/production.Dockerfile');
+    createApplicationExpect(
+        preg_match('/COPY plugins\\.lock \/build\/plugins\\.lock\\R+COPY web\/ \.\/\\R+RUN pnpm build/', $generatedProductionDockerfile) === 1,
+        'admin production builder must copy the fail-closed Plugin lock to the repository root before Vite build'
+    );
     $generatedModulesConfig = (string)file_get_contents($first . '/server/config/modules.php');
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
     createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '')"), 'generated deployment must not enable an unowned Plugin lock');
