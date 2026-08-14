@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "candidate": "a732445c037057ed97cf76846e685f3ddc335397",
+  "candidate_tree": "2ad602f9020d5edca9fe24a733b450015f2227eb",
+  "run_id": "p0ed1f7a113",
+  "resource_id": "peanut-admin-p0e-mysql84-gate",
+  "environment": "development",
+  "endpoint": "192.168.192.2:20183",
+  "groups": {
+    "generated-application": {
+      "status": "passed",
+      "finished_at": 1786719011
+    },
+    "standalone-fresh": {
+      "status": "passed",
+      "finished_at": 1786719023
+    },
+    "multi-tenant-fresh": {
+      "status": "passed",
+      "finished_at": 1786719034
+    },
+    "v1.0-forward": {
+      "status": "passed",
+      "finished_at": 1786719045
+    },
+    "v1.1-forward": {
+      "status": "passed",
+      "finished_at": 1786719061
+    },
+    "migration-fault-restore": {
+      "status": "passed",
+      "finished_at": 1786719080
+    },
+    "plugin-lifecycle": {
+      "status": "passed",
+      "finished_at": 1786719093
+    },
+    "production-compose": {
+      "status": "passed",
+      "finished_at": 1786719163
+    },
+    "standalone-browser": {
+      "status": "passed",
+      "finished_at": 1786719178
+    },
+    "multi-tenant-browser": {
+      "status": "passed",
+      "finished_at": 1786719202
+    }
+  },
+  "cleanup": {
+    "database_residual_count": 0,
+    "compose_removed": true,
+    "container_residual_count": 0,
+    "volume_residual_count": 0,
+    "network_residual_count": 0,
+    "image_residual_count": 0,
+    "listener_residual_count": 0,
+    "docs_listener_stopped": true,
+    "backup_removed": true,
+    "cache_removed": true,
+    "output_preserved": "/Users/xing/Documents/company-projects/peanut-admin-p0e-runtime/output/p0e-p0ed1f7a113",
+    "lease_released": true
+  }
+}
