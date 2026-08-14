@@ -105,9 +105,6 @@ final class PluginLockResolver
                 $moduleRoots
             );
         }
-        if ($plugins === []) {
-            throw new PluginLifecycleException('PLUGIN_LOCK_INVALID', 'plugins.lock contains no Plugin.');
-        }
         return $this->resolved = $plugins;
     }
 

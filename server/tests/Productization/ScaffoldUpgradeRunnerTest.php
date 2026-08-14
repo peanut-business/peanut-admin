@@ -49,7 +49,7 @@ function scaffoldCopyRelease(string $source,string $target): void { scaffoldCopy
 
 $temporaryRoot=realpath(sys_get_temp_dir());if($temporaryRoot===false)throw new RuntimeException('temp root unavailable');
 $temporary=$temporaryRoot.'/peanut-scaffold-e2e-'.bin2hex(random_bytes(8));mkdir($temporary,0700,true);
-$fromRelease=$root.'/scaffold/releases/v1.0.0/scaffold-manifest.json';$toRelease=$root.'/scaffold/releases/v1.1.0/scaffold-manifest.json';
+$fromRelease=$root.'/scaffold/releases/v1.0.0/scaffold-manifest.json';$toRelease=$root.'/scaffold/releases/v1.1.0/scaffold-manifest.json';$patchRelease=$root.'/scaffold/releases/v1.1.1/scaffold-manifest.json';
 try{
     $source=$temporary.'/from-source';
     scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$source]);
@@ -118,9 +118,25 @@ try{
     file_put_contents($driftManifest,(string)file_get_contents($driftManifest)."\n");
     scaffoldFails(fn()=>$runner->apply($drift,scaffoldPlanPath($drift,$driftPlan)),'SCAFFOLD_MANIFEST_CHECKSUM_DRIFT');
 
+    $patchSource=$temporary.'/patch-from-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$patchSource]);scaffoldRun(['git','checkout','--quiet','--detach',$toIdentity['source_commit']],$patchSource);
+    $patchApp=$temporary.'/patch-app';scaffoldFresh($patchSource,$patchApp);$patchBefore=scaffoldFileTree($patchApp);
+    $patchPlan=$runner->preflight($patchApp,$toRelease,$patchRelease);
+    scaffoldExpect($patchPlan['status']==='ready'&&$patchPlan['summary']['conflicts']===0,'v1.1.0 to patch plan must be ready');
+    $patchActions=[];foreach($patchPlan['actions'] as $action)$patchActions[$action['path']]=$action['action'];
+    scaffoldExpect(($patchActions['plugins.lock']??null)==='replace','patch must replace the broken Plugin lock');
+    scaffoldExpect(($patchActions['server/fixtures/plugin-module-lifecycle/run.php']??null)==='delete','patch must remove the source-only lifecycle runner');
+    $patchApply=$runner->apply($patchApp,scaffoldPlanPath($patchApp,$patchPlan));$patchVerify=$runner->verify($patchApp,scaffoldPlanPath($patchApp,$patchPlan));
+    scaffoldExpect($patchApply['status']==='applied'&&$patchVerify['status']==='verified','v1.1.0 to patch apply/verify must complete');
+    $patchLock=json_decode((string)file_get_contents($patchApp.'/plugins.lock'),true,64,JSON_THROW_ON_ERROR);
+    scaffoldExpect($patchLock===['schema_version'=>1,'plugins'=>[]],'patch must install an explicitly empty Plugin lock');
+    scaffoldExpect(!file_exists($patchApp.'/server/fixtures/plugin-module-lifecycle/run.php'),'patch must not retain the demo lifecycle runner');
+    $patchRecover=$runner->recover($patchApp,scaffoldPlanPath($patchApp,$patchPlan));
+    scaffoldExpect($patchRecover['status']==='recovered'&&hash_equals($patchBefore,scaffoldFileTree($patchApp)),'patch recovery must restore the exact v1.1.0 tree');
+
     $fromCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.0.0','--source-commit='.SCAFFOLD_FROM_COMMIT,'--output='.$root.'/scaffold/releases/v1.0.0','--check']);
     $toManifest=json_decode((string)file_get_contents($toRelease),true,512,JSON_THROW_ON_ERROR);$toCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.0','--source-commit='.$toManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.0','--check']);
-    scaffoldExpect(str_contains($fromCheck,'verified')&&str_contains($toCheck,'verified'),'both immutable release trees must exactly regenerate');
+    $patchManifest=json_decode((string)file_get_contents($patchRelease),true,512,JSON_THROW_ON_ERROR);$patchCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.1','--source-commit='.$patchManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.1','--check']);
+    scaffoldExpect(str_contains($fromCheck,'verified')&&str_contains($toCheck,'verified')&&str_contains($patchCheck,'verified'),'all immutable release trees must exactly regenerate');
 }finally{putenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS');scaffoldDelete($temporary);}
 
 echo "SCAFFOLD-UPGRADE-E2E-001 passed\n";

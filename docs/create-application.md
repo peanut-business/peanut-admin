@@ -24,6 +24,10 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 - `app-owned`：应用业务、数据库、页面、文档与稳定 Host/override 入口。future scaffold 默认保留。
 - `excluded`：Peanut Admin 的历史证据、发布记录、内部设计/治理、缓存/构建/依赖、凭据和本机基础设施。
 
+正式应用会生成合法的空 `plugins.lock`，并默认不启用 Plugin lock。源仓中的
+`fixture.delivery-record` manifest、PHP/Web Module 与 lifecycle runner 仅是合同测试证据，
+全部保持 `excluded`；应用 owner 安装真实 Plugin 时才写入可解析的不可变身份并显式配置 lock。
+
 生成的 `.peanut/application-manifest.json` 固定模板版本、源 commit/tree、参数、每个生成文件
 的 SHA-256、mode、分类、owner、managed/app-owned 树摘要与 managed baseline 路径。它是
 后续 scaffold plan/apply/verify/recovery 的项目锁与三方输入；执行合同和命令见

@@ -16,6 +16,9 @@ create-app，再逐字验证完整 managed 生成树。
   tree `172865d8b8057caa8a017ac591618cd914af30a5`。
 - `v1.1.0`：本执行器的下一 scaffold release；精确 commit/tree 记录在其 manifest，且由
   release builder 从该固定 tree 生成。
+- `v1.1.1`：修复正式 create-app 的 Plugin lock 交付边界；空 lock 不再引用 source-only
+  fixture，旧 demo lifecycle runner 从 managed tree 退出。精确 commit/tree 与 managed
+  digest 记录在新增 manifest，`v1.1.0` 身份保持不变。
 
 历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
 schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没有静默覆盖历史证据。
@@ -25,8 +28,8 @@ schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没�
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
-  --from-manifest=/absolute/path/to/scaffold/releases/v1.0.0/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.0/scaffold-manifest.json
+  --from-manifest=/absolute/path/to/scaffold/releases/v1.1.0/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.1/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
