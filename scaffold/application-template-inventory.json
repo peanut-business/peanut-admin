@@ -52,6 +52,14 @@
             "source_sha256": "1180e468df50ba1387571e7426197614268683d8f6bb64e32d782401bca4e1ce"
         },
         {
+            "path": ".github/pull_request_template.md",
+            "target": ".github/pull_request_template.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": ".github/workflows/ci.yml",
             "target": ".github/workflows/ci.yml",
             "classification": "managed",
@@ -63,6 +71,14 @@
         {
             "path": ".github/workflows/core-upgrade-compatibility.yml",
             "target": ".github/workflows/core-upgrade-compatibility.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": ".github/workflows/product-capability-ledger.yml",
+            "target": ".github/workflows/product-capability-ledger.yml",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -1383,6 +1399,62 @@
         {
             "path": "docs/plugin-module-development.md",
             "target": "docs/plugin-module-development.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/README.md",
+            "target": "docs/product-status/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/acceptance-gates.md",
+            "target": "docs/product-status/acceptance-gates.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/capability-ledger.json",
+            "target": "docs/product-status/capability-ledger.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/deferred-scope.md",
+            "target": "docs/product-status/deferred-scope.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/evidence-guide.md",
+            "target": "docs/product-status/evidence-guide.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/releases/README.md",
+            "target": "docs/product-status/releases/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/schema/capability-ledger.schema.json",
+            "target": "docs/product-status/schema/capability-ledger.schema.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3324,6 +3396,14 @@
             "transform": "text",
             "mode": 493,
             "source_sha256": "2ff7beb2674a28fbc71c0fce3df9ff7b5431ba22e3af539cb6f65b3826f46501"
+        },
+        {
+            "path": "scripts/check-product-capability-ledger",
+            "target": "scripts/check-product-capability-ledger",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "scripts/check-stale-facts.sh",
