@@ -11,12 +11,18 @@ Chromium smoke 绑定到同一个 commit/tree、worktree、run_id 与项目资�
 - Environment：`development`
 - Host/container endpoint：`192.168.192.2:20183`
 - Database namespace：`peanut_admin_development_p0e_<run_id>_`
+- Database administration：`peanut-admin-mysql84-remote-admin-cli`，通过 `ssh mac-14` 在已登记
+  的 `peanut-admin-mysql84-development` 容器内运行 MySQL 8.4.10 CLI
 - Production-mode HTTP：`127.0.0.1:20190`
 - Docs preview：`127.0.0.1:20186`
 - Fallback：无
 
 `peanut_admin_development` 是持久开发库，明确禁止进入 P0-E claim、连接、迁移或清理。runner
 只创建登记中的九个 scenario 数据库，并且只删除与本次精确 run_id 相符的这九个名字。
+建库、删库、状态查询、dump 和 restore 不依赖主工作站的 `mysql`/`mysqldump`。runner 在
+active lease 下先核验远端容器的精确 image、running/healthy 状态、CLI 绝对路径与 8.4.10
+版本，再通过 SSH + 远端 `docker exec` 执行；root 凭据只在容器环境内使用，不传回主工作站。
+PHP 安装器和应用 Runtime 仍按登记 endpoint 使用项目数据库账号连接局域网 MySQL。
 
 ## 候选与租约
 
@@ -74,7 +80,8 @@ P0E_PLATFORM_INITIAL_PASSWORD
 P0E_PLAYWRIGHT_CLI
 ```
 
-`P0E_PLAYWRIGHT_CLI` 必须是显式可执行的 Playwright CLI wrapper。Chromium 阶段使用独立
+`P0E_DB_USER`/`P0E_DB_PASSWORD` 仅供 PHP 安装器和应用 Runtime 使用；数据库管理操作使用
+已登记远端容器内的管理身份。`P0E_PLAYWRIGHT_CLI` 必须是显式可执行的 Playwright CLI wrapper。Chromium 阶段使用独立
 session、先 snapshot，再运行固定 smoke fixture；管理员密码只从进程环境读取。
 
 ```bash

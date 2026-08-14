@@ -40,6 +40,7 @@ $expect(count($registered) === 1, 'P0-E resource registration is not unique');
 $expect(($registered[0]['application_runtime'] ?? null) === false, 'P0-E resource became a default runtime');
 $expect(($registered[0]['fallback'] ?? null) === 'none', 'P0-E resource must fail closed');
 $expect(($registered[0]['allowed_scenarios'] ?? null) === $expectedScenarios, 'runner and registry scenarios diverged');
+$expect(($registered[0]['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-mysql84-remote-admin-cli', 'P0-E remote administration tooling is not fixed');
 
 $candidate = trim((string)shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
 $runId = 'p0e' . bin2hex(random_bytes(4));
@@ -61,6 +62,10 @@ $expect(($plan['candidate_tree'] ?? null) === trim((string)shell_exec('git -C ' 
 $expect(($plan['resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'plan resource identity changed');
 $expect(($plan['environment'] ?? null) === 'development', 'plan environment changed');
 $expect(($plan['endpoint'] ?? null) === '192.168.192.2:20183', 'plan endpoint changed');
+$expect(($plan['database_admin_tooling']['transport'] ?? null) === 'ssh-docker-exec', 'plan does not use remote container administration');
+$expect(($plan['database_admin_tooling']['mysql_command'] ?? null) === '/usr/bin/mysql', 'plan MySQL client path changed');
+$expect(($plan['database_admin_tooling']['mysqldump_command'] ?? null) === '/usr/bin/mysqldump', 'plan mysqldump path changed');
+$expect(($plan['database_admin_tooling']['fallback'] ?? null) === 'none; host mysql and mysqldump commands are forbidden', 'plan allowed a host database client fallback');
 $expect(($plan['ports'] ?? null) === ['http' => 20190, 'docs' => 20186], 'plan ports are not registered fixed ports');
 $expect(!file_exists($outputPath) && !file_exists($backupPath) && !file_exists($cachePath), 'no-resource plan created a path');
 
@@ -108,6 +113,9 @@ $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease v
 $expect(str_contains($runnerSource, 'read_only: true'), 'container lease proof is not read-only');
 $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database refusal is missing');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
+$expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
+$expect(str_contains($runnerSource, 'remote_dump') && str_contains($runnerSource, 'remote_restore'), 'backup and restore do not use registered remote tooling');
+$expect(!str_contains($runnerSource, '["mysql"') && !str_contains($runnerSource, '["mysqldump"'), 'runner reintroduced a bare host MySQL client');
 $expect(str_contains($runnerSource, 'core.excludesFile'), 'create-app does not exclude only the lease-owned runtime evidence');
 $expect(str_contains($runnerSource, ':(exclude)'), 'resume cleanliness does not exclude only the lease-owned runtime evidence');
 $expect(str_contains($browserSource, 'snapshot'), 'browser runner does not capture Playwright snapshots');

@@ -10,6 +10,7 @@ import json
 import os
 import re
 import secrets
+import shlex
 import shutil
 import signal
 import socket
@@ -30,6 +31,7 @@ INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
 BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
 PERSISTENT_DATABASE = "peanut_admin_development"
 RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
+ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
 GROUP_RESULT = re.compile(r"^[a-z0-9][a-z0-9.-]{0,63}$")
 
 
@@ -112,7 +114,7 @@ def required_environment(name: str) -> str:
     return value
 
 
-def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     fixture = read_json(FIXTURE_PATH)
     registry = read_json(REGISTRY_PATH)
     if fixture.get("schema_version") != 1 or fixture.get("gate") != "p0e-runtime-qualification":
@@ -125,6 +127,30 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     if len(matches) != 1:
         fail(f"registry must contain exactly one {RESOURCE_ID}")
     registered = matches[0]
+    tooling = registry.get("resources", {}).get("tooling", [])
+    tool_matches = [item for item in tooling if item.get("stable_resource_id") == ADMIN_TOOLING_ID]
+    if len(tool_matches) != 1:
+        fail(f"registry must contain exactly one {ADMIN_TOOLING_ID}")
+    admin_tool = tool_matches[0]
+    expected_tool = {
+        "version": registered.get("version"),
+        "host": "mac-14",
+        "transport": "ssh-docker-exec",
+        "ssh_alias": "mac-14",
+        "ssh_command": "/usr/bin/ssh",
+        "docker_command": "/usr/local/bin/docker",
+        "container_name": "peanut-admin-mysql84-development",
+        "container_image": "mysql:8.4.10@sha256:8dbcf531a03aade657e181b9cf2f1d1803ce621a1d55610cb44cb531ab7d7db6",
+        "mysql_command": "/usr/bin/mysql",
+        "mysqldump_command": "/usr/bin/mysqldump",
+    }
+    for key, value in expected_tool.items():
+        if admin_tool.get(key) != value:
+            fail(f"registered P0-E administrative tooling disagrees on {key}")
+    if registered.get("administrative_tooling_resource_id") != ADMIN_TOOLING_ID:
+        fail("P0-E database does not reference the registered administrative tooling")
+    if admin_tool.get("fallback") != "none; host mysql and mysqldump commands are forbidden":
+        fail("P0-E administrative tooling must forbid a host CLI fallback")
     expected = {
         "stable_resource_id": registered.get("stable_resource_id"),
         "environment": (registered.get("environments") or [None])[0],
@@ -155,7 +181,7 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         resolved = git("rev-parse", f"{baseline}^{{commit}}")
         if not re.fullmatch(r"[0-9a-f]{40}", resolved):
             fail(f"baseline tag is unavailable: {baseline}")
-    return fixture, registry, registered
+    return fixture, registry, registered, admin_tool
 
 
 def validate_candidate(candidate: str, require_clean: bool, allowed_output: Path | None = None) -> tuple[str, str]:
@@ -206,7 +232,7 @@ def database_names(fixture: dict[str, Any], run_id: str) -> dict[str, str]:
 
 
 def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
-    fixture, registry, _ = validate_fixture()
+    fixture, registry, _, admin_tool = validate_fixture()
     names = database_names(fixture, args.run_id)
     paths = {
         "output-dir": str(absolute_path(args.output_dir, "output-dir", args.run_id)),
@@ -272,6 +298,14 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         "worktree": str(ROOT),
         "run_id": args.run_id,
         "resource_id": RESOURCE_ID,
+        "database_admin_tooling": {
+            key: admin_tool[key]
+            for key in (
+                "stable_resource_id", "version", "host", "transport", "ssh_alias",
+                "ssh_command", "docker_command", "container_name", "container_image",
+                "mysql_command", "mysqldump_command", "fallback",
+            )
+        },
         "environment": "development",
         "endpoint": f"{fixture['database_resource']['host']}:{fixture['database_resource']['port']}",
         "databases": names,
@@ -373,6 +407,100 @@ class Runner:
             "owned_candidate_vendor": self.created_candidate_vendor,
             "groups": {},
         }
+
+    def remote_docker(
+        self,
+        arguments: list[str],
+        *,
+        input_bytes: bytes | None = None,
+        stdin: Any = None,
+        stdout: Any = subprocess.PIPE,
+        check: bool = True,
+    ) -> subprocess.CompletedProcess[bytes]:
+        tool = self.plan["database_admin_tooling"]
+        remote_command = shlex.join([tool["docker_command"], *arguments])
+        result = subprocess.run(
+            [
+                tool["ssh_command"], "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+                tool["ssh_alias"], remote_command,
+            ],
+            input=input_bytes,
+            stdin=stdin,
+            stdout=stdout,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if check and result.returncode != 0:
+            detail = result.stderr.decode("utf-8", errors="replace").strip()
+            fail(f"registered remote database administration failed ({result.returncode}): {detail}")
+        return result
+
+    def preflight_database_admin_tooling(self) -> None:
+        tool = self.plan["database_admin_tooling"]
+        ssh_command = Path(tool["ssh_command"])
+        if not ssh_command.is_file() or not os.access(ssh_command, os.X_OK):
+            fail("registered SSH client is unavailable")
+        inspect = self.remote_docker([
+            "inspect", tool["container_name"], "--format",
+            "{{.Config.Image}}|{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}",
+        ]).stdout.decode("utf-8", errors="replace").strip()
+        if inspect != f"{tool['container_image']}|running|healthy":
+            fail("registered MySQL allocation identity or health is not current")
+        probe_script = (
+            'test -x "$1" && test -x "$2" && '
+            '"$1" --version && "$2" --version && printf "user=%s\\n" "$MYSQL_USER"'
+        )
+        probe = self.remote_docker([
+            "exec", tool["container_name"], "/bin/sh", "-ceu", probe_script,
+            "p0e-admin-tooling", tool["mysql_command"], tool["mysqldump_command"],
+        ]).stdout.decode("utf-8", errors="replace")
+        if probe.count(tool["version"]) < 2:
+            fail("registered remote MySQL client version is unavailable")
+        expected_user = required_environment("P0E_DB_USER")
+        if f"user={expected_user}\n" not in probe:
+            fail("P0-E application database identity does not match the registered allocation")
+
+    def remote_mysql(self, sql: str, *, database: str | None = None) -> str:
+        tool = self.plan["database_admin_tooling"]
+        client_script = (
+            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
+            'if [ "$#" -eq 2 ]; then '
+            'exec "$1" --protocol=SOCKET --user=root --batch --raw --skip-column-names "$2"; '
+            'fi; exec "$1" --protocol=SOCKET --user=root --batch --raw --skip-column-names'
+        )
+        arguments = [
+            "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", client_script,
+            "p0e-mysql", tool["mysql_command"],
+        ]
+        if database is not None:
+            arguments.append(database)
+        result = self.remote_docker(arguments, input_bytes=(sql + "\n").encode("utf-8"))
+        return result.stdout.decode("utf-8", errors="strict")
+
+    def remote_dump(self, database: str, destination: Path) -> None:
+        tool = self.plan["database_admin_tooling"]
+        dump_script = (
+            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
+            'exec "$1" --protocol=SOCKET --user=root --single-transaction --routines '
+            '--triggers --no-tablespaces --hex-blob "$2"'
+        )
+        with destination.open("wb") as stream:
+            self.remote_docker([
+                "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", dump_script,
+                "p0e-mysqldump", tool["mysqldump_command"], database,
+            ], stdout=stream)
+
+    def remote_restore(self, database: str, source: Path) -> None:
+        tool = self.plan["database_admin_tooling"]
+        restore_script = (
+            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
+            'exec "$1" --protocol=SOCKET --user=root "$2"'
+        )
+        with source.open("rb") as stream:
+            self.remote_docker([
+                "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", restore_script,
+                "p0e-mysql-restore", tool["mysql_command"], database,
+            ], stdin=stream)
 
     def initialize(self) -> None:
         for port in self.plan["ports"].values():
@@ -487,25 +615,11 @@ class Runner:
         })
         return values
 
-    def mysql(self, sql: str, *, database: str | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
-        env = {
-            "MYSQL_PWD": required_environment("P0E_DB_PASSWORD"),
-        }
-        arguments = [
-            "mysql", "--protocol=TCP", "--host", self.fixture["database_resource"]["host"],
-            "--port", str(self.fixture["database_resource"]["port"]),
-            "--user", required_environment("P0E_DB_USER"), "--batch", "--raw", "--skip-column-names",
-        ]
-        if database:
-            arguments.append(database)
-        arguments.extend(["--execute", sql])
-        return command(arguments, env=env, capture=True, check=check)
-
     def database_exists(self, database: str) -> bool:
         escaped = database.replace("'", "''")
-        result = self.mysql(
+        result = self.remote_mysql(
             f"SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='{escaped}'"
-        ).stdout.strip()
+        ).strip()
         return result == "1"
 
     def create_database(self, database: str) -> None:
@@ -513,12 +627,30 @@ class Runner:
             fail(f"refusing to create unowned database: {database}")
         if self.database_exists(database):
             fail(f"lease-owned database must be absent before creation: {database}")
-        self.mysql(f"CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci")
+        user = required_environment("P0E_DB_USER")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,32}", user):
+            fail("P0-E database user is not a safe registered account name")
+        escaped_user = user.replace("'", "''")
+        self.remote_mysql(
+            f"CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci; "
+            f"GRANT ALL PRIVILEGES ON `{database}`.* TO '{escaped_user}'@'%';"
+        )
 
     def drop_database(self, database: str) -> None:
         if database not in self.plan["databases"].values() or database == PERSISTENT_DATABASE:
             fail(f"refusing to drop unowned database: {database}")
-        self.mysql(f"DROP DATABASE IF EXISTS `{database}`")
+        user = required_environment("P0E_DB_USER")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,32}", user):
+            fail("P0-E database user is not a safe registered account name")
+        escaped_user = user.replace("'", "''")
+        grant_count = self.remote_mysql(
+            "SELECT COUNT(*) FROM information_schema.SCHEMA_PRIVILEGES "
+            f"WHERE TABLE_SCHEMA='{database}' AND "
+            f"GRANTEE=CONCAT(CHAR(39),'{escaped_user}',CHAR(39),'@',CHAR(39),'%',CHAR(39))"
+        ).strip()
+        if grant_count != "0":
+            self.remote_mysql(f"REVOKE ALL PRIVILEGES ON `{database}`.* FROM '{escaped_user}'@'%'")
+        self.remote_mysql(f"DROP DATABASE IF EXISTS `{database}`")
 
     def install_current(self, database: str, mode: str, log: Path) -> None:
         command(["php", "server/database/install.php"], env=self.db_env(database, mode), log=log)
@@ -622,18 +754,12 @@ class Runner:
         dump = self.backup / "migration-fault-source.sql"
         self.create_database(source)
         self.install_current(source, "standalone", log)
-        dump_env = {"MYSQL_PWD": required_environment("P0E_DB_PASSWORD")}
-        with dump.open("wb") as stream:
-            result = subprocess.run([
-                "mysqldump", "--protocol=TCP", "--host", self.fixture["database_resource"]["host"],
-                "--port", str(self.fixture["database_resource"]["port"]), "--user", required_environment("P0E_DB_USER"),
-                "--single-transaction", "--routines", "--triggers", "--no-tablespaces", source,
-            ], env=os.environ | dump_env, stdout=stream, stderr=subprocess.PIPE, check=False)
-        if result.returncode != 0 or dump.stat().st_size < 1024:
+        self.remote_dump(source, dump)
+        if dump.stat().st_size < 1024:
             fail("verified migration backup was not created")
         backup_digest = sha256(dump)
         latest = sorted((ROOT / "server/database/migrations").glob("*.sql"))[-1].name
-        self.mysql(
+        self.remote_mysql(
             "UPDATE pa_schema_migration SET status='failed',error='P0E_INJECTED_MIGRATION_FAULT' "
             f"WHERE migration='{latest}'",
             database=source,
@@ -642,13 +768,7 @@ class Runner:
         if failed.returncode == 0:
             fail("injected migration fault was not rejected")
         self.create_database(restore)
-        with dump.open("rb") as stream:
-            restore_result = subprocess.run([
-                "mysql", "--protocol=TCP", "--host", self.fixture["database_resource"]["host"],
-                "--port", str(self.fixture["database_resource"]["port"]), "--user", required_environment("P0E_DB_USER"), restore,
-            ], env=os.environ | dump_env, stdin=stream, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        if restore_result.returncode != 0:
-            fail("backup restore failed")
+        self.remote_restore(restore, dump)
         self.inspect(restore, "standalone", "migration-fault-restore")
         self.write_json(self.output / "groups/migration-fault-backup.json", {
             "schema_version": 1,
@@ -946,8 +1066,9 @@ def main() -> int:
         print(json.dumps({"status": "claimed", "lease": args.lease, "candidate": args.candidate}))
         return 0
     verify_lease(args, plan_data)
-    fixture, _, _ = validate_fixture()
+    fixture, _, _, _ = validate_fixture()
     runner = Runner(args, plan_data, fixture)
+    runner.preflight_database_admin_tooling()
     if args.command == "run":
         runner.initialize()
     else:

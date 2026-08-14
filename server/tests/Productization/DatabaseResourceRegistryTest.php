@@ -46,6 +46,7 @@ $requiredQualificationFields = [
     'upstream_endpoint', 'container_endpoint', 'credential_ref', 'data_source',
     'freshness_requirement', 'health_check', 'claim_precondition', 'creation_policy',
     'backup_responsibility', 'cleanup_responsibility', 'failure_retention_policy',
+    'administrative_tooling_resource_id',
 ];
 foreach ($requiredQualificationFields as $field) {
     $expect(array_key_exists($field, $qualificationDatabase), "P0-E required field {$field} is missing");
@@ -58,6 +59,7 @@ $expect(($qualificationDatabase['namespace'] ?? null) === 'peanut_admin_developm
 $expect(($qualificationDatabase['run_id_pattern'] ?? null) === '^[a-z0-9]{1,11}$', 'P0-E run_id policy is invalid');
 $expect(($qualificationDatabase['database_name_max_length'] ?? null) === 64, 'P0-E database name limit is invalid');
 $expect(($qualificationDatabase['credential_ref'] ?? null) === 'mac-14:/Users/xing/.config/peanut-admin/development-db.env', 'P0-E credential reference changed unexpectedly');
+$expect(($qualificationDatabase['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-mysql84-remote-admin-cli', 'P0-E administrative tooling reference changed unexpectedly');
 $expect(($qualificationDatabase['lifecycle'] ?? null) === 'ephemeral', 'P0-E database lifecycle must be ephemeral');
 $expect(($qualificationDatabase['fallback'] ?? null) === 'none', 'P0-E database must fail closed');
 $expect(($qualificationDatabase['claim_precondition'] ?? '') !== '', 'P0-E claim precondition is missing');
@@ -68,6 +70,23 @@ $expect(($qualificationDatabase['failure_retention_policy'] ?? '') !== '', 'P0-E
 $expect(($qualificationDatabase['data_source'] ?? '') !== '', 'P0-E authoritative data source is missing');
 $expect(($qualificationDatabase['freshness_requirement'] ?? '') !== '', 'P0-E freshness requirement is missing');
 $expect(is_array($qualificationDatabase['health_check'] ?? null), 'P0-E health check is missing');
+
+$administrativeTools = array_values(array_filter(
+    $registry['resources']['tooling'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-mysql84-remote-admin-cli'
+));
+$expect(count($administrativeTools) === 1, 'P0-E remote MySQL administration tooling registration is missing');
+$administrativeTool = $administrativeTools[0];
+$expect(($administrativeTool['host'] ?? null) === 'mac-14', 'P0-E administration moved off the database resource host');
+$expect(($administrativeTool['version'] ?? null) === '8.4.10', 'P0-E administration client version changed');
+$expect(($administrativeTool['transport'] ?? null) === 'ssh-docker-exec', 'P0-E administration transport changed');
+$expect(($administrativeTool['ssh_command'] ?? null) === '/usr/bin/ssh', 'P0-E SSH command is not absolute');
+$expect(($administrativeTool['docker_command'] ?? null) === '/usr/local/bin/docker', 'P0-E remote Docker command is not absolute');
+$expect(($administrativeTool['container_name'] ?? null) === 'peanut-admin-mysql84-development', 'P0-E administration container changed');
+$expect(($administrativeTool['mysql_command'] ?? null) === '/usr/bin/mysql', 'P0-E MySQL command is not absolute');
+$expect(($administrativeTool['mysqldump_command'] ?? null) === '/usr/bin/mysqldump', 'P0-E mysqldump command is not absolute');
+$expect(str_starts_with((string)($administrativeTool['container_image'] ?? ''), 'mysql:8.4.10@sha256:'), 'P0-E administration image is not immutable');
+$expect(($administrativeTool['fallback'] ?? null) === 'none; host mysql and mysqldump commands are forbidden', 'P0-E administration allowed a host CLI fallback');
 
 foreach (['upstream_endpoint' => 'host', 'container_endpoint' => 'container'] as $key => $consumer) {
     $endpoint = $qualificationDatabase[$key] ?? null;
