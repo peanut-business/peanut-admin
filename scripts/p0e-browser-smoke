@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+die() { printf 'p0e-browser-smoke: %s\n' "$*" >&2; exit 1; }
+
+MODE=""
+BASE_URL=""
+DOCS_URL=""
+OUTPUT_DIR=""
+SESSION=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --mode) MODE="${2:-}"; shift 2 ;;
+    --base-url) BASE_URL="${2:-}"; shift 2 ;;
+    --docs-url) DOCS_URL="${2:-}"; shift 2 ;;
+    --output-dir) OUTPUT_DIR="${2:-}"; shift 2 ;;
+    --session) SESSION="${2:-}"; shift 2 ;;
+    *) die "unknown option: $1" ;;
+  esac
+done
+
+[[ "$MODE" == standalone || "$MODE" == multi-tenant ]] || die '--mode must be standalone or multi-tenant'
+[[ "$BASE_URL" =~ ^http://127\.0\.0\.1:[0-9]{1,5}$ ]] || die '--base-url must be an explicit registered loopback URL'
+[[ "$DOCS_URL" =~ ^http://127\.0\.0\.1:[0-9]{1,5}$ ]] || die '--docs-url must be an explicit registered loopback URL'
+[[ "$OUTPUT_DIR" == /* && -d "$OUTPUT_DIR" ]] || die '--output-dir must be an existing absolute directory'
+[[ "$SESSION" =~ ^[a-z0-9][a-z0-9-]{0,62}$ ]] || die '--session is invalid'
+[[ -n "${P0E_PLAYWRIGHT_CLI:-}" && -x "$P0E_PLAYWRIGHT_CLI" ]] || die 'P0E_PLAYWRIGHT_CLI must name an executable Playwright CLI wrapper'
+for name in P0E_ADMIN_INITIAL_PASSWORD P0E_PLATFORM_INITIAL_EMAIL P0E_PLATFORM_INITIAL_PASSWORD; do
+  [[ -n "${!name:-}" ]] || die "missing environment: $name"
+done
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+FIXTURE="$ROOT/server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js"
+[[ -f "$FIXTURE" ]] || die "missing fixture: $FIXTURE"
+LOG="$OUTPUT_DIR/$MODE-playwright.log"
+OPENED=0
+cleanup() {
+  if [[ "$OPENED" == 1 ]]; then
+    "$P0E_PLAYWRIGHT_CLI" close >>"$LOG" 2>&1 || true
+  fi
+}
+trap cleanup EXIT INT TERM
+export PLAYWRIGHT_CLI_SESSION="$SESSION"
+export P0E_BROWSER_MODE="$MODE"
+export P0E_BROWSER_BASE_URL="$BASE_URL"
+export P0E_BROWSER_DOCS_URL="$DOCS_URL"
+export P0E_BROWSER_OUTPUT_DIR="$OUTPUT_DIR"
+
+cd "$OUTPUT_DIR"
+"$P0E_PLAYWRIGHT_CLI" open "$BASE_URL/admin/login" >"$LOG" 2>&1
+OPENED=1
+"$P0E_PLAYWRIGHT_CLI" resize 1440 1000 >>"$LOG" 2>&1
+"$P0E_PLAYWRIGHT_CLI" snapshot >"$OUTPUT_DIR/$MODE-initial-snapshot.txt" 2>>"$LOG"
+"$P0E_PLAYWRIGHT_CLI" run-code "$(<"$FIXTURE")" >>"$LOG" 2>&1
+"$P0E_PLAYWRIGHT_CLI" snapshot >"$OUTPUT_DIR/$MODE-final-snapshot.txt" 2>>"$LOG"
+"$P0E_PLAYWRIGHT_CLI" close >>"$LOG" 2>&1
+OPENED=0
+printf 'browser_mode=%s\nstatus=passed\nlog=%s\n' "$MODE" "$LOG"

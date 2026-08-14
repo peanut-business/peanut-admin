@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "gate": "p0e-runtime-qualification",
+  "database_resource": {
+    "stable_resource_id": "peanut-admin-p0e-mysql84-gate",
+    "environment": "development",
+    "host": "192.168.192.2",
+    "port": 20183,
+    "database_template": "peanut_admin_development_p0e_<run_id>_<scenario>",
+    "migration_count": 54
+  },
+  "baselines": [
+    "v1.0.0",
+    "v1.1.0"
+  ],
+  "scenarios": {
+    "standalone_fresh": { "deployment_mode": "standalone", "action": "fresh" },
+    "multi_tenant_fresh": { "deployment_mode": "multi-tenant", "action": "fresh" },
+    "v1_0_forward": { "deployment_mode": "standalone", "action": "forward", "baseline": "v1.0.0" },
+    "v1_1_forward": { "deployment_mode": "standalone", "action": "forward", "baseline": "v1.1.0" },
+    "migration_fault_source": { "deployment_mode": "standalone", "action": "fault-source" },
+    "migration_fault_restore": { "deployment_mode": "standalone", "action": "restore" },
+    "plugin_lifecycle": { "deployment_mode": "multi-tenant", "action": "plugin" },
+    "standalone_browser": { "deployment_mode": "standalone", "action": "browser" },
+    "multi_tenant_browser": { "deployment_mode": "multi-tenant", "action": "browser" }
+  },
+  "groups": [
+    "generated-application",
+    "standalone-fresh",
+    "multi-tenant-fresh",
+    "v1.0-forward",
+    "v1.1-forward",
+    "migration-fault-restore",
+    "plugin-lifecycle",
+    "production-compose",
+    "standalone-browser",
+    "multi-tenant-browser"
+  ]
+}

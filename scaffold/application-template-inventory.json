@@ -1338,6 +1338,14 @@
             "mode": 420
         },
         {
+            "path": "docs/p0e-runtime-qualification.md",
+            "target": "docs/p0e-runtime-qualification.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "docs/peanut-admin-development-guide.md",
             "target": "docs/peanut-admin-development-guide.md",
             "classification": "managed",
@@ -3425,6 +3433,22 @@
             "transform": "text",
             "mode": 493,
             "source_sha256": "a75fa063e072c6e4869156aab7b80d21fe1ce21112452d7be41db037190b0cda"
+        },
+        {
+            "path": "scripts/p0e-browser-smoke",
+            "target": "scripts/p0e-browser-smoke",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scripts/p0e-runtime-qualification",
+            "target": "scripts/p0e-runtime-qualification",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "scripts/package-release.sh",
@@ -8677,6 +8701,14 @@
             "source_sha256": "1f04767a565d9ed8b78a255549205bee4e5bc748e219c034b82ca7d23f706727"
         },
         {
+            "path": "server/tests/Productization/P0eRuntimeQualificationTest.php",
+            "target": "server/tests/Productization/P0eRuntimeQualificationTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/tests/Productization/PaymentHostTest.php",
             "target": "server/tests/Productization/PaymentHostTest.php",
             "classification": "app-owned",
@@ -8928,6 +8960,22 @@
             "transform": "copy",
             "mode": 420,
             "source_sha256": "800afb800a0e9ed02c4c908c3acf5ba378ecbc49f67ecb4c62217d098f723f0b"
+        },
+        {
+            "path": "server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js",
+            "target": "server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/p0e-runtime-qualification/matrix.json",
+            "target": "server/tests/fixtures/p0e-runtime-qualification/matrix.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/tests/fixtures/scaffold-upgrade/from/files/conflict.txt",

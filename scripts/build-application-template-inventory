@@ -32,6 +32,11 @@ function excluded(string $path): bool
     if (str_starts_with($path, 'server/tests/fixtures/core-upgrade-compatibility/')) {
         return true;
     }
+    if (str_starts_with($path, 'scripts/p0e-')
+        || $path === 'server/tests/Productization/P0eRuntimeQualificationTest.php'
+        || str_starts_with($path, 'server/tests/fixtures/p0e-runtime-qualification/')) {
+        return true;
+    }
     return str_starts_with($path, 'output/')
         || (str_starts_with($path, 'docs/') && !in_array($path, [
             'docs/peanut-admin-development-guide.md',
