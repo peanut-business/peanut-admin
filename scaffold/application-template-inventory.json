@@ -3578,7 +3578,7 @@
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
-            "mode": 420
+            "mode": 493
         },
         {
             "path": "scripts/project-resource-lease",
