@@ -78,11 +78,11 @@
     },
     {
       "role": "business-domain",
-      "path": "server/app/common/service/config/WebsiteConfigService.php",
-      "before_sha256": "62d8bbe8c2b12d47803fc22b42e25fc2b433626ac85dadc8063701a0794ef5f2",
-      "after_sha256": "837b9591686911867c680a2a60bbeef43914f4e8de6ddf6f2cf73a243935a8b6",
-      "anchor": "final class WebsiteConfigService\n{\n",
-      "replacement": "final class WebsiteConfigService\n{\n    public const DOWNSTREAM_DEFAULT_SITE = 'Combined Upgrade Fixture';\n\n"
+      "path": "server/app/common/service/payment/PaymentServiceFactory.php",
+      "before_sha256": "9cf2c91e24c7d1fa1d56b412a7045599f7d8d324a4f8c02193d56cc24650d406",
+      "after_sha256": "f8917849db73775b22dd9d45ae22decd6e5b0cbd6c9395a34c6c429c590c3822",
+      "anchor": "final class PaymentServiceFactory\n{\n",
+      "replacement": "final class PaymentServiceFactory\n{\n    public const DOWNSTREAM_PAYMENT_PROFILE = 'combined-upgrade-fixture';\n\n"
     }
   ],
   "target_dependencies": {
@@ -109,7 +109,7 @@
   },
   "php_probes": [
     "server/tests/Productization/AdminPermissionHostTest.php",
-    "server/tests/Productization/WebsiteConfigServiceTest.php"
+    "server/tests/Productization/PaymentHostTest.php"
   ],
   "not_covered": [
     "database",

@@ -13,7 +13,7 @@
   `0.1.0-alpha.5`。
 
 在这两条包级路径之外，`scripts/combined-upgrade-qualification` 增加唯一组合资格路径：
-它从正式 `v1.0.0` create-app commit 生成同一个旧下游应用，并在 app-owned Host 与网站设置
+它从正式 `v1.0.0` create-app commit 生成同一个旧下游应用，并在 app-owned Host 与支付
 业务域分别加入确定性定制。随后按不可跳代的
 `1.0.0 → 1.1.0 → 1.1.1 → 1.1.2` release manifest 链执行 preflight/apply/verify，
 最后按目标 Composer、Web、PC 与 UniApp manifest/lock 做全新依赖安装。每一代 release 的
@@ -28,7 +28,7 @@ PHP 在历史应用的干净 archive 中先按原生 manifest/lock 安装 Alpha.
 等于该次 plan 的 `create/delete/replace/regenerate` managed action；任何额外源码变化都会拒绝。
 两处真实下游定制、全部 app-owned 业务源码及 Host 的聚合摘要在旧依赖测试、每一代 scaffold
 升级、目标干净安装和客户端构建后都必须逐字节不变。同一份
-`AdminPermissionHostTest.php` 与代表网站设置域测试会在升级前后各运行一次。
+`AdminPermissionHostTest.php` 与代表支付域测试会在升级前后各运行一次。
 
 ## 兼容承诺边界
 
