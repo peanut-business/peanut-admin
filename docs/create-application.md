@@ -13,7 +13,8 @@ php scripts/create-app \
 
 目标必须是不存在或为空的绝对目录。slug 只接受小写 kebab-case；Composer 风格的 package
 identity 必须包含 vendor/name。路径穿越、符号链接目标、非空目标、inventory 漂移、未知
-变量与未知 transform 均 fail-closed。
+变量与未知 transform 均 fail-closed。入口按 inventory 的 `template_version` 选择同版本的
+`scaffold/releases/v<version>/scaffold-manifest.json`；release 缺失或版本不符时不会创建目标。
 
 `scaffold/application-template-inventory.json` 对每个可生成的模板源文件给出唯一分类；
 `scaffold/**` 中的 source-only inventory、release artifact 与历史证据本身不递归进入应用：
@@ -28,8 +29,15 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 `fixture.delivery-record` manifest、PHP/Web Module 与 lifecycle runner 仅是合同测试证据，
 全部保持 `excluded`；应用 owner 安装真实 Plugin 时才写入可解析的不可变身份并显式配置 lock。
 
-生成的 `.peanut/application-manifest.json` 固定模板版本、源 commit/tree、参数、每个生成文件
-的 SHA-256、mode、分类、owner、managed/app-owned 树摘要与 managed baseline 路径。它是
+生成器在目标目录提交前，会验证 adopted release 的 token、artifact 自摘要、managed 路径
+双向全集、逐文件 mode/classification、参数渲染字节和 release managed tree。只有完整等价
+才会写入应用：`template` 固定已采用的不可变 release commit/tree/inventory，顶层
+`generation_source` 另行记录实际干净生成候选的 commit/tree 与当前 inventory SHA。这样
+source-only 或 app-owned 演进无需伪造新的模板身份，而任何 managed 字节变化仍必须先形成
+新的不可变 scaffold release。
+
+生成的 `.peanut/application-manifest.json` 还固定参数、每个生成文件的 SHA-256、mode、分类、
+owner、managed/app-owned 树摘要与 managed baseline 路径。它是
 后续 scaffold plan/apply/verify/recovery 的项目锁与三方输入；执行合同和命令见
 `docs/scaffold-upgrade.md`。
 

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use app\common\service\scaffold\ApplicationCreator;
+use app\common\service\scaffold\ScaffoldManifest;
 
 $root = dirname(__DIR__);
 require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
@@ -29,7 +30,20 @@ foreach (['name', 'slug', 'package', 'target'] as $required) {
 }
 
 try {
-    $manifest = (new ApplicationCreator($root, $root . '/scaffold/application-template-inventory.json'))->create(
+    $inventoryPath = $root . '/scaffold/application-template-inventory.json';
+    $inventoryRaw = file_get_contents($inventoryPath);
+    $inventory = is_string($inventoryRaw) ? json_decode($inventoryRaw, true, 512, JSON_THROW_ON_ERROR) : null;
+    $templateVersion = is_array($inventory) ? ($inventory['template_version'] ?? null) : null;
+    if (!is_string($templateVersion) || preg_match('/^\d+\.\d+\.\d+$/D', $templateVersion) !== 1) {
+        throw new RuntimeException('CREATE_APP_ADOPTION_INVENTORY_VERSION_INVALID');
+    }
+    $adoptionPath = $root . '/scaffold/releases/v' . $templateVersion . '/scaffold-manifest.json';
+    $adoption = ScaffoldManifest::load($adoptionPath);
+    if ($adoption->version() !== $templateVersion
+        || ($adoption->release()['inventory_template_version'] ?? null) !== $templateVersion) {
+        throw new RuntimeException('CREATE_APP_ADOPTION_VERSION_MISMATCH');
+    }
+    $manifest = (new ApplicationCreator($root, $inventoryPath, null, $adoption->path))->create(
         $options['name'], $options['slug'], $options['package'], $options['target']
     );
     fwrite(STDOUT, json_encode([
@@ -37,6 +51,7 @@ try {
         'target' => $options['target'],
         'template_version' => $manifest['template']['version'],
         'source_commit' => $manifest['template']['source_commit'],
+        'generation_source_commit' => $manifest['generation_source']['commit'],
         'managed_tree_sha256' => $manifest['digests']['managed_tree_sha256'],
         'app_owned_tree_sha256' => $manifest['digests']['app_owned_tree_sha256'],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n");

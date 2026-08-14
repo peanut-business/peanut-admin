@@ -14,7 +14,6 @@ from typing import Any
 REPO = Path(__file__).resolve().parent.parent
 REGISTRY_PATH = REPO / "resources/project-resources.json"
 SAFE_VALUE = re.compile(r"^[A-Za-z0-9._:/-]+$")
-P0E_RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 
 
 def fail(message: str) -> None:
@@ -59,27 +58,34 @@ def target_environment(target: str) -> str:
     return "development" if target == "local-development" else target
 
 
-def qualification_database_name(database: dict[str, Any], name: str) -> str:
+def templated_database_name(database: dict[str, Any], name: str) -> str:
     template = database.get("database")
-    if not isinstance(template, str) or "<run_id>" not in template or "<scenario>" not in template:
-        fail("P0-E database template is invalid")
-    prefix = template.split("<run_id>", 1)[0]
+    if (
+        not isinstance(template, str)
+        or template.count("<run_id>") != 1
+        or template.count("<scenario>") != 1
+    ):
+        fail("database template must contain one <run_id> and one <scenario>")
     allowed_scenarios = database.get("allowed_scenarios")
-    if not isinstance(allowed_scenarios, list) or not allowed_scenarios:
-        fail("P0-E database scenarios are missing")
-    scenario = next(
-        (candidate for candidate in allowed_scenarios if name.endswith(f"_{candidate}")),
-        None,
-    )
-    if scenario is None or not name.startswith(prefix):
-        fail("P0-E database name is outside the registered namespace or scenario set")
-    run_id = name[len(prefix) : -len(f"_{scenario}")]
+    if (
+        not isinstance(allowed_scenarios, list)
+        or not allowed_scenarios
+        or any(not isinstance(item, str) or not item for item in allowed_scenarios)
+    ):
+        fail("database template scenarios are missing or invalid")
+    matcher = re.escape(template)
+    matcher = matcher.replace(re.escape("<run_id>"), r"(?P<run_id>.+?)")
+    matcher = matcher.replace(re.escape("<scenario>"), r"(?P<scenario>.+?)")
+    match = re.fullmatch(matcher, name)
+    if match is None or match.group("scenario") not in allowed_scenarios:
+        fail("database name is outside the registered template or scenario set")
+    run_id = match.group("run_id")
     run_id_pattern = database.get("run_id_pattern")
     if not isinstance(run_id_pattern, str) or re.fullmatch(run_id_pattern, run_id) is None:
-        fail("P0-E database run_id does not match the registered policy")
+        fail("database run_id does not match the registered policy")
     max_length = database.get("database_name_max_length")
-    if not isinstance(max_length, int) or len(name) > max_length:
-        fail("P0-E database name exceeds the registered maximum length")
+    if not isinstance(max_length, int) or max_length < 1 or len(name) > max_length:
+        fail("database name exceeds the registered maximum length")
     return name
 
 
@@ -177,21 +183,26 @@ def main() -> int:
         else:
             database = database_by_id(registry, args.resource_id)
             environment = target_environment(args.deployment_target)
-            if database["stable_resource_id"] == P0E_RESOURCE_ID:
-                if args.deployment_target != "local-development":
-                    fail("P0-E database resource is restricted to local-development")
+            if environment not in database.get("environments", []):
+                fail(
+                    f"database resource {args.resource_id} is not registered for "
+                    f"{args.deployment_target}"
+                )
+            database_template = database.get("database")
+            is_templated = (
+                isinstance(database_template, str)
+                and ("<run_id>" in database_template or "<scenario>" in database_template)
+            )
+            if is_templated:
                 if args.database_name is None:
-                    fail("P0-E database resource requires an exact --database-name")
-                selected_database_name = qualification_database_name(database, args.database_name)
+                    fail("templated database resource requires an exact --database-name")
+                selected_database_name = templated_database_name(database, args.database_name)
             else:
-                if environment not in database.get("environments", []):
-                    fail(
-                        f"database resource {args.resource_id} is not registered for "
-                        f"{args.deployment_target}"
-                    )
                 if args.database_name is not None:
-                    fail("database name override is allowed only for the P0-E resource")
-                selected_database_name = database["database"]
+                    fail("database name override is allowed only for a templated resource")
+                if not isinstance(database_template, str) or database_template == "":
+                    fail("database resource has no fixed database name")
+                selected_database_name = database_template
         endpoint = endpoint_for_consumer(database, args.consumer)
         values = {
             "PEANUT_DATABASE_RESOURCE_ID": database["stable_resource_id"],

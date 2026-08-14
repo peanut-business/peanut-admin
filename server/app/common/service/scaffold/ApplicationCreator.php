@@ -16,6 +16,7 @@ final class ApplicationCreator
         private readonly string $sourceRoot,
         private readonly string $inventoryPath,
         private readonly ?array $sourceIdentity = null,
+        private readonly ?string $adoptionManifestPath = null,
     ) {
     }
 
@@ -24,7 +25,12 @@ final class ApplicationCreator
     {
         $parameters = $this->validateParameters($productName, $slug, $packageIdentity);
         $inventory = $this->loadInventory();
-        $identity = $this->sourceIdentity ?? $this->gitIdentity();
+        $generationIdentity = $this->validateSourceIdentity($this->sourceIdentity ?? $this->gitIdentity());
+        $inventoryDigest = hash_file('sha256', $this->inventoryPath);
+        if (!is_string($inventoryDigest) || preg_match('/^[a-f0-9]{64}$/D', $inventoryDigest) !== 1) {
+            throw new RuntimeException('CREATE_APP_INVENTORY_DIGEST_INVALID');
+        }
+        $adoption = $this->loadAdoptionManifest($inventory);
         $target = $this->validateTarget($target);
         $parent = dirname($target);
         $stage = $parent . DIRECTORY_SEPARATOR . '.' . basename($target) . '.create-' . bin2hex(random_bytes(6));
@@ -61,7 +67,30 @@ final class ApplicationCreator
             }
             usort($files, static fn(array $a, array $b): int => strcmp((string)$a['path'], (string)$b['path']));
             $this->assertNoUnresolvedVariables($stage);
-            $manifest = $this->writeApplicationManifest($stage, $inventory, $identity, $parameters, $files);
+            if ($adoption !== null) {
+                $this->assertAdoptionEquivalent($stage, $adoption, $parameters, $files);
+            }
+            $templateIdentity = $adoption === null
+                ? [
+                    'version' => $inventory['template_version'],
+                    'inventory_sha256' => $inventoryDigest,
+                    'source_commit' => $generationIdentity['commit'],
+                    'source_tree' => $generationIdentity['tree'],
+                ]
+                : [
+                    'version' => $adoption->version(),
+                    'inventory_sha256' => $adoption->release()['inventory_sha256'],
+                    'source_commit' => $adoption->release()['source_commit'],
+                    'source_tree' => $adoption->release()['source_tree'],
+                ];
+            $manifest = $this->writeApplicationManifest(
+                $stage,
+                $generationIdentity,
+                $inventoryDigest,
+                $templateIdentity,
+                $parameters,
+                $files
+            );
 
             if (is_dir($target) && !rmdir($target)) {
                 throw new RuntimeException('CREATE_APP_TARGET_NOT_EMPTY');
@@ -74,6 +103,130 @@ final class ApplicationCreator
             $this->deleteTree($stage);
             throw $exception;
         }
+    }
+
+    /** @param array{commit:string,tree:string} $identity @return array{commit:string,tree:string} */
+    private function validateSourceIdentity(array $identity): array
+    {
+        if (array_keys($identity) !== ['commit', 'tree']
+            || preg_match('/^[a-f0-9]{40}$/D', (string)$identity['commit']) !== 1
+            || preg_match('/^[a-f0-9]{40}$/D', (string)$identity['tree']) !== 1) {
+            throw new RuntimeException('CREATE_APP_SOURCE_IDENTITY_INVALID');
+        }
+        return $identity;
+    }
+
+    /** @param array<string,mixed> $inventory */
+    private function loadAdoptionManifest(array $inventory): ?ScaffoldManifest
+    {
+        if ($this->adoptionManifestPath === null) {
+            return null;
+        }
+        try {
+            $manifest = ScaffoldManifest::load($this->adoptionManifestPath);
+        } catch (\Throwable $exception) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_MANIFEST_INVALID: ' . $exception->getMessage(), 0, $exception);
+        }
+        if ($manifest->version() !== $inventory['template_version']
+            || ($manifest->release()['inventory_template_version'] ?? null) !== $inventory['template_version']) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_VERSION_MISMATCH');
+        }
+        return $manifest;
+    }
+
+    /**
+     * @param array<string,string> $parameters
+     * @param list<array<string,mixed>> $files
+     */
+    private function assertAdoptionEquivalent(
+        string $stage,
+        ScaffoldManifest $adoption,
+        array $parameters,
+        array $files
+    ): void {
+        $release = $adoption->release();
+        $tokens = $release['tokens'] ?? null;
+        if (!is_array($tokens) || array_keys($tokens) !== ['product_name', 'slug', 'package_identity']) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_TOKENS_INVALID');
+        }
+        foreach ($tokens as $token) {
+            if (!is_string($token) || $token === '') {
+                throw new RuntimeException('CREATE_APP_ADOPTION_TOKENS_INVALID');
+            }
+        }
+        if (count(array_unique(array_values($tokens), SORT_STRING)) !== count($tokens)) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_TOKENS_INVALID');
+        }
+        $renderParameters = [
+            'product_name' => $parameters['PRODUCT_NAME'],
+            'slug' => $parameters['SLUG'],
+            'package_identity' => $parameters['PACKAGE_IDENTITY'],
+        ];
+        $current = [];
+        foreach ($files as $file) {
+            if (in_array($file['classification'], ['managed', 'generated-managed'], true)) {
+                $current[(string)$file['path']] = $file;
+            }
+        }
+        ksort($current, SORT_STRING);
+        $released = $adoption->files();
+        if (array_keys($current) !== array_keys($released)) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH');
+        }
+
+        $releaseTree = [];
+        foreach ($released as $path => $artifact) {
+            $generated = $current[$path];
+            if (($artifact['mode'] ?? null) !== ($generated['mode'] ?? null)
+                || ($artifact['classification'] ?? null) !== ($generated['classification'] ?? null)) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_FILE_METADATA_MISMATCH: ' . $path);
+            }
+            $generatedPath = ScaffoldPathGuard::existingFileWithin(
+                $stage,
+                $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path),
+                'CREATE_APP_ADOPTION_GENERATED_PATH_INVALID'
+            );
+            $generatedContent = file_get_contents($generatedPath);
+            $generatedDigest = is_string($generatedContent) ? hash('sha256', $generatedContent) : null;
+            if (!is_string($generatedContent) || !is_string($generatedDigest)
+                || !hash_equals((string)$generated['sha256'], $generatedDigest)
+                || ((fileperms($generatedPath) & 0777) !== $generated['mode'])) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_GENERATED_FILE_MISMATCH: ' . $path);
+            }
+            try {
+                $artifactPath = $adoption->artifactPath($artifact);
+            } catch (\Throwable $exception) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_ARTIFACT_INVALID: ' . $path, 0, $exception);
+            }
+            $artifactContent = file_get_contents($artifactPath);
+            if (!is_string($artifactContent)
+                || !hash_equals((string)$artifact['template_sha256'], hash('sha256', $artifactContent))) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_ARTIFACT_DIGEST_MISMATCH: ' . $path);
+            }
+            $rendered = $this->replaceReleaseTokens($artifactContent, $tokens, $renderParameters);
+            if (!hash_equals($generatedDigest, hash('sha256', $rendered))) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_RENDER_MISMATCH: ' . $path);
+            }
+            $releaseTree[] = [
+                'path' => $path,
+                'sha256' => hash('sha256', $this->replaceReleaseTokens($artifactContent, $tokens, $tokens)),
+            ];
+        }
+        $releaseTreeDigest = $this->treeDigest($releaseTree);
+        $recordedTreeDigest = $release['managed_tree_sha256'] ?? null;
+        if (!is_string($recordedTreeDigest) || preg_match('/^[a-f0-9]{64}$/D', $recordedTreeDigest) !== 1
+            || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
+        }
+    }
+
+    /** @param array<string,string> $tokens @param array<string,string> $values */
+    private function replaceReleaseTokens(string $content, array $tokens, array $values): string
+    {
+        foreach (array_keys($tokens) as $key) {
+            $content = str_replace($tokens[$key], $values[$key], $content);
+        }
+        return $content;
     }
 
     /** @return array<string,string> */
@@ -574,10 +727,21 @@ PHP;
         return $rendered;
     }
 
-    /** @param array<string,mixed> $inventory @param array{commit:string,tree:string} $identity @param array<string,string> $parameters @param list<array<string,mixed>> $files */
-    private function writeApplicationManifest(string $stage, array $inventory, array $identity, array $parameters, array $files): array
-    {
-        $baselineRoot = '.peanut/scaffold-baseline/' . $inventory['template_version'] . '/files';
+    /**
+     * @param array{commit:string,tree:string} $generationIdentity
+     * @param array{version:string,inventory_sha256:string,source_commit:string,source_tree:string} $templateIdentity
+     * @param array<string,string> $parameters
+     * @param list<array<string,mixed>> $files
+     */
+    private function writeApplicationManifest(
+        string $stage,
+        array $generationIdentity,
+        string $inventoryDigest,
+        array $templateIdentity,
+        array $parameters,
+        array $files
+    ): array {
+        $baselineRoot = '.peanut/scaffold-baseline/' . $templateIdentity['version'] . '/files';
         foreach ($files as &$file) {
             if (!in_array($file['classification'], ['managed', 'generated-managed'], true)) {
                 continue;
@@ -598,9 +762,11 @@ PHP;
             'schema_version' => 1,
             'protocol' => 'peanut.application-scaffold.v1',
             'application' => ['name' => $parameters['PRODUCT_NAME'], 'slug' => $parameters['SLUG'], 'package_identity' => $parameters['PACKAGE_IDENTITY']],
-            'template' => [
-                'version' => $inventory['template_version'], 'inventory_sha256' => hash_file('sha256', $this->inventoryPath),
-                'source_commit' => $identity['commit'], 'source_tree' => $identity['tree'],
+            'template' => $templateIdentity,
+            'generation_source' => [
+                'commit' => $generationIdentity['commit'],
+                'tree' => $generationIdentity['tree'],
+                'inventory_sha256' => $inventoryDigest,
             ],
             'ownership' => [
                 'managed_default' => 'three-way against the recorded baseline; never overwrite a locally changed file without an explicit later apply decision',

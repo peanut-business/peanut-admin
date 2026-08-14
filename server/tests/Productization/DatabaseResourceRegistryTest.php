@@ -95,6 +95,18 @@ $expect($exitCode === 0, "default development database selection failed: {$outpu
 $expect(str_contains($output, 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-mysql84-development'), 'persistent development database was not selected by default');
 $expect(!str_contains($output, 'peanut-admin-p0e-mysql84-gate'), 'P0-E database was selected as the default runtime');
 
+[$exitCode, $output] = $runSelector([
+    'database-env', '--deployment-target', 'local-development', '--consumer', 'host',
+    '--resource-id', 'peanut-admin-mysql84-development',
+]);
+$expect($exitCode === 0 && str_contains($output, 'DB_NAME=peanut_admin_development'), 'explicit fixed database resource selection failed');
+
+[$exitCode, $output] = $runSelector([
+    'database-env', '--deployment-target', 'local-development', '--consumer', 'host',
+    '--resource-id', 'peanut-admin-mysql84-development', '--database-name', 'override_forbidden',
+]);
+$expect($exitCode !== 0, 'fixed database resource unexpectedly allowed a database name override');
+
 $qualificationName = 'peanut_admin_development_p0e_run123_standalone_fresh';
 [$exitCode, $output] = $runSelector([
     'database-env', '--deployment-target', 'local-development', '--consumer', 'host',
@@ -103,6 +115,12 @@ $qualificationName = 'peanut_admin_development_p0e_run123_standalone_fresh';
 $expect($exitCode === 0, "explicit P0-E database selection failed: {$output}");
 $expect(str_contains($output, 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-p0e-mysql84-gate'), 'explicit P0-E resource identity is missing');
 $expect(str_contains($output, "DB_NAME={$qualificationName}"), 'explicit P0-E database name is missing');
+
+[$exitCode, $output] = $runSelector([
+    'database-env', '--deployment-target', 'local-development', '--consumer', 'host',
+    '--resource-id', 'peanut-admin-p0e-mysql84-gate',
+]);
+$expect($exitCode !== 0, 'templated database resource unexpectedly allowed a missing database name');
 
 [$exitCode, $output] = $runSelector([
     'database-env', '--deployment-target', 'production', '--consumer', 'container',
@@ -116,6 +134,24 @@ $expect($exitCode !== 0, 'P0-E database selection unexpectedly allowed productio
     '--database-name', 'peanut_admin_development_intruder_run123_standalone_fresh',
 ]);
 $expect($exitCode !== 0, 'P0-E database selection unexpectedly allowed an out-of-namespace name');
+
+[$exitCode, $output] = $runSelector([
+    'database-env', '--deployment-target', 'local-development', '--consumer', 'host',
+    '--resource-id', 'peanut-admin-p0e-mysql84-gate',
+    '--database-name', 'peanut_admin_development_p0e_run123_unknown_scenario',
+]);
+$expect($exitCode !== 0, 'templated database selection unexpectedly allowed an unknown scenario');
+
+[$exitCode, $output] = $runSelector([
+    'database-env', '--deployment-target', 'local-development', '--consumer', 'host',
+    '--resource-id', 'peanut-admin-p0e-mysql84-gate',
+    '--database-name', 'peanut_admin_development_p0e_UPPER_standalone_fresh',
+]);
+$expect($exitCode !== 0, 'templated database selection unexpectedly allowed an invalid run_id');
+
+$selectorSource = (string)file_get_contents($root . '/scripts/project-resource-registry');
+$expect(!str_contains($selectorSource, 'P0E_RESOURCE_ID'), 'resource selector still hard-codes a project resource identity');
+$expect(!str_contains($selectorSource, 'P0-E database'), 'resource selector still exposes project-specific database semantics');
 
 $rootInstructions = (string)file_get_contents($root . '/AGENTS.md');
 $localStack = (string)file_get_contents($root . '/scripts/local-stack.sh');

@@ -19,6 +19,10 @@ create-app，再逐字验证完整 managed 生成树。
 - `v1.1.1`：修复正式 create-app 的 Plugin lock 交付边界；空 lock 不再引用 source-only
   fixture，旧 demo lifecycle runner 从 managed tree 退出。精确 commit/tree 与 managed
   digest 记录在新增 manifest，`v1.1.0` 身份保持不变。
+- `v1.1.2`：create-app 采用不可变 release 身份，并把实际生成候选独立记录为
+  `generation_source`；资源选择器保留由 registry 字段驱动的通用显式资源选择和模板 database
+  校验，不包含 Peanut 专用资源 ID。精确 commit/tree 与 managed digest 记录在其 manifest，
+  既有三代 release 身份不变。
 
 历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
 schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没有静默覆盖历史证据。
@@ -28,8 +32,8 @@ schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没�
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
-  --from-manifest=/absolute/path/to/scaffold/releases/v1.1.0/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.1/scaffold-manifest.json
+  --from-manifest=/absolute/path/to/scaffold/releases/v1.1.1/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.2/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
@@ -52,7 +56,8 @@ apply 只接受 ready、candidate 自校验通过、release checksum 未漂移�
 apply 幂等。
 
 verify 精确核对目标 template commit/tree、每个 managed 文件及 mode、managed 摘要和
-app-owned pre-apply 摘要，成功后才 append `verified`。recover/rollback 从 recovery manifest
+app-owned pre-apply 摘要，成功后才 append `verified`。升级只替换 `template`；已有顶层
+`generation_source` 保持最初生成来源不变，并照常追加 `last_scaffold_upgrade`。recover/rollback 从 recovery manifest
 真实恢复旧 application manifest、文件内容、mode、原缺失/新增状态；重复恢复幂等。
 
 父路径或目标符号链接、硬链接、路径穿越、未知 schema/policy/transform、manifest/artifact
