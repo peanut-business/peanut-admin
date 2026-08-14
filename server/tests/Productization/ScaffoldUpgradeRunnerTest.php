@@ -171,6 +171,7 @@ try{
     scaffoldExpect(($nextAppliedManifest['last_scaffold_upgrade']['from']??null)==='1.1.2'&&($nextAppliedManifest['last_scaffold_upgrade']['to']??null)==='1.1.3','scaffold upgrade must record the v1.1.3 transition');
     scaffoldExpect(hash_equals($nextAppOwnedDigest,(string)hash_file('sha256',$nextApp.'/'.$nextAppOwnedPath)),'v1.1.3 upgrade must preserve app-owned bytes');
     scaffoldExpect(str_contains((string)file_get_contents($nextApp.'/deploy/docker/production.Dockerfile'),'COPY plugins.lock /build/plugins.lock'),'v1.1.3 upgrade must install the production Plugin lock copy');
+    scaffoldExpect(str_contains((string)file_get_contents($nextApp.'/deploy/docker/production.Dockerfile'),'COPY resources/project-resources.json resources/project-resources.json'),'v1.1.3 upgrade must install the production resource registry copy');
     $nextRecover=$runner->recover($nextApp,scaffoldPlanPath($nextApp,$nextPlan));
     scaffoldExpect($nextRecover['status']==='recovered'&&hash_equals($nextBefore,scaffoldFileTree($nextApp)),'v1.1.3 recovery must restore the exact v1.1.2 tree');
 

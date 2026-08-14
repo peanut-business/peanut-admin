@@ -24,7 +24,8 @@ create-app，再逐字验证完整 managed 生成树。
   校验，不包含 Peanut 专用资源 ID。精确 commit/tree 与 managed digest 记录在其 manifest，
   既有三代 release 身份不变。
 - `v1.1.3`：修复生产管理端 Docker builder 的 Plugin lock build context；在 Vite build 前把
-  应用根 `plugins.lock` 精确复制到 `/build/plugins.lock`，不改变 resolver 的 fail-closed 合同。
+  应用根 `plugins.lock` 精确复制到 `/build/plugins.lock`，并把应用资源登记复制进 PHP Runtime，
+  不改变 resolver 或数据库环境门禁的 fail-closed 合同。
   `v1.1.2` 与更早 release 身份保持不变。
 
 历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
