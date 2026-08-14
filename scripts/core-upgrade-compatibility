@@ -66,6 +66,7 @@ CANDIDATE_TREE="$(git -C "$ROOT" rev-parse "${CANDIDATE}^{tree}")"
 
 CURRENT_COMMIT="$(jq -r '.current_create_app.source_commit' "$METADATA")"
 CURRENT_TREE="$(jq -r '.current_create_app.source_tree' "$METADATA")"
+CURRENT_RELEASE_MANIFEST="$ROOT/scaffold/releases/$(jq -r '.current_create_app.template_version' "$METADATA")/scaffold-manifest.json"
 CURRENT_SOURCE="$CACHE/current-create-app-source"
 CURRENT_APP="$OUTPUT/current-create-app"
 LEGACY_WORK="$CACHE/legacy-selection"
@@ -128,6 +129,16 @@ record_phase() {
 
 [[ "$(git -C "$ROOT" rev-parse "${CURRENT_COMMIT}^{commit}")" == "$CURRENT_COMMIT" ]] || die 'current create-app source commit is unavailable'
 [[ "$(git -C "$ROOT" rev-parse "${CURRENT_COMMIT}^{tree}")" == "$CURRENT_TREE" ]] || die 'current create-app source tree changed'
+jq -e --arg commit "$CURRENT_COMMIT" --arg tree "$CURRENT_TREE" \
+  --arg inventory "$(jq -r '.current_create_app.inventory_sha256' "$METADATA")" \
+  --arg managed "$(jq -r '.current_create_app.release_managed_tree_sha256' "$METADATA")" \
+  --argjson file_count "$(jq -r '.current_create_app.release_file_count' "$METADATA")" \
+  '.release.source_commit == $commit
+   and .release.source_tree == $tree
+   and .release.inventory_sha256 == $inventory
+   and .release.managed_tree_sha256 == $managed
+   and (.files | length) == $file_count' "$CURRENT_RELEASE_MANIFEST" >/dev/null \
+  || die 'current create-app release seal changed'
 git -C "$ROOT" worktree add --detach "$CURRENT_SOURCE" "$CURRENT_COMMIT" >/dev/null
 WORKTREE_ADDED=1
 "$PHP_BIN" "$CURRENT_SOURCE/scripts/create-app" \

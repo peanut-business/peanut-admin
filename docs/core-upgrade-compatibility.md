@@ -3,7 +3,7 @@
 本 Gate 使用两个诚实且相互独立的旧起点，不把它们伪称为统一平台版本：
 
 - PHP `legacy-pre-alpha5`：`scripts/select-legacy-pre-alpha5-fixture` 从应用 Git 第一父历史机器筛选最新合格 tree。固定结果是 commit `4808a82f408f10945de1be8348ebc2ea05bc4fb9`、tree `35e7c827ee72feeecdff5e42e34cdfcf945527df`；它原生锁定公开 Packagist `peanut-admin/core@0.1.0-alpha.2`，只使用该版 10 个公开 PSR-4 root，并包含真实 app-owned `CoreServiceOverrides`/Host 测试。该输入不是 create-app 生成物，overlay 为空；机器证据分别记录 Git archive、应用源码、Host 文件和空 overlay 摘要。
-- Web/current boundary：正式 create-app `1.1.0` 从 `8f11f431791e01dc45d57729e279c97bc40a80bb` 生成当前应用，只承担生成 manifest/source 边界、完整 Web runtime 与全客户端公开入口扫描。Web 从公开 npm `@peanut-admin/admin@0.1.0-alpha.4` 升到 `0.1.0-alpha.5`。
+- Web/current boundary：正式 create-app `1.1.1` 固定 source seal `5c33c218bd48e9a428d7a3f23211934e7b3d9303`（tree `01c66f34e8ac7832c54fcbb467a5318d9096f1c6`），release managed digest 为 `02b3204053e137b818dab4315734aa83b143f472e90d4792d6ee525bef748c0d`（274 files）。它生成当前应用，只承担生成 manifest/source 边界、完整 Web runtime 与全客户端公开入口扫描。Web 从公开 npm `@peanut-admin/admin@0.1.0-alpha.4` 升到 `0.1.0-alpha.5`。
 
 PHP 在历史应用的干净 archive 中先按原生 manifest/lock 安装 Alpha.2、运行原生 `AdminPermissionHostTest.php`，随后只替换 `server/composer.json` 和 `server/composer.lock` 为固定 Alpha.5，再运行同一 Host 测试。Web 在 current create-app 中先按固定 Alpha.4 lock 安装、typecheck/build/consumer，随后只替换 `web/package.json` 和 `web/pnpm-lock.yaml` 为固定 Alpha.5 并重复同一组检查。两侧业务源码和 app-owned 摘要必须逐字节不变。
 

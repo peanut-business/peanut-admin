@@ -3524,6 +3524,14 @@
             "source_sha256": "1e9062503fe3a44de9fa72e971eb43ca602173a022df1744a31be9626eba32cf"
         },
         {
+            "path": "scripts/test-core-upgrade-public-entry-gate",
+            "target": "scripts/test-core-upgrade-public-entry-gate",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
             "path": "server/.env.example",
             "target": "server/.env.example",
             "classification": "managed",
@@ -8823,6 +8831,22 @@
             "owner": "template-source-only",
             "transform": "copy",
             "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/web-public-entry-gate-cases.json",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/web-public-entry-gate-cases.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/web-public-entry-gate.mjs",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/web-public-entry-gate.mjs",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "server/tests/fixtures/mt02/default-tenant-upgrade.sql",

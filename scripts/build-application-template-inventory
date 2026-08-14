@@ -42,6 +42,7 @@ function excluded(string $path): bool
             'AGENTS.md', 'AGENT_EXECUTION_RULES.md',
             'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
             'scripts/core-upgrade-compatibility', 'scripts/select-legacy-pre-alpha5-fixture',
+            'scripts/test-core-upgrade-public-entry-gate',
             'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
             'server/tests/Productization/CreateApplicationTest.php',
             '.github/workflows/core-upgrade-compatibility.yml',
