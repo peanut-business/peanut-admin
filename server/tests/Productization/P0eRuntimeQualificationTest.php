@@ -27,12 +27,43 @@ $expect(($fixture['schema_version'] ?? null) === 1, 'P0-E fixture schema changed
 $expect(($fixture['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E Gate identity changed');
 $expect(($fixture['database_resource']['migration_count'] ?? null) === 54, 'P0-E Gate no longer fixes 54-current');
 $expect(($fixture['baselines'] ?? null) === ['v1.0.0', 'v1.1.0'], 'P0-E forward baselines changed');
+$targetRelease = $fixture['target_release'] ?? null;
+$expect(is_array($targetRelease), 'P0-E target scaffold release is missing');
+$expect($targetRelease === [
+    'version' => '1.1.4',
+    'source_commit' => 'e5a20e7733dc46fc516744846c1d4d016c8fd2d0',
+    'source_tree' => 'ac023dbac8c4357cff5a0967645dfe9c27118826',
+    'manifest_sha256' => '07c07ed6396b7c04f088d73a2d556a4320b61c1131f950c2c1cf82bca16f217d',
+    'inventory_sha256' => '35b8e3a81ccfd29a0bbe5dfbd1b8bdb69015373a2761d15fbc156f805ef2699b',
+    'managed_tree_sha256' => '465455281ededc0735f66ec4ec9d86430219b3f0162164ad3d5367f0462f9011',
+    'file_count' => 274,
+    'application_manifest_schema' => 2,
+    'default_application_version' => '0.1.0',
+    'default_uniapp_version_code' => '10',
+], 'P0-E target scaffold release identity changed');
+$legacy = $fixture['legacy_application'] ?? null;
+$expect(is_array($legacy), 'P0-E legacy application fixture is missing');
+$expect(($legacy['source_commit'] ?? null) === '14412607ba36f1816e39f7117f77eea4a9e7419e', 'legacy application commit changed');
+$expect(($legacy['source_tree'] ?? null) === '172865d8b8057caa8a017ac591618cd914af30a5', 'legacy application tree changed');
+$expect(
+    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4'],
+    'legacy application release chain changed'
+);
+$expect(count($legacy['customizations'] ?? []) === 2, 'legacy application must retain two real app-owned customizations');
 $expectedScenarios = [
     'standalone_fresh', 'multi_tenant_fresh', 'v1_0_forward', 'v1_1_forward',
     'migration_fault_source', 'migration_fault_restore', 'plugin_lifecycle',
     'standalone_browser', 'multi_tenant_browser',
 ];
 $expect(array_keys($fixture['scenarios'] ?? []) === $expectedScenarios, 'P0-E scenario order or closure changed');
+$expectedGroups = [
+    'generated-application', 'standalone-fresh', 'multi-tenant-fresh', 'v1.0-forward',
+    'v1.1-forward', 'migration-fault-restore', 'plugin-lifecycle', 'production-compose',
+    'standalone-browser', 'multi-tenant-browser', 'legacy-application-upgrade',
+    'legacy-application-recovery', 'upgraded-plugin-lifecycle', 'upgraded-production-compose',
+    'upgraded-standalone-browser', 'upgraded-multi-tenant-browser',
+];
+$expect(($fixture['groups'] ?? null) === $expectedGroups, 'P0-E group order or closure changed');
 
 $registered = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
@@ -73,6 +104,9 @@ $expect(($plan['database_admin_tooling']['mysql_command'] ?? null) === '/usr/bin
 $expect(($plan['database_admin_tooling']['mysqldump_command'] ?? null) === '/usr/bin/mysqldump', 'plan mysqldump path changed');
 $expect(($plan['database_admin_tooling']['fallback'] ?? null) === 'none; host mysql and mysqldump commands are forbidden', 'plan allowed a host database client fallback');
 $expect(($plan['ports'] ?? null) === ['http' => 20190, 'docs' => 20186], 'plan ports are not registered fixed ports');
+$expect(($plan['legacy_application'] ?? null) === $legacy, 'plan did not bind the fixed legacy application');
+$expect(($plan['target_release'] ?? null) === $targetRelease, 'plan did not bind the target scaffold release');
+$expect(($plan['groups'] ?? null) === $expectedGroups, 'plan did not bind the full PA-P0E-003 group closure');
 $expect(!file_exists($outputPath) && !file_exists($backupPath) && !file_exists($cachePath), 'no-resource plan created a path');
 
 $resourcePairs = [];
@@ -121,6 +155,12 @@ $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
 $expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
 $expect(str_contains($runnerSource, 'remote_dump') && str_contains($runnerSource, 'remote_restore'), 'backup and restore do not use registered remote tooling');
+$expect(str_contains($runnerSource, 'legacy_application_upgrade'), 'fixed legacy scaffold upgrade is not in the Gate');
+$expect(str_contains($runnerSource, 'PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS'), 'legacy scaffold recovery fault is not exercised');
+$expect(str_contains($runnerSource, 'app_owned_proof'), 'upgraded app-owned byte proof is missing');
+$expect(str_contains($runnerSource, 'upgraded_plugin_lifecycle'), 'upgraded application Plugin lifecycle is missing');
+$expect(str_contains($runnerSource, 'upgraded_production_compose'), 'upgraded application service runtime is missing');
+$expect(str_contains($runnerSource, 'upgraded_browser'), 'upgraded application browser runtime is missing');
 $expect(!str_contains($runnerSource, '["mysql"') && !str_contains($runnerSource, '["mysqldump"'), 'runner reintroduced a bare host MySQL client');
 $expect(str_contains($runnerSource, 'core.excludesFile'), 'create-app does not exclude only the lease-owned runtime evidence');
 $expect(str_contains($runnerSource, ':(exclude)'), 'resume cleanliness does not exclude only the lease-owned runtime evidence');
