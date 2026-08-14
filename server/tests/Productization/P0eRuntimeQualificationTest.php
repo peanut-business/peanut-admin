@@ -176,6 +176,14 @@ $expect(
 $expect(!str_contains($runnerSource, '["mysql"') && !str_contains($runnerSource, '["mysqldump"'), 'runner reintroduced a bare host MySQL client');
 $expect(str_contains($runnerSource, 'core.excludesFile'), 'create-app does not exclude only the lease-owned runtime evidence');
 $expect(str_contains($runnerSource, ':(exclude)'), 'resume cleanliness does not exclude only the lease-owned runtime evidence');
+$expect(
+    substr_count($runnerSource, '/var/www/peanut-admin/resources/project-resources.json') === 2,
+    'generated/upgraded Compose does not mount the source-only P0-E registry for PHP and cron'
+);
+$expect(
+    str_contains($runnerSource, 'playwright_cli.parent == lease_proof_dir'),
+    'lease-owned Playwright wrapper is not removed before lease release'
+);
 $expect(str_contains($browserSource, 'snapshot'), 'browser runner does not capture Playwright snapshots');
 
 $composeEnvironmentProbe = <<<'PYTHON'

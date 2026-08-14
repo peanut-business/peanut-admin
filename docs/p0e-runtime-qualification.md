@@ -27,6 +27,8 @@ scaffold `preflight → apply → verify`，再从升级产物自身复验依赖
 只创建登记中的九个 scenario 数据库，并且只删除与本次精确 run_id 相符的这九个名字。
 新生成应用和升级后应用在同一 lease 中串行运行：前者完成并落证后停止服务、删除对应临时库，
 后者才用相同 scenario 名重新建库。这样既不扩大登记资源，也不会让两个 Runtime 同时消费同一库。
+应用制品不会携带源仓专用的 P0-E 数据库登记；生产 Compose Gate 通过 lease overlay 把固定候选的
+`resources/project-resources.json` 只读挂载到 PHP/cron，并同时挂载原子 lease proof，应用字节保持不变。
 建库、删库、状态查询、dump 和 restore 不依赖主工作站的 `mysql`/`mysqldump`。runner 在
 active lease 下先核验远端容器的精确 image、running/healthy 状态、CLI 绝对路径与 8.4.10
 版本，再通过 SSH + 远端 `docker exec` 执行；root 凭据只在容器环境内使用，不传回主工作站。

@@ -1372,6 +1372,16 @@ class Runner:
             f"        source: {proof_dir}\n"
             f"        target: {self.plan['lease_proof_container_path']}\n"
             "        read_only: true\n"
+            "      - type: bind\n"
+            f"        source: {ROOT / 'resources/project-resources.json'}\n"
+            "        target: /var/www/peanut-admin/resources/project-resources.json\n"
+            "        read_only: true\n"
+            "  cron:\n"
+            "    volumes:\n"
+            "      - type: bind\n"
+            f"        source: {ROOT / 'resources/project-resources.json'}\n"
+            "        target: /var/www/peanut-admin/resources/project-resources.json\n"
+            "        read_only: true\n"
         )
         self.compose_overlay.write_text(overlay, encoding="utf-8")
         self.compose_overlay.chmod(0o600)
@@ -1567,6 +1577,12 @@ class Runner:
         shutil.rmtree(self.cache)
         if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
             shutil.rmtree(ROOT / "server/vendor")
+        playwright_cli = Path(required_environment("P0E_PLAYWRIGHT_CLI"))
+        lease_proof_dir = Path(self.plan["lease_proof_dir"])
+        if playwright_cli.parent == lease_proof_dir and playwright_cli.name == "playwright-cli":
+            if not playwright_cli.is_file() or playwright_cli.is_symlink():
+                fail("lease-owned Playwright CLI wrapper identity changed")
+            playwright_cli.unlink()
         self.write_json(self.summary_path, {
             "schema_version": 1,
             "status": "passed",
