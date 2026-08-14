@@ -488,7 +488,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "3df3708ec2995b489e9e38b2f3f50c3bfb5fcef6d1ce17363fa8ce4dc04ea350"
+            "source_sha256": "543dfeaae1c9f875659654e4e6783192f9ab4909894bb64727fcc7f22ec702c6"
         },
         {
             "path": "docs-site/public/brand/avatar-admin.svg",
