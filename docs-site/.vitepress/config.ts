@@ -13,7 +13,7 @@ export default defineConfig({
   sitemap: canonicalUrl ? { hostname: canonicalUrl } : undefined,
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/favicon.svg' }],
-    ['meta', { name: 'theme-color', content: '#165DFF' }],
+    ['meta', { name: 'theme-color', content: '#2457E6' }],
   ],
   themeConfig: {
     logo: '/brand/logo.svg',

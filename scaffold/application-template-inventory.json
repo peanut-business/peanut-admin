@@ -301,7 +301,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "0234fc8803cc79891fa1234c2c1b31d466c650f810d5addf82ca8e5d05162ce9"
+            "source_sha256": "beeb80d0999f7d6b2fa077d7001a759453f9d3122e4b391974088d3f8a55b5f4"
         },
         {
             "path": "docs-site/.vitepress/theme/NotFound.vue",
@@ -319,7 +319,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "1410cd6ed666627705c5d6137dedd6b9fbbf0463d92ab5f8b7f4f61b2f319329"
+            "source_sha256": "96ff9eeb2174344acbba0c5a194c46e80dee92bb8f748b16441cfc3a3dc5126b"
         },
         {
             "path": "docs-site/.vitepress/theme/index.ts",
@@ -418,7 +418,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ea29e72a44a7511f0dc879cc87505790a7861a86e222960250a136a8c0dc4325"
+            "source_sha256": "acdcb91907e24d75f4003a6c313752284aa717a68f7d3eb1ee86163c36fe0de4"
         },
         {
             "path": "docs-site/legal.md",
