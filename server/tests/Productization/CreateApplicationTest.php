@@ -196,6 +196,10 @@ try {
         preg_match('/COPY plugins\\.lock \/build\/plugins\\.lock\\R+COPY web\/ \.\/\\R+RUN pnpm build/', $generatedProductionDockerfile) === 1,
         'admin production builder must copy the fail-closed Plugin lock to the repository root before Vite build'
     );
+    createApplicationExpect(
+        str_contains($generatedProductionDockerfile, 'COPY resources/project-resources.json resources/project-resources.json'),
+        'production PHP image must include the application resource registry consumed by the database environment guard'
+    );
     $generatedModulesConfig = (string)file_get_contents($first . '/server/config/modules.php');
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
     createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '')"), 'generated deployment must not enable an unowned Plugin lock');

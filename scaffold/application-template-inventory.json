@@ -265,7 +265,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "165d585bc4142052dd67034df99e9e0ab8f46a06e8ca598e2d341e3206b0a006"
+            "source_sha256": "a9925a7a5d8939bbfe3a706a1b9550642c8dc3ff7b4c4ff3b1da9618592388ec"
         },
         {
             "path": "deploy/local-stack.env.example",
