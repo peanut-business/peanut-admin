@@ -32,6 +32,8 @@ web/src/modules/<module-slug>/
 `plugin.json` 描述安装包及 Composer、npm、前端和 Module 身份；`module.json` 描述业务
 能力、依赖、数据所有权、权限和菜单。`plugins.lock` 固定实际部署的版本、来源和 SHA-256。
 Host 只接受 lock 中的内容，文件被改写、依赖缺失或前后端身份不一致都会在迁移前拒绝。
+空 `plugins` 列表表示尚未锁定任何 Plugin；正式 create-app 默认生成该状态，不会携带本仓
+演示 fixture。只有应用 owner 交付完整 manifest、Module 与 contribution 后才能加入 lock。
 兼容期内，已有 `PEANUT_MODULE_ROOTS` 会和 lock 中的 Module roots 合并编译；旧模块不要求
 随本功能顺手重构，后续可逐个包装成 Plugin 制品。
 
