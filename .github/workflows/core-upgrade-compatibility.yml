@@ -6,10 +6,21 @@ on:
       - '.github/workflows/core-upgrade-compatibility.yml'
       - 'resources/project-resources.json'
       - 'scaffold/application-template-inventory.json'
+      - 'scaffold/releases/*/scaffold-manifest.json'
       - 'scripts/build-application-template-inventory'
+      - 'scripts/combined-upgrade-qualification'
       - 'scripts/core-upgrade-compatibility'
       - 'scripts/select-legacy-pre-alpha5-fixture'
       - 'scripts/test-core-upgrade-public-entry-gate'
+      - 'server/composer.json'
+      - 'server/composer.lock'
+      - 'web/package.json'
+      - 'web/pnpm-lock.yaml'
+      - 'pc/package.json'
+      - 'pc/package-lock.json'
+      - 'uniapp/package.json'
+      - 'uniapp/package-lock.json'
+      - 'server/tests/Productization/CombinedUpgradePolicyTest.php'
       - 'server/tests/fixtures/core-upgrade-compatibility/**'
       - 'docs/core-upgrade-compatibility.md'
   workflow_dispatch:
@@ -96,4 +107,86 @@ jobs:
           path: |
             core-upgrade-compatibility-summary.json
             core-upgrade-compatibility-checkpoint.json
+          if-no-files-found: warn
+
+  combined-upgrade:
+    needs: compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout full source history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:2.8.10
+          coverage: none
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.6
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run modified downstream combined upgrade qualification
+        env:
+          HUSKY: '0'
+          PEANUT_PHP: php
+          PEANUT_COMPOSER: composer
+          PEANUT_PNPM: pnpm
+          PEANUT_NPM: npm
+        run: |
+          cache_dir="${RUNNER_TEMP}/peanut-admin-combined-upgrade-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output_dir="${RUNNER_TEMP}/peanut-admin-combined-upgrade-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          lease="combined-upgrade-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          owner="github-actions-${GITHUB_RUN_ID}-combined"
+          scripts/project-resource-lease claim \
+            --lease "$lease" \
+            --owner "$owner" \
+            --thread "${GITHUB_REPOSITORY}/${GITHUB_RUN_ID}/combined" \
+            --candidate "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --gate combined-upgrade-qualification \
+            --ttl 3600 \
+            --resource external-service=peanut-admin-packagist-registry \
+            --resource external-service=peanut-admin-npm-registry \
+            --resource external-service=peanut-admin-github-repository \
+            --resource cache-dir="$cache_dir" \
+            --resource output-dir="$output_dir"
+          echo "COMBINED_UPGRADE_LEASE=$lease" >> "$GITHUB_ENV"
+          echo "COMBINED_UPGRADE_OWNER=$owner" >> "$GITHUB_ENV"
+          echo "COMBINED_UPGRADE_OUTPUT=$output_dir" >> "$GITHUB_ENV"
+          mkdir -p "$cache_dir" "$output_dir"
+          php server/tests/Productization/CombinedUpgradePolicyTest.php
+          scripts/combined-upgrade-qualification \
+            --candidate "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --cache "$cache_dir" \
+            --output "$output_dir"
+          cp "$output_dir/summary.json" combined-upgrade-qualification-summary.json
+          cp "$output_dir/checkpoint.json" combined-upgrade-qualification-checkpoint.json
+      - name: Preserve combined checkpoint after failure
+        if: failure() && env.COMBINED_UPGRADE_OUTPUT != ''
+        run: |
+          if [[ -f "$COMBINED_UPGRADE_OUTPUT/checkpoint.json" ]]; then
+            cp "$COMBINED_UPGRADE_OUTPUT/checkpoint.json" combined-upgrade-qualification-checkpoint.json
+          fi
+      - name: Release combined qualification resources
+        if: always() && env.COMBINED_UPGRADE_LEASE != ''
+        run: |
+          scripts/project-resource-lease release \
+            --lease "$COMBINED_UPGRADE_LEASE" \
+            --owner "$COMBINED_UPGRADE_OWNER"
+      - name: Upload combined qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-upgrade-qualification-summary
+          path: |
+            combined-upgrade-qualification-summary.json
+            combined-upgrade-qualification-checkpoint.json
           if-no-files-found: warn

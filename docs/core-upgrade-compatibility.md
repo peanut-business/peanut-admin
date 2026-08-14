@@ -12,9 +12,34 @@
   与全客户端公开入口扫描。Web 从公开 npm `@peanut-admin/admin@0.1.0-alpha.4` 升到
   `0.1.0-alpha.5`。
 
+在这两条包级路径之外，`scripts/combined-upgrade-qualification` 增加唯一组合资格路径：
+它从正式 `v1.0.0` create-app commit 生成同一个旧下游应用，并在 app-owned Host 与支付
+业务域分别加入确定性定制。随后按不可跳代的
+`1.0.0 → 1.1.0 → 1.1.1 → 1.1.2` release manifest 链执行 preflight/apply/verify，
+最后按目标 Composer、Web、PC 与 UniApp manifest/lock 做全新依赖安装。每一代 release 的
+manifest SHA、source commit/tree、inventory、managed tree 和文件数都由 fixture 固定；目标
+application manifest 必须采用同一个 `v1.1.2` release identity。
+
 PHP 在历史应用的干净 archive 中先按原生 manifest/lock 安装 Alpha.2、运行原生 `AdminPermissionHostTest.php`，随后只替换 `server/composer.json` 和 `server/composer.lock` 为固定 Alpha.5，再运行同一 Host 测试。Web 在 current create-app 中先按固定 Alpha.4 lock 安装、typecheck/build/consumer，随后只替换 `web/package.json` 和 `web/pnpm-lock.yaml` 为固定 Alpha.5 并重复同一组检查。两侧业务源码和 app-owned 摘要必须逐字节不变。
 
-公共入口 Gate 从真实安装包解析 Composer PSR-4 与 npm `exports`，拒绝 `vendor`/`node_modules` 内部路径、包内 `src` deep import 和相对跨包源码引用；Alpha.5 不得移除旧应用实际依赖的公开 Composer root 或 Alpha.4 已发布 npm export。PC 与 UniApp 不另造升级矩阵，只纳入 current create-app 的真实 import 扫描。
+公共入口 Gate 从真实安装包解析 Composer PSR-4 与 npm `exports`，拒绝 `vendor`/`node_modules` 内部路径、包内 `src` deep import 和相对跨包源码引用；Alpha.5 不得移除旧应用实际依赖的公开 Composer root 或 Alpha.4 已发布 npm export。包级路径仍只扫描 current create-app 的 PC/UniApp import；组合路径则在目标应用中对 Web 执行 frozen pnpm install、typecheck/build，对 PC 和 UniApp 执行 frozen npm install、typecheck 与最低 production/H5 build。
+
+组合路径在每一跳比较 application manifest 内全部受跟踪文件的前后状态，实际差异必须精确
+等于该次 plan 的 `create/delete/replace/regenerate` managed action；任何额外源码变化都会拒绝。
+两处真实下游定制、全部 app-owned 业务源码及 Host 的聚合摘要在旧依赖测试、每一代 scaffold
+升级、目标干净安装和客户端构建后都必须逐字节不变。同一份
+`AdminPermissionHostTest.php` 与代表支付域测试会在升级前后各运行一次。
+
+## 兼容承诺边界
+
+本 Gate 只承诺：**在稳定公开 API 范围内，合格升级无需 app-owned 重构**。它不承诺未公开、
+未文档化或包内 deep-import 接口的兼容性，也不覆盖数据库、服务、端口、容器、浏览器或发布。
+
+`combined-upgrade.json` 必须枚举仓库中的完整 scaffold release 链和每个相邻 transition。稳定
+transition 使用 `stable-public-api` 且不得夹带迁移动作；breaking transition 必须声明至少一个
+机器可读 `migration`、`codemod` 或 `manual-action`，并固定 action id、仓库内 artifact 和 SHA-256。
+缺失 action、未知 action 类型、artifact 越界/缺失或 digest 漂移都会在依赖安装前 fail-closed。
+新增 release manifest 而未同步 transition policy 也会拒绝。
 
 ## 失败证据与继续策略
 
@@ -34,7 +59,7 @@ provenance 变化掩盖源码变化。deep-import、Composer PSR-4、npm exports
 
 ## 本地执行
 
-按项目租约规则为固定 candidate claim 唯一 cache/output，再运行：
+按项目租约规则为固定 candidate claim 唯一 cache/output。包级矩阵运行：
 
 ```bash
 scripts/core-upgrade-compatibility \
@@ -43,4 +68,15 @@ scripts/core-upgrade-compatibility \
   --output /private/tmp/peanut-admin-core-upgrade-output-<candidate>
 ```
 
-输入会强制规范化到物理绝对路径，并拒绝 symlink、非空、嵌套或相同 cache/output。本 Gate 不连接数据库、端口、服务、浏览器或容器，也不提交 vendor、node_modules、dist、缓存或原始安装日志。
+组合路径运行：
+
+```bash
+scripts/combined-upgrade-qualification \
+  --candidate <full-candidate-commit> \
+  --cache /private/tmp/peanut-admin-combined-upgrade-cache-<candidate> \
+  --output /private/tmp/peanut-admin-combined-upgrade-output-<candidate>
+```
+
+两条 runner 的输入都会强制规范化到物理绝对路径，并拒绝 symlink、非空、嵌套或相同
+cache/output。组合路径只连接项目登记的 Packagist、npm Registry 和 GitHub repository；它不
+连接数据库、端口、服务、浏览器或容器，也不提交 vendor、node_modules、dist、缓存或原始安装日志。

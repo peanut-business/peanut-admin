@@ -46,11 +46,16 @@ function excluded(string $path): bool
         || in_array($path, [
             'AGENTS.md', 'AGENT_EXECUTION_RULES.md',
             'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
-            'scripts/core-upgrade-compatibility', 'scripts/select-legacy-pre-alpha5-fixture',
+            'scripts/core-upgrade-compatibility', 'scripts/combined-upgrade-qualification',
+            'scripts/select-legacy-pre-alpha5-fixture',
             'scripts/test-core-upgrade-public-entry-gate',
+            'scripts/check-product-capability-ledger',
             'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
             'server/tests/Productization/CreateApplicationTest.php',
+            'server/tests/Productization/CombinedUpgradePolicyTest.php',
             '.github/workflows/core-upgrade-compatibility.yml',
+            '.github/workflows/product-capability-ledger.yml',
+            '.github/pull_request_template.md',
             'server/tests/Productization/ScaffoldUpgradeRunnerTest.php',
         ], true)
         || str_starts_with($path, 'server/app/common/service/scaffold/')
