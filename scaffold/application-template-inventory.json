@@ -3344,6 +3344,14 @@
             "source_sha256": "3f30a05daf5c0822184fa590cb09f7a46fccba9091a957cbcaf8869891136c4f"
         },
         {
+            "path": "scripts/combined-upgrade-qualification",
+            "target": "scripts/combined-upgrade-qualification",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
             "path": "scripts/company-development-database.sh",
             "target": "scripts/company-development-database.sh",
             "classification": "excluded",
@@ -8562,6 +8570,14 @@
             "source_sha256": "c327bc38de21b77ab4ff968e99f1991e844b241502179b7d2c96882a65c67824"
         },
         {
+            "path": "server/tests/Productization/CombinedUpgradePolicyTest.php",
+            "target": "server/tests/Productization/CombinedUpgradePolicyTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/tests/Productization/ContentDecorationHostTest.php",
             "target": "server/tests/Productization/ContentDecorationHostTest.php",
             "classification": "app-owned",
@@ -8793,8 +8809,24 @@
             "source_sha256": "a62ae9ce36c728f0e6f9d64331fba0d382f0e051d99ef6044c7866d2823e744e"
         },
         {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/combined-upgrade.json",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/combined-upgrade.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
             "target": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/domain-probe.php",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/domain-probe.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
