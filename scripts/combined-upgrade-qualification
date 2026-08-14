@@ -155,6 +155,7 @@ foreach ($customizations as $customization) {
 if (!isset($roles['host'], $roles['business-domain'])) $fail('customizations must include Host and business-domain source');
 $target = $fixture['target_dependencies'] ?? null;
 $files = is_array($target) ? ($target['files'] ?? null) : null;
+$phpProbes = $fixture['php_probes'] ?? null;
 $expectedPaths = [
     'server/composer.json', 'server/composer.lock',
     'web/package.json', 'web/pnpm-lock.yaml',
@@ -167,6 +168,18 @@ if (!is_array($target) || !is_array($target['composer'] ?? null) || !is_array($t
 }
 foreach ($files as $file) {
     if (preg_match('/^[a-f0-9]{64}$/D', (string)($file['sha256'] ?? '')) !== 1) $fail('target dependency digest is invalid');
+}
+if (!is_array($phpProbes) || $phpProbes === []) $fail('PHP domain probes are required');
+foreach ($phpProbes as $index => $probe) {
+    if (!is_string($probe)
+        || preg_match('#^server/tests/fixtures/core-upgrade-compatibility/[A-Za-z0-9._/-]+\.php$#D', $probe) !== 1) {
+        $fail("PHP domain probe {$index} path is invalid");
+    }
+    $probePath = realpath($root . '/' . $probe);
+    if ($probePath === false || !is_file($probePath)
+        || !str_starts_with($probePath, realpath($root) . DIRECTORY_SEPARATOR)) {
+        $fail("PHP domain probe {$index} is unavailable");
+    }
 }
 echo $application['target_version'], "\n";
 PHP
@@ -406,7 +419,7 @@ PHP
 run_php_probes() {
   local phase="$1" probe
   while IFS= read -r probe; do
-    run_logged "${phase}-$(basename "$probe" .php)" "$PHP_BIN" "$APP/$probe"
+    run_logged "${phase}-$(basename "$probe" .php)" "$PHP_BIN" "$ROOT/$probe" "$APP"
   done < <(jq -r '.php_probes[]' "$FIXTURE")
 }
 

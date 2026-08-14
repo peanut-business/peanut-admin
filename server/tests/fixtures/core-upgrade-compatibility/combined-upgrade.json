@@ -108,8 +108,7 @@
     ]
   },
   "php_probes": [
-    "server/tests/Productization/AdminPermissionHostTest.php",
-    "server/tests/Productization/PaymentHostTest.php"
+    "server/tests/fixtures/core-upgrade-compatibility/domain-probe.php"
   ],
   "not_covered": [
     "database",
