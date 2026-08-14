@@ -9,6 +9,7 @@ on:
       - 'scripts/build-application-template-inventory'
       - 'scripts/core-upgrade-compatibility'
       - 'scripts/select-legacy-pre-alpha5-fixture'
+      - 'scripts/test-core-upgrade-public-entry-gate'
       - 'server/tests/fixtures/core-upgrade-compatibility/**'
       - 'docs/core-upgrade-compatibility.md'
   workflow_dispatch:
@@ -24,6 +25,7 @@ jobs:
       - name: Checkout full source history
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -59,6 +61,7 @@ jobs:
             --ttl 3600 \
             --resource external-service=peanut-admin-packagist-registry \
             --resource external-service=peanut-admin-npm-registry \
+            --resource external-service=peanut-admin-github-repository \
             --resource external-service=peanut-admin-core-source-github-repository \
             --resource external-service=peanut-admin-core-composer-split-github-repository \
             --resource cache-dir="$cache_dir" \
@@ -66,8 +69,19 @@ jobs:
           echo "CORE_UPGRADE_LEASE=$lease" >> "$GITHUB_ENV"
           echo "CORE_UPGRADE_OUTPUT=$output_dir" >> "$GITHUB_ENV"
           mkdir -p "$cache_dir" "$output_dir"
-          scripts/core-upgrade-compatibility --cache "$cache_dir" --output "$output_dir"
+          scripts/test-core-upgrade-public-entry-gate
+          scripts/core-upgrade-compatibility \
+            --candidate "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --cache "$cache_dir" \
+            --output "$output_dir"
           cp "$output_dir/summary.json" core-upgrade-compatibility-summary.json
+          cp "$output_dir/checkpoint.json" core-upgrade-compatibility-checkpoint.json
+      - name: Preserve audit checkpoint after failure
+        if: failure() && env.CORE_UPGRADE_OUTPUT != ''
+        run: |
+          if [[ -f "$CORE_UPGRADE_OUTPUT/checkpoint.json" ]]; then
+            cp "$CORE_UPGRADE_OUTPUT/checkpoint.json" core-upgrade-compatibility-checkpoint.json
+          fi
       - name: Release compatibility resources
         if: always() && env.CORE_UPGRADE_LEASE != ''
         run: |
@@ -75,8 +89,11 @@ jobs:
             --lease "$CORE_UPGRADE_LEASE" \
             --owner "github-actions-${GITHUB_RUN_ID}"
       - name: Upload evidence summary
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: core-upgrade-compatibility-summary
-          path: core-upgrade-compatibility-summary.json
-          if-no-files-found: error
+          path: |
+            core-upgrade-compatibility-summary.json
+            core-upgrade-compatibility-checkpoint.json
+          if-no-files-found: warn

@@ -9,6 +9,12 @@ PHP 在历史应用的干净 archive 中先按原生 manifest/lock 安装 Alpha.
 
 公共入口 Gate 从真实安装包解析 Composer PSR-4 与 npm `exports`，拒绝 `vendor`/`node_modules` 内部路径、包内 `src` deep import 和相对跨包源码引用；Alpha.5 不得移除旧应用实际依赖的公开 Composer root 或 Alpha.4 已发布 npm export。PC 与 UniApp 不另造升级矩阵，只纳入 current create-app 的真实 import 扫描。
 
+## 失败证据与继续策略
+
+历史 run `31754046399`、`31755497847` 和 `31755618378` 保持失败事实，不改写为成功。最后一次运行固定在 candidate `440297f74b6f6fd26b7c88117bbb499b25dc1730`，已通过 Alpha.2 安装/autoload/原生 Host 和 Alpha.4 frozen install，随后因 GitHub Ubuntu 未提供 `rg` 而停止；它没有上传可移植的依赖状态 checkpoint。因此修复后的新 candidate 必须从空 cache/output 完整运行矩阵，执行模式明确记录为 `new_candidate_full_matrix`，不得声称跳过或复用上述成功组。
+
+每次运行会从开始即写出 `checkpoint.json`，绑定完整 candidate commit/tree、legacy commit/archive、Alpha.2/Alpha.5 Composer lock 与 Alpha.4/Alpha.5 pnpm lock 四个摘要、历史 run 证据和逐阶段通过摘要。workflow 在失败时也上传该 checkpoint。候选或任一输入变化时，checkpoint 只能作为审计证据，不得作为缓存复用依据。
+
 ## 已知 PHP 发布身份完整性缺陷
 
 核心 monorepo `v0.1.0-alpha.4` 固定到 commit `7fbd445d8fa547830b7782a7ac147d9ed414e0fd`，但 tag 内 `packages/php/composer.json` 仍声明 `0.1.0-alpha.2`，Packagist 也没有 `peanut-admin/core@0.1.0-alpha.4`。机器 Gate 必须真实观察到这个缺陷，并禁止把它当作可消费 PHP 身份。未来 PHP 发布必须保证 monorepo tag、内嵌 package metadata、Composer split tag 和 Packagist version 一致；本 Gate 不修改核心仓、tag 或 Registry。
@@ -19,6 +25,7 @@ PHP 在历史应用的干净 archive 中先按原生 manifest/lock 安装 Alpha.
 
 ```bash
 scripts/core-upgrade-compatibility \
+  --candidate <full-candidate-commit> \
   --cache /private/tmp/peanut-admin-core-upgrade-cache-<candidate> \
   --output /private/tmp/peanut-admin-core-upgrade-output-<candidate>
 ```

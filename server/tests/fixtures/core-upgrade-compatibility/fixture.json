@@ -1,5 +1,25 @@
 {
   "schema_version": 2,
+  "continuation_evidence": {
+    "execution_mode": "new_candidate_full_matrix",
+    "reason": "run 31755618378 did not upload a portable runtime checkpoint, so no installed dependency state can be safely reused by a changed candidate",
+    "prior_run": 31755618378,
+    "prior_candidate": "440297f74b6f6fd26b7c88117bbb499b25dc1730",
+    "passed_before_environment_failure": [
+      "exact candidate resource claim and release",
+      "legacy-pre-alpha5 selector identity",
+      "Packagist alpha.2 frozen install and autoload",
+      "native PB04-AUTH-HOST-001 Host probe",
+      "npm alpha.4 frozen-lock install"
+    ],
+    "failure": "GitHub Ubuntu did not provide rg for the alpha.4 lock integrity assertion",
+    "unexecuted": [
+      "PHP alpha.5 runtime",
+      "Web alpha.4 typecheck and build",
+      "Web alpha.5 frozen install, typecheck, build and consumer",
+      "final PSR-4/npm exports and source digest proof"
+    ]
+  },
   "current_create_app": {
     "application_name": "Core Upgrade Fixture",
     "slug": "core-upgrade-fixture",
