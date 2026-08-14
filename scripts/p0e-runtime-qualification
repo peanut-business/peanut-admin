@@ -780,21 +780,25 @@ class Runner:
         }
         inspector = INSPECTOR
         created_directories: list[Path] = []
+        copied_inspector = False
         if project_root != ROOT:
             inspector = project_root / "server/tests/fixtures/mt05/inspect.php"
             if inspector.exists():
-                fail(f"application inspector target already exists: {inspector}")
-            parent = inspector.parent
-            cursor = parent
-            while not cursor.exists():
-                created_directories.append(cursor)
-                cursor = cursor.parent
-            parent.mkdir(parents=True)
-            shutil.copy2(INSPECTOR, inspector)
+                if not inspector.is_file() or inspector.is_symlink() or sha256(inspector) != sha256(INSPECTOR):
+                    fail(f"application inspector identity changed: {inspector}")
+            else:
+                parent = inspector.parent
+                cursor = parent
+                while not cursor.exists():
+                    created_directories.append(cursor)
+                    cursor = cursor.parent
+                parent.mkdir(parents=True)
+                shutil.copy2(INSPECTOR, inspector)
+                copied_inspector = True
         try:
             result = command(["php", str(inspector)], env=env, capture=True)
         finally:
-            if inspector != INSPECTOR:
+            if copied_inspector:
                 with contextlib.suppress(FileNotFoundError):
                     inspector.unlink()
                 for directory in created_directories:
