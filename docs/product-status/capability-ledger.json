@@ -190,18 +190,19 @@
       "id": "PA-P0E-001",
       "name": "P0-E 隔离资源登记",
       "area": "qualification",
-      "status": "verified",
-      "summary": "最终运行时验收所需资源已进入版本化登记，但本项不代表 Runtime Gate 已运行。",
+      "status": "implemented",
+      "summary": "最终运行时验收资源已由 Peanut Admin 两份版本化登记独立约束，正等待当前候选合同与 P0-E 验收。",
       "acceptance": [
         "数据库、服务、端口、cache 与 output 使用稳定资源 ID",
         "凭据只记录引用且不进入仓库",
-        "Gate 执行前可以原子 claim 精确候选资源"
+        "Gate 执行前可以原子 claim 精确候选资源",
+        "项目运行与验收不读取 CompanyOS 或其他外部资源登记仓"
       ],
       "evidence": [
         {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/121"},
         {"kind": "git", "ref": "68251239d1b0c5a3dc1fb9d25b3ce3c50ae6b9c0"}
       ],
-      "paths": ["resources/project-resources.json"]
+      "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json"]
     },
     {
       "id": "PA-P0E-002",
@@ -254,18 +255,18 @@
     },
     {
       "id": "PA-GOVERNANCE-001",
-      "name": "CompanyOS Gitee clean PR 流程",
+      "name": "外部 CompanyOS 治理流程",
       "area": "governance",
-      "status": "blocked",
-      "summary": "跨仓治理流程仍有已知缺口，不阻塞应用 Runtime，但阻塞完整交付治理闭环。",
+      "status": "retired",
+      "summary": "Peanut Admin 已退出 CompanyOS 资源与治理依赖；项目资源、GitHub PR 和验收事实均由本仓库维护。",
       "acceptance": [
-        "CompanyOS 侧形成可复现的 clean PR 创建与验证流程",
-        "流程不依赖聊天状态或个人未登记环境"
+        "项目运行与验收不读取 CompanyOS 资源登记",
+        "资源、凭据引用、健康检查和 fallback 由 Peanut Admin 自身版本化登记约束"
       ],
-      "evidence": [],
-      "blockers": [
-        "尚无已合入的 CompanyOS clean PR 实现和固定候选证据"
-      ]
+      "evidence": [
+        {"kind": "resource", "ref": "resources/project-resources.json"}
+      ],
+      "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json"]
     },
     {
       "id": "PA-SAAS-001",

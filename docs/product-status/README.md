@@ -44,12 +44,12 @@ php scripts/check-product-capability-ledger
 | `PA-SCAFFOLD-002` | 安全的脚手架跨版本升级 | 已验证 | preflight、apply、verify、recover/rollback 已形成可执行闭环，默认保留 app-owned 文件。 |
 | `PA-SCAFFOLD-003` | 新应用 Plugin 空锁合同 | 已验证 | 正式生成应用使用有效空 plugins.lock，不再引用仅供源仓测试的 fixture。 |
 | `PA-COMPAT-001` | 公开核心包升级不要求应用源码重构 | 已验证 | 公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。 |
-| `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 最终运行时验收所需资源已进入版本化登记，但本项不代表 Runtime Gate 已运行。 |
 
 ### 已实现或正在验收
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
+| `PA-P0E-001` | P0-E 隔离资源登记 | 已实现，待验收 | 最终运行时验收资源已由 Peanut Admin 两份版本化登记独立约束，正等待当前候选合同与 P0-E 验收。 |
 | `PA-P0E-002` | 最终生成应用运行时验收 | 进行中 | 需要在固定候选上完成真实生成、干净依赖安装、数据库安装迁移、服务启动和浏览器验收。 |
 | `PA-P0E-003` | 最终升级应用运行时验收 | 进行中 | 需要把生成应用从旧 Release 升级到当前 Release，并复验依赖、数据库、服务、浏览器、Plugin 和 app-owned 保持。 |
 
@@ -58,12 +58,12 @@ php scripts/check-product-capability-ledger
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 计划中 | P0-E 固定候选通过后，才能把当前 dev 能力合入 main、建立正式 Tag/Release 并执行最低生产升级演练。 |
-| `PA-GOVERNANCE-001` | CompanyOS Gitee clean PR 流程 | 受阻 | 跨仓治理流程仍有已知缺口，不阻塞应用 Runtime，但阻塞完整交付治理闭环。 |
 
 ### 暂缓或范围外
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
+| `PA-GOVERNANCE-001` | 外部 CompanyOS 治理流程 | 已退出 | Peanut Admin 已退出 CompanyOS 资源与治理依赖；项目资源、GitHub PR 和验收事实均由本仓库维护。 |
 | `PA-SAAS-001` | 完整 SaaS 商业化 | 暂缓 | 商业套餐、计费、完整运营与商业控制面不属于当前独立应用交付目标。 |
 | `PA-OPS-001` | 跨应用实例运营平台 | 范围外 | 跨实例 Release、授权、升级、健康与备份平台应作为独立应用，不进入 Peanut Admin 核心包或 SaaS Host。 |
 | `PA-UPGRADE-001` | 自动重构或静默覆盖应用业务源码 | 范围外 | 升级允许替换已登记的框架管理文件和依赖，但不得自动改写 app-owned 业务代码。 |

@@ -140,7 +140,7 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         fail("P0-E database administration binding is invalid")
     expected_binding = {
         "database_resource_id": RESOURCE_ID,
-        "allocation_resource_id": registered.get("allocation_resource_id"),
+        "runtime_resource_id": registered.get("runtime_resource_id"),
         "administrative_tooling_resource_id": ADMIN_TOOLING_ID,
         "host": "mac-14",
         "port": registered.get("upstream_endpoint", {}).get("port"),

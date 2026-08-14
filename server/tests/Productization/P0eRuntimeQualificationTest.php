@@ -45,7 +45,7 @@ $expect(($registered[0]['allowed_scenarios'] ?? null) === $expectedScenarios, 'r
 $binding = $p0eRegistry['database_administration_binding'] ?? null;
 $expect(is_array($binding), 'P0-E remote administration binding is missing');
 $expect(($binding['database_resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'P0-E remote administration database resource is not fixed');
-$expect(($binding['allocation_resource_id'] ?? null) === ($registered[0]['allocation_resource_id'] ?? null), 'P0-E remote administration allocation diverged');
+$expect(($binding['runtime_resource_id'] ?? null) === ($registered[0]['runtime_resource_id'] ?? null), 'P0-E remote administration runtime resource diverged');
 $expect(($binding['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-mysql84-remote-admin-cli', 'P0-E remote administration tooling is not fixed');
 
 $candidate = trim((string)shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));

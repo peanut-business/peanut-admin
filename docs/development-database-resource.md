@@ -3,11 +3,10 @@
 ## 权威登记与唯一拓扑
 
 本项目版本化机器可读事实源是 `resources/project-resources.json`；根 `AGENTS.md` 是入口。
-CompanyOS 的 `company-os/resources/development-infrastructure.yaml` 仅是 allocation 来源证据，
-不能替代项目登记。Compose、`scripts/local-stack.sh`、数据库门禁与环境探针都从项目登记
-选择资源，不在脚本中维护另一份地址常量。
+Peanut Admin 不依赖外部资源登记仓。Compose、`scripts/local-stack.sh`、数据库门禁与环境
+探针都从项目登记选择资源，并在有状态操作前按登记健康检查核验真实资源。
 
-Peanut Admin 日常开发和本机生产模式预览只使用公司开发基础设施上的数据库：
+Peanut Admin 日常开发和本机生产模式预览只使用项目登记的远程开发数据库：
 
 - 资源 ID：`peanut-admin-mysql84-development`
 - 主机：`mac-14`（`192.168.192.2`）
@@ -23,8 +22,7 @@ Peanut Admin 日常开发和本机生产模式预览只使用公司开发基础�
 
 本机只运行 PHP、Nginx、管理端、PC、UniApp H5 和文档服务，不运行 Peanut Admin
 MySQL。历史 `192.168.192.2:3306/peanut_admin` 没有迁移账本，不是当前开发资源，禁止
-应用连接。公司 allocation 的权威登记位于
-`company-os/resources/development-infrastructure.yaml`。
+应用连接。该资源的权威登记位于本仓库 `resources/project-resources.json`。
 
 当前容器入口与宿主入口同址是经过 Docker Desktop 真实容器连接验证的登记事实。容器
 不会把远端局域网地址解释为宿主 localhost，也不需要 TCP bridge。若网络拓扑未来改变，
@@ -64,7 +62,7 @@ fail closed。Runner 在 Compose 完全停止后 release lease，目录删除后
 首次或资源重建由资源 owner 执行：
 
 ```bash
-./scripts/company-development-database.sh provision
+./scripts/project-development-database.sh provision
 ```
 
 普通开发只需：
@@ -93,7 +91,7 @@ fail closed。Runner 在 Compose 完全停止后 release lease，目录删除后
 ./scripts/local-stack.sh prod-up
 ```
 
-它标记为 `local-production-preview` 并连接同一个公司开发库；真正线上配置必须标记为
+它标记为 `local-production-preview` 并连接同一个项目开发库；真正线上配置必须标记为
 `production` 并使用生产数据库资源 ID。生产容器不会自动执行待处理迁移，发布流程必须
 先备份、显式运行 `database/migrate.php`，然后应用启动门禁确认数据库与发布代码一致。
 Docker PHP 只用于此生产模式预览、生产构建和明确要求容器等价性的 Gate，不是日常

@@ -16,6 +16,9 @@ $expect = static function (bool $condition, string $message): void {
 
 $expect(($registry['schema_version'] ?? null) === 1, 'resource registry schema version is invalid');
 $expect(($registry['project_id'] ?? null) === 'peanut-admin', 'resource registry project id is invalid');
+$expect(($registry['authority']['source'] ?? null) === 'this versioned file', 'project registry is not authoritative');
+$expect(!array_key_exists('company_allocation_evidence', $registry['authority'] ?? []), 'project registry still depends on CompanyOS allocation evidence');
+$expect(!str_contains($registryJson, 'CompanyOS') && !str_contains($registryJson, 'company-os'), 'project registry still references CompanyOS');
 
 $databases = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
@@ -44,7 +47,7 @@ $qualificationDatabases = array_values(array_filter(
 $expect(count($qualificationDatabases) === 1, 'P0-E qualification database registration is missing');
 $qualificationDatabase = $qualificationDatabases[0];
 $requiredQualificationFields = [
-    'purpose', 'owner', 'allocation_resource_id', 'service_type', 'schema', 'allowed_scenarios',
+    'purpose', 'owner', 'runtime_resource_id', 'service_type', 'schema', 'allowed_scenarios',
     'upstream_endpoint', 'container_endpoint', 'credential_ref', 'data_source',
     'freshness_requirement', 'health_check', 'claim_precondition', 'creation_policy',
     'backup_responsibility', 'cleanup_responsibility', 'failure_retention_policy',
@@ -74,10 +77,13 @@ $expect(is_array($qualificationDatabase['health_check'] ?? null), 'P0-E health c
 $expect(($p0eRegistry['schema_version'] ?? null) === 1, 'P0-E resource registry schema version is invalid');
 $expect(($p0eRegistry['project_id'] ?? null) === 'peanut-admin', 'P0-E resource registry project id is invalid');
 $expect(($p0eRegistry['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E resource registry Gate changed');
+$expect(!array_key_exists('company_allocation_evidence', $p0eRegistry['authority'] ?? []), 'P0-E registry still depends on CompanyOS allocation evidence');
+$expect(!array_key_exists('company_allocation_resource_id', $p0eRegistry['authority'] ?? []), 'P0-E registry still has a CompanyOS allocation identity');
+$expect(!str_contains((string)json_encode($p0eRegistry), 'CompanyOS') && !str_contains((string)json_encode($p0eRegistry), 'company-os'), 'P0-E registry still references CompanyOS');
 $binding = $p0eRegistry['database_administration_binding'] ?? null;
 $expect(is_array($binding), 'P0-E database administration binding is missing');
 $expect(($binding['database_resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'P0-E binding database resource changed');
-$expect(($binding['allocation_resource_id'] ?? null) === ($qualificationDatabase['allocation_resource_id'] ?? null), 'P0-E binding and project allocation diverged');
+$expect(($binding['runtime_resource_id'] ?? null) === ($qualificationDatabase['runtime_resource_id'] ?? null), 'P0-E binding and project runtime resource diverged');
 $expect(($binding['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-mysql84-remote-admin-cli', 'P0-E binding tooling resource changed');
 $expect(($binding['database'] ?? null) === ($qualificationDatabase['database'] ?? null), 'P0-E binding database template diverged');
 $expect(($binding['namespace'] ?? null) === ($qualificationDatabase['namespace'] ?? null), 'P0-E binding namespace diverged');

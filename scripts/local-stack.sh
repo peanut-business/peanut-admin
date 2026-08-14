@@ -62,7 +62,7 @@ ensure_env() {
         while IFS='=' read -r name value; do set_env_value "$name" "$value"; done
     if ! grep -q '^DB_USER=peanut_admin_development$' "$env_file" ||
         ! grep -q '^DB_PASS=..' "$env_file"; then
-        "$repo_dir/scripts/company-development-database.sh" sync-credentials
+        "$repo_dir/scripts/project-development-database.sh" sync-credentials
     fi
 }
 
