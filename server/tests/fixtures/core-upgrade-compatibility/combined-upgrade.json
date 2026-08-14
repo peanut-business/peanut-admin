@@ -48,11 +48,11 @@
     },
     {
       "version": "1.1.3",
-      "manifest_sha256": "a1e848bbc0ac97b9734b60bc13befe8d0f0c78dc8d812849da09343cd958a078",
-      "source_commit": "30c70328a59d31a95dc12a3a2b57a996650c05a9",
-      "source_tree": "1ecbddfae8d2f6dfae94423547819e10310ec226",
-      "inventory_sha256": "0b4c24475a79474ea1ca381ee40c534fd2500c15118e934dd180e70988cc8942",
-      "managed_tree_sha256": "79efad54a0c32c3fcde70d13894a473adf0f057e7a60fbcd630018ddf0d42bf1",
+      "manifest_sha256": "0b1a4ea8912bcf2f7d0c5b940f184643e4784210c7f8b1edcbed978792e614fe",
+      "source_commit": "1b174e5134a3a8eca79fd5d6277e9b9599370c1c",
+      "source_tree": "89bcca4af2d72ab98a0320cb1291708e827206c9",
+      "inventory_sha256": "4bf9b4ee61a220aea63d26bcd86a80a167211a83bf46496dd119a9d3ae7a3442",
+      "managed_tree_sha256": "49c72e21ff7deacc50ee2b28e8c2ac3f1ec783d62ec25c238652a5d3f25466eb",
       "file_count": 274
     }
   ],
