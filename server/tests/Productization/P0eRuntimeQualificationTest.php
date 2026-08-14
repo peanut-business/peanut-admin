@@ -126,4 +126,68 @@ $expect(str_contains($runnerSource, 'core.excludesFile'), 'create-app does not e
 $expect(str_contains($runnerSource, ':(exclude)'), 'resume cleanliness does not exclude only the lease-owned runtime evidence');
 $expect(str_contains($browserSource, 'snapshot'), 'browser runner does not capture Playwright snapshots');
 
+$composeEnvironmentProbe = <<<'PYTHON'
+import importlib.machinery
+import importlib.util
+import os
+import sys
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+
+runner_path = sys.argv[1]
+loader = importlib.machinery.SourceFileLoader("p0e_runtime_qualification", runner_path)
+spec = importlib.util.spec_from_loader(loader.name, loader)
+module = importlib.util.module_from_spec(spec)
+loader.exec_module(module)
+
+with tempfile.TemporaryDirectory(prefix="p0e-compose-env-") as directory:
+    temporary = Path(directory)
+    docker = temporary / "docker"
+    docker.write_text(
+        "#!/bin/sh\n"
+        "printf '%s|%s|%s\\n' \"$DB_NAME\" \"$DB_HOST\" \"$PEANUT_DEPLOYMENT_TARGET\"\n",
+        encoding="utf-8",
+    )
+    docker.chmod(0o700)
+    os.environ["PATH"] = f"{temporary}{os.pathsep}{os.environ['PATH']}"
+
+    arguments = SimpleNamespace(candidate="candidate", run_id="probe", lease="lease")
+    plan = {
+        "candidate_tree": "tree",
+        "compose_project": "peanut-p0e-probe",
+        "paths": {
+            "output-dir": str(temporary / "output"),
+            "backup-dir": str(temporary / "backup"),
+            "cache-dir": str(temporary / "cache"),
+        },
+    }
+    runner = module.Runner(arguments, plan, {})
+    runner.compose_env = temporary / "compose.env"
+    runner.compose_overlay = temporary / "compose.lease-proof.yml"
+    runner.compose_env.write_text(
+        "DB_NAME=peanut_admin_development_p0e_probe_standalone_browser\n"
+        "DB_HOST=registered-container-host\n"
+        "PEANUT_DEPLOYMENT_TARGET=local-production-preview\n",
+        encoding="utf-8",
+    )
+    runner.compose_overlay.write_text("services: {}\n", encoding="utf-8")
+    result = runner.compose("config")
+    expected = (
+        "peanut_admin_development_p0e_probe_standalone_browser|"
+        "registered-container-host|local-production-preview"
+    )
+    if result.stdout.strip() != expected:
+        raise SystemExit(f"Compose subprocess inherited polluted environment: {result.stdout!r}")
+PYTHON;
+$probeCommand = '/usr/bin/env '
+    . escapeshellarg('DB_NAME=peanut_admin_development') . ' '
+    . escapeshellarg('DB_HOST=polluted-parent-host') . ' '
+    . escapeshellarg('PEANUT_DEPLOYMENT_TARGET=production') . ' '
+    . 'python3 -c ' . escapeshellarg($composeEnvironmentProbe) . ' ' . escapeshellarg($runner);
+$probeOutput = [];
+$probeCode = 0;
+exec($probeCommand . ' 2>&1', $probeOutput, $probeCode);
+$expect($probeCode === 0, 'Compose environment precedence probe failed: ' . implode("\n", $probeOutput));
+
 echo "P0E-RUNTIME-QUALIFICATION-CONTRACT-001 passed\n";

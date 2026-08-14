@@ -848,13 +848,28 @@ class Runner:
         self.compose_overlay.write_text(overlay, encoding="utf-8")
         self.compose_overlay.chmod(0o600)
 
+    def compose_environment(self) -> dict[str, str]:
+        try:
+            lines = self.compose_env.read_text(encoding="utf-8").splitlines()
+        except OSError as exception:
+            fail(f"cannot read Compose environment {self.compose_env}: {exception}")
+        values: dict[str, str] = {}
+        for line_number, line in enumerate(lines, start=1):
+            name, separator, value = line.partition("=")
+            if not separator or not name or name in values:
+                fail(f"invalid Compose environment at line {line_number}")
+            values[name] = value
+        if not values:
+            fail("Compose environment is empty")
+        return values
+
     def compose(self, *arguments: str, log: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
         return command([
             "docker", "compose", "--project-name", self.plan["compose_project"],
             "--env-file", str(self.compose_env), "-f", str(ROOT / "deploy/docker-compose.prod.yml"),
             "-f", str(self.compose_overlay),
             *arguments,
-        ], env={"PEANUT_DEPLOYMENT_TARGET": "local-production-preview"}, log=log, capture=log is None, check=check)
+        ], env=self.compose_environment(), log=log, capture=log is None, check=check)
 
     def wait_http(self, url: str, seconds: int = 120) -> None:
         deadline = time.time() + seconds
