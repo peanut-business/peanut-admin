@@ -10,6 +10,7 @@ require $root.'/scripts/scaffold-runtime/ScaffoldUpgradeLedger.php';
 require $root.'/scripts/scaffold-runtime/ScaffoldUpgradeRunner.php';
 
 const SCAFFOLD_FROM_COMMIT='14412607ba36f1816e39f7117f77eea4a9e7419e';
+const SCAFFOLD_V1_1_2_CREATE_COMMIT='2cdb5763621e320c60cdbb834dcc0160e7bb7636';
 
 function scaffoldExpect(bool $condition,string $message): void { if(!$condition)throw new RuntimeException($message); }
 function scaffoldRun(array $command,?string $cwd=null,array $environment=[]): string
@@ -153,8 +154,7 @@ try{
     $latestRecover=$runner->recover($latestApp,scaffoldPlanPath($latestApp,$latestPlan));
     scaffoldExpect($latestRecover['status']==='recovered'&&hash_equals($latestBefore,scaffoldFileTree($latestApp)),'v1.1.2 recovery must restore the exact v1.1.1 tree');
 
-    $latestIdentity=json_decode((string)file_get_contents($latestRelease),true,512,JSON_THROW_ON_ERROR)['release'];
-    $nextFromSource=$temporary.'/next-from-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$nextFromSource]);scaffoldRun(['git','checkout','--quiet','--detach',$latestIdentity['source_commit']],$nextFromSource);
+    $nextFromSource=$temporary.'/next-from-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$nextFromSource]);scaffoldRun(['git','checkout','--quiet','--detach',SCAFFOLD_V1_1_2_CREATE_COMMIT],$nextFromSource);
     $nextApp=$temporary.'/next-app';scaffoldFresh($nextFromSource,$nextApp);
     $nextAppOwnedPath='server/config/peanut.php';file_put_contents($nextApp.'/'.$nextAppOwnedPath,(string)file_get_contents($nextApp.'/'.$nextAppOwnedPath)."\n// v1.1.3 preservation proof\n");$nextAppOwnedDigest=hash_file('sha256',$nextApp.'/'.$nextAppOwnedPath);
     $nextApplicationManifestPath=$nextApp.'/.peanut/application-manifest.json';$nextApplicationManifest=json_decode((string)file_get_contents($nextApplicationManifestPath),true,512,JSON_THROW_ON_ERROR);
