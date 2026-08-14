@@ -1,6 +1,6 @@
 {
     "schema_version": 1,
-    "template_version": "1.1.0",
+    "template_version": "1.1.1",
     "protocol": "peanut.create-app-inventory.v1",
     "variables": [
         "PACKAGE_IDENTITY",
@@ -3246,7 +3246,7 @@
             "target": "plugins.lock",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "text",
+            "transform": "plugins-lock",
             "mode": 420,
             "source_sha256": "4828316f386a1d3a3f1535cdc3a202ad8f28c50314a34fa42a4a9fb24b0abb33"
         },
@@ -3471,7 +3471,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "48bbd0c4d22299b4735817430dfbdbf0722b17452d6979564a6ab241844ac186"
+            "source_sha256": "c890f6bb448b0d023aaa02e16de56be71ff7f6e8fcb1126771cf0fd91428f0b9"
         },
         {
             "path": "scripts/scaffold-upgrade",
@@ -7143,7 +7143,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "97c882209d223b22e42146ca8765f965db619dcb757367653cd2c912de280983"
+            "source_sha256": "690c9e58d5ee552ee0698bbfa50c8c38aa306ed99e0e2c517e1ad8dd7c325d01"
         },
         {
             "path": "server/app/platform/service/plugin/PluginModuleRegistryFactory.php",
@@ -7384,7 +7384,7 @@
             "target": "server/config/modules.php",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "text",
+            "transform": "modules-config",
             "mode": 420,
             "source_sha256": "538cbf41c460bd4546495805ebef653e36ccd524b71e5f224aa261e2a57d35d3"
         },
@@ -8003,11 +8003,10 @@
         {
             "path": "server/fixtures/plugin-module-lifecycle/run.php",
             "target": "server/fixtures/plugin-module-lifecycle/run.php",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "60d57702ab86e725db89e97d086dfb892dcda278444c4080ec6da4f817260dba"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/public/.htaccess",

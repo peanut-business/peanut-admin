@@ -45,6 +45,7 @@ function excluded(string $path): bool
         || str_starts_with($path, 'server/app/common/service/scaffold/')
         || str_starts_with($path, 'plugins/fixture.delivery-record/')
         || str_starts_with($path, 'server/app/Modules/Fixture/DeliveryRecord/')
+        || str_starts_with($path, 'server/fixtures/plugin-module-lifecycle/')
         || str_starts_with($path, 'web/src/modules/fixture-delivery-record/')
         || $path === 'web/tests/Productization/plugin-contribution.test.ts'
         || str_starts_with($path, 'scaffold/')
@@ -100,6 +101,8 @@ function transform(string $path, string $classification): string
     if ($path === 'RELEASE_SBOM.spdx.json') return 'sbom';
     if ($path === 'RELEASE_METADATA.json') return 'release-metadata';
     if ($path === 'resources/project-resources.json') return 'resources';
+    if ($path === 'plugins.lock') return 'plugins-lock';
+    if ($path === 'server/config/modules.php') return 'modules-config';
     if ($path === '.github/workflows/ci.yml') return 'ci';
     if ($path === 'server/database/environment-guard.php') return 'environment-guard';
     if ((str_starts_with($path, 'docs-site/') || str_starts_with($path, 'docs/')) && str_ends_with($path, '.md')) return 'docs-page';
@@ -144,7 +147,7 @@ foreach (inventoryGitFiles($root) as $path) {
 
 $inventory = [
     'schema_version' => 1,
-    'template_version' => '1.1.0',
+    'template_version' => '1.1.1',
     'protocol' => 'peanut.create-app-inventory.v1',
     'variables' => ['PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],
     'untracked_exclusions' => [

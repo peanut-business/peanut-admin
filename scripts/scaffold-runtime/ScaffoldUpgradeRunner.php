@@ -69,6 +69,18 @@ final class ScaffoldUpgradeRunner
             try {
                 $writes = 0;
                 foreach ($plan['actions'] as $action) {
+                    if ($action['action'] !== 'delete') continue;
+                    $this->assertActionFresh($root, $action);
+                    $target = ScaffoldPathGuard::projectPath($root, $action['path']);
+                    if (!unlink($target)) throw new RuntimeException('SCAFFOLD_ATOMIC_DELETE_FAILED: ' . $action['path']);
+                    $this->pruneEmptyParents(dirname($target), $root);
+                    $writes++;
+                    $failAfter = getenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS');
+                    if ($failAfter !== false && ctype_digit($failAfter) && $writes >= (int)$failAfter) {
+                        throw new RuntimeException('SCAFFOLD_FAULT_INJECTED');
+                    }
+                }
+                foreach ($plan['actions'] as $action) {
                     if (!in_array($action['action'], ['create', 'replace', 'regenerate'], true)) continue;
                     $this->assertActionFresh($root, $action);
                     $artifact = $this->targetContent($root, $to, $action);
@@ -184,7 +196,17 @@ final class ScaffoldUpgradeRunner
         foreach ($paths as $path) {
             $before = $old[$path] ?? null; $after = $new[$path] ?? null;
             if ($after === null) {
-                $actions[] = $this->action($path, $before ?? [], 'conflict', 'target_removed_managed_file', true, null, null);
+                $projectPath = ScaffoldPathGuard::projectPath($root, $path);
+                $current = $this->regularFileState($projectPath, $path);
+                if (!$current['present']) {
+                    $actions[] = $this->action($path, $before ?? [], 'conflict', 'managed_file_missing', true, $current, null);
+                    continue;
+                }
+                $oldContent = $this->renderArtifact($from, $before, $parameters);
+                $oldDigest = hash('sha256', $oldContent);
+                $actions[] = hash_equals($oldDigest, $current['sha256'])
+                    ? $this->action($path, $before, 'delete', 'upstream_removed_only', false, $current, null)
+                    : $this->action($path, $before, 'conflict', 'project_modified_upstream_removed', true, $current, null);
                 continue;
             }
             $targetContent = $this->renderArtifact($to, $after, $parameters);
@@ -240,7 +262,7 @@ final class ScaffoldUpgradeRunner
     private function summary(array $actions): array
     {
         $summary = ['total' => count($actions), 'automatic' => 0, 'preserved' => 0, 'conflicts' => 0];
-        foreach ($actions as $action) $action['conflict'] ? $summary['conflicts']++ : (in_array($action['action'], ['create','replace','regenerate'], true) ? $summary['automatic']++ : $summary['preserved']++);
+        foreach ($actions as $action) $action['conflict'] ? $summary['conflicts']++ : (in_array($action['action'], ['create','delete','replace','regenerate'], true) ? $summary['automatic']++ : $summary['preserved']++);
         return $summary;
     }
 
@@ -378,6 +400,7 @@ final class ScaffoldUpgradeRunner
             }
         }
         foreach ($plan['actions'] as $action) {
+            if ($action['action'] === 'delete') continue;
             $state = $this->regularFileState(ScaffoldPathGuard::projectPath($root, $action['path']), $action['path']);
             if (!$state['present']) throw new RuntimeException('SCAFFOLD_APPLY_MANAGED_MISSING: ' . $action['path']);
             $files[] = ['path'=>$action['path'],'sha256'=>$state['sha256'],'mode'=>$state['mode'],'classification'=>$action['classification'],

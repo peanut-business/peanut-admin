@@ -8,7 +8,7 @@ use RuntimeException;
 final class ApplicationCreator
 {
     private const CLASSIFICATIONS = ['managed', 'generated-managed', 'app-owned', 'excluded'];
-    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'package', 'sbom', 'third-party-notices'];
+    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices'];
     private const VARIABLES = ['PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
 
     /** @param array{commit:string,tree:string}|null $sourceIdentity */
@@ -230,7 +230,9 @@ final class ApplicationCreator
             'resources' => $this->resourceRegistry($parameters),
             'readme' => $this->render($this->readme(), $parameters),
             'license' => $this->render($this->license(), $parameters),
+            'modules-config' => $this->modulesConfig($content),
             'package' => $this->packageTransform($content, $parameters),
+            'plugins-lock' => $this->pluginsLock(),
             'sbom' => $this->sbom($content, $parameters),
             'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
             default => throw new RuntimeException('CREATE_APP_INVENTORY_TRANSFORM_UNKNOWN'),
@@ -507,6 +509,31 @@ PHP;
     private function changelog(): string
     {
         return "# Changelog\n\n## 0.1.0\n\n- Initial generated application baseline for {{PRODUCT_NAME}}.\n";
+    }
+
+    private function modulesConfig(string $content): string
+    {
+        $replacements = [
+            "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"
+                => "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '')",
+            "'frontend_components' => ['fixture.delivery-record.list']"
+                => "'frontend_components' => []",
+        ];
+        foreach ($replacements as $source => $target) {
+            if (substr_count($content, $source) !== 1) {
+                throw new RuntimeException('CREATE_APP_MODULES_CONFIG_SOURCE_INVALID');
+            }
+            $content = str_replace($source, $target, $content);
+        }
+        return $content;
+    }
+
+    private function pluginsLock(): string
+    {
+        return json_encode(
+            ['schema_version' => 1, 'plugins' => []],
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        ) . "\n";
     }
 
     private function writeFile(string $path, string $content, int $mode): void

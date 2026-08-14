@@ -2,11 +2,15 @@
 declare(strict_types=1);
 
 use app\common\service\scaffold\ApplicationCreator;
+use app\platform\service\plugin\PluginLockResolver;
 
 $root = dirname(__DIR__, 3);
 require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
 require $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
 require $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
+require $root . '/server/app/platform/service/plugin/PluginLifecycleException.php';
+require $root . '/server/app/platform/service/plugin/PluginDescriptor.php';
+require $root . '/server/app/platform/service/plugin/PluginLockResolver.php';
 
 function createApplicationExpect(bool $condition, string $message): void
 {
@@ -89,6 +93,18 @@ try {
     createApplicationExpect(createApplicationFiles($first) === $expected, 'generated tree must exactly match inventory plus declared metadata/baselines');
     createApplicationExpect(!is_dir($first . '/.git') && !is_dir($first . '/output'), 'generated application must exclude Git and historical output');
     createApplicationExpect(!is_file($first . '/AGENTS.md'), 'source governance evidence must be excluded');
+    createApplicationExpect(!is_dir($first . '/plugins/fixture.delivery-record'), 'demo Plugin artifact must remain source-only');
+    createApplicationExpect(!is_dir($first . '/server/app/Modules/Fixture/DeliveryRecord'), 'demo backend Module must remain source-only');
+    createApplicationExpect(!is_dir($first . '/server/fixtures/plugin-module-lifecycle'), 'demo lifecycle runner must remain source-only');
+    createApplicationExpect(!is_dir($first . '/web/src/modules/fixture-delivery-record'), 'demo frontend Module must remain source-only');
+    $sourcePlugins = (new PluginLockResolver($root . '/server', '../plugins.lock'))->all();
+    createApplicationExpect($sourcePlugins !== [], 'source fixture lock must resolve at least one fixture Plugin');
+    $generatedLock = json_decode((string)file_get_contents($first . '/plugins.lock'), true, 64, JSON_THROW_ON_ERROR);
+    createApplicationExpect($generatedLock === ['schema_version' => 1, 'plugins' => []], 'generated Plugin lock must be explicitly empty');
+    createApplicationExpect((new PluginLockResolver($first . '/server', '../plugins.lock'))->all() === [], 'empty generated Plugin lock must resolve without artifacts');
+    $generatedModulesConfig = (string)file_get_contents($first . '/server/config/modules.php');
+    createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
+    createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '')"), 'generated deployment must not enable an unowned Plugin lock');
     $releaseMetadata = json_decode((string)file_get_contents($first . '/RELEASE_METADATA.json'), true, 512, JSON_THROW_ON_ERROR);
     createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $releaseMetadata['version'] === '0.1.0', 'release metadata must be regenerated for the new application');
     createApplicationExpect(!str_contains((string)file_get_contents($first . '/server/database/init.sql'), "MD5(CONCAT(MD5('admin123456')"), 'shared default password must be absent');
