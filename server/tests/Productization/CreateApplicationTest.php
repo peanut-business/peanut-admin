@@ -32,6 +32,34 @@ function createApplicationDelete(string $path): void
     unlink($path);
 }
 
+function createApplicationCopy(string $source, string $target): void
+{
+    mkdir($target, 0775, true);
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($source, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+    foreach ($iterator as $file) {
+        $relative = substr($file->getPathname(), strlen($source) + 1);
+        $destination = $target . '/' . $relative;
+        if ($file->isDir()) {
+            mkdir($destination, $file->getPerms() & 0777, true);
+        } else {
+            copy($file->getPathname(), $destination);
+            chmod($destination, $file->getPerms() & 0777);
+        }
+    }
+}
+
+/** @param array<string,mixed> $data */
+function createApplicationWriteJson(string $path, array $data): void
+{
+    file_put_contents($path, json_encode(
+        $data,
+        JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+    ) . "\n");
+}
+
 function createApplicationFails(callable $operation, string $prefix): void
 {
     try {
@@ -40,6 +68,32 @@ function createApplicationFails(callable $operation, string $prefix): void
     } catch (RuntimeException $exception) {
         createApplicationExpect(str_starts_with($exception->getMessage(), $prefix), "unexpected error: {$exception->getMessage()}");
     }
+}
+
+/** @param array{commit:string,tree:string} $identity */
+function createApplicationTamperedReleaseFails(
+    string $root,
+    string $inventoryPath,
+    array $identity,
+    string $releasePath,
+    string $temporary,
+    string $case,
+    callable $mutate,
+    string $error
+): void {
+    $releaseRoot = $temporary . '/release-' . $case;
+    createApplicationCopy(dirname($releasePath), $releaseRoot);
+    $manifestPath = $releaseRoot . '/scaffold-manifest.json';
+    $manifest = json_decode((string)file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
+    $mutate($manifest, $releaseRoot);
+    createApplicationWriteJson($manifestPath, $manifest);
+    $target = $temporary . '/tampered-' . $case;
+    $creator = new ApplicationCreator($root, $inventoryPath, $identity, $manifestPath);
+    createApplicationFails(
+        fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $target),
+        $error
+    );
+    createApplicationExpect(!file_exists($target), 'failed adoption committed target: ' . $case);
 }
 
 /** @return list<string> */
@@ -59,14 +113,33 @@ createApplicationExpect(is_string($systemTemporary), 'system temporary directory
 $temporary = $systemTemporary . '/peanut-create-app-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0775, true);
 $inventoryPath = $root . '/scaffold/application-template-inventory.json';
+$releasePath = $root . '/scaffold/releases/v1.1.2/scaffold-manifest.json';
 $identity = ['commit' => str_repeat('a', 40), 'tree' => str_repeat('b', 40)];
 
 try {
-    $creator = new ApplicationCreator($root, $inventoryPath, $identity);
+    $creator = new ApplicationCreator($root, $inventoryPath, $identity, $releasePath);
     $first = $temporary . '/first';
     $second = $temporary . '/second';
+    $other = $temporary . '/other';
     $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first);
     $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second);
+    $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other);
+    $release = json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['release'];
+
+    createApplicationExpect($manifestOne['template'] === [
+        'version' => $release['version'],
+        'inventory_sha256' => $release['inventory_sha256'],
+        'source_commit' => $release['source_commit'],
+        'source_tree' => $release['source_tree'],
+    ], 'application template identity must adopt the immutable release');
+    createApplicationExpect($manifestOne['generation_source'] === [
+        'commit' => $identity['commit'],
+        'tree' => $identity['tree'],
+        'inventory_sha256' => hash_file('sha256', $inventoryPath),
+    ], 'generation source must record the actual source identity and current inventory');
+    createApplicationExpect($manifestOther['template'] === $manifestOne['template'], 'all parameter groups must adopt the same release identity');
+    createApplicationExpect($manifestOther['generation_source'] === $manifestOne['generation_source'], 'all parameter groups must record the same generation source');
+    createApplicationExpect($manifestOther['application']['name'] === 'Beta Workspace', 'second parameter group must be rendered independently');
 
     createApplicationExpect($manifestOne === $manifestTwo, 'same template identity and parameters must produce the same manifest');
     createApplicationExpect(
@@ -138,6 +211,125 @@ try {
     $generatedCi = (string)file_get_contents($first . '/.github/workflows/ci.yml');
     createApplicationExpect(!str_contains($generatedCi, 'stale-facts:') && !str_contains($generatedCi, 'create-app:'), 'generated CI must not depend on source-template governance jobs');
     createApplicationExpect(is_file($first . '/server/database/environment-guard.php'), 'production database guard must remain in the deployment inventory');
+
+    $builderTarget = $temporary . '/builder-identity';
+    $builderManifest = (new ApplicationCreator($root, $inventoryPath, $identity))->create(
+        'Builder Token', 'builder-token', 'builder/builder-token', $builderTarget
+    );
+    createApplicationExpect(
+        $builderManifest['template']['source_commit'] === $identity['commit']
+            && $builderManifest['template']['source_tree'] === $identity['tree']
+            && $builderManifest['generation_source']['commit'] === $identity['commit']
+            && $builderManifest['generation_source']['tree'] === $identity['tree'],
+        'release builder mode must keep its explicit source identity without recursive adoption'
+    );
+
+    $sourceOnlyInventory = $inventory;
+    foreach ($sourceOnlyInventory['files'] as &$entry) {
+        if ($entry['path'] === 'docs-site/index.md') {
+            $entry['transform'] = 'copy';
+            break;
+        }
+    }
+    unset($entry);
+    $sourceOnlyInventory['files'][] = [
+        'path' => 'source-only/adoption-proof.txt',
+        'target' => 'source-only/adoption-proof.txt',
+        'classification' => 'excluded',
+        'owner' => 'template-source-only',
+        'transform' => 'copy',
+        'mode' => 0644,
+    ];
+    $sourceOnlyInventoryPath = $temporary . '/source-only-inventory.json';
+    createApplicationWriteJson($sourceOnlyInventoryPath, $sourceOnlyInventory);
+    $sourceOnlyTarget = $temporary . '/source-only-allowed';
+    $sourceOnlyManifest = (new ApplicationCreator($root, $sourceOnlyInventoryPath, $identity, $releasePath))->create(
+        'Acme Console', 'acme-console', 'acme/acme-console', $sourceOnlyTarget
+    );
+    createApplicationExpect($sourceOnlyManifest['template'] === $manifestOne['template'], 'app-owned/excluded-only source changes must retain release adoption');
+    createApplicationExpect(
+        $sourceOnlyManifest['generation_source']['inventory_sha256'] === hash_file('sha256', $sourceOnlyInventoryPath),
+        'source-only inventory change must remain visible in generation source'
+    );
+    createApplicationExpect(
+        $sourceOnlyManifest['digests']['app_owned_tree_sha256'] !== $manifestOne['digests']['app_owned_tree_sha256'],
+        'app-owned-only change fixture must actually change app-owned output'
+    );
+    createApplicationExpect(!file_exists($sourceOnlyTarget . '/source-only/adoption-proof.txt'), 'excluded-only source must not enter the generated application');
+
+    $managedChangeInventory = $inventory;
+    foreach ($managedChangeInventory['files'] as &$entry) {
+        if ($entry['path'] === 'scripts/project-resource-registry') {
+            $entry['transform'] = 'copy';
+            break;
+        }
+    }
+    unset($entry);
+    $managedChangeInventoryPath = $temporary . '/managed-change-inventory.json';
+    createApplicationWriteJson($managedChangeInventoryPath, $managedChangeInventory);
+    $managedChangeTarget = $temporary . '/managed-change-rejected';
+    $managedChangeCreator = new ApplicationCreator($root, $managedChangeInventoryPath, $identity, $releasePath);
+    createApplicationFails(
+        fn() => $managedChangeCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $managedChangeTarget),
+        'CREATE_APP_ADOPTION_RENDER_MISMATCH'
+    );
+    createApplicationExpect(!file_exists($managedChangeTarget), 'managed source change committed an unsealed target');
+
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'token',
+        static function (array &$manifest): void { $manifest['release']['tokens']['slug'] = 'tampered-slug-token'; },
+        'CREATE_APP_ADOPTION_RENDER_MISMATCH'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'token-keys',
+        static function (array &$manifest): void { $manifest['release']['tokens']['extra'] = 'extra-token'; },
+        'CREATE_APP_ADOPTION_TOKENS_INVALID'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'artifact',
+        static function (array &$manifest, string $releaseRoot): void {
+            file_put_contents($releaseRoot . '/' . $manifest['files'][0]['source'], "\ntampered\n", FILE_APPEND);
+        },
+        'CREATE_APP_ADOPTION_ARTIFACT_DIGEST_MISMATCH'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'mode',
+        static function (array &$manifest): void { $manifest['files'][0]['mode'] = 0755; },
+        'CREATE_APP_ADOPTION_FILE_METADATA_MISMATCH'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'classification',
+        static function (array &$manifest): void {
+            foreach ($manifest['files'] as &$file) {
+                if ($file['classification'] === 'generated-managed') {
+                    $file['classification'] = 'managed';
+                    $file['policy'] = 'managed';
+                    break;
+                }
+            }
+            unset($file);
+        },
+        'CREATE_APP_ADOPTION_FILE_METADATA_MISMATCH'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'managed-added',
+        static function (array &$manifest): void {
+            $extra = $manifest['files'][0];
+            $extra['path'] = 'extra-managed.txt';
+            $manifest['files'][] = $extra;
+        },
+        'CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'managed-removed',
+        static function (array &$manifest): void { array_pop($manifest['files']); },
+        'CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH'
+    );
+    createApplicationTamperedReleaseFails(
+        $root, $inventoryPath, $identity, $releasePath, $temporary, 'managed-tree',
+        static function (array &$manifest): void { $manifest['release']['managed_tree_sha256'] = str_repeat('0', 64); },
+        'CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH'
+    );
 
     $unknown = $inventory;
     foreach ($unknown['files'] as &$entry) {

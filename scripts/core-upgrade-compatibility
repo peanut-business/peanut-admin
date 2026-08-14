@@ -64,10 +64,8 @@ CANDIDATE="$(git -C "$ROOT" rev-parse "${candidate_input}^{commit}")"
 [[ "$(git -C "$ROOT" rev-parse HEAD)" == "$CANDIDATE" ]] || die 'working tree is not checked out at the fixed candidate'
 CANDIDATE_TREE="$(git -C "$ROOT" rev-parse "${CANDIDATE}^{tree}")"
 
-CURRENT_COMMIT="$(jq -r '.current_create_app.source_commit' "$METADATA")"
-CURRENT_TREE="$(jq -r '.current_create_app.source_tree' "$METADATA")"
-CURRENT_RELEASE_MANIFEST="$ROOT/scaffold/releases/v$(jq -r '.current_create_app.template_version' "$METADATA")/scaffold-manifest.json"
-CURRENT_SOURCE="$CACHE/current-create-app-source"
+CURRENT_VERSION="$(jq -r '.current_create_app.release_identity.version' "$METADATA")"
+CURRENT_RELEASE_MANIFEST="$ROOT/scaffold/releases/v${CURRENT_VERSION}/scaffold-manifest.json"
 CURRENT_APP="$OUTPUT/current-create-app"
 LEGACY_WORK="$CACHE/legacy-selection"
 LEGACY_COMMIT="$(jq -r '.legacy_pre_alpha5.source_commit' "$METADATA")"
@@ -76,7 +74,6 @@ CORE_MONOREPO="$CACHE/core-monorepo"
 CORE_SPLIT="$CACHE/core-split"
 COMPOSER_CACHE="$CACHE/composer"
 PNPM_STORE="$CACHE/pnpm-store"
-WORKTREE_ADDED=0
 CHECKPOINT="$OUTPUT/checkpoint.json"
 CURRENT_PHASE=initialization
 
@@ -88,9 +85,6 @@ cleanup() {
       "$CHECKPOINT" >"${CHECKPOINT}.tmp" 2>/dev/null \
       && mv "${CHECKPOINT}.tmp" "$CHECKPOINT" \
       || true
-  fi
-  if [[ "$WORKTREE_ADDED" == 1 ]]; then
-    git -C "$ROOT" worktree remove "$CURRENT_SOURCE" >/dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT INT TERM
@@ -127,35 +121,62 @@ record_phase() {
   mv "$temporary" "$CHECKPOINT"
 }
 
-[[ "$(git -C "$ROOT" rev-parse "${CURRENT_COMMIT}^{commit}")" == "$CURRENT_COMMIT" ]] || die 'current create-app source commit is unavailable'
-[[ "$(git -C "$ROOT" rev-parse "${CURRENT_COMMIT}^{tree}")" == "$CURRENT_TREE" ]] || die 'current create-app source tree changed'
-jq -e --arg commit "$CURRENT_COMMIT" --arg tree "$CURRENT_TREE" \
-  --arg inventory "$(jq -r '.current_create_app.inventory_sha256' "$METADATA")" \
-  --arg managed "$(jq -r '.current_create_app.release_managed_tree_sha256' "$METADATA")" \
-  --argjson file_count "$(jq -r '.current_create_app.release_file_count' "$METADATA")" \
-  '.release.source_commit == $commit
-   and .release.source_tree == $tree
+CURRENT_RELEASE_COMMIT="$(jq -r '.release.source_commit' "$CURRENT_RELEASE_MANIFEST")"
+CURRENT_RELEASE_TREE="$(jq -r '.release.source_tree' "$CURRENT_RELEASE_MANIFEST")"
+CURRENT_INVENTORY_SHA256="$(file_sha256 "$ROOT/scaffold/application-template-inventory.json")"
+[[ "$(git -C "$ROOT" rev-parse "${CURRENT_RELEASE_COMMIT}^{commit}")" == "$CURRENT_RELEASE_COMMIT" ]] || die 'current create-app release source commit is unavailable'
+[[ "$(git -C "$ROOT" rev-parse "${CURRENT_RELEASE_COMMIT}^{tree}")" == "$CURRENT_RELEASE_TREE" ]] || die 'current create-app release source tree changed'
+jq -e --arg version "$CURRENT_VERSION" \
+  --arg inventory "$(jq -r '.current_create_app.release_identity.inventory_sha256' "$METADATA")" \
+  --arg managed "$(jq -r '.current_create_app.release_identity.managed_tree_sha256' "$METADATA")" \
+  --argjson file_count "$(jq -r '.current_create_app.release_identity.file_count' "$METADATA")" \
+  '.release.version == $version
+   and .release.inventory_template_version == $version
    and .release.inventory_sha256 == $inventory
    and .release.managed_tree_sha256 == $managed
    and (.files | length) == $file_count' "$CURRENT_RELEASE_MANIFEST" >/dev/null \
   || die 'current create-app release seal changed'
-git -C "$ROOT" worktree add --detach "$CURRENT_SOURCE" "$CURRENT_COMMIT" >/dev/null
-WORKTREE_ADDED=1
-"$PHP_BIN" "$CURRENT_SOURCE/scripts/create-app" \
+[[ -z "$(git -C "$ROOT" status --porcelain=v1 --untracked-files=all)" ]] || die 'candidate working tree is not clean'
+"$PHP_BIN" "$ROOT/scripts/create-app" \
   --name="$(jq -r '.current_create_app.application_name' "$METADATA")" \
   --slug="$(jq -r '.current_create_app.slug' "$METADATA")" \
   --package="$(jq -r '.current_create_app.package_identity' "$METADATA")" \
   --target="$CURRENT_APP" >"$OUTPUT/create-app.json"
 
 CURRENT_MANIFEST="$CURRENT_APP/.peanut/application-manifest.json"
-[[ "$(jq -r '.template.version' "$CURRENT_MANIFEST")" == "$(jq -r '.current_create_app.template_version' "$METADATA")" ]] || die 'current template version changed'
-[[ "$(jq -r '.template.source_commit' "$CURRENT_MANIFEST")" == "$CURRENT_COMMIT" ]] || die 'current generated source commit changed'
-[[ "$(jq -r '.template.source_tree' "$CURRENT_MANIFEST")" == "$CURRENT_TREE" ]] || die 'current generated source tree changed'
-[[ "$(jq -r '.template.inventory_sha256' "$CURRENT_MANIFEST")" == "$(jq -r '.current_create_app.inventory_sha256' "$METADATA")" ]] || die 'current generated inventory changed'
+current_identity_matches() {
+  local manifest="$1"
+  jq -e \
+    --arg name "$(jq -r '.current_create_app.application_name' "$METADATA")" \
+    --arg slug "$(jq -r '.current_create_app.slug' "$METADATA")" \
+    --arg package "$(jq -r '.current_create_app.package_identity' "$METADATA")" \
+    --arg version "$CURRENT_VERSION" --arg release_commit "$CURRENT_RELEASE_COMMIT" --arg release_tree "$CURRENT_RELEASE_TREE" \
+    --arg release_inventory "$(jq -r '.current_create_app.release_identity.inventory_sha256' "$METADATA")" \
+    --arg candidate "$CANDIDATE" --arg candidate_tree "$CANDIDATE_TREE" --arg candidate_inventory "$CURRENT_INVENTORY_SHA256" \
+    '.schema_version == 1
+     and .protocol == "peanut.application-scaffold.v1"
+     and .application == {name:$name,slug:$slug,package_identity:$package}
+     and .template == {version:$version,inventory_sha256:$release_inventory,source_commit:$release_commit,source_tree:$release_tree}
+     and .generation_source == {commit:$candidate,tree:$candidate_tree,inventory_sha256:$candidate_inventory}' "$manifest" >/dev/null
+}
+current_identity_matches "$CURRENT_MANIFEST" || die 'current create-app release/generation identity mismatch'
+for identity_case in release candidate inventory; do
+  tampered="$OUTPUT/identity-tamper-${identity_case}.json"
+  case "$identity_case" in
+    release) jq '.template.source_commit = ("0" * 40)' "$CURRENT_MANIFEST" >"$tampered" ;;
+    candidate) jq '.generation_source.commit = ("0" * 40)' "$CURRENT_MANIFEST" >"$tampered" ;;
+    inventory) jq '.generation_source.inventory_sha256 = ("0" * 64)' "$CURRENT_MANIFEST" >"$tampered" ;;
+  esac
+  if current_identity_matches "$tampered"; then die "identity fixture accepted wrong ${identity_case}"; fi
+done
 current_manifest_sha="$(shasum -a 256 "$CURRENT_MANIFEST" | awk '{print $1}')"
-check_expected_digest '.current_create_app.generated_manifest_sha256' "$current_manifest_sha"
-check_expected_digest '.current_create_app.managed_tree_sha256' "$(jq -r '.digests.managed_tree_sha256' "$CURRENT_MANIFEST")"
-check_expected_digest '.current_create_app.app_owned_tree_sha256' "$(jq -r '.digests.app_owned_tree_sha256' "$CURRENT_MANIFEST")"
+check_expected_digest '.current_create_app.expected.managed_tree_sha256' "$(jq -r '.digests.managed_tree_sha256' "$CURRENT_MANIFEST")"
+check_expected_digest '.current_create_app.expected.app_owned_tree_sha256' "$(jq -r '.digests.app_owned_tree_sha256' "$CURRENT_MANIFEST")"
+jq -e --slurpfile release "$CURRENT_RELEASE_MANIFEST" --argjson expected "$(jq -r '.current_create_app.expected.application_file_count' "$METADATA")" '
+  ([.files[] | select(.classification == "managed" or .classification == "generated-managed") | {path,mode,classification}] | sort_by(.path))
+    == ([$release[0].files[] | {path,mode,classification}] | sort_by(.path))
+  and (.files | length) == $expected
+' "$CURRENT_MANIFEST" >/dev/null || die 'current create-app managed set or application file count changed'
 
 mkdir -p "$CURRENT_APP/web/src/core"
 cp "$FIXTURE/web-probe.ts" "$CURRENT_APP/web/src/core/core-upgrade-compatibility-probe.ts"
@@ -232,8 +253,8 @@ legacy_source_before="$(tree_digest "$LEGACY_APP" source)"
 legacy_overlay_before="$(tree_digest "$LEGACY_APP" empty-overlay)"
 printf 'current_app_owned_with_probe_sha256=%s\ncurrent_application_source_sha256=%s\nlegacy_app_owned_host_sha256=%s\nlegacy_application_source_sha256=%s\nlegacy_overlay_sha256=%s\n' \
   "$current_app_owned_before" "$current_source_before" "$legacy_host_before" "$legacy_source_before" "$legacy_overlay_before" >"$OUTPUT/source-digests.txt"
-check_expected_digest '.current_create_app.app_owned_with_probe_sha256' "$current_app_owned_before"
-check_expected_digest '.current_create_app.application_source_sha256' "$current_source_before"
+check_expected_digest '.current_create_app.expected.app_owned_with_probe_sha256' "$current_app_owned_before"
+check_expected_digest '.current_create_app.expected.application_source_sha256' "$current_source_before"
 check_expected_digest '.legacy_pre_alpha5.app_owned_host_sha256' "$legacy_host_before"
 check_expected_digest '.legacy_pre_alpha5.application_source_sha256' "$legacy_source_before"
 check_expected_digest '.legacy_pre_alpha5.overlay_sha256' "$legacy_overlay_before"
@@ -422,7 +443,8 @@ record_phase release-identities "monorepo tags, Composer split tags, Packagist a
 
 CURRENT_PHASE=final-proof
 jq -n \
-  --arg current_commit "$CURRENT_COMMIT" --arg current_tree "$CURRENT_TREE" --arg current_manifest "$current_manifest_sha" \
+  --arg release_commit "$CURRENT_RELEASE_COMMIT" --arg release_tree "$CURRENT_RELEASE_TREE" --arg current_manifest "$current_manifest_sha" \
+  --arg generation_commit "$CANDIDATE" --arg generation_tree "$CANDIDATE_TREE" --arg generation_inventory "$CURRENT_INVENTORY_SHA256" \
   --arg current_source "$current_source_before" --arg current_app_owned "$current_app_owned_before" \
   --arg legacy_commit "$LEGACY_COMMIT" --arg legacy_tree "$(jq -r '.legacy_pre_alpha5.source_tree' "$METADATA")" \
   --arg legacy_archive "$(jq -r '.legacy_pre_alpha5.archive_sha256' "$METADATA")" --arg legacy_source "$legacy_source_before" \
@@ -432,7 +454,7 @@ jq -n \
   --arg candidate "$CANDIDATE" --arg candidate_tree "$CANDIDATE_TREE" \
   --argjson continuation "$(jq '.continuation_evidence' "$METADATA")" \
   --argjson defect "$(jq '.known_release_identity_defect' "$METADATA")" \
-  '{schema_version:2,status:"passed",execution_mode:"new_candidate_full_matrix",candidate:{commit:$candidate,tree:$candidate_tree},continuation_evidence:$continuation,current_create_app:{source_commit:$current_commit,source_tree:$current_tree,generated_manifest_sha256:$current_manifest,application_source_sha256:$current_source,app_owned_with_probe_sha256:$current_app_owned},legacy_pre_alpha5:{source_commit:$legacy_commit,source_tree:$legacy_tree,archive_sha256:$legacy_archive,application_source_sha256:$legacy_source,app_owned_host_sha256:$legacy_host,overlay_sha256:$legacy_overlay,overlay_files:[]},php:{old:$php_old,old_source_reference:$php_old_ref,new:$php_new,new_source_reference:$php_new_ref,status:"passed"},web:{old:$web_old,old_integrity:$web_old_integrity,new:$web_new,new_integrity:$web_new_integrity,status:"passed"},public_entry_gate:"passed",source_diff_gate:"passed",known_php_release_identity_defect:$defect,not_covered:["database","services","ports","containers","browser","full PC build","full UniApp build","publication"]}' >"$OUTPUT/summary.json"
+  '{schema_version:2,status:"passed",execution_mode:"new_candidate_full_matrix",candidate:{commit:$candidate,tree:$candidate_tree},continuation_evidence:$continuation,current_create_app:{release_identity:{commit:$release_commit,tree:$release_tree},generation_identity:{commit:$generation_commit,tree:$generation_tree,inventory_sha256:$generation_inventory},generated_manifest_sha256:$current_manifest,application_source_sha256:$current_source,app_owned_with_probe_sha256:$current_app_owned},legacy_pre_alpha5:{source_commit:$legacy_commit,source_tree:$legacy_tree,archive_sha256:$legacy_archive,application_source_sha256:$legacy_source,app_owned_host_sha256:$legacy_host,overlay_sha256:$legacy_overlay,overlay_files:[]},php:{old:$php_old,old_source_reference:$php_old_ref,new:$php_new,new_source_reference:$php_new_ref,status:"passed"},web:{old:$web_old,old_integrity:$web_old_integrity,new:$web_new,new_integrity:$web_new_integrity,status:"passed"},public_entry_gate:"passed",source_diff_gate:"passed",known_php_release_identity_defect:$defect,not_covered:["database","services","ports","containers","browser","full PC build","full UniApp build","publication"]}' >"$OUTPUT/summary.json"
 
 record_phase final-proof "PSR-4/npm exports retained; deep-import and source/app-owned digest gates passed"
 jq '.status = "passed"' "$CHECKPOINT" >"${CHECKPOINT}.tmp"

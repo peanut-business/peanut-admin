@@ -1,6 +1,6 @@
 {
     "schema_version": 1,
-    "template_version": "1.1.1",
+    "template_version": "1.1.2",
     "protocol": "peanut.create-app-inventory.v1",
     "variables": [
         "PACKAGE_IDENTITY",
@@ -3289,7 +3289,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "8b4302f69979f870349162a59018247d88df3da623f1fc340c556fcd800809a0"
+            "source_sha256": "4d6ec52e0f2777e1d95434b473829e6bbe7e935c5e80cd24309414c300b2b931"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3451,7 +3451,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "d6616f12fcec84e421529a1ce191fec7b3892ebf8007ddb3bb5388f84097ae80"
+            "source_sha256": "81753bc05fdde77f61b3553bf228d99116c2b2daf04e356af951894c32c776c1"
         },
         {
             "path": "scripts/publish-github-release",
