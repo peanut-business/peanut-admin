@@ -370,7 +370,7 @@ try {
     createApplicationTamperedReleaseFails(
         $root, $inventoryPath, $identity, $releasePath, $temporary, 'token-keys',
         static function (array &$manifest): void { $manifest['release']['tokens']['extra'] = 'extra-token'; },
-        'CREATE_APP_ADOPTION_TOKENS_INVALID'
+        'CREATE_APP_ADOPTION_MANIFEST_INVALID: SCAFFOLD_MANIFEST_APPLICATION_INVALID'
     );
     createApplicationTamperedReleaseFails(
         $root, $inventoryPath, $identity, $releasePath, $temporary, 'artifact',

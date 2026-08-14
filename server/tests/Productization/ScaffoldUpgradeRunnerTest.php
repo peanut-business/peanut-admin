@@ -50,6 +50,23 @@ function scaffoldFresh(string $source,string $target): void
 {
     scaffoldRun(['php',$source.'/scripts/create-app','--name=Acme Console','--slug=acme-console','--package=acme/acme-console','--target='.$target]);
 }
+function scaffoldFreshAdopted(string $source,string $releasePath,string $target): void
+{
+    $code=<<<'PHP'
+require $argv[1].'/server/app/common/service/scaffold/ScaffoldPathGuard.php';
+require $argv[1].'/server/app/common/service/scaffold/ScaffoldManifest.php';
+require $argv[1].'/server/app/common/service/scaffold/ApplicationCreator.php';
+$release=json_decode((string)file_get_contents($argv[2]),true,512,JSON_THROW_ON_ERROR)['release'];
+$creator=new app\common\service\scaffold\ApplicationCreator(
+    $argv[1],
+    $argv[1].'/scaffold/application-template-inventory.json',
+    ['commit'=>$release['source_commit'],'tree'=>$release['source_tree']],
+    $argv[2]
+);
+$creator->create('Acme Console','acme-console','acme/acme-console',$argv[3]);
+PHP;
+    scaffoldRun(['php','-r',$code,$source,$releasePath,$target]);
+}
 function scaffoldCopyRelease(string $source,string $target): void { scaffoldCopy(dirname($source),$target); }
 
 $temporaryRoot=realpath(sys_get_temp_dir());if($temporaryRoot===false)throw new RuntimeException('temp root unavailable');
@@ -181,7 +198,7 @@ try{
 
     $legacyIdentity=json_decode((string)file_get_contents($nextRelease),true,512,JSON_THROW_ON_ERROR)['release'];
     $legacySource=$temporary.'/legacy-version-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$legacySource]);scaffoldRun(['git','checkout','--quiet','--detach',$legacyIdentity['source_commit']],$legacySource);
-    $legacyApp=$temporary.'/legacy-version-app';scaffoldFresh($legacySource,$legacyApp);
+    $legacyApp=$temporary.'/legacy-version-app';scaffoldFreshAdopted($legacySource,$nextRelease,$legacyApp);
     $legacyManifestPath=$legacyApp.'/.peanut/application-manifest.json';$legacyManifest=json_decode((string)file_get_contents($legacyManifestPath),true,512,JSON_THROW_ON_ERROR);
     scaffoldExpect(($legacyManifest['protocol']??null)==='peanut.application-scaffold.v1'&&!isset($legacyManifest['application']['version']),'v1.1.3 fixture must exercise the legacy manifest path');
     $legacyMetadataPath=$legacyApp.'/RELEASE_METADATA.json';$legacyMetadata=json_decode((string)file_get_contents($legacyMetadataPath),true,512,JSON_THROW_ON_ERROR);$legacyMetadata['version']='2.4.6';file_put_contents($legacyMetadataPath,json_encode($legacyMetadata,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
@@ -196,7 +213,7 @@ try{
     scaffoldExpect(hash_equals((string)$legacyUniappDigest,(string)hash_file('sha256',$legacyApp.'/uniapp/src/manifest.json')),'upgrade must preserve existing UniApp versionName/versionCode bytes');
     foreach(['web/package.json','pc/package.json','uniapp/package.json','server/config/project.php']as$versionPath)scaffoldExpect(str_contains((string)file_get_contents($legacyApp.'/'.$versionPath),'2.4.6'),'managed application version surface was not preserved: '.$versionPath);
 
-    $ambiguousApp=$temporary.'/legacy-version-ambiguous';scaffoldFresh($legacySource,$ambiguousApp);$ambiguousMetadataPath=$ambiguousApp.'/RELEASE_METADATA.json';$ambiguousMetadata=json_decode((string)file_get_contents($ambiguousMetadataPath),true,512,JSON_THROW_ON_ERROR);$ambiguousMetadata['application']=['version'=>'9.9.9'];file_put_contents($ambiguousMetadataPath,json_encode($ambiguousMetadata,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    $ambiguousApp=$temporary.'/legacy-version-ambiguous';scaffoldFreshAdopted($legacySource,$nextRelease,$ambiguousApp);$ambiguousMetadataPath=$ambiguousApp.'/RELEASE_METADATA.json';$ambiguousMetadata=json_decode((string)file_get_contents($ambiguousMetadataPath),true,512,JSON_THROW_ON_ERROR);$ambiguousMetadata['application']=['version'=>'9.9.9'];file_put_contents($ambiguousMetadataPath,json_encode($ambiguousMetadata,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
     scaffoldFails(fn()=>$runner->preflight($ambiguousApp,$nextRelease,$currentRelease),'SCAFFOLD_LEGACY_APPLICATION_VERSION_AMBIGUOUS');
 
     $fromCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.0.0','--source-commit='.SCAFFOLD_FROM_COMMIT,'--output='.$root.'/scaffold/releases/v1.0.0','--check']);
