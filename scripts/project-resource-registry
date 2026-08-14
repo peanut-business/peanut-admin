@@ -14,6 +14,7 @@ from typing import Any
 REPO = Path(__file__).resolve().parent.parent
 REGISTRY_PATH = REPO / "resources/project-resources.json"
 SAFE_VALUE = re.compile(r"^[A-Za-z0-9._:/-]+$")
+P0E_RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 
 
 def fail(message: str) -> None:
@@ -36,10 +37,50 @@ def database_for_target(registry: dict[str, Any], target: str) -> dict[str, Any]
         item
         for item in registry["resources"]["databases"]
         if environment in item.get("environments", [])
+        and item.get("application_runtime", True)
     ]
     if len(matches) != 1:
         fail(f"expected exactly one database for {target}, found {len(matches)}")
     return matches[0]
+
+
+def database_by_id(registry: dict[str, Any], resource_id: str) -> dict[str, Any]:
+    matches = [
+        item
+        for item in registry["resources"]["databases"]
+        if item.get("stable_resource_id") == resource_id
+    ]
+    if len(matches) != 1:
+        fail(f"expected exactly one database resource {resource_id}, found {len(matches)}")
+    return matches[0]
+
+
+def target_environment(target: str) -> str:
+    return "development" if target == "local-development" else target
+
+
+def qualification_database_name(database: dict[str, Any], name: str) -> str:
+    template = database.get("database")
+    if not isinstance(template, str) or "<run_id>" not in template or "<scenario>" not in template:
+        fail("P0-E database template is invalid")
+    prefix = template.split("<run_id>", 1)[0]
+    allowed_scenarios = database.get("allowed_scenarios")
+    if not isinstance(allowed_scenarios, list) or not allowed_scenarios:
+        fail("P0-E database scenarios are missing")
+    scenario = next(
+        (candidate for candidate in allowed_scenarios if name.endswith(f"_{candidate}")),
+        None,
+    )
+    if scenario is None or not name.startswith(prefix):
+        fail("P0-E database name is outside the registered namespace or scenario set")
+    run_id = name[len(prefix) : -len(f"_{scenario}")]
+    run_id_pattern = database.get("run_id_pattern")
+    if not isinstance(run_id_pattern, str) or re.fullmatch(run_id_pattern, run_id) is None:
+        fail("P0-E database run_id does not match the registered policy")
+    max_length = database.get("database_name_max_length")
+    if not isinstance(max_length, int) or len(name) > max_length:
+        fail("P0-E database name exceeds the registered maximum length")
+    return name
 
 
 def endpoint_for_consumer(database: dict[str, Any], consumer: str) -> dict[str, Any]:
@@ -65,6 +106,8 @@ def main() -> int:
     database_parser = subparsers.add_parser("database-env")
     database_parser.add_argument("--deployment-target", required=True)
     database_parser.add_argument("--consumer", choices=("host", "container"), required=True)
+    database_parser.add_argument("--resource-id")
+    database_parser.add_argument("--database-name")
 
     stack_parser = subparsers.add_parser("local-stack-env")
     stack_parser.add_argument(
@@ -126,7 +169,29 @@ def main() -> int:
 
     values: dict[str, str | int] = {}
     if args.command == "database-env":
-        database = database_for_target(registry, args.deployment_target)
+        if args.resource_id is None:
+            if args.database_name is not None:
+                fail("--database-name requires an explicit --resource-id")
+            database = database_for_target(registry, args.deployment_target)
+            selected_database_name = database["database"]
+        else:
+            database = database_by_id(registry, args.resource_id)
+            environment = target_environment(args.deployment_target)
+            if database["stable_resource_id"] == P0E_RESOURCE_ID:
+                if args.deployment_target != "local-development":
+                    fail("P0-E database resource is restricted to local-development")
+                if args.database_name is None:
+                    fail("P0-E database resource requires an exact --database-name")
+                selected_database_name = qualification_database_name(database, args.database_name)
+            else:
+                if environment not in database.get("environments", []):
+                    fail(
+                        f"database resource {args.resource_id} is not registered for "
+                        f"{args.deployment_target}"
+                    )
+                if args.database_name is not None:
+                    fail("database name override is allowed only for the P0-E resource")
+                selected_database_name = database["database"]
         endpoint = endpoint_for_consumer(database, args.consumer)
         values = {
             "PEANUT_DATABASE_RESOURCE_ID": database["stable_resource_id"],
@@ -134,7 +199,7 @@ def main() -> int:
             "PEANUT_DATABASE_CONSUMER": args.consumer,
             "DB_HOST": endpoint["host"],
             "DB_PORT": endpoint["port"],
-            "DB_NAME": database["database"],
+            "DB_NAME": selected_database_name,
         }
     if args.command == "local-stack-env":
         environments = {

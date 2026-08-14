@@ -101,6 +101,67 @@
         "backup_responsibility": "Peanut Admin project owner before each migration"
       },
       {
+        "stable_resource_id": "peanut-admin-p0e-mysql84-gate",
+        "purpose": "isolated P0-E install, upgrade, recovery, plugin lifecycle and browser qualification databases",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin P0-E project-resource lease owner; allocation source mac-14 CompanyOS registry",
+        "allocation_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_development_p0e_<run_id>_<scenario>",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development_p0e_<run_id>_",
+        "run_id_pattern": "^[a-z0-9]{1,11}$",
+        "database_name_max_length": 64,
+        "allowed_scenarios": [
+          "standalone_fresh",
+          "multi_tenant_fresh",
+          "v1_0_forward",
+          "v1_1_forward",
+          "migration_fault_source",
+          "migration_fault_restore",
+          "plugin_lifecycle",
+          "standalone_browser",
+          "multi_tenant_browser"
+        ],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-p0e-mysql84-gate-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-p0e-mysql84-gate-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "the lease-fixed candidate tree, immutable v1.0.0/v1.1.0 tag trees and Gate-owned synthetic fixtures; persistent development and production data are forbidden",
+        "freshness_requirement": "each fixed candidate uses a new lease-bound run_id; every scenario target must be absent or empty before setup, and its ordered migration checksums and ledger must be verified against that candidate before evidence capture",
+        "health_check": {
+          "allocation": "scripts/company-development-database.sh status",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer <host|container> --resource-id peanut-admin-p0e-mysql84-gate --database-name <exact_lease_database>",
+          "database": "after a successful claim, the Gate runner performs a credential-backed ping and SELECT DATABASE(), then verifies the candidate migration ledger"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "claim_precondition": "before connection, creation, backup, migration, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed candidate, worktree, Gate, this resource ID, exact run_id database names, backup path, cache path and output path",
+        "creation_policy": "the active scripts/project-resource-lease owner may create only databases matching peanut_admin_development_p0e_<run_id>_<allowed_scenario>",
+        "cleanup_responsibility": "the active P0-E lease owner drops only databases matching its exact run_id after evidence capture; unmatched, expired or ownerless databases require an explicit project-owner gate",
+        "backup_responsibility": "the active P0-E lease owner captures and verifies the fault-source backup before recovery injection; successful-run backups are removed with the lease-owned output after acceptance",
+        "failure_retention_policy": "on failure, the lease owner preserves the exact run_id databases, backup and output, renews or explicitly transfers the lease, and reports recovery coordinates; cleanup waits for evidence capture and the named owner decision"
+      },
+      {
         "stable_resource_id": "peanut-admin-production-bundled-mysql84",
         "purpose": "production-server bundled database profile",
         "environments": [
