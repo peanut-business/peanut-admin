@@ -317,7 +317,16 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "beeb80d0999f7d6b2fa077d7001a759453f9d3122e4b391974088d3f8a55b5f4"
+            "source_sha256": "e34de6f64e8ef3c875941af716bf08bb187f467b493e5b4bb3123caabc342279"
+        },
+        {
+            "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
+            "target": "docs-site/.vitepress/theme/HomeTechVisual.vue",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "a6a63af40a57127d4127f10a834d3440fb1ee7fd8587d107981d1da8815dc866"
         },
         {
             "path": "docs-site/.vitepress/theme/NotFound.vue",
@@ -327,6 +336,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "3ac9c68f36c2471db3dca110d4dd9db76a203191cc9afb462c4cf0918b876e22"
+        },
+        {
+            "path": "docs-site/.vitepress/theme/ProductStatus.vue",
+            "target": "docs-site/.vitepress/theme/ProductStatus.vue",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "8f5d5754074736e4f62b600193bb9cd3cb6e2819685a4df471492a2c94e819f2"
         },
         {
             "path": "docs-site/.vitepress/theme/custom.css",
@@ -344,7 +362,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "15d5cec94c91d8fe312fa06420c1df10d90c2bfc0dc516a5a775b89031497d7a"
+            "source_sha256": "688ad58fa0b4f285807a944816d34c30ce1f6faf8798da2a3218851077642f88"
         },
         {
             "path": "docs-site/404.md",
@@ -462,6 +480,15 @@
             "transform": "package",
             "mode": 420,
             "source_sha256": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
+        },
+        {
+            "path": "docs-site/product-status.md",
+            "target": "docs-site/product-status.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "source_sha256": "3df3708ec2995b489e9e38b2f3f50c3bfb5fcef6d1ce17363fa8ce4dc04ea350"
         },
         {
             "path": "docs-site/public/brand/avatar-admin.svg",

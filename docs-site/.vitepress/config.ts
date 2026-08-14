@@ -21,6 +21,7 @@ export default defineConfig({
     nav: [
       { text: '产品', link: '/' },
       { text: '能力与场景', link: '/capabilities' },
+      { text: '产品状态', link: '/product-status' },
       {
         text: '文档',
         items: [
@@ -52,6 +53,7 @@ export default defineConfig({
             { text: '部署与升级', link: '/deployment' },
             { text: 'API 与扩展', link: '/api' },
             { text: '管理员使用手册', link: '/guide/user-manual' },
+            { text: '产品状态', link: '/product-status' },
             { text: '版本与发布', link: '/releases' },
             { text: '许可证与告知', link: '/legal' },
           ],
@@ -63,6 +65,7 @@ export default defineConfig({
           items: [
             { text: '产品首页', link: '/' },
             { text: '能力与场景', link: '/capabilities' },
+            { text: '产品状态', link: '/product-status' },
           ],
         },
         {
@@ -74,6 +77,7 @@ export default defineConfig({
             { text: '部署与升级', link: '/deployment' },
             { text: 'API 与扩展', link: '/api' },
             { text: '管理员手册', link: '/guide/user-manual' },
+            { text: '产品状态', link: '/product-status' },
             { text: '版本与发布', link: '/releases' },
             { text: '许可证与告知', link: '/legal' },
           ],
