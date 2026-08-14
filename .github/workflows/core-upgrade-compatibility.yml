@@ -1,0 +1,99 @@
+name: Core upgrade compatibility
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/core-upgrade-compatibility.yml'
+      - 'resources/project-resources.json'
+      - 'scaffold/application-template-inventory.json'
+      - 'scripts/build-application-template-inventory'
+      - 'scripts/core-upgrade-compatibility'
+      - 'scripts/select-legacy-pre-alpha5-fixture'
+      - 'scripts/test-core-upgrade-public-entry-gate'
+      - 'server/tests/fixtures/core-upgrade-compatibility/**'
+      - 'docs/core-upgrade-compatibility.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout full source history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:2.8.10
+          coverage: none
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.6
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run immutable old-to-new consumer matrix
+        env:
+          HUSKY: '0'
+          PEANUT_PHP: php
+          PEANUT_COMPOSER: composer
+          PEANUT_PNPM: pnpm
+        run: |
+          cache_dir="${RUNNER_TEMP}/peanut-admin-core-upgrade-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output_dir="${RUNNER_TEMP}/peanut-admin-core-upgrade-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          lease="core-upgrade-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          scripts/project-resource-lease claim \
+            --lease "$lease" \
+            --owner "github-actions-${GITHUB_RUN_ID}" \
+            --thread "${GITHUB_REPOSITORY}/${GITHUB_RUN_ID}" \
+            --candidate "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --gate core-upgrade-compatibility \
+            --ttl 3600 \
+            --resource external-service=peanut-admin-packagist-registry \
+            --resource external-service=peanut-admin-npm-registry \
+            --resource external-service=peanut-admin-github-repository \
+            --resource external-service=peanut-admin-core-source-github-repository \
+            --resource external-service=peanut-admin-core-composer-split-github-repository \
+            --resource cache-dir="$cache_dir" \
+            --resource output-dir="$output_dir"
+          echo "CORE_UPGRADE_LEASE=$lease" >> "$GITHUB_ENV"
+          echo "CORE_UPGRADE_OUTPUT=$output_dir" >> "$GITHUB_ENV"
+          mkdir -p "$cache_dir" "$output_dir"
+          scripts/test-core-upgrade-public-entry-gate
+          scripts/core-upgrade-compatibility \
+            --candidate "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --cache "$cache_dir" \
+            --output "$output_dir"
+          cp "$output_dir/summary.json" core-upgrade-compatibility-summary.json
+          cp "$output_dir/checkpoint.json" core-upgrade-compatibility-checkpoint.json
+      - name: Preserve audit checkpoint after failure
+        if: failure() && env.CORE_UPGRADE_OUTPUT != ''
+        run: |
+          if [[ -f "$CORE_UPGRADE_OUTPUT/checkpoint.json" ]]; then
+            cp "$CORE_UPGRADE_OUTPUT/checkpoint.json" core-upgrade-compatibility-checkpoint.json
+          fi
+      - name: Release compatibility resources
+        if: always() && env.CORE_UPGRADE_LEASE != ''
+        run: |
+          scripts/project-resource-lease release \
+            --lease "$CORE_UPGRADE_LEASE" \
+            --owner "github-actions-${GITHUB_RUN_ID}"
+      - name: Upload evidence summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-upgrade-compatibility-summary
+          path: |
+            core-upgrade-compatibility-summary.json
+            core-upgrade-compatibility-checkpoint.json
+          if-no-files-found: warn

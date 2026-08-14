@@ -332,6 +332,48 @@
     ],
     "external_services": [
       {
+        "stable_resource_id": "peanut-admin-packagist-registry",
+        "purpose": "immutable Composer package metadata and distribution downloads for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "Packagist public registry; peanut-opensource package publisher",
+        "host": "repo.packagist.org",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin/core",
+        "service_type": "Packagist Composer v2 registry",
+        "version": "public HTTPS API",
+        "credential_ref": null,
+        "data_source": "published peanut-admin/core version metadata and immutable dist references",
+        "freshness_requirement": "resolve each exact version immediately before the compatibility gate and retain the lockfile content reference",
+        "health_check": "composer show peanut-admin/core --all --format=json",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-npm-registry",
+        "purpose": "immutable npm package metadata and tarball downloads for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "npm public registry; peanut-opensource package publisher",
+        "host": "registry.npmjs.org",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "@peanut-admin/admin",
+        "service_type": "npm registry",
+        "version": "public HTTPS API",
+        "credential_ref": null,
+        "data_source": "published @peanut-admin/admin version metadata and immutable tarballs",
+        "freshness_requirement": "resolve each exact version immediately before the compatibility gate and retain version, integrity and tarball identity",
+        "health_check": "npm view @peanut-admin/admin --json",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
         "stable_resource_id": "peanut-admin-github-repository",
         "purpose": "source control and CI",
         "environments": [
@@ -349,6 +391,48 @@
         "data_source": "git@github.com:peanut-business/peanut-admin.git",
         "freshness_requirement": "fetch origin/dev before implementation",
         "health_check": "git ls-remote origin",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-source-github-repository",
+        "purpose": "read-only core release tag and embedded package metadata verification for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "peanut-opensource GitHub organization",
+        "host": "github.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-opensource/peanut-admin",
+        "service_type": "GitHub source repository",
+        "version": "immutable annotated release tags",
+        "credential_ref": null,
+        "data_source": "https://github.com/peanut-opensource/peanut-admin.git",
+        "freshness_requirement": "fetch only the exact recorded release tags immediately before the compatibility gate",
+        "health_check": "git ls-remote --tags https://github.com/peanut-opensource/peanut-admin.git",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-composer-split-github-repository",
+        "purpose": "read-only generated Composer split tag, commit and tree verification for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "peanut-opensource GitHub organization",
+        "host": "github.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-opensource/peanut-admin-core",
+        "service_type": "GitHub generated Composer split repository",
+        "version": "immutable annotated release tags",
+        "credential_ref": null,
+        "data_source": "https://github.com/peanut-opensource/peanut-admin-core.git",
+        "freshness_requirement": "fetch only the exact recorded release tags immediately before the compatibility gate",
+        "health_check": "git ls-remote --tags https://github.com/peanut-opensource/peanut-admin-core.git",
         "fallback": "none",
         "cleanup_responsibility": "not applicable"
       },
