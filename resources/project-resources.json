@@ -169,6 +169,7 @@
         ],
         "owner": "Peanut Admin production deployment owner",
         "deployment_resource_id": "peanut-admin-production-deployment",
+        "backup_resource_id": "peanut-admin-production-backups",
         "service_type": "mysql",
         "version": "8.4",
         "compose_project": "peanut-admin",
@@ -189,7 +190,7 @@
         },
         "credential_ref": "oracle3:/www/docker/peanut-admin/.env (root-owned mode 0600; secret values are not stored in Git)",
         "data_source": "Docker volume peanut-admin_mysql-data on oracle3",
-        "freshness_requirement": "a verified backup method and destination, the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, and the explicit migration ledger must be confirmed before production application readiness",
+        "freshness_requirement": "a verified peanut-admin-production-backups artifact pair, the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, and the explicit migration ledger must be confirmed before production application readiness",
         "health_check": {
           "allocation": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps mysql'",
           "host_connection": null,
@@ -198,7 +199,7 @@
         "fallback": "none",
         "lifecycle": "persistent",
         "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate",
-        "backup_responsibility": "Peanut Admin production deployment owner before each upgrade or migration; the current backup method and destination are not yet registered"
+        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before each upgrade or migration"
       }
     ],
     "local_listeners": [
@@ -376,6 +377,7 @@
         },
         "database_resource_id": "peanut-admin-production-bundled-mysql84",
         "domain_resource_id": "peanut-admin-production-domain",
+        "backup_resource_id": "peanut-admin-production-backups",
         "database": "peanut_admin",
         "schema": "pa_ table prefix",
         "namespace": "peanut-admin-production",
@@ -386,14 +388,14 @@
           "peanut-admin_php-runtime",
           "peanut-admin_php-storage"
         ],
-        "freshness_requirement": "before each update, verify the exact release checkout and images, preserve the existing peanut-admin Compose project and persistent volume bindings, and pass the current migration ledger check",
+        "freshness_requirement": "before each update, verify the exact release checkout and images, preserve the existing peanut-admin Compose project and persistent volume bindings, verify the peanut-admin-production-backups pair, and pass the current migration ledger check",
         "health_check": {
           "compose": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps'",
           "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18092/healthz'"
         },
         "fallback": "none",
         "cleanup_responsibility": "Peanut Admin production deployment owner; no automatic cleanup and destructive cleanup requires an explicit gate",
-        "backup_responsibility": "Peanut Admin production deployment owner before each upgrade; the current persistent-data backup method and destination are not yet registered"
+        "backup_responsibility": "Peanut Admin production deployment owner archives peanut-admin_php-storage in the same quiesced window as the bundled database dump"
       },
       {
         "stable_resource_id": "peanut-admin-production-bundled-mysql84-container",
@@ -407,17 +409,18 @@
         "compose_file": "compose.yaml",
         "container_name": "peanut-admin-mysql-1",
         "database_resource_id": "peanut-admin-production-bundled-mysql84",
+        "backup_resource_id": "peanut-admin-production-backups",
         "database": "peanut_admin",
         "schema": "pa_ table prefix",
         "namespace": "peanut-admin-production",
         "service_type": "mysql:8.4",
         "credential_ref": "oracle3:/www/docker/peanut-admin/.env (root-owned mode 0600; secret values are not stored in Git)",
         "data_source": "Docker volume peanut-admin_mysql-data on oracle3",
-        "freshness_requirement": "preserve the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, then run the explicit migration ledger current check",
+        "freshness_requirement": "preserve the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, verify the peanut-admin-production-backups pair, then run the explicit migration ledger current check",
         "health_check": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps mysql' plus php server/database/environment-guard.php --current",
         "fallback": "none",
         "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate",
-        "backup_responsibility": "Peanut Admin production deployment owner before each upgrade or migration; the current backup method and destination are not yet registered"
+        "backup_responsibility": "Peanut Admin production deployment owner creates the bundled database dump in the same quiesced window as the php-storage archive"
       }
     ],
     "optional_services": [
@@ -581,13 +584,19 @@
         ],
         "database_resource_id": "peanut-admin-production-bundled-mysql84",
         "domain_resource_id": "peanut-admin-production-domain",
+        "backup_resource_id": "peanut-admin-production-backups",
         "database": null,
         "schema": null,
         "namespace": "peanut-admin-production",
         "service_type": "SSH-managed Docker Compose production deployment",
         "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin/.env",
         "data_source": "release Git checkout and Docker Compose state under /www/docker/peanut-admin",
-        "freshness_requirement": "before each update, verify SSH reachability, the exact release checkout and image references, the peanut-admin Compose project, persistent volume bindings, non-secret production selector keys, and a production backup method and destination",
+        "freshness_requirement": "before each update, verify SSH reachability, the exact release checkout and image references, the peanut-admin Compose project, persistent volume bindings, exact non-secret production selector values, and a complete peanut-admin-production-backups artifact pair",
+        "preflight_checks": {
+          "environment_selection": "ssh -o BatchMode=yes oracle3 'sudo -n grep -Fqx PEANUT_DEPLOYMENT_TARGET=production /www/docker/peanut-admin/.env && sudo -n grep -Fqx PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-mysql84 /www/docker/peanut-admin/.env'",
+          "backup_target": "peanut-admin-production-backups capacity, tools, quiescence, manifest and checksum checks must pass before any production update",
+          "failure_policy": "any missing or mismatched selector or backup check blocks backup, migration and deployment; do not rewrite .env or select another database, path or host implicitly"
+        },
         "health_check": {
           "ssh": "ssh -o BatchMode=yes oracle3 'test -d /www/docker/peanut-admin && test -r /www/docker/peanut-admin/compose.yaml'",
           "compose": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps'",
@@ -596,7 +605,7 @@
         "fallback": "none",
         "lifecycle": "persistent",
         "cleanup_responsibility": "Peanut Admin production deployment owner; no automatic cleanup and destructive cleanup requires an explicit gate",
-        "backup_responsibility": "Peanut Admin production deployment owner before each upgrade or migration; the current backup method and destination are not yet registered"
+        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before each upgrade or migration"
       },
       {
         "stable_resource_id": "peanut-admin-production-domain",
@@ -635,6 +644,79 @@
         },
         "fallback": "none",
         "cleanup_responsibility": "Peanut Admin production deployment owner; releases must not remove or replace the existing binding"
+      }
+    ],
+    "backups": [
+      {
+        "stable_resource_id": "peanut-admin-production-backups",
+        "purpose": "paired pre-release bundled MySQL and php-storage backups captured in one application write-quiescence window",
+        "environments": [
+          "production"
+        ],
+        "owner": "Peanut Admin production deployment owner",
+        "host_resource_id": "peanut-admin-production-deployment",
+        "host": "oracle3",
+        "port": null,
+        "path": "/www/docker/peanut-admin/backups",
+        "database_resource_id": "peanut-admin-production-bundled-mysql84",
+        "application_resource_id": "peanut-admin-production-application-containers",
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production-backups",
+        "service_type": "host-filesystem paired backup sets",
+        "version": "mysqldump 8.4.11; GNU tar 1.34; gzip 1.10; sha256sum 8.32",
+        "credential_ref": "oracle3:/www/docker/peanut-admin/.env; MYSQL_ROOT_PASSWORD is consumed only inside peanut-admin-mysql-1 and is never written to backup artifacts or Git",
+        "data_source": "logical dump of peanut_admin plus archive of Docker volume peanut-admin_php-storage",
+        "allocation_state": "registered target; the backups directory was absent on 2026-08-15 and is created with mode 0700 only by an authorized backup gate",
+        "execution_context": "all backup_method and integrity_check commands execute on oracle3 under /www/docker/peanut-admin; no artifact is streamed to or retained on the operator workstation",
+        "backup_id_format": "YYYYmmddTHHMMSSZ-<source_commit_12>",
+        "artifact_layout": {
+          "directory": "/www/docker/peanut-admin/backups/<backup_id>",
+          "database_dump": "database.sql.gz",
+          "php_storage_archive": "php-storage.tar.gz",
+          "manifest": "manifest.json",
+          "checksums": "SHA256SUMS"
+        },
+        "capacity_requirement": "immediately before backup, available bytes at the target must exceed twice the current mysql-data and php-storage source bytes plus 1 GiB, with sufficient inode headroom",
+        "write_quiescence": {
+          "stop": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db stop --timeout 60 nginx cron php'",
+          "verify": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && test \"$(sudo -n docker compose -f compose.yaml --profile bundled-db ps --status running --services | sort)\" = mysql'",
+          "resume": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db start --wait --wait-timeout 120 php cron nginx'",
+          "failure_policy": "the deployment owner must restore php, cron and nginx before leaving a failed gate; incomplete backup directories are not eligible for restore or deployment evidence"
+        },
+        "backup_method": {
+          "prepare": "install -d -m 0700 /www/docker/peanut-admin/backups/<backup_id> before entering the write-quiescence window",
+          "database_dump": "cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db exec -T mysql sh -c 'MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec mysqldump --single-transaction --quick --routines --events --triggers --hex-blob --set-gtid-purged=OFF -uroot peanut_admin' | gzip -9 > /www/docker/peanut-admin/backups/<backup_id>/database.sql.gz",
+          "php_storage_archive": "sudo -n tar --one-file-system --numeric-owner -C /var/lib/docker/volumes/peanut-admin_php-storage/_data -czf - . > /www/docker/peanut-admin/backups/<backup_id>/php-storage.tar.gz",
+          "checksum_file": "after manifest.json is complete, run sha256sum database.sql.gz php-storage.tar.gz manifest.json > SHA256SUMS from the exact backup directory",
+          "ordering": "prepare target; quiesce and verify application writers; dump database; archive php-storage; write manifest and checksums; verify artifacts; resume services; run origin and public health checks"
+        },
+        "manifest_required_fields": [
+          "backup_id and UTC start/completion timestamps",
+          "source commit and tree",
+          "deployment, database, application and backup stable resource IDs",
+          "Compose project, file and profile",
+          "database name and php-storage volume name",
+          "PHP, Nginx and MySQL image references and digests",
+          "artifact filenames, byte sizes and SHA-256 digests"
+        ],
+        "integrity_check": "from the exact backup directory, run sha256sum -c SHA256SUMS, gzip -t database.sql.gz, and tar -tzf php-storage.tar.gz >/dev/null; SHA256SUMS covers database.sql.gz, php-storage.tar.gz and manifest.json",
+        "restore_check": {
+          "artifact_precondition": "the exact paired directory must pass all checksum, gzip and tar checks and its manifest resource IDs must match this production deployment",
+          "policy": "production restore is never part of a routine release and requires an explicit recovery gate; database.sql.gz and php-storage.tar.gz must be restored as one pair",
+          "post_restore": "run php server/database/environment-guard.php --current, start php/cron/nginx with --wait, then pass origin /healthz and public HTTPS /healthz and /admin/ smoke checks"
+        },
+        "freshness_requirement": "each production update uses a new backup ID from the exact pre-update source commit; all four artifacts and checks must complete before the application write-quiescence window ends",
+        "health_check": {
+          "capacity": "ssh -o BatchMode=yes oracle3 'df -Pk /www/docker/peanut-admin && df -Pi /www/docker/peanut-admin'",
+          "tools": "ssh -o BatchMode=yes oracle3 'command -v tar gzip sha256sum && cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db exec -T mysql mysqldump --version'",
+          "source_bindings": "ssh -o BatchMode=yes oracle3 'sudo -n docker volume inspect peanut-admin_mysql-data peanut-admin_php-storage'"
+        },
+        "fallback": "none",
+        "lifecycle": "persistent until explicit cleanup approval",
+        "retention_policy": "no automatic pruning; retain each verified pair until a newer verified pair exists, its release smoke has passed, and the production deployment owner explicitly approves deletion of the exact older backup ID",
+        "cleanup_responsibility": "Peanut Admin production deployment owner deletes only an explicitly approved backup ID directory; incomplete or failed sets remain isolated and require an explicit disposition decision",
+        "backup_responsibility": "Peanut Admin production deployment owner executes the registered paired backup method before each production upgrade or migration"
       }
     ],
     "queues": {
