@@ -34,6 +34,31 @@ MySQL。历史 `192.168.192.2:3306/peanut_admin` 没有迁移账本，不是当�
 `192.168.192.2`。`PEANUT_DEPLOYMENT_TARGET`、`PEANUT_DATABASE_RESOURCE_ID` 和
 `DB_HOST/DB_PORT/DB_NAME` 必须同时匹配登记合同，否则应用拒绝启动。
 
+## P0-E 一次性资格数据库
+
+P0-E Runtime Gate 只能显式选择 `peanut-admin-p0e-mysql84-gate`（development，
+`192.168.192.2:20183`，fallback `none`）。它不是应用日常 Runtime，也不能选择持久
+`peanut_admin_development`。允许的数据库名称必须精确匹配登记中的
+`peanut_admin_development_p0e_<run_id>_<scenario>`；`run_id` 与九个 scenario 均由
+`resources/project-resources.json` 约束。
+
+生产 Compose entrypoint 不绕过数据库门禁。P0-E runner 把当前 active lease 目录只读
+挂载到 `/run/peanut-admin/resource-lease`，并只通过
+`PEANUT_RESOURCE_LEASE_PROOF` 告知 guard 该容器路径。Guard 直接读取其中的
+`metadata.tsv` 和 `resources.tsv`，同时核对：
+
+- active 状态和未来 `expires_at`，固定 Gate、候选 commit/tree、worktree 与 lease ID；
+- P0-E resource/environment/deployment target、host/container consumer 和登记 endpoint；
+- 同一 `run_id` 的九个精确数据库、当前 `DB_NAME`、scenario 对应的 deployment mode；
+- 31 行完整资源全集及每行 `sha256(type + TAB + value)`，包括端口、输出、备份、缓存、
+  Compose、浏览器和 lease proof 自引用。
+
+任何缺失、额外项、重复冲突、过期、未知 fallback、持久库、越界名称或地址都会在连接前
+fail closed。Runner 在 Compose 完全停止后 release lease，目录删除后 guard 立即失效；
+长 Gate 必须在到期前 renew。该 proof 的信任边界是拥有宿主 Git common-dir 与 Docker
+权限的本机唯一 owner；它防止误选和并发越界，不宣称能够抵抗已取得宿主 root 权限的
+密码学伪造。
+
 ## 使用
 
 首次或资源重建由资源 owner 执行：
