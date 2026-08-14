@@ -69,9 +69,10 @@ try {
     $application=$temporary.'/application';
     $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree]);
     $manifest=$creator->create(RELEASE_PRODUCT_TOKEN,RELEASE_SLUG_TOKEN,RELEASE_PACKAGE_TOKEN,$application);
+    $generationSource=$manifest['generation_source']??null;
     if(($manifest['template']['source_commit']??null)!==$commit||($manifest['template']['source_tree']??null)!==$tree
-        ||($manifest['generation_source']['commit']??null)!==$commit||($manifest['generation_source']['tree']??null)!==$tree
-        ||($manifest['generation_source']['inventory_sha256']??null)!==hash_file('sha256',$source.'/scaffold/application-template-inventory.json'))throw new RuntimeException('SCAFFOLD_RELEASE_GENERATION_IDENTITY_MISMATCH');
+        ||($generationSource!==null&&(!is_array($generationSource)||($generationSource['commit']??null)!==$commit||($generationSource['tree']??null)!==$tree
+            ||($generationSource['inventory_sha256']??null)!==hash_file('sha256',$source.'/scaffold/application-template-inventory.json'))))throw new RuntimeException('SCAFFOLD_RELEASE_GENERATION_IDENTITY_MISMATCH');
     $files=[];
     foreach($manifest['files'] as $entry){
         if(!in_array($entry['classification'],['managed','generated-managed'],true))continue;
