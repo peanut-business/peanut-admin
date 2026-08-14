@@ -166,6 +166,22 @@ try {
     createApplicationExpect(createApplicationFiles($first) === $expected, 'generated tree must exactly match inventory plus declared metadata/baselines');
     createApplicationExpect(!is_dir($first . '/.git') && !is_dir($first . '/output'), 'generated application must exclude Git and historical output');
     createApplicationExpect(!is_file($first . '/AGENTS.md'), 'source governance evidence must be excluded');
+    createApplicationExpect(!is_dir($first . '/docs/product-status'), 'source product capability ledger must be excluded');
+    createApplicationExpect(!is_file($first . '/docs-site/.vitepress/theme/ProductStatus.vue'), 'source product status component must be excluded');
+    createApplicationExpect(!is_file($first . '/docs-site/product-status.md'), 'source product status page must be excluded');
+    $generatedDocsConfig = (string)file_get_contents($first . '/docs-site/.vitepress/config.ts');
+    $generatedDocsTheme = (string)file_get_contents($first . '/docs-site/.vitepress/theme/index.ts');
+    createApplicationExpect(
+        str_contains($generatedDocsConfig, 'productStatusFeatureAvailable')
+            && str_contains($generatedDocsConfig, '...productStatusNavigation'),
+        'generated docs navigation must keep product status behind the optional source-feature guard'
+    );
+    createApplicationExpect(
+        !str_contains($generatedDocsTheme, "import ProductStatus from './ProductStatus.vue'")
+            && str_contains($generatedDocsTheme, "import.meta.glob('./ProductStatus.vue'")
+            && str_contains($generatedDocsTheme, "if (ProductStatus) app.component('ProductStatus', ProductStatus)"),
+        'generated docs theme must resolve the optional product status component without a static import'
+    );
     createApplicationExpect(!is_dir($first . '/plugins/fixture.delivery-record'), 'demo Plugin artifact must remain source-only');
     createApplicationExpect(!is_dir($first . '/server/app/Modules/Fixture/DeliveryRecord'), 'demo backend Module must remain source-only');
     createApplicationExpect(!is_dir($first . '/server/fixtures/plugin-module-lifecycle'), 'demo lifecycle runner must remain source-only');

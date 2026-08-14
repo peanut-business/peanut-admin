@@ -317,7 +317,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "e34de6f64e8ef3c875941af716bf08bb187f467b493e5b4bb3123caabc342279"
+            "source_sha256": "ad76e559db16489ad1193d7f5d8e0ad7d84f7e796e028c7f4f6aa15a95b414f9"
         },
         {
             "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
@@ -340,11 +340,10 @@
         {
             "path": "docs-site/.vitepress/theme/ProductStatus.vue",
             "target": "docs-site/.vitepress/theme/ProductStatus.vue",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "8f5d5754074736e4f62b600193bb9cd3cb6e2819685a4df471492a2c94e819f2"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "docs-site/.vitepress/theme/custom.css",
@@ -362,7 +361,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "688ad58fa0b4f285807a944816d34c30ce1f6faf8798da2a3218851077642f88"
+            "source_sha256": "b0c0010582cd3b1911787116ae747749168e6d0730ec07000f1b130ee35753ee"
         },
         {
             "path": "docs-site/404.md",
@@ -484,11 +483,10 @@
         {
             "path": "docs-site/product-status.md",
             "target": "docs-site/product-status.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "source_sha256": "db8898cc4e6602124fa87b4a08a1df2e91da539d5d13cdf52e2d003c9a28fc49"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "docs-site/public/brand/avatar-admin.svg",

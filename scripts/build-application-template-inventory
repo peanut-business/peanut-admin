@@ -46,6 +46,8 @@ function excluded(string $path): bool
             'scripts/test-core-upgrade-public-entry-gate',
             'scripts/check-product-capability-ledger',
             'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
+            'docs-site/.vitepress/theme/ProductStatus.vue',
+            'docs-site/product-status.md',
             'server/tests/Productization/CreateApplicationTest.php',
             'server/tests/Productization/CombinedUpgradePolicyTest.php',
             '.github/workflows/core-upgrade-compatibility.yml',
