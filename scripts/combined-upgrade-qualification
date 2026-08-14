@@ -311,7 +311,9 @@ if (($application['template'] ?? null) !== $expected) exit(1);
 $managed = [];
 foreach ($application['files'] as $file) {
     if (in_array($file['classification'] ?? null, ['managed','generated-managed'], true)) {
-        $managed[$file['path']] = [$file['classification'], $file['mode']];
+        $path = $app . '/' . $file['path'];
+        if (!is_file($path) || is_link($path)) exit(1);
+        $managed[$file['path']] = [$file['classification'], fileperms($path) & 0777];
     }
 }
 $releaseManaged = [];
