@@ -113,8 +113,16 @@ foreach ($ledger['capabilities'] as $index => $rawCapability) {
         $evidenceContext = "$context.evidence[$evidenceIndex]";
         $evidence = objectValue($rawEvidence, $evidenceContext);
         exactKeys($evidence, ['kind', 'ref'], $evidenceContext);
-        enumValue($evidence['kind'], $evidenceKinds, "$evidenceContext.kind");
-        nonEmptyString($evidence['ref'], "$evidenceContext.ref");
+        $evidenceKind = enumValue($evidence['kind'], $evidenceKinds, "$evidenceContext.kind");
+        $evidenceRef = nonEmptyString($evidence['ref'], "$evidenceContext.ref");
+        if (in_array($evidenceKind, ['document', 'report', 'resource'], true)
+            && !str_starts_with($evidenceRef, 'https://')) {
+            expect(
+                !str_starts_with($evidenceRef, '/') && !str_contains($evidenceRef, '..'),
+                "$id has unsafe repository evidence reference: $evidenceRef",
+            );
+            expect(file_exists($root . '/' . $evidenceRef), "$id references missing evidence: $evidenceRef");
+        }
     }
 
     if ($status === 'verified') {
