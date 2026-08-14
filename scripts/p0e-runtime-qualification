@@ -25,6 +25,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE_PATH = ROOT / "server/tests/fixtures/p0e-runtime-qualification/matrix.json"
 REGISTRY_PATH = ROOT / "resources/project-resources.json"
+P0E_REGISTRY_PATH = ROOT / "resources/p0e-runtime-qualification.json"
 LEASE_TOOL = ROOT / "scripts/project-resource-lease"
 REGISTRY_TOOL = ROOT / "scripts/project-resource-registry"
 INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
@@ -117,6 +118,7 @@ def required_environment(name: str) -> str:
 def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     fixture = read_json(FIXTURE_PATH)
     registry = read_json(REGISTRY_PATH)
+    p0e_registry = read_json(P0E_REGISTRY_PATH)
     if fixture.get("schema_version") != 1 or fixture.get("gate") != "p0e-runtime-qualification":
         fail("unsupported P0-E fixture")
     db_fixture = fixture.get("database_resource")
@@ -127,7 +129,30 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
     if len(matches) != 1:
         fail(f"registry must contain exactly one {RESOURCE_ID}")
     registered = matches[0]
-    tooling = registry.get("resources", {}).get("tooling", [])
+    if (
+        p0e_registry.get("schema_version") != 1
+        or p0e_registry.get("project_id") != "peanut-admin"
+        or p0e_registry.get("gate") != "p0e-runtime-qualification"
+    ):
+        fail("unsupported P0-E resource registry")
+    binding = p0e_registry.get("database_administration_binding")
+    if not isinstance(binding, dict):
+        fail("P0-E database administration binding is invalid")
+    expected_binding = {
+        "database_resource_id": RESOURCE_ID,
+        "allocation_resource_id": registered.get("allocation_resource_id"),
+        "administrative_tooling_resource_id": ADMIN_TOOLING_ID,
+        "host": "mac-14",
+        "port": registered.get("upstream_endpoint", {}).get("port"),
+        "database": registered.get("database"),
+        "namespace": registered.get("namespace"),
+        "version": registered.get("version"),
+        "fallback": "none",
+    }
+    for key, value in expected_binding.items():
+        if binding.get(key) != value:
+            fail(f"P0-E database administration binding disagrees on {key}")
+    tooling = p0e_registry.get("resources", {}).get("tooling", [])
     tool_matches = [item for item in tooling if item.get("stable_resource_id") == ADMIN_TOOLING_ID]
     if len(tool_matches) != 1:
         fail(f"registry must contain exactly one {ADMIN_TOOLING_ID}")
@@ -147,8 +172,6 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
     for key, value in expected_tool.items():
         if admin_tool.get(key) != value:
             fail(f"registered P0-E administrative tooling disagrees on {key}")
-    if registered.get("administrative_tooling_resource_id") != ADMIN_TOOLING_ID:
-        fail("P0-E database does not reference the registered administrative tooling")
     if admin_tool.get("fallback") != "none; host mysql and mysqldump commands are forbidden":
         fail("P0-E administrative tooling must forbid a host CLI fallback")
     expected = {

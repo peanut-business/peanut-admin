@@ -7,7 +7,8 @@
 路线，执行规则由该独立文档维护。
 
 本项目数据库、缓存、队列、对象存储、外部服务、域名、容器消费入口与本地固定端口的
-版本化机器可读资源登记为 `resources/project-resources.json`。连接、启动、迁移、测试或
+版本化机器可读日常资源登记为 `resources/project-resources.json`；仅源仓 P0-E 资格工具及其
+CompanyOS allocation 绑定登记为 `resources/p0e-runtime-qualification.json`。连接、启动、迁移、测试或
 部署前必须先读取该文件并显式选择资源 ID、环境和登记地址；CompanyOS 登记仅作为上游
 allocation 来源证据，不能替代本项目登记。
 

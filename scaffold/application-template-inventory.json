@@ -3388,6 +3388,14 @@
             "mode": 420
         },
         {
+            "path": "resources/p0e-runtime-qualification.json",
+            "target": "resources/p0e-runtime-qualification.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "resources/project-resources.json",
             "target": "resources/project-resources.json",
             "classification": "generated-managed",

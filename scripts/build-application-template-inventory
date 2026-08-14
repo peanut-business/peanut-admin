@@ -33,6 +33,7 @@ function excluded(string $path): bool
         return true;
     }
     if (str_starts_with($path, 'scripts/p0e-')
+        || $path === 'resources/p0e-runtime-qualification.json'
         || $path === 'server/tests/Productization/P0eRuntimeQualificationTest.php'
         || str_starts_with($path, 'server/tests/fixtures/p0e-runtime-qualification/')) {
         return true;

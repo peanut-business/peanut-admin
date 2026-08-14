@@ -6,6 +6,7 @@ $runner = $root . '/scripts/p0e-runtime-qualification';
 $browser = $root . '/scripts/p0e-browser-smoke';
 $fixturePath = $root . '/server/tests/fixtures/p0e-runtime-qualification/matrix.json';
 $registryPath = $root . '/resources/project-resources.json';
+$p0eRegistryPath = $root . '/resources/p0e-runtime-qualification.json';
 
 $expect = static function (bool $condition, string $message): void {
     if (!$condition) throw new RuntimeException($message);
@@ -21,6 +22,7 @@ $run = static function (array $arguments) use ($runner): array {
 
 $fixture = json_decode((string)file_get_contents($fixturePath), true, 512, JSON_THROW_ON_ERROR);
 $registry = json_decode((string)file_get_contents($registryPath), true, 512, JSON_THROW_ON_ERROR);
+$p0eRegistry = json_decode((string)file_get_contents($p0eRegistryPath), true, 512, JSON_THROW_ON_ERROR);
 $expect(($fixture['schema_version'] ?? null) === 1, 'P0-E fixture schema changed');
 $expect(($fixture['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E Gate identity changed');
 $expect(($fixture['database_resource']['migration_count'] ?? null) === 54, 'P0-E Gate no longer fixes 54-current');
@@ -40,7 +42,11 @@ $expect(count($registered) === 1, 'P0-E resource registration is not unique');
 $expect(($registered[0]['application_runtime'] ?? null) === false, 'P0-E resource became a default runtime');
 $expect(($registered[0]['fallback'] ?? null) === 'none', 'P0-E resource must fail closed');
 $expect(($registered[0]['allowed_scenarios'] ?? null) === $expectedScenarios, 'runner and registry scenarios diverged');
-$expect(($registered[0]['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-mysql84-remote-admin-cli', 'P0-E remote administration tooling is not fixed');
+$binding = $p0eRegistry['database_administration_binding'] ?? null;
+$expect(is_array($binding), 'P0-E remote administration binding is missing');
+$expect(($binding['database_resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'P0-E remote administration database resource is not fixed');
+$expect(($binding['allocation_resource_id'] ?? null) === ($registered[0]['allocation_resource_id'] ?? null), 'P0-E remote administration allocation diverged');
+$expect(($binding['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-mysql84-remote-admin-cli', 'P0-E remote administration tooling is not fixed');
 
 $candidate = trim((string)shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
 $runId = 'p0e' . bin2hex(random_bytes(4));

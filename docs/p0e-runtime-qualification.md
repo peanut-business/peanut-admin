@@ -7,6 +7,10 @@ Chromium smoke 绑定到同一个 commit/tree、worktree、run_id 与项目资�
 
 ## 固定资源
 
+日常/应用资源登记仍是 `resources/project-resources.json`；仅源仓 Gate 使用的远端管理工具及
+它与 CompanyOS allocation 的绑定登记在 source-only
+`resources/p0e-runtime-qualification.json`，该文件不会进入 create-app 生成应用。
+
 - Database resource：`peanut-admin-p0e-mysql84-gate`
 - Environment：`development`
 - Host/container endpoint：`192.168.192.2:20183`
