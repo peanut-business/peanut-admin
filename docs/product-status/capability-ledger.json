@@ -4,7 +4,7 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "dev",
-    "commit": "5c5a9a27d9a1ee982838db76ab05da762c8246d5",
+    "commit": "232cc53b8f65e68330abf094766fb58c7ea4587d",
     "reviewed_at": "2026-08-14"
   },
   "overall": {
@@ -210,7 +210,7 @@
       "status": "in_progress",
       "summary": "需要在固定候选上完成真实生成、干净依赖安装、数据库安装迁移、服务启动和浏览器验收。",
       "acceptance": [
-        "从固定 dev 候选生成全新应用并核对 v1.1.2 模板身份",
+        "从固定 dev 候选生成全新应用并核对 v1.1.3 模板身份",
         "Composer 与 npm 干净安装通过",
         "登记数据库上的空库安装、迁移 current 与清理通过",
         "API、管理端和代表客户端能够启动",
@@ -218,7 +218,7 @@
       ],
       "evidence": [],
       "dependencies": ["PA-P0E-001", "PA-SCAFFOLD-001"],
-      "paths": ["docs/testing/local-functional-test-register.md"]
+      "paths": ["docs/p0e-runtime-qualification.md"]
     },
     {
       "id": "PA-P0E-003",

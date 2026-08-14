@@ -28,7 +28,7 @@ php scripts/check-product-capability-ledger
 <!-- CAPABILITY_STATUS_GENERATED_START -->
 > 总体状态：**进行中**。创建、脚手架升级、Plugin 生命周期与公开核心包兼容合同已经通过；最终 P0-E 运行时闭环和正式发布仍未完成。
 >
-> 事实基线：`dev@5c5a9a27d9a1ee982838db76ab05da762c8246d5`，复核日期：`2026-08-14`。
+> 事实基线：`dev@232cc53b8f65e68330abf094766fb58c7ea4587d`，复核日期：`2026-08-14`。
 
 ### 已验证可用
 
