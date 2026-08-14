@@ -201,7 +201,7 @@
       "evidence": [
         {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/121"},
         {"kind": "git", "ref": "68251239d1b0c5a3dc1fb9d25b3ce3c50ae6b9c0"},
-        {"kind": "report", "ref": "output/p0e-p0ed1f7a113/summary.json"}
+        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"}
       ],
       "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json"]
     },
@@ -219,7 +219,7 @@
         "真实浏览器登录与代表业务页面通过"
       ],
       "evidence": [
-        {"kind": "report", "ref": "output/p0e-p0ed1f7a113/summary.json"}
+        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"}
       ],
       "dependencies": ["PA-P0E-001", "PA-SCAFFOLD-001"],
       "paths": ["docs/p0e-runtime-qualification.md"]
@@ -238,7 +238,7 @@
         "故障注入后 recover 能恢复完整旧应用"
       ],
       "evidence": [
-        {"kind": "report", "ref": "output/p0e-p0ed1f7a113/summary.json"}
+        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"}
       ],
       "dependencies": ["PA-SCAFFOLD-002", "PA-COMPAT-001", "PA-P0E-002"],
       "paths": ["scripts/scaffold-upgrade"]
