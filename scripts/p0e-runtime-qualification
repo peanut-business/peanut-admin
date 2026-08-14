@@ -1127,9 +1127,14 @@ class Runner:
         if final_manifest.get("template", {}).get("version") != versions[-1]:
             fail("legacy application did not reach the target scaffold release")
         final_versions = self.application_version_surfaces(self.upgraded)
+        initial_versions = identity["version_surfaces"]
+        application_version = initial_versions["release_metadata"]
+        managed_version_surfaces = ("web", "pc", "uniapp", "release_metadata", "server_project")
         if (
-            final_versions != identity["version_surfaces"]
-            or final_manifest.get("application", {}).get("version") != final_versions["release_metadata"]
+            final_manifest.get("application", {}).get("version") != application_version
+            or any(final_versions[surface] != application_version for surface in managed_version_surfaces)
+            or final_versions["uniapp_version_name"] != initial_versions["uniapp_version_name"]
+            or final_versions["uniapp_version_code"] != initial_versions["uniapp_version_code"]
         ):
             fail("legacy application version surfaces changed during scaffold upgrade")
         self.write_json(self.upgrade_proof_path, {

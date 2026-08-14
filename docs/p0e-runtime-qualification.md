@@ -130,6 +130,8 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 8. 完整升级后只在依赖目录均不存在时执行 Composer、Web、PC、UniApp 和 Docs frozen install/
    build；升级前、每个 transition 后和依赖完成后，全量 application manifest `app-owned`
    路径的内容与 mode 聚合摘要必须逐字节相同。
+   v1 manifest 从旧应用 `RELEASE_METADATA.version` 唯一采用 application version，最终 managed
+   版本面与该值一致；app-owned UniApp `versionName/versionCode` 仍保持升级前字节。
 9. 独立恢复副本在第一次真实 managed 写后注入 `SCAFFOLD_FAULT_INJECTED`，执行 recover 后按
    全产品树内容和 mode（排除审计用 `.peanut/upgrades` 与 `.git`）核对完整恢复，并从恢复态继续
    完整 release chain。

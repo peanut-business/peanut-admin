@@ -162,6 +162,11 @@ $expect(str_contains($runnerSource, 'upgraded_plugin_lifecycle'), 'upgraded appl
 $expect(str_contains($runnerSource, 'upgraded_production_compose'), 'upgraded application service runtime is missing');
 $expect(str_contains($runnerSource, 'upgraded_browser'), 'upgraded application browser runtime is missing');
 $expect(
+    str_contains($runnerSource, 'managed_version_surfaces')
+        && str_contains($runnerSource, 'initial_versions["uniapp_version_code"]'),
+    'legacy version adoption and UniApp preservation are not both enforced'
+);
+$expect(
     str_contains($runnerSource, 'self.production_compose_at(self.generated'),
     'generated application production Compose does not use the generated application root'
 );
