@@ -3,9 +3,9 @@
     "protocol": "peanut.scaffold-release.v2",
     "release": {
         "version": "1.1.3",
-        "source_commit": "1b174e5134a3a8eca79fd5d6277e9b9599370c1c",
-        "source_tree": "89bcca4af2d72ab98a0320cb1291708e827206c9",
-        "inventory_sha256": "4bf9b4ee61a220aea63d26bcd86a80a167211a83bf46496dd119a9d3ae7a3442",
+        "source_commit": "7b1769745fab287da8617a2a8fc3ea8947b0ce7c",
+        "source_tree": "5efcf2f7c79730d4703df8d6c041b9db4a161968",
+        "inventory_sha256": "85be21d21203707fe6f9a13749d8a7edb9fbe7579a0f900cbd12af62b99002b0",
         "inventory_template_version": "1.1.3",
         "managed_tree_sha256": "49c72e21ff7deacc50ee2b28e8c2ac3f1ec783d62ec25c238652a5d3f25466eb",
         "tokens": {
