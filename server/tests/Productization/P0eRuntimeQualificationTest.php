@@ -255,4 +255,266 @@ $probeCode = 0;
 exec($probeCommand . ' 2>&1', $probeOutput, $probeCode);
 $expect($probeCode === 0, 'Compose environment precedence probe failed: ' . implode("\n", $probeOutput));
 
+$offlineClosureProbe = <<<'PYTHON'
+import importlib.machinery
+import importlib.util
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+
+runner_path = Path(sys.argv[1]).resolve()
+loader = importlib.machinery.SourceFileLoader("p0e_runtime_offline_closure", str(runner_path))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+module = importlib.util.module_from_spec(spec)
+loader.exec_module(module)
+
+real_command = module.command
+inspector_paths = []
+compose_calls = []
+lease_releases = []
+
+
+def offline_command(arguments, **kwargs):
+    if len(arguments) >= 2 and arguments[0] == "php" and arguments[1].endswith("/server/tests/fixtures/mt05/inspect.php"):
+        inspector_paths.append(Path(arguments[1]).resolve())
+        payload = {
+            "status": "passed",
+            "migration_ledger": {"count": 54},
+        }
+        return subprocess.CompletedProcess(arguments, 0, json.dumps(payload), "")
+    if arguments[:2] == ["docker", "ps"] or arguments[:2] == ["docker", "volume"] or arguments[:2] == ["docker", "network"]:
+        return subprocess.CompletedProcess(arguments, 0, "", "")
+    if arguments[:3] == ["docker", "image", "inspect"]:
+        return subprocess.CompletedProcess(arguments, 1, "", "not found")
+    if arguments and arguments[0] == str(module.LEASE_TOOL) and "release" in arguments:
+        lease_releases.append(arguments)
+        return subprocess.CompletedProcess(arguments, 0, "", "")
+    return real_command(arguments, **kwargs)
+
+
+module.command = offline_command
+
+
+class OfflineRunner(module.Runner):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.databases = set()
+        self.docs_roots = []
+
+    def install_application_dependencies(self, project_root, log):
+        roots = [
+            project_root / "server/vendor",
+            project_root / "web/node_modules",
+            project_root / "pc/node_modules",
+            project_root / "uniapp/node_modules",
+            project_root / "docs-site/node_modules",
+        ]
+        if any(path.exists() for path in roots):
+            module.fail("offline dependency shim did not start clean")
+        for path in roots:
+            path.mkdir(parents=True)
+            (path / ".p0e-offline-installed").write_text("installed\n", encoding="utf-8")
+        return {
+            "status": "passed",
+            "mode": "offline-boundary-shim",
+            "dependency_roots": [str(path.relative_to(project_root)) for path in roots],
+        }
+
+    def db_env(self, database, mode, consumer="host"):
+        if database not in self.plan["databases"].values():
+            module.fail("offline database boundary received an unowned database")
+        return {
+            "DB_NAME": database,
+            "DB_HOST": "registered-offline-boundary",
+            "DB_PORT": "20183",
+            "DB_USER": "p0e_offline",
+            "DB_PASS": "not-used",
+            "DEPLOYMENT_MODE": mode,
+            "ADMIN_INITIAL_PASSWORD": "not-used",
+            "ADMIN_INITIAL_EMAIL": "admin@example.invalid",
+            "PLATFORM_INITIAL_PASSWORD": "not-used",
+            "PLATFORM_INITIAL_EMAIL": "platform@example.invalid",
+        }
+
+    def database_exists(self, database):
+        return database in self.databases
+
+    def create_database(self, database):
+        if database not in self.plan["databases"].values() or database in self.databases:
+            module.fail("offline database create boundary changed")
+        self.databases.add(database)
+
+    def drop_database(self, database):
+        self.databases.discard(database)
+
+    def install_current(self, database, mode, log, project_root=module.ROOT):
+        if Path(project_root).resolve() != self.upgraded.resolve():
+            module.fail("upgraded runtime install did not use the upgraded application root")
+
+    def plugin_lifecycle_at(self, project_root, scenario, group):
+        expected = [
+            project_root / "plugins/fixture.delivery-record",
+            project_root / "server/app/Modules/Fixture/DeliveryRecord",
+            project_root / "web/src/modules/fixture-delivery-record",
+            project_root / "server/fixtures/plugin-module-lifecycle/run.php",
+        ]
+        if Path(project_root).resolve() != self.upgraded.resolve() or not all(path.exists() for path in expected):
+            module.fail("upgraded Plugin lifecycle did not receive the source-only fixture")
+
+    def compose(self, *arguments, log=None, check=True, project_root=module.ROOT):
+        if Path(project_root).resolve() != self.upgraded.resolve():
+            module.fail("upgraded Compose did not use the upgraded application root")
+        compose_calls.append((arguments, Path(project_root).resolve()))
+        return subprocess.CompletedProcess(arguments, 0, "", "")
+
+    def wait_http(self, url, seconds=120):
+        if url != "http://127.0.0.1:20190/healthz":
+            module.fail("offline HTTP boundary received an unregistered URL")
+
+    def start_docs(self, project_root):
+        if Path(project_root).resolve() != self.upgraded.resolve():
+            module.fail("upgraded Docs preview did not use the upgraded application root")
+        self.docs_roots.append(Path(project_root).resolve())
+
+    def stop_docs(self):
+        self.docs_process = None
+        self.docs_root = None
+
+
+with tempfile.TemporaryDirectory(prefix="p0e-offline-closure-", dir="/private/tmp") as directory:
+    temporary = Path(directory)
+    output = temporary / "output"
+    backup = temporary / "backup"
+    cache = temporary / "cache"
+    proof = temporary / "lease-proof"
+    for path in (output, backup, cache, proof):
+        path.mkdir()
+    (output / "groups").mkdir()
+
+    playwright_log = temporary / "playwright-shim.log"
+    playwright = proof / "playwright-cli"
+    playwright.write_text(
+        "#!/bin/sh\n"
+        "printf '%s\\n' \"$*\" >> \"$P0E_SHIM_LOG\"\n"
+        "if [ \"${1:-}\" = snapshot ]; then printf 'offline snapshot\\n'; fi\n",
+        encoding="utf-8",
+    )
+    playwright.chmod(0o700)
+    os.environ.update({
+        "P0E_PLAYWRIGHT_CLI": str(playwright),
+        "P0E_SHIM_LOG": str(playwright_log),
+        "P0E_ADMIN_INITIAL_PASSWORD": "offline-admin",
+        "P0E_PLATFORM_INITIAL_EMAIL": "platform@example.invalid",
+        "P0E_PLATFORM_INITIAL_PASSWORD": "offline-platform",
+    })
+
+    candidate = real_command(["git", "rev-parse", "HEAD^{commit}"], capture=True).stdout.strip()
+    candidate_tree = real_command(["git", "rev-parse", "HEAD^{tree}"], capture=True).stdout.strip()
+    fixture = module.read_json(module.FIXTURE_PATH)
+    scenarios = fixture["scenarios"].keys()
+    run_id = "offlinep0e"
+    args = SimpleNamespace(
+        candidate=candidate,
+        run_id=run_id,
+        lease=f"p0e-runtime-{run_id}",
+        owner="offline-closure",
+        thread="offline-closure",
+        ttl=3600,
+    )
+    plan = {
+        "candidate_tree": candidate_tree,
+        "compose_project": f"peanut-p0e-{run_id}",
+        "paths": {
+            "output-dir": str(output),
+            "backup-dir": str(backup),
+            "cache-dir": str(cache),
+        },
+        "databases": {
+            scenario: f"peanut_admin_development_p0e_{run_id}_{scenario}"
+            for scenario in scenarios
+        },
+        "ports": {"http": 20190, "docs": 20186},
+        "endpoint": "192.168.192.2:20183",
+        "lease_proof_dir": str(proof),
+        "lease_proof_container_path": "/run/peanut-admin/resource-lease",
+    }
+
+    runner = OfflineRunner(args, plan, fixture)
+    runner.created_candidate_vendor = False
+    runner.legacy_application_upgrade()
+    upgrade = module.read_json(runner.upgrade_proof_path)
+    expected_before = {
+        "web": "1.1.0",
+        "pc": "1.1.0",
+        "uniapp": "1.1.0",
+        "release_metadata": "0.1.0",
+        "server_project": "1.1.0",
+        "uniapp_version_name": "1.1.0",
+        "uniapp_version_code": "110",
+    }
+    expected_after = {
+        "web": "0.1.0",
+        "pc": "0.1.0",
+        "uniapp": "0.1.0",
+        "release_metadata": "0.1.0",
+        "server_project": "0.1.0",
+        "uniapp_version_name": "1.1.0",
+        "uniapp_version_code": "110",
+    }
+    if upgrade["version_surfaces_before"] != expected_before or upgrade["version_surfaces_after"] != expected_after:
+        raise SystemExit("legacy application version surface contract changed")
+    if len(upgrade["transitions"]) != 5 or any(item["preflight"] != "ready" or item["apply"] != "applied" or item["verify"] != "verified" for item in upgrade["transitions"]):
+        raise SystemExit("legacy application did not complete five real scaffold transitions")
+    if upgrade["app_owned_before_sha256"] != upgrade["app_owned_after_sha256"]:
+        raise SystemExit("legacy upgrade changed app-owned bytes")
+
+    runner.legacy_application_recovery()
+    recovery = module.read_json(output / "groups/legacy-application-recovery.json")
+    if recovery["recover"] != "recovered" or recovery["pre_tree_sha256"] != recovery["recovered_tree_sha256"] or len(recovery["continued_transitions"]) != 5:
+        raise SystemExit("legacy fault recovery closure failed")
+
+    runner.upgraded_plugin_lifecycle()
+    if module.read_json(runner.upgraded / "plugins.lock") != {"schema_version": 1, "plugins": []}:
+        raise SystemExit("upgraded Plugin lock was not restored")
+
+    runner.upgraded_production_compose()
+    overlay = runner.compose_overlay.read_text(encoding="utf-8")
+    source_registry = str(module.ROOT / "resources/project-resources.json")
+    if overlay.count(source_registry) != 2 or overlay.count("read_only: true") != 3:
+        raise SystemExit("source-only registry/lease overlay is incomplete")
+
+    runner.upgraded_browser("standalone")
+    runner.upgraded_browser("multi-tenant")
+    if len(inspector_paths) < 2 or any(runner.upgraded.resolve() not in path.parents for path in inspector_paths):
+        raise SystemExit("application inspector escaped the upgraded project root")
+    upgraded_inspector = runner.upgraded / "server/tests/fixtures/mt05/inspect.php"
+    if not upgraded_inspector.is_file() or module.sha256(upgraded_inspector) != module.sha256(module.INSPECTOR):
+        raise SystemExit("existing upgraded application inspector identity changed")
+    browser_actions = playwright_log.read_text(encoding="utf-8").splitlines()
+    for action in ("open", "resize", "snapshot", "run-code", "close"):
+        if sum(line.startswith(action) for line in browser_actions) < 2:
+            raise SystemExit(f"Playwright shim did not observe both browser modes: {action}")
+    if len(runner.docs_roots) != 2 or len(compose_calls) < 2:
+        raise SystemExit("upgraded Compose/browser control flow is incomplete")
+
+    runner.cleanup_success()
+    summary = module.read_json(output / "summary.json")
+    if summary["status"] != "passed" or not summary["cleanup"]["lease_released"]:
+        raise SystemExit("success cleanup did not produce a released summary")
+    if backup.exists() or cache.exists() or playwright.exists() or not output.exists():
+        raise SystemExit("success cleanup path retained lease-owned state or removed evidence")
+    if runner.databases or len(lease_releases) != 1:
+        raise SystemExit("success cleanup did not clear database state and release exactly once")
+PYTHON;
+$offlineCommand = 'python3 -c ' . escapeshellarg($offlineClosureProbe) . ' ' . escapeshellarg($runner);
+$offlineOutput = [];
+$offlineCode = 0;
+exec($offlineCommand . ' 2>&1', $offlineOutput, $offlineCode);
+$expect($offlineCode === 0, 'P0-E offline executable closure failed: ' . implode("\n", $offlineOutput));
+
 echo "P0E-RUNTIME-QUALIFICATION-CONTRACT-001 passed\n";
