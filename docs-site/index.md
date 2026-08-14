@@ -20,54 +20,88 @@ hero:
       link: https://github.com/peanut-business/peanut-admin
 
 features:
-  - icon: 🧭
+  - icon: '01'
     title: 管理端基线
     details: Vue 3 与 Element Plus 管理端，菜单、角色、按钮/API 权限和操作审计形成闭环。
-  - icon: 🖥️
+  - icon: '02'
     title: PC 与移动端
     details: Nuxt 3 PC、UniApp/H5 共用无 UI client 契约，同时保留各端导航与平台能力。
-  - icon: 🧱
+  - icon: '03'
     title: 清晰的应用边界
     details: 产品领域由应用 Module 唯一拥有，公共 Runtime 只通过两个公开核心包消费。
-  - icon: 🎨
+  - icon: '04'
     title: 可覆盖品牌
     details: 一个 bootstrap manifest 提供克隆默认值，安装后由网站配置 Runtime 统一管理四端品牌。
-  - icon: 🚀
+  - icon: '05'
     title: 可重复交付
     details: 支持空库安装、前滚迁移、三端静态构建和 Docker Compose 生产发布。
-  - icon: 🔐
+  - icon: '06'
     title: 安全默认值
     details: 首次安装显式提供管理员密码，敏感配置不进入模板、URL、日志或响应。
 ---
 
 <div class="home-proof">
-  <p class="eyebrow">CURRENT BASELINE</p>
-  <h2>从可运行模板，到可维护的产品 Host</h2>
-  <p>Peanut Admin 1.1.0 已完成 Standalone 与多租户双模式、实例内 Tenant 平台管理、可信租户会话及代表业务隔离。当前文档只描述仓库中已经交付的能力；订阅计费与跨实例运营平台仍是独立后续阶段。</p>
-  <div class="home-proof-actions">
-    <a href="/capabilities">查看能力与边界</a>
-    <a href="/deployment">部署与升级</a>
-    <a href="/releases">版本状态</a>
+  <div class="home-proof-copy">
+    <p class="eyebrow">CURRENT BASELINE · V1.1.0</p>
+    <h2>从可运行模板，到可维护的产品 Host</h2>
+    <p>Standalone 与多租户双模式、实例内 Tenant 平台管理、可信租户会话及代表业务隔离，已经收进同一条可验证的交付链。</p>
+    <div class="home-proof-actions">
+      <a href="/capabilities">查看能力与边界 <span>→</span></a>
+      <a href="/deployment">部署与升级</a>
+      <a href="/releases">版本状态</a>
+    </div>
+  </div>
+  <div class="home-proof-metrics" aria-label="当前产品基线摘要">
+    <div><strong>4</strong><span>管理端、PC、H5 与 UniApp</span></div>
+    <div><strong>2</strong><span>Standalone / 多租户部署模式</span></div>
+    <div><strong>1</strong><span>统一品牌与应用 Runtime</span></div>
+    <div><strong>0</strong><span>仓库共享默认密码</span></div>
   </div>
 </div>
 
-## 选择你的入口
+<div class="home-section-heading">
+  <p class="eyebrow">START HERE</p>
+  <h2>选择你的入口</h2>
+  <p>从第一次安装，到应用扩展和日常管理，每种角色都能直接抵达需要的上下文。</p>
+</div>
 
 <div class="doc-entry-grid">
   <a class="doc-entry" href="/getting-started">
-    <strong>第一次使用</strong>
-    <span>从依赖、空库安装到首次登录，完成最短成功路径。</span>
+    <span class="doc-entry-index">01</span>
+    <span class="doc-entry-copy"><strong>第一次使用</strong><span>从依赖、空库安装到首次登录，完成最短成功路径。</span></span>
+    <span class="doc-entry-arrow">↗</span>
   </a>
   <a class="doc-entry" href="/guide/development">
-    <strong>开发与扩展</strong>
-    <span>理解应用/核心边界、覆盖 Host、数据库迁移和客户端约定。</span>
+    <span class="doc-entry-index">02</span>
+    <span class="doc-entry-copy"><strong>开发与扩展</strong><span>理解应用/核心边界、覆盖 Host、数据库迁移和客户端约定。</span></span>
+    <span class="doc-entry-arrow">↗</span>
   </a>
   <a class="doc-entry" href="/guide/user-manual">
-    <strong>后台管理员</strong>
-    <span>按模块查找业务操作、权限范围和安全注意事项。</span>
+    <span class="doc-entry-index">03</span>
+    <span class="doc-entry-copy"><strong>后台管理员</strong><span>按模块查找业务操作、权限范围和安全注意事项。</span></span>
+    <span class="doc-entry-arrow">↗</span>
   </a>
 </div>
 
-## 发布边界
+<div class="home-flow">
+  <div class="home-section-heading">
+    <p class="eyebrow">DELIVERY PATH</p>
+    <h2>创建只是开始，升级也必须可控</h2>
+    <p>把应用所有权、依赖边界和恢复路径放在同一条工作流里，避免长期维护演变成一次次重写。</p>
+  </div>
+  <div class="home-flow-grid">
+    <div><span>01</span><strong>创建</strong><p>从中性模板生成独立应用。</p></div>
+    <div><span>02</span><strong>扩展</strong><p>业务留在 app-owned 边界。</p></div>
+    <div><span>03</span><strong>升级</strong><p>先预检，再应用，并可恢复。</p></div>
+    <div><span>04</span><strong>交付</strong><p>固定制品、迁移与运行证据。</p></div>
+  </div>
+</div>
 
-Peanut Admin 应用 `1.1.0` 已以 annotated `v1.1.0` 与同 tag GitHub Release 正式发布。Composer `peanut-admin/core` 与 npm `@peanut-admin/admin` 是仅有的公开运行依赖；内部领域目录不是独立包。既有应用与官网域名的部署状态以[版本与发布](/releases)记录为准；本版本是稳定多租户脚手架，不宣称包含完整 SaaS 商业能力。
+<div class="home-release">
+  <div>
+    <p class="eyebrow">RELEASE BOUNDARY</p>
+    <h2>发布身份清楚，产品边界同样清楚</h2>
+    <p>Peanut Admin 应用 <code>1.1.0</code> 已以 annotated <code>v1.1.0</code> 与同 tag GitHub Release 正式发布。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；本版本不宣称包含完整 SaaS 商业能力。</p>
+  </div>
+  <a href="/releases">查看版本与发布 <span>→</span></a>
+</div>
