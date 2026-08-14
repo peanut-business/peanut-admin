@@ -161,6 +161,14 @@ $expect(str_contains($runnerSource, 'app_owned_proof'), 'upgraded app-owned byte
 $expect(str_contains($runnerSource, 'upgraded_plugin_lifecycle'), 'upgraded application Plugin lifecycle is missing');
 $expect(str_contains($runnerSource, 'upgraded_production_compose'), 'upgraded application service runtime is missing');
 $expect(str_contains($runnerSource, 'upgraded_browser'), 'upgraded application browser runtime is missing');
+$expect(
+    str_contains($runnerSource, 'self.production_compose_at(self.generated'),
+    'generated application production Compose does not use the generated application root'
+);
+$expect(
+    str_contains($runnerSource, 'project_root / "server/tests/fixtures/mt05/inspect.php"'),
+    'application database inspection is not rooted in the qualified application'
+);
 $expect(!str_contains($runnerSource, '["mysql"') && !str_contains($runnerSource, '["mysqldump"'), 'runner reintroduced a bare host MySQL client');
 $expect(str_contains($runnerSource, 'core.excludesFile'), 'create-app does not exclude only the lease-owned runtime evidence');
 $expect(str_contains($runnerSource, ':(exclude)'), 'resume cleanliness does not exclude only the lease-owned runtime evidence');

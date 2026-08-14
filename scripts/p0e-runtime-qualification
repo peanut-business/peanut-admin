@@ -768,7 +768,7 @@ class Runner:
         if parsed.get("status") != "up_to_date" or parsed.get("ledger_count") != self.fixture["database_resource"]["migration_count"]:
             fail(f"migration idempotency/current assertion failed for {database}")
 
-    def inspect(self, database: str, mode: str, label: str) -> None:
+    def inspect(self, database: str, mode: str, label: str, project_root: Path = ROOT) -> None:
         inspector_mode = "multitenant-empty" if mode == "multi-tenant" else (
             "v1-forward" if "forward" in label else "standalone-empty"
         )
@@ -778,7 +778,28 @@ class Runner:
             "MT05_CANDIDATE": self.args.candidate,
             "MT05_RUN_ID": self.args.run_id,
         }
-        result = command(["php", str(INSPECTOR)], env=env, capture=True)
+        inspector = INSPECTOR
+        created_directories: list[Path] = []
+        if project_root != ROOT:
+            inspector = project_root / "server/tests/fixtures/mt05/inspect.php"
+            if inspector.exists():
+                fail(f"application inspector target already exists: {inspector}")
+            parent = inspector.parent
+            cursor = parent
+            while not cursor.exists():
+                created_directories.append(cursor)
+                cursor = cursor.parent
+            parent.mkdir(parents=True)
+            shutil.copy2(INSPECTOR, inspector)
+        try:
+            result = command(["php", str(inspector)], env=env, capture=True)
+        finally:
+            if inspector != INSPECTOR:
+                with contextlib.suppress(FileNotFoundError):
+                    inspector.unlink()
+                for directory in created_directories:
+                    with contextlib.suppress(OSError):
+                        directory.rmdir()
         parsed = json.loads(result.stdout)
         if parsed.get("status") != "passed" or parsed.get("migration_ledger", {}).get("count") != self.fixture["database_resource"]["migration_count"]:
             fail(f"database inspection failed for {label}")
@@ -1246,7 +1267,7 @@ class Runner:
             env=self.db_env(database, "multi-tenant"),
             log=log,
         )
-        self.inspect(database, "multi-tenant", group)
+        self.inspect(database, "multi-tenant", group, project_root=project_root)
         self.drop_database(database)
 
     def plugin_lifecycle(self) -> None:
@@ -1399,7 +1420,7 @@ class Runner:
         log = self.group_log(group)
         self.create_database(database)
         self.install_current(database, "standalone", log, project_root=project_root)
-        self.inspect(database, "standalone", f"{group}-database")
+        self.inspect(database, "standalone", f"{group}-database", project_root=project_root)
         self.write_compose_env(database, "standalone")
         self.compose("up", "-d", "--build", "php", "nginx", "cron", log=log, project_root=project_root)
         self.active_compose_root = project_root
@@ -1415,7 +1436,7 @@ class Runner:
         })
 
     def production_compose(self) -> None:
-        self.production_compose_at(ROOT, "standalone_browser", "production-compose")
+        self.production_compose_at(self.generated, "standalone_browser", "production-compose")
 
     def upgraded_production_compose(self) -> None:
         self.assert_upgraded_app_owned()
@@ -1454,7 +1475,7 @@ class Runner:
             if not self.database_exists(database):
                 self.create_database(database)
                 self.install_current(database, mode, self.group_log(group), project_root=project_root)
-            self.inspect(database, mode, f"{group}-database")
+            self.inspect(database, mode, f"{group}-database", project_root=project_root)
             self.write_compose_env(database, mode)
             self.compose(
                 "up", "-d", "--no-build", "--force-recreate", "php", "nginx", "cron",
