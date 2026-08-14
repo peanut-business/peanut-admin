@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "protocol": "peanut.combined-upgrade-qualification.v1",
+  "promise": "stable-public-api-no-app-owned-refactor",
+  "application": {
+    "name": "Combined Upgrade Fixture",
+    "slug": "combined-upgrade-fixture",
+    "package_identity": "peanut-fixtures/combined-upgrade-fixture",
+    "initial_version": "1.0.0",
+    "target_version": "1.1.2"
+  },
+  "release_chain": [
+    {
+      "version": "1.0.0",
+      "manifest_sha256": "d20f10ee728351f7e3dda6478d3363d12702f9399c82fbdd95d52edf50595723",
+      "source_commit": "14412607ba36f1816e39f7117f77eea4a9e7419e",
+      "source_tree": "172865d8b8057caa8a017ac591618cd914af30a5",
+      "inventory_sha256": "067f9a8d96f5fbd1fd082807da6ab46fee453a110101858a64580c5d2401f5eb",
+      "managed_tree_sha256": "101fd6e0abc1229428e936fe035903ca542e23b61a2433f2e9df3faf9ebb6abf",
+      "file_count": 270
+    },
+    {
+      "version": "1.1.0",
+      "manifest_sha256": "398c75fbf6a3b81d98faaad75e76556ed95a5829f23ae28994a09eac145ac582",
+      "source_commit": "2aaf8bfbd25f20b12de1a9a9c2c2c77ec26ed91a",
+      "source_tree": "1ffbe4be8f209eeb7645c52d82c1f550068f9690",
+      "inventory_sha256": "38f4cf0d596d6e9b7dccfe3b30054d94440e95f377cdc0844e530e1202b6ec76",
+      "managed_tree_sha256": "852745ea97d9bf8d9116065c3cb91ea259e6acfe81ff51d166f133d6d241b487",
+      "file_count": 275
+    },
+    {
+      "version": "1.1.1",
+      "manifest_sha256": "be1cf1db95f173d421947cc8bbc053d03909b56516daea29d893d783320ce406",
+      "source_commit": "5c33c218bd48e9a428d7a3f23211934e7b3d9303",
+      "source_tree": "01c66f34e8ac7832c54fcbb467a5318d9096f1c6",
+      "inventory_sha256": "4df03aa181ad3d56de4ad59a255ed724c77a288f663e0bced6850fe0e50a06c9",
+      "managed_tree_sha256": "02b3204053e137b818dab4315734aa83b143f472e90d4792d6ee525bef748c0d",
+      "file_count": 274
+    },
+    {
+      "version": "1.1.2",
+      "manifest_sha256": "000c38dd03a824358c5321d429c3da1c4fb53b320b4a9d8fb19bccae0ae78681",
+      "source_commit": "9f67c5c4a97874d813511f615f1df071d6ca1ea3",
+      "source_tree": "c5ddef763e730a2b93601c3965bdf8916b65e48f",
+      "inventory_sha256": "cd6f2766bd137441c61488a3c55e57a220da5cbbab64f7c17971eacffdc0b39b",
+      "managed_tree_sha256": "1e1222ecfe9d3793a1918824507ebbc65f606e6ad770cfd728116660ee45d73e",
+      "file_count": 274
+    }
+  ],
+  "transitions": [
+    {
+      "from": "1.0.0",
+      "to": "1.1.0",
+      "compatibility": "stable-public-api",
+      "actions": []
+    },
+    {
+      "from": "1.1.0",
+      "to": "1.1.1",
+      "compatibility": "stable-public-api",
+      "actions": []
+    },
+    {
+      "from": "1.1.1",
+      "to": "1.1.2",
+      "compatibility": "stable-public-api",
+      "actions": []
+    }
+  ],
+  "customizations": [
+    {
+      "role": "host",
+      "path": "server/app/common/service/CoreServiceOverrides.php",
+      "before_sha256": "329954bb17771ade5c8d3d63256a0b901471fbe94ee6b8f3077342529ded9b83",
+      "after_sha256": "3d3ab74f8352ac514c82faa76611295543f83d5dd78ef482ebaedcc2115349e3",
+      "anchor": "    public const CONTRACT_VERSION = '2.0.0';\n",
+      "replacement": "    public const CONTRACT_VERSION = '2.0.0';\n    public const DOWNSTREAM_HOST_PROFILE = 'combined-upgrade-fixture';\n"
+    },
+    {
+      "role": "business-domain",
+      "path": "server/app/common/service/payment/PaymentServiceFactory.php",
+      "before_sha256": "9cf2c91e24c7d1fa1d56b412a7045599f7d8d324a4f8c02193d56cc24650d406",
+      "after_sha256": "f8917849db73775b22dd9d45ae22decd6e5b0cbd6c9395a34c6c429c590c3822",
+      "anchor": "final class PaymentServiceFactory\n{\n",
+      "replacement": "final class PaymentServiceFactory\n{\n    public const DOWNSTREAM_PAYMENT_PROFILE = 'combined-upgrade-fixture';\n\n"
+    }
+  ],
+  "target_dependencies": {
+    "composer": {
+      "package": "peanut-admin/core",
+      "version": "0.1.0-alpha.5",
+      "reference": "ef06da45c9e77ae4b194bfc1f859ec007aa0e022"
+    },
+    "npm": {
+      "package": "@peanut-admin/admin",
+      "version": "0.1.0-alpha.5",
+      "integrity": "sha512-brHwkDH1Ym1EHFEBJDu+L956Wq3rwtxTaeaIvwPL7mMk8KKur82nqRnp/yk7RSnmScl/XeXMaj2HrTeQqTiOIQ=="
+    },
+    "files": [
+      {"path": "server/composer.json", "sha256": "3a4c213218a0247b044e6184b295a4154d1caf749c0120b5b5941fa824932908"},
+      {"path": "server/composer.lock", "sha256": "7f4c0f360d40be2edea367b631448292e1f19c3ee149d14f1f96f7687271ae28"},
+      {"path": "web/package.json", "sha256": "476d4859b3366be07db9da525a47020017c224a3a09cb84cda59515cf464937c"},
+      {"path": "web/pnpm-lock.yaml", "sha256": "1ba6d87a5ffe944c21bdad76b2309fe69919a0553128bd40c6b5dd429c0e9f79"},
+      {"path": "pc/package.json", "sha256": "2fc07fe60b135a992dac9678e44048ae4f7e4e3a252888e727577d220782f225"},
+      {"path": "pc/package-lock.json", "sha256": "af6791c89f3045f33f4436c1630330bbb1250335bdbcd340156d9c348b04e167"},
+      {"path": "uniapp/package.json", "sha256": "c154dc9da3fa2150e3bb4e9a8133d0cbcb66a8a886c28d50336e414f83f87590"},
+      {"path": "uniapp/package-lock.json", "sha256": "a4b0b96086c6d2b1b251b49169497d329ea305caa3360c4cfee7d8940e1939f6"}
+    ]
+  },
+  "php_probes": [
+    "server/tests/fixtures/core-upgrade-compatibility/domain-probe.php"
+  ],
+  "not_covered": [
+    "database",
+    "services",
+    "ports",
+    "containers",
+    "browser",
+    "publication",
+    "non-public or undocumented package internals"
+  ]
+}

@@ -52,6 +52,14 @@
             "source_sha256": "1180e468df50ba1387571e7426197614268683d8f6bb64e32d782401bca4e1ce"
         },
         {
+            "path": ".github/pull_request_template.md",
+            "target": ".github/pull_request_template.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": ".github/workflows/ci.yml",
             "target": ".github/workflows/ci.yml",
             "classification": "managed",
@@ -63,6 +71,14 @@
         {
             "path": ".github/workflows/core-upgrade-compatibility.yml",
             "target": ".github/workflows/core-upgrade-compatibility.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": ".github/workflows/product-capability-ledger.yml",
+            "target": ".github/workflows/product-capability-ledger.yml",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -301,7 +317,16 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "0234fc8803cc79891fa1234c2c1b31d466c650f810d5addf82ca8e5d05162ce9"
+            "source_sha256": "e34de6f64e8ef3c875941af716bf08bb187f467b493e5b4bb3123caabc342279"
+        },
+        {
+            "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
+            "target": "docs-site/.vitepress/theme/HomeTechVisual.vue",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "a6a63af40a57127d4127f10a834d3440fb1ee7fd8587d107981d1da8815dc866"
         },
         {
             "path": "docs-site/.vitepress/theme/NotFound.vue",
@@ -313,13 +338,22 @@
             "source_sha256": "3ac9c68f36c2471db3dca110d4dd9db76a203191cc9afb462c4cf0918b876e22"
         },
         {
+            "path": "docs-site/.vitepress/theme/ProductStatus.vue",
+            "target": "docs-site/.vitepress/theme/ProductStatus.vue",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "8f5d5754074736e4f62b600193bb9cd3cb6e2819685a4df471492a2c94e819f2"
+        },
+        {
             "path": "docs-site/.vitepress/theme/custom.css",
             "target": "docs-site/.vitepress/theme/custom.css",
             "classification": "app-owned",
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "1410cd6ed666627705c5d6137dedd6b9fbbf0463d92ab5f8b7f4f61b2f319329"
+            "source_sha256": "96ff9eeb2174344acbba0c5a194c46e80dee92bb8f748b16441cfc3a3dc5126b"
         },
         {
             "path": "docs-site/.vitepress/theme/index.ts",
@@ -328,7 +362,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "15d5cec94c91d8fe312fa06420c1df10d90c2bfc0dc516a5a775b89031497d7a"
+            "source_sha256": "688ad58fa0b4f285807a944816d34c30ce1f6faf8798da2a3218851077642f88"
         },
         {
             "path": "docs-site/404.md",
@@ -418,7 +452,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ea29e72a44a7511f0dc879cc87505790a7861a86e222960250a136a8c0dc4325"
+            "source_sha256": "acdcb91907e24d75f4003a6c313752284aa717a68f7d3eb1ee86163c36fe0de4"
         },
         {
             "path": "docs-site/legal.md",
@@ -446,6 +480,15 @@
             "transform": "package",
             "mode": 420,
             "source_sha256": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
+        },
+        {
+            "path": "docs-site/product-status.md",
+            "target": "docs-site/product-status.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "source_sha256": "db8898cc4e6602124fa87b4a08a1df2e91da539d5d13cdf52e2d003c9a28fc49"
         },
         {
             "path": "docs-site/public/brand/avatar-admin.svg",
@@ -1383,6 +1426,62 @@
         {
             "path": "docs/plugin-module-development.md",
             "target": "docs/plugin-module-development.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/README.md",
+            "target": "docs/product-status/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/acceptance-gates.md",
+            "target": "docs/product-status/acceptance-gates.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/capability-ledger.json",
+            "target": "docs/product-status/capability-ledger.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/deferred-scope.md",
+            "target": "docs/product-status/deferred-scope.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/evidence-guide.md",
+            "target": "docs/product-status/evidence-guide.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/releases/README.md",
+            "target": "docs/product-status/releases/README.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/schema/capability-ledger.schema.json",
+            "target": "docs/product-status/schema/capability-ledger.schema.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3326,6 +3425,14 @@
             "source_sha256": "2ff7beb2674a28fbc71c0fce3df9ff7b5431ba22e3af539cb6f65b3826f46501"
         },
         {
+            "path": "scripts/check-product-capability-ledger",
+            "target": "scripts/check-product-capability-ledger",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
             "path": "scripts/check-stale-facts.sh",
             "target": "scripts/check-stale-facts.sh",
             "classification": "managed",
@@ -3342,6 +3449,14 @@
             "transform": "text",
             "mode": 493,
             "source_sha256": "3f30a05daf5c0822184fa590cb09f7a46fccba9091a957cbcaf8869891136c4f"
+        },
+        {
+            "path": "scripts/combined-upgrade-qualification",
+            "target": "scripts/combined-upgrade-qualification",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "scripts/company-development-database.sh",
@@ -8562,6 +8677,14 @@
             "source_sha256": "c327bc38de21b77ab4ff968e99f1991e844b241502179b7d2c96882a65c67824"
         },
         {
+            "path": "server/tests/Productization/CombinedUpgradePolicyTest.php",
+            "target": "server/tests/Productization/CombinedUpgradePolicyTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/tests/Productization/ContentDecorationHostTest.php",
             "target": "server/tests/Productization/ContentDecorationHostTest.php",
             "classification": "app-owned",
@@ -8793,8 +8916,24 @@
             "source_sha256": "a62ae9ce36c728f0e6f9d64331fba0d382f0e051d99ef6044c7866d2823e744e"
         },
         {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/combined-upgrade.json",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/combined-upgrade.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
             "target": "server/tests/fixtures/core-upgrade-compatibility/composer-alpha5.lock",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/fixtures/core-upgrade-compatibility/domain-probe.php",
+            "target": "server/tests/fixtures/core-upgrade-compatibility/domain-probe.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",

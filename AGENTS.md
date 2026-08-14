@@ -108,6 +108,15 @@ TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
 - 产品化正式基线与多租户稳定脚手架均已进入 `main`；完整 SaaS 商业化暂缓，独立运营平台需另行立项，当前没有由本文件授权的下一业务阶段
 
+### 2.4 产品能力与交付状态事实源
+
+当前能力的“已验证、实现待验收、计划/受阻、暂缓/范围外”详细矩阵，以
+`docs/product-status/capability-ledger.json` 为唯一机器可读事实源；对应人类可读入口为
+`docs/product-status/README.md`。本节只保留高层产品事实，不再复制能力表。开放 PR、运行中的
+Gate 和未提交 worktree 不得提前写成完成；正式产品发布时才在
+`docs/product-status/releases/` 冻结不可变能力快照。该内部目录默认不进入 docs-site 首页或
+公开导航。
+
 ---
 
 ## 3. 目录结构
