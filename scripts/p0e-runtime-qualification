@@ -206,6 +206,13 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         "backup-dir": str(absolute_path(args.backup_dir, "backup-dir", args.run_id)),
         "cache-dir": str(absolute_path(args.cache_dir, "cache-dir", args.run_id)),
     }
+    expected_paths = {
+        "output-dir": str(ROOT / "output" / f"p0e-{args.run_id}"),
+        "backup-dir": str(Path.home() / ".local/state/peanut-admin" / f"p0e-backup-{args.run_id}"),
+        "cache-dir": str(Path.home() / ".cache/peanut-admin" / f"p0e-{args.run_id}"),
+    }
+    if paths != expected_paths:
+        fail(f"output/backup/cache paths must equal the fixed lease proof contract: {expected_paths}")
     ports = [args.http_port, args.docs_port]
     if len(set(ports)) != 2 or any(port < 1024 or port > 65535 for port in ports):
         fail("http/docs ports must be distinct explicit non-privileged ports")
@@ -902,6 +909,8 @@ def main() -> int:
     args = parser.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", args.lease):
         fail("lease id is invalid")
+    if args.lease != f"p0e-runtime-{args.run_id}":
+        fail("lease id must equal p0e-runtime-<exact run_id>")
     if hasattr(args, "ttl") and not 60 <= args.ttl <= 86400:
         fail("ttl must be 60-86400 seconds")
     if args.command != "plan" and (not args.owner or not args.thread):

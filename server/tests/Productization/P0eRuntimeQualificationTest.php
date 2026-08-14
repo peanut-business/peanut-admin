@@ -42,13 +42,15 @@ $expect(($registered[0]['fallback'] ?? null) === 'none', 'P0-E resource must fai
 $expect(($registered[0]['allowed_scenarios'] ?? null) === $expectedScenarios, 'runner and registry scenarios diverged');
 
 $candidate = trim((string)shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
-$runId = 'p0etest';
-$temporary = sys_get_temp_dir() . '/peanut-p0e-plan-' . bin2hex(random_bytes(5));
+$runId = 'p0e' . bin2hex(random_bytes(4));
+$outputPath = $root . '/output/p0e-' . $runId;
+$backupPath = rtrim((string)getenv('HOME'), '/') . '/.local/state/peanut-admin/p0e-backup-' . $runId;
+$cachePath = rtrim((string)getenv('HOME'), '/') . '/.cache/peanut-admin/p0e-' . $runId;
 $arguments = [
-    'plan', '--candidate', $candidate, '--run-id', $runId, '--lease', 'p0e-plan-test',
-    '--output-dir', $temporary . '/output-' . $runId,
-    '--backup-dir', $temporary . '/backup-' . $runId,
-    '--cache-dir', $temporary . '/cache-' . $runId,
+    'plan', '--candidate', $candidate, '--run-id', $runId, '--lease', 'p0e-runtime-' . $runId,
+    '--output-dir', $outputPath,
+    '--backup-dir', $backupPath,
+    '--cache-dir', $cachePath,
     '--http-port', '20190', '--docs-port', '20186',
 ];
 [$code, $output] = $run($arguments);
@@ -60,7 +62,7 @@ $expect(($plan['resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'pla
 $expect(($plan['environment'] ?? null) === 'development', 'plan environment changed');
 $expect(($plan['endpoint'] ?? null) === '192.168.192.2:20183', 'plan endpoint changed');
 $expect(($plan['ports'] ?? null) === ['http' => 20190, 'docs' => 20186], 'plan ports are not registered fixed ports');
-$expect(!is_dir($temporary), 'no-resource plan created a path');
+$expect(!file_exists($outputPath) && !file_exists($backupPath) && !file_exists($cachePath), 'no-resource plan created a path');
 
 $resourcePairs = [];
 $resourceCounts = [];
@@ -77,9 +79,9 @@ $expect(($resourceCounts['port'] ?? null) === 2, 'claim must bind both generic p
 foreach ([
     'resource-id=peanut-admin-p0e-mysql84-gate', 'environment=development',
     'deployment-target=local-production-preview', 'consumer=host', 'consumer=container',
-    'endpoint=192.168.192.2:20183', 'run-id=p0etest', 'deployment-mode=standalone',
+    'endpoint=192.168.192.2:20183', 'run-id=' . $runId, 'deployment-mode=standalone',
     'deployment-mode=multi-tenant', 'port=20190', 'port=20186', 'http-port=20190',
-    'docs-port=20186', 'compose-project=peanut-p0e-p0etest', 'browser-session=p0e-p0etest',
+    'docs-port=20186', 'compose-project=peanut-p0e-' . $runId, 'browser-session=p0e-' . $runId,
 ] as $required) {
     $expect(in_array($required, $resourcePairs, true), "plan lease resource is missing: {$required}");
 }
@@ -88,7 +90,7 @@ foreach ($expectedScenarios as $scenario) {
     $expect(in_array($database, $resourcePairs, true), "exact scenario database is missing: {$scenario}");
 }
 $expect(!in_array('mysql-db=peanut_admin_development', $resourcePairs, true), 'persistent development database entered the claim');
-$expect(str_contains((string)($plan['lease_proof_dir'] ?? ''), '/peanut-admin-resource-leases/leases/p0e-plan-test'), 'lease proof does not bind the active common-dir lease');
+$expect(str_contains((string)($plan['lease_proof_dir'] ?? ''), '/peanut-admin-resource-leases/leases/p0e-runtime-' . $runId), 'lease proof does not bind the active common-dir lease');
 $expect(($plan['lease_proof_container_path'] ?? null) === '/run/peanut-admin/resource-lease', 'container lease proof path changed');
 
 $bad = $arguments;
