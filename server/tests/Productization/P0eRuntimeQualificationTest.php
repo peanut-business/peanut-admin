@@ -108,6 +108,8 @@ $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease v
 $expect(str_contains($runnerSource, 'read_only: true'), 'container lease proof is not read-only');
 $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database refusal is missing');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
+$expect(str_contains($runnerSource, 'core.excludesFile'), 'create-app does not exclude only the lease-owned runtime evidence');
+$expect(str_contains($runnerSource, ':(exclude)'), 'resume cleanliness does not exclude only the lease-owned runtime evidence');
 $expect(str_contains($browserSource, 'snapshot'), 'browser runner does not capture Playwright snapshots');
 
 echo "P0E-RUNTIME-QUALIFICATION-CONTRACT-001 passed\n";

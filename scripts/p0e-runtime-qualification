@@ -158,7 +158,7 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     return fixture, registry, registered
 
 
-def validate_candidate(candidate: str, require_clean: bool) -> tuple[str, str]:
+def validate_candidate(candidate: str, require_clean: bool, allowed_output: Path | None = None) -> tuple[str, str]:
     if not re.fullmatch(r"[0-9a-f]{40}", candidate):
         fail("candidate must be an exact lowercase 40-hex commit")
     resolved = git("rev-parse", f"{candidate}^{{commit}}")
@@ -166,8 +166,16 @@ def validate_candidate(candidate: str, require_clean: bool) -> tuple[str, str]:
     if resolved != candidate or head != candidate:
         fail(f"worktree HEAD {head} is not fixed candidate {candidate}")
     tree = git("rev-parse", f"{candidate}^{{tree}}")
-    if require_clean and git("status", "--porcelain"):
-        fail("fixed candidate worktree is not clean")
+    if require_clean:
+        status_arguments = ["status", "--porcelain=v1", "--untracked-files=all"]
+        if allowed_output is not None:
+            try:
+                relative_output = allowed_output.relative_to(ROOT)
+            except ValueError:
+                fail("allowed runtime output must be within the candidate worktree")
+            status_arguments.extend(["--", ".", f":(exclude){relative_output.as_posix()}/**"])
+        if git(*status_arguments):
+            fail("fixed candidate worktree is not clean")
     return head, tree
 
 
@@ -199,7 +207,6 @@ def database_names(fixture: dict[str, Any], run_id: str) -> dict[str, str]:
 
 def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
     fixture, registry, _ = validate_fixture()
-    _, tree = validate_candidate(args.candidate, require_clean=require_clean)
     names = database_names(fixture, args.run_id)
     paths = {
         "output-dir": str(absolute_path(args.output_dir, "output-dir", args.run_id)),
@@ -213,6 +220,11 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
     }
     if paths != expected_paths:
         fail(f"output/backup/cache paths must equal the fixed lease proof contract: {expected_paths}")
+    _, tree = validate_candidate(
+        args.candidate,
+        require_clean=require_clean,
+        allowed_output=Path(paths["output-dir"]),
+    )
     ports = [args.http_port, args.docs_port]
     if len(set(ports)) != 2 or any(port < 1024 or port > 65535 for port in ports):
         fail("http/docs ports must be distinct explicit non-privileged ports")
@@ -542,10 +554,19 @@ class Runner:
 
     def generated_application(self) -> None:
         log = self.group_log("generated-application")
+        create_app_excludes = self.cache / "create-app-git-excludes"
+        create_app_excludes.write_text(
+            f"/{self.output.relative_to(ROOT).as_posix()}/\n",
+            encoding="utf-8",
+        )
         command([
             "php", "scripts/create-app", "--name=P0E Qualification", "--slug=p0e-qualification",
             "--package=p0e/qualification", f"--target={self.generated}",
-        ], log=log)
+        ], env={
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "core.excludesFile",
+            "GIT_CONFIG_VALUE_0": str(create_app_excludes),
+        }, log=log)
         composer_env = {"COMPOSER_CACHE_DIR": str(self.cache / "composer")}
         command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=self.generated / "server", env=composer_env, log=log)
         command(["php", "-r", "require 'vendor/autoload.php'; echo 'autoload=ok\\n';"], cwd=self.generated / "server", log=log)

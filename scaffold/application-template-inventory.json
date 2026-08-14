@@ -91,7 +91,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "daafbd13199c6cef632e842400214c10862e331664f82b5db7c589e7618d23bb"
+            "source_sha256": "a822d05eccaed1b7169c1153eaabb61885fb1b388c8f08088002ff2cd51beecf"
         },
         {
             "path": "AGENTS.md",
