@@ -9300,11 +9300,10 @@
         {
             "path": "web/.claude/launch.json",
             "target": "web/.claude/launch.json",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "aee5604b4d4ade0beee1c775f34cd27bf739a8bc497c6e3dc7277035e741f79a"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "web/.env.development",
