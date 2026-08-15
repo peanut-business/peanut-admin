@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "main",
-    "commit": "f0b2b81acd792b05404e0e4897ec61e85c131041",
+    "branch": "feat/v1.1.5-production-seeder",
+    "commit": "b6495f90b713f2483de32006d529c168ca656d0f",
     "reviewed_at": "2026-08-15"
   },
   "overall": {
     "id": "PA-DELIVERY-001",
-    "status": "verified",
-    "summary": "Peanut Admin v1.1.3 已以 main@f0b2b81acd792b05404e0e4897ec61e85c131041（tree a9051b12703bfe3b63746680e0279a0193aa056c）正式发布；Release 下游消费与登记生产升级、54 条迁移、登录/API/核心页/TLS smoke 均通过，状态为 production-demonstrated。"
+    "status": "in_progress",
+    "summary": "Peanut Admin v1.1.5 生产镜像与演示数据命令修复已进入发布准备；scaffold v1.1.8 不可变身份、最终 P0-E、dev/main、Tag、GitHub Release 与生产验证尚未完成。"
   },
   "capabilities": [
     {
@@ -249,32 +249,15 @@
       "id": "PA-DELIVERY-002",
       "name": "当前能力进入正式发布分支",
       "area": "release",
-      "status": "verified",
-      "summary": "v1.1.3 已完成 dev/main、annotated tag、GitHub Release、正式 Release 独立应用消费、配对生产备份、50→54 迁移和最低登录/API/核心页/TLS smoke，达到 production-demonstrated。",
+      "status": "in_progress",
+      "summary": "v1.1.5 已完成生产镜像与 seeder 源码修复，正在准备 scaffold v1.1.8 和发布元数据；最终 P0-E、合入、Tag/Release 与生产 smoke 尚未执行。",
       "acceptance": [
         "P0-E 最终生成和升级运行时 Gate 全部通过",
         "dev 到 main 的固定候选身份和 CI 完整",
         "Tag、GitHub Release、发布说明和能力快照一致",
         "生产升级完成备份、迁移和最低 smoke"
       ],
-      "evidence": [
-        {
-          "kind": "tag",
-          "ref": "v1.1.3"
-        },
-        {
-          "kind": "release",
-          "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.3"
-        },
-        {
-          "kind": "pull_request",
-          "ref": "https://github.com/peanut-business/peanut-admin/pull/136"
-        },
-        {
-          "kind": "report",
-          "ref": "docs/product-status/releases/v1.1.3.json"
-        }
-      ],
+      "evidence": [],
       "dependencies": ["PA-P0E-002", "PA-P0E-003"]
     },
     {

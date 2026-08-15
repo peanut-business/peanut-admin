@@ -1,6 +1,6 @@
 # Peanut Admin Third-Party Notices
 
-Generated for Peanut Admin 1.1.4 on 2026-08-15.
+Generated for Peanut Admin 1.1.5 on 2026-08-15.
 
 Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. All rights reserved. Third-party components remain governed by their own licenses. Nothing in the Peanut Admin proprietary license restricts rights granted by those third-party licenses.
 

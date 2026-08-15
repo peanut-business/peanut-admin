@@ -3,6 +3,22 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [1.1.5] - 2026-08-15
+
+### Fixed
+
+- The production PHP image now includes the executable `scripts/seed-demo-data`
+  command at the application root.
+- Demo seeding uses unique native PDO placeholders for every prepared statement,
+  including separate insert and update timestamps and balance mirrors.
+
+### Changed
+
+- Scaffold `v1.1.8` reseals the managed production Dockerfile while preserving
+  the demo seeder as app-owned application code.
+- The release keeps 54 migrations and the existing public Core package versions;
+  no prebuilt production image or new public package is published.
+
 ## [1.1.4] - 2026-08-15
 
 ### Added
@@ -142,6 +158,8 @@ and the two public core packages have independent version histories.
 - Real SMS, payment and WeChat/OAuth production availability still depends on
   deployment-specific credentials, platform registration and a low-risk smoke.
 
+[1.1.5]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5
+[1.1.4]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.4
 [1.1.3]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.3
 [1.1.0]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0
 [1.0.0]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0

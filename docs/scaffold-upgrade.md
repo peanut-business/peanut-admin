@@ -38,6 +38,8 @@ create-app，再逐字验证完整 managed 生成树。
   app-owned 字节不变。
 - `v1.1.7`：保留 `v1.1.6` Runtime 行为，重新封存当前产品版本与法律 inventory 的
   managed artifact；既有 scaffold identity 均保持不变。
+- `v1.1.8`：更新受管生产 Dockerfile，将 app-owned `scripts/seed-demo-data` 安装进 PHP
+  镜像并设为可执行；升级器仍保留既有应用自己的 seeder 字节。
 
 历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
 schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没有静默覆盖历史证据。
@@ -48,7 +50,7 @@ schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没�
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
   --from-manifest=/absolute/path/to/scaffold/releases/v1.1.5/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.7/scaffold-manifest.json
+  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.8/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json

@@ -113,7 +113,7 @@ createApplicationExpect(is_string($systemTemporary), 'system temporary directory
 $temporary = $systemTemporary . '/peanut-create-app-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0775, true);
 $inventoryPath = $root . '/scaffold/application-template-inventory.json';
-$releasePath = $root . '/scaffold/releases/v1.1.7/scaffold-manifest.json';
+$releasePath = $root . '/scaffold/releases/v1.1.8/scaffold-manifest.json';
 $identity = ['commit' => str_repeat('a', 40), 'tree' => str_repeat('b', 40)];
 
 try {
@@ -147,9 +147,9 @@ try {
         'generated application manifest must carry the default application version contract'
     );
     createApplicationExpect(
-        ($release['version'] ?? null) === '1.1.7'
+        ($release['version'] ?? null) === '1.1.8'
             && (json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['application']['version'] ?? null) === '0.1.0',
-        'scaffold v1.1.7 must expose the independent default application version'
+        'scaffold v1.1.8 must expose the independent default application version'
     );
 
     createApplicationExpect($manifestOne === $manifestTwo, 'same template identity and parameters must produce the same manifest');
@@ -226,6 +226,12 @@ try {
     createApplicationExpect(
         str_contains($generatedProductionDockerfile, 'COPY resources/project-resources.json resources/project-resources.json'),
         'production PHP image must include the application resource registry consumed by the database environment guard'
+    );
+    createApplicationExpect(
+        str_contains($generatedProductionDockerfile, 'COPY scripts/seed-demo-data scripts/seed-demo-data')
+            && str_contains($generatedProductionDockerfile, 'chmod +x server/think scripts/seed-demo-data /usr/local/bin/peanut-php-entrypoint')
+            && is_executable($first . '/scripts/seed-demo-data'),
+        'production PHP image must install the executable app-owned demo seeder'
     );
     $generatedModulesConfig = (string)file_get_contents($first . '/server/config/modules.php');
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
