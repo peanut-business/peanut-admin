@@ -156,7 +156,7 @@
             "owner": "scaffold",
             "transform": "release-metadata",
             "mode": 420,
-            "source_sha256": "518cacb548e48534732b41b2f1bad9d0719153114f57b2a97712c84df339b896"
+            "source_sha256": "0e15fd6028b5cf6503f36f9eabadb5e632125c6b1c8f37b0993721f29af8f90d"
         },
         {
             "path": "RELEASE_SBOM.spdx.json",
