@@ -714,7 +714,7 @@ PHP;
     private function thirdPartyNotices(string $content, array $parameters): string
     {
         $content = $this->textTransform($content, $parameters, 'THIRD_PARTY_NOTICES.md');
-        $content = str_replace(' 1.1.3 on 2026-08-15', ' generated application baseline', $content);
+        $content = str_replace(' 1.1.4 on 2026-08-15', ' generated application baseline', $content);
         $content = preg_replace('/Copyright \(c\) 2026 花生科技\. All rights reserved\./', 'Copyright holder: application owner. All rights reserved.', $content) ?? $content;
         return $content;
     }

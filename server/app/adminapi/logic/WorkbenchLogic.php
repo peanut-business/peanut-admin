@@ -26,7 +26,7 @@ class WorkbenchLogic extends BaseLogic
     {
         $website = self::websiteService()->get();
         return [
-            'version' => (string) config('project.version', '1.1.3'),
+            'version' => (string) config('project.version', '1.1.4'),
             'website' => $website['official_url'],
             'name'    => $website['name'],
             'based'   => (string) config(

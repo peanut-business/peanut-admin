@@ -169,7 +169,7 @@ foreach (inventoryGitFiles($root) as $path) {
 
 $inventory = [
     'schema_version' => 2,
-    'template_version' => '1.1.6',
+    'template_version' => '1.1.7',
     'protocol' => 'peanut.create-app-inventory.v2',
     'application' => ['version' => '0.1.0'],
     'variables' => ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],

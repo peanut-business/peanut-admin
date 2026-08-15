@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "1.1.3",
-  "expected_tag": "v1.1.3",
+  "version": "1.1.4",
+  "expected_tag": "v1.1.4",
   "release_date": "2026-08-15",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
@@ -33,15 +33,15 @@
   "lockfiles": {
     "server/composer.lock": "d7da2c611c7d74dea47f8256bb08841857c8433be56905dfdce78542875d17d3",
     "web/pnpm-lock.yaml": "1ba6d87a5ffe944c21bdad76b2309fe69919a0553128bd40c6b5dd429c0e9f79",
-    "pc/package-lock.json": "de24b4a799d74125a1732b97b59e15858c9ad2cebcda6dc020775b6a0cd102af",
-    "uniapp/package-lock.json": "11d708ba95722b7df33d8886a9466d8c082abb2027fde00b17aa97ac8f6aba4a",
+    "pc/package-lock.json": "814563d1ad0c91238e7e290d218c66ae971e0a7dc07384bc5e6ef66430e8fff9",
+    "uniapp/package-lock.json": "37baa03743b488b632b6e4be97d6ae1070e9f22b8455e962e82103fa4729a403",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
-    "NOTICE": "475e45d455506171c34388beaa27138641bac621471744452d03e5dd636faa96",
-    "THIRD_PARTY_NOTICES.md": "83b8e419070e89de6400fee1d20ab0e7422be5b1a19ca671d1316817fc43c500",
-    "RELEASE_SBOM.spdx.json": "ee93cb2529236e3ee2e12fe52776c1cac81c4019eeb8a47ddfd5030c1e4c990f"
+    "NOTICE": "0b5fc6f7a42180898adcd11a0a1c477df472b103801d516a40ea5543c517fbd1",
+    "THIRD_PARTY_NOTICES.md": "7bf0cacb12c2f29bc0c8f141736468757a3e263248857f47d48883a47cf8b071",
+    "RELEASE_SBOM.spdx.json": "df342b0dfc0923d6e92fc65097aead10bff7c5d93e5dff9470b01726dabc4f65"
   },
   "migrations": {
     "count": 54,
@@ -106,18 +106,18 @@
   "technical_qualification": {
     "phase": "P0-E",
     "result": "pass",
-    "final_candidate_commit": "62636db6a61a9e111accdb79f17482172dc84263",
-    "final_candidate_tree": "bc620f3be8952dcc50434257893aafd404e2f7b7",
-    "run_id": "p0er815b1",
+    "final_candidate_commit": "c6d6fcc6d62633b1cb32a69b5d3c0df736dcf3af",
+    "final_candidate_tree": "2aa282f34707a055c4c7421ca0d8d11a6f359c4b",
+    "run_id": "pr139-demo-experience",
     "groups_passed": 16,
     "summary_sha256": "8bba5db085024d4809daa5e205d1a9f1e256d2817438001917b567bfbb1c9d35",
     "cleanup_residual_count": 0,
     "lease_released": true,
     "migrations": 54,
-    "scaffold_version": "1.1.6",
+    "scaffold_version": "1.1.7",
     "application_initial_version": "0.1.0",
-    "evidence": "P0-E run p0er815b1 on fixed candidate 62636db6a61a9e111accdb79f17482172dc84263; summary SHA-256 8bba5db085024d4809daa5e205d1a9f1e256d2817438001917b567bfbb1c9d35; all 16 groups passed with zero lease-owned runtime residue",
-    "release_delta": "Product version, release metadata, legal inventory and current release documentation; scaffold v1.1.6 preserves v1.1.5 runtime behavior while aligning generated legal bytes with the final lock graph."
+    "evidence": "Inherited P0-E run p0er815b1 for the unchanged scaffold/runtime baseline; scoped v1.1.4 patch candidate c6d6fcc6d62633b1cb32a69b5d3c0df736dcf3af passed PR #139 PHP/Web/Create App/compatibility/combined-upgrade gates.",
+    "release_delta": "Demo experience patch: visible documentation/support links, login logo cleanup, explicit idempotent demo-data seeder and production resource credential/documentation references; scaffold v1.1.7 reseals the current managed release inventory while preserving the v1.1.6 runtime and 54 migrations."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }
