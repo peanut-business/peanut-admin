@@ -218,8 +218,9 @@ try{
 
     $currentIdentity=json_decode((string)file_get_contents($currentRelease),true,512,JSON_THROW_ON_ERROR)['release'];
     $runtimeSource=$temporary.'/runtime-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$runtimeSource]);scaffoldRun(['git','checkout','--quiet','--detach',$currentIdentity['source_commit']],$runtimeSource);
-    $runtimeApp=$temporary.'/runtime-app';scaffoldFreshAdopted($runtimeSource,$currentRelease,$runtimeApp);$runtimeBefore=scaffoldFileTree($runtimeApp);
+    $runtimeApp=$temporary.'/runtime-app';scaffoldFreshAdopted($runtimeSource,$currentRelease,$runtimeApp);
     $runtimeAppOwnedPath='server/config/peanut.php';file_put_contents($runtimeApp.'/'.$runtimeAppOwnedPath,(string)file_get_contents($runtimeApp.'/'.$runtimeAppOwnedPath)."\n// v1.1.5 preservation proof\n");$runtimeAppOwnedDigest=hash_file('sha256',$runtimeApp.'/'.$runtimeAppOwnedPath);
+    $runtimeBefore=scaffoldFileTree($runtimeApp);
     $runtimePlan=$runner->preflight($runtimeApp,$currentRelease,$runtimeRelease);scaffoldExpect($runtimePlan['status']==='ready'&&$runtimePlan['summary']['conflicts']===0,'v1.1.4 to v1.1.5 plan must be ready');
     $runtimeAutomatic=[];foreach($runtimePlan['actions']as$action)if(in_array($action['action'],['create','delete','replace','regenerate'],true))$runtimeAutomatic[$action['path']]=$action['action'];ksort($runtimeAutomatic,SORT_STRING);
     scaffoldExpect($runtimeAutomatic===['deploy/docker-compose.prod.yml'=>'replace','deploy/docker/nginx-select-admin.sh'=>'create','deploy/docker/production.Dockerfile'=>'replace','scripts/check-local-runtime-contract'=>'replace'],'v1.1.5 must contain only the production admin runtime compatibility actions');
