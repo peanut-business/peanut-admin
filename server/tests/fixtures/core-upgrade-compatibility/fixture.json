@@ -37,10 +37,10 @@
     },
     "expected": {
       "managed_tree_sha256": "62373bcc3727c48b98b8bfe0fbfcc2484fceccda737a21c0296f6c011f9d4f11",
-      "app_owned_tree_sha256": "5d6af91144f391bf24fe4634c319040b35b095682d66f53fbb295ce37a55eff5",
-      "application_file_count": 1000,
-      "application_source_sha256": "fe96f5b673d1db5335e68b19dc1f5c2b99888b2349deab7059274b34305275f7",
-      "app_owned_with_probe_sha256": "d825fb3792f1b35c4375f9b9279882b3462635702e476845a716a97ab0bb86d6"
+      "app_owned_tree_sha256": "77aaaa95f6e1d84a1c9dbab6af88a1bb97ec162c86604cf93da9bc1449ee94b5",
+      "application_file_count": 1002,
+      "application_source_sha256": "4517a60353ea177fd692c541ffa79539e6910afcf6d26059f36f655c5525824d",
+      "app_owned_with_probe_sha256": "d0ff474423f19cae435e3496ed84646f36f15b0ac49fa5b4f52d15bb88df4577"
     }
   },
   "legacy_pre_alpha5": {

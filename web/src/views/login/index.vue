@@ -6,7 +6,6 @@
         :src="brandStore.website.web_logo"
         style="width: 32px; height: 32px"
       />
-      <div class="logo-text">{{ brandStore.website.name }}</div>
     </div>
     <LoginBanner />
     <div class="content">
@@ -63,13 +62,6 @@
     z-index: 1;
     display: inline-flex;
     align-items: center;
-
-    &-text {
-      margin-right: 4px;
-      margin-left: 4px;
-      color: var(--color-fill-1);
-      font-size: 20px;
-    }
   }
 </style>
 
