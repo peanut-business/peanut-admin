@@ -171,7 +171,7 @@
             "owner": "scaffold",
             "transform": "readme",
             "mode": 420,
-            "source_sha256": "bc88986cc0c565e73bf9ec63b97ceee28612342eaf33ef70ac1ed2db943fe39a"
+            "source_sha256": "691fa2b8f7c11010f8176562c24268cac2c67608a38dbe452162754d105e43b6"
         },
         {
             "path": "RELEASE_METADATA.json",

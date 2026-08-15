@@ -4,7 +4,7 @@ Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的
 当前源码是 `2.0.0` fresh-only 开发候选，同一代码线支持单实例（`standalone`）和多租户
 （`multi-tenant`）部署，覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
 
-[在线应用](https://peanut-admin.007345.xyz) ·
+[1.x 历史演示应用](https://peanut-admin.007345.xyz) ·
 [文档中心](https://peanut-admin-doc.007345.xyz) ·
 [1.x 历史 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5) ·
 [更新日志](CHANGELOG.md)
@@ -100,9 +100,9 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 
 | 入口 | 地址 |
 | --- | --- |
-| 应用首页 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
-| PC 客户端 | https://peanut-admin.007345.xyz/pc/ |
-| H5 客户端 | https://peanut-admin.007345.xyz/mobile/ |
+| 1.x 历史演示应用 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
+| 1.x 历史演示应用 / PC | https://peanut-admin.007345.xyz/pc/ |
+| 1.x 历史演示应用 / H5 | https://peanut-admin.007345.xyz/mobile/ |
 | 官方文档 | https://peanut-admin-doc.007345.xyz |
 
 生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。首次部署、
