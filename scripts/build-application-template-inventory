@@ -97,6 +97,9 @@ function classification(string $path): string
     if ($path === 'scripts/scaffold-upgrade' || str_starts_with($path, 'scripts/scaffold-runtime/')) {
         return 'managed';
     }
+    if ($path === 'scripts/seed-demo-data') {
+        return 'app-owned';
+    }
     if (str_starts_with($path, 'docs-site/')
         || str_starts_with($path, 'server/app/') || str_starts_with($path, 'server/database/')
         || str_starts_with($path, 'server/tests/') || str_starts_with($path, 'web/src/views/')

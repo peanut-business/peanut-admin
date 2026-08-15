@@ -20,6 +20,24 @@ $expect(($registry['authority']['source'] ?? null) === 'this versioned file', 'p
 $expect(!array_key_exists('company_allocation_evidence', $registry['authority'] ?? []), 'project registry still depends on CompanyOS allocation evidence');
 $expect(!str_contains($registryJson, 'CompanyOS') && !str_contains($registryJson, 'company-os'), 'project registry still references CompanyOS');
 
+$docsDomains = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-docs-domain'
+));
+$expect(count($docsDomains) === 1, 'production documentation domain must be registered exactly once as an external service');
+$docsDomain = $docsDomains[0];
+$expect(($docsDomain['environments'] ?? null) === ['production'], 'documentation domain must remain production-only');
+$expect(($docsDomain['host'] ?? null) === 'peanut-admin-doc.007345.xyz', 'documentation domain host changed unexpectedly');
+$expect(($docsDomain['port'] ?? null) === 443, 'documentation domain port changed unexpectedly');
+$expect(($docsDomain['service_type'] ?? null) === 'Cloudflare Pages documentation site', 'documentation service type changed unexpectedly');
+$expect(($docsDomain['fallback'] ?? null) === 'none', 'documentation domain must fail closed');
+$expect(!array_key_exists('deployment_resource_id', $docsDomain), 'documentation domain must not claim the application Docker deployment');
+$docsBackupMatches = array_values(array_filter(
+    $registry['resources']['backups'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-docs-domain'
+));
+$expect($docsBackupMatches === [], 'documentation domain must not be registered as a backup resource');
+
 $databases = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
     static fn (array $item): bool => in_array('development', $item['environments'] ?? [], true)

@@ -116,20 +116,29 @@
             <template #header>{{ $t('workplace.support.title') }}</template>
             <el-row :gutter="16" class="support-grid">
               <el-col
-                v-for="item in workbench.support"
+                v-for="item in supportItems"
                 :key="item.title"
                 :xs="24"
                 :sm="12"
               >
-                <div class="support-item">
+                <component
+                  :is="item.url ? 'a' : 'div'"
+                  class="support-item"
+                  :href="item.url || undefined"
+                  :target="item.url ? '_blank' : undefined"
+                  :rel="item.url ? 'noopener noreferrer' : undefined"
+                >
                   <el-avatar :size="48" :src="item.image">
                     <el-icon><QuestionFilled /></el-icon>
                   </el-avatar>
-                  <div>
+                  <div class="support-content">
                     <div class="support-title">{{ item.title }}</div>
                     <div class="support-desc">{{ item.desc }}</div>
+                    <div v-if="item.url" class="support-url">{{
+                      item.url
+                    }}</div>
                   </div>
-                </div>
+                </component>
               </el-col>
             </el-row>
           </el-card>
@@ -178,6 +187,13 @@
     () =>
       Boolean(workbench.version.channel.website) ||
       Boolean(workbench.version.channel.github)
+  );
+
+  const supportItems = computed(() =>
+    workbench.support.map((item) => ({
+      ...item,
+      url: (item as typeof item & { url?: string }).url || '',
+    }))
   );
 
   const metrics = computed(() => [
@@ -334,11 +350,28 @@
     padding: 16px;
     background: var(--el-fill-color-light);
     border-radius: var(--el-border-radius-base);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a.support-item:hover {
+    color: var(--el-color-primary);
+  }
+
+  .support-content {
+    min-width: 0;
   }
 
   .support-title {
     margin-bottom: 6px;
     color: var(--el-text-color-primary);
     font-weight: 500;
+  }
+
+  .support-url {
+    margin-top: 6px;
+    color: var(--el-color-primary);
+    font-size: 12px;
+    overflow-wrap: anywhere;
   }
 </style>
