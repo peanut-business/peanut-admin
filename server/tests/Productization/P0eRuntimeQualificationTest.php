@@ -31,13 +31,13 @@ $expect(($fixture['baselines'] ?? null) === ['v1.0.0', 'v1.1.0'], 'P0-E forward 
 $targetRelease = $fixture['target_release'] ?? null;
 $expect(is_array($targetRelease), 'P0-E target scaffold release is missing');
 $expect($targetRelease === [
-    'version' => '1.1.8',
-    'source_commit' => '1c8ff0ba73b263b679be8ffcd7827e65838c4f0a',
-    'source_tree' => 'dc8b73382e42cac7c3f026f5df35c4f9521f9577',
-    'manifest_sha256' => '6fa271c35268113bbf9f85ff8d19aabb5e341b863e8243552b1ba1c8a73f0f12',
-    'inventory_sha256' => 'aa6dbc6268d6d5caad0bf07d04852a00e360f7c2e9ba613f7c16072eee1daa80',
-    'managed_tree_sha256' => 'c2d00b7ba821151220baa2f93efb386143a636114427b77189b06c3ebc5b8ffe',
-    'file_count' => 275,
+    'version' => '1.1.9',
+    'source_commit' => '85ab60853c14e3635ff5f018d69ce545f725ba70',
+    'source_tree' => '183d5c50b8a25fdf1d4206569d893e8a254b004a',
+    'manifest_sha256' => 'a3d38ae128601151de639740d4ad755f1c4f7fabab5ffda160472b17ad096cfc',
+    'inventory_sha256' => '1dee2667bee9457ee62890bcdeb12d235c17a5e9110a8dd6cb84a1b1667b3a8c',
+    'managed_tree_sha256' => 'bdcf0dda546771e5f5a2f68ad6fbaf2320b03ba6d5501582c27c5b571d93bc0e',
+    'file_count' => 276,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
     'default_uniapp_version_code' => '10',
@@ -47,7 +47,7 @@ $expect(is_array($legacy), 'P0-E legacy application fixture is missing');
 $expect(($legacy['source_commit'] ?? null) === '14412607ba36f1816e39f7117f77eea4a9e7419e', 'legacy application commit changed');
 $expect(($legacy['source_tree'] ?? null) === '172865d8b8057caa8a017ac591618cd914af30a5', 'legacy application tree changed');
 $expect(
-    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5', '1.1.6', '1.1.7', '1.1.8'],
+    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5', '1.1.6', '1.1.7', '1.1.8', '1.1.9'],
     'legacy application release chain changed'
 );
 $expect(count($legacy['customizations'] ?? []) === 2, 'legacy application must retain two real app-owned customizations');

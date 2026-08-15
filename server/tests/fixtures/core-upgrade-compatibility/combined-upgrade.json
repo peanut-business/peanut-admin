@@ -7,7 +7,7 @@
     "slug": "combined-upgrade-fixture",
     "package_identity": "peanut-fixtures/combined-upgrade-fixture",
     "initial_version": "1.0.0",
-    "target_version": "1.1.8"
+    "target_version": "1.1.9"
   },
   "release_chain": [
     {
@@ -99,6 +99,15 @@
       "inventory_sha256": "aa6dbc6268d6d5caad0bf07d04852a00e360f7c2e9ba613f7c16072eee1daa80",
       "managed_tree_sha256": "c2d00b7ba821151220baa2f93efb386143a636114427b77189b06c3ebc5b8ffe",
       "file_count": 275
+    },
+    {
+      "version": "1.1.9",
+      "manifest_sha256": "a3d38ae128601151de639740d4ad755f1c4f7fabab5ffda160472b17ad096cfc",
+      "source_commit": "85ab60853c14e3635ff5f018d69ce545f725ba70",
+      "source_tree": "183d5c50b8a25fdf1d4206569d893e8a254b004a",
+      "inventory_sha256": "1dee2667bee9457ee62890bcdeb12d235c17a5e9110a8dd6cb84a1b1667b3a8c",
+      "managed_tree_sha256": "bdcf0dda546771e5f5a2f68ad6fbaf2320b03ba6d5501582c27c5b571d93bc0e",
+      "file_count": 276
     }
   ],
   "transitions": [
@@ -153,6 +162,12 @@
     {
       "from": "1.1.7",
       "to": "1.1.8",
+      "compatibility": "stable-public-api",
+      "actions": []
+    },
+    {
+      "from": "1.1.8",
+      "to": "1.1.9",
       "compatibility": "stable-public-api",
       "actions": []
     }
