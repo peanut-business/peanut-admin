@@ -10,7 +10,7 @@
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "Peanut Admin v1.1.5 已把演示数据实现纳入 managed 升级边界；scaffold v1.1.9 不可变身份、最终 P0-E、dev/main、Tag、GitHub Release 与生产验证尚未完成。"
+    "summary": "Peanut Admin v1.1.5 与 scaffold v1.1.9 已通过最终 P0-E 16 组资格；尚需最新 head CI、dev/main、Tag、GitHub Release 与生产升级验证。"
   },
   "capabilities": [
     {
@@ -210,9 +210,9 @@
       "name": "最终生成应用运行时验收",
       "area": "qualification",
       "status": "verified",
-      "summary": "固定候选生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。",
+      "summary": "固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。",
       "acceptance": [
-        "从固定 dev 候选生成全新应用并核对 scaffold v1.1.6 模板身份",
+        "从固定 dev 候选生成全新应用并核对 scaffold v1.1.9 模板身份",
         "Composer 与 npm 干净安装通过",
         "登记数据库上的空库安装、迁移 current 与清理通过",
         "API、管理端和代表客户端能够启动",
@@ -220,7 +220,8 @@
       ],
       "evidence": [
         {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"},
-        {"kind": "git", "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"}
+        {"kind": "git", "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"},
+        {"kind": "git", "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"}
       ],
       "dependencies": ["PA-P0E-001", "PA-SCAFFOLD-001"],
       "paths": ["docs/p0e-runtime-qualification.md"]
@@ -230,7 +231,7 @@
       "name": "最终升级应用运行时验收",
       "area": "qualification",
       "status": "verified",
-      "summary": "固定旧应用完成六段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。",
+      "summary": "固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。",
       "acceptance": [
         "preflight、apply 与 verify 在固定旧应用上成功",
         "app-owned 业务源码逐字保持",
@@ -240,7 +241,8 @@
       ],
       "evidence": [
         {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"},
-        {"kind": "git", "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"}
+        {"kind": "git", "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"},
+        {"kind": "git", "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"}
       ],
       "dependencies": ["PA-SCAFFOLD-002", "PA-COMPAT-001", "PA-P0E-002"],
       "paths": ["scripts/scaffold-upgrade"]
@@ -250,14 +252,16 @@
       "name": "当前能力进入正式发布分支",
       "area": "release",
       "status": "in_progress",
-      "summary": "v1.1.5 已完成受管 seeder 与生产镜像修复，正在准备 scaffold v1.1.9 和发布元数据；最终 P0-E、合入、Tag/Release 与生产 smoke 尚未执行。",
+      "summary": "v1.1.5 与 scaffold v1.1.9 已通过 P0-E 16/16；正在等待最新 head CI，之后依次合入 dev/main、Tag/Release、生产升级与 smoke。",
       "acceptance": [
         "P0-E 最终生成和升级运行时 Gate 全部通过",
         "dev 到 main 的固定候选身份和 CI 完整",
         "Tag、GitHub Release、发布说明和能力快照一致",
         "生产升级完成备份、迁移和最低 smoke"
       ],
-      "evidence": [],
+      "evidence": [
+        {"kind": "git", "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"}
+      ],
       "dependencies": ["PA-P0E-002", "PA-P0E-003"]
     },
     {
