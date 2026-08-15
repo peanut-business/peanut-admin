@@ -106,17 +106,17 @@
   "technical_qualification": {
     "phase": "P0-E",
     "result": "pass",
-    "final_candidate_commit": "c6d6fcc6d62633b1cb32a69b5d3c0df736dcf3af",
-    "final_candidate_tree": "2aa282f34707a055c4c7421ca0d8d11a6f359c4b",
-    "run_id": "pr139-demo-experience",
+    "final_candidate_commit": "42496d996de715b9a3195447aeeafd0748b83095",
+    "final_candidate_tree": "18e1132a42cc185df81786b410b725b6969b61cb",
+    "run_id": "p0ev117a1",
     "groups_passed": 16,
-    "summary_sha256": "8bba5db085024d4809daa5e205d1a9f1e256d2817438001917b567bfbb1c9d35",
+    "summary_sha256": "7e8eef7bddf6c96bdf87537cbb753e6e7de13dff0c6c4887e93f68b14f83e460",
     "cleanup_residual_count": 0,
     "lease_released": true,
     "migrations": 54,
     "scaffold_version": "1.1.7",
     "application_initial_version": "0.1.0",
-    "evidence": "Inherited P0-E run p0er815b1 for the unchanged scaffold/runtime baseline; scoped v1.1.4 patch candidate c6d6fcc6d62633b1cb32a69b5d3c0df736dcf3af passed PR #139 PHP/Web/Create App/compatibility/combined-upgrade gates.",
+    "evidence": "P0-E run p0ev117a1 on fixed candidate 42496d996de715b9a3195447aeeafd0748b83095 passed all 16 groups for scaffold v1.1.7, including clean dependency builds, dual-mode fresh/forward runtime, full legacy application upgrade/recovery, Plugin lifecycle, Compose and four real-browser paths; cleanup residuals were zero and the lease was released.",
     "release_delta": "Demo experience patch: visible documentation/support links, login logo cleanup, explicit idempotent demo-data seeder and production resource credential/documentation references; scaffold v1.1.7 reseals the current managed release inventory while preserving the v1.1.6 runtime and 54 migrations."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
