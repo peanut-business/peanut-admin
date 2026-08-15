@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "1.1.7",
+    "template_version": "1.1.9",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -120,7 +120,7 @@
             "owner": "scaffold",
             "transform": "changelog",
             "mode": 420,
-            "source_sha256": "d7f570ecfde893ff416fe4903ba3ab6a62c6731657b134982b3e66a783fe3b23"
+            "source_sha256": "fcd1aae230a41f69e38991663bb233bc6e6a876df1a132aec258351d6005910a"
         },
         {
             "path": "LICENSE",
@@ -138,7 +138,7 @@
             "owner": "scaffold",
             "transform": "license",
             "mode": 420,
-            "source_sha256": "0b5fc6f7a42180898adcd11a0a1c477df472b103801d516a40ea5543c517fbd1"
+            "source_sha256": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8"
         },
         {
             "path": "README.md",
@@ -147,7 +147,7 @@
             "owner": "scaffold",
             "transform": "readme",
             "mode": 420,
-            "source_sha256": "17cc70f9d6fad7fbc186139997bdc84a282f068b75620ef76b5990546c228a62"
+            "source_sha256": "92c385699948003eba2f66968e042fca0155625e379a27a0d4745fe2677910d9"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -156,7 +156,7 @@
             "owner": "scaffold",
             "transform": "release-metadata",
             "mode": 420,
-            "source_sha256": "b15ccd333388d0367fb6fc3cae96a768461975907f279ae81515f3e0c9790234"
+            "source_sha256": "ccc9df2423e99a630397f1bff846ac5248465ba38198a7f18810a28bb66eba71"
         },
         {
             "path": "RELEASE_SBOM.spdx.json",
@@ -165,7 +165,7 @@
             "owner": "scaffold",
             "transform": "sbom",
             "mode": 420,
-            "source_sha256": "df342b0dfc0923d6e92fc65097aead10bff7c5d93e5dff9470b01726dabc4f65"
+            "source_sha256": "54648a99691185bbf1729b1467c755f6b9430653ebbc09f5a0173f34b7589123"
         },
         {
             "path": "THIRD_PARTY_NOTICES.md",
@@ -174,7 +174,7 @@
             "owner": "scaffold",
             "transform": "third-party-notices",
             "mode": 420,
-            "source_sha256": "7bf0cacb12c2f29bc0c8f141736468757a3e263248857f47d48883a47cf8b071"
+            "source_sha256": "8253b6ea0e26db948d3ad8441e58fd6affb7dbbad4b5dfb580e154394177c081"
         },
         {
             "path": "compose.yaml",
@@ -278,7 +278,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "1d58e531a2112f45d065ac1f312fec6ee90e75d4b3a92b6ba24772eccfefe0b7"
+            "source_sha256": "7dd544c3dc91c5cc1853d863374a3c5faf23eb466c6f519289d3082a11679381"
         },
         {
             "path": "deploy/local-stack.env.example",
@@ -401,7 +401,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "127ab278ce225b74b9e61a1f46c01a169efb4e025c23a3cfdabc7f446002aa26"
+            "source_sha256": "a9ad4d84bc9edb989521a66fdfcee28865f6d6b8954a82e8f03beedeb829e02c"
         },
         {
             "path": "docs-site/deployment.md",
@@ -464,7 +464,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ee68b2d92036900165fc00fb0095f6047e393e0a18db61aa090fcc4ff6546656"
+            "source_sha256": "8c8385151c30514e2f3a6e7b0b29dae0bcae88c64018ebf19ecdfaa4da104e87"
         },
         {
             "path": "docs-site/legal.md",
@@ -482,7 +482,7 @@
             "owner": "application",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "351e8c2fdc930a0c3a1d8b5336f14bfb8cf35e35757149cca675ba3d9894e127"
+            "source_sha256": "98277e5a22d1b77a9de00554212ce70627ffb6052f7c504382a1773d1ed0047d"
         },
         {
             "path": "docs-site/pnpm-lock.yaml",
@@ -3164,7 +3164,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "814563d1ad0c91238e7e290d218c66ae971e0a7dc07384bc5e6ef66430e8fff9"
+            "source_sha256": "616c37b8cd183657096c9722441aac2738a8f710c182cfb03c68f32660f31946"
         },
         {
             "path": "pc/package.json",
@@ -3173,7 +3173,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "2d62c3a68d41c649b3efcc01c400f9efe5ad03916f9b10b4f521e6eba82cc33f"
+            "source_sha256": "8e48b8a62a138ecbdc1f083e4227afd23494351ea238e624ac5fcd334a41b4fd"
         },
         {
             "path": "pc/pages/account/security.vue",
@@ -3687,7 +3687,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "6dcd54e7520ea0f5f4c49fd98df8a75e037091b847f5df438a8597fa491f5e85"
+            "source_sha256": "5b92ee9d3c7e239524609e1c96deede4295ae0b714cb6a13be5bbf812ac0d49a"
         },
         {
             "path": "scripts/select-legacy-pre-alpha5-fixture",
@@ -4320,7 +4320,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "d395c750c4c69bbacde9f94448a7a7276562d95785dca12bc6824049f0116d2c"
+            "source_sha256": "1dfcc3fd58d27a710948134c4de5ed433b796c041b2b3a2016787d4921d039ba"
         },
         {
             "path": "server/app/adminapi/logic/article/ArticleCateLogic.php",
@@ -5211,7 +5211,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "909cfc986cc558a85cc4e54255ee5e32b683f5158a58726bc2ab8e56491bf0fa"
+            "source_sha256": "77636c5890171025443a88eb33264d856b4920a55c55d4e4d77a14802dffdf1b"
         },
         {
             "path": "server/app/api/logic/LoginLogic.php",
@@ -7636,7 +7636,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "e8751b45cae06c0c094dda26a80eae99ce6a5d18da0f6218303498108836057c"
+            "source_sha256": "ef49b82e1ba61f1e891e74f5b669c99918b81c5287be5b68b82295bc094ff61e"
         },
         {
             "path": "server/config/route.php",
@@ -8213,6 +8213,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "6ab4b219402d6bc06727460d5481b43546f524289c39bfc0bb26753b5d5ea353"
+        },
+        {
+            "path": "server/database/seed-demo-data.php",
+            "target": "server/database/seed-demo-data.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "source_sha256": "aefb59103ab444bf3cae6887aa926c6fc3ba10ec55756fedbcb02145b064e17f"
         },
         {
             "path": "server/extend/.gitignore",
@@ -8811,7 +8820,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "0eeeaa7f28e3e79cebc5d6a45c494544e0ea4e81f5f9c73ab08f65abcfb9e334"
+            "source_sha256": "421b712009087c832d0d809fc027571625e2352f2b6a23dbd68926210b23b103"
         },
         {
             "path": "server/tests/Productization/FileMediaHostTest.php",
@@ -9324,7 +9333,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "37baa03743b488b632b6e4be97d6ae1070e9f22b8455e962e82103fa4729a403"
+            "source_sha256": "fceda8f31424e9051335cd2961a243df043c2a03e75db700811f3559c4bdb391"
         },
         {
             "path": "uniapp/package.json",
@@ -9333,7 +9342,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "e51de931f600b8e41eac5b493f91e2340e61d8ced5f4c776ac595280414a23b5"
+            "source_sha256": "eff209db33b27c17d6f759c3f59b9ddfde0c208390f31c4ab702777a7bcb9fd4"
         },
         {
             "path": "uniapp/packages/pages/404/404.vue",
@@ -10044,7 +10053,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "a2a465e98c44bc1d8989e8570bf33c66311b330ae8e581d76fd1b009713e2127"
+            "source_sha256": "7973960ebbd3aa980d3ea11ef30167fbb88b02b3779f9c183a42d1b6bb6966d3"
         },
         {
             "path": "web/pnpm-lock.yaml",

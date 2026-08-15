@@ -3,6 +3,25 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [1.1.5] - 2026-08-15
+
+### Fixed
+
+- The production PHP image now includes the managed
+  `server/database/seed-demo-data.php` implementation as the stable
+  `peanut-seed-demo-data` command; `scripts/seed-demo-data` remains a
+  source-level compatibility wrapper.
+- Demo seeding uses unique native PDO placeholders for every prepared statement,
+  including separate insert and update timestamps and balance mirrors.
+
+### Changed
+
+- Scaffold `v1.1.9` adds the demo seeder implementation to the managed upgrade
+  boundary, so applications created before the demo patch receive it during
+  scaffold upgrade without replacing an app-owned compatibility wrapper.
+- The release keeps 54 migrations and the existing public Core package versions;
+  no prebuilt production image or new public package is published.
+
 ## [1.1.4] - 2026-08-15
 
 ### Added
@@ -142,6 +161,8 @@ and the two public core packages have independent version histories.
 - Real SMS, payment and WeChat/OAuth production availability still depends on
   deployment-specific credentials, platform registration and a low-risk smoke.
 
+[1.1.5]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5
+[1.1.4]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.4
 [1.1.3]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.3
 [1.1.0]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0
 [1.0.0]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0

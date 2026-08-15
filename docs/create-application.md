@@ -43,15 +43,17 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 source-only 或 app-owned 演进无需伪造新的模板身份，而任何 managed 字节变化仍必须先形成
 新的不可变 scaffold release。
 
-当前 inventory 采用不可变 scaffold `v1.1.7` release。该 identity 只属于 scaffold 命名空间，
-不是 Peanut Admin 产品 Tag/Release；既有 scaffold identity 均保持不变。`v1.1.7`
-继承 `v1.1.5` 的双模式 Runtime 和 application version 合同，并让生成应用的法律 inventory
-与最终五份依赖 lock 一致。生产管理端 builder 在执行 Vite 前，
+当前 inventory 采用不可变 scaffold `v1.1.9` release。该 identity 只属于 scaffold 命名空间，
+不是 Peanut Admin 产品 Tag/Release；既有 scaffold identity 均保持不变。`v1.1.9`
+继承 `v1.1.8` 的双模式 Runtime、application version 与法律 inventory 合同，并把演示数据
+实现纳入 managed 升级边界。生产管理端 builder 在执行 Vite 前，
 把应用根目录的 `plugins.lock` 精确复制为 `/build/plugins.lock`；Plugin contribution resolver
 仍直接读取这份 lock，缺失或无效内容继续 fail-closed，不会回退到默认或忽略 Plugin 状态。
 生产镜像同时构建 Standalone 与 multi-tenant 管理端 bundle，并在容器启动时按
-`DEPLOYMENT_MODE` 选择；PHP 镜像携带应用自己的 `resources/project-resources.json`，供启动
-阶段数据库环境门禁读取。登记缺失或与显式部署目标不一致时仍 fail-closed。
+`DEPLOYMENT_MODE` 选择；PHP 镜像携带应用自己的 `resources/project-resources.json`，并把受管
+`server/database/seed-demo-data.php` 暴露为 `peanut-seed-demo-data`，供数据库环境门禁与显式
+演示初始化使用。根 `scripts/seed-demo-data` 仍是 app-owned 兼容入口；登记缺失或与显式部署
+目标不一致时仍 fail-closed。
 
 生成的 `.peanut/application-manifest.json` v2 还固定 `application.version`、参数、每个生成文件的 SHA-256、mode、分类、
 owner、managed/app-owned 树摘要与 managed baseline 路径。它是

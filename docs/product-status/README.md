@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**已验证**。Peanut Admin v1.1.3 已以 main@f0b2b81acd792b05404e0e4897ec61e85c131041（tree a9051b12703bfe3b63746680e0279a0193aa056c）正式发布；Release 下游消费与登记生产升级、54 条迁移、登录/API/核心页/TLS smoke 均通过，状态为 production-demonstrated。
+> 总体状态：**进行中**。Peanut Admin v1.1.5 与 scaffold v1.1.9 已通过最终 P0-E 16 组资格；尚需最新 head CI、dev/main、Tag、GitHub Release 与生产升级验证。
 >
-> 事实基线：`main@f0b2b81acd792b05404e0e4897ec61e85c131041`，复核日期：`2026-08-15`。
+> 事实基线：`feat/v1.1.5-production-seeder@b6495f90b713f2483de32006d529c168ca656d0f`，复核日期：`2026-08-15`。
 
 ### 已验证可用
 
@@ -45,9 +45,14 @@ php scripts/check-product-capability-ledger
 | `PA-SCAFFOLD-003` | 新应用 Plugin 空锁合同 | 已验证 | 正式生成应用使用有效空 plugins.lock，不再引用仅供源仓测试的 fixture。 |
 | `PA-COMPAT-001` | 公开核心包升级不要求应用源码重构 | 已验证 | 公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。 |
 | `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。 |
-| `PA-P0E-002` | 最终生成应用运行时验收 | 已验证 | 固定候选生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
-| `PA-P0E-003` | 最终升级应用运行时验收 | 已验证 | 固定旧应用完成六段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
-| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 已验证 | v1.1.3 已完成 dev/main、annotated tag、GitHub Release、正式 Release 独立应用消费、配对生产备份、50→54 迁移和最低登录/API/核心页/TLS smoke，达到 production-demonstrated。 |
+| `PA-P0E-002` | 最终生成应用运行时验收 | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
+| `PA-P0E-003` | 最终升级应用运行时验收 | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
+
+### 已实现或正在验收
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 进行中 | v1.1.5 与 scaffold v1.1.9 已通过 P0-E 16/16；正在等待最新 head CI，之后依次合入 dev/main、Tag/Release、生产升级与 smoke。 |
 
 ### 暂缓或范围外
 
