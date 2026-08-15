@@ -120,14 +120,22 @@ docker compose --profile bundled-db up -d --build
 
 ## 后续升级
 
-默认沿用服务器当前稳定发布分支。正式升级前先备份 MySQL 与 `php-storage` 卷。升级顺序固定为：拉取代码、构建新镜像、用新镜像迁移数据库，迁移成功后才切换运行容器：
+正式发布和运行时运维是两条不同路径。只有应用代码、依赖锁、数据库迁移、Compose/镜像或发布身份改变时，才创建版本候选并进入产品发布；文档站由独立 workflow 发布，不重启应用。管理员密码、站点配置和演示数据属于已经运行实例的数据操作，不创建 tag/Release，也不重跑 P0-E。管理员密码不写入仓库，遗失时由部署 owner 使用受控运维入口轮换，而不是猜测或复用历史密码。
+
+生产升级固定使用脚本。它只接受不可变 annotated tag，并在同一命令中完成“校验 tag/metadata → 检出 → 构建 → 迁移 → 切换 → `/healthz` 和版本 smoke”：
 
 ```bash
-git pull --ff-only
-docker compose build
-docker compose run --rm --no-deps php php server/database/migrate.php
-docker compose up -d --no-build
+./scripts/production-upgrade v1.1.5 --apply
 ```
+
+当前登记的 `oracle3:/www/docker/peanut-admin` 是可重建的演示实例，备份默认跳过；涉及不可逆迁移、有价值数据或部署 owner 明确要求时才显式启用已登记的备份命令：
+
+```bash
+PEANUT_BACKUP_COMMAND='…已审计的数据库与 php-storage 配对备份命令…' \
+  ./scripts/production-upgrade v1.1.5 --apply --backup
+```
+
+脚本不会把 `dev`、可移动分支或当前工作树当作生产身份，也不会在版本 smoke 失败后宣称已部署。生产页面显示的版本必须来自同一 tag 的 `RELEASE_METADATA.json`；Release、运行容器和文档版本不一致时立即停止并修正事实，不发布“Release 已更新但生产仍是旧版”的状态。
 
 包含 PB06 的版本会由迁移账本执行 `20260811-content-asset-reference.sql`，扩充文章封面和 Tabbar 图标列以保存完整云/CDN URL。必须保持“先迁移、后切换”顺序；该迁移不搬迁素材对象，也不改写历史相对 URI。
 

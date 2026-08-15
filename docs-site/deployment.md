@@ -71,14 +71,17 @@ Compose 与持久数据，不承载文档站静态文件。
 
 ## 已有应用升级
 
-升级必须先备份数据库和 `php-storage` 卷，再按“构建 → 迁移 → 切换”执行，不能先启动依赖新结构的应用代码：
+正式产品发布、文档站发布和运行时数据操作相互独立。只改 `docs-site/` 时由文档 workflow 构建并发布 Cloudflare Pages，不创建应用 tag/Release、不重启应用，也不运行完整客户端或 P0-E。管理员密码、站点配置和演示数据是实例运行时操作，使用受控运维入口修改，不因为数据变化制造新产品版本。
+
+应用升级固定使用仓库脚本。它只接受不可变 annotated tag，按“校验 tag/metadata → 检出 → 构建 → 迁移 → 切换 → 健康与版本 smoke”执行：
 
 ```bash
-git pull --ff-only
-docker compose build
-docker compose run --rm --no-deps php php server/database/migrate.php
-docker compose up -d --no-build
+./scripts/production-upgrade v1.1.5 --apply
 ```
+
+当前登记的官方环境是可重建的演示实例，备份默认不执行；只有不可逆迁移、有价值数据或部署 owner 明确要求时才加 `--backup`，并提供已登记的 `PEANUT_BACKUP_COMMAND`。演示数据用幂等 seeder 生成，管理员密码不记录在 Git 或文档公开内容中。
+
+Release、运行容器和页面版本必须来自同一 tag 的 `RELEASE_METADATA.json`。若 GitHub Release 已更新而生产仍显示旧版本，发布状态必须判定为不一致并停止后续声明，不能把两者写成同一完成事实。
 
 包含 PB06 的版本会由迁移账本执行 `20260811-content-asset-reference.sql`，扩充文章封面和 Tabbar 图标列以保存完整云/CDN URL。必须保持“先迁移、后切换”顺序；该迁移不搬迁素材对象，也不改写历史相对 URI。
 

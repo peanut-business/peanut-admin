@@ -81,8 +81,32 @@
             "mode": 420
         },
         {
+            "path": ".github/workflows/docs-site.yml",
+            "target": ".github/workflows/docs-site.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": ".github/workflows/product-capability-ledger.yml",
             "target": ".github/workflows/product-capability-ledger.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": ".github/workflows/repository-policy.yml",
+            "target": ".github/workflows/repository-policy.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": ".github/workflows/resource-registry.yml",
+            "target": ".github/workflows/resource-registry.yml",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -410,7 +434,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "0b5d1ba02f80959496db9e7911ac3891f24abfcc32e6a9b55aeced06f29bc422"
+            "source_sha256": "32572183fa38b720b8b4191ea0785bf6627fd1f676fad9ad8adc50b37c5fbb53"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -580,7 +604,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ccc93b94258b37dfdaafab5d18fb58738658c5cfdd22b1cb589522f3c16a75db"
+            "source_sha256": "0032d39965cea99e11783b27cda91c6cd54462e613e82165986d1b671d98dfaa"
         },
         {
             "path": "docs-site/scripts/sync-legal-assets.mjs",
@@ -1415,7 +1439,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "9a553b6ad076f3a95af86c3240ca6f5fa78cbd4fc16e8f85acaa33a9fd9af9ef"
+            "source_sha256": "ad75de44f406808461fd054882dd6f4251e461af5a466d23c68a06d8cd4a3beb"
         },
         {
             "path": "docs/peanut-admin-user-manual.md",
@@ -1509,6 +1533,14 @@
         {
             "path": "docs/product-status/releases/v1.1.3.json",
             "target": "docs/product-status/releases/v1.1.3.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/releases/v1.1.5.json",
+            "target": "docs/product-status/releases/v1.1.5.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3431,7 +3463,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "05fe0afb57385094e55ccf9dece4d6253d18cc365f8ab24f07bf13df44c9ff08"
+            "source_sha256": "5c75c77ee1d2428925f927bc67e187908b7dfffa7b843cd14fab090af0a67a37"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3600,6 +3632,14 @@
             "transform": "text",
             "mode": 493,
             "source_sha256": "1b00a637c6bbd54eaa259f4ffe3602597a205f053f8684fef9299dd426033fe3"
+        },
+        {
+            "path": "scripts/production-upgrade",
+            "target": "scripts/production-upgrade",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "scripts/project-development-database.sh",
