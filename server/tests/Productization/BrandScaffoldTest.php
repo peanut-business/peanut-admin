@@ -51,7 +51,7 @@ foreach (['admin_avatar', 'user_avatar', 'menu', 'project_docs', 'technical_supp
 }
 
 $migration = file_get_contents(
-    dirname(__DIR__, 2) . '/database/migrations/20260811-brand-scaffold-defaults.sql'
+    dirname(__DIR__, 2) . '/database/init.sql'
 );
 brandExpect(
     is_string($migration) && str_contains($migration, "'{$defaultImages['user_avatar']}'"),

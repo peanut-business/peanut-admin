@@ -200,7 +200,7 @@ $paymentController = (string)file_get_contents($root . '/app/api/controller/Paym
 $officialController = (string)file_get_contents($root . '/app/api/controller/OfficialAccountController.php');
 $oauthController = (string)file_get_contents($root . '/app/api/controller/OAuthController.php');
 $settlement = (string)file_get_contents($root . '/app/api/logic/RechargeLogic.php');
-$migration = (string)file_get_contents($root . '/database/migrations/20260814_external_callback_tenant_routing.sql');
+$migration = (string)file_get_contents($root . '/database/init.sql');
 foreach ([$paymentController, $officialController, $oauthController] as $source) {
     externalExpect(!str_contains($source, "['tenant_id']") && !str_contains($source, "get('tenant_id")
         && !str_contains($source, "header('tenant_id"), 'callback wiring trusts request tenant_id');
@@ -209,7 +209,7 @@ externalExpect(strpos($paymentController, 'verifiedCallback(') < strpos($payment
 externalExpect(str_contains($settlement, 'settle(object $context'), 'settlement does not require a verified context port');
 externalExpect(!str_contains($settlement, 'VerifiedPaymentTenantResolver::resolve'), 'settlement still derives Tenant from an order number');
 foreach (['uk_external_callback_key', 'uk_external_provider_identity', 'uk_external_tenant_provider',
-    'pa_default_tenant_bootstrap', 'RANDOM_BYTES(32)', 'fk_external_binding_tenant'] as $marker) {
+    "WHERE `code` = 'default' AND `status` = 'active'", 'RANDOM_BYTES(32)', 'fk_external_binding_tenant'] as $marker) {
     externalExpect(str_contains($migration, $marker), 'binding migration invariant missing: ' . $marker);
 }
 

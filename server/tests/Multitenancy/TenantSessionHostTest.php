@@ -63,9 +63,7 @@ try {
     foreach (ModuleSchema::tableNames() as $table) {
         $pdo->exec(ModuleSchema::createSql($table));
     }
-    $pdo->exec((string)file_get_contents(
-        dirname(__DIR__, 2) . '/database/migrations/20260813_tenant_auth_client_key.sql'
-    ));
+    $pdo->exec('ALTER TABLE `pa_login_challenge` ALTER COLUMN `client_key` DROP DEFAULT');
 
     $transactions = new PdoTransactionManager($pdo);
     $passwords = new PasswordHasher();

@@ -81,7 +81,7 @@ foreach ([
 }
 
 $migration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260811-notification-host-security.sql'
+    $serverRoot . '/database/init.sql'
 );
 expectNotificationHost(
     str_contains($migration, 'CHANGE COLUMN `verify_code` `verify_code_hash` VARCHAR(255)'),

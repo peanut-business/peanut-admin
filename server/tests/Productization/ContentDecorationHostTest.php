@@ -129,7 +129,7 @@ expectContentDecoration(
 );
 
 $assetMigration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260811-content-asset-reference.sql'
+    $serverRoot . '/database/init.sql'
 );
 expectContentDecoration(
     str_contains($assetMigration, 'MODIFY COLUMN `image` VARCHAR(2048)'),
@@ -143,7 +143,7 @@ expectContentDecoration(
 $initSql = (string)file_get_contents($serverRoot . '/database/init.sql');
 expectContentDecoration(str_contains($initSql, 'uk_member_article'), 'article collection idempotency key is missing');
 $decorationMigration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260802_decoration_parity.sql'
+    $serverRoot . '/database/init.sql'
 );
 expectContentDecoration(
     str_contains($decorationMigration, 'uk_decorate_page_type'),

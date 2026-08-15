@@ -29,7 +29,7 @@ foreach ($permissions as $permission) {
 }
 
 $migration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260802_system_tools_core.sql'
+    $serverRoot . '/database/init.sql'
 );
 foreach ($permissions as $permission) {
     expectOpsHost(

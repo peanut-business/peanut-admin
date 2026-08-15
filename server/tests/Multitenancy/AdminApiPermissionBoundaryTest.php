@@ -82,7 +82,7 @@ $platformPermissionSource = (string)file_get_contents(dirname(__DIR__, 2) . '/ap
 expectAdminApiBoundary(str_contains($platformPermissionSource, "str_starts_with(\$permission, 'platform.')"), 'Platform permission catalog boundary is missing');
 expectAdminApiBoundary(!str_contains($platformLoginSource, 'AdminTokenService'), 'Platform login must not use Tenant Admin sessions');
 
-$migration = strtolower((string)file_get_contents(dirname(__DIR__, 2) . '/database/migrations/20260814_admin_api_default_deny.sql'));
+$migration = strtolower((string)file_get_contents(dirname(__DIR__, 2) . '/database/init.sql'));
 foreach (['admin/status', 'finance/recharge/refund', 'finance.refund/stat', 'log/export/status'] as $exactPermission) {
     expectAdminApiBoundary(str_contains($migration, "'{$exactPermission}'"), 'exact status/compatibility permission is missing: ' . $exactPermission);
 }

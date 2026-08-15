@@ -450,11 +450,12 @@ function waitForDatabase(array $config, int $seconds): PDO
     } while (true);
 }
 
-/** @return array{migration_count:int,latest_migration:string,admin_count:int,menu_count:int,config_count:int,bootstrap_count:int} */
+/** @return array{migration_count:int,latest_migration:string,admin_count:int,menu_count:int,config_count:int,tenant_count:int,owner_count:int,operator_count:int} */
 function assertCurrentDatabase(PDO $pdo): array
 {
-    $files = glob(__DIR__ . '/migrations/*.sql') ?: [];
-    sort($files, SORT_STRING);
+    $migrations = glob(__DIR__ . '/migrations/*.sql') ?: [];
+    sort($migrations, SORT_STRING);
+    $files = [__DIR__ . '/init.sql', ...$migrations];
     $expected = [];
     foreach ($files as $file) {
         $checksum = hash_file('sha256', $file);
@@ -491,10 +492,28 @@ function assertCurrentDatabase(PDO $pdo): array
     )->fetchColumn();
     $menuCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
     $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
-    $bootstrapCount = (int)$pdo->query(
-        "SELECT COUNT(*) FROM pa_default_tenant_bootstrap WHERE status = 'completed'"
+    $tenantCount = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_tenant WHERE code = 'default' AND status = 'active'"
     )->fetchColumn();
-    if ($adminCount !== 1 || $menuCount < 1 || $configCount < 1 || $bootstrapCount !== 1) {
+    $ownerCount = (int)$pdo->query(<<<'SQL'
+SELECT COUNT(DISTINCT tm.id)
+FROM pa_tenant t
+JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+JOIN pa_credential c ON c.account_id = a.id AND c.status = 'active'
+JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
+JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
+WHERE t.code = 'default' AND t.status = 'active' AND r.`key` = 'core.tenant-owner'
+SQL)->fetchColumn();
+    $operatorCount = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_platform_operator WHERE status = 'active'"
+    )->fetchColumn();
+    if ($adminCount !== 1
+        || $menuCount < 1
+        || $configCount < 1
+        || $tenantCount !== 1
+        || $ownerCount !== 1
+        || $operatorCount !== 1) {
         throw new RuntimeException('数据库基线数据不完整');
     }
 
@@ -504,7 +523,9 @@ function assertCurrentDatabase(PDO $pdo): array
         'admin_count' => $adminCount,
         'menu_count' => $menuCount,
         'config_count' => $configCount,
-        'bootstrap_count' => $bootstrapCount,
+        'tenant_count' => $tenantCount,
+        'owner_count' => $ownerCount,
+        'operator_count' => $operatorCount,
     ];
 }
 

@@ -93,10 +93,10 @@ expectMemberFinance(
 );
 
 $paymentMigration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260802_recharge_payment_core.sql'
+    $serverRoot . '/database/init.sql'
 );
 $refundMigration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260801_recharge_refund_parity.sql'
+    $serverRoot . '/database/init.sql'
 );
 expectMemberFinance(str_contains($paymentMigration, 'uk_transaction_id'), 'transaction id unique guard is missing');
 expectMemberFinance(str_contains($refundMigration, 'uk_order_type_order_id'), 'one-refund-per-order guard is missing');

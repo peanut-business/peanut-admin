@@ -117,7 +117,7 @@ expectOAuthChannelHost(
 );
 
 $migration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260811-oauth-channel-host.sql'
+    $serverRoot . '/database/init.sql'
 );
 foreach (['wechat_open_secret', 'wechat_oa_secret', 'qq_secret', 'encoding_aes_key', 'encryption_type'] as $field) {
     expectOAuthChannelHost(str_contains($migration, $field), 'retired credential cleanup is missing: ' . $field);

@@ -28,7 +28,7 @@ function pluginMigrationNormalize(string $sql): string
     return (string)preg_replace('/\s+/', ' ', trim(rtrim($sql, ';')));
 }
 
-$path = dirname(__DIR__, 2) . '/database/migrations/20260814_plugin_module_lifecycle.sql';
+$path = dirname(__DIR__, 2) . '/database/init.sql';
 $sql = (string)file_get_contents($path);
 pluginMigrationExpect($sql !== '', 'Plugin lifecycle migration is unavailable');
 
@@ -55,26 +55,26 @@ foreach ($requiredTables as $table) {
 
 pluginMigrationExpect(
     !str_contains($sql, 'CREATE TABLE `pa_permission`'),
-    'lifecycle migration must adopt the existing Core pa_permission table'
+    'canonical application schema must leave pa_permission to Core KernelSchema'
 );
 foreach (['pa_resource_operation_target_type', 'pa_resource_operation_permission', 'pa_menu_definition'] as $table) {
     pluginMigrationExpect(
         str_contains(pluginMigrationTableSql($sql, $table), 'REFERENCES `pa_permission` (`id`)'),
-        "{$table} must reference adopted Core pa_permission"
+        "{$table} must reference native Core pa_permission"
     );
 }
 $runner = (string)file_get_contents(dirname(__DIR__, 2) . '/database/migrate.php');
 pluginMigrationExpect(
-    str_contains($runner, "assertPluginLifecyclePermissionSchema(\$pdo)"),
-    'migration runner does not fail closed on the adopted Core pa_permission schema'
+    str_contains($runner, 'assertFreshBaselineLedger'),
+    'migration runner does not require the canonical fresh baseline identity'
 );
 pluginMigrationExpect(
-    str_contains($runner, "--repair-failed="),
-    'migration runner lacks an auditable failed-ledger recovery entry point'
+    str_contains($runner, 'assertAdditiveMigration'),
+    'migration runner does not enforce additive post-baseline migrations'
 );
 pluginMigrationExpect(
-    str_contains($runner, "'status' => \$checkOnly ? 'recovery_ready' : 'recovered'"),
-    'migration runner lacks a non-mutating recovery assertion mode'
+    !str_contains($runner, '--adopt-existing'),
+    'migration runner still exposes the retired pre-baseline adoption path'
 );
 foreach (['deployment', 'tenant', 'target'] as $scope) {
     pluginMigrationExpect(
