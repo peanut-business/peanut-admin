@@ -1,6 +1,6 @@
 ---
 title: 文档门户
-description: Peanut Admin 快速开始、开发、部署、API、管理员与版本文档入口。
+description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部署、能力目录与管理员文档入口。
 ---
 
 # 文档门户
@@ -13,12 +13,24 @@ description: Peanut Admin 快速开始、开发、部署、API、管理员与版
     <span>准备 PHP、MySQL、Node，完成空库安装与首次登录。</span>
   </a>
   <a class="doc-entry" href="/guide/development">
-    <strong>开发指南</strong>
-    <span>仓库结构、应用/核心边界、数据库迁移、测试和扩展 Host。</span>
+    <strong>架构、目录与身份</strong>
+    <span>Core/Host/应用/Module、部署实例、三类身份、Tenant 映射和 DCS 边界。</span>
+  </a>
+  <a class="doc-entry" href="/api#module-plugin-与-host">
+    <strong>Module 与跨模块调用</strong>
+    <span>真实纵向目录、Plugin/TenantModule Gate、命令、查询、事件和失败处理。</span>
+  </a>
+  <a class="doc-entry" href="/guide/module-development">
+    <strong>首个 Module 教程</strong>
+    <span>从目录、表、合同、权限和菜单到跨 Module 调用与最低测试。</span>
+  </a>
+  <a class="doc-entry" href="/capabilities">
+    <strong>开箱即用能力目录</strong>
+    <span>逐项区分当前能力、核心默认、可选官方模块、DCS 业务和示例。</span>
   </a>
   <a class="doc-entry" href="/deployment">
-    <strong>部署与升级</strong>
-    <span>Docker/原生发布、环境变量、迁移账本、备份与回滚停止线。</span>
+    <strong>部署与安装</strong>
+    <span>应用实例、2.0.0 fresh baseline、空库安装、备份与回滚。</span>
   </a>
   <a class="doc-entry" href="/api">
     <strong>API 与扩展</strong>
@@ -36,6 +48,31 @@ description: Peanut Admin 快速开始、开发、部署、API、管理员与版
 
 ## 推荐阅读顺序
 
-1. 新安装者：快速开始 → 部署与升级 → 管理员手册。
-2. 二次开发者：能力与场景 → 开发指南 → API 与扩展。
-3. 发布负责人：版本与发布 → 部署与升级 → PB08B/PB09 状态。
+1. 新安装者：快速开始 → 架构、目录与身份 → 部署与安装 → 管理员手册。
+2. Module 开发者：架构、目录与身份 → 首个 Module 教程 → API 与扩展 → 开箱即用能力目录。
+3. 架构讨论：开箱即用能力目录 → 身份与三类映射 → fresh baseline 与当前边界。
+4. 发布负责人：版本与发布 → 部署与安装 → 产品状态。
+
+## 当前讨论入口
+
+需要继续模块、身份、租户或脚手架清理讨论时，从以下五页开始，不再依赖聊天摘要：
+
+- [架构、目录、三类身份与租户映射](/guide/development#身份与业务主体)
+- [Module、Plugin、Host 与跨模块调用](/api#module-plugin-与-host)
+- [首个 Module 纵向教程](/guide/module-development)
+- [2.0.0 空库安装与 fresh baseline](/deployment#fresh-only-基线)
+- [开箱即用能力逐项决策](/capabilities)
+
+这些页面会明确标注“当前已支持、推荐新增、仅迁移需要、暂不建议、待核验”。设计建议
+不会被写成已经存在的 Runtime；DCS 具体领域文档仍由 DCS 仓库维护。
+
+## 未决问题
+
+以下问题已有边界，但尚未获得实现授权：
+
+1. DCS 中 Business Subject 与 Tenant 是一对一、可多对多，还是只对部分供应商建立关联。
+2. 采购单采用单一权威记录加 participant policy，还是在什么条件下升级为双方投影。
+3. `pa_member` 业务客户登录是否长期独立，还是未来只关联而不合并到 Account/TenantMember。
+4. 文件、文章、导入导出等应用 Runtime 中，哪一个先包装成可选官方 Plugin。
+5. 是否已有两个真实消费者足以批准通用 Outbox/Event Bus；没有消费者前保持同步合同。
+6. 管理端多 Tenant 选择器是否满足最终浏览器验收；后端已经返回选择状态，但仍需以当前候选验证 UI。

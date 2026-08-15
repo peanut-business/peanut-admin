@@ -7,16 +7,40 @@ description: Peanut Admin 的架构、开发约定、客户端命令和生产部
 
 本文只描述当前 Peanut Admin 仓库中的代码、命令和运行边界，不依赖其他项目。示例中的域名、仓库地址、数据库账号、密码、证书和云服务参数均需按环境配置；不要把真实密钥提交到 Git。
 
+## 5 分钟速读
+
+```text
+Peanut Core（通用身份、Tenant、权限和扩展合同）
+  -> Peanut Admin Host/脚手架（应用入口、安装、管理端和产品能力）
+      -> DCS 等独立派生应用（自己的业务 Module、版本和数据库）
+          -> 一个或多个部署实例
+              -> 每个实例包含 Tenant、客户端和已安装 Module
+```
+
+- 默认一套部署对应一个应用实例；一个实例可以服务多个 Tenant、多个客户端和多个 Module。
+- 多个应用通常意味着多个独立部署和数据边界。它们可以共用云账号或集群，但不能共享私有表。
+- Account 是登录身份，TenantMember 是租户成员，`pa_member` 是当前应用的业务会员；三者不是同一模型。
+- 新业务优先放在独立 Module，通过公开命令、查询 DTO 或已验证的事件合同协作，不直接访问其他 Module 私有表。
+- Plugin 安装、TenantModule 开通和成员授权是三道不同 Gate。
+- DCS 是脚手架派生的独立应用；商品、库存、采购等领域能力不属于 Peanut Admin。
+
+需要直接动手时，先读[API 与 Module 扩展](/api)；需要判断默认安装哪些能力时，读
+[开箱即用能力目录](/capabilities)；fresh 安装和 1.x 退出边界见[部署与安装](/deployment)。
+
 ## 1. 架构与目录
 
-Peanut Admin 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是 server/public/index.php，路由集中在 server/route/app.php。
+Peanut Admin 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是
+`server/public/index.php`，路由集中在 `server/route/app.php`。
 
 ~~~text
 peanut-admin/
 ├── server/
 │   ├── app/adminapi/        管理端 API：controller、logic、validate、service、http/middleware
 │   ├── app/api/             会员/公开 API：controller、logic、validate、service
+│   ├── app/platform/        实例内 PlatformOperator、Tenant 生命周期与平台 RBAC
+│   ├── app/tenant/          Core Tenant 会话登录、选择、切换和退出 Host
 │   ├── app/common/          公共 controller、logic、model、service、enum、validate
+│   ├── app/Modules/         Plugin Module 后端；源码仓 fixture 仅用于资格验证
 │   ├── config/              ThinkPHP、数据库、JWT、控制台等配置
 │   ├── route/app.php        管理端和用户端路由
 │   ├── database/init.sql    新环境的一次性全量表结构与种子
@@ -25,7 +49,8 @@ peanut-admin/
 │   ├── public/storage/      本地存储和导出文件的公开目录
 │   └── runtime/             日志、缓存和运行时文件（需可写）
 ├── web/                     Vue 3 + Element Plus 管理端
-│   └── src/{api,router,views,store,components,...}
+│   ├── src/{api,router,views,store,components,...}
+│   └── src/modules/         Module 前端 contribution；fixture 不进入生成应用
 ├── pc/                      Nuxt 3 PC 会员端
 │   ├── pages/、api/、components/、layouts/
 │   ├── composables/、stores/、middleware/
@@ -34,14 +59,96 @@ peanut-admin/
 │   ├── src/{pages,packages,api,store,utils}
 │   ├── src/pages.json、src/manifest.json
 │   └── vite.config.ts
-└── docs/                    项目文档
+├── plugins/                 源码仓 Plugin artifact；正式应用由自己的 lock 决定
+├── plugins.lock             当前部署允许加载的不可变 Plugin 身份
+├── resources/               项目资源登记；连接、启动、迁移前的唯一事实源
+├── scripts/                 create-app、scaffold release、资源租约和聚焦 Gate
+├── deploy/                  development/production Compose 与 Nginx 配置
+├── docs-site/               面向使用者和开发者的现行文档站
+└── docs/                    架构合同、能力账本、计划和内部证据
 ~~~
+
+### Core、Host、应用和 Module 的所有权
+
+| 层 | 当前 owner | 可以拥有 | 不应拥有 |
+| --- | --- | --- | --- |
+| Core | `peanut-admin/core`、`@peanut-admin/admin` | Account、Tenant、RBAC 原语、公开 Host/override 合同 | Peanut 品牌、应用业务表、DCS 商品库存 |
+| Peanut Host | 本仓 `server/app/*`、`web/`、安装和部署入口 | 应用路由、原生管理身份 Host/菜单适配、产品设置和已采用业务 Runtime | 跨应用运营平台、下游应用业务 |
+| Module | `server/app/Modules/<Vendor>/<Module>` 与前端 contribution | 自有表、用例、权限、菜单、设置和公开合同 | 其他 Module 私有表和 Core schema |
+| Plugin | `plugin.json` 与 `plugins.lock` | 一个或多个 Module 的制品身份和依赖 | Tenant 开通状态、成员权限和业务数据 |
+| 派生应用 | create-app 生成的独立仓库 | 品牌、业务 Module、数据库、域名、发布周期 | 修改已安装 Core 包内部实现 |
+
+### 应用、部署和客户端
+
+“应用”是可独立发布的代码产品，“应用实例”是这套产品在某个环境的一次部署。默认
+一套部署等于一个实例，拥有自己的数据库、密钥、文件空间和生命周期。一个实例可以同时
+提供管理端、PC、H5、小程序等客户端，也可以在 `multi-tenant` 模式服务多个 Tenant。
+
+同一 Kubernetes 集群、Docker 主机或云账号可以编排多个实例，但它们仍是多个应用部署。
+每个实例只能通过公开 API/事件交换最小必要数据，不能让两个应用共享私有数据库表或复用
+对方管理员账号。
+
+只有法律隔离、地区合规、安全/故障域、独立发布回滚、团队 owner 或产品生命周期确实
+不同，才优先拆成多个应用。菜单、角色、品牌或客户端差异通常由 TenantModule、权限和
+客户端组合解决，不构成拆应用理由。
+
+### 身份与业务主体
+
+当前必须区分三条身份链：
+
+| 身份 | 当前已支持程度 | 不能混写的边界 |
+| --- | --- | --- |
+| 平台/系统操作身份 | **实现存在；2.0 组合复验待完成**：独立 PlatformOperator 会话、平台角色和权限；账号不能同时成为 TenantMember | 只治理本实例 Tenant/Module，不读取任意租户业务数据 |
+| Tenant 管理成员 | **2.0 候选已实现，最终资格待验**：管理端认证、会话、角色和权限直接使用 Core Account/Credential、TenantMember 与 RBAC | TenantMember 是组织成员，不自动成为客户、供应商联系人或门店员工档案 |
+| 业务客户/会员 | **候选实现存在，2.0 组合复验待完成**：`pa_member` 有独立注册、登录、OAuth、标签和单一权威余额，并按 Tenant 隔离 | 当前没有与 Core Account/TenantMember 的通用一对一映射；不要假定两种 token 可互换 |
+
+Account/TenantMember/RBAC 足以作为客户组织员工或供应商组织成员的通用登录与授权基础，
+但当前仓库没有 Supplier、业务主体关联、供应商邀请/成员治理或供应商专用客户端。因此
+“供应商可建成 Tenant、其用户可成为 TenantMember”是**推荐新增的派生应用模型**，不是
+Peanut Admin 当前开箱即用业务能力。
+
+客户业务档案应继续与登录身份分离：Account 说明“谁登录”，Customer/Member 说明“业务上
+是谁”。需要关联时使用显式、可选、可审计的 link，而不是把等级、积分、供应商资质等字段
+放进 Account。
+
+### 三类租户映射
+
+| 类型 | 用途 | 当前状态与时机 |
+| --- | --- | --- |
+| legacy Admin/Role/Dept 到 Core 身份 | 旧单租户应用升级 | **仅迁移需要，当前版本不提供**。2.0.0 只接受空库安装，旧映射表、bootstrap 和 Runtime bridge 已退出 |
+| 同应用业务主体到 Tenant/Member | 让 Supplier、Store、Customer 等主体由明确组织和成员操作 | **推荐新增到具体业务应用**；有真实跨组织流程时设计，不属于 legacy |
+| 跨应用 global subject 到 local tenant | 两个独立实例识别同一外部组织 | **暂不建议**；只有两个真实实例稳定协作后再设计联邦和生命周期 |
+
+同应用关联通常是 `business_subject <-> tenant` 和 `person/contact <-> account/member`，并附
+角色、有效期和来源。它不能改变 TenantContext，也不能自动授予关联 Tenant 的全部数据。
+
+### 门店与供应商在同一应用中协作
+
+Peanut Admin 只提供通用安全边界，具体表和状态机由 DCS 等派生应用冻结。推荐起点是
+“单一权威记录 + 明确 owner Tenant + 参与方操作授权”：
+
+1. 采购单由采购方 Tenant 拥有，保存供应商业务主体、合作关系和下单快照。
+2. Supplier 业务主体可以显式关联供应商 Tenant；其 TenantMember 只能通过采购模块的
+   participant policy 查看、确认或发货，不获得采购方其他数据。
+3. 商品授权和报价先校验双方 Relationship/Contract 的状态、有效期和 SKU 范围；采购单
+   不能只凭另一个 Tenant ID 建立。
+4. 供应商确认/发货只允许推进声明的状态和写入供应方字段；不能编辑采购方审批、仓库或
+   成本字段。
+5. 买方确认收货后，Procurement 调用 Inventory 的入库命令；供应商不能直接写买方库存表。
+6. 查询 Repository 必须同时约束 owner Tenant 或明确 participant grant。业务关系存在不等于
+   获得对方 Tenant 的通用读权限。
+
+只有双方必须保留独立数据副本、自治状态机或不同保留策略时，才引入双方投影和可靠事件
+同步；否则不要为“独立”制造重复订单真值。DCS 的 Product、Pricing、Inventory、
+Procurement 和 Trade 详细文档归 DCS 仓，不进入 Peanut 默认模块。
 
 三个客户端都以 `/api` 为后端前缀：`web/config/vite.config.dev.ts`、`pc/nuxt.config.ts` 和 `uniapp/vite.config.ts` 的纯本机开发代理均读取 `PHP_PORT`（登记默认 `20180`）。生产多阶段镜像将 web 管理端放在 `/admin/`、uniapp H5 放在 `/mobile/`、Nuxt PC 放在 `/pc/`；API 统一走 `/api/`。
 
 后端路由大致分为：
 
 - api/user/login、admin/login/login：管理员登录/退出；
+- api/platform/*：独立 PlatformOperator 会话与实例内 Tenant/Module 治理；
+- api/tenant/session/*：Core Tenant 会话登录、选择、切换和退出；
 - api/admin/*：完整管理端 API，统一挂载登录、权限和操作日志中间件；
 - api/*：会员公开接口与需会员令牌的接口；
 - api/payment/notify/*、api/wechat/official-account/callback：第三方平台回调，按业务要求匿名进入后再验签。
@@ -94,35 +201,45 @@ JsonService::dataLists() 的 data 包含 lists、count、pageNo、pageSize；业
 
 server/route/app.php 中，登录路由不挂鉴权；管理端 api/admin/* 统一按 LoginMiddleware → AuthMiddleware → OperationLogMiddleware 执行：
 
-1. LoginMiddleware 从 `Authorization: Bearer <token>` 读取 `pa_admin_session`，检查过期、登录 IP、账号状态，并把 `adminInfo/adminId` 注入请求。
+1. LoginMiddleware 从 `Authorization: Bearer <token>` 读取原生 `pa_tat_` Tenant access token，验证 Account、TenantMember、Tenant 和会话状态，再注入可信 TenantContext 与管理成员主体。
 2. AuthMiddleware 根据请求路径去掉 api/admin/ 得到权限标识，例如 api/admin/menu/lists 对应 menu/lists。
 3. OperationLogMiddleware 仅记录成功的 POST 写操作，并对 password、token、secret、证书等字段打码。
 
-管理员 JWT 配置见 server/config/jwt.php；管理端会话时长和登录锁定参数见 server/config/admin_auth.php。超级管理员是 pa_admin.root=1，当前种子账号为 admin，首次登录后必须改密。
+管理端登录账号由安装时显式提供的 `ADMIN_INITIAL_EMAIL` 创建。内建
+`core.tenant-owner` Role 表达首 owner 权限，不再使用旧 `pa_admin.root` 隐式身份；初始密码
+必须通过 `ADMIN_INITIAL_PASSWORD` 提供，仓库没有可复用的默认密码。
 
 会员端需登录的路由挂 server/app/api/middleware/CheckTokenMiddleware.php，公开路由不挂该中间件。会员令牌与管理员令牌不要混用。
 
 ### 菜单和权限
 
-pa_system_menu 的 type 为 M（目录）、C（菜单）或 A（按钮/API 权限）；角色通过 pa_system_role_menu 授权，管理员通过 pa_admin_role 关联角色。AdminPermissionService 为非 root 管理员计算菜单树和按钮权限；菜单接口由 MenuController 提供，前端动态路由以服务端返回为准。新增管理接口应同时：
+`pa_system_menu` 的 type 为 M（目录）、C（菜单）或 A（按钮/API 权限），继续作为应用菜单
+展示清单；可授权的 `perms` 对应 Core `pa_permission.key`，角色通过
+`pa_role_permission` 获权，成员通过 `pa_member_role` 关联角色。AdminPermissionService 组合
+原生权限和应用菜单树；前端动态路由以服务端返回为准。新增管理接口应同时：
 
 - 在 server/route/app.php 写明路由；
 - 在 init.sql 或对应迁移中写入 perms 与菜单节点；
 - 在角色中授予 A 权限，确认 perms 与去掉 api/admin/ 后的 URI 完全一致。
 
-当前实现对“未登记在启用菜单中的 URI”默认放行；因此敏感接口不能漏写 perms，应在菜单种子和权限验证中一并覆盖。root=1 直接放行全部已启用菜单。
+当前实现对未登记、已停用或跨 Tenant 的 URI **默认拒绝**，而且先检查登记再判断 root；
+因此 root 也不能绕过未登记路径。新增接口必须在 migration/菜单资源中登记准确 `perms`，
+再由角色授予。不要依据旧 PB04 合同中封存的“未登记放行”历史语义开发新接口。
 
 ### 数据范围（Data Scope）
 
-仓库有 pa_dept、pa_jobs、pa_admin_dept、pa_admin_jobs 关系和管理员维护页面，但没有通用的角色数据范围字段或统一 DataScope 查询服务；AdminPermissionService 只处理菜单/按钮 URI。部门/岗位关联本身不会自动限制业务列表。若模块需要行级隔离，必须在该模块的 logic/query 中显式加入管理员部门或业务归属条件，并在 detail/edit/delete 再次校验；不要把“有角色权限”误认为“拥有全部数据”。
+仓库有 Core `pa_department`、应用岗位字典 `pa_jobs` 和原生成员组织关系；Core 也提供 Tenant 权限集合和 typed-target
+数据权限原语。但现有应用业务表不会因为管理员拥有某个部门或按钮权限就自动获得行级过滤。
+Module 必须为自己的 Store/Warehouse 等资源提供 target resolver，并在列表、详情和写命令中
+使用可信 TenantContext 与授权目标约束查询。不要把“有功能权限”误认为“拥有全部数据”。
 
 ## 4. 数据库与迁移
 
 - 数据库默认 MySQL，编码 utf8mb4，表前缀由 DB_PREFIX 控制，默认 pa_；配置来源是 server/config/database.php。
-- 新环境先创建空数据库并配置 server/.env，再执行 `php server/database/install.php`。安装器按顺序执行 server/database/init.sql 和全部 server/database/migrations/*.sql，并校验预期表、菜单、配置及默认管理员；安装成功后会把全部 migration 文件的名称、SHA-256、批次和状态写入 `pa_schema_migration`；目标库已有任何表时会拒绝运行。
-- server/database/init.sql 只保存基础结构和基础种子，不单独代表完整的当前版本。后续业务表和增量字段以 migrations/ 为准，由首次安装器统一收口。
-- `server/database/migrations/20260807_schema_migration_ledger.sql` 创建迁移账本；`php server/database/migrate.php` 只执行账本中未登记的文件，并在运行前校验已登记文件的 SHA-256。没有待执行文件时返回 `up_to_date`，普通成功可以重复运行。
-- 历史安装升级必须先完成数据库和存储备份。首次接管只执行一次 `php server/database/migrate.php --adopt-existing`；脚本会完整校验历史基线，校验通过后登记历史迁移并继续执行未登记文件。基线校验失败或已有失败记录时必须停止并前滚处置，不要绕过账本。
+- 新环境先创建空数据库并配置 `server/.env`，再执行 `php server/database/install.php`。安装器创建 Core 原生 Schema，执行 canonical `server/database/init.sql` 和基线之后的追加式 migration，并校验表、菜单、配置、默认 Tenant 与首 owner；目标库已有任何表时拒绝运行。
+- `server/database/init.sql` 是 2.0.0 的完整应用基线，`server/database/migrations/` 只接收该基线之后的追加变更。安装结果把 `init.sql` 和后续 migration 的名称、SHA-256、批次与状态写入 `pa_schema_migration`。
+- `pa_schema_migration` 属于 canonical `init.sql`。`php server/database/migrate.php --current` 校验基线身份和全部已登记文件；普通 `migrate.php` 只执行缺失的基线后追加 migration。
+- 2.0.0 不支持接管 1.x 历史安装。需要保留旧环境时继续运行旧版本实例，为 2.0.0 准备独立空库，并把业务数据迁移作为独立、显式、可验收的项目处理。
 - server/database/import.php 是读取 .env 后通过 PDO 执行 init.sql 的一次性脚本，文件注释明确提示“用完即删”；优先使用可审计的 mysql 导入命令，除非环境确实需要该脚本。
 - 金额、状态和软删除字段应沿用已有表的类型/命名；涉及旧数据兼容时在迁移中写幂等的 information_schema 检查，并先发布迁移再发布依赖字段的 PHP 代码。
 
@@ -141,6 +258,7 @@ DB_PASS=按环境配置
 DB_PREFIX=pa_
 JWT_SECRET=至少32位随机字符串
 JWT_EXPIRE=7200
+ADMIN_INITIAL_EMAIL=owner@example.com
 ADMIN_INITIAL_PASSWORD=仅空库首次安装使用的强密码
 ~~~
 
@@ -162,7 +280,7 @@ git clone <仓库地址> && cd peanut-admin
 # 后端配置与依赖
 cd server
 cp .env.example .env
-# 编辑 .env，至少填写 DB_*、JWT_SECRET 和仅首次安装使用的 ADMIN_INITIAL_PASSWORD
+# 编辑 .env，至少填写 DB_*、JWT_SECRET、ADMIN_INITIAL_EMAIL 和 ADMIN_INITIAL_PASSWORD
 composer install
 cd ..
 
@@ -173,26 +291,24 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 php server/database/install.php
 ~~~
 
-安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。日常开发统一使用登记的宿主 PHP 8.3.24 与 Composer 2.8.10：
+安装器会创建默认 Tenant、原生 Account/Credential/TenantMember 和内建
+`core.tenant-owner` Role。空库安装必须显式提供有效 `ADMIN_INITIAL_EMAIL`，以及至少 12 位且
+同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器不会回显密码。日常开发统一使用登记的宿主 PHP 8.3.24 与 Composer 2.8.10：
 
 ~~~bash
 ./scripts/local-stack.sh dev-up
 ./scripts/local-stack.sh status
 ~~~
 
-默认打开 `http://127.0.0.1:20187/admin/`，使用安装时提供的密码登录，随后改为个人凭据。
+默认打开 `http://127.0.0.1:20187/admin/`，使用安装时提供的邮箱和密码登录。
 宿主 API 登记默认端口为 `20180`；Web/PC/Mobile/Docs/Nginx 容器通过
 `host.docker.internal:${PHP_PORT}` 绕过代理访问它。本地监听统一来自 `.local/stack.env`
 （或 `PEANUT_LOCAL_ENV_FILE`），可按 clone/worktree 覆盖，示例见
 `deploy/local-stack.env.example`。停止使用 `./scripts/local-stack.sh dev-down`。
 
-已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管前先完成数据库和存储备份，然后只执行一次：
-
-~~~bash
-php server/database/migrate.php --adopt-existing
-~~~
-
-接管成功后，每次发布只执行 `php server/database/migrate.php`。命令会按文件名处理未登记迁移并校验 SHA-256；失败时保持旧版本运行，核对实际 DDL 后编写前滚修复，不得删除账本记录或改写已登记迁移。
+安装后可执行 `php server/database/migrate.php --current` 校验当前数据库与源码基线。后续发布
+只执行普通 `migrate.php` 应用 2.0.0 之后的追加 migration；失败时保持旧版本运行，核对实际
+DDL 后编写前滚修复，不得删除账本记录或改写已登记 SQL。
 
 ## 7. 客户端开发与构建命令
 
@@ -250,7 +366,7 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 ### Nginx
 
-Nginx 根目录固定为发布制品的 `server/public/`。根路径 `/` 重定向到 `/admin/`；管理端、H5 和 PC 静态文件分别位于 `server/public/admin/`、`server/public/mobile/` 和 `server/public/pc/`；`/api/` 和 legacy `/admin/login/*` 进入 ThinkPHP。
+Nginx 根目录固定为发布制品的 `server/public/`。根路径 `/` 重定向到 `/admin/`；管理端、H5 和 PC 静态文件分别位于 `server/public/admin/`、`server/public/mobile/` 和 `server/public/pc/`；`/api/` 和管理登录 `/admin/login/*` 进入 ThinkPHP。
 
 ~~~nginx
 server {
@@ -349,25 +465,32 @@ server/app/common/service/storage/Driver.php 通过 storage.default 选择 local
 
 ### 支付
 
-支付入口由 server/app/common/service/payment/PaymentServiceFactory.php 统一选择 wechat 或 alipay。预支付、回调 parser 和退款 gateway 都只能由该 Factory 装配，并共用可注入 `PaymentTransportInterface` 与 `PaymentCrypto`；gateway 不得另建 cURL/签名路径。回调先验签和标准化，再交给充值 logic 更新订单、余额和流水；微信商户响应还必须用平台证书校验 timestamp、nonce、serial 和签名，支付宝退款响应必须按原始节点验 RSA2。`user_money` 是权威余额，旧 `balance` 只是兼容镜像；后台调账、可信充值回调和首次充值退款必须在各自领域事务内调用 `MemberBalanceService`，不得直接写余额或 `AccountLogLogic`。回调路由是 /api/payment/notify/wechat 与 /api/payment/notify/alipay，必须保持公网 HTTPS、时间戳/证书/公钥配置正确。完整边界见应用仓 `docs/architecture/pb07-payment-host-contract.md`。
+支付入口由 server/app/common/service/payment/PaymentServiceFactory.php 统一选择 wechat 或 alipay。预支付、回调 parser 和退款 gateway 都只能由该 Factory 装配，并共用可注入 `PaymentTransportInterface` 与 `PaymentCrypto`；gateway 不得另建 cURL/签名路径。回调先验签和标准化，再交给充值 logic 更新订单、余额和流水；微信商户响应还必须用平台证书校验 timestamp、nonce、serial 和签名，支付宝退款响应必须按原始节点验 RSA2。会员余额只保留 `user_money` 权威字段，流水只保留 `left_amount` 作为变更后余额；后台调账、可信充值回调和首次充值退款必须在各自领域事务内调用 `MemberBalanceService`，不得直接写余额或 `AccountLogLogic`。回调路由是 /api/payment/notify/wechat 与 /api/payment/notify/alipay，必须保持公网 HTTPS、时间戳/证书/公钥配置正确。完整边界见应用仓 `docs/architecture/pb07-payment-host-contract.md`。
 
 ### 微信 OAuth
 
-OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 mnp_setting，公众号 oa 使用 oa_setting，PC 开放平台 open_pc 使用 open_platform。身份表、一次性 state 和补全票据由 server/database/migrations/20260802_wechat_oauth.sql 创建；浏览器流程通过 /api/oauth/wechat/begin、callback，小程序通过 mini-program，已登录绑定通过 bind。`OAuthBrowserCallbackService` 是浏览器回跳唯一映射点：微信分别登记 `/api/oauth/wechat/redirect/pc` 与 `/api/oauth/wechat/redirect/official-account`，再固定桥接到 `/pc/oauth/callback` 与 `/mobile/#/pages/oauth/callback`，禁止客户端或控制器另拼根路径。state、completion ticket 均为 32 字节随机值、SHA-256 存储、600 秒和行锁单次消费；UniApp completion ticket 暂存后读即删，不进入 URL，补全接口不能当作会员 token。旧 Channel CRUD 和公众号 AES 写入口已经退出，当前只支持明文公众号回调。新增 OAuth 提供商应实现 OAuthTransportInterface，保留 provider/client/subject 隔离和一次性票据语义，不要在控制器直接写身份表。完整边界见应用仓 `docs/architecture/pb07-oauth-channel-host-contract.md`。
+OAuth 场景和配置边界在 server/app/api/logic/OAuthLogic.php：mnp 使用 mnp_setting，公众号 oa 使用 oa_setting，PC 开放平台 open_pc 使用 open_platform。身份表、一次性 state 和补全票据属于 canonical `init.sql`；浏览器流程通过 /api/oauth/wechat/begin、callback，小程序通过 mini-program，已登录绑定通过 bind。`OAuthBrowserCallbackService` 是浏览器回跳唯一映射点：微信分别登记 `/api/oauth/wechat/redirect/pc` 与 `/api/oauth/wechat/redirect/official-account`，再固定桥接到 `/pc/oauth/callback` 与 `/mobile/#/pages/oauth/callback`，禁止客户端或控制器另拼根路径。state、completion ticket 均为 32 字节随机值、SHA-256 存储、600 秒和行锁单次消费；UniApp completion ticket 暂存后读即删，不进入 URL，补全接口不能当作会员 token。当前只支持明文公众号回调。新增 OAuth 提供商应实现 OAuthTransportInterface，保留 provider/client/subject 隔离和一次性票据语义，不要在控制器直接写身份表。完整边界见应用仓 `docs/architecture/pb07-oauth-channel-host-contract.md`。
 
 ## 10. 增加一个业务模块
 
-以管理端模块为例，建议按以下顺序提交，且每一步都保持可回滚：
+新增独立业务优先采用 `server/app/Modules/<Vendor>/<Module>/` 和
+`web/src/modules/<module-slug>/`，而不是继续把所有代码堆入共享 `common/` 和 `views/`。
 
-1. **数据设计**：新增 `server/database/migrations/YYYYMMDD_<module>.sql`，使用 `pa_<module>` 表名、索引、时间戳和软删除字段；首次安装器会按文件名顺序纳入迁移，不要把同一增量结构重复写进 `init.sql`。
-2. **Model/Enum**：在 `server/app/common/model/<module>/` 增加继承 BaseModel 的模型；状态/类型常量放 `common/enum`，关系和访问器放模型。
-3. **Validate/Logic/Service**：分别创建 `adminapi/validate/<module>/`、`adminapi/logic/<module>/`；跨模块/外部服务才增加 service。列表分页统一 `page_no/page_size` 和 `dataLists`，写操作使用事务，失败通过 `BaseLogic::setError()` 返回。
-4. **Controller 与路由**：创建 `adminapi/controller/<module>/` 控制器，继承 BaseAdminController；在 `server/route/app.php` 的 `api/admin` 组声明 GET/POST 路由。确认权限标识等于去掉 `api/admin/` 后的路径（必要时增加显式 alias）。
-5. **菜单与角色**：在迁移/种子中写入 M/C/A 菜单、paths、component 和 perms；登录 root 账号检查动态菜单，普通角色授予最小 A 权限。
-6. **客户端**：在 web/src/api/ 增加请求封装，在 web/src/router/routes/modules/ 注册页面并在 web/src/views/ 实现；PC/uni-app 只有确实提供该业务入口时才分别增加 pc/api、pc/pages 或 uniapp/src/api、uniapp/src/pages。
-7. **数据范围和审计**：若有部门/租户/所有者隔离，在 logic 的列表、详情和写操作都加显式范围条件；敏感写操作统一由 `OperationLogService` 写入，新增支付/API key、证书、验证码或授权字段时必须补充聚焦脱敏用例，不在 controller 另写日志。
+最小纵向顺序：
 
-最小验收是：迁移在空库/目标升级库各执行一次；登录后访问列表、详情、新增、编辑、删除和无权限场景；确认统一响应、菜单过滤、runtime 日志和上传文件路径均符合约定。不要用生成器产物替代人工审查路由、权限和数据范围。
+1. 在 `module.json` 固定 Module key、依赖、owned tables、公开合同和停用行为。
+2. 在 Module 自有 `Database/Migrations/` 增加追加式 migration；不修改历史 migration。
+3. 在 `Contracts/` 定义其他模块可用的命令/查询 DTO，在 `Application/` 实现用例和事务。
+4. Repository 只从可信 TenantContext 取 `tenant_id`，并在所有读写路径约束它。
+5. 在 `Resources/permissions.json`、`menus.json` 和设置定义中登记扩展面。
+6. 在 `ModuleProvider.php` 装配合同与基础设施；HTTP 路由仍在应用 Host 显式登记。
+7. 前端通过 `contribution.ts` 注册页面、Module key 和 required permissions。
+8. 固定 Plugin artifact/lock，安装后再分别开通 TenantModule 和成员权限。
+9. 最低验证覆盖安装幂等、两个 Tenant 隔离、停用拒绝、无权限、前端 contribution 和公开合同。
+
+当前可执行的完整 fixture、目录说明和跨模块调用边界见
+[Module 开发教程](/guide/module-development)。生成器只能生成起点，不能替代 owner、权限、Tenant
+隔离和失败恢复审查。
 
 ## 11. 最小验证与常见故障
 
@@ -387,11 +510,28 @@ cd web && pnpm run type:check
 
 | 现象 | 直接检查 |
 | --- | --- |
-| 40100 | 请求是否带 Authorization: Bearer；pa_admin_session/会员令牌是否过期；登录 IP 是否变化。 |
-| 40300 或菜单为空 | pa_system_menu.is_disable、角色关联和 perms 是否与实际 /api/admin/... 路径一致；非 root 未登记 URI 当前会放行，不能据此判断权限已配置。 |
+| 40100 | 请求是否带 `Authorization: Bearer pa_tat_...`；Tenant access token 是否过期；Account、TenantMember 或 Tenant 是否已停用。业务会员令牌不能用于管理端。 |
+| 40300 或菜单为空 | 检查 `pa_system_menu.is_disable`、`pa_permission`、`pa_role_permission`、`pa_member_role` 和 perms 是否与实际 `/api/admin/...` 路径一致；当前未登记 URI 对 owner 和普通成员都默认拒绝。 |
 | 数据库连接失败/表不存在 | .env 的 DB_*、DB_PREFIX 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认目标迁移已执行。 |
 | 前端请求 404/CORS | 开发代理是否指向当前 `PHP_PORT`；生产是否将 `/api/` 送到 ThinkPHP，并确认 `/admin/`、`/mobile/`、`/pc/` 分别命中对应客户端；检查各客户端 API base 配置。 |
 | 上传/导出失败或文件 404 | PHP-FPM 对 server/runtime/、server/public/storage/ 的写权限；Nginx /storage/ alias；ZipArchive 是否安装。 |
 | 支付/OAuth 失败 | 先确认 pa_config 中对应开关、AppID、证书/公钥、回调 HTTPS 和平台白名单；查看 server/runtime/log/，不要关闭验签。 |
 | 定时任务不执行 | 系统 cron 是否每分钟调用 php think crontab；pa_crontab.status、表达式、error、数据库 GET_LOCK；命令是否在 server/config/console.php 注册。 |
 | PHP 报缺少 cURL/OpenSSL/mbstring | 按本节扩展要求安装到实际 PHP-FPM/CLI 两套运行时，并确认 CLI 与 FPM 版本一致。 |
+
+## 12. 术语表
+
+| 术语 | 含义 |
+| --- | --- |
+| Core | 可由多个应用消费的通用 PHP/Web 契约和原语，不是完整业务应用 |
+| Host | 把 Core 接入具体框架、路由、配置、数据库和客户端的应用层 |
+| Application | 有独立产品边界、版本、Module 组合和数据所有权的代码产品 |
+| Application Instance | Application 在一个环境中的一次部署，拥有自己的数据库和密钥 |
+| Tenant | 一个实例内的数据隔离和成员授权根，不是门店/仓库的通用别名 |
+| Account/Credential | 可登录身份及其凭据，不直接保存业务客户或供应商资料 |
+| TenantMember | Account 在某个 Tenant 内的成员身份和状态 |
+| PlatformOperator | 只治理本实例平台能力的独立身份，不是 TenantMember |
+| Business Subject | 客户、供应商或经营公司等业务主体，可选择显式关联 Tenant |
+| Module | 业务代码、表、权限、菜单、测试和公开合同的唯一 owner |
+| Plugin | 携带一个或多个 Module 的不可变安装制品 |
+| TenantModule | 某个 Tenant 对已安装 Module 的开通状态 |

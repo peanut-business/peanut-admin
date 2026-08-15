@@ -1,6 +1,6 @@
 # Peanut Admin 应用、核心包与发布契约
 
-> 状态：Accepted Target，两个核心包已发布，PB04–PB08A 已收口
+> 状态：1.x 历史合同；2.0 当前事实以 `clean-native-multitenancy-baseline.md` 为准
 > 日期：2026-08-11
 
 ## 1. 产品与仓库边界
@@ -15,10 +15,9 @@ php scripts/create-app --name="Acme Console" --slug=acme-console \
 创建结果是不含 Git 历史和 Peanut 演示身份的独立应用候选；品牌、资源登记和 package
 identity 来自创建参数。生产部署的是这个已存在应用自己的 release，不是在服务器再次
 运行创建器。精确 inventory、所有权与 manifest 合同见 `docs/create-application.md`。
-已创建应用使用 `scripts/scaffold-upgrade` 的显式 plan/apply/verify/recover 闭环跨版本升级；
-执行器只管理 manifest 中的 managed/generated-managed 文件，不默认覆盖 app-owned 产品
-Module、数据库、页面或稳定 Host/override。完整不可变 release 与恢复合同见
-`docs/scaffold-upgrade.md`。
+1.x 曾使用 `scripts/scaffold-upgrade` 的显式 plan/apply/verify/recover 闭环；该合同只解释
+历史发布，不是 2.0 支持路径。2.0 仅从空目录、空数据库创建独立应用，不携带 1.x upgrade
+Runtime；当前创建合同见 `docs/create-application.md`。
 
 `peanut-opensource/peanut-admin` 是产品无关基础设施与公开契约仓。本应用的 LikeAdmin 业务能力已经独立验收，其中会员/财务、内容/装修、支付/OAuth 等产品领域继续由应用 Module 唯一拥有；核心同名或相邻候选能力未经固定资格和下游决策前不能视为替换基线。当前所有权与迁移门禁见 `docs/architecture/pb03-ownership-and-migration-gates.md`。
 

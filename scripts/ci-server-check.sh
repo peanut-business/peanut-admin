@@ -27,32 +27,13 @@ if [[ "$mode" == '--full' ]]; then
   lint_php "${php_files[@]}"
 
   tests=(
-    server/tests/Productization/WebsiteConfigServiceTest.php
-    server/tests/Productization/BrandScaffoldTest.php
-    server/tests/Productization/InstallerBootstrapTest.php
-    server/tests/Productization/AdminPermissionHostTest.php
-    server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php
-    server/tests/Multitenancy/AdminApiPermissionMigrationTest.php
-    server/tests/Multitenancy/AdminRbacTenantIsolationTest.php
-    server/tests/Productization/ReferenceCodesHostTest.php
-    server/tests/Productization/FileMediaHostTest.php
-    server/tests/Productization/OpsHostTest.php
+    server/tests/Productization/FreshSchemaBaselineTest.php
+    server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
+    server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
     server/tests/Productization/MemberFinanceHostTest.php
-    server/tests/Multitenancy/MemberTenantIsolationTest.php
-    server/tests/Productization/ContentDecorationHostTest.php
-    server/tests/Productization/LegacyDecorationRuntimeConvergenceTest.php
-    server/tests/Productization/NotificationHostTest.php
-    server/tests/Productization/PaymentHostTest.php
-    server/tests/Productization/OAuthChannelHostTest.php
-    server/tests/Multitenancy/ArticleTenantIsolationTest.php
-    server/tests/Multitenancy/NoticeTenantIsolationTest.php
-    server/tests/Multitenancy/TenantCacheLockIsolationTest.php
-    server/tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php
-    server/tests/Multitenancy/FileTenantIsolationTest.php
-    server/tests/Multitenancy/OperationLogTenantIsolationTest.php
-    server/tests/Multitenancy/CrontabTenantIsolationTest.php
-    server/tests/Multitenancy/HotSearchTenantIsolationTest.php
-    server/tests/Multitenancy/PlatformOperatorBoundaryTest.php
+    server/tests/Productization/PluginArtifactContractTest.php
+    server/tests/Productization/PluginModuleContractTest.php
+    server/tests/Productization/PluginLifecycleMigrationContractTest.php
   )
   for test_file in "${tests[@]}"; do
     php "$test_file"
@@ -115,18 +96,12 @@ while IFS= read -r path; do
     server/app/common/service/external/*|server/app/api/controller/PaymentNotifyController.php|server/app/api/controller/OfficialAccountController.php|server/app/api/controller/OAuthController.php|server/database/migrations/20260814_external_callback_tenant_routing.sql)
       select_test server/tests/Multitenancy/ExternalCallbackTenantRoutingTest.php
       ;;
-    *dict*|*Dict*) select_test server/tests/Multitenancy/DictTenantIsolationTest.php ;;
-    *article*) select_test server/tests/Multitenancy/ArticleTenantIsolationTest.php ;;
-    *decoration*|*Decoration*) select_test server/tests/Productization/LegacyDecorationRuntimeConvergenceTest.php ;;
-    *member*|*Member*|*account_log*|*AccountLog*) select_test server/tests/Multitenancy/MemberTenantIsolationTest.php ;;
-    *notice*|*notification*) select_test server/tests/Multitenancy/NoticeTenantIsolationTest.php ;;
-    *crontab*) select_test server/tests/Multitenancy/CrontabTenantIsolationTest.php ;;
-    *hot_search*|*HotSearch*) select_test server/tests/Multitenancy/HotSearchTenantIsolationTest.php ;;
-    *operation_log*|*/audit/*) select_test server/tests/Multitenancy/OperationLogTenantIsolationTest.php ;;
-    *file*|*File*) select_test server/tests/Multitenancy/FileTenantIsolationTest.php ;;
-    *cache*|*Cache*|*lock*|*Lock*)
-      select_test server/tests/Multitenancy/TenantCacheLockIsolationTest.php
-      select_test server/tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php
+    *member*|*Member*|*account_log*|*AccountLog*)
+      select_test server/tests/Productization/MemberFinanceHostTest.php
+      select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
+      ;;
+    *dict*|*Dict*|*article*|*decoration*|*Decoration*|*notice*|*notification*|*crontab*|*hot_search*|*HotSearch*|*operation_log*|*/audit/*|*file*|*File*|*cache*|*Cache*|*lock*|*Lock*)
+      select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
       ;;
     *tenant*|*Tenant*|server/app/platform/*)
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
@@ -142,8 +117,10 @@ while IFS= read -r path; do
       select_test server/tests/Productization/AdminPermissionHostTest.php
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       ;;
-    server/database/install.php|server/database/migrate.php|server/database/migrations/*tenant*)
+    server/database/install.php|server/database/migrate.php|server/database/init.sql|server/database/migrations/*)
       select_test server/tests/Productization/FreshSchemaBaselineTest.php
+      select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
+      select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
       ;;
   esac
 done < "$changed_file"

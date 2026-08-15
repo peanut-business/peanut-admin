@@ -17,7 +17,7 @@ class UserLogic extends BaseLogic
     /** 用户中心（首屏数据） */
     public static function center(AuthenticatedMemberContext $context, int $memberId): array
     {
-        $member = MemberTenantRepository::members($context)->field(['id', 'sn', 'nickname', 'avatar', 'mobile', 'balance', 'points', 'create_time'])
+        $member = MemberTenantRepository::members($context)->field(['id', 'sn', 'nickname', 'avatar', 'mobile', 'user_money', 'points', 'create_time'])
             ->findOrEmpty($memberId);
 
         if ($member->isEmpty()) {
@@ -25,6 +25,8 @@ class UserLogic extends BaseLogic
         }
 
         $data               = $member->toArray();
+        $data['balance']    = $data['user_money'];
+        unset($data['user_money']);
         $data['avatar']     = FileService::getFileUrl((string) $data['avatar']);
         $data['collect_num'] = ArticleCollect::alias('c')
             ->join('article a', 'c.tenant_id = a.tenant_id AND c.article_id = a.id')
@@ -42,7 +44,7 @@ class UserLogic extends BaseLogic
     /** 个人信息 */
     public static function info(AuthenticatedMemberContext $context, int $memberId): array
     {
-        $member = MemberTenantRepository::members($context)->field(['id', 'sn', 'account', 'nickname', 'avatar', 'sex', 'birthday', 'mobile', 'email', 'balance', 'points', 'create_time'])
+        $member = MemberTenantRepository::members($context)->field(['id', 'sn', 'account', 'nickname', 'avatar', 'sex', 'birthday', 'mobile', 'email', 'user_money', 'points', 'create_time'])
             ->findOrEmpty($memberId);
 
         if ($member->isEmpty()) {
@@ -50,6 +52,8 @@ class UserLogic extends BaseLogic
         }
 
         $data           = $member->toArray();
+        $data['balance'] = $data['user_money'];
+        unset($data['user_money']);
         $data['avatar'] = FileService::getFileUrl((string) $data['avatar']);
         $data['has_password'] = $member->password !== '' && $member->password !== null;
 

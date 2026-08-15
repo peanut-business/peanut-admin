@@ -48,10 +48,10 @@ function demoPlan(): array
             ],
             [
                 'category' => '更新日志',
-                'title' => 'v1.1.5 演示环境更新记录',
-                'desc' => '记录当前演示环境的发布、迁移和可用性验证。',
+                'title' => '2.0.0 fresh baseline 说明',
+                'desc' => '记录当前开发候选的原生身份与空库安装边界。',
                 'abstract' => 'Peanut Admin Demo content',
-                'content' => '<p>当前演示环境运行 Peanut Admin v1.1.5，已完成 50 到 54 条迁移及最低线上 smoke。</p>',
+                'content' => '<p>Peanut Admin 2.0.0 从 canonical Schema 空库安装，不接管 1.x 数据库。</p>',
                 'click_virtual' => 64,
                 'sort' => 50,
             ],
@@ -67,11 +67,11 @@ function demoPlan(): array
         ],
         'tags' => ['演示用户', '内容爱好者'],
         'members' => [
-            ['sn' => 'DEMO0001', 'account' => 'demo_member_01', 'nickname' => '演示用户 01', 'channel' => 4, 'points' => 128, 'balance' => '88.00'],
-            ['sn' => 'DEMO0002', 'account' => 'demo_member_02', 'nickname' => '演示用户 02', 'channel' => 3, 'points' => 96, 'balance' => '56.00'],
-            ['sn' => 'DEMO0003', 'account' => 'demo_member_03', 'nickname' => '演示用户 03', 'channel' => 1, 'points' => 64, 'balance' => '32.00'],
-            ['sn' => 'DEMO0004', 'account' => 'demo_member_04', 'nickname' => '演示用户 04', 'channel' => 4, 'points' => 40, 'balance' => '20.00'],
-            ['sn' => 'DEMO0005', 'account' => 'demo_member_05', 'nickname' => '演示用户 05', 'channel' => 3, 'points' => 24, 'balance' => '12.00'],
+            ['sn' => 'DEMO0001', 'account' => 'demo_member_01', 'nickname' => '演示用户 01', 'channel' => 4, 'points' => 128, 'user_money' => '88.00'],
+            ['sn' => 'DEMO0002', 'account' => 'demo_member_02', 'nickname' => '演示用户 02', 'channel' => 3, 'points' => 96, 'user_money' => '56.00'],
+            ['sn' => 'DEMO0003', 'account' => 'demo_member_03', 'nickname' => '演示用户 03', 'channel' => 1, 'points' => 64, 'user_money' => '32.00'],
+            ['sn' => 'DEMO0004', 'account' => 'demo_member_04', 'nickname' => '演示用户 04', 'channel' => 4, 'points' => 40, 'user_money' => '20.00'],
+            ['sn' => 'DEMO0005', 'account' => 'demo_member_05', 'nickname' => '演示用户 05', 'channel' => 3, 'points' => 24, 'user_money' => '12.00'],
         ],
     ];
 }
@@ -209,16 +209,16 @@ try {
     }
 
     $member = $pdo->prepare(
-        'INSERT INTO pa_member (tenant_id, sn, account, password, nickname, avatar, real_name, mobile, channel, email, sex, status, is_new_user, balance, user_money, total_recharge_amount, points, create_time, update_time) '
-        . 'VALUES (:tenant_id, :sn, :account, \'\', :nickname, \'\', \'\', \'\', :channel, \'\', 0, 1, 0, :balance, :user_money, 0, :points, :create_time, :update_time) '
-        . 'ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), nickname = VALUES(nickname), channel = VALUES(channel), balance = VALUES(balance), user_money = VALUES(user_money), points = VALUES(points), status = 1, delete_time = NULL, update_time = VALUES(update_time)'
+        'INSERT INTO pa_member (tenant_id, sn, account, password, nickname, avatar, real_name, mobile, channel, email, sex, status, is_new_user, user_money, total_recharge_amount, points, create_time, update_time) '
+        . 'VALUES (:tenant_id, :sn, :account, \'\', :nickname, \'\', \'\', \'\', :channel, \'\', 0, 1, 0, :user_money, 0, :points, :create_time, :update_time) '
+        . 'ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), nickname = VALUES(nickname), channel = VALUES(channel), user_money = VALUES(user_money), points = VALUES(points), status = 1, delete_time = NULL, update_time = VALUES(update_time)'
     );
     $relation = $pdo->prepare('INSERT IGNORE INTO pa_member_tag_relation (tenant_id, member_id, tag_id) VALUES (:tenant_id, :member_id, :tag_id)');
     foreach ($plan['members'] as $index => $memberData) {
         $member->execute([
             'tenant_id' => $tenantId, 'sn' => $memberData['sn'], 'account' => $memberData['account'],
-            'nickname' => $memberData['nickname'], 'channel' => $memberData['channel'], 'balance' => $memberData['balance'],
-            'user_money' => $memberData['balance'], 'points' => $memberData['points'],
+            'nickname' => $memberData['nickname'], 'channel' => $memberData['channel'],
+            'user_money' => $memberData['user_money'], 'points' => $memberData['points'],
             'create_time' => $now, 'update_time' => $now,
         ]);
         $memberId = (int) $pdo->lastInsertId();

@@ -24,7 +24,7 @@ cd peanut-admin
 
 cd server
 cp .env.example .env
-# 编辑 .env，填写 DB_*、随机 JWT_SECRET 和首次安装用 ADMIN_INITIAL_PASSWORD
+# 编辑 .env，填写 DB_*、随机 JWT_SECRET、ADMIN_INITIAL_EMAIL 和 ADMIN_INITIAL_PASSWORD
 composer install
 cd ..
 ```
@@ -39,10 +39,14 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 
 ```bash
 export ADMIN_INITIAL_PASSWORD='<至少 12 位且同时包含字母和数字>'
+export ADMIN_INITIAL_EMAIL='owner@example.com'
 php server/database/install.php
 ```
 
-安装器只接受空数据库，创建管理员 `admin`，且不会回显初始密码。已有环境不要重复运行首次安装器，也不要设置该变量：先完成数据库与存储备份，尚未进入迁移账本的历史安装只执行一次 `php server/database/migrate.php --adopt-existing`，已接管环境及后续发布执行 `php server/database/migrate.php`。命令会按账本处理未登记迁移并校验 SHA-256；不要手工改写账本或已登记迁移。
+安装器只接受空数据库，创建默认 Tenant、原生 Account/TenantMember 和首 owner，且不会回显
+初始密码。2.0.0 不支持接管 1.x 数据库；目标库已有任何表时停止并换用已登记的空库。
+安装后可执行 `php server/database/migrate.php --current` 校验 canonical `init.sql` 与基线后
+追加 migration 的 SHA-256。不要手工改写账本或已登记 SQL。
 
 ## 启动服务
 
@@ -53,7 +57,7 @@ php server/database/install.php
 ./scripts/local-stack.sh status
 ```
 
-默认打开 `http://127.0.0.1:20187/admin/`，使用管理员 `admin` 和安装时提供的密码登录；
+默认打开 `http://127.0.0.1:20187/admin/`，使用安装时提供的管理员邮箱和密码登录；
 首次登录后请改为个人凭据。本地监听来自 `.local/stack.env`（或
 `PEANUT_LOCAL_ENV_FILE`），其他 clone/worktree 可覆盖登记默认端口。停止服务运行
 `./scripts/local-stack.sh dev-down`。

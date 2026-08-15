@@ -12,7 +12,7 @@ use PeanutAdmin\Kernel\Menu\PdoMenuCatalogRepository;
 use think\facade\Db;
 
 /**
- * Adapts the Core Module/TenantModule catalog to the legacy Admin menu payload.
+ * Adapts the Core Module/TenantModule catalog to the Admin Shell menu payload.
  *
  * The bridge is read-only: Plugin installation owns deployment state, the platform
  * owns TenantModule enablement, and Core RBAC owns member Permission grants.
@@ -32,32 +32,26 @@ final readonly class CoreTenantModuleAdminBridge
             return ['menu' => [], 'permissions' => []];
         }
 
-        try {
-            $pdo = $this->connection();
-            $permissions = (new PdoTenantAuthorizationRepository($pdo))->permissions(
-                $tenantContext->tenantId,
-                $tenantContext->memberId
-            )->keys();
-            $catalog = new PdoMenuCatalogRepository($pdo);
-            $definitions = $catalog->activeDefinitions('tenant');
-            $deploymentModules = $catalog->activeDeploymentModules();
-            $tenantModules = $catalog->activeTenantModules($tenantContext->tenantId);
-            $visible = (new MenuRegistry($definitions))->visible(
-                'admin-web',
-                static fn(string $moduleKey): bool => in_array($moduleKey, $deploymentModules, true),
-                static fn(string $moduleKey): bool => in_array($moduleKey, $tenantModules, true),
-                static fn(string $permission): bool => in_array($permission, $permissions, true)
-            );
+        $pdo = $this->connection();
+        $permissions = (new PdoTenantAuthorizationRepository($pdo))->permissions(
+            $tenantContext->tenantId,
+            $tenantContext->memberId
+        )->keys();
+        $catalog = new PdoMenuCatalogRepository($pdo);
+        $definitions = $catalog->activeDefinitions('tenant');
+        $deploymentModules = $catalog->activeDeploymentModules();
+        $tenantModules = $catalog->activeTenantModules($tenantContext->tenantId);
+        $visible = (new MenuRegistry($definitions))->visible(
+            'admin-web',
+            static fn(string $moduleKey): bool => in_array($moduleKey, $deploymentModules, true),
+            static fn(string $moduleKey): bool => in_array($moduleKey, $tenantModules, true),
+            static fn(string $permission): bool => in_array($permission, $permissions, true)
+        );
 
-            return [
-                'menu' => $this->serverMenuRecords($visible),
-                'permissions' => array_values(array_unique($permissions)),
-            ];
-        } catch (\Throwable) {
-            // Existing installations without the lifecycle migration keep their
-            // legacy Admin menu. Module routes remain absent and therefore closed.
-            return ['menu' => [], 'permissions' => []];
-        }
+        return [
+            'menu' => $this->serverMenuRecords($visible),
+            'permissions' => array_values(array_unique($permissions)),
+        ];
     }
 
     private function connection(): PDO
@@ -86,8 +80,8 @@ final readonly class CoreTenantModuleAdminBridge
 
         $records = [];
         foreach ($definitions as $definition) {
-            // Legacy ServerMenuRecord groups have a concrete client route. Core
-            // groups do not, so page/link records are flattened for this adapter.
+            // Admin Shell groups require a concrete client route. Core groups do
+            // not, so page/link records are flattened for this adapter.
             if ($definition->type === 'group' || $definition->routePath === null) {
                 continue;
             }

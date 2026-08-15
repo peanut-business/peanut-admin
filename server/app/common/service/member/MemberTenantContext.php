@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\common\service\member;
 
 use app\common\service\notice\NoticeTenantContext;
-use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -44,10 +43,6 @@ final class MemberTenantContext
         }
         if ($context instanceof TenantContext && self::trusted($context)) {
             return $context->tenantId;
-        }
-        if ($context instanceof TenantSystemContext
-            && $context->actorKey === FinanceTenantContext::VERIFIED_PAYMENT_ACTOR) {
-            return FinanceTenantContext::tenantId($context);
         }
         if ($context instanceof TenantSystemContext
             && $context->tenantId > 0

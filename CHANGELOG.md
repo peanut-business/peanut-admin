@@ -3,6 +3,24 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [2.0.0] - Unreleased
+
+### Changed
+
+- Management authentication and authorization now use the native
+  Account/Credential/TenantMember/RBAC model exclusively.
+- Fresh installations use one canonical application Schema plus the Core
+  KernelSchema; post-baseline migrations must be additive.
+- All shipped official capabilities are required to enforce Tenant ownership
+  and isolation. Multi-tenant behavior is no longer optional compatibility.
+
+### Removed
+
+- The 1.x Admin/Role/Department mapping tables, default-Tenant bootstrap ledger,
+  legacy Admin Runtime, and member balance mirror columns.
+- In-place database and scaffold upgrades from 1.x. Version 2.0.0 installs only
+  into an empty database; historical tags and Release evidence remain unchanged.
+
 ## [1.1.5] - 2026-08-15
 
 ### Fixed

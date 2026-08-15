@@ -1,6 +1,10 @@
 # 脚手架升级执行器
 
-`scripts/scaffold-upgrade` 为 `scripts/create-app` 创建的独立应用提供可执行的
+> **1.x 历史归档，不是 2.0.0 使用说明。** 2.0.0 fresh-only 不提供脚手架原地升级；
+> 新应用请使用 `scripts/create-app` 生成并准备独立空数据库。以下内容只保留旧版本行为的
+> 可追溯记录，不能作为当前操作路径。
+
+`scripts/scaffold-upgrade` 曾为 `scripts/create-app` 创建的独立应用提供可执行的
 `preflight → apply → verify → recover/rollback` 闭环。它只管理 application manifest
 中标记为 `managed` 或 `generated-managed` 的文件；`app-owned` 业务、数据库、页面和
 Host/override 文件永远不进入默认写集。

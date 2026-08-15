@@ -13,8 +13,6 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class FinanceTenantContext
 {
-    public const VERIFIED_PAYMENT_ACTOR = 'peanut.finance.verified-payment';
-
     public static function member(object $request): AuthenticatedMemberContext
     {
         $context = $request->authenticatedMemberContext ?? null;
@@ -22,20 +20,6 @@ final class FinanceTenantContext
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
         return $context;
-    }
-
-    public static function verifiedPayment(int $tenantId, string $orderSn): TenantSystemContext
-    {
-        $orderSn = trim($orderSn);
-        if ($tenantId < 1 || $orderSn === '') {
-            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
-        }
-        return new TenantSystemContext(
-            $tenantId,
-            self::VERIFIED_PAYMENT_ACTOR,
-            'finance.recharge.settle',
-            'payment:' . hash('sha256', $orderSn),
-        );
     }
 
     public static function externalPayment(int $tenantId, string $identity): TenantSystemContext
@@ -58,11 +42,9 @@ final class FinanceTenantContext
             $tenantId = $context->tenantId;
         } else {
             $tenantId = $context->tenantId;
-            $legacy = $context->actorKey === self::VERIFIED_PAYMENT_ACTOR
-                && $context->operation === 'finance.recharge.settle';
             $external = $context->actorKey === ExternalTenantResolver::ACTOR
                 && $context->operation === 'payment.settle';
-            if ((!$legacy && !$external) || $context->operationId === '') {
+            if (!$external || $context->operationId === '') {
                 throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
             }
         }
