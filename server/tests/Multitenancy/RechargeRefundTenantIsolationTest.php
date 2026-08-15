@@ -112,7 +112,7 @@ try {
     expectFinanceTenant(in_array('uk_refund_record_order_global', $refundIndexes, true), 'global one-refund-per-order invariant was lowered');
 
     $pdo->exec("INSERT INTO pa_tenant (id,code,status) VALUES (202,'beta','active')");
-    $pdo->exec("INSERT INTO pa_member (id,tenant_id,sn,account,nickname,user_money,balance,total_recharge_amount) VALUES (22,202,'M-BETA','beta','Beta',20,20,0)");
+    $pdo->exec("INSERT INTO pa_member (id,tenant_id,sn,account,nickname,user_money,total_recharge_amount) VALUES (22,202,'M-BETA','beta','Beta',20,0)");
     putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
     putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
     $app = new think\App(); $app->initialize();

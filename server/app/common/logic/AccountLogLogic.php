@@ -47,8 +47,6 @@ class AccountLogLogic extends BaseLogic
             'action' => $action,
             'change_amount' => abs(round($changeAmount, 2)),
             'left_amount' => $leftAmount,
-            // Peanut 旧字段保留为兼容镜像，不再承载权威语义。
-            'after_amount' => $leftAmount,
             'source_type' => 0,
             'source_sn' => $sourceSn,
             'remark' => $remark,

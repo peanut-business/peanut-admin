@@ -50,7 +50,7 @@ CREATE TABLE pa_member (
   channel TINYINT UNSIGNED NOT NULL DEFAULT 0, email VARCHAR(100) NOT NULL DEFAULT '', sex TINYINT NOT NULL DEFAULT 0,
   birthday DATE NULL, status TINYINT NOT NULL DEFAULT 1, login_time INT UNSIGNED NOT NULL DEFAULT 0,
   login_ip VARCHAR(45) NOT NULL DEFAULT '', is_new_user TINYINT NOT NULL DEFAULT 0,
-  balance DECIMAL(10,2) NOT NULL DEFAULT 0, user_money DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
+  user_money DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
   total_recharge_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, points INT UNSIGNED NOT NULL DEFAULT 0,
   create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
   PRIMARY KEY (id), UNIQUE KEY uk_sn (sn), UNIQUE KEY uk_mobile_nonempty (mobile_unique),
@@ -69,7 +69,7 @@ CREATE TABLE pa_member_balance_log (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT, sn VARCHAR(32) NOT NULL DEFAULT '', member_id INT UNSIGNED NOT NULL DEFAULT 0,
   change_object TINYINT UNSIGNED NOT NULL DEFAULT 1, change_type SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   action TINYINT UNSIGNED NOT NULL DEFAULT 1, change_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
-  left_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, after_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  left_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
   source_type TINYINT NOT NULL DEFAULT 0, source_sn VARCHAR(255) NULL, remark VARCHAR(255) NULL DEFAULT '', extra TEXT NULL,
   admin_id INT UNSIGNED NOT NULL DEFAULT 0, create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NULL, delete_time INT UNSIGNED NULL,
   PRIMARY KEY (id), UNIQUE KEY uk_sn (sn), KEY idx_member_id (member_id), KEY idx_change_type (change_type), KEY idx_create_time (create_time)
@@ -147,7 +147,7 @@ try {
 
     $betaMember = MemberTenantRepository::createMember($beta, [
         'tenant_id' => 101, 'sn' => 'M-LEGACY-11', 'account' => 'same-account', 'nickname' => 'Beta member',
-        'mobile' => '13800000000', 'status' => 1, 'balance' => 20, 'user_money' => 20,
+        'mobile' => '13800000000', 'status' => 1, 'user_money' => 20,
     ]);
     expectMemberTenant((int)$betaMember->tenant_id === 202, 'member payload forged Tenant ownership');
     expectMemberTenant(MemberTagLogic::add($beta, ['name' => 'same-tag']), MemberTagLogic::getError());

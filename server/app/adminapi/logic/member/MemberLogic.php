@@ -64,7 +64,7 @@ class MemberLogic extends BaseLogic
         $member = MemberTenantRepository::members($context)->field([
             'id', 'sn', 'account', 'nickname', 'avatar', 'real_name',
             'sex', 'mobile', 'create_time', 'login_time', 'channel',
-            'user_money', 'balance',
+            'user_money',
         ])->findOrEmpty($id);
         if ($member->isEmpty()) {
             return [];
@@ -182,7 +182,7 @@ class MemberLogic extends BaseLogic
             $row['channel'] = MemberChannelEnum::getDesc($channel);
             $row['status'] = (int)($row['status'] ?? 1);
             $row['is_disable'] = $row['status'] === 1 ? 0 : 1;
-            $row['user_money'] = (float)($row['user_money'] ?? $row['balance'] ?? 0);
+            $row['user_money'] = (float)($row['user_money'] ?? 0);
             $row['balance'] = $row['user_money'];
             $row['total_recharge_amount'] = (float)($row['total_recharge_amount'] ?? 0);
             $row['create_time'] = self::formatTime($row['create_time'] ?? 0);

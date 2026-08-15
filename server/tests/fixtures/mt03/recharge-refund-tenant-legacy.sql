@@ -10,8 +10,8 @@ CREATE TABLE pa_member (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL,
   sn VARCHAR(20) NOT NULL DEFAULT '', account VARCHAR(50) NOT NULL DEFAULT '', password VARCHAR(100) NOT NULL DEFAULT '',
   nickname VARCHAR(50) NOT NULL DEFAULT '', avatar VARCHAR(255) NOT NULL DEFAULT '', mobile VARCHAR(20) NOT NULL DEFAULT '',
-  status TINYINT NOT NULL DEFAULT 1, balance DECIMAL(10,2) NOT NULL DEFAULT 0,
-  user_money DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, total_recharge_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1, user_money DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
+  total_recharge_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
   create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
   PRIMARY KEY (id), UNIQUE KEY uk_member_tenant_id (tenant_id,id)
 ) ENGINE=InnoDB;
@@ -28,7 +28,7 @@ CREATE TABLE pa_member_balance_log (
   sn VARCHAR(32) NOT NULL, member_id INT UNSIGNED NOT NULL, change_object TINYINT UNSIGNED NOT NULL DEFAULT 1,
   change_type SMALLINT UNSIGNED NOT NULL DEFAULT 0, action TINYINT UNSIGNED NOT NULL DEFAULT 1,
   change_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, left_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
-  after_amount DECIMAL(10,2) NOT NULL DEFAULT 0, source_type TINYINT NOT NULL DEFAULT 0,
+  source_type TINYINT NOT NULL DEFAULT 0,
   source_sn VARCHAR(255) NULL, remark VARCHAR(255) NULL, extra TEXT NULL, admin_id INT UNSIGNED NOT NULL DEFAULT 0,
   create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NULL, delete_time INT UNSIGNED NULL,
   PRIMARY KEY (id), UNIQUE KEY uk_member_balance_log_tenant_id (tenant_id,id),
@@ -54,8 +54,8 @@ CREATE TABLE pa_refund_log (
 
 INSERT INTO pa_tenant (id,code,status) VALUES (101,'default','active');
 INSERT INTO pa_default_tenant_bootstrap (id,tenant_id,status) VALUES (1,101,'completed');
-INSERT INTO pa_member (id,tenant_id,sn,account,nickname,user_money,balance,total_recharge_amount)
-VALUES (11,101,'M-ALPHA','alpha','Alpha',100.00,100.00,10.00);
+INSERT INTO pa_member (id,tenant_id,sn,account,nickname,user_money,total_recharge_amount)
+VALUES (11,101,'M-ALPHA','alpha','Alpha',100.00,10.00);
 INSERT INTO pa_recharge_order
   (id,sn,user_id,pay_sn,pay_way,pay_status,pay_time,order_amount,order_terminal,transaction_id,refund_status,create_time)
 VALUES (21,'RC-LEGACY-ALPHA',11,'PY-LEGACY-ALPHA',2,1,1700000000,10.00,3,'TX-LEGACY-ALPHA',1,1700000000);

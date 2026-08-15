@@ -16,12 +16,18 @@ $serverRoot = dirname(__DIR__, 2);
 $repositoryRoot = dirname($serverRoot);
 $balanceServicePath = $serverRoot . '/app/common/service/MemberBalanceService.php';
 $balanceService = (string)file_get_contents($balanceServicePath);
+$accountLog = (string)file_get_contents($serverRoot . '/app/common/logic/AccountLogLogic.php');
+$schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 
 expectMemberFinance(MemberBalanceService::moneyToCents('10.10') === 1010, 'decimal amount conversion changed');
 expectMemberFinance(MemberBalanceService::moneyToCents(0.1) === 10, 'float amount conversion changed');
 expectMemberFinance(MemberBalanceService::centsToMoney(1010) === '10.10', 'money formatting changed');
 expectMemberFinance(str_contains($balanceService, 'Member::lock(true)'), 'balance owner must lock the member row');
 expectMemberFinance(str_contains($balanceService, 'AccountLogLogic::add'), 'balance owner must append a ledger row');
+expectMemberFinance(!str_contains($balanceService, '$member->balance'), 'balance owner must not write a compatibility mirror');
+expectMemberFinance(!str_contains($accountLog, "'after_amount' =>"), 'ledger owner must not write a compatibility mirror');
+expectMemberFinance(!str_contains($schema, '`balance` DECIMAL'), 'member compatibility balance remains in the fresh schema');
+expectMemberFinance(!str_contains($schema, '`after_amount` DECIMAL'), 'ledger compatibility amount remains in the fresh schema');
 $memberSave = strpos($balanceService, '$member->save()');
 $ledgerAppend = strpos($balanceService, 'AccountLogLogic::add');
 expectMemberFinance(
