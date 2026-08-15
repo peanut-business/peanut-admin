@@ -1,12 +1,12 @@
 # Peanut Admin
 
 Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的企业应用脚手架。
-同一份 `1.1.3` release 同时支持单实例（`standalone`）和多租户（`multi-tenant`）部署，
+同一份 `1.1.4` release 同时支持单实例（`standalone`）和多租户（`multi-tenant`）部署，
 覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
 
 [在线应用](https://peanut-admin.007345.xyz) ·
 [文档中心](https://peanut-admin-doc.007345.xyz) ·
-[v1.1.3 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.3) ·
+[v1.1.4 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.4) ·
 [更新日志](CHANGELOG.md)
 
 ## 当前稳定能力
@@ -16,9 +16,9 @@ Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的
 - 多端应用：Vue 3 管理端、Nuxt 3 PC、UniApp H5/小程序。
 - 多租户：默认 Tenant、可信 TenantContext、Tenant-first 数据访问、缓存/文件/任务/审计隔离。
 - 实例内平台管理：独立 PlatformOperator、Tenant 生命周期、首个 owner 和 TenantModule 管理。
-- 交付：空库安装、`v1.0.0/v1.1.0 → v1.1.3` 前滚、54 条迁移账本和 Docker Compose 生产部署。
+- 交付：空库安装、`v1.0.0/v1.1.0 → v1.1.4` 前滚、54 条迁移账本和 Docker Compose 生产部署。
 
-`1.1.3` 是稳定多租户应用脚手架，不包含套餐、订阅、计费、试用、发票、应用市场或
+`1.1.4` 是稳定多租户应用脚手架，不包含套餐、订阅、计费、试用、发票、应用市场或
 跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并完成平台登记。
 
 ## 技术栈
@@ -152,7 +152,7 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 
 ## 版本与许可证
 
-当前稳定版本为 [`v1.1.3`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.3)。
+当前稳定版本为 [`v1.1.4`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.4)。
 发布附件包含源码归档、Release manifest、许可证、第三方告知和 SPDX SBOM。
 
 Peanut Admin 应用当前采用专有 / All Rights Reserved 许可；公开 Core 包维持 Apache-2.0。

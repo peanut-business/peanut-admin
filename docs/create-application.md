@@ -43,8 +43,8 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 source-only 或 app-owned 演进无需伪造新的模板身份，而任何 managed 字节变化仍必须先形成
 新的不可变 scaffold release。
 
-当前 inventory 采用不可变 scaffold `v1.1.6` release。该 identity 只属于 scaffold 命名空间，
-不是 Peanut Admin 产品 Tag/Release；既有 scaffold identity 均保持不变。`v1.1.6`
+当前 inventory 采用不可变 scaffold `v1.1.7` release。该 identity 只属于 scaffold 命名空间，
+不是 Peanut Admin 产品 Tag/Release；既有 scaffold identity 均保持不变。`v1.1.7`
 继承 `v1.1.5` 的双模式 Runtime 和 application version 合同，并让生成应用的法律 inventory
 与最终五份依赖 lock 一致。生产管理端 builder 在执行 Vite 前，
 把应用根目录的 `plugins.lock` 精确复制为 `/build/plugins.lock`；Plugin contribution resolver

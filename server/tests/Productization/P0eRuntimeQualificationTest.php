@@ -31,12 +31,12 @@ $expect(($fixture['baselines'] ?? null) === ['v1.0.0', 'v1.1.0'], 'P0-E forward 
 $targetRelease = $fixture['target_release'] ?? null;
 $expect(is_array($targetRelease), 'P0-E target scaffold release is missing');
 $expect($targetRelease === [
-    'version' => '1.1.6',
-    'source_commit' => 'e68700335fc75452b8a6866d9efe229decc34a76',
-    'source_tree' => 'cab4413c5afff2cf8457f175f2de4a835547237c',
-    'manifest_sha256' => '8fa18359ed9853283822c4247cdac61da3fdda3c5ed849bda8b8d089e577df54',
-    'inventory_sha256' => 'da8ebc4554e043ee1aedbd9d1b9ddef60fbd1f79e1c96e2ed6e3e918e6a4f4e0',
-    'managed_tree_sha256' => 'd54e1f467fabe616276ad436a5334bebbf4c900d47a68d5d395b8ad6d78e1cb1',
+    'version' => '1.1.7',
+    'source_commit' => '8d6cd3390dd75e8c03aa0b468bc20e2619f97a65',
+    'source_tree' => '03685f5506d4a6b84be461910ecbd779d149df14',
+    'manifest_sha256' => '1e3cced21b1c26737d953c4e24b24d33c38af489edbd6484b1af1653f42bc1fe',
+    'inventory_sha256' => 'a65ec2323eaa8c008633e2c615b1a5dc1c228b7140d8e2fc0aa602224cb2466a',
+    'managed_tree_sha256' => 'c9904e48c0cf8ea8b571046b3ddd095f0772da5cfa0ae21a5622d46d8987ee94',
     'file_count' => 275,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
@@ -47,7 +47,7 @@ $expect(is_array($legacy), 'P0-E legacy application fixture is missing');
 $expect(($legacy['source_commit'] ?? null) === '14412607ba36f1816e39f7117f77eea4a9e7419e', 'legacy application commit changed');
 $expect(($legacy['source_tree'] ?? null) === '172865d8b8057caa8a017ac591618cd914af30a5', 'legacy application tree changed');
 $expect(
-    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5', '1.1.6'],
+    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5', '1.1.6', '1.1.7'],
     'legacy application release chain changed'
 );
 $expect(count($legacy['customizations'] ?? []) === 2, 'legacy application must retain two real app-owned customizations');

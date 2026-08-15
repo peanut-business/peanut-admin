@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "1.1.6",
+    "template_version": "1.1.7",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -120,7 +120,7 @@
             "owner": "scaffold",
             "transform": "changelog",
             "mode": 420,
-            "source_sha256": "f8b7b7bde276a06497c1b054fdd556f331e09f9ad26a400b5772e46712dc0af1"
+            "source_sha256": "d7f570ecfde893ff416fe4903ba3ab6a62c6731657b134982b3e66a783fe3b23"
         },
         {
             "path": "LICENSE",
@@ -138,7 +138,7 @@
             "owner": "scaffold",
             "transform": "license",
             "mode": 420,
-            "source_sha256": "475e45d455506171c34388beaa27138641bac621471744452d03e5dd636faa96"
+            "source_sha256": "0b5fc6f7a42180898adcd11a0a1c477df472b103801d516a40ea5543c517fbd1"
         },
         {
             "path": "README.md",
@@ -147,7 +147,7 @@
             "owner": "scaffold",
             "transform": "readme",
             "mode": 420,
-            "source_sha256": "bf61db4b47f8e1bf64c44824aad5881d58f81d30965f60eecf24b0f4c7d6c3c0"
+            "source_sha256": "17cc70f9d6fad7fbc186139997bdc84a282f068b75620ef76b5990546c228a62"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -156,7 +156,7 @@
             "owner": "scaffold",
             "transform": "release-metadata",
             "mode": 420,
-            "source_sha256": "0e15fd6028b5cf6503f36f9eabadb5e632125c6b1c8f37b0993721f29af8f90d"
+            "source_sha256": "b15ccd333388d0367fb6fc3cae96a768461975907f279ae81515f3e0c9790234"
         },
         {
             "path": "RELEASE_SBOM.spdx.json",
@@ -165,7 +165,7 @@
             "owner": "scaffold",
             "transform": "sbom",
             "mode": 420,
-            "source_sha256": "ee93cb2529236e3ee2e12fe52776c1cac81c4019eeb8a47ddfd5030c1e4c990f"
+            "source_sha256": "df342b0dfc0923d6e92fc65097aead10bff7c5d93e5dff9470b01726dabc4f65"
         },
         {
             "path": "THIRD_PARTY_NOTICES.md",
@@ -174,7 +174,7 @@
             "owner": "scaffold",
             "transform": "third-party-notices",
             "mode": 420,
-            "source_sha256": "83b8e419070e89de6400fee1d20ab0e7422be5b1a19ca671d1316817fc43c500"
+            "source_sha256": "7bf0cacb12c2f29bc0c8f141736468757a3e263248857f47d48883a47cf8b071"
         },
         {
             "path": "compose.yaml",
@@ -401,7 +401,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "e437ece76189210779715b6aadbcdecbd876902794625d7f396a94f19b52d19b"
+            "source_sha256": "127ab278ce225b74b9e61a1f46c01a169efb4e025c23a3cfdabc7f446002aa26"
         },
         {
             "path": "docs-site/deployment.md",
@@ -464,7 +464,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "1fd2aa0063fb9756ff31779ed2a270350bdbed30eb1ae23fde8ffae166521607"
+            "source_sha256": "ee68b2d92036900165fc00fb0095f6047e393e0a18db61aa090fcc4ff6546656"
         },
         {
             "path": "docs-site/legal.md",
@@ -482,7 +482,7 @@
             "owner": "application",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "5965644a453eb9d8d0a65439c43da813257b76e10f28f35c9e4803a062efa53d"
+            "source_sha256": "351e8c2fdc930a0c3a1d8b5336f14bfb8cf35e35757149cca675ba3d9894e127"
         },
         {
             "path": "docs-site/pnpm-lock.yaml",
@@ -3164,7 +3164,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "de24b4a799d74125a1732b97b59e15858c9ad2cebcda6dc020775b6a0cd102af"
+            "source_sha256": "814563d1ad0c91238e7e290d218c66ae971e0a7dc07384bc5e6ef66430e8fff9"
         },
         {
             "path": "pc/package.json",
@@ -3173,7 +3173,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "a269651c7b21bbe9ea65d548e77e9ccd77be0c2b5f108eb7ba1e45c9ee019c6f"
+            "source_sha256": "2d62c3a68d41c649b3efcc01c400f9efe5ad03916f9b10b4f521e6eba82cc33f"
         },
         {
             "path": "pc/pages/account/security.vue",
@@ -3687,7 +3687,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "27a18dfdc3d58a20e22aab997c25c284d953d9232f3dcd4ab277d8d1e8eab8d4"
+            "source_sha256": "6dcd54e7520ea0f5f4c49fd98df8a75e037091b847f5df438a8597fa491f5e85"
         },
         {
             "path": "scripts/select-legacy-pre-alpha5-fixture",
@@ -4320,7 +4320,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "eb58caf8c175a46f70c5bdb9e59fcdd19b20398315fa10f3fa43eb1a922b8e18"
+            "source_sha256": "d395c750c4c69bbacde9f94448a7a7276562d95785dca12bc6824049f0116d2c"
         },
         {
             "path": "server/app/adminapi/logic/article/ArticleCateLogic.php",
@@ -5211,7 +5211,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "5aa960c5ac204e28c836ba86581bdf347407bcd6d4c5863a6154a4b7d1e6f456"
+            "source_sha256": "909cfc986cc558a85cc4e54255ee5e32b683f5158a58726bc2ab8e56491bf0fa"
         },
         {
             "path": "server/app/api/logic/LoginLogic.php",
@@ -7636,7 +7636,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "a4fe01a99cc59dac2c13a5e45b6e75e7bbb8e49bb06a91aa72147d23cadf56c0"
+            "source_sha256": "e8751b45cae06c0c094dda26a80eae99ce6a5d18da0f6218303498108836057c"
         },
         {
             "path": "server/config/route.php",
@@ -9324,7 +9324,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "11d708ba95722b7df33d8886a9466d8c082abb2027fde00b17aa97ac8f6aba4a"
+            "source_sha256": "37baa03743b488b632b6e4be97d6ae1070e9f22b8455e962e82103fa4729a403"
         },
         {
             "path": "uniapp/package.json",
@@ -9333,7 +9333,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "e35ff7f97e1005d1ff25c7f065212bb3ffecb12a04fff052a149d1125d1c5a14"
+            "source_sha256": "e51de931f600b8e41eac5b493f91e2340e61d8ced5f4c776ac595280414a23b5"
         },
         {
             "path": "uniapp/packages/pages/404/404.vue",
@@ -10044,7 +10044,7 @@
             "owner": "scaffold",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "1ec885f0de03bb4cdfd7c5ffef10d432072536651bb7b05e27cf7b44f0ae454c"
+            "source_sha256": "a2a465e98c44bc1d8989e8570bf33c66311b330ae8e581d76fd1b009713e2127"
         },
         {
             "path": "web/pnpm-lock.yaml",

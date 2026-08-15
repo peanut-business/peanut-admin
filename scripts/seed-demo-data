@@ -48,10 +48,10 @@ function demoPlan(): array
             ],
             [
                 'category' => '更新日志',
-                'title' => 'v1.1.3 演示环境更新记录',
+                'title' => 'v1.1.4 演示环境更新记录',
                 'desc' => '记录当前演示环境的发布、迁移和可用性验证。',
                 'abstract' => 'Peanut Admin Demo content',
-                'content' => '<p>当前演示环境运行 Peanut Admin v1.1.3，已完成 50 到 54 条迁移及最低线上 smoke。</p>',
+                'content' => '<p>当前演示环境运行 Peanut Admin v1.1.4，已完成 50 到 54 条迁移及最低线上 smoke。</p>',
                 'click_virtual' => 64,
                 'sort' => 50,
             ],
