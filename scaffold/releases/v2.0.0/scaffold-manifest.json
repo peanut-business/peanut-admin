@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "69dfade0ce5c717888527dba4216edf804a454da",
-        "source_tree": "3a4744d1b3f771bf87fd685e6353c3867b5526c5",
-        "inventory_sha256": "72c7dcfbfbd5219f15a683af93d7f4f160969674bdc4ff69bf2e706870f03448",
+        "source_commit": "fb6c110984577ad7f2632deca7f0db4fc747fb59",
+        "source_tree": "c68891d769807528341ff8a66b7b3b99e35d4478",
+        "inventory_sha256": "4e661a927636d777ddc516884715d2e1edb3f483f2f5144311a780b50bd98247",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "5e876a7962e3b363d74b09391ed74d06f19cb60919fc580f42d52999a673409d",
+        "managed_tree_sha256": "408b4c707d377bc3912aa0fed058c12d6a403593c9a26e0b6217d1db7665b87d",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -593,26 +593,6 @@
             "path": "scripts/local-client-dev",
             "source": "files/scripts/local-client-dev",
             "template_sha256": "96d74e83081b5f27ad2450e27dfaa78bbe65ff76a110529d33d6f3417e45cf21",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 493,
-            "policy": "managed",
-            "owner": "host"
-        },
-        {
-            "path": "scripts/mt05/README.md",
-            "source": "files/scripts/mt05/README.md",
-            "template_sha256": "9137ce713552ec2b101601c82935b7158160465a1122d6ca90801ebae3d4c01a",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "host"
-        },
-        {
-            "path": "scripts/mt05/run-install-upgrade",
-            "source": "files/scripts/mt05/run-install-upgrade",
-            "template_sha256": "a75fa063e072c6e4869156aab7b80d21fe1ce21112452d7be41db037190b0cda",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
