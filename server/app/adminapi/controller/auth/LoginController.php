@@ -8,7 +8,6 @@ use app\adminapi\logic\auth\LoginLogic;
 use app\adminapi\service\AdminPermissionService;
 use app\adminapi\service\AdminTokenService;
 use app\adminapi\validate\auth\LoginValidate;
-use app\common\model\auth\Admin;
 
 class LoginController extends BaseAdminController
 {
@@ -32,22 +31,21 @@ class LoginController extends BaseAdminController
 
     public function info()
     {
-        $admin = Admin::with(['roles'])->findOrEmpty($this->adminId);
-        if ($admin->isEmpty()) return $this->fail('管理员不存在');
-
-        $roleNames = $admin->roles->column('name');
+        $admin = $this->adminInfo;
+        if ($admin === []) return $this->fail('管理员不存在');
+        $roleNames = array_column($admin['roles'] ?? [], 'name');
         $accessData = AdminPermissionService::accessData($this->request->tenantContext ?? null, $admin);
 
         return $this->data([
-            'id'          => $admin->id,
-            'username'    => $admin->username,
-            'nickname'    => $admin->nickname,
+            'id'          => $admin['id'],
+            'username'    => $admin['username'],
+            'nickname'    => $admin['nickname'],
             // 管理端展示与鉴权所需字段
-            'name'        => $admin->nickname ?: $admin->username,
-            'avatar'      => $admin->avatar,
+            'name'        => $admin['name'],
+            'avatar'      => $admin['avatar'],
             // 前端路由守卫用标量 role（'admin' 可访问全部 demo 路由）
-            'role'        => $admin->root ? 'admin' : 'user',
-            'root'        => $admin->root,
+            'role'        => $admin['root'] ? 'admin' : 'user',
+            'root'        => $admin['root'],
             'roles'       => $roleNames,
             'menu'        => $accessData['menu'],
             'permissions' => $accessData['permissions'],

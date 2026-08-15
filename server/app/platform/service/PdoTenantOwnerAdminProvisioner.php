@@ -5,7 +5,7 @@ namespace app\platform\service;
 
 use PDO;
 
-/** Builds the existing Admin/RBAC principal for a newly provisioned Core Tenant owner. */
+/** Verifies that Core already provisioned the first owner and returns its member ID. */
 final readonly class PdoTenantOwnerAdminProvisioner implements TenantOwnerAdminProvisioner
 {
     public function __construct(private PDO $pdo)
@@ -24,70 +24,38 @@ final readonly class PdoTenantOwnerAdminProvisioner implements TenantOwnerAdminP
             throw new \DomainException('TENANT_OWNER_ADMIN_PRINCIPAL_INVALID');
         }
 
-        $now = time();
-        $role = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_system_role (tenant_id, name, `desc`, sort, create_time, update_time)
-VALUES (:tenant_id, 'Tenant Owner', 'Instance-local Tenant owner', 100, :created_at, :updated_at)
+        $statement = $this->pdo->prepare(<<<'SQL'
+SELECT tm.id
+FROM pa_tenant_member tm
+JOIN pa_account a
+  ON a.id = tm.account_id
+ AND a.status = 'active'
+JOIN pa_member_role mr
+  ON mr.tenant_id = tm.tenant_id
+ AND mr.tenant_member_id = tm.id
+JOIN pa_role r
+  ON r.tenant_id = mr.tenant_id
+ AND r.id = mr.role_id
+ AND r.id = :role_id
+ AND r.`key` = 'core.tenant-owner'
+ AND r.is_builtin = 1
+ AND r.status = 'active'
+WHERE tm.tenant_id = :tenant_id
+  AND tm.id = :member_id
+  AND tm.account_id = :account_id
+  AND tm.status = 'active'
+LIMIT 1
 SQL);
-        $role->execute(['tenant_id' => $tenantId, 'created_at' => $now, 'updated_at' => $now]);
-        $legacyRoleId = (int)$this->pdo->lastInsertId();
-
-        $roleMap = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_legacy_role_tenant_map (
-    tenant_id, legacy_role_id, role_id, created_at
-) VALUES (:tenant_id, :legacy_role_id, :role_id, CURRENT_TIMESTAMP(3))
-SQL);
-        $roleMap->execute([
+        $statement->execute([
             'tenant_id' => $tenantId,
-            'legacy_role_id' => $legacyRoleId,
-            'role_id' => $coreRoleId,
-        ]);
-
-        $menus = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_system_role_menu (tenant_id, role_id, menu_id)
-SELECT :tenant_id, :role_id, id FROM pa_system_menu WHERE is_disable = 0
-SQL);
-        $menus->execute(['tenant_id' => $tenantId, 'role_id' => $legacyRoleId]);
-
-        $admin = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_admin (
-    tenant_id, username, nickname, password, salt, avatar, root, disable,
-    login_time, login_ip, multipoint_login, create_time, update_time
-) VALUES (
-    :tenant_id, :username, :nickname, :password, :salt, '', 0, 0,
-    0, '', 1, :created_at, :updated_at
-)
-SQL);
-        $admin->execute([
-            'tenant_id' => $tenantId,
-            'username' => substr('tenant-owner-' . $tenantId, 0, 50),
-            'nickname' => mb_substr($displayName, 0, 50),
-            // Core owns the usable credential. The compatibility principal never gets a password login secret.
-            'password' => hash('sha256', random_bytes(32)),
-            'salt' => bin2hex(random_bytes(8)),
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-        $adminId = (int)$this->pdo->lastInsertId();
-
-        $adminRole = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_admin_role (tenant_id, admin_id, role_id)
-VALUES (:tenant_id, :admin_id, :role_id)
-SQL);
-        $adminRole->execute(['tenant_id' => $tenantId, 'admin_id' => $adminId, 'role_id' => $legacyRoleId]);
-
-        $adminMap = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_legacy_admin_tenant_map (
-    tenant_id, legacy_admin_id, account_id, tenant_member_id, created_at
-) VALUES (:tenant_id, :admin_id, :account_id, :member_id, CURRENT_TIMESTAMP(3))
-SQL);
-        $adminMap->execute([
-            'tenant_id' => $tenantId,
-            'admin_id' => $adminId,
             'account_id' => $accountId,
             'member_id' => $memberId,
+            'role_id' => $coreRoleId,
         ]);
+        if ((int)$statement->fetchColumn() !== $memberId) {
+            throw new \DomainException('TENANT_OWNER_ADMIN_PRINCIPAL_INVALID');
+        }
 
-        return $adminId;
+        return $memberId;
     }
 }

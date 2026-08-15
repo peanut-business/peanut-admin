@@ -7,7 +7,7 @@ use DomainException;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-/** Resolves only the compatibility Admin mapped to a validated Core Tenant session. */
+/** Resolves the native TenantMember principal represented by a validated Core session. */
 final readonly class TenantAdminPrincipalResolver
 {
     public function __construct(private PDO $pdo)
@@ -17,16 +17,14 @@ final readonly class TenantAdminPrincipalResolver
     public function resolve(TenantContext $context): int
     {
         $statement = $this->pdo->prepare(<<<'SQL'
-SELECT a.id
-FROM pa_legacy_admin_tenant_map m
-JOIN pa_admin a
-  ON a.tenant_id = m.tenant_id
- AND a.id = m.legacy_admin_id
- AND a.disable = 0
- AND a.delete_time IS NULL
-WHERE m.tenant_id = :tenant_id
-  AND m.account_id = :account_id
-  AND m.tenant_member_id = :member_id
+SELECT tm.id
+FROM pa_tenant_member tm
+JOIN pa_tenant t ON t.id = tm.tenant_id AND t.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+WHERE tm.tenant_id = :tenant_id
+  AND tm.account_id = :account_id
+  AND tm.id = :member_id
+  AND tm.status = 'active'
 LIMIT 1
 SQL);
         $statement->execute([
@@ -34,10 +32,10 @@ SQL);
             'account_id' => $context->accountId,
             'member_id' => $context->memberId,
         ]);
-        $adminId = (int)$statement->fetchColumn();
-        if ($adminId < 1) {
+        $memberId = (int)$statement->fetchColumn();
+        if ($memberId < 1) {
             throw new DomainException('TENANT_ADMIN_PRINCIPAL_UNAVAILABLE');
         }
-        return $adminId;
+        return $memberId;
     }
 }

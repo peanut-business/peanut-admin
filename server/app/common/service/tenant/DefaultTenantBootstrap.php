@@ -56,14 +56,6 @@ final class DefaultTenantBootstrap
         $owner = $this->preflightLegacy($password);
         $this->ensureCoreSchema();
 
-        if ($this->tableExists('pa_default_tenant_bootstrap')) {
-            $completed = $this->completedState();
-            if ($completed !== null) {
-                $this->assertCompleted($completed);
-                return $completed + ['operator_id' => $this->operatorId(), 'status' => 'already_bootstrapped'];
-            }
-        }
-
         $tenantCount = $this->count('pa_tenant');
         $operatorCount = $this->count('pa_platform_operator');
         if ($tenantCount === 0 && $operatorCount === 0) {
@@ -129,12 +121,7 @@ final class DefaultTenantBootstrap
     public function complete(): array
     {
         if ($this->prepared === null) {
-            $completed = $this->completedState();
-            if ($completed === null) {
-                throw new RuntimeException('MT02_BOOTSTRAP_NOT_PREPARED');
-            }
-            $this->assertCompleted($completed);
-            return $completed + ['status' => 'already_bootstrapped'];
+            throw new RuntimeException('MT02_BOOTSTRAP_NOT_PREPARED');
         }
 
         $context = $this->prepared;
@@ -143,31 +130,11 @@ final class DefaultTenantBootstrap
             $this->mapRoles($context);
             $this->mapAdmins($context);
             $this->mapRelations($context);
-            $now = $this->now();
-            $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_default_tenant_bootstrap (
-    id, tenant_id, owner_account_id, owner_member_id, core_source_commit,
-    schema_digest, status, completed_at, created_at, updated_at
-) VALUES (
-    1, :tenant_id, :account_id, :member_id, :source_commit,
-    :schema_digest, 'completed', :completed_at, :created_at, :updated_at
-)
-SQL);
-            $statement->execute([
-                'tenant_id' => $context['tenant_id'],
-                'account_id' => $context['account_id'],
-                'member_id' => $context['member_id'],
-                'source_commit' => self::CORE_SOURCE_COMMIT,
-                'schema_digest' => self::schemaDigest(),
-                'completed_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
             (new PdoAuditRepository($this->pdo))->appendTenantSystem(
                 $context['tenant_id'],
-                'tenant.legacy-admin-mapping.completed',
+                'tenant.native-identity-adoption.completed',
                 'application.mt02.bootstrap',
-                'mt02-legacy-mapping',
+                'mt02-native-identity-adoption',
                 [
                     'admin_count' => $this->count('pa_admin'),
                     'role_count' => $this->count('pa_system_role'),
@@ -331,7 +298,6 @@ SQL);
                     'updated_at' => $this->legacyTime((int)$row['update_time']),
                 ]);
                 $departmentId = (int)$this->pdo->lastInsertId();
-                $this->insertMap('pa_legacy_dept_tenant_map', 'legacy_dept_id', (int)$row['id'], 'department_id', $departmentId, $context['tenant_id']);
                 $mapped[(int)$row['id']] = $departmentId;
                 unset($pending[$index]);
                 $progress = true;
@@ -366,7 +332,6 @@ SQL);
                 'created_at' => $this->legacyTime((int)$row['create_time']),
                 'updated_at' => $this->legacyTime((int)$row['update_time']),
             ]);
-            $this->insertMap('pa_legacy_role_tenant_map', 'legacy_role_id', (int)$row['id'], 'role_id', (int)$this->pdo->lastInsertId(), $context['tenant_id']);
         }
     }
 
@@ -392,7 +357,17 @@ SQL);
                 $accountId = $account->id;
                 $memberId = $member->id;
             }
-            $this->insertAdminMap((int)$row['id'], $accountId, $memberId, $context['tenant_id']);
+            $memberNo = $this->pdo->prepare(<<<'SQL'
+UPDATE pa_tenant_member
+SET member_no = :member_no, updated_at = :updated_at
+WHERE tenant_id = :tenant_id AND id = :member_id
+SQL);
+            $memberNo->execute([
+                'member_no' => 'legacy.admin.' . $row['id'],
+                'updated_at' => $this->now(),
+                'tenant_id' => $context['tenant_id'],
+                'member_id' => $memberId,
+            ]);
         }
     }
 
@@ -402,22 +377,29 @@ SQL);
         $tenantId = $context['tenant_id'];
         $this->pdo->exec(<<<SQL
 INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at)
-SELECT {$tenantId}, am.tenant_member_id, rm.role_id, CURRENT_TIMESTAMP(3)
+SELECT {$tenantId}, tm.id, r.id, CURRENT_TIMESTAMP(3)
 FROM pa_admin_role ar
-JOIN pa_legacy_admin_tenant_map am ON am.tenant_id = {$tenantId} AND am.legacy_admin_id = ar.admin_id
-JOIN pa_legacy_role_tenant_map rm ON rm.tenant_id = {$tenantId} AND rm.legacy_role_id = ar.role_id
+JOIN pa_tenant_member tm ON tm.tenant_id = {$tenantId} AND tm.member_no = CONCAT('legacy.admin.', ar.admin_id)
+JOIN pa_role r ON r.tenant_id = {$tenantId} AND r.`key` = CONCAT('legacy.role.', ar.role_id)
+SQL);
+        $this->pdo->exec(<<<SQL
+INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at)
+SELECT DISTINCT {$tenantId}, r.id, p.id, CURRENT_TIMESTAMP(3)
+FROM pa_system_role_menu legacy_grant
+JOIN pa_role r ON r.tenant_id = {$tenantId} AND r.`key` = CONCAT('legacy.role.', legacy_grant.role_id)
+JOIN pa_system_menu menu ON menu.id = legacy_grant.menu_id AND menu.is_disable = 0 AND menu.perms <> ''
+JOIN pa_permission p ON p.`key` = menu.perms AND p.status = 'active'
+WHERE legacy_grant.tenant_id = {$tenantId}
 SQL);
         $this->pdo->exec(<<<SQL
 UPDATE pa_tenant_member tm
-JOIN pa_legacy_admin_tenant_map am ON am.tenant_id = tm.tenant_id AND am.tenant_member_id = tm.id
 LEFT JOIN (
-    SELECT ad.admin_id, MIN(dm.department_id) AS department_id
+    SELECT ad.admin_id, MIN(d.id) AS department_id
     FROM pa_admin_dept ad
-    JOIN pa_legacy_dept_tenant_map dm ON dm.tenant_id = {$tenantId} AND dm.legacy_dept_id = ad.dept_id
-    JOIN pa_department d ON d.tenant_id = dm.tenant_id AND d.id = dm.department_id AND d.status = 'active'
+    JOIN pa_department d ON d.tenant_id = {$tenantId} AND d.code = CONCAT('legacy.dept.', ad.dept_id) AND d.status = 'active'
     WHERE ad.tenant_id = {$tenantId}
     GROUP BY ad.admin_id
-) primary_dept ON primary_dept.admin_id = am.legacy_admin_id
+) primary_dept ON tm.member_no = CONCAT('legacy.admin.', primary_dept.admin_id)
 SET tm.primary_department_id = primary_dept.department_id,
     tm.authorization_revision = tm.authorization_revision + 1,
     tm.updated_at = CURRENT_TIMESTAMP(3)
@@ -427,14 +409,11 @@ SQL);
 
     private function assertMappings(int $tenantId): void
     {
-        foreach ([
-            ['pa_admin', 'pa_legacy_admin_tenant_map'],
-            ['pa_system_role', 'pa_legacy_role_tenant_map'],
-            ['pa_dept', 'pa_legacy_dept_tenant_map'],
-        ] as [$source, $map]) {
-            if ($this->count($source) !== (int)$this->pdo->query("SELECT COUNT(*) FROM {$map} WHERE tenant_id = {$tenantId}")->fetchColumn()) {
-                throw new RuntimeException('MT02_MAPPING_INCOMPLETE');
-            }
+        $adoptedAdmins = (int)$this->pdo->query("SELECT COUNT(*) FROM pa_tenant_member WHERE tenant_id = {$tenantId} AND member_no LIKE 'legacy.admin.%'")->fetchColumn();
+        $adoptedRoles = (int)$this->pdo->query("SELECT COUNT(*) FROM pa_role WHERE tenant_id = {$tenantId} AND `key` LIKE 'legacy.role.%'")->fetchColumn();
+        $adoptedDepartments = (int)$this->pdo->query("SELECT COUNT(*) FROM pa_department WHERE tenant_id = {$tenantId} AND code LIKE 'legacy.dept.%'")->fetchColumn();
+        if ($adoptedAdmins !== $this->count('pa_admin') || $adoptedRoles !== $this->count('pa_system_role') || $adoptedDepartments !== $this->count('pa_dept')) {
+            throw new RuntimeException('MT02_NATIVE_IDENTITY_ADOPTION_INCOMPLETE');
         }
         foreach (['pa_admin', 'pa_system_role', 'pa_dept', 'pa_jobs', 'pa_admin_role', 'pa_admin_dept', 'pa_admin_jobs', 'pa_system_role_menu'] as $table) {
             $foreign = (int)$this->pdo->query("SELECT COUNT(*) FROM {$table} WHERE tenant_id <> {$tenantId}")->fetchColumn();
@@ -451,32 +430,6 @@ SQL)->fetchColumn();
         if ($owners !== 1) {
             throw new RuntimeException('MT02_OWNER_MAPPING_INVALID');
         }
-    }
-
-    /** @return array{tenant_id:int,account_id:int,member_id:int}|null */
-    private function completedState(): ?array
-    {
-        if (!$this->tableExists('pa_default_tenant_bootstrap')) {
-            return null;
-        }
-        $row = $this->pdo->query("SELECT * FROM pa_default_tenant_bootstrap WHERE id = 1 AND status = 'completed'")->fetch(PDO::FETCH_ASSOC);
-        return $row === false ? null : [
-            'tenant_id' => (int)$row['tenant_id'],
-            'account_id' => (int)$row['owner_account_id'],
-            'member_id' => (int)$row['owner_member_id'],
-        ];
-    }
-
-    /** @param array{tenant_id:int,account_id:int,member_id:int} $completed */
-    private function assertCompleted(array $completed): void
-    {
-        $row = $this->pdo->query('SELECT core_source_commit, schema_digest FROM pa_default_tenant_bootstrap WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
-        if ($row === false
-            || !hash_equals(self::CORE_SOURCE_COMMIT, (string)$row['core_source_commit'])
-            || !hash_equals(self::schemaDigest(), (string)$row['schema_digest'])) {
-            throw new RuntimeException('MT02_BOOTSTRAP_IDENTITY_MISMATCH');
-        }
-        $this->assertMappings($completed['tenant_id']);
     }
 
     private function bootstrapService(): BootstrapService
@@ -523,24 +476,6 @@ SQL)->fetchColumn();
         }
     }
 
-    private function insertMap(string $table, string $legacyColumn, int $legacyId, string $coreColumn, int $coreId, int $tenantId): void
-    {
-        $statement = $this->pdo->prepare(
-            "INSERT INTO {$table} (tenant_id, {$legacyColumn}, {$coreColumn}, created_at) VALUES (?, ?, ?, ?)"
-        );
-        $statement->execute([$tenantId, $legacyId, $coreId, $this->now()]);
-    }
-
-    private function insertAdminMap(int $legacyId, int $accountId, int $memberId, int $tenantId): void
-    {
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_legacy_admin_tenant_map (
-    tenant_id, legacy_admin_id, account_id, tenant_member_id, created_at
-) VALUES (?, ?, ?, ?, ?)
-SQL);
-        $statement->execute([$tenantId, $legacyId, $accountId, $memberId, $this->now()]);
-    }
-
     private function tableExists(string $table): bool
     {
         $statement = $this->pdo->prepare(
@@ -559,11 +494,6 @@ SQL);
     private function rows(string $sql): array
     {
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    private function operatorId(): int
-    {
-        return (int)$this->pdo->query("SELECT id FROM pa_platform_operator WHERE status = 'active' ORDER BY id LIMIT 1")->fetchColumn();
     }
 
     private function now(): string

@@ -3,136 +3,63 @@ declare(strict_types=1);
 
 namespace app\adminapi\service;
 
-use app\common\model\auth\Admin;
-use app\common\model\auth\AdminRole;
 use app\common\model\auth\SystemMenu;
-use app\common\model\auth\SystemRoleMenu;
 use app\common\service\CoreServiceOverrides;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 
-/**
- * 管理端菜单、按钮与 API 权限的单一计算入口。
- */
-class AdminPermissionService
+/** Management authorization backed only by native member-role-permission grants. */
+final class AdminPermissionService
 {
-    public static function accessData(mixed $tenantContext, Admin|array $admin): array
+    public static function accessData(mixed $tenantContext, array $admin): array
     {
-        $moduleAccess = (new CoreTenantModuleAdminBridge())->accessData($tenantContext);
+        $native = (new CoreTenantModuleAdminBridge())->accessData($tenantContext);
+        $permissions = $native['permissions'];
         return [
-            'menu'        => [
-                ...self::legacyMenusForAdmin($tenantContext, $admin),
-                ...$moduleAccess['menu'],
+            'menu' => [
+                ...self::compatibilityMenus($tenantContext, $admin, $permissions),
+                ...$native['menu'],
             ],
-            'permissions' => array_values(array_unique([
-                ...self::legacyButtonPermissionsForAdmin($tenantContext, $admin),
-                ...$moduleAccess['permissions'],
-            ])),
+            'permissions' => self::isRoot($admin)
+                ? ['*']
+                : array_values(array_unique($permissions)),
         ];
     }
 
-    public static function menusForAdminId(mixed $tenantContext, int $adminId): array
+    public static function menusForAdminId(mixed $tenantContext, int $memberId): array
     {
-        $tenantId = self::tenantId($tenantContext);
-        if ($tenantId === null) {
+        if (!$tenantContext instanceof TenantContext || $tenantContext->memberId !== $memberId) {
             return [];
         }
-        $admin = Admin::where('tenant_id', $tenantId)->findOrEmpty($adminId);
-        if ($admin->isEmpty()) {
+        try {
+            $admin = (new NativeAdminPrincipalRepository())->require($tenantContext);
+        } catch (\Throwable) {
             return [];
         }
-        return self::menusForAdmin($tenantContext, $admin);
+        return self::accessData($tenantContext, $admin)['menu'];
     }
 
-    /**
-     * M/C 菜单取管理员全部角色授权联集；超级管理员取全部启用菜单。
-     */
-    public static function menusForAdmin(mixed $tenantContext, Admin|array $admin): array
+    public static function menusForAdmin(mixed $tenantContext, array $admin): array
     {
-        return [
-            ...self::legacyMenusForAdmin($tenantContext, $admin),
-            ...(new CoreTenantModuleAdminBridge())->accessData($tenantContext)['menu'],
-        ];
+        return self::accessData($tenantContext, $admin)['menu'];
     }
 
-    private static function legacyMenusForAdmin(mixed $tenantContext, Admin|array $admin): array
+    public static function buttonPermissionsForAdmin(mixed $tenantContext, array $admin): array
     {
-        $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
-        if ($tenantId === null) {
-            return [];
-        }
-        $query = SystemMenu::where('type', 'in', ['M', 'C'])
-            ->where('is_disable', 0);
-
-        if (!self::isRoot($admin)) {
-            $menuIds = self::assignedMenuIds($tenantId, $admin);
-            if (empty($menuIds)) {
-                return [];
-            }
-            $query->whereIn('id', $menuIds);
-        }
-
-        $menus = $query->order(['sort' => 'desc', 'id' => 'asc'])
-            ->select()
-            ->toArray();
-
-        return linear_to_tree($menus);
+        return self::accessData($tenantContext, $admin)['permissions'];
     }
 
-    /**
-     * 前端按钮权限只返回已授权、已启用的 A 类型权限字符。
-     */
-    public static function buttonPermissionsForAdmin(mixed $tenantContext, Admin|array $admin): array
+    public static function canAccess(mixed $tenantContext, array $admin, string $accessUri): bool
     {
-        return array_values(array_unique([
-            ...self::legacyButtonPermissionsForAdmin($tenantContext, $admin),
-            ...(new CoreTenantModuleAdminBridge())->accessData($tenantContext)['permissions'],
-        ]));
-    }
-
-    private static function legacyButtonPermissionsForAdmin(mixed $tenantContext, Admin|array $admin): array
-    {
-        $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
-        if ($tenantId === null) {
-            return [];
-        }
-        if (self::isRoot($admin)) {
-            return ['*'];
-        }
-
-        $menuIds = self::assignedMenuIds($tenantId, $admin);
-        if (empty($menuIds)) {
-            return [];
-        }
-
-        $permissions = SystemMenu::whereIn('id', $menuIds)
-            ->where('type', 'A')
-            ->where('is_disable', 0)
-            ->where('perms', '<>', '')
-            ->column('perms');
-
-        return array_values(array_unique($permissions));
-    }
-
-    /** Unregistered, disabled and cross-Tenant permission paths fail closed. */
-    public static function canAccess(mixed $tenantContext, Admin|array $admin, string $accessUri): bool
-    {
-        $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
-        if ($tenantId === null) {
+        if (!self::validContext($tenantContext, $admin)) {
             return false;
         }
-        $menuIds = self::assignedMenuIds($tenantId, $admin);
         $registered = SystemMenu::where('is_disable', 0)
             ->where('perms', '<>', '')
             ->column('perms');
-        $owned = empty($menuIds)
-            ? []
-            : SystemMenu::whereIn('id', $menuIds)
-                ->where('is_disable', 0)
-                ->where('perms', '<>', '')
-                ->column('perms');
+        $owned = (new CoreTenantModuleAdminBridge())->accessData($tenantContext)['permissions'];
 
         return CoreServiceOverrides::adminPermissionPolicy()->canAccess(
             self::isRoot($admin),
@@ -142,20 +69,11 @@ class AdminPermissionService
         );
     }
 
-    /** Builds the Core authorization input only after the trusted admin boundary permits it. */
     public static function authorizedAsyncExport(
         TenantContext $tenantContext,
-        Admin|array $admin,
+        array $admin,
     ): AuthorizedOperationContext {
-        if ($tenantContext->tenantId < 1
-            || $tenantContext->accountId < 1
-            || $tenantContext->memberId < 1
-            || $tenantContext->authorizationRevision < 1
-            || $tenantContext->sessionKey === ''
-            || $tenantContext->clientKey === ''
-            || $tenantContext->requestId === ''
-            || !self::canAccess($tenantContext, $admin, 'log/export')
-        ) {
+        if (!self::canAccess($tenantContext, $admin, 'log/export')) {
             throw new \DomainException('ASYNC_EXPORT_PERMISSION_DENIED');
         }
 
@@ -173,62 +91,38 @@ class AdminPermissionService
         ));
     }
 
-    private static function assignedMenuIds(int $tenantId, Admin|array $admin): array
+    /** @param list<string> $permissions */
+    private static function compatibilityMenus(mixed $tenantContext, array $admin, array $permissions): array
     {
-        $adminId = self::adminId($admin);
-        if ($adminId < 1) {
+        if (!self::validContext($tenantContext, $admin)) {
             return [];
         }
-
-        $roleIds = AdminRole::alias('ar')
-            ->join('system_role r', 'r.id = ar.role_id AND r.tenant_id = ar.tenant_id')
-            ->where('ar.tenant_id', $tenantId)
-            ->where('ar.admin_id', $adminId)
-            ->where('r.tenant_id', $tenantId)
-            ->whereNull('r.delete_time')
-            ->column('ar.role_id');
-        $roleIds = array_values(array_unique(array_map('intval', $roleIds)));
-        if (empty($roleIds)) {
-            return [];
+        $query = SystemMenu::where('type', 'in', ['M', 'C'])->where('is_disable', 0);
+        if (!self::isRoot($admin)) {
+            $query->where(static function ($query) use ($permissions): void {
+                $query->where('perms', '')->whereOr('perms', 'in', $permissions ?: ['__none__']);
+            });
         }
-
-        $menuIds = SystemRoleMenu::where('tenant_id', $tenantId)
-            ->whereIn('role_id', $roleIds)
-            ->column('menu_id');
-        return array_values(array_unique(array_map('intval', $menuIds)));
+        return linear_to_tree($query->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray());
     }
 
-    private static function tenantIdForAdmin(mixed $tenantContext, Admin|array $admin): ?int
+    private static function validContext(mixed $context, array $admin): bool
     {
-        $tenantId = self::tenantId($tenantContext);
-        $adminTenantId = (int)($admin instanceof Admin
-            ? $admin->getData('tenant_id')
-            : ($admin['tenant_id'] ?? 0));
-        return $tenantId !== null && $adminTenantId === $tenantId ? $tenantId : null;
+        return $context instanceof TenantContext
+            && $context->tenantId > 0
+            && $context->accountId > 0
+            && $context->memberId > 0
+            && $context->authorizationRevision > 0
+            && $context->sessionKey !== ''
+            && $context->clientKey !== ''
+            && $context->requestId !== ''
+            && (int)($admin['tenant_id'] ?? 0) === $context->tenantId
+            && (int)($admin['account_id'] ?? 0) === $context->accountId
+            && (int)($admin['id'] ?? 0) === $context->memberId;
     }
 
-    private static function tenantId(mixed $tenantContext): ?int
+    private static function isRoot(array $admin): bool
     {
-        if (!$tenantContext instanceof TenantContext
-            || $tenantContext->tenantId < 1
-            || $tenantContext->accountId < 1
-            || $tenantContext->memberId < 1
-            || $tenantContext->authorizationRevision < 1
-            || $tenantContext->sessionKey === ''
-            || $tenantContext->clientKey === ''
-            || $tenantContext->requestId === '') {
-            return null;
-        }
-        return $tenantContext->tenantId;
-    }
-
-    private static function adminId(Admin|array $admin): int
-    {
-        return (int)($admin instanceof Admin ? $admin->getData('id') : ($admin['id'] ?? 0));
-    }
-
-    private static function isRoot(Admin|array $admin): bool
-    {
-        return (int)($admin instanceof Admin ? $admin->root : ($admin['root'] ?? 0)) === 1;
+        return (int)($admin['root'] ?? 0) === 1;
     }
 }

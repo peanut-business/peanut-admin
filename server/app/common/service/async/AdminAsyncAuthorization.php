@@ -15,7 +15,7 @@ use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 
-/** Restores an async context from the signed envelope and current database authority. */
+/** Revalidates queued Admin work against current native member RBAC. */
 final readonly class AdminAsyncAuthorization implements AsyncAuthorizationRevalidator
 {
     public function __construct(private PDO $pdo)
@@ -33,47 +33,43 @@ final readonly class AdminAsyncAuthorization implements AsyncAuthorizationRevali
 
         $statement = $this->pdo->prepare(<<<'SQL'
 SELECT
-  a.id AS admin_id,
-  a.root,
   tm.authorization_revision,
   EXISTS (
     SELECT 1
-    FROM pa_admin_role ar
-    JOIN pa_system_role r
-      ON r.tenant_id = ar.tenant_id
-     AND r.id = ar.role_id
-     AND r.is_disable = 0
-     AND r.delete_time IS NULL
-    JOIN pa_system_role_menu rm
-      ON rm.tenant_id = ar.tenant_id
-     AND rm.role_id = ar.role_id
-    JOIN pa_system_menu menu
-      ON menu.id = rm.menu_id
-     AND menu.is_disable = 0
-     AND LOWER(menu.perms) = 'log/export'
-    WHERE ar.tenant_id = m.tenant_id
-      AND ar.admin_id = a.id
+    FROM pa_member_role mr
+    JOIN pa_role r
+      ON r.tenant_id = mr.tenant_id
+     AND r.id = mr.role_id
+     AND r.status = 'active'
+    WHERE mr.tenant_id = tm.tenant_id
+      AND mr.tenant_member_id = tm.id
+      AND r.`key` = 'core.tenant-owner'
+      AND r.is_builtin = 1
+  ) AS is_owner,
+  EXISTS (
+    SELECT 1
+    FROM pa_member_role mr
+    JOIN pa_role r
+      ON r.tenant_id = mr.tenant_id
+     AND r.id = mr.role_id
+     AND r.status = 'active'
+    JOIN pa_role_permission rp
+      ON rp.tenant_id = r.tenant_id
+     AND rp.role_id = r.id
+    JOIN pa_permission p
+      ON p.id = rp.permission_id
+     AND p.status = 'active'
+     AND p.`key` = 'log/export'
+    WHERE mr.tenant_id = tm.tenant_id
+      AND mr.tenant_member_id = tm.id
   ) AS permission_owned
-FROM pa_legacy_admin_tenant_map m
-JOIN pa_admin a
-  ON a.tenant_id = m.tenant_id
- AND a.id = m.legacy_admin_id
- AND a.disable = 0
- AND a.delete_time IS NULL
-JOIN pa_tenant t
-  ON t.id = m.tenant_id
- AND t.status = 'active'
-JOIN pa_account account
-  ON account.id = m.account_id
- AND account.status = 'active'
-JOIN pa_tenant_member tm
-  ON tm.tenant_id = m.tenant_id
- AND tm.id = m.tenant_member_id
- AND tm.account_id = m.account_id
- AND tm.status = 'active'
-WHERE m.tenant_id = :tenant_id
-  AND m.account_id = :account_id
-  AND m.tenant_member_id = :member_id
+FROM pa_tenant_member tm
+JOIN pa_tenant t ON t.id = tm.tenant_id AND t.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+WHERE tm.tenant_id = :tenant_id
+  AND tm.account_id = :account_id
+  AND tm.id = :member_id
+  AND tm.status = 'active'
 LIMIT 1
 SQL);
         $statement->execute([
@@ -83,14 +79,14 @@ SQL);
         ]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)
-            || ((int)$row['root'] !== 1 && (int)$row['permission_owned'] !== 1)
+            || ((int)$row['is_owner'] !== 1 && (int)$row['permission_owned'] !== 1)
             || (int)$row['authorization_revision'] < 1
         ) {
             throw $this->denied();
         }
 
         $session = new ValidatedTenantSession(
-            (int)$row['admin_id'],
+            $envelope->memberId,
             'async-' . hash('sha256', $envelope->operationId),
             $envelope->tenantId,
             $envelope->accountId,
