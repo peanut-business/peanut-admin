@@ -244,8 +244,8 @@ try{
     scaffoldExpect(hash_equals($releaseCandidateAppOwnedDigest,(string)hash_file('sha256',$releaseCandidateApp.'/'.$releaseCandidateAppOwnedPath)),'v1.1.6 upgrade must preserve app-owned bytes');
     $releaseCandidateRecover=$runner->recover($releaseCandidateApp,scaffoldPlanPath($releaseCandidateApp,$releaseCandidatePlan));scaffoldExpect($releaseCandidateRecover['status']==='recovered'&&hash_equals($releaseCandidateBefore,scaffoldFileTree($releaseCandidateApp)),'v1.1.6 recovery must restore the exact v1.1.5 tree');
 
-    $productReleaseIdentity=json_decode((string)file_get_contents($productRelease),true,512,JSON_THROW_ON_ERROR)['release'];
-    $productReleaseSource=$temporary.'/product-release-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$productReleaseSource]);scaffoldRun(['git','checkout','--quiet','--detach',$productReleaseIdentity['source_commit']],$productReleaseSource);
+    $releaseCandidateIdentity=json_decode((string)file_get_contents($releaseCandidate),true,512,JSON_THROW_ON_ERROR)['release'];
+    $productReleaseSource=$temporary.'/product-release-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$productReleaseSource]);scaffoldRun(['git','checkout','--quiet','--detach',$releaseCandidateIdentity['source_commit']],$productReleaseSource);
     $productReleaseApp=$temporary.'/product-release-app';scaffoldFreshAdopted($productReleaseSource,$releaseCandidate,$productReleaseApp);
     $productReleaseAppOwnedPath='server/config/peanut.php';file_put_contents($productReleaseApp.'/'.$productReleaseAppOwnedPath,(string)file_get_contents($productReleaseApp.'/'.$productReleaseAppOwnedPath)."\n// v1.1.7 preservation proof\n");$productReleaseAppOwnedDigest=hash_file('sha256',$productReleaseApp.'/'.$productReleaseAppOwnedPath);
     $productReleasePlan=$runner->preflight($productReleaseApp,$releaseCandidate,$productRelease);scaffoldExpect($productReleasePlan['status']==='ready'&&$productReleasePlan['summary']['conflicts']===0,'v1.1.6 to v1.1.7 plan must be ready');
