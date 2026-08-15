@@ -6,9 +6,9 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "fb6c110984577ad7f2632deca7f0db4fc747fb59",
-        "source_tree": "c68891d769807528341ff8a66b7b3b99e35d4478",
-        "inventory_sha256": "4e661a927636d777ddc516884715d2e1edb3f483f2f5144311a780b50bd98247",
+        "source_commit": "ae91994a85f3ab42a4810b25cdd16a10e4935dfa",
+        "source_tree": "4e69bfa3af5f60aa3f0f095c810340788242ba19",
+        "inventory_sha256": "e3d13b91b1c03ed1e481580699651cdb499e014d9a9bc11a952ec980dd0af0f5",
         "inventory_template_version": "2.0.0",
         "managed_tree_sha256": "408b4c707d377bc3912aa0fed058c12d6a403593c9a26e0b6217d1db7665b87d",
         "tokens": {
