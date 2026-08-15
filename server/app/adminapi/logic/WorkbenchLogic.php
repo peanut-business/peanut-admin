@@ -26,7 +26,7 @@ class WorkbenchLogic extends BaseLogic
     {
         $website = self::websiteService()->get();
         return [
-            'version' => (string) config('project.version', '1.1.3'),
+            'version' => (string) config('project.version', '1.1.4'),
             'website' => $website['official_url'],
             'name'    => $website['name'],
             'based'   => (string) config(
@@ -119,6 +119,7 @@ class WorkbenchLogic extends BaseLogic
 
     public static function support(): array
     {
+        $website = self::websiteService()->get();
         return [
             [
                 'image' => FileService::getFileUrl(
@@ -126,6 +127,7 @@ class WorkbenchLogic extends BaseLogic
                 ),
                 'title' => '项目文档',
                 'desc'  => '查看 Peanut Admin 使用与开发文档',
+                'url'   => (string) $website['official_url'],
             ],
             [
                 'image' => FileService::getFileUrl(
@@ -133,6 +135,7 @@ class WorkbenchLogic extends BaseLogic
                 ),
                 'title' => '技术支持',
                 'desc'  => '获取 Peanut Admin 技术支持',
+                'url'   => (string) $website['github_url'],
             ],
         ];
     }

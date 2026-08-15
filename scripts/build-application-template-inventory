@@ -97,6 +97,9 @@ function classification(string $path): string
     if ($path === 'scripts/scaffold-upgrade' || str_starts_with($path, 'scripts/scaffold-runtime/')) {
         return 'managed';
     }
+    if ($path === 'scripts/seed-demo-data') {
+        return 'app-owned';
+    }
     if (str_starts_with($path, 'docs-site/')
         || str_starts_with($path, 'server/app/') || str_starts_with($path, 'server/database/')
         || str_starts_with($path, 'server/tests/') || str_starts_with($path, 'web/src/views/')
@@ -166,7 +169,7 @@ foreach (inventoryGitFiles($root) as $path) {
 
 $inventory = [
     'schema_version' => 2,
-    'template_version' => '1.1.6',
+    'template_version' => '1.1.7',
     'protocol' => 'peanut.create-app-inventory.v2',
     'application' => ['version' => '0.1.0'],
     'variables' => ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],

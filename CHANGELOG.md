@@ -3,6 +3,23 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [1.1.4] - 2026-08-15
+
+### Added
+
+- Production demo instances can opt into deterministic, tenant-scoped sample
+  categories, articles, member tags and synthetic members with an idempotent
+  seed command.
+- Workbench support cards show and link the registered documentation and
+  support addresses.
+
+### Fixed
+
+- The login page no longer repeats the product name beside the logo.
+- Production resource registration now records the documentation domain and
+  the Keychain-backed administrator credential reference without storing a
+  secret.
+
 ## [1.1.3] - 2026-08-15
 
 ### Added
@@ -30,6 +47,8 @@ and the two public core packages have independent version histories.
   Admin product, scaffold and downstream application versions are distinct.
 - Scaffold `v1.1.6` preserves the dual-mode administration bundles from
   `v1.1.5` and aligns the generated legal inventory with all five final locks.
+- Scaffold `v1.1.7` reseals the current managed release inventory without
+  changing the `v1.1.6` runtime behavior.
 - The public runtime dependencies remain fixed at
   `peanut-admin/core@0.1.0-alpha.5` and `@peanut-admin/admin@0.1.0-alpha.5`.
 
