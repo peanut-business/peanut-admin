@@ -61,6 +61,7 @@ function excluded(string $path): bool
             '.github/workflows/product-capability-ledger.yml',
             '.github/workflows/docs-site.yml',
             '.github/workflows/repository-policy.yml',
+            '.github/workflows/resource-registry.yml',
             '.github/pull_request_template.md',
             'server/tests/Productization/ScaffoldUpgradeRunnerTest.php',
         ], true)

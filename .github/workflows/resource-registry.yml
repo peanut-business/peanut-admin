@@ -1,0 +1,25 @@
+name: Resource registry
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - 'resources/project-resources.json'
+      - 'scripts/project-resource-registry'
+      - '.github/workflows/resource-registry.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate resource registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate project resources
+        run: ./scripts/project-resource-registry validate

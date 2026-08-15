@@ -70,7 +70,7 @@
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "9749cd3f2dc250578387ebea927bde51563bbb7c0552318304b565c121354b49"
+            "source_sha256": "d31964d6043a751aecfe535a77b03d53cd140ea9c1919d2d19ec19d541aef75f"
         },
         {
             "path": ".github/workflows/core-upgrade-compatibility.yml",
@@ -99,6 +99,14 @@
         {
             "path": ".github/workflows/repository-policy.yml",
             "target": ".github/workflows/repository-policy.yml",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": ".github/workflows/resource-registry.yml",
+            "target": ".github/workflows/resource-registry.yml",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
