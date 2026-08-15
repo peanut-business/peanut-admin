@@ -31,12 +31,12 @@ $expect(($fixture['baselines'] ?? null) === ['v1.0.0', 'v1.1.0'], 'P0-E forward 
 $targetRelease = $fixture['target_release'] ?? null;
 $expect(is_array($targetRelease), 'P0-E target scaffold release is missing');
 $expect($targetRelease === [
-    'version' => '1.1.7',
-    'source_commit' => '8d6cd3390dd75e8c03aa0b468bc20e2619f97a65',
-    'source_tree' => '03685f5506d4a6b84be461910ecbd779d149df14',
-    'manifest_sha256' => '1e3cced21b1c26737d953c4e24b24d33c38af489edbd6484b1af1653f42bc1fe',
-    'inventory_sha256' => 'a65ec2323eaa8c008633e2c615b1a5dc1c228b7140d8e2fc0aa602224cb2466a',
-    'managed_tree_sha256' => 'c9904e48c0cf8ea8b571046b3ddd095f0772da5cfa0ae21a5622d46d8987ee94',
+    'version' => '1.1.8',
+    'source_commit' => '1c8ff0ba73b263b679be8ffcd7827e65838c4f0a',
+    'source_tree' => 'dc8b73382e42cac7c3f026f5df35c4f9521f9577',
+    'manifest_sha256' => '6fa271c35268113bbf9f85ff8d19aabb5e341b863e8243552b1ba1c8a73f0f12',
+    'inventory_sha256' => 'aa6dbc6268d6d5caad0bf07d04852a00e360f7c2e9ba613f7c16072eee1daa80',
+    'managed_tree_sha256' => 'c2d00b7ba821151220baa2f93efb386143a636114427b77189b06c3ebc5b8ffe',
     'file_count' => 275,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
@@ -47,7 +47,7 @@ $expect(is_array($legacy), 'P0-E legacy application fixture is missing');
 $expect(($legacy['source_commit'] ?? null) === '14412607ba36f1816e39f7117f77eea4a9e7419e', 'legacy application commit changed');
 $expect(($legacy['source_tree'] ?? null) === '172865d8b8057caa8a017ac591618cd914af30a5', 'legacy application tree changed');
 $expect(
-    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5', '1.1.6', '1.1.7'],
+    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5', '1.1.6', '1.1.7', '1.1.8'],
     'legacy application release chain changed'
 );
 $expect(count($legacy['customizations'] ?? []) === 2, 'legacy application must retain two real app-owned customizations');

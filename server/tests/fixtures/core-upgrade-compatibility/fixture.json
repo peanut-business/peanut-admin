@@ -25,9 +25,9 @@
     "slug": "core-upgrade-fixture",
     "package_identity": "peanut-fixtures/core-upgrade-fixture",
     "release_identity": {
-      "version": "1.1.7",
-      "inventory_sha256": "a65ec2323eaa8c008633e2c615b1a5dc1c228b7140d8e2fc0aa602224cb2466a",
-      "managed_tree_sha256": "c9904e48c0cf8ea8b571046b3ddd095f0772da5cfa0ae21a5622d46d8987ee94",
+      "version": "1.1.8",
+      "inventory_sha256": "aa6dbc6268d6d5caad0bf07d04852a00e360f7c2e9ba613f7c16072eee1daa80",
+      "managed_tree_sha256": "c2d00b7ba821151220baa2f93efb386143a636114427b77189b06c3ebc5b8ffe",
       "file_count": 275
     },
     "generation_identity": {
@@ -36,11 +36,11 @@
       "inventory_sha256": "candidate-current"
     },
     "expected": {
-      "managed_tree_sha256": "25b63045fb6b9b39f9c38e494a88b034dc42c83b2336ba8e09c74e60d8e427ef",
-      "app_owned_tree_sha256": "e77f9a02fc35a2e174ddd1b4a08bd7eb8c0cff09b73083f061230209b1e48e15",
+      "managed_tree_sha256": "b5fedcd26fd0b735d984b534ad4463f5e63ec0ee8b5a48b5ba033345b747c1d8",
+      "app_owned_tree_sha256": "79644a4e78c5e1a30dd8c85eb38543f5571450ce499a043153da301c00328833",
       "application_file_count": 1002,
-      "application_source_sha256": "cd2893ac3d00e2ef543bff16d212004b445a9471019a9b55e3c895b889736371",
-      "app_owned_with_probe_sha256": "d97e6489d6907a5725b719e8b74936556b8c11b9e68d943ccf6383639110378e"
+      "application_source_sha256": "5b6d85069a39a1f3abe7f9bced157a3e9d1a1626c5f695f4d3f6e948a9cd48f5",
+      "app_owned_with_probe_sha256": "a578277b424ece62b8047a8444a87db12699d10eeb95c94f97c639666e7a466a"
     }
   },
   "legacy_pre_alpha5": {
