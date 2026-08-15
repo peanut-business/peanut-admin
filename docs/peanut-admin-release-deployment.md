@@ -73,6 +73,15 @@ Docker Desktop 可通过 `docker buildx inspect --bootstrap` 查看 `moby.host-g
 
 2026-08-11 PB09 正式部署检出不可变 `v1.0.0@0d3c848…`，在部署端从源码构建 PHP/Nginx 镜像；数据库与 `php-storage` 配对备份后，迁移账本从 24 条一次前滚到 28 条，再以 `up -d --no-build` 切换。MySQL/PHP/Nginx 健康且 cron 运行；一次最低外部 smoke 覆盖应用健康、管理端/PC/H5 HTTP、`RELEASE_METADATA.json`、法律资产和官网版本页，不重复 PB08B 浏览器矩阵。
 
+2026-08-13 生产主机 `oracle3` 已检出不可变 `v1.1.0@c6a165f…`，在原有数据库与
+`php-storage` 成对备份之后由源码构建 `v1.1.0` PHP/Nginx 镜像。迁移按“先迁移、后切换”
+从 28 条一次前滚到 50 条，默认 Tenant、Account、TenantMember 与 owner 映射完成；旧管理员
+凭据不满足 Core 最低长度时先保持 `v1.0.0` 流量，完成受控密码轮换后再继续迁移，没有绕过
+密码策略。切换后 MySQL/PHP/Nginx 健康、cron 运行，`/healthz`、管理端、PC、H5、release
+metadata 与管理端登录最低检查通过。应用入口为 <https://peanut-admin.007345.xyz>；文档站由
+Cloudflare Pages 项目 `peanut-admin-docs` 独立发布到
+<https://peanut-admin-doc.007345.xyz>，不经过 `oracle3`。
+
 以上只记录已封存的验收范围，不是模板域名、IP、数据库地址或云平台默认值。
 
 ## HTTPS 反向代理
@@ -153,6 +162,10 @@ docker compose up -d --no-build
 `DEPLOYMENT_MODE=standalone` 或 `DEPLOYMENT_MODE=multi-tenant`；缺失或未知值不会自动
 回退为 Standalone。两种模式都必须设置彼此独立、至少 32 字节且发布后保持稳定的
 `TENANT_IDENTIFIER_HMAC_KEY` 和 `PLATFORM_IDENTIFIER_HMAC_KEY`。
+
+生产 Nginx 镜像在同一次构建中包含 Standalone 与 multi-tenant 两套管理端 bundle，并在
+容器启动时按 `DEPLOYMENT_MODE` 选择其中一套。切换模式需要重新创建 Nginx 容器，但不需要
+重新构建镜像；不得在构建时用宿主环境隐式固定模式，也不得绕过启动时的合法值校验。
 
 首次安装和首次将历史库纳入 Tenant Account 模型时提供 `ADMIN_INITIAL_EMAIL`，空库还要
 提供合格的 `ADMIN_INITIAL_PASSWORD`。多租户模式另需提供与管理员邮箱不同的

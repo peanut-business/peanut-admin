@@ -15,6 +15,7 @@ use app\common\service\payment\gateway\AlipayRefundGateway;
 use app\common\service\payment\gateway\WechatPayGateway;
 use app\common\service\payment\gateway\WechatRefundGateway;
 use app\common\service\payment\transport\CurlPaymentTransport;
+use app\common\service\external\ExternalTenantResolver;
 
 /** Peanut 自有支付边界工厂，不承载参考系统的路由或参数兼容。 */
 final class PaymentServiceFactory
@@ -30,6 +31,20 @@ final class PaymentServiceFactory
     {
         $this->config = $config ?? ConfigService::get('pay');
         $this->transport = $transport ?? new CurlPaymentTransport();
+    }
+
+    public static function forTenant(
+        object $context,
+        string $channel,
+        ?PaymentTransportInterface $transport = null,
+    ): self {
+        $provider = match (strtolower(trim($channel))) {
+            'wechat' => ExternalTenantResolver::WECHAT_PAYMENT,
+            'alipay' => ExternalTenantResolver::ALIPAY_PAYMENT,
+            default => throw new \RuntimeException('支付渠道不受支持'),
+        };
+        $binding = ExternalTenantResolver::production()->bindingForTenant($context, $provider);
+        return new self($binding->config, $transport);
     }
 
     public function prepay(string $channel): PrepayGatewayInterface

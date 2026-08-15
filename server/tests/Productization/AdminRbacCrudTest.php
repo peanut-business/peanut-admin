@@ -68,17 +68,6 @@ $rootDept = Dept::where('pid', 0)->where('status', 1)->findOrEmpty();
 expectCrud(!$rootDept->isEmpty(), 'active root department is required');
 
 try {
-    $aliases = (new ReflectionClass(AdminPermissionService::class))->getConstant('ACCESS_ALIASES');
-    expectCrud(is_array($aliases), 'permission aliases must be readable');
-    foreach ([
-        'admin/status' => 'admin/edit',
-        'dept/status' => 'dept/edit',
-        'jobs/status' => 'jobs/edit',
-        'menu/status' => 'menu/edit',
-    ] as $uri => $permission) {
-        expectCrud(($aliases[$uri] ?? null) === $permission, $uri . ' must reuse ' . $permission);
-    }
-
     expectCrud(MenuLogic::add([
         'pid' => 0,
         'type' => 'M',

@@ -16,6 +16,8 @@ use app\common\service\oauth\WechatOAuthTransport;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
 use app\common\service\member\MemberTenantRepository;
+use app\common\service\external\ExternalTenantBinding;
+use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\facade\Db;
@@ -28,9 +30,9 @@ class OAuthLogic extends BaseLogic
     private const ATTEMPT_TTL = 600;
     private const COMPLETION_TTL = 600;
     private const SCENES = [
-        'mnp' => ['config' => 'mnp_setting', 'terminal' => 1],
-        'oa' => ['config' => 'oa_setting', 'terminal' => 2],
-        'open_pc' => ['config' => 'open_platform', 'terminal' => 4],
+        'mnp' => ['terminal' => 1],
+        'oa' => ['terminal' => 2],
+        'open_pc' => ['terminal' => 4],
     ];
 
     public static function begin(
@@ -38,6 +40,7 @@ class OAuthLogic extends BaseLogic
         string $scene,
         string $returnPath,
         string $redirectUri,
+        ExternalTenantBinding $binding,
         ?OAuthTransportInterface $transport = null
     ): array|false {
         try {
@@ -45,7 +48,7 @@ class OAuthLogic extends BaseLogic
                 throw new \RuntimeException('该微信场景不支持浏览器授权');
             }
             self::assertReturnPath($returnPath);
-            $config = self::sceneConfig($scene);
+            $config = $binding->config;
             $state = bin2hex(random_bytes(32));
             OAuthTenantRepository::createAttempt($context, [
                 'state_hash' => hash('sha256', $state),
@@ -75,6 +78,7 @@ class OAuthLogic extends BaseLogic
         string $scene,
         string $code,
         string $state,
+        ExternalTenantBinding $binding,
         ?OAuthTransportInterface $transport = null
     ): array|false {
         try {
@@ -83,8 +87,8 @@ class OAuthLogic extends BaseLogic
             }
             $returnPath = self::consumeAttempt($context, $scene, $state);
             $transport ??= new WechatOAuthTransport();
-            $profile = $transport->exchange($scene, self::sceneConfig($scene), $code);
-            $result = self::loginWithProfile($context, $scene, $profile);
+            $profile = $transport->exchange($scene, $binding->config, $code);
+            $result = self::loginWithProfile($context, $scene, $profile, $binding);
             $result['return_path'] = $returnPath;
             return $result;
         } catch (\Throwable $e) {
@@ -96,12 +100,13 @@ class OAuthLogic extends BaseLogic
     public static function miniProgramLogin(
         TenantSystemContext $context,
         string $code,
+        ExternalTenantBinding $binding,
         ?OAuthTransportInterface $transport = null
     ): array|false {
         try {
             $transport ??= new WechatOAuthTransport();
-            $profile = $transport->exchange('mnp', self::sceneConfig('mnp'), $code);
-            return self::loginWithProfile($context, 'mnp', $profile);
+            $profile = $transport->exchange('mnp', $binding->config, $code);
+            return self::loginWithProfile($context, 'mnp', $profile, $binding);
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
             return false;
@@ -124,8 +129,12 @@ class OAuthLogic extends BaseLogic
                 throw new \RuntimeException('用户不存在或已禁用');
             }
             $transport ??= new WechatOAuthTransport();
-            $profile = $transport->exchange($scene, self::sceneConfig($scene), $code);
-            [$bound] = self::resolveIdentity($context, $scene, $profile, $memberId);
+            $binding = ExternalTenantResolver::production()->bindingForTenant(
+                $context,
+                ExternalTenantResolver::oauthProvider($scene),
+            );
+            $profile = $transport->exchange($scene, $binding->config, $code);
+            [$bound] = self::resolveIdentity($context, $scene, $profile, $memberId, $binding);
             if ((int)$bound->id !== $memberId) {
                 throw new \RuntimeException('微信身份已绑定其他用户');
             }
@@ -206,9 +215,14 @@ class OAuthLogic extends BaseLogic
         }
     }
 
-    private static function loginWithProfile(TenantSystemContext $context, string $scene, OAuthProfile $profile): array
+    private static function loginWithProfile(
+        TenantSystemContext $context,
+        string $scene,
+        OAuthProfile $profile,
+        ExternalTenantBinding $binding,
+    ): array
     {
-        [$member, $created] = self::resolveIdentity($context, $scene, $profile, null);
+        [$member, $created] = self::resolveIdentity($context, $scene, $profile, null, $binding);
         if (!(int)$member->status) {
             throw new \RuntimeException('账号已被禁用');
         }
@@ -216,7 +230,7 @@ class OAuthLogic extends BaseLogic
         $needMobile = (int)ConfigService::get('login', 'coerce_mobile', 0) === 1
             && trim((string)$member->mobile) === '';
         if ($needProfile || $needMobile) {
-            return self::completionResult($context, $member, $needProfile, $needMobile);
+            return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
         }
         $member->login_time = time();
         $member->login_ip = request()->ip();
@@ -229,11 +243,11 @@ class OAuthLogic extends BaseLogic
         TenantContext|TenantSystemContext $context,
         string $scene,
         OAuthProfile $profile,
-        ?int $bindingMemberId
+        ?int $bindingMemberId,
+        ExternalTenantBinding $binding,
     ): array {
         $sceneMeta = self::SCENES[$scene];
-        $config = self::sceneConfig($scene);
-        $clientKey = $scene . ':' . (string)$config['app_id'];
+        $clientKey = $scene . ':' . (string)($binding->config['app_id'] ?? '');
         $tenantId = OAuthTenantContext::tenantId($context);
         $lockSeed = $profile->unionId() !== ''
             ? 'union:' . $profile->unionId()
@@ -409,12 +423,14 @@ class OAuthLogic extends BaseLogic
         TenantContext|TenantSystemContext $context,
         Member $member,
         bool $needProfile,
-        bool $needMobile
+        bool $needMobile,
+        ExternalTenantBinding $binding,
     ): array
     {
         $raw = bin2hex(random_bytes(32));
         OAuthTenantRepository::createCompletionTicket($context, [
             'token_hash' => hash('sha256', $raw),
+            'binding_id' => $binding->id,
             'member_id' => (int)$member->id,
             'need_profile' => $needProfile ? 1 : 0,
             'need_mobile' => $needMobile ? 1 : 0,
@@ -478,31 +494,6 @@ class OAuthLogic extends BaseLogic
         } catch (\Throwable $e) {
             Db::rollback();
             throw $e;
-        }
-    }
-
-    private static function sceneConfig(string $scene): array
-    {
-        self::assertEnabled();
-        if (!isset(self::SCENES[$scene])) {
-            throw new \RuntimeException('微信授权场景无效');
-        }
-        $type = (string)self::SCENES[$scene]['config'];
-        $config = [
-            'app_id' => trim((string)ConfigService::get($type, 'app_id', '')),
-            'app_secret' => trim((string)ConfigService::get($type, 'app_secret', '')),
-        ];
-        if ($config['app_id'] === '' || $config['app_secret'] === '') {
-            throw new \RuntimeException('微信授权渠道未配置');
-        }
-        return $config;
-    }
-
-    private static function assertEnabled(): void
-    {
-        if ((int)ConfigService::get('login', 'third_auth', 0) !== 1
-            || (int)ConfigService::get('login', 'wechat_auth', 0) !== 1) {
-            throw new \RuntimeException('微信授权登录未开启');
         }
     }
 

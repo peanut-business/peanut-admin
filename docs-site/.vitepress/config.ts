@@ -1,19 +1,28 @@
 import { defineConfig } from 'vitepress'
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import brandManifest from '../generated/brand.json'
 
 const canonicalUrl = process.env.PEANUT_DOCS_SITE_URL?.trim()
 const { website } = brandManifest
+const productStatusFeatureAvailable = [
+  new URL('../product-status.md', import.meta.url),
+  new URL('./theme/ProductStatus.vue', import.meta.url),
+].every(url => existsSync(fileURLToPath(url)))
+const productStatusNavigation = productStatusFeatureAvailable
+  ? [{ text: '产品状态', link: '/product-status' }]
+  : []
 
 export default defineConfig({
   lang: 'zh-CN',
   title: website.name,
   description: website.slogan,
   cleanUrls: true,
-  lastUpdated: true,
+  lastUpdated: process.env.VITEPRESS_DISABLE_GIT !== 'true',
   sitemap: canonicalUrl ? { hostname: canonicalUrl } : undefined,
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/favicon.svg' }],
-    ['meta', { name: 'theme-color', content: '#165DFF' }],
+    ['meta', { name: 'theme-color', content: '#2457E6' }],
   ],
   themeConfig: {
     logo: '/brand/logo.svg',
@@ -21,6 +30,7 @@ export default defineConfig({
     nav: [
       { text: '产品', link: '/' },
       { text: '能力与场景', link: '/capabilities' },
+      ...productStatusNavigation,
       {
         text: '文档',
         items: [
@@ -52,6 +62,7 @@ export default defineConfig({
             { text: '部署与升级', link: '/deployment' },
             { text: 'API 与扩展', link: '/api' },
             { text: '管理员使用手册', link: '/guide/user-manual' },
+            ...productStatusNavigation,
             { text: '版本与发布', link: '/releases' },
             { text: '许可证与告知', link: '/legal' },
           ],
@@ -63,6 +74,7 @@ export default defineConfig({
           items: [
             { text: '产品首页', link: '/' },
             { text: '能力与场景', link: '/capabilities' },
+            ...productStatusNavigation,
           ],
         },
         {
@@ -74,6 +86,7 @@ export default defineConfig({
             { text: '部署与升级', link: '/deployment' },
             { text: 'API 与扩展', link: '/api' },
             { text: '管理员手册', link: '/guide/user-manual' },
+            ...productStatusNavigation,
             { text: '版本与发布', link: '/releases' },
             { text: '许可证与告知', link: '/legal' },
           ],

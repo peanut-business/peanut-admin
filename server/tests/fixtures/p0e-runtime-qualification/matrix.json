@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "gate": "p0e-runtime-qualification",
+  "database_resource": {
+    "stable_resource_id": "peanut-admin-p0e-mysql84-gate",
+    "environment": "development",
+    "host": "192.168.192.2",
+    "port": 20183,
+    "database_template": "peanut_admin_development_p0e_<run_id>_<scenario>",
+    "migration_count": 54
+  },
+  "baselines": [
+    "v1.0.0",
+    "v1.1.0"
+  ],
+  "target_release": {
+    "version": "1.1.6",
+    "source_commit": "e68700335fc75452b8a6866d9efe229decc34a76",
+    "source_tree": "cab4413c5afff2cf8457f175f2de4a835547237c",
+    "manifest_sha256": "8fa18359ed9853283822c4247cdac61da3fdda3c5ed849bda8b8d089e577df54",
+    "inventory_sha256": "da8ebc4554e043ee1aedbd9d1b9ddef60fbd1f79e1c96e2ed6e3e918e6a4f4e0",
+    "managed_tree_sha256": "d54e1f467fabe616276ad436a5334bebbf4c900d47a68d5d395b8ad6d78e1cb1",
+    "file_count": 275,
+    "application_manifest_schema": 2,
+    "default_application_version": "0.1.0",
+    "default_uniapp_version_code": "10"
+  },
+  "legacy_application": {
+    "name": "P0E Upgraded Qualification",
+    "slug": "p0e-upgraded-qualification",
+    "package_identity": "p0e/upgraded-qualification",
+    "initial_version": "1.0.0",
+    "source_commit": "14412607ba36f1816e39f7117f77eea4a9e7419e",
+    "source_tree": "172865d8b8057caa8a017ac591618cd914af30a5",
+    "release_chain": ["1.0.0", "1.1.0", "1.1.1", "1.1.2", "1.1.3", "1.1.4", "1.1.5", "1.1.6"],
+    "customizations": [
+      {
+        "path": "server/app/common/service/CoreServiceOverrides.php",
+        "anchor": "    public const CONTRACT_VERSION = '2.0.0';\n",
+        "replacement": "    public const CONTRACT_VERSION = '2.0.0';\n    public const DOWNSTREAM_HOST_PROFILE = 'p0e-upgraded-qualification';\n"
+      },
+      {
+        "path": "server/app/common/service/payment/PaymentServiceFactory.php",
+        "anchor": "final class PaymentServiceFactory\n{\n",
+        "replacement": "final class PaymentServiceFactory\n{\n    public const DOWNSTREAM_PAYMENT_PROFILE = 'p0e-upgraded-qualification';\n\n"
+      }
+    ]
+  },
+  "scenarios": {
+    "standalone_fresh": { "deployment_mode": "standalone", "action": "fresh" },
+    "multi_tenant_fresh": { "deployment_mode": "multi-tenant", "action": "fresh" },
+    "v1_0_forward": { "deployment_mode": "standalone", "action": "forward", "baseline": "v1.0.0" },
+    "v1_1_forward": { "deployment_mode": "standalone", "action": "forward", "baseline": "v1.1.0" },
+    "migration_fault_source": { "deployment_mode": "standalone", "action": "fault-source" },
+    "migration_fault_restore": { "deployment_mode": "standalone", "action": "restore" },
+    "plugin_lifecycle": { "deployment_mode": "multi-tenant", "action": "plugin" },
+    "standalone_browser": { "deployment_mode": "standalone", "action": "browser" },
+    "multi_tenant_browser": { "deployment_mode": "multi-tenant", "action": "browser" }
+  },
+  "groups": [
+    "generated-application",
+    "standalone-fresh",
+    "multi-tenant-fresh",
+    "v1.0-forward",
+    "v1.1-forward",
+    "migration-fault-restore",
+    "plugin-lifecycle",
+    "production-compose",
+    "standalone-browser",
+    "multi-tenant-browser",
+    "legacy-application-upgrade",
+    "legacy-application-recovery",
+    "upgraded-plugin-lifecycle",
+    "upgraded-production-compose",
+    "upgraded-standalone-browser",
+    "upgraded-multi-tenant-browser"
+  ]
+}

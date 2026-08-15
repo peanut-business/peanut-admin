@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "project_id": "peanut-admin",
+  "gate": "p0e-runtime-qualification",
+  "authority": {
+    "owner": "Peanut Admin P0-E qualification owner",
+    "source": "this versioned source-only registry",
+    "project_resource_registry": "resources/project-resources.json",
+    "live_resource_validation": "the registered mac-14 resource must pass the exact remote preflight before mutation",
+    "credentials_policy": "references only; secrets are never stored in Git"
+  },
+  "database_administration_binding": {
+    "stable_resource_id": "peanut-admin-p0e-mysql84-remote-administration",
+    "purpose": "bind the registered P0-E databases to lease-bound remote administration",
+    "environments": ["development"],
+    "owner": "Peanut Admin P0-E project-resource lease owner",
+    "host": "mac-14",
+    "port": 20183,
+    "database": "peanut_admin_development_p0e_<run_id>_<scenario>",
+    "schema": "pa_ table prefix",
+    "namespace": "peanut_admin_development_p0e_<run_id>_",
+    "service_type": "P0-E database-to-administrative-tooling binding",
+    "version": "8.4.10",
+    "database_resource_id": "peanut-admin-p0e-mysql84-gate",
+    "runtime_resource_id": "peanut-admin-mysql84-development",
+    "administrative_tooling_resource_id": "peanut-admin-mysql84-remote-admin-cli",
+    "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+    "data_source": "resources/project-resources.json plus the live registered mac-14 resource",
+    "freshness_requirement": "after claim and before mutation, both project registries and the live resource must agree on the resource, image, endpoint and version",
+    "health_check": "scripts/p0e-runtime-qualification run/resume remote administration preflight",
+    "fallback": "none",
+    "cleanup_responsibility": "the active P0-E lease owner drops only its exact run_id databases"
+  },
+  "resources": {
+    "tooling": [
+      {
+        "stable_resource_id": "peanut-admin-mysql84-remote-admin-cli",
+        "purpose": "lease-bound P0-E database administration, logical backup and restore",
+        "environments": ["development"],
+        "owner": "Peanut Admin project; consumes the registered mac-14 MySQL allocation",
+        "host": "mac-14",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut_admin_development_p0e_<run_id>_",
+        "service_type": "MySQL CLI inside the allocated database container over SSH docker exec",
+        "version": "8.4.10",
+        "transport": "ssh-docker-exec",
+        "ssh_alias": "mac-14",
+        "ssh_command": "/usr/bin/ssh",
+        "docker_command": "/usr/local/bin/docker",
+        "container_name": "peanut-admin-mysql84-development",
+        "container_image": "mysql:8.4.10@sha256:8dbcf531a03aade657e181b9cf2f1d1803ce621a1d55610cb44cb531ab7d7db6",
+        "mysql_command": "/usr/bin/mysql",
+        "mysqldump_command": "/usr/bin/mysqldump",
+        "credential_ref": "the registered container's MYSQL_ROOT_PASSWORD environment; never transferred to the workstation",
+        "data_source": "live Peanut Admin resource peanut-admin-mysql84-development on mac-14",
+        "freshness_requirement": "after claim and before any database mutation, verify the exact container image, running/healthy state and MySQL CLI version",
+        "health_check": "scripts/p0e-runtime-qualification run/resume remote administration preflight",
+        "fallback": "none; host mysql and mysqldump commands are forbidden",
+        "cleanup_responsibility": "not applicable; the tooling runs inside the existing persistent allocation"
+      }
+    ]
+  }
+}

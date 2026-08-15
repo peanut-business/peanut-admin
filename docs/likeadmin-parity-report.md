@@ -30,7 +30,14 @@
 | LikeAdmin 1.9.4 | `http://127.0.0.1:5174/admin/` | 前端 5174、Docker API 80 已运行 |
 | Peanut Admin | `http://127.0.0.1:5175/` | 前端 5175、后端 8000 已运行 |
 
-Peanut 的权威数据库不是本机临时库，而是局域网 `mac-2014` 上的 `192.168.192.2:3306/peanut_admin`。2026-08-01 已确认 `peanut-mysql`、`peanut-redis` 正常运行并使用 `unless-stopped` 重启策略，Docker Desktop 已启用自动启动；非交互 SSH 使用 `/usr/local/bin/docker`。
+本报告下方的数据库与运行结果封存的是 2026-08-01 parity 验收现场，不是当前开发
+环境说明。该现场当时使用 `mac-2014` 上的旧 3306 端口与 `peanut_admin` 库；此资源
+后来退出，且没有当前迁移账本，不得连接或复用。现行开发资源只以根 `AGENTS.md` 和
+`resources/project-resources.json` 为准：资源
+`peanut-admin-mysql84-development`，地址
+`192.168.192.2:20183/peanut_admin_development`。报告中的表数、菜单数、配置数及脚本
+输出仍保留为对应固定日期的历史证据，不能替代 `v1.1.0` 的 50 条 migration 发布身份，
+也不能替代发布后 `dev` 的当前迁移清单。
 
 F01 验收前发现 LikeAdmin 前端进程的 `VITE_APP_BASE_URL` 指向未运行的 `127.0.0.1:8001`，而实际 Docker API 监听 80。已重启同一 5174 前端进程并将 API 基址修正为 `127.0.0.1:80`，真实页面和 API 请求恢复正常。
 
@@ -63,7 +70,7 @@ F01 验收前发现 LikeAdmin 前端进程的 `VITE_APP_BASE_URL` 指向未运�
 | 装修 | 已验收 | 移动端、Tabbar、PC 编辑器、Schema、权限、消费 DTO 与即时生效均已验收 |
 | 系统设置 | 已验收 | 配置、支付/充值、六终端场景、微信三场景、三端消费及双系统浏览器均已验收 |
 | 开发工具 | 已验收 | 生成器、字典、调度、操作日志、维护页面及双系统浏览器均已验收 |
-| 文档与手册 | 未开始 | 下一批次 DOC01/DOC02 编写 Peanut Admin 独立文档与使用手册 |
+| 文档与手册 | 已验收 | DOC01/DOC02 独立开发部署指南与管理员使用手册已完成并经核查 |
 
 基础权限域的源码、API 和数据表映射持续维护于 `docs/likeadmin-foundation-contract-matrix.md`。
 

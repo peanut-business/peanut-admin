@@ -1,0 +1,731 @@
+{
+  "schema_version": 1,
+  "project_id": "peanut-admin",
+  "authority": {
+    "owner": "Peanut Admin maintainers",
+    "source": "this versioned file",
+    "resource_observation_policy": "validate this registry against the live resource before each stateful operation",
+    "credentials_policy": "references only; secrets are never stored in Git",
+    "local_port_policy": "registered values are defaults; PEANUT_LOCAL_ENV_FILE or .local/stack.env is the per-clone runtime source and existing overrides are preserved"
+  },
+  "resources": {
+    "tooling": [
+      {
+        "stable_resource_id": "peanut-admin-host-php-development",
+        "purpose": "default daily development API runtime",
+        "environments": ["development"],
+        "owner": "Peanut Admin project",
+        "host": "macbookpro-arm64",
+        "bind_address": "0.0.0.0",
+        "access_address": "127.0.0.1",
+        "container_access_address": "host.docker.internal",
+        "port": 20180,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-development",
+        "service_type": "PHP CLI development server",
+        "version": "8.3.24",
+        "command": "/opt/homebrew/bin/php",
+        "credential_ref": null,
+        "data_source": "current server worktree",
+        "freshness_requirement": "verify registered binary identity before start",
+        "health_check": "scripts/local-php-runtime status",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-host-composer-development",
+        "purpose": "locked PHP dependency installation for daily development",
+        "environments": ["development"],
+        "owner": "Peanut Admin project",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-development",
+        "service_type": "Composer CLI",
+        "version": "2.8.10",
+        "runtime": "PHP 8.3.24",
+        "command": "/usr/local/bin/composer",
+        "credential_ref": "local Composer provider configuration when required",
+        "data_source": "server/composer.lock",
+        "freshness_requirement": "composer install --frozen lock semantics before API start when vendor is absent",
+        "health_check": "/usr/local/bin/composer --version",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      }
+    ],
+    "databases": [
+      {
+        "stable_resource_id": "peanut-admin-mysql84-development",
+        "purpose": "shared development and local production-mode preview database",
+        "environments": [
+          "development",
+          "local-production-preview"
+        ],
+        "owner": "Peanut Admin project; remote host mac-14",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "database": "peanut_admin_development",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development",
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-mysql84-development-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-mysql84-development-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "persistent Peanut Admin development data on mac-14",
+        "freshness_requirement": "server/database/environment-guard.php --current must pass before application readiness",
+        "health_check": {
+          "allocation": "scripts/project-development-database.sh status",
+          "host_connection": "scripts/local-stack.sh database-host-status",
+          "container_connection": "scripts/local-stack.sh database-status"
+        },
+        "fallback": "none",
+        "lifecycle": "persistent",
+        "cleanup_responsibility": "Peanut Admin project owner; explicit owner gate required",
+        "backup_responsibility": "Peanut Admin project owner before each migration"
+      },
+      {
+        "stable_resource_id": "peanut-admin-p0e-mysql84-gate",
+        "purpose": "isolated P0-E install, upgrade, recovery, plugin lifecycle and browser qualification databases",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin P0-E project-resource lease owner; remote host mac-14",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_development_p0e_<run_id>_<scenario>",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development_p0e_<run_id>_",
+        "run_id_pattern": "^[a-z0-9]{1,11}$",
+        "database_name_max_length": 64,
+        "allowed_scenarios": [
+          "standalone_fresh",
+          "multi_tenant_fresh",
+          "v1_0_forward",
+          "v1_1_forward",
+          "migration_fault_source",
+          "migration_fault_restore",
+          "plugin_lifecycle",
+          "standalone_browser",
+          "multi_tenant_browser"
+        ],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-p0e-mysql84-gate-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-p0e-mysql84-gate-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "the lease-fixed candidate tree, immutable v1.0.0/v1.1.0 tag trees and Gate-owned synthetic fixtures; persistent development and production data are forbidden",
+        "freshness_requirement": "each fixed candidate uses a new lease-bound run_id; every scenario target must be absent or empty before setup, and its ordered migration checksums and ledger must be verified against that candidate before evidence capture",
+        "health_check": {
+          "allocation": "scripts/project-development-database.sh status",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer <host|container> --resource-id peanut-admin-p0e-mysql84-gate --database-name <exact_lease_database>",
+          "database": "after a successful claim, the Gate runner performs a credential-backed ping and SELECT DATABASE(), then verifies the candidate migration ledger"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "claim_precondition": "before connection, creation, backup, migration, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed candidate, worktree, Gate, this resource ID, exact run_id database names, backup path, cache path and output path",
+        "creation_policy": "the active scripts/project-resource-lease owner may create only databases matching peanut_admin_development_p0e_<run_id>_<allowed_scenario>",
+        "cleanup_responsibility": "the active P0-E lease owner drops only databases matching its exact run_id after evidence capture; unmatched, expired or ownerless databases require an explicit project-owner gate",
+        "backup_responsibility": "the active P0-E lease owner captures and verifies the fault-source backup before recovery injection; successful-run backups are removed with the lease-owned output after acceptance",
+        "failure_retention_policy": "on failure, the lease owner preserves the exact run_id databases, backup and output, renews or explicitly transfers the lease, and reports recovery coordinates; cleanup waits for evidence capture and the named owner decision"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-bundled-mysql84",
+        "purpose": "production-server bundled database profile",
+        "environments": [
+          "production"
+        ],
+        "owner": "Peanut Admin production deployment owner",
+        "deployment_resource_id": "peanut-admin-production-deployment",
+        "backup_resource_id": "peanut-admin-production-backups",
+        "service_type": "mysql",
+        "version": "8.4",
+        "compose_project": "peanut-admin",
+        "compose_file": "compose.yaml",
+        "container_name": "peanut-admin-mysql-1",
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin",
+        "upstream_endpoint": null,
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-production-bundled-mysql84-compose",
+          "host": "mysql",
+          "port": 3306,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "deployment-local Compose network"
+        },
+        "credential_ref": "oracle3:/www/docker/peanut-admin/.env (root-owned mode 0600; secret values are not stored in Git)",
+        "data_source": "Docker volume peanut-admin_mysql-data on oracle3",
+        "freshness_requirement": "a verified peanut-admin-production-backups artifact pair, the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, and the explicit migration ledger must be confirmed before production application readiness",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps mysql'",
+          "host_connection": null,
+          "container_connection": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db exec -T php php server/database/environment-guard.php --current'"
+        },
+        "fallback": "none",
+        "lifecycle": "persistent",
+        "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate",
+        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before each upgrade or migration"
+      }
+    ],
+    "local_listeners": [
+      {
+        "stable_resource_id": "peanut-admin-local-development-gateway",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20187,
+        "port_env": "DEV_HTTP_PORT",
+        "service_type": "http",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "local development Compose stack",
+        "freshness_requirement": "current worktree",
+        "health_check": "GET /admin/",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-php",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20180,
+        "port_env": "PHP_PORT",
+        "service_type": "http",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "registered macbookpro-arm64 host PHP runtime",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-admin",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20181,
+        "port_env": "VITE_PORT",
+        "service_type": "vite",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "web source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-pc",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20185,
+        "port_env": "PC_PORT",
+        "service_type": "nuxt",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "pc source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-mobile",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20182,
+        "port_env": "MOBILE_PORT",
+        "service_type": "vite-uniapp",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "uniapp source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-development-docs",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20186,
+        "port_env": "DOCS_PORT",
+        "service_type": "vitepress",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "docs-site source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "GET /",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-production-preview-gateway",
+        "environment": "local-production-preview",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20190,
+        "port_env": "HTTP_PORT",
+        "service_type": "http",
+        "namespace": "peanut-admin-production",
+        "credential_ref": null,
+        "data_source": "local production-mode Compose stack",
+        "freshness_requirement": "current worktree image",
+        "health_check": "GET /healthz",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh prod-down"
+      }
+    ],
+    "containers": [
+      {
+        "stable_resource_id": "peanut-admin-development-ui-containers",
+        "purpose": "development admin, PC, mobile, docs and Nginx gateway runtimes; API targets host.docker.internal:${PHP_PORT}",
+        "environment": "development",
+        "owner": "deploy/docker-compose.dev.yml",
+        "host": "Docker Desktop local engine",
+        "port": "registered local_listeners entries",
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-development",
+        "service_type": "Node.js 20.19.4 and Nginx 1.27 containers",
+        "credential_ref": null,
+        "data_source": "current web, pc, uniapp and docs-site worktrees",
+        "freshness_requirement": "current worktree",
+        "health_check": "scripts/local-environment-probe",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-production-preview-containers",
+        "purpose": "local production-mode PHP, Nginx and cron preview runtimes",
+        "environment": "local-production-preview",
+        "owner": "deploy/docker-compose.prod.yml",
+        "host": "Docker Desktop local engine",
+        "port": 20190,
+        "database": "peanut_admin_development via peanut-admin-mysql84-development-docker-direct",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production",
+        "service_type": "Peanut Admin production PHP/Nginx images",
+        "credential_ref": ".local/stack.env generated from the registered external credential reference",
+        "data_source": "current worktree images",
+        "freshness_requirement": "current image and current migration ledger",
+        "health_check": "scripts/local-environment-probe",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh prod-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-application-containers",
+        "purpose": "production PHP, Nginx and cron application runtimes",
+        "environment": "production",
+        "owner": "Peanut Admin production deployment owner; deploy/docker-compose.prod.yml",
+        "host_resource_id": "peanut-admin-production-deployment",
+        "host": "oracle3",
+        "compose_project": "peanut-admin",
+        "compose_file": "compose.yaml",
+        "services": {
+          "php": "peanut-admin-php-1",
+          "cron": "peanut-admin-cron-1",
+          "nginx": "peanut-admin-nginx-1"
+        },
+        "published_endpoint": {
+          "host": "127.0.0.1",
+          "port": 18092,
+          "consumers": [
+            "BaoTa-managed Nginx reverse proxy"
+          ],
+          "network_scope": "production host loopback"
+        },
+        "database_resource_id": "peanut-admin-production-bundled-mysql84",
+        "domain_resource_id": "peanut-admin-production-domain",
+        "backup_resource_id": "peanut-admin-production-backups",
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production",
+        "service_type": "Docker Compose PHP/Nginx/cron application stack",
+        "credential_ref": "oracle3:/www/docker/peanut-admin/.env (root-owned mode 0600; secret values are not stored in Git)",
+        "data_source": "release source and images under /www/docker/peanut-admin on oracle3",
+        "persistent_volumes": [
+          "peanut-admin_php-runtime",
+          "peanut-admin_php-storage"
+        ],
+        "freshness_requirement": "before each update, verify the exact release checkout and images, preserve the existing peanut-admin Compose project and persistent volume bindings, verify the peanut-admin-production-backups pair, and pass the current migration ledger check",
+        "health_check": {
+          "compose": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps'",
+          "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18092/healthz'"
+        },
+        "fallback": "none",
+        "cleanup_responsibility": "Peanut Admin production deployment owner; no automatic cleanup and destructive cleanup requires an explicit gate",
+        "backup_responsibility": "Peanut Admin production deployment owner archives peanut-admin_php-storage in the same quiesced window as the bundled database dump"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-bundled-mysql84-container",
+        "purpose": "optional production bundled database runtime",
+        "environment": "production",
+        "owner": "deploy/docker-compose.prod.yml bundled-db profile",
+        "host_resource_id": "peanut-admin-production-deployment",
+        "host": "oracle3",
+        "port": 3306,
+        "compose_project": "peanut-admin",
+        "compose_file": "compose.yaml",
+        "container_name": "peanut-admin-mysql-1",
+        "database_resource_id": "peanut-admin-production-bundled-mysql84",
+        "backup_resource_id": "peanut-admin-production-backups",
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production",
+        "service_type": "mysql:8.4",
+        "credential_ref": "oracle3:/www/docker/peanut-admin/.env (root-owned mode 0600; secret values are not stored in Git)",
+        "data_source": "Docker volume peanut-admin_mysql-data on oracle3",
+        "freshness_requirement": "preserve the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, verify the peanut-admin-production-backups pair, then run the explicit migration ledger current check",
+        "health_check": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps mysql' plus php server/database/environment-guard.php --current",
+        "fallback": "none",
+        "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate",
+        "backup_responsibility": "Peanut Admin production deployment owner creates the bundled database dump in the same quiesced window as the php-storage archive"
+      }
+    ],
+    "optional_services": [
+      {
+        "stable_resource_id": "peanut-admin-local-redis-experiment",
+        "purpose": "opt-in local experiments only",
+        "environments": [
+          "development",
+          "local-production-preview"
+        ],
+        "owner": "invoking developer",
+        "host": "127.0.0.1",
+        "port": 20184,
+        "port_env": "REDIS_PORT",
+        "database": null,
+        "schema": null,
+        "namespace": "must be assigned by the invoking experiment",
+        "service_type": "redis:7-alpine",
+        "credential_ref": null,
+        "data_source": "ephemeral local experiment",
+        "freshness_requirement": "not applicable",
+        "health_check": "redis-cli ping",
+        "fallback": "none",
+        "cleanup_responsibility": "invoking lease owner"
+      }
+    ],
+    "external_services": [
+      {
+        "stable_resource_id": "peanut-admin-packagist-registry",
+        "purpose": "immutable Composer package metadata and distribution downloads for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "Packagist public registry; peanut-opensource package publisher",
+        "host": "repo.packagist.org",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin/core",
+        "service_type": "Packagist Composer v2 registry",
+        "version": "public HTTPS API",
+        "credential_ref": null,
+        "data_source": "published peanut-admin/core version metadata and immutable dist references",
+        "freshness_requirement": "resolve each exact version immediately before the compatibility gate and retain the lockfile content reference",
+        "health_check": "composer show peanut-admin/core --all --format=json",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-npm-registry",
+        "purpose": "immutable npm package metadata and tarball downloads for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "npm public registry; peanut-opensource package publisher",
+        "host": "registry.npmjs.org",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "@peanut-admin/admin",
+        "service_type": "npm registry",
+        "version": "public HTTPS API",
+        "credential_ref": null,
+        "data_source": "published @peanut-admin/admin version metadata and immutable tarballs",
+        "freshness_requirement": "resolve each exact version immediately before the compatibility gate and retain version, integrity and tarball identity",
+        "health_check": "npm view @peanut-admin/admin --json",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-github-repository",
+        "purpose": "source control and CI",
+        "environments": [
+          "development",
+          "production"
+        ],
+        "owner": "peanut-business GitHub organization",
+        "host": "github.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-business/peanut-admin",
+        "service_type": "GitHub",
+        "credential_ref": "developer gh/SSH credential provider",
+        "data_source": "git@github.com:peanut-business/peanut-admin.git",
+        "freshness_requirement": "fetch origin/dev before implementation",
+        "health_check": "git ls-remote origin",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-source-github-repository",
+        "purpose": "read-only core release tag and embedded package metadata verification for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "peanut-opensource GitHub organization",
+        "host": "github.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-opensource/peanut-admin",
+        "service_type": "GitHub source repository",
+        "version": "immutable annotated release tags",
+        "credential_ref": null,
+        "data_source": "https://github.com/peanut-opensource/peanut-admin.git",
+        "freshness_requirement": "fetch only the exact recorded release tags immediately before the compatibility gate",
+        "health_check": "git ls-remote --tags https://github.com/peanut-opensource/peanut-admin.git",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-composer-split-github-repository",
+        "purpose": "read-only generated Composer split tag, commit and tree verification for compatibility gates",
+        "environments": [
+          "development"
+        ],
+        "owner": "peanut-opensource GitHub organization",
+        "host": "github.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-opensource/peanut-admin-core",
+        "service_type": "GitHub generated Composer split repository",
+        "version": "immutable annotated release tags",
+        "credential_ref": null,
+        "data_source": "https://github.com/peanut-opensource/peanut-admin-core.git",
+        "freshness_requirement": "fetch only the exact recorded release tags immediately before the compatibility gate",
+        "health_check": "git ls-remote --tags https://github.com/peanut-opensource/peanut-admin-core.git",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-deployment",
+        "purpose": "SSH access and deployment root for the Peanut Admin production Docker deployment",
+        "environments": [
+          "production"
+        ],
+        "owner": "Peanut Admin production deployment owner",
+        "source": "production owner confirmation and read-only SSH verification on 2026-08-15",
+        "host": "oracle3",
+        "port": null,
+        "transport": "ssh",
+        "ssh_alias": "oracle3",
+        "deployment_root": "/www/docker/peanut-admin",
+        "compose_project": "peanut-admin",
+        "compose_file": "compose.yaml",
+        "compose_profile": "bundled-db",
+        "required_non_secret_environment": {
+          "PEANUT_DEPLOYMENT_TARGET": "production",
+          "PEANUT_DATABASE_RESOURCE_ID": "peanut-admin-production-bundled-mysql84",
+          "COMPOSE_PROFILES": "bundled-db",
+          "DB_HOST": "mysql",
+          "DB_PORT": 3306,
+          "DB_NAME": "peanut_admin",
+          "HTTP_PORT": 18092
+        },
+        "runtime_resource_ids": [
+          "peanut-admin-production-application-containers",
+          "peanut-admin-production-bundled-mysql84-container"
+        ],
+        "database_resource_id": "peanut-admin-production-bundled-mysql84",
+        "domain_resource_id": "peanut-admin-production-domain",
+        "backup_resource_id": "peanut-admin-production-backups",
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-production",
+        "service_type": "SSH-managed Docker Compose production deployment",
+        "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin/.env",
+        "data_source": "release Git checkout and Docker Compose state under /www/docker/peanut-admin",
+        "freshness_requirement": "before each update, verify SSH reachability, the exact release checkout and image references, the peanut-admin Compose project, persistent volume bindings, exact non-secret production selector values, and a complete peanut-admin-production-backups artifact pair",
+        "preflight_checks": {
+          "environment_selection": "ssh -o BatchMode=yes oracle3 'sudo -n grep -Fqx PEANUT_DEPLOYMENT_TARGET=production /www/docker/peanut-admin/.env && sudo -n grep -Fqx PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-mysql84 /www/docker/peanut-admin/.env'",
+          "backup_target": "peanut-admin-production-backups capacity, tools, quiescence, manifest and checksum checks must pass before any production update",
+          "failure_policy": "any missing or mismatched selector or backup check blocks backup, migration and deployment; do not rewrite .env or select another database, path or host implicitly"
+        },
+        "health_check": {
+          "ssh": "ssh -o BatchMode=yes oracle3 'test -d /www/docker/peanut-admin && test -r /www/docker/peanut-admin/compose.yaml'",
+          "compose": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps'",
+          "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18092/healthz'"
+        },
+        "fallback": "none",
+        "lifecycle": "persistent",
+        "cleanup_responsibility": "Peanut Admin production deployment owner; no automatic cleanup and destructive cleanup requires an explicit gate",
+        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before each upgrade or migration"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-domain",
+        "purpose": "existing BaoTa-managed Nginx reverse-proxy binding for the published Peanut Admin application",
+        "environments": [
+          "production"
+        ],
+        "owner": "Peanut Admin production deployment owner; BaoTa-managed Nginx configuration",
+        "source": "production owner confirmation plus direct HTTP and TLS verification on 2026-08-15",
+        "host": "peanut-admin.007345.xyz",
+        "port": 443,
+        "deployment_resource_id": "peanut-admin-production-deployment",
+        "runtime_resource_id": "peanut-admin-production-application-containers",
+        "origin_endpoint": {
+          "host": "127.0.0.1",
+          "port": 18092,
+          "consumers": [
+            "BaoTa-managed Nginx reverse proxy"
+          ],
+          "network_scope": "production host loopback"
+        },
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin",
+        "service_type": "BaoTa-managed Nginx HTTPS reverse-proxy binding",
+        "credential_ref": "operator-managed BaoTa control-plane and TLS credential provider",
+        "data_source": "existing production BaoTa/Nginx reverse-proxy configuration",
+        "configuration_policy": "existing binding; releases update only the Docker deployment and do not create, replace or reconfigure BaoTa/Nginx",
+        "freshness_requirement": "release-specific origin, public HTTP, public HTTPS and TLS smoke evidence",
+        "health_check": {
+          "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18092/healthz'",
+          "public_http": "curl --noproxy '*' -fsS http://peanut-admin.007345.xyz/healthz",
+          "public_https": "curl --noproxy '*' -fsS https://peanut-admin.007345.xyz/healthz",
+          "public_admin": "curl --noproxy '*' -fsS https://peanut-admin.007345.xyz/admin/",
+          "tls": "openssl s_client -connect peanut-admin.007345.xyz:443 -servername peanut-admin.007345.xyz"
+        },
+        "fallback": "none",
+        "cleanup_responsibility": "Peanut Admin production deployment owner; releases must not remove or replace the existing binding"
+      }
+    ],
+    "backups": [
+      {
+        "stable_resource_id": "peanut-admin-production-backups",
+        "purpose": "paired pre-release bundled MySQL and php-storage backups captured in one application write-quiescence window",
+        "environments": [
+          "production"
+        ],
+        "owner": "Peanut Admin production deployment owner",
+        "host_resource_id": "peanut-admin-production-deployment",
+        "host": "oracle3",
+        "port": null,
+        "path": "/www/docker/peanut-admin/backups",
+        "database_resource_id": "peanut-admin-production-bundled-mysql84",
+        "application_resource_id": "peanut-admin-production-application-containers",
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production-backups",
+        "service_type": "host-filesystem paired backup sets",
+        "version": "mysqldump 8.4.11; GNU tar 1.34; gzip 1.10; sha256sum 8.32",
+        "credential_ref": "oracle3:/www/docker/peanut-admin/.env; MYSQL_ROOT_PASSWORD is consumed only inside peanut-admin-mysql-1 and is never written to backup artifacts or Git",
+        "data_source": "logical dump of peanut_admin plus archive of Docker volume peanut-admin_php-storage",
+        "allocation_state": "registered target; the backups directory was absent on 2026-08-15 and is created with mode 0700 only by an authorized backup gate",
+        "execution_context": "all backup_method and integrity_check commands execute on oracle3 under /www/docker/peanut-admin; no artifact is streamed to or retained on the operator workstation",
+        "backup_id_format": "YYYYmmddTHHMMSSZ-<source_commit_12>",
+        "artifact_layout": {
+          "directory": "/www/docker/peanut-admin/backups/<backup_id>",
+          "database_dump": "database.sql.gz",
+          "php_storage_archive": "php-storage.tar.gz",
+          "manifest": "manifest.json",
+          "checksums": "SHA256SUMS"
+        },
+        "capacity_requirement": "immediately before backup, available bytes at the target must exceed twice the current mysql-data and php-storage source bytes plus 1 GiB, with sufficient inode headroom",
+        "write_quiescence": {
+          "stop": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db stop --timeout 60 nginx cron php'",
+          "verify": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && test \"$(sudo -n docker compose -f compose.yaml --profile bundled-db ps --status running --services | sort)\" = mysql'",
+          "resume": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db start --wait --wait-timeout 120 php cron nginx'",
+          "failure_policy": "the deployment owner must restore php, cron and nginx before leaving a failed gate; incomplete backup directories are not eligible for restore or deployment evidence"
+        },
+        "backup_method": {
+          "prepare": "install -d -m 0700 /www/docker/peanut-admin/backups/<backup_id> before entering the write-quiescence window",
+          "database_dump": "cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db exec -T mysql sh -c 'MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec mysqldump --single-transaction --quick --routines --events --triggers --hex-blob --set-gtid-purged=OFF -uroot peanut_admin' | gzip -9 > /www/docker/peanut-admin/backups/<backup_id>/database.sql.gz",
+          "php_storage_archive": "sudo -n tar --one-file-system --numeric-owner -C /var/lib/docker/volumes/peanut-admin_php-storage/_data -czf - . > /www/docker/peanut-admin/backups/<backup_id>/php-storage.tar.gz",
+          "checksum_file": "after manifest.json is complete, run sha256sum database.sql.gz php-storage.tar.gz manifest.json > SHA256SUMS from the exact backup directory",
+          "ordering": "prepare target; quiesce and verify application writers; dump database; archive php-storage; write manifest and checksums; verify artifacts; resume services; run origin and public health checks"
+        },
+        "manifest_required_fields": [
+          "backup_id and UTC start/completion timestamps",
+          "source commit and tree",
+          "deployment, database, application and backup stable resource IDs",
+          "Compose project, file and profile",
+          "database name and php-storage volume name",
+          "PHP, Nginx and MySQL image references and digests",
+          "artifact filenames, byte sizes and SHA-256 digests"
+        ],
+        "integrity_check": "from the exact backup directory, run sha256sum -c SHA256SUMS, gzip -t database.sql.gz, and tar -tzf php-storage.tar.gz >/dev/null; SHA256SUMS covers database.sql.gz, php-storage.tar.gz and manifest.json",
+        "restore_check": {
+          "artifact_precondition": "the exact paired directory must pass all checksum, gzip and tar checks and its manifest resource IDs must match this production deployment",
+          "policy": "production restore is never part of a routine release and requires an explicit recovery gate; database.sql.gz and php-storage.tar.gz must be restored as one pair",
+          "post_restore": "run php server/database/environment-guard.php --current, start php/cron/nginx with --wait, then pass origin /healthz and public HTTPS /healthz and /admin/ smoke checks"
+        },
+        "freshness_requirement": "each production update uses a new backup ID from the exact pre-update source commit; all four artifacts and checks must complete before the application write-quiescence window ends",
+        "health_check": {
+          "capacity": "ssh -o BatchMode=yes oracle3 'df -Pk /www/docker/peanut-admin && df -Pi /www/docker/peanut-admin'",
+          "tools": "ssh -o BatchMode=yes oracle3 'command -v tar gzip sha256sum && cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db exec -T mysql mysqldump --version'",
+          "source_bindings": "ssh -o BatchMode=yes oracle3 'sudo -n docker volume inspect peanut-admin_mysql-data peanut-admin_php-storage'"
+        },
+        "fallback": "none",
+        "lifecycle": "persistent until explicit cleanup approval",
+        "retention_policy": "no automatic pruning; retain each verified pair until a newer verified pair exists, its release smoke has passed, and the production deployment owner explicitly approves deletion of the exact older backup ID",
+        "cleanup_responsibility": "Peanut Admin production deployment owner deletes only an explicitly approved backup ID directory; incomplete or failed sets remain isolated and require an explicit disposition decision",
+        "backup_responsibility": "Peanut Admin production deployment owner executes the registered paired backup method before each production upgrade or migration"
+      }
+    ],
+    "queues": {
+      "status": "not_applicable",
+      "reason": "the current product has no registered queue service"
+    },
+    "object_storage": {
+      "status": "not_applicable",
+      "reason": "the current product defaults to application-managed file storage; external object storage has no project allocation"
+    }
+  }
+}

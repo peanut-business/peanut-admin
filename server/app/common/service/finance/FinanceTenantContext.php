@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\finance;
 
 use app\common\service\tenant\TenantScope;
+use app\common\service\external\ExternalTenantContext;
+use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -35,6 +37,11 @@ final class FinanceTenantContext
         );
     }
 
+    public static function externalPayment(int $tenantId, string $identity): TenantSystemContext
+    {
+        return ExternalTenantContext::verified($tenantId, 'payment.settle', 'payment:' . hash('sha256', trim($identity)));
+    }
+
     public static function tenantId(TenantContext|TenantSystemContext|TenantScope $context): int
     {
         if ($context instanceof TenantScope) {
@@ -46,9 +53,11 @@ final class FinanceTenantContext
             $tenantId = $context->tenantId;
         } else {
             $tenantId = $context->tenantId;
-            if ($context->actorKey !== self::VERIFIED_PAYMENT_ACTOR
-                || $context->operation !== 'finance.recharge.settle'
-                || $context->operationId === '') {
+            $legacy = $context->actorKey === self::VERIFIED_PAYMENT_ACTOR
+                && $context->operation === 'finance.recharge.settle';
+            $external = $context->actorKey === ExternalTenantResolver::ACTOR
+                && $context->operation === 'payment.settle';
+            if ((!$legacy && !$external) || $context->operationId === '') {
                 throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
             }
         }

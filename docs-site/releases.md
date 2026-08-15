@@ -7,7 +7,12 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-Peanut Admin 应用 `1.1.0` 是当前稳定多租户发布候选。它以同一 release 支持 Standalone 与 `multi-tenant`，数据库迁移账本为 50 条；MT05 已完成 Standalone 空库、`v1.0.0` 前滚、多租户空库和平台到租户的真实浏览器闭环。发布完成时的正式身份为 annotated `v1.1.0` 与同 tag GitHub Release。
+Peanut Admin 应用 `1.1.0` 是当前稳定多租户基线。它以同一 release 支持 Standalone 与 `multi-tenant`，数据库迁移账本为 50 条；MT05 已完成 Standalone 空库、`v1.0.0` 前滚、多租户空库和平台到租户的真实浏览器闭环。正式身份为 annotated `v1.1.0` 与同 tag GitHub Release。
+
+官方运行环境已同步到该稳定版本：应用在 `oracle3` 运行
+[`v1.1.0`](https://peanut-admin.007345.xyz)，生产账本为 50 条；官方文档由 Cloudflare Pages
+独立发布到 [peanut-admin-doc.007345.xyz](https://peanut-admin-doc.007345.xyz)。两者不是同一
+部署目标，文档站更新不会重启或改动应用容器。
 
 ## 公开运行依赖
 
@@ -29,7 +34,9 @@ Peanut Admin 应用 `1.1.0` 是当前稳定多租户发布候选。它以同一 
 ## 正式发布身份
 
 - [Peanut Admin v1.1.0 GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0)
-- 规范源码附件、完整 commit、各附件 SHA-256 与外部 manifest 摘要以该 Release 的 `RELEASE_MANIFEST.json` 和 Release notes 为准。
+- `main/dev` commit：`c6a165fbc223bcca1332235d3a31c9d2ede55a06`；annotated tag object：`0f4fffd731cbcb632f9fb6b293e31671857410a5`。
+- 规范源码附件 SHA-256：`73398b2504ad7b41f759f5593efd32a91df56fd4e2ed06d1ffa4af9c84a36334`；外部 `RELEASE_MANIFEST.json` SHA-256：`7edd5b2e3baaae06d657fc45856633b8f27ad97fe5669fd2c9642587313fa0a9`。
+- 发布后一次干净验证从规范归档精确安装 Composer/npm Alpha.5、加载 Core，并确认 `1.1.0`/50 migrations 源码身份。
 - 应用暂时采用专有 / All Rights Reserved，版权主体显示为“花生科技”；Release 同时附带根许可证、NOTICE、第三方清单和 SPDX SBOM。
 - 功能分支 PR #10 的五组 CI 一次通过；`dev` → `main` 阶段 PR #11 的分支保护检查也全部通过。
 - 应用仓当前保持 private；GitHub Release 链接对已获授权的 GitHub 身份可见，匿名访客会得到 404。官网、应用和法律资产本身不依赖该登录态。

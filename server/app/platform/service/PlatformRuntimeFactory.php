@@ -5,29 +5,21 @@ namespace app\platform\service;
 
 use app\platform\identity\CorePlatformOperatorIdentityPort;
 use app\platform\identity\PlatformOperatorAccountBoundary;
-use app\platform\service\module\DeployedTenantModuleRegistry;
-use app\platform\service\module\OpisManifestSchemaValidator;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PlatformTenantModuleService;
-use app\platform\service\module\ReflectionContractInspector;
-use app\platform\service\module\StrictVersionConstraintMatcher;
 use app\platform\service\module\VerifiedTenantModuleRepository;
+use app\platform\service\plugin\PluginLockResolver;
+use app\platform\service\plugin\PluginModuleRegistryFactory;
 use PDO;
-use PeanutAdmin\DataPermission\Persistence\Schema\DataPermissionSchema;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
-use PeanutAdmin\Kernel\Idempotency\IdempotencySchema;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use PeanutAdmin\Kernel\Module\ModuleBoundaryChecker;
-use PeanutAdmin\Kernel\Module\ModuleHostLayout;
-use PeanutAdmin\Kernel\Module\ModuleProvider;
-use PeanutAdmin\Kernel\Module\ModuleRegistryCompiler;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
@@ -37,9 +29,6 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
-use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
-use PeanutAdmin\Kernel\Authorization\Persistence\Schema\AuthorizationSchema;
-use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
@@ -155,62 +144,17 @@ final class PlatformRuntimeFactory
 
         $pdo = self::pdo();
         $config = Config::get('modules', []);
-        $roots = is_array($config) && is_array($config['roots'] ?? null)
-            ? array_values($config['roots'])
-            : [];
-        if ($roots === [] || !array_is_list($roots)) {
-            throw new ModuleException(
-                'MODULE_REGISTRY_UNAVAILABLE',
-                'No deployed Module roots are configured.'
-            );
-        }
         $serverRoot = dirname(__DIR__, 3);
-        $resolvedRoots = [];
-        foreach ($roots as $root) {
-            if (!is_string($root) || trim($root) === '') {
-                throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'A deployed Module root is invalid.');
-            }
-            $candidate = str_starts_with($root, DIRECTORY_SEPARATOR)
-                ? $root
-                : $serverRoot . '/' . ltrim($root, '/');
-            $resolved = realpath($candidate);
-            if ($resolved === false || !is_dir($resolved)) {
-                throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'A deployed Module root is unavailable.');
-            }
-            $resolvedRoots[] = $resolved;
-        }
-
-        $kernelVersion = is_array($config) ? trim((string)($config['kernel_version'] ?? '')) : '';
-        $frontend = is_array($config) && is_array($config['frontend_components'] ?? null)
-            ? array_values($config['frontend_components'])
-            : [];
-        $clients = is_array($config) && is_array($config['registered_client_keys'] ?? null)
-            ? array_values($config['registered_client_keys'])
-            : [];
-        if ($kernelVersion === '' || $clients === [] || !array_is_list($frontend) || !array_is_list($clients)) {
+        if (!is_array($config)) {
             throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
         }
-
-        $kernelRoot = dirname((new \ReflectionClass(ModuleProvider::class))->getFileName(), 3);
-        $layout = new ModuleHostLayout('server/app/Modules', 'app\\Modules', 'web/src/modules');
-        $compiler = new ModuleRegistryCompiler(
-            new OpisManifestSchemaValidator($kernelRoot . '/resources/schemas/module-manifest.schema.json'),
-            new StrictVersionConstraintMatcher(),
-            new ReflectionContractInspector(),
-            $kernelVersion,
-            $frontend,
-            $layout,
-            [
-                ...KernelSchema::tableNames(),
-                ...AuthorizationSchema::tableNames(),
-                ...ModuleSchema::tableNames(),
-                ...IdempotencySchema::tableNames(),
-                ...DataPermissionSchema::tableNames(),
-            ],
-            $clients
-        );
-        $registry = DeployedTenantModuleRegistry::compile($pdo, $resolvedRoots, $compiler);
-        (new ModuleBoundaryChecker($registry->compiled(), $layout, ['pa_']))->check();
+        $factory = new PluginModuleRegistryFactory($pdo, $serverRoot);
+        $lockPath = trim((string)($config['plugin_lock'] ?? ''));
+        if ($lockPath !== '' && is_file($serverRoot . '/' . ltrim($lockPath, '/'))) {
+            $registry = $factory->fromPluginLock(new PluginLockResolver($serverRoot, $lockPath), $config);
+        } else {
+            $registry = $factory->fromDeploymentConfig($config);
+        }
         $validator = new OpisTenantModuleConfigValidator();
         $repository = new VerifiedTenantModuleRepository(
             new PdoModuleRuntimeRepository($pdo, true),

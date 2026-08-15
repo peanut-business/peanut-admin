@@ -1,0 +1,120 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+const RELEASE_PRODUCT_TOKEN = 'Scaffold Product Token';
+const RELEASE_SLUG_TOKEN = 'scaffold-product-token';
+const RELEASE_PACKAGE_TOKEN = 'scaffold-vendor-token/scaffold-package-token';
+const RELEASE_APPLICATION_VERSION_TOKEN = '999999.999999.999999';
+
+function releaseUsage(): never
+{
+    fwrite(STDERR, "Usage: php scripts/build-scaffold-release --version=<semver> --source-commit=<full-sha> --output=<absolute-directory> [--check]\n");
+    exit(64);
+}
+
+$root = dirname(__DIR__); $options = []; $check = false;
+foreach (array_slice($argv, 1) as $argument) {
+    if ($argument === '--check') { $check = true; continue; }
+    if (preg_match('/^--(version|source-commit|output)=(.+)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) releaseUsage();
+    $options[$matches[1]] = $matches[2];
+}
+foreach (['version','source-commit','output'] as $required) if (!isset($options[$required])) releaseUsage();
+if (preg_match('/^\d+\.\d+\.\d+$/D',$options['version'])!==1 || preg_match('/^[a-f0-9]{40}$/D',$options['source-commit'])!==1 || !str_starts_with($options['output'],'/')) releaseUsage();
+
+function releaseRun(array $command, ?string $cwd = null): string
+{
+    $pipes=[]; $process=proc_open($command,[1=>['pipe','w'],2=>['pipe','w']],$pipes,$cwd);
+    if(!is_resource($process)) throw new RuntimeException('SCAFFOLD_RELEASE_PROCESS_FAILED');
+    $stdout=stream_get_contents($pipes[1]); $stderr=stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]);
+    if(proc_close($process)!==0 || !is_string($stdout)) throw new RuntimeException('SCAFFOLD_RELEASE_COMMAND_FAILED: '.trim((string)$stderr));
+    return $stdout;
+}
+function releaseDelete(string $path): void
+{
+    if(is_dir($path)&&!is_link($path)){foreach(array_diff(scandir($path)?:[],['.','..']) as $entry)releaseDelete($path.'/'.$entry);rmdir($path);return;}
+    if(file_exists($path)||is_link($path))unlink($path);
+}
+function releaseWrite(string $path,string $content,int $mode): void
+{
+    if(!is_dir(dirname($path))&&!mkdir(dirname($path),0775,true))throw new RuntimeException('SCAFFOLD_RELEASE_DIRECTORY_FAILED');
+    if(file_put_contents($path,$content)===false||!chmod($path,$mode))throw new RuntimeException('SCAFFOLD_RELEASE_WRITE_FAILED');
+}
+function releaseOwner(string $path): string
+{
+    if(str_starts_with($path,'server/'))return 'backend';
+    if(str_starts_with($path,'web/')||str_starts_with($path,'pc/')||str_starts_with($path,'uniapp/')||str_starts_with($path,'docs-site/'))return 'frontend';
+    return 'host';
+}
+function releaseAssertTracked(string $root,string $path): void
+{
+    $relative=substr($path,strlen($root)+1);
+    if($relative===$path)throw new RuntimeException('SCAFFOLD_RELEASE_OUTPUT_OUTSIDE_REPOSITORY');
+    releaseRun(['git','-C',$root,'ls-files','--error-unmatch','--',$relative]);
+}
+
+$commit=trim(releaseRun(['git','-C',$root,'rev-parse',$options['source-commit'].'^{commit}']));
+if(!hash_equals($options['source-commit'],$commit))throw new RuntimeException('SCAFFOLD_RELEASE_SOURCE_NOT_COMMIT');
+$tree=trim(releaseRun(['git','-C',$root,'rev-parse',$commit.'^{tree}']));
+$temporaryRoot=realpath(sys_get_temp_dir());
+if($temporaryRoot===false)throw new RuntimeException('SCAFFOLD_RELEASE_TEMP_ROOT_INVALID');
+$temporary=$temporaryRoot.'/peanut-scaffold-release-'.bin2hex(random_bytes(8));
+if(!mkdir($temporary,0700,true))throw new RuntimeException('SCAFFOLD_RELEASE_TEMP_FAILED');
+try {
+    $archive=$temporary.'/source.tar'; $source=$temporary.'/source'; mkdir($source,0700);
+    releaseRun(['git','-C',$root,'archive','--format=tar','--output='.$archive,$commit]);
+    (new PharData($archive))->extractTo($source);
+    require $source.'/server/app/common/service/scaffold/ScaffoldPathGuard.php';
+    require $source.'/server/app/common/service/scaffold/ScaffoldManifest.php';
+    require $source.'/server/app/common/service/scaffold/ApplicationCreator.php';
+    $application=$temporary.'/application';
+    $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree]);
+    $manifest=$creator->create(
+        RELEASE_PRODUCT_TOKEN,
+        RELEASE_SLUG_TOKEN,
+        RELEASE_PACKAGE_TOKEN,
+        $application,
+        RELEASE_APPLICATION_VERSION_TOKEN
+    );
+    $generationSource=$manifest['generation_source']??null;
+    if(($manifest['template']['source_commit']??null)!==$commit||($manifest['template']['source_tree']??null)!==$tree
+        ||($generationSource!==null&&(!is_array($generationSource)||($generationSource['commit']??null)!==$commit||($generationSource['tree']??null)!==$tree
+            ||($generationSource['inventory_sha256']??null)!==hash_file('sha256',$source.'/scaffold/application-template-inventory.json'))))throw new RuntimeException('SCAFFOLD_RELEASE_GENERATION_IDENTITY_MISMATCH');
+    $files=[];
+    foreach($manifest['files'] as $entry){
+        if(!in_array($entry['classification'],['managed','generated-managed'],true))continue;
+        $path=$entry['path'];$content=file_get_contents($application.'/'.$path);
+        if(!is_string($content)||!hash_equals($entry['sha256'],hash('sha256',$content)))throw new RuntimeException('SCAFFOLD_RELEASE_GENERATED_TREE_MISMATCH: '.$path);
+        $artifact=['path'=>$path,'source'=>'files/'.$path,'template_sha256'=>hash('sha256',$content),'classification'=>$entry['classification'],
+            'transform'=>'tokens','mode'=>$entry['mode']??((fileperms($application.'/'.$path)&0111)!==0?0755:0644),
+            'policy'=>$entry['classification']==='generated-managed'?'generated':'managed','owner'=>releaseOwner($path)];
+        $destination=rtrim($options['output'],'/').'/'.$artifact['source'];
+        if($check){if(!is_file($destination)||!hash_equals($artifact['template_sha256'],(string)hash_file('sha256',$destination))||((fileperms($destination)&0777)!==$artifact['mode']))throw new RuntimeException('SCAFFOLD_RELEASE_ARTIFACT_STALE: '.$path);}
+        else releaseWrite($destination,$content,$artifact['mode']);
+        $files[]=$artifact;
+    }
+    usort($files,static fn(array $a,array $b):int=>strcmp($a['path'],$b['path']));
+    $inventoryRaw=file_get_contents($source.'/scaffold/application-template-inventory.json');
+    $inventory=json_decode((string)$inventoryRaw,true,512,JSON_THROW_ON_ERROR);
+    $releaseIdentity=[
+        'version'=>$options['version'],'source_commit'=>$commit,'source_tree'=>$tree,'inventory_sha256'=>hash('sha256',(string)$inventoryRaw),
+        'inventory_template_version'=>$manifest['template']['version'],'managed_tree_sha256'=>$manifest['digests']['managed_tree_sha256'],
+    ];
+    if(($inventory['schema_version']??null)===1&&($inventory['protocol']??null)==='peanut.create-app-inventory.v1'){
+        $releaseIdentity['tokens']=['product_name'=>RELEASE_PRODUCT_TOKEN,'slug'=>RELEASE_SLUG_TOKEN,'package_identity'=>RELEASE_PACKAGE_TOKEN];
+        $release=['schema_version'=>2,'protocol'=>'peanut.scaffold-release.v2','release'=>$releaseIdentity,'files'=>$files,'renames'=>[]];
+    }else{
+        $applicationVersion=$inventory['application']['version']??null;
+        if(($inventory['schema_version']??null)!==2||($inventory['protocol']??null)!=='peanut.create-app-inventory.v2'
+            ||!is_string($applicationVersion)||preg_match('/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/D',$applicationVersion)!==1)throw new RuntimeException('SCAFFOLD_RELEASE_APPLICATION_VERSION_INVALID');
+        $releaseIdentity['tokens']=['product_name'=>RELEASE_PRODUCT_TOKEN,'slug'=>RELEASE_SLUG_TOKEN,'package_identity'=>RELEASE_PACKAGE_TOKEN,
+            'application_version'=>RELEASE_APPLICATION_VERSION_TOKEN];
+        $release=['schema_version'=>3,'protocol'=>'peanut.scaffold-release.v3','application'=>['version'=>$applicationVersion],
+            'release'=>$releaseIdentity,'files'=>$files,'renames'=>[]];
+    }
+    $json=json_encode($release,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n";
+    $manifestPath=rtrim($options['output'],'/').'/scaffold-manifest.json';
+    if($check){if(!is_file($manifestPath)||!hash_equals($json,(string)file_get_contents($manifestPath)))throw new RuntimeException('SCAFFOLD_RELEASE_MANIFEST_STALE'); echo "SCAFFOLD-RELEASE-{$options['version']} verified\n";}
+    else{releaseWrite($manifestPath,$json,0644);echo "wrote {$manifestPath} with ".count($files)." managed files\n";}
+    if($check){foreach($files as $file)releaseAssertTracked($root,rtrim($options['output'],'/').'/'.$file['source']);releaseAssertTracked($root,$manifestPath);}
+} finally { releaseDelete($temporary); }

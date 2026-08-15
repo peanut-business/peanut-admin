@@ -1,10 +1,16 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-13
+> Last updated: 2026-08-15
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
+
+本项目数据库、缓存、队列、对象存储、外部服务、域名、容器消费入口与本地固定端口的
+版本化机器可读日常资源登记为 `resources/project-resources.json`；仅源仓 P0-E 资格工具及其
+远程管理绑定登记为 `resources/p0e-runtime-qualification.json`。连接、启动、迁移、测试或
+部署前必须先读取对应文件并显式选择资源 ID、环境和登记地址；本项目登记是唯一事实源，
+使用前还必须按登记的健康检查核验真实资源。
 
 ---
 
@@ -29,7 +35,7 @@
 
 - 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 数据库：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 24 migrations
+- 当前数据库入口：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 54 migrations；下表中的 24 条账本是 parity 完成时的历史证据，`v1.1.0` 发布制品固定为 50 条
 
 **独立验证结果（非 Codex 自报）：**
 
@@ -44,13 +50,12 @@
 - `output/playwright/v02/summary.json` — **本会话独立验证，可信**
 - `output/playwright/v02/*.png` — 9 组截图 + 登录截图
 
-### 2.2 SaaS / 多租户设计与实现 — 🚧 分阶段进行中
+### 2.2 多租户与平台管理 — ✅ MT00–MT06 已完成
 
-设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。后端已经合入默认 Tenant
-bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、PlatformOperator
-边界和可信管理端 TenantContext 等独立切片；这不表示 MT02–MT04 或 PM01 已整体完成。
-判断完成度和领取下一切片前，必须读取当前权威计划并核对远端 `dev`，不得继续沿用
-“完全未实现”或某个局部 PR 已代表阶段完成的旧判断。
+设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。默认 Tenant、可信管理端
+TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双模式 Host 已完成；
+完成身份与验收范围以本节下方的 `v1.1.0` 事实和当前权威计划为准。判断后续范围前仍须
+核对远端 `dev`，不得继续沿用“完全未实现”或“MT02–MT04 尚未整体完成”的旧判断。
 
 截至 MT05 最终代码候选 `074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8`
 （tree `1a2df02e97414b5c236a842adf17804fb33e4699`）：
@@ -69,12 +74,12 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
   `5bd3e78…` 的三模式安装/升级证据早于两条新增 migration，不能覆盖最终候选。
   PR #99 修正合法部署枚举 `multi-tenant` 后，最终候选的 Standalone 空库、`v1.0.0`
   前滚和多租户空库均以 50 条 migration/81 张表通过；MT02–MT05 已完成。MT06
-  `v1.1.0` 发布候选已从 `dev@b06bb766…` 形成，正在收口版本/Registry lock、生产双模式
-  环境接线、发布 metadata/法律制品和用户文档；正式 `main`、tag、Release 与一次安装
-  验证尚未完成。
+  `v1.1.0` 已正式发布：`main/dev@c6a165f…`、annotated tag object `0f4fffd…`、
+  [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0)
+  与一次干净 Composer/npm/source 安装验证均完成；MT06 已完成。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
-- 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
+- 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；产品正式发布、独立运营平台与后续 SaaS 的跨项目交接顺序见 `docs/plans/product-release-operations-saas-roadmap.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
 - 跨应用实例管理 Release、授权、升级、健康和备份的运营平台已明确为独立应用；它不属于核心包，也不是 SaaS Host 内的租户控制面
 
 ### 2.3 产品化正式基线 — ✅ 完成
@@ -82,7 +87,16 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 - 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
 - 已完成：生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
 - 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`
-- 当前生产服务器使用 `bundled-db` MySQL profile；局域网 `192.168.192.2` 是开发/历史验收数据库，公网服务器不可直接路由该地址
+- 日常开发和本机生产模式预览只使用 Peanut Admin 项目登记的
+  `peanut-admin-mysql84-development`（development）：
+  `192.168.192.2:20183/peanut_admin_development`，MySQL `8.4.10`。凭据引用为
+  `mac-14:/Users/xing/.config/peanut-admin/development-db.env`，不得把密钥写入仓库。
+  机器可读事实源为 `resources/project-resources.json`；P0-E 专用远程管理工具登记为
+  `resources/p0e-runtime-qualification.json`。使用前仍须按登记要求核验目标实况。旧开发
+  端口 `3306` 与旧库名 `peanut_admin` 的组合没有迁移账本，不得连接或作为现行指引。
+  本机不运行 Peanut Admin MySQL。当前生产服务器使用自身 `bundled-db` MySQL profile，
+  不能路由开发局域网地址；两类资源由 `PEANUT_DEPLOYMENT_TARGET` 和
+  `PEANUT_DATABASE_RESOURCE_ID` 门禁隔离。
 - 已完成 PB03：`docs/architecture/pb03-ownership-and-migration-gates.md` 已冻结核心通用基础设施、应用产品 Module、唯一实现、Host/override、测试 owner 与逐领域停止线
 - PB04 已完成：网站设置、权限 Host、管理员/RBAC CRUD、字典、文件素材、任务/导入导出与日志/维护均形成应用唯一实现、核心候选停止线及测试 owner
 - PB05 已完成：会员/标签、权威余额、兼容镜像、分类流水、充值入账与退款形成应用唯一 Runtime；核心 Tenant membership 与 R01/R02 候选未经采用授权
@@ -92,7 +106,16 @@ bootstrap、Article Tenant-first、首批缓存/文件/任务/日志隔离、Pla
 - PB08B 已完成：候选 `4442229…` 通过 registry 构建、弱凭据/24→28/空库、Compose/HTTP/镜像/Host、唯一桌面/移动 Chromium 与文档一致性；总摘要见 `output/playwright/pb08b/summary.json`
 - PB09 已完成：法律门禁、PR #10/#11、`dev/main` 合入、annotated `v1.0.0`、GitHub Release、既有应用与官网部署、24→28 前滚和一次最低线上 smoke 均已封存；生产运行镜像由不可变 tag 源码在部署端构建，不发布预构建镜像
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
-- 产品化正式基线已经进入 `main`；下一阶段先完成已获授权的媒体项目通用能力合同，再按当前计划推进多租户和必要的平台管理；完整 SaaS 商业化暂缓
+- 产品化正式基线与多租户稳定脚手架均已进入 `main`；当前产品固化发布仍以能力账本和跨项目路线的完成条件为准。独立运营平台已获准在同级独立项目立项并先行设计，不进入本仓 Runtime；完整 SaaS 商业化仍暂缓
+
+### 2.4 产品能力与交付状态事实源
+
+当前能力的“已验证、实现待验收、计划/受阻、暂缓/范围外”详细矩阵，以
+`docs/product-status/capability-ledger.json` 为唯一机器可读事实源；对应人类可读入口为
+`docs/product-status/README.md`。本节只保留高层产品事实，不再复制能力表。开放 PR、运行中的
+Gate 和未提交 worktree 不得提前写成完成；正式产品发布时才在
+`docs/product-status/releases/` 冻结不可变能力快照。该内部目录默认不进入 docs-site 首页或
+公开导航。
 
 ---
 
@@ -106,7 +129,7 @@ peanut-admin/
 │   ├── database/
 │   │   ├── install.php  # 一键安装（空库 → 全量初始化）
 │   │   ├── init.sql     # 基础表 + 种子数据
-│   │   └── migrations/  # 24 个增量迁移
+│   │   └── migrations/  # 当前 54 个版本化迁移；v1.1.0 固定 50 个
 │   └── .env             # DB/JWT 配置（不提交）
 ├── web/             # 管理端前端（Vue3 + Element Plus）
 ├── pc/              # PC 消费端（Nuxt3）
@@ -122,12 +145,19 @@ peanut-admin/
 
 ---
 
-## 4. 默认凭据（开发环境）
+## 4. 开发入口与安装身份
 
-- 管理员账号：`admin` / `admin123456`
-- 管理端 API：`http://127.0.0.1:8000/`（`php think run --port=8000`）
-- 前端 Dev：`http://localhost:5173`（`pnpm dev`，位于 `web/`）
+- 初始管理员账号为 `admin`；密码必须在空库安装时通过
+  `ADMIN_INITIAL_PASSWORD` 显式提供，仓库没有可供当前环境复用的共享默认密码。
+  历史 parity 证据中出现的旧密码仅用于追溯，不是现行登录指引。
+- 管理端 API 登记默认值：`http://127.0.0.1:20180/`（由 `scripts/local-stack.sh dev-up` 托管）
+- 前端 Dev 登记默认值：`http://127.0.0.1:20181`（`pnpm dev`，位于 `web/`）
 - API 前缀：`admin/*`（管理端），`api/*`（前端/小程序）
+- 日常开发统一从 `scripts/local-stack.sh dev-up` 启动：API 使用项目登记的宿主
+  `/opt/homebrew/bin/php` 8.3.24 与 `/usr/local/bin/composer` 2.8.10；development Compose
+  不含 PHP 服务，容器通过 `host.docker.internal:${PHP_PORT}` 访问宿主 API。所有本地
+  监听从 `.local/stack.env` 或 `PEANUT_LOCAL_ENV_FILE` 读取，`201xx` 只是项目登记默认值。
+  Docker PHP 只用于 local-production-preview、生产构建和明确要求的容器等价 Gate。
 
 ---
 

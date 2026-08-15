@@ -111,6 +111,7 @@ foreach (['WechatPayGateway', 'AlipayGateway', 'WechatCallbackParser', 'AlipayCa
     'WechatRefundGateway', 'AlipayRefundGateway'] as $gateway) {
     expectPaymentHost(str_contains($factory, 'new ' . $gateway), 'Payment Host misses ' . $gateway);
 }
+expectPaymentHost(str_contains($factory, 'ExternalTenantResolver::WECHAT_PAYMENT'), 'Payment Host is not tenant-bound');
 expectPaymentHost(
     !is_file($serverRoot . '/app/common/service/RefundGatewayService.php'),
     'duplicate legacy refund gateway remains executable'
@@ -150,7 +151,7 @@ foreach ([$adminRefund, $reconcile] as $source) {
 $payConfig = (string)file_get_contents(
     $serverRoot . '/app/adminapi/logic/setting/PayConfigLogic.php'
 );
-foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'setManyAtomic'] as $marker) {
+foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'Db::transaction'] as $marker) {
     expectPaymentHost(str_contains($payConfig, $marker), 'payment config boundary missing: ' . $marker);
 }
 $legacyWebApi = (string)file_get_contents($repositoryRoot . '/web/src/api/app.ts');

@@ -1,0 +1,193 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+$root = dirname(__DIR__);
+$output = $root . '/scaffold/application-template-inventory.json';
+
+function inventoryGitFiles(string $root): array
+{
+    $command = ['git', '-C', $root, '-c', 'core.quotepath=false', 'ls-files', '--cached', '--others', '--exclude-standard'];
+    $pipes = [];
+    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    if (!is_resource($process)) {
+        throw new RuntimeException('unable to run git ls-files');
+    }
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    if (proc_close($process) !== 0 || !is_string($stdout)) {
+        throw new RuntimeException('git ls-files failed: ' . trim((string)$stderr));
+    }
+    $files = array_values(array_filter(explode("\n", trim($stdout)), 'strlen'));
+    $files = array_values(array_filter($files, static fn(string $path): bool => $path !== 'scaffold/application-template-inventory.json'
+        && !str_starts_with($path, 'scaffold/')));
+    sort($files, SORT_STRING);
+    return $files;
+}
+
+function excluded(string $path): bool
+{
+    if (str_starts_with($path, 'server/tests/fixtures/core-upgrade-compatibility/')) {
+        return true;
+    }
+    if (str_starts_with($path, 'scripts/p0e-')
+        || $path === 'resources/p0e-runtime-qualification.json'
+        || $path === 'server/tests/Productization/P0eRuntimeQualificationTest.php'
+        || str_starts_with($path, 'server/tests/fixtures/p0e-runtime-qualification/')) {
+        return true;
+    }
+    return str_starts_with($path, 'output/')
+        || (str_starts_with($path, 'docs/') && !in_array($path, [
+            'docs/peanut-admin-development-guide.md',
+            'docs/peanut-admin-release-deployment.md',
+            'docs/peanut-admin-user-manual.md',
+        ], true))
+        || in_array($path, [
+            'AGENTS.md', 'AGENT_EXECUTION_RULES.md',
+            'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
+            'scripts/core-upgrade-compatibility', 'scripts/combined-upgrade-qualification',
+            'scripts/select-legacy-pre-alpha5-fixture',
+            'scripts/test-core-upgrade-public-entry-gate',
+            'scripts/check-product-capability-ledger',
+            'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
+            'docs-site/.vitepress/theme/ProductStatus.vue',
+            'docs-site/product-status.md',
+            'server/tests/Productization/CreateApplicationTest.php',
+            'server/tests/Productization/CombinedUpgradePolicyTest.php',
+            '.github/workflows/core-upgrade-compatibility.yml',
+            '.github/workflows/product-capability-ledger.yml',
+            '.github/pull_request_template.md',
+            'server/tests/Productization/ScaffoldUpgradeRunnerTest.php',
+        ], true)
+        || str_starts_with($path, 'server/app/common/service/scaffold/')
+        || str_starts_with($path, 'plugins/fixture.delivery-record/')
+        || str_starts_with($path, 'server/app/Modules/Fixture/DeliveryRecord/')
+        || str_starts_with($path, 'server/fixtures/plugin-module-lifecycle/')
+        || str_starts_with($path, 'web/src/modules/fixture-delivery-record/')
+        || $path === 'web/tests/Productization/plugin-contribution.test.ts'
+        || str_starts_with($path, 'scaffold/')
+        || str_starts_with($path, 'server/tests/fixtures/scaffold-upgrade/');
+}
+
+function classification(string $path): string
+{
+    if (excluded($path)) {
+        return 'excluded';
+    }
+    if (in_array($path, [
+        'README.md', 'LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'RELEASE_SBOM.spdx.json',
+        'CHANGELOG.md', 'RELEASE_METADATA.json', 'resources/project-resources.json',
+        'server/config/brand.json', 'web/src/generated/brand.json', 'pc/generated/brand.json',
+        'uniapp/src/generated/brand.json', 'docs-site/generated/brand.json',
+    ], true)) {
+        return 'generated-managed';
+    }
+    if (in_array($path, [
+        'deploy/docker-compose.remote-development.yml', 'scripts/project-development-database.sh',
+        'server/tests/Productization/DatabaseResourceRegistryTest.php',
+        'scripts/local-stack.sh', 'scripts/local-php-runtime', 'scripts/local-environment-probe',
+        'deploy/docker-compose.dev.yml', 'deploy/docker/php-development-entrypoint.sh',
+        'deploy/docker/php-development.Dockerfile', 'deploy/nginx/development.conf',
+        'deploy/local-stack.env.example',
+    ], true)) {
+        return 'excluded';
+    }
+    if ($path === 'scripts/scaffold-upgrade' || str_starts_with($path, 'scripts/scaffold-runtime/')) {
+        return 'managed';
+    }
+    if (str_starts_with($path, 'docs-site/')
+        || str_starts_with($path, 'server/app/') || str_starts_with($path, 'server/database/')
+        || str_starts_with($path, 'server/tests/') || str_starts_with($path, 'web/src/views/')
+        || str_starts_with($path, 'web/tests/') || str_starts_with($path, 'pc/pages/')
+        || str_starts_with($path, 'pc/components/') || str_starts_with($path, 'uniapp/src/')
+        || in_array($path, ['server/config/peanut.php', 'web/src/peanut.overrides.ts'], true)) {
+        return 'app-owned';
+    }
+    return 'managed';
+}
+
+function transform(string $path, string $classification): string
+{
+    if ($classification === 'excluded') {
+        return 'copy';
+    }
+    if ($path === 'README.md') return 'readme';
+    if ($path === 'LICENSE' || $path === 'NOTICE') return 'license';
+    if ($path === 'CHANGELOG.md') return 'changelog';
+    if ($path === 'THIRD_PARTY_NOTICES.md') return 'third-party-notices';
+    if ($path === 'RELEASE_SBOM.spdx.json') return 'sbom';
+    if ($path === 'RELEASE_METADATA.json') return 'release-metadata';
+    if ($path === 'resources/project-resources.json') return 'resources';
+    if ($path === 'plugins.lock') return 'plugins-lock';
+    if ($path === 'server/config/modules.php') return 'modules-config';
+    if ($path === '.github/workflows/ci.yml') return 'ci';
+    if ($path === 'server/database/environment-guard.php') return 'environment-guard';
+    if ((str_starts_with($path, 'docs-site/') || str_starts_with($path, 'docs/')) && str_ends_with($path, '.md')) return 'docs-page';
+    if (preg_match('#(^|/)(config/brand|generated/brand)\.json$#', $path) === 1) return 'brand';
+    if (preg_match('#/brand/(logo|favicon)\.svg$#', $path) === 1) return 'brand-asset';
+    if (preg_match('#(^|/)(composer\.json|package\.json|package-lock\.json|pnpm-lock\.yaml)$#', $path) === 1) return 'package';
+    $basename = basename($path);
+    $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $textExtensions = ['php', 'json', 'md', 'sql', 'ts', 'tsx', 'js', 'mjs', 'cjs', 'sh', 'lock', 'vue', 'css', 'less', 'scss', 'html', 'xml', 'yaml', 'yml', 'toml', 'txt', 'svg', 'conf', 'ini', 'env', 'example', 'dockerfile'];
+    if (in_array($extension, $textExtensions, true)
+        || str_starts_with($path, 'scripts/')
+        || in_array($basename, ['compose.yaml', 'think', '.gitignore', '.dockerignore', '.env.example', '.htaccess'], true)
+        || str_contains($basename, 'Dockerfile')) {
+        return 'text';
+    }
+    return 'copy';
+}
+
+$entries = [];
+foreach (inventoryGitFiles($root) as $path) {
+    $absolute = $root . '/' . $path;
+    $classification = classification($path);
+    if (!file_exists($absolute) && $classification === 'excluded') {
+        continue;
+    }
+    if ((!is_file($absolute) && $path !== 'scaffold/application-template-inventory.json') || is_link($absolute)) {
+        throw new RuntimeException('inventory only supports regular files: ' . $path);
+    }
+    $entry = [
+        'path' => $path,
+        'target' => $path,
+        'classification' => $classification,
+        'owner' => $classification === 'app-owned' ? 'application' : ($classification === 'excluded' ? 'template-source-only' : 'scaffold'),
+        'transform' => transform($path, $classification),
+        'mode' => is_file($absolute) && (fileperms($absolute) & 0111) !== 0 ? 0755 : 0644,
+    ];
+    if ($classification !== 'excluded') {
+        $entry['source_sha256'] = hash_file('sha256', $absolute);
+    }
+    $entries[] = $entry;
+}
+
+$inventory = [
+    'schema_version' => 2,
+    'template_version' => '1.1.6',
+    'protocol' => 'peanut.create-app-inventory.v2',
+    'application' => ['version' => '0.1.0'],
+    'variables' => ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],
+    'untracked_exclusions' => [
+        '.git/**', '.local/**', '.env', 'server/.env', '**/vendor/**', '**/node_modules/**',
+        '**/dist/**', '**/runtime/**', '**/.cache/**', 'server/public/uploads/**',
+        'server/public/storage/**', 'output/**', '*.log', '.DS_Store',
+    ],
+    'files' => $entries,
+];
+$json = json_encode($inventory, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+if (in_array('--check', array_slice($argv, 1), true)) {
+    $actual = is_file($output) ? file_get_contents($output) : false;
+    if (!is_string($actual) || !hash_equals($json, $actual)) {
+        fwrite(STDERR, "application template inventory is stale\n");
+        exit(1);
+    }
+    echo "CREATE-APP-INVENTORY-001 passed\n";
+    exit(0);
+}
+if (file_put_contents($output, $json) === false) {
+    throw new RuntimeException('unable to write inventory');
+}
+echo "wrote scaffold/application-template-inventory.json with " . count($entries) . " entries\n";

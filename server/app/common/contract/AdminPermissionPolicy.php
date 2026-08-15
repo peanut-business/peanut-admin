@@ -8,13 +8,11 @@ interface AdminPermissionPolicy
     /**
      * @param iterable<string> $registeredPermissions
      * @param iterable<string> $grantedPermissions
-     * @param array<string,string> $aliases
      */
     public function canAccess(
         bool $isRoot,
         string $accessUri,
         iterable $registeredPermissions,
-        iterable $grantedPermissions,
-        array $aliases = []
+        iterable $grantedPermissions
     ): bool;
 }

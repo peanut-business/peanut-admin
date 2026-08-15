@@ -32,7 +32,7 @@ peanut-admin/
 └── docs/                    项目文档
 ~~~
 
-三个客户端都以 /api 为后端前缀：web/config/vite.config.dev.ts、pc/nuxt.config.ts 和 uniapp/vite.config.ts 的开发代理均指向 http://127.0.0.1:8000。生产环境建议由同一域名的 Nginx 将 /api 转给 PHP-FPM，减少跨域配置。
+三个客户端都以 /api 为后端前缀：web/config/vite.config.dev.ts、pc/nuxt.config.ts 和 uniapp/vite.config.ts 的纯本机开发代理均读取 PHP_PORT（登记默认 20180）。生产环境建议由同一域名的 Nginx 将 /api 转给 PHP-FPM，减少跨域配置。
 
 后端路由大致分为：
 
@@ -168,20 +168,18 @@ mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE 
 php server/database/install.php
 ~~~
 
-安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。安装完成后启动后端和管理端：
+安装器会写入 `pa_admin` 的超级管理员 `admin`。空库安装必须显式提供至少 12 位且同时包含字母和数字的 `ADMIN_INITIAL_PASSWORD`；安装器使用随机盐写入摘要且不会回显密码。项目日常开发统一使用 `resources/project-resources.json` 登记的宿主 PHP 8.3.24 与 Composer 2.8.10；启动完整开发栈：
 
 ~~~bash
-# 终端 A：ThinkPHP 开发服务器（server 目录）
-cd server
-php think run --host 0.0.0.0 --port 8000
-
-# 终端 B：web 管理端
-cd web
-pnpm install
-pnpm dev
+./scripts/local-stack.sh dev-up
+./scripts/local-stack.sh status
 ~~~
 
-打开 http://localhost:5173，使用安装时提供的密码登录，随后改为个人凭据。PC 会员端和 uni-app H5 可另开终端（命令见下一节）；它们都通过开发代理访问 8000 端口。
+默认打开 `http://127.0.0.1:20187/admin/`，使用安装时提供的密码登录，随后改为个人凭据。
+宿主 API 登记默认端口为 `20180`；Web/PC/Mobile/Docs/Nginx 容器通过
+`host.docker.internal:${PHP_PORT}` 绕过代理访问它。本地监听统一来自 `.local/stack.env`
+（或 `PEANUT_LOCAL_ENV_FILE`），可按 clone/worktree 覆盖，示例见
+`deploy/local-stack.env.example`。停止使用 `./scripts/local-stack.sh dev-down`。
 
 已有数据库升级时，不要运行首次安装器，也不要把 init.sql 当迁移工具。历史安装首次接管时先完成数据库和存储备份，然后只执行一次：
 
@@ -204,7 +202,7 @@ php server/database/migrate.php
 ~~~bash
 cd web
 pnpm install
-pnpm dev                 # Vite，开发代理 /api → 127.0.0.1:8000
+pnpm dev                 # 纯本机模式读取 VITE_PORT/PHP_PORT；登记默认 20181/20180
 pnpm run type:check
 pnpm build               # vue-tsc + Vite 生产构建，产物 dist/
 pnpm preview             # 构建后本地预览
@@ -217,13 +215,13 @@ pnpm preview             # 构建后本地预览
 ~~~bash
 cd pc
 npm install
-npm run dev              # Nuxt 开发服务器，脚本固定 --port 3100
+npm run dev              # 读取 PC_PORT/PHP_PORT；登记默认 20185/20180
 npm run typecheck
 npm run build
 npm run preview
 ~~~
 
-pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址；开发时 `/api` 代理到 8000。生产使用 `npm run generate` 生成静态 SPA，由 Nginx 挂载在 `/pc/`。
+pc/nuxt.config.ts 的 runtimeConfig.public.apiBase 控制浏览器端 API 基址；开发时 `/api` 代理到当前 `PHP_PORT`。生产使用 `npm run generate` 生成静态 SPA，由 Nginx 挂载在 `/pc/`。
 
 ### uniapp/ 多端会员端
 
@@ -247,7 +245,7 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 生产服务器部署已经存在的应用 release，不在服务器用模板创建新应用。宿主机只安装 Git、Docker Engine 和 Compose；拉取代码、配置 `deploy/production.env` 后执行一次 `docker compose ... up -d --build`。完整首次部署、宝塔反代和 Cloudflare 设置见 `docs/peanut-admin-release-deployment.md`。
 
-生产 Compose 内部运行 MySQL、PHP-FPM、Nginx 和定时任务；Redis 为可选 profile。管理端、PC、H5 和 API 共用一个 Nginx 入口，分别位于 `/admin/`、`/pc/`、`/mobile/` 和 `/api/`。宿主机不安装 Node.js、PHP 或 Composer。
+生产 Compose 内部运行 MySQL、PHP-FPM、Nginx 和定时任务；Redis 为可选 profile。管理端、PC、H5 和 API 共用一个 Nginx 入口，分别位于 `/admin/`、`/pc/`、`/mobile/` 和 `/api/`。生产宿主机不安装 Node.js、PHP 或 Composer；这不改变日常开发默认使用本机 PHP 的合同。
 
 PHP 运行用户必须能写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、独立数据库密码和 `APP_DEBUG=false`。首次空库由容器入口初始化；历史已有库首次升级必须先备份并接管一次，之后由 `migrate.php` 执行未登记迁移。
 
@@ -327,7 +325,7 @@ cd web && pnpm run type:check
 | 40100 | 请求是否带 Authorization: Bearer；pa_admin_session/会员令牌是否过期；登录 IP 是否变化。 |
 | 40300 或菜单为空 | pa_system_menu.is_disable、角色关联和 perms 是否与实际 /api/admin/... 路径一致；非 root 未登记 URI 当前会放行，不能据此判断权限已配置。 |
 | 数据库连接失败/表不存在 | .env 的 DB_*、DB_PREFIX 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认历史接管或 `php server/database/migrate.php` 成功。 |
-| 前端请求 404/CORS | 开发代理是否指向 8000；生产 Nginx 是否把 /api 送到 server/public/index.php；检查各客户端 API base 配置。 |
+| 前端请求 404/CORS | 开发代理是否指向当前 `PHP_PORT`；生产 Nginx 是否把 /api 送到 server/public/index.php；检查各客户端 API base 配置。 |
 | 上传/导出失败或文件 404 | PHP-FPM 对 server/runtime/、server/public/storage/ 的写权限；Nginx /storage/ alias；ZipArchive 是否安装。 |
 | 支付/OAuth 失败 | 先确认 pa_config 中对应开关、AppID、证书/公钥、回调 HTTPS 和平台白名单；查看 server/runtime/log/，不要关闭验签。 |
 | 定时任务不执行 | 系统 cron 是否每分钟调用 php think crontab；pa_crontab.status、表达式、error、数据库 GET_LOCK；命令是否在 server/config/console.php 注册。 |

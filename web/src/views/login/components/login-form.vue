@@ -76,7 +76,7 @@
   import { useBrandStore, useUserStore } from '@/store';
   import useLoading from '@/hooks/loading';
   import type { LoginData } from '@/api/user';
-  import type { TenantChoice, TenantSelection } from '@/core/tenant-session';
+  import type { TenantChoice } from '@/core/tenant-session';
 
   const router = useRouter();
   const { t } = useI18n();
@@ -101,9 +101,9 @@
     setLoading(true);
     try {
       const outcome = await userStore.login({ ...userInfo } as LoginData);
-      if (outcome?.state === 'tenant_selection_required') {
-        tenantChoices.value = (outcome as TenantSelection).tenants;
-        userInfo.challengeToken = (outcome as TenantSelection).challenge_token;
+      if ('state' in outcome && outcome.state === 'tenant_selection_required') {
+        tenantChoices.value = outcome.tenants;
+        userInfo.challengeToken = outcome.challenge_token;
         userInfo.tenantId = tenantChoices.value[0]?.tenant_id;
         return;
       }
@@ -164,6 +164,5 @@
       width: 100%;
       margin-left: 0;
     }
-
   }
 </style>

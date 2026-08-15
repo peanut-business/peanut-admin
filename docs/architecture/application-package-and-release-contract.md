@@ -5,7 +5,20 @@
 
 ## 1. 产品与仓库边界
 
-`peanut-business/peanut-admin` 是可运行的演示应用和新应用模板。开发者克隆模板后形成一个独立应用，在应用仓完成品牌、配置和业务开发。生产部署的是这个已存在的应用 release，不是在服务器再次克隆模板创建应用。
+`peanut-business/peanut-admin` 是可运行的参考应用和版本化应用模板。新应用通过仓库内正式入口创建：
+
+```bash
+php scripts/create-app --name="Acme Console" --slug=acme-console \
+  --package=acme/acme-console --target=/absolute/path/to/acme-console
+```
+
+创建结果是不含 Git 历史和 Peanut 演示身份的独立应用候选；品牌、资源登记和 package
+identity 来自创建参数。生产部署的是这个已存在应用自己的 release，不是在服务器再次
+运行创建器。精确 inventory、所有权与 manifest 合同见 `docs/create-application.md`。
+已创建应用使用 `scripts/scaffold-upgrade` 的显式 plan/apply/verify/recover 闭环跨版本升级；
+执行器只管理 manifest 中的 managed/generated-managed 文件，不默认覆盖 app-owned 产品
+Module、数据库、页面或稳定 Host/override。完整不可变 release 与恢复合同见
+`docs/scaffold-upgrade.md`。
 
 `peanut-opensource/peanut-admin` 是产品无关基础设施与公开契约仓。本应用的 LikeAdmin 业务能力已经独立验收，其中会员/财务、内容/装修、支付/OAuth 等产品领域继续由应用 Module 唯一拥有；核心同名或相邻候选能力未经固定资格和下游决策前不能视为替换基线。当前所有权与迁移门禁见 `docs/architecture/pb03-ownership-and-migration-gates.md`。
 

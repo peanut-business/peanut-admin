@@ -18,25 +18,18 @@ use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
  */
 class AdminPermissionService
 {
-    /** Peanut 的轻量状态接口复用 LikeAdmin 的管理员编辑权限。 */
-    private const ACCESS_ALIASES = [
-        'admin/status' => 'admin/edit',
-        'dept/status' => 'dept/edit',
-        'jobs/status' => 'jobs/edit',
-        'menu/status' => 'menu/edit',
-        'finance/account-log/lists' => 'finance.account_log/lists',
-        'finance/recharge/lists' => 'recharge.recharge/lists',
-        'finance/recharge/refund' => 'recharge.recharge/refund',
-        'finance/recharge/refundagain' => 'recharge.recharge/refundagain',
-        'finance/refund/record' => 'finance.refund/record',
-        'finance/refund/log' => 'finance.refund/log',
-    ];
-
     public static function accessData(mixed $tenantContext, Admin|array $admin): array
     {
+        $moduleAccess = (new CoreTenantModuleAdminBridge())->accessData($tenantContext);
         return [
-            'menu'        => self::menusForAdmin($tenantContext, $admin),
-            'permissions' => self::buttonPermissionsForAdmin($tenantContext, $admin),
+            'menu'        => [
+                ...self::legacyMenusForAdmin($tenantContext, $admin),
+                ...$moduleAccess['menu'],
+            ],
+            'permissions' => array_values(array_unique([
+                ...self::legacyButtonPermissionsForAdmin($tenantContext, $admin),
+                ...$moduleAccess['permissions'],
+            ])),
         ];
     }
 
@@ -57,6 +50,14 @@ class AdminPermissionService
      * M/C 菜单取管理员全部角色授权联集；超级管理员取全部启用菜单。
      */
     public static function menusForAdmin(mixed $tenantContext, Admin|array $admin): array
+    {
+        return [
+            ...self::legacyMenusForAdmin($tenantContext, $admin),
+            ...(new CoreTenantModuleAdminBridge())->accessData($tenantContext)['menu'],
+        ];
+    }
+
+    private static function legacyMenusForAdmin(mixed $tenantContext, Admin|array $admin): array
     {
         $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
         if ($tenantId === null) {
@@ -85,6 +86,14 @@ class AdminPermissionService
      */
     public static function buttonPermissionsForAdmin(mixed $tenantContext, Admin|array $admin): array
     {
+        return array_values(array_unique([
+            ...self::legacyButtonPermissionsForAdmin($tenantContext, $admin),
+            ...(new CoreTenantModuleAdminBridge())->accessData($tenantContext)['permissions'],
+        ]));
+    }
+
+    private static function legacyButtonPermissionsForAdmin(mixed $tenantContext, Admin|array $admin): array
+    {
         $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
         if ($tenantId === null) {
             return [];
@@ -107,10 +116,7 @@ class AdminPermissionService
         return array_values(array_unique($permissions));
     }
 
-    /**
-     * LikeAdmin 1.9.4 现状：只有登记在启用菜单 perms 中的 URI 才参与 RBAC；
-     * 未登记 URI 直接放行，而不是默认拒绝。
-     */
+    /** Unregistered, disabled and cross-Tenant permission paths fail closed. */
     public static function canAccess(mixed $tenantContext, Admin|array $admin, string $accessUri): bool
     {
         $tenantId = self::tenantIdForAdmin($tenantContext, $admin);
@@ -133,7 +139,6 @@ class AdminPermissionService
             $accessUri,
             $registered,
             $owned,
-            self::ACCESS_ALIASES
         );
     }
 

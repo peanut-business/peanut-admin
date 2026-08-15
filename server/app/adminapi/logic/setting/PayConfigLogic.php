@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace app\adminapi\logic\setting;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
+use app\common\service\external\ExternalChannelBindingService;
+use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\facade\Db;
 
 /**
  * 支付配置 Logic
@@ -34,9 +37,12 @@ class PayConfigLogic extends BaseLogic
         'ali_pay_seller_id'    => '',
     ];
 
-    public static function getConfig(): array
+    public static function getConfig(TenantContext $context): array
     {
-        $stored = ConfigService::get(self::CONFIG_TYPE);
+        $stored = [
+            ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
+            ...ExternalChannelBindingService::config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
+        ];
         $result = [];
         foreach (self::FIELDS as $field => $default) {
             $value = $stored[$field] ?? $default;
@@ -54,10 +60,13 @@ class PayConfigLogic extends BaseLogic
         return $result;
     }
 
-    public static function setConfig(array $params): bool
+    public static function setConfig(TenantContext $context, array $params): bool
     {
         try {
-            $stored = ConfigService::get(self::CONFIG_TYPE);
+            $stored = [
+                ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
+                ...ExternalChannelBindingService::config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
+            ];
             $data = [];
             foreach (self::FIELDS as $field => $default) {
                 $current = (string)($stored[$field] ?? $default);
@@ -73,7 +82,22 @@ class PayConfigLogic extends BaseLogic
                 }
             }
             self::assertUsable($data);
-            ConfigService::setManyAtomic(self::CONFIG_TYPE, $data);
+            Db::transaction(function () use ($context, $data): void {
+                ExternalChannelBindingService::update(
+                    $context,
+                    ExternalTenantResolver::WECHAT_PAYMENT,
+                    $data,
+                    trim((string)$data['wx_pay_appid']) !== '' && trim((string)$data['wx_pay_mch_id']) !== ''
+                        ? (string)$data['wx_pay_appid'] . ':' . (string)$data['wx_pay_mch_id'] : '',
+                );
+                ExternalChannelBindingService::update(
+                    $context,
+                    ExternalTenantResolver::ALIPAY_PAYMENT,
+                    $data,
+                    trim((string)$data['ali_pay_app_id']) !== '' && trim((string)$data['ali_pay_seller_id']) !== ''
+                        ? (string)$data['ali_pay_app_id'] . ':' . (string)$data['ali_pay_seller_id'] : '',
+                );
+            });
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());

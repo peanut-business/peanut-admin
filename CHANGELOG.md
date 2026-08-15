@@ -3,6 +3,52 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [1.1.3] - 2026-08-15
+
+### Added
+
+- Deterministic application creation now adopts immutable scaffold releases,
+  records generation identity and preserves managed/app-owned boundaries.
+- Scaffold upgrades provide preflight, apply, verify and recover workflows with
+  conflict detection, application-version preservation and append-only evidence.
+- Plugin and Module lifecycle support validates immutable locks, module-owned
+  migrations, permissions, menus, settings and TenantModule enablement.
+- Production deployment, database, application-container and paired-backup
+  resources are explicitly registered with fail-closed selectors.
+
+### Security
+
+- Tenant Admin API routes fail closed and inherited role grants remain bounded
+  by capabilities already authorized to the acting principal.
+- Payment, OAuth and official-account callbacks resolve explicit Tenant-owned
+  external bindings instead of falling back to a default Tenant.
+
+### Changed
+
+- The application migration ledger advances from 50 to 54 migrations.
+- Generated applications use an independent initial version `0.1.0`; Peanut
+  Admin product, scaffold and downstream application versions are distinct.
+- Scaffold `v1.1.6` preserves the dual-mode administration bundles from
+  `v1.1.5` and aligns the generated legal inventory with all five final locks.
+- The public runtime dependencies remain fixed at
+  `peanut-admin/core@0.1.0-alpha.5` and `@peanut-admin/admin@0.1.0-alpha.5`.
+
+### Upgrade notes
+
+- Require `PEANUT_DEPLOYMENT_TARGET=production` and the registered database
+  resource ID before backup, migration or deployment.
+- Capture and verify bundled MySQL and `php-storage` as one pair before moving
+  the migration ledger from 50 to 54 entries.
+- After a new migration begins, image-only rollback is unsafe; recovery requires
+  the exact paired backup under an explicit production recovery gate.
+
+### Release boundaries
+
+- The normative artifact is the deterministic source archive attached to the
+  annotated `v1.1.3` GitHub Release.
+- No prebuilt production image, new public Core package, subscription billing,
+  marketplace or cross-instance operations platform is included.
+
 ## [1.1.0] - 2026-08-13
 
 ### Added
@@ -77,5 +123,6 @@ and the two public core packages have independent version histories.
 - Real SMS, payment and WeChat/OAuth production availability still depends on
   deployment-specific credentials, platform registration and a low-risk smoke.
 
+[1.1.3]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.3
 [1.1.0]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0
 [1.0.0]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.0.0
