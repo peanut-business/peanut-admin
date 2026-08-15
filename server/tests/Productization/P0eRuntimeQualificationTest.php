@@ -30,13 +30,13 @@ $expect(($fixture['baselines'] ?? null) === ['v1.0.0', 'v1.1.0'], 'P0-E forward 
 $targetRelease = $fixture['target_release'] ?? null;
 $expect(is_array($targetRelease), 'P0-E target scaffold release is missing');
 $expect($targetRelease === [
-    'version' => '1.1.4',
-    'source_commit' => 'e5a20e7733dc46fc516744846c1d4d016c8fd2d0',
-    'source_tree' => 'ac023dbac8c4357cff5a0967645dfe9c27118826',
-    'manifest_sha256' => '07c07ed6396b7c04f088d73a2d556a4320b61c1131f950c2c1cf82bca16f217d',
-    'inventory_sha256' => '35b8e3a81ccfd29a0bbe5dfbd1b8bdb69015373a2761d15fbc156f805ef2699b',
-    'managed_tree_sha256' => '465455281ededc0735f66ec4ec9d86430219b3f0162164ad3d5367f0462f9011',
-    'file_count' => 274,
+    'version' => '1.1.5',
+    'source_commit' => 'e6a6a5794cbbceaca19cfe8f3383f9fe4fd83ce3',
+    'source_tree' => 'b7215409599bf3eaff5bd47153b984a57794c9de',
+    'manifest_sha256' => '1e71cf3a5063af84275cf46b3503efad2ae5a01f8130437dd7ccd73542722822',
+    'inventory_sha256' => '2f611874fe39c20a202031155ac1c60b401f0945fdb44b8de341189bb92795a8',
+    'managed_tree_sha256' => 'ff2f975c708b2be25eaa2a2d7cd02102bbfd004ce676d175dbbbe76a74cd72be',
+    'file_count' => 275,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
     'default_uniapp_version_code' => '10',
@@ -46,7 +46,7 @@ $expect(is_array($legacy), 'P0-E legacy application fixture is missing');
 $expect(($legacy['source_commit'] ?? null) === '14412607ba36f1816e39f7117f77eea4a9e7419e', 'legacy application commit changed');
 $expect(($legacy['source_tree'] ?? null) === '172865d8b8057caa8a017ac591618cd914af30a5', 'legacy application tree changed');
 $expect(
-    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4'],
+    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5'],
     'legacy application release chain changed'
 );
 $expect(count($legacy['customizations'] ?? []) === 2, 'legacy application must retain two real app-owned customizations');
@@ -468,14 +468,15 @@ with tempfile.TemporaryDirectory(prefix="p0e-offline-closure-", dir="/private/tm
     }
     if upgrade["version_surfaces_before"] != expected_before or upgrade["version_surfaces_after"] != expected_after:
         raise SystemExit("legacy application version surface contract changed")
-    if len(upgrade["transitions"]) != 5 or any(item["preflight"] != "ready" or item["apply"] != "applied" or item["verify"] != "verified" for item in upgrade["transitions"]):
-        raise SystemExit("legacy application did not complete five real scaffold transitions")
+    expected_transition_count = len(fixture["legacy_application"]["release_chain"]) - 1
+    if len(upgrade["transitions"]) != expected_transition_count or any(item["preflight"] != "ready" or item["apply"] != "applied" or item["verify"] != "verified" for item in upgrade["transitions"]):
+        raise SystemExit("legacy application did not complete every real scaffold transition")
     if upgrade["app_owned_before_sha256"] != upgrade["app_owned_after_sha256"]:
         raise SystemExit("legacy upgrade changed app-owned bytes")
 
     runner.legacy_application_recovery()
     recovery = module.read_json(output / "groups/legacy-application-recovery.json")
-    if recovery["recover"] != "recovered" or recovery["pre_tree_sha256"] != recovery["recovered_tree_sha256"] or len(recovery["continued_transitions"]) != 5:
+    if recovery["recover"] != "recovered" or recovery["pre_tree_sha256"] != recovery["recovered_tree_sha256"] or len(recovery["continued_transitions"]) != expected_transition_count:
         raise SystemExit("legacy fault recovery closure failed")
 
     runner.upgraded_plugin_lifecycle()
