@@ -8,7 +8,9 @@ COPY web/package.json web/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY plugins.lock /build/plugins.lock
 COPY web/ ./
-RUN pnpm build
+RUN pnpm exec vue-tsc --noEmit \
+    && VITE_DEPLOYMENT_MODE=standalone pnpm exec vite build --config ./config/vite.config.prod.ts --outDir dist/standalone \
+    && VITE_DEPLOYMENT_MODE=multi-tenant pnpm exec vite build --config ./config/vite.config.prod.ts --outDir dist/multi-tenant
 
 FROM node:20.19.4-bookworm-slim AS mobile-builder
 
@@ -80,10 +82,12 @@ EXPOSE 9000
 FROM nginx:1.28.0-alpine AS nginx
 
 COPY deploy/nginx/peanut-admin.conf /etc/nginx/conf.d/default.conf
+COPY deploy/docker/nginx-select-admin.sh /docker-entrypoint.d/40-select-admin.sh
 COPY server/public /var/www/peanut-admin/server/public
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json /var/www/peanut-admin/server/public/legal/
-COPY --from=admin-builder /build/web/dist /var/www/peanut-admin/server/public/admin
+COPY --from=admin-builder /build/web/dist /opt/peanut-admin/admin
 COPY --from=mobile-builder /build/uniapp/dist/build/h5 /var/www/peanut-admin/server/public/mobile
 COPY --from=pc-builder /build/pc/.output/public /var/www/peanut-admin/server/public/pc
 
-RUN mkdir -p /var/www/peanut-admin/server/public/storage
+RUN chmod +x /docker-entrypoint.d/40-select-admin.sh \
+    && mkdir -p /var/www/peanut-admin/server/public/storage

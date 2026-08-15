@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "1.1.4",
+    "template_version": "1.1.5",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -209,7 +209,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "064420391d9bce30b4c70238ced4854f8d1e57424de3471baf7939a36634eac4"
+            "source_sha256": "994ae802116680a1fc2b10136dd91b0683869be03d822298692982ec6241d037"
         },
         {
             "path": "deploy/docker-compose.remote-development.yml",
@@ -227,6 +227,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "c5bd627ab4df12ed0dc2004ac776685daf77ef3e7e463267a9752b57a95b460d"
+        },
+        {
+            "path": "deploy/docker/nginx-select-admin.sh",
+            "target": "deploy/docker/nginx-select-admin.sh",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "source_sha256": "d5017bfa27927aa5aa31161a97b250093d9c31903be15d2d0e9949fe353bec56"
         },
         {
             "path": "deploy/docker/php-development-entrypoint.sh",
@@ -269,7 +278,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "a9925a7a5d8939bbfe3a706a1b9550642c8dc3ff7b4c4ff3b1da9618592388ec"
+            "source_sha256": "1d58e531a2112f45d065ac1f312fec6ee90e75d4b3a92b6ba24772eccfefe0b7"
         },
         {
             "path": "deploy/local-stack.env.example",
@@ -1406,7 +1415,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "2f70549dc16ef8bd6fe280f142cfcf99315eb2efedae7f1d69db7984252c160a"
+            "source_sha256": "9a553b6ad076f3a95af86c3240ca6f5fa78cbd4fc16e8f85acaa33a9fd9af9ef"
         },
         {
             "path": "docs/peanut-admin-user-manual.md",
@@ -1532,6 +1541,182 @@
         {
             "path": "output/deployment/upgrade-rehearsal-20260807.json",
             "target": "output/deployment/upgrade-rehearsal-20260807.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/multi-tenant-admin.png",
+            "target": "output/p0e-p0ef815a1/browser/generated/multi-tenant-admin.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/multi-tenant-initial-snapshot.txt",
+            "target": "output/p0e-p0ef815a1/browser/generated/multi-tenant-initial-snapshot.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/standalone-admin.png",
+            "target": "output/p0e-p0ef815a1/browser/generated/standalone-admin.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/standalone-docs.png",
+            "target": "output/p0e-p0ef815a1/browser/generated/standalone-docs.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/standalone-final-snapshot.txt",
+            "target": "output/p0e-p0ef815a1/browser/generated/standalone-final-snapshot.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/standalone-h5.png",
+            "target": "output/p0e-p0ef815a1/browser/generated/standalone-h5.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/standalone-initial-snapshot.txt",
+            "target": "output/p0e-p0ef815a1/browser/generated/standalone-initial-snapshot.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/browser/generated/standalone-pc.png",
+            "target": "output/p0e-p0ef815a1/browser/generated/standalone-pc.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/checkpoint.json",
+            "target": "output/p0e-p0ef815a1/checkpoint.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/generated-application.json",
+            "target": "output/p0e-p0ef815a1/groups/generated-application.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/migration-fault-backup.json",
+            "target": "output/p0e-p0ef815a1/groups/migration-fault-backup.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/migration-fault-restore.json",
+            "target": "output/p0e-p0ef815a1/groups/migration-fault-restore.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/multi-tenant-browser-database.json",
+            "target": "output/p0e-p0ef815a1/groups/multi-tenant-browser-database.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/multi-tenant-fresh.json",
+            "target": "output/p0e-p0ef815a1/groups/multi-tenant-fresh.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/plugin-lifecycle.json",
+            "target": "output/p0e-p0ef815a1/groups/plugin-lifecycle.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/production-compose-database.json",
+            "target": "output/p0e-p0ef815a1/groups/production-compose-database.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/production-compose.json",
+            "target": "output/p0e-p0ef815a1/groups/production-compose.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/standalone-fresh.json",
+            "target": "output/p0e-p0ef815a1/groups/standalone-fresh.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/v1.0-forward.json",
+            "target": "output/p0e-p0ef815a1/groups/v1.0-forward.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/groups/v1.1-forward.json",
+            "target": "output/p0e-p0ef815a1/groups/v1.1-forward.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/plan.json",
+            "target": "output/p0e-p0ef815a1/plan.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ef815a1/recovery.json",
+            "target": "output/p0e-p0ef815a1/recovery.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3440,7 +3625,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "2ff7beb2674a28fbc71c0fce3df9ff7b5431ba22e3af539cb6f65b3826f46501"
+            "source_sha256": "f1654cb025f50bab9ad0ea2e9537ecdea6b15f021e9b6013330f316c8b6ef718"
         },
         {
             "path": "scripts/check-product-capability-ledger",

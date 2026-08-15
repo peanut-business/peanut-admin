@@ -57,8 +57,24 @@ printf '%s\n' "$production_compose" | grep -q 'published: "22190"' || {
     printf 'production-preview Compose config lost custom HTTP_PORT\n' >&2
     exit 1
 }
+printf '%s\n' "$production_compose" | grep -q 'DEPLOYMENT_MODE: standalone' || {
+    printf 'production Nginx service lost the selected deployment mode\n' >&2
+    exit 1
+}
 grep -q '\${HTTP_PORT:-18092}:80' "$repo_dir/deploy/docker-compose.prod.yml" || {
     printf 'production deployment default is no longer scoped to 18092\n' >&2
+    exit 1
+}
+
+dockerfile="$repo_dir/deploy/docker/production.Dockerfile"
+for mode in standalone multi-tenant; do
+    grep -q "VITE_DEPLOYMENT_MODE=$mode" "$dockerfile" || {
+        printf 'production admin builder lost %s mode\n' "$mode" >&2
+        exit 1
+    }
+done
+grep -q 'nginx-select-admin.sh /docker-entrypoint.d/40-select-admin.sh' "$dockerfile" || {
+    printf 'production Nginx image lost the runtime admin selector\n' >&2
     exit 1
 }
 

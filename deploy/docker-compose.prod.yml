@@ -84,6 +84,8 @@ services:
       args: *build-proxy
       extra_hosts: *build-hosts
     restart: unless-stopped
+    environment:
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE to standalone or multi-tenant}
     ports:
       - "127.0.0.1:${HTTP_PORT:-18092}:80"
     volumes:
