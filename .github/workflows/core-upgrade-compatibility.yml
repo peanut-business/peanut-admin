@@ -3,9 +3,7 @@ name: Core upgrade compatibility
 on:
   pull_request:
     paths:
-      - 'scaffold/application-template-inventory.json'
       - 'scaffold/releases/*/scaffold-manifest.json'
-      - 'scripts/build-application-template-inventory'
       - 'scripts/combined-upgrade-qualification'
       - 'scripts/core-upgrade-compatibility'
       - 'scripts/select-legacy-pre-alpha5-fixture'

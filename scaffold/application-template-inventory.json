@@ -70,7 +70,7 @@
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "42a8137f83ac7d3fc242dc785484e99addbe20ca9867e2fa955c2611914eb1bd"
+            "source_sha256": "9749cd3f2dc250578387ebea927bde51563bbb7c0552318304b565c121354b49"
         },
         {
             "path": ".github/workflows/core-upgrade-compatibility.yml",
