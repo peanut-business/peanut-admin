@@ -1381,6 +1381,10 @@ class Runner:
             f"        source: {ROOT / 'resources/project-resources.json'}\n"
             "        target: /var/www/peanut-admin/resources/project-resources.json\n"
             "        read_only: true\n"
+            "      - type: bind\n"
+            f"        source: {ROOT / 'server/database/environment-guard.php'}\n"
+            "        target: /var/www/peanut-admin/server/database/environment-guard.php\n"
+            "        read_only: true\n"
             "  cron:\n"
             "    volumes:\n"
             "      - type: bind\n"
@@ -1506,6 +1510,7 @@ class Runner:
         self.start_docs(project_root)
         env = {
             "P0E_PLAYWRIGHT_CLI": required_environment("P0E_PLAYWRIGHT_CLI"),
+            "P0E_ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
             "P0E_ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
             "P0E_PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
             "P0E_PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),

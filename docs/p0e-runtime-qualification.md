@@ -136,8 +136,9 @@ scripts/p0e-runtime-qualification run "${common[@]}"
    全产品树内容和 mode（排除审计用 `.peanut/upgrades` 与 `.git`）核对完整恢复，并从恢复态继续
    完整 release chain。
 10. 升级产物临时铺设 source-only Plugin fixture，复验 install、权限、失败 migration 和
-    preserve-data lifecycle，随后恢复空 `plugins.lock` 并移除 fixture。最后从升级产物自身构建
-    生产镜像，在 Standalone 与 multi-tenant 各跑一次真实 Chromium 代表流程。
+    preserve-data lifecycle，随后恢复空 `plugins.lock` 并移除 fixture。生产 Compose Gate
+    只读挂载当前 source-only 资源登记和环境门禁，不改写升级应用的 app-owned 字节；最后从
+    升级产物自身构建生产镜像，在 Standalone 与 multi-tenant 各跑一次真实 Chromium 代表流程。
 
 ## 失败恢复与完成
 

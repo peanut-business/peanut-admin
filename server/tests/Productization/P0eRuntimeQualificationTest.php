@@ -4,6 +4,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__, 3);
 $runner = $root . '/scripts/p0e-runtime-qualification';
 $browser = $root . '/scripts/p0e-browser-smoke';
+$browserFixture = $root . '/server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js';
 $fixturePath = $root . '/server/tests/fixtures/p0e-runtime-qualification/matrix.json';
 $registryPath = $root . '/resources/project-resources.json';
 $p0eRegistryPath = $root . '/resources/p0e-runtime-qualification.json';
@@ -149,6 +150,7 @@ $expect($badPortCode !== 0, 'unregistered HTTP port did not fail closed');
 
 $runnerSource = (string)file_get_contents($runner);
 $browserSource = (string)file_get_contents($browser);
+$browserFixtureSource = (string)file_get_contents($browserFixture);
 $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease verification is not an exact-set comparison');
 $expect(str_contains($runnerSource, 'read_only: true'), 'container lease proof is not read-only');
 $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database refusal is missing');
@@ -186,10 +188,19 @@ $expect(
     'generated/upgraded Compose does not mount the source-only P0-E registry for PHP and cron'
 );
 $expect(
+    substr_count($runnerSource, '/var/www/peanut-admin/server/database/environment-guard.php') === 1,
+    'upgraded Compose does not mount the source-only P0-E environment guard for PHP'
+);
+$expect(
     str_contains($runnerSource, 'playwright_cli.parent == lease_proof_dir'),
     'lease-owned Playwright wrapper is not removed before lease release'
 );
 $expect(str_contains($browserSource, 'snapshot'), 'browser runner does not capture Playwright snapshots');
+$expect(
+    str_contains($browserFixtureSource, "required('P0E_ADMIN_INITIAL_EMAIL')")
+        && str_contains($browserFixtureSource, ".then(() => 'navigated')"),
+    'multi-tenant browser fixture does not support the registered email and direct-login path'
+);
 
 $composeEnvironmentProbe = <<<'PYTHON'
 import importlib.machinery
@@ -408,6 +419,7 @@ with tempfile.TemporaryDirectory(prefix="p0e-offline-closure-", dir="/private/tm
     os.environ.update({
         "P0E_PLAYWRIGHT_CLI": str(playwright),
         "P0E_SHIM_LOG": str(playwright_log),
+        "P0E_ADMIN_INITIAL_EMAIL": "admin@example.invalid",
         "P0E_ADMIN_INITIAL_PASSWORD": "offline-admin",
         "P0E_PLATFORM_INITIAL_EMAIL": "platform@example.invalid",
         "P0E_PLATFORM_INITIAL_PASSWORD": "offline-platform",
@@ -486,8 +498,13 @@ with tempfile.TemporaryDirectory(prefix="p0e-offline-closure-", dir="/private/tm
     runner.upgraded_production_compose()
     overlay = runner.compose_overlay.read_text(encoding="utf-8")
     source_registry = str(module.ROOT / "resources/project-resources.json")
-    if overlay.count(source_registry) != 2 or overlay.count("read_only: true") != 3:
-        raise SystemExit("source-only registry/lease overlay is incomplete")
+    source_guard = str(module.ROOT / "server/database/environment-guard.php")
+    if (
+        overlay.count(source_registry) != 2
+        or overlay.count(source_guard) != 1
+        or overlay.count("read_only: true") != 4
+    ):
+        raise SystemExit("source-only registry/environment-guard/lease overlay is incomplete")
 
     runner.upgraded_browser("standalone")
     runner.upgraded_browser("multi-tenant")
