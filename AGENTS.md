@@ -29,7 +29,7 @@
 
 ---
 
-## 2. 当前状态（2026-08-13）
+## 2. 当前状态（2026-08-15）
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 
@@ -84,6 +84,12 @@ TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双
 
 ### 2.3 产品化正式基线 — ✅ 完成
 
+- `v1.1.3` 已达到 `production-demonstrated`：`main/dev/tag@f0b2b81…`
+  （tree `a9051b1…`）、annotated tag object `42e7e86…` 和正式 GitHub Release 身份一致；
+  从规范 Release 附件生成的独立应用完成五套锁定依赖、生产模式启动和真实浏览器登录，
+  生产 `oracle3:/www/docker/peanut-admin` 在配对备份后从 50 前滚到 54 条迁移，登录、API、
+  工作台、PC、H5 与 TLS 最低 smoke 通过。不可变证据见
+  `docs/product-status/releases/v1.1.3.json`。
 - 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
 - 已完成：生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
 - 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`

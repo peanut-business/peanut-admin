@@ -4,6 +4,8 @@
 > 决策日期：2026-08-15
 > Peanut Admin 产品状态事实源：`docs/product-status/capability-ledger.json`
 > 应用内多租户计划：`docs/plans/multi-tenancy-platform-management-plan.md`
+> R1 状态：`v1.1.3` 已于 2026-08-15 达到 `production-demonstrated`；OP02 的 Release
+> 前置已解除，但独立运营平台实现仍未开始。
 
 ## 1. 目标与顺序
 
@@ -36,13 +38,13 @@
 
 ### R0：候选资格与发布准备
 
-现有 owner 继续完成各自已领取的 P0-E/升级资格和发布准备。它们只交付固定证据，不直接
-执行最终发布，也不得因为局部失败重复已经通过的 Gate。
+已完成。P0-E 最终 run `p0er815b1` 为 16/16 通过且零资源残留，发布准备进入
+`v1.1.3@f0b2b81acd792b05404e0e4897ec61e85c131041`。
 
 ### R1：最终发布负责人
 
-单独会话承担唯一发布集成 owner。它在 R0 owner 交接前只做只读核对；交接后连续推进到
-`production-demonstrated`，不能在 `qualified`、PR 合入或 Tag 创建后提前停止。
+已完成。正式 Release、下游消费、配对生产备份、50→54 迁移和最低生产 smoke 已封存到
+`docs/product-status/releases/v1.1.3.json`；该快照是本轮 R1 的不可变完成证据。
 
 R1 的串行职责：
 
