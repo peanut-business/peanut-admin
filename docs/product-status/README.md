@@ -28,7 +28,7 @@ php scripts/check-product-capability-ledger
 <!-- CAPABILITY_STATUS_GENERATED_START -->
 > 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only 候选正在收口；原生身份、Tenant 资格和 canonical Schema 已实现，空库、create-app、管理端浏览器与正式发布身份尚未完成。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@b52554fa275aefca1fade651df6fbbbaa37192df`，复核日期：`2026-08-16`。
+> 事实基线：`feat/module-identity-tenancy-docs@2fffd77c063e8d81c62fe4262dc9ced845ffca49`，复核日期：`2026-08-16`。
 
 ### 已验证可用
 
