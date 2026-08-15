@@ -135,10 +135,10 @@ try {
     );
     $insertCategory = $pdo->prepare(
         'INSERT INTO pa_article_cate (tenant_id, name, sort, is_show, create_time, update_time) '
-        . 'VALUES (:tenant_id, :name, :sort, 1, :now, :now)'
+        . 'VALUES (:tenant_id, :name, :sort, 1, :create_time, :update_time)'
     );
     $updateCategory = $pdo->prepare(
-        'UPDATE pa_article_cate SET sort = :sort, is_show = 1, delete_time = NULL, update_time = :now '
+        'UPDATE pa_article_cate SET sort = :sort, is_show = 1, delete_time = NULL, update_time = :update_time '
         . 'WHERE id = :id AND tenant_id = :tenant_id'
     );
     foreach ($plan['categories'] as $sort => $name) {
@@ -147,10 +147,10 @@ try {
         $categoryValues = [
             'tenant_id' => $tenantId,
             'sort' => (count($plan['categories']) - $sort) * 10,
-            'now' => $now,
+            'update_time' => $now,
         ];
         if ($categoryId === false) {
-            $insertCategory->execute($categoryValues + ['name' => $name]);
+            $insertCategory->execute($categoryValues + ['name' => $name, 'create_time' => $now]);
             $categoryId = (int) $pdo->lastInsertId();
         } else {
             $updateCategory->execute($categoryValues + ['id' => (int) $categoryId]);
@@ -161,10 +161,10 @@ try {
     $findArticle = $pdo->prepare('SELECT id FROM pa_article WHERE tenant_id = :tenant_id AND title = :title AND author = :author AND delete_time IS NULL LIMIT 1');
     $insertArticle = $pdo->prepare(
         'INSERT INTO pa_article (tenant_id, cid, title, `desc`, abstract, image, author, content, click_virtual, click_actual, sort, is_show, create_time, update_time) '
-        . 'VALUES (:tenant_id, :cid, :title, :description, :abstract, \'\', \'Peanut Admin Demo\', :content, :click_virtual, 0, :sort, 1, :now, :now)'
+        . 'VALUES (:tenant_id, :cid, :title, :description, :abstract, \'\', \'Peanut Admin Demo\', :content, :click_virtual, 0, :sort, 1, :create_time, :update_time)'
     );
     $updateArticle = $pdo->prepare(
-        'UPDATE pa_article SET cid = :cid, `desc` = :description, abstract = :abstract, content = :content, click_virtual = :click_virtual, sort = :sort, is_show = 1, update_time = :now '
+        'UPDATE pa_article SET cid = :cid, `desc` = :description, abstract = :abstract, content = :content, click_virtual = :click_virtual, sort = :sort, is_show = 1, update_time = :update_time '
         . 'WHERE id = :id AND tenant_id = :tenant_id'
     );
     foreach ($plan['articles'] as $article) {
@@ -173,10 +173,10 @@ try {
         $values = [
             'tenant_id' => $tenantId, 'cid' => $categoryIds[$article['category']], 'title' => $article['title'],
             'description' => $article['desc'], 'abstract' => $article['abstract'], 'content' => $article['content'],
-            'click_virtual' => $article['click_virtual'], 'sort' => $article['sort'], 'now' => $now,
+            'click_virtual' => $article['click_virtual'], 'sort' => $article['sort'], 'update_time' => $now,
         ];
         if ($articleId === false) {
-            $insertArticle->execute($values);
+            $insertArticle->execute($values + ['create_time' => $now]);
         } else {
             $updateArticle->execute([
                 'tenant_id' => $tenantId,
@@ -186,7 +186,7 @@ try {
                 'content' => $values['content'],
                 'click_virtual' => $values['click_virtual'],
                 'sort' => $values['sort'],
-                'now' => $now,
+                'update_time' => $now,
                 'id' => (int) $articleId,
             ]);
         }
@@ -194,17 +194,23 @@ try {
 
     $tagIds = [];
     $tag = $pdo->prepare(
-        'INSERT INTO pa_member_tag (tenant_id, name, remark, create_time, update_time) VALUES (:tenant_id, :name, :remark, :now, :now) '
+        'INSERT INTO pa_member_tag (tenant_id, name, remark, create_time, update_time) VALUES (:tenant_id, :name, :remark, :create_time, :update_time) '
         . 'ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), remark = VALUES(remark), delete_time = NULL, update_time = VALUES(update_time)'
     );
     foreach ($plan['tags'] as $name) {
-        $tag->execute(['tenant_id' => $tenantId, 'name' => $name, 'remark' => 'Peanut Admin Demo synthetic data', 'now' => $now]);
+        $tag->execute([
+            'tenant_id' => $tenantId,
+            'name' => $name,
+            'remark' => 'Peanut Admin Demo synthetic data',
+            'create_time' => $now,
+            'update_time' => $now,
+        ]);
         $tagIds[$name] = (int) $pdo->lastInsertId();
     }
 
     $member = $pdo->prepare(
         'INSERT INTO pa_member (tenant_id, sn, account, password, nickname, avatar, real_name, mobile, channel, email, sex, status, is_new_user, balance, user_money, total_recharge_amount, points, create_time, update_time) '
-        . 'VALUES (:tenant_id, :sn, :account, \'\', :nickname, \'\', \'\', \'\', :channel, \'\', 0, 1, 0, :balance, :balance, 0, :points, :now, :now) '
+        . 'VALUES (:tenant_id, :sn, :account, \'\', :nickname, \'\', \'\', \'\', :channel, \'\', 0, 1, 0, :balance, :user_money, 0, :points, :create_time, :update_time) '
         . 'ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), nickname = VALUES(nickname), channel = VALUES(channel), balance = VALUES(balance), user_money = VALUES(user_money), points = VALUES(points), status = 1, delete_time = NULL, update_time = VALUES(update_time)'
     );
     $relation = $pdo->prepare('INSERT IGNORE INTO pa_member_tag_relation (tenant_id, member_id, tag_id) VALUES (:tenant_id, :member_id, :tag_id)');
@@ -212,17 +218,18 @@ try {
         $member->execute([
             'tenant_id' => $tenantId, 'sn' => $memberData['sn'], 'account' => $memberData['account'],
             'nickname' => $memberData['nickname'], 'channel' => $memberData['channel'], 'balance' => $memberData['balance'],
-            'points' => $memberData['points'], 'now' => $now,
+            'user_money' => $memberData['balance'], 'points' => $memberData['points'],
+            'create_time' => $now, 'update_time' => $now,
         ]);
         $memberId = (int) $pdo->lastInsertId();
         $relation->execute(['tenant_id' => $tenantId, 'member_id' => $memberId, 'tag_id' => $tagIds[$index % 2 === 0 ? '演示用户' : '内容爱好者']]);
     }
 
     $docs = $pdo->prepare(
-        'INSERT INTO pa_config (type, name, value, create_time, update_time) VALUES (\'website\', \'official_url\', :url, :now, :now) '
+        'INSERT INTO pa_config (type, name, value, create_time, update_time) VALUES (\'website\', \'official_url\', :url, :create_time, :update_time) '
         . 'ON DUPLICATE KEY UPDATE value = VALUES(value), update_time = VALUES(update_time)'
     );
-    $docs->execute(['url' => $docsUrl, 'now' => $now]);
+    $docs->execute(['url' => $docsUrl, 'create_time' => $now, 'update_time' => $now]);
     $pdo->commit();
 
     echo json_encode([

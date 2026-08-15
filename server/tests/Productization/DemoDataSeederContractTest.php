@@ -48,4 +48,14 @@ $expect(str_contains($source, 'INSERT IGNORE INTO pa_member_tag_relation'), 'dem
 $expect(str_contains($source, 'guardedDatabaseConfig()'), 'demo seed must use the project environment guard');
 $expect(str_contains($source, 'PEANUT_DEMO_TENANT_ID'), 'demo seed must require an explicit tenant');
 
+$prepareCalls = [];
+preg_match_all('/\$pdo->prepare\((.*?)\);/s', $source, $prepareCalls);
+$expect(($prepareCalls[1] ?? []) !== [], 'demo seed prepared statements could not be inspected');
+foreach ($prepareCalls[1] as $preparedSql) {
+    $parameters = [];
+    preg_match_all('/:([a-z_][a-z0-9_]*)/i', $preparedSql, $parameters);
+    $duplicates = array_diff_assoc($parameters[1], array_unique($parameters[1]));
+    $expect($duplicates === [], 'demo seed repeats native prepared parameter :' . reset($duplicates));
+}
+
 echo "DEMO-DATA-SEED-001 contract passed\n";
