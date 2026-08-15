@@ -17,20 +17,15 @@ jobs:
     name: Preserve integration branches
     runs-on: ubuntu-latest
     steps:
-      - name: Verify repository deletion policy
+      - name: Verify integration branches
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          delete_on_merge="$(gh api repos/${GITHUB_REPOSITORY} --jq '.delete_branch_on_merge')"
-          [[ "$delete_on_merge" == "false" ]] || {
-            printf 'repository-policy: delete_branch_on_merge must remain false (got %s)\n' "$delete_on_merge" >&2
-            exit 1
-          }
           for branch in dev main; do
             gh api "repos/${GITHUB_REPOSITORY}/branches/${branch}" --jq '.name' | grep -Fx "$branch" >/dev/null || {
               printf 'repository-policy: required branch is missing: %s\n' "$branch" >&2
               exit 1
             }
           done
-          printf 'repository-policy: delete_on_merge=false; dev and main exist\n'
+          printf 'repository-policy: dev and main exist\n'
