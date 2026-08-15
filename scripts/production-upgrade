@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+COMPOSE_FILE="$ROOT_DIR/compose.yaml"
+ENV_FILE="${PEANUT_PRODUCTION_ENV_FILE:-$ROOT_DIR/.env}"
+BACKUP=0
+APPLY=0
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: scripts/production-upgrade <version-tag> --apply [--backup]
+
+Deploys one immutable annotated tag with the fixed order:
+  fetch/check tag -> checkout -> build -> migrate -> switch -> version/health smoke
+
+Backups are opt-in. The registered Peanut Admin environment is a rebuildable
+demo instance; use --backup when a release changes valuable production data or
+the deployment owner explicitly requires the registered backup hook.
+When --backup is supplied, PEANUT_BACKUP_COMMAND must name an existing, audited
+backup command. Secrets are read from the deployment .env and never logged.
+EOF
+  exit 64
+}
+
+fail() {
+  printf 'production-upgrade: %s\n' "$1" >&2
+  exit 1
+}
+
+[[ $# -ge 2 ]] || usage
+TAG="$1"
+shift
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --apply) APPLY=1; shift ;;
+    --backup) BACKUP=1; shift ;;
+    --help|-h) usage ;;
+    *) usage ;;
+  esac
+done
+
+[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'tag must be an immutable vX.Y.Z release tag'
+[[ "$APPLY" == 1 ]] || fail 'pass --apply to execute the production update'
+[[ -d "$ROOT_DIR/.git" || -f "$ROOT_DIR/.git" ]] || fail "not a Git checkout: $ROOT_DIR"
+[[ -f "$COMPOSE_FILE" ]] || fail "missing production Compose entry: $COMPOSE_FILE"
+[[ -f "$ENV_FILE" ]] || fail "missing deployment env file: $ENV_FILE"
+command -v git >/dev/null || fail 'git is required'
+command -v docker >/dev/null || fail 'docker is required'
+command -v curl >/dev/null || fail 'curl is required'
+command -v jq >/dev/null || fail 'jq is required'
+
+cd "$ROOT_DIR"
+[[ -z "$(git status --porcelain)" ]] || fail 'deployment checkout is not clean'
+
+require_env() {
+  local key="$1"
+  local value="$2"
+  grep -Fqx "${key}=${value}" "$ENV_FILE" || fail "$ENV_FILE must contain ${key}=${value}"
+}
+
+require_env PEANUT_DEPLOYMENT_TARGET production
+require_env PEANUT_DATABASE_RESOURCE_ID peanut-admin-production-bundled-mysql84
+require_env DB_HOST mysql
+require_env DB_PORT 3306
+require_env HTTP_PORT 18092
+
+if ! git rev-parse --verify --quiet "$TAG^{tag}" >/dev/null; then
+  git fetch --quiet origin "refs/tags/$TAG:refs/tags/$TAG" || fail "cannot fetch $TAG from origin"
+fi
+tag_type="$(git cat-file -t "$TAG" 2>/dev/null || true)"
+[[ "$tag_type" == tag ]] || fail "$TAG is not an annotated tag"
+tag_commit="$(git rev-parse "$TAG^{commit}")"
+remote_tag="$(git ls-remote --tags origin "refs/tags/$TAG" | awk 'NR == 1 { print $1 }')"
+remote_commit="$(git ls-remote --tags origin "refs/tags/$TAG^{}" | awk 'NR == 1 { print $1 }')"
+[[ -n "$remote_tag" && -n "$remote_commit" ]] || fail "$TAG is not fully visible on origin"
+[[ "$remote_commit" == "$tag_commit" ]] || fail "$TAG local and remote commit identities differ"
+
+version="${TAG#v}"
+metadata_version="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.version // empty')"
+metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
+[[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || {
+  fail "RELEASE_METADATA.json does not match $TAG (version=$metadata_version tag=$metadata_tag)"
+}
+
+if [[ "$BACKUP" == 1 ]]; then
+  [[ -n "${PEANUT_BACKUP_COMMAND:-}" ]] || fail '--backup requires PEANUT_BACKUP_COMMAND'
+  printf 'running registered backup command\n'
+  sh -c "$PEANUT_BACKUP_COMMAND"
+else
+  printf 'backup=skipped (registered environment is rebuildable demo; pass --backup to override)\n'
+fi
+
+git checkout --detach --quiet "$TAG"
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-peanut-admin}"
+compose=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+"${compose[@]}" config >/dev/null
+"${compose[@]}" build
+"${compose[@]}" run --rm --no-deps php php server/database/migrate.php
+"${compose[@]}" up -d --no-build
+"${compose[@]}" ps
+
+health_url="http://127.0.0.1:${HTTP_PORT:-18092}/healthz"
+metadata_url="http://127.0.0.1:${HTTP_PORT:-18092}/legal/RELEASE_METADATA.json"
+curl --fail --silent --show-error --retry 12 --retry-delay 2 "$health_url" >/dev/null
+runtime_version="$(curl --fail --silent --show-error "$metadata_url" | jq -r '.version // empty')"
+[[ "$runtime_version" == "$version" ]] || fail "runtime metadata is $runtime_version, expected $version"
+printf 'deployed_tag=%s\ncommit=%s\nruntime_version=%s\n' "$TAG" "$tag_commit" "$runtime_version"

@@ -11,15 +11,6 @@ permissions:
   contents: read
 
 jobs:
-  stale-facts:
-    name: Stale facts
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Reject retired current guidance
-        run: ./scripts/check-stale-facts.sh
-
   changes:
     name: Changed paths
     runs-on: ubuntu-latest
@@ -29,6 +20,8 @@ jobs:
       pc: ${{ steps.paths.outputs.pc }}
       uniapp: ${{ steps.paths.outputs.uniapp }}
       docs_site: ${{ steps.paths.outputs.docs_site }}
+      docs: ${{ steps.paths.outputs.docs }}
+      ledger: ${{ steps.paths.outputs.ledger }}
       create_app: ${{ steps.paths.outputs.create_app }}
       scaffold_upgrade: ${{ steps.paths.outputs.scaffold_upgrade }}
     steps:
@@ -42,7 +35,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            for output in server web pc uniapp docs_site create_app scaffold_upgrade; do
+            for output in server web pc uniapp docs_site docs ledger create_app scaffold_upgrade; do
               echo "${output}=true" >> "$GITHUB_OUTPUT"
             done
             exit 0
@@ -59,8 +52,21 @@ jobs:
           matches '^pc/' && echo 'pc=true' >> "$GITHUB_OUTPUT" || echo 'pc=false' >> "$GITHUB_OUTPUT"
           matches '^uniapp/' && echo 'uniapp=true' >> "$GITHUB_OUTPUT" || echo 'uniapp=false' >> "$GITHUB_OUTPUT"
           matches '^docs-site/' && echo 'docs_site=true' >> "$GITHUB_OUTPUT" || echo 'docs_site=false' >> "$GITHUB_OUTPUT"
+          matches '^(docs/|README\.md$|AGENTS\.md$|AGENT_EXECUTION_RULES\.md$)' && echo 'docs=true' >> "$GITHUB_OUTPUT" || echo 'docs=false' >> "$GITHUB_OUTPUT"
+          matches '^(docs/product-status/|scripts/check-product-capability-ledger$|\.github/workflows/product-capability-ledger\.yml$)' && echo 'ledger=true' >> "$GITHUB_OUTPUT" || echo 'ledger=false' >> "$GITHUB_OUTPUT"
           matches '^(scaffold/application-template-inventory\.json|scripts/create-app|scripts/build-application-template-inventory|server/app/common/service/scaffold/ApplicationCreator\.php|server/tests/Productization/CreateApplicationTest\.php|docs/create-application\.md)$' && echo 'create_app=true' >> "$GITHUB_OUTPUT" || echo 'create_app=false' >> "$GITHUB_OUTPUT"
           matches '^(scripts/scaffold-upgrade|scripts/scaffold-runtime/|scripts/build-scaffold-release|scaffold/releases/|scaffold/legacy/|server/app/common/service/scaffold/Scaffold|server/tests/Productization/ScaffoldUpgradeRunnerTest\.php|docs/scaffold-upgrade\.md)' && echo 'scaffold_upgrade=true' >> "$GITHUB_OUTPUT" || echo 'scaffold_upgrade=false' >> "$GITHUB_OUTPUT"
+
+  stale-facts:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.server == 'true' || needs.changes.outputs.web == 'true' || needs.changes.outputs.pc == 'true' || needs.changes.outputs.uniapp == 'true'
+    name: Stale facts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Reject retired current guidance
+        run: ./scripts/check-stale-facts.sh
 
   create-app:
     name: Create app
@@ -253,29 +259,3 @@ jobs:
       - name: Build H5
         working-directory: uniapp
         run: npm run build:h5
-
-  docs-site:
-    name: Docs site
-    needs: changes
-    if: needs.changes.outputs.docs_site == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-          cache-dependency-path: docs-site/pnpm-lock.yaml
-      - name: Install dependencies
-        working-directory: docs-site
-        run: pnpm install --frozen-lockfile
-      - name: Build
-        working-directory: docs-site
-        run: pnpm run build

@@ -595,11 +595,17 @@
         "documentation_resource_id": "peanut-admin-production-docs-domain",
         "demo_data_command": "sudo docker compose -f compose.yaml --profile bundled-db exec -T -e PEANUT_DEMO_MODE=enabled -e PEANUT_DEMO_TENANT_ID=<registered-active-tenant> -e PEANUT_DEMO_DOCS_URL=https://peanut-admin-doc.007345.xyz php peanut-seed-demo-data --apply",
         "data_source": "release Git checkout and Docker Compose state under /www/docker/peanut-admin",
-        "freshness_requirement": "before each update, verify SSH reachability, the exact release checkout and image references, the peanut-admin Compose project, persistent volume bindings, exact non-secret production selector values, and a complete peanut-admin-production-backups artifact pair",
+        "freshness_requirement": "before each update, verify SSH reachability, the exact release checkout and image references, the peanut-admin Compose project, persistent volume bindings, exact non-secret production selector values, and that the rebuildable demo policy is still approved; use the registered backup pair only when the release or owner requires it",
+        "backup_policy": {
+          "required": false,
+          "default": "skip",
+          "override": "scripts/production-upgrade <tag> --apply --backup with PEANUT_BACKUP_COMMAND",
+          "rationale": "This registered environment is a disposable demo. Its synthetic data may be rebuilt with the idempotent demo seeder; valuable data or irreversible migrations require an explicit backup override."
+        },
         "preflight_checks": {
           "environment_selection": "ssh -o BatchMode=yes oracle3 'sudo -n grep -Fqx PEANUT_DEPLOYMENT_TARGET=production /www/docker/peanut-admin/.env && sudo -n grep -Fqx PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-mysql84 /www/docker/peanut-admin/.env'",
-          "backup_target": "peanut-admin-production-backups capacity, tools, quiescence, manifest and checksum checks must pass before any production update",
-          "failure_policy": "any missing or mismatched selector or backup check blocks backup, migration and deployment; do not rewrite .env or select another database, path or host implicitly"
+          "backup_target": "optional by default for this rebuildable demo; when --backup is selected, peanut-admin-production-backups capacity, tools, quiescence, manifest and checksum checks must pass",
+          "failure_policy": "any missing or mismatched selector blocks migration and deployment; do not rewrite .env or select another database, path or host implicitly"
         },
         "health_check": {
           "ssh": "ssh -o BatchMode=yes oracle3 'test -d /www/docker/peanut-admin && test -r /www/docker/peanut-admin/compose.yaml'",
