@@ -7696,7 +7696,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "969b479c873b6c79aa052e25987a805ce0d88be074049befc233d6dd5f9a15bc"
+            "source_sha256": "0a02d3da00746a75a327be01e133febee69d59cdf7c1f59c64a6101b5b65add2"
         },
         {
             "path": "server/database/install.php",
@@ -7898,14 +7898,6 @@
         {
             "path": "server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php",
             "target": "server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/Multitenancy/AdminApiPermissionMigrationTest.php",
-            "target": "server/tests/Multitenancy/AdminApiPermissionMigrationTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
