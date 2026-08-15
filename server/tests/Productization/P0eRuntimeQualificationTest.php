@@ -31,12 +31,12 @@ $expect(($fixture['baselines'] ?? null) === ['v1.0.0', 'v1.1.0'], 'P0-E forward 
 $targetRelease = $fixture['target_release'] ?? null;
 $expect(is_array($targetRelease), 'P0-E target scaffold release is missing');
 $expect($targetRelease === [
-    'version' => '1.1.5',
-    'source_commit' => 'ff254476c71fc552e69c53f8346553aaaf76c4da',
-    'source_tree' => 'afae1b20297bd587f528382459fcdbe1d48d8f62',
-    'manifest_sha256' => 'ed088bda5262048328a27735b1289fa139757f3dac544a23a1f582b6adc54a10',
-    'inventory_sha256' => '72ed7ef6506ec68f677bc3bdaa988358613f1c6845d19d0cf83e5a213d24fa72',
-    'managed_tree_sha256' => 'ff2f975c708b2be25eaa2a2d7cd02102bbfd004ce676d175dbbbe76a74cd72be',
+    'version' => '1.1.6',
+    'source_commit' => 'e68700335fc75452b8a6866d9efe229decc34a76',
+    'source_tree' => 'cab4413c5afff2cf8457f175f2de4a835547237c',
+    'manifest_sha256' => '8fa18359ed9853283822c4247cdac61da3fdda3c5ed849bda8b8d089e577df54',
+    'inventory_sha256' => 'da8ebc4554e043ee1aedbd9d1b9ddef60fbd1f79e1c96e2ed6e3e918e6a4f4e0',
+    'managed_tree_sha256' => 'd54e1f467fabe616276ad436a5334bebbf4c900d47a68d5d395b8ad6d78e1cb1',
     'file_count' => 275,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
@@ -47,7 +47,7 @@ $expect(is_array($legacy), 'P0-E legacy application fixture is missing');
 $expect(($legacy['source_commit'] ?? null) === '14412607ba36f1816e39f7117f77eea4a9e7419e', 'legacy application commit changed');
 $expect(($legacy['source_tree'] ?? null) === '172865d8b8057caa8a017ac591618cd914af30a5', 'legacy application tree changed');
 $expect(
-    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5'],
+    ($legacy['release_chain'] ?? null) === ['1.0.0', '1.1.0', '1.1.1', '1.1.2', '1.1.3', '1.1.4', '1.1.5', '1.1.6'],
     'legacy application release chain changed'
 );
 $expect(count($legacy['customizations'] ?? []) === 2, 'legacy application must retain two real app-owned customizations');

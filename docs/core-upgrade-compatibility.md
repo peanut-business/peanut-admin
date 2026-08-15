@@ -6,7 +6,7 @@
 - Web/current boundary：正式 create-app `1.1.6` 从当前 Gate 的精确 candidate 运行，但
   application manifest 的 `template` 必须逐字段采用同版本不可变 release，
   `generation_source` 则必须逐字段绑定 candidate commit/tree 与 candidate 当前 inventory。
-  release manifest 自身记录完整 source commit/tree、inventory、managed digest 与 274 files；
+  release manifest 自身记录完整 source commit/tree、inventory、managed digest 与 275 files；
   fixture 只固定非递归的 release 内容身份和稳定生成摘要，不再把 release provenance 与移动
   candidate 混成一个身份。它生成当前应用，只承担生成 manifest/source 边界、完整 Web runtime
   与全客户端公开入口扫描。Web 从公开 npm `@peanut-admin/admin@0.1.0-alpha.4` 升到
