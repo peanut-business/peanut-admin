@@ -3,8 +3,6 @@ name: Core upgrade compatibility
 on:
   pull_request:
     paths:
-      - '.github/workflows/core-upgrade-compatibility.yml'
-      - 'resources/project-resources.json'
       - 'scaffold/application-template-inventory.json'
       - 'scaffold/releases/*/scaffold-manifest.json'
       - 'scripts/build-application-template-inventory'
