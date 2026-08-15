@@ -40,8 +40,8 @@
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "8253b6ea0e26db948d3ad8441e58fd6affb7dbbad4b5dfb580e154394177c081",
-    "RELEASE_SBOM.spdx.json": "54648a99691185bbf1729b1467c755f6b9430653ebbc09f5a0173f34b7589123"
+    "THIRD_PARTY_NOTICES.md": "3180a5a9a715cffb7042994510defc155d1df5734c00dafe0b2a6a6a07b7e9fc",
+    "RELEASE_SBOM.spdx.json": "540558d156c7cdf66a31471d1a6d5191cbac4e541d8dd6b6cef3115f8536ebbe"
   },
   "migrations": {
     "count": 0,

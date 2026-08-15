@@ -180,7 +180,7 @@
             "owner": "scaffold",
             "transform": "release-metadata",
             "mode": 420,
-            "source_sha256": "99ea347dd490a33222d47d05eb94c21a9011e27a665fd362d4baf747a8fcad1f"
+            "source_sha256": "192e3d985df5e119ef7fa18c6c7f08586596f114ee91ed5278a687e4fb8739ee"
         },
         {
             "path": "RELEASE_SBOM.spdx.json",
