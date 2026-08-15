@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__, 2);
 $script = $root . '/../scripts/seed-demo-data';
+$productionDockerfile = $root . '/../deploy/docker/production.Dockerfile';
 $expect = static function (bool $condition, string $message): void {
     if (!$condition) {
         throw new RuntimeException($message);
@@ -10,6 +11,15 @@ $expect = static function (bool $condition, string $message): void {
 };
 
 $expect(is_file($script), 'demo seed script is missing');
+$dockerfile = (string) file_get_contents($productionDockerfile);
+$expect(
+    str_contains($dockerfile, 'COPY scripts/seed-demo-data scripts/seed-demo-data'),
+    'production PHP image does not install the demo seed script'
+);
+$expect(
+    str_contains($dockerfile, 'chmod +x server/think scripts/seed-demo-data /usr/local/bin/peanut-php-entrypoint'),
+    'production PHP image does not make the demo seed script executable'
+);
 $planOutput = [];
 $planExit = 0;
 exec(escapeshellarg($script) . ' --plan 2>&1', $planOutput, $planExit);

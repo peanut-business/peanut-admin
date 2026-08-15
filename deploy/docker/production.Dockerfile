@@ -66,6 +66,7 @@ COPY server/view server/view
 COPY server/think server/think
 COPY server/composer.json server/composer.lock server/
 COPY server/public server/public
+COPY scripts/seed-demo-data scripts/seed-demo-data
 COPY --from=composer-deps /build/server/vendor server/vendor
 COPY deploy/docker/php-entrypoint.sh /usr/local/bin/peanut-php-entrypoint
 
@@ -74,7 +75,7 @@ RUN mkdir -p server/runtime server/public/storage \
     && php think service:discover \
     && php think vendor:publish \
     && cd .. \
-    && chmod +x server/think /usr/local/bin/peanut-php-entrypoint \
+    && chmod +x server/think scripts/seed-demo-data /usr/local/bin/peanut-php-entrypoint \
     && chown -R www-data:www-data server/runtime server/public/storage
 
 EXPOSE 9000
