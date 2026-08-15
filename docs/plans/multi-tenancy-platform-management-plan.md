@@ -3,6 +3,7 @@
 > 状态：当前权威执行计划  
 > 日期：2026-08-13
 > 架构基线：`docs/design/saas-enhancement-blueprint.md`
+> 跨项目发布与交接：`docs/plans/product-release-operations-saas-roadmap.md`
 
 ## 1. 当前目标
 
@@ -54,8 +55,8 @@ Runtime 和 fixture 必须继续并行。每个阻塞项必须记录具体缺失
 | MT04 | 完成多租户前端和应用 Host 闭环 | 已完成 |
 | MT05 | 双模式安装、升级、下游和浏览器验收 | 已完成 |
 | MT06 | 发布多租户稳定基线 | 已完成；`v1.1.0` 已正式发布并完成一次干净安装验证 |
-| OP01 | 独立运营平台协议和项目立项 | 未开始 |
-| OP02 | 独立运营平台首个实例管理闭环 | 未开始 |
+| OP01 | 独立运营平台协议和项目立项 | 已授权；在同级独立项目初始化和设计，不进入本仓 Runtime |
+| OP02 | 独立运营平台首个实例管理闭环 | 等待 Peanut Admin 正式 Release 达到 `consumable` |
 | SAAS-FUTURE | 套餐、订阅、计费等完整 SaaS | 暂缓 |
 
 ### 当前恢复指针
@@ -120,8 +121,8 @@ SHA-256 `73398b2504ad7b41f759f5593efd32a91df56fd4e2ed06d1ffa4af9c84a36334`，外
    再从固定参数创建新 Host 并冻结实际 Module/manifest/migration/API/permission
    写集；不得复制旧 Runtime，也不得把 adoption 当作 D1 业务实现 PASS。
 5. MT06 `v1.1.0` 已完成 `dev → main → annotated tag → GitHub Release → 一次安装验证`。
-   当前授权在此停止；不要重复 MT05 两组、CAP01–CAP06、MT01、Tabbar、发布或既有业务
-   Gate，也不要在本仓开始 OP01/OP02。
+   不要重复 MT05 两组、CAP01–CAP06、MT01、Tabbar、发布或既有业务 Gate。OP01/OP02
+   已获独立立项授权，但只能在同级独立项目推进；本仓只维护实例接入合同和发布事实。
 6. DCS W0/D0 是旧固定 Core 的真实外部采用；
    当前 Alpha.5/MT01 候选仍只有 Product-only `CONDITIONAL` 裁决，不得写成 D1 已落地。
 7. 性能与 Recovery 作为阶段末后续项登记，不阻塞当前业务稳定候选；只有发现 Tenant
@@ -141,9 +142,9 @@ SHA-256 `73398b2504ad7b41f759f5593efd32a91df56fd4e2ed06d1ffa4af9c84a36334`，外
 | PM01 | PlatformOperator、Tenant lifecycle、首 owner、TenantModule HTTP/Web 与 mutation Host 已通过真实浏览器业务链 | 无 | 无 |
 | MT04 | Tenant 选择/切换/撤销、旧上下文清理、双模式入口和实例工具 guard 已通过真实浏览器业务链 | 无 | 无 |
 | MT05 | 三模式安装/升级与完整平台→Tenant 浏览器矩阵均已通过 | 无；两组证据绑定各自固定候选，禁止重复 | 无 |
-| MT06 | `main/dev`、annotated `v1.1.0`、GitHub Release、Alpha.5 locks、发布 metadata/法律资产与一次干净安装验证均已固定 | 无 | 无；按当前授权停止，不进入 OP01/OP02 |
-| OP01 | 未开始 | 独立仓库、协议、身份、签名任务、数据边界和项目立项均缺 | 需新的独立项目授权；不在 Peanut Admin 仓实现 |
-| OP02 | 未开始 | Release/实例/升级/健康/备份首个闭环均缺 | OP01 合入后在独立仓库实现一个签名升级任务纵向切片 |
+| MT06 | `main/dev`、annotated `v1.1.0`、GitHub Release、Alpha.5 locks、发布 metadata/法律资产与一次干净安装验证均已固定 | 无 | 无；后续产品固化发布按跨项目路线推进，不在本仓实现 OP01/OP02 |
+| OP01 | 已授权，独立项目初始化中 | 产品架构、协议、身份、签名任务、数据边界和验收矩阵尚待在独立项目冻结 | 在 `peanut-operations-platform` 完成不依赖 scaffold 的设计闭包；不在 Peanut Admin 仓实现 |
+| OP02 | 未开始 | Release/实例/升级/健康/备份首个闭环均缺 | Peanut Admin 达到 `consumable` 后，在独立项目固定正式 Release 并实现一个签名升级任务纵向切片 |
 
 旧应用 PR #49 已在 PR #50 的新权威指针合入后关闭。Core PR #53 已在全部声明检查
 成功后合入为 `5e105f15b58ef8e271905283bfa07c34ce6d8b7c`，current-schema
@@ -270,6 +271,11 @@ PM01 不包含套餐价格、订阅、计费、试用、续费、商业配额或
   选择替代版本，后续身份变化必须重新提名和裁决。
 
 ## 12. OP01–OP02：独立运营平台
+
+OP01 已于 2026-08-15 获得独立立项授权。项目目录为与本仓同级的
+`/Users/xing/Documents/company-projects/peanut-operations-platform`；当前先推进不依赖
+Peanut scaffold 的产品、领域、协议和架构设计。详细阶段 Gate 与发布交接见
+`docs/plans/product-release-operations-saas-roadmap.md`。
 
 运营平台必须在独立仓库、独立数据库和独立部署中实现，首期管理：
 

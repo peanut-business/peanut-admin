@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-14
+> Last updated: 2026-08-15
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -79,7 +79,7 @@ TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双
   与一次干净 Composer/npm/source 安装验证均完成；MT06 已完成。
 
 - 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
-- 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
+- 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；产品正式发布、独立运营平台与后续 SaaS 的跨项目交接顺序见 `docs/plans/product-release-operations-saas-roadmap.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
 - 跨应用实例管理 Release、授权、升级、健康和备份的运营平台已明确为独立应用；它不属于核心包，也不是 SaaS Host 内的租户控制面
 
 ### 2.3 产品化正式基线 — ✅ 完成
@@ -106,7 +106,7 @@ TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双
 - PB08B 已完成：候选 `4442229…` 通过 registry 构建、弱凭据/24→28/空库、Compose/HTTP/镜像/Host、唯一桌面/移动 Chromium 与文档一致性；总摘要见 `output/playwright/pb08b/summary.json`
 - PB09 已完成：法律门禁、PR #10/#11、`dev/main` 合入、annotated `v1.0.0`、GitHub Release、既有应用与官网部署、24→28 前滚和一次最低线上 smoke 均已封存；生产运行镜像由不可变 tag 源码在部署端构建，不发布预构建镜像
 - Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
-- 产品化正式基线与多租户稳定脚手架均已进入 `main`；完整 SaaS 商业化暂缓，独立运营平台需另行立项，当前没有由本文件授权的下一业务阶段
+- 产品化正式基线与多租户稳定脚手架均已进入 `main`；当前产品固化发布仍以能力账本和跨项目路线的完成条件为准。独立运营平台已获准在同级独立项目立项并先行设计，不进入本仓 Runtime；完整 SaaS 商业化仍暂缓
 
 ### 2.4 产品能力与交付状态事实源
 
