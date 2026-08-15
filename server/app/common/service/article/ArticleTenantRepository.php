@@ -6,12 +6,13 @@ namespace app\common\service\article;
 use app\common\model\article\Article;
 use app\common\model\article\ArticleCate;
 use app\common\model\article\ArticleCollect;
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class ArticleTenantRepository
 {
-    public static function articles(TenantContext|TenantSystemContext $context)
+    public static function articles(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
     {
         return Article::where('tenant_id', ArticleTenantContext::tenantId($context));
     }
@@ -21,7 +22,7 @@ final class ArticleTenantRepository
         return ArticleCate::where('tenant_id', ArticleTenantContext::tenantId($context));
     }
 
-    public static function collections(TenantContext|TenantSystemContext $context)
+    public static function collections(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
     {
         return ArticleCollect::where('tenant_id', ArticleTenantContext::tenantId($context));
     }
@@ -38,7 +39,10 @@ final class ArticleTenantRepository
         return ArticleCate::create(['tenant_id' => ArticleTenantContext::tenantId($context)] + $data);
     }
 
-    public static function createCollection(TenantContext $context, array $data): ArticleCollect
+    public static function createCollection(
+        AuthenticatedMemberContext|TenantContext $context,
+        array $data
+    ): ArticleCollect
     {
         unset($data['tenant_id']);
         return ArticleCollect::create(['tenant_id' => ArticleTenantContext::tenantId($context)] + $data);

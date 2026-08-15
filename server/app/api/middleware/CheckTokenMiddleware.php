@@ -43,7 +43,7 @@ class CheckTokenMiddleware
             if ($requestId === '') {
                 $requestId = bin2hex(random_bytes(16));
             }
-            $request->tenantContext = $this->tenantContexts()->resolve(
+            $request->authenticatedMemberContext = $this->tenantContexts()->resolve(
                 $memberId,
                 $token,
                 $requestId,

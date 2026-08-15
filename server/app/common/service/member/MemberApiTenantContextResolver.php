@@ -3,28 +3,24 @@ declare(strict_types=1);
 
 namespace app\common\service\member;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use PDO;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use think\facade\Db;
 
-/** Restores an application-member TenantContext from a verified JWT subject and authoritative ownership. */
+/** Restores application-member identity from a verified JWT subject and authoritative ownership. */
 final class MemberApiTenantContextResolver
 {
     public function __construct(private ?PDO $pdo = null)
     {
     }
 
-    public function resolve(int $memberId, string $token, string $requestId): TenantContext
+    public function resolve(int $memberId, string $token, string $requestId): AuthenticatedMemberContext
     {
         if ($memberId < 1 || $token === '' || $requestId === '') {
             throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
         }
 
         $statement = $this->connection()->prepare(<<<'SQL'
-SELECT m.id AS member_id, m.tenant_id, t.authorization_revision
+SELECT m.id AS member_id, m.tenant_id
 FROM pa_member m
 JOIN pa_tenant t
   ON t.id = m.tenant_id
@@ -41,21 +37,16 @@ SQL);
         }
         $row = $rows[0];
         $tenantId = (int)($row['tenant_id'] ?? 0);
-        $authorizationRevision = (int)($row['authorization_revision'] ?? 0);
-        if ($tenantId < 1 || $authorizationRevision < 1) {
+        if ($tenantId < 1 || (int)($row['member_id'] ?? 0) !== $memberId) {
             throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
         }
 
-        return TenantContext::fromValidatedSession(new ValidatedTenantSession(
-            $memberId,
-            'member-jwt-' . hash('sha256', $token),
+        return new AuthenticatedMemberContext(
             $tenantId,
             $memberId,
-            $memberId,
-            'member-api',
-            new DateTimeImmutable('now', new DateTimeZone('UTC')),
-            $authorizationRevision,
-        ), $requestId);
+            hash('sha256', $token),
+            $requestId,
+        );
     }
 
     private function connection(): PDO

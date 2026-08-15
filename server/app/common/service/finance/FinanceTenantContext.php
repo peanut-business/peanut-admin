@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\finance;
 
+use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\tenant\TenantScope;
 use app\common\service\external\ExternalTenantContext;
 use app\common\service\external\ExternalTenantResolver;
@@ -14,10 +15,10 @@ final class FinanceTenantContext
 {
     public const VERIFIED_PAYMENT_ACTOR = 'peanut.finance.verified-payment';
 
-    public static function member(object $request): TenantContext
+    public static function member(object $request): AuthenticatedMemberContext
     {
-        $context = $request->tenantContext ?? null;
-        if (!$context instanceof TenantContext || !self::trustedMember($context)) {
+        $context = $request->authenticatedMemberContext ?? null;
+        if (!$context instanceof AuthenticatedMemberContext) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
         return $context;
@@ -42,10 +43,14 @@ final class FinanceTenantContext
         return ExternalTenantContext::verified($tenantId, 'payment.settle', 'payment:' . hash('sha256', trim($identity)));
     }
 
-    public static function tenantId(TenantContext|TenantSystemContext|TenantScope $context): int
+    public static function tenantId(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext|TenantScope $context
+    ): int
     {
         if ($context instanceof TenantScope) {
             $tenantId = $context->tenantId();
+        } elseif ($context instanceof AuthenticatedMemberContext) {
+            $tenantId = $context->tenantId;
         } elseif ($context instanceof TenantContext) {
             if (!self::trustedMember($context)) {
                 throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);

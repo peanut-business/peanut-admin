@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\external;
 
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -104,7 +105,7 @@ final class ExternalTenantResolver
     }
 
     public function bindingForTenant(
-        TenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $provider,
         bool $requireActive = true,
     ): ExternalTenantBinding

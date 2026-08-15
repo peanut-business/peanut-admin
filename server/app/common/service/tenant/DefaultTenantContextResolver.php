@@ -6,7 +6,7 @@ namespace app\common\service\tenant;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\facade\Db;
 
-/** Resolves anonymous application work only through the active bootstrapped Tenant. */
+/** Resolves anonymous application work only through the unique active default Tenant. */
 final class DefaultTenantContextResolver
 {
     public static function system(string $actor, string $operation, string $operationId): TenantSystemContext
@@ -18,12 +18,11 @@ final class DefaultTenantContextResolver
             throw new \DomainException('DEFAULT_TENANT_CONTEXT_UNAVAILABLE');
         }
 
-        $tenantIds = Db::name('default_tenant_bootstrap')->alias('b')
-            ->join('tenant t', "t.id = b.tenant_id AND t.status = 'active'")
-            ->where('b.id', 1)
-            ->where('b.status', 'completed')
+        $tenantIds = Db::name('tenant')
+            ->where('code', 'default')
+            ->where('status', 'active')
             ->limit(2)
-            ->column('b.tenant_id');
+            ->column('id');
         if (count($tenantIds) !== 1 || (int)$tenantIds[0] < 1) {
             throw new \DomainException('DEFAULT_TENANT_CONTEXT_UNAVAILABLE');
         }

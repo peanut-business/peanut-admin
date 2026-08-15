@@ -13,10 +13,10 @@ final class MemberTenantContext
 {
     public const PUBLIC_AUTH_ACTOR = 'peanut.member.public-auth';
 
-    public static function member(object $request): TenantContext
+    public static function member(object $request): AuthenticatedMemberContext
     {
-        $context = $request->tenantContext ?? null;
-        if (!$context instanceof TenantContext || !self::trusted($context)) {
+        $context = $request->authenticatedMemberContext ?? null;
+        if (!$context instanceof AuthenticatedMemberContext) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
         return $context;
@@ -35,8 +35,13 @@ final class MemberTenantContext
         return $context;
     }
 
-    public static function tenantId(TenantContext|TenantSystemContext $context): int
+    public static function tenantId(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context
+    ): int
     {
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context->tenantId;
+        }
         if ($context instanceof TenantContext && self::trusted($context)) {
             return $context->tenantId;
         }

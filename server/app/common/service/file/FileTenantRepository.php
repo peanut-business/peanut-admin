@@ -5,31 +5,32 @@ namespace app\common\service\file;
 
 use app\common\model\file\File;
 use app\common\model\file\FileCate;
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class FileTenantRepository
 {
-    public static function files(TenantContext $context)
+    public static function files(AuthenticatedMemberContext|TenantContext $context)
     {
         return File::where('tenant_id', FileTenantContext::tenantId($context));
     }
 
-    public static function categories(TenantContext $context)
+    public static function categories(AuthenticatedMemberContext|TenantContext $context)
     {
         return FileCate::where('tenant_id', FileTenantContext::tenantId($context));
     }
 
-    public static function findFile(TenantContext $context, int $id): ?File
+    public static function findFile(AuthenticatedMemberContext|TenantContext $context, int $id): ?File
     {
         return self::files($context)->where('id', $id)->find();
     }
 
-    public static function findCategory(TenantContext $context, int $id): ?FileCate
+    public static function findCategory(AuthenticatedMemberContext|TenantContext $context, int $id): ?FileCate
     {
         return self::categories($context)->where('id', $id)->find();
     }
 
-    public static function createFile(TenantContext $context, array $data): File
+    public static function createFile(AuthenticatedMemberContext|TenantContext $context, array $data): File
     {
         unset($data['tenant_id']);
         FileObjectNamespace::assertOwnedUri($context, (string)($data['uri'] ?? ''));

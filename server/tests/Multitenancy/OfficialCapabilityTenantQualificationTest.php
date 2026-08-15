@@ -19,6 +19,7 @@ $root = dirname(__DIR__, 2);
 $sources = [];
 foreach ([
     'default_context' => 'app/common/service/tenant/DefaultTenantContextResolver.php',
+    'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
     'member_middleware' => 'app/api/middleware/CheckTokenMiddleware.php',
     'file_repository' => 'app/common/service/file/FileTenantRepository.php',
@@ -43,8 +44,10 @@ foreach (['file_repository', 'article_repository', 'decoration_repository', 'not
 qualificationExpect(str_contains($sources['file_namespace'], 'tenants/v1/%d'), 'file objects lost Tenant namespace');
 qualificationExpect(str_contains($sources['async_files'], "'tenants/v1/%d/exports/'"), 'async exports lost private Tenant namespace');
 qualificationExpect(
-    str_contains($sources['default_context'], "t.status = 'active'")
-        && str_contains($sources['default_context'], "b.status', 'completed'"),
+    str_contains($sources['default_context'], "Db::name('tenant')")
+        && str_contains($sources['default_context'], "where('code', 'default')")
+        && str_contains($sources['default_context'], "where('status', 'active')")
+        && !str_contains($sources['default_context'], 'default_tenant_bootstrap'),
     'anonymous default-Tenant resolution does not fail closed'
 );
 qualificationExpect(
@@ -52,6 +55,21 @@ qualificationExpect(
         && str_contains($sources['member_context'], 'm.tenant_id')
         && str_contains($sources['member_middleware'], 'MemberApiTenantContextResolver'),
     'member JWT ownership does not establish an active trusted Tenant context'
+);
+qualificationExpect(
+    str_contains($sources['authenticated_member_context'], 'public readonly int $memberId')
+        && !str_contains($sources['authenticated_member_context'], 'accountId')
+        && !str_contains($sources['authenticated_member_context'], 'tenantMember')
+        && !str_contains($sources['authenticated_member_context'], 'PeanutAdmin\\Kernel\\Auth'),
+    'application-member identity is mixed with Core Account or TenantMember identity'
+);
+qualificationExpect(
+    str_contains($sources['member_context'], 'new AuthenticatedMemberContext(')
+        && !str_contains($sources['member_context'], 'ValidatedTenantSession')
+        && !str_contains($sources['member_context'], 'TenantContext::fromValidatedSession')
+        && str_contains($sources['member_middleware'], '$request->authenticatedMemberContext =')
+        && !str_contains($sources['member_middleware'], '$request->tenantContext = $this->tenantContexts()'),
+    'member JWT context is still written into the Core TenantContext request boundary'
 );
 qualificationExpect(
     str_contains($sources['external_resolver'], '!$binding->tenantActive')

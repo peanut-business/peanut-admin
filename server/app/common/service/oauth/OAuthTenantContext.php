@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\oauth;
 
 use app\common\service\member\MemberTenantContext;
+use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\notice\NoticeTenantContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -18,8 +19,13 @@ final class OAuthTenantContext
         'member.oauth-mini-program',
     ];
 
-    public static function tenantId(TenantContext|TenantSystemContext $context): int
+    public static function tenantId(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context
+    ): int
     {
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context->tenantId;
+        }
         if ($context instanceof TenantContext) {
             return MemberTenantContext::tenantId($context);
         }

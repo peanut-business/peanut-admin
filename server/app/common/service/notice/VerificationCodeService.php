@@ -5,6 +5,7 @@ namespace app\common\service\notice;
 
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\notice\NoticeLog;
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\facade\Db;
@@ -111,7 +112,7 @@ class VerificationCodeService
     }
 
     public function verify(
-        TenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $sceneCode,
         string $mobile,
         string $code

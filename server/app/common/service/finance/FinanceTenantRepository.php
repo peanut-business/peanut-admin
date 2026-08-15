@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\finance;
 
+use app\common\service\member\AuthenticatedMemberContext;
 use app\common\model\finance\RechargeOrder;
 use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
@@ -12,7 +13,10 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class FinanceTenantRepository
 {
-    public static function orders(TenantContext|TenantSystemContext|TenantScope $context, string $alias = '')
+    public static function orders(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext|TenantScope $context,
+        string $alias = ''
+    )
     {
         $tenantId = FinanceTenantContext::tenantId($context);
         return $alias === ''
@@ -33,7 +37,10 @@ final class FinanceTenantRepository
         return RefundLog::where('tenant_id', FinanceTenantContext::tenantId($context));
     }
 
-    public static function createOrder(TenantContext $context, array $data): RechargeOrder
+    public static function createOrder(
+        AuthenticatedMemberContext|TenantContext $context,
+        array $data
+    ): RechargeOrder
     {
         unset($data['tenant_id']);
         return RechargeOrder::create(['tenant_id' => FinanceTenantContext::tenantId($context)] + $data);

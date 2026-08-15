@@ -16,6 +16,7 @@ use app\common\service\oauth\WechatOAuthTransport;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
 use app\common\service\member\MemberTenantRepository;
+use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -114,7 +115,7 @@ class OAuthLogic extends BaseLogic
     }
 
     public static function bind(
-        TenantContext $context,
+        AuthenticatedMemberContext $context,
         int $memberId,
         string $scene,
         string $code,
@@ -240,7 +241,7 @@ class OAuthLogic extends BaseLogic
 
     /** @return array{0:Member,1:bool} */
     private static function resolveIdentity(
-        TenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $scene,
         OAuthProfile $profile,
         ?int $bindingMemberId,
@@ -309,6 +310,9 @@ class OAuthLogic extends BaseLogic
                         throw new \RuntimeException('微信联合身份关联用户不存在');
                     }
                 } else {
+                    if ($context instanceof AuthenticatedMemberContext) {
+                        throw new \RuntimeException('已认证会员不能创建替代会员身份');
+                    }
                     $member = self::createMember($context, $profile, (int)$sceneMeta['terminal']);
                     $created = true;
                 }
@@ -355,7 +359,7 @@ class OAuthLogic extends BaseLogic
     }
 
     private static function assertPrincipalOwnership(
-        TenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         OAuthProfile $profile,
         int $memberId
     ): ?int
@@ -382,7 +386,11 @@ class OAuthLogic extends BaseLogic
         return (int)$principal->id;
     }
 
-    private static function createMember(TenantContext|TenantSystemContext $context, OAuthProfile $profile, int $terminal): Member
+    private static function createMember(
+        TenantContext|TenantSystemContext $context,
+        OAuthProfile $profile,
+        int $terminal
+    ): Member
     {
         $sn = Member::generateSn($context);
         do {
