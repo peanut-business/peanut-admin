@@ -30,6 +30,7 @@ LEASE_TOOL = ROOT / "scripts/project-resource-lease"
 REGISTRY_TOOL = ROOT / "scripts/project-resource-registry"
 INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
 BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
+SCAFFOLD_UPGRADE = ROOT / "scripts/scaffold-upgrade"
 PERSISTENT_DATABASE = "peanut_admin_development"
 RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
@@ -204,6 +205,60 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         resolved = git("rev-parse", f"{baseline}^{{commit}}")
         if not re.fullmatch(r"[0-9a-f]{40}", resolved):
             fail(f"baseline tag is unavailable: {baseline}")
+    target = fixture.get("target_release")
+    if not isinstance(target, dict):
+        fail("target scaffold release fixture is missing")
+    target_manifest_path = ROOT / "scaffold/releases" / f"v{target.get('version')}" / "scaffold-manifest.json"
+    target_manifest = read_json(target_manifest_path)
+    target_release = target_manifest.get("release", {})
+    target_expected = {
+        "source_commit": target.get("source_commit"),
+        "source_tree": target.get("source_tree"),
+        "inventory_sha256": target.get("inventory_sha256"),
+        "managed_tree_sha256": target.get("managed_tree_sha256"),
+    }
+    if (
+        target_manifest.get("schema_version") != 3
+        or target_release.get("version") != target.get("version")
+        or any(target_release.get(key) != value for key, value in target_expected.items())
+        or len(target_manifest.get("files", [])) != target.get("file_count")
+        or sha256(target_manifest_path) != target.get("manifest_sha256")
+        or sha256(ROOT / "scaffold/application-template-inventory.json") != target.get("inventory_sha256")
+        or target_manifest.get("application", {}).get("version") != target.get("default_application_version")
+        or target.get("application_manifest_schema") != 2
+        or target.get("default_uniapp_version_code") != "10"
+    ):
+        fail("target scaffold release identity changed")
+    legacy = fixture.get("legacy_application")
+    if not isinstance(legacy, dict):
+        fail("legacy application fixture is missing")
+    source_commit = legacy.get("source_commit")
+    source_tree = legacy.get("source_tree")
+    if (
+        not isinstance(source_commit, str)
+        or git("rev-parse", f"{source_commit}^{{commit}}") != source_commit
+        or git("rev-parse", f"{source_commit}^{{tree}}") != source_tree
+    ):
+        fail("legacy application source identity is unavailable")
+    release_chain = legacy.get("release_chain")
+    if (
+        not isinstance(release_chain, list)
+        or len(release_chain) < 2
+        or release_chain[0] != legacy.get("initial_version")
+        or release_chain[-1] != target.get("version")
+    ):
+        fail("legacy application release chain is invalid")
+    for version in release_chain:
+        manifest_path = ROOT / "scaffold/releases" / f"v{version}" / "scaffold-manifest.json"
+        manifest = read_json(manifest_path)
+        if manifest.get("release", {}).get("version") != version:
+            fail(f"legacy release manifest identity is invalid: {version}")
+    customizations = legacy.get("customizations")
+    if not isinstance(customizations, list) or not customizations:
+        fail("legacy application customizations are missing")
+    for customization in customizations:
+        if not isinstance(customization, dict) or set(customization) != {"path", "anchor", "replacement"}:
+            fail("legacy application customization is invalid")
     return fixture, registry, registered, admin_tool
 
 
@@ -338,6 +393,8 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         "lease_proof_dir": str(lease_proof_dir),
         "lease_proof_container_path": "/run/peanut-admin/resource-lease",
         "groups": fixture["groups"],
+        "target_release": fixture["target_release"],
+        "legacy_application": fixture["legacy_application"],
         "lease_resources": [{"type": kind, "value": value} for kind, value in resources],
     }
 
@@ -416,9 +473,15 @@ class Runner:
         self.checkpoint_path = self.output / "checkpoint.json"
         self.summary_path = self.output / "summary.json"
         self.generated = self.cache / "generated-application"
+        self.upgraded = self.cache / "upgraded-application"
+        self.upgrade_fault = self.cache / "upgrade-recovery-application"
+        self.legacy_source = self.cache / "legacy-v1.0.0-source"
+        self.upgrade_proof_path = self.output / "groups/legacy-application-upgrade.json"
         self.compose_env = self.cache / "compose.env"
         self.compose_overlay = self.cache / "compose.lease-proof.yml"
         self.docs_process: subprocess.Popen[str] | None = None
+        self.docs_root: Path | None = None
+        self.active_compose_root = ROOT
         self.created_candidate_vendor = not (ROOT / "server/vendor/autoload.php").exists()
         self.current_group = "preflight"
         self.checkpoint: dict[str, Any] = {
@@ -553,6 +616,8 @@ class Runner:
                 fail(f"checkpoint {key} mismatch")
         self.checkpoint = checkpoint
         self.created_candidate_vendor = bool(checkpoint.get("owned_candidate_vendor"))
+        if checkpoint.get("groups", {}).get("upgraded-production-compose", {}).get("status") == "passed":
+            self.active_compose_root = self.upgraded
 
     @staticmethod
     def write_json(path: Path, value: Any) -> None:
@@ -593,6 +658,9 @@ class Runner:
             "migration-fault-restore": ["migration_fault_source", "migration_fault_restore"],
             "plugin-lifecycle": ["plugin_lifecycle"],
             "production-compose": ["standalone_browser"],
+            "upgraded-plugin-lifecycle": ["plugin_lifecycle"],
+            "upgraded-production-compose": ["standalone_browser"],
+            "upgraded-multi-tenant-browser": ["multi_tenant_browser"],
         }
         if group == "generated-application":
             if self.generated.exists():
@@ -603,8 +671,16 @@ class Runner:
             baseline = "v1.0.0" if group == "v1.0-forward" else "v1.1.0"
             with contextlib.suppress(FileNotFoundError):
                 shutil.rmtree(self.cache / f"baseline-{baseline}")
-        if group == "production-compose" and self.compose_env.exists() and self.compose_overlay.exists():
-            self.compose("down", "--volumes", "--remove-orphans", check=False)
+        if group == "legacy-application-upgrade":
+            for path in (self.upgraded, self.legacy_source):
+                if path.exists():
+                    shutil.rmtree(path)
+        if group == "legacy-application-recovery" and self.upgrade_fault.exists():
+            shutil.rmtree(self.upgrade_fault)
+        if group in ("production-compose", "upgraded-production-compose") and self.compose_env.exists() and self.compose_overlay.exists():
+            self.compose("down", "--volumes", "--remove-orphans", check=False, project_root=self.active_compose_root)
+        if group == "upgraded-multi-tenant-browser" and self.compose_env.exists() and self.compose_overlay.exists():
+            self.compose("down", "--volumes", "--remove-orphans", check=False, project_root=self.active_compose_root)
         for scenario in scenarios.get(group, []):
             database = self.plan["databases"][scenario]
             if self.database_exists(database):
@@ -675,13 +751,14 @@ class Runner:
             self.remote_mysql(f"REVOKE ALL PRIVILEGES ON `{database}`.* FROM '{escaped_user}'@'%'")
         self.remote_mysql(f"DROP DATABASE IF EXISTS `{database}`")
 
-    def install_current(self, database: str, mode: str, log: Path) -> None:
-        command(["php", "server/database/install.php"], env=self.db_env(database, mode), log=log)
-        self.assert_up_to_date(database, mode, log)
+    def install_current(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
+        command(["php", "server/database/install.php"], cwd=project_root, env=self.db_env(database, mode), log=log)
+        self.assert_up_to_date(database, mode, log, project_root=project_root)
 
-    def assert_up_to_date(self, database: str, mode: str, log: Path) -> None:
+    def assert_up_to_date(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
         result = command(
             ["php", "server/database/migrate.php"],
+            cwd=project_root,
             env=self.db_env(database, mode),
             capture=True,
         )
@@ -691,7 +768,7 @@ class Runner:
         if parsed.get("status") != "up_to_date" or parsed.get("ledger_count") != self.fixture["database_resource"]["migration_count"]:
             fail(f"migration idempotency/current assertion failed for {database}")
 
-    def inspect(self, database: str, mode: str, label: str) -> None:
+    def inspect(self, database: str, mode: str, label: str, project_root: Path = ROOT) -> None:
         inspector_mode = "multitenant-empty" if mode == "multi-tenant" else (
             "v1-forward" if "forward" in label else "standalone-empty"
         )
@@ -701,7 +778,32 @@ class Runner:
             "MT05_CANDIDATE": self.args.candidate,
             "MT05_RUN_ID": self.args.run_id,
         }
-        result = command(["php", str(INSPECTOR)], env=env, capture=True)
+        inspector = INSPECTOR
+        created_directories: list[Path] = []
+        copied_inspector = False
+        if project_root != ROOT:
+            inspector = project_root / "server/tests/fixtures/mt05/inspect.php"
+            if inspector.exists():
+                if not inspector.is_file() or inspector.is_symlink() or sha256(inspector) != sha256(INSPECTOR):
+                    fail(f"application inspector identity changed: {inspector}")
+            else:
+                parent = inspector.parent
+                cursor = parent
+                while not cursor.exists():
+                    created_directories.append(cursor)
+                    cursor = cursor.parent
+                parent.mkdir(parents=True)
+                shutil.copy2(INSPECTOR, inspector)
+                copied_inspector = True
+        try:
+            result = command(["php", str(inspector)], env=env, capture=True)
+        finally:
+            if copied_inspector:
+                with contextlib.suppress(FileNotFoundError):
+                    inspector.unlink()
+                for directory in created_directories:
+                    with contextlib.suppress(OSError):
+                        directory.rmdir()
         parsed = json.loads(result.stdout)
         if parsed.get("status") != "passed" or parsed.get("migration_ledger", {}).get("count") != self.fixture["database_resource"]["migration_count"]:
             fail(f"database inspection failed for {label}")
@@ -737,6 +839,363 @@ class Runner:
         command(["npm", "run", "build:h5"], cwd=self.generated / "uniapp", log=log)
         command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=self.generated / "docs-site", log=log)
         command(["pnpm", "run", "build"], cwd=self.generated / "docs-site", log=log)
+        target = self.fixture["target_release"]
+        manifest = read_json(self.generated / ".peanut/application-manifest.json")
+        expected_template = {
+            "version": target["version"],
+            "inventory_sha256": target["inventory_sha256"],
+            "source_commit": target["source_commit"],
+            "source_tree": target["source_tree"],
+        }
+        generation = manifest.get("generation_source", {})
+        if (
+            manifest.get("schema_version") != target["application_manifest_schema"]
+            or manifest.get("protocol") != "peanut.application-scaffold.v2"
+            or manifest.get("application", {}).get("version") != target["default_application_version"]
+            or manifest.get("template") != expected_template
+            or generation.get("commit") != self.args.candidate
+            or generation.get("tree") != self.plan["candidate_tree"]
+            or generation.get("inventory_sha256") != target["inventory_sha256"]
+        ):
+            fail("generated application identity does not match the fixed target release")
+        uniapp_manifest = (self.generated / "uniapp/src/manifest.json").read_text(encoding="utf-8")
+        expected_version = re.escape(target["default_application_version"])
+        expected_code = re.escape(target["default_uniapp_version_code"])
+        if (
+            re.search(rf'"versionName"\s*:\s*"{expected_version}"', uniapp_manifest) is None
+            or re.search(rf'"versionCode"\s*:\s*"{expected_code}"', uniapp_manifest) is None
+        ):
+            fail("generated UniApp version identity changed")
+        self.write_json(self.output / "groups/generated-application.json", {
+            "schema_version": 1,
+            "status": "passed",
+            "candidate": self.args.candidate,
+            "candidate_tree": self.plan["candidate_tree"],
+            "target_release": target,
+            "application_manifest_sha256": sha256(self.generated / ".peanut/application-manifest.json"),
+            "application_version": manifest["application"]["version"],
+            "uniapp_version_code": target["default_uniapp_version_code"],
+            "app_owned": self.app_owned_proof(self.generated),
+        })
+
+    @staticmethod
+    def append_command_output(log: Path, label: str, result: subprocess.CompletedProcess[str]) -> None:
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write(f"\n[{label}]\n")
+            if result.stdout:
+                stream.write(result.stdout)
+                if not result.stdout.endswith("\n"):
+                    stream.write("\n")
+            if result.stderr:
+                stream.write(result.stderr)
+                if not result.stderr.endswith("\n"):
+                    stream.write("\n")
+
+    def json_command(
+        self,
+        arguments: list[str],
+        *,
+        label: str,
+        log: Path,
+        cwd: Path = ROOT,
+        env: dict[str, str] | None = None,
+        check: bool = True,
+    ) -> tuple[dict[str, Any], subprocess.CompletedProcess[str]]:
+        result = command(arguments, cwd=cwd, env=env, capture=True, check=False)
+        self.append_command_output(log, label, result)
+        if check and result.returncode != 0:
+            fail(f"{label} failed ({result.returncode})")
+        try:
+            parsed = json.loads(result.stdout) if result.stdout else {}
+        except json.JSONDecodeError as exception:
+            fail(f"{label} returned invalid JSON: {exception}")
+        if not isinstance(parsed, dict):
+            fail(f"{label} JSON root is invalid")
+        return parsed, result
+
+    @staticmethod
+    def tree_digest(root: Path, *, exclude_upgrade_state: bool = False) -> str:
+        rows: list[str] = []
+        for path in sorted(root.rglob("*"), key=lambda item: item.as_posix()):
+            relative = path.relative_to(root).as_posix()
+            if relative == ".git" or relative.startswith(".git/"):
+                continue
+            if exclude_upgrade_state and (
+                relative == ".peanut/upgrades" or relative.startswith(".peanut/upgrades/")
+            ):
+                continue
+            if path.is_symlink():
+                fail(f"tree digest refuses symlink: {relative}")
+            mode = path.stat().st_mode & 0o777
+            if path.is_dir():
+                rows.append(f"d\0{relative}\0-\0{mode:04o}")
+            elif path.is_file():
+                rows.append(f"f\0{relative}\0{sha256(path)}\0{mode:04o}")
+            else:
+                fail(f"tree digest refuses non-file path: {relative}")
+        return hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def app_owned_proof(project_root: Path) -> dict[str, Any]:
+        manifest = read_json(project_root / ".peanut/application-manifest.json")
+        files = manifest.get("files")
+        if not isinstance(files, list):
+            fail("application manifest files are invalid")
+        rows: list[str] = []
+        paths: list[str] = []
+        for item in files:
+            if not isinstance(item, dict) or item.get("classification") != "app-owned":
+                continue
+            relative = item.get("path")
+            if not isinstance(relative, str) or not relative or relative.startswith("/") or ".." in Path(relative).parts:
+                fail("application manifest contains an unsafe app-owned path")
+            path = project_root / relative
+            if not path.is_file() or path.is_symlink():
+                fail(f"app-owned file is unavailable: {relative}")
+            mode = path.stat().st_mode & 0o777
+            paths.append(relative)
+            rows.append(f"{relative}\0{sha256(path)}\0{mode:04o}")
+        if not rows:
+            fail("application manifest contains no app-owned files")
+        return {
+            "file_count": len(rows),
+            "paths_sha256": hashlib.sha256("\n".join(paths).encode("utf-8")).hexdigest(),
+            "tree_sha256": hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest(),
+        }
+
+    @staticmethod
+    def application_version_surfaces(project_root: Path) -> dict[str, str]:
+        versions = {
+            client: str(read_json(project_root / client / "package.json").get("version", ""))
+            for client in ("web", "pc", "uniapp")
+        }
+        release = read_json(project_root / "RELEASE_METADATA.json")
+        versions["release_metadata"] = str(release.get("version", ""))
+        project_config = (project_root / "server/config/project.php").read_text(encoding="utf-8")
+        project_match = re.search(r"env\('project\.version',\s*'([^']+)'\)", project_config)
+        uniapp_manifest = (project_root / "uniapp/src/manifest.json").read_text(encoding="utf-8")
+        uniapp_name = re.search(r'"versionName"\s*:\s*"([^"]+)"', uniapp_manifest)
+        uniapp_code = re.search(r'"versionCode"\s*:\s*"([^"]+)"', uniapp_manifest)
+        if project_match is None or uniapp_name is None or uniapp_code is None or any(not value for value in versions.values()):
+            fail("application version surface is unavailable")
+        versions["server_project"] = project_match.group(1)
+        versions["uniapp_version_name"] = uniapp_name.group(1)
+        versions["uniapp_version_code"] = uniapp_code.group(1)
+        return versions
+
+    def ensure_legacy_source(self, log: Path) -> None:
+        legacy = self.fixture["legacy_application"]
+        if not self.legacy_source.exists():
+            command(
+                ["git", "clone", "--quiet", "--no-local", "--no-checkout", str(ROOT), str(self.legacy_source)],
+                log=log,
+            )
+            command(
+                ["git", "checkout", "--quiet", "--detach", legacy["source_commit"]],
+                cwd=self.legacy_source,
+                log=log,
+            )
+        source_commit = command(["git", "rev-parse", "HEAD^{commit}"], cwd=self.legacy_source, capture=True).stdout.strip()
+        source_tree = command(["git", "rev-parse", "HEAD^{tree}"], cwd=self.legacy_source, capture=True).stdout.strip()
+        if source_commit != legacy["source_commit"] or source_tree != legacy["source_tree"]:
+            fail("legacy source clone identity changed")
+
+    def create_legacy_application(self, target: Path, log: Path) -> dict[str, Any]:
+        self.ensure_legacy_source(log)
+        if target.exists():
+            fail(f"legacy application target already exists: {target}")
+        legacy = self.fixture["legacy_application"]
+        command([
+            "php", "scripts/create-app", f"--name={legacy['name']}", f"--slug={legacy['slug']}",
+            f"--package={legacy['package_identity']}", f"--target={target}",
+        ], cwd=self.legacy_source, log=log)
+        manifest = read_json(target / ".peanut/application-manifest.json")
+        template = manifest.get("template", {})
+        if (
+            template.get("version") != legacy["initial_version"]
+            or template.get("source_commit") != legacy["source_commit"]
+            or template.get("source_tree") != legacy["source_tree"]
+        ):
+            fail("generated legacy application identity is not fixed v1.0.0")
+        classifications = {
+            item.get("path"): item.get("classification")
+            for item in manifest.get("files", [])
+            if isinstance(item, dict)
+        }
+        customization_proof = []
+        for customization in legacy["customizations"]:
+            relative = customization["path"]
+            if classifications.get(relative) != "app-owned":
+                fail(f"legacy customization is not app-owned: {relative}")
+            path = target / relative
+            content = path.read_text(encoding="utf-8")
+            if content.count(customization["anchor"]) != 1:
+                fail(f"legacy customization anchor changed: {relative}")
+            before = sha256(path)
+            path.write_text(
+                content.replace(customization["anchor"], customization["replacement"], 1),
+                encoding="utf-8",
+            )
+            customization_proof.append({"path": relative, "before_sha256": before, "after_sha256": sha256(path)})
+        return {
+            "source_commit": legacy["source_commit"],
+            "source_tree": legacy["source_tree"],
+            "template_version": legacy["initial_version"],
+            "customizations": customization_proof,
+            "app_owned": self.app_owned_proof(target),
+            "version_surfaces": self.application_version_surfaces(target),
+        }
+
+    @staticmethod
+    def release_manifest(version: str) -> Path:
+        return ROOT / "scaffold/releases" / f"v{version}" / "scaffold-manifest.json"
+
+    def scaffold_transition(self, project_root: Path, from_version: str, to_version: str, log: Path) -> dict[str, Any]:
+        preflight, _ = self.json_command([
+            "php", str(SCAFFOLD_UPGRADE), "preflight", f"--project-root={project_root}",
+            f"--from-manifest={self.release_manifest(from_version)}",
+            f"--to-manifest={self.release_manifest(to_version)}",
+        ], label=f"scaffold-preflight-{from_version}-to-{to_version}", log=log)
+        if preflight.get("status") != "ready" or preflight.get("summary", {}).get("conflicts") != 0:
+            fail(f"scaffold preflight did not produce a ready plan: {from_version} to {to_version}")
+        plan_path = project_root / str(preflight.get("plan_path", ""))
+        apply, _ = self.json_command([
+            "php", str(SCAFFOLD_UPGRADE), "apply", f"--project-root={project_root}", f"--plan={plan_path}",
+        ], label=f"scaffold-apply-{from_version}-to-{to_version}", log=log)
+        verify, _ = self.json_command([
+            "php", str(SCAFFOLD_UPGRADE), "verify", f"--project-root={project_root}", f"--plan={plan_path}",
+        ], label=f"scaffold-verify-{from_version}-to-{to_version}", log=log)
+        if apply.get("status") != "applied" or verify.get("status") != "verified":
+            fail(f"scaffold apply/verify did not complete: {from_version} to {to_version}")
+        return {
+            "from": from_version,
+            "to": to_version,
+            "candidate": preflight.get("candidate"),
+            "preflight": "ready",
+            "apply": "applied",
+            "verify": "verified",
+            "manifest_sha256": sha256(self.release_manifest(to_version)),
+            "app_owned_sha256": self.app_owned_proof(project_root)["tree_sha256"],
+        }
+
+    def install_application_dependencies(self, project_root: Path, log: Path) -> dict[str, Any]:
+        dependency_roots = [
+            project_root / "server/vendor", project_root / "web/node_modules",
+            project_root / "pc/node_modules", project_root / "uniapp/node_modules",
+            project_root / "docs-site/node_modules",
+        ]
+        if any(path.exists() for path in dependency_roots):
+            fail("upgraded application dependency install is not clean")
+        composer_env = {"COMPOSER_CACHE_DIR": str(self.cache / "composer")}
+        command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=project_root / "server", env=composer_env, log=log)
+        command(["php", "-r", "require 'vendor/autoload.php'; echo 'autoload=ok\\n';"], cwd=project_root / "server", log=log)
+        command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=project_root / "web", env={"HUSKY": "0"}, log=log)
+        command(["pnpm", "run", "build"], cwd=project_root / "web", log=log)
+        command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=project_root / "pc", log=log)
+        command(["npm", "run", "typecheck"], cwd=project_root / "pc", log=log)
+        command(["npm", "run", "generate"], cwd=project_root / "pc", log=log)
+        command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=project_root / "uniapp", log=log)
+        command(["npm", "run", "type-check"], cwd=project_root / "uniapp", log=log)
+        command(["npm", "run", "build:h5"], cwd=project_root / "uniapp", log=log)
+        command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=project_root / "docs-site", env={"HUSKY": "0"}, log=log)
+        command(["pnpm", "run", "build"], cwd=project_root / "docs-site", log=log)
+        return {
+            "composer_lock_sha256": sha256(project_root / "server/composer.lock"),
+            "web_lock_sha256": sha256(project_root / "web/pnpm-lock.yaml"),
+            "pc_lock_sha256": sha256(project_root / "pc/package-lock.json"),
+            "uniapp_lock_sha256": sha256(project_root / "uniapp/package-lock.json"),
+            "docs_lock_sha256": sha256(project_root / "docs-site/pnpm-lock.yaml"),
+            "status": "passed",
+        }
+
+    def legacy_application_upgrade(self) -> None:
+        log = self.group_log("legacy-application-upgrade")
+        identity = self.create_legacy_application(self.upgraded, log)
+        expected_app_owned = identity["app_owned"]["tree_sha256"]
+        versions = self.fixture["legacy_application"]["release_chain"]
+        transitions = []
+        for from_version, to_version in zip(versions, versions[1:]):
+            transition = self.scaffold_transition(self.upgraded, from_version, to_version, log)
+            if transition["app_owned_sha256"] != expected_app_owned:
+                fail(f"scaffold transition changed app-owned bytes: {from_version} to {to_version}")
+            transitions.append(transition)
+        dependencies = self.install_application_dependencies(self.upgraded, log)
+        final_app_owned = self.app_owned_proof(self.upgraded)
+        if final_app_owned["tree_sha256"] != expected_app_owned:
+            fail("dependency installation changed upgraded app-owned bytes")
+        final_manifest = read_json(self.upgraded / ".peanut/application-manifest.json")
+        if final_manifest.get("template", {}).get("version") != versions[-1]:
+            fail("legacy application did not reach the target scaffold release")
+        final_versions = self.application_version_surfaces(self.upgraded)
+        initial_versions = identity["version_surfaces"]
+        application_version = initial_versions["release_metadata"]
+        managed_version_surfaces = ("web", "pc", "uniapp", "release_metadata", "server_project")
+        if (
+            final_manifest.get("application", {}).get("version") != application_version
+            or any(final_versions[surface] != application_version for surface in managed_version_surfaces)
+            or final_versions["uniapp_version_name"] != initial_versions["uniapp_version_name"]
+            or final_versions["uniapp_version_code"] != initial_versions["uniapp_version_code"]
+        ):
+            fail("legacy application version surfaces changed during scaffold upgrade")
+        self.write_json(self.upgrade_proof_path, {
+            "schema_version": 1,
+            "status": "passed",
+            "legacy_identity": identity,
+            "release_chain": versions,
+            "transitions": transitions,
+            "dependencies": dependencies,
+            "app_owned_before_sha256": expected_app_owned,
+            "app_owned_after_sha256": final_app_owned["tree_sha256"],
+            "app_owned_file_count": final_app_owned["file_count"],
+            "version_surfaces_before": identity["version_surfaces"],
+            "version_surfaces_after": final_versions,
+            "target_template": final_manifest["template"],
+        })
+
+    def legacy_application_recovery(self) -> None:
+        log = self.group_log("legacy-application-recovery")
+        identity = self.create_legacy_application(self.upgrade_fault, log)
+        before_tree = self.tree_digest(self.upgrade_fault, exclude_upgrade_state=True)
+        before_app_owned = identity["app_owned"]["tree_sha256"]
+        versions = self.fixture["legacy_application"]["release_chain"]
+        from_version, to_version = versions[0], versions[1]
+        preflight, _ = self.json_command([
+            "php", str(SCAFFOLD_UPGRADE), "preflight", f"--project-root={self.upgrade_fault}",
+            f"--from-manifest={self.release_manifest(from_version)}",
+            f"--to-manifest={self.release_manifest(to_version)}",
+        ], label="scaffold-recovery-preflight", log=log)
+        if preflight.get("status") != "ready" or preflight.get("summary", {}).get("automatic", 0) < 1:
+            fail("recovery fixture did not plan a real automatic scaffold write")
+        plan_path = self.upgrade_fault / str(preflight.get("plan_path", ""))
+        _, fault = self.json_command([
+            "php", str(SCAFFOLD_UPGRADE), "apply", f"--project-root={self.upgrade_fault}", f"--plan={plan_path}",
+        ], label="scaffold-recovery-fault", log=log, env={"PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS": "1"}, check=False)
+        if fault.returncode == 0 or "SCAFFOLD_FAULT_INJECTED" not in fault.stderr:
+            fail("scaffold fault injection was not observed")
+        recover, _ = self.json_command([
+            "php", str(SCAFFOLD_UPGRADE), "recover", f"--project-root={self.upgrade_fault}", f"--plan={plan_path}",
+        ], label="scaffold-recover", log=log)
+        after_recover_tree = self.tree_digest(self.upgrade_fault, exclude_upgrade_state=True)
+        if recover.get("status") != "recovered" or after_recover_tree != before_tree:
+            fail("scaffold recover did not restore the complete legacy application tree")
+        if self.app_owned_proof(self.upgrade_fault)["tree_sha256"] != before_app_owned:
+            fail("scaffold recover changed legacy app-owned bytes")
+        continued = [self.scaffold_transition(self.upgrade_fault, from_version, to_version, log)]
+        for next_from, next_to in zip(versions[1:], versions[2:]):
+            continued.append(self.scaffold_transition(self.upgrade_fault, next_from, next_to, log))
+        if self.app_owned_proof(self.upgrade_fault)["tree_sha256"] != before_app_owned:
+            fail("recovered legacy application changed app-owned bytes while continuing the upgrade")
+        self.write_json(self.output / "groups/legacy-application-recovery.json", {
+            "schema_version": 1,
+            "status": "passed",
+            "fault": "SCAFFOLD_FAULT_INJECTED",
+            "recover": "recovered",
+            "pre_tree_sha256": before_tree,
+            "recovered_tree_sha256": after_recover_tree,
+            "app_owned_sha256": before_app_owned,
+            "continued_release_chain": versions,
+            "continued_transitions": continued,
+        })
 
     def fresh(self, scenario: str, group: str, mode: str) -> None:
         database = self.plan["databases"][scenario]
@@ -806,14 +1265,88 @@ class Runner:
         self.drop_database(source)
         self.drop_database(restore)
 
-    def plugin_lifecycle(self) -> None:
-        database = self.plan["databases"]["plugin_lifecycle"]
-        log = self.group_log("plugin-lifecycle")
+    def plugin_lifecycle_at(self, project_root: Path, scenario: str, group: str) -> None:
+        database = self.plan["databases"][scenario]
+        log = self.group_log(group)
         self.create_database(database)
-        self.install_current(database, "multi-tenant", log)
-        command(["php", "server/fixtures/plugin-module-lifecycle/run.php"], env=self.db_env(database, "multi-tenant"), log=log)
-        self.inspect(database, "multi-tenant", "plugin-lifecycle")
+        self.install_current(database, "multi-tenant", log, project_root=project_root)
+        command(
+            ["php", "server/fixtures/plugin-module-lifecycle/run.php"],
+            cwd=project_root,
+            env=self.db_env(database, "multi-tenant"),
+            log=log,
+        )
+        self.inspect(database, "multi-tenant", group, project_root=project_root)
         self.drop_database(database)
+
+    def plugin_lifecycle(self) -> None:
+        self.plugin_lifecycle_at(ROOT, "plugin_lifecycle", "plugin-lifecycle")
+
+    def expected_upgraded_app_owned(self) -> str:
+        proof = read_json(self.upgrade_proof_path)
+        digest = proof.get("app_owned_after_sha256")
+        if proof.get("status") != "passed" or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            fail("upgraded application proof is unavailable")
+        return digest
+
+    def assert_upgraded_app_owned(self) -> dict[str, Any]:
+        proof = self.app_owned_proof(self.upgraded)
+        if proof["tree_sha256"] != self.expected_upgraded_app_owned():
+            fail("upgraded application app-owned bytes changed")
+        return proof
+
+    def upgraded_plugin_lifecycle(self) -> None:
+        expected = self.assert_upgraded_app_owned()
+        lock = self.upgraded / "plugins.lock"
+        original_lock = lock.read_bytes()
+        original_mode = lock.stat().st_mode & 0o777
+        empty_lock = json.loads(original_lock)
+        if empty_lock != {"schema_version": 1, "plugins": []}:
+            fail("upgraded application Plugin lock is not the released empty lock")
+        fixture_paths = [
+            (ROOT / "plugins/fixture.delivery-record", self.upgraded / "plugins/fixture.delivery-record"),
+            (ROOT / "server/app/Modules/Fixture/DeliveryRecord", self.upgraded / "server/app/Modules/Fixture/DeliveryRecord"),
+            (ROOT / "web/src/modules/fixture-delivery-record", self.upgraded / "web/src/modules/fixture-delivery-record"),
+        ]
+        runner_source = ROOT / "server/fixtures/plugin-module-lifecycle/run.php"
+        runner_target = self.upgraded / "server/fixtures/plugin-module-lifecycle/run.php"
+        if any(target.exists() for _, target in fixture_paths) or runner_target.exists():
+            fail("upgraded application already contains a Plugin qualification fixture")
+        try:
+            for source, target in fixture_paths:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(source, target, copy_function=shutil.copy2)
+            runner_target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(runner_source, runner_target)
+            shutil.copy2(ROOT / "plugins.lock", lock)
+            self.plugin_lifecycle_at(
+                self.upgraded,
+                "plugin_lifecycle",
+                "upgraded-plugin-lifecycle",
+            )
+        finally:
+            lock.write_bytes(original_lock)
+            lock.chmod(original_mode)
+            for _, target in reversed(fixture_paths):
+                if target.exists():
+                    shutil.rmtree(target)
+            with contextlib.suppress(FileNotFoundError):
+                runner_target.unlink()
+            with contextlib.suppress(OSError):
+                runner_target.parent.rmdir()
+        after = self.assert_upgraded_app_owned()
+        if lock.read_bytes() != original_lock or (lock.stat().st_mode & 0o777) != original_mode:
+            fail("upgraded application Plugin lock was not restored byte-for-byte")
+        self.write_json(self.output / "groups/upgraded-plugin-lifecycle.json", {
+            "schema_version": 1,
+            "status": "passed",
+            "application_root": str(self.upgraded),
+            "database": self.plan["databases"]["plugin_lifecycle"],
+            "plugin_lock_restored_sha256": sha256(lock),
+            "fixture_removed": True,
+            "app_owned_before_sha256": expected["tree_sha256"],
+            "app_owned_after_sha256": after["tree_sha256"],
+        })
 
     def write_compose_env(self, database: str, mode: str) -> None:
         values = self.db_env(database, mode, consumer="container")
@@ -844,6 +1377,20 @@ class Runner:
             f"        source: {proof_dir}\n"
             f"        target: {self.plan['lease_proof_container_path']}\n"
             "        read_only: true\n"
+            "      - type: bind\n"
+            f"        source: {ROOT / 'resources/project-resources.json'}\n"
+            "        target: /var/www/peanut-admin/resources/project-resources.json\n"
+            "        read_only: true\n"
+            "      - type: bind\n"
+            f"        source: {ROOT / 'server/database/environment-guard.php'}\n"
+            "        target: /var/www/peanut-admin/server/database/environment-guard.php\n"
+            "        read_only: true\n"
+            "  cron:\n"
+            "    volumes:\n"
+            "      - type: bind\n"
+            f"        source: {ROOT / 'resources/project-resources.json'}\n"
+            "        target: /var/www/peanut-admin/resources/project-resources.json\n"
+            "        read_only: true\n"
         )
         self.compose_overlay.write_text(overlay, encoding="utf-8")
         self.compose_overlay.chmod(0o600)
@@ -863,13 +1410,19 @@ class Runner:
             fail("Compose environment is empty")
         return values
 
-    def compose(self, *arguments: str, log: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
+    def compose(
+        self,
+        *arguments: str,
+        log: Path | None = None,
+        check: bool = True,
+        project_root: Path = ROOT,
+    ) -> subprocess.CompletedProcess[str]:
         return command([
             "docker", "compose", "--project-name", self.plan["compose_project"],
-            "--env-file", str(self.compose_env), "-f", str(ROOT / "deploy/docker-compose.prod.yml"),
+            "--env-file", str(self.compose_env), "-f", str(project_root / "deploy/docker-compose.prod.yml"),
             "-f", str(self.compose_overlay),
             *arguments,
-        ], env=self.compose_environment(), log=log, capture=log is None, check=check)
+        ], cwd=project_root, env=self.compose_environment(), log=log, capture=log is None, check=check)
 
     def wait_http(self, url: str, seconds: int = 120) -> None:
         deadline = time.time() + seconds
@@ -885,55 +1438,85 @@ class Runner:
             time.sleep(2)
         fail(f"HTTP readiness failed for {url}: {error}")
 
-    def production_compose(self) -> None:
-        database = self.plan["databases"]["standalone_browser"]
-        log = self.group_log("production-compose")
+    def production_compose_at(self, project_root: Path, scenario: str, group: str) -> None:
+        database = self.plan["databases"][scenario]
+        log = self.group_log(group)
         self.create_database(database)
-        self.install_current(database, "standalone", log)
-        self.inspect(database, "standalone", "standalone-browser-database")
+        self.install_current(database, "standalone", log, project_root=project_root)
+        self.inspect(database, "standalone", f"{group}-database", project_root=project_root)
         self.write_compose_env(database, "standalone")
-        self.compose("up", "-d", "--build", "php", "nginx", "cron", log=log)
+        self.compose("up", "-d", "--build", "php", "nginx", "cron", log=log, project_root=project_root)
+        self.active_compose_root = project_root
         self.wait_http(f"http://127.0.0.1:{self.plan['ports']['http']}/healthz")
-        self.write_json(self.output / "groups/production-compose.json", {
+        self.write_json(self.output / "groups" / f"{group}.json", {
             "schema_version": 1,
             "compose_project": self.plan["compose_project"],
             "candidate": self.args.candidate,
+            "application_root": str(project_root),
             "mode": "standalone",
             "health_url": f"http://127.0.0.1:{self.plan['ports']['http']}/healthz",
             "status": "passed",
         })
 
-    def start_docs(self) -> None:
-        if self.docs_process is not None and self.docs_process.poll() is None:
+    def production_compose(self) -> None:
+        self.production_compose_at(self.generated, "standalone_browser", "production-compose")
+
+    def upgraded_production_compose(self) -> None:
+        self.assert_upgraded_app_owned()
+        self.stop_docs()
+        if self.compose_env.exists() and self.compose_overlay.exists():
+            self.compose(
+                "down", "--volumes", "--remove-orphans", "--rmi", "local",
+                check=False,
+                project_root=self.active_compose_root,
+            )
+        for scenario in ("standalone_browser", "multi_tenant_browser"):
+            database = self.plan["databases"][scenario]
+            if self.database_exists(database):
+                self.drop_database(database)
+        self.production_compose_at(
+            self.upgraded,
+            "standalone_browser",
+            "upgraded-production-compose",
+        )
+
+    def start_docs(self, project_root: Path) -> None:
+        if self.docs_process is not None and self.docs_process.poll() is None and self.docs_root == project_root:
             return
+        self.stop_docs()
         log = (self.output / "groups/docs-preview.log").open("a", encoding="utf-8")
         self.docs_process = subprocess.Popen([
             "pnpm", "exec", "vitepress", "preview", ".", "--host", "127.0.0.1",
             "--port", str(self.plan["ports"]["docs"]),
-        ], cwd=self.generated / "docs-site", stdout=log, stderr=subprocess.STDOUT, text=True)
+        ], cwd=project_root / "docs-site", stdout=log, stderr=subprocess.STDOUT, text=True)
+        self.docs_root = project_root
         self.wait_http(f"http://127.0.0.1:{self.plan['ports']['docs']}/")
 
-    def browser(self, mode: str) -> None:
-        group = f"{mode}-browser"
-        scenario = "standalone_browser" if mode == "standalone" else "multi_tenant_browser"
+    def browser_at(self, mode: str, project_root: Path, scenario: str, group: str, output_scope: str) -> None:
         database = self.plan["databases"][scenario]
         if mode == "multi-tenant":
             if not self.database_exists(database):
                 self.create_database(database)
-                self.install_current(database, mode, self.group_log(group))
-            self.inspect(database, mode, "multi-tenant-browser-database")
+                self.install_current(database, mode, self.group_log(group), project_root=project_root)
+            self.inspect(database, mode, f"{group}-database", project_root=project_root)
             self.write_compose_env(database, mode)
-            self.compose("up", "-d", "--no-build", "--force-recreate", "php", "nginx", "cron", log=self.group_log(group))
+            self.compose(
+                "up", "-d", "--no-build", "--force-recreate", "php", "nginx", "cron",
+                log=self.group_log(group),
+                project_root=project_root,
+            )
+            self.active_compose_root = project_root
             self.wait_http(f"http://127.0.0.1:{self.plan['ports']['http']}/healthz")
-        self.start_docs()
+        self.start_docs(project_root)
         env = {
             "P0E_PLAYWRIGHT_CLI": required_environment("P0E_PLAYWRIGHT_CLI"),
+            "P0E_ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
             "P0E_ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
             "P0E_PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
             "P0E_PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
         }
-        browser_output = self.output / "browser"
-        browser_output.mkdir(exist_ok=True)
+        browser_output = self.output / "browser" / output_scope
+        browser_output.mkdir(parents=True, exist_ok=True)
         command([
             str(BROWSER_RUNNER), "--mode", mode,
             "--base-url", f"http://127.0.0.1:{self.plan['ports']['http']}",
@@ -941,6 +1524,20 @@ class Runner:
             "--output-dir", str(browser_output),
             "--session", f"p0e-{self.args.run_id}",
         ], env=env, log=self.group_log(group))
+
+    def browser(self, mode: str) -> None:
+        group = f"{mode}-browser"
+        scenario = "standalone_browser" if mode == "standalone" else "multi_tenant_browser"
+        self.browser_at(mode, self.generated, scenario, group, "generated")
+
+    def upgraded_browser(self, mode: str) -> None:
+        self.assert_upgraded_app_owned()
+        group = f"upgraded-{mode}-browser"
+        scenario = (
+            "standalone_browser" if mode == "standalone" else "multi_tenant_browser"
+        )
+        self.browser_at(mode, self.upgraded, scenario, group, "upgraded")
+        self.assert_upgraded_app_owned()
 
     def stop_docs(self) -> None:
         if self.docs_process is None or self.docs_process.poll() is not None:
@@ -952,11 +1549,16 @@ class Runner:
             self.docs_process.kill()
             self.docs_process.wait(timeout=5)
         self.docs_process = None
+        self.docs_root = None
 
     def cleanup_success(self) -> None:
         self.stop_docs()
         if self.compose_env.exists():
-            self.compose("down", "--volumes", "--remove-orphans", "--rmi", "local", check=False)
+            self.compose(
+                "down", "--volumes", "--remove-orphans", "--rmi", "local",
+                check=False,
+                project_root=self.active_compose_root,
+            )
         for database in self.plan["databases"].values():
             self.drop_database(database)
         residual = [name for name in self.plan["databases"].values() if self.database_exists(name)]
@@ -985,6 +1587,12 @@ class Runner:
         shutil.rmtree(self.cache)
         if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
             shutil.rmtree(ROOT / "server/vendor")
+        playwright_cli = Path(required_environment("P0E_PLAYWRIGHT_CLI"))
+        lease_proof_dir = Path(self.plan["lease_proof_dir"])
+        if playwright_cli.parent == lease_proof_dir and playwright_cli.name == "playwright-cli":
+            if not playwright_cli.is_file() or playwright_cli.is_symlink():
+                fail("lease-owned Playwright CLI wrapper identity changed")
+            playwright_cli.unlink()
         self.write_json(self.summary_path, {
             "schema_version": 1,
             "status": "passed",
@@ -995,6 +1603,15 @@ class Runner:
             "environment": "development",
             "endpoint": self.plan["endpoint"],
             "groups": self.checkpoint["groups"],
+            "pa_p0e_003": {
+                "legacy_application_upgrade": "groups/legacy-application-upgrade.json",
+                "legacy_application_recovery": "groups/legacy-application-recovery.json",
+                "upgraded_plugin_lifecycle": "groups/upgraded-plugin-lifecycle.json",
+                "upgraded_compose": "groups/upgraded-production-compose.json",
+                "upgraded_browser": "browser/upgraded",
+                "app_owned_byte_gate": "passed",
+                "scaffold_fault_recover_gate": "passed",
+            },
             "cleanup": {
                 "database_residual_count": 0,
                 "compose_removed": True,
@@ -1025,6 +1642,12 @@ class Runner:
         self.run_group("production-compose", self.production_compose)
         self.run_group("standalone-browser", lambda: self.browser("standalone"))
         self.run_group("multi-tenant-browser", lambda: self.browser("multi-tenant"))
+        self.run_group("legacy-application-upgrade", self.legacy_application_upgrade)
+        self.run_group("legacy-application-recovery", self.legacy_application_recovery)
+        self.run_group("upgraded-plugin-lifecycle", self.upgraded_plugin_lifecycle)
+        self.run_group("upgraded-production-compose", self.upgraded_production_compose)
+        self.run_group("upgraded-standalone-browser", lambda: self.upgraded_browser("standalone"))
+        self.run_group("upgraded-multi-tenant-browser", lambda: self.upgraded_browser("multi-tenant"))
         required = set(self.fixture["groups"])
         passed = {name for name, value in self.checkpoint["groups"].items() if value.get("status") == "passed"}
         if passed != required:

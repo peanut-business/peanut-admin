@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。固定候选 a732445c037057ed97cf76846e685f3ddc335397（tree 2ad602f9020d5edca9fe24a733b450015f2227eb）的 P0-E 10/10 运行时闭环已经通过且零资源残留；正式发布仍未完成。
+> 总体状态：**进行中**。固定候选 b757da6072de6babb3a41c2ce521ac0598803d76（tree bb75bddb71b737aec504d81149b3d4fb45660cf3）的 P0-E 16/16 生成与升级运行时闭环已经通过且零资源残留；正式发布仍未完成。
 >
-> 事实基线：`feat/p0e-runtime-qualification@a732445c037057ed97cf76846e685f3ddc335397`，复核日期：`2026-08-14`。
+> 事实基线：`feat/p0e-upgrade-runtime-final@b757da6072de6babb3a41c2ce521ac0598803d76`，复核日期：`2026-08-15`。
 
 ### 已验证可用
 
@@ -45,19 +45,14 @@ php scripts/check-product-capability-ledger
 | `PA-SCAFFOLD-003` | 新应用 Plugin 空锁合同 | 已验证 | 正式生成应用使用有效空 plugins.lock，不再引用仅供源仓测试的 fixture。 |
 | `PA-COMPAT-001` | 公开核心包升级不要求应用源码重构 | 已验证 | 公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。 |
 | `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。 |
-| `PA-P0E-002` | 最终生成应用运行时验收 | 已验证 | 固定候选生成全新 v1.1.3 应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
+| `PA-P0E-002` | 最终生成应用运行时验收 | 已验证 | 固定候选生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
+| `PA-P0E-003` | 最终升级应用运行时验收 | 已验证 | 固定旧应用完成六段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 
 ### 已实现或正在验收
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-P0E-003` | 最终升级应用运行时验收 | 进行中 | 固定候选的 v1.0/v1.1 数据库前滚、迁移故障恢复，以及当前生成应用的 Plugin 生命周期和双模式浏览器闭环已经通过；旧应用执行完整 scaffold preflight/apply/verify 后的依赖、app-owned、Plugin 与浏览器复验尚未完成。 |
-
-### 计划中或受阻
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 计划中 | P0-E 固定候选通过后，才能把当前 dev 能力合入 main、建立正式 Tag/Release 并执行最低生产升级演练。 |
+| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 进行中 | P0-E 固定候选已经 16/16 通过；尚需合入 dev/main、建立正式 Tag/Release 并完成备份后的生产升级与最低 smoke。 |
 
 ### 暂缓或范围外
 

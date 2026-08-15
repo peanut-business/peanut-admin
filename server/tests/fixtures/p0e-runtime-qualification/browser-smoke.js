@@ -9,6 +9,7 @@ const mode = required('P0E_BROWSER_MODE');
 const baseUrl = required('P0E_BROWSER_BASE_URL').replace(/\/$/, '');
 const docsUrl = required('P0E_BROWSER_DOCS_URL').replace(/\/$/, '');
 const outputDir = required('P0E_BROWSER_OUTPUT_DIR');
+const adminEmail = required('P0E_ADMIN_INITIAL_EMAIL');
 const adminPassword = required('P0E_ADMIN_INITIAL_PASSWORD');
 const platformEmail = required('P0E_PLATFORM_INITIAL_EMAIL');
 const platformPassword = required('P0E_PLATFORM_INITIAL_PASSWORD');
@@ -25,11 +26,19 @@ const assertPage = async (url, label, minimumText = 20) => {
 
 const results = {};
 await page.goto(`${baseUrl}/admin/login`, { waitUntil: 'networkidle' });
+if (mode === 'multi-tenant') {
+  await page.locator('input').nth(0).fill(adminEmail);
+}
 await page.locator('input[type="password"]').fill(adminPassword);
 await page.getByRole('button', { name: /登录|login/i }).click();
 if (mode === 'multi-tenant') {
-  await page.locator('.el-select').waitFor({ state: 'visible' });
-  await page.getByRole('button', { name: /登录|login/i }).click();
+  const tenantTransition = await Promise.race([
+    page.locator('.el-select').waitFor({ state: 'visible', timeout: 20000 }).then(() => 'select'),
+    page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20000 }).then(() => 'navigated'),
+  ]);
+  if (tenantTransition === 'select') {
+    await page.getByRole('button', { name: /登录|login/i }).click();
+  }
 }
 await page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20000 });
 await page.waitForLoadState('networkidle');

@@ -163,6 +163,10 @@ docker compose up -d --no-build
 回退为 Standalone。两种模式都必须设置彼此独立、至少 32 字节且发布后保持稳定的
 `TENANT_IDENTIFIER_HMAC_KEY` 和 `PLATFORM_IDENTIFIER_HMAC_KEY`。
 
+生产 Nginx 镜像在同一次构建中包含 Standalone 与 multi-tenant 两套管理端 bundle，并在
+容器启动时按 `DEPLOYMENT_MODE` 选择其中一套。切换模式需要重新创建 Nginx 容器，但不需要
+重新构建镜像；不得在构建时用宿主环境隐式固定模式，也不得绕过启动时的合法值校验。
+
 首次安装和首次将历史库纳入 Tenant Account 模型时提供 `ADMIN_INITIAL_EMAIL`，空库还要
 提供合格的 `ADMIN_INITIAL_PASSWORD`。多租户模式另需提供与管理员邮箱不同的
 `PLATFORM_INITIAL_EMAIL` 和合格的 `PLATFORM_INITIAL_PASSWORD`，以建立独立

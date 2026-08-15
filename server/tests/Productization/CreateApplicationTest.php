@@ -113,7 +113,7 @@ createApplicationExpect(is_string($systemTemporary), 'system temporary directory
 $temporary = $systemTemporary . '/peanut-create-app-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0775, true);
 $inventoryPath = $root . '/scaffold/application-template-inventory.json';
-$releasePath = $root . '/scaffold/releases/v1.1.4/scaffold-manifest.json';
+$releasePath = $root . '/scaffold/releases/v1.1.5/scaffold-manifest.json';
 $identity = ['commit' => str_repeat('a', 40), 'tree' => str_repeat('b', 40)];
 
 try {
@@ -147,9 +147,9 @@ try {
         'generated application manifest must carry the default application version contract'
     );
     createApplicationExpect(
-        ($release['version'] ?? null) === '1.1.4'
+        ($release['version'] ?? null) === '1.1.5'
             && (json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['application']['version'] ?? null) === '0.1.0',
-        'scaffold v1.1.4 must expose the independent default application version'
+        'scaffold v1.1.5 must expose the independent default application version'
     );
 
     createApplicationExpect($manifestOne === $manifestTwo, 'same template identity and parameters must produce the same manifest');
@@ -204,8 +204,24 @@ try {
     createApplicationExpect((new PluginLockResolver($first . '/server', '../plugins.lock'))->all() === [], 'empty generated Plugin lock must resolve without artifacts');
     $generatedProductionDockerfile = (string)file_get_contents($first . '/deploy/docker/production.Dockerfile');
     createApplicationExpect(
-        preg_match('/COPY plugins\\.lock \/build\/plugins\\.lock\\R+COPY web\/ \.\/\\R+RUN pnpm build/', $generatedProductionDockerfile) === 1,
+        preg_match('/COPY plugins\\.lock \/build\/plugins\\.lock\\R+COPY web\/ \.\/\\R+RUN pnpm exec vue-tsc --noEmit/', $generatedProductionDockerfile) === 1,
         'admin production builder must copy the fail-closed Plugin lock to the repository root before Vite build'
+    );
+    foreach (['standalone', 'multi-tenant'] as $deploymentMode) {
+        createApplicationExpect(
+            str_contains($generatedProductionDockerfile, 'VITE_DEPLOYMENT_MODE=' . $deploymentMode),
+            'admin production builder must compile the ' . $deploymentMode . ' bundle'
+        );
+    }
+    createApplicationExpect(
+        str_contains($generatedProductionDockerfile, 'nginx-select-admin.sh /docker-entrypoint.d/40-select-admin.sh')
+            && is_executable($first . '/deploy/docker/nginx-select-admin.sh'),
+        'production Nginx image must install the executable deployment-mode selector'
+    );
+    $generatedProductionCompose = (string)file_get_contents($first . '/deploy/docker-compose.prod.yml');
+    createApplicationExpect(
+        preg_match('/nginx:\\R(?:.*\\R)*?    environment:\\R      DEPLOYMENT_MODE: \\${DEPLOYMENT_MODE:\?set DEPLOYMENT_MODE to standalone or multi-tenant}/', $generatedProductionCompose) === 1,
+        'production Nginx service must receive the explicit deployment mode'
     );
     createApplicationExpect(
         str_contains($generatedProductionDockerfile, 'COPY resources/project-resources.json resources/project-resources.json'),

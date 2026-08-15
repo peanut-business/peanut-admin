@@ -2,8 +2,10 @@
 
 `scripts/p0e-runtime-qualification` 是固定候选唯一全量入口。它把 create-app、依赖冻结安装、
 四端最低构建、安装/升级/恢复、Plugin lifecycle、生产 Compose/HTTP 和两种部署模式的真实
-Chromium smoke 绑定到同一个 commit/tree、worktree、run_id 与项目资源租约。日常 PR 不运行
-这个 Gate；内容与依赖全部冻结后只运行一次。
+Chromium smoke 绑定到同一个 commit/tree、worktree、run_id 与项目资源租约。它还从正式
+`v1.0.0` create-app commit/tree 生成一个带真实 Host/支付域定制的旧应用，逐代执行完整
+scaffold `preflight → apply → verify`，再从升级产物自身复验依赖、数据库、Plugin、服务和浏览器。
+日常 PR 不运行这个 Gate；内容、目标 scaffold identity 与依赖全部冻结后只运行一次。
 
 ## 固定资源
 
@@ -23,6 +25,10 @@ Chromium smoke 绑定到同一个 commit/tree、worktree、run_id 与项目资�
 
 `peanut_admin_development` 是持久开发库，明确禁止进入 P0-E claim、连接、迁移或清理。runner
 只创建登记中的九个 scenario 数据库，并且只删除与本次精确 run_id 相符的这九个名字。
+新生成应用和升级后应用在同一 lease 中串行运行：前者完成并落证后停止服务、删除对应临时库，
+后者才用相同 scenario 名重新建库。这样既不扩大登记资源，也不会让两个 Runtime 同时消费同一库。
+应用制品不会携带源仓专用的 P0-E 数据库登记；生产 Compose Gate 通过 lease overlay 把固定候选的
+`resources/project-resources.json` 只读挂载到 PHP/cron，并同时挂载原子 lease proof，应用字节保持不变。
 建库、删库、状态查询、dump 和 restore 不依赖主工作站的 `mysql`/`mysqldump`。runner 在
 active lease 下先核验远端容器的精确 image、running/healthy 状态、CLI 绝对路径与 8.4.10
 版本，再通过 SSH + 远端 `docker exec` 执行；root 凭据只在容器环境内使用，不传回主工作站。
@@ -117,6 +123,22 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 6. 候选生产镜像只 build 一次；Standalone 与 multi-tenant 分别复用镜像、命中各自 P0-E
    browser database。每种模式真实 Chromium 覆盖管理端、PC、H5、Docs；multi-tenant 另覆盖
    Tenant 管理员选择和 Instance Platform 登录。
+7. 固定旧输入为正式 `v1.0.0` create-app commit
+   `14412607ba36f1816e39f7117f77eea4a9e7419e`（tree
+   `172865d8b8057caa8a017ac591618cd914af30a5`）。runner 写入两处 app-owned 下游定制后，按
+   fixture 的有序 release chain 对每个相邻版本执行并记录 preflight、apply 与 verify。
+8. 完整升级后只在依赖目录均不存在时执行 Composer、Web、PC、UniApp 和 Docs frozen install/
+   build；升级前、每个 transition 后和依赖完成后，全量 application manifest `app-owned`
+   路径的内容与 mode 聚合摘要必须逐字节相同。
+   v1 manifest 从旧应用 `RELEASE_METADATA.version` 唯一采用 application version，最终 managed
+   版本面与该值一致；app-owned UniApp `versionName/versionCode` 仍保持升级前字节。
+9. 独立恢复副本在第一次真实 managed 写后注入 `SCAFFOLD_FAULT_INJECTED`，执行 recover 后按
+   全产品树内容和 mode（排除审计用 `.peanut/upgrades` 与 `.git`）核对完整恢复，并从恢复态继续
+   完整 release chain。
+10. 升级产物临时铺设 source-only Plugin fixture，复验 install、权限、失败 migration 和
+    preserve-data lifecycle，随后恢复空 `plugins.lock` 并移除 fixture。生产 Compose Gate
+    只读挂载当前 source-only 资源登记和环境门禁，不改写升级应用的 app-owned 字节；最后从
+    升级产物自身构建生产镜像，在 Standalone 与 multi-tenant 各跑一次真实 Chromium 代表流程。
 
 ## 失败恢复与完成
 
@@ -128,7 +150,9 @@ Compose 取证资源，写入 `recovery.json` 并 renew lease。完成一次只�
 scripts/p0e-runtime-qualification resume "${common[@]}"
 ```
 
-resume 跳过已经通过的 group，只重跑失败/未完成组。成功终态停止 Docs listener、删除本
-run_id 的九个数据库、Compose containers/volumes/local images、backup/cache 和 runner 创建的
-候选 vendor，核验数据库残留为 0，保留脱敏 output evidence，最后 release lease。任何失败
-终态都不会自动 release；未经 named owner 的明确恢复动作，不清理失败资源。
+resume 跳过已经通过的 group，只重跑失败/未完成组。16 个 group 全部通过后，成功终态停止
+Docs listener、删除本 run_id 的九个数据库、Compose containers/volumes/local images、
+backup/cache、两个旧应用工作副本和 runner 创建的候选 vendor，核验数据库残留为 0，保留脱敏
+output evidence，最后 release lease。任何失败终态都不会自动 release；未经 named owner 的
+明确恢复动作，不清理失败资源。最终 Gate 必须在版本策略 owner 确认目标 scaffold identity 后
+使用新 candidate/run_id 执行；旧 identity 的局部或全量结果不能替代最终资格。
