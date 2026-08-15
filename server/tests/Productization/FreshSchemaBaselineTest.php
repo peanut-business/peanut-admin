@@ -13,6 +13,8 @@ $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 $installer = (string)file_get_contents($serverRoot . '/database/install.php');
 $runner = (string)file_get_contents($serverRoot . '/database/migrate.php');
 $guard = (string)file_get_contents($serverRoot . '/database/environment-guard.php');
+preg_match_all('/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+`([^`]+)`/i', $schema, $matches);
+$applicationTables = array_values(array_unique($matches[1] ?? []));
 
 foreach ([
     'pa_legacy_admin_tenant_map',
@@ -28,9 +30,10 @@ foreach ([
     'pa_system_role_menu',
     'pa_dept',
 ] as $retiredTable) {
-    freshSchemaExpect(!str_contains($schema, $retiredTable), "retired table remains in canonical schema: {$retiredTable}");
-    freshSchemaExpect(!str_contains($installer, $retiredTable), "installer still depends on retired table: {$retiredTable}");
-    freshSchemaExpect(!str_contains($guard, $retiredTable), "environment guard still depends on retired table: {$retiredTable}");
+    $identifier = '/(?<![A-Za-z0-9_])' . preg_quote($retiredTable, '/') . '(?![A-Za-z0-9_])/';
+    freshSchemaExpect(!in_array($retiredTable, $applicationTables, true), "retired table remains in canonical schema: {$retiredTable}");
+    freshSchemaExpect(preg_match($identifier, $installer) !== 1, "installer still depends on retired table: {$retiredTable}");
+    freshSchemaExpect(preg_match($identifier, $guard) !== 1, "environment guard still depends on retired table: {$retiredTable}");
 }
 
 freshSchemaExpect(str_contains($installer, 'KernelSchema::tableNames()'), 'installer does not create native Core schema');
@@ -46,8 +49,6 @@ foreach (['information_schema', 'ALTER TABLE', 'PREPARE ', 'EXECUTE ', 'DEALLOCA
     freshSchemaExpect(!str_contains($schema, $transitionSql), "transition SQL remains in canonical schema: {$transitionSql}");
 }
 
-preg_match_all('/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+`([^`]+)`/i', $schema, $matches);
-$applicationTables = array_values(array_unique($matches[1] ?? []));
 freshSchemaExpect(count($applicationTables) === 61, 'canonical application table set changed unexpectedly');
 foreach (['pa_jobs', 'pa_schema_migration', 'pa_plugin_installation', 'pa_task_job', 'pa_external_channel_binding'] as $table) {
     freshSchemaExpect(in_array($table, $applicationTables, true), "canonical business table missing: {$table}");

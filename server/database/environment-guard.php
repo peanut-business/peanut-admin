@@ -450,7 +450,7 @@ function waitForDatabase(array $config, int $seconds): PDO
     } while (true);
 }
 
-/** @return array{migration_count:int,latest_migration:string,admin_count:int,menu_count:int,config_count:int,tenant_count:int,owner_count:int,operator_count:int} */
+/** @return array{migration_count:int,latest_migration:string,management_member_count:int,menu_count:int,config_count:int,tenant_count:int,owner_count:int,operator_count:int} */
 function assertCurrentDatabase(PDO $pdo): array
 {
     $migrations = glob(__DIR__ . '/migrations/*.sql') ?: [];
@@ -487,9 +487,6 @@ function assertCurrentDatabase(PDO $pdo): array
         throw new RuntimeException('数据库缺少迁移：' . implode(', ', $missing));
     }
 
-    $adminCount = (int)$pdo->query(
-        "SELECT COUNT(*) FROM pa_admin WHERE username = 'admin' AND root = 1 AND delete_time IS NULL"
-    )->fetchColumn();
     $menuCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
     $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
     $tenantCount = (int)$pdo->query(
@@ -508,8 +505,7 @@ SQL)->fetchColumn();
     $operatorCount = (int)$pdo->query(
         "SELECT COUNT(*) FROM pa_platform_operator WHERE status = 'active'"
     )->fetchColumn();
-    if ($adminCount !== 1
-        || $menuCount < 1
+    if ($menuCount < 1
         || $configCount < 1
         || $tenantCount !== 1
         || $ownerCount !== 1
@@ -520,7 +516,7 @@ SQL)->fetchColumn();
     return [
         'migration_count' => count($actual),
         'latest_migration' => array_key_last($actual) ?? '',
-        'admin_count' => $adminCount,
+        'management_member_count' => $ownerCount,
         'menu_count' => $menuCount,
         'config_count' => $configCount,
         'tenant_count' => $tenantCount,
