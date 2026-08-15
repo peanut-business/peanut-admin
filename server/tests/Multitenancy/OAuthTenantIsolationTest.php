@@ -130,7 +130,7 @@ try {
     ]);
     expectOAuthTenant((int)$betaIdentity->tenant_id === 202, 'payload forged OAuth identity Tenant ownership');
     expectOAuthTenant(OAuthTenantRepository::identities($alpha)->where('id', (int)$betaIdentity->id)->findOrEmpty()->isEmpty(), 'Alpha read Beta OAuth identity');
-    expectOAuthTenant(OAuthIdentity::subjectForMember(22, 1) === 'openid-shared', 'payment compatibility lookup lost Beta owned subject');
+    expectOAuthTenant(OAuthIdentity::subjectForMember($beta, 22, 1) === 'openid-shared', 'payment compatibility lookup lost Beta owned subject');
 
     $sameStateHash = str_repeat('c', 64);
     OAuthTenantRepository::createAttempt(new TenantSystemContext(101, MemberTenantContext::PUBLIC_AUTH_ACTOR, 'member.oauth-begin', 'alpha-begin'), [

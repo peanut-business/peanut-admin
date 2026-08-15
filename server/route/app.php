@@ -23,6 +23,8 @@ use app\api\controller\OAuthController as ApiOAuthController;
 use app\api\middleware\CheckTokenMiddleware;
 use app\api\middleware\PublicArticleTenantMiddleware;
 use app\api\middleware\PublicDecorationTenantMiddleware;
+use app\api\middleware\PublicMemberTenantMiddleware;
+use app\api\middleware\PublicNoticeTenantMiddleware;
 use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\member\MemberController;
 use app\adminapi\controller\member\MemberTagController;
@@ -435,12 +437,17 @@ Route::get('api/index/config',  [ApiIndexController::class, 'config'])
     ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
 Route::get('api/index/policy',  [ApiIndexController::class, 'policy']);
 
-Route::post('api/login/register', [ApiLoginController::class, 'register']);
-Route::post('api/login/account',  [ApiLoginController::class, 'account']);
-Route::post('api/login/mobile',   [ApiLoginController::class, 'mobile']);
-Route::post('api/login/resetPassword', [ApiLoginController::class, 'resetPassword']);
+Route::post('api/login/register', [ApiLoginController::class, 'register'])
+    ->middleware(PublicMemberTenantMiddleware::class, 'member.register');
+Route::post('api/login/account',  [ApiLoginController::class, 'account'])
+    ->middleware(PublicMemberTenantMiddleware::class, 'member.login');
+Route::post('api/login/mobile',   [ApiLoginController::class, 'mobile'])
+    ->middleware(PublicNoticeTenantMiddleware::class, 'notice.verification.verify');
+Route::post('api/login/resetPassword', [ApiLoginController::class, 'resetPassword'])
+    ->middleware(PublicNoticeTenantMiddleware::class, 'notice.verification.verify');
 Route::post('api/login/logout',   [ApiLoginController::class, 'logout']);
-Route::post('api/sms/sendCode',   [ApiSmsController::class, 'sendCode']);
+Route::post('api/sms/sendCode',   [ApiSmsController::class, 'sendCode'])
+    ->middleware(PublicNoticeTenantMiddleware::class, 'notice.verification.send');
 
 // 微信 OAuth 匿名流程；仅 completion ticket 可进入补全接口，不是会员 token。
 Route::post('api/oauth/wechat/begin', [ApiOAuthController::class, 'begin']);

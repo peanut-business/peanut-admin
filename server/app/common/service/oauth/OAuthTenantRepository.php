@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\common\service\oauth;
 
-use app\common\model\member\Member;
 use app\common\model\oauth\OAuthAttempt;
 use app\common\model\oauth\OAuthCompletionTicket;
 use app\common\model\oauth\OAuthIdentity;
 use app\common\model\oauth\OAuthPrincipal;
+use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -73,14 +73,12 @@ final class OAuthTenantRepository
         ] + $data);
     }
 
-    public static function subjectForOwnedMember(int $memberId, int $terminal): string
+    public static function subjectForOwnedMember(TenantContext $context, int $memberId, int $terminal): string
     {
-        $tenantId = (int)Member::where('id', $memberId)->value('tenant_id');
-        if ($tenantId < 1) {
+        if (MemberTenantRepository::members($context)->where('id', $memberId)->count() !== 1) {
             return '';
         }
-        return (string)OAuthIdentity::where([
-            'tenant_id' => $tenantId,
+        return (string)self::identities($context)->where([
             'provider' => 'wechat',
             'member_id' => $memberId,
             'terminal' => $terminal,

@@ -168,6 +168,7 @@ class RechargeLogic extends BaseLogic
             if ($payWay === PaymentScene::PAY_WAY_WECHAT
                 && in_array((int)$order['order_terminal'], [1, 2], true)) {
                 $openid = OAuthIdentity::subjectForMember(
+                    $context,
                     $memberId,
                     (int)$order['order_terminal']
                 );
