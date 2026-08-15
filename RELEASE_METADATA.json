@@ -111,10 +111,10 @@
     "previous_run_id": "p0ev117a1",
     "groups_passed": 0,
     "migrations": 54,
-    "scaffold_version": "1.1.8",
+    "scaffold_version": "1.1.9",
     "application_initial_version": "0.1.0",
-    "evidence": "scaffold v1.1.8 immutable identity and final fixed-candidate P0-E qualification pending",
-    "release_delta": "Production PHP image installs the executable app-owned demo seeder; native PDO statements use unique placeholders; scaffold v1.1.8 reseals the managed Dockerfile while preserving 54 migrations and existing public Core package versions."
+    "evidence": "scaffold v1.1.9 immutable identity and final fixed-candidate P0-E qualification pending",
+    "release_delta": "Production PHP image exposes a managed demo seeder implementation while preserving the root compatibility wrapper as app-owned; native PDO statements use unique placeholders; scaffold v1.1.9 preserves 54 migrations and existing public Core package versions."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

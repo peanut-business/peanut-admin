@@ -94,7 +94,9 @@ function classification(string $path): string
     ], true)) {
         return 'excluded';
     }
-    if ($path === 'scripts/scaffold-upgrade' || str_starts_with($path, 'scripts/scaffold-runtime/')) {
+    if ($path === 'server/database/seed-demo-data.php'
+        || $path === 'scripts/scaffold-upgrade'
+        || str_starts_with($path, 'scripts/scaffold-runtime/')) {
         return 'managed';
     }
     if ($path === 'scripts/seed-demo-data') {
@@ -169,7 +171,7 @@ foreach (inventoryGitFiles($root) as $path) {
 
 $inventory = [
     'schema_version' => 2,
-    'template_version' => '1.1.8',
+    'template_version' => '1.1.9',
     'protocol' => 'peanut.create-app-inventory.v2',
     'application' => ['version' => '0.1.0'],
     'variables' => ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],

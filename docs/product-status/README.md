@@ -26,7 +26,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin v1.1.5 生产镜像与演示数据命令修复已进入发布准备；scaffold v1.1.8 不可变身份、最终 P0-E、dev/main、Tag、GitHub Release 与生产验证尚未完成。
+> 总体状态：**进行中**。Peanut Admin v1.1.5 已把演示数据实现纳入 managed 升级边界；scaffold v1.1.9 不可变身份、最终 P0-E、dev/main、Tag、GitHub Release 与生产验证尚未完成。
 >
 > 事实基线：`feat/v1.1.5-production-seeder@b6495f90b713f2483de32006d529c168ca656d0f`，复核日期：`2026-08-15`。
 
@@ -52,7 +52,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 进行中 | v1.1.5 已完成生产镜像与 seeder 源码修复，正在准备 scaffold v1.1.8 和发布元数据；最终 P0-E、合入、Tag/Release 与生产 smoke 尚未执行。 |
+| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 进行中 | v1.1.5 已完成受管 seeder 与生产镜像修复，正在准备 scaffold v1.1.9 和发布元数据；最终 P0-E、合入、Tag/Release 与生产 smoke 尚未执行。 |
 
 ### 暂缓或范围外
 

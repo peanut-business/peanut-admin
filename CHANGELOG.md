@@ -7,15 +7,18 @@ and the two public core packages have independent version histories.
 
 ### Fixed
 
-- The production PHP image now includes the executable `scripts/seed-demo-data`
-  command at the application root.
+- The production PHP image now includes the managed
+  `server/database/seed-demo-data.php` implementation as the stable
+  `peanut-seed-demo-data` command; `scripts/seed-demo-data` remains a
+  source-level compatibility wrapper.
 - Demo seeding uses unique native PDO placeholders for every prepared statement,
   including separate insert and update timestamps and balance mirrors.
 
 ### Changed
 
-- Scaffold `v1.1.8` reseals the managed production Dockerfile while preserving
-  the demo seeder as app-owned application code.
+- Scaffold `v1.1.9` adds the demo seeder implementation to the managed upgrade
+  boundary, so applications created before the demo patch receive it during
+  scaffold upgrade without replacing an app-owned compatibility wrapper.
 - The release keeps 54 migrations and the existing public Core package versions;
   no prebuilt production image or new public package is published.
 

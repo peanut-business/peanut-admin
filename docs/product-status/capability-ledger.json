@@ -10,7 +10,7 @@
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "Peanut Admin v1.1.5 生产镜像与演示数据命令修复已进入发布准备；scaffold v1.1.8 不可变身份、最终 P0-E、dev/main、Tag、GitHub Release 与生产验证尚未完成。"
+    "summary": "Peanut Admin v1.1.5 已把演示数据实现纳入 managed 升级边界；scaffold v1.1.9 不可变身份、最终 P0-E、dev/main、Tag、GitHub Release 与生产验证尚未完成。"
   },
   "capabilities": [
     {
@@ -250,7 +250,7 @@
       "name": "当前能力进入正式发布分支",
       "area": "release",
       "status": "in_progress",
-      "summary": "v1.1.5 已完成生产镜像与 seeder 源码修复，正在准备 scaffold v1.1.8 和发布元数据；最终 P0-E、合入、Tag/Release 与生产 smoke 尚未执行。",
+      "summary": "v1.1.5 已完成受管 seeder 与生产镜像修复，正在准备 scaffold v1.1.9 和发布元数据；最终 P0-E、合入、Tag/Release 与生产 smoke 尚未执行。",
       "acceptance": [
         "P0-E 最终生成和升级运行时 Gate 全部通过",
         "dev 到 main 的固定候选身份和 CI 完整",

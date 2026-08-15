@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "1.1.8",
+    "template_version": "1.1.9",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -120,7 +120,7 @@
             "owner": "scaffold",
             "transform": "changelog",
             "mode": 420,
-            "source_sha256": "6fc26f55465ad009e395814bc03ee9dc7c9a8f5e4cd0c24e474545545966ba53"
+            "source_sha256": "fcd1aae230a41f69e38991663bb233bc6e6a876df1a132aec258351d6005910a"
         },
         {
             "path": "LICENSE",
@@ -156,7 +156,7 @@
             "owner": "scaffold",
             "transform": "release-metadata",
             "mode": 420,
-            "source_sha256": "081dd2cdcdaae349f34f202a7847df17981a66a8088bf584222b5a443965aede"
+            "source_sha256": "2a0bd6f05c65d1a0e54f3d434a2213105106cd3a9ec109d3c63fe76fd949e458"
         },
         {
             "path": "RELEASE_SBOM.spdx.json",
@@ -278,7 +278,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "4a4fe0b6b896229910c810a59610288e10a85d294c400c7999779e99c9d23b44"
+            "source_sha256": "7dd544c3dc91c5cc1853d863374a3c5faf23eb466c6f519289d3082a11679381"
         },
         {
             "path": "deploy/local-stack.env.example",
@@ -1557,6 +1557,254 @@
         {
             "path": "output/deployment/upgrade-rehearsal-20260807.json",
             "target": "output/deployment/upgrade-rehearsal-20260807.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/multi-tenant-admin.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/multi-tenant-admin.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/multi-tenant-docs.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/multi-tenant-docs.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/multi-tenant-final-snapshot.txt",
+            "target": "output/p0e-p0ev118a1/browser/generated/multi-tenant-final-snapshot.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/multi-tenant-h5.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/multi-tenant-h5.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/multi-tenant-initial-snapshot.txt",
+            "target": "output/p0e-p0ev118a1/browser/generated/multi-tenant-initial-snapshot.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/multi-tenant-pc.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/multi-tenant-pc.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/multi-tenant-platform.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/multi-tenant-platform.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/standalone-admin.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/standalone-admin.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/standalone-docs.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/standalone-docs.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/standalone-final-snapshot.txt",
+            "target": "output/p0e-p0ev118a1/browser/generated/standalone-final-snapshot.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/standalone-h5.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/standalone-h5.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/standalone-initial-snapshot.txt",
+            "target": "output/p0e-p0ev118a1/browser/generated/standalone-initial-snapshot.txt",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/browser/generated/standalone-pc.png",
+            "target": "output/p0e-p0ev118a1/browser/generated/standalone-pc.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/checkpoint.json",
+            "target": "output/p0e-p0ev118a1/checkpoint.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/generated-application.json",
+            "target": "output/p0e-p0ev118a1/groups/generated-application.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/legacy-application-recovery.json",
+            "target": "output/p0e-p0ev118a1/groups/legacy-application-recovery.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/legacy-application-upgrade.json",
+            "target": "output/p0e-p0ev118a1/groups/legacy-application-upgrade.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/migration-fault-backup.json",
+            "target": "output/p0e-p0ev118a1/groups/migration-fault-backup.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/migration-fault-restore.json",
+            "target": "output/p0e-p0ev118a1/groups/migration-fault-restore.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/multi-tenant-browser-database.json",
+            "target": "output/p0e-p0ev118a1/groups/multi-tenant-browser-database.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/multi-tenant-fresh.json",
+            "target": "output/p0e-p0ev118a1/groups/multi-tenant-fresh.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/plugin-lifecycle.json",
+            "target": "output/p0e-p0ev118a1/groups/plugin-lifecycle.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/production-compose-database.json",
+            "target": "output/p0e-p0ev118a1/groups/production-compose-database.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/production-compose.json",
+            "target": "output/p0e-p0ev118a1/groups/production-compose.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/standalone-fresh.json",
+            "target": "output/p0e-p0ev118a1/groups/standalone-fresh.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/upgraded-plugin-lifecycle.json",
+            "target": "output/p0e-p0ev118a1/groups/upgraded-plugin-lifecycle.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/upgraded-production-compose-database.json",
+            "target": "output/p0e-p0ev118a1/groups/upgraded-production-compose-database.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/v1.0-forward.json",
+            "target": "output/p0e-p0ev118a1/groups/v1.0-forward.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/groups/v1.1-forward.json",
+            "target": "output/p0e-p0ev118a1/groups/v1.1-forward.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/plan.json",
+            "target": "output/p0e-p0ev118a1/plan.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0ev118a1/recovery.json",
+            "target": "output/p0e-p0ev118a1/recovery.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3687,7 +3935,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "89b040a849d20278f2ac3ea8ca03c532688edacc4c053b5f88bfcefd5bd6765a"
+            "source_sha256": "5b92ee9d3c7e239524609e1c96deede4295ae0b714cb6a13be5bbf812ac0d49a"
         },
         {
             "path": "scripts/select-legacy-pre-alpha5-fixture",
@@ -8215,6 +8463,15 @@
             "source_sha256": "6ab4b219402d6bc06727460d5481b43546f524289c39bfc0bb26753b5d5ea353"
         },
         {
+            "path": "server/database/seed-demo-data.php",
+            "target": "server/database/seed-demo-data.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "source_sha256": "aefb59103ab444bf3cae6887aa926c6fc3ba10ec55756fedbcb02145b064e17f"
+        },
+        {
             "path": "server/extend/.gitignore",
             "target": "server/extend/.gitignore",
             "classification": "managed",
@@ -8811,7 +9068,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "011da31d4a232405b49f467e605361b271bcdc9a95dc60437d052eaf522bf0c6"
+            "source_sha256": "421b712009087c832d0d809fc027571625e2352f2b6a23dbd68926210b23b103"
         },
         {
             "path": "server/tests/Productization/FileMediaHostTest.php",
