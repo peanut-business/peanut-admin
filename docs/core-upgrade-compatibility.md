@@ -3,10 +3,10 @@
 本 Gate 使用两个诚实且相互独立的旧起点，不把它们伪称为统一平台版本：
 
 - PHP `legacy-pre-alpha5`：`scripts/select-legacy-pre-alpha5-fixture` 从应用 Git 第一父历史机器筛选最新合格 tree。固定结果是 commit `4808a82f408f10945de1be8348ebc2ea05bc4fb9`、tree `35e7c827ee72feeecdff5e42e34cdfcf945527df`；它原生锁定公开 Packagist `peanut-admin/core@0.1.0-alpha.2`，只使用该版 10 个公开 PSR-4 root，并包含真实 app-owned `CoreServiceOverrides`/Host 测试。该输入不是 create-app 生成物，overlay 为空；机器证据分别记录 Git archive、应用源码、Host 文件和空 overlay 摘要。
-- Web/current boundary：正式 create-app `1.1.4` 从当前 Gate 的精确 candidate 运行，但
+- Web/current boundary：正式 create-app `1.1.6` 从当前 Gate 的精确 candidate 运行，但
   application manifest 的 `template` 必须逐字段采用同版本不可变 release，
   `generation_source` 则必须逐字段绑定 candidate commit/tree 与 candidate 当前 inventory。
-  release manifest 自身记录完整 source commit/tree、inventory、managed digest 与 274 files；
+  release manifest 自身记录完整 source commit/tree、inventory、managed digest 与 275 files；
   fixture 只固定非递归的 release 内容身份和稳定生成摘要，不再把 release provenance 与移动
   candidate 混成一个身份。它生成当前应用，只承担生成 manifest/source 边界、完整 Web runtime
   与全客户端公开入口扫描。Web 从公开 npm `@peanut-admin/admin@0.1.0-alpha.4` 升到
@@ -15,10 +15,10 @@
 在这两条包级路径之外，`scripts/combined-upgrade-qualification` 增加唯一组合资格路径：
 它从正式 `v1.0.0` create-app commit 生成同一个旧下游应用，并在 app-owned Host 与支付
 业务域分别加入确定性定制。随后按不可跳代的
-`1.0.0 → 1.1.0 → 1.1.1 → 1.1.2 → 1.1.3 → 1.1.4` release manifest 链执行 preflight/apply/verify，
+`1.0.0 → 1.1.0 → 1.1.1 → 1.1.2 → 1.1.3 → 1.1.4 → 1.1.5 → 1.1.6` release manifest 链执行 preflight/apply/verify，
 最后按目标 Composer、Web、PC 与 UniApp manifest/lock 做全新依赖安装。每一代 release 的
 manifest SHA、source commit/tree、inventory、managed tree 和文件数都由 fixture 固定；目标
-application manifest 必须采用同一个 `v1.1.4` scaffold release identity，并保持独立
+application manifest 必须采用同一个 `v1.1.6` scaffold release identity，并保持独立
 `application.version`；该 identity 不代表 Peanut Admin 产品 Tag/Release。
 
 PHP 在历史应用的干净 archive 中先按原生 manifest/lock 安装 Alpha.2、运行原生 `AdminPermissionHostTest.php`，随后只替换 `server/composer.json` 和 `server/composer.lock` 为固定 Alpha.5，再运行同一 Host 测试。Web 在 current create-app 中先按固定 Alpha.4 lock 安装、typecheck/build/consumer，随后只替换 `web/package.json` 和 `web/pnpm-lock.yaml` 为固定 Alpha.5 并重复同一组检查。两侧业务源码和 app-owned 摘要必须逐字节不变。

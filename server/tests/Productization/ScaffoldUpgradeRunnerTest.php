@@ -71,7 +71,7 @@ function scaffoldCopyRelease(string $source,string $target): void { scaffoldCopy
 
 $temporaryRoot=realpath(sys_get_temp_dir());if($temporaryRoot===false)throw new RuntimeException('temp root unavailable');
 $temporary=$temporaryRoot.'/peanut-scaffold-e2e-'.bin2hex(random_bytes(8));mkdir($temporary,0700,true);
-$fromRelease=$root.'/scaffold/releases/v1.0.0/scaffold-manifest.json';$toRelease=$root.'/scaffold/releases/v1.1.0/scaffold-manifest.json';$patchRelease=$root.'/scaffold/releases/v1.1.1/scaffold-manifest.json';$latestRelease=$root.'/scaffold/releases/v1.1.2/scaffold-manifest.json';$nextRelease=$root.'/scaffold/releases/v1.1.3/scaffold-manifest.json';$currentRelease=$root.'/scaffold/releases/v1.1.4/scaffold-manifest.json';$runtimeRelease=$root.'/scaffold/releases/v1.1.5/scaffold-manifest.json';
+$fromRelease=$root.'/scaffold/releases/v1.0.0/scaffold-manifest.json';$toRelease=$root.'/scaffold/releases/v1.1.0/scaffold-manifest.json';$patchRelease=$root.'/scaffold/releases/v1.1.1/scaffold-manifest.json';$latestRelease=$root.'/scaffold/releases/v1.1.2/scaffold-manifest.json';$nextRelease=$root.'/scaffold/releases/v1.1.3/scaffold-manifest.json';$currentRelease=$root.'/scaffold/releases/v1.1.4/scaffold-manifest.json';$runtimeRelease=$root.'/scaffold/releases/v1.1.5/scaffold-manifest.json';$releaseCandidate=$root.'/scaffold/releases/v1.1.6/scaffold-manifest.json';
 try{
     $source=$temporary.'/from-source';
     scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$source]);
@@ -231,6 +231,19 @@ try{
     scaffoldExpect(str_contains($runtimeDockerfile,'VITE_DEPLOYMENT_MODE=standalone')&&str_contains($runtimeDockerfile,'VITE_DEPLOYMENT_MODE=multi-tenant')&&is_executable($runtimeApp.'/deploy/docker/nginx-select-admin.sh'),'v1.1.5 upgrade must install both admin bundles and the executable runtime selector');
     $runtimeRecover=$runner->recover($runtimeApp,scaffoldPlanPath($runtimeApp,$runtimePlan));scaffoldExpect($runtimeRecover['status']==='recovered'&&hash_equals($runtimeBefore,scaffoldFileTree($runtimeApp)),'v1.1.5 recovery must restore the exact v1.1.4 tree');
 
+    $runtimeIdentity=json_decode((string)file_get_contents($runtimeRelease),true,512,JSON_THROW_ON_ERROR)['release'];
+    $releaseCandidateSource=$temporary.'/release-candidate-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$releaseCandidateSource]);scaffoldRun(['git','checkout','--quiet','--detach',$runtimeIdentity['source_commit']],$releaseCandidateSource);
+    $releaseCandidateApp=$temporary.'/release-candidate-app';scaffoldFreshAdopted($releaseCandidateSource,$runtimeRelease,$releaseCandidateApp);
+    $releaseCandidateAppOwnedPath='server/config/peanut.php';file_put_contents($releaseCandidateApp.'/'.$releaseCandidateAppOwnedPath,(string)file_get_contents($releaseCandidateApp.'/'.$releaseCandidateAppOwnedPath)."\n// v1.1.6 preservation proof\n");$releaseCandidateAppOwnedDigest=hash_file('sha256',$releaseCandidateApp.'/'.$releaseCandidateAppOwnedPath);
+    $releaseCandidateBefore=scaffoldFileTree($releaseCandidateApp);$releaseCandidatePlan=$runner->preflight($releaseCandidateApp,$runtimeRelease,$releaseCandidate);
+    scaffoldExpect($releaseCandidatePlan['status']==='ready'&&$releaseCandidatePlan['summary']['conflicts']===0,'v1.1.5 to v1.1.6 plan must be ready');
+    $releaseCandidateAutomatic=[];foreach($releaseCandidatePlan['actions']as$action)if(in_array($action['action'],['create','delete','replace','regenerate'],true))$releaseCandidateAutomatic[$action['path']]=$action['action'];ksort($releaseCandidateAutomatic,SORT_STRING);
+    scaffoldExpect($releaseCandidateAutomatic===['RELEASE_SBOM.spdx.json'=>'regenerate'],'v1.1.6 must only regenerate the lock-aligned SBOM');
+    $releaseCandidateApply=$runner->apply($releaseCandidateApp,scaffoldPlanPath($releaseCandidateApp,$releaseCandidatePlan));$releaseCandidateVerify=$runner->verify($releaseCandidateApp,scaffoldPlanPath($releaseCandidateApp,$releaseCandidatePlan));
+    scaffoldExpect($releaseCandidateApply['status']==='applied'&&$releaseCandidateVerify['status']==='verified','v1.1.5 to v1.1.6 apply/verify must complete');
+    scaffoldExpect(hash_equals($releaseCandidateAppOwnedDigest,(string)hash_file('sha256',$releaseCandidateApp.'/'.$releaseCandidateAppOwnedPath)),'v1.1.6 upgrade must preserve app-owned bytes');
+    $releaseCandidateRecover=$runner->recover($releaseCandidateApp,scaffoldPlanPath($releaseCandidateApp,$releaseCandidatePlan));scaffoldExpect($releaseCandidateRecover['status']==='recovered'&&hash_equals($releaseCandidateBefore,scaffoldFileTree($releaseCandidateApp)),'v1.1.6 recovery must restore the exact v1.1.5 tree');
+
     $fromCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.0.0','--source-commit='.SCAFFOLD_FROM_COMMIT,'--output='.$root.'/scaffold/releases/v1.0.0','--check']);
     $toManifest=json_decode((string)file_get_contents($toRelease),true,512,JSON_THROW_ON_ERROR);$toCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.0','--source-commit='.$toManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.0','--check']);
     $patchManifest=json_decode((string)file_get_contents($patchRelease),true,512,JSON_THROW_ON_ERROR);$patchCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.1','--source-commit='.$patchManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.1','--check']);
@@ -238,7 +251,8 @@ try{
     $nextManifest=json_decode((string)file_get_contents($nextRelease),true,512,JSON_THROW_ON_ERROR);$nextCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.3','--source-commit='.$nextManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.3','--check']);
     $currentManifest=json_decode((string)file_get_contents($currentRelease),true,512,JSON_THROW_ON_ERROR);$currentCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.4','--source-commit='.$currentManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.4','--check']);
     $runtimeManifest=json_decode((string)file_get_contents($runtimeRelease),true,512,JSON_THROW_ON_ERROR);$runtimeCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.5','--source-commit='.$runtimeManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.5','--check']);
-    scaffoldExpect(str_contains($fromCheck,'verified')&&str_contains($toCheck,'verified')&&str_contains($patchCheck,'verified')&&str_contains($latestCheck,'verified')&&str_contains($nextCheck,'verified')&&str_contains($currentCheck,'verified')&&str_contains($runtimeCheck,'verified'),'all immutable release trees must exactly regenerate');
+    $releaseCandidateManifest=json_decode((string)file_get_contents($releaseCandidate),true,512,JSON_THROW_ON_ERROR);$releaseCandidateCheck=scaffoldRun(['php',$root.'/scripts/build-scaffold-release','--version=1.1.6','--source-commit='.$releaseCandidateManifest['release']['source_commit'],'--output='.$root.'/scaffold/releases/v1.1.6','--check']);
+    scaffoldExpect(str_contains($fromCheck,'verified')&&str_contains($toCheck,'verified')&&str_contains($patchCheck,'verified')&&str_contains($latestCheck,'verified')&&str_contains($nextCheck,'verified')&&str_contains($currentCheck,'verified')&&str_contains($runtimeCheck,'verified')&&str_contains($releaseCandidateCheck,'verified'),'all immutable release trees must exactly regenerate');
 }finally{putenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS');scaffoldDelete($temporary);}
 
 echo "SCAFFOLD-UPGRADE-E2E-001 passed\n";

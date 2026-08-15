@@ -211,6 +211,13 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
     target_manifest_path = ROOT / "scaffold/releases" / f"v{target.get('version')}" / "scaffold-manifest.json"
     target_manifest = read_json(target_manifest_path)
     target_release = target_manifest.get("release", {})
+    target_source_inventory = command(
+        [
+            "git", "-C", str(ROOT), "show",
+            f"{target.get('source_commit')}:scaffold/application-template-inventory.json",
+        ],
+        capture=True,
+    ).stdout
     target_expected = {
         "source_commit": target.get("source_commit"),
         "source_tree": target.get("source_tree"),
@@ -223,7 +230,7 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         or any(target_release.get(key) != value for key, value in target_expected.items())
         or len(target_manifest.get("files", [])) != target.get("file_count")
         or sha256(target_manifest_path) != target.get("manifest_sha256")
-        or sha256(ROOT / "scaffold/application-template-inventory.json") != target.get("inventory_sha256")
+        or hashlib.sha256(target_source_inventory.encode("utf-8")).hexdigest() != target.get("inventory_sha256")
         or target_manifest.get("application", {}).get("version") != target.get("default_application_version")
         or target.get("application_manifest_schema") != 2
         or target.get("default_uniapp_version_code") != "10"

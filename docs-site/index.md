@@ -42,7 +42,7 @@ features:
 
 <div class="home-proof">
   <div class="home-proof-copy">
-    <p class="eyebrow">CURRENT BASELINE · V1.1.0</p>
+    <p class="eyebrow">CURRENT BASELINE · V1.1.3</p>
     <h2>从可运行模板，到可维护的产品 Host</h2>
     <p>Standalone 与多租户双模式、实例内 Tenant 平台管理、可信租户会话及代表业务隔离，已经收进同一条可验证的交付链。</p>
     <div class="home-proof-actions">
@@ -101,7 +101,7 @@ features:
   <div>
     <p class="eyebrow">RELEASE BOUNDARY</p>
     <h2>发布身份清楚，产品边界同样清楚</h2>
-    <p>Peanut Admin 应用 <code>1.1.0</code> 已以 annotated <code>v1.1.0</code> 与同 tag GitHub Release 正式发布。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；本版本不宣称包含完整 SaaS 商业能力。</p>
+    <p>Peanut Admin 应用 <code>1.1.3</code> 以 annotated <code>v1.1.3</code> 与同 tag GitHub Release 发布。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；本版本不宣称包含完整 SaaS 商业能力。</p>
   </div>
   <a href="/releases">查看版本与发布 <span>→</span></a>
 </div>
