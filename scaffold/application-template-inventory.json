@@ -3611,20 +3611,18 @@
         {
             "path": "scripts/mt05/README.md",
             "target": "scripts/mt05/README.md",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "9137ce713552ec2b101601c82935b7158160465a1122d6ca90801ebae3d4c01a"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "scripts/mt05/run-install-upgrade",
             "target": "scripts/mt05/run-install-upgrade",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 493,
-            "source_sha256": "a75fa063e072c6e4869156aab7b80d21fe1ce21112452d7be41db037190b0cda"
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
         },
         {
             "path": "scripts/p0e-browser-smoke",
