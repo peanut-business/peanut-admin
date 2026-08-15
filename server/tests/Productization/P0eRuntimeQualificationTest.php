@@ -397,7 +397,10 @@ class OfflineRunner(module.Runner):
         self.docs_root = None
 
 
-with tempfile.TemporaryDirectory(prefix="p0e-offline-closure-", dir="/private/tmp") as directory:
+with tempfile.TemporaryDirectory(
+    prefix="p0e-offline-closure-",
+    dir=Path(tempfile.gettempdir()).resolve(),
+) as directory:
     temporary = Path(directory)
     output = temporary / "output"
     backup = temporary / "backup"
