@@ -5,7 +5,7 @@ namespace app\common\model\refund;
 
 use app\common\enum\RefundEnum;
 use app\common\model\BaseModel;
-use app\common\model\auth\Admin;
+use think\facade\Db;
 
 /**
  * 退款日志模型
@@ -30,7 +30,10 @@ class RefundLog extends BaseModel
         if (empty($data['handle_id'])) {
             return '系统';
         }
-        return (string) Admin::where('id', $data['handle_id'])->value('nickname');
+        return (string)Db::name('tenant_member')
+            ->where('tenant_id', (int)($data['tenant_id'] ?? 0))
+            ->where('id', (int)$data['handle_id'])
+            ->value('display_name');
     }
 
     /** 退款状态文字 */

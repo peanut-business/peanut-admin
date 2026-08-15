@@ -129,23 +129,21 @@ while IFS= read -r path; do
       select_test server/tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php
       ;;
     *tenant*|*Tenant*|server/app/platform/*)
-      select_test server/tests/Multitenancy/AdminTenantContextTest.php
+      select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
+      select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
       select_test server/tests/Multitenancy/TenantGovernanceTest.php
       select_test server/tests/Multitenancy/PlatformOperatorBoundaryTest.php
       ;;
     server/app/adminapi/*auth*|server/app/common/*auth*|server/app/common/*permission*)
       select_test server/tests/Productization/AdminPermissionHostTest.php
-      select_test server/tests/Productization/AdminRbacCrudTest.php
-      select_test server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php
+      select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       ;;
     server/config/admin_api_access.php|server/route/app.php|scripts/check-admin-api-permissions.php|server/database/migrations/*admin*permission*)
       select_test server/tests/Productization/AdminPermissionHostTest.php
-      select_test server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php
-      select_test server/tests/Multitenancy/AdminApiPermissionMigrationTest.php
-      select_test server/tests/Multitenancy/AdminRbacTenantIsolationTest.php
+      select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       ;;
     server/database/install.php|server/database/migrate.php|server/database/migrations/*tenant*)
-      select_test server/tests/Productization/DefaultTenantBootstrapTest.php
+      select_test server/tests/Productization/FreshSchemaBaselineTest.php
       ;;
   esac
 done < "$changed_file"

@@ -6,7 +6,6 @@ $runtimeFiles = [
     'app/adminapi',
     'app/platform/service/PdoTenantOwnerAdminProvisioner.php',
     'app/common/service/async/AdminAsyncAuthorization.php',
-    'app/common/service/tenant/DefaultTenantBootstrap.php',
 ];
 $forbidden = [
     'pa_legacy_admin_tenant_map',
@@ -15,6 +14,9 @@ $forbidden = [
     'pa_default_tenant_bootstrap',
 ];
 $source = '';
+if (is_file($serverDir . '/app/common/service/tenant/DefaultTenantBootstrap.php')) {
+    throw new RuntimeException('Retired legacy bootstrap service remains in Runtime');
+}
 foreach ($runtimeFiles as $relative) {
     $path = $serverDir . '/' . $relative;
     if (is_dir($path)) {

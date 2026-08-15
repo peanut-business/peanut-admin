@@ -6,7 +6,6 @@ namespace app\adminapi\logic\auth;
 use app\adminapi\service\AdminPermissionService;
 use app\common\logic\BaseLogic;
 use app\common\model\auth\SystemMenu;
-use app\common\model\auth\SystemRoleMenu;
 use think\facade\Db;
 
 class MenuLogic extends BaseLogic
@@ -95,7 +94,8 @@ class MenuLogic extends BaseLogic
             if (SystemMenu::where('pid', $id)->count() > 0) {
                 throw new \RuntimeException('已关联下级菜单，暂不可删除');
             }
-            if (SystemRoleMenu::where('menu_id', $id)->count() > 0) {
+            $permission = trim((string)$menu->perms);
+            if ($permission !== '' && self::permissionAssigned($permission)) {
                 throw new \RuntimeException('菜单已被角色使用，暂不可删除');
             }
 
@@ -155,5 +155,13 @@ class MenuLogic extends BaseLogic
             }
             $parentId = (int)$parent->pid;
         }
+    }
+
+    private static function permissionAssigned(string $permission): bool
+    {
+        return Db::name('role_permission')->alias('rp')
+            ->join('permission p', 'p.id = rp.permission_id')
+            ->where('p.key', $permission)
+            ->count() > 0;
     }
 }
