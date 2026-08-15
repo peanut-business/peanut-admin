@@ -3406,7 +3406,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "f81397d23abeecee5455f3bb25e1485ef866b5681d216ca9159b9976c72de8d1"
+            "source_sha256": "872ab75c625639e81667e99dade7758c71a66cc3f112ffb07fba732855c470a6"
         },
         {
             "path": "scripts/build-application-template-inventory",
