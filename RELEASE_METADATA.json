@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "1.1.4",
-  "expected_tag": "v1.1.4",
+  "version": "1.1.5",
+  "expected_tag": "v1.1.5",
   "release_date": "2026-08-15",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
@@ -33,15 +33,15 @@
   "lockfiles": {
     "server/composer.lock": "d7da2c611c7d74dea47f8256bb08841857c8433be56905dfdce78542875d17d3",
     "web/pnpm-lock.yaml": "1ba6d87a5ffe944c21bdad76b2309fe69919a0553128bd40c6b5dd429c0e9f79",
-    "pc/package-lock.json": "814563d1ad0c91238e7e290d218c66ae971e0a7dc07384bc5e6ef66430e8fff9",
-    "uniapp/package-lock.json": "37baa03743b488b632b6e4be97d6ae1070e9f22b8455e962e82103fa4729a403",
+    "pc/package-lock.json": "616c37b8cd183657096c9722441aac2738a8f710c182cfb03c68f32660f31946",
+    "uniapp/package-lock.json": "fceda8f31424e9051335cd2961a243df043c2a03e75db700811f3559c4bdb391",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
-    "NOTICE": "0b5fc6f7a42180898adcd11a0a1c477df472b103801d516a40ea5543c517fbd1",
-    "THIRD_PARTY_NOTICES.md": "7bf0cacb12c2f29bc0c8f141736468757a3e263248857f47d48883a47cf8b071",
-    "RELEASE_SBOM.spdx.json": "df342b0dfc0923d6e92fc65097aead10bff7c5d93e5dff9470b01726dabc4f65"
+    "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
+    "THIRD_PARTY_NOTICES.md": "8253b6ea0e26db948d3ad8441e58fd6affb7dbbad4b5dfb580e154394177c081",
+    "RELEASE_SBOM.spdx.json": "54648a99691185bbf1729b1467c755f6b9430653ebbc09f5a0173f34b7589123"
   },
   "migrations": {
     "count": 54,
@@ -106,18 +106,18 @@
   "technical_qualification": {
     "phase": "P0-E",
     "result": "pass",
-    "final_candidate_commit": "42496d996de715b9a3195447aeeafd0748b83095",
-    "final_candidate_tree": "18e1132a42cc185df81786b410b725b6969b61cb",
-    "run_id": "p0ev117a1",
+    "final_candidate_commit": "8fa274b2f91f5f482a361ee137302fa3438b8a11",
+    "final_candidate_tree": "4e549b55922b36c0c851439a0ba1943e41e57a03",
+    "run_id": "p0ev119a1",
     "groups_passed": 16,
-    "summary_sha256": "7e8eef7bddf6c96bdf87537cbb753e6e7de13dff0c6c4887e93f68b14f83e460",
+    "summary_sha256": "8acdbf354a616bebb8de516787c747ca97ea79e383018828d61dda726673b940",
     "cleanup_residual_count": 0,
     "lease_released": true,
     "migrations": 54,
-    "scaffold_version": "1.1.7",
+    "scaffold_version": "1.1.9",
     "application_initial_version": "0.1.0",
-    "evidence": "P0-E run p0ev117a1 on fixed candidate 42496d996de715b9a3195447aeeafd0748b83095 passed all 16 groups for scaffold v1.1.7, including clean dependency builds, dual-mode fresh/forward runtime, full legacy application upgrade/recovery, Plugin lifecycle, Compose and four real-browser paths; cleanup residuals were zero and the lease was released.",
-    "release_delta": "Demo experience patch: visible documentation/support links, login logo cleanup, explicit idempotent demo-data seeder and production resource credential/documentation references; scaffold v1.1.7 reseals the current managed release inventory while preserving the v1.1.6 runtime and 54 migrations."
+    "evidence": "P0-E run p0ev119a1 on fixed candidate 8fa274b2f91f5f482a361ee137302fa3438b8a11 passed all 16 groups for scaffold v1.1.9, including clean dependency builds, dual-mode fresh/forward runtime, the complete legacy application upgrade/recovery chain, Plugin lifecycle, Compose and four real-browser paths; cleanup residuals were zero and the lease was released.",
+    "release_delta": "Production PHP image exposes a managed demo seeder implementation while preserving the root compatibility wrapper as app-owned; native PDO statements use unique placeholders; scaffold v1.1.9 preserves 54 migrations and existing public Core package versions."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }
