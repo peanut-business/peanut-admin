@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "1.1.0",
-  "expected_tag": "v1.1.0",
-  "release_date": "2026-08-13",
+  "version": "1.1.3",
+  "expected_tag": "v1.1.3",
+  "release_date": "2026-08-15",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "proprietary",
@@ -32,20 +32,20 @@
   },
   "lockfiles": {
     "server/composer.lock": "d7da2c611c7d74dea47f8256bb08841857c8433be56905dfdce78542875d17d3",
-    "web/pnpm-lock.yaml": "1ec634ac6b9a680806d6aa40640e52b4ba9df2a0d2554b7d67b0c46ed4ecab90",
-    "pc/package-lock.json": "5c9bb037f72b3ed6bd3ab763c14aa8bc3270de4c251f20729fbf715407376633",
-    "uniapp/package-lock.json": "f2d709b386d6b3b80ee9f9799b35883cd3cc2d7b9973f9bdfe762c0f4f4b37d5",
+    "web/pnpm-lock.yaml": "1ba6d87a5ffe944c21bdad76b2309fe69919a0553128bd40c6b5dd429c0e9f79",
+    "pc/package-lock.json": "de24b4a799d74125a1732b97b59e15858c9ad2cebcda6dc020775b6a0cd102af",
+    "uniapp/package-lock.json": "11d708ba95722b7df33d8886a9466d8c082abb2027fde00b17aa97ac8f6aba4a",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
-    "NOTICE": "89b87de8750121870acc0babfd1692f6b384717442acb62bf96ecd97529a4106",
-    "THIRD_PARTY_NOTICES.md": "bef655f82d74d37607d8f4695666dd84e92bd1b1d87f15d111c2ec1a06657268",
-    "RELEASE_SBOM.spdx.json": "5060b598409a3ea557641a0c616c63daba2605014089bb23e732d9a9f84cf14a"
+    "NOTICE": "475e45d455506171c34388beaa27138641bac621471744452d03e5dd636faa96",
+    "THIRD_PARTY_NOTICES.md": "83b8e419070e89de6400fee1d20ab0e7422be5b1a19ca671d1316817fc43c500",
+    "RELEASE_SBOM.spdx.json": "ee93cb2529236e3ee2e12fe52776c1cac81c4019eeb8a47ddfd5030c1e4c990f"
   },
   "migrations": {
-    "count": 50,
-    "ordered_path_list_sha256": "99844e7bd440c6172b5760367230c822d0edc7962fa56b78b526025eea33d31d",
+    "count": 54,
+    "ordered_path_list_sha256": "8af1fd40a72edc0a832a662a3398b99004f27ad3ed6f6f9f48b3b051c82854d2",
     "ordered_files": [
       "server/database/migrations/20260728_admin_auth_parity.sql",
       "server/database/migrations/20260728_admin_management_parity.sql",
@@ -96,34 +96,25 @@
       "server/database/migrations/20260813_task_import_export.sql",
       "server/database/migrations/20260813_tenant_auth_client_key.sql",
       "server/database/migrations/20260813_tenant_module_management.sql",
-      "server/database/migrations/20260813_transaction_setting_tenant_ownership.sql"
+      "server/database/migrations/20260813_transaction_setting_tenant_ownership.sql",
+      "server/database/migrations/20260814_admin_api_default_deny.sql",
+      "server/database/migrations/20260814_external_callback_tenant_routing.sql",
+      "server/database/migrations/20260814_legacy_decoration_entry_convergence.sql",
+      "server/database/migrations/20260814_plugin_module_lifecycle.sql"
     ]
   },
   "technical_qualification": {
-    "phase": "MT05",
-    "result": "pass",
-    "final_candidate_commit": "074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8",
-    "final_candidate_tree": "1a2df02e97414b5c236a842adf17804fb33e4699",
-    "install_upgrade": {
-      "candidate_commit": "074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8",
-      "run_id": "mt05-074fce5-install",
-      "migrations": 50,
-      "tables": 81,
-      "modes": [
-        "standalone-empty",
-        "v1-forward",
-        "multitenant-empty"
-      ],
-      "summary_sha256": "9460e256d0494c693a398f1e28742d432809460173294a82601ddebd2d3b07ae",
-      "evidence": "PR #100 qualification record plus run summary SHA-256"
-    },
-    "browser": {
-      "candidate_commit": "2def4819d038ae991a7dbd0e38858540ebef82be",
-      "run_id": "mt05-2def481-browser",
-      "summary_sha256": "402773ce98021c151e2f287a4937bd797102c823fe22b37f82e85a071abf6814",
-      "evidence": "PR #100 qualification record plus run summary SHA-256"
-    },
-    "release_delta": "Version and public dependency identities, production deployment environment wiring, legal inventory and user-facing release documentation only; qualified Tenant business behavior and migration files are unchanged."
+    "phase": "P0-E",
+    "result": "pending",
+    "previous_qualified_candidate_commit": "b757da6072de6babb3a41c2ce521ac0598803d76",
+    "previous_qualified_candidate_tree": "bb75bddb71b737aec504d81149b3d4fb45660cf3",
+    "previous_run_id": "p0ei815a1",
+    "groups_passed": 0,
+    "migrations": 54,
+    "scaffold_version": "1.1.6",
+    "application_initial_version": "0.1.0",
+    "evidence": "v1.1.5 passed in PR #134; final v1.1.6 fixed-candidate qualification pending",
+    "release_delta": "Product version, release metadata, legal inventory and current release documentation; scaffold v1.1.6 preserves v1.1.5 runtime behavior while aligning generated legal bytes with the final lock graph."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

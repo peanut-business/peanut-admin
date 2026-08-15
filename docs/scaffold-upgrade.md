@@ -30,6 +30,12 @@ create-app，再逐字验证完整 managed 生成树。
 - `v1.1.4`：增加独立 `application.version` 合同与 scaffold release v3 token。新应用默认
   `0.1.0`，所有 managed 版本表面从该值渲染；该 scaffold identity 不是 Peanut Admin
   产品 Tag/Release，且不会修改或重封 `v1.1.3`。
+- `v1.1.5`：同一生产镜像构建 Standalone 与 multi-tenant 管理端 bundle，并在容器启动时
+  按 `DEPLOYMENT_MODE` 选择；升级只替换四个登记的 production runtime managed 文件，
+  保持应用版本和 app-owned 字节不变。
+- `v1.1.6`：保留 `v1.1.5` Runtime 行为，更新产品版本转换和五份最终 lock 对应的法律
+  inventory；升级只处理登记的 managed/generated-managed 文件，继续保持应用版本和
+  app-owned 字节不变。
 
 历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
 schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没有静默覆盖历史证据。
@@ -39,8 +45,8 @@ schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没�
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
-  --from-manifest=/absolute/path/to/scaffold/releases/v1.1.3/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.4/scaffold-manifest.json
+  --from-manifest=/absolute/path/to/scaffold/releases/v1.1.5/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v1.1.6/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
