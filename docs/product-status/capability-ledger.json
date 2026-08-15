@@ -4,7 +4,7 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/module-identity-tenancy-docs",
-    "commit": "c36e9fb2674eeca19479fa8c977b1d5aeb614baa",
+    "commit": "b52554fa275aefca1fade651df6fbbbaa37192df",
     "reviewed_at": "2026-08-16"
   },
   "overall": {
