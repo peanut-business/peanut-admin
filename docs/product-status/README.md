@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin v1.1.5 与 scaffold v1.1.9 已通过最终 P0-E 16 组资格；尚需最新 head CI、dev/main、Tag、GitHub Release 与生产升级验证。
+> 总体状态：**已验证**。Peanut Admin v1.1.5 已完成 P0-E 16/16、PR #142/143、dev/main、annotated tag、GitHub Release、oracle3 生产升级、配对备份、54 条迁移、管理员登录、文档链接与 demo 数据 smoke；状态为 production-demonstrated。
 >
-> 事实基线：`feat/v1.1.5-production-seeder@b6495f90b713f2483de32006d529c168ca656d0f`，复核日期：`2026-08-15`。
+> 事实基线：`dev@11c1d1cb713ecc6d5b09e65ea5ebd92accd35fc9`，复核日期：`2026-08-16`。
 
 ### 已验证可用
 
@@ -36,7 +36,7 @@ php scripts/check-product-capability-ledger
 |---|---|---|---|
 | `PA-FOUNDATION-001` | LikeAdmin 标准版基础能力对齐 | 已验证 | 基础后台能力、空库安装、迁移账本和代表路由已有独立验证。 |
 | `PA-TENANCY-001` | 多租户隔离与平台租户治理 | 已验证 | MT00 至 MT06 已完成，覆盖 TenantContext、数据隔离、平台 operator、TenantModule 和双部署模式。 |
-| `PA-PRODUCT-001` | 产品化部署与发布基线 | 已验证 | 生产 Compose、最低 CI、正式部署、法律制品和 v1.0.0 发布链已经封存。 |
+| `PA-PRODUCT-001` | 产品化部署与发布基线 | 已验证 | 生产 Compose、最低 CI、正式部署、法律制品和 v1.1.5 发布链已经封存。 |
 | `PA-OWNERSHIP-001` | 核心包与应用唯一实现边界 | 已验证 | 权限、管理员、字典、文件、任务、会员财务、内容装修、通知、支付和 OAuth 已固定应用 Runtime 与核心边界。 |
 | `PA-BRAND-001` | 中性品牌与安全安装默认值 | 已验证 | 四端品牌消费、中性安装、显式初始密码和文档门户合同已完成。 |
 | `PA-PLUGIN-001` | Plugin 与 Module 生命周期 | 已验证 | 安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture。 |
@@ -47,12 +47,7 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。 |
 | `PA-P0E-002` | 最终生成应用运行时验收 | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
 | `PA-P0E-003` | 最终升级应用运行时验收 | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
-
-### 已实现或正在验收
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 进行中 | v1.1.5 与 scaffold v1.1.9 已通过 P0-E 16/16；正在等待最新 head CI，之后依次合入 dev/main、Tag/Release、生产升级与 smoke。 |
+| `PA-DELIVERY-002` | 当前能力进入正式发布分支 | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 
 ### 暂缓或范围外
 
