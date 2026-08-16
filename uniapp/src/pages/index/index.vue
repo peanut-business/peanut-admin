@@ -63,7 +63,7 @@
 
       <view v-else-if="decorationComponent.name === 'news'" class="article-section" data-decoration-component="news">
         <view class="section-title">最新资讯</view>
-        <view class="article-list">
+        <view v-if="articles.length" class="article-list">
           <view v-for="item in articles" :key="item.id" class="article-item" @click="goDetail(item.id)">
             <image :src="item.image" class="article-img" mode="aspectFill" />
             <view class="article-info">
@@ -74,6 +74,10 @@
               </view>
             </view>
           </view>
+        </view>
+        <view v-else class="article-empty">
+          <text class="article-empty-title">暂未发布资讯</text>
+          <text class="article-empty-copy">新的内容将在这里展示</text>
         </view>
       </view>
     </template>
@@ -178,6 +182,9 @@ function goNews() { uni.navigateTo({ url: '/pages/news/news' }) }
 .nav-name { margin-top: 8rpx; color: #333; font-size: 24rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .article-section { padding: 24rpx; }
 .section-title { font-size: 32rpx; font-weight: 600; margin-bottom: 20rpx; color: var(--theme-primary); }
+.article-empty { display: flex; min-height: 200rpx; flex-direction: column; align-items: center; justify-content: center; gap: 12rpx; border: 2rpx dashed #cbd5e1; border-radius: 12rpx; background: #f8fafc; }
+.article-empty-title { color: #334155; font-size: 28rpx; font-weight: 600; }
+.article-empty-copy { color: #64748b; font-size: 24rpx; }
 .article-item { display: flex; background: #fff; border-radius: 12rpx; margin-bottom: 20rpx; overflow: hidden; }
 .article-img { width: 200rpx; height: 160rpx; flex-shrink: 0; }
 .article-info { flex: 1; padding: 16rpx 20rpx; display: flex; flex-direction: column; justify-content: space-between; }

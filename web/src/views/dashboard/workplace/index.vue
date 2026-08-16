@@ -80,7 +80,7 @@
         <el-col :span="24">
           <el-card class="general-card">
             <template #header>{{ $t('workplace.shortcuts.title') }}</template>
-            <el-row :gutter="12" class="shortcut-grid">
+            <el-row v-if="workbench.menu.length > 0" :gutter="12" class="shortcut-grid">
               <el-col
                 v-for="item in workbench.menu"
                 :key="item.url"
@@ -95,26 +95,41 @@
                 </router-link>
               </el-col>
             </el-row>
+            <el-empty
+              v-else
+              class="workplace-empty"
+              :description="$t('workplace.empty.shortcuts')"
+            />
           </el-card>
         </el-col>
 
         <el-col :xs="24" :lg="16">
           <el-card class="general-card">
             <template #header>{{ $t('workplace.visitor.title') }}</template>
-            <Chart height="320px" :option="visitorOption" />
+            <Chart v-if="hasVisitorData" height="320px" :option="visitorOption" />
+            <el-empty
+              v-else
+              class="workplace-empty workplace-empty--chart"
+              :description="$t('workplace.empty.visitor')"
+            />
           </el-card>
         </el-col>
         <el-col :xs="24" :lg="8">
           <el-card class="general-card">
             <template #header>{{ $t('workplace.sale.title') }}</template>
-            <Chart height="320px" :option="saleOption" />
+            <Chart v-if="hasSaleData" height="320px" :option="saleOption" />
+            <el-empty
+              v-else
+              class="workplace-empty workplace-empty--chart"
+              :description="$t('workplace.empty.sale')"
+            />
           </el-card>
         </el-col>
 
         <el-col :span="24">
           <el-card class="general-card">
             <template #header>{{ $t('workplace.support.title') }}</template>
-            <el-row :gutter="16" class="support-grid">
+            <el-row v-if="supportItems.length > 0" :gutter="16" class="support-grid">
               <el-col
                 v-for="item in supportItems"
                 :key="item.title"
@@ -141,6 +156,11 @@
                 </component>
               </el-col>
             </el-row>
+            <el-empty
+              v-else
+              class="workplace-empty"
+              :description="$t('workplace.empty.support')"
+            />
           </el-card>
         </el-col>
       </el-row>
@@ -194,6 +214,18 @@
       ...item,
       url: (item as typeof item & { url?: string }).url || '',
     }))
+  );
+
+  const hasVisitorData = computed(
+    () =>
+      workbench.visitor.date.length > 0 &&
+      workbench.visitor.list.some((series) => series.data.length > 0)
+  );
+
+  const hasSaleData = computed(
+    () =>
+      workbench.sale.date.length > 0 &&
+      workbench.sale.list.some((series) => series.data.length > 0)
   );
 
   const metrics = computed(() => [
@@ -373,5 +405,13 @@
     color: var(--el-color-primary);
     font-size: 12px;
     overflow-wrap: anywhere;
+  }
+
+  .workplace-empty {
+    padding: 20px 0;
+  }
+
+  .workplace-empty--chart {
+    height: 320px;
   }
 </style>

@@ -22,5 +22,9 @@ export default {
   'workplace.visitor.title': 'Visitor trend',
   'workplace.sale.title': 'Sales trend',
   'workplace.support.title': 'Support',
+  'workplace.empty.shortcuts': 'No shortcuts available',
+  'workplace.empty.visitor': 'No visitor trend data available',
+  'workplace.empty.sale': 'No sales trend data available',
+  'workplace.empty.support': 'No support information available',
   'workplace.loadFailed': 'Failed to load workplace data.',
 };
