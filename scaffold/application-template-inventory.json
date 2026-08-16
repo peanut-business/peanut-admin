@@ -7696,7 +7696,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "0a02d3da00746a75a327be01e133febee69d59cdf7c1f59c64a6101b5b65add2"
+            "source_sha256": "1bb4353c4774efa4a890b78550fbccbaa1ea38c8d8193c2466c4caedeaf19e47"
         },
         {
             "path": "server/database/install.php",

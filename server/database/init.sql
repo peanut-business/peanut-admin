@@ -1481,8 +1481,8 @@ WHERE NOT EXISTS (
 
 INSERT INTO `pa_crontab`
   (`name`,`type`,`command`,`params`,`status`,`expression`,`error`,`last_time`,`time`,`max_time`,`sort`,`remark`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,'退款状态收敛', 1, 'refund:reconcile', '', 1, '* * * * *', '', 0, 0, 0, 100,
-       '查询支付渠道并收敛充值退款最终状态', 0, 0
+SELECT '退款状态收敛', 1, 'refund:reconcile', '', 1, '* * * * *', '', 0, 0, 0, 100,
+       '查询支付渠道并收敛充值退款最终状态', 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (
   SELECT 1 FROM `pa_crontab` WHERE `command` = 'refund:reconcile'
 );
@@ -1494,65 +1494,65 @@ INSERT IGNORE INTO `pa_notice_scene`
   (4,'reset_password','找回密码验证码','用户通过手机号重置密码','用户',JSON_ARRAY('code'),'','您的找回密码验证码是${code}，五分钟内有效。',0,0,0,@pa_default_tenant_id);
 INSERT INTO `pa_notice_scene`
   (`code`,`name`,`description`,`recipient`,`variables`,`sms_template_id`,`sms_content`,`sms_status`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,'login_code', '登录验证码', '用户使用手机号验证码登录', '用户', JSON_ARRAY('code'), '', '您的登录验证码是${code}，五分钟内有效。', 0, 0, 0
+SELECT 'login_code', '登录验证码', '用户使用手机号验证码登录', '用户', JSON_ARRAY('code'), '', '您的登录验证码是${code}，五分钟内有效。', 0, 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_notice_scene` WHERE `code` = 'login_code');
 INSERT INTO `pa_notice_scene`
   (`code`,`name`,`description`,`recipient`,`variables`,`sms_template_id`,`sms_content`,`sms_status`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,'bind_mobile', '绑定手机验证码', '用户首次绑定手机号', '用户', JSON_ARRAY('code'), '', '您的绑定手机验证码是${code}，五分钟内有效。', 0, 0, 0
+SELECT 'bind_mobile', '绑定手机验证码', '用户首次绑定手机号', '用户', JSON_ARRAY('code'), '', '您的绑定手机验证码是${code}，五分钟内有效。', 0, 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_notice_scene` WHERE `code` = 'bind_mobile');
 INSERT INTO `pa_notice_scene`
   (`code`,`name`,`description`,`recipient`,`variables`,`sms_template_id`,`sms_content`,`sms_status`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,'change_mobile', '变更手机验证码', '用户更换已绑定手机号', '用户', JSON_ARRAY('code'), '', '您的变更手机验证码是${code}，五分钟内有效。', 0, 0, 0
+SELECT 'change_mobile', '变更手机验证码', '用户更换已绑定手机号', '用户', JSON_ARRAY('code'), '', '您的变更手机验证码是${code}，五分钟内有效。', 0, 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_notice_scene` WHERE `code` = 'change_mobile');
 INSERT INTO `pa_notice_scene`
   (`code`,`name`,`description`,`recipient`,`variables`,`sms_template_id`,`sms_content`,`sms_status`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,'reset_password', '找回密码验证码', '用户通过手机号重置密码', '用户', JSON_ARRAY('code'), '', '您的找回密码验证码是${code}，五分钟内有效。', 0, 0, 0
+SELECT 'reset_password', '找回密码验证码', '用户通过手机号重置密码', '用户', JSON_ARRAY('code'), '', '您的找回密码验证码是${code}，五分钟内有效。', 0, 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_notice_scene` WHERE `code` = 'reset_password');
 INSERT INTO `pa_crontab`
     (`name`,`type`,`command`,`params`,`status`,`expression`,`error`,`last_time`,`time`,`max_time`,`sort`,`remark`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,'退款状态收敛', 1, 'refund:reconcile', '', 1, '* * * * *', '', 0, 0, 0, 100,
-       '查询支付渠道并收敛充值退款最终状态', 0, 0
+SELECT '退款状态收敛', 1, 'refund:reconcile', '', 1, '* * * * *', '', 0, 0, 0, 100,
+       '查询支付渠道并收敛充值退款最终状态', 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (
     SELECT 1 FROM `pa_crontab` WHERE `command` = 'refund:reconcile'
 );
 INSERT INTO `pa_crontab`
   (`name`,`type`,`command`,`params`,`status`,`expression`,`error`,`last_time`,`time`,`max_time`,`sort`,`remark`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,'代码生成归档清理',1,'generator:cleanup','',1,'0 3 * * *','',0,0,0,20,
-       '清理已使用或过期的代码生成下载令牌和隔离归档',0,0
+SELECT '代码生成归档清理',1,'generator:cleanup','',1,'0 3 * * *','',0,0,0,20,
+       '清理已使用或过期的代码生成下载令牌和隔离归档',0,0,@pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_crontab` WHERE `command`='generator:cleanup');
 INSERT INTO `pa_decorate_page` (`type`,`name`,`data`,`meta`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,1, '移动端首页',
+SELECT 1, '移动端首页',
   '[{"title":"搜索","name":"search","disabled":1,"content":{},"styles":{}},{"title":"首页轮播图","name":"banner","content":{"enabled":1,"style":1,"bg_style":1,"data":[{"is_show":1,"image":"","bg":"","name":"","link":{"target_type":"shop","target":"home"}}]},"styles":{}},{"title":"导航菜单","name":"nav","content":{"enabled":1,"style":2,"per_line":5,"show_line":2,"data":[{"is_show":1,"image":"","name":"资讯中心","link":{"target_type":"shop","target":"news"}}]},"styles":{}},{"title":"首页中部轮播图","name":"middle-banner","content":{"enabled":1,"data":[{"is_show":1,"image":"","name":"","link":{"target_type":"shop","target":"home"}}]},"styles":{}},{"title":"资讯","name":"news","disabled":1,"content":{},"styles":{}}]',
-  '[{"title":"页面设置","name":"page-meta","content":{"title":"首页","title_type":1,"title_img":"","bg_type":1,"bg_color":"#2F80ED","bg_image":"","text_color":1},"styles":{}}]', 0, 0
+  '[{"title":"页面设置","name":"page-meta","content":{"title":"首页","title_type":1,"title_img":"","bg_type":1,"bg_color":"#2F80ED","bg_image":"","text_color":1},"styles":{}}]', 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_page` WHERE `type`=1);
 INSERT INTO `pa_decorate_page` (`type`,`name`,`data`,`meta`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,2, '个人中心',
+SELECT 2, '个人中心',
   '[{"title":"用户信息","name":"user-info","disabled":1,"content":{},"styles":{}},{"title":"我的服务","name":"my-service","content":{"enabled":1,"style":1,"title":"我的服务","data":[{"is_show":1,"image":"","name":"我的收藏","link":{"target_type":"shop","target":"favorites"}}]},"styles":{}},{"title":"个人中心广告图","name":"user-banner","content":{"enabled":1,"data":[{"is_show":1,"image":"","name":"","link":{"target_type":"shop","target":"profile"}}]},"styles":{}}]',
-  '[{"title":"页面设置","name":"page-meta","content":{"title":"个人中心","title_type":1,"title_img":"","bg_type":1,"bg_color":"#2F80ED","bg_image":"","text_color":1},"styles":{}}]', 0, 0
+  '[{"title":"页面设置","name":"page-meta","content":{"title":"个人中心","title_type":1,"title_img":"","bg_type":1,"bg_color":"#2F80ED","bg_image":"","text_color":1},"styles":{}}]', 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_page` WHERE `type`=2);
 INSERT INTO `pa_decorate_page` (`type`,`name`,`data`,`meta`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,3, '客服设置',
+SELECT 3, '客服设置',
   '[{"title":"客服设置","name":"customer-service","content":{"title":"添加客服二维码","time":"9:30 - 19:00","mobile":"","qrcode":"","remark":"长按添加客服或拨打客服热线"},"styles":{}}]',
-  '[]', 0, 0
+  '[]', 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_page` WHERE `type`=3);
 INSERT INTO `pa_decorate_page` (`type`,`name`,`data`,`meta`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,4, 'PC 首页',
+SELECT 4, 'PC 首页',
   '[{"title":"首页轮播图","name":"pc-banner","content":{"enabled":1,"data":[{"image":"","name":"","link":{"target_type":"shop","target":"home"}}]},"styles":{"position":"absolute","left":"40px","top":"75px","width":"750px","height":"340px"}}]',
-  '[]', 0, 0
+  '[]', 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_page` WHERE `type`=4);
 INSERT INTO `pa_decorate_page` (`type`,`name`,`data`,`meta`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,5, '系统风格',
+SELECT 5, '系统风格',
   '{"themeColorId":3,"topTextColor":"white","navigationBarColor":"#A74BFD","themeColor1":"#A74BFD","themeColor2":"#CB60FF","buttonColor":"white"}',
-  '[]', 0, 0
+  '[]', 0, 0, @pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_page` WHERE `type`=5);
 INSERT INTO `pa_decorate_tabbar` (`position`,`name`,`selected`,`unselected`,`link`,`is_show`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,0,'首页','','','{"target_type":"shop","target":"home"}',1,0,0
+SELECT 0,'首页','','','{"target_type":"shop","target":"home"}',1,0,0,@pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_tabbar` WHERE `position`=0);
 INSERT INTO `pa_decorate_tabbar` (`position`,`name`,`selected`,`unselected`,`link`,`is_show`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,1,'资讯','','','{"target_type":"shop","target":"news"}',1,0,0
+SELECT 1,'资讯','','','{"target_type":"shop","target":"news"}',1,0,0,@pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_tabbar` WHERE `position`=1);
 INSERT INTO `pa_decorate_tabbar` (`position`,`name`,`selected`,`unselected`,`link`,`is_show`,`create_time`,`update_time`,`tenant_id`)
-SELECT @pa_default_tenant_id,2,'我的','','','{"target_type":"shop","target":"profile"}',1,0,0
+SELECT 2,'我的','','','{"target_type":"shop","target":"profile"}',1,0,0,@pa_default_tenant_id
 WHERE NOT EXISTS (SELECT 1 FROM `pa_decorate_tabbar` WHERE `position`=2);
 
 INSERT INTO `pa_payment_scene`
