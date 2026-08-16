@@ -54,7 +54,7 @@ if (mode === 'multi-tenant') {
   await inputs.nth(0).fill(platformEmail);
   await inputs.nth(1).fill(platformPassword);
   await page.getByRole('button', { name: /登录实例平台/i }).click();
-  await page.getByRole('heading', { name: '概览' }).waitFor({ state: 'visible', timeout: 20000 });
+  await page.getByText('概览', { exact: true }).first().waitFor({ state: 'visible', timeout: 20000 });
   await page.waitForLoadState('networkidle');
   await page.screenshot({ path: screenshotPath('platform'), fullPage: true });
   results.platform = { url: page.url(), title: await page.title() };
