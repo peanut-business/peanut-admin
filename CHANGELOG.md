@@ -3,7 +3,13 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-08-17
+
+### Security
+
+- External channel bindings are created within the active Tenant context and
+  receive an unpredictable callback routing key when first enabled; deterministic
+  fresh-install placeholders are never retained for an enabled channel.
 
 ### Changed
 
