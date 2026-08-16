@@ -26,14 +26,15 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 6eb06a4。正式 P0-E 已通过生成应用、双模式空库、Plugin 生命周期、生产 Compose 与 Standalone 浏览器六组；Multi-tenant 浏览器登录仍停在登录页，线上候选和 v2.0.0 正式发布仍未完成。
+> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 8221e27。最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 与线上部署仍是独立后续动作。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@6eb06a493001d8fc4024ce9cb7f8b892e5a1e5d8`，复核日期：`2026-08-17`。
+> 事实基线：`feat/module-identity-tenancy-docs@8221e270329de4a79c217d3b6fdafba5d24ad988`，复核日期：`2026-08-17`。
 
 ### 已验证可用
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
+| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已验证 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 8221e27 的最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 仍未声明。 |
 | `PA-FOUNDATION-001` | 1.x LikeAdmin 标准版基础能力对齐（历史） | 已验证 | 基础后台能力、空库安装、迁移账本和代表路由已有独立验证。 |
 | `PA-TENANCY-001` | 1.x 多租户隔离与平台租户治理（历史） | 已验证 | 1.x MT00 至 MT06 已完成并封存；2.0 复用其设计，但原生身份与 fresh Schema 组合仍需当前候选 Gate。 |
 | `PA-PRODUCT-001` | 1.x 产品化部署与发布基线（历史） | 已验证 | 生产 Compose、最低 CI、正式部署、法律制品和 v1.1.5 发布链已经封存。 |
@@ -47,12 +48,6 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-002` | 1.x 最终生成应用运行时验收（历史） | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
-
-### 已实现或正在验收
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。共享 Admin、Tenant A、Tenant B 三域名矩阵已通过；6eb06a4 的正式 P0-E 前六组通过，仍待定位 Multi-tenant 浏览器登录未离开登录页的原因后完成资格与发布。 |
 
 ### 暂缓或范围外
 

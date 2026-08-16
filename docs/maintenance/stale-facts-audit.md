@@ -92,15 +92,15 @@
   Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
 - **已部署候选体验**：固定候选 `d3d5900` 的隔离 `production-candidate` 已更新为头像
   fallback 候选；部署源码关键文件摘要、`d3d5900` 镜像、容器健康和 origin health 已核对。
-  本地共享 Admin、Tenant A、Tenant B 的当前候选头像与菜单矩阵通过；线上共享 Admin 也已
-  确认默认头像资源完整、无 broken image/加载残留且菜单可点击。线上 Tenant A/B 的旧截图
-  生成于 `d3d5900` 之前且明确仍为破图，当前候选重拍受 Browser 控制超时阻塞，不能冒充
-  通过。该候选体验不等于正式双模式 P0-E 或 2.0.0 发布证明。
-- **仍待完成**：候选 `6eb06a4` 的 P0-E 已通过生成应用、双模式空库、Plugin 生命周期、
-  生产 Compose 与 Standalone 浏览器六组；Multi-tenant 浏览器登录仍停在登录页，尚不能
-  声明 Gate 通过。H5 默认装修在空内容时仍有无语义占位区域，资讯标题的主题色对比度也
-  待修复和重拍。之后仍需 tag、GitHub Release 和正式发布部署证明；Core Alpha.5 的
-  KernelSchema 字段遗漏由独立 Core 工作流修正。
+  线上 Tenant A/B 的旧截图生成于头像修复之前，仍保留为历史失败证据，不能冒充当前通过。
+  当前候选的本地共享 Admin、Platform、PC、H5 和文档截图已人工检查通过；线上 Tenant A/B
+  尚未重新部署或重拍，因此不把本地截图写成线上证明。该候选体验不等于正式双模式 P0-E
+  或 2.0.0 发布证明。
+- **当前结论**：固定候选 `8221e27` 的 P0-E 七组已全部通过，包含生成应用、双模式空库、
+  Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；截图人工检查确认
+  Admin 头像 fallback、Platform 页面、PC/H5 空资讯状态和文档资源均无明显视觉异常。正式
+  v2.0.0 tag、GitHub Release 与线上部署证明仍是独立后续动作；Core Alpha.5 的 KernelSchema
+  字段遗漏由独立 Core 工作流修正。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
   adopt、余额双写和旧 scaffold upgrade Runtime；它们不得进入生成应用。
 - **推荐新增**：供应商/门店/客户业务主体关联、participant policy、双 Module 合同示例。
