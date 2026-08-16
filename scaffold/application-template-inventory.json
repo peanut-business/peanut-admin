@@ -11330,7 +11330,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "df457f9e2fe8e23c95e8a39560ecea7928f1e53cbe9b367f2f48779cf601e783"
+            "source_sha256": "690f70809eff1120ea198494556a3fedc215fc4cd33e65d07e246d6fcb7d3769"
         },
         {
             "path": "web/src/views/login/index.vue",
@@ -11348,7 +11348,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "bb78b8444bd7ee30f2deada0a40f5357a4b0d0915de3c11d88dea042dd64ac4a"
+            "source_sha256": "02249eb39324dd954b05907fb23689423c79c5b719f80d294d955d8a254f6078"
         },
         {
             "path": "web/src/views/login/locale/zh-CN.ts",
@@ -11357,7 +11357,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "7d9555fb249726fd8d953fde1f6344e773a6125fa60261992552f28b2540c85d"
+            "source_sha256": "26634ec86fffe54f9518856ce811029f7614088f5032ba06513d5927f55d14b9"
         },
         {
             "path": "web/src/views/member/list/index.vue",
