@@ -46,23 +46,23 @@
 
 ### 原始问题覆盖矩阵
 
-“文档结构已覆盖”只说明正式入口已经明确回答问题；“候选实现”与“正式验收”仍按能力
-账本分开。DCS 领域实现始终由 DCS 仓库负责。
+“文档结构已覆盖”只说明正式入口已经明确回答问题；“开发候选已验证”与“正式发布”仍
+按发布身份分开。DCS 领域实现始终由 DCS 仓库负责。
 
 | 原始问题 | 审计前覆盖 | 当前文档覆盖 | 当前实现状态 | 正式入口与未决项 |
 | --- | --- | --- | --- | --- |
-| 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 文档构建待本候选验证 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
+| 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 当前文档入口与语义检查已覆盖；正式发布仍待版本身份 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
 | Peanut Admin 架构、真实目录与所有权 | 只部分回答 | **文档结构已覆盖** | 当前目录已核验 | `docs-site/guide/development.md` |
 | Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 扩展点存在；双 Module 可运行示例待新增 | `docs-site/guide/module-development.md`、`docs-site/api.md` |
-| 前后端、路由、菜单、权限和测试路径 | 部分且有冲突 | **文档结构已覆盖** | 原生身份候选已实现，最终运行 Gate 待验 | `docs-site/guide/development.md`、`docs-site/api.md` |
+| 前后端、路由、菜单、权限和测试路径 | 部分且有冲突 | **文档结构已覆盖** | 原生身份、官方能力 Tenant 资格和真实浏览器验证已通过 | `docs-site/guide/development.md`、`docs-site/api.md` |
 | DCS 与 Peanut Admin 的边界 | 只部分回答 | **Peanut 采用边界已覆盖** | DCS Runtime 不在本仓 | `docs-site/guide/development.md`；详细领域文档归 DCS |
 | DCS owner 与商品、采购、库存数据流 | 只部分回答 | **推荐合同已覆盖** | 本仓不实现 | `docs-site/guide/module-development.md`；DCS 冻结表/API/事件/状态机 |
-| 平台、Tenant 管理成员与业务客户身份 | 尚未回答 | **文档结构已覆盖** | 原生管理身份与独立 `pa_member` 候选已实现 | `docs-site/guide/development.md`；客户/供应商关联仍待产品决策 |
+| 平台、Tenant 管理成员与业务客户身份 | 尚未回答 | **文档结构已覆盖** | 原生管理身份与独立 `pa_member` 已通过开发候选资格 | `docs-site/guide/development.md`；客户/供应商关联仍待产品决策 |
 | 三类租户映射 | 只部分回答 | **文档结构已覆盖** | legacy 映射已退出；同应用关联和跨应用联邦未实现 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
 | 门店与供应商同应用协作和越权边界 | 只部分回答 | **推荐模型已覆盖** | DCS participant policy 未实现 | `docs-site/guide/development.md` |
 | 一部署、一实例、多 Tenant/客户端/Module | 只部分回答 | **文档结构已覆盖** | 当前部署合同支持 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
-| 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 已收敛；create-app release 待封存 | `docs-site/deployment.md` |
-| 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 候选实现与推荐层级已分栏；最终资格待验 | `docs-site/capabilities.md` |
+| 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 已验证；create-app 2.0 final reseal 待完成 | `docs-site/deployment.md` |
+| 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 开发候选实现与推荐层级已分栏；外部渠道生产验证另列 | `docs-site/capabilities.md` |
 | 文档与 Runtime/Schema 清理关系 | 只部分回答 | **已明确** | 本轮已由独立提交实施后再同步文档 | 本审计与 `docs/architecture/clean-native-multitenancy-baseline.md` |
 
 ### 现有文档判定
@@ -81,10 +81,11 @@
 
 ### 2.0 当前事实分类
 
-- **候选已实现**：原生管理身份、独立业务会员、canonical fresh Schema、强制官方能力
-  Tenant 资格合同、单一权威会员余额字段。
-- **待核验**：登记数据库空库安装、管理端真实浏览器登录/Tenant 切换、最终 create-app
-  release 身份和生成应用运行资格。
+- **开发候选已验证**：fresh 安装得到 85 表、197 菜单、43 配置；原生 Platform/Tenant
+  登录、三 Tenant 选择和 Store Demo 真实浏览器通过；原生管理身份、独立业务会员、
+  canonical fresh Schema、强制官方能力 Tenant 资格检查和单一权威会员余额字段均通过。
+- **仍待完成**：create-app 2.0 最终 reseal 与生成应用运行资格，以及正式 tag、GitHub
+  Release 和生产部署。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
   adopt、余额双写和旧 scaffold upgrade Runtime；它们不得进入生成应用。
 - **推荐新增**：供应商/门店/客户业务主体关联、participant policy、双 Module 合同示例。

@@ -11,8 +11,8 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 演进，但切换为原生 Account/TenantMember/RBAC、canonical Schema 和空库安装；不提供 1.x
 数据库或脚手架原地升级。
 
-2.0.0 尚未创建 annotated tag、GitHub Release、P0-E 固定候选或生产部署证明。因此当前
-状态是“开发中”，不能用 1.x 的 54 条 migration、浏览器或生产证据替代本版本验收。
+2.0.0 尚未创建 annotated tag、GitHub Release 或生产部署证明。因此当前状态是“已验证的
+开发候选”，不能把它写成正式发布或生产可用版本。
 
 ## 公开运行依赖
 
@@ -25,9 +25,9 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 2.0.0 当前范围
 
-- **已实现，待最终候选验收**：原生管理身份、管理 RBAC、业务会员独立身份、官方能力 Tenant 资格合同和 fresh-only Schema。
+- **已验证的开发候选**：fresh 安装得到 85 表、197 菜单、43 配置；原生 Platform/Tenant 登录、三 Tenant 选择和 Store Demo 真实浏览器通过；管理身份、RBAC、业务会员独立身份与官方能力 Tenant 资格检查通过。
 - **不再交付**：legacy Admin/Role/Dept 映射、default bootstrap 状态、兼容余额镜像和 1.x adopt/upgrade Runtime。
-- **最低待验收**：双模式空库安装、migration current、create-app 一致性、管理端原生登录/多 Tenant 选择和文档构建。
+- **仍待完成**：create-app 2.0 最终 reseal 与生成应用资格；正式版本元数据、tag、GitHub Release 和生产部署。
 - **明确不做**：1.x 升级矩阵、DCS 领域 Runtime、跨应用联邦、完整 SaaS 商业化、生产部署和真实外部渠道验证。
 
 ## 1.x 历史发布身份
@@ -55,5 +55,5 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 - [开发指南](/guide/development)
 - [许可证与第三方告知](/legal)
 
-[Changelog](/legal/CHANGELOG.txt) 保留 1.x 历史。2.0.0 只有在固定候选、最低 Gate、版本元数据、
+[Changelog](/legal/CHANGELOG.txt) 保留 1.x 历史。2.0.0 只有在 create-app 最终 reseal、版本元数据、
 tag 与 Release 全部完成后，才能新增正式发布身份。

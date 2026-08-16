@@ -98,9 +98,9 @@ peanut-admin/
 
 | 身份 | 当前已支持程度 | 不能混写的边界 |
 | --- | --- | --- |
-| 平台/系统操作身份 | **实现存在；2.0 组合复验待完成**：独立 PlatformOperator 会话、平台角色和权限；账号不能同时成为 TenantMember | 只治理本实例 Tenant/Module，不读取任意租户业务数据 |
-| Tenant 管理成员 | **2.0 候选已实现，最终资格待验**：管理端认证、会话、角色和权限直接使用 Core Account/Credential、TenantMember 与 RBAC | TenantMember 是组织成员，不自动成为客户、供应商联系人或门店员工档案 |
-| 业务客户/会员 | **候选实现存在，2.0 组合复验待完成**：`pa_member` 有独立注册、登录、OAuth、标签和单一权威余额，并按 Tenant 隔离 | 当前没有与 Core Account/TenantMember 的通用一对一映射；不要假定两种 token 可互换 |
+| 平台/系统操作身份 | **2.0 开发候选已验证**：独立 PlatformOperator 会话、平台角色和权限；账号不能同时成为 TenantMember | 只治理本实例 Tenant/Module，不读取任意租户业务数据 |
+| Tenant 管理成员 | **2.0 开发候选已验证**：管理端认证、会话、角色和权限直接使用 Core Account/Credential、TenantMember 与 RBAC；真实浏览器已通过三 Tenant 选择并进入 Store Demo | TenantMember 是组织成员，不自动成为客户、供应商联系人或门店员工档案 |
+| 业务客户/会员 | **2.0 开发候选已验证**：`pa_member` 有独立注册、登录、OAuth、标签和单一权威余额，并按 Tenant 隔离 | 当前没有与 Core Account/TenantMember 的通用一对一映射；不要假定两种 token 可互换 |
 
 Account/TenantMember/RBAC 足以作为客户组织员工或供应商组织成员的通用登录与授权基础，
 但当前仓库没有 Supplier、业务主体关联、供应商邀请/成员治理或供应商专用客户端。因此

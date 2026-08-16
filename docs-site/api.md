@@ -12,8 +12,8 @@ Peanut Admin 的 HTTP API、两个公开运行包和 Host 覆盖共同构成扩�
 - 普通业务 API 仍按路由、Controller、Application/Logic、Repository 分层。
 - 新的独立业务域优先做 Module；Plugin 负责分发，TenantModule 负责租户开通。
 - 其他 Module 只能调用 `Contracts/` 中公开的命令或查询，不能直接使用私有 Model/表。
-- Plugin lifecycle、Module migration、菜单、权限、设置和前端 contribution 已有 1.x fixture
-  证据；2.0 fresh 组合资格仍待最终 Gate。
+- Plugin lifecycle、Module migration、菜单、权限、设置和前端 contribution 已通过 2.0 fresh
+  组合资格与官方能力强制 Tenant 检查。
 - 当前没有通用、已验证的 Outbox/Event Bus；采用异步事件前要由派生应用补齐可靠性合同。
 
 ## 响应格式
