@@ -56,18 +56,11 @@ lease proof 目录。缺项或多项都拒绝运行。
 
 ## Claim 与运行
 
-凭据引用为 `mac-14:/Users/xing/.config/peanut-admin/development-db.env`。操作者通过本机凭据
-提供器映射以下变量；不得把值写入命令、输出、租约或仓库：
-
-```text
-P0E_DB_USER
-P0E_DB_PASSWORD
-P0E_ADMIN_INITIAL_EMAIL
-P0E_ADMIN_INITIAL_PASSWORD
-P0E_PLATFORM_INITIAL_EMAIL
-P0E_PLATFORM_INITIAL_PASSWORD
-P0E_PLAYWRIGHT_CLI
-```
+凭据引用为 `mac-14:/Users/xing/.config/peanut-admin/development-db.env`。runner 会先调用项目
+登记的凭据同步脚本，再从本机受限 `.local/stack.env` 读取数据库账户；每个 run 的 Tenant Owner
+与 PlatformOperator 测试账号会随机生成，并只写入该 run 的 0600 cache，以供失败后的同参数
+resume 使用。浏览器工具优先使用显式受控路径，否则使用本机已缓存的 Playwright CLI。以上秘密
+均不得写入命令、输出、租约或仓库。
 
 ```bash
 common=(

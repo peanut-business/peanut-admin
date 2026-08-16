@@ -173,6 +173,8 @@ $expect(!str_contains($runClosure, 'forward') && !str_contains($runClosure, 'leg
 $expect(str_contains($runnerSource, 'self.generated,') && str_contains($runnerSource, 'plugin_lock_restored_sha256'), 'Plugin lifecycle is not exercised in the generated application');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
 $expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
+$expect(str_contains($runnerSource, 'prepare_database_credentials()'), 'P0-E runner does not synchronize the registered database credential source');
+$expect(str_contains($runnerSource, 'runtime-credentials.env'), 'P0-E runner does not retain per-run browser credentials for resume');
 $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease verification is not an exact-set comparison');
 $expect(str_contains($runnerSource, 'read_only: true'), 'container lease proof is not read-only');
 $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database refusal is missing');

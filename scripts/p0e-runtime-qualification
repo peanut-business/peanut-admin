@@ -30,6 +30,8 @@ LEASE_TOOL = ROOT / "scripts/project-resource-lease"
 REGISTRY_TOOL = ROOT / "scripts/project-resource-registry"
 INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
 BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
+DEVELOPMENT_DATABASE_SYNC = ROOT / "scripts/project-development-database.sh"
+LOCAL_STACK_ENV = ROOT / ".local/stack.env"
 PERSISTENT_DATABASE = "peanut_admin_development"
 RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
@@ -113,6 +115,29 @@ def required_environment(name: str) -> str:
     if not value:
         fail(f"missing required environment: {name}")
     return value
+
+
+def read_private_environment(path: Path, required: set[str]) -> dict[str, str]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exception:
+        fail(f"cannot read private runtime environment: {exception}")
+    values: dict[str, str] = {}
+    for line in lines:
+        name, separator, value = line.partition("=")
+        if separator and name in required and value:
+            values[name] = value
+    missing = sorted(required - values.keys())
+    if missing:
+        fail(f"private runtime environment is missing: {', '.join(missing)}")
+    return values
+
+
+def prepare_database_credentials() -> None:
+    command([str(DEVELOPMENT_DATABASE_SYNC), "sync-credentials"])
+    values = read_private_environment(LOCAL_STACK_ENV, {"DB_USER", "DB_PASS"})
+    os.environ["P0E_DB_USER"] = values["DB_USER"]
+    os.environ["P0E_DB_PASSWORD"] = values["DB_PASS"]
 
 
 def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
@@ -459,6 +484,7 @@ class Runner:
         self.generated = self.cache / "generated-application"
         self.compose_env = self.cache / "compose.env"
         self.compose_overlay = self.cache / "compose.lease-proof.yml"
+        self.runtime_credentials = self.cache / "runtime-credentials.env"
         self.docs_process: subprocess.Popen[str] | None = None
         self.docs_root: Path | None = None
         self.active_compose_root = ROOT
@@ -473,6 +499,44 @@ class Runner:
             "owned_candidate_vendor": self.created_candidate_vendor,
             "groups": {},
         }
+
+    def prepare_runtime_credentials(self, resume: bool = False) -> None:
+        names = {
+            "P0E_ADMIN_INITIAL_EMAIL",
+            "P0E_ADMIN_INITIAL_PASSWORD",
+            "P0E_PLATFORM_INITIAL_EMAIL",
+            "P0E_PLATFORM_INITIAL_PASSWORD",
+        }
+        if resume:
+            values = read_private_environment(self.runtime_credentials, names)
+        else:
+            if self.runtime_credentials.exists():
+                fail("P0-E runtime credentials already exist before initialization")
+            suffix = secrets.token_hex(6)
+            values = {
+                "P0E_ADMIN_INITIAL_EMAIL": f"owner-{suffix}@p0e.invalid",
+                "P0E_ADMIN_INITIAL_PASSWORD": "P0eOwner" + secrets.token_urlsafe(18) + "9",
+                "P0E_PLATFORM_INITIAL_EMAIL": f"platform-{suffix}@p0e.invalid",
+                "P0E_PLATFORM_INITIAL_PASSWORD": "P0ePlatform" + secrets.token_urlsafe(18) + "9",
+            }
+            self.runtime_credentials.write_text(
+                "".join(f"{name}={values[name]}\n" for name in sorted(values)),
+                encoding="utf-8",
+            )
+            self.runtime_credentials.chmod(0o600)
+        os.environ.update(values)
+
+    def playwright_cli(self) -> str:
+        explicit = os.environ.get("P0E_PLAYWRIGHT_CLI", "")
+        if explicit and Path(explicit).is_file() and os.access(explicit, os.X_OK):
+            return explicit
+        candidates = sorted(
+            ROOT.glob(".local/pwcli-cache-*/_npx/*/node_modules/.bin/playwright-cli"),
+            key=lambda path: path.stat().st_mtime,
+        )
+        if not candidates or not os.access(candidates[-1], os.X_OK):
+            fail("P0-E Playwright CLI is unavailable; install the registered local browser tooling first")
+        return str(candidates[-1])
 
     def remote_docker(
         self,
@@ -551,6 +615,7 @@ class Runner:
         for path in (self.output, self.cache):
             path.mkdir(parents=True, exist_ok=False)
             path.chmod(0o700)
+        self.prepare_runtime_credentials()
         (self.output / "groups").mkdir()
         self.write_json(self.output / "plan.json", self.plan)
         self.save_checkpoint()
@@ -570,6 +635,7 @@ class Runner:
                 fail(f"checkpoint {key} mismatch")
         self.checkpoint = checkpoint
         self.created_candidate_vendor = bool(checkpoint.get("owned_candidate_vendor"))
+        self.prepare_runtime_credentials(resume=True)
 
     @staticmethod
     def write_json(path: Path, value: Any) -> None:
@@ -1059,7 +1125,7 @@ class Runner:
             self.wait_http(f"http://127.0.0.1:{self.plan['ports']['http']}/healthz")
         self.start_docs(project_root)
         env = {
-            "P0E_PLAYWRIGHT_CLI": required_environment("P0E_PLAYWRIGHT_CLI"),
+            "P0E_PLAYWRIGHT_CLI": self.playwright_cli(),
             "P0E_ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
             "P0E_ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
             "P0E_PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
@@ -1128,7 +1194,7 @@ class Runner:
         shutil.rmtree(self.cache)
         if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
             shutil.rmtree(ROOT / "server/vendor")
-        playwright_cli = Path(required_environment("P0E_PLAYWRIGHT_CLI"))
+        playwright_cli = Path(self.playwright_cli())
         lease_proof_dir = Path(self.plan["lease_proof_dir"])
         if playwright_cli.parent == lease_proof_dir and playwright_cli.name == "playwright-cli":
             if not playwright_cli.is_file() or playwright_cli.is_symlink():
@@ -1255,6 +1321,7 @@ def main() -> int:
         print(json.dumps({"status": "claimed", "lease": args.lease, "candidate": args.candidate}))
         return 0
     verify_lease(args, plan_data)
+    prepare_database_credentials()
     fixture, _, _, _, _ = validate_fixture()
     runner = Runner(args, plan_data, fixture)
     runner.preflight_database_admin_tooling()
