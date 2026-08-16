@@ -158,6 +158,7 @@ jobs:
           node "${test_output}/tests/Productization/permission-policy.test.js"
           node "${test_output}/tests/Productization/plugin-contribution.test.js"
           node "${test_output}/tests/Productization/department-parent-options.test.js"
+          node tests/Productization/navbar-avatar-fallback.test.mjs
 
   platform:
     name: Platform
