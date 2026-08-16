@@ -114,6 +114,27 @@ $temporary = $systemTemporary . '/peanut-create-app-' . bin2hex(random_bytes(6))
 mkdir($temporary, 0775, true);
 $inventoryPath = $root . '/scaffold/application-template-inventory.json';
 $inventory = json_decode((string)file_get_contents($inventoryPath), true, 512, JSON_THROW_ON_ERROR);
+$inventoryByPath = [];
+foreach ($inventory['files'] ?? [] as $entry) {
+    if (is_array($entry) && is_string($entry['path'] ?? null)) {
+        $inventoryByPath[$entry['path']] = $entry;
+    }
+}
+createApplicationExpect(
+    array_filter(array_keys($inventoryByPath), static fn(string $path): bool => str_starts_with($path, 'output/')) === [],
+    'source qualification evidence must not participate in application template identity'
+);
+foreach (['CHANGELOG.md' => 'changelog', 'RELEASE_METADATA.json' => 'release-metadata'] as $path => $transform) {
+    $semanticDigest = hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
+    createApplicationExpect(
+        ($inventoryByPath[$path]['source_sha256'] ?? null) === $semanticDigest,
+        "{$path} must use the versioned semantic source digest"
+    );
+    createApplicationExpect(
+        !hash_equals($semanticDigest, (string)hash_file('sha256', $root . '/' . $path)),
+        "{$path} semantic digest must not depend on release prose bytes"
+    );
+}
 $templateVersion = (string)($inventory['template_version'] ?? '');
 createApplicationExpect(preg_match('/^\d+\.\d+\.\d+$/D', $templateVersion) === 1, 'inventory template version must be SemVer');
 $releasePath = $root . '/scaffold/releases/v' . $templateVersion . '/scaffold-manifest.json';

@@ -57,7 +57,7 @@ final class ApplicationCreator
                     continue;
                 }
                 $source = $this->sourcePath((string)$entry['path']);
-                $actualSourceDigest = hash_file('sha256', $source);
+                $actualSourceDigest = self::sourceDigest($source, (string)$entry['path'], (string)$entry['transform']);
                 if (!is_string($actualSourceDigest) || !hash_equals((string)$entry['source_sha256'], $actualSourceDigest)) {
                     throw new RuntimeException('CREATE_APP_SOURCE_DIGEST_MISMATCH: ' . $entry['path']);
                 }
@@ -405,6 +405,20 @@ final class ApplicationCreator
     {
         $path = $this->sourceRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
         return ScaffoldPathGuard::existingFileWithin($this->sourceRoot, $path, 'CREATE_APP_SOURCE_PATH_INVALID');
+    }
+
+    private static function sourceDigest(string $source, string $path, string $transform): string
+    {
+        // Generated metadata is rebuilt from parameters, so source prose changes
+        // must not invalidate the immutable application template identity.
+        if (in_array($transform, ['changelog', 'release-metadata'], true)) {
+            return hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
+        }
+        $digest = hash_file('sha256', $source);
+        if (!is_string($digest)) {
+            throw new RuntimeException('CREATE_APP_SOURCE_DIGEST_INVALID');
+        }
+        return $digest;
     }
 
     /** @param array<string,mixed> $entry @param array<string,string> $parameters */
