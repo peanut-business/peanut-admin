@@ -59,6 +59,7 @@ $expectedTarget = [
 $expect(($fixture['schema_version'] ?? null) === 1, 'P0-E fixture schema changed');
 $expect(($fixture['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E Gate identity changed');
 $expect(($fixture['database_resource']['migration_count'] ?? null) === 3, 'P0-E Gate no longer fixes the 2.0 post-baseline migration set');
+$expect(($fixture['database_resource']['ledger_count'] ?? null) === 4, 'P0-E Gate no longer fixes the canonical baseline ledger count');
 $expect(!array_key_exists('baselines', $fixture), 'fresh-only P0-E fixture retained 1.x baselines');
 $expect(!array_key_exists('legacy_application', $fixture), 'fresh-only P0-E fixture retained a legacy application');
 $expect(($fixture['target_release'] ?? null) === $expectedTarget, 'P0-E target scaffold identity changed');

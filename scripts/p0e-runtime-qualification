@@ -684,7 +684,7 @@ class Runner:
         with log.open("a", encoding="utf-8") as stream:
             stream.write(result.stdout)
         parsed = json.loads(result.stdout)
-        if parsed.get("status") != "up_to_date" or parsed.get("ledger_count") != self.fixture["database_resource"]["migration_count"]:
+        if parsed.get("status") != "up_to_date" or parsed.get("ledger_count") != self.fixture["database_resource"]["ledger_count"]:
             fail(f"migration idempotency/current assertion failed for {database}")
 
     def inspect(self, database: str, mode: str, label: str, project_root: Path = ROOT) -> None:
@@ -722,7 +722,7 @@ class Runner:
                     with contextlib.suppress(OSError):
                         directory.rmdir()
         parsed = json.loads(result.stdout)
-        if parsed.get("status") != "passed" or parsed.get("migration_ledger", {}).get("count") != self.fixture["database_resource"]["migration_count"]:
+        if parsed.get("status") != "passed" or parsed.get("migration_ledger", {}).get("count") != self.fixture["database_resource"]["ledger_count"]:
             fail(f"database inspection failed for {label}")
         self.write_json(self.output / "groups" / f"{label}.json", parsed)
 
