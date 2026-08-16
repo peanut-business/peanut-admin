@@ -144,7 +144,7 @@
             "owner": "scaffold",
             "transform": "changelog",
             "mode": 420,
-            "source_sha256": "da96133be9254a29a8965de24f7ff443f2971fcc5124575b05725b3c6b0f4438"
+            "source_sha256": "64cbd4c2051845a1eba81bcc9b713c5508c754a49b0a8452a57925418a63130c"
         },
         {
             "path": "LICENSE",
@@ -416,7 +416,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "5329e5cb2b47a1985c0f1f268d172821c7401441a735907707b2f508805b5708"
+            "source_sha256": "9b68359ac4bd75d848559021648b53ec9f6369ebadf7cabe1b0398a746d74afd"
         },
         {
             "path": "docs-site/capabilities.md",
@@ -425,7 +425,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "4f84a4df0690e409b37dd5476f1d39c35313b2e93c7c55a93e2481a92caf68ce"
+            "source_sha256": "eb56dc596b24d33032d2cc49b6d08b8a37946232ff7d06aee540c3cfb911ddfc"
         },
         {
             "path": "docs-site/deployment.md",
@@ -461,7 +461,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "519032e6f475bff2c23df6488d3ed06c2fd6185c583d38852042bd484de09c51"
+            "source_sha256": "19e384b4fadae5dc76566941bd920143d9fb3b0f5e6f5f99f024fbdb8bc520e7"
         },
         {
             "path": "docs-site/guide/index.md",
@@ -470,7 +470,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "4feab3ba045fc2cd4aac661f9945178e6b45df92a075126dc597d32bfc75f58d"
+            "source_sha256": "6b8716c7cf3d002f9d7577d1c2e956d8b991e94b8585298374899b98b4e205be"
         },
         {
             "path": "docs-site/guide/module-development.md",
@@ -613,7 +613,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "b7f46016f8b1197cad9433add10bd866cb9cdddc45979112226ecdaa4a131245"
+            "source_sha256": "32c70061c56e463884d3420d6299491103d5d7099b92c0f6fedcee4835dfc2fe"
         },
         {
             "path": "docs-site/scripts/sync-legal-assets.mjs",
@@ -1456,7 +1456,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "108faa9bf3d8a32d1d321556ff5dca80c407d7e06e6652a11e11b80ea75f9e8f"
+            "source_sha256": "30222a084e12371bcc1da3ba3a8acba57c418a19f84d5b3dc783badf6cdb08fe"
         },
         {
             "path": "docs/peanut-admin-user-manual.md",
@@ -3481,7 +3481,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "5c75c77ee1d2428925f927bc67e187908b7dfffa7b843cd14fab090af0a67a37"
+            "source_sha256": "9ea4b9a9828f97c0d2c210fb6f6eddb386986747c05d7076e19316edf57242bd"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3681,7 +3681,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "81753bc05fdde77f61b3553bf228d99116c2b2daf04e356af951894c32c776c1"
+            "source_sha256": "cdc575a5dcd77d249d1e409d7276424df0a1e1a11ef35f507a42d801f7bd0a08"
         },
         {
             "path": "scripts/publish-github-release",
@@ -7678,7 +7678,7 @@
             "owner": "application",
             "transform": "environment-guard",
             "mode": 420,
-            "source_sha256": "62b1c8b9907519affcb5b882189ae58e413017751bdac069b354d0bdf6e6fe73"
+            "source_sha256": "e0192d989341ae09167b1370b01305a74e5d044ec46da9f4dd24f624afb1b432"
         },
         {
             "path": "server/database/import.php",
@@ -7705,7 +7705,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "412dd1da9ef69d64f91e6a2d965a1a313d1e1803d39c8fadf52c14a8bc47cdaf"
+            "source_sha256": "317c5baf3d4445b18a5397cd7639ac317bc209148ba8c459b35ae06cb98e1e2f"
         },
         {
             "path": "server/database/migrate.php",
@@ -10298,7 +10298,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "a1da009a1708d7a45fe493f74a4172a205cdaf0dfa181f7e869182d994ad26dd"
+            "source_sha256": "130dac901bf865f931fb398c3e8a33566b21a3cfc92ba14f8c4241fb4925cd2a"
         },
         {
             "path": "web/src/router/guard/userLoginInfo.ts",
@@ -10442,7 +10442,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "d9aca77125d2085e18451e5bd1cc032dd0002ce8035241fbf9bc573db0bbe202"
+            "source_sha256": "c28320dbc25987358f3ebe80b98061ecd0bb8cbb9cfea3d2ec770e89d878b315"
         },
         {
             "path": "web/src/router/routes/types.ts",
