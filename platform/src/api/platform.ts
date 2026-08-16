@@ -138,8 +138,18 @@ async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
   const result = await request;
   if (result.data.code !== 20000) {
     const details = result.data.data as { error_code?: string } | null;
-    const code = details?.error_code ? `[${details.error_code}] ` : '';
-    throw new Error(`${code}${result.data.msg || '平台接口拒绝请求'}`);
+    const errorCode = details?.error_code || '';
+    const localizedErrors: Record<string, string> = {
+      OWNER_INVITATION_DELIVERY_UNAVAILABLE:
+        '尚未配置租户所有者邀请邮件服务，当前不能创建或发送邀请。',
+      PLATFORM_AUTHENTICATION_INVALID: '平台登录凭据无效，请重新登录。',
+      PLATFORM_SESSION_INVALID: '平台会话已失效，请重新登录。',
+      TENANT_CODE_EXISTS: '租户编码已被使用。',
+      TENANT_OWNER_INVITATION_PENDING: '该租户已有待接受的所有者邀请。',
+      TENANT_ENTRY_BINDING_CONFLICT: '该域名和客户端已绑定其他租户。',
+    };
+    const fallback = result.data.msg || '平台接口拒绝请求';
+    throw new Error(localizedErrors[errorCode] || fallback);
   }
   return result.data.data;
 }

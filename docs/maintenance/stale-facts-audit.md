@@ -90,8 +90,11 @@
 - **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC 和 fixture 同步命令
   Guard 已有证据；现有文件、通知、支付等只是 Tenant 适配的应用 Host，并非已交付官方可选
   Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
-- **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和生产部署；Core Alpha.5 的
-  KernelSchema 字段遗漏由独立 Core 工作流修正。
+- **已部署候选体验**：隔离 `production-candidate` 的四域名网络入口、Platform 与公共 Admin
+  已可访问；第二 Tenant、Owner 邀请与两个 Tenant 域名的应用内绑定等待生产邮件 Provider。
+  该环境不等于完整多租户绑定或正式发布证明。
+- **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明；Core Alpha.5
+  的 KernelSchema 字段遗漏由独立 Core 工作流修正。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
   adopt、余额双写和旧 scaffold upgrade Runtime；它们不得进入生成应用。
 - **推荐新增**：供应商/门店/客户业务主体关联、participant policy、双 Module 合同示例。

@@ -171,7 +171,7 @@
             "owner": "scaffold",
             "transform": "readme",
             "mode": 420,
-            "source_sha256": "7252fdc45c7a280b29d999cbd9d2e9f2bfd755d197f9c33d404f7a776049493a"
+            "source_sha256": "0d547dff8222f9bea21773b5b1ae49ff14547151f859f91b75f60e3a74601d94"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -443,7 +443,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "6749e69320605f6eb453cec9d849e7f97fc173a01504872b019ea36aaba2fc6f"
+            "source_sha256": "9043490ebd48fd72e10745ffa595eb2000159e816c2de3372ab4374e654c5eca"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -631,7 +631,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "9b260439c9c11aca530b3b6c6e24ed7609988331dca10efb18bb5f5a9c93fd71"
+            "source_sha256": "b17c8e698d6b218d1c60d7188d6cb2d82893592ef8c4f720a6b141e9463c751b"
         },
         {
             "path": "docs-site/scripts/sync-legal-assets.mjs",
@@ -3502,7 +3502,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "6983897c8621280a0c172b3f57d1f45ea8085211d0b5545cf07e89294312bc7a"
+            "source_sha256": "bfaa5fb2248d12239ee67f11b9f266200f32a8b47720021ec121d17101737f3c"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3511,7 +3511,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "d622efb6592789903c25f6e61f9b4e2579101d0cf3f605c7738d8e94c1a332e5"
+            "source_sha256": "9d8e7c2212d425b6f0212075ce123bcb3898654431e36182f38dd68eb48956cf"
         },
         {
             "path": "platform/src/main.ts",

@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only 开发实现与必要本地资格已完成；正式双模式 P0-E、tag、GitHub Release 和生产部署尚未执行。
+> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only 开发实现与必要本地资格已完成；隔离线上候选已完成 Platform、公共 Admin 和四域名网络入口，第二 Tenant、Owner 邀请和 Tenant 域名绑定等待生产邮件 Provider；正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明尚未完成。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@60e49921f0081bed2bf426a35f023cd52e235020`，复核日期：`2026-08-16`。
+> 事实基线：`feat/module-identity-tenancy-docs@8c703cb942d6a1cacfa3c3d76c612c68298f429e`，复核日期：`2026-08-16`。
 
 ### 已验证可用
 
@@ -52,7 +52,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力 Tenant 资格和 create-app 2.0 生成身份已完成；登记多租户空库与真实浏览器通过，正式双模式发布 Gate 未执行。 |
+| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力 Tenant 资格和 create-app 2.0 生成身份已完成；登记本地三 Tenant 浏览器与绑定入口拒绝切换通过，线上候选四域名网络入口可用但 Tenant 应用绑定等待邮件 Provider；正式双模式发布 Gate 未执行。 |
 
 ### 暂缓或范围外
 

@@ -52,8 +52,7 @@
 
 - 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 1.x 数据库入口历史为 `install.php` + `migrate.php` + `init.sql` + 54 migrations；2.0
-  当前数据库入口为 `init.sql` + `KernelSchema` + 2 条追加 migrations；下表中的
+- 1.x 数据库入口历史为 `install.php` + `migrate.php` + `init.sql` + 54 migrations；2.0 当前数据库入口为 `init.sql` + `KernelSchema` + 2 migrations；下表中的
   24 条账本是 parity 时点证据，`v1.1.0` 发布制品固定为 50 条。该计数不是 2.0 当前 Schema。
 
 **独立验证结果（非 Codex 自报）：**
