@@ -7,6 +7,7 @@ import type {
 
 const tenantClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
+  withCredentials: true,
 });
 
 interface TenantEnvelope<T> {
@@ -35,6 +36,13 @@ export async function tenantSwitch(accessToken: string) {
     '/api/tenant/session/switch',
     {},
     { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  return response.data.data;
+}
+
+export async function refreshTenantSession() {
+  const response = await tenantClient.post<TenantEnvelope<TenantAuthentication>>(
+    '/api/tenant/session/refresh'
   );
   return response.data.data;
 }

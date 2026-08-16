@@ -72,6 +72,7 @@ use app\platform\controller\PlatformTenantInvitationController;
 use app\platform\controller\PlatformTenantEntryBindingController;
 use app\platform\controller\TenantOwnerInvitationPublicController;
 use app\platform\http\middleware\PlatformLoginMiddleware;
+use app\platform\http\middleware\PlatformHostMiddleware;
 use app\platform\http\middleware\PlatformPermissionMiddleware;
 use app\tenant\controller\TenantSessionController;
 use think\facade\Route;
@@ -83,9 +84,12 @@ Route::post('admin/login/login',  [LoginController::class, 'login']);
 Route::post('admin/login/logout', [LoginController::class, 'logout']);
 
 // Instance-local platform control plane. It never shares admin sessions, RBAC or routes.
-Route::post('api/platform/session/login', [PlatformSessionController::class, 'login']);
-Route::post('api/platform/session/refresh', [PlatformSessionController::class, 'refresh']);
-Route::post('api/platform/session/logout', [PlatformSessionController::class, 'logout']);
+Route::post('api/platform/session/login', [PlatformSessionController::class, 'login'])
+    ->middleware(PlatformHostMiddleware::class);
+Route::post('api/platform/session/refresh', [PlatformSessionController::class, 'refresh'])
+    ->middleware(PlatformHostMiddleware::class);
+Route::post('api/platform/session/logout', [PlatformSessionController::class, 'logout'])
+    ->middleware(PlatformHostMiddleware::class);
 Route::get('api/platform/session/info', [PlatformSessionController::class, 'info'])
     ->middleware(PlatformLoginMiddleware::class);
 Route::get('api/platform/tenants/capabilities', [PlatformTenantBoundaryController::class, 'capabilities'])
@@ -137,8 +141,10 @@ Route::post('api/platform/tenant-entry-bindings/enable', [PlatformTenantEntryBin
 Route::post('api/platform/tenant-entry-bindings/disable', [PlatformTenantEntryBindingController::class, 'disable'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
-Route::get('api/tenant/owner-invitations/inspect', [TenantOwnerInvitationPublicController::class, 'inspect']);
-Route::post('api/tenant/owner-invitations/accept', [TenantOwnerInvitationPublicController::class, 'accept']);
+Route::get('api/tenant/owner-invitations/inspect', [TenantOwnerInvitationPublicController::class, 'inspect'])
+    ->middleware(PlatformHostMiddleware::class);
+Route::post('api/tenant/owner-invitations/accept', [TenantOwnerInvitationPublicController::class, 'accept'])
+    ->middleware(PlatformHostMiddleware::class);
 Route::post('api/platform/tenants/activate', [PlatformTenantController::class, 'activate'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');
@@ -193,6 +199,7 @@ Route::post('api/platform/roles/permissions/replace', [PlatformAccessController:
 Route::post('api/tenant/session/login', [TenantSessionController::class, 'login']);
 Route::post('api/tenant/session/select', [TenantSessionController::class, 'select']);
 Route::post('api/tenant/session/switch', [TenantSessionController::class, 'switchChallenge']);
+Route::post('api/tenant/session/refresh', [TenantSessionController::class, 'refresh']);
 Route::post('api/tenant/session/logout', [TenantSessionController::class, 'logout']);
 
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────

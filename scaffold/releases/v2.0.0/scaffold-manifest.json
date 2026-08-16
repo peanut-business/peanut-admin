@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "36cfa2a82d511309c8c9b8af6ccfde6bd5c5ce29",
-        "source_tree": "e715f82d8f210068f40264254af411a2899fc74a",
-        "inventory_sha256": "d815b2d278a37c6733a0be755b593c9e82b745b83da05db707be377085ddfaf4",
+        "source_commit": "ca99e83f2664e27a35d3e8d8f74c38ec1810ebe0",
+        "source_tree": "48c188110bbc4c63c9af8f1d9faf68a24cb17212",
+        "inventory_sha256": "4e1abd14d0d7194083229f4b13b04532cfb541c9abe138851d639f1ea502df99",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "3b3c1ba4111ab4c68ff5221a8d62c6b3f2b961f5baead405d7728de1be1b437e",
+        "managed_tree_sha256": "e54182586eb3f01e44389bb43d01ea949da353d392d3b911d2aa07307793636a",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -32,7 +32,7 @@
         {
             "path": ".env.example",
             "source": "files/.env.example",
-            "template_sha256": "600d6a9ac37189bb6aaae8345a74184d6a0285073a5aa215e817095f0d748dde",
+            "template_sha256": "11ba30741e33f3770b342635299c14095e7cd79bb3dbfdf890104a452c5c6fef",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -162,7 +162,7 @@
         {
             "path": "deploy/docker-compose.prod.yml",
             "source": "files/deploy/docker-compose.prod.yml",
-            "template_sha256": "5ba9b4b77533f0010577a22870efb4fb9346fba4f7456cdead8a868b88e84fc2",
+            "template_sha256": "4fa82e77d2400acfbf23d28b54f74b3647f557fc59fab5ee6e1cbab9eeaaa8b7",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -652,7 +652,7 @@
         {
             "path": "scripts/local-multi-tenant-demo",
             "source": "files/scripts/local-multi-tenant-demo",
-            "template_sha256": "bf0237a01ba8e7adb5ead02dd7d1333e3d1b7b7e532d966389921907ca28113b",
+            "template_sha256": "86aeff47b5403cbba350d049b7924caa9038db4a866afea7be2ba7ff2f8052dc",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -862,7 +862,7 @@
         {
             "path": "server/config/deployment.php",
             "source": "files/server/config/deployment.php",
-            "template_sha256": "05ae68a4ced4d44667b82b240923a084816427033f88ec72a0c06cd2d7833480",
+            "template_sha256": "b9100865db8e8fe91f0ea10332fb579bfdca59bbed051a5bd18c60bd69e15226",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -933,6 +933,16 @@
             "path": "server/config/platform_auth.php",
             "source": "files/server/config/platform_auth.php",
             "template_sha256": "6287d68260d8c5360aaaf57264a03d18757cf0724be315632ef008a2815887dc",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "backend"
+        },
+        {
+            "path": "server/config/platform_invitation.php",
+            "source": "files/server/config/platform_invitation.php",
+            "template_sha256": "c89d07f4cffcee32bf1d9f04e8a6e7005daeee234925d62aa3a29a33390c42c2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1172,7 +1182,7 @@
         {
             "path": "server/route/app.php",
             "source": "files/server/route/app.php",
-            "template_sha256": "403b014c6f437d99dcb541ceb443654424c63c66a75732424f39f8e7c06d9c06",
+            "template_sha256": "a361a789de9f19e3fb78bc135c99c163a49182431ed55be3b0f2e86bf2cc5d08",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1672,7 +1682,7 @@
         {
             "path": "web/src/api/interceptor.ts",
             "source": "files/web/src/api/interceptor.ts",
-            "template_sha256": "964c28825f534a33731b04c712a8c0dbf074df07dfb26749d04eac14ce53f793",
+            "template_sha256": "816d9a0c7e39d6aee119389a2891694a4c8a1afe73240c5f261c470f3bbcb855",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1852,7 +1862,7 @@
         {
             "path": "web/src/api/tenant-session.ts",
             "source": "files/web/src/api/tenant-session.ts",
-            "template_sha256": "31d583b6e196b8d11b2202e090ee5c3e57960cab1cf6ecbac8deaff2614d01a6",
+            "template_sha256": "fbed9dda5bd86b60d8339247aa503db56d0de8114aa73dfef31a8c810975e6b4",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
