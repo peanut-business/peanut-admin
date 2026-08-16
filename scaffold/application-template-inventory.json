@@ -3623,7 +3623,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "57c863f3d90ee8769ec90e000353f7466809e87ff6182c8e0afa46c91b2b11ff"
+            "source_sha256": "c7b6aeb0eb959af89e0f9c476ae5db934e840f18161593f8fdf853c767c58781"
         },
         {
             "path": "scripts/check-product-capability-ledger",
@@ -7756,7 +7756,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "99f20ab91495756a4935bdf232e8bd3e5b41d50c74d2861811f2f37f3c1c11eb"
+            "source_sha256": "35eb1ddf083cd47af74db6efa42f4960b3516cde25a24590e913340f52919a2f"
         },
         {
             "path": "server/composer.json",

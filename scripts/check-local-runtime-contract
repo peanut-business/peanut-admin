@@ -71,6 +71,12 @@ for entrypoint in server/think server/public/index.php; do
         exit 1
     }
 done
+for conventional_key in PLATFORM_HOSTS TENANT_ADMIN_HOSTS OWNER_INVITATION_DELIVERY_MODE; do
+    grep -q "'$conventional_key'" "$repo_dir/server/bootstrap/environment-aliases.php" || {
+        printf 'PHP environment bridge lost multi-tenant deployment key: %s\n' "$conventional_key" >&2
+        exit 1
+    }
+done
 grep -q '\${HTTP_PORT:-18092}:80' "$repo_dir/deploy/docker-compose.prod.yml" || {
     printf 'production deployment default is no longer scoped to 18092\n' >&2
     exit 1
