@@ -1632,30 +1632,6 @@
             "mode": 420
         },
         {
-            "path": "output/p0e-p0e374e434/checkpoint.json",
-            "target": "output/p0e-p0e374e434/checkpoint.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "output/p0e-p0e374e434/plan.json",
-            "target": "output/p0e-p0e374e434/plan.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "output/p0e-p0e374e434/recovery.json",
-            "target": "output/p0e-p0e374e434/recovery.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
             "path": "output/playwright/c01/acceptance-plan.md",
             "target": "output/playwright/c01/acceptance-plan.md",
             "classification": "excluded",
@@ -9436,7 +9412,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "f4658bec94f8cd6d1c81a47d5033f190a77cb2916245162337b76cbf7adef0e7"
+            "source_sha256": "56d7b28611e269d49be8fe0915bf3d167c5b7665dbcb6f4e4a69267021a9a646"
         },
         {
             "path": "uniapp/src/pages/login/login.vue",
