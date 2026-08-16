@@ -399,7 +399,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "8487f4b14db402940de0529c7aea21c6948e3389e194e10e5920acae4ff7d2ef"
+            "source_sha256": "92084599827bcf04db558b0b33319a1d557ab29102e968aa8254c7e0842f0ee8"
         },
         {
             "path": "docs-site/architecture/identity-and-tenancy.md",
@@ -435,7 +435,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "6c5aba769f14cb1576159586c64cd164645471cd60c73e6b19bb10525f15b7bb"
+            "source_sha256": "1139de284e6ef2fd435d571c242f92d671903f19fdc788ed009e9fa8f316022d"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -525,7 +525,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "29954b9853517e5863c2ff6ef8df1f8e43ca8702690222bbad5367793047c82b"
+            "source_sha256": "06902a40712ff2b31b621eb36a326c458519f27ebe4d10a9a6aed159463deee7"
         },
         {
             "path": "docs-site/pnpm-lock.yaml",
@@ -1626,6 +1626,30 @@
         {
             "path": "output/deployment/upgrade-rehearsal-20260807.json",
             "target": "output/deployment/upgrade-rehearsal-20260807.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0e374e434/checkpoint.json",
+            "target": "output/p0e-p0e374e434/checkpoint.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0e374e434/plan.json",
+            "target": "output/p0e-p0e374e434/plan.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "output/p0e-p0e374e434/recovery.json",
+            "target": "output/p0e-p0e374e434/recovery.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3260,7 +3284,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "305d287b5f5b1118e41bed89ccc1c0d486029906b1aa8927a42e2b27d63aae3e"
+            "source_sha256": "063d7305c1dae77d60ccf2d1bd34cbcd6dfef03e429f12abe8167419b1cbbd9f"
         },
         {
             "path": "pc/pages/information/[source].vue",
@@ -9412,7 +9436,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "3003bc94d0c45844315e7268526971f612e208adbe6ffd36bf975724d52e096d"
+            "source_sha256": "f4658bec94f8cd6d1c81a47d5033f190a77cb2916245162337b76cbf7adef0e7"
         },
         {
             "path": "uniapp/src/pages/login/login.vue",
@@ -11208,7 +11232,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "3aed1410c99a8c981d70b6af96ba28b99b9dc4fd0c8171834fafbb22045e9ce2"
+            "source_sha256": "f80c57bd3c9bb5a4a1c61e443a082c55b9356cfbc6c30dd9efd8b46012bd929f"
         },
         {
             "path": "web/src/views/dashboard/workplace/locale/en-US.ts",
@@ -11217,7 +11241,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "81cf4a4e74702b698edba3e3a5dd2764eb2f4c56e3c6561d18362862769c69ef"
+            "source_sha256": "5e0f0215a15454ef4ce16803ec63c1273a4d5103fcfa91315d152a1cf4763617"
         },
         {
             "path": "web/src/views/dashboard/workplace/locale/zh-CN.ts",
@@ -11226,7 +11250,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "0ac4a1f40355313d62dba9380c8c86470eae1f4f2e7ebb924213df5b27baac32"
+            "source_sha256": "8f286981483d1cac542f47bf08afa0112fa8e216cfb023324b63ff9195e2e04c"
         },
         {
             "path": "web/src/views/decoration/mobile/index.vue",
