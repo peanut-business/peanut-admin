@@ -36,10 +36,6 @@
           "ref": "f94cb5c51b1b234ba43e99c54d8f33e34859e25f"
         },
         {
-          "kind": "report",
-          "ref": "output/playwright/local-multi-tenant-demo/final-79b1095/summary.json"
-        },
-        {
           "kind": "resource",
           "ref": "resources/project-resources.json"
         }
