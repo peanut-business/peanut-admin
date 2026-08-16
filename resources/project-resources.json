@@ -91,7 +91,7 @@
         "data_source": "persistent Peanut Admin development data on mac-14",
         "freshness_requirement": "server/database/environment-guard.php --current must pass before application readiness",
         "health_check": {
-          "allocation": "scripts/project-development-database.sh status",
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
           "host_connection": "scripts/local-stack.sh database-host-status",
           "container_connection": "scripts/local-stack.sh database-status"
         },
@@ -149,7 +149,7 @@
         "data_source": "the lease-fixed candidate tree, immutable v1.0.0/v1.1.0 tag trees and Gate-owned synthetic fixtures; persistent development and production data are forbidden",
         "freshness_requirement": "each fixed candidate uses a new lease-bound run_id; every scenario target must be absent or empty before setup, and its ordered migration checksums and ledger must be verified against that candidate before evidence capture",
         "health_check": {
-          "allocation": "scripts/project-development-database.sh status",
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
           "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer <host|container> --resource-id peanut-admin-p0e-mysql84-gate --database-name <exact_lease_database>",
           "database": "after a successful claim, the Gate runner performs a credential-backed ping and SELECT DATABASE(), then verifies the candidate migration ledger"
         },
@@ -198,7 +198,7 @@
         "data_source": "lease-owned synthetic multi-tenant demo data; persistent development and production data are forbidden",
         "freshness_requirement": "an active local multi-tenant demo lease, the registered database health check and a current fresh-install ledger are required before application start",
         "health_check": {
-          "allocation": "scripts/project-development-database.sh status",
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
           "selection": "scripts/project-resource-registry database-env --deployment-target local-multi-tenant-demo --consumer host --resource-id peanut-admin-mysql84-local-multi-tenant-demo",
           "database": "credential-backed ping, SELECT DATABASE() and server/database/migrate.php --current"
         },
