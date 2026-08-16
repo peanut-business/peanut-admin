@@ -3556,7 +3556,7 @@
             "owner": "scaffold",
             "transform": "plugins-lock",
             "mode": 420,
-            "source_sha256": "4828316f386a1d3a3f1535cdc3a202ad8f28c50314a34fa42a4a9fb24b0abb33"
+            "source_sha256": "71a298c9ab6e97e75f894578101f427853e301f30b7493ab6e35ae1bdbf35290"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
