@@ -79,7 +79,6 @@ $expect(($localDemoDomains[0]['tenant_entry_bindings'] ?? null) === [
     'tenant-a.peanut-admin.test' => 'tenant-a/admin-web',
     'tenant-b.peanut-admin.test' => 'tenant-b/admin-web',
 ], 'local demo Tenant host bindings changed unexpectedly');
-
 $productionDeployments = array_values(array_filter(
     $registry['resources']['external_services'] ?? [],
     static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-deployment'
@@ -186,9 +185,9 @@ $expect(($administrativeTool['ssh_command'] ?? null) === '/usr/bin/ssh', 'P0-E S
 $expect(($administrativeTool['docker_command'] ?? null) === '/usr/local/bin/docker', 'P0-E remote Docker command is not absolute');
 $expect(($administrativeTool['container_name'] ?? null) === 'peanut-admin-mysql84-development', 'P0-E administration container changed');
 $expect(($administrativeTool['mysql_command'] ?? null) === '/usr/bin/mysql', 'P0-E MySQL command is not absolute');
-$expect(($administrativeTool['mysqldump_command'] ?? null) === '/usr/bin/mysqldump', 'P0-E mysqldump command is not absolute');
+$expect(!array_key_exists('mysqldump_command', $administrativeTool), 'fresh-only P0-E retained backup tooling');
 $expect(str_starts_with((string)($administrativeTool['container_image'] ?? ''), 'mysql:8.4.10@sha256:'), 'P0-E administration image is not immutable');
-$expect(($administrativeTool['fallback'] ?? null) === 'none; host mysql and mysqldump commands are forbidden', 'P0-E administration allowed a host CLI fallback');
+$expect(($administrativeTool['fallback'] ?? null) === 'none; host mysql commands are forbidden', 'P0-E administration allowed a host CLI fallback');
 
 foreach (['upstream_endpoint' => 'host', 'container_endpoint' => 'container'] as $key => $consumer) {
     $endpoint = $qualificationDatabase[$key] ?? null;
