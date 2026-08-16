@@ -79,9 +79,10 @@ try {
         expectInvariant(tableExists($pdo, $requiredTable), 'MT05_REQUIRED_TABLE_MISSING:' . $requiredTable);
     }
 
-    $migrationDir = dirname(__DIR__, 3) . '/database/migrations';
-    $migrationFiles = glob($migrationDir . '/*.sql') ?: [];
+    $databaseDir = dirname(__DIR__, 3) . '/database';
+    $migrationFiles = glob($databaseDir . '/migrations/*.sql') ?: [];
     sort($migrationFiles, SORT_STRING);
+    array_unshift($migrationFiles, $databaseDir . '/init.sql');
     $expectedLedger = [];
     foreach ($migrationFiles as $file) {
         $checksum = hash_file('sha256', $file);
