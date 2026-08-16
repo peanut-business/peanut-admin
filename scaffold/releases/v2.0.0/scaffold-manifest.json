@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "ca99e83f2664e27a35d3e8d8f74c38ec1810ebe0",
-        "source_tree": "48c188110bbc4c63c9af8f1d9faf68a24cb17212",
-        "inventory_sha256": "4e1abd14d0d7194083229f4b13b04532cfb541c9abe138851d639f1ea502df99",
+        "source_commit": "03554f3648e0290b62d69cabcfc98627f773663e",
+        "source_tree": "58c3710c2b49e2c5c70ac90fe63f60db7daeeef8",
+        "inventory_sha256": "ace9ff9b373f4d7d3572064c5cd2cd4246d0f7dfdcfc7129b801731d90745ea0",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "e54182586eb3f01e44389bb43d01ea949da353d392d3b911d2aa07307793636a",
+        "managed_tree_sha256": "7a9c61bc4fa1b6fe5c8991562de8e86e8533ae3db9eef4a13ea07eb95c549d38",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -612,7 +612,7 @@
         {
             "path": "scripts/check-local-runtime-contract",
             "source": "files/scripts/check-local-runtime-contract",
-            "template_sha256": "57c863f3d90ee8769ec90e000353f7466809e87ff6182c8e0afa46c91b2b11ff",
+            "template_sha256": "c7b6aeb0eb959af89e0f9c476ae5db934e840f18161593f8fdf853c767c58781",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -742,7 +742,7 @@
         {
             "path": "server/bootstrap/environment-aliases.php",
             "source": "files/server/bootstrap/environment-aliases.php",
-            "template_sha256": "99f20ab91495756a4935bdf232e8bd3e5b41d50c74d2861811f2f37f3c1c11eb",
+            "template_sha256": "35eb1ddf083cd47af74db6efa42f4960b3516cde25a24590e913340f52919a2f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
