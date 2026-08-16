@@ -25,9 +25,7 @@ const assertPage = async (url, label, minimumText = 20) => {
 
 const results = {};
 await page.goto(`${baseUrl}/admin/login`, { waitUntil: 'networkidle' });
-if (mode === 'multi-tenant') {
-  await page.locator('input').nth(0).fill(adminEmail);
-}
+await page.locator('input').nth(0).fill(adminEmail);
 await page.locator('input[type="password"]').fill(adminPassword);
 await page.getByRole('button', { name: /登录|login/i }).click();
 if (mode === 'multi-tenant') {
@@ -36,6 +34,10 @@ if (mode === 'multi-tenant') {
     page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20000 }).then(() => 'navigated'),
   ]);
   if (tenantTransition === 'select') {
+    const tenantSelector = page.locator('.login-form .el-select');
+    await tenantSelector.click();
+    await page.locator('.el-select-dropdown:visible .el-select-dropdown__item').first().click();
+    await page.getByRole('button', { name: /登录|login/i }).waitFor({ state: 'visible' });
     await page.getByRole('button', { name: /登录|login/i }).click();
   }
 }

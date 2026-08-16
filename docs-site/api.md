@@ -156,10 +156,11 @@ interface InventoryCommands
 
 ### DCS 采用边界
 
-DCS 是由 Peanut Admin 脚手架派生、独立维护的应用。Peanut 只提供 Module、Tenant、权限、
-审计和 Host 扩展合同；Party、Store、Warehouse、Supplier、Product、Pricing、Inventory、
-Procurement 与 Trade 的接口、表和事件仅能在 DCS 仓独立冻结后实现。Peanut 中的 Product-only
-`CONDITIONAL` 记录只是采用边界，不是 DCS Runtime 完成证明。
+DCS 如获批采用 Peanut Admin，应作为由脚手架派生、独立维护的应用。Peanut 只提供
+Module、Tenant、权限、审计和 Host 扩展合同；Party、Store、Warehouse、Supplier、
+Product、Pricing、Inventory、Procurement 与 Trade 的接口、表和事件，必须在 DCS 仓
+独立冻结并另行获批后实现。Peanut 中的 Product-only `CONDITIONAL` 记录只是采用边界，
+不是 DCS 项目或 Runtime 已实现的证明。
 
 详细目录、安装命令、最小测试和常见错误见
 [Module 开发教程](/guide/module-development)。

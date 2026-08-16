@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/module-identity-tenancy-docs",
-    "commit": "f94cb5c51b1b234ba43e99c54d8f33e34859e25f",
-    "reviewed_at": "2026-08-16"
+    "commit": "c41b90fe2e9b260c7fb31ed8012a163c6537b990",
+    "reviewed_at": "2026-08-17"
   },
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 f94cb5c。正式 P0-E 在任何数据库、构建或浏览器动作前被登记端口 20190 上来源不明的外部 Compose 监听阻塞；线上候选和 v2.0.0 正式发布仍未完成。"
+    "summary": "Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 c41b90f。正式 P0-E 已通过生成应用、双模式空库、Plugin 生命周期、生产 Compose 与 Standalone 浏览器六组；Multi-tenant 浏览器夹具存在已记录的时序失败，线上候选和 v2.0.0 正式发布仍未完成。"
   },
   "capabilities": [
     {
@@ -18,7 +18,7 @@
       "name": "2.0.0 原生身份与干净安装基线",
       "area": "foundation",
       "status": "implemented",
-      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。共享 Admin、Tenant A、Tenant B 三域名矩阵已通过，scaffold 已从 65aeeef 完成最终 reseal；正式 P0-E 与发布尚未完成。",
+      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。共享 Admin、Tenant A、Tenant B 三域名矩阵已通过；c41b90f 的正式 P0-E 前六组通过，仍待修复并重新验证 Multi-tenant 浏览器夹具后完成资格与发布。",
       "acceptance": [
         "Standalone 与 multi-tenant 从空库安装同一 canonical Schema",
         "管理端登录、Tenant 选择、RBAC 和暂停拒绝只使用原生身份链",
@@ -33,7 +33,11 @@
         },
         {
           "kind": "git",
-          "ref": "f94cb5c51b1b234ba43e99c54d8f33e34859e25f"
+          "ref": "c41b90fe2e9b260c7fb31ed8012a163c6537b990"
+        },
+        {
+          "kind": "report",
+          "ref": "output/p0e-p0ec41b90f/recovery.json"
         },
         {
           "kind": "resource",
@@ -45,7 +49,7 @@
         "PA-OWNERSHIP-001"
       ],
       "blockers": [
-        "正式 P0-E 的登记端口 20190 被来源不明的 peanut-p0e-r115c816a1 Compose 监听占用；按资源规则不得停止外部任务或静默改端口",
+        "Multi-tenant 浏览器夹具在 Tenant 选择控件的短暂状态变化中超时；已完成一次定向修复与重跑，当前保留取证资源，等待独立的夹具稳定性修复工作流",
         "正式 P0-E 通过后仍需完成线上候选和 v2.0.0 发布"
       ],
       "paths": [

@@ -96,8 +96,11 @@
   确认默认头像资源完整、无 broken image/加载残留且菜单可点击。线上 Tenant A/B 的旧截图
   生成于 `d3d5900` 之前且明确仍为破图，当前候选重拍受 Browser 控制超时阻塞，不能冒充
   通过。该候选体验不等于正式双模式 P0-E 或 2.0.0 发布证明。
-- **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明；Core Alpha.5
-  的 KernelSchema 字段遗漏由独立 Core 工作流修正。
+- **仍待完成**：候选 `c41b90f` 的 P0-E 已通过生成应用、双模式空库、Plugin 生命周期、
+  生产 Compose 与 Standalone 浏览器六组；Multi-tenant 浏览器夹具在 Tenant 选择控件时序
+  中超时，已完成一次定向修复与重跑后保留取证，尚不能声明 Gate 通过。之后仍需 tag、
+  GitHub Release 和正式发布部署证明；Core Alpha.5 的 KernelSchema 字段遗漏由独立 Core
+  工作流修正。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
   adopt、余额双写和旧 scaffold upgrade Runtime；它们不得进入生成应用。
 - **推荐新增**：供应商/门店/客户业务主体关联、participant policy、双 Module 合同示例。
