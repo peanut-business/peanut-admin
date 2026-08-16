@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "fbcae3fe8487cbb9a9d2de6d2d24c5ee1a2aa82f",
-        "source_tree": "85ee1512feab99284a213782aec803725e8a585e",
-        "inventory_sha256": "7546289c34bf5abd777ce0c456c442ed4c59408d3cd33052dd0acdddeedc90b0",
+        "source_commit": "27c2ed7d059af4673e6b6c2cc77f6c9335d9ce9f",
+        "source_tree": "736d81185861bd70745d6b34cc5e7f944a74ad71",
+        "inventory_sha256": "92dc5d321a182b421a993412821a52ae3ff0a63517cacd8db418265b2a6b1487",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "408b4c707d377bc3912aa0fed058c12d6a403593c9a26e0b6217d1db7665b87d",
+        "managed_tree_sha256": "dd4bae0e0b6e5b80edd2db3cf70e103feeb017fbb1d5a66c3a6d8a01b54a17b8",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -622,7 +622,7 @@
         {
             "path": "scripts/project-resource-registry",
             "source": "files/scripts/project-resource-registry",
-            "template_sha256": "3335785fecb691b743f7a0f68ca0a1902c42dfe96b589e40e34e5f3baf2fdfcd",
+            "template_sha256": "47910f638eef385d3ab228055566a359db7cb4e759e84741605d17ec135027a3",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -2312,7 +2312,7 @@
         {
             "path": "web/src/router/guard/permission.ts",
             "source": "files/web/src/router/guard/permission.ts",
-            "template_sha256": "a1da009a1708d7a45fe493f74a4172a205cdaf0dfa181f7e869182d994ad26dd",
+            "template_sha256": "130dac901bf865f931fb398c3e8a33566b21a3cfc92ba14f8c4241fb4925cd2a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2472,7 +2472,7 @@
         {
             "path": "web/src/router/routes/plugin-contributions.ts",
             "source": "files/web/src/router/routes/plugin-contributions.ts",
-            "template_sha256": "d9aca77125d2085e18451e5bd1cc032dd0002ce8035241fbf9bc573db0bbe202",
+            "template_sha256": "c28320dbc25987358f3ebe80b98061ecd0bb8cbb9cfea3d2ec770e89d878b315",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
