@@ -62,7 +62,7 @@
     "migrations": 0,
     "scaffold_version": "2.0.0",
     "application_initial_version": "0.1.0",
-    "evidence": "Candidate implementation is fresh-only and has not yet completed the registered database/browser qualification.",
+    "evidence": "Necessary development qualification passed on the registered local multi-tenant demo: canonical fresh install, native Platform/Tenant login, three-Tenant selection, Store Demo browser flow, and official capability Tenant checks. Formal dual-mode P0-E release qualification remains pending.",
     "release_delta": "Native Account/Credential/TenantMember/RBAC identity, canonical fresh Schema, and retirement of 1.x migration/adoption runtime."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."

@@ -27,7 +27,9 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 - **已验证的开发候选**：fresh 安装得到 85 表、197 菜单、43 配置；原生 Platform/Tenant 登录、三 Tenant 选择和 Store Demo 真实浏览器通过；管理身份、RBAC、业务会员独立身份与官方能力 Tenant 资格检查通过。
 - **不再交付**：legacy Admin/Role/Dept 映射、default bootstrap 状态、兼容余额镜像和 1.x adopt/upgrade Runtime。
-- **仍待完成**：create-app 2.0 最终 reseal 与生成应用资格；正式版本元数据、tag、GitHub Release 和生产部署。
+- **已完成的生成边界**：create-app 2.0 inventory 与 `scaffold/releases/v2.0.0` 已按 fresh-only
+  Runtime 重封，生成应用身份由确定性检查验证。
+- **仍待完成**：正式双模式 P0-E、annotated tag、GitHub Release 和生产部署。
 - **明确不做**：1.x 升级矩阵、DCS 领域 Runtime、跨应用联邦、完整 SaaS 商业化、生产部署和真实外部渠道验证。
 
 ## 1.x 历史发布身份
@@ -55,5 +57,5 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 - [开发指南](/guide/development)
 - [许可证与第三方告知](/legal)
 
-[Changelog](/legal/CHANGELOG.txt) 保留 1.x 历史。2.0.0 只有在 create-app 最终 reseal、版本元数据、
+[Changelog](/legal/CHANGELOG.txt) 保留 1.x 历史。2.0.0 只有在正式双模式 P0-E、版本元数据、
 tag 与 Release 全部完成后，才能新增正式发布身份。

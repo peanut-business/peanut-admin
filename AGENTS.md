@@ -31,7 +31,7 @@
 
 ## 2. 当前状态（2026-08-16）
 
-### 2.0 2.0.0 fresh-only 候选 — 实现完成，最终运行资格待验
+### 2.0 2.0.0 fresh-only 候选 — 开发实现与必要本地资格完成
 
 - 当前开发分支已切换为原生 `Account/Credential/TenantMember/RBAC` 管理身份；业务会员
   `pa_member` 保持独立。
@@ -39,8 +39,13 @@
   Schema；`server/database/migrations/` 当前没有基线后追加 SQL。
 - 1.x Admin/Role/Department 映射、默认 Tenant bootstrap、兼容余额镜像和 1.x 数据库/
   scaffold 原地升级不属于 2.0.0 支持面。
+- 登记多租户空库安装得到 85 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
+  三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
+- `scaffold/releases/v2.0.0` 已从当前 fresh-only 源码重新封存；本地多租户体验使用登记资源
+  `peanut-admin-mysql84-local-multi-tenant-demo`、API `127.0.0.1:20178` 和管理端
+  `127.0.0.1:20179`，不得复用为生产资源。
 - 当前源码尚未形成正式 `v2.0.0` tag、GitHub Release 或生产部署证明；下面的 1.x 发布、
-  P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 验收。
+  P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 正式发布资格。
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 

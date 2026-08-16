@@ -75,4 +75,5 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 3. `pa_member` 业务客户登录是否长期独立，还是未来只关联而不合并到 Account/TenantMember。
 4. 文件、文章、导入导出等应用 Runtime 中，哪一个先包装成可选官方 Plugin。
 5. 是否已有两个真实消费者足以批准通用 Outbox/Event Bus；没有消费者前保持同步合同。
-6. create-app 的 2.0 最终 reseal 何时完成；在此之前不把当前源码候选写成已采用的生成应用 release。
+6. Core Alpha.5 的 KernelSchema 字段遗漏何时在 Core 源仓修正并发布；本仓 installer 的兼容
+   处理不能代替公共 Core 合同修复。

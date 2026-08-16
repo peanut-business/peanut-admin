@@ -61,7 +61,7 @@
 | 三类租户映射 | 只部分回答 | **文档结构已覆盖** | legacy 映射已退出；同应用关联和跨应用联邦未实现 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
 | 门店与供应商同应用协作和越权边界 | 只部分回答 | **推荐模型已覆盖** | DCS participant policy 未实现 | `docs-site/guide/development.md` |
 | 一部署、一实例、多 Tenant/客户端/Module | 只部分回答 | **文档结构已覆盖** | 当前部署合同支持 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
-| 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 已验证；create-app 2.0 final reseal 待完成 | `docs-site/deployment.md` |
+| 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 与 create-app 2.0 release 已验证重封 | `docs-site/deployment.md` |
 | 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 开发候选实现与推荐层级已分栏；外部渠道生产验证另列 | `docs-site/capabilities.md` |
 | 文档与 Runtime/Schema 清理关系 | 只部分回答 | **已明确** | 本轮已由独立提交实施后再同步文档 | 本审计与 `docs/architecture/clean-native-multitenancy-baseline.md` |
 
@@ -84,8 +84,8 @@
 - **开发候选已验证**：fresh 安装得到 85 表、197 菜单、43 配置；原生 Platform/Tenant
   登录、三 Tenant 选择和 Store Demo 真实浏览器通过；原生管理身份、独立业务会员、
   canonical fresh Schema、强制官方能力 Tenant 资格检查和单一权威会员余额字段均通过。
-- **仍待完成**：create-app 2.0 最终 reseal 与生成应用运行资格，以及正式 tag、GitHub
-  Release 和生产部署。
+- **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和生产部署；Core Alpha.5 的
+  KernelSchema 字段遗漏由独立 Core 工作流修正。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
   adopt、余额双写和旧 scaffold upgrade Runtime；它们不得进入生成应用。
 - **推荐新增**：供应商/门店/客户业务主体关联、participant policy、双 Module 合同示例。

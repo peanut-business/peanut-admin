@@ -180,7 +180,7 @@
             "owner": "scaffold",
             "transform": "release-metadata",
             "mode": 420,
-            "source_sha256": "192e3d985df5e119ef7fa18c6c7f08586596f114ee91ed5278a687e4fb8739ee"
+            "source_sha256": "14949a0b3ac990f8a3ba7756800392ca9fac07a1e61243c6f6b7de87d8e6dbc2"
         },
         {
             "path": "RELEASE_SBOM.spdx.json",
@@ -470,7 +470,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "6b8716c7cf3d002f9d7577d1c2e956d8b991e94b8585298374899b98b4e205be"
+            "source_sha256": "abc348dbaa398c061da4e65f65c59eebbde611f40f3a3da0051c07fcdfc5bf72"
         },
         {
             "path": "docs-site/guide/module-development.md",
@@ -613,7 +613,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "32c70061c56e463884d3420d6299491103d5d7099b92c0f6fedcee4835dfc2fe"
+            "source_sha256": "ab3e626ee89ba313571601cd18cccbdc243322e1e13ad6ad185f8f02b8fb0af8"
         },
         {
             "path": "docs-site/scripts/sync-legal-assets.mjs",

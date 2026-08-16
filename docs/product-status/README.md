@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only 候选正在收口；原生身份、Tenant 资格和 canonical Schema 已实现，空库、create-app、管理端浏览器与正式发布身份尚未完成。
+> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only 开发实现与必要本地资格已完成；正式双模式 P0-E、tag、GitHub Release 和生产部署尚未执行。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@6be3744a6c1ecc1899eab0d571bc8138b3c38094`，复核日期：`2026-08-16`。
+> 事实基线：`feat/module-identity-tenancy-docs@60e49921f0081bed2bf426a35f023cd52e235020`，复核日期：`2026-08-16`。
 
 ### 已验证可用
 
@@ -52,7 +52,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 进行中 | 管理端已切换到 Account/Credential/TenantMember/RBAC，业务会员保持独立；legacy 映射、bootstrap、兼容镜像和 1.x adopt 路径已退出候选；离线合同通过，登记数据库和浏览器 Gate 待完成。 |
+| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力 Tenant 资格和 create-app 2.0 生成身份已完成；登记多租户空库与真实浏览器通过，正式双模式发布 Gate 未执行。 |
 
 ### 暂缓或范围外
 
