@@ -11,6 +11,9 @@ and the two public core packages have independent version histories.
   Account/Credential/TenantMember/RBAC model exclusively.
 - Fresh installations use one canonical application Schema plus the Core
   KernelSchema; post-baseline migrations must be additive.
+- Fresh installations bootstrap the initial Tenant owner from explicit
+  `ADMIN_INITIAL_EMAIL` and `ADMIN_INITIAL_PASSWORD` inputs; no shared username
+  or default credential is shipped.
 - All shipped official capabilities are required to enforce Tenant ownership
   and isolation. Multi-tenant behavior is no longer optional compatibility.
 

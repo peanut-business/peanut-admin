@@ -1,4 +1,4 @@
-# 脚手架升级执行器
+# 脚手架升级执行器（1.x 历史）
 
 > **1.x 历史归档，不是 2.0.0 使用说明。** 2.0.0 fresh-only 不提供脚手架原地升级；
 > 新应用请使用 `scripts/create-app` 生成并准备独立空数据库。以下内容只保留旧版本行为的
@@ -51,7 +51,7 @@ create-app，再逐字验证完整 managed 生成树。
 历史 `scaffold/legacy/brand-preflight-v1.1.0/` 只保留此前两文件 dry-run 证据。它使用旧
 schema，既不是完整 release，也会被执行器 fail-closed 拒绝；没有静默覆盖历史证据。
 
-## 命令
+## 历史命令（仅 1.x）
 
 ```bash
 php scripts/scaffold-upgrade preflight \

@@ -33,6 +33,7 @@ ADMIN_INITIAL_PASSWORD=<at-least-12-letters-and-digits>
 
 多租户模式将 `DEPLOYMENT_MODE` 改为 `multi-tenant`，并增加与管理员不同的
 `PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`。
+安装完成后使用 `ADMIN_INITIAL_EMAIL` 对应的邮箱登录；2.0 不提供共享用户名或默认凭据。
 
 ```bash
 cp .env.example .env
@@ -58,6 +59,8 @@ php server/database/migrate.php --current
 禁止执行或恢复 1.x 的 `--adopt-existing`、legacy Admin/Role/Dept map、默认 Tenant
 bootstrap、余额双写或旧 scaffold upgrade Runtime。需要保留旧系统时，继续隔离运行旧
 实例，并为 2.0 准备独立空库；业务数据迁移必须另立字段映射、校验和回滚方案。
+旧接管和升级步骤只随对应 1.x tag、Release 与文档快照保留为历史证据，不得复制到 2.0
+部署流程，也不得把旧 migration 数量、`admin` 用户名或 scaffold identity 当作当前默认值。
 
 2.0 基线后的 SQL 只允许追加 migration。不要改写已登记 SQL 或删除账本。发布前创建数据库
 与文件存储的同一时点备份；若新 Schema 已不兼容旧 Runtime，不能直接切回旧镜像，只能
