@@ -149,7 +149,15 @@ async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
       TENANT_ENTRY_BINDING_CONFLICT: '该域名和客户端已绑定其他租户。',
     };
     const fallback = result.data.msg || '平台接口拒绝请求';
-    throw new Error(localizedErrors[errorCode] || fallback);
+    const localizedMessages: Record<string, string> = {
+      'Platform authentication credential is invalid.':
+        '平台登录凭据无效，请重新登录。',
+      'Owner invitation delivery is not configured.':
+        '尚未配置租户所有者邀请邮件服务，当前不能创建或发送邀请。',
+    };
+    throw new Error(
+      localizedErrors[errorCode] || localizedMessages[fallback] || fallback
+    );
   }
   return result.data.data;
 }
