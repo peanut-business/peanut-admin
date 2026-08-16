@@ -337,7 +337,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "57eaf02ca408738c3c81c24527bca3ce7888df2db145061b01755f1e5d87b2a1"
+            "source_sha256": "4de95f47d6c846b40b5d237f343a78294104cfaf9d1a7ca6e8fd9b1cf73e5edf"
         },
         {
             "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
@@ -435,7 +435,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "da41ee3eb1df82ae9c6c9dcac88ea94c4b8df9e5e46d9510ca87ff5dfa554ad2"
+            "source_sha256": "9cb9cf3bf2e9be5bc28cc72df0755c7a905913f57822016631e38b5a22c88073"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -453,7 +453,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "9166a0f8930ee5956b1c99147a8f4d12235a6f3bd87c949d25f8af2f2210f993"
+            "source_sha256": "0888ef7cb6b3c0586cadfcb39e4ccc43ceefcce3db80c7f48c864026401a97ec"
         },
         {
             "path": "docs-site/guide/development.md",
@@ -471,7 +471,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "eb327088e62d68a3aaf767c599469e7fc31569abca9d192353c461f4c2546139"
+            "source_sha256": "bffde1b14503dfe79e56e4ba5357092dc2d8b5ffe8a7fe064698008dfb025741"
         },
         {
             "path": "docs-site/guide/module-development.md",
@@ -633,6 +633,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "c6cbc28b521c3f5fda1df0d4fb8020434c486775f4445ee3791f34e29cc0fc6c"
+        },
+        {
+            "path": "docs-site/troubleshooting.md",
+            "target": "docs-site/troubleshooting.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "source_sha256": "af5aed8cafbc297bc7f3961cc3d8112c888280d88d3f8b09f4c4639d6e0956ce"
         },
         {
             "path": "docs/2026-08-05-core-packages-production-claude-review-RESULT.md",
@@ -3539,7 +3548,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "0231590ee5ab519ea41fa670ecc0b1592e776de2d1d899055dace9de321ce901"
+            "source_sha256": "96f04816343b279efa32966afd0f3bbece53cdc758c31e946a65e36efcf91a3e"
         },
         {
             "path": "plugins.lock",
@@ -3699,7 +3708,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "86aeff47b5403cbba350d049b7924caa9038db4a866afea7be2ba7ff2f8052dc"
+            "source_sha256": "10b4ddb954a067a990d33bff1aae072af70d755d39c52ad245a4c14624bd6fb6"
         },
         {
             "path": "scripts/local-php-runtime",
@@ -8036,7 +8045,7 @@
             "owner": "application",
             "transform": "environment-guard",
             "mode": 420,
-            "source_sha256": "5956e74d18779147ec157fe38e6314e0e57ad36f13031de7af10067d684d87ab"
+            "source_sha256": "af6f8e2d8eaa1450e7dde80cec4a01a37f6328d3a8be344d350490519dcd820a"
         },
         {
             "path": "server/database/import.php",
@@ -9930,7 +9939,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "adb67f28a9564f2408abd8b3ac6152f2b360d6aebcd26cf10383c5def6e0abde"
+            "source_sha256": "cd933c1b635d53d733cd195ff743c633db1fe26ad7d498bd26c370ff04d6642a"
         },
         {
             "path": "web/config/vite.config.prod.ts",
@@ -12033,6 +12042,15 @@
             "owner": "template-source-only",
             "transform": "copy",
             "mode": 420
+        },
+        {
+            "path": "web/tests/Productization/vite-allowed-hosts.test.mjs",
+            "target": "web/tests/Productization/vite-allowed-hosts.test.mjs",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "db89b0a7a1fd4c140c99097fbf1e68b130bbfc24372dae0a5bb6e6d66dc3e43e"
         },
         {
             "path": "web/tsconfig.json",
