@@ -30,7 +30,7 @@ await page.locator('input[type="password"]').fill(adminPassword);
 await page.getByRole('button', { name: /登录|login/i }).click();
 if (mode === 'multi-tenant') {
   const tenantTransition = await Promise.race([
-    page.locator('.el-select').waitFor({ state: 'visible', timeout: 20000 }).then(() => 'select'),
+    page.locator('.login-form .el-select').waitFor({ state: 'visible', timeout: 20000 }).then(() => 'select'),
     page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20000 }).then(() => 'navigated'),
   ]);
   if (tenantTransition === 'select') {

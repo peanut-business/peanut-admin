@@ -178,6 +178,7 @@ $expect(str_contains($pluginFixture, "uninstall('fixture.delivery-record')"), 'P
 
 $browserFixture = (string)file_get_contents($root . '/server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js');
 $expect(str_contains($browserFixture, "await page.locator('input').nth(0).fill(adminEmail);"), 'browser smoke must submit an email in both deployment modes');
+$expect(str_contains($browserFixture, "page.locator('.login-form .el-select').waitFor"), 'multi-tenant browser smoke must not mistake the navbar selector for the login selector');
 $expect(str_contains($browserFixture, ".el-select-dropdown:visible .el-select-dropdown__item').first().click()"), 'multi-tenant browser smoke must select a tenant before its second login submission');
 
 echo "P0E-RUNTIME-QUALIFICATION-CONTRACT-001 passed\n";
