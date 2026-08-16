@@ -131,13 +131,26 @@ try {
     );
 
     $identity = $install->query(<<<'SQL'
-SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id
+SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id,
+       a.status AS owner_account_status, tm.status AS owner_member_status,
+       c.status AS owner_credential_status, COUNT(DISTINCT r.id) AS owner_role_count
 FROM pa_platform_operator po
-CROSS JOIN pa_default_tenant_bootstrap b
-JOIN pa_tenant_member tm ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id
-WHERE po.status = 'active' AND b.id = 1
+JOIN pa_account platform_account ON platform_account.id = po.account_id AND platform_account.status = 'active'
+JOIN pa_tenant t ON t.code = 'default' AND t.status = 'active'
+JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+JOIN pa_credential c ON c.account_id = a.id AND c.status = 'active'
+JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
+JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
+  AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
+WHERE po.status = 'active'
+GROUP BY po.account_id, tm.account_id, a.status, tm.status, c.status
 SQL)->fetch();
     mt05BootstrapExpect(is_array($identity), 'multi-tenant identities missing');
+    mt05BootstrapExpect((string)$identity['owner_account_status'] === 'active', 'default owner account is not active');
+    mt05BootstrapExpect((string)$identity['owner_member_status'] === 'active', 'default owner member is not active');
+    mt05BootstrapExpect((string)$identity['owner_credential_status'] === 'active', 'default owner credential is not active');
+    mt05BootstrapExpect((int)$identity['owner_role_count'] === 1, 'default owner role is invalid');
     mt05BootstrapExpect(
         (int)$identity['platform_account_id'] !== (int)$identity['owner_account_id'],
         'platform operator and default owner reused one Account'
