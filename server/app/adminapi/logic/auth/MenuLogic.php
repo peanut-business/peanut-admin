@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\auth;
 
+use app\adminapi\service\CoreTenantModuleAdminBridge;
 use app\adminapi\service\AdminPermissionService;
 use app\common\logic\BaseLogic;
 use app\common\model\auth\SystemMenu;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 class MenuLogic extends BaseLogic
@@ -21,11 +23,21 @@ class MenuLogic extends BaseLogic
         return linear_to_tree($menus);
     }
 
-    public static function getAllSimple(): array
+    public static function getAllSimple(TenantContext $context): array
     {
         $data = SystemMenu::where('is_disable', 0)->field('id,pid,name')
             ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
-        return linear_to_tree($data);
+        $moduleMenus = array_map(
+            static fn(array $menu): array => [
+                'id' => (int)$menu['id'],
+                'pid' => 0,
+                'name' => (string)$menu['name'],
+                'module_key' => (string)$menu['module_key'],
+                'managed' => true,
+            ],
+            (new CoreTenantModuleAdminBridge())->assignableMenuRecords($context->tenantId)
+        );
+        return [...linear_to_tree($data), ...$moduleMenus];
     }
 
     public static function detail(int $id): array

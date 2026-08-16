@@ -295,7 +295,9 @@ SQL;
             $sql .= ' AND EXISTS (SELECT 1 FROM pa_member_role filter_mr WHERE filter_mr.tenant_id = tm.tenant_id AND filter_mr.tenant_member_id = tm.id AND filter_mr.role_id = :role_id)';
             $bindings['role_id'] = (int)$params['role_id'];
         }
-        $sql .= ' GROUP BY tm.id ORDER BY tm.id DESC';
+        $sql .= ' GROUP BY tm.id, tm.account_id, tm.display_name, tm.primary_department_id, tm.status,'
+            . ' tm.created_at, tm.updated_at, a.avatar_uri, a.last_login_at,'
+            . ' c.identifier_normalized, d.name ORDER BY tm.id DESC';
         $statement = self::pdo()->prepare($sql);
         $statement->execute($bindings);
         $rows = [];

@@ -61,24 +61,16 @@ printf '%s\n' "$production_compose" | grep -q 'DEPLOYMENT_MODE: standalone' || {
     printf 'production Nginx service lost the selected deployment mode\n' >&2
     exit 1
 }
-for alias in \
-    'PHP_APP_ENV: production' \
-    'PHP_DEPLOYMENT_MODE: standalone' \
-    'PHP_TENANT_IDENTIFIER_HMAC_KEY:' \
-    'PHP_PLATFORM_IDENTIFIER_HMAC_KEY:'; do
-    printf '%s\n' "$production_compose" | grep -q "$alias" || {
-        printf 'production runtime lost ThinkPHP environment bridge: %s\n' "$alias" >&2
+if printf '%s\n' "$production_compose" | grep -q 'PHP_APP_ENV:'; then
+    printf 'production Compose still exposes ThinkPHP internal aliases\n' >&2
+    exit 1
+fi
+for entrypoint in server/think server/public/index.php; do
+    grep -q 'bootstrap/environment-aliases.php' "$repo_dir/$entrypoint" || {
+        printf 'PHP entry point lost the conventional environment bridge: %s\n' "$entrypoint" >&2
         exit 1
     }
 done
-awk '
-    /: "\${APP_ENV:=development}"/ { default_line = NR }
-    /export PHP_APP_ENV="\$APP_ENV"/ { alias_line = NR }
-    END { exit !(default_line > 0 && alias_line > default_line) }
-' "$repo_dir/scripts/local-php-runtime" || {
-    printf 'local runtime must default APP_ENV before deriving PHP_APP_ENV\n' >&2
-    exit 1
-}
 grep -q '\${HTTP_PORT:-18092}:80' "$repo_dir/deploy/docker-compose.prod.yml" || {
     printf 'production deployment default is no longer scoped to 18092\n' >&2
     exit 1

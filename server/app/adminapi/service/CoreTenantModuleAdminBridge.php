@@ -54,6 +54,26 @@ final readonly class CoreTenantModuleAdminBridge
         ];
     }
 
+    /** @return list<array<string,mixed>> */
+    public function assignableMenuRecords(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $pdo = $this->connection();
+        $catalog = new PdoMenuCatalogRepository($pdo);
+        $deploymentModules = $catalog->activeDeploymentModules();
+        $tenantModules = $catalog->activeTenantModules($tenantId);
+        $visible = (new MenuRegistry($catalog->activeDefinitions('tenant')))->visible(
+            'admin-web',
+            static fn(string $moduleKey): bool => in_array($moduleKey, $deploymentModules, true),
+            static fn(string $moduleKey): bool => in_array($moduleKey, $tenantModules, true),
+            static fn(string $_permission): bool => true
+        );
+
+        return $this->serverMenuRecords($visible);
+    }
+
     private function connection(): PDO
     {
         if ($this->pdo instanceof PDO) {
@@ -74,8 +94,7 @@ final readonly class CoreTenantModuleAdminBridge
     {
         $ids = [];
         foreach ($definitions as $definition) {
-            $ids[$definition->key] = 2_000_000_000
-                + (int)sprintf('%u', crc32($definition->key)) % 100_000_000;
+            $ids[$definition->key] = self::virtualMenuId($definition->key);
         }
 
         $records = [];
@@ -105,5 +124,10 @@ final readonly class CoreTenantModuleAdminBridge
         }
 
         return $records;
+    }
+
+    public static function virtualMenuId(string $menuKey): int
+    {
+        return 2_000_000_000 + (int)sprintf('%u', crc32($menuKey)) % 100_000_000;
     }
 }

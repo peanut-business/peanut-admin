@@ -97,16 +97,17 @@ Route::get('api/platform/tenants/detail', [PlatformTenantController::class, 'det
 Route::post('api/platform/tenants/provision', [PlatformTenantInvitationController::class, 'provision'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.create');
-Route::post('api/platform/tenants/invitations', [PlatformTenantInvitationController::class, 'invite'])
-    ->middleware(PlatformLoginMiddleware::class)
-    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
-Route::get('api/platform/tenants/invitations', [PlatformTenantInvitationController::class, 'lists'])
-    ->middleware(PlatformLoginMiddleware::class)
-    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
 Route::post('api/platform/tenants/invitations/resend', [PlatformTenantInvitationController::class, 'resend'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
 Route::post('api/platform/tenants/invitations/revoke', [PlatformTenantInvitationController::class, 'revoke'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+// ThinkPHP routes are prefix-sensitive: register invitation actions before the collection route.
+Route::post('api/platform/tenants/invitations', [PlatformTenantInvitationController::class, 'invite'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+Route::get('api/platform/tenants/invitations', [PlatformTenantInvitationController::class, 'lists'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
 Route::get('api/platform/tenants/owner', [PlatformControlPlaneQueryController::class, 'owner'])

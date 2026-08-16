@@ -233,7 +233,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "b07bb5819b0c4155b2c1c7c73c47bc66a86188423c51d3b0f70c322f0cc221f8"
+            "source_sha256": "5ba9b4b77533f0010577a22870efb4fb9346fba4f7456cdead8a868b88e84fc2"
         },
         {
             "path": "deploy/docker-compose.remote-development.yml",
@@ -3556,7 +3556,7 @@
             "owner": "scaffold",
             "transform": "plugins-lock",
             "mode": 420,
-            "source_sha256": "71a298c9ab6e97e75f894578101f427853e301f30b7493ab6e35ae1bdbf35290"
+            "source_sha256": "49ad85da60195b0bdc254bc80787a311ae8e0cfdbcf7c024a54b10c016bec835"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -3589,7 +3589,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "377be54c7c983905b0169a7a409274eb8d079944c671855587303c951dd3324c"
+            "source_sha256": "85b4330edbc3de1e62f717ac2f2d589428ebac8c7dbadc82204514353794ccd4"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3623,7 +3623,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "8243288aa0f833ef1a6df3140e95b97cf285272d8cff11fe03476a5d0104dee2"
+            "source_sha256": "e195ab64c1d91657f6b80b946b9129453989671ea8fc33d98aaf93afe974484a"
         },
         {
             "path": "scripts/check-product-capability-ledger",
@@ -3995,6 +3995,30 @@
             "mode": 420
         },
         {
+            "path": "server/app/Modules/Fixture/DeliveryRecord/Http/DeliveryRecordController.php",
+            "target": "server/app/Modules/Fixture/DeliveryRecord/Http/DeliveryRecordController.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/app/Modules/Fixture/DeliveryRecord/Http/DeliveryRecordHttpHandler.php",
+            "target": "server/app/Modules/Fixture/DeliveryRecord/Http/DeliveryRecordHttpHandler.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/app/Modules/Fixture/DeliveryRecord/Http/routes.php",
+            "target": "server/app/Modules/Fixture/DeliveryRecord/Http/routes.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php",
             "target": "server/app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php",
             "classification": "excluded",
@@ -4128,7 +4152,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "9da06bd89ca0bc3304922ef45931c5acd3211d2f11f0713bb85f626f58ae73ad"
+            "source_sha256": "d0e6d104eca6e93ec6d466ee12cfb568caab757a2431072cc6be43abf07f7cda"
         },
         {
             "path": "server/app/adminapi/controller/auth/RoleController.php",
@@ -4506,7 +4530,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "cb5ca96f145d86f912b9712abfbaa1254743032e16b49aa562601e83a1726b66"
+            "source_sha256": "2d697e12d503b586c25e5f17da55ae7b77deeaceb46e0213978a514ce8bf097f"
         },
         {
             "path": "server/app/adminapi/logic/auth/LoginLogic.php",
@@ -4524,7 +4548,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "65992ec09a5c24d8b74c06c74492b52e3c4a514f918a518a5a5b6414b61e60fc"
+            "source_sha256": "f530439a1edbf7f82241231af70b4fc7bf69d840f1336f832f56421b120869aa"
         },
         {
             "path": "server/app/adminapi/logic/auth/RoleLogic.php",
@@ -4533,7 +4557,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "6ce247abe95ae5d5a05607c730b886a83b99d580396b873b41123fee848f83a1"
+            "source_sha256": "926347a61d961093ef694e0d4b355dce5a2a52d72375295f611c3047625d66ce"
         },
         {
             "path": "server/app/adminapi/logic/config/ConfigLogic.php",
@@ -4857,7 +4881,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "80596ee33e5719a74607c749ba95d772ceb73d384b0ee4dfc9d67dce49d25188"
+            "source_sha256": "b012583d266bd058213722d3cb2424e74b29efb70973c9f6b31000a797f753e7"
         },
         {
             "path": "server/app/adminapi/service/NativeAdminPrincipalRepository.php",
@@ -7597,7 +7621,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "ee4b54ec4b8d6f9a8f900356db18cbea3c3992758f228dc16f411a17807ba7e5"
+            "source_sha256": "b806caa27f96b18df6cc3b0bdfb1f5e1171bf89397dfd778a4e987780be6a518"
         },
         {
             "path": "server/app/platform/service/plugin/PluginLockResolver.php",
@@ -7706,6 +7730,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "7adbd96df3926992c9b2a0fcf2d361cd04156e585837d95dff00836f42e65992"
+        },
+        {
+            "path": "server/bootstrap/environment-aliases.php",
+            "target": "server/bootstrap/environment-aliases.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "99f20ab91495756a4935bdf232e8bd3e5b41d50c74d2861811f2f37f3c1c11eb"
         },
         {
             "path": "server/composer.json",
@@ -8136,7 +8169,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "f41b65efa50b796d6db96c2b63a480aeaf5cd81cf1162b7390329e0ed1f5438e"
+            "source_sha256": "3c77111f96ab1f219408adbe58287e41852383b06d816a5c361f6d9874eff1c2"
         },
         {
             "path": "server/public/robots.txt",
@@ -8181,7 +8214,15 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "f99680bf887f04b4fb7d46529d979bae8f83b67334c069036e94ffe4ef0308d1"
+            "source_sha256": "403b014c6f437d99dcb541ceb443654424c63c66a75732424f39f8e7c06d9c06"
+        },
+        {
+            "path": "server/route/fixture_delivery_record.php",
+            "target": "server/route/fixture_delivery_record.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
         },
         {
             "path": "server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php",
@@ -8604,6 +8645,14 @@
         {
             "path": "server/tests/Productization/FileMediaHostTest.php",
             "target": "server/tests/Productization/FileMediaHostTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/Productization/FixtureModuleHttpBoundaryTest.php",
+            "target": "server/tests/Productization/FixtureModuleHttpBoundaryTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -9057,7 +9106,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "a4f1571da3e9e9092363b27d53ac66d9a0bb73d2240641368373f191733e03b6"
+            "source_sha256": "6bc50c8ff8c53e7f6e7625ea14baa22ac7d2a8d27e636ecdb01f65a68f836631"
         },
         {
             "path": "server/view/README.md",

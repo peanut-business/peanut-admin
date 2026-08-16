@@ -63,6 +63,42 @@ $expect(($candidateDomains[0]['hosts'] ?? null) === [
 ], 'candidate domain list changed unexpectedly');
 $expect(($candidateDomains[0]['origin_endpoint']['port'] ?? null) === 18093, 'candidate origin port changed');
 
+$localDemoDomains = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-local-multi-tenant-demo-domains'
+));
+$expect(count($localDemoDomains) === 1, 'local multi-tenant demo domains must be registered exactly once');
+$expect(($localDemoDomains[0]['environments'] ?? null) === ['local-multi-tenant-demo'], 'local demo domains use the wrong environment');
+$expect(($localDemoDomains[0]['hosts'] ?? null) === [
+    'platform.peanut-admin.test',
+    'admin.peanut-admin.test',
+    'tenant-a.peanut-admin.test',
+    'tenant-b.peanut-admin.test',
+], 'local demo domain list changed unexpectedly');
+$expect(($localDemoDomains[0]['tenant_entry_bindings'] ?? null) === [
+    'tenant-a.peanut-admin.test' => 'tenant-a/admin-web',
+    'tenant-b.peanut-admin.test' => 'tenant-b/admin-web',
+], 'local demo Tenant host bindings changed unexpectedly');
+
+$productionDeployments = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-deployment'
+));
+$expect(count($productionDeployments) === 1, 'published production deployment must be registered exactly once');
+$expect(($productionDeployments[0]['environments'] ?? null) === ['production'], 'published deployment must remain production-only');
+$expect(($productionDeployments[0]['deployment_root'] ?? null) === '/www/docker/peanut-admin', 'published deployment root changed');
+$expect(($productionDeployments[0]['required_non_secret_environment']['PEANUT_DEPLOYMENT_TARGET'] ?? null) === 'production', 'published deployment target changed');
+
+$candidateDeployments = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-candidate-deployment'
+));
+$expect(count($candidateDeployments) === 1, 'production candidate deployment must be registered exactly once');
+$expect(($candidateDeployments[0]['environments'] ?? null) === ['production-candidate'], 'candidate deployment environment changed');
+$expect(($candidateDeployments[0]['deployment_root'] ?? null) === '/www/docker/peanut-admin-candidate', 'candidate deployment root changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['PEANUT_DEPLOYMENT_TARGET'] ?? null) === 'production-candidate', 'candidate deployment target changed');
+$expect(($candidateDeployments[0]['database_resource_id'] ?? null) === 'peanut-admin-production-candidate-mysql84', 'candidate deployment database changed');
+
 $databases = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
     static fn (array $item): bool => in_array('development', $item['environments'] ?? [], true)

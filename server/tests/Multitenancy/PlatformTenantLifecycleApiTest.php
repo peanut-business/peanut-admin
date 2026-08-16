@@ -378,6 +378,12 @@ SQL);
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle'"),
         'platform lifecycle HTTP routes lost their dedicated permissions'
     );
+    $resendRoute = strpos($route, "Route::post('api/platform/tenants/invitations/resend'");
+    $inviteRoute = strpos($route, "Route::post('api/platform/tenants/invitations'");
+    lifecycleExpect(
+        $resendRoute !== false && $inviteRoute !== false && $resendRoute < $inviteRoute,
+        'specific invitation actions must precede the prefix-sensitive invitation collection route'
+    );
 
     echo "PM01-PLATFORM-TENANT-LIFECYCLE-HTTP-001 passed\n";
 } finally {

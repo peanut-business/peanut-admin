@@ -778,10 +778,38 @@
         "cleanup_responsibility": "not applicable"
       },
       {
+        "stable_resource_id": "peanut-admin-local-multi-tenant-demo-domains",
+        "purpose": "local Platform, shared Admin and two Tenant-bound hostnames for the multi-tenant demo",
+        "environments": [
+          "local-multi-tenant-demo"
+        ],
+        "owner": "Peanut Admin local multi-tenant demo lease owner",
+        "host": "platform.peanut-admin.test",
+        "hosts": [
+          "platform.peanut-admin.test",
+          "admin.peanut-admin.test",
+          "tenant-a.peanut-admin.test",
+          "tenant-b.peanut-admin.test"
+        ],
+        "port": null,
+        "service_type": "local hosts-file aliases for the registered Vite listeners",
+        "credential_ref": null,
+        "data_source": "versioned hostname plan plus the local machine /etc/hosts block",
+        "tenant_entry_bindings": {
+          "tenant-a.peanut-admin.test": "tenant-a/admin-web",
+          "tenant-b.peanut-admin.test": "tenant-b/admin-web"
+        },
+        "freshness_requirement": "an active local demo lease, exact 127.0.0.1 hosts entries and matching pa_tenant_entry_binding rows",
+        "health_check": "resolve each hostname to 127.0.0.1, then verify Platform on 20176 and Admin on 20179 with the original Host preserved",
+        "fallback": "none",
+        "lifecycle": "local development configuration retained for user testing",
+        "cleanup_responsibility": "Peanut Admin local multi-tenant demo owner removes only the marked Peanut Admin block when the local demo is retired"
+      },
+      {
         "stable_resource_id": "peanut-admin-production-deployment",
         "purpose": "SSH access and deployment root for the Peanut Admin production Docker deployment",
         "environments": [
-          "production-candidate"
+          "production"
         ],
         "owner": "Peanut Admin production deployment owner",
         "source": "production owner confirmation and read-only SSH verification on 2026-08-15",
@@ -794,7 +822,7 @@
         "compose_file": "compose.yaml",
         "compose_profile": "bundled-db",
         "required_non_secret_environment": {
-          "PEANUT_DEPLOYMENT_TARGET": "production-candidate",
+          "PEANUT_DEPLOYMENT_TARGET": "production",
           "PEANUT_DATABASE_RESOURCE_ID": "peanut-admin-production-bundled-mysql84",
           "COMPOSE_PROFILES": "bundled-db",
           "DB_HOST": "mysql",
@@ -860,7 +888,7 @@
         "candidate_identity_source": "the exact full commit and tree recorded by git rev-parse in the deployment evidence before first start",
         "required_non_secret_environment": {
           "APP_ENV": "production",
-          "PEANUT_DEPLOYMENT_TARGET": "production",
+          "PEANUT_DEPLOYMENT_TARGET": "production-candidate",
           "PEANUT_DATABASE_RESOURCE_ID": "peanut-admin-production-candidate-mysql84",
           "COMPOSE_PROFILES": "bundled-db",
           "DEPLOYMENT_MODE": "multi-tenant",

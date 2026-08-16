@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\auth;
 
+use app\adminapi\service\CoreTenantModuleAdminBridge;
 use app\common\logic\BaseLogic;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -49,7 +50,7 @@ final class RoleLogic extends BaseLogic
             $service = self::service();
             $role = $service->create($context->tenantId, 'application.admin.' . bin2hex(random_bytes(8)),
                 (string)$params['name'], (string)($params['desc'] ?? ''), $context->memberId, $context->accountId, $context->requestId);
-            $keys = self::permissionKeys(self::menuIds($params));
+            $keys = self::permissionKeys($context->tenantId, self::menuIds($params));
             if ($keys !== []) {
                 $service->replacePermissions($context->tenantId, (int)$role['id'], $keys, (int)$role['revision'],
                     $context->memberId, $context->accountId, $context->requestId);
@@ -69,7 +70,7 @@ final class RoleLogic extends BaseLogic
             $role = $service->update($context->tenantId, (int)$params['id'], (string)$params['name'],
                 (string)($params['desc'] ?? ''), (int)$current['revision'], $context->memberId, $context->accountId, $context->requestId);
             if (array_key_exists('menu_id', $params) || array_key_exists('menu_ids', $params)) {
-                $service->replacePermissions($context->tenantId, (int)$params['id'], self::permissionKeys(self::menuIds($params)),
+                $service->replacePermissions($context->tenantId, (int)$params['id'], self::permissionKeys($context->tenantId, self::menuIds($params)),
                     (int)$role['revision'], $context->memberId, $context->accountId, $context->requestId);
             }
             return true;
@@ -101,6 +102,11 @@ final class RoleLogic extends BaseLogic
             $statement = self::pdo()->prepare("SELECT id FROM pa_system_menu WHERE is_disable=0 AND perms IN ({$placeholders}) ORDER BY id");
             $statement->execute($keys);
             $menus = array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
+            foreach ((new CoreTenantModuleAdminBridge(self::pdo()))->assignableMenuRecords($context->tenantId) as $menu) {
+                if (in_array((string)$menu['required_permission'], $keys, true)) {
+                    $menus[] = (int)$menu['id'];
+                }
+            }
         }
         return ['id' => (int)$role['id'], 'name' => $role['name'], 'desc' => $role['description'] ?? '', 'sort' => 0,
             'create_time' => '', 'num' => self::memberCount($context->tenantId, (int)$role['id']),
@@ -122,14 +128,20 @@ final class RoleLogic extends BaseLogic
     }
 
     /** @param list<int> $menuIds @return list<string> */
-    private static function permissionKeys(array $menuIds): array
+    private static function permissionKeys(int $tenantId, array $menuIds): array
     {
         if ($menuIds === []) return [];
         $placeholders = implode(',', array_fill(0, count($menuIds), '?'));
         $statement = self::pdo()->prepare("SELECT DISTINCT p.`key` FROM pa_system_menu m JOIN pa_permission p ON p.`key`=m.perms AND p.status='active' WHERE m.id IN ({$placeholders}) AND m.is_disable=0 AND m.perms<>'' ORDER BY p.`key`");
         $statement->execute($menuIds);
-        $keys = $statement->fetchAll(PDO::FETCH_COLUMN);
-        return array_values(array_map('strval', $keys));
+        $keys = array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+        $selected = array_fill_keys($menuIds, true);
+        foreach ((new CoreTenantModuleAdminBridge(self::pdo()))->assignableMenuRecords($tenantId) as $menu) {
+            if (isset($selected[(int)$menu['id']]) && trim((string)$menu['required_permission']) !== '') {
+                $keys[] = (string)$menu['required_permission'];
+            }
+        }
+        return array_values(array_unique($keys));
     }
 
     private static function service(): RoleAdminService { return new RoleAdminService(self::pdo()); }

@@ -42,7 +42,7 @@ is_owned_process() {
     port=$(read_env PHP_PORT)
     command_line=$(ps -p "$(runtime_pid)" -o command= 2>/dev/null || true)
     case "$command_line" in
-        *"php -S 0.0.0.0:$port"*"$repo_dir/server/public/router.php"*) return 0 ;;
+        *"$php_bin"*"-S 0.0.0.0:$port"*"$repo_dir/server/public/router.php"*) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -103,31 +103,6 @@ start_runtime() {
         set +a
         : "${APP_ENV:=development}"
         export APP_ENV
-        # ThinkPHP reads application settings from PHP_* when they are not
-        # loaded from server/.env. Keep the unprefixed DB_* variables for the
-        # installer and resource guard. PHP_* aliases are an internal runtime
-        # bridge; developers configure only the unprefixed values in the
-        # selected environment file.
-        [ -n "${APP_ENV+x}" ] && export PHP_APP_ENV="$APP_ENV"
-        [ -n "${APP_DEBUG+x}" ] && export PHP_APP_DEBUG="$APP_DEBUG"
-        [ -n "${DEPLOYMENT_MODE+x}" ] && export PHP_DEPLOYMENT_MODE="$DEPLOYMENT_MODE"
-        [ -n "${JWT_SECRET+x}" ] && export PHP_JWT_SECRET="$JWT_SECRET"
-        [ -n "${JWT_EXPIRE+x}" ] && export PHP_JWT_EXPIRE="$JWT_EXPIRE"
-        [ -n "${TENANT_IDENTIFIER_HMAC_KEY+x}" ] && export PHP_TENANT_IDENTIFIER_HMAC_KEY="$TENANT_IDENTIFIER_HMAC_KEY"
-        [ -n "${PLATFORM_IDENTIFIER_HMAC_KEY+x}" ] && export PHP_PLATFORM_IDENTIFIER_HMAC_KEY="$PLATFORM_IDENTIFIER_HMAC_KEY"
-        [ -n "${DB_DRIVER+x}" ] && export PHP_DB_DRIVER="$DB_DRIVER"
-        [ -n "${DB_TYPE+x}" ] && export PHP_DB_TYPE="$DB_TYPE"
-        [ -n "${DB_HOST+x}" ] && export PHP_DB_HOST="$DB_HOST"
-        [ -n "${DB_PORT+x}" ] && export PHP_DB_PORT="$DB_PORT"
-        [ -n "${DB_NAME+x}" ] && export PHP_DB_NAME="$DB_NAME"
-        [ -n "${DB_USER+x}" ] && export PHP_DB_USER="$DB_USER"
-        [ -n "${DB_PASS+x}" ] && export PHP_DB_PASS="$DB_PASS"
-        [ -n "${DB_CHARSET+x}" ] && export PHP_DB_CHARSET="$DB_CHARSET"
-        [ -n "${DB_PREFIX+x}" ] && export PHP_DB_PREFIX="$DB_PREFIX"
-        [ -n "${ASYNC_SIGNING_KEY+x}" ] && export PHP_ASYNC_SIGNING_KEY="$ASYNC_SIGNING_KEY"
-        [ -n "${PEANUT_MODULE_ROOTS+x}" ] && export PHP_PEANUT_MODULE_ROOTS="$PEANUT_MODULE_ROOTS"
-        [ -n "${PEANUT_PLUGIN_LOCK+x}" ] && export PHP_PEANUT_PLUGIN_LOCK="$PEANUT_PLUGIN_LOCK"
-        [ -n "${PEANUT_MODULE_KERNEL_VERSION+x}" ] && export PHP_PEANUT_MODULE_KERNEL_VERSION="$PEANUT_MODULE_KERNEL_VERSION"
         deployment_target=${PEANUT_DEPLOYMENT_TARGET:-local-development}
         export PEANUT_DEPLOYMENT_TARGET="$deployment_target"
         export HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= http_proxy= https_proxy= all_proxy=
