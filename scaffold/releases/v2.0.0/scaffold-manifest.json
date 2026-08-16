@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "d9d3717844ba32fd59f044a949df76d4155b1fe0",
-        "source_tree": "a52d6beab8eb56b127de2642d2c3683532cc49ce",
-        "inventory_sha256": "c3564a556fcd048916cfb2e6ff41961bb368efc189ffa46bf8d22feda933fa00",
+        "source_commit": "43fcca98a120ec874d6e476b1491e1ca6e1add8b",
+        "source_tree": "9506c362936d8398e61f7705a260320852385e8f",
+        "inventory_sha256": "e3381b9e480914c90940ba38c44790ff42a572502fc4a82e381ea3f763fa6ab7",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "a5addfdaf78b2eac929765b027ded6028f6870253b273bccdbf6a8e760bb0326",
+        "managed_tree_sha256": "a4cc2b632c8343626b714319fdbdd7f03cce26d69ad03a250e888b74451e2d15",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -32,7 +32,7 @@
         {
             "path": ".env.example",
             "source": "files/.env.example",
-            "template_sha256": "67651758afcda7aed90f8fb1e461222c5fd3d40ab7e3b9bd492d57df6e8e7d93",
+            "template_sha256": "600d6a9ac37189bb6aaae8345a74184d6a0285073a5aa215e817095f0d748dde",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -162,7 +162,7 @@
         {
             "path": "deploy/docker-compose.prod.yml",
             "source": "files/deploy/docker-compose.prod.yml",
-            "template_sha256": "994ae802116680a1fc2b10136dd91b0683869be03d822298692982ec6241d037",
+            "template_sha256": "b07bb5819b0c4155b2c1c7c73c47bc66a86188423c51d3b0f70c322f0cc221f8",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -223,16 +223,6 @@
             "path": "deploy/nginx/peanut-admin.conf",
             "source": "files/deploy/nginx/peanut-admin.conf",
             "template_sha256": "d6a2bbaa915ef438d00e26e5ed48a0c2bea876fd17e11e9369f559f6dc612116",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "host"
-        },
-        {
-            "path": "deploy/production.env.example",
-            "source": "files/deploy/production.env.example",
-            "template_sha256": "196863d89758c2711d89007d823393706c5bdac2c710cdbb760d1633f224f14a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -622,7 +612,7 @@
         {
             "path": "scripts/check-local-runtime-contract",
             "source": "files/scripts/check-local-runtime-contract",
-            "template_sha256": "f1654cb025f50bab9ad0ea2e9537ecdea6b15f021e9b6013330f316c8b6ef718",
+            "template_sha256": "8243288aa0f833ef1a6df3140e95b97cf285272d8cff11fe03476a5d0104dee2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -692,7 +682,7 @@
         {
             "path": "scripts/project-resource-registry",
             "source": "files/scripts/project-resource-registry",
-            "template_sha256": "4c1476e81e4195af5de8a7c1dcbb2a02d5c85264b9a5a53a5051ce9a9e3a310a",
+            "template_sha256": "e673e6bbc0207b415242ae0f1931e81a8abc0b5e243df9e5b05982b52a8778f1",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -708,16 +698,6 @@
             "mode": 420,
             "policy": "managed",
             "owner": "host"
-        },
-        {
-            "path": "server/.env.example",
-            "source": "files/server/.env.example",
-            "template_sha256": "67ca55767c8cc35e5aa1171d47144f7d91189c9a830570f4a445228f08738cd2",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "backend"
         },
         {
             "path": "server/.gitignore",
@@ -2022,7 +2002,7 @@
         {
             "path": "web/src/components/navbar/index.vue",
             "source": "files/web/src/components/navbar/index.vue",
-            "template_sha256": "d618280fba19088dff59a6f3cdc3791c1e2613fa9f00a916249816fa5648ff0a",
+            "template_sha256": "f23f8ca7384f82894003ff7da9c46376d468d5c8e79d30ee904e322640b8ca8f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2362,7 +2342,7 @@
         {
             "path": "web/src/router/guard/permission.ts",
             "source": "files/web/src/router/guard/permission.ts",
-            "template_sha256": "6c84afefa1efee26f81a1c1ef635d2411841f496bdcc74c52972358f9b7c3c65",
+            "template_sha256": "f8da7d861c9345e9b7b58333eec8e6d3900a01200c6e993e7a5d47fd1ee8c48a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2612,7 +2592,7 @@
         {
             "path": "web/src/store/modules/user/index.ts",
             "source": "files/web/src/store/modules/user/index.ts",
-            "template_sha256": "3da4e09c4de5d307d8365b9a53b43832270548728117bff34a9dd104fd9c27d5",
+            "template_sha256": "b63b34d87b9ade9640d3a075c85640831f3c64bbd06efafc99c7497bc03d5aa5",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2622,7 +2602,7 @@
         {
             "path": "web/src/store/modules/user/types.ts",
             "source": "files/web/src/store/modules/user/types.ts",
-            "template_sha256": "4e4ddfc93f37283299d158295f33a87d89d2aa19da98c84f4f42fbd230fc3ef0",
+            "template_sha256": "ab024c031041ff029e84fc838fc37ac6cab470df654c9301497346384ae3b31b",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

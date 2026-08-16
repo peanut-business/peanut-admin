@@ -22,4 +22,5 @@ export interface UserState {
   role: RoleType;
   permissions: string[];
   menu: ServerMenuRecord[];
+  canSwitchTenant?: boolean;
 }
