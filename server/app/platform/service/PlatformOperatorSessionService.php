@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use app\platform\context\PlatformOperatorContext;
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use PeanutAdmin\Kernel\Auth\PlatformAuthentication;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
@@ -15,8 +14,7 @@ final readonly class PlatformOperatorSessionService
     public function __construct(
         private PlatformAuthService $authentication,
         private PlatformAuthorizationEvaluator $authorization,
-        private PlatformAuthorizationRepository $permissions,
-        private PlatformOperatorAccountBoundary $accounts
+        private PlatformAuthorizationRepository $permissions
     ) {
     }
 
@@ -27,16 +25,7 @@ final readonly class PlatformOperatorSessionService
         ?string $userAgent,
         string $requestId
     ): PlatformAuthentication {
-        $this->accounts->assertEmailIsPlatformOnly($email);
-        $result = $this->authentication->login($email, $password, $ipAddress, $userAgent, $requestId);
-        try {
-            $this->accounts->assertAccountIsPlatformOnly($result->context->accountId);
-        } catch (\Throwable $exception) {
-            $this->authentication->logout($result->tokens->access->expose());
-            throw $exception;
-        }
-
-        return $result;
+        return $this->authentication->login($email, $password, $ipAddress, $userAgent, $requestId);
     }
 
     public function refresh(
@@ -45,28 +34,14 @@ final readonly class PlatformOperatorSessionService
         ?string $userAgent,
         string $requestId
     ): PlatformAuthentication {
-        $result = $this->authentication->refresh($refreshToken, $ipAddress, $userAgent, $requestId);
-        try {
-            $this->accounts->assertAccountIsPlatformOnly($result->context->accountId);
-        } catch (\Throwable $exception) {
-            $this->authentication->logout($result->tokens->access->expose());
-            throw $exception;
-        }
-
-        return $result;
+        return $this->authentication->refresh($refreshToken, $ipAddress, $userAgent, $requestId);
     }
 
     public function context(string $accessToken, string $requestId): PlatformOperatorContext
     {
-        $context = $this->authentication->context($accessToken, $requestId);
-        try {
-            $this->accounts->assertAccountIsPlatformOnly($context->accountId);
-        } catch (\Throwable $exception) {
-            $this->authentication->logout($accessToken);
-            throw $exception;
-        }
-
-        return PlatformOperatorContext::fromValidatedPlatformSession($context);
+        return PlatformOperatorContext::fromValidatedPlatformSession(
+            $this->authentication->context($accessToken, $requestId)
+        );
     }
 
     public function logout(string $accessToken): void

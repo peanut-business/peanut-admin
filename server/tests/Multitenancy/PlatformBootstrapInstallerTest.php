@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use app\common\service\tenant\DefaultTenantBootstrap;
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -121,8 +120,7 @@ function mt05BootstrapPlatformSessions(PDO $pdo): PlatformOperatorSessionService
             str_repeat('h', 32)
         ),
         new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
-        $permissions,
-        new PlatformOperatorAccountBoundary($pdo)
+        $permissions
     );
 }
 

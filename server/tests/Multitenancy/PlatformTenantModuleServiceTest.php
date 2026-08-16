@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use app\platform\identity\CorePlatformOperatorIdentityPort;
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\module\DeployedTenantModuleRegistry;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PlatformTenantModuleService;
@@ -95,8 +94,7 @@ function pm01ModuleSessions(PDO $pdo): PlatformOperatorSessionService
             str_repeat('m', 32)
         ),
         new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
-        $permissions,
-        new PlatformOperatorAccountBoundary($pdo)
+        $permissions
     );
 }
 

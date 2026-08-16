@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use app\platform\context\PlatformOperatorContext;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -74,8 +73,7 @@ function poSessions(PDO $pdo): PlatformOperatorSessionService
             str_repeat('p', 32)
         ),
         new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache()),
-        $repository,
-        new PlatformOperatorAccountBoundary($pdo)
+        $repository
     );
 }
 
@@ -189,7 +187,7 @@ SQL);
     $sessions->assertAllowed($scopedContext, 'platform.tenant.read');
     poRejected(static fn() => $sessions->assertAllowed($scopedContext, 'platform.tenant.lifecycle'), 'AUTHZ_PERMISSION_DENIED');
 
-    // If the same account later acquires TenantMember identity, every existing platform session fails closed.
+    // The same Account may hold both identities without merging their sessions or permissions.
     $candidate = $bootstrap->provisionTenantOwnerCandidate(
         $platform->operatorId,
         'boundary',
@@ -197,16 +195,25 @@ SQL);
         'scoped@example.test',
         null,
         'Scoped Operator',
-        'pm01-membership-forbidden'
-    );
-    poRejected(
-        static fn() => $sessions->context($scoped->tokens->access->expose(), 'pm01-membership-recheck'),
-        'PLATFORM_OPERATOR_TENANT_MEMBERSHIP_FORBIDDEN'
+        'pm01-dual-identity-membership'
     );
     poExpect($candidate->memberId > 0, 'membership boundary fixture was not established');
+    $dualIdentityContext = $sessions->context(
+        $scoped->tokens->access->expose(),
+        'pm01-membership-recheck'
+    );
     poExpect(
-        $pdo->query("SELECT status FROM pa_platform_session WHERE platform_operator_id={$scopedOperatorId}")->fetchColumn() === 'revoked',
-        'dual-identity detection did not revoke the platform session'
+        $dualIdentityContext->core->operatorId === $scopedOperatorId,
+        'TenantMember identity changed the validated platform operator'
+    );
+    $sessions->assertAllowed($dualIdentityContext, 'platform.tenant.read');
+    poRejected(
+        static fn() => $sessions->assertAllowed($dualIdentityContext, 'core.member.read'),
+        'AUTHZ_PERMISSION_DENIED'
+    );
+    poExpect(
+        $pdo->query("SELECT status FROM pa_platform_session WHERE platform_operator_id={$scopedOperatorId}")->fetchColumn() === 'active',
+        'TenantMember identity revoked the independent platform session'
     );
 
     $routeSource = file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
