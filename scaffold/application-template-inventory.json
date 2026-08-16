@@ -3502,7 +3502,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "bfaa5fb2248d12239ee67f11b9f266200f32a8b47720021ec121d17101737f3c"
+            "source_sha256": "2c5fb8b7f2eb368556043de64e27957a14d5ad9b094cbda6887e92f3fca41156"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3511,7 +3511,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "7ab65fcc6bc6a26a8ff29af4028d424687bcfe1efacedc72fab967f173d175f7"
+            "source_sha256": "8da901bc912317fbbb8f04ad79f0294042659ab15bb295476d6326576b3780fc"
         },
         {
             "path": "platform/src/main.ts",

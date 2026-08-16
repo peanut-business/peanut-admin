@@ -137,6 +137,9 @@ client.interceptors.request.use((config) => {
 async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
   const result = await request;
   if (result.data.code !== 20000) {
+    if (result.data.code === 40100) {
+      localStorage.removeItem(tokenKey);
+    }
     const details = result.data.data as { error_code?: string } | null;
     const errorCode = details?.error_code || '';
     const localizedErrors: Record<string, string> = {
