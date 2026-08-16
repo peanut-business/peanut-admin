@@ -7,6 +7,7 @@ use app\adminapi\service\CoreTenantModuleAdminBridge;
 use app\adminapi\service\AdminPermissionService;
 use app\common\logic\BaseLogic;
 use app\common\model\auth\SystemMenu;
+use app\common\service\platform\InstanceControlPlanePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -19,13 +20,18 @@ class MenuLogic extends BaseLogic
 
     public static function getAll(): array
     {
-        $menus = SystemMenu::order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
+        $menus = SystemMenu::whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
+            ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
         return linear_to_tree($menus);
     }
 
     public static function getAllSimple(TenantContext $context): array
     {
-        $data = SystemMenu::where('is_disable', 0)->field('id,pid,name')
+        $data = SystemMenu::where('is_disable', 0)
+            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
+            ->field('id,pid,name')
             ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
         $moduleMenus = array_map(
             static fn(array $menu): array => [

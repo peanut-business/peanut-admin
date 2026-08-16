@@ -12,13 +12,17 @@ final class ArticleTenantContext
 {
     public const PUBLIC_ACTOR = 'peanut.article.public-read';
 
-    public static function member(object $request): AuthenticatedMemberContext
+    public static function member(object $request): AuthenticatedMemberContext|TenantContext
     {
         $context = $request->authenticatedMemberContext ?? null;
-        if (!$context instanceof AuthenticatedMemberContext) {
-            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context;
         }
-        return $context;
+        $context = $request->tenantContext ?? null;
+        if ($context instanceof TenantContext && self::trustedMember($context)) {
+            return $context;
+        }
+        throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
     public static function read(object $request, string $operation): TenantContext|TenantSystemContext

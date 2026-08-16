@@ -50,6 +50,7 @@ $activeMigrations = array_map(
 sort($activeMigrations, SORT_STRING);
 freshSchemaExpect(
     $activeMigrations === [
+        '20260816-tenant-capability-setting.sql',
         '20260816-tenant-entry-binding.sql',
         '20260816-tenant-owner-invitation.sql',
     ],

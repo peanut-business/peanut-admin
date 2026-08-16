@@ -3,23 +3,27 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
-use app\common\model\config\Config;
-use app\common\service\ConfigService;
+use app\common\service\external\ExternalTenantResolutionException;
+use app\common\service\external\ExternalTenantResolver;
 use app\common\service\notice\driver\sms\AliyunSms;
 use app\common\service\notice\driver\sms\SmsDriver;
 use app\common\service\notice\driver\sms\TencentSms;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\facade\Db;
 
-/** 应用短信凭据、默认 Provider、驱动选择与回执脱敏的唯一 Host。 */
+/** Tenant 短信凭据、默认 Provider、驱动选择与回执脱敏的唯一 Host。 */
 final class NoticeChannelService
 {
+    private const BINDING_PROVIDER = 'notice.sms';
     private const PROVIDERS = ['aliyun', 'tencent'];
 
-    public static function detail(): array
+    public static function detail(TenantContext $context): array
     {
-        $default = strtolower(trim((string)ConfigService::get('notice', 'sms_default', '')));
-        $aliyun = self::config('aliyun');
-        $tencent = self::config('tencent');
+        $stored = self::bindingConfig($context);
+        $default = strtolower(trim((string)($stored['sms_default'] ?? '')));
+        $aliyun = self::providerConfig($stored, 'aliyun');
+        $tencent = self::providerConfig($stored, 'tencent');
         $active = $default === 'aliyun' ? $aliyun : ($default === 'tencent' ? $tencent : []);
 
         return [
@@ -43,23 +47,58 @@ final class NoticeChannelService
         ];
     }
 
-    public static function save(string $section, array $input): void
+    public static function save(TenantContext $context, string $section, array $input): void
     {
-        Db::transaction(function () use ($section, $input): void {
-            Config::where('type', 'notice')->lock(true)->select();
-            self::saveLocked($section, $input);
+        $tenantId = NoticeTenantContext::tenantId($context);
+        Db::transaction(function () use ($tenantId, $section, $input): void {
+            $binding = Db::name('external_channel_binding')
+                ->where('tenant_id', $tenantId)
+                ->where('provider', self::BINDING_PROVIDER)
+                ->lock(true)
+                ->find();
+            if (empty($binding)) {
+                $bindingId = Db::name('external_channel_binding')->insertGetId([
+                    'tenant_id' => $tenantId,
+                    'provider' => self::BINDING_PROVIDER,
+                    'callback_key' => bin2hex(random_bytes(32)),
+                    'identity_hash' => hash('sha256', 'tenant:' . $tenantId . ':' . self::BINDING_PROVIDER),
+                    'identity_hint' => self::BINDING_PROVIDER,
+                    'config_json' => '{}',
+                    'status' => 0,
+                    'create_time' => time(),
+                    'update_time' => time(),
+                ]);
+                $binding = ['id' => $bindingId, 'config_json' => '{}'];
+            }
+
+            $stored = self::decodeConfig($binding['config_json'] ?? '');
+            self::saveLocked($section, $input, $stored);
+            $default = strtolower(trim((string)($stored['sms_default'] ?? '')));
+            $active = in_array($default, self::PROVIDERS, true)
+                && self::complete($default, self::providerConfig($stored, $default));
+            Db::name('external_channel_binding')
+                ->where('id', (int)$binding['id'])
+                ->where('tenant_id', $tenantId)
+                ->update([
+                    'config_json' => json_encode(
+                        $stored,
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+                    ),
+                    'status' => $active ? 1 : 0,
+                    'update_time' => time(),
+                ]);
         });
     }
 
-    private static function saveLocked(string $section, array $input): void
+    private static function saveLocked(string $section, array $input, array &$stored): void
     {
         if ($section === 'sms_default') {
             $provider = strtolower(trim((string)($input['value'] ?? '')));
             if (!in_array($provider, self::PROVIDERS, true)
-                || !self::complete($provider, self::config($provider))) {
+                || !self::complete($provider, self::providerConfig($stored, $provider))) {
                 throw new \RuntimeException('只能选择已启用且配置完整的短信服务商');
             }
-            ConfigService::set('notice', 'sms_default', $provider);
+            $stored['sms_default'] = $provider;
             return;
         }
 
@@ -75,7 +114,7 @@ final class NoticeChannelService
             throw new \RuntimeException('短信配置包含未知字段');
         }
 
-        $current = self::config($provider);
+        $current = self::providerConfig($stored, $provider);
         $config = [];
         foreach ($allowed as $field) {
             if ($field === 'status') {
@@ -95,26 +134,31 @@ final class NoticeChannelService
         $changes = [$section => $config];
         if ($config['status'] === 1) {
             $other = $provider === 'aliyun' ? 'tencent' : 'aliyun';
-            $otherConfig = self::config($other);
+            $otherConfig = self::providerConfig($stored, $other);
             $otherConfig['status'] = 0;
             $changes['sms_' . $other] = $otherConfig;
             $changes['sms_default'] = $provider;
-        } elseif ((string)ConfigService::get('notice', 'sms_default', '') === $provider) {
+        } elseif ((string)($stored['sms_default'] ?? '') === $provider) {
             $changes['sms_default'] = '';
         }
-        ConfigService::setMany('notice', $changes);
+        $stored = array_replace($stored, $changes);
     }
 
     /** @return array{success:bool,provider:string,error:string,result:array<string,mixed>} */
     public static function sendSms(
+        TenantContext|TenantSystemContext $context,
         string $mobile,
         string $templateId,
         array $variables,
         ?callable $beforeSend = null
     ): array
     {
-        $provider = strtolower(trim((string)ConfigService::get('notice', 'sms_default', '')));
-        $config = in_array($provider, self::PROVIDERS, true) ? self::config($provider) : [];
+        NoticeTenantContext::verificationTenantId($context, 'notice.verification.send');
+        $stored = self::bindingConfig($context);
+        $provider = strtolower(trim((string)($stored['sms_default'] ?? '')));
+        $config = in_array($provider, self::PROVIDERS, true)
+            ? self::providerConfig($stored, $provider)
+            : [];
         if (!self::complete($provider, $config)) {
             return self::result(false, $provider, '短信服务商未启用或配置不完整');
         }
@@ -151,10 +195,30 @@ final class NoticeChannelService
         return compact('success', 'provider', 'error', 'result');
     }
 
-    private static function config(string $provider): array
+    private static function bindingConfig(TenantContext|TenantSystemContext $context): array
     {
-        $raw = ConfigService::get('notice', 'sms_' . $provider, '');
-        return is_array($raw) ? $raw : (json_decode((string)$raw, true) ?? []);
+        try {
+            return ExternalTenantResolver::production()
+                ->bindingForTenant($context, self::BINDING_PROVIDER, false)
+                ->config;
+        } catch (ExternalTenantResolutionException) {
+            return [];
+        }
+    }
+
+    private static function providerConfig(array $stored, string $provider): array
+    {
+        $config = $stored['sms_' . $provider] ?? [];
+        return is_array($config) ? $config : self::decodeConfig($config);
+    }
+
+    private static function decodeConfig(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        $decoded = json_decode((string)$value, true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     private static function complete(string $provider, array $config): bool

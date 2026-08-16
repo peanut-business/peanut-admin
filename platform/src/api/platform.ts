@@ -120,6 +120,22 @@ export interface InvitationInspection {
   requires_password: boolean;
 }
 
+export interface StorageEngine {
+  name: string;
+  path: string;
+  engine: 'local' | 'qiniu' | 'aliyun' | 'qcloud';
+  status: number;
+}
+
+export interface StorageDetail {
+  bucket?: string;
+  region?: string;
+  access_key?: string;
+  secret_key?: string;
+  domain?: string;
+  status: number;
+}
+
 const tokenKey = 'peanut-platform-token';
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
@@ -414,6 +430,16 @@ export const api = {
         change_reason: changeReason,
       })
     ),
+  storageEngines: () =>
+    unwrap<StorageEngine[]>(client.get('/api/platform/infrastructure/storage')),
+  storageDetail: (engine: StorageEngine['engine']) =>
+    unwrap<StorageDetail>(
+      client.get('/api/platform/infrastructure/storage/detail', { params: { engine } })
+    ),
+  setupStorage: (payload: Record<string, string | number>) =>
+    unwrap(client.post('/api/platform/infrastructure/storage/setup', payload)),
+  changeStorage: (engine: StorageEngine['engine']) =>
+    unwrap(client.post('/api/platform/infrastructure/storage/change', { engine })),
   audit: () =>
     unwrap<Page<AuditEvent>>(
       client.get('/api/platform/audit', {

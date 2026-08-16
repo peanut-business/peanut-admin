@@ -4,24 +4,24 @@ declare(strict_types=1);
 namespace app\adminapi\logic\setting;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
+use app\common\service\external\ExternalChannelBindingService;
+use app\common\service\external\ExternalTenantResolver;
 use app\common\service\wechat\OfficialAccountService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class OfficialAccountMenuLogic extends BaseLogic
 {
-    private const CONFIG_TYPE = 'oa_setting';
-
-    public static function detail(): array
+    public static function detail(TenantContext $context): array
     {
-        $stored = (string)ConfigService::get(self::CONFIG_TYPE, 'menu', '[]');
-        $menu = json_decode($stored, true);
+        $stored = self::config($context);
+        $menu = $stored['menu'] ?? [];
         return ['menu' => is_array($menu) ? $menu : []];
     }
 
-    public static function save(array $menu): bool
+    public static function save(TenantContext $context, array $menu): bool
     {
         try {
-            self::store($menu);
+            self::store($context, $menu);
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -29,16 +29,21 @@ class OfficialAccountMenuLogic extends BaseLogic
         }
     }
 
-    public static function saveAndPublish(array $menu, ?OfficialAccountService $service = null): bool
+    public static function saveAndPublish(
+        TenantContext $context,
+        array $menu,
+        ?OfficialAccountService $service = null
+    ): bool
     {
         try {
+            $config = self::config($context);
             $service ??= new OfficialAccountService();
             $service->publishMenu(
-                (string)ConfigService::get(self::CONFIG_TYPE, 'app_id', ''),
-                (string)ConfigService::get(self::CONFIG_TYPE, 'app_secret', ''),
+                (string)($config['app_id'] ?? ''),
+                (string)($config['app_secret'] ?? ''),
                 $menu
             );
-            self::store($menu);
+            self::store($context, $menu, $config);
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -46,9 +51,23 @@ class OfficialAccountMenuLogic extends BaseLogic
         }
     }
 
-    private static function store(array $menu): void
+    private static function store(TenantContext $context, array $menu, ?array $config = null): void
     {
-        $json = json_encode($menu, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        ConfigService::setManyAtomic(self::CONFIG_TYPE, ['menu' => $json]);
+        $config ??= self::config($context);
+        $config['menu'] = $menu;
+        ExternalChannelBindingService::update(
+            $context,
+            ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
+            $config,
+            (string)($config['original_id'] ?? $config['app_id'] ?? '')
+        );
+    }
+
+    private static function config(TenantContext $context): array
+    {
+        return ExternalChannelBindingService::config(
+            $context,
+            ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK
+        );
     }
 }

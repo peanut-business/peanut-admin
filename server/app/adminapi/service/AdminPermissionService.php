@@ -5,6 +5,7 @@ namespace app\adminapi\service;
 
 use app\common\model\auth\SystemMenu;
 use app\common\service\CoreServiceOverrides;
+use app\common\service\platform\InstanceControlPlanePolicy;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
@@ -56,8 +57,12 @@ final class AdminPermissionService
         if (!self::validContext($tenantContext, $admin)) {
             return false;
         }
+        if (InstanceControlPlanePolicy::isTenantAdminRoute($accessUri)) {
+            return false;
+        }
         $registered = SystemMenu::where('is_disable', 0)
             ->where('perms', '<>', '')
+            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->column('perms');
         $owned = (new CoreTenantModuleAdminBridge())->accessData($tenantContext)['permissions'];
 
@@ -97,7 +102,10 @@ final class AdminPermissionService
         if (!self::validContext($tenantContext, $admin)) {
             return [];
         }
-        $query = SystemMenu::where('type', 'in', ['M', 'C'])->where('is_disable', 0);
+        $query = SystemMenu::where('type', 'in', ['M', 'C'])
+            ->where('is_disable', 0)
+            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths());
         if (!self::isRoot($admin)) {
             $query->where(static function ($query) use ($permissions): void {
                 $query->where('perms', '')->whereOr('perms', 'in', $permissions ?: ['__none__']);

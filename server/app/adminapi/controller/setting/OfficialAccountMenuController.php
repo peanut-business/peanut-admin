@@ -6,19 +6,23 @@ namespace app\adminapi\controller\setting;
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\setting\OfficialAccountMenuLogic;
 use app\adminapi\validate\setting\OfficialAccountMenuValidate;
+use app\common\service\member\MemberTenantContext;
 
 class OfficialAccountMenuController extends BaseAdminController
 {
     public function detail()
     {
-        return $this->data(OfficialAccountMenuLogic::detail());
+        return $this->data(OfficialAccountMenuLogic::detail(MemberTenantContext::member($this->request)));
     }
 
     public function save()
     {
         $params = $this->request->post();
         $this->validate($params, OfficialAccountMenuValidate::class);
-        $result = OfficialAccountMenuLogic::save((array)$params['menu']);
+        $result = OfficialAccountMenuLogic::save(
+            MemberTenantContext::member($this->request),
+            (array)$params['menu']
+        );
         return $result ? $this->success('保存成功') : $this->fail(OfficialAccountMenuLogic::getError());
     }
 
@@ -26,7 +30,10 @@ class OfficialAccountMenuController extends BaseAdminController
     {
         $params = $this->request->post();
         $this->validate($params, OfficialAccountMenuValidate::class);
-        $result = OfficialAccountMenuLogic::saveAndPublish((array)$params['menu']);
+        $result = OfficialAccountMenuLogic::saveAndPublish(
+            MemberTenantContext::member($this->request),
+            (array)$params['menu']
+        );
         return $result ? $this->success('发布成功') : $this->fail(OfficialAccountMenuLogic::getError());
     }
 }

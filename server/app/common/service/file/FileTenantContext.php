@@ -9,13 +9,17 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class FileTenantContext
 {
-    public static function member(object $request): AuthenticatedMemberContext
+    public static function member(object $request): AuthenticatedMemberContext|TenantContext
     {
         $context = $request->authenticatedMemberContext ?? null;
-        if (!$context instanceof AuthenticatedMemberContext) {
-            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context;
         }
-        return $context;
+        $context = $request->tenantContext ?? null;
+        if ($context instanceof TenantContext && self::trustedMember($context)) {
+            return $context;
+        }
+        throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
     public static function tenantId(AuthenticatedMemberContext|TenantContext $context): int
@@ -24,5 +28,16 @@ final class FileTenantContext
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
         return $context->tenantId;
+    }
+
+    private static function trustedMember(TenantContext $context): bool
+    {
+        return $context->tenantId > 0
+            && $context->accountId > 0
+            && $context->memberId > 0
+            && $context->authorizationRevision > 0
+            && $context->sessionKey !== ''
+            && $context->clientKey !== ''
+            && $context->requestId !== '';
     }
 }

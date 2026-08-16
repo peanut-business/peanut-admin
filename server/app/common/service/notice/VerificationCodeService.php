@@ -66,6 +66,7 @@ class VerificationCodeService
 
         $log = null;
         $result = $this->sender->send(
+            $context,
             $mobile,
             $templateId,
             ['code' => $code],

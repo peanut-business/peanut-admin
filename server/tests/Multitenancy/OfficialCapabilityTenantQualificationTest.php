@@ -35,6 +35,15 @@ foreach ([
     'oauth_repository' => 'app/common/service/oauth/OAuthTenantRepository.php',
     'external_resolver' => 'app/common/service/external/ExternalTenantResolver.php',
     'finance_repository' => 'app/common/service/finance/FinanceTenantRepository.php',
+    'recharge_settings' => 'app/common/service/finance/RechargeTenantSettingService.php',
+    'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
+    'notice_channel' => 'app/common/service/notice/NoticeChannelService.php',
+    'platform_storage' => 'app/common/service/platform/InstanceControlPlanePolicy.php',
+    'admin_permissions' => 'app/adminapi/service/AdminPermissionService.php',
+    'member_admin_context' => 'app/common/service/member/MemberTenantContext.php',
+    'article_admin_context' => 'app/common/service/article/ArticleTenantContext.php',
+    'file_admin_context' => 'app/common/service/file/FileTenantContext.php',
+    'finance_admin_context' => 'app/common/service/finance/FinanceTenantContext.php',
     'crontab_scheduler' => 'app/common/service/crontab/CrontabSchedulerService.php',
     'async_authorization' => 'app/common/service/async/AdminAsyncAuthorization.php',
     'async_files' => 'app/common/service/export/AppFileMediaGateway.php',
@@ -115,6 +124,34 @@ qualificationExpect(
         && str_contains($sources['async_authorization'], 'authorization_revision'),
     'async work does not recheck Tenant availability and authorization'
 );
+qualificationExpect(
+    str_contains($sources['notice_channel'], "private const BINDING_PROVIDER = 'notice.sms'")
+        && str_contains($sources['notice_channel'], "where('tenant_id', \$tenantId)")
+        && !str_contains($sources['notice_channel'], 'ConfigService'),
+    'notification Provider configuration is not Tenant-owned'
+);
+qualificationExpect(
+    str_contains($sources['tenant_settings'], "where('tenant_id', \$tenantId)")
+        && str_contains($sources['tenant_settings'], "where('namespace', \$namespace)")
+        && str_contains($sources['recharge_settings'], 'TenantSettingService::document')
+        && str_contains($sources['recharge_settings'], 'ExternalChannelBindingService::config'),
+    'recharge policy or payment channel configuration is not Tenant-owned'
+);
+qualificationExpect(
+    str_contains($sources['platform_storage'], "'storage/setup'")
+        && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::isTenantAdminRoute')
+        && str_contains($sources['routes'], 'api/platform/infrastructure/storage')
+        && !str_contains($sources['routes'], "Route::post('storage/setup'"),
+    'instance storage control remains reachable from a Tenant Admin audience'
+);
+foreach (['member_admin_context', 'article_admin_context', 'file_admin_context', 'finance_admin_context'] as $key) {
+    qualificationExpect(
+        str_contains($sources[$key], 'AuthenticatedMemberContext|TenantContext')
+            && str_contains($sources[$key], '$request->tenantContext ?? null')
+            && str_contains($sources[$key], 'authorizationRevision'),
+        'native Admin TenantContext is not accepted safely by domain entry: ' . $key
+    );
+}
 foreach ([
     "PublicMemberTenantMiddleware::class, 'member.register'",
     "PublicMemberTenantMiddleware::class, 'member.login'",

@@ -13,13 +13,17 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class FinanceTenantContext
 {
-    public static function member(object $request): AuthenticatedMemberContext
+    public static function member(object $request): AuthenticatedMemberContext|TenantContext
     {
         $context = $request->authenticatedMemberContext ?? null;
-        if (!$context instanceof AuthenticatedMemberContext) {
-            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context;
         }
-        return $context;
+        $context = $request->tenantContext ?? null;
+        if ($context instanceof TenantContext && self::trustedMember($context)) {
+            return $context;
+        }
+        throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
     public static function externalPayment(int $tenantId, string $identity): TenantSystemContext

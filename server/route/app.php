@@ -40,7 +40,6 @@ use app\adminapi\controller\file\UploadController;
 use app\adminapi\controller\crontab\CrontabController;
 use app\adminapi\controller\generator\GeneratorController;
 use app\adminapi\controller\system\SystemController;
-use app\adminapi\controller\setting\StorageController;
 use app\adminapi\controller\setting\HotSearchController;
 use app\adminapi\controller\setting\PayConfigController;
 use app\adminapi\controller\setting\RechargeSettingController;
@@ -68,6 +67,7 @@ use app\platform\controller\PlatformTenantBoundaryController;
 use app\platform\controller\PlatformTenantController;
 use app\platform\controller\PlatformTenantModuleController;
 use app\platform\controller\PlatformControlPlaneQueryController;
+use app\platform\controller\PlatformStorageController;
 use app\platform\controller\PlatformTenantInvitationController;
 use app\platform\controller\PlatformTenantEntryBindingController;
 use app\platform\controller\TenantOwnerInvitationPublicController;
@@ -138,6 +138,18 @@ Route::get('api/platform/tenant-entry-bindings', [PlatformTenantEntryBindingCont
 Route::post('api/platform/tenant-entry-bindings/enable', [PlatformTenantEntryBindingController::class, 'enable'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
+Route::get('api/platform/infrastructure/storage', [PlatformStorageController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::get('api/platform/infrastructure/storage/detail', [PlatformStorageController::class, 'detail'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::post('api/platform/infrastructure/storage/setup', [PlatformStorageController::class, 'setup'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/infrastructure/storage/change', [PlatformStorageController::class, 'change'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
 Route::post('api/platform/tenant-entry-bindings/disable', [PlatformTenantEntryBindingController::class, 'disable'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
@@ -346,10 +358,6 @@ Route::group('api/admin', function () {
     Route::post('config/login/save', [ConfigController::class, 'saveLogin']);
 
     // 系统配置 - 存储设置
-    Route::get('storage/lists',   [StorageController::class, 'lists']);
-    Route::get('storage/detail',  [StorageController::class, 'detail']);
-    Route::post('storage/setup',  [StorageController::class, 'setup']);
-    Route::post('storage/change', [StorageController::class, 'change']);
 
     // 会员列表
     Route::get('member/lists',          [MemberController::class, 'lists']);

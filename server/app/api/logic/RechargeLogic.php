@@ -9,10 +9,10 @@ use app\common\logic\BaseLogic;
 use app\common\model\finance\PaymentScene;
 use app\common\model\finance\RechargeOrder;
 use app\common\model\oauth\OAuthIdentity;
-use app\common\service\ConfigService;
 use app\common\service\MemberBalanceService;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
+use app\common\service\finance\RechargeTenantSettingService;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\PaymentEvent;
@@ -33,18 +33,19 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('用户不存在');
             }
 
-            $scenes = PaymentScene::where([
-                'terminal' => $terminal,
-                'status' => 1,
-            ])->order('is_default', 'desc')->order('pay_way', 'asc')->select()->toArray();
+            $setting = RechargeTenantSettingService::config($context);
+            $scenes = RechargeTenantSettingService::enabledScenes($context, $terminal);
             $scenes = array_values(array_filter(
                 $scenes,
-                static fn(array $scene): bool => self::isChannelConfigured((int)$scene['pay_way'])
+                static fn(array $scene): bool => RechargeTenantSettingService::channelConfigured(
+                    $context,
+                    (int)$scene['pay_way']
+                )
             ));
 
             return [
-                'status' => (int)ConfigService::get('recharge', 'status', 0),
-                'min_amount' => self::moneyString(ConfigService::get('recharge', 'min_amount', '0.01')),
+                'status' => (int)$setting['status'],
+                'min_amount' => self::moneyString($setting['min_amount']),
                 'balance' => self::moneyString($member->user_money),
                 'terminal' => $terminal,
                 'channels' => array_map(static fn(array $scene): array => [
@@ -64,16 +65,17 @@ class RechargeLogic extends BaseLogic
         try {
             $terminal = (int)$params['terminal'];
             self::assertTerminal($terminal);
-            if ((int)ConfigService::get('recharge', 'status', 0) !== 1) {
+            $setting = RechargeTenantSettingService::config($context);
+            if ((int)$setting['status'] !== 1) {
                 throw new \RuntimeException('充值功能未开启');
             }
 
             $amountCents = self::moneyToCents((string)$params['amount']);
-            $minCents = self::moneyToCents((string)ConfigService::get('recharge', 'min_amount', '0.01'));
+            $minCents = self::moneyToCents((string)$setting['min_amount']);
             if ($amountCents <= 0 || $amountCents < $minCents) {
                 throw new \RuntimeException('充值金额不能低于最低充值金额');
             }
-            $configuredMax = self::moneyToCents((string)ConfigService::get('recharge', 'max_amount', '99999.00'));
+            $configuredMax = self::moneyToCents((string)$setting['max_amount']);
             $maxCents = min(self::MAX_AMOUNT_CENTS, $configuredMax);
             if ($amountCents > $maxCents) {
                 throw new \RuntimeException('充值金额超过单次上限');
@@ -83,12 +85,9 @@ class RechargeLogic extends BaseLogic
             if ($member->isEmpty()) {
                 throw new \RuntimeException('用户不存在');
             }
-            $defaultScene = PaymentScene::where([
-                'terminal' => $terminal,
-                'status' => 1,
-                'is_default' => 1,
-            ])->findOrEmpty();
-            if ($defaultScene->isEmpty() || !self::isChannelConfigured((int)$defaultScene->pay_way)) {
+            $defaultScene = RechargeTenantSettingService::defaultScene($context, $terminal);
+            if ($defaultScene === null
+                || !RechargeTenantSettingService::channelConfigured($context, (int)$defaultScene['pay_way'])) {
                 throw new \RuntimeException('当前终端暂无可用支付方式');
             }
 
@@ -96,7 +95,7 @@ class RechargeLogic extends BaseLogic
                 'sn' => RechargeOrder::generateSn(),
                 'user_id' => $memberId,
                 'pay_sn' => '',
-                'pay_way' => (int)$defaultScene->pay_way,
+                'pay_way' => (int)$defaultScene['pay_way'],
                 'pay_status' => RechargeOrder::PAY_STATUS_UNPAID,
                 'pay_time' => null,
                 'order_amount' => self::centsToMoney($amountCents),
@@ -124,15 +123,11 @@ class RechargeLogic extends BaseLogic
             if (!PaymentScene::supports($terminal, $payWay)) {
                 throw new \RuntimeException('当前终端未启用该支付方式');
             }
-            $scene = PaymentScene::where([
-                'terminal' => $terminal,
-                'pay_way' => $payWay,
-                'status' => 1,
-            ])->findOrEmpty();
-            if ($scene->isEmpty()) {
+            $scene = RechargeTenantSettingService::scene($context, $terminal, $payWay);
+            if ($scene === null) {
                 throw new \RuntimeException('当前终端未启用该支付方式');
             }
-            if (!self::isChannelConfigured($payWay)) {
+            if (!RechargeTenantSettingService::channelConfigured($context, $payWay)) {
                 throw new \RuntimeException('支付渠道未启用或配置不完整');
             }
 
@@ -339,15 +334,6 @@ class RechargeLogic extends BaseLogic
         if (!UserTerminalEnum::isValid($terminal)) {
             throw new \RuntimeException('支付终端不支持');
         }
-    }
-
-    private static function isChannelConfigured(int $payWay): bool
-    {
-        return match ($payWay) {
-            PaymentScene::PAY_WAY_WECHAT => (int)ConfigService::get('pay', 'wx_pay_status', 0) === 1,
-            PaymentScene::PAY_WAY_ALIPAY => (int)ConfigService::get('pay', 'ali_pay_status', 0) === 1,
-            default => false,
-        };
     }
 
     private static function channelToPayWay(string $channel): int

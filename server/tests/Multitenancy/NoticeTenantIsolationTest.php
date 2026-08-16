@@ -69,6 +69,7 @@ final class SuccessfulNoticeSender implements NoticeSmsSender
     public int $calls = 0;
 
     public function send(
+        TenantContext|TenantSystemContext $context,
         string $mobile,
         string $templateId,
         array $variables,
