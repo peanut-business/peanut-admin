@@ -246,6 +246,7 @@ function assertP0eLeaseContract(
     string $deploymentMode
 ): void {
     $expectedCounts = [
+        'browser-host' => 2,
         'browser-session' => 1,
         'cache-dir' => 1,
         'candidate-tree' => 1,
@@ -271,7 +272,7 @@ function assertP0eLeaseContract(
         $actualCounts[$type] = count($values);
     }
     ksort($actualCounts, SORT_STRING);
-    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== 26) {
+    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== 28) {
         throw new RuntimeException('P0-E lease resource set 存在缺失、额外项或 cardinality 冲突');
     }
 
@@ -298,6 +299,7 @@ function assertP0eLeaseContract(
     assertLeaseResourceValues($resources, 'docs-port', ['20186']);
     assertLeaseResourceValues($resources, 'compose-project', ['peanut-p0e-' . $runId]);
     assertLeaseResourceValues($resources, 'browser-session', ['p0e-' . $runId]);
+    assertLeaseResourceValues($resources, 'browser-host', ['admin.p0e.localhost', 'platform.p0e.localhost']);
     assertLeaseResourceValues($resources, 'gate', [$metadata['gate']]);
     assertLeaseResourceValues($resources, 'worktree', [$metadata['worktree']]);
     if ($metadata['lease'] !== 'p0e-runtime-' . $runId

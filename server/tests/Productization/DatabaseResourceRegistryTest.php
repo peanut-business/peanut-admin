@@ -437,6 +437,7 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
         'output-dir' => [$worktree . '/output/p0e-' . $runId],
         'compose-project' => ['peanut-p0e-' . $runId],
         'browser-session' => ['p0e-' . $runId],
+        'browser-host' => ['admin.p0e.localhost', 'platform.p0e.localhost'],
         'lease-proof-dir' => [
             '/Users/xing/Documents/company-projects/peanut-admin/.git/peanut-admin-resource-leases/leases/' . $lease,
         ],
@@ -529,6 +530,7 @@ try {
         'candidate' => static function (array &$metadata): void { $metadata['candidate'] = 'moving-head'; },
         'extra' => static function (array &$metadata, array &$resources): void { $resources['fallback'] = ['localhost']; },
         'missing-db' => static function (array &$metadata, array &$resources): void { array_pop($resources['mysql-db']); },
+        'missing-browser-host' => static function (array &$metadata, array &$resources): void { array_pop($resources['browser-host']); },
         'tree' => static function (array &$metadata, array &$resources): void { $resources['candidate-tree'] = ['tree']; },
         'proof-self' => static function (array &$metadata, array &$resources): void { $resources['lease-proof-dir'] = ['/tmp/other']; },
         'worktree' => static function (array &$metadata, array &$resources): void { $resources['worktree'] = ['/tmp/other']; },
