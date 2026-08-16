@@ -102,6 +102,9 @@ export default defineConfig({
           items: [
             { text: '文档门户', link: '/guide/' },
             { text: '开始使用', link: '/getting-started' },
+            { text: '实例平台管理', link: '/platform' },
+            { text: '身份与租户边界', link: '/architecture/identity-and-tenancy' },
+            { text: '官方模块多租户资格', link: '/architecture/official-module-qualification' },
             { text: '开发指南', link: '/guide/development' },
             { text: 'Module 开发', link: '/guide/module-development' },
             { text: '部署与安装', link: '/deployment' },

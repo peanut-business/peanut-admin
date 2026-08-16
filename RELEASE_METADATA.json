@@ -44,9 +44,13 @@
     "RELEASE_SBOM.spdx.json": "540558d156c7cdf66a31471d1a6d5191cbac4e541d8dd6b6cef3115f8536ebbe"
   },
   "migrations": {
-    "count": 0,
-    "ordered_path_list_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "ordered_files": [],
+    "count": 3,
+    "ordered_path_list_sha256": "93e476d8e94853101f0eb8ef24ed526308572dae2ea58214f97c46119627a812",
+    "ordered_files": [
+      "server/database/migrations/20260816-tenant-capability-setting.sql",
+      "server/database/migrations/20260816-tenant-entry-binding.sql",
+      "server/database/migrations/20260816-tenant-owner-invitation.sql"
+    ],
     "baseline": "server/database/init.sql plus the Core KernelSchema; post-baseline changes must be additive"
   },
   "technical_qualification": {
@@ -59,7 +63,7 @@
     "summary_sha256": null,
     "cleanup_residual_count": null,
     "lease_released": null,
-    "migrations": 0,
+    "migrations": 3,
     "scaffold_version": "2.0.0",
     "application_initial_version": "0.1.0",
     "evidence": "Necessary development qualification passed on the registered local multi-tenant demo: canonical fresh install, native Platform/Tenant login, three-Tenant selection, Store Demo browser flow, and official capability Tenant checks. Formal dual-mode P0-E release qualification remains pending.",

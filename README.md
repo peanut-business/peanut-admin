@@ -9,14 +9,14 @@ Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的
 [1.x 历史 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5) ·
 [更新日志](CHANGELOG.md)
 
-## 当前稳定能力
+## 当前候选能力
 
 - 管理后台：菜单、角色、管理员、部门、岗位、字典、文件、定时任务、日志和系统设置。
 - 业务模块：会员、标签、余额、通知、充值退款、文章、装修、热门搜索和客服设置。
 - 多端应用：Vue 3 管理端、Nuxt 3 PC、UniApp H5/小程序。
 - 多租户：默认 Tenant、可信 TenantContext、Tenant-first 数据访问、缓存/文件/任务/审计隔离。
 - 实例内平台管理：独立 PlatformOperator、Tenant 生命周期、首个 owner 和 TenantModule 管理。
-- 交付：2.0.0 canonical Schema 空库安装、基线后追加迁移账本和 Docker Compose 生产部署。
+- 交付：2.0.0 canonical Schema 空库安装、基线后追加迁移账本和 Docker Compose 候选部署。
 
 `2.0.0` 不支持 1.x 数据库或脚手架原地升级，也不包含套餐、订阅、计费、试用、发票、
 应用市场或跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并

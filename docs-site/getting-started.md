@@ -27,10 +27,11 @@ cd server && composer install && cd ..
 ```
 
 根 `.env` 是生产 Compose 的唯一人工配置样例；`PHP_*` 只由启动器自动派生给 ThinkPHP，
-不要手工维护第二份 `server/.env`。项目维护开发环境仍先选择资源登记中的空 MySQL 数据库。Peanut Admin 维护仓的日常开发资源是
-`peanut-admin-mysql84-development`；本地多租户体验使用隔离的
-`peanut-admin-mysql84-local-multi-tenant-demo`。先取得对应 lease，再由资源选择器写出
-非秘密连接信息；凭据只从登记的 credential reference 注入：
+不要手工维护第二份 `server/.env`。空库安装必须使用应用 owner 登记并确认为空的目标；
+Peanut Admin 维护仓的 `peanut-admin-mysql84-development` 是持久开发数据，不能假定为空。
+需要重建本地多租户体验时，使用隔离的
+`peanut-admin-mysql84-local-multi-tenant-demo`，并先取得对应 lease。资源选择器只写出非秘密
+连接信息；凭据只从登记的 credential reference 注入：
 
 ```bash
 ./scripts/project-resource-registry validate
@@ -48,8 +49,9 @@ export ADMIN_INITIAL_EMAIL='owner@example.com'
 php server/database/install.php
 ```
 
-安装器只接受空数据库，创建默认 Tenant、原生 Account/TenantMember 和首 owner，且不会回显
-初始密码。2.0.0 不支持接管 1.x 数据库；目标库已有任何表时停止并换用已登记的空库。
+安装器只接受已登记且已确认为空的数据库，创建默认 Tenant、原生 Account/TenantMember 和首
+owner，且不会回显初始密码。2.0.0 不支持接管 1.x 数据库；目标库已有任何表时停止，先登记并
+选择新的空库，不能把共享开发库重置为安装目标。
 安装后可执行 `php server/database/migrate.php --current` 校验 canonical `init.sql` 与基线后
 追加 migration 的 SHA-256。不要手工改写账本或已登记 SQL。
 

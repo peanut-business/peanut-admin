@@ -12,8 +12,9 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 数据库或脚手架原地升级。
 
 2.0.0 尚未创建 annotated tag、GitHub Release 或完成正式双模式 P0-E。隔离的
-固定候选 `ec32a9a` 的 `production-candidate` 已验证四域名网络入口、Platform、公共 Admin、
-两个 Tenant Owner、Tenant A/B 持续绑定和错误 Tenant 登录拒绝。该环境不能替代正式发布证明。
+`production-candidate` 体验环境已验证 Platform、公共 Admin、两个 Tenant Owner、Tenant A/B
+持续绑定和错误 Tenant 登录拒绝；候选身份以项目资源登记和根 `AGENTS.md` 为准。该环境不能替代
+正式发布证明。
 
 ## 公开运行依赖
 
@@ -30,7 +31,7 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 - **不再交付**：legacy Admin/Role/Dept 映射、default bootstrap 状态、兼容余额镜像和 1.x adopt/upgrade Runtime。
 - **已完成的生成边界**：create-app 2.0 inventory 与 `scaffold/releases/v2.0.0` 已按 fresh-only
   Runtime 重封，生成应用身份由确定性检查验证。
-- **已部署候选体验**：独立 `production-candidate` 使用四个 Cloudflare 域名、宝塔反向代理和单一多租户 origin；Platform 与公共 Admin 可用，两个 Tenant 域名只完成网络入口，尚未建立应用内 Tenant 绑定。
+- **已部署候选体验**：独立 `production-candidate` 使用四个 Cloudflare 域名、宝塔反向代理和单一多租户 origin；Platform、公共 Admin 与两个 Tenant 绑定入口均已存在。体验环境不是正式发布，也不能替代正式双模式 Gate。
 - **仍待完成**：正式双模式 P0-E、annotated tag、GitHub Release 和正式发布部署证明。
 - **明确不做**：1.x 升级矩阵、DCS 领域 Runtime、跨应用联邦、完整 SaaS 商业化和真实外部渠道验证。
 

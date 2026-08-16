@@ -263,9 +263,11 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 
 正式部署应检出不可变 release tag，并核对根 `RELEASE_METADATA.json`；源码 release 的完整 commit 与 archive SHA-256 以 GitHub Release 附件 `RELEASE_MANIFEST.json` 为准。应用生产入口保持源码文件名，必须能取得 `/legal/LICENSE`、`/legal/NOTICE`、`/legal/THIRD_PARTY_NOTICES.md` 与 `/legal/RELEASE_SBOM.spdx.json`；本站法律下载区为下载友好另使用 `.txt` 后缀。PB09 不发布预构建 PHP/Nginx 镜像。
 
-- 确认服务器没有使用开发 Compose，三端均由生产 Compose 构建并运行。
-- 确认 `/`、`/admin/`、`/mobile/`、`/pc/` 和 `/api/` 的入口分别符合路由契约。
+- 确认服务器没有使用开发 Compose，Tenant Admin、Platform、H5 与 PC 均由生产 Compose 构建并运行。
+- 确认 `/`、`/admin/`、`/platform/`、`/mobile/`、`/pc/` 和 `/api/` 的入口分别符合路由契约。
 - 登录并确认管理端菜单与当前角色一致。
+- 在多租户模式下确认 Platform Host、公共 Admin Host 与一个绑定 Tenant Host 均保留原始 Host；错误
+  Tenant Token、错误 Tenant 登录或绑定入口切换必须被拒绝。
 - 检查 `/api` 请求、上传和导出目录权限。
 - 用受限账号验证一个列表、详情和写操作，确认权限拒绝仍返回 `40300`。
 - 确认日志、支付和渠道配置中没有泄露密钥。

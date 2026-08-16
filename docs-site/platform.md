@@ -42,7 +42,8 @@ Provider；显式 `manual` 模式允许已认证且具备权限的 PlatformOpera
 
 ## 入口绑定
 
-绑定的唯一键是 `(host, client_key)`，当前客户端键为 `admin-web` 和 `member-api`。服务端会：
+运行时以 `(host, client_key)` 解析唯一有效映射，当前客户端键为 `admin-web` 和 `member-api`。
+数据库保留 Tenant 所有权和绑定状态，服务层拒绝同一 Host/client 指向不同 active Tenant。服务端会：
 
 - 规范化大小写、端口和末尾点；
 - 拒绝无效 Host、重复 active 绑定、暂停/关闭 Tenant；

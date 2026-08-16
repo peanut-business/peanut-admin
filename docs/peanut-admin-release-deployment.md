@@ -53,8 +53,10 @@ docker compose ps
 curl -fsS http://127.0.0.1:18092/healthz
 ```
 
-生产 Compose 构建管理端、H5、PC 和 PHP Runtime；Nginx 统一暴露 `/admin/`、`/mobile/`、
-`/pc/`、`/api/` 与 `/storage/`。MySQL、PHP-FPM 和内部服务端口不得直接暴露公网。
+生产 Compose 构建 Tenant Admin、独立 Platform、H5、PC 和 PHP Runtime；Nginx 统一暴露
+`/admin/`、`/platform/`、`/mobile/`、`/pc/`、`/api/` 与 `/storage/`。多租户部署还必须让
+`PLATFORM_HOSTS`、公共 `TENANT_ADMIN_HOSTS` 和 Tenant 绑定 Host 保留原始 Host。MySQL、PHP-FPM
+和内部服务端口不得直接暴露公网。
 
 ## 数据库边界
 
@@ -80,8 +82,9 @@ bootstrap、余额双写或旧 scaffold upgrade Runtime。需要保留旧系统�
 1. 固定源码 commit/tag 与版本元数据一致。
 2. 从空库完成一次目标部署模式安装和 `migrate.php --current`。
 3. 管理员登录、菜单/RBAC、Tenant 切换或 Standalone 默认 Tenant 正常。
-4. 使用第二 Tenant 验证一个列表、详情和写操作均 fail closed。
-5. `/admin/`、`/mobile/`、`/pc/`、`/api/`、上传和导出入口可访问。
+4. 使用第二 Tenant 验证一个列表、详情和写操作均 fail closed；绑定 Tenant Host 不允许切换。
+5. `/admin/`、`/platform/`、`/mobile/`、`/pc/`、`/api/`、上传和导出入口可访问，Platform API
+   只从 `PLATFORM_HOSTS` 访问。
 6. 日志、回调和错误响应不泄露密码、token、证书或 Provider secret。
 7. 当前 Module lock、资源登记、数据库和构建制品属于同一固定候选。
 

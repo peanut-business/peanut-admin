@@ -29,6 +29,7 @@ server/app/Modules/        应用 Module 后端
 server/database/           canonical Schema、安装器和追加 migration
 server/route/app.php       HTTP 路由入口
 web/                       Vue 管理端
+platform/                  Vue 实例 Platform 控制面
 pc/                        Nuxt PC 客户端
 uniapp/                    H5/小程序客户端
 plugins/ + plugins.lock    Plugin 制品与当前部署锁
@@ -40,6 +41,10 @@ scripts/                   创建应用、资源门禁和维护命令
 Core 只拥有通用身份、Tenant、权限和公开 Host 合同；应用拥有业务表、HTTP 装配、菜单、
 页面与产品配置；Module 只拥有自己的表、用例、权限和公开合同；Plugin 是一个或多个
 Module 的不可变交付制品，不等于 Tenant 开通或成员授权。
+
+多租户部署还包含独立 `platform/` 前端，发布产物位于 `server/public/platform/`，入口为
+`/platform/`。Platform Host、公共 Tenant Admin Host 与 Tenant 专属绑定 Host 必须由反向代理
+保留原始 Host；Platform API 只接收 `PLATFORM_HOSTS`，绑定入口不允许切换 Tenant。
 
 ## 开发最小路径
 

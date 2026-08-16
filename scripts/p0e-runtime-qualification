@@ -30,7 +30,6 @@ LEASE_TOOL = ROOT / "scripts/project-resource-lease"
 REGISTRY_TOOL = ROOT / "scripts/project-resource-registry"
 INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
 BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
-SCAFFOLD_UPGRADE = ROOT / "scripts/scaffold-upgrade"
 PERSISTENT_DATABASE = "peanut_admin_development"
 RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
@@ -168,13 +167,12 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         "container_name": "peanut-admin-mysql84-development",
         "container_image": "mysql:8.4.10@sha256:8dbcf531a03aade657e181b9cf2f1d1803ce621a1d55610cb44cb531ab7d7db6",
         "mysql_command": "/usr/bin/mysql",
-        "mysqldump_command": "/usr/bin/mysqldump",
     }
     for key, value in expected_tool.items():
         if admin_tool.get(key) != value:
             fail(f"registered P0-E administrative tooling disagrees on {key}")
-    if admin_tool.get("fallback") != "none; host mysql and mysqldump commands are forbidden":
-        fail("P0-E administrative tooling must forbid a host CLI fallback")
+    if admin_tool.get("fallback") != "none; host mysql commands are forbidden":
+        fail("P0-E administrative tooling must forbid a host MySQL fallback")
     expected = {
         "stable_resource_id": registered.get("stable_resource_id"),
         "environment": (registered.get("environments") or [None])[0],
@@ -201,10 +199,6 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
             f"candidate migration count {len(migrations)} does not equal the fixed "
             f"qualification count {db_fixture.get('migration_count')}"
         )
-    for baseline in fixture.get("baselines", []):
-        resolved = git("rev-parse", f"{baseline}^{{commit}}")
-        if not re.fullmatch(r"[0-9a-f]{40}", resolved):
-            fail(f"baseline tag is unavailable: {baseline}")
     target = fixture.get("target_release")
     if not isinstance(target, dict):
         fail("target scaffold release fixture is missing")
@@ -236,36 +230,6 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         or target.get("default_uniapp_version_code") != "10"
     ):
         fail("target scaffold release identity changed")
-    legacy = fixture.get("legacy_application")
-    if not isinstance(legacy, dict):
-        fail("legacy application fixture is missing")
-    source_commit = legacy.get("source_commit")
-    source_tree = legacy.get("source_tree")
-    if (
-        not isinstance(source_commit, str)
-        or git("rev-parse", f"{source_commit}^{{commit}}") != source_commit
-        or git("rev-parse", f"{source_commit}^{{tree}}") != source_tree
-    ):
-        fail("legacy application source identity is unavailable")
-    release_chain = legacy.get("release_chain")
-    if (
-        not isinstance(release_chain, list)
-        or len(release_chain) < 2
-        or release_chain[0] != legacy.get("initial_version")
-        or release_chain[-1] != target.get("version")
-    ):
-        fail("legacy application release chain is invalid")
-    for version in release_chain:
-        manifest_path = ROOT / "scaffold/releases" / f"v{version}" / "scaffold-manifest.json"
-        manifest = read_json(manifest_path)
-        if manifest.get("release", {}).get("version") != version:
-            fail(f"legacy release manifest identity is invalid: {version}")
-    customizations = legacy.get("customizations")
-    if not isinstance(customizations, list) or not customizations:
-        fail("legacy application customizations are missing")
-    for customization in customizations:
-        if not isinstance(customization, dict) or set(customization) != {"path", "anchor", "replacement"}:
-            fail("legacy application customization is invalid")
     return fixture, registry, registered, admin_tool
 
 
@@ -321,12 +285,10 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
     names = database_names(fixture, args.run_id)
     paths = {
         "output-dir": str(absolute_path(args.output_dir, "output-dir", args.run_id)),
-        "backup-dir": str(absolute_path(args.backup_dir, "backup-dir", args.run_id)),
         "cache-dir": str(absolute_path(args.cache_dir, "cache-dir", args.run_id)),
     }
     expected_paths = {
         "output-dir": str(ROOT / "output" / f"p0e-{args.run_id}"),
-        "backup-dir": str(Path.home() / ".local/state/peanut-admin" / f"p0e-backup-{args.run_id}"),
         "cache-dir": str(Path.home() / ".cache/peanut-admin" / f"p0e-{args.run_id}"),
     }
     if paths != expected_paths:
@@ -370,7 +332,6 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         ("docs-port", str(args.docs_port)),
         ("cache-dir", paths["cache-dir"]),
         ("output-dir", paths["output-dir"]),
-        ("backup-dir", paths["backup-dir"]),
         ("compose-project", compose_project),
         ("browser-session", f"p0e-{args.run_id}"),
         ("lease-proof-dir", str(lease_proof_dir)),
@@ -388,7 +349,7 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
             for key in (
                 "stable_resource_id", "version", "host", "transport", "ssh_alias",
                 "ssh_command", "docker_command", "container_name", "container_image",
-                "mysql_command", "mysqldump_command", "fallback",
+                "mysql_command", "fallback",
             )
         },
         "environment": "development",
@@ -401,7 +362,6 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         "lease_proof_container_path": "/run/peanut-admin/resource-lease",
         "groups": fixture["groups"],
         "target_release": fixture["target_release"],
-        "legacy_application": fixture["legacy_application"],
         "lease_resources": [{"type": kind, "value": value} for kind, value in resources],
     }
 
@@ -475,15 +435,10 @@ class Runner:
         self.plan = plan_data
         self.fixture = fixture
         self.output = Path(plan_data["paths"]["output-dir"])
-        self.backup = Path(plan_data["paths"]["backup-dir"])
         self.cache = Path(plan_data["paths"]["cache-dir"])
         self.checkpoint_path = self.output / "checkpoint.json"
         self.summary_path = self.output / "summary.json"
         self.generated = self.cache / "generated-application"
-        self.upgraded = self.cache / "upgraded-application"
-        self.upgrade_fault = self.cache / "upgrade-recovery-application"
-        self.legacy_source = self.cache / "legacy-v1.0.0-source"
-        self.upgrade_proof_path = self.output / "groups/legacy-application-upgrade.json"
         self.compose_env = self.cache / "compose.env"
         self.compose_overlay = self.cache / "compose.lease-proof.yml"
         self.docs_process: subprocess.Popen[str] | None = None
@@ -540,14 +495,13 @@ class Runner:
         if inspect != f"{tool['container_image']}|running|healthy":
             fail("registered MySQL allocation identity or health is not current")
         probe_script = (
-            'test -x "$1" && test -x "$2" && '
-            '"$1" --version && "$2" --version && printf "user=%s\\n" "$MYSQL_USER"'
+            'test -x "$1" && "$1" --version && printf "user=%s\\n" "$MYSQL_USER"'
         )
         probe = self.remote_docker([
             "exec", tool["container_name"], "/bin/sh", "-ceu", probe_script,
-            "p0e-admin-tooling", tool["mysql_command"], tool["mysqldump_command"],
+            "p0e-admin-tooling", tool["mysql_command"],
         ]).stdout.decode("utf-8", errors="replace")
-        if probe.count(tool["version"]) < 2:
+        if tool["version"] not in probe:
             fail("registered remote MySQL client version is unavailable")
         expected_user = required_environment("P0E_DB_USER")
         if f"user={expected_user}\n" not in probe:
@@ -570,38 +524,13 @@ class Runner:
         result = self.remote_docker(arguments, input_bytes=(sql + "\n").encode("utf-8"))
         return result.stdout.decode("utf-8", errors="strict")
 
-    def remote_dump(self, database: str, destination: Path) -> None:
-        tool = self.plan["database_admin_tooling"]
-        dump_script = (
-            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
-            'exec "$1" --protocol=SOCKET --user=root --single-transaction --routines '
-            '--triggers --no-tablespaces --hex-blob "$2"'
-        )
-        with destination.open("wb") as stream:
-            self.remote_docker([
-                "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", dump_script,
-                "p0e-mysqldump", tool["mysqldump_command"], database,
-            ], stdout=stream)
-
-    def remote_restore(self, database: str, source: Path) -> None:
-        tool = self.plan["database_admin_tooling"]
-        restore_script = (
-            'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; unset MYSQL_ROOT_PASSWORD; '
-            'exec "$1" --protocol=SOCKET --user=root "$2"'
-        )
-        with source.open("rb") as stream:
-            self.remote_docker([
-                "exec", "-i", tool["container_name"], "/bin/sh", "-ceu", restore_script,
-                "p0e-mysql-restore", tool["mysql_command"], database,
-            ], stdin=stream)
-
     def initialize(self) -> None:
         for port in self.plan["ports"].values():
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
                 probe.settimeout(0.5)
                 if probe.connect_ex(("127.0.0.1", int(port))) == 0:
                     fail(f"lease-bound listener port is already active: {port}")
-        for path in (self.output, self.backup, self.cache):
+        for path in (self.output, self.cache):
             path.mkdir(parents=True, exist_ok=False)
             path.chmod(0o700)
         (self.output / "groups").mkdir()
@@ -609,7 +538,7 @@ class Runner:
         self.save_checkpoint()
 
     def resume(self) -> None:
-        for path in (self.output, self.backup, self.cache):
+        for path in (self.output, self.cache):
             if not path.is_dir():
                 fail(f"resume path is unavailable: {path}")
         checkpoint = read_json(self.checkpoint_path)
@@ -623,8 +552,6 @@ class Runner:
                 fail(f"checkpoint {key} mismatch")
         self.checkpoint = checkpoint
         self.created_candidate_vendor = bool(checkpoint.get("owned_candidate_vendor"))
-        if checkpoint.get("groups", {}).get("upgraded-production-compose", {}).get("status") == "passed":
-            self.active_compose_root = self.upgraded
 
     @staticmethod
     def write_json(path: Path, value: Any) -> None:
@@ -660,33 +587,18 @@ class Runner:
         scenarios = {
             "standalone-fresh": ["standalone_fresh"],
             "multi-tenant-fresh": ["multi_tenant_fresh"],
-            "v1.0-forward": ["v1_0_forward"],
-            "v1.1-forward": ["v1_1_forward"],
-            "migration-fault-restore": ["migration_fault_source", "migration_fault_restore"],
             "plugin-lifecycle": ["plugin_lifecycle"],
             "production-compose": ["standalone_browser"],
-            "upgraded-plugin-lifecycle": ["plugin_lifecycle"],
-            "upgraded-production-compose": ["standalone_browser"],
-            "upgraded-multi-tenant-browser": ["multi_tenant_browser"],
+            "multi-tenant-browser": ["multi_tenant_browser"],
         }
         if group == "generated-application":
             if self.generated.exists():
                 shutil.rmtree(self.generated)
             if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
                 shutil.rmtree(ROOT / "server/vendor")
-        if group in ("v1.0-forward", "v1.1-forward"):
-            baseline = "v1.0.0" if group == "v1.0-forward" else "v1.1.0"
-            with contextlib.suppress(FileNotFoundError):
-                shutil.rmtree(self.cache / f"baseline-{baseline}")
-        if group == "legacy-application-upgrade":
-            for path in (self.upgraded, self.legacy_source):
-                if path.exists():
-                    shutil.rmtree(path)
-        if group == "legacy-application-recovery" and self.upgrade_fault.exists():
-            shutil.rmtree(self.upgrade_fault)
-        if group in ("production-compose", "upgraded-production-compose") and self.compose_env.exists() and self.compose_overlay.exists():
+        if group == "production-compose" and self.compose_env.exists() and self.compose_overlay.exists():
             self.compose("down", "--volumes", "--remove-orphans", check=False, project_root=self.active_compose_root)
-        if group == "upgraded-multi-tenant-browser" and self.compose_env.exists() and self.compose_overlay.exists():
+        if group == "multi-tenant-browser" and self.compose_env.exists() and self.compose_overlay.exists():
             self.compose("down", "--volumes", "--remove-orphans", check=False, project_root=self.active_compose_root)
         for scenario in scenarios.get(group, []):
             database = self.plan["databases"][scenario]
@@ -776,9 +688,7 @@ class Runner:
             fail(f"migration idempotency/current assertion failed for {database}")
 
     def inspect(self, database: str, mode: str, label: str, project_root: Path = ROOT) -> None:
-        inspector_mode = "multitenant-empty" if mode == "multi-tenant" else (
-            "v1-forward" if "forward" in label else "standalone-empty"
-        )
+        inspector_mode = "multitenant-empty" if mode == "multi-tenant" else "standalone-empty"
         env = self.db_env(database, mode) | {
             "MT05_MODE": inspector_mode,
             "MT05_DEPLOYMENT_MODE": mode,
@@ -884,63 +794,6 @@ class Runner:
             "uniapp_version_code": target["default_uniapp_version_code"],
             "app_owned": self.app_owned_proof(self.generated),
         })
-
-    @staticmethod
-    def append_command_output(log: Path, label: str, result: subprocess.CompletedProcess[str]) -> None:
-        with log.open("a", encoding="utf-8") as stream:
-            stream.write(f"\n[{label}]\n")
-            if result.stdout:
-                stream.write(result.stdout)
-                if not result.stdout.endswith("\n"):
-                    stream.write("\n")
-            if result.stderr:
-                stream.write(result.stderr)
-                if not result.stderr.endswith("\n"):
-                    stream.write("\n")
-
-    def json_command(
-        self,
-        arguments: list[str],
-        *,
-        label: str,
-        log: Path,
-        cwd: Path = ROOT,
-        env: dict[str, str] | None = None,
-        check: bool = True,
-    ) -> tuple[dict[str, Any], subprocess.CompletedProcess[str]]:
-        result = command(arguments, cwd=cwd, env=env, capture=True, check=False)
-        self.append_command_output(log, label, result)
-        if check and result.returncode != 0:
-            fail(f"{label} failed ({result.returncode})")
-        try:
-            parsed = json.loads(result.stdout) if result.stdout else {}
-        except json.JSONDecodeError as exception:
-            fail(f"{label} returned invalid JSON: {exception}")
-        if not isinstance(parsed, dict):
-            fail(f"{label} JSON root is invalid")
-        return parsed, result
-
-    @staticmethod
-    def tree_digest(root: Path, *, exclude_upgrade_state: bool = False) -> str:
-        rows: list[str] = []
-        for path in sorted(root.rglob("*"), key=lambda item: item.as_posix()):
-            relative = path.relative_to(root).as_posix()
-            if relative == ".git" or relative.startswith(".git/"):
-                continue
-            if exclude_upgrade_state and (
-                relative == ".peanut/upgrades" or relative.startswith(".peanut/upgrades/")
-            ):
-                continue
-            if path.is_symlink():
-                fail(f"tree digest refuses symlink: {relative}")
-            mode = path.stat().st_mode & 0o777
-            if path.is_dir():
-                rows.append(f"d\0{relative}\0-\0{mode:04o}")
-            elif path.is_file():
-                rows.append(f"f\0{relative}\0{sha256(path)}\0{mode:04o}")
-            else:
-                fail(f"tree digest refuses non-file path: {relative}")
-        return hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest()
 
     @staticmethod
     def app_owned_proof(project_root: Path) -> dict[str, Any]:
@@ -1287,7 +1140,56 @@ class Runner:
         self.drop_database(database)
 
     def plugin_lifecycle(self) -> None:
-        self.plugin_lifecycle_at(ROOT, "plugin_lifecycle", "plugin-lifecycle")
+        lock = self.generated / "plugins.lock"
+        original_lock = lock.read_bytes()
+        original_mode = lock.stat().st_mode & 0o777
+        if json.loads(original_lock) != {"schema_version": 1, "plugins": []}:
+            fail("generated application Plugin lock is not the released empty lock")
+        fixture_paths = [
+            (ROOT / "plugins/fixture.delivery-record", self.generated / "plugins/fixture.delivery-record"),
+            (ROOT / "server/app/Modules/Fixture/DeliveryRecord", self.generated / "server/app/Modules/Fixture/DeliveryRecord"),
+            (ROOT / "web/src/modules/fixture-delivery-record", self.generated / "web/src/modules/fixture-delivery-record"),
+        ]
+        runner_source = ROOT / "server/fixtures/plugin-module-lifecycle/run.php"
+        runner_target = self.generated / "server/fixtures/plugin-module-lifecycle/run.php"
+        if any(target.exists() for _, target in fixture_paths) or runner_target.exists():
+            fail("generated application already contains a Plugin qualification fixture")
+        before = self.app_owned_proof(self.generated)
+        try:
+            for source, target in fixture_paths:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(source, target, copy_function=shutil.copy2)
+            runner_target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(runner_source, runner_target)
+            shutil.copy2(ROOT / "plugins.lock", lock)
+            self.plugin_lifecycle_at(
+                self.generated,
+                "plugin_lifecycle",
+                "plugin-lifecycle",
+            )
+        finally:
+            lock.write_bytes(original_lock)
+            lock.chmod(original_mode)
+            for _, target in reversed(fixture_paths):
+                if target.exists():
+                    shutil.rmtree(target)
+            with contextlib.suppress(FileNotFoundError):
+                runner_target.unlink()
+            with contextlib.suppress(OSError):
+                runner_target.parent.rmdir()
+        after = self.app_owned_proof(self.generated)
+        if before != after or lock.read_bytes() != original_lock or (lock.stat().st_mode & 0o777) != original_mode:
+            fail("generated application Plugin qualification changed released bytes")
+        self.write_json(self.output / "groups/plugin-lifecycle.json", {
+            "schema_version": 1,
+            "status": "passed",
+            "application_root": str(self.generated),
+            "database": self.plan["databases"]["plugin_lifecycle"],
+            "plugin_lock_restored_sha256": sha256(lock),
+            "fixture_removed": True,
+            "app_owned_before_sha256": before["tree_sha256"],
+            "app_owned_after_sha256": after["tree_sha256"],
+        })
 
     def expected_upgraded_app_owned(self) -> str:
         proof = read_json(self.upgrade_proof_path)
@@ -1590,7 +1492,6 @@ class Runner:
                     fail(f"listener cleanup residual remains on port {port}")
         with contextlib.suppress(FileNotFoundError):
             self.compose_env.unlink()
-        shutil.rmtree(self.backup)
         shutil.rmtree(self.cache)
         if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
             shutil.rmtree(ROOT / "server/vendor")
@@ -1610,14 +1511,13 @@ class Runner:
             "environment": "development",
             "endpoint": self.plan["endpoint"],
             "groups": self.checkpoint["groups"],
-            "pa_p0e_003": {
-                "legacy_application_upgrade": "groups/legacy-application-upgrade.json",
-                "legacy_application_recovery": "groups/legacy-application-recovery.json",
-                "upgraded_plugin_lifecycle": "groups/upgraded-plugin-lifecycle.json",
-                "upgraded_compose": "groups/upgraded-production-compose.json",
-                "upgraded_browser": "browser/upgraded",
-                "app_owned_byte_gate": "passed",
-                "scaffold_fault_recover_gate": "passed",
+            "fresh_only_2_0": {
+                "generated_application": "groups/generated-application.json",
+                "standalone_fresh": "groups/standalone-fresh.json",
+                "multi_tenant_fresh": "groups/multi-tenant-fresh.json",
+                "plugin_lifecycle": "groups/plugin-lifecycle.json",
+                "production_compose": "groups/production-compose.json",
+                "browser": "browser/generated",
             },
             "cleanup": {
                 "database_residual_count": 0,
@@ -1628,7 +1528,6 @@ class Runner:
                 "image_residual_count": 0,
                 "listener_residual_count": 0,
                 "docs_listener_stopped": True,
-                "backup_removed": True,
                 "cache_removed": True,
                 "output_preserved": str(self.output),
             },
@@ -1642,19 +1541,10 @@ class Runner:
         self.run_group("generated-application", self.generated_application)
         self.run_group("standalone-fresh", lambda: self.fresh("standalone_fresh", "standalone-fresh", "standalone"))
         self.run_group("multi-tenant-fresh", lambda: self.fresh("multi_tenant_fresh", "multi-tenant-fresh", "multi-tenant"))
-        self.run_group("v1.0-forward", lambda: self.forward("v1_0_forward", "v1.0-forward", "v1.0.0"))
-        self.run_group("v1.1-forward", lambda: self.forward("v1_1_forward", "v1.1-forward", "v1.1.0"))
-        self.run_group("migration-fault-restore", self.migration_fault_restore)
         self.run_group("plugin-lifecycle", self.plugin_lifecycle)
         self.run_group("production-compose", self.production_compose)
         self.run_group("standalone-browser", lambda: self.browser("standalone"))
         self.run_group("multi-tenant-browser", lambda: self.browser("multi-tenant"))
-        self.run_group("legacy-application-upgrade", self.legacy_application_upgrade)
-        self.run_group("legacy-application-recovery", self.legacy_application_recovery)
-        self.run_group("upgraded-plugin-lifecycle", self.upgraded_plugin_lifecycle)
-        self.run_group("upgraded-production-compose", self.upgraded_production_compose)
-        self.run_group("upgraded-standalone-browser", lambda: self.upgraded_browser("standalone"))
-        self.run_group("upgraded-multi-tenant-browser", lambda: self.upgraded_browser("multi-tenant"))
         required = set(self.fixture["groups"])
         passed = {name for name, value in self.checkpoint["groups"].items() if value.get("status") == "passed"}
         if passed != required:
@@ -1678,7 +1568,6 @@ class Runner:
             "passed_groups": sorted(name for name, value in self.checkpoint["groups"].items() if value.get("status") == "passed"),
             "resume_command": "scripts/p0e-runtime-qualification resume <same fixed arguments>",
             "databases": self.plan["databases"],
-            "backup_dir": str(self.backup),
             "cache_dir": str(self.cache),
             "output_dir": str(self.output),
         })
@@ -1692,7 +1581,6 @@ def add_fixed_arguments(parser: argparse.ArgumentParser, with_lease: bool = True
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--backup-dir", required=True)
     parser.add_argument("--cache-dir", required=True)
     parser.add_argument("--http-port", required=True, type=int)
     parser.add_argument("--docs-port", required=True, type=int)
