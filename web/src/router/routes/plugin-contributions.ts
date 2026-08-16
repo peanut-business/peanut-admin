@@ -10,12 +10,13 @@ export const pluginRoutes: RouteRecordRaw[] = (
 )
   .flatMap((contribution) => contribution.routes)
   .map(
-    (route): RouteRecordRaw => ({
-      ...route,
-      meta: {
-        ...route.meta,
-        requiresAuth: route.meta?.requiresAuth === true,
-        hideInMenu: true,
-      },
-    }) as RouteRecordRaw
+    (route): RouteRecordRaw =>
+      ({
+        ...route,
+        meta: {
+          ...route.meta,
+          requiresAuth: route.meta?.requiresAuth === true,
+          hideInMenu: true,
+        },
+      } as RouteRecordRaw)
   );

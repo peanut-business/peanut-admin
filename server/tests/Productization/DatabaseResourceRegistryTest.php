@@ -237,12 +237,12 @@ $expect($registeredPorts === [
     'DEV_HTTP_PORT' => 20187,
     'PHP_PORT' => 20180,
     'VITE_PORT' => 20181,
+    'MT_DEMO_PHP_PORT' => 20178,
+    'MT_DEMO_VITE_PORT' => 20179,
     'PC_PORT' => 20185,
     'MOBILE_PORT' => 20182,
     'DOCS_PORT' => 20186,
     'HTTP_PORT' => 20190,
-    'MT_DEMO_PHP_PORT' => 20178,
-    'MT_DEMO_VITE_PORT' => 20179,
 ], 'registered local listener ports do not match the Peanut Admin project block');
 $redis = array_values(array_filter(
     $registry['resources']['optional_services'] ?? [],

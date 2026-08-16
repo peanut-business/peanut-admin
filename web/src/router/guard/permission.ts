@@ -21,10 +21,13 @@ export default function setupPermissionGuard(router: Router) {
         enabledModules,
         userStore.permissions,
         permissionEvaluator
-      ).some((route) =>
-        route.path === to.path || route.children?.some((child) =>
-          `${route.path}/${child.path}`.replace(/\/{2,}/g, '/') === to.path
-        )
+      ).some(
+        (route) =>
+          route.path === to.path ||
+          route.children?.some(
+            (child) =>
+              `${route.path}/${child.path}`.replace(/\/{2,}/g, '/') === to.path
+          )
       );
       if (!accessible) {
         next(NOT_FOUND);
