@@ -27,12 +27,16 @@ final class TenantOwnerInvitationAdminService
     private PdoTenantRepository $tenants;
     private MembershipRepository $memberships;
     private PdoAuditRepository $audit;
+    private OwnerInvitationRuntimePolicy $runtimePolicy;
 
     public function __construct(
         private readonly PDO $pdo,
         private readonly PlatformOperatorSessionService $sessions,
-        private readonly OwnerInvitationDeliveryPort $delivery
+        private readonly OwnerInvitationDeliveryPort $delivery,
+        ?OwnerInvitationRuntimePolicy $runtimePolicy = null
     ) {
+        $this->runtimePolicy = $runtimePolicy
+            ?? OwnerInvitationRuntimePolicy::fromEnvironment((string)(getenv('APP_ENV') ?: ''));
         $this->transactions = new PdoTransactionManager($pdo);
         $this->tenants = new PdoTenantRepository($pdo);
         $this->memberships = new PdoMembershipRepository($pdo);
@@ -50,6 +54,7 @@ final class TenantOwnerInvitationAdminService
     ): array {
         $this->sessions->assertAllowed($context, self::CREATE_PERMISSION);
         $this->sessions->assertAllowed($context, self::INVITE_PERMISSION);
+        $this->runtimePolicy->assertIssuanceAllowed($this->delivery);
         $email = EmailAddress::fromString($ownerEmail)->value();
         $token = OneTimeInvitationToken::issue();
         $expiresAt = $this->expiry($expiresInHours);
@@ -107,6 +112,7 @@ final class TenantOwnerInvitationAdminService
         int $expiresInHours
     ): array {
         $this->sessions->assertAllowed($context, self::INVITE_PERMISSION);
+        $this->runtimePolicy->assertIssuanceAllowed($this->delivery);
         $email = EmailAddress::fromString($ownerEmail)->value();
         $token = OneTimeInvitationToken::issue();
         $expiresAt = $this->expiry($expiresInHours);
@@ -119,14 +125,9 @@ final class TenantOwnerInvitationAdminService
             $token,
             $expiresAt
         ): array {
-            $tenant = $this->lockProvisioningTenant($tenantId);
+            $tenant = $this->lockInvitableTenant($tenantId);
             $this->expireStalePending($tenantId);
-            if ($this->memberships->pendingOrActiveMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
-                throw TenantOwnerInvitationException::conflict(
-                    'TENANT_OWNER_ALREADY_ASSIGNED',
-                    'Tenant already has an owner candidate.'
-                );
-            }
+            $this->assertOwnerBaseline($tenantId, (string)$tenant['status']);
             if ($this->pendingInvitationExists($tenantId)) {
                 throw TenantOwnerInvitationException::conflict(
                     'TENANT_OWNER_INVITATION_PENDING',
@@ -156,7 +157,7 @@ final class TenantOwnerInvitationAdminService
             return $invitation + [
                 'tenant_code' => $tenant['code'],
                 'tenant_name' => $tenant['name'],
-                'tenant_status' => TenantStatus::Provisioning->value,
+                'tenant_status' => $tenant['status'],
             ];
         });
 
@@ -203,6 +204,7 @@ SQL);
         int $expiresInHours
     ): array {
         $this->sessions->assertAllowed($context, self::INVITE_PERMISSION);
+        $this->runtimePolicy->assertIssuanceAllowed($this->delivery);
         $token = OneTimeInvitationToken::issue();
         $expiresAt = $this->expiry($expiresInHours);
         $issued = $this->transactions->run(function () use (
@@ -212,19 +214,15 @@ SQL);
             $token
         ): array {
             $invitation = $this->lockInvitationById($invitationId);
-            $tenant = $this->lockProvisioningTenant((int)$invitation['tenant_id']);
+            $tenantId = (int)$invitation['tenant_id'];
+            $tenant = $this->lockInvitableTenant($tenantId);
             if ($invitation['status'] !== 'pending') {
                 throw TenantOwnerInvitationException::conflict(
                     'INVITATION_NOT_PENDING',
                     'Only a pending invitation can be resent.'
                 );
             }
-            if ($this->memberships->pendingOrActiveMemberWithRoleExists((int)$invitation['tenant_id'], self::OWNER_ROLE)) {
-                throw TenantOwnerInvitationException::conflict(
-                    'TENANT_OWNER_ALREADY_ASSIGNED',
-                    'Tenant already has an owner candidate.'
-                );
-            }
+            $this->assertOwnerBaseline($tenantId, (string)$tenant['status']);
             $now = $this->now();
             $statement = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_tenant_owner_invitation
@@ -251,7 +249,7 @@ SQL);
 
             return [
                 'id' => $invitationId,
-                'tenant_id' => (int)$invitation['tenant_id'],
+                'tenant_id' => $tenantId,
                 'tenant_code' => $tenant['code'],
                 'tenant_name' => $tenant['name'],
                 'email' => $invitation['email_normalized'],
@@ -273,7 +271,7 @@ SQL);
 
         return $this->transactions->run(function () use ($context, $invitationId): array {
             $invitation = $this->lockInvitationById($invitationId);
-            $this->lockProvisioningTenant((int)$invitation['tenant_id']);
+            $this->lockInvitableTenant((int)$invitation['tenant_id']);
             if ($invitation['status'] !== 'pending') {
                 throw TenantOwnerInvitationException::conflict(
                     'INVITATION_NOT_PENDING',
@@ -394,10 +392,12 @@ SQL);
             'token_hash' => $token->hash(),
         ]);
 
-        return array_replace($issued, [
-            'delivery_status' => $result->status,
-            'accept_token' => $token->expose(),
-        ]);
+        $response = array_replace($issued, ['delivery_status' => $result->status]);
+        if ($this->runtimePolicy->allowsPlaintextTokenResponse()) {
+            $response['accept_token'] = $token->expose();
+        }
+
+        return $response;
     }
 
     /** @return array{id:int,tenant_id:int,email_normalized:string,display_name:string,status:string,generation:int} */
@@ -419,7 +419,7 @@ SQL);
     }
 
     /** @return array{id:int,code:string,name:string,status:string} */
-    private function lockProvisioningTenant(int $tenantId): array
+    private function lockInvitableTenant(int $tenantId): array
     {
         $statement = $this->pdo->prepare(
             'SELECT id, code, name, status FROM pa_tenant WHERE id = :id FOR UPDATE'
@@ -429,14 +429,34 @@ SQL);
         if (!is_array($row)) {
             throw TenantOwnerInvitationException::conflict('TENANT_NOT_FOUND', 'Tenant was not found.');
         }
-        if ($row['status'] !== TenantStatus::Provisioning->value) {
+        if (!in_array($row['status'], [TenantStatus::Provisioning->value, TenantStatus::Active->value], true)) {
             throw TenantOwnerInvitationException::conflict(
-                'TENANT_NOT_PROVISIONING',
-                'Owner invitations require a provisioning Tenant.'
+                'TENANT_OWNER_INVITATION_NOT_ALLOWED',
+                'Owner invitations require a provisioning or active Tenant.'
             );
         }
 
         return $row;
+    }
+
+    private function assertOwnerBaseline(int $tenantId, string $tenantStatus): void
+    {
+        if ($tenantStatus === TenantStatus::Provisioning->value) {
+            if ($this->memberships->pendingOrActiveMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+                throw TenantOwnerInvitationException::conflict(
+                    'TENANT_OWNER_ALREADY_ASSIGNED',
+                    'Tenant already has an owner candidate.'
+                );
+            }
+            return;
+        }
+
+        if (!$this->memberships->activeMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+            throw TenantOwnerInvitationException::conflict(
+                'TENANT_ACTIVE_OWNER_REQUIRED',
+                'An active Tenant must retain an active owner before another owner is invited.'
+            );
+        }
     }
 
     private function expireStalePending(int $tenantId): void

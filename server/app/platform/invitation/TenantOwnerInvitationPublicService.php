@@ -88,13 +88,17 @@ final class TenantOwnerInvitationPublicService
             if ($invitation['status'] !== 'pending') {
                 return ['_error' => 'INVITATION_NOT_PENDING'];
             }
-            if ($invitation['tenant_status'] !== TenantStatus::Provisioning->value) {
-                return ['_error' => 'TENANT_NOT_PROVISIONING'];
-            }
-
             $tenantId = (int)$invitation['tenant_id'];
-            if ($this->memberships->pendingOrActiveMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
-                return ['_error' => 'TENANT_OWNER_ALREADY_ASSIGNED'];
+            $tenantStatus = (string)$invitation['tenant_status'];
+            if (!in_array($tenantStatus, [TenantStatus::Provisioning->value, TenantStatus::Active->value], true)) {
+                return ['_error' => 'TENANT_OWNER_INVITATION_NOT_ALLOWED'];
+            }
+            if ($tenantStatus === TenantStatus::Provisioning->value) {
+                if ($this->memberships->pendingOrActiveMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+                    return ['_error' => 'TENANT_OWNER_ALREADY_ASSIGNED'];
+                }
+            } elseif (!$this->memberships->activeMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+                return ['_error' => 'TENANT_ACTIVE_OWNER_REQUIRED'];
             }
             $role = $this->memberships->roleByKey($tenantId, self::OWNER_ROLE, true);
             if ($role === null || !$role->isBuiltin) {
@@ -127,6 +131,9 @@ final class TenantOwnerInvitationPublicService
             }
 
             $member = $this->memberships->byTenantAndAccount($tenantId, $account->id, true);
+            if ($member !== null && $this->memberships->memberHasRole($tenantId, $member->id, self::OWNER_ROLE)) {
+                return ['_error' => 'ACCOUNT_ALREADY_TENANT_OWNER'];
+            }
             if ($member === null) {
                 $member = $this->memberships->createPending(
                     $tenantId,
@@ -178,7 +185,7 @@ SQL);
                 'member_id' => $member->id,
                 'role_id' => $role->id,
                 'status' => 'accepted',
-                'tenant_status' => TenantStatus::Provisioning->value,
+                'tenant_status' => $tenantStatus,
             ];
         });
 
@@ -278,6 +285,10 @@ SQL);
             'EXISTING_ACCOUNT_PASSWORD_FORBIDDEN' => TenantOwnerInvitationException::conflict(
                 $error,
                 'A password cannot be supplied for an existing Account.'
+            ),
+            'ACCOUNT_ALREADY_TENANT_OWNER' => TenantOwnerInvitationException::conflict(
+                $error,
+                'The Account already holds the Tenant owner role.'
             ),
             default => TenantOwnerInvitationException::conflict(
                 $error,

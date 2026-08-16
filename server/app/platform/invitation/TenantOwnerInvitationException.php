@@ -32,4 +32,9 @@ final class TenantOwnerInvitationException extends \DomainException
     {
         return new self($code, 410, $message);
     }
+
+    public static function unavailable(string $code, string $message): self
+    {
+        return new self($code, 503, $message);
+    }
 }

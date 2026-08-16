@@ -19,7 +19,8 @@ final class PlatformInvitationRuntimeFactory
         return self::$invitations ??= new TenantOwnerInvitationAdminService(
             self::pdo(),
             self::sessions(),
-            new UnavailableOwnerInvitationDeliveryPort()
+            new UnavailableOwnerInvitationDeliveryPort(),
+            OwnerInvitationRuntimePolicy::fromEnvironment((string)env('APP_ENV', ''))
         );
     }
 
