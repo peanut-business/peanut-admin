@@ -980,12 +980,12 @@
         "owner": "Peanut Admin production candidate deployment owner; Cloudflare DNS and BaoTa Nginx",
         "source": "owner-approved hostname plan on 2026-08-16; live allocation pending",
         "hosts": [
-          "platform.peanut-admin.007345.xyz",
-          "admin.peanut-admin.007345.xyz",
-          "tenant-a.peanut-admin.007345.xyz",
-          "tenant-b.peanut-admin.007345.xyz"
+          "pa-platform.007345.xyz",
+          "pa-admin.007345.xyz",
+          "pa-tenant-a.007345.xyz",
+          "pa-tenant-b.007345.xyz"
         ],
-        "host": "platform.peanut-admin.007345.xyz",
+        "host": "pa-platform.007345.xyz",
         "port": 443,
         "deployment_resource_id": "peanut-admin-production-candidate-deployment",
         "runtime_resource_id": "peanut-admin-production-candidate-application-containers",
@@ -1000,8 +1000,8 @@
           "network_scope": "production host loopback"
         },
         "tenant_entry_bindings": {
-          "tenant-a.peanut-admin.007345.xyz": "tenant-a/admin-web",
-          "tenant-b.peanut-admin.007345.xyz": "tenant-b/admin-web"
+          "pa-tenant-a.007345.xyz": "tenant-a/admin-web",
+          "pa-tenant-b.007345.xyz": "tenant-b/admin-web"
         },
         "database": null,
         "schema": null,
@@ -1013,10 +1013,10 @@
         "freshness_requirement": "verify DNS, Cloudflare proxy mode, BaoTa server_name/TLS/upstream and application Host bindings against this exact list",
         "health_check": {
           "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18093/healthz'",
-          "public_platform": "curl --noproxy '*' -fsS https://platform.peanut-admin.007345.xyz/platform/",
-          "public_admin": "curl --noproxy '*' -fsS https://admin.peanut-admin.007345.xyz/admin/",
-          "public_tenant_a": "curl --noproxy '*' -fsS https://tenant-a.peanut-admin.007345.xyz/admin/",
-          "public_tenant_b": "curl --noproxy '*' -fsS https://tenant-b.peanut-admin.007345.xyz/admin/",
+          "public_platform": "curl --noproxy '*' -fsS https://pa-platform.007345.xyz/platform/",
+          "public_admin": "curl --noproxy '*' -fsS https://pa-admin.007345.xyz/admin/",
+          "public_tenant_a": "curl --noproxy '*' -fsS https://pa-tenant-a.007345.xyz/admin/",
+          "public_tenant_b": "curl --noproxy '*' -fsS https://pa-tenant-b.007345.xyz/admin/",
           "tls": "verify SNI and certificate coverage separately for all four hosts"
         },
         "fallback": "none",

@@ -56,10 +56,10 @@ $candidateDomains = array_values(array_filter(
 ));
 $expect(count($candidateDomains) === 1, 'production candidate domain group must be registered exactly once');
 $expect(($candidateDomains[0]['hosts'] ?? null) === [
-    'platform.peanut-admin.007345.xyz',
-    'admin.peanut-admin.007345.xyz',
-    'tenant-a.peanut-admin.007345.xyz',
-    'tenant-b.peanut-admin.007345.xyz',
+    'pa-platform.007345.xyz',
+    'pa-admin.007345.xyz',
+    'pa-tenant-a.007345.xyz',
+    'pa-tenant-b.007345.xyz',
 ], 'candidate domain list changed unexpectedly');
 $expect(($candidateDomains[0]['origin_endpoint']['port'] ?? null) === 18093, 'candidate origin port changed');
 
