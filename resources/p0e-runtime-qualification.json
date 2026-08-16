@@ -31,6 +31,22 @@
     "fallback": "none",
     "cleanup_responsibility": "the active P0-E lease owner drops only its exact run_id databases"
   },
+  "browser_host_binding": {
+    "stable_resource_id": "peanut-admin-p0e-browser-hosts",
+    "purpose": "separate PlatformOperator and shared Tenant Admin hosts during the local production-mode P0-E browser gate",
+    "environments": ["local-production-preview"],
+    "owner": "Peanut Admin P0-E project-resource lease owner",
+    "platform_host": "platform.p0e.localhost",
+    "tenant_admin_host": "admin.p0e.localhost",
+    "port": 20190,
+    "service_type": "RFC 6761 localhost aliases served by the lease-bound Compose Nginx listener",
+    "credential_ref": null,
+    "data_source": "lease-bound Compose environment and the browser's native .localhost resolution",
+    "freshness_requirement": "after the Compose health check, each exact host must resolve to loopback and preserve its Host header through Nginx",
+    "health_check": "GET /healthz at both registered hosts and port while the P0-E lease is active",
+    "fallback": "none",
+    "cleanup_responsibility": "the P0-E runner removes the exact Compose listener with its lease-bound stack"
+  },
   "resources": {
     "tooling": [
       {

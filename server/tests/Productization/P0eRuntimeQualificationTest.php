@@ -92,6 +92,12 @@ $binding = $p0eRegistry['database_administration_binding'] ?? null;
 $expect(is_array($binding), 'P0-E remote administration binding is missing');
 $expect(($binding['database_resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'P0-E database resource is not fixed');
 $expect(($binding['runtime_resource_id'] ?? null) === ($registered[0]['runtime_resource_id'] ?? null), 'P0-E runtime resource diverged');
+$browserHosts = $p0eRegistry['browser_host_binding'] ?? null;
+$expect(is_array($browserHosts), 'P0-E browser Host binding is missing');
+$expect(($browserHosts['platform_host'] ?? null) === 'platform.p0e.localhost', 'P0-E Platform browser Host changed');
+$expect(($browserHosts['tenant_admin_host'] ?? null) === 'admin.p0e.localhost', 'P0-E Tenant Admin browser Host changed');
+$expect(($browserHosts['port'] ?? null) === 20190, 'P0-E browser Host port changed');
+$expect(($browserHosts['fallback'] ?? null) === 'none', 'P0-E browser Host binding must fail closed');
 $tooling = $p0eRegistry['resources']['tooling'][0] ?? null;
 $expect(is_array($tooling), 'P0-E remote administration tooling is missing');
 $expect(($tooling['mysql_command'] ?? null) === '/usr/bin/mysql', 'P0-E MySQL CLI path changed');
@@ -130,10 +136,11 @@ foreach ($plan['lease_resources'] ?? [] as $resource) {
     $type = (string)($resource['type'] ?? '');
     $resourceCounts[$type] = ($resourceCounts[$type] ?? 0) + 1;
 }
-$expect(count($plan['lease_resources'] ?? []) === 24, 'manual lease resources must have 24 exact rows');
+$expect(count($plan['lease_resources'] ?? []) === 26, 'manual lease resources must have 26 exact rows');
 $expect(($resourceCounts['mysql-db'] ?? null) === 5, 'claim must bind five exact fresh-only databases');
 $expect(($resourceCounts['deployment-mode'] ?? null) === 2, 'claim must bind both deployment modes');
 $expect(($resourceCounts['port'] ?? null) === 2, 'claim must bind both generic port conflicts');
+$expect(($resourceCounts['browser-host'] ?? null) === 2, 'claim must bind the separate browser Host boundaries');
 
 $runnerSource = (string)file_get_contents($runner);
 $unsupportedRunnerFragments = [
@@ -178,6 +185,8 @@ $expect(str_contains($pluginFixture, "uninstall('fixture.delivery-record')"), 'P
 
 $browserFixture = (string)file_get_contents($root . '/server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js');
 $expect(str_contains($browserFixture, "await page.locator('input').nth(0).fill(adminEmail);"), 'browser smoke must submit an email in both deployment modes');
+$expect(str_contains($browserFixture, 'P0E_BROWSER_TENANT_ADMIN_URL') && str_contains($browserFixture, 'P0E_BROWSER_PLATFORM_URL'), 'browser smoke must use separate Tenant Admin and Platform Hostnames');
+$expect(str_contains($browserFixture, '${platformUrl}/platform/'), 'browser smoke must enter the standalone Platform frontend');
 $expect(str_contains($browserFixture, "page.locator('.login-form .el-select').waitFor"), 'multi-tenant browser smoke must not mistake the navbar selector for the login selector');
 $expect(str_contains($browserFixture, ".el-select-dropdown:visible .el-select-dropdown__item').first().click()"), 'multi-tenant browser smoke must select a tenant before its second login submission');
 

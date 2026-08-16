@@ -16,7 +16,7 @@
       </view>
 
       <swiper
-        v-else-if="decorationComponent.name === 'banner' && componentItems(decorationComponent).length"
+        v-else-if="decorationComponent.name === 'banner' && bannerItems(decorationComponent).length"
         class="banner"
         :class="`banner-style-${Number(decorationComponent.content.style || 1)}`"
         data-decoration-component="banner"
@@ -24,7 +24,7 @@
         :interval="4000"
         circular
       >
-        <swiper-item v-for="item in componentItems(decorationComponent)" :key="`${item.name}-${item.image}`">
+        <swiper-item v-for="item in bannerItems(decorationComponent)" :key="`${item.name}-${item.image}`">
           <view class="banner-item" :style="bannerItemStyle(decorationComponent, item)" @click="executeDecorationLink(item.link)">
             <image v-if="showBannerImage(decorationComponent, item)" :src="item.image" mode="aspectFill" class="banner-img" />
             <view v-if="item.name" class="banner-title">{{ item.name }}</view>
@@ -46,14 +46,14 @@
       </view>
 
       <swiper
-        v-else-if="decorationComponent.name === 'middle-banner' && componentItems(decorationComponent).length"
+        v-else-if="decorationComponent.name === 'middle-banner' && bannerItems(decorationComponent).length"
         class="middle-banner"
         data-decoration-component="middle-banner"
         :autoplay="true"
         :interval="5000"
         circular
       >
-        <swiper-item v-for="item in componentItems(decorationComponent)" :key="`${item.name}-${item.image}`">
+        <swiper-item v-for="item in bannerItems(decorationComponent)" :key="`${item.name}-${item.image}`">
           <view class="banner-item" @click="executeDecorationLink(item.link)">
             <image v-if="item.image" :src="item.image" mode="aspectFill" class="middle-banner-img" />
             <view v-if="item.name" class="banner-title">{{ item.name }}</view>
@@ -115,6 +115,9 @@ const showTitleImage = computed(() => Number(meta.value.title_type) === 2 && typ
 const metaTextClass = computed(() => Number(meta.value.text_color) === 2 ? 'page-meta-dark' : 'page-meta-light')
 const componentItems = (component: DecorationComponent) => getDecorationItems(component)
   .filter((item) => item.is_show === undefined || item.is_show === 1)
+const isMeaningfulBannerValue = (value: unknown) => typeof value === 'string' && value.trim() !== ''
+const bannerItems = (component: DecorationComponent) => componentItems(component)
+  .filter((item) => isMeaningfulBannerValue(item.image) || isMeaningfulBannerValue(item.name) || isMeaningfulBannerValue(item.bg))
 const pageStyle = computed(() => {
   const style: Record<string, string> = {
     '--theme-primary': theme.value?.themeColor1 || '#2979ff',
@@ -134,9 +137,9 @@ const limitedNavItems = (component: DecorationComponent) => {
   return componentItems(component).slice(0, perLine * showLine)
 }
 const showBannerImage = (component: DecorationComponent, item: DecorationItem) =>
-  Number(component.content.bg_style || 1) === 1 || !item.bg
+  isMeaningfulBannerValue(item.image) && (Number(component.content.bg_style || 1) === 1 || !isMeaningfulBannerValue(item.bg))
 const bannerItemStyle = (component: DecorationComponent, item: DecorationItem) =>
-  Number(component.content.bg_style || 1) === 2 && item.bg
+  Number(component.content.bg_style || 1) === 2 && isMeaningfulBannerValue(item.bg)
     ? { backgroundImage: `url(${String(item.bg)})` }
     : {}
 

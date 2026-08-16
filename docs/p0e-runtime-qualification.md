@@ -98,7 +98,10 @@ scripts/p0e-runtime-qualification run "${common[@]}"
    Compose 和 `/healthz`。
 6. `standalone-browser`：复用 Standalone Compose，最小 Chromium smoke 覆盖管理端、PC、H5、Docs。
 7. `multi-tenant-browser`：复用同一镜像切换到 Multi-tenant fresh 数据库，最小 Chromium smoke
-   另覆盖 Tenant 管理员选择和 Instance Platform 登录。
+   另覆盖 Tenant 管理员选择和 Instance Platform 登录。该组使用两个不同的 RFC 6761
+   `.localhost` Host：`admin.p0e.localhost:20190` 是共享 Tenant Admin 入口，
+   `platform.p0e.localhost:20190` 是独立 PlatformOperator 入口；不得把同一个 Host 同时
+   配置成两种身份边界。
 
 ## 失败恢复与完成
 

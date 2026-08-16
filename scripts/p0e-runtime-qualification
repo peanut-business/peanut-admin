@@ -115,7 +115,7 @@ def required_environment(name: str) -> str:
     return value
 
 
-def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     fixture = read_json(FIXTURE_PATH)
     registry = read_json(REGISTRY_PATH)
     p0e_registry = read_json(P0E_REGISTRY_PATH)
@@ -173,6 +173,18 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
             fail(f"registered P0-E administrative tooling disagrees on {key}")
     if admin_tool.get("fallback") != "none; host mysql commands are forbidden":
         fail("P0-E administrative tooling must forbid a host MySQL fallback")
+    browser_hosts = p0e_registry.get("browser_host_binding")
+    expected_browser_hosts = {
+        "stable_resource_id": "peanut-admin-p0e-browser-hosts",
+        "platform_host": "platform.p0e.localhost",
+        "tenant_admin_host": "admin.p0e.localhost",
+        "port": 20190,
+        "fallback": "none",
+    }
+    if not isinstance(browser_hosts, dict) or any(
+        browser_hosts.get(key) != value for key, value in expected_browser_hosts.items()
+    ):
+        fail("P0-E browser Host binding is invalid")
     expected = {
         "stable_resource_id": registered.get("stable_resource_id"),
         "environment": (registered.get("environments") or [None])[0],
@@ -230,7 +242,7 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         or target.get("default_uniapp_version_code") != "10"
     ):
         fail("target scaffold release identity changed")
-    return fixture, registry, registered, admin_tool
+    return fixture, registry, registered, admin_tool, browser_hosts
 
 
 def validate_candidate(candidate: str, require_clean: bool, allowed_output: Path | None = None) -> tuple[str, str]:
@@ -281,7 +293,7 @@ def database_names(fixture: dict[str, Any], run_id: str) -> dict[str, str]:
 
 
 def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
-    fixture, registry, _, admin_tool = validate_fixture()
+    fixture, registry, _, admin_tool, browser_hosts = validate_fixture()
     names = database_names(fixture, args.run_id)
     paths = {
         "output-dir": str(absolute_path(args.output_dir, "output-dir", args.run_id)),
@@ -334,6 +346,8 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         ("output-dir", paths["output-dir"]),
         ("compose-project", compose_project),
         ("browser-session", f"p0e-{args.run_id}"),
+        ("browser-host", browser_hosts["tenant_admin_host"]),
+        ("browser-host", browser_hosts["platform_host"]),
         ("lease-proof-dir", str(lease_proof_dir)),
     ]
     return {
@@ -356,6 +370,10 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         "endpoint": f"{fixture['database_resource']['host']}:{fixture['database_resource']['port']}",
         "databases": names,
         "ports": {"http": args.http_port, "docs": args.docs_port},
+        "browser_hosts": {
+            "tenant_admin": browser_hosts["tenant_admin_host"],
+            "platform": browser_hosts["platform_host"],
+        },
         "paths": paths,
         "compose_project": compose_project,
         "lease_proof_dir": str(lease_proof_dir),
@@ -903,6 +921,8 @@ class Runner:
             "APP_ENV": "production",
             "PEANUT_DEPLOYMENT_TARGET": "local-production-preview",
             "HTTP_PORT": str(self.plan["ports"]["http"]),
+            "PLATFORM_HOSTS": self.plan["browser_hosts"]["platform"],
+            "TENANT_ADMIN_HOSTS": self.plan["browser_hosts"]["tenant_admin"],
             "JWT_SECRET": secrets.token_hex(32),
             "TENANT_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
             "PLATFORM_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
@@ -1049,7 +1069,8 @@ class Runner:
         browser_output.mkdir(parents=True, exist_ok=True)
         command([
             str(BROWSER_RUNNER), "--mode", mode,
-            "--base-url", f"http://127.0.0.1:{self.plan['ports']['http']}",
+            "--tenant-admin-url", f"http://{self.plan['browser_hosts']['tenant_admin']}:{self.plan['ports']['http']}",
+            "--platform-url", f"http://{self.plan['browser_hosts']['platform']}:{self.plan['ports']['http']}",
             "--docs-url", f"http://127.0.0.1:{self.plan['ports']['docs']}",
             "--output-dir", str(browser_output),
             "--session", f"p0e-{self.args.run_id}",
@@ -1234,7 +1255,7 @@ def main() -> int:
         print(json.dumps({"status": "claimed", "lease": args.lease, "candidate": args.candidate}))
         return 0
     verify_lease(args, plan_data)
-    fixture, _, _, _ = validate_fixture()
+    fixture, _, _, _, _ = validate_fixture()
     runner = Runner(args, plan_data, fixture)
     runner.preflight_database_admin_tooling()
     if args.command == "run":

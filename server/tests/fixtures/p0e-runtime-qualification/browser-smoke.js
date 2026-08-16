@@ -4,7 +4,8 @@ const required = (name) => {
   return value;
 };
 const mode = required('P0E_BROWSER_MODE');
-const baseUrl = required('P0E_BROWSER_BASE_URL').replace(/\/$/, '');
+const tenantAdminUrl = required('P0E_BROWSER_TENANT_ADMIN_URL').replace(/\/$/, '');
+const platformUrl = required('P0E_BROWSER_PLATFORM_URL').replace(/\/$/, '');
 const docsUrl = required('P0E_BROWSER_DOCS_URL').replace(/\/$/, '');
 const outputDir = required('P0E_BROWSER_OUTPUT_DIR');
 const adminEmail = required('P0E_ADMIN_INITIAL_EMAIL');
@@ -24,7 +25,7 @@ const assertPage = async (url, label, minimumText = 20) => {
 };
 
 const results = {};
-await page.goto(`${baseUrl}/admin/login`, { waitUntil: 'networkidle' });
+await page.goto(`${tenantAdminUrl}/admin/login`, { waitUntil: 'networkidle' });
 await page.locator('input').nth(0).fill(adminEmail);
 await page.locator('input[type="password"]').fill(adminPassword);
 await page.getByRole('button', { name: /登录|login/i }).click();
@@ -48,18 +49,18 @@ await page.screenshot({ path: screenshotPath('admin'), fullPage: true });
 results.admin = { url: page.url(), title: await page.title() };
 
 if (mode === 'multi-tenant') {
-  await page.goto(`${baseUrl}/admin/platform/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${platformUrl}/platform/`, { waitUntil: 'networkidle' });
   const inputs = page.locator('input');
   await inputs.nth(0).fill(platformEmail);
   await inputs.nth(1).fill(platformPassword);
-  await page.getByRole('button', { name: /sign in to platform/i }).click();
-  await page.waitForURL(/\/admin\/platform\/tenants/, { timeout: 20000 });
+  await page.getByRole('button', { name: /登录实例平台/i }).click();
+  await page.getByRole('heading', { name: '概览' }).waitFor({ state: 'visible', timeout: 20000 });
   await page.waitForLoadState('networkidle');
   await page.screenshot({ path: screenshotPath('platform'), fullPage: true });
   results.platform = { url: page.url(), title: await page.title() };
 }
 
-results.pc = await assertPage(`${baseUrl}/pc/`, 'pc');
-results.h5 = await assertPage(`${baseUrl}/mobile/`, 'h5');
+results.pc = await assertPage(`${tenantAdminUrl}/pc/`, 'pc');
+results.h5 = await assertPage(`${tenantAdminUrl}/mobile/`, 'h5');
 results.docs = await assertPage(`${docsUrl}/`, 'docs');
 console.log(JSON.stringify({ schema_version: 1, mode, status: 'passed', results }));
