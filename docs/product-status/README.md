@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、文档和局部合同已完成到源码候选 67e5aa5；本地服务已启动，但最终三域名浏览器矩阵在一次有界重跑后仍被自动化浏览器 HTTP response failure 阻塞。UI 通过前不 reseal scaffold、不执行正式 P0-E，也不更新线上候选或发布 v2.0.0。
+> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 f94cb5c。正式 P0-E 在任何数据库、构建或浏览器动作前被登记端口 20190 上来源不明的外部 Compose 监听阻塞；线上候选和 v2.0.0 正式发布仍未完成。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@67e5aa5ff03efcc2407a5de6ade866302e09a81a`，复核日期：`2026-08-16`。
+> 事实基线：`feat/module-identity-tenancy-docs@f94cb5c51b1b234ba43e99c54d8f33e34859e25f`，复核日期：`2026-08-16`。
 
 ### 已验证可用
 
@@ -52,7 +52,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback 和本地域名显式白名单已实现到 67e5aa5。旧候选三身份截图与线上共享 Admin 证据不能覆盖最新源码；最终本地浏览器矩阵、scaffold reseal 和正式双模式发布 Gate 尚未通过。 |
+| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。共享 Admin、Tenant A、Tenant B 三域名矩阵已通过，scaffold 已从 65aeeef 完成最终 reseal；正式 P0-E 与发布尚未完成。 |
 
 ### 暂缓或范围外
 

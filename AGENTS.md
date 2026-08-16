@@ -42,15 +42,16 @@
   scaffold 原地升级不属于 2.0.0 支持面。
 - 登记多租户空库安装得到 87 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
   三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
-- `scaffold/releases/v2.0.0` 当前固定到 source commit `d387a2e…`；后续本地域名白名单修复
-  `67e5aa5…` 尚未重新封存。按浏览器停止线，必须先通过最终 UI 矩阵再 reseal。本地多租户
+- `scaffold/releases/v2.0.0` 已从 source commit `65aeeef…`（tree `d748f95…`）完成唯一最终
+  reseal；inventory SHA-256 为 `ceb7423…`，manifest SHA-256 为 `ed7554f…`。本地多租户
   体验使用登记资源 `peanut-admin-mysql84-local-multi-tenant-demo`、Platform
   `127.0.0.1:20176`、API `127.0.0.1:20178` 和管理端 `127.0.0.1:20179`，不得复用为生产资源。
 - 已部署的隔离 `production-candidate` 仍是 `d3d5900…`；它包含右上角头像空值/加载失败
-  fallback、可访问用户菜单按钮和对应 Web 合同测试。最新源码 `67e5aa5…` 又增加了登记本地
-  域名的 Vite 显式白名单，但最终共享 Admin、Tenant A、Tenant B 浏览器矩阵在一次有界重跑后
-  仍被自动化浏览器的 HTTP response failure 阻塞。旧候选截图不能代替最新源码证据；在 UI
-  通过前不得 reseal scaffold、执行正式 P0-E 或部署新的线上候选。
+  fallback、可访问用户菜单按钮和对应 Web 合同测试。共享 Admin、Tenant A、Tenant B 已在
+  `79b1095…` 完成三域名截图、破图、加载、溢出和菜单人工检查；到当前 seal 候选没有 Web、
+  Platform 或应用 Runtime 差异。正式 P0-E 在任何数据库、构建或浏览器动作前被登记端口
+  `20190` 上来源不明的 `peanut-p0e-r115c816a1` Compose 监听阻塞；不得停止该外部任务或静默
+  改用其他端口。P0-E、线上候选和正式发布仍未完成。
 - 当前源码尚未形成正式 `v2.0.0` tag、GitHub Release 或生产部署证明；下面的 1.x 发布、
   P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 正式发布资格。
 
