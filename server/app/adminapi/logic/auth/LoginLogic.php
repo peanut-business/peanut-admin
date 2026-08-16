@@ -6,6 +6,7 @@ namespace app\adminapi\logic\auth;
 use app\adminapi\http\AdminRequest;
 use app\adminapi\service\NativeAdminPrincipalRepository;
 use app\common\logic\BaseLogic;
+use app\common\service\tenant\TenantEntryBindingResolver;
 use app\tenant\service\TenantAuthRuntimeFactory;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantAuthentication;
@@ -16,12 +17,15 @@ final class LoginLogic extends BaseLogic
     public static function login(array $params): array|false
     {
         try {
+            $tenantCode = TenantEntryBindingResolver::production()->loginTenantCode(
+                request(),
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
+            );
             $outcome = TenantAuthRuntimeFactory::service()->login(
                 trim((string)$params['account']),
                 (string)$params['password'],
-                isset($params['tenant_code']) && trim((string)$params['tenant_code']) !== ''
-                    ? trim((string)$params['tenant_code'])
-                    : null,
+                $tenantCode,
                 request()->ip(),
                 request()->header('User-Agent'),
                 AdminRequest::requestId(request()),

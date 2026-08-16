@@ -43,7 +43,24 @@ freshSchemaExpect(str_contains($installer, "'core.tenant-owner'"), 'installer he
 freshSchemaExpect(str_contains($runner, "[\$databaseDir . '/init.sql'"), 'migration ledger does not bind canonical init.sql');
 freshSchemaExpect(str_contains($runner, 'assertAdditiveMigration'), 'post-baseline migrations are not constrained to additive changes');
 freshSchemaExpect(!str_contains($runner, '--adopt-existing'), 'retired database adoption option remains active');
-freshSchemaExpect((glob($serverRoot . '/database/migrations/*.sql') ?: []) === [], 'historical migrations remain active');
+$activeMigrations = array_map(
+    'basename',
+    glob($serverRoot . '/database/migrations/*.sql') ?: []
+);
+sort($activeMigrations, SORT_STRING);
+freshSchemaExpect(
+    $activeMigrations === [
+        '20260816-tenant-entry-binding.sql',
+        '20260816-tenant-owner-invitation.sql',
+    ],
+    'active migrations are not the reviewed post-2.0 additive set'
+);
+foreach ($activeMigrations as $migration) {
+    freshSchemaExpect(
+        preg_match('/(?:legacy|compat|bootstrap|mapping|adopt)/i', $migration) !== 1,
+        'transition migration remains active: ' . $migration
+    );
+}
 
 foreach (['information_schema', 'ALTER TABLE', 'PREPARE ', 'EXECUTE ', 'DEALLOCATE PREPARE'] as $transitionSql) {
     freshSchemaExpect(!str_contains($schema, $transitionSql), "transition SQL remains in canonical schema: {$transitionSql}");

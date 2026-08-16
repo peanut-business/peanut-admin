@@ -36,14 +36,15 @@
 - 当前开发分支已切换为原生 `Account/Credential/TenantMember/RBAC` 管理身份；业务会员
   `pa_member` 保持独立。
 - fresh install 使用 `server/database/init.sql` 与 Core KernelSchema 建立 canonical
-  Schema；`server/database/migrations/` 当前没有基线后追加 SQL。
+  Schema；`server/database/migrations/` 当前只有 Owner 邀请和 Tenant 入口绑定两条
+  2.0 基线后追加 SQL，不包含 legacy/adopt/compatibility 迁移。
 - 1.x Admin/Role/Department 映射、默认 Tenant bootstrap、兼容余额镜像和 1.x 数据库/
   scaffold 原地升级不属于 2.0.0 支持面。
 - 登记多租户空库安装得到 85 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
   三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
 - `scaffold/releases/v2.0.0` 已从当前 fresh-only 源码重新封存；本地多租户体验使用登记资源
-  `peanut-admin-mysql84-local-multi-tenant-demo`、API `127.0.0.1:20178` 和管理端
-  `127.0.0.1:20179`，不得复用为生产资源。
+  `peanut-admin-mysql84-local-multi-tenant-demo`、Platform `127.0.0.1:20176`、API
+  `127.0.0.1:20178` 和管理端 `127.0.0.1:20179`，不得复用为生产资源。
 - 当前源码尚未形成正式 `v2.0.0` tag、GitHub Release 或生产部署证明；下面的 1.x 发布、
   P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 正式发布资格。
 
@@ -52,7 +53,7 @@
 - 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
 - 1.x 数据库入口历史为 `install.php` + `migrate.php` + `init.sql` + 54 migrations；2.0
-  当前数据库入口为 `init.sql` + `KernelSchema` + 0 migrations；下表中的
+  当前数据库入口为 `init.sql` + `KernelSchema` + 2 条追加 migrations；下表中的
   24 条账本是 parity 时点证据，`v1.1.0` 发布制品固定为 50 条。该计数不是 2.0 当前 Schema。
 
 **独立验证结果（非 Codex 自报）：**
@@ -153,7 +154,7 @@ peanut-admin/
 │   ├── database/
 │   │   ├── install.php  # 一键安装（空库 → 全量初始化）
 │   │   ├── init.sql     # 基础表 + 种子数据
-│   │   └── migrations/  # 2.0 基线后追加迁移；当前仅 .gitkeep
+│   │   └── migrations/  # 2.0 基线后追加迁移；当前 2 条
 │   └── .env             # DB/JWT 配置（不提交）
 ├── web/             # 管理端前端（Vue3 + Element Plus）
 ├── pc/              # PC 消费端（Nuxt3）

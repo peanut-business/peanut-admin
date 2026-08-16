@@ -65,7 +65,10 @@ chmod 600 .env
 docker compose up -d --build
 ```
 
-生产镜像是多阶段构建：web 管理端放到 `server/public/admin/`，uniapp H5 放到 `server/public/mobile/`，Nuxt PC 放到 `server/public/pc/`，API 统一走 `/api/`。PHP 容器入口会自动执行可跳过已安装数据库的安装器。可以连接外部 MySQL，也可以为单机部署启用 `bundled-db`；外部地址必须能从生产服务器实际路由。
+生产镜像是多阶段构建：Tenant Admin 放到 `server/public/admin/`，独立 Platform 放到
+`server/public/platform/`，UniApp H5 放到 `server/public/mobile/`，Nuxt PC 放到
+`server/public/pc/`，API 统一走 `/api/`。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
+可以连接外部 MySQL，也可以为单机部署启用 `bundled-db`；外部地址必须能从生产服务器实际路由。
 
 外部 MySQL 地址必须能从 PHP 容器实际路由；不要把开发局域网地址写成生产默认值。单机部署可使用 `bundled-db`，多机部署则显式提供数据库主机并在 MySQL 侧限制来源。
 
@@ -108,6 +111,20 @@ scaffold baseline 或 app-owned 文件到 2.0.0 生成物。需要保留旧环�
 - `pa_jobs` 是应用岗位字典，不是旧身份映射表；成员组织关系使用 Core Department/RBAC。
 - 当前交付的文件、通知、OAuth、支付、会员、任务、导入导出和文章能力都必须满足相同的
   Tenant 隔离 Gate，不能以“可选模块”为由接受单租户实现。
+
+## Tenant 域名与客户端入口
+
+生产可以使用共享登录入口后由成员选择 Tenant，也可以由域名限定 Tenant。Platform 中配置的
+`host + client_key -> tenant` 是本实例唯一入口映射；当前 `client_key` 为 `admin-web` 和
+`member-api`。反向代理必须把浏览器原始 `Host` 传给 PHP，不能固定改写为内部容器名。
+
+部署负责人仍需提供：实际域名清单、DNS、覆盖所有入口的 TLS 证书、反向代理 Host 规则和
+邮件 Provider。缺少这些信息时不要反复尝试线上部署；本地可在 hosts 中把测试域名指向
+`127.0.0.1`，再从 Platform 创建对应绑定。绑定冲突、禁用绑定、暂停 Tenant 或显式
+`tenant_code` 与 Host 不一致时都会拒绝登录，不会猜测其他 Tenant。
+
+Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前端、会话、RBAC 和审计。
+它不是管理端中的一个业务子应用，也不是跨多个 Peanut 实例的运营平台。
 
 ### 状态说明
 
@@ -155,6 +172,10 @@ location /admin/ {
     try_files $uri $uri/ /admin/index.html;
 }
 
+location /platform/ {
+    try_files $uri $uri/ /platform/index.html;
+}
+
 location /mobile/ {
     try_files $uri $uri/ /mobile/index.html;
 }
@@ -172,7 +193,10 @@ location ^~ /storage/ {
 }
 ```
 
-管理端、H5 和 PC 静态文件分别位于 `server/public/admin/`、`server/public/mobile/` 和 `server/public/pc/`；`/` 重定向到 `/admin/`，`/api/` 和 legacy `/admin/login/*` 进入 ThinkPHP。实际域名、PHP-FPM socket、目录和 HTTPS 证书按目标环境配置。
+Tenant Admin、Platform、H5 和 PC 静态文件分别位于 `server/public/admin/`、
+`server/public/platform/`、`server/public/mobile/` 和 `server/public/pc/`；`/` 重定向到
+`/admin/`，`/api/` 与管理登录路由进入 ThinkPHP。实际域名、PHP-FPM socket、目录和 HTTPS
+证书按目标环境配置。
 
 ## 周期任务
 

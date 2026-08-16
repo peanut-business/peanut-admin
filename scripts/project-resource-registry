@@ -158,6 +158,7 @@ def main() -> int:
             "HTTP_PORT": 20190,
             "MT_DEMO_PHP_PORT": 20178,
             "MT_DEMO_VITE_PORT": 20179,
+            "MT_DEMO_PLATFORM_PORT": 20176,
         }
         registered_ports = {
             item.get("port_env"): item.get("port")

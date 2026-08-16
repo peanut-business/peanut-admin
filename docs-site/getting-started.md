@@ -29,11 +29,18 @@ composer install
 cd ..
 ```
 
-创建一个空的 MySQL 数据库：
+选择项目资源登记中的空 MySQL 数据库。Peanut Admin 维护仓的日常开发资源是
+`peanut-admin-mysql84-development`；本地多租户体验使用隔离的
+`peanut-admin-mysql84-local-multi-tenant-demo`。先取得对应 lease，再由资源选择器写出
+非秘密连接信息；凭据只从登记的 credential reference 注入：
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+./scripts/project-resource-registry validate
+./scripts/project-resource-registry database-env \
+  --deployment-target local-development --consumer host
 ```
+
+不要依次尝试 `localhost`、默认端口或默认 root 密码，也不要静默创建未登记数据库。
 
 安装基础结构、增量迁移和种子数据：
 
@@ -57,13 +64,34 @@ php server/database/install.php
 ./scripts/local-stack.sh status
 ```
 
-默认打开 `http://127.0.0.1:20187/admin/`，使用安装时提供的管理员邮箱和密码登录；
+登记的默认网关为 `http://127.0.0.1:20187/admin/`，独立 Platform 为
+`http://127.0.0.1:20177/platform/`；直接开发端口分别为 Admin `20181`、API `20180`。
+使用安装时提供的管理员邮箱和密码登录 Tenant Admin；Platform 使用独立的
+`PLATFORM_INITIAL_EMAIL`/`PLATFORM_INITIAL_PASSWORD`。两套身份不能互换。
 首次登录后请改为个人凭据。本地监听来自 `.local/stack.env`（或
 `PEANUT_LOCAL_ENV_FILE`），其他 clone/worktree 可覆盖登记默认端口。停止服务运行
 `./scripts/local-stack.sh dev-down`。
+
+本项目维护者使用隔离的多租户体验环境时，登记地址为 Admin
+`http://127.0.0.1:20179/admin/`、Platform `http://127.0.0.1:20176/platform/`、API
+`http://127.0.0.1:20178/`。这些端口和 demo 数据库必须由同一个
+`local-multi-tenant-demo` lease 持有，不能与日常 development 数据库混用。
+
+在 lease 已固定到当前提交后，使用项目脚本准备私有 env、应用当前 migration 并启动三个入口：
+
+```bash
+./scripts/local-multi-tenant-demo prepare
+./scripts/local-multi-tenant-demo up
+./scripts/local-multi-tenant-demo status
+./scripts/local-multi-tenant-demo credentials
+```
+
+脚本不会创建替代数据库，也不会打印数据库密码。`credentials` 只按本地体验要求显示合成的
+Tenant Owner 与 PlatformOperator 账号密码；停止时运行 `./scripts/local-multi-tenant-demo down`。
 
 ## 下一步
 
 - 需要理解目录和分层时，阅读[开发与部署指南](/guide/development)。
 - 需要执行后台业务操作时，阅读[管理员使用手册](/guide/user-manual)。
 - 只查接口响应和认证规则时，阅读[API 约定](/api)。
+- 需要创建 Tenant、邀请 Owner 或配置域名时，阅读[实例平台管理](/platform)。

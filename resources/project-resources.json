@@ -348,6 +348,22 @@
         "cleanup_responsibility": "local multi-tenant demo lease owner"
       },
       {
+        "stable_resource_id": "peanut-admin-local-multi-tenant-demo-platform",
+        "environment": "local-multi-tenant-demo",
+        "owner": "local multi-tenant demo lease owner",
+        "host": "127.0.0.1",
+        "port": 20176,
+        "port_env": "MT_DEMO_PLATFORM_PORT",
+        "service_type": "vite",
+        "namespace": "peanut-admin-local-multi-tenant-demo",
+        "credential_ref": null,
+        "data_source": "current platform source tree",
+        "freshness_requirement": "active local multi-tenant demo lease and current worktree",
+        "health_check": "GET /platform/",
+        "fallback": "none",
+        "cleanup_responsibility": "local multi-tenant demo lease owner"
+      },
+      {
         "stable_resource_id": "peanut-admin-local-development-pc",
         "environment": "development",
         "owner": "scripts/local-stack.sh",

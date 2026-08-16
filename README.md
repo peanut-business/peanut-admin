@@ -96,6 +96,10 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 使用安装时提供的管理员邮箱和密码登录。安装器只接受空数据库；1.x 数据库不能原地升级
 为 2.0.0，应保留旧实例并为新版本准备独立空库。
 
+隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定 Admin `20179`、
+Platform `20176`、API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
+由当前候选的项目 lease 同时持有这些资源。
+
 ## 生产入口
 
 | 入口 | 地址 |
@@ -115,6 +119,7 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 peanut-admin/
 ├── server/       # ThinkPHP 后端、数据库安装器与迁移
 ├── web/          # Vue 3 管理端
+├── platform/     # Vue 3 实例 Platform 控制面
 ├── pc/           # Nuxt 3 PC 客户端
 ├── uniapp/       # UniApp H5 / 小程序
 ├── docs-site/    # VitePress 官方文档站
@@ -138,6 +143,8 @@ peanut-admin/
 - [管理员手册](https://peanut-admin-doc.007345.xyz/guide/user-manual)
 - [开发指南](https://peanut-admin-doc.007345.xyz/guide/development)
 - [部署与安装](https://peanut-admin-doc.007345.xyz/deployment)
+- [实例平台管理](https://peanut-admin-doc.007345.xyz/platform)
+- [身份与租户边界](https://peanut-admin-doc.007345.xyz/architecture/identity-and-tenancy)
 - [版本与发布](https://peanut-admin-doc.007345.xyz/releases)
 
 文档源码位于 `docs-site/`，由 Cloudflare Pages 项目 `peanut-admin-docs` 发布到

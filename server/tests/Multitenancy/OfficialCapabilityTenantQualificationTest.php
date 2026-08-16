@@ -19,6 +19,11 @@ $root = dirname(__DIR__, 2);
 $sources = [];
 foreach ([
     'default_context' => 'app/common/service/tenant/DefaultTenantContextResolver.php',
+    'entry_binding' => 'app/common/service/tenant/TenantEntryBindingResolver.php',
+    'entry_migration' => 'database/migrations/20260816-tenant-entry-binding.sql',
+    'public_member_middleware' => 'app/api/middleware/PublicMemberTenantMiddleware.php',
+    'tenant_session' => 'app/tenant/controller/TenantSessionController.php',
+    'admin_login' => 'app/adminapi/logic/auth/LoginLogic.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
     'member_middleware' => 'app/api/middleware/CheckTokenMiddleware.php',
@@ -34,6 +39,9 @@ foreach ([
     'async_authorization' => 'app/common/service/async/AdminAsyncAuthorization.php',
     'async_files' => 'app/common/service/export/AppFileMediaGateway.php',
     'routes' => 'route/app.php',
+    'module_manifest' => 'vendor/peanut-admin/core/kernel/src/Module/ManifestLoader.php',
+    'module_availability' => 'vendor/peanut-admin/core/kernel/src/Host/ModuleAvailabilityAdapter.php',
+    'deployed_module_registry' => 'app/platform/service/module/DeployedTenantModuleRegistry.php',
 ] as $key => $relative) {
     $sources[$key] = qualificationSource($root, $relative);
 }
@@ -70,6 +78,21 @@ qualificationExpect(
         && str_contains($sources['member_middleware'], '$request->authenticatedMemberContext =')
         && !str_contains($sources['member_middleware'], '$request->tenantContext = $this->tenantContexts()'),
     'member JWT context is still written into the Core TenantContext request boundary'
+);
+qualificationExpect(
+    str_contains($sources['entry_migration'], 'pa_tenant_entry_binding')
+        && str_contains($sources['entry_migration'], 'fk_tenant_entry_binding_tenant')
+        && str_contains($sources['entry_binding'], 'b.host = :host')
+        && str_contains($sources['entry_binding'], 'b.client_key = :client_key')
+        && str_contains($sources['entry_binding'], "tenant_status'] ?? null) !== 'active'"),
+    'Tenant entry bindings are not instance-owned and active-Tenant scoped'
+);
+qualificationExpect(
+    str_contains($sources['tenant_session'], 'loginTenantCode(')
+        && str_contains($sources['admin_login'], 'loginTenantCode(')
+        && str_contains($sources['public_member_middleware'], 'TenantEntryBindingResolver::production()->system(')
+        && !str_contains($sources['public_member_middleware'], 'DefaultTenantContextResolver::system('),
+    'Admin or anonymous member authentication bypasses Tenant entry resolution'
 );
 qualificationExpect(
     str_contains($sources['external_resolver'], '!$binding->tenantActive')
@@ -110,8 +133,49 @@ $matrix = [
     'tenant_module' => [
         'application_hosts_are_enableable_modules' => false,
         'reason' => 'No shipped application Host in this matrix declares module.json; TenantModule applies only to registered optional Modules.',
+        'optional_module_manifest_required' => true,
+        'optional_module_enable_guard_required' => true,
         'optional_module_guard_owner' => 'peanut-admin/core ModuleGuard plus permission catalog',
     ],
 ];
+
+foreach (array_diff(array_keys($matrix), ['tenant_module']) as $capability) {
+    qualificationExpect(
+        ($matrix[$capability]['trusted_context'] ?? false) === true
+            && ($matrix[$capability]['sql_scope'] ?? false) === true,
+        'official capability is not mandatorily Tenant-scoped: ' . $capability
+    );
+}
+qualificationExpect(
+    str_contains($sources['module_manifest'], "'/module.json'")
+        && str_contains($sources['module_availability'], 'assertDeployment(')
+        && str_contains($sources['module_availability'], 'assertTenant(')
+        && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
+    'optional Modules are not guarded by both module.json and Tenant enablement'
+);
+
+$shippedManifests = glob($root . '/app/Modules/*/*/module.json') ?: [];
+sort($shippedManifests, SORT_STRING);
+foreach ($shippedManifests as $manifestPath) {
+    $manifest = json_decode(
+        (string)file_get_contents($manifestPath),
+        true,
+        512,
+        JSON_THROW_ON_ERROR
+    );
+    $tenant = is_array($manifest['tenant'] ?? null) ? $manifest['tenant'] : [];
+    $backend = is_array($manifest['backend'] ?? null) ? $manifest['backend'] : [];
+    $database = is_array($manifest['database'] ?? null) ? $manifest['database'] : [];
+    qualificationExpect(
+        ($tenant['enableable'] ?? null) === true
+            && ($tenant['disable_behavior'] ?? null) === 'reject_new_operations'
+            && is_array($tenant['requires'] ?? null)
+            && is_string($backend['provider'] ?? null)
+            && trim((string)$backend['provider']) !== ''
+            && is_array($database['owned_tables'] ?? null),
+        'shipped optional Module is not mandatorily Tenant-qualified: '
+            . basename(dirname($manifestPath))
+    );
+}
 
 echo json_encode(['status' => 'passed', 'matrix' => $matrix], JSON_UNESCAPED_SLASHES) . PHP_EOL;

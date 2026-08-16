@@ -67,6 +67,10 @@ use app\platform\controller\PlatformAccessController;
 use app\platform\controller\PlatformTenantBoundaryController;
 use app\platform\controller\PlatformTenantController;
 use app\platform\controller\PlatformTenantModuleController;
+use app\platform\controller\PlatformControlPlaneQueryController;
+use app\platform\controller\PlatformTenantInvitationController;
+use app\platform\controller\PlatformTenantEntryBindingController;
+use app\platform\controller\TenantOwnerInvitationPublicController;
 use app\platform\http\middleware\PlatformLoginMiddleware;
 use app\platform\http\middleware\PlatformPermissionMiddleware;
 use app\tenant\controller\TenantSessionController;
@@ -93,9 +97,50 @@ Route::get('api/platform/tenants', [PlatformTenantController::class, 'lists'])
 Route::get('api/platform/tenants/detail', [PlatformTenantController::class, 'detail'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
-Route::post('api/platform/tenants/provision', [PlatformTenantController::class, 'provision'])
+Route::post('api/platform/tenants/provision', [PlatformTenantInvitationController::class, 'provision'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.create');
+Route::post('api/platform/tenants/invitations', [PlatformTenantInvitationController::class, 'invite'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+Route::get('api/platform/tenants/invitations', [PlatformTenantInvitationController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+Route::post('api/platform/tenants/invitations/resend', [PlatformTenantInvitationController::class, 'resend'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+Route::post('api/platform/tenants/invitations/revoke', [PlatformTenantInvitationController::class, 'revoke'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner');
+Route::get('api/platform/tenants/owner', [PlatformControlPlaneQueryController::class, 'owner'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/operators', [PlatformControlPlaneQueryController::class, 'operators'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.read');
+Route::get('api/platform/roles', [PlatformControlPlaneQueryController::class, 'roles'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.role.read');
+Route::get('api/platform/permissions', [PlatformControlPlaneQueryController::class, 'permissions'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.permission.read');
+Route::get('api/platform/audit', [PlatformControlPlaneQueryController::class, 'audit'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.audit.read');
+Route::get('api/platform/tenants/modules', [PlatformControlPlaneQueryController::class, 'moduleStates'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/tenant-entry-bindings', [PlatformTenantEntryBindingController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::post('api/platform/tenant-entry-bindings/enable', [PlatformTenantEntryBindingController::class, 'enable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
+Route::post('api/platform/tenant-entry-bindings/disable', [PlatformTenantEntryBindingController::class, 'disable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
+Route::get('api/tenant/owner-invitations/inspect', [TenantOwnerInvitationPublicController::class, 'inspect']);
+Route::post('api/tenant/owner-invitations/accept', [TenantOwnerInvitationPublicController::class, 'accept']);
 Route::post('api/platform/tenants/activate', [PlatformTenantController::class, 'activate'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle');

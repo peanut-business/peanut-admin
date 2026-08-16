@@ -70,7 +70,7 @@
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "f6109e9c510d4ad82eb334e8ee4e98e36a70e0aa9a2c3e1b6971fbb404f33e6f"
+            "source_sha256": "7959a83cceaedf7e3e98d854d328f2fab88d3d79a8f44e56ec315d74fb38b7dd"
         },
         {
             "path": ".github/workflows/core-upgrade-compatibility.yml",
@@ -171,7 +171,7 @@
             "owner": "scaffold",
             "transform": "readme",
             "mode": 420,
-            "source_sha256": "691fa2b8f7c11010f8176562c24268cac2c67608a38dbe452162754d105e43b6"
+            "source_sha256": "3464a9f2c35dfe8aaecf054d11128ba0bf12b0ca69e5fe2d626963afed13e69f"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -302,7 +302,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "7dd544c3dc91c5cc1853d863374a3c5faf23eb466c6f519289d3082a11679381"
+            "source_sha256": "d0c3b0a26345de75212c3a496aa0ee48f7cf84da955d8fff88009db48576f5bc"
         },
         {
             "path": "deploy/local-stack.env.example",
@@ -327,7 +327,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "111c3814207fe397d62ab7a3e1c84be48b85a9e10c1d6b7e8fcb441e526ae746"
+            "source_sha256": "d6a2bbaa915ef438d00e26e5ed48a0c2bea876fd17e11e9369f559f6dc612116"
         },
         {
             "path": "deploy/production.env.example",
@@ -354,7 +354,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "f79c3eb4fb50080dccb6dfcb99d8dbc23c30363862d1d65123106f592ccfdfea"
+            "source_sha256": "5e1412abe34ef1420d5c48da085d17a5328c20540f166528fb8b8a9059f3cc36"
         },
         {
             "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
@@ -419,13 +419,31 @@
             "source_sha256": "9b68359ac4bd75d848559021648b53ec9f6369ebadf7cabe1b0398a746d74afd"
         },
         {
+            "path": "docs-site/architecture/identity-and-tenancy.md",
+            "target": "docs-site/architecture/identity-and-tenancy.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "source_sha256": "b6cc05660e61a9d84189e46399706730cc58242ac9230bf1eafd3d36f69dd1b6"
+        },
+        {
+            "path": "docs-site/architecture/official-module-qualification.md",
+            "target": "docs-site/architecture/official-module-qualification.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "source_sha256": "f2f5ed09e85437b199f043a1eb196857a6577f0a24f72b90e48065a32a6e12c7"
+        },
+        {
             "path": "docs-site/capabilities.md",
             "target": "docs-site/capabilities.md",
             "classification": "app-owned",
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "eb56dc596b24d33032d2cc49b6d08b8a37946232ff7d06aee540c3cfb911ddfc"
+            "source_sha256": "046d6933ef87692344b9013531f2acbc959dd4037de12d05df2bb1630702fd07"
         },
         {
             "path": "docs-site/deployment.md",
@@ -434,7 +452,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "35395b50ba879622887140bcef9c441c3a7934c767f356e3858d1214dc8d5771"
+            "source_sha256": "b2df1f2125b1fceec53fc967526f19dc52795f1c76f069403ae36054a5f9e8ef"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -452,7 +470,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "5c702209d07a5250dc8e2f42e39043786d83a66c68eae6d68a453507c6a33e60"
+            "source_sha256": "8c623230937c7c20dd1c991da3966229cd0ed7b3da5f92043d70e4064b0588dc"
         },
         {
             "path": "docs-site/guide/development.md",
@@ -470,7 +488,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "abc348dbaa398c061da4e65f65c59eebbde611f40f3a3da0051c07fcdfc5bf72"
+            "source_sha256": "eb327088e62d68a3aaf767c599469e7fc31569abca9d192353c461f4c2546139"
         },
         {
             "path": "docs-site/guide/module-development.md",
@@ -516,6 +534,15 @@
             "transform": "package",
             "mode": 420,
             "source_sha256": "01615290f62c3feb26fd8dcdb4127a58a128597fa919b0e612b030fd1116512d"
+        },
+        {
+            "path": "docs-site/platform.md",
+            "target": "docs-site/platform.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "source_sha256": "74d932e7ef7cc38efaaeb5307dbaac1911bc79e547b1357c10e56b3839817f9a"
         },
         {
             "path": "docs-site/pnpm-lock.yaml",
@@ -3442,6 +3469,96 @@
             "source_sha256": "56f5b528cc102a257b71c01305f8b1456762d85793bd610bf613f2d7c3e1fc84"
         },
         {
+            "path": "platform/.gitignore",
+            "target": "platform/.gitignore",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "790e3169bc19b046fe55ba1da6d13b976c28363c8c00462a2195fe5faf260910"
+        },
+        {
+            "path": "platform/index.html",
+            "target": "platform/index.html",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "5b8968e71e13977aa195271d18a3c937b73de76e91a888984e765a89b2c31931"
+        },
+        {
+            "path": "platform/package-lock.json",
+            "target": "platform/package-lock.json",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "package",
+            "mode": 420,
+            "source_sha256": "4d14a4c4f6ede22feca28987abc35d2cb26256a4215fd19e16f1102c0dc5ec2b"
+        },
+        {
+            "path": "platform/package.json",
+            "target": "platform/package.json",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "package",
+            "mode": 420,
+            "source_sha256": "ab2647ff633c65fbd82057eb3f9801aad02bbc25005ab10547a25671471dd4eb"
+        },
+        {
+            "path": "platform/src/App.vue",
+            "target": "platform/src/App.vue",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "3ede2bc7bab5b6c3fb47bb59a6ba85a93fc6b3492ad39b11b6acddd3984cdbd8"
+        },
+        {
+            "path": "platform/src/api/platform.ts",
+            "target": "platform/src/api/platform.ts",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "af16d8368d4c5b18e38e304a259b31ce7647d29471a6406024430fe0d953eda8"
+        },
+        {
+            "path": "platform/src/main.ts",
+            "target": "platform/src/main.ts",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "d2765c0610d6d92b186823066c10d1628ec5c0b1830615b6e6208e69a5027e9e"
+        },
+        {
+            "path": "platform/src/style.css",
+            "target": "platform/src/style.css",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "0b68b0739a13871618ef5b894ab0a490649407a79c68bbe8268722057fdfd912"
+        },
+        {
+            "path": "platform/tsconfig.json",
+            "target": "platform/tsconfig.json",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "dee6105a3c5d5a3e55252bfd12ad8027c391925d2fcf64c1be21f8ce5511d7e4"
+        },
+        {
+            "path": "platform/vite.config.ts",
+            "target": "platform/vite.config.ts",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "0231590ee5ab519ea41fa670ecc0b1592e776de2d1d899055dace9de321ce901"
+        },
+        {
             "path": "plugins.lock",
             "target": "plugins.lock",
             "classification": "managed",
@@ -3481,7 +3598,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "9ea4b9a9828f97c0d2c210fb6f6eddb386986747c05d7076e19316edf57242bd"
+            "source_sha256": "d1f14a8d66beae7f1674c5f43e1949d1c0b133cbd51399a119c54e18249ae510"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3582,7 +3699,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "96d74e83081b5f27ad2450e27dfaa78bbe65ff76a110529d33d6f3417e45cf21"
+            "source_sha256": "a6def556469242b06b5ca564a3fce18808bb0427ea578586bdff3e3682c19ed2"
         },
         {
             "path": "scripts/local-environment-probe",
@@ -3591,6 +3708,15 @@
             "owner": "template-source-only",
             "transform": "copy",
             "mode": 493
+        },
+        {
+            "path": "scripts/local-multi-tenant-demo",
+            "target": "scripts/local-multi-tenant-demo",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "source_sha256": "d70a81fed122828dee1e168d7bfbef4ea9373a7a19ab2b8e56ed70d6265a75fe"
         },
         {
             "path": "scripts/local-php-runtime",
@@ -3681,7 +3807,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "cdc575a5dcd77d249d1e409d7276424df0a1e1a11ef35f507a42d801f7bd0a08"
+            "source_sha256": "a025d55cff3da9e1b87e3e7907855f05686125949e7348118e9dc3a055e3aaa0"
         },
         {
             "path": "scripts/publish-github-release",
@@ -4407,7 +4533,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "de786f8b78309ce6389f1ba7ca056fb613496ba2a9ad3060fe5e6af868276672"
+            "source_sha256": "709ad139f5aa409e739a9364316b8765dfb8da53f1a6e25009ecc913481b4ba3"
         },
         {
             "path": "server/app/adminapi/logic/auth/MenuLogic.php",
@@ -5343,7 +5469,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "991f6019f334360979fbf28874793218f829fa4668be0cb16dbc0226d01af0b4"
+            "source_sha256": "3dd3a690bf7d8adc7f9779b80c1f31e1ca19263cb5f5b9080dd7dc92a2a234b2"
         },
         {
             "path": "server/app/api/middleware/PublicNoticeTenantMiddleware.php",
@@ -6952,6 +7078,15 @@
             "source_sha256": "b9e7116d331d90877f1aa227ca03ed5fc792268692d4acf5ba48242a8a1f3eba"
         },
         {
+            "path": "server/app/common/service/tenant/TenantEntryBindingResolver.php",
+            "target": "server/app/common/service/tenant/TenantEntryBindingResolver.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "707286313542b6396d48fb5ce0866b06fe41681bea109878949964e4e1a9eefc"
+        },
+        {
             "path": "server/app/common/service/tenant/TenantLockNamespace.php",
             "target": "server/app/common/service/tenant/TenantLockNamespace.php",
             "classification": "app-owned",
@@ -7087,6 +7222,15 @@
             "source_sha256": "11ccec1ec7d6b6faa1cd320a55ba66b8a4ced2b9694d84e841d594766cc22b47"
         },
         {
+            "path": "server/app/platform/controller/PlatformControlPlaneQueryController.php",
+            "target": "server/app/platform/controller/PlatformControlPlaneQueryController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "c9f6747203e1c1abd3aa884e99f9af3fd17b1ca2c6a4bf107c2fdb05725f9133"
+        },
+        {
             "path": "server/app/platform/controller/PlatformSessionController.php",
             "target": "server/app/platform/controller/PlatformSessionController.php",
             "classification": "app-owned",
@@ -7114,6 +7258,24 @@
             "source_sha256": "b48f095503893bac2172acd72f8eb09064ff625a0d65c1c20817348df98d765d"
         },
         {
+            "path": "server/app/platform/controller/PlatformTenantEntryBindingController.php",
+            "target": "server/app/platform/controller/PlatformTenantEntryBindingController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "0e7119adc4e3589ddfb04f934e43474e938b3c2560abd36fdd6b1c3527073f7c"
+        },
+        {
+            "path": "server/app/platform/controller/PlatformTenantInvitationController.php",
+            "target": "server/app/platform/controller/PlatformTenantInvitationController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "20128ff5e556f504854c83133802bbf6c65fe2cfe2f7385dd5b80a458fb43807"
+        },
+        {
             "path": "server/app/platform/controller/PlatformTenantModuleController.php",
             "target": "server/app/platform/controller/PlatformTenantModuleController.php",
             "classification": "app-owned",
@@ -7121,6 +7283,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "2ed4ede88d3432b8c0faebba0288ac5ad4ea9fbcf7002e21ea05ddf1f3bc5e68"
+        },
+        {
+            "path": "server/app/platform/controller/TenantOwnerInvitationPublicController.php",
+            "target": "server/app/platform/controller/TenantOwnerInvitationPublicController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "faa070aad7e72a9b1445d0e1cea39bbb725514a004c0cd9962c47d549c60671c"
         },
         {
             "path": "server/app/platform/http/PlatformRequest.php",
@@ -7195,6 +7366,105 @@
             "source_sha256": "434b24f9ff3ec80126411587b6e925b6c1cfa2ae2faaab9260eae3a4c19216dd"
         },
         {
+            "path": "server/app/platform/invitation/OneTimeInvitationToken.php",
+            "target": "server/app/platform/invitation/OneTimeInvitationToken.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "ce3b492b772ad188cb3b9d298a7d372565bfc9fa2b1c3b9388a98d754f75bb0e"
+        },
+        {
+            "path": "server/app/platform/invitation/OwnerInvitationDelivery.php",
+            "target": "server/app/platform/invitation/OwnerInvitationDelivery.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "0f869b03ef6183f1bacad8933ae5d9388687513ddf9242b7c5a6ab31e350bc53"
+        },
+        {
+            "path": "server/app/platform/invitation/OwnerInvitationDeliveryPort.php",
+            "target": "server/app/platform/invitation/OwnerInvitationDeliveryPort.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "e0de2acb74392a020a0f39830a970a996bc18178a439a92d4f5f9442f5ead8b1"
+        },
+        {
+            "path": "server/app/platform/invitation/OwnerInvitationDeliveryResult.php",
+            "target": "server/app/platform/invitation/OwnerInvitationDeliveryResult.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "e6dce3a400685ec3b0681ac6b23244a26db429af341c2bd8b962d2c1e135b5a8"
+        },
+        {
+            "path": "server/app/platform/invitation/OwnerInvitationRuntimePolicy.php",
+            "target": "server/app/platform/invitation/OwnerInvitationRuntimePolicy.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "b44bedf572ed29083a738e242d406ef87d81c275f17704946c9950ede60fc15b"
+        },
+        {
+            "path": "server/app/platform/invitation/PlatformInvitationRuntimeFactory.php",
+            "target": "server/app/platform/invitation/PlatformInvitationRuntimeFactory.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "6ed1e24bc40392d419c8304dc9a2b512abda31df5cf8c74e684fc0e458e1a742"
+        },
+        {
+            "path": "server/app/platform/invitation/TenantOwnerInvitationAdminService.php",
+            "target": "server/app/platform/invitation/TenantOwnerInvitationAdminService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "2d02bf7c0ecc8962b9f9ec7a0fa6b204e05aa5f3690aa9c9adfa6af3bfce9e4f"
+        },
+        {
+            "path": "server/app/platform/invitation/TenantOwnerInvitationException.php",
+            "target": "server/app/platform/invitation/TenantOwnerInvitationException.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "1a435f5f51800d322a721e4c9f9db3ce83f1f25074c52777624231aa02c61acc"
+        },
+        {
+            "path": "server/app/platform/invitation/TenantOwnerInvitationPublicService.php",
+            "target": "server/app/platform/invitation/TenantOwnerInvitationPublicService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "2e99592d0196f4c319ed51aa39bb9a90c14d6bdd898ce650f7048d44635476e5"
+        },
+        {
+            "path": "server/app/platform/invitation/UnavailableOwnerInvitationDeliveryPort.php",
+            "target": "server/app/platform/invitation/UnavailableOwnerInvitationDeliveryPort.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "298c77c8649705dab89189074e866c65709aee1b9b317faf5ebf23b26205b3e4"
+        },
+        {
+            "path": "server/app/platform/query/PlatformControlPlaneQueryService.php",
+            "target": "server/app/platform/query/PlatformControlPlaneQueryService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "3e71aa1a5c73c7ac46b80ffa211ccf4905c3eda9b286e4bab2fc781e3f8316ef"
+        },
+        {
             "path": "server/app/platform/service/PdoTenantOwnerAdminProvisioner.php",
             "target": "server/app/platform/service/PdoTenantOwnerAdminProvisioner.php",
             "classification": "app-owned",
@@ -7219,7 +7489,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "4818e32dd5f3d80262e715046468d8f5e92604315eabd4cfa4c928f0b5c218ab"
+            "source_sha256": "9a8662b6edfa6caf739fb0e24b98fa13533fe1487717dbe3bd265cbdd28ccbaa"
         },
         {
             "path": "server/app/platform/service/PlatformTenantQueryService.php",
@@ -7229,6 +7499,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "cf961602f54b50afd2b3a088848514fe802891c80661e3fec4573c1d92d097bf"
+        },
+        {
+            "path": "server/app/platform/service/TenantEntryBindingAdminService.php",
+            "target": "server/app/platform/service/TenantEntryBindingAdminService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "878bc125c3bd24599db1919789f8e2084b66cc0d8ba16ab365ebd0db8169b86b"
         },
         {
             "path": "server/app/platform/service/TenantGovernanceService.php",
@@ -7402,6 +7681,24 @@
             "source_sha256": "566c022129a05febb99f153eaf32758ab00ba5ec91d50cab49f96c5098e90021"
         },
         {
+            "path": "server/app/platform/validate/TenantEntryBindingValidate.php",
+            "target": "server/app/platform/validate/TenantEntryBindingValidate.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "3c16c7040e5aab84ae77f3f4d477a7c607354ce6f4c79d31b490704c950168c6"
+        },
+        {
+            "path": "server/app/platform/validate/TenantOwnerInvitationValidate.php",
+            "target": "server/app/platform/validate/TenantOwnerInvitationValidate.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "2e856fbe42da66f81aa40810663710bca2aea8ba23c5612fe569e3e0cb5348d0"
+        },
+        {
             "path": "server/app/provider.php",
             "target": "server/app/provider.php",
             "classification": "app-owned",
@@ -7426,7 +7723,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "965c39ebafbd934c09eb8d1366f4d600a7982dbd0402ddf62330e95834748024"
+            "source_sha256": "a72bfb2861ad5aa9e94148606ca78d5e8d8e82d89523e74bfb8fd37c9ca4bc51"
         },
         {
             "path": "server/app/tenant/service/TenantAuthRuntimeFactory.php",
@@ -7726,6 +8023,24 @@
             "source_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
         },
         {
+            "path": "server/database/migrations/20260816-tenant-entry-binding.sql",
+            "target": "server/database/migrations/20260816-tenant-entry-binding.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "216366c0a6a923d2d3a6505f1a497af1ef6d2f55348e977dc91a105a9574fc61"
+        },
+        {
+            "path": "server/database/migrations/20260816-tenant-owner-invitation.sql",
+            "target": "server/database/migrations/20260816-tenant-owner-invitation.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "69244f00e369e83b898477ce2b6f2469f29b3afd662c85eeee937bd01546bcd3"
+        },
+        {
             "path": "server/database/seed-demo-data.php",
             "target": "server/database/seed-demo-data.php",
             "classification": "managed",
@@ -7893,7 +8208,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "c400c19486ac3e0ee044e2392cbfbfc00304489b20cb1e232cd80cf77b41385a"
+            "source_sha256": "54d293e264d5f426a3229ce13e429053b953039343ea36b197c4007f43f73d74"
         },
         {
             "path": "server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php",
@@ -8047,7 +8362,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "2b0fcd3b25588bff056fec67c46bd7f7984fedef8866d63ac7212d1ad9894c64"
+            "source_sha256": "d871108bb1e76e924459b2b8a97c38954a7d4a3fbc0742583e882b66c19c08c1"
         },
         {
             "path": "server/tests/Multitenancy/OperationLogTenantIsolationTest.php",
@@ -8076,6 +8391,14 @@
         {
             "path": "server/tests/Multitenancy/PlatformBootstrapInstallerTest.php",
             "target": "server/tests/Multitenancy/PlatformBootstrapInstallerTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/Multitenancy/PlatformControlPlaneQueryContractTest.php",
+            "target": "server/tests/Multitenancy/PlatformControlPlaneQueryContractTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -8170,8 +8493,24 @@
             "mode": 420
         },
         {
+            "path": "server/tests/Multitenancy/TenantEntryBindingResolverTest.php",
+            "target": "server/tests/Multitenancy/TenantEntryBindingResolverTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "server/tests/Multitenancy/TenantGovernanceTest.php",
             "target": "server/tests/Multitenancy/TenantGovernanceTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/Multitenancy/TenantOwnerInvitationContractTest.php",
+            "target": "server/tests/Multitenancy/TenantOwnerInvitationContractTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -8304,7 +8643,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "86c35542493c102f7edf385e39aeca7f87bebd7fb79d034e86a51045cc258ba7"
+            "source_sha256": "413853ea13e2025430832d6a22fd61c713c3cd707b79f0c08161b75e5409ab3d"
         },
         {
             "path": "server/tests/Productization/InstallerBootstrapTest.php",
@@ -9665,15 +10004,6 @@
             "source_sha256": "60ff5ba7ee9142c3632344f8d6642f27a915d84c5d81c2b2fa5dafd7fe29c4a7"
         },
         {
-            "path": "web/src/api/platform.ts",
-            "target": "web/src/api/platform.ts",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "9adeff4cdd3a311ec6b2310e2a791d6fd51419168c33475b9bf0881f764536ec"
-        },
-        {
             "path": "web/src/api/system-settings.ts",
             "target": "web/src/api/system-settings.ts",
             "classification": "managed",
@@ -10007,15 +10337,6 @@
             "source_sha256": "5c2f1b19032b8ed419fd96cf3b91b26afd6e347a149f7b9060f2444f7412de50"
         },
         {
-            "path": "web/src/core/platform-session.ts",
-            "target": "web/src/core/platform-session.ts",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "3b82f94f2a0f21248aee182fb2d725f0fffae20183b65ae49cd3fd97a9316e19"
-        },
-        {
             "path": "web/src/core/plugin-contribution-policy.ts",
             "target": "web/src/core/plugin-contribution-policy.ts",
             "classification": "managed",
@@ -10280,7 +10601,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "67feb2d3533891334150c4c379c56eb47e387b0f2ee8a478b679187d52070746"
+            "source_sha256": "19f901a8bee269d504f8434b9b55b3f88b832c2947330875971bae073fa4751a"
         },
         {
             "path": "web/src/router/guard/index.ts",
@@ -10298,7 +10619,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "130dac901bf865f931fb398c3e8a33566b21a3cfc92ba14f8c4241fb4925cd2a"
+            "source_sha256": "6c84afefa1efee26f81a1c1ef635d2411841f496bdcc74c52972358f9b7c3c65"
         },
         {
             "path": "web/src/router/guard/userLoginInfo.ts",
@@ -10307,7 +10628,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "622a91c135415e4ed520e92ef973ba9b8b989fd7c4dde496c15a6e53a656f5ca"
+            "source_sha256": "47290f950434149eb8f9dd8f2760e57a6e3711efc287d13ac721735c30a8bf51"
         },
         {
             "path": "web/src/router/index.ts",
@@ -10407,15 +10728,6 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "48017f27722b76d76b92edd4ff246a8839bd773168eb6eb5d037e54430d65bc5"
-        },
-        {
-            "path": "web/src/router/routes/modules/platform.ts",
-            "target": "web/src/router/routes/modules/platform.ts",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "a2231832100a544ca33e4aaf8304e83856e862ec661b4342007fdbeddca40206"
         },
         {
             "path": "web/src/router/routes/modules/system.ts",
@@ -11190,24 +11502,6 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "0a902a33d74514ffbb3333477ad18604c7922dbf5c7ca1c7101a3f51993f3ebc"
-        },
-        {
-            "path": "web/src/views/platform/login.vue",
-            "target": "web/src/views/platform/login.vue",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "119d561b64b7e258424648e742693862162c942db9419737b326dfc251f0e9c5"
-        },
-        {
-            "path": "web/src/views/platform/tenants.vue",
-            "target": "web/src/views/platform/tenants.vue",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "source_sha256": "c382bd08fde16cc1d49ab3166dac809825bba12466417df90751c6ea71adb817"
         },
         {
             "path": "web/src/views/redirect/index.vue",

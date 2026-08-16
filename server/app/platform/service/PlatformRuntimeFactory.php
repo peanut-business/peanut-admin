@@ -42,6 +42,7 @@ final class PlatformRuntimeFactory
 {
     private static ?PlatformOperatorSessionService $sessions = null;
     private static ?PlatformTenantQueryService $tenantQueries = null;
+    private static ?TenantEntryBindingAdminService $tenantEntryBindings = null;
     private static ?TenantGovernanceService $tenantGovernance = null;
     private static ?PlatformTenantModuleService $tenantModules = null;
     private static ?PlatformAccessAdminService $platformAccess = null;
@@ -92,6 +93,14 @@ final class PlatformRuntimeFactory
         return self::$tenantQueries = new PlatformTenantQueryService(
             self::sessions(),
             new PlatformWorkspaceQueryService(self::pdo())
+        );
+    }
+
+    public static function tenantEntryBindings(): TenantEntryBindingAdminService
+    {
+        return self::$tenantEntryBindings ??= new TenantEntryBindingAdminService(
+            self::pdo(),
+            self::sessions()
         );
     }
 

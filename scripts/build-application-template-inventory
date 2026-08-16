@@ -116,7 +116,7 @@ function classification(string $path): string
     if ($path === 'scripts/seed-demo-data') {
         return 'app-owned';
     }
-    if (str_starts_with($path, 'docs-site/')
+    if (str_starts_with($path, 'docs-site/') || str_starts_with($path, 'platform/src/')
         || str_starts_with($path, 'server/app/') || str_starts_with($path, 'server/database/')
         || str_starts_with($path, 'server/tests/') || str_starts_with($path, 'web/src/views/')
         || str_starts_with($path, 'web/tests/') || str_starts_with($path, 'pc/pages/')

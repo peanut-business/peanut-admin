@@ -5,6 +5,7 @@ namespace app\tenant\controller;
 
 use app\common\controller\BaseLikeAdminController;
 use app\common\service\JsonService;
+use app\common\service\tenant\TenantEntryBindingResolver;
 use app\platform\http\PlatformRequest;
 use app\tenant\service\TenantAuthRuntimeFactory;
 use PeanutAdmin\Kernel\Auth\AuthException;
@@ -16,12 +17,15 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         $params = $this->request->post();
         try {
+            $tenantCode = TenantEntryBindingResolver::production()->loginTenantCode(
+                $this->request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
+            );
             return $this->response(TenantAuthRuntimeFactory::endpoint()->login(
                 trim((string)($params['email'] ?? '')),
                 (string)($params['password'] ?? ''),
-                isset($params['tenant_code']) && trim((string)$params['tenant_code']) !== ''
-                    ? trim((string)$params['tenant_code'])
-                    : null,
+                $tenantCode,
                 $this->request->ip(),
                 $this->request->header('User-Agent'),
                 PlatformRequest::requestId($this->request)
