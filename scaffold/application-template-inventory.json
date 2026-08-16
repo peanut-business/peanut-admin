@@ -443,7 +443,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "046d6933ef87692344b9013531f2acbc959dd4037de12d05df2bb1630702fd07"
+            "source_sha256": "eadba576f4cfb91b47fdf461bb6edd026b97ee6a20a8c8a5e4e94596b06f9d01"
         },
         {
             "path": "docs-site/deployment.md",
@@ -640,7 +640,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ab3e626ee89ba313571601cd18cccbdc243322e1e13ad6ad185f8f02b8fb0af8"
+            "source_sha256": "9b260439c9c11aca530b3b6c6e24ed7609988331dca10efb18bb5f5a9c93fd71"
         },
         {
             "path": "docs-site/scripts/sync-legal-assets.mjs",
@@ -3716,7 +3716,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "d70a81fed122828dee1e168d7bfbef4ea9373a7a19ab2b8e56ed70d6265a75fe"
+            "source_sha256": "618bbb560cfb99a5a4b95fce48ceaa0137e835e5275fded63aea4146619769fd"
         },
         {
             "path": "scripts/local-php-runtime",
@@ -8208,7 +8208,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "54d293e264d5f426a3229ce13e429053b953039343ea36b197c4007f43f73d74"
+            "source_sha256": "f99680bf887f04b4fb7d46529d979bae8f83b67334c069036e94ffe4ef0308d1"
         },
         {
             "path": "server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php",

@@ -81,7 +81,7 @@
 
 ### 2.0 当前事实分类
 
-- **开发候选已验证**：fresh 安装得到 85 表、197 菜单、43 配置；原生 Platform/Tenant
+- **开发候选已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant
   登录、三 Tenant 选择和 Store Demo 真实浏览器通过；原生管理身份、独立业务会员、
   canonical fresh Schema、强制官方能力 Tenant 资格检查和单一权威会员余额字段均通过。
 - **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和生产部署；Core Alpha.5 的

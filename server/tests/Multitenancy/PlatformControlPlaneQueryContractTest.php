@@ -14,6 +14,7 @@ $querySource = (string)file_get_contents($queryPath);
 $controllerSource = (string)file_get_contents(
     $serverRoot . '/app/platform/controller/PlatformControlPlaneQueryController.php'
 );
+$routesSource = (string)file_get_contents($serverRoot . '/route/app.php');
 
 preg_match_all('/\b(?:FROM|JOIN)\s+(pa_[a-z0-9_]+)/i', $querySource, $matches);
 $tables = array_values(array_unique(array_map('strtolower', $matches[1] ?? [])));
@@ -35,6 +36,8 @@ $allowed = [
 sort($allowed);
 platformQueryExpect($tables === $allowed, 'Platform query table boundary changed: ' . implode(', ', $tables));
 
+$genericTenantList = strpos($routesSource, "api/platform/tenants',");
+platformQueryExpect($genericTenantList !== false, 'generic Tenant list route is missing');
 foreach ([
     'operators' => 'platform.operator.read',
     'roles' => 'platform.role.read',
@@ -57,6 +60,18 @@ foreach (['pa_member', 'pa_article', 'pa_recharge_order', 'pa_config', 'pa_file'
     platformQueryExpect(
         !in_array($businessTable, $tables, true),
         "Platform query crossed into a Tenant business table: {$businessTable}"
+    );
+}
+foreach ([
+    "api/platform/tenants/detail",
+    "api/platform/tenants/invitations",
+    "api/platform/tenants/owner",
+    "api/platform/tenants/modules",
+] as $specificRoute) {
+    $specificPosition = strpos($routesSource, $specificRoute);
+    platformQueryExpect(
+        $specificPosition !== false && $specificPosition < $genericTenantList,
+        "generic Tenant list shadows specific route: {$specificRoute}"
     );
 }
 

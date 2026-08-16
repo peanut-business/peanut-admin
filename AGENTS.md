@@ -40,7 +40,7 @@
   2.0 基线后追加 SQL，不包含 legacy/adopt/compatibility 迁移。
 - 1.x Admin/Role/Department 映射、默认 Tenant bootstrap、兼容余额镜像和 1.x 数据库/
   scaffold 原地升级不属于 2.0.0 支持面。
-- 登记多租户空库安装得到 85 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
+- 登记多租户空库安装得到 87 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
   三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
 - `scaffold/releases/v2.0.0` 已从当前 fresh-only 源码重新封存；本地多租户体验使用登记资源
   `peanut-admin-mysql84-local-multi-tenant-demo`、Platform `127.0.0.1:20176`、API

@@ -34,7 +34,7 @@ Peanut Admin 已经验证了什么，以及长期产品形态应把这项能力�
 | Tenant 与 TenantMember | **2.0 开发候选已验证**：默认 Tenant、首 owner、生命周期、三 Tenant 选择/切换和隔离通过原生身份测试与真实浏览器验证；没有通用供应商/客户成员产品 | **核心默认，多租户模式必须，Standalone 内部仍保留默认 Tenant** | Account、TenantContext、成员状态、部署模式 | 高，隔离回归和成员生命周期不可停 |
 | RBAC 与数据权限 | **2.0 开发候选已验证**：Admin URI/菜单 RBAC、Core Tenant 权限集合和 Module 数据权限原语通过原生资格检查；每个业务域仍需自己的 target resolver/query 约束 | **核心默认，是**。功能权限和数据权限必须分开；业务模块负责声明受保护对象 | TenantMember、Role、Permission、TenantModule、领域 target provider | 高，新增接口和资源类型都要维护 |
 | 审计与操作日志 | **2.0 开发候选已验证**：管理写操作、平台操作和 Tenant 归属已有 owner 与聚焦合同 | **核心默认，是**。安全、排错和合规都依赖可追溯记录 | 可信 actor、request ID、TenantContext、保留策略 | 中高，数据量、脱敏和归档需持续治理 |
-| 安装与基线后迁移 | **2.0 开发候选已验证**：fresh 安装得到 85 表、197 菜单和 43 配置；后续只接收 canonical baseline 之后的追加 migration，不提供 1.x 数据库或脚手架原地升级 | **核心默认，是**。没有确定性安装和变更账本就不能稳定交付应用 | 版本身份、数据库锁、checksum、空库重建 | 中高；不维护 1.x 兼容矩阵，但每个新变更仍需安装验证 |
+| 安装与基线后迁移 | **2.0 开发候选已验证**：fresh 安装得到 87 表、197 菜单和 43 配置；后续只接收 canonical baseline 之后的追加 migration，不提供 1.x 数据库或脚手架原地升级 | **核心默认，是**。没有确定性安装和变更账本就不能稳定交付应用 | 版本身份、数据库锁、checksum、空库重建 | 中高；不维护 1.x 兼容矩阵，但每个新变更仍需安装验证 |
 | Module/Plugin 生命周期 | **2.0 开发候选已验证**：安装、重复安装、dry-run、失败 migration、停用和卸载，以及官方能力强制 Tenant 资格检查均已通过 | **核心默认，是；生产默认空 lock**。扩展机制应随脚手架存在，但不自动安装业务 Plugin | 不可变 artifact、lock、Module manifest、migration ledger | 中高，制品安全和兼容矩阵长期维护 |
 | Admin Shell | **2.0 开发候选已验证**：Vue 管理端布局、动态菜单、原生权限会话和平台入口已通过 Platform 登录、三 Tenant 选择并进入 Store Demo 的真实浏览器验证 | **核心默认，是**。后台应用需要统一导航、会话和错误处理，但业务页面不进入 Shell | Web 公共包、路由、菜单、权限、品牌入口 | 中，浏览器兼容和前端依赖升级持续发生 |
 

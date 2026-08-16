@@ -105,6 +105,7 @@ start_runtime() {
         # loaded from server/.env. Keep the unprefixed DB_* variables for the
         # installer and resource guard, while exposing the same values to the
         # framework runtime as the production container does.
+        [ -n "${APP_ENV+x}" ] && export PHP_APP_ENV="$APP_ENV"
         [ -n "${APP_DEBUG+x}" ] && export PHP_APP_DEBUG="$APP_DEBUG"
         [ -n "${DEPLOYMENT_MODE+x}" ] && export PHP_DEPLOYMENT_MODE="$DEPLOYMENT_MODE"
         [ -n "${JWT_SECRET+x}" ] && export PHP_JWT_SECRET="$JWT_SECRET"
