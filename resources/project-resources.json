@@ -162,6 +162,54 @@
         "failure_retention_policy": "on failure, the lease owner preserves the exact run_id databases, backup and output, renews or explicitly transfers the lease, and reports recovery coordinates; cleanup waits for evidence capture and the named owner decision"
       },
       {
+        "stable_resource_id": "peanut-admin-mysql84-local-multi-tenant-demo",
+        "purpose": "isolated local multi-tenant application demo database",
+        "environments": [
+          "local-multi-tenant-demo"
+        ],
+        "owner": "Peanut Admin local multi-tenant demo lease owner; remote host mac-14",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "database": "peanut_admin_development_mtlocal01",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development_mtlocal01",
+        "deployment_modes": [
+          "multi-tenant"
+        ],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-mysql84-local-multi-tenant-demo-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-mysql84-local-multi-tenant-demo-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "lease-owned synthetic multi-tenant demo data; persistent development and production data are forbidden",
+        "freshness_requirement": "an active local multi-tenant demo lease, the registered database health check and a current fresh-install ledger are required before application start",
+        "health_check": {
+          "allocation": "scripts/project-development-database.sh status",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-multi-tenant-demo --consumer host --resource-id peanut-admin-mysql84-local-multi-tenant-demo",
+          "database": "credential-backed ping, SELECT DATABASE() and server/database/migrate.php --current"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "claim_precondition": "before connection, creation, installation, test or cleanup, scripts/project-resource-lease must hold an active local multi-tenant demo lease for this exact database, API port and admin port",
+        "creation_policy": "the active demo lease owner may recreate only peanut_admin_development_mtlocal01",
+        "cleanup_responsibility": "the active demo lease owner drops only peanut_admin_development_mtlocal01 after the user no longer needs the local demo",
+        "backup_responsibility": "not applicable; this database contains only synthetic demo data"
+      },
+      {
         "stable_resource_id": "peanut-admin-production-bundled-mysql84",
         "purpose": "production-server bundled database profile",
         "environments": [
@@ -250,6 +298,38 @@
         "health_check": "TCP connect",
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-multi-tenant-demo-php",
+        "environment": "local-multi-tenant-demo",
+        "owner": "local multi-tenant demo lease owner",
+        "host": "127.0.0.1",
+        "port": 20178,
+        "port_env": "MT_DEMO_PHP_PORT",
+        "service_type": "http",
+        "namespace": "peanut-admin-local-multi-tenant-demo",
+        "credential_ref": null,
+        "data_source": "current worktree host PHP runtime",
+        "freshness_requirement": "active local multi-tenant demo lease and current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "local multi-tenant demo lease owner"
+      },
+      {
+        "stable_resource_id": "peanut-admin-local-multi-tenant-demo-admin",
+        "environment": "local-multi-tenant-demo",
+        "owner": "local multi-tenant demo lease owner",
+        "host": "127.0.0.1",
+        "port": 20179,
+        "port_env": "MT_DEMO_VITE_PORT",
+        "service_type": "vite",
+        "namespace": "peanut-admin-local-multi-tenant-demo",
+        "credential_ref": null,
+        "data_source": "current web source tree",
+        "freshness_requirement": "active local multi-tenant demo lease and current worktree",
+        "health_check": "TCP connect",
+        "fallback": "none",
+        "cleanup_responsibility": "local multi-tenant demo lease owner"
       },
       {
         "stable_resource_id": "peanut-admin-local-development-pc",

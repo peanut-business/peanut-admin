@@ -241,6 +241,8 @@ $expect($registeredPorts === [
     'MOBILE_PORT' => 20182,
     'DOCS_PORT' => 20186,
     'HTTP_PORT' => 20190,
+    'MT_DEMO_PHP_PORT' => 20178,
+    'MT_DEMO_VITE_PORT' => 20179,
 ], 'registered local listener ports do not match the Peanut Admin project block');
 $redis = array_values(array_filter(
     $registry['resources']['optional_services'] ?? [],
@@ -385,6 +387,15 @@ $ordinaryEnvironments = [
         'DB_HOST' => '192.168.192.2', 'DB_PORT' => '20183',
         'DB_NAME' => 'peanut_admin_development', 'DB_USER' => 'test', 'DB_PASS' => 'test',
         'DEPLOYMENT_MODE' => 'standalone',
+    ],
+    'local-multi-tenant-demo' => [
+        'APP_ENV' => 'development', 'PEANUT_DEPLOYMENT_TARGET' => 'local-multi-tenant-demo',
+        'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-mysql84-local-multi-tenant-demo',
+        'PEANUT_DATABASE_CONSUMER' => 'host',
+        'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-mysql84-local-multi-tenant-demo-host-direct',
+        'DB_HOST' => '192.168.192.2', 'DB_PORT' => '20183',
+        'DB_NAME' => 'peanut_admin_development_mtlocal01', 'DB_USER' => 'test', 'DB_PASS' => 'test',
+        'DEPLOYMENT_MODE' => 'multi-tenant',
     ],
     'production' => [
         'APP_ENV' => 'production', 'PEANUT_DEPLOYMENT_TARGET' => 'production',

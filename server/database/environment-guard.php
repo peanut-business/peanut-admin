@@ -61,6 +61,11 @@ function deploymentTargetContract(string $deploymentTarget): array
             'resource_environment' => 'local-production-preview',
             'default_consumer' => 'container',
         ],
+        'local-multi-tenant-demo' => [
+            'app_environment' => 'development',
+            'resource_environment' => 'local-multi-tenant-demo',
+            'default_consumer' => 'host',
+        ],
         'production' => [
             'app_environment' => 'production',
             'resource_environment' => 'production',
@@ -399,8 +404,14 @@ function guardedDatabaseConfig(?string $leaseProofPath = null, ?int $now = null)
         if (!is_string($registeredName) || !hash_equals($registeredName, $actual['database'])) {
             throw new RuntimeException("数据库资源 {$resourceId} 的 database 不匹配固定登记值");
         }
-        if ($deploymentMode !== 'standalone') {
-            throw new RuntimeException('当前持久运行环境必须显式使用 DEPLOYMENT_MODE=standalone');
+        $deploymentModes = $database['deployment_modes'] ?? ['standalone'];
+        if (!is_array($deploymentModes)
+            || $deploymentModes === []
+            || array_filter($deploymentModes, static fn(mixed $mode): bool => !is_string($mode) || $mode === '') !== []) {
+            throw new RuntimeException("数据库资源 {$resourceId} 的 deployment_modes 登记无效");
+        }
+        if (!in_array($deploymentMode, $deploymentModes, true)) {
+            throw new RuntimeException("数据库资源 {$resourceId} 不允许 DEPLOYMENT_MODE={$deploymentMode}");
         }
     }
 
