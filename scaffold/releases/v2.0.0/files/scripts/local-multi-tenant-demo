@@ -100,6 +100,10 @@ stop_pid() {
     [ -f "$pid_file" ] || return 0
     pid=$(cat "$pid_file" 2>/dev/null || true)
     case "$pid" in ''|*[!0-9]*) rm -f "$pid_file"; return 0 ;; esac
+    if ! kill -0 "$pid" 2>/dev/null; then
+        rm -f "$pid_file"
+        return 0
+    fi
     command_line=$(ps -p "$pid" -o command= 2>/dev/null || true)
     case "$command_line" in *"$expected"*) ;; *) die "refusing to stop unowned pid $pid" ;; esac
     kill "$pid" 2>/dev/null || true
@@ -138,6 +142,7 @@ start_clients() {
     if ! pid_running "$admin_pid"; then
         : > "$admin_log"
         (
+            trap '' HUP
             cd "$repo_dir/web"
             VITE_API_PROXY_TARGET=http://127.0.0.1:20178 VITE_OPEN_BROWSER=false \
                 VITE_DEPLOYMENT_MODE=multi-tenant \
@@ -149,6 +154,7 @@ start_clients() {
     if ! pid_running "$platform_pid"; then
         : > "$platform_log"
         (
+            trap '' HUP
             cd "$repo_dir/platform"
             VITE_API_PROXY_TARGET=http://127.0.0.1:20178 \
                 exec node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 20176
