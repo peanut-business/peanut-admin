@@ -246,7 +246,6 @@ function assertP0eLeaseContract(
     string $deploymentMode
 ): void {
     $expectedCounts = [
-        'backup-dir' => 1,
         'browser-session' => 1,
         'cache-dir' => 1,
         'candidate-tree' => 1,
@@ -260,7 +259,7 @@ function assertP0eLeaseContract(
         'gate' => 1,
         'http-port' => 1,
         'lease-proof-dir' => 1,
-        'mysql-db' => 9,
+        'mysql-db' => 5,
         'output-dir' => 1,
         'port' => 2,
         'resource-id' => 1,
@@ -272,7 +271,7 @@ function assertP0eLeaseContract(
         $actualCounts[$type] = count($values);
     }
     ksort($actualCounts, SORT_STRING);
-    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== 31) {
+    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== 26) {
         throw new RuntimeException('P0-E lease resource set 存在缺失、额外项或 cardinality 冲突');
     }
 
@@ -308,17 +307,13 @@ function assertP0eLeaseContract(
     }
 
     $outputDir = $resources['output-dir'][0];
-    $backupDir = $resources['backup-dir'][0];
     $cacheDir = $resources['cache-dir'][0];
     $proofDir = $resources['lease-proof-dir'][0];
     if (!isLexicallyAbsolutePath($outputDir)
-        || !isLexicallyAbsolutePath($backupDir)
         || !isLexicallyAbsolutePath($cacheDir)
         || !isLexicallyAbsolutePath($proofDir)
         || $outputDir !== rtrim($metadata['worktree'], '/') . '/output/p0e-' . $runId
-        || basename($backupDir) !== 'p0e-backup-' . $runId
         || basename($cacheDir) !== 'p0e-' . $runId
-        || !str_ends_with($backupDir, '/.local/state/peanut-admin/p0e-backup-' . $runId)
         || !str_ends_with($cacheDir, '/.cache/peanut-admin/p0e-' . $runId)
         || !str_ends_with($proofDir, '/peanut-admin-resource-leases/leases/' . $metadata['lease'])) {
         throw new RuntimeException('P0-E lease path identity 不匹配精确 run_id 合同');

@@ -1,12 +1,31 @@
 <?php
 declare(strict_types=1);
 
+const P0E_FRESH_SCENARIO_MODES = [
+    'standalone_fresh' => 'standalone',
+    'multi_tenant_fresh' => 'multi-tenant',
+    'plugin_lifecycle' => 'multi-tenant',
+    'standalone_browser' => 'standalone',
+    'multi_tenant_browser' => 'multi-tenant',
+];
+const P0E_FRESH_GROUPS = [
+    'generated-application',
+    'standalone-fresh',
+    'multi-tenant-fresh',
+    'plugin-lifecycle',
+    'production-compose',
+    'standalone-browser',
+    'multi-tenant-browser',
+];
+
 $root = dirname(__DIR__, 3);
 $registryPath = $root . '/resources/project-resources.json';
 $p0eRegistryPath = $root . '/resources/p0e-runtime-qualification.json';
+$p0eMatrixPath = $root . '/server/tests/fixtures/p0e-runtime-qualification/matrix.json';
 $registryJson = (string)file_get_contents($registryPath);
 $registry = json_decode($registryJson, true, 512, JSON_THROW_ON_ERROR);
 $p0eRegistry = json_decode((string)file_get_contents($p0eRegistryPath), true, 512, JSON_THROW_ON_ERROR);
+$p0eMatrix = json_decode((string)file_get_contents($p0eMatrixPath), true, 512, JSON_THROW_ON_ERROR);
 
 $expect = static function (bool $condition, string $message): void {
     if (!$condition) {
@@ -143,6 +162,22 @@ $expect(($qualificationDatabase['database'] ?? null) === 'peanut_admin_developme
 $expect(($qualificationDatabase['namespace'] ?? null) === 'peanut_admin_development_p0e_<run_id>_', 'P0-E database namespace is invalid');
 $expect(($qualificationDatabase['run_id_pattern'] ?? null) === '^[a-z0-9]{1,11}$', 'P0-E run_id policy is invalid');
 $expect(($qualificationDatabase['database_name_max_length'] ?? null) === 64, 'P0-E database name limit is invalid');
+$expect(
+    ($qualificationDatabase['allowed_scenarios'] ?? null) === array_keys(P0E_FRESH_SCENARIO_MODES),
+    'P0-E database scenarios are not the 2.0 fresh-only set'
+);
+$expect(
+    array_keys($p0eMatrix['scenarios'] ?? []) === array_keys(P0E_FRESH_SCENARIO_MODES),
+    'P0-E matrix scenarios diverge from the registered 2.0 fresh-only set'
+);
+$expect(($p0eMatrix['groups'] ?? null) === P0E_FRESH_GROUPS, 'P0-E matrix does not contain the seven fresh-only Gate groups');
+$expect(
+    !str_contains((string)json_encode($p0eMatrix), 'v1_0_forward')
+        && !str_contains((string)json_encode($p0eMatrix), 'v1_1_forward')
+        && !str_contains((string)json_encode($p0eMatrix), 'migration_fault')
+        && !str_contains((string)json_encode($p0eMatrix), 'recovery'),
+    'P0-E matrix retained a 1.x upgrade or recovery fixture'
+);
 $expect(($qualificationDatabase['credential_ref'] ?? null) === 'mac-14:/Users/xing/.config/peanut-admin/development-db.env', 'P0-E credential reference changed unexpectedly');
 $expect(($qualificationDatabase['lifecycle'] ?? null) === 'ephemeral', 'P0-E database lifecycle must be ephemeral');
 $expect(($qualificationDatabase['fallback'] ?? null) === 'none', 'P0-E database must fail closed');
@@ -381,11 +416,7 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
         'expires_at' => (string)($now + 3600),
         'status' => 'ACTIVE',
     ];
-    $scenarios = [
-        'standalone_fresh', 'multi_tenant_fresh', 'v1_0_forward', 'v1_1_forward',
-        'migration_fault_source', 'migration_fault_restore', 'plugin_lifecycle',
-        'standalone_browser', 'multi_tenant_browser',
-    ];
+    $scenarios = array_keys(P0E_FRESH_SCENARIO_MODES);
     $resources = [
         'resource-id' => ['peanut-admin-p0e-mysql84-gate'],
         'environment' => ['development'],
@@ -404,7 +435,6 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
         'docs-port' => ['20186'],
         'cache-dir' => ['/Users/xing/.cache/peanut-admin/p0e-' . $runId],
         'output-dir' => [$worktree . '/output/p0e-' . $runId],
-        'backup-dir' => ['/Users/xing/.local/state/peanut-admin/p0e-backup-' . $runId],
         'compose-project' => ['peanut-p0e-' . $runId],
         'browser-session' => ['p0e-' . $runId],
         'lease-proof-dir' => [
@@ -487,14 +517,7 @@ $guardNow = 2_000_000_000;
 try {
     $activeProof = $temporary . '/active';
     resourceGuardWriteProof($activeProof, $guardRunId, $guardNow);
-    $scenarioModes = [
-        'standalone_fresh' => 'standalone', 'multi_tenant_fresh' => 'multi-tenant',
-        'v1_0_forward' => 'standalone', 'v1_1_forward' => 'standalone',
-        'migration_fault_source' => 'standalone', 'migration_fault_restore' => 'standalone',
-        'plugin_lifecycle' => 'multi-tenant', 'standalone_browser' => 'standalone',
-        'multi_tenant_browser' => 'multi-tenant',
-    ];
-    foreach ($scenarioModes as $scenario => $mode) {
+    foreach (P0E_FRESH_SCENARIO_MODES as $scenario => $mode) {
         resourceGuardSetEnvironment(resourceGuardP0eEnvironment($guardRunId, $scenario, $mode));
         $config = guardedDatabaseConfig($activeProof, $guardNow);
         $expect($config['consumer'] === 'container', "P0-E guard did not allow exact scenario {$scenario}");

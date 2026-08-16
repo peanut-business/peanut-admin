@@ -44,6 +44,10 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
     <strong>部署与安装</strong>
     <span>应用实例、2.0.0 fresh baseline、空库安装、备份与回滚。</span>
   </a>
+  <a class="doc-entry" href="/troubleshooting">
+    <strong>故障处理</strong>
+    <span>安装、启动、登录、Tenant 入口和 Module Gate 的最小诊断路径。</span>
+  </a>
   <a class="doc-entry" href="/api">
     <strong>API 与扩展</strong>
     <span>响应、认证、权限、回调，以及 Composer/npm 公共入口。</span>
@@ -60,7 +64,7 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 
 ## 推荐阅读顺序
 
-1. 新安装者：快速开始 → 架构、目录与身份 → 部署与安装 → 管理员手册。
+1. 新安装者：快速开始 → 架构、目录与身份 → 部署与安装 → 故障处理 → 管理员手册。
 2. Module 开发者：架构、目录与身份 → 首个 Module 教程 → API 与扩展 → 开箱即用能力目录。
 3. 架构讨论：身份与 Tenant 边界 → 开箱即用能力目录 → 官方模块资格 → fresh baseline。
 4. 发布负责人：版本与发布 → 部署与安装 → 产品状态。
@@ -73,6 +77,7 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 - [Module、Plugin、Host 与跨模块调用](/api#module-plugin-与-host)
 - [首个 Module 纵向教程](/guide/module-development)
 - [2.0.0 空库安装与 fresh baseline](/deployment#fresh-only-基线)
+- [安装、启动、身份与 Module Gate 故障处理](/troubleshooting)
 - [开箱即用能力逐项决策](/capabilities)
 - [独立中文 Platform 操作手册](/platform)
 - [官方可选模块强制多租户资格](/architecture/official-module-qualification)

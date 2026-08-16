@@ -135,6 +135,25 @@ $expect(($resourceCounts['deployment-mode'] ?? null) === 2, 'claim must bind bot
 $expect(($resourceCounts['port'] ?? null) === 2, 'claim must bind both generic port conflicts');
 
 $runnerSource = (string)file_get_contents($runner);
+$unsupportedRunnerFragments = [
+    'ensure_legacy_source',
+    'create_legacy_application',
+    'legacy_application_upgrade',
+    'legacy_application_recovery',
+    'def forward(',
+    'migration_fault_restore',
+    '--adopt-existing',
+    'SCAFFOLD_UPGRADE',
+    'upgraded_plugin_lifecycle',
+    'upgraded_production_compose',
+    'upgraded_browser',
+    'mysqldump',
+    'remote_dump',
+    'remote_restore',
+];
+foreach ($unsupportedRunnerFragments as $fragment) {
+    $expect(!str_contains($runnerSource, $fragment), "fresh-only runner retained unsupported code: {$fragment}");
+}
 $runStart = strpos($runnerSource, '    def run(self) -> None:');
 $runEnd = strpos($runnerSource, '    def preserve_failure', $runStart === false ? 0 : $runStart);
 $expect($runStart !== false && $runEnd !== false, 'runner group closure is unavailable');
