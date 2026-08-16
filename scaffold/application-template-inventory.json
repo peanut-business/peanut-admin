@@ -3716,7 +3716,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "618bbb560cfb99a5a4b95fce48ceaa0137e835e5275fded63aea4146619769fd"
+            "source_sha256": "bf0237a01ba8e7adb5ead02dd7d1333e3d1b7b7e532d966389921907ca28113b"
         },
         {
             "path": "scripts/local-php-runtime",

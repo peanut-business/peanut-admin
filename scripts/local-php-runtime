@@ -42,7 +42,7 @@ is_owned_process() {
     port=$(read_env PHP_PORT)
     command_line=$(ps -p "$(runtime_pid)" -o command= 2>/dev/null || true)
     case "$command_line" in
-        *"think run"*"--port $port"*) return 0 ;;
+        *"php -S 0.0.0.0:$port"*"$repo_dir/server/public/router.php"*) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -136,7 +136,9 @@ start_runtime() {
             -d upload_max_filesize=200M \
             -d post_max_size=210M \
             -d max_file_uploads=20 \
-            think run --host 0.0.0.0 --port "$port"
+            -S "0.0.0.0:$port" \
+            -t "$repo_dir/server/public" \
+            "$repo_dir/server/public/router.php"
     ) >> "$log_file" 2>&1 &
     pid=$!
     printf '%s\n' "$pid" > "$pid_file"
