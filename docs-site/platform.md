@@ -25,8 +25,9 @@ PlatformOperator 会话、平台角色和平台审计；普通 Tenant 管理员�
 | TenantMember | `/admin/` | 在当前 Tenant 内按 Tenant Role/RBAC 使用管理端 | 不能查看其他 Tenant；切换前必须已经加入目标 Tenant |
 | 业务会员 `pa_member` | 业务客户端登录 | 客户侧业务身份、标签、余额等 | 不是 Account/TenantMember，不能拿会员 Token 调用管理端 |
 
-客户档案、供应商档案和联系人应作为业务对象，与 Account 登录载体分开。供应商在派生应用中可以
-作为 Tenant，但其成员关系、合同、商品授权和采购参与权限必须由 DCS 等应用显式建模。
+客户档案、供应商档案和联系人应作为业务对象，与 Account 登录载体分开。派生应用只有在独立
+冻结了业务主体、成员关系、合同、商品授权和采购参与权限后，才可以选择把供应商关联到 Tenant；
+这不是 Peanut Admin 当前内建的默认建模。
 
 ## Tenant 生命周期
 

@@ -94,7 +94,8 @@ Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。使用 Nginx、�
 ## Fresh-only 基线
 
 2.0.0 只有一条数据库路径：空库安装。`install.php` 创建 Core Schema、应用 canonical
-`init.sql`、默认 Tenant、首个 Tenant owner，以及多租户模式下可选的 PlatformOperator。
+`init.sql`、默认 Tenant、首个 Tenant owner；multi-tenant 模式还必须创建独立的
+PlatformOperator。
 安装后执行 `migrate.php --current` 只核对 `init.sql` 与基线后追加 migration 的 checksum。
 
 ```bash

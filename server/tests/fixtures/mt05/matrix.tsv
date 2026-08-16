@@ -1,4 +1,0 @@
-mode	action	deployment_mode	baseline_ref
-standalone-empty	candidate-install	standalone	-
-v1-forward	v1-forward	standalone	v1.0.0
-multitenant-empty	candidate-install	multi-tenant	-

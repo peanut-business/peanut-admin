@@ -399,7 +399,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "9b68359ac4bd75d848559021648b53ec9f6369ebadf7cabe1b0398a746d74afd"
+            "source_sha256": "8487f4b14db402940de0529c7aea21c6948e3389e194e10e5920acae4ff7d2ef"
         },
         {
             "path": "docs-site/architecture/identity-and-tenancy.md",
@@ -435,7 +435,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "9cb9cf3bf2e9be5bc28cc72df0755c7a905913f57822016631e38b5a22c88073"
+            "source_sha256": "6c5aba769f14cb1576159586c64cd164645471cd60c73e6b19bb10525f15b7bb"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -525,7 +525,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "a91ea808192ca4d2c5d9cab40cbfb5a5f3514d3c27a7d08de2c0feed4b6404f2"
+            "source_sha256": "29954b9853517e5863c2ff6ef8df1f8e43ca8702690222bbad5367793047c82b"
         },
         {
             "path": "docs-site/pnpm-lock.yaml",
@@ -3721,22 +3721,6 @@
         {
             "path": "scripts/local-stack.sh",
             "target": "scripts/local-stack.sh",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 493
-        },
-        {
-            "path": "scripts/mt05/README.md",
-            "target": "scripts/mt05/README.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "scripts/mt05/run-install-upgrade",
-            "target": "scripts/mt05/run-install-upgrade",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -8314,14 +8298,6 @@
             "mode": 420
         },
         {
-            "path": "server/tests/Multitenancy/AdminTenantContextTest.php",
-            "target": "server/tests/Multitenancy/AdminTenantContextTest.php",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
             "path": "server/tests/Multitenancy/AdminTenantDomainContextContractTest.php",
             "target": "server/tests/Multitenancy/AdminTenantDomainContextContractTest.php",
             "classification": "excluded",
@@ -8556,14 +8532,6 @@
             "mode": 420
         },
         {
-            "path": "server/tests/Multitenancy/PlatformTenantSuspensionGuardTest.php",
-            "target": "server/tests/Multitenancy/PlatformTenantSuspensionGuardTest.php",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
             "path": "server/tests/Multitenancy/RechargeRefundTenantIsolationTest.php",
             "target": "server/tests/Multitenancy/RechargeRefundTenantIsolationTest.php",
             "classification": "excluded",
@@ -8582,14 +8550,6 @@
         {
             "path": "server/tests/Multitenancy/TaskImportExportTenantIsolationTest.php",
             "target": "server/tests/Multitenancy/TaskImportExportTenantIsolationTest.php",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/Multitenancy/TenantAdminRequestBridgeTest.php",
-            "target": "server/tests/Multitenancy/TenantAdminRequestBridgeTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -9013,64 +8973,8 @@
             "mode": 420
         },
         {
-            "path": "server/tests/fixtures/mt03/decoration-tabbar-tenant-legacy.sql",
-            "target": "server/tests/fixtures/mt03/decoration-tabbar-tenant-legacy.sql",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/fixtures/mt03/member-tenant-legacy.sql",
-            "target": "server/tests/fixtures/mt03/member-tenant-legacy.sql",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/fixtures/mt03/notice-tenant-ownership.sql",
-            "target": "server/tests/fixtures/mt03/notice-tenant-ownership.sql",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/fixtures/mt03/oauth-tenant-legacy.sql",
-            "target": "server/tests/fixtures/mt03/oauth-tenant-legacy.sql",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/fixtures/mt03/recharge-refund-tenant-legacy.sql",
-            "target": "server/tests/fixtures/mt03/recharge-refund-tenant-legacy.sql",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/fixtures/mt03/transaction-setting-legacy.sql",
-            "target": "server/tests/fixtures/mt03/transaction-setting-legacy.sql",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
             "path": "server/tests/fixtures/mt05/inspect.php",
             "target": "server/tests/fixtures/mt05/inspect.php",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420
-        },
-        {
-            "path": "server/tests/fixtures/mt05/matrix.tsv",
-            "target": "server/tests/fixtures/mt05/matrix.tsv",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
