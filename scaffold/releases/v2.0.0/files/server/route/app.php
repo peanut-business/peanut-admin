@@ -91,9 +91,6 @@ Route::get('api/platform/session/info', [PlatformSessionController::class, 'info
 Route::get('api/platform/tenants/capabilities', [PlatformTenantBoundaryController::class, 'capabilities'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
-Route::get('api/platform/tenants', [PlatformTenantController::class, 'lists'])
-    ->middleware(PlatformLoginMiddleware::class)
-    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
 Route::get('api/platform/tenants/detail', [PlatformTenantController::class, 'detail'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
@@ -156,6 +153,10 @@ Route::post('api/platform/tenants/modules/enable', [PlatformTenantModuleControll
 Route::post('api/platform/tenants/modules/disable', [PlatformTenantModuleController::class, 'disable'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.module.manage');
+// ThinkPHP routes are prefix-sensitive: register the generic Tenant list after every /tenants/* route.
+Route::get('api/platform/tenants', [PlatformTenantController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
 Route::post('api/platform/operators/create', [PlatformAccessController::class, 'createOperator'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.operator.create');
