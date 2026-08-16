@@ -151,6 +151,7 @@ def main() -> int:
             "DEV_HTTP_PORT": 20187,
             "PHP_PORT": 20180,
             "VITE_PORT": 20181,
+            "PLATFORM_PORT": 20177,
             "MOBILE_PORT": 20182,
             "PC_PORT": 20185,
             "DOCS_PORT": 20186,

@@ -300,6 +300,22 @@
         "cleanup_responsibility": "scripts/local-stack.sh dev-down"
       },
       {
+        "stable_resource_id": "peanut-admin-local-development-platform",
+        "environment": "development",
+        "owner": "scripts/local-stack.sh",
+        "host": "127.0.0.1",
+        "port": 20177,
+        "port_env": "PLATFORM_PORT",
+        "service_type": "vite",
+        "namespace": "peanut-admin-development",
+        "credential_ref": null,
+        "data_source": "platform source tree",
+        "freshness_requirement": "current worktree",
+        "health_check": "GET /platform/",
+        "fallback": "none",
+        "cleanup_responsibility": "scripts/local-stack.sh dev-down"
+      },
+      {
         "stable_resource_id": "peanut-admin-local-multi-tenant-demo-php",
         "environment": "local-multi-tenant-demo",
         "owner": "local multi-tenant demo lease owner",
@@ -399,7 +415,7 @@
     "containers": [
       {
         "stable_resource_id": "peanut-admin-development-ui-containers",
-        "purpose": "development admin, PC, mobile, docs and Nginx gateway runtimes; API targets host.docker.internal:${PHP_PORT}",
+        "purpose": "development admin, platform, PC, mobile, docs and Nginx gateway runtimes; API targets host.docker.internal:${PHP_PORT}",
         "environment": "development",
         "owner": "deploy/docker-compose.dev.yml",
         "host": "Docker Desktop local engine",
@@ -409,7 +425,7 @@
         "namespace": "peanut-admin-development",
         "service_type": "Node.js 20.19.4 and Nginx 1.27 containers",
         "credential_ref": null,
-        "data_source": "current web, pc, uniapp and docs-site worktrees",
+        "data_source": "current web, platform, pc, uniapp and docs-site worktrees",
         "freshness_requirement": "current worktree",
         "health_check": "scripts/local-environment-probe",
         "fallback": "none",

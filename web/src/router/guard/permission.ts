@@ -35,11 +35,6 @@ export default function setupPermissionGuard(router: Router) {
         return;
       }
     }
-    if (to.meta.controlPlane === 'platform') {
-      next();
-      NProgress.done();
-      return;
-    }
     if (appStore.menuFromServer) {
       if (
         !appStore.serverMenuLoaded &&

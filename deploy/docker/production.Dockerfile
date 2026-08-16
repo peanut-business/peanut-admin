@@ -16,10 +16,18 @@ FROM node:20.19.4-bookworm-slim AS mobile-builder
 
 WORKDIR /build/uniapp
 COPY uniapp/package.json uniapp/package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY uniapp/ ./
 ENV VITE_APP_BASE_URL=""
 RUN npm run build:h5
+
+FROM node:20.19.4-bookworm-slim AS platform-builder
+
+WORKDIR /build/platform
+COPY platform/package.json platform/package-lock.json ./
+RUN npm ci
+COPY platform/ ./
+RUN npm run build
 
 FROM node:20.19.4-bookworm-slim AS pc-builder
 
@@ -87,6 +95,7 @@ COPY deploy/docker/nginx-select-admin.sh /docker-entrypoint.d/40-select-admin.sh
 COPY server/public /var/www/peanut-admin/server/public
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json /var/www/peanut-admin/server/public/legal/
 COPY --from=admin-builder /build/web/dist /opt/peanut-admin/admin
+COPY --from=platform-builder /build/platform/dist /var/www/peanut-admin/server/public/platform
 COPY --from=mobile-builder /build/uniapp/dist/build/h5 /var/www/peanut-admin/server/public/mobile
 COPY --from=pc-builder /build/pc/.output/public /var/www/peanut-admin/server/public/pc
 
