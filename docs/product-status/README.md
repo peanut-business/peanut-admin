@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only 开发实现与必要本地资格已完成；固定候选 d3d5900 已部署到隔离线上环境，本地共享 Admin、Tenant A、Tenant B 头像矩阵和线上共享 Admin 头像/菜单已通过。线上 Tenant A/B 当前候选截图尚未重拍；正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明尚未完成。
+> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、文档和局部合同已完成到源码候选 67e5aa5；本地服务已启动，但最终三域名浏览器矩阵在一次有界重跑后仍被自动化浏览器 HTTP response failure 阻塞。UI 通过前不 reseal scaffold、不执行正式 P0-E，也不更新线上候选或发布 v2.0.0。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@d3d590018c1aa323d8d3149c28e4fb4f5214818a`，复核日期：`2026-08-16`。
+> 事实基线：`feat/module-identity-tenancy-docs@67e5aa5ff03efcc2407a5de6ade866302e09a81a`，复核日期：`2026-08-16`。
 
 ### 已验证可用
 
@@ -52,7 +52,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力 Tenant 资格和 create-app 2.0 生成身份已完成；固定候选 d3d5900 的空头像与加载失败 fallback、可访问用户菜单和最小 Web 合同已完成，本地共享 Admin、Tenant A、Tenant B 及线上共享 Admin 视觉验收通过。线上 Tenant A/B 当前候选截图尚未重拍；正式双模式发布 Gate 未执行。 |
+| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已实现，待验收 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback 和本地域名显式白名单已实现到 67e5aa5。旧候选三身份截图与线上共享 Admin 证据不能覆盖最新源码；最终本地浏览器矩阵、scaffold reseal 和正式双模式发布 Gate 尚未通过。 |
 
 ### 暂缓或范围外
 

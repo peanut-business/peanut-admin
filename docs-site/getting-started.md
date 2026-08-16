@@ -90,6 +90,8 @@ API 使用 `20178`。这些域名、端口和 demo 数据库必须由同一个
 
 脚本不会创建替代数据库，也不会打印数据库密码。`credentials` 只按本地体验要求显示合成的
 Tenant Owner 与 PlatformOperator 账号密码；停止时运行 `./scripts/local-multi-tenant-demo down`。
+如果电脑启用了 HTTP/HTTPS 系统代理，还必须把 `*.peanut-admin.test` 加入代理绕过列表；
+`/etc/hosts` 只负责解析到 `127.0.0.1`，不能阻止浏览器把这些请求交给代理。
 
 ## 下一步
 

@@ -130,6 +130,8 @@ Owner 邀请默认 `OWNER_INVITATION_DELIVERY_MODE=auto`，生产环境必须接
 人工模式不会把明文 Token 写数据库或日志，也不能冒充邮件已发送。缺少这些信息时不要反复尝试线上部署；本地可在 hosts 中把测试域名指向
 `127.0.0.1`，再从 Platform 创建对应绑定。绑定冲突、禁用绑定、暂停 Tenant 或显式
 `tenant_code` 与 Host 不一致时都会拒绝登录，不会猜测其他 Tenant。
+启用系统代理时还要把 `*.peanut-admin.test` 加入代理绕过列表；否则即使 hosts 解析正确，
+浏览器仍可能从代理收到 503，无法证明 Tenant Host Runtime 是否正确。
 
 绑定是持续边界：登录、challenge 选择、管理 Token 后续请求都必须匹配同一 Tenant，绑定
 入口禁止切换；只有未绑定公共入口允许账号在自己的 TenantMember 列表中切换。一个站点可以
