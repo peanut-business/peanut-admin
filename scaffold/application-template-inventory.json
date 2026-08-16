@@ -8029,7 +8029,7 @@
             "owner": "application",
             "transform": "environment-guard",
             "mode": 420,
-            "source_sha256": "af6f8e2d8eaa1450e7dde80cec4a01a37f6328d3a8be344d350490519dcd820a"
+            "source_sha256": "b59ba9b32eb8c142b96cc0e009caccc4c0ecafc2bdb2627f04351e8d893689fb"
         },
         {
             "path": "server/database/import.php",
