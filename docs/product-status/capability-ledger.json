@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/module-identity-tenancy-docs",
-    "commit": "c41b90fe2e9b260c7fb31ed8012a163c6537b990",
+    "commit": "6eb06a493001d8fc4024ce9cb7f8b892e5a1e5d8",
     "reviewed_at": "2026-08-17"
   },
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 c41b90f。正式 P0-E 已通过生成应用、双模式空库、Plugin 生命周期、生产 Compose 与 Standalone 浏览器六组；Multi-tenant 浏览器夹具存在已记录的时序失败，线上候选和 v2.0.0 正式发布仍未完成。"
+    "summary": "Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 6eb06a4。正式 P0-E 已通过生成应用、双模式空库、Plugin 生命周期、生产 Compose 与 Standalone 浏览器六组；Multi-tenant 浏览器登录仍停在登录页，线上候选和 v2.0.0 正式发布仍未完成。"
   },
   "capabilities": [
     {
@@ -18,7 +18,7 @@
       "name": "2.0.0 原生身份与干净安装基线",
       "area": "foundation",
       "status": "implemented",
-      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。共享 Admin、Tenant A、Tenant B 三域名矩阵已通过；c41b90f 的正式 P0-E 前六组通过，仍待修复并重新验证 Multi-tenant 浏览器夹具后完成资格与发布。",
+      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。共享 Admin、Tenant A、Tenant B 三域名矩阵已通过；6eb06a4 的正式 P0-E 前六组通过，仍待定位 Multi-tenant 浏览器登录未离开登录页的原因后完成资格与发布。",
       "acceptance": [
         "Standalone 与 multi-tenant 从空库安装同一 canonical Schema",
         "管理端登录、Tenant 选择、RBAC 和暂停拒绝只使用原生身份链",
@@ -33,11 +33,11 @@
         },
         {
           "kind": "git",
-          "ref": "c41b90fe2e9b260c7fb31ed8012a163c6537b990"
+          "ref": "6eb06a493001d8fc4024ce9cb7f8b892e5a1e5d8"
         },
         {
           "kind": "report",
-          "ref": "output/p0e-p0ec41b90f/recovery.json"
+          "ref": "output/p0e-p0e6eb06a4/recovery.json"
         },
         {
           "kind": "resource",
@@ -49,7 +49,8 @@
         "PA-OWNERSHIP-001"
       ],
       "blockers": [
-        "Multi-tenant 浏览器夹具在 Tenant 选择控件的短暂状态变化中超时；已完成一次定向修复与重跑，当前保留取证资源，等待独立的夹具稳定性修复工作流",
+        "Multi-tenant 浏览器登录仍未离开登录页；生成应用、空库和 Standalone 浏览器均通过，需以单独的登录流程诊断定位 Runtime 或夹具边界后再重试",
+        "H5 默认装修在空内容时仍有无语义占位区域，资讯标题在主题背景上的对比度不足；不得在修复并完成新截图检查前作为视觉验收通过",
         "正式 P0-E 通过后仍需完成线上候选和 v2.0.0 发布"
       ],
       "paths": [
