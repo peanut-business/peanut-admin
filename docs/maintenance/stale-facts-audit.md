@@ -90,9 +90,9 @@
 - **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC 和 fixture 同步命令
   Guard 已有证据；现有文件、通知、支付等只是 Tenant 适配的应用 Host，并非已交付官方可选
   Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
-- **已部署候选体验**：隔离 `production-candidate` 的四域名网络入口、Platform 与公共 Admin
-  已可访问；第二 Tenant、Owner 邀请与两个 Tenant 域名的应用内绑定等待生产邮件 Provider。
-  该环境不等于完整多租户绑定或正式发布证明。
+- **已部署候选体验**：固定候选 `ec32a9a` 的隔离 `production-candidate` 已验证四域名网络
+  入口、Platform、公共 Admin、两个 Tenant Owner、Tenant A/B 持续绑定和错误 Tenant 登录拒绝。
+  该候选体验不等于正式双模式 P0-E 或 2.0.0 发布证明。
 - **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明；Core Alpha.5
   的 KernelSchema 字段遗漏由独立 Core 工作流修正。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x

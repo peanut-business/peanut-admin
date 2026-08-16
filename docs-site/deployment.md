@@ -147,20 +147,20 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 
 2.0.0 当前是开发候选。隔离的 `production-candidate` 已使用独立空库、Compose project、
 origin 和四个域名上线；Platform、公共 Admin、DNS、TLS、Host 保留和反向代理已验证。
-当前生产候选未配置 Owner 邀请邮件 Provider，因此不能创建第二 Tenant 并完成两个 Tenant
-域名的应用内绑定。该阻塞不影响本地三 Tenant + hosts 验证，但线上候选不能据此宣称多租户
-绑定链路已完成，也不能替代正式双模式 P0-E、annotated tag 或 GitHub Release。
+当前生产候选使用登记的人工 Owner 邀请交付模式，已创建第二 Tenant，并完成两个 Tenant
+域名的应用内持续绑定；跨域名或错误 Tenant 账号登录会被拒绝。该线上体验验收不能替代
+正式双模式 P0-E、annotated tag 或 GitHub Release。
 
 | 候选体验入口 | 地址 |
 | --- | --- |
 | 实例平台 | `https://pa-platform.007345.xyz/platform/` |
 | 公共管理端 | `https://pa-admin.007345.xyz/admin/` |
-| Tenant A 预留域名（暂未绑定） | `https://pa-tenant-a.007345.xyz/admin/` |
-| Tenant B 预留域名（暂未绑定） | `https://pa-tenant-b.007345.xyz/admin/` |
+| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` |
+| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` |
 
-恢复线上 Tenant 绑定验收的最小输入是生产邮件 Provider 及发件身份。配置完成后，只需执行一次
-“新建 Tenant -> Owner 接受邀请 -> 激活 Tenant -> 绑定域名 -> 绑定入口拒绝切换”的业务链；
-不要把 `APP_ENV` 降级为 development，也不要在生产响应中暴露一次性邀请 Token。
+邮件 Provider 是自动投递 Owner 邀请的可选生产集成，不是 Tenant 创建或域名绑定的 Runtime
+前置。人工模式下必须通过受控渠道交付一次性邀请 Token；不要把 `APP_ENV` 降级为
+development，也不要在生产响应、日志或版本库中暴露 Token。
 
 ### 回滚停止线
 

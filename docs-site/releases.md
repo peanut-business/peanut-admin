@@ -12,8 +12,8 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 数据库或脚手架原地升级。
 
 2.0.0 尚未创建 annotated tag、GitHub Release 或完成正式双模式 P0-E。隔离的
-`production-candidate` 已验证四域名网络入口、Platform 和公共 Admin；第二 Tenant、Owner
-邀请和 Tenant 域名绑定仍等待生产邮件 Provider。该环境不能替代正式发布证明。
+固定候选 `ec32a9a` 的 `production-candidate` 已验证四域名网络入口、Platform、公共 Admin、
+两个 Tenant Owner、Tenant A/B 持续绑定和错误 Tenant 登录拒绝。该环境不能替代正式发布证明。
 
 ## 公开运行依赖
 

@@ -21,7 +21,7 @@ Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的
 `2.0.0` 不支持 1.x 数据库或脚手架原地升级，也不包含套餐、订阅、计费、试用、发票、
 应用市场或跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并
 完成平台登记。当前候选已有隔离的线上实例：Platform、公共 Admin 和四域名代理可访问；
-第二 Tenant、Owner 邀请与 Tenant 域名绑定仍等待生产邮件 Provider。候选尚未创建正式 tag、
+第二 Tenant、Owner 邀请与 Tenant 域名绑定已通过人工邀请模式完成。候选尚未创建正式 tag、
 GitHub Release 或完成正式双模式发布 Gate，体验实例不能替代发布证明。
 
 ## 技术栈
@@ -112,8 +112,8 @@ API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动
 | --- | --- |
 | 2.0 多租户候选 / 实例平台 | https://pa-platform.007345.xyz/platform/ |
 | 2.0 多租户候选 / 公共管理端 | https://pa-admin.007345.xyz/admin/ |
-| 2.0 候选 / Tenant A 预留域名（暂未绑定） | https://pa-tenant-a.007345.xyz/admin/ |
-| 2.0 候选 / Tenant B 预留域名（暂未绑定） | https://pa-tenant-b.007345.xyz/admin/ |
+| 2.0 多租户候选 / Tenant A 绑定入口 | https://pa-tenant-a.007345.xyz/admin/ |
+| 2.0 多租户候选 / Tenant B 绑定入口 | https://pa-tenant-b.007345.xyz/admin/ |
 | 1.x 历史演示应用 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
 | 1.x 历史演示应用 / PC | https://peanut-admin.007345.xyz/pc/ |
 | 1.x 历史演示应用 / H5 | https://peanut-admin.007345.xyz/mobile/ |
@@ -121,8 +121,8 @@ API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动
 
 正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表 2.0
 入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境，不是正式 Release。
-两个 Tenant 预留域名目前只验证 DNS、TLS、Host 保留和反向代理；在邮件 Provider 配置、
-第二 Tenant Owner 接受邀请并完成入口绑定前，不能把它们视为 Tenant 识别验收。
+两个 Tenant 域名已完成 DNS、TLS、Host 保留、反向代理和应用内持续绑定；错误 Tenant 账号
+登录会被拒绝。当前候选使用登记的人工 Owner 邀请交付模式，不依赖生产邮件 Provider。
 首次部署、
 `standalone`/`multi-tenant` 配置、空库安装、数据库备份和回滚停止线见
 [部署与安装](https://peanut-admin-doc.007345.xyz/deployment)。

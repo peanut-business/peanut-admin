@@ -45,6 +45,9 @@
 - `scaffold/releases/v2.0.0` 已从当前 fresh-only 源码重新封存；本地多租户体验使用登记资源
   `peanut-admin-mysql84-local-multi-tenant-demo`、Platform `127.0.0.1:20176`、API
   `127.0.0.1:20178` 和管理端 `127.0.0.1:20179`，不得复用为生产资源。
+- 固定候选 `ec32a9ac2d432ac560d070c74e745bc20d9dc0b5` 已部署到隔离的
+  `production-candidate`：Platform、公共 Admin、两个 Tenant Owner、Tenant A/B 域名持续绑定
+  及错误 Tenant 登录拒绝均已验证；该可重建体验环境不替代正式 2.0.0 发布证明。
 - 当前源码尚未形成正式 `v2.0.0` tag、GitHub Release 或生产部署证明；下面的 1.x 发布、
   P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 正式发布资格。
 

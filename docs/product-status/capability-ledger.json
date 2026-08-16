@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/module-identity-tenancy-docs",
-    "commit": "8c703cb942d6a1cacfa3c3d76c612c68298f429e",
+    "commit": "ec32a9ac2d432ac560d070c74e745bc20d9dc0b5",
     "reviewed_at": "2026-08-16"
   },
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "Peanut Admin 2.0.0 fresh-only 开发实现与必要本地资格已完成；隔离线上候选已完成 Platform、公共 Admin 和四域名网络入口，第二 Tenant、Owner 邀请和 Tenant 域名绑定等待生产邮件 Provider；正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明尚未完成。"
+    "summary": "Peanut Admin 2.0.0 fresh-only 开发实现与必要本地资格已完成；固定候选 ec32a9a 的隔离线上环境已完成 Platform、公共 Admin、两个 Tenant Owner、Tenant A/B 域名持续绑定及错误 Tenant 登录拒绝；正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明尚未完成。"
   },
   "capabilities": [
     {
@@ -18,7 +18,7 @@
       "name": "2.0.0 原生身份与干净安装基线",
       "area": "foundation",
       "status": "implemented",
-      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力 Tenant 资格和 create-app 2.0 生成身份已完成；登记本地三 Tenant 浏览器与绑定入口拒绝切换通过，线上候选四域名网络入口可用但 Tenant 应用绑定等待邮件 Provider；正式双模式发布 Gate 未执行。",
+      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力 Tenant 资格和 create-app 2.0 生成身份已完成；登记本地三 Tenant 浏览器与绑定入口拒绝切换通过，固定候选 ec32a9a 的隔离线上环境也已完成两个 Tenant Owner、Tenant A/B 域名持续绑定和错误 Tenant 登录拒绝；正式双模式发布 Gate 未执行。",
       "acceptance": [
         "Standalone 与 multi-tenant 从空库安装同一 canonical Schema",
         "管理端登录、Tenant 选择、RBAC 和暂停拒绝只使用原生身份链",
@@ -33,7 +33,7 @@
         },
         {
           "kind": "git",
-          "ref": "60e49921f0081bed2bf426a35f023cd52e235020"
+          "ref": "ec32a9ac2d432ac560d070c74e745bc20d9dc0b5"
         },
         {
           "kind": "resource",

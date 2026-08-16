@@ -981,7 +981,7 @@
           "production-candidate"
         ],
         "owner": "Peanut Admin production candidate deployment owner; Cloudflare DNS and BaoTa Nginx",
-        "source": "owner-approved hostname plan on 2026-08-16; live allocation pending",
+        "source": "owner-approved hostname plan plus live DNS, TLS, reverse-proxy and application binding verification on 2026-08-16",
         "hosts": [
           "pa-platform.007345.xyz",
           "pa-admin.007345.xyz",
