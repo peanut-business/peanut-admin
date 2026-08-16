@@ -42,6 +42,7 @@ export default {
   'menu.devTools': '开发工具',
   'menu.devTools.code': '代码生成器',
   'navbar.action.locale': '切换为中文',
+  'navbar.userMenu': '打开用户菜单',
   'navbar.userSettings': '用户设置',
   'navbar.logout': '退出登录',
   'navbar.tenantSwitch': '切换租户',

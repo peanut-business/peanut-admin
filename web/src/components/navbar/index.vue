@@ -92,12 +92,15 @@
       </li>
       <li>
         <el-dropdown trigger="click" @command="handleUserCommand">
-          <el-avatar
-            :size="32"
-            :style="{ marginRight: '8px', cursor: 'pointer' }"
+          <button
+            type="button"
+            class="user-menu-trigger"
+            :aria-label="$t('navbar.userMenu')"
           >
-            <img alt="avatar" :src="avatar" />
-          </el-avatar>
+            <el-avatar :size="32" :src="avatar" alt="">
+              {{ avatarInitial }}
+            </el-avatar>
+          </button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="settings">
@@ -188,8 +191,12 @@
   const { changeLocale, currentLocale } = useLocale();
   const { isFullscreen, toggle: toggleFullScreen } = useFullscreen();
   const locales = [...LOCALE_OPTIONS];
-  const avatar = computed(() => {
-    return userStore.avatar;
+  const avatar = computed(
+    () => userStore.avatar?.trim() || '/brand/avatar-admin.svg'
+  );
+  const avatarInitial = computed(() => {
+    const identity = userStore.name?.trim() || userStore.email?.trim() || '?';
+    return Array.from(identity)[0]?.toLocaleUpperCase() || '?';
   });
   const theme = computed(() => {
     return appStore.theme;
@@ -316,6 +323,22 @@
       border-color: var(--el-border-color);
       color: var(--el-text-color-regular);
       font-size: 16px;
+    }
+
+    .user-menu-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+
+      &:focus-visible {
+        outline: 2px solid var(--el-color-primary);
+        outline-offset: 2px;
+      }
     }
 
     .dropdown-icon-placeholder {

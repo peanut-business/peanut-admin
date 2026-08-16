@@ -42,6 +42,7 @@ export default {
   'menu.devTools': 'Developer Tools',
   'menu.devTools.code': 'Code Generator',
   'navbar.action.locale': 'Switch to English',
+  'navbar.userMenu': 'Open user menu',
   'navbar.userSettings': 'User Settings',
   'navbar.logout': 'Logout',
   'navbar.tenantSwitch': 'Switch Tenant',
