@@ -125,7 +125,8 @@ start_runtime() {
         [ -n "${PEANUT_PLUGIN_LOCK+x}" ] && export PHP_PEANUT_PLUGIN_LOCK="$PEANUT_PLUGIN_LOCK"
         [ -n "${PEANUT_MODULE_KERNEL_VERSION+x}" ] && export PHP_PEANUT_MODULE_KERNEL_VERSION="$PEANUT_MODULE_KERNEL_VERSION"
         export APP_ENV=development
-        export PEANUT_DEPLOYMENT_TARGET=local-development
+        deployment_target=${PEANUT_DEPLOYMENT_TARGET:-local-development}
+        export PEANUT_DEPLOYMENT_TARGET="$deployment_target"
         export HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= http_proxy= https_proxy= all_proxy=
         export NO_PROXY="127.0.0.1,localhost,192.168.192.2"
         export no_proxy="$NO_PROXY"
