@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "823b853ee0e59a9d8057f42cc019986fbb37127e",
-        "source_tree": "f1d2e49238aa0c9f645a0e440f0e801677e58562",
-        "inventory_sha256": "3e79f17e868704d8125f32c27f45a567412eb100a85cb5746a55dbe6e278865f",
+        "source_commit": "d387a2e915062dd0daa09a792e351d150e14badc",
+        "source_tree": "2c1721f9bbd697e55dfd8543ff2b33167436efda",
+        "inventory_sha256": "dde7fcf71203f3a975f8464b7d40eb15a152cf87ff2fad04f64bfd5e36c214f8",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "790afe50c1766893373a970611cd7abcc3a0da03e15456cf2190a0b14505651c",
+        "managed_tree_sha256": "0a0cb4aaf095404d5bac5213442471b663618c55d865fcc0eefab2e66dc3cba5",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -732,7 +732,7 @@
         {
             "path": "server/README.md",
             "source": "files/server/README.md",
-            "template_sha256": "83e8abef65f2dbb8fa4c0aafdc70cf8cb55ae75adac4f503d925e859390d937b",
+            "template_sha256": "4cbeba574c95c27cc6f12a2c9548a23fd703e5ce7a9fbcb9b0280a9dfca6df9c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1182,7 +1182,7 @@
         {
             "path": "server/route/app.php",
             "source": "files/server/route/app.php",
-            "template_sha256": "a361a789de9f19e3fb78bc135c99c163a49182431ed55be3b0f2e86bf2cc5d08",
+            "template_sha256": "181857b8a1fdf1c88c9d815f54a7ba6f2b0148b0f76ad3081491f66ffb2881cd",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
