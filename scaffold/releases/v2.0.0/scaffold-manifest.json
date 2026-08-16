@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "f6da253126835111dca50cc391ad764bebe355d8",
-        "source_tree": "4a20f1c9f6933dc2cf91ec48735edcc8f4088c77",
-        "inventory_sha256": "05ffbc255063dccc063952223c193f32ce0667c6d99857a6c2312828fff1314e",
+        "source_commit": "d6e1fc76f96aae48b649ef184619d5122f7ebd11",
+        "source_tree": "54266bec7f6b9bcd387da39b8ac128c788bedabb",
+        "inventory_sha256": "2ddeffcc5c1a1723c6c5400e7f01f068fadae7c8183375511963530eddfe8b5e",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "dd4bae0e0b6e5b80edd2db3cf70e103feeb017fbb1d5a66c3a6d8a01b54a17b8",
+        "managed_tree_sha256": "3bdfd5904a142aa013d0a450ecad906a7c592d8be7524c3f52dc74f3297ef4b7",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -52,7 +52,7 @@
         {
             "path": ".github/workflows/ci.yml",
             "source": "files/.github/workflows/ci.yml",
-            "template_sha256": "8d894a4e3bc939922200603bed0ddd1240b5a8bf8ddf0a7519332d4f796ee8cb",
+            "template_sha256": "7256aeec2cba392bf66158ee4a8db4d508caa843fc99509138327740f7b3a083",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -212,7 +212,7 @@
         {
             "path": "deploy/docker/production.Dockerfile",
             "source": "files/deploy/docker/production.Dockerfile",
-            "template_sha256": "7dd544c3dc91c5cc1853d863374a3c5faf23eb466c6f519289d3082a11679381",
+            "template_sha256": "d0c3b0a26345de75212c3a496aa0ee48f7cf84da955d8fff88009db48576f5bc",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -222,7 +222,7 @@
         {
             "path": "deploy/nginx/peanut-admin.conf",
             "source": "files/deploy/nginx/peanut-admin.conf",
-            "template_sha256": "111c3814207fe397d62ab7a3e1c84be48b85a9e10c1d6b7e8fcb441e526ae746",
+            "template_sha256": "d6a2bbaa915ef438d00e26e5ed48a0c2bea876fd17e11e9369f559f6dc612116",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -530,6 +530,66 @@
             "owner": "frontend"
         },
         {
+            "path": "platform/.gitignore",
+            "source": "files/platform/.gitignore",
+            "template_sha256": "790e3169bc19b046fe55ba1da6d13b976c28363c8c00462a2195fe5faf260910",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "platform/index.html",
+            "source": "files/platform/index.html",
+            "template_sha256": "19b1c2f1692d09162092a1f94ab6ae2122bb800b587791ea0623a34954e1798f",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "platform/package-lock.json",
+            "source": "files/platform/package-lock.json",
+            "template_sha256": "209024a154269cd28629f343ffde89bf39f150af9b651a501a5a64f752970fa2",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "platform/package.json",
+            "source": "files/platform/package.json",
+            "template_sha256": "2be82bd18526c174f75d1c84c6737e7fa7fc11b413021075bbe1d86c0b9a7805",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "platform/tsconfig.json",
+            "source": "files/platform/tsconfig.json",
+            "template_sha256": "dee6105a3c5d5a3e55252bfd12ad8027c391925d2fcf64c1be21f8ce5511d7e4",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "platform/vite.config.ts",
+            "source": "files/platform/vite.config.ts",
+            "template_sha256": "0231590ee5ab519ea41fa670ecc0b1592e776de2d1d899055dace9de321ce901",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
             "path": "plugins.lock",
             "source": "files/plugins.lock",
             "template_sha256": "06d41ac88753a44f90cf8ad72196da50cfa1e76849e7fb30b2755ce6b8655d8c",
@@ -592,7 +652,17 @@
         {
             "path": "scripts/local-client-dev",
             "source": "files/scripts/local-client-dev",
-            "template_sha256": "96d74e83081b5f27ad2450e27dfaa78bbe65ff76a110529d33d6f3417e45cf21",
+            "template_sha256": "a6def556469242b06b5ca564a3fce18808bb0427ea578586bdff3e3682c19ed2",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 493,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "scripts/local-multi-tenant-demo",
+            "source": "files/scripts/local-multi-tenant-demo",
+            "template_sha256": "d70a81fed122828dee1e168d7bfbef4ea9373a7a19ab2b8e56ed70d6265a75fe",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -622,7 +692,7 @@
         {
             "path": "scripts/project-resource-registry",
             "source": "files/scripts/project-resource-registry",
-            "template_sha256": "47910f638eef385d3ab228055566a359db7cb4e759e84741605d17ec135027a3",
+            "template_sha256": "4c1476e81e4195af5de8a7c1dcbb2a02d5c85264b9a5a53a5051ce9a9e3a310a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -1112,7 +1182,7 @@
         {
             "path": "server/route/app.php",
             "source": "files/server/route/app.php",
-            "template_sha256": "c400c19486ac3e0ee044e2392cbfbfc00304489b20cb1e232cd80cf77b41385a",
+            "template_sha256": "54d293e264d5f426a3229ce13e429053b953039343ea36b197c4007f43f73d74",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1650,16 +1720,6 @@
             "owner": "frontend"
         },
         {
-            "path": "web/src/api/platform.ts",
-            "source": "files/web/src/api/platform.ts",
-            "template_sha256": "9adeff4cdd3a311ec6b2310e2a791d6fd51419168c33475b9bf0881f764536ec",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "frontend"
-        },
-        {
             "path": "web/src/api/system-settings.ts",
             "source": "files/web/src/api/system-settings.ts",
             "template_sha256": "002771201607e028233ec5681bf1216af28d4b0d086d3eda6b7694ba50d7a483",
@@ -2030,16 +2090,6 @@
             "owner": "frontend"
         },
         {
-            "path": "web/src/core/platform-session.ts",
-            "source": "files/web/src/core/platform-session.ts",
-            "template_sha256": "3b82f94f2a0f21248aee182fb2d725f0fffae20183b65ae49cd3fd97a9316e19",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "frontend"
-        },
-        {
             "path": "web/src/core/plugin-contribution-policy.ts",
             "source": "files/web/src/core/plugin-contribution-policy.ts",
             "template_sha256": "48843339a280a60b6390444e19cdcfe99fab68406b7ff7387d5a3ced442b9fab",
@@ -2292,7 +2342,7 @@
         {
             "path": "web/src/router/constants.ts",
             "source": "files/web/src/router/constants.ts",
-            "template_sha256": "67feb2d3533891334150c4c379c56eb47e387b0f2ee8a478b679187d52070746",
+            "template_sha256": "19f901a8bee269d504f8434b9b55b3f88b832c2947330875971bae073fa4751a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2312,7 +2362,7 @@
         {
             "path": "web/src/router/guard/permission.ts",
             "source": "files/web/src/router/guard/permission.ts",
-            "template_sha256": "130dac901bf865f931fb398c3e8a33566b21a3cfc92ba14f8c4241fb4925cd2a",
+            "template_sha256": "6c84afefa1efee26f81a1c1ef635d2411841f496bdcc74c52972358f9b7c3c65",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2322,7 +2372,7 @@
         {
             "path": "web/src/router/guard/userLoginInfo.ts",
             "source": "files/web/src/router/guard/userLoginInfo.ts",
-            "template_sha256": "622a91c135415e4ed520e92ef973ba9b8b989fd7c4dde496c15a6e53a656f5ca",
+            "template_sha256": "47290f950434149eb8f9dd8f2760e57a6e3711efc287d13ac721735c30a8bf51",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2433,16 +2483,6 @@
             "path": "web/src/router/routes/modules/notice.ts",
             "source": "files/web/src/router/routes/modules/notice.ts",
             "template_sha256": "48017f27722b76d76b92edd4ff246a8839bd773168eb6eb5d037e54430d65bc5",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "frontend"
-        },
-        {
-            "path": "web/src/router/routes/modules/platform.ts",
-            "source": "files/web/src/router/routes/modules/platform.ts",
-            "template_sha256": "a2231832100a544ca33e4aaf8304e83856e862ec661b4342007fdbeddca40206",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
