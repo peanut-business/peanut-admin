@@ -22,7 +22,8 @@ function inventoryGitFiles(string $root): array
     }
     $files = array_values(array_filter(explode("\n", trim($stdout)), 'strlen'));
     $files = array_values(array_filter($files, static fn(string $path): bool => $path !== 'scaffold/application-template-inventory.json'
-        && !str_starts_with($path, 'scaffold/')));
+        && !str_starts_with($path, 'scaffold/')
+        && (file_exists($root . '/' . $path) || is_link($root . '/' . $path))));
     sort($files, SORT_STRING);
     return $files;
 }

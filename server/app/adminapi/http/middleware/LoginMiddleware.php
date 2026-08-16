@@ -7,6 +7,7 @@ use app\adminapi\http\AdminRequest;
 use app\adminapi\service\AdminTokenService;
 use app\adminapi\service\NativeAdminPrincipalRepository;
 use app\common\service\JsonService;
+use app\common\service\tenant\TenantEntryBindingResolver;
 use app\tenant\service\TenantAuthRuntimeFactory;
 
 /** Establishes management identity only from a validated native Tenant session. */
@@ -27,12 +28,22 @@ final class LoginMiddleware
                 $token,
                 AdminRequest::requestId($request),
             );
+            $entryBindings = TenantEntryBindingResolver::production();
+            $entryBindings->assertTenantAccess(
+                $request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                $context->tenantId,
+            );
             $principal = (new NativeAdminPrincipalRepository())->require($context);
             $principal['token'] = $token;
             $principal['terminal'] = 1;
             $request->adminInfo = $principal;
             $request->adminId = (int)$principal['id'];
             $request->tenantContext = $context;
+            $request->tenantEntryBound = $entryBindings->boundTenantId(
+                $request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+            ) !== null;
         } catch (\Throwable) {
             return JsonService::fail('租户会话不可用', null, 40300);
         }

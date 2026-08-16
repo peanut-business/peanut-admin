@@ -38,6 +38,31 @@ $docsBackupMatches = array_values(array_filter(
 ));
 $expect($docsBackupMatches === [], 'documentation domain must not be registered as a backup resource');
 
+$candidateDatabases = array_values(array_filter(
+    $registry['resources']['databases'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-candidate-mysql84'
+));
+$expect(count($candidateDatabases) === 1, 'production candidate database must be registered exactly once');
+$candidateDatabase = $candidateDatabases[0];
+$expect(($candidateDatabase['environments'] ?? null) === ['production-candidate'], 'candidate database environment changed');
+$expect(($candidateDatabase['database'] ?? null) === 'peanut_admin_candidate', 'candidate database name changed');
+$expect(($candidateDatabase['fresh_install_only'] ?? null) === true, 'candidate database lost the fresh-only boundary');
+$expect(($candidateDatabase['container_endpoint']['host'] ?? null) === 'mysql'
+    && ($candidateDatabase['container_endpoint']['port'] ?? null) === 3306, 'candidate database endpoint changed');
+
+$candidateDomains = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-candidate-domains'
+));
+$expect(count($candidateDomains) === 1, 'production candidate domain group must be registered exactly once');
+$expect(($candidateDomains[0]['hosts'] ?? null) === [
+    'platform.peanut-admin.007345.xyz',
+    'admin.peanut-admin.007345.xyz',
+    'tenant-a.peanut-admin.007345.xyz',
+    'tenant-b.peanut-admin.007345.xyz',
+], 'candidate domain list changed unexpectedly');
+$expect(($candidateDomains[0]['origin_endpoint']['port'] ?? null) === 18093, 'candidate origin port changed');
+
 $databases = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
     static fn (array $item): bool => in_array('development', $item['environments'] ?? [], true)
@@ -237,8 +262,10 @@ $expect($registeredPorts === [
     'DEV_HTTP_PORT' => 20187,
     'PHP_PORT' => 20180,
     'VITE_PORT' => 20181,
+    'PLATFORM_PORT' => 20177,
     'MT_DEMO_PHP_PORT' => 20178,
     'MT_DEMO_VITE_PORT' => 20179,
+    'MT_DEMO_PLATFORM_PORT' => 20176,
     'PC_PORT' => 20185,
     'MOBILE_PORT' => 20182,
     'DOCS_PORT' => 20186,
@@ -402,6 +429,12 @@ $ordinaryEnvironments = [
         'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-production-bundled-mysql84',
         'DB_HOST' => 'mysql', 'DB_PORT' => '3306', 'DB_NAME' => 'peanut_admin',
         'DB_USER' => 'test', 'DB_PASS' => 'test', 'DEPLOYMENT_MODE' => 'standalone',
+    ],
+    'production-candidate' => [
+        'APP_ENV' => 'production', 'PEANUT_DEPLOYMENT_TARGET' => 'production-candidate',
+        'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-production-candidate-mysql84',
+        'DB_HOST' => 'mysql', 'DB_PORT' => '3306', 'DB_NAME' => 'peanut_admin_candidate',
+        'DB_USER' => 'test', 'DB_PASS' => 'test', 'DEPLOYMENT_MODE' => 'multi-tenant',
     ],
 ];
 foreach ($ordinaryEnvironments as $case => $environment) {

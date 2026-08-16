@@ -46,6 +46,19 @@ final class TenantEntryBindingResolver
         return $binding['tenant_code'];
     }
 
+    public function boundTenantId(object $request, string $clientKey): ?int
+    {
+        return $this->binding(self::requestHost($request), $clientKey)['tenant_id'] ?? null;
+    }
+
+    public function assertTenantAccess(object $request, string $clientKey, int $tenantId): void
+    {
+        $boundTenantId = $this->boundTenantId($request, $clientKey);
+        if ($boundTenantId !== null && $boundTenantId !== $tenantId) {
+            throw new \DomainException('TENANT_ENTRY_BINDING_CONFLICT');
+        }
+    }
+
     public function system(
         object $request,
         string $clientKey,

@@ -67,7 +67,7 @@ SQL);
             );
             $tenant->execute(['id' => $tenantId]);
             $tenantRow = $tenant->fetch(PDO::FETCH_ASSOC);
-            if (!is_array($tenantRow) || $tenantRow['status'] === 'closed') {
+            if (!is_array($tenantRow) || $tenantRow['status'] !== 'active') {
                 throw new \DomainException('TENANT_ENTRY_TENANT_UNAVAILABLE');
             }
 

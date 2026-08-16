@@ -47,15 +47,17 @@ export interface EntryBinding {
 }
 
 export interface ModuleState {
-  id: number;
+  id: number | null;
   tenant_id: number;
   module_key: string;
-  status: 'enabled' | 'disabled';
+  status: 'not_enabled' | 'enabled' | 'disabled';
   source: string;
   config_revision: number;
   effective_at: string | null;
   expires_at: string | null;
   disabled_reason: string | null;
+  installed_version: string;
+  installation_status: 'active';
 }
 
 export interface Operator {

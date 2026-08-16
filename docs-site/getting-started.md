@@ -21,15 +21,13 @@ description: Peanut Admin 本地开发环境的安装与启动步骤。
 ```bash
 git clone <repo-url>
 cd peanut-admin
-
-cd server
 cp .env.example .env
-# 编辑 .env，填写 DB_*、随机 JWT_SECRET、ADMIN_INITIAL_EMAIL 和 ADMIN_INITIAL_PASSWORD
-composer install
-cd ..
+# 编辑根 .env，填写 DB_*、随机 JWT_SECRET、ADMIN_INITIAL_EMAIL 和 ADMIN_INITIAL_PASSWORD
+cd server && composer install && cd ..
 ```
 
-选择项目资源登记中的空 MySQL 数据库。Peanut Admin 维护仓的日常开发资源是
+根 `.env` 是生产 Compose 的唯一人工配置样例；`PHP_*` 只由启动器自动派生给 ThinkPHP，
+不要手工维护第二份 `server/.env`。项目维护开发环境仍先选择资源登记中的空 MySQL 数据库。Peanut Admin 维护仓的日常开发资源是
 `peanut-admin-mysql84-development`；本地多租户体验使用隔离的
 `peanut-admin-mysql84-local-multi-tenant-demo`。先取得对应 lease，再由资源选择器写出
 非秘密连接信息；凭据只从登记的 credential reference 注入：

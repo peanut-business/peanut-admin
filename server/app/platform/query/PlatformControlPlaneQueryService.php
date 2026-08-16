@@ -105,13 +105,22 @@ SQL, [], $page);
     ): array {
         $this->sessions->assertAllowed($context, 'platform.tenant.read');
         return $this->page(<<<'SQL'
-SELECT id, tenant_id, module_key, status, source, config_revision,
-       effective_at, expires_at, enabled_at, disabled_at, disabled_reason,
-       created_at, updated_at
-FROM pa_tenant_module
-WHERE tenant_id = :tenant_id
-ORDER BY module_key ASC
-SQL, ['tenant_id' => $tenantId], $page);
+SELECT tm.id, :selected_tenant_id AS tenant_id, mi.module_key,
+       COALESCE(tm.status, 'not_enabled') AS status,
+       COALESCE(tm.source, 'not_configured') AS source,
+       COALESCE(tm.config_revision, 0) AS config_revision,
+       tm.effective_at, tm.expires_at, tm.enabled_at, tm.disabled_at,
+       tm.disabled_reason, tm.created_at, tm.updated_at,
+       mi.installed_version, mi.status AS installation_status
+FROM pa_module_installation mi
+LEFT JOIN pa_tenant_module tm
+  ON tm.tenant_id = :joined_tenant_id AND tm.module_key = mi.module_key
+WHERE mi.status = 'active'
+ORDER BY mi.module_key ASC
+SQL, [
+            'selected_tenant_id' => $tenantId,
+            'joined_tenant_id' => $tenantId,
+        ], $page);
     }
 
     /** @return array<string,mixed> */

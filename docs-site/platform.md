@@ -14,7 +14,7 @@ PlatformOperator 会话、平台角色和平台审计；普通 Tenant 管理员�
 - 一套部署默认对应一个应用实例；一个实例可以有多个 Tenant、客户端和 Module。
 - 创建 Tenant 后先处于 `provisioning`，必须通过 Owner 邀请接受建立首个 TenantMember，之后才能激活。
 - 同一账号能切换几个 Tenant，取决于它在这些 Tenant 中各有一条 active `TenantMember` 关系；平台身份本身不提供切换权。
-- 域名绑定由平台配置 `host + client_key -> tenant`。绑定存在时服务端决定 Tenant，客户端提交冲突的 `tenant_code` 会被拒绝。
+- 域名绑定由平台配置 `host + client_key -> tenant`。它从登录持续约束到后续管理 API；绑定入口不允许切换到其他 Tenant。
 - Owner 是 Tenant 内置 RBAC 角色，不是“全实例超级管理员”。平台 Operator 不能因平台身份读取租户业务数据。
 
 ## 登录与身份
@@ -46,8 +46,14 @@ PlatformOperator 会话、平台角色和平台审计；普通 Tenant 管理员�
 - 规范化大小写、端口和末尾点；
 - 拒绝无效 Host、重复 active 绑定、暂停/关闭 Tenant；
 - 绑定存在时忽略或拒绝冲突的显式 Tenant 编码；
+- challenge 选择、已有管理 Token 和后续 API 必须继续匹配绑定 Tenant；
+- 绑定入口禁止生成租户切换 challenge，前端同时隐藏切换入口；
 - 绑定停用后 fail closed，不回退到另一个 Tenant；
 - 没有绑定时，只有原有“唯一 active 默认 Tenant”规则可以回退。
+
+未绑定公共入口与绑定入口可以同时存在：公共入口允许账号在自己的 active TenantMember 列表中
+选择或切换，绑定入口只允许固定 Tenant。Alpha Tenant 的 Token 在 Beta 绑定域名使用会被后端
+拒绝；不能通过修改前端请求或手工附带 `tenant_code` 绕过。
 
 反向代理必须保留真实 `Host`，TLS 证书和 DNS 由部署方负责。多个应用实例不共享这张绑定表；跨实例映射属于
 另一个独立的联邦能力，当前不实现。
@@ -57,5 +63,8 @@ PlatformOperator 会话、平台角色和平台审计；普通 Tenant 管理员�
 Platform 页面按中文菜单提供：概览、Tenant 生命周期、Owner 邀请、入口域名与客户端、Module 目录、
 PlatformOperator、平台角色与权限、平台审计。所有写操作都需要变更原因，失败会显示服务端错误码，
 权限变更和生命周期变更会增加安全版本并写审计。
+
+平台页面不维护“当前租户”。Owner、入口和 Module 页面中的 Tenant 是操作员显式选择的治理目标，
+不会转换 PlatformOperator 的身份，也不会让平台会话进入该 Tenant 的业务数据。
 
 详细 API 入口见 [API 与扩展](/api)，空库与本地体验见 [快速开始](/getting-started) 和 [部署与安装](/deployment)。

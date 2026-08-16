@@ -123,6 +123,11 @@ scaffold baseline 或 app-owned 文件到 2.0.0 生成物。需要保留旧环�
 `127.0.0.1`，再从 Platform 创建对应绑定。绑定冲突、禁用绑定、暂停 Tenant 或显式
 `tenant_code` 与 Host 不一致时都会拒绝登录，不会猜测其他 Tenant。
 
+绑定是持续边界：登录、challenge 选择、管理 Token 后续请求都必须匹配同一 Tenant，绑定
+入口禁止切换；只有未绑定公共入口允许账号在自己的 TenantMember 列表中切换。一个站点可以
+把多个域名代理到同一实例 origin，不需要为每个 Tenant 重复部署应用；DNS、TLS 和外层 Nginx
+只负责保留各自 Host，Tenant 归属仍由实例内绑定表决定。
+
 Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前端、会话、RBAC 和审计。
 它不是管理端中的一个业务子应用，也不是跨多个 Peanut 实例的运营平台。
 

@@ -33,16 +33,21 @@ pa_member login         -> Member token -> customer/member domain
 ## Tenant 选择、切换和域名
 
 登录后看到的 Tenant 列表来自该 Account 的 active `TenantMember` 关系，不来自 PlatformOperator 记录。
-选择和切换会重新校验 Tenant 状态、成员状态、角色权限版本和会话版本。域名入口绑定只限制请求候选范围，
-不能替用户加入 Tenant。
+选择和切换会重新校验 Tenant 状态、成员状态、角色权限版本和会话版本。域名入口绑定是持续访问边界，
+不是一次性的登录预选，也不能替用户加入 Tenant：绑定 Host 上只能建立和使用该 Tenant 的管理会话，
+不能切换到其他 Tenant；未绑定的公共入口才允许在该账号的 active 成员列表中选择和切换。
 
 推荐的请求顺序是：
 
-1. 根据 Host/client 解析候选 Tenant；
+1. 根据 Host/client 解析绑定 Tenant；未绑定入口才接受成员选择；
 2. 校验 Tenant active；
 3. 校验 Token 对应的 Account/TenantMember；
 4. 校验 Role/Permission 和数据权限；
 5. 业务 Service 只接收可信 `TenantContext`。
+
+因此二者不会冲突：Host 先给出允许的 Tenant 范围，Tenant 切换只能在这个范围内进行。Alpha
+绑定域名携带 Beta Token、在 Alpha challenge 中选择 Beta、或从 Alpha 会话发起切换，后端都会
+拒绝；前端隐藏切换入口只是体验优化，不是安全边界。
 
 业务关系存在不等于数据权限。供应商 Tenant 参与一张采购单，只能根据采购模块的 participant grant 读取
 采购单允许字段，不能由 `supplier_tenant_id` 直接读取采购方所有表。

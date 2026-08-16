@@ -104,7 +104,10 @@
                 <el-icon><Setting /></el-icon>
                 <span>{{ $t('navbar.userSettings') }}</span>
               </el-dropdown-item>
-              <el-dropdown-item v-if="tenantSession" command="tenant-switch">
+              <el-dropdown-item
+                v-if="tenantSession && userStore.canSwitchTenant"
+                command="tenant-switch"
+              >
                 <el-icon><Switch /></el-icon>
                 <span>{{ $t('navbar.tenantSwitch') }}</span>
               </el-dropdown-item>

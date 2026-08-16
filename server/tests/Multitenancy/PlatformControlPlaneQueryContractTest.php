@@ -23,6 +23,7 @@ $allowed = [
     'pa_account',
     'pa_credential',
     'pa_member_role',
+    'pa_module_installation',
     'pa_permission',
     'pa_platform_audit_event',
     'pa_platform_operator',
@@ -35,6 +36,12 @@ $allowed = [
 ];
 sort($allowed);
 platformQueryExpect($tables === $allowed, 'Platform query table boundary changed: ' . implode(', ', $tables));
+platformQueryExpect(
+    str_contains($querySource, 'FROM pa_module_installation mi')
+        && str_contains($querySource, 'LEFT JOIN pa_tenant_module tm')
+        && str_contains($querySource, "COALESCE(tm.status, 'not_enabled')"),
+    'Platform Module catalog no longer includes installed modules before first Tenant enablement'
+);
 
 $genericTenantList = strpos($routesSource, "api/platform/tenants',");
 platformQueryExpect($genericTenantList !== false, 'generic Tenant list route is missing');

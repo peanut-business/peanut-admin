@@ -35,6 +35,7 @@ const useUserStore = defineStore('user', {
     role: '',
     permissions: [],
     menu: [],
+    canSwitchTenant: false,
   }),
 
   getters: {

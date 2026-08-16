@@ -423,6 +423,10 @@ Tenant owner/管理员登录后选择自己有权访问的 Tenant。切换 Tenan
 登录和既有会话的业务写入均会被拒绝。遇到拒绝时先核对 Tenant 状态和当前选择，不要
 通过共享 token、平台身份或手改请求参数绕过。
 
+使用绑定 Tenant 的专属域名时不显示租户切换，且后端会拒绝其他 Tenant 的 Token、challenge
+选择和切换请求。只有未绑定的公共 Admin 入口才允许账号在自己的 active TenantMember 列表中
+切换；域名绑定不会自动把账号加入该 Tenant。
+
 `standalone` 部署不显示 Tenant 选择器或平台入口，原有管理员流程保持单实例体验。部署
 模式由服务端环境配置决定，不能在浏览器中切换。
 

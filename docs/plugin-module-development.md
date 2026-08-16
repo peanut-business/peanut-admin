@@ -34,6 +34,8 @@ Controller、Model 或 Vue 文件复制进公共目录，卸载也不会默认�
 | 权限、菜单、设置登记 | **当前已支持** | 安装后登记，失败不进入 active |
 | TenantModule 开通/停用 | **当前已支持** | Plugin active 不替代租户开通 |
 | 前端 contribution | **当前已支持** | 从 lock 汇总路由入口，不复制到共享 views |
+| 同步 Module 命令停用 Guard | **当前已支持（fixture）** | 授予成员权限后停用仍返回 `MODULE_TENANT_DISABLED` |
+| Module HTTP/任务/回调/专属文件统一 Guard | **推荐新增** | 现有共享 Host 已做 Tenant 隔离，但不是可停用 Module 的完整运行时证明 |
 | 跨模块命令/查询扩展点 | **当前已支持** | PHP `Contracts/` 公开接口可由应用显式装配；当前没有两个 Module 的可运行示例 |
 | 两个 Module 的命令/查询示例 | **推荐新增** | 当前 fixture 只证明单 Module 合同，不能冒充跨 Module 运行证据 |
 | 通用 Outbox/事件总线 | **推荐新增** | 当前 fixture 没有事件，业务模块不能假定已有可靠事件传输 |
@@ -129,8 +131,10 @@ interface DeliveryRecordCommands
 ### 3. 登记权限和菜单
 
 `permissions.json` 声明 `fixture.delivery-record.read/create`；`menus.json` 把页面绑定到
-`admin-web`、路由、组件和读取权限。后端命令仍需再次调用授权 Repository，前端隐藏按钮
-不是安全边界。
+`admin-web`、路由、组件和读取权限。后端命令仍需再次调用统一 ModuleGuard 和授权 Repository，
+前端隐藏按钮不是安全边界。root、system actor、异步 worker、外部回调和模块专属文件入口也
+不能绕过 Module 状态；当前 fixture 只证明同步成员命令，正式 Module 必须为实际使用的其他
+入口补负向测试。
 
 管理端 HTTP 路由目前仍由应用在 `server/route/app.php` 显式登记。新增 API 时必须同时
 完成路由、Controller、Module Application Service、权限定义和聚焦测试，不能只增加菜单。

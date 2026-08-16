@@ -38,11 +38,30 @@ Module 都必须通过同一套 Tenant 资格；不满足就只能留在派生�
 
 ## 当前仓库状态
 
-- **当前已支持**：Core 身份、TenantMember、RBAC、审计、Module 生命周期及现有文件、通知、OAuth、支付、会员、任务、导入导出和文章 Runtime 的 Tenant 资格检查。
-- **推荐新增**：把已经验证的应用 Runtime 按稳定 manifest 拆成官方可选模块，并为每个模块建立独立 Provider、版本、安装/停用和浏览器验收。
+- **当前已支持**：Core 身份、TenantMember、RBAC、审计、Plugin 安装与 TenantModule 治理；
+  原生菜单/RBAC 会交集 ModuleInstallation、TenantModule 和成员权限；源码 fixture 的同步业务命令
+  也会在授权后再次检查 ModuleGuard。
+- **当前只是 Tenant 适配，不是可选 Module**：文件、通知、OAuth、支付、会员、任务、导入导出
+  和文章 Runtime 已按 Tenant 隔离，但仍由应用 Host 直接拥有，不能从“已隔离”推导为“已可安装/
+  可停用”。共享文件基础设施也不应因某个业务 Module 停用而整体关闭。
+- **推荐新增**：把候选能力按稳定 manifest 拆成官方可选 Module，并逐一补齐 HTTP/内部命令、
+  入队和 worker 执行、外部回调、模块专属文件入口的统一 Guard，以及独立 Provider、版本和浏览器验收。
 - **示例模板**：`fixture.delivery-record` 用于演示表、合同、权限、菜单和前端 contribution，不进入生产默认 lock。
 - **暂不建议**：DCS 的 Party、Store、Warehouse、Supplier Relationship、Product、Pricing、Inventory、Procurement、Trade；这些属于派生应用。
 - **仅迁移需要**：legacy Admin/Role/Dept 映射、双写、镜像和旧 bootstrap；不允许出现在新装 Runtime。
 
 仓库资格测试会扫描随产品交付的 `module.json`，并拒绝缺失 Tenant 声明的模块。具体领域模块仍需在
 DCS 或其他派生应用中重复这套门禁。
+
+## 会阻断后续模块的未完成链
+
+| 缺口 | 已经能做什么 | 为什么阻断下游 | 完成条件 |
+| --- | --- | --- | --- |
+| Module HTTP/内部命令统一入口 | fixture 同步命令已使用 ModuleGuard | root、system actor 或无权限型命令不能只依赖菜单/RBAC | 正式 Module 的每个入口命中同一 Guard，并有停用负向测试 |
+| 模块任务与定时任务 | 共享调度器已有 TenantContext 和 Tenant active 检查 | 任务 envelope 没有通用可信 `module_key`，停用后执行前无法统一复核 | 提交与执行前都复核 ModuleInstallation/TenantModule |
+| 模块外部回调 | 现有支付/OAuth 等 Host 已做 Tenant 路由 | 这些不是可停用 Module，不能证明模块回调会在停用后拒绝 | 可信绑定携带 module key，验签后、处理前 Guard |
+| 模块专属文件入口 | 共享上传/素材已有 Tenant namespace | 共享基础设施不能整体关闭，模块下载/上传仍需自己的入口 Guard | 模块 Controller 在调用共享文件服务前 Guard |
+| 两 Module 可运行示例 | Contracts 目录和装配模式存在 | 不能证明真实跨模块 DTO/事务/失败合同 | 两个最小 Module 的命令、查询和禁止直表测试 |
+
+这些缺口不会阻塞 Core、Platform 或现有应用 Host 的 Tenant 隔离，但会阻塞任何能力被宣称为
+“正式、可停用的官方可选 Module”。

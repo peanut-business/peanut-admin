@@ -101,10 +101,13 @@ start_runtime() {
         # shellcheck disable=SC1090 -- generated local environment is gitignored.
         . "$env_file"
         set +a
+        : "${APP_ENV:=development}"
+        export APP_ENV
         # ThinkPHP reads application settings from PHP_* when they are not
         # loaded from server/.env. Keep the unprefixed DB_* variables for the
-        # installer and resource guard, while exposing the same values to the
-        # framework runtime as the production container does.
+        # installer and resource guard. PHP_* aliases are an internal runtime
+        # bridge; developers configure only the unprefixed values in the
+        # selected environment file.
         [ -n "${APP_ENV+x}" ] && export PHP_APP_ENV="$APP_ENV"
         [ -n "${APP_DEBUG+x}" ] && export PHP_APP_DEBUG="$APP_DEBUG"
         [ -n "${DEPLOYMENT_MODE+x}" ] && export PHP_DEPLOYMENT_MODE="$DEPLOYMENT_MODE"
@@ -125,7 +128,6 @@ start_runtime() {
         [ -n "${PEANUT_MODULE_ROOTS+x}" ] && export PHP_PEANUT_MODULE_ROOTS="$PEANUT_MODULE_ROOTS"
         [ -n "${PEANUT_PLUGIN_LOCK+x}" ] && export PHP_PEANUT_PLUGIN_LOCK="$PEANUT_PLUGIN_LOCK"
         [ -n "${PEANUT_MODULE_KERNEL_VERSION+x}" ] && export PHP_PEANUT_MODULE_KERNEL_VERSION="$PEANUT_MODULE_KERNEL_VERSION"
-        export APP_ENV=development
         deployment_target=${PEANUT_DEPLOYMENT_TARGET:-local-development}
         export PEANUT_DEPLOYMENT_TARGET="$deployment_target"
         export HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= http_proxy= https_proxy= all_proxy=

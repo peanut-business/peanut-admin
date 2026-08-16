@@ -53,7 +53,7 @@
 | --- | --- | --- | --- | --- |
 | 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 当前文档入口与语义检查已覆盖；正式发布仍待版本身份 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
 | Peanut Admin 架构、真实目录与所有权 | 只部分回答 | **文档结构已覆盖** | 当前目录已核验 | `docs-site/guide/development.md` |
-| Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 扩展点存在；双 Module 可运行示例待新增 | `docs-site/guide/module-development.md`、`docs-site/api.md` |
+| Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 安装、治理、菜单/RBAC 和 fixture 同步命令 Guard 已支持；任务/回调/专属文件 Guard 与双 Module 示例待新增 | `docs-site/guide/module-development.md`、`docs-site/architecture/official-module-qualification.md` |
 | 前后端、路由、菜单、权限和测试路径 | 部分且有冲突 | **文档结构已覆盖** | 原生身份、官方能力 Tenant 资格和真实浏览器验证已通过 | `docs-site/guide/development.md`、`docs-site/api.md` |
 | DCS 与 Peanut Admin 的边界 | 只部分回答 | **Peanut 采用边界已覆盖** | DCS Runtime 不在本仓 | `docs-site/guide/development.md`；详细领域文档归 DCS |
 | DCS owner 与商品、采购、库存数据流 | 只部分回答 | **推荐合同已覆盖** | 本仓不实现 | `docs-site/guide/module-development.md`；DCS 冻结表/API/事件/状态机 |
@@ -61,6 +61,9 @@
 | 三类租户映射 | 只部分回答 | **文档结构已覆盖** | legacy 映射已退出；同应用关联和跨应用联邦未实现 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
 | 门店与供应商同应用协作和越权边界 | 只部分回答 | **推荐模型已覆盖** | DCS participant policy 未实现 | `docs-site/guide/development.md` |
 | 一部署、一实例、多 Tenant/客户端/Module | 只部分回答 | **文档结构已覆盖** | 当前部署合同支持 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
+| Platform 是否独立、是否存在“当前租户” | 尚未回答 | **已完整回答** | 独立 `/platform/` 前端、会话/RBAC/审计；只显式选择治理目标 Tenant | `docs-site/platform.md` |
+| 域名解析与租户切换是否冲突 | 尚未回答 | **已完整回答** | Host 绑定是持续边界；绑定入口禁切换，未绑定公共入口按 TenantMember 切换 | `docs-site/architecture/identity-and-tenancy.md`、`docs-site/platform.md` |
+| `.env` 与 `PHP_*` 配置关系 | 尚未回答 | **已完整回答** | 人工只维护根 `.env` 普通键；启动器/Compose 派生 ThinkPHP 内部 alias | `docs-site/getting-started.md`、`docs-site/guide/development.md` |
 | 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 与 create-app 2.0 release 已验证重封 | `docs-site/deployment.md` |
 | 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 开发候选实现与推荐层级已分栏；外部渠道生产验证另列 | `docs-site/capabilities.md` |
 | 文档与 Runtime/Schema 清理关系 | 只部分回答 | **已明确** | 本轮已由独立提交实施后再同步文档 | 本审计与 `docs/architecture/clean-native-multitenancy-baseline.md` |
@@ -83,7 +86,10 @@
 
 - **开发候选已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant
   登录、三 Tenant 选择和 Store Demo 真实浏览器通过；原生管理身份、独立业务会员、
-  canonical fresh Schema、强制官方能力 Tenant 资格检查和单一权威会员余额字段均通过。
+  canonical fresh Schema、应用 Host 的 Tenant 隔离和单一权威会员余额字段均通过。
+- **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC 和 fixture 同步命令
+  Guard 已有证据；现有文件、通知、支付等只是 Tenant 适配的应用 Host，并非已交付官方可选
+  Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
 - **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和生产部署；Core Alpha.5 的
   KernelSchema 字段遗漏由独立 Core 工作流修正。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x

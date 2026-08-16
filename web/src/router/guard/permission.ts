@@ -14,6 +14,13 @@ export default function setupPermissionGuard(router: Router) {
     const appStore = useAppStore();
     const userStore = useUserStore();
     const Permission = usePermission();
+    if (
+      appStore.menuFromServer &&
+      !appStore.serverMenuLoaded &&
+      !WHITE_LIST.find((el) => el.name === to.name)
+    ) {
+      await appStore.fetchServerMenuConfig();
+    }
     if (to.meta.tenantModuleKey) {
       const enabledModules = appStore.enabledTenantModules;
       const accessible = routesForTenantModules(
@@ -36,13 +43,6 @@ export default function setupPermissionGuard(router: Router) {
       }
     }
     if (appStore.menuFromServer) {
-      if (
-        !appStore.serverMenuLoaded &&
-        !WHITE_LIST.find((el) => el.name === to.name)
-      ) {
-        await appStore.fetchServerMenuConfig();
-      }
-
       if (Permission.accessRouter(to)) {
         next();
       } else {

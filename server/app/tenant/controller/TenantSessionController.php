@@ -39,6 +39,11 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         $params = $this->request->post();
         try {
+            TenantEntryBindingResolver::production()->assertTenantAccess(
+                $this->request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                (int)($params['tenant_id'] ?? 0),
+            );
             return $this->response(TenantAuthRuntimeFactory::endpoint()->selectTenant(
                 trim((string)($params['challenge_token'] ?? '')),
                 (int)($params['tenant_id'] ?? 0),
@@ -54,6 +59,12 @@ final class TenantSessionController extends BaseLikeAdminController
     public function switchChallenge()
     {
         try {
+            if (TenantEntryBindingResolver::production()->boundTenantId(
+                $this->request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+            ) !== null) {
+                throw new \DomainException('TENANT_SWITCH_BOUND_ENTRY');
+            }
             return $this->response(TenantAuthRuntimeFactory::endpoint()->switchChallenge(
                 PlatformRequest::bearerToken($this->request),
                 $this->request->ip(),

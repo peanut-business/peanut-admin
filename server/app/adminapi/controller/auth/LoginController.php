@@ -49,6 +49,7 @@ class LoginController extends BaseAdminController
             'roles'       => $roleNames,
             'menu'        => $accessData['menu'],
             'permissions' => $accessData['permissions'],
+            'canSwitchTenant' => !($this->request->tenantEntryBound ?? false),
         ]);
     }
 

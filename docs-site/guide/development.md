@@ -98,7 +98,7 @@ peanut-admin/
 
 | 身份 | 当前已支持程度 | 不能混写的边界 |
 | --- | --- | --- |
-| 平台/系统操作身份 | **2.0 开发候选已验证**：独立 PlatformOperator 会话、平台角色和权限；账号不能同时成为 TenantMember | 只治理本实例 Tenant/Module，不读取任意租户业务数据 |
+| 平台/系统操作身份 | **2.0 开发候选已验证**：独立 PlatformOperator 会话、平台角色和权限；同一 Account 可以另有关联 TenantMember，但两套身份不互推 | 只治理本实例 Tenant/Module，不读取任意租户业务数据 |
 | Tenant 管理成员 | **2.0 开发候选已验证**：管理端认证、会话、角色和权限直接使用 Core Account/Credential、TenantMember 与 RBAC；真实浏览器已通过三 Tenant 选择并进入 Store Demo | TenantMember 是组织成员，不自动成为客户、供应商联系人或门店员工档案 |
 | 业务客户/会员 | **2.0 开发候选已验证**：`pa_member` 有独立注册、登录、OAuth、标签和单一权威余额，并按 Tenant 隔离 | 当前没有与 Core Account/TenantMember 的通用一对一映射；不要假定两种 token 可互换 |
 
@@ -236,7 +236,7 @@ Module 必须为自己的 Store/Warehouse 等资源提供 target resolver，并�
 ## 4. 数据库与迁移
 
 - 数据库默认 MySQL，编码 utf8mb4，表前缀由 DB_PREFIX 控制，默认 pa_；配置来源是 server/config/database.php。
-- 新环境先创建空数据库并配置 `server/.env`，再执行 `php server/database/install.php`。安装器创建 Core 原生 Schema，执行 canonical `server/database/init.sql` 和基线之后的追加式 migration，并校验表、菜单、配置、默认 Tenant 与首 owner；目标库已有任何表时拒绝运行。
+- 新环境先创建空数据库并配置根 `.env`；生产由 Compose 注入环境，本地维护环境由资源登记和启动器注入。再执行 `php server/database/install.php`。安装器创建 Core 原生 Schema，执行 canonical `server/database/init.sql` 和基线之后的追加式 migration，并校验表、菜单、配置、默认 Tenant 与首 owner；目标库已有任何表时拒绝运行。
 - `server/database/init.sql` 是 2.0.0 的完整应用基线，`server/database/migrations/` 只接收该基线之后的追加变更。安装结果把 `init.sql` 和后续 migration 的名称、SHA-256、批次与状态写入 `pa_schema_migration`。
 - `pa_schema_migration` 属于 canonical `init.sql`。`php server/database/migrate.php --current` 校验基线身份和全部已登记文件；普通 `migrate.php` 只执行缺失的基线后追加 migration。
 - 2.0.0 不支持接管 1.x 历史安装。需要保留旧环境时继续运行旧版本实例，为 2.0.0 准备独立空库，并把业务数据迁移作为独立、显式、可验收的项目处理。
@@ -245,24 +245,31 @@ Module 必须为自己的 Store/Warehouse 等资源提供 target resolver，并�
 
 ## 5. 配置与密钥
 
-复制 server/.env.example 为 server/.env，至少填写：
+复制根 `.env.example` 为 `.env`，至少填写：
 
 ~~~dotenv
-APP_ENV=development
+APP_ENV=production
 APP_DEBUG=false
-DB_HOST=127.0.0.1
+PEANUT_DEPLOYMENT_TARGET=production
+PEANUT_DATABASE_RESOURCE_ID=<已登记的生产数据库资源 ID>
+DB_HOST=mysql
 DB_PORT=3306
-DB_NAME=peanut_admin
+DB_NAME=<empty-database>
 DB_USER=peanut_admin
 DB_PASS=按环境配置
 DB_PREFIX=pa_
 JWT_SECRET=至少32位随机字符串
 JWT_EXPIRE=7200
+DEPLOYMENT_MODE=standalone
+TENANT_IDENTIFIER_HMAC_KEY=至少32字节稳定随机值
+PLATFORM_IDENTIFIER_HMAC_KEY=另一项至少32字节稳定随机值
 ADMIN_INITIAL_EMAIL=owner@example.com
 ADMIN_INITIAL_PASSWORD=仅空库首次安装使用的强密码
 ~~~
 
-DB_TYPE、DB_DRIVER、DB_CHARSET 可按 server/config/database.php 的默认值或环境需要设置。管理端锁定参数可通过 ADMIN_TOKEN_EXPIRE、ADMIN_TOKEN_RENEW_BEFORE、ADMIN_PASSWORD_ERROR_TIMES、ADMIN_LOGIN_LOCK_MINUTES 覆盖 server/config/admin_auth.php 的默认值。
+人工只维护这些普通键。生产 Compose 和本地启动器会派生 ThinkPHP 内部使用的 `PHP_*`
+进程变量；不要另建一份 `server/.env`。DB_TYPE、DB_DRIVER、DB_CHARSET 可按
+server/config/database.php 的默认值或环境需要设置。管理端锁定参数可通过 ADMIN_TOKEN_EXPIRE、ADMIN_TOKEN_RENEW_BEFORE、ADMIN_PASSWORD_ERROR_TIMES、ADMIN_LOGIN_LOCK_MINUTES 覆盖 server/config/admin_auth.php 的默认值。
 
 网站、支付、存储、渠道、充值和 OAuth 等业务配置主要保存在 pa_config，由管理端设置页面维护；不要把支付私钥、微信 AppSecret、短信密钥、对象存储 Secret、证书内容或 .env 提交到仓库。生产环境使用独立的密钥注入/文件权限方案，并限制 PHP-FPM 用户读取证书目录。配置修改后如遇旧值，使用管理端系统维护页面清理缓存或按发布流程重启 PHP-FPM。
 
@@ -277,12 +284,10 @@ DB_TYPE、DB_DRIVER、DB_CHARSET 可按 server/config/database.php 的默认值�
 ~~~bash
 git clone <仓库地址> && cd peanut-admin
 
-# 后端配置与依赖
-cd server
+# 根环境配置与后端依赖
 cp .env.example .env
-# 编辑 .env，至少填写 DB_*、JWT_SECRET、ADMIN_INITIAL_EMAIL 和 ADMIN_INITIAL_PASSWORD
-composer install
-cd ..
+# 编辑根 .env；直接执行安装器时由受控 shell/资源选择器导出相同普通键
+cd server && composer install && cd ..
 
 # 创建空数据库（数据库用户的创建和授权按环境配置）
 mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

@@ -104,6 +104,23 @@ $insert = $pdo->prepare(
 $insert->execute([101, 'alpha.example.test', TenantEntryBindingResolver::ADMIN_CLIENT, 'active']);
 $insert->execute([101, 'alpha.example.test', TenantEntryBindingResolver::MEMBER_CLIENT, 'active']);
 entryBindingExpect(
+    $resolver->boundTenantId($boundRequest, TenantEntryBindingResolver::ADMIN_CLIENT) === 101,
+    'the bound Admin entry did not expose its continuous Tenant boundary',
+);
+entryBindingExpect(
+    $resolver->boundTenantId($unboundRequest, TenantEntryBindingResolver::ADMIN_CLIENT) === null,
+    'an unbound Admin entry invented a continuous Tenant boundary',
+);
+$resolver->assertTenantAccess($boundRequest, TenantEntryBindingResolver::ADMIN_CLIENT, 101);
+entryBindingRejects(
+    static fn() => $resolver->assertTenantAccess(
+        $boundRequest,
+        TenantEntryBindingResolver::ADMIN_CLIENT,
+        202,
+    ),
+    'a bound Admin entry accepted a session for another Tenant',
+);
+entryBindingExpect(
     $resolver->loginTenantCode(
         $boundRequest,
         TenantEntryBindingResolver::ADMIN_CLIENT,
@@ -177,6 +194,23 @@ entryBindingRejects(
     'a suspended bound Tenant silently used the default Tenant',
 );
 entryBindingExpect($fallbackCalls === 1, 'a configured failure reached the compatibility fallback');
+
+$sessionController = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/app/tenant/controller/TenantSessionController.php'
+);
+$loginMiddleware = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/app/adminapi/http/middleware/LoginMiddleware.php'
+);
+entryBindingExpect(
+    str_contains($sessionController, 'TENANT_SWITCH_BOUND_ENTRY')
+        && str_contains($sessionController, 'assertTenantAccess('),
+    'Tenant challenge selection or switch lost the continuous Host boundary',
+);
+entryBindingExpect(
+    str_contains($loginMiddleware, 'assertTenantAccess(')
+        && str_contains($loginMiddleware, 'tenantEntryBound'),
+    'Admin session requests lost the continuous Host boundary',
+);
 
 $migration = (string)file_get_contents(
     dirname(__DIR__, 2) . '/database/migrations/20260816-tenant-entry-binding.sql'

@@ -59,6 +59,9 @@ Module 的不可变交付制品，不等于 Tenant 开通或成员授权。
 
 ## 资源与运行
 
+根 `.env.example` 是部署时唯一人工维护的环境样例；生产复制为根 `.env`，Compose 和本地
+启动器会自动派生 ThinkPHP 内部使用的 `PHP_*` 变量，不维护第二份 `server/.env`。
+
 Peanut Admin 源仓维护者必须先读 `resources/project-resources.json`，显式选择登记的资源
 ID、环境和地址，再连接数据库、启动服务或执行迁移。派生应用生成后必须把该文件替换为
 自身版本化资源登记；不得沿用 Peanut Admin 的开发主机、凭据引用或端口。

@@ -85,5 +85,9 @@ Compose 默认把 Nginx 绑定到宿主回环地址 `127.0.0.1:18092`。外层 N
 等价入口终止 HTTPS，并转发正确的 Host 与 scheme。证书必须覆盖实际应用域名；数据库与
 PHP-FPM 不对公网开放。
 
+同一实例可以把 Platform、公共 Admin 和多个 Tenant 域名都反向代理到同一 origin。绑定域名
+是持续 Tenant 边界：登录、选择和后续 API 均必须匹配绑定 Tenant，并禁止切换到其他 Tenant；
+未绑定公共 Admin 才允许账号在自己的 active TenantMember 列表中切换。
+
 完整 Compose profile、原生发布备选、Nginx location、定时任务、品牌同步、发布后检查和
 故障停止线见 `docs-site/deployment.md`。

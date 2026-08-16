@@ -71,6 +71,11 @@ function deploymentTargetContract(string $deploymentTarget): array
             'resource_environment' => 'production',
             'default_consumer' => 'container',
         ],
+        'production-candidate' => [
+            'app_environment' => 'production',
+            'resource_environment' => 'production-candidate',
+            'default_consumer' => 'container',
+        ],
         default => throw new RuntimeException("不支持的部署目标：{$deploymentTarget}"),
     };
 }

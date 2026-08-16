@@ -42,6 +42,7 @@ foreach ([
     'module_manifest' => 'vendor/peanut-admin/core/kernel/src/Module/ManifestLoader.php',
     'module_availability' => 'vendor/peanut-admin/core/kernel/src/Host/ModuleAvailabilityAdapter.php',
     'deployed_module_registry' => 'app/platform/service/module/DeployedTenantModuleRegistry.php',
+    'fixture_module_access' => 'app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php',
 ] as $key => $relative) {
     $sources[$key] = qualificationSource($root, $relative);
 }
@@ -150,6 +151,8 @@ qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")
         && str_contains($sources['module_availability'], 'assertDeployment(')
         && str_contains($sources['module_availability'], 'assertTenant(')
+        && str_contains($sources['fixture_module_access'], 'ModuleGuard')
+        && str_contains($sources['fixture_module_access'], 'assertMemberAccess(')
         && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
     'optional Modules are not guarded by both module.json and Tenant enablement'
 );

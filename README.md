@@ -53,7 +53,7 @@ php scripts/create-app \
   --target=/absolute/path/to/acme-console
 cd /absolute/path/to/acme-console
 git init
-cp server/.env.example server/.env
+cp .env.example .env
 ```
 
 创建器使用完整版本化 inventory，生成 `.peanut/application-manifest.json` 和受管文件基线；
@@ -61,7 +61,8 @@ cp server/.env.example server/.env
 仍用于维护 Peanut Admin 参考应用，不再是创建正式下游应用的入口。详见
 [创建独立应用](docs/create-application.md)。
 
-编辑 `server/.env`，至少填写数据库连接、`JWT_SECRET` 和下列安装身份：
+编辑根目录 `.env`，至少填写数据库连接、`JWT_SECRET` 和下列安装身份。生产 Compose
+会自动把这些普通键映射为 ThinkPHP 所需的内部 `PHP_*` 进程变量，不需要维护第二份配置：
 
 ```dotenv
 DEPLOYMENT_MODE=standalone

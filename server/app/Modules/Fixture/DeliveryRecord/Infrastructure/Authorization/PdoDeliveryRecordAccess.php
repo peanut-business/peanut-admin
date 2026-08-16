@@ -3,11 +3,14 @@ declare(strict_types=1);
 
 namespace app\Modules\Fixture\DeliveryRecord\Infrastructure\Authorization;
 
-use DomainException;
+use DateTimeImmutable;
+use DateTimeZone;
 use PDO;
 use app\Modules\Fixture\DeliveryRecord\Application\DeliveryRecordAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\PdoTenantAuthorizationRepository;
+use PeanutAdmin\Kernel\Module\ModuleGuard;
+use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 
 final readonly class PdoDeliveryRecordAccess implements DeliveryRecordAccess
 {
@@ -21,8 +24,11 @@ final readonly class PdoDeliveryRecordAccess implements DeliveryRecordAccess
             $context->tenantId,
             $context->memberId
         );
-        if (!$permissions->allows($permission)) {
-            throw new DomainException('FIXTURE_DELIVERY_RECORD_FORBIDDEN');
-        }
+        (new ModuleGuard(new PdoModuleRuntimeRepository($this->pdo)))->assertMemberAccess(
+            $context->tenantId,
+            'fixture.delivery-record',
+            $permissions->allows($permission),
+            new DateTimeImmutable('now', new DateTimeZone('UTC'))
+        );
     }
 }
