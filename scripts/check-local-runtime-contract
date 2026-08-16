@@ -87,6 +87,10 @@ grep -q 'nginx-select-admin.sh /docker-entrypoint.d/40-select-admin.sh' "$docker
     printf 'production Nginx image lost the runtime admin selector\n' >&2
     exit 1
 }
+grep -q '^COPY server/bootstrap server/bootstrap$' "$dockerfile" || {
+    printf 'production PHP image lost the environment bootstrap directory\n' >&2
+    exit 1
+}
 
 for expectation in "web 22181 22180" "pc 22185 22180" "mobile 22182 22180" "docs 22186"; do
     set -- $expectation

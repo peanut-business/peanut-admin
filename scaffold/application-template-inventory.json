@@ -302,7 +302,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "d0c3b0a26345de75212c3a496aa0ee48f7cf84da955d8fff88009db48576f5bc"
+            "source_sha256": "b6ad4d93fe9e5fca98ad9aee104d5c68e7050d76f8893390887b6c5fd0ea0901"
         },
         {
             "path": "deploy/local-stack.env.example",
@@ -3589,7 +3589,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "85b4330edbc3de1e62f717ac2f2d589428ebac8c7dbadc82204514353794ccd4"
+            "source_sha256": "52de54b969079639a80d755bba3930f26cd9b3f6ba02bb9776a0e8f4ad766cac"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3623,7 +3623,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "e195ab64c1d91657f6b80b946b9129453989671ea8fc33d98aaf93afe974484a"
+            "source_sha256": "57c863f3d90ee8769ec90e000353f7466809e87ff6182c8e0afa46c91b2b11ff"
         },
         {
             "path": "scripts/check-product-capability-ledger",

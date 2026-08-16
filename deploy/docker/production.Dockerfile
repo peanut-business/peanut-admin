@@ -66,6 +66,7 @@ COPY deploy/docker/php-upload.ini /usr/local/etc/php/conf.d/peanut-upload.ini
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json legal/
 COPY resources/project-resources.json resources/project-resources.json
 COPY server/app server/app
+COPY server/bootstrap server/bootstrap
 COPY server/config server/config
 COPY server/database server/database
 COPY server/extend server/extend
