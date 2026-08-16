@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.0",
-        "source_commit": "43fcca98a120ec874d6e476b1491e1ca6e1add8b",
-        "source_tree": "9506c362936d8398e61f7705a260320852385e8f",
-        "inventory_sha256": "e3381b9e480914c90940ba38c44790ff42a572502fc4a82e381ea3f763fa6ab7",
+        "source_commit": "71872fb1575d3f51c6f3dfd2f461fcf557b18ac4",
+        "source_tree": "cfe5ece8aae0ff455ff0a820ecfa5a5dd26aeca7",
+        "inventory_sha256": "7a7f52466cffe7ae5568f3593bb3238d0ff2994dbc981d788f75d11671a58fdc",
         "inventory_template_version": "2.0.0",
-        "managed_tree_sha256": "a4cc2b632c8343626b714319fdbdd7f03cce26d69ad03a250e888b74451e2d15",
+        "managed_tree_sha256": "cd14d713b33d0b41b56b925a3ff0642e7849161cba50bc8dab38d267a36ffa9b",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -162,7 +162,7 @@
         {
             "path": "deploy/docker-compose.prod.yml",
             "source": "files/deploy/docker-compose.prod.yml",
-            "template_sha256": "b07bb5819b0c4155b2c1c7c73c47bc66a86188423c51d3b0f70c322f0cc221f8",
+            "template_sha256": "5ba9b4b77533f0010577a22870efb4fb9346fba4f7456cdead8a868b88e84fc2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -612,7 +612,7 @@
         {
             "path": "scripts/check-local-runtime-contract",
             "source": "files/scripts/check-local-runtime-contract",
-            "template_sha256": "8243288aa0f833ef1a6df3140e95b97cf285272d8cff11fe03476a5d0104dee2",
+            "template_sha256": "e195ab64c1d91657f6b80b946b9129453989671ea8fc33d98aaf93afe974484a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -733,6 +733,16 @@
             "path": "server/README.md",
             "source": "files/server/README.md",
             "template_sha256": "83e8abef65f2dbb8fa4c0aafdc70cf8cb55ae75adac4f503d925e859390d937b",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "backend"
+        },
+        {
+            "path": "server/bootstrap/environment-aliases.php",
+            "source": "files/server/bootstrap/environment-aliases.php",
+            "template_sha256": "99f20ab91495756a4935bdf232e8bd3e5b41d50c74d2861811f2f37f3c1c11eb",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1112,7 +1122,7 @@
         {
             "path": "server/public/index.php",
             "source": "files/server/public/index.php",
-            "template_sha256": "f41b65efa50b796d6db96c2b63a480aeaf5cd81cf1162b7390329e0ed1f5438e",
+            "template_sha256": "3c77111f96ab1f219408adbe58287e41852383b06d816a5c361f6d9874eff1c2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1162,7 +1172,7 @@
         {
             "path": "server/route/app.php",
             "source": "files/server/route/app.php",
-            "template_sha256": "f99680bf887f04b4fb7d46529d979bae8f83b67334c069036e94ffe4ef0308d1",
+            "template_sha256": "403b014c6f437d99dcb541ceb443654424c63c66a75732424f39f8e7c06d9c06",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1172,7 +1182,7 @@
         {
             "path": "server/think",
             "source": "files/server/think",
-            "template_sha256": "a4f1571da3e9e9092363b27d53ac66d9a0bb73d2240641368373f191733e03b6",
+            "template_sha256": "6bc50c8ff8c53e7f6e7625ea14baa22ac7d2a8d27e636ecdb01f65a68f836631",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
