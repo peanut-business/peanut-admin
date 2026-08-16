@@ -90,9 +90,12 @@
 - **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC 和 fixture 同步命令
   Guard 已有证据；现有文件、通知、支付等只是 Tenant 适配的应用 Host，并非已交付官方可选
   Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
-- **已部署候选体验**：固定候选 `ec32a9a` 的隔离 `production-candidate` 已验证四域名网络
-  入口、Platform、公共 Admin、两个 Tenant Owner、Tenant A/B 持续绑定和错误 Tenant 登录拒绝。
-  该候选体验不等于正式双模式 P0-E 或 2.0.0 发布证明。
+- **已部署候选体验**：固定候选 `d3d5900` 的隔离 `production-candidate` 已更新为头像
+  fallback 候选；部署源码关键文件摘要、`d3d5900` 镜像、容器健康和 origin health 已核对。
+  本地共享 Admin、Tenant A、Tenant B 的当前候选头像与菜单矩阵通过；线上共享 Admin 也已
+  确认默认头像资源完整、无 broken image/加载残留且菜单可点击。线上 Tenant A/B 的旧截图
+  生成于 `d3d5900` 之前且明确仍为破图，当前候选重拍受 Browser 控制超时阻塞，不能冒充
+  通过。该候选体验不等于正式双模式 P0-E 或 2.0.0 发布证明。
 - **仍待完成**：正式双模式 P0-E、tag、GitHub Release 和正式发布部署证明；Core Alpha.5
   的 KernelSchema 字段遗漏由独立 Core 工作流修正。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
