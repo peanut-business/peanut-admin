@@ -32,7 +32,16 @@ ADMIN_INITIAL_PASSWORD=<at-least-12-letters-and-digits>
 ```
 
 多租户模式将 `DEPLOYMENT_MODE` 改为 `multi-tenant`，并增加与管理员不同的
-`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`。
+`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`，同时配置：
+
+```dotenv
+PLATFORM_HOSTS=platform.example.com
+TENANT_ADMIN_HOSTS=admin.example.com
+OWNER_INVITATION_DELIVERY_MODE=auto
+```
+
+Tenant 专属 Host 在 Platform 中动态绑定。未知 Host 会被应用拒绝；`auto` 在生产要求真实
+邀请投递 Provider，私有部署可显式改为 `manual` 并由平台操作员人工交付一次性链接。
 安装完成后使用 `ADMIN_INITIAL_EMAIL` 对应的邮箱登录；2.0 不提供共享用户名或默认凭据。
 
 ```bash

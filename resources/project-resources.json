@@ -895,7 +895,10 @@
           "DB_HOST": "mysql",
           "DB_PORT": 3306,
           "DB_NAME": "peanut_admin_candidate",
-          "HTTP_PORT": 18093
+          "HTTP_PORT": 18093,
+          "PLATFORM_HOSTS": "pa-platform.007345.xyz",
+          "TENANT_ADMIN_HOSTS": "pa-admin.007345.xyz",
+          "OWNER_INVITATION_DELIVERY_MODE": "manual"
         },
         "runtime_resource_ids": [
           "peanut-admin-production-candidate-application-containers",

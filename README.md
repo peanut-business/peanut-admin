@@ -75,7 +75,9 @@ PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 ```
 
 多租户部署把 `DEPLOYMENT_MODE` 改为 `multi-tenant`，并额外提供与管理员不同的
-`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`。HMAC 生成后必须稳定保存；随意更换
+`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`，再显式填写 `PLATFORM_HOSTS`、
+`TENANT_ADMIN_HOSTS` 与 Owner 邀请投递模式。Tenant 专属域名由 Platform 动态绑定，未知 Host
+会被应用拒绝。HMAC 生成后必须稳定保存；随意更换
 会使既有身份索引失配。
 
 ### 3. 安装与启动
@@ -99,8 +101,9 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 使用安装时提供的管理员邮箱和密码登录。安装器只接受空数据库；1.x 数据库不能原地升级
 为 2.0.0，应保留旧实例并为新版本准备独立空库。
 
-隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定 Admin `20179`、
-Platform `20176`、API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
+隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定
+`admin.peanut-admin.test:20179`、`platform.peanut-admin.test:20176`、两个 Tenant 测试域名、
+API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
 由当前候选的项目 lease 同时持有这些资源。
 
 ## 生产入口

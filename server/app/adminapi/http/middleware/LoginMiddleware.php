@@ -8,6 +8,7 @@ use app\adminapi\service\AdminTokenService;
 use app\adminapi\service\NativeAdminPrincipalRepository;
 use app\common\service\JsonService;
 use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\service\tenant\ApplicationHostPolicy;
 use app\tenant\service\TenantAuthRuntimeFactory;
 
 /** Establishes management identity only from a validated native Tenant session. */
@@ -24,6 +25,7 @@ final class LoginMiddleware
         }
 
         try {
+            ApplicationHostPolicy::production()->assertTenantAdmin($request);
             $context = TenantAuthRuntimeFactory::service()->context(
                 $token,
                 AdminRequest::requestId($request),

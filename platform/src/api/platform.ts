@@ -123,7 +123,10 @@ export interface InvitationInspection {
 const tokenKey = 'peanut-platform-token';
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
+  withCredentials: true,
 });
+
+let platformRefreshRequest: Promise<string> | null = null;
 
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem(tokenKey);
@@ -132,6 +135,41 @@ client.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+});
+
+client.interceptors.response.use(async (response) => {
+  const envelope = response.data as Envelope<unknown>;
+  const config = response.config as typeof response.config & {
+    platformRefreshRetried?: boolean;
+  };
+  if (
+    envelope?.code === 40100 &&
+    !config.platformRefreshRetried &&
+    config.url !== '/api/platform/session/login' &&
+    config.url !== '/api/platform/session/refresh' &&
+    config.url !== '/api/platform/session/logout'
+  ) {
+    config.platformRefreshRetried = true;
+    try {
+      platformRefreshRequest ||= client
+        .post<Envelope<Session>>('/api/platform/session/refresh')
+        .then((result) => {
+          if (result.data.code !== 20000) throw new Error(result.data.msg);
+          localStorage.setItem(tokenKey, result.data.data.access_token);
+          return result.data.data.access_token;
+        })
+        .finally(() => {
+          platformRefreshRequest = null;
+        });
+      const refreshedToken = await platformRefreshRequest;
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${refreshedToken}`;
+      return client.request(config);
+    } catch {
+      localStorage.removeItem(tokenKey);
+    }
+  }
+  return response;
 });
 
 async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {

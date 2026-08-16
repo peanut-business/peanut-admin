@@ -6,6 +6,7 @@ namespace app\tenant\controller;
 use app\common\controller\BaseLikeAdminController;
 use app\common\service\JsonService;
 use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\service\tenant\ApplicationHostPolicy;
 use app\platform\http\PlatformRequest;
 use app\tenant\service\TenantAuthRuntimeFactory;
 use PeanutAdmin\Kernel\Auth\AuthException;
@@ -17,6 +18,7 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         $params = $this->request->post();
         try {
+            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
             $tenantCode = TenantEntryBindingResolver::production()->loginTenantCode(
                 $this->request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
@@ -39,6 +41,7 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         $params = $this->request->post();
         try {
+            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
             TenantEntryBindingResolver::production()->assertTenantAccess(
                 $this->request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
@@ -59,6 +62,7 @@ final class TenantSessionController extends BaseLikeAdminController
     public function switchChallenge()
     {
         try {
+            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
             if (TenantEntryBindingResolver::production()->boundTenantId(
                 $this->request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
@@ -76,9 +80,27 @@ final class TenantSessionController extends BaseLikeAdminController
         }
     }
 
+    public function refresh()
+    {
+        try {
+            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
+            $endpoint = TenantAuthRuntimeFactory::endpoint();
+            return $this->response($endpoint->refresh(
+                trim((string)$this->request->cookie($endpoint->refreshCookieName(), '')),
+                $this->isTrustedBrowserOrigin(),
+                $this->request->ip(),
+                $this->request->header('User-Agent'),
+                PlatformRequest::requestId($this->request)
+            ));
+        } catch (AuthException|\DomainException|\InvalidArgumentException) {
+            return JsonService::fail('Tenant refresh credential is invalid.', null, 40100);
+        }
+    }
+
     public function logout()
     {
         try {
+            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
             return $this->response(TenantAuthRuntimeFactory::endpoint()->logout(
                 PlatformRequest::bearerToken($this->request),
                 PlatformRequest::requestId($this->request)
@@ -92,5 +114,21 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         $response = json($result->body ?? ['code' => 20000, 'msg' => 'success', 'data' => null], $result->status);
         return $result->headers === [] ? $response : $response->header($result->headers);
+    }
+
+    private function isTrustedBrowserOrigin(): bool
+    {
+        if (strtolower(trim((string)$this->request->header('Sec-Fetch-Site', ''))) !== 'same-origin') {
+            return false;
+        }
+        $origin = trim((string)$this->request->header('Origin', ''));
+        $originHost = parse_url($origin, PHP_URL_HOST);
+        if (!is_string($originHost) || $originHost === '') {
+            return false;
+        }
+        return hash_equals(
+            TenantEntryBindingResolver::normalizeHost((string)$this->request->host()),
+            TenantEntryBindingResolver::normalizeHost($originHost),
+        );
     }
 }

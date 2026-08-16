@@ -106,9 +106,17 @@ ownerInvitationExpect(
 $developmentPolicy = OwnerInvitationRuntimePolicy::fromEnvironment('development');
 $localPolicy = OwnerInvitationRuntimePolicy::fromEnvironment('local');
 $productionPolicy = OwnerInvitationRuntimePolicy::fromEnvironment('production');
+$manualProductionPolicy = OwnerInvitationRuntimePolicy::fromEnvironment('production', 'manual');
 ownerInvitationExpect($developmentPolicy->allowsPlaintextTokenResponse(), 'development token exposure was disabled');
 ownerInvitationExpect($localPolicy->allowsPlaintextTokenResponse(), 'local token exposure was disabled');
 ownerInvitationExpect(!$productionPolicy->allowsPlaintextTokenResponse(), 'production token exposure was enabled');
+ownerInvitationExpect($manualProductionPolicy->allowsPlaintextTokenResponse(), 'explicit manual handoff was disabled');
+$manualProductionPolicy->assertIssuanceAllowed(new UnavailableOwnerInvitationDeliveryPort());
+try {
+    OwnerInvitationRuntimePolicy::fromEnvironment('production', 'unknown');
+    throw new RuntimeException('unknown invitation delivery mode was accepted');
+} catch (InvalidArgumentException) {
+}
 try {
     $productionPolicy->assertIssuanceAllowed(new UnavailableOwnerInvitationDeliveryPort());
     throw new RuntimeException('production invitation issuance bypassed missing delivery provider');

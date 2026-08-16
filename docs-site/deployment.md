@@ -49,6 +49,11 @@ fail-closed 处理。两种模式都要为 `TENANT_IDENTIFIER_HMAC_KEY` 与
 `PLATFORM_INITIAL_PASSWORD`；它们只建立独立 PlatformOperator，不会把该身份加入默认
 Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不写进 Git 或日志。
 
+多租户部署还必须显式配置 `PLATFORM_HOSTS` 与 `TENANT_ADMIN_HOSTS`。前者只允许实例平台
+控制面，后者是可切换 Tenant 的公共管理入口；Tenant 专属域名由 Platform 绑定，不重复写入
+`.env`。未知 Host、在 Tenant 域调用 Platform API、在 Platform 域调用 Tenant Admin API
+都会由应用层拒绝，不能只依赖外层 Nginx 默认站点。
+
 ## Docker 生产部署（推荐）
 
 生产和开发 Compose 严格分离。根目录 `compose.yaml` 是生产入口，并引用 `deploy/docker-compose.prod.yml`；开发环境使用 `deploy/docker-compose.dev.yml`，不要混用。首次部署时拉取已经存在的应用仓、复制受保护的环境文件，然后只执行一条构建并启动命令：
@@ -60,7 +65,8 @@ cp .env.example .env
 chmod 600 .env
 # 编辑 .env，填写数据库、JWT_SECRET、部署模式、两项 HMAC；
 # 空库还要填写 ADMIN_INITIAL_EMAIL / ADMIN_INITIAL_PASSWORD；
-# multi-tenant 另填 PLATFORM_INITIAL_EMAIL / PLATFORM_INITIAL_PASSWORD
+# multi-tenant 另填 PLATFORM_INITIAL_EMAIL / PLATFORM_INITIAL_PASSWORD、
+# PLATFORM_HOSTS / TENANT_ADMIN_HOSTS 和 OWNER_INVITATION_DELIVERY_MODE
 
 docker compose up -d --build
 ```
@@ -118,8 +124,10 @@ scaffold baseline 或 app-owned 文件到 2.0.0 生成物。需要保留旧环�
 `host + client_key -> tenant` 是本实例唯一入口映射；当前 `client_key` 为 `admin-web` 和
 `member-api`。反向代理必须把浏览器原始 `Host` 传给 PHP，不能固定改写为内部容器名。
 
-部署负责人仍需提供：实际域名清单、DNS、覆盖所有入口的 TLS 证书、反向代理 Host 规则和
-邮件 Provider。缺少这些信息时不要反复尝试线上部署；本地可在 hosts 中把测试域名指向
+部署负责人仍需提供：实际域名清单、DNS、覆盖所有入口的 TLS 证书和反向代理 Host 规则。
+Owner 邀请默认 `OWNER_INVITATION_DELIVERY_MODE=auto`，生产环境必须接入真实投递 Provider；
+私有部署也可显式设置 `manual`，由具备权限的 PlatformOperator 复制只显示一次的邀请链接。
+人工模式不会把明文 Token 写数据库或日志，也不能冒充邮件已发送。缺少这些信息时不要反复尝试线上部署；本地可在 hosts 中把测试域名指向
 `127.0.0.1`，再从 Platform 创建对应绑定。绑定冲突、禁用绑定、暂停 Tenant 或显式
 `tenant_code` 与 Host 不一致时都会拒绝登录，不会猜测其他 Tenant。
 
@@ -127,6 +135,10 @@ scaffold baseline 或 app-owned 文件到 2.0.0 生成物。需要保留旧环�
 入口禁止切换；只有未绑定公共入口允许账号在自己的 TenantMember 列表中切换。一个站点可以
 把多个域名代理到同一实例 origin，不需要为每个 Tenant 重复部署应用；DNS、TLS 和外层 Nginx
 只负责保留各自 Host，Tenant 归属仍由实例内绑定表决定。
+
+Tenant 与 Platform access token 都是 15 分钟短会话，浏览器使用各自独立的 HttpOnly refresh
+Cookie 自动轮换；两条 token 前缀、Cookie、会话表和 RBAC 不能互换。刷新只接受同源浏览器
+请求，绑定 Tenant 域刷新后仍要继续满足同一 Host 边界。
 
 Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前端、会话、RBAC 和审计。
 它不是管理端中的一个业务子应用，也不是跨多个 Peanut 实例的运营平台。

@@ -98,6 +98,9 @@ $expect(($candidateDeployments[0]['environments'] ?? null) === ['production-cand
 $expect(($candidateDeployments[0]['deployment_root'] ?? null) === '/www/docker/peanut-admin-candidate', 'candidate deployment root changed');
 $expect(($candidateDeployments[0]['required_non_secret_environment']['PEANUT_DEPLOYMENT_TARGET'] ?? null) === 'production-candidate', 'candidate deployment target changed');
 $expect(($candidateDeployments[0]['database_resource_id'] ?? null) === 'peanut-admin-production-candidate-mysql84', 'candidate deployment database changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['PLATFORM_HOSTS'] ?? null) === 'pa-platform.007345.xyz', 'candidate Platform Host boundary changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['TENANT_ADMIN_HOSTS'] ?? null) === 'pa-admin.007345.xyz', 'candidate shared Admin Host boundary changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['OWNER_INVITATION_DELIVERY_MODE'] ?? null) === 'manual', 'candidate invitation handoff mode changed');
 
 $databases = array_values(array_filter(
     $registry['resources']['databases'] ?? [],

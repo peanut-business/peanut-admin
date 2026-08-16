@@ -2,7 +2,9 @@ import axios from 'axios';
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useUserStore } from '@/store';
-import { getToken } from '@/utils/auth';
+import { getToken, setToken } from '@/utils/auth';
+import { isTenantAccessToken } from '@/core/tenant-session';
+import { refreshTenantSession } from '@/api/tenant-session';
 
 export interface HttpResponse<T = unknown> {
   status: number;
@@ -14,6 +16,8 @@ export interface HttpResponse<T = unknown> {
 if (import.meta.env.VITE_API_BASE_URL) {
   axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 }
+
+let tenantRefreshRequest: Promise<string> | null = null;
 
 axios.interceptors.request.use(
   (config: AxiosRequestConfig) => {
@@ -37,11 +41,40 @@ axios.interceptors.request.use(
 );
 // add response interceptors
 axios.interceptors.response.use(
-  (response: AxiosResponse<HttpResponse>) => {
+  async (response: AxiosResponse<HttpResponse>) => {
     const res = response.data;
     // 20000 is the normal success envelope; LikeAdmin uses code=2 for a
     // successfully generated export file.
     if (![20000, 2].includes(res.code)) {
+      const retryConfig = response.config as AxiosRequestConfig & {
+        tenantRefreshRetried?: boolean;
+      };
+      const accessToken = getToken();
+      if (
+        res.code === 40100 &&
+        isTenantAccessToken(accessToken) &&
+        !retryConfig.tenantRefreshRetried &&
+        retryConfig.url !== '/api/tenant/session/refresh' &&
+        retryConfig.url !== '/api/tenant/session/logout'
+      ) {
+        retryConfig.tenantRefreshRetried = true;
+        try {
+          tenantRefreshRequest ||= refreshTenantSession()
+            .then((authentication) => {
+              setToken(authentication.access_token);
+              return authentication.access_token;
+            })
+            .finally(() => {
+              tenantRefreshRequest = null;
+            });
+          const refreshedToken = await tenantRefreshRequest;
+          retryConfig.headers = retryConfig.headers || {};
+          retryConfig.headers.Authorization = `Bearer ${refreshedToken}`;
+          return axios.request(retryConfig);
+        } catch {
+          // Continue to the existing re-login flow below.
+        }
+      }
       ElMessage.error({
         message: res.msg || 'Error',
         duration: 5 * 1000,

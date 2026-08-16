@@ -36,6 +36,8 @@ pa_member login         -> Member token -> customer/member domain
 选择和切换会重新校验 Tenant 状态、成员状态、角色权限版本和会话版本。域名入口绑定是持续访问边界，
 不是一次性的登录预选，也不能替用户加入 Tenant：绑定 Host 上只能建立和使用该 Tenant 的管理会话，
 不能切换到其他 Tenant；未绑定的公共入口才允许在该账号的 active 成员列表中选择和切换。
+“未绑定”不等于接受任意域名：公共入口必须列入 `TENANT_ADMIN_HOSTS`，其他未知 Host
+fail closed；Platform API 则只接受 `PLATFORM_HOSTS`。
 
 推荐的请求顺序是：
 

@@ -6,6 +6,7 @@ namespace app\platform\invitation;
 use app\platform\query\PlatformControlPlaneQueryService;
 use app\platform\service\PlatformOperatorSessionService;
 use PDO;
+use think\facade\Config;
 use think\facade\Db;
 
 final class PlatformInvitationRuntimeFactory
@@ -20,7 +21,10 @@ final class PlatformInvitationRuntimeFactory
             self::pdo(),
             self::sessions(),
             new UnavailableOwnerInvitationDeliveryPort(),
-            OwnerInvitationRuntimePolicy::fromEnvironment((string)env('APP_ENV', ''))
+            OwnerInvitationRuntimePolicy::fromEnvironment(
+                (string)env('APP_ENV', ''),
+                (string)Config::get('platform_invitation.delivery_mode', 'auto')
+            )
         );
     }
 

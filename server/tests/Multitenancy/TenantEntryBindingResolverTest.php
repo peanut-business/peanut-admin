@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\service\tenant\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -61,6 +62,12 @@ $boundRequest = new class {
 $unboundRequest = new class {
     public function host(): string { return 'unbound.example.test'; }
 };
+$platformRequest = new class {
+    public function host(): string { return 'platform.example.test'; }
+};
+$sharedAdminRequest = new class {
+    public function host(): string { return 'admin.example.test'; }
+};
 
 entryBindingExpect(
     TenantEntryBindingResolver::normalizeHost('Alpha.Example.Test.:443') === 'alpha.example.test',
@@ -103,6 +110,28 @@ $insert = $pdo->prepare(
 );
 $insert->execute([101, 'alpha.example.test', TenantEntryBindingResolver::ADMIN_CLIENT, 'active']);
 $insert->execute([101, 'alpha.example.test', TenantEntryBindingResolver::MEMBER_CLIENT, 'active']);
+$multiTenantHosts = new ApplicationHostPolicy(
+    'multi-tenant',
+    ['platform.example.test'],
+    ['admin.example.test'],
+    $resolver,
+);
+$multiTenantHosts->assertPlatform($platformRequest);
+$multiTenantHosts->assertTenantAdmin($sharedAdminRequest);
+$multiTenantHosts->assertTenantAdmin($boundRequest);
+entryBindingRejects(
+    static fn() => $multiTenantHosts->assertPlatform($sharedAdminRequest),
+    'the shared Tenant Admin Host reached the Platform control plane',
+);
+entryBindingRejects(
+    static fn() => $multiTenantHosts->assertTenantAdmin($platformRequest),
+    'the Platform Host reached the Tenant Admin control plane',
+);
+entryBindingRejects(
+    static fn() => $multiTenantHosts->assertTenantAdmin($unboundRequest),
+    'an unknown Host became an implicit shared Tenant Admin entry',
+);
+(new ApplicationHostPolicy('standalone', [], [], $resolver))->assertTenantAdmin($unboundRequest);
 entryBindingExpect(
     $resolver->boundTenantId($boundRequest, TenantEntryBindingResolver::ADMIN_CLIENT) === 101,
     'the bound Admin entry did not expose its continuous Tenant boundary',

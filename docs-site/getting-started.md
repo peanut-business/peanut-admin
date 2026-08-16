@@ -70,9 +70,11 @@ php server/database/install.php
 `PEANUT_LOCAL_ENV_FILE`），其他 clone/worktree 可覆盖登记默认端口。停止服务运行
 `./scripts/local-stack.sh dev-down`。
 
-本项目维护者使用隔离的多租户体验环境时，登记地址为 Admin
-`http://127.0.0.1:20179/admin/`、Platform `http://127.0.0.1:20176/platform/`、API
-`http://127.0.0.1:20178/`。这些端口和 demo 数据库必须由同一个
+本项目维护者使用隔离的多租户体验环境时，`/etc/hosts` 中登记的四个名称都指向
+`127.0.0.1`：Platform `platform.peanut-admin.test`、公共 Admin
+`admin.peanut-admin.test`、两个 Tenant 入口 `tenant-a.peanut-admin.test` 与
+`tenant-b.peanut-admin.test`。Platform 使用端口 `20176`，三个 Admin 入口使用 `20179`，
+API 使用 `20178`。这些域名、端口和 demo 数据库必须由同一个
 `local-multi-tenant-demo` lease 持有，不能与日常 development 数据库混用。
 
 在 lease 已固定到当前提交后，使用项目脚本准备私有 env、应用当前 migration 并启动三个入口：

@@ -56,6 +56,9 @@ prepare_env() {
     set_env APP_DEBUG true
     set_env PEANUT_DEPLOYMENT_TARGET local-multi-tenant-demo
     set_env DEPLOYMENT_MODE multi-tenant
+    set_env PLATFORM_HOSTS platform.peanut-admin.test
+    set_env TENANT_ADMIN_HOSTS admin.peanut-admin.test
+    set_env OWNER_INVITATION_DELIVERY_MODE manual
     set_env ADMIN_INITIAL_EMAIL owner@local.test
     set_env ADMIN_INITIAL_PASSWORD 'OwnerLocal2026!'
     set_env PLATFORM_INITIAL_EMAIL platform@local.test
@@ -165,8 +168,10 @@ start_clients() {
 
 show_urls() {
     printf '%s\n' \
-        'Tenant Admin: http://127.0.0.1:20179/admin/' \
-        'Platform:     http://127.0.0.1:20176/platform/' \
+        'Tenant Admin: http://admin.peanut-admin.test:20179/admin/' \
+        'Tenant Alpha: http://tenant-a.peanut-admin.test:20179/admin/' \
+        'Tenant Beta:  http://tenant-b.peanut-admin.test:20179/admin/' \
+        'Platform:     http://platform.peanut-admin.test:20176/platform/' \
         'API:          http://127.0.0.1:20178/'
 }
 
