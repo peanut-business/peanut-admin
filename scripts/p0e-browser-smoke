@@ -51,7 +51,10 @@ cd "$OUTPUT_DIR"
 OPENED=1
 "$P0E_PLAYWRIGHT_CLI" resize 1440 1000 >>"$LOG" 2>&1
 "$P0E_PLAYWRIGHT_CLI" snapshot >"$OUTPUT_DIR/$MODE-initial-snapshot.txt" 2>>"$LOG"
-"$P0E_PLAYWRIGHT_CLI" run-code "$(<"$FIXTURE")" >>"$LOG" 2>&1
+fixture_code="$(<"$FIXTURE")"
+"$P0E_PLAYWRIGHT_CLI" run-code "async (page) => {
+$fixture_code
+}" >>"$LOG" 2>&1
 "$P0E_PLAYWRIGHT_CLI" snapshot >"$OUTPUT_DIR/$MODE-final-snapshot.txt" 2>>"$LOG"
 "$P0E_PLAYWRIGHT_CLI" close >>"$LOG" 2>&1
 OPENED=0
