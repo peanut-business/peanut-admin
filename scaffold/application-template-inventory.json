@@ -70,7 +70,7 @@
             "owner": "scaffold",
             "transform": "ci",
             "mode": 420,
-            "source_sha256": "7959a83cceaedf7e3e98d854d328f2fab88d3d79a8f44e56ec315d74fb38b7dd"
+            "source_sha256": "f98edabb3084403b324ff17c6136da21401f13fb8ecd6b202aada50b13bd4638"
         },
         {
             "path": ".github/workflows/core-upgrade-compatibility.yml",
@@ -171,7 +171,7 @@
             "owner": "scaffold",
             "transform": "readme",
             "mode": 420,
-            "source_sha256": "fb21486f72a6c292c887eeb00567ea2cf25bfba2c733344df5248949af2abed9"
+            "source_sha256": "8c2da6967d8d5b65d2a268ad0717e78d1f597c3ca7038ec8befd31ef64d075d5"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -443,7 +443,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ab2e851895daff782f7ad22772fd91b4126aadda4551e74d0c8a158672f2d257"
+            "source_sha256": "c17b56c30a880650aaa6b1cd5c19fe5750e790e99f1ae702c9dc3f3806510c4e"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -631,7 +631,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "b17c8e698d6b218d1c60d7188d6cb2d82893592ef8c4f720a6b141e9463c751b"
+            "source_sha256": "bc9eb55eee9a532ddfd3c1bdc318bf924b09a9203d546ac154ef0ff7c7837830"
         },
         {
             "path": "docs-site/scripts/sync-legal-assets.mjs",
@@ -3589,7 +3589,7 @@
             "owner": "scaffold",
             "transform": "resources",
             "mode": 420,
-            "source_sha256": "32b5ed88b29f7fedb9b6874074b87c583ff7ac29eac35859fc9631a91c9340e8"
+            "source_sha256": "b19769b0c653f8bfe182f68db0042686331ee52798aa3779375f5928f88204b8"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -10248,7 +10248,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "3cd7a83b86267fce6a72bd6888bd8051bc23093fd704d99839332df89f67e147"
+            "source_sha256": "1a7ae88d6d9762455fd7272a94f8f72df1ed8f66ff53f5cf381ae9699aa3f29e"
         },
         {
             "path": "web/src/components/file-picker/index.vue",
@@ -10329,7 +10329,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "f23f8ca7384f82894003ff7da9c46376d468d5c8e79d30ee904e322640b8ca8f"
+            "source_sha256": "71f9dc7c47f1b181d1e0ce32a7ebdb72cd98454c4a1d2cad64078168539c028e"
         },
         {
             "path": "web/src/components/tab-bar/index.vue",
@@ -10554,7 +10554,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "0704e52f29f796ef12b2a2f6c95d8db7ee0baa4883ab4ad51a38d96f048d376b"
+            "source_sha256": "e6c990a49b72de8eef645c24fd0e3040e6b30fb55e8e891bdb99b0e05555bb23"
         },
         {
             "path": "web/src/locale/en-US/settings.ts",
@@ -10581,7 +10581,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "aa1fa7ce880d1809eb0deeb79e622e75f9bb621fec3a008bf921f3c471c4c5ae"
+            "source_sha256": "65a6df797b658aa02075bfd492b1ed0d38e13be90dbf88589406495646094ec5"
         },
         {
             "path": "web/src/locale/zh-CN/settings.ts",
@@ -11938,6 +11938,15 @@
             "transform": "text",
             "mode": 420,
             "source_sha256": "0e37b44b48856287b5df5a64b4530c91f62e43a3cf1f31059d3ea4614d8128d3"
+        },
+        {
+            "path": "web/tests/Productization/navbar-avatar-fallback.test.mjs",
+            "target": "web/tests/Productization/navbar-avatar-fallback.test.mjs",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "a63e9397a5119640bd2f2904d7cbb0def5d1cfc9ef01614e2020fa1c7c8f2940"
         },
         {
             "path": "web/tests/Productization/permission-policy.test.ts",
