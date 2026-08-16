@@ -3,10 +3,10 @@ import NProgress from 'nprogress'; // progress bar
 
 import usePermission from '@/hooks/permission';
 import { useUserStore, useAppStore } from '@/store';
-import { appRoutes } from '../routes';
-import { pluginRoutes } from '../routes/plugin-contributions';
 import { routesForTenantModules } from '@/core/plugin-contribution-policy';
 import { permissionEvaluator } from '@/core/runtime';
+import { appRoutes } from '../routes';
+import { pluginRoutes } from '../routes/plugin-contributions';
 import { WHITE_LIST, NOT_FOUND, DEFAULT_ROUTE_NAME } from '../constants';
 
 export default function setupPermissionGuard(router: Router) {

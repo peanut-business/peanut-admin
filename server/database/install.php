@@ -227,6 +227,7 @@ function initializeCoreIdentity(
     foreach (KernelSchema::tableNames() as $table) {
         $pdo->exec(KernelSchema::createSql($table));
     }
+    ensureTenantChallengeClientKey($pdo);
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
 
     $service = new BootstrapService(
@@ -272,6 +273,28 @@ function initializeCoreIdentity(
         'member_id' => $owner->memberId,
         'operator_id' => $platform->operatorId,
     ];
+}
+
+/**
+ * The alpha.5 Core package persists the client binding but its exported
+ * fresh schema predates that column. Keep a fresh install compatible with the
+ * repository contract until the package's canonical KernelSchema is released.
+ */
+function ensureTenantChallengeClientKey(PDO $pdo): void
+{
+    $column = $pdo->query(
+        "SHOW COLUMNS FROM `pa_login_challenge` LIKE 'client_key'"
+    )->fetch(PDO::FETCH_ASSOC);
+    if ($column !== false) {
+        return;
+    }
+
+    $pdo->exec(<<<'SQL'
+ALTER TABLE `pa_login_challenge`
+  ADD COLUMN `client_key` VARCHAR(64) NOT NULL AFTER `purpose`,
+  ADD CONSTRAINT `chk_login_challenge_client`
+    CHECK (REGEXP_LIKE(`client_key`, '^[a-z][a-z0-9-]{0,63}$', 'c'))
+SQL);
 }
 
 /** @return array{tenant_count:int,owner_count:int,operator_count:int} */
