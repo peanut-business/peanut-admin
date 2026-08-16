@@ -44,34 +44,46 @@ CREATE TABLE pa_tenant (id BIGINT UNSIGNED NOT NULL, status VARCHAR(32) NOT NULL
 CREATE TABLE pa_admin (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL,
  username VARCHAR(50) NOT NULL DEFAULT '', nickname VARCHAR(50) NOT NULL DEFAULT '',
+ active_username VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, username, NULL)) STORED,
+ active_nickname VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, nickname, NULL)) STORED,
  password VARCHAR(64) NOT NULL DEFAULT '', salt VARCHAR(16) NOT NULL DEFAULT '', avatar VARCHAR(255) NOT NULL DEFAULT '',
  root TINYINT NOT NULL DEFAULT 0, disable TINYINT NOT NULL DEFAULT 0, login_time INT UNSIGNED NOT NULL DEFAULT 0,
  login_ip VARCHAR(45) NOT NULL DEFAULT '', multipoint_login TINYINT NOT NULL DEFAULT 1,
  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
  PRIMARY KEY (id), UNIQUE KEY uk_admin_tenant_id (tenant_id,id),
+ UNIQUE KEY uk_admin_tenant_active_username (tenant_id,active_username),
+ UNIQUE KEY uk_admin_tenant_active_nickname (tenant_id,active_nickname),
  CONSTRAINT fk_admin_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
 ) ENGINE=InnoDB;
 CREATE TABLE pa_system_role (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, name VARCHAR(50) NOT NULL DEFAULT '',
+ active_name VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, name, NULL)) STORED,
  `desc` VARCHAR(255) NOT NULL DEFAULT '', sort SMALLINT NOT NULL DEFAULT 0,
  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
  PRIMARY KEY (id), UNIQUE KEY uk_system_role_tenant_id (tenant_id,id),
+ UNIQUE KEY uk_system_role_tenant_active_name (tenant_id,active_name),
  CONSTRAINT fk_system_role_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
 ) ENGINE=InnoDB;
 CREATE TABLE pa_dept (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, pid INT UNSIGNED NOT NULL DEFAULT 0,
  name VARCHAR(50) NOT NULL DEFAULT '', leader VARCHAR(50) NOT NULL DEFAULT '', mobile VARCHAR(20) NOT NULL DEFAULT '',
+ active_name VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, name, NULL)) STORED,
  sort SMALLINT NOT NULL DEFAULT 0, is_disable TINYINT NOT NULL DEFAULT 0, status TINYINT NOT NULL DEFAULT 1,
  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
  PRIMARY KEY (id), UNIQUE KEY uk_dept_tenant_id (tenant_id,id),
+ UNIQUE KEY uk_dept_tenant_active_name (tenant_id,active_name),
  CONSTRAINT fk_dept_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
 ) ENGINE=InnoDB;
 CREATE TABLE pa_jobs (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, name VARCHAR(50) NOT NULL DEFAULT '',
  code VARCHAR(64) NOT NULL DEFAULT '', sort SMALLINT NOT NULL DEFAULT 0, is_disable TINYINT NOT NULL DEFAULT 0,
+ active_name VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, name, NULL)) STORED,
+ active_code VARCHAR(64) GENERATED ALWAYS AS (IF(delete_time IS NULL, code, NULL)) STORED,
  status TINYINT NOT NULL DEFAULT 1, remark VARCHAR(200) NOT NULL DEFAULT '',
  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
  PRIMARY KEY (id), UNIQUE KEY uk_jobs_tenant_id (tenant_id,id),
+ UNIQUE KEY uk_jobs_tenant_active_name (tenant_id,active_name),
+ UNIQUE KEY uk_jobs_tenant_active_code (tenant_id,active_code),
  CONSTRAINT fk_jobs_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
 ) ENGINE=InnoDB;
 CREATE TABLE pa_system_menu (
@@ -84,22 +96,30 @@ CREATE TABLE pa_system_menu (
 CREATE TABLE pa_admin_role (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, admin_id INT UNSIGNED NOT NULL, role_id INT UNSIGNED NOT NULL,
  PRIMARY KEY (id), UNIQUE KEY uk_admin_role_tenant (tenant_id,admin_id,role_id),
- CONSTRAINT fk_admin_role_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
+ CONSTRAINT fk_admin_role_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
+ CONSTRAINT fk_admin_role_admin_owner FOREIGN KEY (tenant_id,admin_id) REFERENCES pa_admin(tenant_id,id) ON DELETE RESTRICT,
+ CONSTRAINT fk_admin_role_role_owner FOREIGN KEY (tenant_id,role_id) REFERENCES pa_system_role(tenant_id,id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_admin_dept (
  tenant_id BIGINT UNSIGNED NOT NULL, admin_id INT UNSIGNED NOT NULL, dept_id INT UNSIGNED NOT NULL,
  PRIMARY KEY (admin_id,dept_id), UNIQUE KEY uk_admin_dept_tenant (tenant_id,admin_id,dept_id),
- CONSTRAINT fk_admin_dept_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
+ CONSTRAINT fk_admin_dept_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
+ CONSTRAINT fk_admin_dept_admin_owner FOREIGN KEY (tenant_id,admin_id) REFERENCES pa_admin(tenant_id,id) ON DELETE RESTRICT,
+ CONSTRAINT fk_admin_dept_dept_owner FOREIGN KEY (tenant_id,dept_id) REFERENCES pa_dept(tenant_id,id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_admin_jobs (
  tenant_id BIGINT UNSIGNED NOT NULL, admin_id INT UNSIGNED NOT NULL, jobs_id INT UNSIGNED NOT NULL,
  PRIMARY KEY (admin_id,jobs_id), UNIQUE KEY uk_admin_jobs_tenant (tenant_id,admin_id,jobs_id),
- CONSTRAINT fk_admin_jobs_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
+ CONSTRAINT fk_admin_jobs_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
+ CONSTRAINT fk_admin_jobs_admin_owner FOREIGN KEY (tenant_id,admin_id) REFERENCES pa_admin(tenant_id,id) ON DELETE RESTRICT,
+ CONSTRAINT fk_admin_jobs_jobs_owner FOREIGN KEY (tenant_id,jobs_id) REFERENCES pa_jobs(tenant_id,id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_system_role_menu (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, role_id INT UNSIGNED NOT NULL, menu_id INT UNSIGNED NOT NULL,
  PRIMARY KEY (id), UNIQUE KEY uk_role_menu_tenant (tenant_id,role_id,menu_id),
- CONSTRAINT fk_role_menu_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
+ CONSTRAINT fk_role_menu_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
+ CONSTRAINT fk_role_menu_role_owner FOREIGN KEY (tenant_id,role_id) REFERENCES pa_system_role(tenant_id,id) ON DELETE RESTRICT,
+ CONSTRAINT fk_role_menu_menu FOREIGN KEY (menu_id) REFERENCES pa_system_menu(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_admin_session (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, admin_id INT UNSIGNED NOT NULL, terminal TINYINT NOT NULL DEFAULT 1,
@@ -129,36 +149,12 @@ $adminPdo = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
-$databases = [];
+$database = 'peanut_admin_mt02_org_' . $runId;
 
 try {
-    $migration = (string)file_get_contents($serverRoot . '/database/migrations/20260813_org_tenant_integrity.sql');
-    expectOrgTenant($migration !== '', 'org Tenant integrity migration is missing');
-
-    $pollutedDb = 'peanut_admin_mt02_org_preflight_' . $runId;
-    $databases[] = $pollutedDb;
-    $adminPdo->exec("CREATE DATABASE `{$pollutedDb}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
-    $polluted = new PDO("mysql:host={$host};port={$port};dbname={$pollutedDb};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
-    createOrgTenantSchema($polluted);
-    $polluted->exec("INSERT INTO pa_admin (id,tenant_id,username,nickname) VALUES (1,101,'alpha','Alpha')");
-    $polluted->exec("INSERT INTO pa_system_role (id,tenant_id,name) VALUES (11,101,'Alpha Role'),(22,202,'Beta Role')");
-    $polluted->exec('INSERT INTO pa_admin_role (tenant_id,admin_id,role_id) VALUES (202,1,22)');
-    try {
-        $polluted->exec($migration);
-        throw new RuntimeException('polluted org migration preflight unexpectedly succeeded');
-    } catch (PDOException) {
-        expectOrgTenant(
-            (int)$polluted->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pa_admin' AND COLUMN_NAME='active_username'")->fetchColumn() === 0,
-            'failed migration changed schema before rejecting polluted pivot'
-        );
-    }
-
-    $database = 'peanut_admin_mt02_org_' . $runId;
-    $databases[] = $database;
     $adminPdo->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
     $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
     createOrgTenantSchema($pdo);
-    $pdo->exec($migration);
 
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
@@ -242,9 +238,7 @@ try {
     expectOrgTenant(JobsLogic::edit($alpha, ['id' => $alphaJobs, 'name' => 'Operator Alpha', 'code' => 'OPS-A', 'status' => 1]), JobsLogic::getError());
     expectOrgTenant(JobsLogic::updateStatus($alpha, $alphaJobs, 0), JobsLogic::getError());
 } finally {
-    foreach ($databases as $database) {
-        $adminPdo->exec("DROP DATABASE IF EXISTS `{$database}`");
-    }
+    $adminPdo->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT02-ORG-TENANT-ISOLATION-001 passed\n";

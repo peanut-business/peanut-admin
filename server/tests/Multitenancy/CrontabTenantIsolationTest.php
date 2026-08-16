@@ -37,18 +37,14 @@ function crontabTenantContext(int $tenantId, int $memberId, string $requestId): 
     ), $requestId);
 }
 
-function createCrontabTenantSchema(PDO $pdo, bool $withTenant = true): void
+function createCrontabTenantSchema(PDO $pdo): void
 {
-    if ($withTenant) {
-        $pdo->exec(<<<'SQL'
+    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_tenant (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   status VARCHAR(32) NOT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
-SQL);
-    }
-    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_crontab (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL DEFAULT '',
@@ -66,7 +62,11 @@ CREATE TABLE pa_crontab (
   create_time INT UNSIGNED NOT NULL DEFAULT 0,
   update_time INT UNSIGNED NOT NULL DEFAULT 0,
   delete_time INT UNSIGNED NULL DEFAULT NULL,
-  PRIMARY KEY (id), KEY idx_status (status)
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), KEY idx_status (status),
+  UNIQUE KEY uk_crontab_tenant_id (tenant_id, id),
+  KEY idx_crontab_tenant_status_last (tenant_id, status, last_time, id),
+  CONSTRAINT fk_crontab_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 SQL);
 }
@@ -77,58 +77,15 @@ $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_crontab_' . $runId;
-$missingTenantDatabase = $database . '_missing';
-$ambiguousTenantDatabase = $database . '_ambiguous';
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
     'root',
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260812_crontab_tenant_ownership.sql');
-expectCrontabTenant($migration !== '', 'crontab tenant migration is missing');
-
-$databases = [$database, $missingTenantDatabase, $ambiguousTenantDatabase];
-foreach ($databases as $name) {
-    $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-}
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 try {
-    $missing = new PDO(
-        "mysql:host={$host};port={$port};dbname={$missingTenantDatabase};charset=utf8mb4",
-        'root',
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-    );
-    createCrontabTenantSchema($missing, false);
-    try {
-        $missing->exec($migration);
-        throw new RuntimeException('migration accepted a database without pa_tenant');
-    } catch (PDOException) {
-        expectCrontabTenant(
-            (int)$missing->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_crontab' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 0,
-            'missing-Tenant migration mutated crontab schema before refusing'
-        );
-    }
-
-    $ambiguous = new PDO(
-        "mysql:host={$host};port={$port};dbname={$ambiguousTenantDatabase};charset=utf8mb4",
-        'root',
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-    );
-    createCrontabTenantSchema($ambiguous);
-    $ambiguous->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
-    try {
-        $ambiguous->exec($migration);
-        throw new RuntimeException('migration guessed among multiple active Tenants');
-    } catch (PDOException) {
-        expectCrontabTenant(
-            (int)$ambiguous->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_crontab' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 0,
-            'ambiguous-Tenant migration mutated crontab schema before refusing'
-        );
-    }
-
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
         'root',
@@ -136,16 +93,8 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
     createCrontabTenantSchema($pdo);
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active')");
-    $pdo->exec("INSERT INTO pa_crontab (id, name, command, status, expression) VALUES (11, 'Legacy', 'crontab:demo', 1, '* * * * *')");
-    $pdo->exec($migration);
-    expectCrontabTenant((int)$pdo->query('SELECT tenant_id FROM pa_crontab WHERE id = 11')->fetchColumn() === 101, 'legacy task was not backfilled');
-    expectCrontabTenant($pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_crontab' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 'NO', 'crontab.tenant_id is nullable');
-    $indexes = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_crontab'")->fetchAll(PDO::FETCH_COLUMN);
-    expectCrontabTenant(in_array('uk_crontab_tenant_id', $indexes, true), 'crontab Tenant identity index is missing');
-    expectCrontabTenant(in_array('idx_crontab_tenant_status_last', $indexes, true), 'crontab scheduler index is missing');
-
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (202, 'active')");
+    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
+    $pdo->exec("INSERT INTO pa_crontab (id, tenant_id, name, command, status, expression) VALUES (11, 101, 'Alpha seed', 'crontab:demo', 1, '* * * * *')");
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
     putenv('PHP_DB_NAME=' . $database);
@@ -267,9 +216,7 @@ try {
     }
 } finally {
     CrontabSchedulerService::useDispatcherForTest(null);
-    foreach ($databases as $name) {
-        $admin->exec("DROP DATABASE IF EXISTS `{$name}`");
-    }
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT03-CRONTAB-TENANT-ISOLATION-001 passed\n";

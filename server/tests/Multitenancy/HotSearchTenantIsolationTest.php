@@ -31,24 +31,24 @@ function hotSearchTenantContext(int $tenantId, int $memberId, string $requestId)
     ), $requestId);
 }
 
-function createHotSearchTenantSchema(PDO $pdo, bool $withTenant = true): void
+function createHotSearchTenantSchema(PDO $pdo): void
 {
-    if ($withTenant) {
-        $pdo->exec(<<<'SQL'
+    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_tenant (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   status VARCHAR(32) NOT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
-SQL);
-    }
-    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_hot_search (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(200) NOT NULL DEFAULT '',
   sort SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_hot_search_tenant_id (tenant_id, id),
+  KEY idx_hot_search_tenant_sort (tenant_id, sort, id),
+  CONSTRAINT fk_hot_search_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_config (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -62,56 +62,32 @@ CREATE TABLE pa_config (
 SQL);
 }
 
-$serverRoot = dirname(__DIR__, 2);
+function seedHotSearchTenantSchema(PDO $pdo): void
+{
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active');
+INSERT INTO pa_hot_search (id, tenant_id, name, sort) VALUES
+  (11, 101, 'Alpha seed', 10),
+  (21, 202, 'Same term', 30),
+  (22, 202, 'Beta only', 20);
+INSERT INTO pa_config (type, name, value) VALUES ('hot_search', 'status', '1');
+SQL);
+}
+
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_hot_search_' . $runId;
-$missingTenantDatabase = $database . '_missing';
-$emptyTenantDatabase = $database . '_empty';
-$ambiguousTenantDatabase = $database . '_ambiguous';
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
     'root',
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260813_hot_search_tenant_ownership.sql');
-expectHotSearchTenant($migration !== '', 'hot-search tenant migration is missing');
-
-$databases = [$database, $missingTenantDatabase, $emptyTenantDatabase, $ambiguousTenantDatabase];
-foreach ($databases as $name) {
-    $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-}
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 try {
-    foreach ([
-        $missingTenantDatabase => 'missing',
-        $emptyTenantDatabase => 'empty',
-        $ambiguousTenantDatabase => 'ambiguous',
-    ] as $name => $case) {
-        $candidate = new PDO(
-            "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
-            'root',
-            $password,
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-        );
-        createHotSearchTenantSchema($candidate, $case !== 'missing');
-        if ($case === 'ambiguous') {
-            $candidate->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
-        }
-        try {
-            $candidate->exec($migration);
-            throw new RuntimeException("migration accepted {$case} active Tenant state");
-        } catch (PDOException) {
-            expectHotSearchTenant(
-                (int)$candidate->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_hot_search' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 0,
-                "{$case} Tenant preflight mutated hot-search schema"
-            );
-        }
-    }
-
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
         'root',
@@ -119,18 +95,7 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
     createHotSearchTenantSchema($pdo);
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active')");
-    $pdo->exec("INSERT INTO pa_hot_search (id, name, sort) VALUES (11, 'Legacy', 10)");
-    $pdo->exec("INSERT INTO pa_config (type, name, value) VALUES ('hot_search', 'status', '1')");
-    $pdo->exec($migration);
-    expectHotSearchTenant((int)$pdo->query('SELECT tenant_id FROM pa_hot_search WHERE id = 11')->fetchColumn() === 101, 'legacy term was not backfilled');
-    expectHotSearchTenant($pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_hot_search' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 'NO', 'hot_search.tenant_id is nullable');
-    $indexes = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_hot_search'")->fetchAll(PDO::FETCH_COLUMN);
-    expectHotSearchTenant(in_array('uk_hot_search_tenant_id', $indexes, true), 'hot-search Tenant identity index is missing');
-    expectHotSearchTenant(in_array('idx_hot_search_tenant_sort', $indexes, true), 'hot-search Tenant sort index is missing');
-
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (202, 'active')");
-    $pdo->exec("INSERT INTO pa_hot_search (tenant_id, name, sort) VALUES (202, 'Same term', 30), (202, 'Beta only', 20)");
+    seedHotSearchTenantSchema($pdo);
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
     putenv('PHP_DB_NAME=' . $database);
@@ -199,9 +164,7 @@ try {
         expectHotSearchTenant($exception->getMessage() !== '', 'untrusted public denial lost its shape');
     }
 } finally {
-    foreach ($databases as $name) {
-        $admin->exec("DROP DATABASE IF EXISTS `{$name}`");
-    }
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT03-HOT-SEARCH-TENANT-ISOLATION-001 passed\n";

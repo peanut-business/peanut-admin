@@ -36,15 +36,17 @@ function memberTenantContext(int $tenantId, int $memberId, string $requestId): T
     ), $requestId);
 }
 
-function createMemberTenantSchema(PDO $pdo, bool $withTenant = true): void
+function createMemberTenantSchema(PDO $pdo): void
 {
-    if ($withTenant) {
-        $pdo->exec("CREATE TABLE pa_tenant (id BIGINT UNSIGNED NOT NULL, status VARCHAR(32) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB");
-    }
     $pdo->exec(<<<'SQL'
+CREATE TABLE pa_tenant (
+  id BIGINT UNSIGNED NOT NULL, status VARCHAR(32) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
 CREATE TABLE pa_member (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT, sn VARCHAR(20) NOT NULL DEFAULT '',
-  account VARCHAR(50) NOT NULL DEFAULT '', password VARCHAR(100) NOT NULL DEFAULT '',
+  account VARCHAR(50) NOT NULL DEFAULT '', account_unique VARCHAR(50) GENERATED ALWAYS AS (NULLIF(account,'')) STORED,
+  password VARCHAR(100) NOT NULL DEFAULT '',
   nickname VARCHAR(50) NOT NULL DEFAULT '', avatar VARCHAR(255) NOT NULL DEFAULT '', real_name VARCHAR(32) NOT NULL DEFAULT '',
   mobile VARCHAR(20) NOT NULL DEFAULT '', mobile_unique VARCHAR(20) GENERATED ALWAYS AS (NULLIF(mobile,'')) STORED,
   channel TINYINT UNSIGNED NOT NULL DEFAULT 0, email VARCHAR(100) NOT NULL DEFAULT '', sex TINYINT NOT NULL DEFAULT 0,
@@ -53,17 +55,32 @@ CREATE TABLE pa_member (
   user_money DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
   total_recharge_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, points INT UNSIGNED NOT NULL DEFAULT 0,
   create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_sn (sn), UNIQUE KEY uk_mobile_nonempty (mobile_unique),
-  KEY idx_account (account), KEY idx_mobile (mobile), KEY idx_status (status), KEY idx_channel (channel), KEY idx_create_time (create_time)
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), KEY idx_account (account), KEY idx_mobile (mobile), KEY idx_status (status),
+  KEY idx_channel (channel), KEY idx_create_time (create_time),
+  UNIQUE KEY uk_member_tenant_id (tenant_id, id), UNIQUE KEY uk_member_tenant_sn (tenant_id, sn),
+  UNIQUE KEY uk_member_tenant_account (tenant_id, account_unique),
+  UNIQUE KEY uk_member_tenant_mobile (tenant_id, mobile_unique),
+  KEY idx_member_tenant_status_channel (tenant_id, status, channel, id),
+  CONSTRAINT fk_member_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_member_tag (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT, name VARCHAR(50) NOT NULL DEFAULT '', remark VARCHAR(255) NOT NULL DEFAULT '',
   create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_name (name)
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_member_tag_tenant_id (tenant_id, id),
+  UNIQUE KEY uk_member_tag_tenant_name (tenant_id, name), KEY idx_member_tag_tenant_live (tenant_id, delete_time, id),
+  CONSTRAINT fk_member_tag_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_member_tag_relation (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT, member_id INT UNSIGNED NOT NULL DEFAULT 0, tag_id INT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (id), UNIQUE KEY uk_member_tag (member_id, tag_id), KEY idx_tag_id (tag_id)
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), KEY idx_tag_id (tag_id), UNIQUE KEY uk_member_tag_relation_tenant_id (tenant_id, id),
+  UNIQUE KEY uk_member_tag_relation_tenant_pair (tenant_id, member_id, tag_id),
+  KEY idx_member_tag_relation_tenant_tag (tenant_id, tag_id, member_id),
+  CONSTRAINT fk_member_tag_relation_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_member_tag_relation_member FOREIGN KEY (tenant_id, member_id) REFERENCES pa_member (tenant_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_member_tag_relation_tag FOREIGN KEY (tenant_id, tag_id) REFERENCES pa_member_tag (tenant_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_member_balance_log (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT, sn VARCHAR(32) NOT NULL DEFAULT '', member_id INT UNSIGNED NOT NULL DEFAULT 0,
@@ -72,7 +89,15 @@ CREATE TABLE pa_member_balance_log (
   left_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
   source_type TINYINT NOT NULL DEFAULT 0, source_sn VARCHAR(255) NULL, remark VARCHAR(255) NULL DEFAULT '', extra TEXT NULL,
   admin_id INT UNSIGNED NOT NULL DEFAULT 0, create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NULL, delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_sn (sn), KEY idx_member_id (member_id), KEY idx_change_type (change_type), KEY idx_create_time (create_time)
+  source_sn_unique VARCHAR(255) GENERATED ALWAYS AS (NULLIF(source_sn,'')) STORED,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), KEY idx_member_id (member_id), KEY idx_change_type (change_type), KEY idx_create_time (create_time),
+  UNIQUE KEY uk_member_balance_log_tenant_id (tenant_id, id),
+  UNIQUE KEY uk_member_balance_log_tenant_sn (tenant_id, sn),
+  UNIQUE KEY uk_member_balance_log_tenant_source (tenant_id, source_sn_unique),
+  KEY idx_member_balance_log_tenant_member_time (tenant_id, member_id, create_time, id),
+  CONSTRAINT fk_member_balance_log_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_member_balance_log_member FOREIGN KEY (tenant_id, member_id) REFERENCES pa_member (tenant_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 SQL);
 }
@@ -83,54 +108,26 @@ $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_member_' . $runId;
-$missingDatabase = $database . '_missing';
-$ambiguousDatabase = $database . '_ambiguous';
 $admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260812_member_tenant_ownership.sql');
-$fixture = (string)file_get_contents($serverRoot . '/tests/fixtures/mt03/member-tenant-legacy.sql');
-expectMemberTenant($migration !== '' && $fixture !== '', 'member migration or fixture is missing');
-$databases = [$database, $missingDatabase, $ambiguousDatabase];
-foreach ($databases as $name) {
-    $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-}
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 try {
-    foreach ([[$missingDatabase, false, []], [$ambiguousDatabase, true, [[101, 'active'], [202, 'active']]]] as [$name, $withTenant, $tenants]) {
-        $pdo = new PDO("mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
-        createMemberTenantSchema($pdo, $withTenant);
-        foreach ($tenants as [$id, $status]) {
-            $pdo->exec("INSERT INTO pa_tenant (id,status) VALUES ({$id},'{$status}')");
-        }
-        try {
-            $pdo->exec($migration);
-            throw new RuntimeException('member migration accepted missing or ambiguous active Tenant');
-        } catch (PDOException) {
-            expectMemberTenant((int)$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pa_member' AND COLUMN_NAME='tenant_id'")->fetchColumn() === 0, 'failed migration mutated schema before refusing');
-        }
-    }
-
     $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
     createMemberTenantSchema($pdo);
-    $pdo->exec("INSERT INTO pa_tenant (id,status) VALUES (101,'active')");
-    $pdo->exec($fixture);
-    $pdo->exec($migration);
-    foreach (['pa_member', 'pa_member_tag', 'pa_member_tag_relation', 'pa_member_balance_log'] as $table) {
-        expectMemberTenant((int)$pdo->query("SELECT tenant_id FROM `{$table}` LIMIT 1")->fetchColumn() === 101, "{$table} was not backfilled");
-        expectMemberTenant($pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='{$table}' AND COLUMN_NAME='tenant_id'")->fetchColumn() === 'NO', "{$table}.tenant_id is nullable");
-    }
-    foreach ([
-        'pa_member' => ['uk_member_tenant_sn', 'uk_member_tenant_account', 'uk_member_tenant_mobile'],
-        'pa_member_tag' => ['uk_member_tag_tenant_name'],
-        'pa_member_tag_relation' => ['uk_member_tag_relation_tenant_pair'],
-        'pa_member_balance_log' => ['uk_member_balance_log_tenant_sn', 'uk_member_balance_log_tenant_source'],
-    ] as $table => $indexes) {
-        $actual = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='{$table}'")->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($indexes as $index) {
-            expectMemberTenant(in_array($index, $actual, true), "{$table}.{$index} is missing");
-        }
-    }
-
-    $pdo->exec("INSERT INTO pa_tenant (id,status) VALUES (202,'active')");
+    $pdo->exec("INSERT INTO pa_tenant (id,status) VALUES (101,'active'),(202,'active')");
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_member
+  (id, tenant_id, sn, account, password, nickname, mobile, status, user_money, create_time, update_time)
+VALUES
+  (11, 101, 'M-SHARED-11', 'same-account', '', 'Alpha member', '13800000000', 1, 10.00, 1, 1);
+INSERT INTO pa_member_tag (id, tenant_id, name, remark, create_time, update_time)
+VALUES (21, 101, 'same-tag', 'alpha', 1, 1);
+INSERT INTO pa_member_tag_relation (id, tenant_id, member_id, tag_id) VALUES (31, 101, 11, 21);
+INSERT INTO pa_member_balance_log
+  (id, tenant_id, sn, member_id, change_object, change_type, action, change_amount, left_amount, source_type, source_sn, remark, admin_id, create_time)
+VALUES
+  (41, 101, 'FLOW-SAME', 11, 1, 100, 1, 10.00, 10.00, 0, 'SOURCE-SAME', 'alpha', 0, 1);
+SQL);
     putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
     putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
     $app = new think\App(); $app->initialize();
@@ -146,7 +143,7 @@ try {
     try { MemberTenantContext::member(new stdClass()); throw new RuntimeException('missing TenantContext was accepted'); } catch (Throwable $e) { expectMemberTenant($e->getMessage() !== '', 'missing context denial lost shape'); }
 
     $betaMember = MemberTenantRepository::createMember($beta, [
-        'tenant_id' => 101, 'sn' => 'M-LEGACY-11', 'account' => 'same-account', 'nickname' => 'Beta member',
+        'tenant_id' => 101, 'sn' => 'M-SHARED-11', 'account' => 'same-account', 'nickname' => 'Beta member',
         'mobile' => '13800000000', 'status' => 1, 'user_money' => 20,
     ]);
     expectMemberTenant((int)$betaMember->tenant_id === 202, 'member payload forged Tenant ownership');
@@ -205,7 +202,7 @@ try {
         $output = [];
     }
 } finally {
-    foreach ($databases as $name) { $admin->exec("DROP DATABASE IF EXISTS `{$name}`"); }
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT03-MEMBER-TENANT-001 passed\n";

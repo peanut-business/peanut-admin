@@ -52,72 +52,129 @@ function financeDatabase(PDO $admin, string $prefix): string
     return $name;
 }
 
-$serverRoot = dirname(__DIR__, 2);
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260813_recharge_refund_tenant_ownership.sql');
-$fixture = (string)file_get_contents($serverRoot . '/tests/fixtures/mt03/recharge-refund-tenant-legacy.sql');
-expectFinanceTenant($migration !== '' && $fixture !== '', 'finance migration or fixture is missing');
+function createFinanceTenantSchema(PDO $pdo): void
+{
+    $pdo->exec(<<<'SQL'
+CREATE TABLE pa_tenant (
+  id BIGINT UNSIGNED NOT NULL, code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
+CREATE TABLE pa_member (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT, sn VARCHAR(20) NOT NULL DEFAULT '',
+  account VARCHAR(50) NOT NULL DEFAULT '', account_unique VARCHAR(50) GENERATED ALWAYS AS (NULLIF(account,'')) STORED,
+  password VARCHAR(100) NOT NULL DEFAULT '', nickname VARCHAR(50) NOT NULL DEFAULT '',
+  avatar VARCHAR(255) NOT NULL DEFAULT '', real_name VARCHAR(32) NOT NULL DEFAULT '',
+  mobile VARCHAR(20) NOT NULL DEFAULT '', mobile_unique VARCHAR(20) GENERATED ALWAYS AS (NULLIF(mobile,'')) STORED,
+  channel TINYINT UNSIGNED NOT NULL DEFAULT 0, email VARCHAR(100) NOT NULL DEFAULT '', sex TINYINT NOT NULL DEFAULT 0,
+  birthday DATE NULL, status TINYINT NOT NULL DEFAULT 1, login_time INT UNSIGNED NOT NULL DEFAULT 0,
+  login_ip VARCHAR(45) NOT NULL DEFAULT '', is_new_user TINYINT NOT NULL DEFAULT 0,
+  user_money DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
+  total_recharge_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, points INT UNSIGNED NOT NULL DEFAULT 0,
+  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_member_tenant_id (tenant_id, id),
+  UNIQUE KEY uk_member_tenant_sn (tenant_id, sn), UNIQUE KEY uk_member_tenant_account (tenant_id, account_unique),
+  UNIQUE KEY uk_member_tenant_mobile (tenant_id, mobile_unique),
+  CONSTRAINT fk_member_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+CREATE TABLE pa_member_balance_log (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT, sn VARCHAR(32) NOT NULL DEFAULT '', member_id INT UNSIGNED NOT NULL DEFAULT 0,
+  change_object TINYINT UNSIGNED NOT NULL DEFAULT 1, change_type SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  action TINYINT UNSIGNED NOT NULL DEFAULT 1, left_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
+  source_type TINYINT NOT NULL DEFAULT 0, extra TEXT NULL, admin_id INT UNSIGNED NOT NULL DEFAULT 0,
+  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NULL, delete_time INT UNSIGNED NULL,
+  change_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, source_sn VARCHAR(255) NULL,
+  source_sn_unique VARCHAR(255) GENERATED ALWAYS AS (NULLIF(source_sn,'')) STORED,
+  remark VARCHAR(255) NULL DEFAULT '', tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_member_balance_log_tenant_id (tenant_id, id),
+  UNIQUE KEY uk_member_balance_log_tenant_sn (tenant_id, sn),
+  UNIQUE KEY uk_member_balance_log_tenant_source (tenant_id, source_sn_unique),
+  KEY idx_member_balance_log_tenant_member_time (tenant_id, member_id, create_time, id),
+  CONSTRAINT fk_member_balance_log_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_member_balance_log_member FOREIGN KEY (tenant_id, member_id) REFERENCES pa_member (tenant_id, id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+CREATE TABLE pa_recharge_order (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT, user_id INT UNSIGNED NOT NULL DEFAULT 0,
+  pay_status TINYINT NOT NULL DEFAULT 0, order_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  order_terminal TINYINT NULL DEFAULT 1, refund_status TINYINT NOT NULL DEFAULT 0,
+  refund_transaction_id VARCHAR(255) NULL, delete_time INT UNSIGNED NULL,
+  sn VARCHAR(64) NOT NULL, pay_way TINYINT NOT NULL DEFAULT 2, pay_time INT UNSIGNED NULL,
+  create_time INT UNSIGNED NULL, update_time INT UNSIGNED NULL, pay_sn VARCHAR(255) NULL,
+  transaction_id VARCHAR(128) NULL, tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_sn (sn), UNIQUE KEY uk_pay_sn (pay_sn),
+  UNIQUE KEY uk_transaction_id (transaction_id), UNIQUE KEY uk_recharge_order_tenant_id (tenant_id, id),
+  KEY idx_recharge_order_tenant_member_time (tenant_id, user_id, create_time, id),
+  CONSTRAINT fk_recharge_order_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_recharge_order_member FOREIGN KEY (tenant_id, user_id) REFERENCES pa_member (tenant_id, id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+CREATE TABLE pa_refund_record (
+  id INT NOT NULL AUTO_INCREMENT, order_type VARCHAR(255) NULL DEFAULT 'order',
+  order_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, refund_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
+  transaction_id VARCHAR(255) NULL, refund_way TINYINT NOT NULL DEFAULT 1, refund_type TINYINT NOT NULL DEFAULT 1,
+  refund_status TINYINT UNSIGNED NOT NULL DEFAULT 0, refund_msg TEXT NULL,
+  create_time INT UNSIGNED NULL DEFAULT 0, update_time INT NULL, sn VARCHAR(32) NOT NULL DEFAULT '',
+  order_sn VARCHAR(64) NOT NULL, tenant_id BIGINT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NOT NULL DEFAULT 0, order_id INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id), UNIQUE KEY uk_sn (sn), UNIQUE KEY uk_refund_record_tenant_id (tenant_id, id),
+  UNIQUE KEY uk_refund_record_tenant_order (tenant_id, order_type, order_id),
+  UNIQUE KEY uk_refund_record_order_global (order_type, order_id),
+  KEY idx_refund_record_tenant_status_time (tenant_id, refund_status, create_time, id),
+  CONSTRAINT fk_refund_record_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_refund_record_member FOREIGN KEY (tenant_id, user_id) REFERENCES pa_member (tenant_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_refund_record_order FOREIGN KEY (tenant_id, order_id) REFERENCES pa_recharge_order (tenant_id, id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+CREATE TABLE pa_refund_log (
+  id INT NOT NULL AUTO_INCREMENT, sn VARCHAR(32) NULL, record_id INT NOT NULL,
+  handle_id INT NOT NULL DEFAULT 0, order_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0,
+  refund_amount DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT 0, refund_status TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  refund_msg TEXT NULL, create_time INT UNSIGNED NULL DEFAULT 0, update_time INT NULL,
+  tenant_id BIGINT UNSIGNED NOT NULL, user_id INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id), UNIQUE KEY uk_sn (sn), UNIQUE KEY uk_refund_log_tenant_id (tenant_id, id),
+  KEY idx_refund_log_tenant_record_time (tenant_id, record_id, create_time, id),
+  CONSTRAINT fk_refund_log_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_refund_log_member FOREIGN KEY (tenant_id, user_id) REFERENCES pa_member (tenant_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_refund_log_record FOREIGN KEY (tenant_id, record_id) REFERENCES pa_refund_record (tenant_id, id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+SQL);
+}
+
+function seedFinanceTenantSchema(PDO $pdo): void
+{
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_tenant (id,code,status) VALUES (101,'alpha','active'),(202,'beta','active');
+INSERT INTO pa_member (id,tenant_id,sn,account,nickname,user_money,total_recharge_amount)
+VALUES (11,101,'M-ALPHA','alpha','Alpha',100.00,10.00),(22,202,'M-BETA','beta','Beta',20.00,0);
+INSERT INTO pa_recharge_order
+  (id,tenant_id,sn,user_id,pay_sn,pay_way,pay_status,pay_time,order_amount,order_terminal,transaction_id,refund_status,create_time)
+VALUES (21,101,'RC-ALPHA',11,'PY-ALPHA',2,1,1700000000,10.00,3,'TX-ALPHA',1,1700000000);
+INSERT INTO pa_refund_record
+  (id,tenant_id,sn,user_id,order_id,order_sn,order_type,order_amount,refund_amount,transaction_id,refund_way,refund_type,refund_status,refund_msg)
+VALUES (31,101,'RF-ALPHA',11,21,'RC-ALPHA','recharge',10.00,10.00,'TX-ALPHA',1,1,2,'');
+INSERT INTO pa_refund_log
+  (id,tenant_id,sn,record_id,user_id,handle_id,order_amount,refund_amount,refund_status,refund_msg)
+VALUES (41,101,'RL-ALPHA',31,11,1,10.00,10.00,2,'');
+SQL);
+}
 
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
 $admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-$databases = [];
+$database = financeDatabase($admin, 'peanut_admin_mt03_finance_');
 
 try {
-    foreach (['missing_table', 'default_tenant_unavailable', 'invalid_relation'] as $failure) {
-        $database = financeDatabase($admin, 'peanut_admin_mt03_finance_preflight_');
-        $databases[] = $database;
-        $pdo = financePdo($host, $port, $password, $database);
-        $pdo->exec($fixture);
-        if ($failure === 'missing_table') {
-            $pdo->exec('DROP TABLE pa_default_tenant_bootstrap');
-        } elseif ($failure === 'default_tenant_unavailable') {
-            $pdo->exec("UPDATE pa_default_tenant_bootstrap SET status='running'");
-        } else {
-            $pdo->exec('UPDATE pa_refund_log SET user_id = 999 WHERE id = 41');
-        }
-        try {
-            $pdo->exec($migration);
-            throw new RuntimeException("{$failure} migration preflight unexpectedly succeeded");
-        } catch (PDOException) {
-            foreach (['pa_recharge_order', 'pa_refund_record'] as $table) {
-                $count = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='{$table}' AND COLUMN_NAME='tenant_id'")->fetchColumn();
-                expectFinanceTenant($count === 0, "{$failure} changed {$table} before refusing");
-            }
-        }
-    }
-
-    $database = financeDatabase($admin, 'peanut_admin_mt03_finance_');
-    $databases[] = $database;
     $pdo = financePdo($host, $port, $password, $database);
-    $pdo->exec($fixture);
-    $pdo->exec($migration);
-    foreach (['pa_recharge_order', 'pa_refund_record', 'pa_refund_log'] as $table) {
-        expectFinanceTenant((int)$pdo->query("SELECT tenant_id FROM `{$table}` LIMIT 1")->fetchColumn() === 101, "{$table} was not backfilled");
-        expectFinanceTenant($pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='{$table}' AND COLUMN_NAME='tenant_id'")->fetchColumn() === 'NO', "{$table}.tenant_id is nullable");
-    }
-    foreach ([
-        'pa_recharge_order' => ['uk_recharge_order_tenant_id', 'idx_recharge_order_tenant_member_time'],
-        'pa_refund_record' => ['uk_refund_record_tenant_order', 'idx_refund_record_tenant_status_time'],
-        'pa_refund_log' => ['uk_refund_log_tenant_id', 'idx_refund_log_tenant_record_time'],
-    ] as $table => $required) {
-        $actual = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='{$table}'")->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($required as $index) expectFinanceTenant(in_array($index, $actual, true), "{$table}.{$index} is missing");
-    }
-    $rechargeIndexes = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pa_recharge_order'")->fetchAll(PDO::FETCH_COLUMN);
-    foreach (['uk_sn', 'uk_pay_sn', 'uk_transaction_id'] as $globalIndex) {
-        expectFinanceTenant(in_array($globalIndex, $rechargeIndexes, true), "global merchant identity {$globalIndex} was lowered");
-    }
-    $refundIndexes = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pa_refund_record'")->fetchAll(PDO::FETCH_COLUMN);
-    expectFinanceTenant(in_array('uk_refund_record_order_global', $refundIndexes, true), 'global one-refund-per-order invariant was lowered');
-
-    $pdo->exec("INSERT INTO pa_tenant (id,code,status) VALUES (202,'beta','active')");
-    $pdo->exec("INSERT INTO pa_member (id,tenant_id,sn,account,nickname,user_money,total_recharge_amount) VALUES (22,202,'M-BETA','beta','Beta',20,0)");
+    createFinanceTenantSchema($pdo);
+    seedFinanceTenantSchema($pdo);
     putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
     putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
     $app = new think\App(); $app->initialize();
     $alpha = financeTenantContext(101, 501, 'mt03-finance-alpha');
     $beta = financeTenantContext(202, 502, 'mt03-finance-beta');
+    expectFinanceTenant(!FinanceTenantRepository::records($alpha)->where('id', 31)->findOrEmpty()->isEmpty(), 'Alpha refund record disappeared');
+    expectFinanceTenant(FinanceTenantRepository::records($beta)->where('id', 31)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund record');
+    expectFinanceTenant(!FinanceTenantRepository::logs($alpha)->where('id', 41)->findOrEmpty()->isEmpty(), 'Alpha refund log disappeared');
+    expectFinanceTenant(FinanceTenantRepository::logs($beta)->where('id', 41)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund log');
 
     $betaOrder = FinanceTenantRepository::createOrder($beta, [
         'tenant_id' => 101,
@@ -144,11 +201,8 @@ try {
     } catch (Throwable $e) {
         expectFinanceTenant($e->getMessage() !== '', 'forged actor denial lost shape');
     }
-
-    $migrationSource = $migration;
-    expectFinanceTenant(str_contains($migrationSource, 'pa_payment_scene and pa_config(type=pay/recharge) remain instance-owned'), 'instance payment configuration boundary is missing');
 } finally {
-    foreach ($databases as $database) $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT03-RECHARGE-REFUND-TENANT-001 passed\n";

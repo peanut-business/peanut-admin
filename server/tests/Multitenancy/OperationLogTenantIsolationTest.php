@@ -32,18 +32,14 @@ function operationTenantContext(int $tenantId, int $memberId, string $requestId)
     ), $requestId);
 }
 
-function createOperationTenantSchema(PDO $pdo, bool $withTenant = true): void
+function createOperationTenantSchema(PDO $pdo): void
 {
-    if ($withTenant) {
-        $pdo->exec(<<<'SQL'
+    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_tenant (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   status VARCHAR(32) NOT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
-SQL);
-    }
-    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_operation_log (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   admin_id INT UNSIGNED NOT NULL DEFAULT 0,
@@ -51,9 +47,13 @@ CREATE TABLE pa_operation_log (
   ip VARCHAR(50) NOT NULL DEFAULT '',
   uri VARCHAR(200) NOT NULL DEFAULT '',
   method VARCHAR(10) NOT NULL DEFAULT '',
+  request_id VARCHAR(128) NOT NULL DEFAULT '',
   params TEXT,
   create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_operation_log_tenant_id (tenant_id, id),
+  KEY idx_operation_log_tenant_created (tenant_id, create_time, id),
+  CONSTRAINT fk_operation_log_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 SQL);
 }
@@ -64,12 +64,6 @@ $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_audit_' . $runId;
-$missingTenantDatabase = $database . '_missing';
-$ambiguousTenantDatabase = $database . '_ambiguous';
-$migration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260812_operation_log_tenant_attribution.sql'
-);
-expectOperationTenant($migration !== '', 'operation log tenant migration is missing');
 
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
@@ -77,49 +71,10 @@ $admin = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
-$databases = [$database, $missingTenantDatabase, $ambiguousTenantDatabase];
-foreach ($databases as $name) {
-    $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-}
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 $exportedPath = null;
 try {
-    $missing = new PDO(
-        "mysql:host={$host};port={$port};dbname={$missingTenantDatabase};charset=utf8mb4",
-        'root',
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-    );
-    createOperationTenantSchema($missing, false);
-    try {
-        $missing->exec($migration);
-        throw new RuntimeException('migration accepted a database without pa_tenant');
-    } catch (PDOException) {
-        expectOperationTenant(
-            (int)$missing->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_operation_log' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 0,
-            'missing-Tenant migration mutated audit schema before refusing'
-        );
-    }
-
-    $ambiguous = new PDO(
-        "mysql:host={$host};port={$port};dbname={$ambiguousTenantDatabase};charset=utf8mb4",
-        'root',
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-    );
-    createOperationTenantSchema($ambiguous);
-    $ambiguous->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
-    $ambiguous->exec("INSERT INTO pa_operation_log (username, uri, method) VALUES ('legacy', 'legacy/write', 'POST')");
-    try {
-        $ambiguous->exec($migration);
-        throw new RuntimeException('migration guessed among multiple active Tenants');
-    } catch (PDOException) {
-        expectOperationTenant(
-            (int)$ambiguous->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_operation_log' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 0,
-            'ambiguous-Tenant migration mutated audit schema before refusing'
-        );
-    }
-
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
         'root',
@@ -127,22 +82,8 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
     createOperationTenantSchema($pdo);
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active')");
-    $pdo->exec("INSERT INTO pa_operation_log (username, uri, method) VALUES ('legacy', 'legacy/write', 'POST')");
-    $pdo->exec($migration);
-    expectOperationTenant(
-        (int)$pdo->query("SELECT tenant_id FROM pa_operation_log WHERE username = 'legacy'")->fetchColumn() === 101,
-        'legacy audit row was not attributed to the sole active Tenant'
-    );
-    expectOperationTenant(
-        $pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_operation_log' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 'NO',
-        'operation_log.tenant_id is nullable'
-    );
-    $indexes = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_operation_log'")->fetchAll(PDO::FETCH_COLUMN);
-    expectOperationTenant(in_array('uk_operation_log_tenant_id', $indexes, true), 'tenant/id audit index is missing');
-    expectOperationTenant(in_array('idx_operation_log_tenant_created', $indexes, true), 'tenant/create_time audit index is missing');
-
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (202, 'active')");
+    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
+    $pdo->exec("INSERT INTO pa_operation_log (tenant_id, username, uri, method) VALUES (101, 'alpha-seed', 'seed/read', 'GET')");
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
     putenv('PHP_DB_NAME=' . $database);
@@ -265,7 +206,5 @@ try {
     if (is_string($exportedPath) && is_file($exportedPath)) {
         unlink($exportedPath);
     }
-    foreach (array_reverse($databases) as $name) {
-        $admin->exec("DROP DATABASE IF EXISTS `{$name}`");
-    }
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

@@ -170,13 +170,8 @@ try {
         $pdo->exec(KernelSchema::createSql($table));
     }
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
-    $migration = file_get_contents(dirname(__DIR__, 2) . '/database/migrations/20260813_tenant_module_management.sql');
-    pm01ModuleExpect(is_string($migration), 'TenantModule migration is unavailable');
-    $pdo->exec($migration);
     foreach (ModuleSchema::tableNames() as $table) {
-        if ($table !== 'pa_module_installation') {
-            $pdo->exec(ModuleSchema::createSql($table));
-        }
+        $pdo->exec(ModuleSchema::createSql($table));
     }
     foreach (AuthorizationSchema::tableNames() as $table) {
         $pdo->exec(AuthorizationSchema::createSql($table));

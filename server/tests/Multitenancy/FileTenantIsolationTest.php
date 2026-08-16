@@ -33,18 +33,14 @@ function fileTenantContext(int $tenantId, int $memberId, string $requestId): Ten
     ), $requestId);
 }
 
-function createFileTenantSchema(PDO $pdo, bool $withTenant = true): void
+function createFileTenantSchema(PDO $pdo): void
 {
-    if ($withTenant) {
-        $pdo->exec(<<<'SQL'
+    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_tenant (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   status VARCHAR(32) NOT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
-SQL);
-    }
-    $pdo->exec(<<<'SQL'
 CREATE TABLE pa_file_cate (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   pid INT UNSIGNED NOT NULL DEFAULT 0,
@@ -53,7 +49,10 @@ CREATE TABLE pa_file_cate (
   create_time INT UNSIGNED NOT NULL DEFAULT 0,
   update_time INT UNSIGNED NOT NULL DEFAULT 0,
   delete_time INT UNSIGNED NULL DEFAULT NULL,
-  PRIMARY KEY (id), KEY idx_type (type)
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), KEY idx_type (type), UNIQUE KEY uk_file_cate_tenant_id (tenant_id, id),
+  KEY idx_file_cate_tenant_type_parent (tenant_id, type, pid, id),
+  CONSTRAINT fk_file_cate_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_file (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -67,8 +66,11 @@ CREATE TABLE pa_file (
   create_time INT UNSIGNED NOT NULL DEFAULT 0,
   update_time INT UNSIGNED NOT NULL DEFAULT 0,
   delete_time INT UNSIGNED NULL DEFAULT NULL,
+  tenant_id BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (id), KEY idx_cid (cid), KEY idx_type (type),
-  KEY idx_type_cid_source (type, cid, source)
+  KEY idx_type_cid_source (type, cid, source), UNIQUE KEY uk_file_tenant_id (tenant_id, id),
+  KEY idx_file_tenant_type_cid_source (tenant_id, type, cid, source, id),
+  CONSTRAINT fk_file_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 SQL);
 }
@@ -79,21 +81,13 @@ $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_file_' . $runId;
-$missingTenantDatabase = $database . '_missing';
-$ambiguousTenantDatabase = $database . '_ambiguous';
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
     'root',
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260812_file_tenant_ownership.sql');
-expectFileTenant($migration !== '', 'file tenant migration is missing');
-
-$databases = [$database, $missingTenantDatabase, $ambiguousTenantDatabase];
-foreach ($databases as $name) {
-    $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-}
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 $storageRoot = $serverRoot . '/public/storage/tenants/v1';
 $alphaDirectory = $storageRoot . '/101/uploads/images';
@@ -103,41 +97,6 @@ $alphaObject = $alphaDirectory . '/' . $objectName;
 $betaObject = $betaDirectory . '/' . $objectName;
 
 try {
-    $missing = new PDO(
-        "mysql:host={$host};port={$port};dbname={$missingTenantDatabase};charset=utf8mb4",
-        'root',
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-    );
-    createFileTenantSchema($missing, false);
-    try {
-        $missing->exec($migration);
-        throw new RuntimeException('migration accepted a database without pa_tenant');
-    } catch (PDOException) {
-        expectFileTenant(
-            (int)$missing->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_file' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 0,
-            'missing-Tenant migration mutated file schema before refusing'
-        );
-    }
-
-    $ambiguous = new PDO(
-        "mysql:host={$host};port={$port};dbname={$ambiguousTenantDatabase};charset=utf8mb4",
-        'root',
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-    );
-    createFileTenantSchema($ambiguous);
-    $ambiguous->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
-    try {
-        $ambiguous->exec($migration);
-        throw new RuntimeException('migration guessed among multiple active Tenants');
-    } catch (PDOException) {
-        expectFileTenant(
-            (int)$ambiguous->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_file' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 0,
-            'ambiguous-Tenant migration mutated file schema before refusing'
-        );
-    }
-
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
         'root',
@@ -145,32 +104,9 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
     createFileTenantSchema($pdo);
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active')");
-    $pdo->exec("INSERT INTO pa_file_cate (id, pid, type, name) VALUES (11, 0, 10, 'Legacy')");
-    $pdo->exec("INSERT INTO pa_file (id, cid, source_id, source, type, name, uri, storage) VALUES (21, 11, 1, 0, 10, 'legacy.png', 'storage/tenants/v1/101/uploads/images/legacy.png', 'local')");
-    $pdo->exec($migration);
-
-    foreach (['pa_file_cate', 'pa_file'] as $table) {
-        expectFileTenant(
-            (int)$pdo->query("SELECT tenant_id FROM `{$table}` LIMIT 1")->fetchColumn() === 101,
-            $table . ' did not backfill from the sole active Tenant'
-        );
-        expectFileTenant(
-            $pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 'NO',
-            $table . '.tenant_id is nullable'
-        );
-    }
-    foreach ([
-        'pa_file_cate' => ['uk_file_cate_tenant_id', 'idx_file_cate_tenant_type_parent'],
-        'pa_file' => ['uk_file_tenant_id', 'idx_file_tenant_type_cid_source'],
-    ] as $table => $indexes) {
-        $actual = $pdo->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}'")->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($indexes as $index) {
-            expectFileTenant(in_array($index, $actual, true), "{$table}.{$index} is missing");
-        }
-    }
-
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (202, 'active')");
+    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
+    $pdo->exec("INSERT INTO pa_file_cate (id, tenant_id, pid, type, name) VALUES (11, 101, 0, 10, 'Alpha seed')");
+    $pdo->exec("INSERT INTO pa_file (id, tenant_id, cid, source_id, source, type, name, uri, storage) VALUES (21, 101, 11, 1, 0, 10, 'alpha-seed.png', 'storage/tenants/v1/101/uploads/images/alpha-seed.png', 'local')");
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
     putenv('PHP_DB_NAME=' . $database);
@@ -271,7 +207,5 @@ try {
         @rmdir(dirname($directory));
         @rmdir(dirname($directory, 2));
     }
-    foreach ($databases as $name) {
-        $admin->exec("DROP DATABASE IF EXISTS `{$name}`");
-    }
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

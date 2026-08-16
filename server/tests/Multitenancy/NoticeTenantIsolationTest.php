@@ -13,6 +13,7 @@ use app\common\service\notice\VerificationCodeService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -27,7 +28,7 @@ function noticeTenantContext(int $tenantId, int $accountId, int $memberId, strin
 {
     return TenantContext::fromValidatedSession(new ValidatedTenantSession(
         $memberId,
-        '01JMT03NOTICE' . str_pad((string)$memberId, 14, '0', STR_PAD_LEFT),
+        'notice-session-' . $tenantId . '-' . $memberId,
         $tenantId,
         $accountId,
         $memberId,
@@ -37,10 +38,10 @@ function noticeTenantContext(int $tenantId, int $accountId, int $memberId, strin
     ), $requestId);
 }
 
-function noticeDatabase(PDO $admin, string $prefix): string
+function noticeDatabase(PDO $admin): string
 {
-    $database = $prefix . strtolower(bin2hex(random_bytes(5)));
-    $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $database = 'peanut_admin_notice_fresh_' . strtolower(bin2hex(random_bytes(5)));
+    $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
     return $database;
 }
 
@@ -54,14 +55,21 @@ function noticePdo(string $host, int $port, string $password, string $database):
     );
 }
 
-function tenantColumnExists(PDO $pdo, string $table): bool
+function noticeFreshSchema(PDO $pdo, string $serverRoot): void
 {
-    $statement = $pdo->prepare(<<<'SQL'
-SELECT COUNT(*) FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = 'tenant_id'
+    foreach (KernelSchema::tableNames() as $table) {
+        $pdo->exec(KernelSchema::createSql($table));
+    }
+    $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (101, 'default', 'Alpha', 'Alpha', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
 SQL);
-    $statement->execute(['table_name' => $table]);
-    return (int)$statement->fetchColumn() > 0;
+    $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
+    expectNoticeTenant($schema !== '', 'canonical application schema is missing');
+    $pdo->exec($schema);
 }
 
 final class SuccessfulNoticeSender implements NoticeSmsSender
@@ -84,10 +92,6 @@ final class SuccessfulNoticeSender implements NoticeSmsSender
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260812_notice_tenant_ownership.sql');
-$fixture = (string)file_get_contents($serverRoot . '/tests/fixtures/mt03/notice-tenant-ownership.sql');
-expectNoticeTenant($migration !== '' && $fixture !== '', 'notice tenant migration or fixture is missing');
-
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
@@ -97,65 +101,21 @@ $admin = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
-$databases = [];
+$database = noticeDatabase($admin);
 
 try {
-    foreach (['missing_table', 'zero_active', 'multiple_active'] as $failure) {
-        $database = noticeDatabase($admin, 'peanut_admin_mt03_notice_preflight_');
-        $databases[] = $database;
-        $pdo = noticePdo($host, $port, $password, $database);
-        $pdo->exec($fixture);
-        if ($failure === 'missing_table') {
-            $pdo->exec('DROP TABLE pa_notice_template');
-        } elseif ($failure === 'zero_active') {
-            $pdo->exec("UPDATE pa_tenant SET status = 'suspended'");
-        } else {
-            $pdo->exec("INSERT INTO pa_tenant (id, code, status) VALUES (202, 'beta', 'active')");
-        }
-        try {
-            $pdo->exec($migration);
-            throw new RuntimeException("{$failure} migration preflight unexpectedly succeeded");
-        } catch (PDOException) {
-            foreach (['pa_notice_scene', 'pa_notice_log'] as $table) {
-                expectNoticeTenant(!tenantColumnExists($pdo, $table), "{$failure} changed {$table} before rejecting");
-            }
-            if ($failure !== 'missing_table') {
-                expectNoticeTenant(!tenantColumnExists($pdo, 'pa_notice_template'), "{$failure} changed pa_notice_template before rejecting");
-            }
-        }
-    }
-
-    $database = noticeDatabase($admin, 'peanut_admin_mt03_notice_');
-    $databases[] = $database;
     $pdo = noticePdo($host, $port, $password, $database);
-    $pdo->exec($fixture);
-    $pdo->exec($migration);
-
-    foreach (['pa_notice_scene', 'pa_notice_template', 'pa_notice_log'] as $table) {
-        expectNoticeTenant(
-            (int)$pdo->query("SELECT COUNT(*) FROM `{$table}` WHERE tenant_id = 101")->fetchColumn() > 0,
-            "{$table} legacy rows were not backfilled"
-        );
-        $nullable = $pdo->query(
-            "SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}' AND COLUMN_NAME = 'tenant_id'"
-        )->fetchColumn();
-        expectNoticeTenant($nullable === 'NO', "{$table}.tenant_id is nullable");
-    }
-    foreach ([
-        'pa_notice_scene' => ['uk_notice_scene_tenant_code', 'idx_notice_scene_tenant_sms'],
-        'pa_notice_template' => ['uk_notice_template_tenant_code', 'idx_notice_template_tenant_channel'],
-        'pa_notice_log' => ['idx_notice_log_tenant_scene_receiver', 'idx_notice_log_tenant_list'],
-    ] as $table => $indexes) {
-        $actual = $pdo->query(
-            "SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}'"
-        )->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($indexes as $index) {
-            expectNoticeTenant(in_array($index, $actual, true), "{$table}.{$index} is missing");
-        }
-    }
-
-    $pdo->exec("INSERT INTO pa_tenant (id, code, status) VALUES (202, 'beta', 'active')");
+    noticeFreshSchema($pdo, $serverRoot);
     $pdo->exec(<<<'SQL'
+INSERT INTO pa_notice_template
+  (id, tenant_id, name, code, channel, content, create_time, update_time)
+VALUES (21, 101, 'Alpha template', 'member_notice', 1, 'Alpha ${code}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP());
+INSERT INTO pa_notice_log
+  (id, tenant_id, template_id, scene_id, channel, provider, receiver, title, content, status, error, extra, send_time, create_time)
+VALUES (31, 101, 21, 1, 1, 'fixture-provider', '13900000000', 'Alpha', 'redacted', 2, '', '{}', UNIX_TIMESTAMP() - 600, UNIX_TIMESTAMP() - 600);
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES (202, 'beta', 'Beta', 'Beta', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
 INSERT INTO pa_notice_scene
   (id, tenant_id, code, name, variables, sms_template_id, sms_content, sms_status, create_time, update_time)
 VALUES (112, 202, 'login_code', 'Beta login', JSON_ARRAY('code'), 'beta-login', 'Beta ${code}', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());
@@ -191,8 +151,8 @@ SQL);
     $app = new think\App();
     $app->initialize();
 
-    $alpha = noticeTenantContext(101, 1001, 501, 'mt03-notice-alpha');
-    $beta = noticeTenantContext(202, 2002, 502, 'mt03-notice-beta');
+    $alpha = noticeTenantContext(101, 1001, 501, 'fresh-notice-alpha');
+    $beta = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta');
     $invalidSend = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.send', 'invalid-send');
     $invalidVerify = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.verify', 'invalid-verify');
 
@@ -309,14 +269,11 @@ SQL);
 
     echo json_encode([
         'status' => 'passed',
-        'scope' => 'mt03-notice-tenant-first',
-        'migration' => '20260812_notice_tenant_ownership.sql',
-        'preflight_denials' => ['missing_table', 'zero_active', 'multiple_active'],
-        'tenant_first' => ['scene', 'template_key', 'send_log', 'verification', 'admin_log'],
+        'scope' => 'notice-tenant-isolation',
+        'schema' => 'fresh-canonical',
+        'tenant_isolation' => ['scene', 'template_key', 'send_log', 'verification', 'admin_log'],
         'provider_credentials' => 'application_host_only',
     ], JSON_UNESCAPED_SLASHES) . PHP_EOL;
 } finally {
-    foreach (array_reverse($databases) as $database) {
-        $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
-    }
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

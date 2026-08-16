@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use app\adminapi\service\AdminPermissionService;
+use app\adminapi\service\NativeAdminPrincipalRepository;
 use app\common\service\async\TaskImportExportRuntime;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -25,82 +26,26 @@ function asyncTenantContext(int $tenantId, int $accountId, int $memberId, string
         $accountId,
         $memberId,
         'admin-web',
-        new \DateTimeImmutable('2031-01-01T00:00:00Z'),
+        new DateTimeImmutable('2031-01-01T00:00:00Z'),
         1,
     ), $requestId);
 }
 
-function asyncTenantSchema(PDO $pdo): void
+function asyncTenantSchema(PDO $pdo, string $serverRoot): void
 {
-    foreach (['pa_account', 'pa_tenant', 'pa_tenant_member', 'pa_tenant_audit_event'] as $table) {
+    foreach (KernelSchema::tableNames() as $table) {
         $pdo->exec(KernelSchema::createSql($table));
     }
+    $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
     $pdo->exec(<<<'SQL'
-CREATE TABLE pa_admin (
-  id INT UNSIGNED NOT NULL,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  username VARCHAR(64) NOT NULL,
-  root TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  disable TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_admin_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role (
-  id INT UNSIGNED NOT NULL,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  name VARCHAR(64) NOT NULL,
-  is_disable TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_system_role_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_menu (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  pid INT UNSIGNED NOT NULL DEFAULT 0,
-  type CHAR(1) NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  icon VARCHAR(100) NOT NULL DEFAULT '',
-  sort INT NOT NULL DEFAULT 0,
-  perms VARCHAR(200) NOT NULL DEFAULT '',
-  paths VARCHAR(200) NOT NULL DEFAULT '',
-  component VARCHAR(200) NOT NULL DEFAULT '',
-  is_cache TINYINT NOT NULL DEFAULT 0,
-  is_show TINYINT NOT NULL DEFAULT 1,
-  is_disable TINYINT NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role_menu (
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  role_id INT UNSIGNED NOT NULL,
-  menu_id INT UNSIGNED NOT NULL,
-  UNIQUE KEY uk_role_menu_tenant (tenant_id, role_id, menu_id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin_role (
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  admin_id INT UNSIGNED NOT NULL,
-  role_id INT UNSIGNED NOT NULL,
-  UNIQUE KEY uk_admin_role_tenant (tenant_id, admin_id, role_id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_legacy_admin_tenant_map (
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  legacy_admin_id INT UNSIGNED NOT NULL,
-  account_id BIGINT UNSIGNED NOT NULL,
-  tenant_member_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY (tenant_id, legacy_admin_id),
-  UNIQUE KEY uk_legacy_admin_member (tenant_id, tenant_member_id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_operation_log (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  admin_id INT UNSIGNED NOT NULL DEFAULT 0,
-  username VARCHAR(50) NOT NULL DEFAULT '',
-  ip VARCHAR(50) NOT NULL DEFAULT '',
-  uri VARCHAR(200) NOT NULL DEFAULT '',
-  method VARCHAR(10) NOT NULL DEFAULT '',
-  params TEXT,
-  create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (id), UNIQUE KEY uk_operation_log_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (101, 'default', 'Alpha', 'Alpha', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
 SQL);
+    $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
+    expectAsyncTenant($schema !== '', 'canonical application schema is missing');
+    $pdo->exec($schema);
 }
 
 $serverRoot = dirname(__DIR__, 2);
@@ -108,9 +53,9 @@ $host = getenv('DB_HOST') ?: '127.0.0.1';
 $port = (int)(getenv('DB_PORT') ?: 3306);
 $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
 $runId = strtolower(bin2hex(random_bytes(6)));
-$database = 'peanut_admin_mt03_async_' . $runId;
-$privateRoot = sys_get_temp_dir() . '/peanut-admin-mt03-async-' . $runId;
-$signingKey = hash('sha256', 'mt03-async-' . $runId) . hash('sha256', 'second-' . $runId);
+$database = 'peanut_admin_fresh_async_' . $runId;
+$privateRoot = sys_get_temp_dir() . '/peanut-admin-fresh-async-' . $runId;
+$signingKey = hash('sha256', 'fresh-async-' . $runId) . hash('sha256', 'second-' . $runId);
 
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
@@ -132,27 +77,68 @@ try {
             PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
         ]
     );
-    asyncTenantSchema($pdo);
+    asyncTenantSchema($pdo, $serverRoot);
     $now = '2030-01-01 00:00:00.000';
-    $pdo->exec("INSERT INTO pa_account (id,display_name,status,created_at,updated_at) VALUES (1001,'Alpha','active','{$now}','{$now}'),(1002,'Beta','active','{$now}','{$now}')");
-    $pdo->exec("INSERT INTO pa_tenant (id,code,name,display_name,status,activated_at,created_at,updated_at) VALUES (101,'alpha','Alpha','Alpha','active','{$now}','{$now}','{$now}'),(202,'beta','Beta','Beta','active','{$now}','{$now}','{$now}')");
-    $pdo->exec("INSERT INTO pa_tenant_member (id,tenant_id,account_id,status,joined_at,created_at,updated_at) VALUES (501,101,1001,'active','{$now}','{$now}','{$now}'),(502,202,1002,'active','{$now}','{$now}','{$now}')");
-    $pdo->exec("INSERT INTO pa_admin (id,tenant_id,username,root) VALUES (1,101,'alpha',0),(2,202,'beta',0)");
-    $pdo->exec("INSERT INTO pa_system_role (id,tenant_id,name) VALUES (11,101,'Alpha export'),(22,202,'Beta export')");
-    $pdo->exec("INSERT INTO pa_admin_role (tenant_id,admin_id,role_id) VALUES (101,1,11),(202,2,22)");
-    $pdo->exec("INSERT INTO pa_legacy_admin_tenant_map (tenant_id,legacy_admin_id,account_id,tenant_member_id) VALUES (101,1,1001,501),(202,2,1002,502)");
-    $pdo->exec("INSERT INTO pa_system_menu (type,name,paths) VALUES ('C','Operation logs','/system/log')");
-
-    $migration = (string)file_get_contents($serverRoot . '/database/migrations/20260813_task_import_export.sql');
-    expectAsyncTenant($migration !== '', 'async migration is missing');
-    $pdo->exec($migration);
-    $exportMenu = (int)$pdo->query("SELECT id FROM pa_system_menu WHERE perms='log/export'")->fetchColumn();
-    expectAsyncTenant($exportMenu > 0, 'async export Permission was not registered');
-    $insertPermission = $pdo->prepare('INSERT INTO pa_system_role_menu (tenant_id,role_id,menu_id) VALUES (?,?,?)');
-    $insertPermission->execute([101, 11, $exportMenu]);
-    $insertPermission->execute([202, 22, $exportMenu]);
-
-    $pdo->exec("INSERT INTO pa_operation_log (tenant_id,admin_id,username,uri,method,params,create_time) VALUES (101,1,'alpha','same/write','POST','{\"marker\":\"alpha-only\"}',UNIX_TIMESTAMP()),(202,2,'beta','same/write','POST','{\"marker\":\"beta-only\"}',UNIX_TIMESTAMP())");
+    $pdo->exec(<<<SQL
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (202, 'beta', 'Beta', 'Beta', 'active', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_account (id, display_name, status, created_at, updated_at) VALUES
+  (1001, 'Alpha', 'active', '{$now}', '{$now}'),
+  (1002, 'Beta', 'active', '{$now}', '{$now}'),
+  (1003, 'No export', 'active', '{$now}', '{$now}');
+INSERT INTO pa_credential
+  (account_id, kind, identifier_type, identifier_normalized, secret_hash, status, verified_at, secret_changed_at, created_at, updated_at)
+VALUES
+  (1001, 'email_password', 'email', 'alpha@example.test', REPEAT('a', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  (1002, 'email_password', 'email', 'beta@example.test', REPEAT('b', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  (1003, 'email_password', 'email', 'no-export@example.test', REPEAT('c', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_tenant_member
+  (id, tenant_id, account_id, display_name, status, joined_at, created_at, updated_at)
+VALUES
+  (501, 101, 1001, 'Alpha', 'active', '{$now}', '{$now}', '{$now}'),
+  (502, 202, 1002, 'Beta', 'active', '{$now}', '{$now}', '{$now}'),
+  (503, 101, 1003, 'No export', 'active', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_module_installation
+  (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
+VALUES
+  ('peanut.admin', '2.0.0', 1, REPEAT('d', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_tenant_module
+  (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
+VALUES
+  (101, 'peanut.admin', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (202, 'peanut.admin', 'enabled', 'manual', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_permission
+  (`key`, module_key, type, name, description, risk_level, status, manifest_version, created_at, updated_at)
+VALUES
+  ('log/export', 'peanut.admin', 'api', 'Export operation logs', NULL, 'normal', 'active', 'fresh-schema-v1', '{$now}', '{$now}')
+ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at), retired_at = NULL;
+INSERT INTO pa_role
+  (id, tenant_id, `key`, name, is_builtin, status, authorization_revision, created_at, updated_at)
+VALUES
+  (11, 101, 'alpha.export', 'Alpha export', 0, 'active', 1, '{$now}', '{$now}'),
+  (22, 202, 'beta.export', 'Beta export', 0, 'active', 1, '{$now}', '{$now}'),
+  (33, 101, 'alpha.no-export', 'Alpha no export', 0, 'active', 1, '{$now}', '{$now}');
+INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at) VALUES
+  (101, 501, 11, '{$now}'),
+  (202, 502, 22, '{$now}'),
+  (101, 503, 33, '{$now}');
+INSERT INTO pa_system_menu (type, name, perms, paths, is_disable)
+VALUES ('A', 'Export operation logs', 'log/export', '', 0);
+SQL);
+    $exportPermission = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'log/export'")->fetchColumn();
+    expectAsyncTenant($exportPermission > 0, 'fresh canonical async export Permission is missing');
+    $insertPermission = $pdo->prepare(
+        'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
+    );
+    $insertPermission->execute([101, 11, $exportPermission, $now]);
+    $insertPermission->execute([202, 22, $exportPermission, $now]);
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_operation_log (tenant_id, admin_id, username, uri, method, params, create_time) VALUES
+  (101, 501, 'alpha', 'same/write', 'POST', '{"marker":"alpha-only"}', UNIX_TIMESTAMP()),
+  (202, 502, 'beta', 'same/write', 'POST', '{"marker":"beta-only"}', UNIX_TIMESTAMP());
+SQL);
 
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
@@ -160,25 +146,20 @@ try {
     putenv('PHP_DB_USER=root');
     putenv('PHP_DB_PASS=' . $password);
     putenv('PHP_DB_PREFIX=pa_');
-    // The dependency directory can be shared between worktrees; bind config to this fixture root.
     $app = new think\App($serverRoot);
     $app->initialize();
 
-    $alphaTenant = asyncTenantContext(101, 1001, 501, 'mt03-alpha-' . $runId);
-    $betaTenant = asyncTenantContext(202, 1002, 502, 'mt03-beta-' . $runId);
-    $alpha = AdminPermissionService::authorizedAsyncExport($alphaTenant, [
-        'id' => 1, 'tenant_id' => 101, 'root' => 0, 'roles' => [['id' => 11]],
-    ]);
-    $beta = AdminPermissionService::authorizedAsyncExport($betaTenant, [
-        'id' => 2, 'tenant_id' => 202, 'root' => 0, 'roles' => [['id' => 22]],
-    ]);
+    $alphaTenant = asyncTenantContext(101, 1001, 501, 'fresh-async-alpha-' . $runId);
+    $betaTenant = asyncTenantContext(202, 1002, 502, 'fresh-async-beta-' . $runId);
+    $noExportTenant = asyncTenantContext(101, 1003, 503, 'fresh-async-no-export-' . $runId);
+    $principals = new NativeAdminPrincipalRepository($pdo);
+    $alpha = AdminPermissionService::authorizedAsyncExport($alphaTenant, $principals->require($alphaTenant));
+    $beta = AdminPermissionService::authorizedAsyncExport($betaTenant, $principals->require($betaTenant));
     try {
-        AdminPermissionService::authorizedAsyncExport($alphaTenant, [
-            'id' => 1, 'tenant_id' => 101, 'root' => 0, 'roles' => [],
-        ]);
-        throw new RuntimeException('permission-less async submission succeeded');
+        AdminPermissionService::authorizedAsyncExport($noExportTenant, $principals->require($noExportTenant));
+        throw new RuntimeException('native permission-less async submission succeeded');
     } catch (DomainException $exception) {
-        expectAsyncTenant($exception->getMessage() === 'ASYNC_EXPORT_PERMISSION_DENIED', 'permission denial shape changed');
+        expectAsyncTenant($exception->getMessage() === 'ASYNC_EXPORT_PERMISSION_DENIED', 'native permission denial shape changed');
     }
 
     $runtime = new TaskImportExportRuntime($pdo, $signingKey, $privateRoot);
@@ -207,27 +188,27 @@ SQL);
     expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn() === 1, 'failed submission left a job');
 
     $jobKey = (string)$operation->taskJobKey;
-    $envelope = (string)$pdo->query("SELECT trusted_envelope FROM pa_task_job WHERE job_key=" . $pdo->quote($jobKey))->fetchColumn();
+    $envelope = (string)$pdo->query("SELECT trusted_envelope FROM pa_task_job WHERE job_key = " . $pdo->quote($jobKey))->fetchColumn();
     $forged = str_replace('"tenant_id":101', '"tenant_id":202', $envelope);
-    $pdo->prepare('UPDATE pa_task_job SET trusted_envelope=? WHERE job_key=?')->execute([$forged, $jobKey]);
-    expectAsyncTenant($runtime->runTenant(101, 'mt03-forged-' . $runId) === 1, 'forged job was not claimed');
-    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key=" . $pdo->quote($jobKey))->fetchColumn() === 'dead', 'forged envelope did not fail closed');
+    $pdo->prepare('UPDATE pa_task_job SET trusted_envelope = ? WHERE job_key = ?')->execute([$forged, $jobKey]);
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-forged-' . $runId) === 1, 'forged job was not claimed');
+    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote($jobKey))->fetchColumn() === 'dead', 'forged envelope did not fail closed');
     expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_file_object')->fetchColumn() === 0, 'forged envelope produced an artifact');
 
     $suspended = $runtime->submitOperationLogExport($alpha, 'suspended-' . $runId);
-    $pdo->exec("UPDATE pa_tenant SET status='suspended', suspended_at=UTC_TIMESTAMP(3) WHERE id=101");
-    expectAsyncTenant($runtime->runTenant(101, 'mt03-suspended-' . $runId) === 1, 'suspended Tenant job was not examined');
-    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key=" . $pdo->quote((string)$suspended->taskJobKey))->fetchColumn() === 'dead', 'suspended Tenant job executed');
-    $pdo->exec("UPDATE pa_tenant SET status='active', suspended_at=NULL WHERE id=101");
+    $pdo->exec("UPDATE pa_tenant SET status = 'suspended', suspended_at = UTC_TIMESTAMP(3) WHERE id = 101");
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-suspended-' . $runId) === 1, 'suspended Tenant job was not examined');
+    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$suspended->taskJobKey))->fetchColumn() === 'dead', 'suspended Tenant job executed');
+    $pdo->exec("UPDATE pa_tenant SET status = 'active', suspended_at = NULL WHERE id = 101");
 
     $revoked = $runtime->submitOperationLogExport($alpha, 'revoked-' . $runId);
-    $pdo->exec("DELETE FROM pa_system_role_menu WHERE tenant_id=101 AND role_id=11 AND menu_id={$exportMenu}");
-    expectAsyncTenant($runtime->runTenant(101, 'mt03-revoked-' . $runId) === 1, 'revoked job was not examined');
-    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key=" . $pdo->quote((string)$revoked->taskJobKey))->fetchColumn() === 'dead', 'revoked Permission still executed');
-    $insertPermission->execute([101, 11, $exportMenu]);
+    $pdo->exec("DELETE FROM pa_role_permission WHERE tenant_id = 101 AND role_id = 11 AND permission_id = {$exportPermission}");
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-revoked-' . $runId) === 1, 'revoked job was not examined');
+    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$revoked->taskJobKey))->fetchColumn() === 'dead', 'revoked native Permission still executed');
+    $insertPermission->execute([101, 11, $exportPermission, $now]);
 
     $success = $runtime->submitOperationLogExport($alpha, 'success-' . $runId);
-    expectAsyncTenant($runtime->runTenant(101, 'mt03-success-' . $runId) === 1, 'successful job was not processed');
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-success-' . $runId) === 1, 'successful job was not processed');
     $completed = $runtime->operation($alpha, $success->operationKey);
     expectAsyncTenant($completed->status === 'succeeded' && $completed->resultFileKey !== null, 'successful export did not publish a result');
     $download = $runtime->download($alpha, $completed->resultFileKey);
