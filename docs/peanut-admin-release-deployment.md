@@ -17,10 +17,12 @@
 
 ### 无人值守发布脚本
 
-正式发布使用 `scripts/deploy-release`，不要在服务器上继续调用旧的
+`scripts/deploy-release` 是当前 `dev` 的发布控制脚本，尚未随 `v2.0.0` Release 交付或完成
+Standalone/Multi-tenant 双部署生产资格。正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
 `scripts/production-upgrade`。脚本从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
-数据库资源。它不会通过默认值猜测另一套部署。
+数据库资源。它不会通过默认值猜测另一套部署。以下 `--apply` 命令是经资源 owner 授权后的
+操作模板，不是 `v2.0.0` 已执行生产部署的证据。
 
 ```bash
 # 先只核对计划（不连接线上、不写入线上）
