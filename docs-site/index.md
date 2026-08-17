@@ -42,7 +42,7 @@ features:
 
 <div class="home-proof">
   <div class="home-proof-copy">
-    <p class="eyebrow">CURRENT CANDIDATE · 2.0.0</p>
+    <p class="eyebrow">SOURCE RELEASE · 2.0.0</p>
     <h2>从可运行模板，到可维护的产品 Host</h2>
     <p>Standalone 与多租户双模式、实例内 Tenant 平台管理、可信租户会话及代表业务隔离，已经收进同一条可验证的交付链。</p>
     <div class="home-proof-actions">

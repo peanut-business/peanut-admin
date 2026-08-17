@@ -27,6 +27,14 @@ Peanut Core（通用身份、Tenant、权限和扩展合同）
 需要直接动手时，先读[API 与 Module 扩展](/api)；需要判断默认安装哪些能力时，读
 [开箱即用能力目录](/capabilities)；fresh 安装和 1.x 退出边界见[部署与安装](/deployment)。
 
+| 当前任务 | 先读 | 完成标志 |
+| --- | --- | --- |
+| 新增普通管理功能 | ThinkPHP 分层、认证权限、数据库迁移 | 路由、权限、菜单、后端拒绝和聚焦测试同时成立 |
+| 新增独立业务域 | [Module 开发教程](/guide/module-development) | 表/代码/权限/菜单/测试有独立 owner，跨模块只依赖公开合同 |
+| 新增可选官方能力 | [官方模块资格](/architecture/official-module-qualification) | Plugin + TenantModule + RBAC/Data Scope 四层全部通过 |
+| 派生 DCS 应用 | create-app 与 Module 边界 | DCS 领域代码和文档留在 DCS 仓库 |
+| 启动/安装/部署 | [命令参数参考](/guide/reading-guide) | 实际结果与文档的预期结果一致 |
+
 ## 1. 架构与目录
 
 Peanut Admin 是 ThinkPHP 8 + Vue 3 客户端的前后端分离项目。HTTP 入口是
@@ -98,9 +106,9 @@ peanut-admin/
 
 | 身份 | 当前已支持程度 | 不能混写的边界 |
 | --- | --- | --- |
-| 平台/系统操作身份 | **2.0 开发候选已验证**：独立 PlatformOperator 会话、平台角色和权限；同一 Account 可以另有关联 TenantMember，但两套身份不互推 | 只治理本实例 Tenant/Module，不读取任意租户业务数据 |
-| Tenant 管理成员 | **2.0 开发候选已验证**：管理端认证、会话、角色和权限直接使用 Core Account/Credential、TenantMember 与 RBAC；真实浏览器已通过三 Tenant 选择并进入 Store Demo | TenantMember 是组织成员，不自动成为客户、供应商联系人或门店员工档案 |
-| 业务客户/会员 | **2.0 开发候选已验证**：`pa_member` 有独立注册、登录、OAuth、标签和单一权威余额，并按 Tenant 隔离 | 当前没有与 Core Account/TenantMember 的通用一对一映射；不要假定两种 token 可互换 |
+| 平台/系统操作身份 | **v2.0.0 已验证并正式源码发布**：独立 PlatformOperator 会话、平台角色和权限；同一 Account 可以另有关联 TenantMember，但两套身份不互推 | 只治理本实例 Tenant/Module，不读取任意租户业务数据 |
+| Tenant 管理成员 | **v2.0.0 已验证并正式源码发布**：管理端认证、会话、角色和权限直接使用 Core Account/Credential、TenantMember 与 RBAC；真实浏览器已通过三 Tenant 选择并进入 Store Demo | TenantMember 是组织成员，不自动成为客户、供应商联系人或门店员工档案 |
+| 业务客户/会员 | **v2.0.0 已验证并正式源码发布**：`pa_member` 有独立注册、登录、OAuth、标签和单一权威余额，并按 Tenant 隔离 | 当前没有与 Core Account/TenantMember 的通用一对一映射；不要假定两种 token 可互换 |
 
 Account/TenantMember/RBAC 足以作为客户组织员工或供应商组织成员的通用登录与授权基础，
 但当前仓库没有 Supplier、业务主体关联、供应商邀请/成员治理或供应商专用客户端。因此
@@ -266,6 +274,17 @@ PLATFORM_IDENTIFIER_HMAC_KEY=另一项至少32字节稳定随机值
 ADMIN_INITIAL_EMAIL=owner@example.com
 ADMIN_INITIAL_PASSWORD=仅空库首次安装使用的强密码
 ~~~
+
+| 配置组 | 必填场景 | 作用 | 注意 |
+| --- | --- | --- | --- |
+| `APP_ENV` / `APP_DEBUG` | 所有环境 | 控制运行模式和调试输出 | 生产固定 `production/false` |
+| `PEANUT_DEPLOYMENT_TARGET` / `PEANUT_DATABASE_RESOURCE_ID` | 所有连接数据库的操作 | 绑定登记环境和数据库资源 | 不静默回退到 localhost |
+| `DB_*` | 所有数据库环境 | 应用数据库连接 | 首次安装必须确认空库 |
+| `JWT_SECRET` | 所有运行环境 | 会话签名 | 至少 32 位，禁止提交 |
+| `DEPLOYMENT_MODE` | 所有部署 | 单租户或多租户 | 只接受两个合法枚举 |
+| 两项 `*_HMAC_KEY` | 管理身份运行时 | 稳定身份索引 | 必须独立、稳定且至少 32 字节 |
+| `ADMIN_INITIAL_*` | 空库首次安装 | 创建首个 Tenant owner | 安装后不作为日常凭据配置 |
+| `PLATFORM_INITIAL_*` | 多租户空库首次安装 | 创建独立 PlatformOperator | 不能与 Tenant owner 邮箱相同 |
 
 人工只维护这些普通键。生产 Compose 和本地启动器会派生 ThinkPHP 内部使用的 `PHP_*`
 进程变量；不要另建一份 `server/.env`。DB_TYPE、DB_DRIVER、DB_CHARSET 可按

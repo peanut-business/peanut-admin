@@ -30,6 +30,15 @@ Peanut Admin 的 HTTP API、两个公开运行包和 Host 覆盖共同构成扩�
 
 列表接口的 `data` 使用 `lists`、`count`、`pageNo`、`pageSize` 字段；详情和配置接口返回 `data` 对象。业务错误为 `40000`，未登录为 `40100`，无权限为 `40300`。
 
+| `code` | 人话解释 | 调用方应该做什么 |
+| --- | --- | --- |
+| `20000` | 请求成功 | 使用 `data`，不要再按 HTTP body 猜结果 |
+| `40000` | 输入或业务状态不允许 | 显示 `msg`，修正输入或刷新业务状态 |
+| `40100` | 会话不存在、过期或身份链错误 | 回到对应 Platform/Tenant/member 登录入口 |
+| `40300` | 已登录但无权限或数据范围不允许 | 不重试、不隐藏错误；核对 Role、TenantModule 和 Data Scope |
+
+不要为了让前端“继续运行”而把 `40100/40300` 转成成功响应；前端隐藏按钮也不能替代后端拒绝。
+
 ## 路由前缀
 
 - `api/platform/*`：实例内 PlatformOperator 会话与 Tenant/Module 治理，使用独立 audience。
@@ -61,6 +70,18 @@ api/admin/menu/lists -> menu/lists
 ```
 
 新增管理接口时，应同时登记路由、菜单和按钮/API 权限，并确认角色获得最小必要授权。权限不足时接口返回 `40300`，前端会隐藏没有权限的按钮。
+
+### 新接口完成清单
+
+| 项目 | 完成条件 |
+| --- | --- |
+| 路由 | HTTP 方法、URI、认证中间件明确 |
+| Controller/Validate | 只做输入、场景校验和响应转换 |
+| Application/Logic | 事务、状态和失败语义集中 |
+| Tenant | 只从可信 TenantContext 取 Tenant，不接受浏览器伪造 |
+| Permission | `perms` 与去掉 `api/admin/` 后的 URI 一致 |
+| Menu/Button | 只是展示和操作入口，不承担安全边界 |
+| 测试 | 成功、无权限、错误 Tenant 和停用状态至少各一条 |
 
 ## 敏感字段
 
@@ -140,6 +161,12 @@ interface InventoryCommands
 可信 TenantContext；被调用方拥有事务、表和失败语义。调用方可以保存必要快照，但不能
 直接读写 Inventory 私有表。跨 Module 列表由应用查询编排层组合公开 DTO，不建立隐藏的
 跨表 JOIN 合同。
+
+| 选择 | 什么时候用 | 调用方能保存什么 | 禁止做什么 |
+| --- | --- | --- | --- |
+| 同步命令 | 本次操作必须立即成功或失败 | 返回 ID、业务快照、幂等键 | 直接更新被调用 Module 的表 |
+| 只读查询 | 页面或校验需要当前业务事实 | 公开 DTO | 返回 ORM Model、PDO 或私有字段 |
+| 领域事件 | 允许最终一致且已有可靠投递 Runtime | 事件 ID、版本和最小快照 | 把内存事件当作可靠消息 |
 
 ### 事件与失败处理
 
