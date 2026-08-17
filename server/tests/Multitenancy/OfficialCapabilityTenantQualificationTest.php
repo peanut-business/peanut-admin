@@ -52,6 +52,9 @@ foreach ([
     'module_availability' => 'vendor/peanut-admin/core/kernel/src/Host/ModuleAvailabilityAdapter.php',
     'deployed_module_registry' => 'app/platform/service/module/DeployedTenantModuleRegistry.php',
     'fixture_module_access' => 'app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php',
+    'official_article_manifest' => 'app/Modules/Official/Article/module.json',
+    'official_article_access' => 'app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php',
+    'official_article_public' => 'app/api/middleware/PublicArticleTenantMiddleware.php',
 ] as $key => $relative) {
     $sources[$key] = qualificationSource($root, $relative);
 }
@@ -170,20 +173,35 @@ $matrix = [
     'crontab_task_import_export' => ['trusted_context' => true, 'sql_scope' => true, 'non_sql_namespace' => true, 'execution_recheck' => true],
     'tenant_module' => [
         'application_hosts_are_enableable_modules' => false,
-        'reason' => 'No shipped application Host in this matrix declares module.json; TenantModule applies only to registered optional Modules.',
+        'reason' => 'Application Host capabilities remain separate; only explicitly packaged official Modules use TenantModule.',
         'optional_module_manifest_required' => true,
         'optional_module_enable_guard_required' => true,
         'optional_module_guard_owner' => 'peanut-admin/core ModuleGuard plus permission catalog',
     ],
+    'official_article_module' => [
+        'manifest' => true,
+        'plugin_installation_guard' => true,
+        'tenant_module_guard' => true,
+        'tenant_sql_scope' => true,
+        'host_bound_public_tenant' => true,
+    ],
 ];
 
-foreach (array_diff(array_keys($matrix), ['tenant_module']) as $capability) {
+foreach (array_diff(array_keys($matrix), ['tenant_module', 'official_article_module']) as $capability) {
     qualificationExpect(
         ($matrix[$capability]['trusted_context'] ?? false) === true
             && ($matrix[$capability]['sql_scope'] ?? false) === true,
         'official capability is not mandatorily Tenant-scoped: ' . $capability
     );
 }
+qualificationExpect(
+    str_contains($sources['official_article_manifest'], '"key": "official.article"')
+        && str_contains($sources['official_article_access'], 'ModuleGuard')
+        && str_contains($sources['official_article_access'], 'assertMemberAccess(')
+        && str_contains($sources['official_article_public'], 'TenantEntryBindingResolver::production()->system(')
+        && str_contains($sources['article_repository'], 'assertTenant('),
+    'official Article Module is not guarded across deployment, Tenant and public Host boundaries'
+);
 qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")
         && str_contains($sources['module_availability'], 'assertDeployment(')

@@ -10,6 +10,21 @@ description: 官方可选 Module 必须满足的 Tenant 隔离、权限、生命
 “可选模块”只表示可以安装或关闭，不表示可以用单租户实现。任何进入 Peanut Admin 官方模块目录的
 Module 都必须通过同一套 Tenant 资格；不满足就只能留在派生应用或示例模板。
 
+## 5 分钟判断
+
+一个能力只有同时回答“是”，才能叫官方可选 Module：
+
+| 问题 | 必须答案 |
+| --- | --- |
+| 部署是否以不可变 Plugin 身份安装？ | 是 |
+| 是否能逐 Tenant 开通和停用？ | 是 |
+| 后端每个入口是否检查 TenantModule、成员权限和数据范围？ | 是 |
+| 表、文件、缓存、锁、任务和回调是否都有 Tenant owner？ | 是 |
+| 停用后，HTTP、内部命令、worker 和回调是否都拒绝新操作？ | 是 |
+| 是否有两个 Tenant 的正向与越权测试？ | 是 |
+
+只有“表里有 `tenant_id`”或“前端隐藏了菜单”，答案仍然是否。
+
 ## 必须满足的门禁
 
 每个 `module.json` 必须声明：
@@ -26,15 +41,15 @@ Module 都必须通过同一套 Tenant 资格；不满足就只能留在派生�
 
 ## 能力逐项要求
 
-| 能力 | 强制要求 |
-| --- | --- |
-| 身份/成员/RBAC | 使用可信 TenantContext；Permission 与数据条件分开；不能复用 PlatformRole |
-| 文件/素材 | 对象键带 Tenant namespace；下载、删除和异步导出都复核 Tenant |
-| 通知/OAuth/支付 | Provider binding 必须关联 Tenant；回调先验签再解析业务 Tenant；幂等和审计不跨租户 |
-| 任务/定时任务 | 调度记录、锁、运行上下文和重试都带 Tenant；执行前重新检查 Tenant 状态 |
-| 导入/导出 | 文件、字段映射、任务和结果只属于发起 Tenant；批量操作不能跳过权限 |
-| 文章/CRM | SQL 所有权、状态、搜索和缓存都按 Tenant 隔离；客户档案不等于 Account |
-| 跨模块调用 | 通过公开命令、查询 DTO 或版本化事件；禁止读写对方私有表 |
+| 能力 | 强制要求 | 最低验收示例 |
+| --- | --- | --- |
+| 身份/成员/RBAC | 使用可信 TenantContext；Permission 与数据条件分开；不能复用 PlatformRole | 同一 Account 在 Tenant A/B 得到不同权限，平台 Token 调租户 API 被拒绝 |
+| 文件/素材 | 对象键带 Tenant namespace；下载、删除和异步导出都复核 Tenant | Tenant A 猜测 Tenant B 文件 ID 仍返回拒绝/不存在 |
+| 通知/OAuth/支付 | Provider binding 关联 Tenant；回调先验签再解析业务 Tenant；幂等和审计不跨租户 | 相同外部单号不能串到另一 Tenant，伪造签名不进入状态机 |
+| 任务/定时任务 | 调度记录、锁、运行上下文和重试都带 Tenant；执行前重新检查 Tenant/Module 状态 | Module 停用后已排队任务不会继续执行写操作 |
+| 导入/导出 | 文件、字段映射、任务和结果只属于发起 Tenant；批量操作不能跳过权限 | Tenant B 无法下载 Tenant A 的导出结果或复用任务 ID |
+| 文章/CRM | SQL 所有权、状态、搜索和缓存都按 Tenant 隔离；客户档案不等于 Account | 相同业务 ID 在两个 Tenant 中查询互不污染 |
+| 跨模块调用 | 通过公开命令、查询 DTO 或版本化事件；禁止读写对方私有表 | 调用方测试只依赖 `Contracts/`，扫描或测试拒绝私有 Repository 依赖 |
 
 ## 当前仓库状态
 
@@ -42,8 +57,12 @@ Module 都必须通过同一套 Tenant 资格；不满足就只能留在派生�
   原生菜单/RBAC 会交集 ModuleInstallation、TenantModule 和成员权限；源码 fixture 的同步业务命令
   也会在授权后再次检查 ModuleGuard。
 - **当前只是 Tenant 适配，不是可选 Module**：文件、通知、OAuth、支付、会员、任务、导入导出
-  和文章 Runtime 已按 Tenant 隔离，但仍由应用 Host 直接拥有，不能从“已隔离”推导为“已可安装/
+  Runtime 已按 Tenant 隔离，但仍由应用 Host 直接拥有，不能从“已隔离”推导为“已可安装/
   可停用”。共享文件基础设施也不应因某个业务 Module 停用而整体关闭。
+- **进行中的首个候选**：Article 已形成固定功能提交，加入 manifest、权限/菜单目录、管理端
+  contribution、ModuleInstallation/TenantModule Guard、Host 绑定解析和会员收藏公开查询合同；
+  PC/UniApp 静态停用合同、Plugin/Module 和 Web 类型检查已通过。它仍缺真实数据库、浏览器、
+  `dev` 合入与正式 Release 身份，因此不能写成“当前已支持的官方 Module”。
 - **推荐新增**：把候选能力按稳定 manifest 拆成官方可选 Module，并逐一补齐 HTTP/内部命令、
   入队和 worker 执行、外部回调、模块专属文件入口的统一 Guard，以及独立 Provider、版本和浏览器验收。
 - **示例模板**：`fixture.delivery-record` 用于演示表、合同、权限、菜单和前端 contribution，不进入生产默认 lock。

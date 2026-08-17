@@ -60,6 +60,13 @@
           </div>
         </el-tab-pane>
         <el-tab-pane name="2" :label="$t('userSetting.tab.securitySettings')">
+          <el-alert
+            v-if="userStore.demoMode"
+            class="demo-password-alert"
+            type="info"
+            :closable="false"
+            :title="$t('userSetting.security.demoDisabled')"
+          />
           <el-form
             ref="pwdRef"
             :model="pwdForm"
@@ -73,6 +80,7 @@
             >
               <el-input
                 v-model="pwdForm.password_old"
+                :disabled="userStore.demoMode"
                 type="password"
                 show-password
                 :placeholder="
@@ -86,6 +94,7 @@
             >
               <el-input
                 v-model="pwdForm.password"
+                :disabled="userStore.demoMode"
                 type="password"
                 show-password
                 :placeholder="
@@ -99,6 +108,7 @@
             >
               <el-input
                 v-model="pwdForm.password_confirm"
+                :disabled="userStore.demoMode"
                 type="password"
                 show-password
                 :placeholder="
@@ -110,6 +120,7 @@
               <el-button
                 type="primary"
                 :loading="pwdLoading"
+                :disabled="userStore.demoMode"
                 @click="savePassword"
               >
                 {{ $t('userSetting.save') }}
@@ -288,5 +299,10 @@
 
   .form-loading {
     min-height: 240px;
+  }
+
+  .demo-password-alert {
+    max-width: 480px;
+    margin: 8px 0 16px;
   }
 </style>

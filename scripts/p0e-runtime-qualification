@@ -951,7 +951,18 @@ class Runner:
                 shutil.copytree(source, target, copy_function=shutil.copy2)
             runner_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(runner_source, runner_target)
-            shutil.copy2(ROOT / "plugins.lock", lock)
+            source_lock = read_json(ROOT / "plugins.lock")
+            fixture_lock = {
+                "schema_version": 1,
+                "plugins": [
+                    entry
+                    for entry in source_lock.get("plugins", [])
+                    if isinstance(entry, dict) and entry.get("key") == "fixture.delivery-record"
+                ],
+            }
+            if len(fixture_lock["plugins"]) != 1:
+                fail("fixture Plugin lock entry is missing or duplicated")
+            lock.write_text(json.dumps(fixture_lock, indent=2) + "\n", encoding="utf-8")
             self.plugin_lifecycle_at(
                 self.generated,
                 "plugin_lifecycle",

@@ -26,9 +26,19 @@ SELECT
     tm.primary_department_id,
     tm.status,
     tm.authorization_revision,
+    tenant.name AS tenant_name,
     account.avatar_uri,
     account.last_login_at,
     credential.identifier_normalized AS username,
+    (
+        SELECT COUNT(*)
+        FROM pa_tenant_member switch_member
+        JOIN pa_tenant switch_tenant
+          ON switch_tenant.id = switch_member.tenant_id
+         AND switch_tenant.status = 'active'
+        WHERE switch_member.account_id = tm.account_id
+          AND switch_member.status = 'active'
+    ) AS switchable_tenant_count,
     EXISTS (
         SELECT 1
         FROM pa_member_role owner_membership
@@ -73,8 +83,10 @@ SQL);
         return [
             'id' => (int)$row['id'],
             'tenant_id' => (int)$row['tenant_id'],
+            'tenant_name' => (string)$row['tenant_name'],
             'account_id' => (int)$row['account_id'],
             'username' => (string)$row['username'],
+            'switchable_tenant_count' => (int)$row['switchable_tenant_count'],
             'account' => (string)$row['username'],
             'nickname' => (string)($row['display_name'] ?: $row['username']),
             'name' => (string)($row['display_name'] ?: $row['username']),

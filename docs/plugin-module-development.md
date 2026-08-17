@@ -94,6 +94,10 @@ web/src/modules/fixture-delivery-record/
 
 ## 第一个纵向切片
 
+### 开始前
+
+确认 Module key、数据 owner、依赖 Module、目标客户端和停用行为已经写清楚。若无法回答“谁拥有表、谁能调用、停用后哪些入口必须拒绝”，先停在设计阶段，不要创建 migration。
+
 ### 1. 定义数据 owner
 
 Module migration 必须在每张业务表上固定 `tenant_id`，索引和外键也要包含 Tenant 边界。
@@ -147,7 +151,14 @@ interface DeliveryRecordCommands
 
 ### 5. 安装和开通
 
-源码仓 fixture 的合同命令是：
+源码仓 fixture 的合同命令如下。它们只用于仓库资格示例，生产应用必须换成真实 Plugin artifact 和 lock 身份。
+
+| 命令 | 必填参数 | 作用 | 预期结果 | 风险/停止线 |
+| --- | --- | --- | --- | --- |
+| `plugin:install` | Plugin key | 预检、执行 Module migration、登记资源并激活 | 首次安装为 active；相同不可变身份重跑为 unchanged | manifest、摘要或 migration 不一致时停止 |
+| `plugin:upgrade --dry-run` | Plugin key | 只生成升级计划 | 不修改数据库和 Plugin 状态 | 计划出现越权表或降级动作时停止 |
+| `plugin:rollback` | Plugin key | 生成回滚计划 | 不默认删除业务数据 | 不把计划当作已回滚证明 |
+| `plugin:uninstall` | Plugin key | 卸载 Plugin Runtime | 所有 TenantModule 停用后执行，默认保留数据 | 任一 Tenant 仍启用时拒绝 |
 
 ```bash
 cd server
@@ -163,6 +174,9 @@ php think plugin:uninstall fixture.delivery-record
 
 生产应用不会自带 fixture。应用 owner 必须先提供真实 Plugin artifact 和 lock 身份，再由
 PlatformOperator 开通 TenantModule，最后给 TenantMember 分配权限。
+
+安装完成不等于功能可用。最终应看到：Plugin active、目标 TenantModule enabled、成员已获权限，
+并且前后端入口都能在 Module 停用后立即拒绝新操作。
 
 ## 模块之间如何调用
 

@@ -68,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive } from 'vue';
+  import { ref, reactive, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import { ElMessage, type FormInstance } from 'element-plus';
   import { Lock, User } from '@element-plus/icons-vue';
@@ -93,6 +93,16 @@
     challengeToken: undefined as string | undefined,
   });
   const tenantChoices = ref<TenantChoice[]>([]);
+
+  watch(
+    () => brandStore.demo,
+    (demo) => {
+      if (!demo.enabled) return;
+      if (!userInfo.username) userInfo.username = demo.email;
+      if (!userInfo.password) userInfo.password = demo.password;
+    },
+    { immediate: true, deep: true }
+  );
 
   const handleSubmit = async () => {
     if (loading.value) return;

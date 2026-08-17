@@ -64,7 +64,12 @@ final class AdminPermissionService
             ->where('perms', '<>', '')
             ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->column('perms');
-        $owned = (new CoreTenantModuleAdminBridge())->accessData($tenantContext)['permissions'];
+        $bridge = new CoreTenantModuleAdminBridge();
+        $registered = [
+            ...$registered,
+            ...$bridge->registeredPermissions($tenantContext->tenantId),
+        ];
+        $owned = $bridge->accessData($tenantContext)['permissions'];
 
         return CoreServiceOverrides::adminPermissionPolicy()->canAccess(
             self::isRoot($admin),
@@ -106,6 +111,7 @@ final class AdminPermissionService
             ->where('is_disable', 0)
             ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths());
+        $query->whereNotIn('paths', ['/article', '/article/cate', '/article/list']);
         if (!self::isRoot($admin)) {
             $query->where(static function ($query) use ($permissions): void {
                 $query->where('perms', '')->whereOr('perms', 'in', $permissions ?: ['__none__']);

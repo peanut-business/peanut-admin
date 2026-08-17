@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "key": "official.article",
+  "name": "Article Content",
+  "description": "Tenant-owned article and category content with member collections.",
+  "version": "1.0.0",
+  "kernel_constraint": "^1.0",
+  "license": "proprietary",
+  "php_package": "peanut-business/official-article",
+  "web_package": "@peanut-admin/official-article",
+  "dependencies": [],
+  "backend": {
+    "provider": "app\\Modules\\Official\\Article\\ModuleProvider",
+    "routes": "Http/routes.php",
+    "menus": "Resources/menus.json",
+    "permissions": "Resources/permissions.json"
+  },
+  "frontend": {
+    "entry": "web/src/modules/official-article/contribution.ts"
+  },
+  "database": {
+    "owned_tables": ["pa_article_cate", "pa_article", "pa_article_collect"]
+  },
+  "contracts": {
+    "exports": [
+      "app\\Modules\\Official\\Article\\Contracts\\ArticleModuleAccess",
+      "app\\Modules\\Official\\Article\\Contracts\\ArticleCollectionSummary"
+    ],
+    "events": []
+  },
+  "tenant": {
+    "enableable": true,
+    "disable_behavior": "reject_new_operations",
+    "requires": []
+  }
+}

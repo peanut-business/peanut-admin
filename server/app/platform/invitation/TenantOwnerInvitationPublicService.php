@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\invitation;
 
+use app\platform\service\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -147,6 +148,12 @@ final class TenantOwnerInvitationPublicService
                 return ['_error' => 'TENANT_MEMBER_INACTIVE'];
             }
             $this->memberships->assignRole($tenantId, $member->id, $role->id);
+            (new ApplicationTenantBootstrapService($this->pdo))->provision(
+                $tenantId,
+                $member->id,
+                $role->id,
+                (string)$invitation['tenant_code']
+            );
 
             $now = $this->format($this->now());
             $statement = $this->pdo->prepare(<<<'SQL'
@@ -202,7 +209,7 @@ SQL);
         $statement = $this->pdo->prepare(<<<'SQL'
 SELECT i.id, i.tenant_id, i.email_normalized, i.display_name, i.status,
        i.delivery_status, i.expires_at, i.accepted_account_id, i.accepted_member_id,
-       t.name AS tenant_name, t.status AS tenant_status
+       t.code AS tenant_code, t.name AS tenant_name, t.status AS tenant_status
 FROM pa_tenant_owner_invitation i
 JOIN pa_tenant t ON t.id = i.tenant_id
 WHERE i.token_hash = :token_hash

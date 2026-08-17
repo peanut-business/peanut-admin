@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**已验证**。Peanut Admin v2.0.0 fresh-only 正式源码发布已完成：固定候选 78e9667 的 P0-E 七组全部通过，PR #148/#149 已合入 dev/main，annotated tag、GitHub Release、确定性源码包和法律附件一致。生产部署不在本轮范围内，必须由后续独立工作流验证。
+> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；v2.0.1 固定源码候选已通过 P0-E 7/7 与 2.x 派生应用升级资格，正在收口正式 Release，线上 Standalone/Multi-tenant 双部署仍未完成。
 >
-> 事实基线：`main@ec4ac732a498afe5e02eafb4a4855ec1f52aa68d`，复核日期：`2026-08-17`。
+> 事实基线：`dev@82da1974c7a732264de35d8063ec08598fcadf6d`，复核日期：`2026-08-18`。
 
 ### 已验证可用
 
@@ -43,12 +43,20 @@ php scripts/check-product-capability-ledger
 | `PA-PLUGIN-001` | Plugin 与 Module 生命周期 | 已验证 | 安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture。 |
 | `PA-SCAFFOLD-001` | 创建独立应用 | 已验证 | create-app 已具备确定性生成、路径安全、品牌参数化、文件归属和不可变 Release 采用。 |
 | `PA-SCAFFOLD-003` | 新应用 Plugin 空锁合同 | 已验证 | 正式生成应用使用有效空 plugins.lock，不再引用仅供源仓测试的 fixture。 |
+| `PA-SCAFFOLD-004` | 2.x 派生应用受控升级 | 已验证 | 2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略与 preflight/apply/verify/recover 执行器已通过一次真实 v2.0.0 -> v2.0.1 派生应用资格，app-owned 字节保持且恢复闭环通过。 |
 | `PA-COMPAT-001` | 1.x 公开核心包升级兼容（历史） | 已验证 | 公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。 |
 | `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。 |
 | `PA-P0E-002` | 1.x 最终生成应用运行时验收（历史） | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
+
+### 已实现或正在验收
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.0.1 固定源码候选已整合无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格与固定候选 P0-E 7/7 已通过，证据为 9ffffed3d25857e99915b9d1da04e122c6a49080/tree 3a777f72928681c3d4e62adf86473cec506f4612、run p0e201r3。仍缺 main/tag/GitHub Release 收口和正式线上 Standalone/Multi-tenant 部署；v2.0.0 正式 Release 的支持面仍是 Docker Compose 手工流程和基础 demo seeder。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已进入 v2.0.1 开发候选，并通过后端、Plugin/Module、Web、PC 与 UniApp 聚焦合同。它尚未完成固定候选真实数据库、Article 页面浏览器资格或正式 Release 身份。 |
 
 ### 暂缓或范围外
 

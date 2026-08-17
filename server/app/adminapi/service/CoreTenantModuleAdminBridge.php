@@ -74,6 +74,30 @@ final readonly class CoreTenantModuleAdminBridge
         return $this->serverMenuRecords($visible);
     }
 
+    /** @return list<string> */
+    public function registeredPermissions(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $statement = $this->connection()->prepare(<<<'SQL'
+SELECT DISTINCT p.`key`
+FROM pa_permission p
+JOIN pa_module_installation installation
+  ON installation.module_key = p.module_key AND installation.status = 'active'
+JOIN pa_tenant_module tenant_module
+  ON tenant_module.module_key = p.module_key
+ AND tenant_module.tenant_id = :tenant_id
+ AND tenant_module.status = 'enabled'
+WHERE p.status = 'active'
+  AND (tenant_module.effective_at IS NULL OR tenant_module.effective_at <= CURRENT_TIMESTAMP(3))
+  AND (tenant_module.expires_at IS NULL OR tenant_module.expires_at > CURRENT_TIMESTAMP(3))
+ORDER BY p.`key`
+SQL);
+        $statement->execute(['tenant_id' => $tenantId]);
+        return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+    }
+
     private function connection(): PDO
     {
         if ($this->pdo instanceof PDO) {

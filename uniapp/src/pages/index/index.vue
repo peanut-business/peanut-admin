@@ -151,6 +151,8 @@ async function loadHome() {
     decorate.value = data.decorate
     applyDecorationPageMeta(decorate.value)
   } catch (error) {
+    articles.value = []
+    decorate.value = null
     console.error('Failed to load index data:', error)
   }
 }

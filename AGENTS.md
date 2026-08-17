@@ -59,6 +59,12 @@
   SHA-256 为 `af9fc2f…`，外部 manifest SHA-256 为 `508fc378…`。GitHub Actions 因账户
   配额/付款限制未执行实际任务，用户明确批准以已通过的固定候选 P0-E 7/7 作为发布门禁后
   绕过；该例外不能写成 CI 通过。2.0.0 生产部署不在本轮源码发布范围内，后续必须独立执行。
+- 2.0.1 固定源码候选已通过资格，但在 `main`、annotated tag 和 GitHub Release 收口前仍不是
+  正式 Release：候选已整合无人值守发布、2.x scaffold 升级、Article 官方可选 Module 和
+  2.0.1 scaffold 身份；`v2.0.0 -> v2.0.1` 派生应用已通过 `preflight/apply/verify/recover`，
+  固定候选 `9ffffed3d25857e99915b9d1da04e122c6a49080`（tree
+  `3a777f72928681c3d4e62adf86473cec506f4612`）的 P0-E `p0e201r3` 七组通过且零资源残留。
+  线上 Standalone/Multi-tenant 双部署仍未完成，不得写成已部署。
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 

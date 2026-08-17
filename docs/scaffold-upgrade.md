@@ -1,8 +1,35 @@
-# 脚手架升级执行器（1.x 历史）
+# 脚手架升级执行器
 
-> **1.x 历史归档，不是 2.0.0 使用说明。** 2.0.0 fresh-only 不提供脚手架原地升级；
-> 新应用请使用 `scripts/create-app` 生成并准备独立空数据库。以下内容只保留旧版本行为的
-> 可追溯记录，不能作为当前操作路径。
+## 当前 2.x 路径
+
+2.x 派生应用现在可以使用同一套 `preflight -> apply -> verify -> recover` 执行器在不可变
+scaffold Release 之间升级。当前已有一次真实资格：从 `v2.0.0` 生成应用升级到 `v2.0.1`，
+保留 `app-owned` 修改并完成恢复。
+
+```bash
+php scripts/scaffold-upgrade preflight \
+  --project-root=/absolute/path/to/application \
+  --from-manifest=/absolute/path/to/scaffold/releases/v2.0.0/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v2.0.1/scaffold-manifest.json
+
+php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+php scripts/scaffold-upgrade verify --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+```
+
+这条执行器只更新 manifest 中标为 `managed` 或 `generated-managed` 的框架文件，并原子保存
+恢复材料；`app-owned` 业务代码、业务 Schema、部署密钥和业务迁移不会被自动改写。它也不
+执行 Composer/npm、数据库 migration 或服务重启。部署中的前后端与数据库升级由
+`scripts/deploy-release --upgrade --from <当前版本>` 另行完成，二者必须使用同一不可变 Release
+和配对备份策略。升级前先运行 `preflight`，看到 `status=ready` 且冲突为 0 后再 apply。
+
+## 1.x 历史归档
+
+> 以下内容是 1.x 的历史证据，不是 2.x 的默认安装或升级路径。2.0.0 仍然是 fresh-only，
+> 不接受 1.x 数据库或脚手架原地升级。
 
 `scripts/scaffold-upgrade` 曾为 `scripts/create-app` 创建的独立应用提供可执行的
 `preflight → apply → verify → recover/rollback` 闭环。它只管理 application manifest

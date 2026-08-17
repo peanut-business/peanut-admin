@@ -19,6 +19,18 @@ pa_member login         -> Member token -> customer/member domain
 `Account` 只表示登录载体；`TenantMember` 表示某个账号加入某个 Tenant；`Role/Permission` 决定该成员在
 当前 Tenant 能做什么；`pa_member` 是独立的业务客户档案。客户等级、积分、供应商资质和合同不能写入 Account。
 
+## 术语表
+
+| 术语 | 人话解释 | 典型误解 |
+| --- | --- | --- |
+| Application Instance | 一套独立部署、数据库和生命周期 | 不是一个 Tenant，也不是前端菜单分组 |
+| Platform | 管理当前实例中 Tenant/入口/Module 的独立控制面 | 不是 Tenant 后台的子应用，也不是跨实例运营平台 |
+| Account | 可验证的登录账号 | 不等于客户、供应商或员工档案 |
+| TenantMember | Account 加入某个 Tenant 的成员关系 | 一个 Account 可以有多条，所以可以切换多个 Tenant |
+| Tenant Role/RBAC | 成员在当前 Tenant 的功能权限 | 不会自动赋予业务数据的全部行权限 |
+| `pa_member` | 当前应用的客户侧业务会员 | 不能用会员 Token 登录管理端 |
+| TenantModule | 某个 Tenant 是否开通一个 Module | 不等于 Plugin 已安装，也不等于成员已有权限 |
+
 ## 当前支持与边界
 
 | 能力 | 当前仓库 | 说明 |
@@ -53,6 +65,19 @@ fail closed；Platform API 则只接受 `PLATFORM_HOSTS`。
 
 业务关系存在不等于数据权限。供应商 Tenant 参与一张采购单，只能根据采购模块的 participant grant 读取
 采购单允许字段，不能由 `supplier_tenant_id` 直接读取采购方所有表。
+
+### 同一实例中的跨 Tenant 业务关系
+
+Peanut Admin 只提供 Tenant、成员和授权原语；下面是派生应用应采用的边界，不是当前内建采购 Runtime：
+
+1. 采购方 Tenant 拥有采购单权威记录和状态机。
+2. 供应商 Tenant 通过显式 Relationship/Contract/ParticipantGrant 被授权参与同一业务单据。
+3. 供应商读取的是采购模块允许的字段或只读投影，不是采购方数据库权限。
+4. 商品授权、价格、确认、收货和库存命令每次都校验双方 Tenant、关系状态、有效期和最小权限。
+5. 收货成功后由采购模块调用库存公开命令；库存拥有余额、预占和流水，采购模块不能直接改库存表。
+
+若双方必须独立发布、独立数据库或处于不同安全边界，才拆为多个应用实例并通过 API/事件协作。
+跨实例 global subject -> local tenant 映射是另一项复杂能力，当前不实现。
 
 ## 三类租户映射
 
