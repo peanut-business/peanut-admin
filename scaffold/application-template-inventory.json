@@ -417,7 +417,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "e98b268ddab4a9b625a655c76044ef5e5c6990431642414c6ab66b7cf7b93058"
+            "source_sha256": "ba4b5917015202235177711341c6386a3e11d7f7c8e266fb2c6d5a57fb69acdd"
         },
         {
             "path": "docs-site/capabilities.md",
@@ -426,7 +426,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "b6033e1c963facb03876f51f161eebab23c5f4cff5aee72cfefd8590bd3531b7"
+            "source_sha256": "ccccc2cae4d71e4db4e351a01fecb700df97d4ed5b35af5d9450bbe9e31594c1"
         },
         {
             "path": "docs-site/deployment.md",
@@ -435,7 +435,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "b3443e89b11f3ae601acd8b28a5106d2997723df479b4952355aea7f88ae1e55"
+            "source_sha256": "c3726decb863f456779b1ecda4f841b6f5edf33c936a994c28ec8a17c166fc9b"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -471,7 +471,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "bed1f5a6587886241148f6de349cada924592476f88ec0e6c3dc861d1f653e2c"
+            "source_sha256": "ea877b1ad1497711e6b86b27a0d57e23e65bf3fc978c24b12ffbb0981564a85b"
         },
         {
             "path": "docs-site/guide/module-development.md",
@@ -1483,7 +1483,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "79579814a8196836329f8575b0c4c38924155d8390724964b9fb1effd250cd94"
+            "source_sha256": "ea02d5c5648eb0b8b67a8fa065498d80b329b38a4eded85cf930df70d487d2fe"
         },
         {
             "path": "docs/peanut-admin-release-deployment.md",
@@ -1492,7 +1492,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "d00c38f068d2da2aa2749cdac9ca37354e5d02804ad30cae3e4fe31668711c99"
+            "source_sha256": "eef904c76e0e76d42da85371439481d013b5782fb505355fbc2d23506d697b47"
         },
         {
             "path": "docs/peanut-admin-user-manual.md",
@@ -2106,6 +2106,15 @@
             "source_sha256": "ba5093f5997851277b9eb3a20a944f077444a06a24cfff0d4f3dd9c805cf14d8"
         },
         {
+            "path": "resources/release-upgrade-transitions.json",
+            "target": "resources/release-upgrade-transitions.json",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "source_sha256": "e28c4746a3ac96113d83b3c06ea28aa2f4d722eb61317f979da243053a9f4145"
+        },
+        {
             "path": "scripts/build-application-template-inventory",
             "target": "scripts/build-application-template-inventory",
             "classification": "excluded",
@@ -2172,7 +2181,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "73f77219fd0f684ed69f30ddbcceeb0f1ef9f0bcb8cfdfe15eca8a49cd2f9034"
+            "source_sha256": "71dc7596e35ea6e73c1acd0e4a16248003a5f3d99597a8bf31b30d8388689dba"
         },
         {
             "path": "scripts/combined-upgrade-qualification",
@@ -2205,7 +2214,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "6c93a92c059cd4f9691eb167c4afa0c4362f1107b4a1e7d3387e18388daa0d95"
+            "source_sha256": "7f4325c820629fc82a2101a96126135bbb71651c4e92bcbe28cfb25d4b105396"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -2323,6 +2332,15 @@
             "owner": "template-source-only",
             "transform": "copy",
             "mode": 493
+        },
+        {
+            "path": "scripts/release-upgrade-policy",
+            "target": "scripts/release-upgrade-policy",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "source_sha256": "e4f8eada9c2b2c9c2565844aab9409e51c0eb0c6c9b32f88c479d69663d04b91"
         },
         {
             "path": "scripts/scaffold-runtime/ScaffoldManifest.php",
@@ -7405,6 +7423,14 @@
         {
             "path": "server/tests/Productization/ReferenceCodesHostTest.php",
             "target": "server/tests/Productization/ReferenceCodesHostTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/Productization/ReleaseUpgradePolicyTest.php",
+            "target": "server/tests/Productization/ReleaseUpgradePolicyTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
