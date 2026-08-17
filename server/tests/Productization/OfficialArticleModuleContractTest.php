@@ -115,7 +115,8 @@ officialArticleExpect(str_contains($repository, 'ModuleProvider'), 'Article repo
 officialArticleExpect(str_contains($capability, 'assertTenant('), 'Article typed target lost TenantModule enforcement');
 officialArticleExpect(
     str_contains($publicMiddleware, 'TenantEntryBindingResolver::production()->system(')
-        && str_contains($publicMiddleware, 'assertTenant('),
+        && str_contains($publicMiddleware, 'ModuleExecutionContext::system(')
+        && str_contains($publicMiddleware, 'ModuleExecutionGuard'),
     'public Article entry is not Host-bound and Module guarded'
 );
 

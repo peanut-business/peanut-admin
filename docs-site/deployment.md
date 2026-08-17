@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 2.0.0 的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 2.0.x（当前发布 v2.0.1）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -11,7 +11,7 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 - 默认一套部署对应一个应用实例，拥有自己的数据库、密钥、文件和生命周期。
 - 一个实例可以有多个 Tenant、客户端和 Module；多个实例不能共享私有业务表。
-- 2.0.0 是 fresh-only 主版本：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级。
+- 2.0.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.0.1。
 - canonical `init.sql` 是完整应用 Schema；`migrations/` 只保存 2.0.0 基线之后的追加变更。
 - 管理身份直接使用 Account/Credential/TenantMember/RBAC，不创建 legacy 映射或兼容 Admin 表。
 - 旧 tag、Release、迁移和升级证据仍可追溯，但不进入当前 Runtime、Schema、create-app 或日常操作路径。
@@ -37,7 +37,7 @@ Node.js、pnpm 和 Composer 只在开发机或 Docker 构建容器中使用。�
 
 ## 部署模式与身份输入
 
-Standalone 和多租户能力来自同一 2.0.0 代码线。每个部署必须显式设置
+Standalone 和多租户能力来自同一 2.0.x 代码线。每个部署必须显式设置
 `DEPLOYMENT_MODE=standalone` 或 `DEPLOYMENT_MODE=multi-tenant`；缺失值或其他拼写会按
 fail-closed 处理。两种模式都要为 `TENANT_IDENTIFIER_HMAC_KEY` 与
 `PLATFORM_IDENTIFIER_HMAC_KEY` 提供彼此独立、至少 32 字节的稳定随机值，发布后不能随意
@@ -99,11 +99,11 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 ```bash
 export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
 export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位且同时包含字母和数字>'
-scripts/deploy-release v2.0.0 --target production --fresh \
+scripts/deploy-release v2.0.1 --target production --fresh \
   --confirm-destroy production --dry-run
-scripts/deploy-release v2.0.0 --target production --fresh \
+scripts/deploy-release v2.0.1 --target production --fresh \
   --confirm-destroy production --apply
-scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
+scripts/deploy-release v2.0.1 --target production-candidate --upgrade --apply
 ```
 
 脚本不会回显密码。用于写入部署 `.env` 的值只接受字母、数字和有限的安全符号；含 `$`、
@@ -115,7 +115,7 @@ PC/UniApp/PHP 镜像、只启动 MySQL、执行 `migrate.php` 应用追加 migra
 升级属于同一个候选，不会出现只换镜像而遗漏 Schema 的情况。
 
 脚本保留部署 `.env` 和备份目录，不复制旧目录中的 migration 或运行时代码；fresh 目标只
-使用 tag 内的 canonical Schema。2.0.0 不接管 1.x 数据库，旧系统数据若需迁移必须另立
+使用 tag 内的 canonical Schema。2.0.x 不接管 1.x 数据库，旧系统数据若需迁移必须另立
 映射、校验和回滚方案。
 
 预期结果是：所选 tag 的前后端、PHP 镜像与数据库 migration 作为同一个候选完成更新，
@@ -242,7 +242,7 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 
 ### 状态说明
 
-2.0.0 已完成正式源码发布。隔离的 `production-candidate` 仍使用独立空库、Compose project、
+2.0.1 已完成正式源码发布。隔离的 `production-candidate` 仍使用独立空库、Compose project、
 origin 和四个域名上线；Platform、公共 Admin、DNS、TLS、Host 保留和反向代理已验证。
 当前生产候选使用登记的人工 Owner 邀请交付模式，已创建第二 Tenant，并完成两个 Tenant
 域名的应用内持续绑定；跨域名或错误 Tenant 账号登录会被拒绝。该线上体验验收不能替代
@@ -261,7 +261,7 @@ development，也不要在生产响应、日志或版本库中暴露 Token。
 
 ### 回滚停止线
 
-- 2.0.0 基线后的数据库迁移只前滚，不提供自动 down migration；不要删除账本记录、改写已登记 SQL，或假定 MySQL DDL 会随事务完整回滚。
+- 2.0.x 基线后的数据库迁移只前滚，不提供自动 down migration；不要删除账本记录、改写已登记 SQL，或假定 MySQL DDL 会随事务完整回滚。
 - 只有新迁移对旧应用保持向后兼容时，才可把应用镜像切回上一版本；切回前仍需确认后台任务、缓存和三端静态资源与旧版本匹配。
 - 如果迁移已产生旧应用不能读取的结构或数据，立即停止写流量，不启动旧镜像；只能修复并继续前滚，或恢复发布前同一时点的数据库与 `php-storage` 成对备份。
 - 真实支付、通知或 OAuth 外部状态不能靠数据库恢复撤销；恢复前先停止对应回调/任务并人工对账。

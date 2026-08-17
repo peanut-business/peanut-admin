@@ -3,8 +3,9 @@ declare(strict_types=1);
 
 namespace app\api\middleware;
 
-use app\Modules\Official\Article\ModuleProvider;
 use app\common\service\article\ArticleTenantContext;
+use app\common\service\module\ModuleExecutionContext;
+use app\common\service\module\ModuleExecutionGuard;
 use app\common\service\JsonService;
 use app\common\service\tenant\DefaultTenantContextResolver;
 use app\common\service\tenant\TenantEntryBindingResolver;
@@ -28,7 +29,9 @@ final class PublicArticleTenantMiddleware
             if (!$pdo instanceof \PDO) {
                 throw new \RuntimeException('ARTICLE_MODULE_DATABASE_UNAVAILABLE');
             }
-            (new ModuleProvider())->access($pdo)->assertTenant($request->tenantContext->tenantId);
+            (new ModuleExecutionGuard($pdo, 'official.article'))->assertEnabled(
+                ModuleExecutionContext::system('official.article', $request->tenantContext),
+            );
         } catch (ModuleException $exception) {
             return JsonService::fail('文章模块当前不可用', ['error_code' => $exception->errorCode], 40400);
         } catch (\Throwable) {

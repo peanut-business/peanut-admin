@@ -619,7 +619,7 @@
       "name": "官方可选 Module 产品化",
       "area": "plugins",
       "status": "in_progress",
-      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已随 v2.0.1 源码 Release 交付其 manifest、权限/菜单目录、管理端 contribution、后端 Guard、PC/UniApp 停用合同和 Plugin/Module 聚焦合同，但仍缺固定候选真实数据库与 Article 页面浏览器资格。",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；统一 ModuleExecutionContext/Guard 已接入 Fixture 和 Article 的管理/公开入口。Article 首个官方可选 Module 已随 v2.0.1 源码 Release 交付 manifest、权限/菜单目录、管理端 contribution、后端 Guard、PC/UniApp 停用合同和 Plugin/Module 聚焦合同，但仍缺通用任务/worker/回调/模块文件入口合同，以及固定候选真实数据库与 Article 页面浏览器资格。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",
@@ -649,7 +649,11 @@
         "Article 固定候选真实数据库与页面浏览器资格尚未完成"
       ],
       "paths": [
+        "server/app/common/service/module/ModuleExecutionContext.php",
+        "server/app/common/service/module/ModuleExecutionGuard.php",
+        "docs/architecture/module-execution-context-contract.md",
         "docs-site/architecture/official-module-qualification.md",
+        "docs-site/architecture/module-execution-context.md",
         "docs-site/capabilities.md"
       ]
     },

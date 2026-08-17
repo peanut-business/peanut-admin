@@ -123,7 +123,7 @@ Peanut Admin 当前开箱即用业务能力。
 
 | 类型 | 用途 | 当前状态与时机 |
 | --- | --- | --- |
-| legacy Admin/Role/Dept 到 Core 身份 | 旧单租户应用升级 | **仅迁移需要，当前版本不提供**。2.0.0 只接受空库安装，旧映射表、bootstrap 和 Runtime bridge 已退出 |
+| legacy Admin/Role/Dept 到 Core 身份 | 旧单租户应用升级 | **仅迁移需要，当前版本不提供**。2.0.x 只接受空库安装，旧映射表、bootstrap 和 Runtime bridge 已退出 |
 | 同应用业务主体到 Tenant/Member | 让 Supplier、Store、Customer 等主体由明确组织和成员操作 | **推荐新增到具体业务应用**；有真实跨组织流程时设计，不属于 legacy |
 | 跨应用 global subject 到 local tenant | 两个独立实例识别同一外部组织 | **暂不建议**；只有两个真实实例稳定协作后再设计联邦和生命周期 |
 

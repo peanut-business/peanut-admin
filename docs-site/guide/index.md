@@ -40,9 +40,17 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
     <strong>开箱即用能力与后续路线</strong>
     <span>逐项区分当前能力、下一步产品形态、核心默认、可选官方模块、DCS 业务和示例。</span>
   </a>
+  <a class="doc-entry" href="/product-status">
+    <strong>当前任务与状态</strong>
+    <span>查看已完成、进行中、范围外和下一步工作，不把历史计划当成当前待办。</span>
+  </a>
   <a class="doc-entry" href="/architecture/official-module-qualification">
     <strong>官方模块资格</strong>
     <span>所有官方可选模块必须满足的多租户、权限、文件、任务、回调和停用门禁。</span>
+  </a>
+  <a class="doc-entry" href="/architecture/module-execution-context">
+    <strong>Module 执行上下文</strong>
+    <span>说明租户身份、模块开通、RBAC 和任务/回调入口如何连续生效。</span>
   </a>
   <a class="doc-entry" href="/deployment">
     <strong>部署与安装</strong>
@@ -71,7 +79,7 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 1. 新安装者：文档阅读与命令参考 → 快速开始 → 架构、目录与身份 → 部署与安装 → 故障处理 → 管理员手册。
 2. Module 开发者：架构、目录与身份 → 首个 Module 教程 → API 与扩展 → 开箱即用能力与后续路线。
 3. 架构讨论：身份与 Tenant 边界 → 开箱即用能力与后续路线 → 官方模块资格 → fresh baseline。
-4. 发布负责人：版本与发布 → 部署与安装 → 产品状态。
+4. 发布负责人：版本与发布 → 部署与安装 → 产品状态 → 当前任务与状态。
 
 ## 当前讨论入口
 
@@ -85,6 +93,7 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 - [开箱即用能力逐项决策](/capabilities)
 - [独立中文 Platform 操作手册](/platform)
 - [官方可选模块强制多租户资格](/architecture/official-module-qualification)
+- [当前任务与状态](/product-status)
 
 这些页面会明确标注“当前已支持、推荐新增、仅迁移需要、暂不建议、待核验”。设计建议
 不会被写成已经存在的 Runtime；DCS 具体领域文档仍由 DCS 仓库维护。
@@ -104,7 +113,7 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 | Module、Plugin、Host 和跨模块调用 | 已补齐 | [API 与扩展](/api#module-plugin-与-host)说明四道 Gate、DTO、命令和失败边界 |
 | 开箱即用能力和后续路线 | 已补齐 | [能力目录](/capabilities)分开记录当前事实、推荐产品形态和完成条件 |
 | 官方可选模块多租户 | 已补齐 | [官方模块资格](/architecture/official-module-qualification)明确所有官方 Module 必须多租户 |
-| 部署与迁移 | 已补齐当前事实 | `v2.0.0` 是 fresh-only；`v2.0.1` 已正式源码 Release，含无人值守脚本和 2.x 升级资格；线上双部署仍需独立执行 |
+| 部署与迁移 | 已补齐当前事实 | `v2.0.x` 是 fresh-only；当前 `v2.0.1` 已正式源码 Release，含无人值守脚本和 2.x 升级资格；线上双部署仍需独立执行 |
 | 管理员操作 | 已覆盖当前页面 | [管理员手册](/guide/user-manual)按页面说明操作结果和权限边界 |
 | 故障处理 | 已补齐最小路径 | [故障处理](/troubleshooting)按资源、安装、身份、Host 和 Module Gate 排查 |
 | DCS 边界 | 已明确 | Peanut 只说明扩展机制；DCS 领域表、事件和业务流程留在 DCS 仓库 |

@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Http;
 
-use app\Modules\Official\Article\ModuleProvider;
+use app\common\service\module\ModuleExecutionContext;
+use app\common\service\module\ModuleExecutionGuard;
 use app\common\service\JsonService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PDO;
 use think\facade\Db;
@@ -18,8 +20,12 @@ final class ArticleModuleMiddleware
             if (!$pdo instanceof PDO) {
                 throw new \RuntimeException('ARTICLE_MODULE_DATABASE_UNAVAILABLE');
             }
-            (new ModuleProvider())->access($pdo)->assertTenant(
-                (int)($request->tenantContext->tenantId ?? 0)
+            $context = $request->tenantContext ?? null;
+            if (!$context instanceof TenantContext) {
+                throw new \PeanutAdmin\Kernel\Auth\AuthException('CONTEXT_TENANT_REQUIRED', 403);
+            }
+            (new ModuleExecutionGuard($pdo, 'official.article'))->assertEnabled(
+                ModuleExecutionContext::admin('official.article', $context, 'http.admin'),
             );
         } catch (ModuleException $exception) {
             $status = in_array($exception->errorCode, ['MODULE_NOT_INSTALLED', 'MODULE_INSTALLATION_FAILED'], true)
