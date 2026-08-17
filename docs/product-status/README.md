@@ -43,6 +43,7 @@ php scripts/check-product-capability-ledger
 | `PA-PLUGIN-001` | Plugin 与 Module 生命周期 | 已验证 | 安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture。 |
 | `PA-SCAFFOLD-001` | 创建独立应用 | 已验证 | create-app 已具备确定性生成、路径安全、品牌参数化、文件归属和不可变 Release 采用。 |
 | `PA-SCAFFOLD-003` | 新应用 Plugin 空锁合同 | 已验证 | 正式生成应用使用有效空 plugins.lock，不再引用仅供源仓测试的 fixture。 |
+| `PA-SCAFFOLD-004` | 2.x 派生应用受控升级 | 已验证 | 2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略与 preflight/apply/verify/recover 执行器已通过一次真实 v2.0.0 -> v2.0.1 派生应用资格，app-owned 字节保持且恢复闭环通过。 |
 | `PA-COMPAT-001` | 1.x 公开核心包升级兼容（历史） | 已验证 | 公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。 |
 | `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。 |
 | `PA-P0E-002` | 1.x 最终生成应用运行时验收（历史） | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
@@ -56,12 +57,6 @@ php scripts/check-product-capability-ledger
 |---|---|---|---|
 | `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | 无人值守发布脚本、Standalone/Multi-tenant 目标门禁和完整演示补丁已合入 dev，但尚未进入新的正式 Release，也未完成双部署线上资格；v2.0.0 Release 的正式支持面仍是 Docker Compose 手工流程和基础 demo seeder。 |
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已形成固定功能提交并通过静态多端停用合同、Plugin/Module 和 Web 类型检查，但尚未合入 dev，也没有真实数据库、浏览器资格或正式 Release 身份。 |
-
-### 计划中或受阻
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-SCAFFOLD-004` | 2.x 派生应用受控升级 | 计划中 | 2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略已有独立候选，但完整 preflight/plan/apply/verify/recover 链路和一次真实派生应用升级资格尚未完成。 |
 
 ### 暂缓或范围外
 

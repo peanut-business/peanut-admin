@@ -99,7 +99,7 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 | 脚本参数表 | 已补齐 | [文档阅读与命令参考](/guide/reading-guide)列必填项、默认值、作用、风险和示例 |
 | 前置条件、预期结果和失败处理 | 已补齐 | 开始使用、部署和故障页统一使用停止线，不把 HTTP 200 当业务验收 |
 | 目录结构与模块职责 | 已补齐 | [开发指南](/guide/development)和[Module 教程](/guide/module-development)提供真实目录与所有权 |
-| 派生应用创建与升级边界 | 已说明当前支持面；自动升级待交付 | [开始使用](/getting-started)说明 create-app 参数、人工采用边界和 2.x 当前仍无自动升级器 |
+| 派生应用创建与升级边界 | 已说明当前支持面 | [开始使用](/getting-started)和[脚手架升级](/guide/scaffold-upgrade)说明 2.x 受管文件升级、app-owned 保留和数据库迁移边界 |
 | 三类身份、Tenant 选择与域名 | 已补齐 | [身份与 Tenant 边界](/architecture/identity-and-tenancy)和[实例 Platform](/platform) |
 | Module、Plugin、Host 和跨模块调用 | 已补齐 | [API 与扩展](/api#module-plugin-与-host)说明四道 Gate、DTO、命令和失败边界 |
 | 开箱即用能力和后续路线 | 已补齐 | [能力目录](/capabilities)分开记录当前事实、推荐产品形态和完成条件 |

@@ -32,7 +32,7 @@ TenantModule 生命周期和全部入口 Guard 后，产品形态才算兑现。
 | P0 | Standalone 与多租户线上交付 | **源码已发布，正式生产证明未完成**：现有多租户地址是隔离体验候选，不是 `v2.0.0` 正式生产发布 | 从同一个不可变 tag 部署一个 Standalone 实例和一个 Multi-tenant 实例 | 固定 tag、资源、数据库和域名；完成备份/迁移、TLS、健康检查、最小浏览器矩阵和账号交付 |
 | P0 | 演示站叠加层 | **基础 seeder 已发布；完整演示补丁尚未交付** | 正常安装后显式叠加可丢弃的 Tenant A/B 数据、账号预填、演示账号保护和 Tenant 标题 | 只能用于登记的演示目标；身份/Host/密码一致；可重复执行或安全失败；不会改变普通生产升级配置 |
 | P0 | 文档事实自动收敛 | **长期入口已修正，自动防滞后未完成**：发布页、能力账本、首页、开发指南和能力目录已统一到正式 Release | 发布状态只由能力账本和不可变 Release 快照生成，公共入口不再手工复制旧状态 | 文档构建和状态检查能发现过期版本、候选措辞和能力表冲突 |
-| P1 | 2.x 派生应用受控升级 | **进行中，尚未交付**：create-app 已记录模板身份、文件 owner 和 managed baseline；Release 转换白名单和部署端策略已有固定候选，派生应用三方计划、原子应用、验证和恢复仍未闭环 | 从旧 Release、当前应用和目标 Release 生成三方计划，只更新受管文件与 Peanut 依赖，冲突时停止 | app-owned 字节保持；依赖、数据库 migration 和恢复步骤显式列出；至少通过一次真实 2.x→2.x 派生应用升级资格 |
+| P1 | 2.x 派生应用受控升级 | **已验证一条 2.x 路径**：`v2.0.0 -> v2.0.1` 真实派生应用完成 preflight/apply/verify/recover，app-owned 修改保持；后续 Release 仍需重复同一资格 | 从旧 Release、当前应用和目标 Release 生成三方计划，只更新受管文件与 Peanut 依赖，冲突时停止 | 每个目标 Release 都有不可变 manifest；app-owned 字节保持；依赖、数据库 migration 和恢复步骤显式列出 |
 | P1 | 官方可选 Module 产品化 | **进行中，尚未交付**：Article 首个候选已有固定功能提交，manifest、权限/菜单目录、管理端 contribution、后端 Guard、PC/UniApp 停用合同、Plugin/Module 和 Web 类型检查已通过；尚未合入 `dev`，真实数据库、浏览器和正式 Release 身份仍缺失。其他候选仍是 Tenant-first Host 能力 | 每项能力拥有稳定 Plugin/Module manifest，可安装、逐 Tenant 开通和停用 | Plugin 安装、TenantModule、成员 RBAC、数据权限和所有入口 Guard 同时通过 |
 | P1 | Module 全入口 Guard | **部分具备**：同步 fixture 命令已检查 ModuleGuard；通用任务、回调和模块文件入口没有统一合同 | HTTP、内部命令、入队、worker、外部回调和模块文件入口使用同一授权链 | 每类入口都有启用正向测试和停用负向测试；前端隐藏不能作为安全证据 |
 | P1 | 跨 Module 可运行示例 | **未完成**：当前只有单 Module 的 `fixture.delivery-record` | 两个最小 Module 演示公开命令、只读查询 DTO，以及必要时的版本化事件 | 示例可独立运行；调用方不依赖对方私有表或 Repository；失败场景没有部分写入 |

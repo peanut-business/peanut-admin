@@ -317,8 +317,8 @@
       "id": "PA-SCAFFOLD-004",
       "name": "2.x 派生应用受控升级",
       "area": "scaffold",
-      "status": "planned",
-      "summary": "2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略已有独立候选，但完整 preflight/plan/apply/verify/recover 链路和一次真实派生应用升级资格尚未完成。",
+      "status": "verified",
+      "summary": "2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略与 preflight/apply/verify/recover 执行器已通过一次真实 v2.0.0 -> v2.0.1 派生应用资格，app-owned 字节保持且恢复闭环通过。",
       "acceptance": [
         "升级输入固定旧模板、当前应用和目标不可变 Release，先生成可审阅且无写操作的计划",
         "只处理 managed/generated-managed 与 Peanut 依赖，app-owned 业务代码、业务 Schema 和部署秘密不进入默认写集",
@@ -327,6 +327,10 @@
         "数据库 migration、Composer/npm lock 和应用业务迁移在同一发布计划中显式列出，但由各自 owner 执行和验证"
       ],
       "evidence": [
+        {
+          "kind": "git",
+          "ref": "1c1c37c5c367de1ad9f548339a5af457b359de7c"
+        },
         {
           "kind": "git",
           "ref": "6a71f23f7c233f599ea10c34368e989fbd3dc09c"
@@ -343,10 +347,6 @@
       "dependencies": [
         "PA-SCAFFOLD-001",
         "PA-DELIVERY-003"
-      ],
-      "blockers": [
-        "现有候选只冻结合法 Release 转换和部署端策略，尚未完成派生应用三方计划、原子应用、验证和恢复闭环",
-        "尚未形成从一个 2.x scaffold Release 升级到下一不可变 Release 的真实派生应用资格证据"
       ],
       "paths": [
         "docs/create-application.md",
