@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "protocol": "peanut.release-upgrade-transitions.v1",
+  "project_id": "peanut-admin",
+  "transitions": []
+}

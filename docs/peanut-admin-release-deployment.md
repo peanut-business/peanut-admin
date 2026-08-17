@@ -28,14 +28,16 @@ Standalone/Multi-tenant 双部署生产资格。正式发布工作流使用这�
 # 先只核对计划（不连接线上、不写入线上）
 scripts/deploy-release v2.0.0 --target production --fresh \
   --confirm-destroy production --dry-run
-scripts/deploy-release v2.0.0 --target production-candidate --upgrade --dry-run
+scripts/deploy-release v2.0.1 --target production --upgrade \
+  --from v2.0.0 --dry-run
 
 # 单租户：明确允许破坏性 fresh，旧 1.x 卷会被删除并从空库安装
 scripts/deploy-release v2.0.0 --target production --fresh \
   --confirm-destroy production --apply
 
-# 多租户：保留数据库和文件，只应用 2.0 基线后的追加迁移
-scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
+# 后续 2.x：自动创建登记的数据库/文件配对备份，再升级前后端和数据库
+scripts/deploy-release v2.0.1 --target production --upgrade \
+  --from v2.0.0 --apply
 ```
 
 | 参数 | 是否必填 | 含义 |
@@ -43,14 +45,20 @@ scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
 | `<vX.Y.Z>` | 是 | 已发布的 annotated tag，例如 `v2.0.0` |
 | `--target` | 是 | 只接受登记的 `production` 或 `production-candidate` |
 | `--fresh` / `--upgrade` | 二选一 | fresh 删除该目标的 Compose 卷并空库安装；upgrade 保留数据并执行迁移 |
+| `--from <vX.Y.Z>` | upgrade 必填 | 声明目标当前精确版本；脚本会在远端再次核对 `.release-tag`，不一致立即停止 |
 | `--confirm-destroy <target>` | fresh 必填 | 值必须与 `--target` 完全一致，避免误删另一实例 |
 | `--dry-run` / `--apply` | 二选一 | 只展示计划，或实际执行 |
 | `--overlay <file.tar>` | 否 | 仅用于登记的演示候选，把有摘要的 demo patch 叠加到正式 tag |
 
-`--upgrade` 的固定顺序是：构建前端/后端镜像 → 只启动 MySQL → 用绕过应用 entrypoint 的
-PHP 容器执行 `migrate.php` 应用缺失追加迁移 → `migrate.php --current` 校验账本 → 启动
-PHP/Nginx/cron → origin 和版本 smoke。因而升级同时覆盖前端、后端和数据库；2.0.0 不提供
-1.x 原地升级，1.x 到 2.0 必须使用单独的业务数据迁移项目。
+`--upgrade` 只接受目标 Release 中显式批准的 2.x transition，并要求 `--from` 与远端当前
+`.release-tag` 完全一致。固定顺序是：校验 source/target 与 transition → 构建前端/后端镜像
+→ 只启动 MySQL → 用绕过应用 entrypoint 的 PHP 容器执行 `migrate.php` 应用缺失追加迁移
+→ `migrate.php --current` 校验账本 → 启动 PHP/Nginx/cron → origin 和版本 smoke。因而升级
+同时覆盖前端、后端和数据库；2.0.0 不提供 1.x 原地升级，1.x 到 2.0 必须使用单独的业务
+数据迁移项目。首个后续 2.x Release 发布前，升级器框架存在不等于已有可执行 transition。
+目标部署还必须登记配对备份资源；脚本在停止写入后自动备份数据库和 PHP 文件空间，并校验
+manifest、SHA-256、gzip 与 tar。没有备份登记时，upgrade 在本地 preflight 就停止；可丢弃的
+演示实例应继续使用 fresh 重建，不得用“数据不重要”绕过正式升级合同。
 
 ### 演示站补丁
 
