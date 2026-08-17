@@ -101,7 +101,7 @@ features:
   <div>
     <p class="eyebrow">RELEASE BOUNDARY</p>
     <h2>发布身份清楚，产品边界同样清楚</h2>
-    <p>Peanut Admin <code>2.0.0</code> 当前是 fresh-only 开发候选，尚未正式发布。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；DCS 业务模块和跨应用运营平台不进入本产品。</p>
+    <p>Peanut Admin <code>2.0.0</code> 已完成 fresh-only 正式源码发布；生产部署仍按独立工作流执行。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；DCS 业务模块和跨应用运营平台不进入本产品。</p>
   </div>
   <a href="/releases">查看版本与发布 <span>→</span></a>
 </div>
