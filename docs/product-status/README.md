@@ -55,7 +55,7 @@ php scripts/check-product-capability-ledger
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | 无人值守发布脚本、Standalone/Multi-tenant 目标门禁和完整演示补丁已合入 dev，但尚未进入新的正式 Release，也未完成双部署线上资格；v2.0.0 Release 的正式支持面仍是 Docker Compose 手工流程和基础 demo seeder。 |
-| `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 是首个正在实现和验收的官方可选 Module 候选，但尚无已合入提交、多端停用矩阵或正式 Release 身份。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已形成固定功能提交并通过静态多端停用合同、Plugin/Module 和 Web 类型检查，但尚未合入 dev，也没有真实数据库、浏览器资格或正式 Release 身份。 |
 
 ### 计划中或受阻
 

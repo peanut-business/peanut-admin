@@ -612,7 +612,7 @@
       "name": "官方可选 Module 产品化",
       "area": "plugins",
       "status": "in_progress",
-      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 是首个正在实现和验收的官方可选 Module 候选，但尚无已合入提交、多端停用矩阵或正式 Release 身份。",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已形成固定功能提交并通过静态多端停用合同、Plugin/Module 和 Web 类型检查，但尚未合入 dev，也没有真实数据库、浏览器资格或正式 Release 身份。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",
@@ -621,6 +621,10 @@
         "共享基础设施与业务 Module 生命周期分离，停用业务 Module 不会错误关闭全局文件或调度能力"
       ],
       "evidence": [
+        {
+          "kind": "git",
+          "ref": "a189cd68d422b13e6207de405cd43bb1f647515d"
+        },
         {
           "kind": "document",
           "ref": "docs-site/architecture/official-module-qualification.md"
