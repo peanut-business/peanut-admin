@@ -64,5 +64,9 @@ $expect(
     substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 5,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );
+$expect(
+    substr_count($deploy, '</dev/null') === 5,
+    'remote one-shot Compose commands must close inherited standard input'
+);
 
 echo "DEMO-SITE-PATCH-CONTRACT-001 passed\n";

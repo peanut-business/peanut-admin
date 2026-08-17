@@ -348,19 +348,19 @@ compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --
 # additive migrations before the application process is allowed to start.
 "${compose[@]}" up -d --wait mysql
 if [[ "$mode" == fresh ]]; then
-  "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php
+  "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php </dev/null
 fi
-"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/migrate.php
-"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/migrate.php --current
+"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/migrate.php </dev/null
+"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/migrate.php --current </dev/null
 if [[ "$mode" == fresh && "$PEANUT_DEMO_MODE" == enabled ]]; then
-  demo_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/seed-multi-tenant-demo.php --apply)"
+  demo_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/seed-multi-tenant-demo.php --apply </dev/null)"
   printf '%s\n' "$demo_result"
   tenant_a_id="$(printf '%s' "$demo_result" | jq -r '.tenant_a_id // empty')"
   tenant_b_id="$(printf '%s' "$demo_result" | jq -r '.tenant_b_id // empty')"
   [[ "$tenant_a_id" =~ ^[1-9][0-9]*$ && "$tenant_b_id" =~ ^[1-9][0-9]*$ ]] || fail 'demo Tenant seed returned invalid identifiers'
   for tenant_id in "$tenant_a_id" "$tenant_b_id"; do
     "${compose[@]}" run -T --rm --no-deps --entrypoint php \
-      -e PEANUT_DEMO_TENANT_ID="$tenant_id" php server/database/seed-demo-data.php --apply
+      -e PEANUT_DEMO_TENANT_ID="$tenant_id" php server/database/seed-demo-data.php --apply </dev/null
   done
 fi
 "${compose[@]}" up -d --wait
