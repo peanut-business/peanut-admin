@@ -24,25 +24,64 @@
 
 ```bash
 # 先只核对计划（不连接线上、不写入线上）
-scripts/deploy-release v2.0.0 --target production --fresh --dry-run
+scripts/deploy-release v2.0.0 --target production --fresh \
+  --confirm-destroy production --dry-run
 scripts/deploy-release v2.0.0 --target production-candidate --upgrade --dry-run
 
 # 单租户：明确允许破坏性 fresh，旧 1.x 卷会被删除并从空库安装
-scripts/deploy-release v2.0.0 --target production --fresh --apply
+scripts/deploy-release v2.0.0 --target production --fresh \
+  --confirm-destroy production --apply
 
 # 多租户：保留数据库和文件，只应用 2.0 基线后的追加迁移
 scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
 ```
 
-`--fresh` 只允许登记的单租户 `production` 目标；多租户候选拒绝 fresh，以免误删租户数据。
+| 参数 | 是否必填 | 含义 |
+| --- | --- | --- |
+| `<vX.Y.Z>` | 是 | 已发布的 annotated tag，例如 `v2.0.0` |
+| `--target` | 是 | 只接受登记的 `production` 或 `production-candidate` |
+| `--fresh` / `--upgrade` | 二选一 | fresh 删除该目标的 Compose 卷并空库安装；upgrade 保留数据并执行迁移 |
+| `--confirm-destroy <target>` | fresh 必填 | 值必须与 `--target` 完全一致，避免误删另一实例 |
+| `--dry-run` / `--apply` | 二选一 | 只展示计划，或实际执行 |
+| `--overlay <file.tar>` | 否 | 仅用于登记的演示候选，把有摘要的 demo patch 叠加到正式 tag |
+
 `--upgrade` 的固定顺序是：构建前端/后端镜像 → 只启动 MySQL → 用绕过应用 entrypoint 的
 PHP 容器执行 `migrate.php` 应用缺失追加迁移 → `migrate.php --current` 校验账本 → 启动
 PHP/Nginx/cron → origin 和版本 smoke。因而升级同时覆盖前端、后端和数据库；2.0.0 不提供
 1.x 原地升级，1.x 到 2.0 必须使用单独的业务数据迁移项目。
 
-脚本生成单租户 fresh 管理员初始密码（若 `.env` 没有提供），只写入服务器 root-owned
-`.env`，并在命令输出中一次性显示；请立即保存到受控凭据存储。候选多租户使用其登记的
-Platform/Tenant 管理凭据，不会覆盖现有密钥。
+### 演示站补丁
+
+演示补丁不改正式 tag，也不进入普通生产默认行为。先从干净提交生成 overlay，再用 fresh
+重建可丢弃的 `production-candidate`；脚本会核对 base tag、overlay SHA-256、登记路径和
+数据库资源，随后创建 Tenant A/B、独立 TenantMember/Owner、域名绑定和合成数据。
+
+```bash
+scripts/build-demo-site-patch v2.0.0 output/deployment/demo-site-v2.0.0.tar
+
+export PEANUT_GENERATED_ADMIN_EMAIL='bootstrap@pa-demo.test'
+export PEANUT_GENERATED_ADMIN_PASSWORD='<bootstrap-password>'
+export PEANUT_GENERATED_PLATFORM_EMAIL='platform@pa-demo.test'
+export PEANUT_GENERATED_PLATFORM_PASSWORD='<platform-password>'
+export PEANUT_DEMO_MODE=enabled
+export PEANUT_DEMO_TENANT_A_EMAIL='tenant-a@pa-demo.test'
+export PEANUT_DEMO_TENANT_B_EMAIL='tenant-b@pa-demo.test'
+export PEANUT_DEMO_SHARED_PASSWORD='<demo-password>'
+export PEANUT_DEMO_TENANT_A_HOST='pa-tenant-a.007345.xyz'
+export PEANUT_DEMO_TENANT_B_HOST='pa-tenant-b.007345.xyz'
+export PEANUT_DEMO_DOCS_URL='https://peanut-admin-doc.007345.xyz'
+
+scripts/deploy-release v2.0.0 --target production-candidate --fresh \
+  --confirm-destroy production-candidate \
+  --overlay output/deployment/demo-site-v2.0.0.tar --apply
+```
+
+只有 `PEANUT_DEMO_MODE=enabled` 时，租户登录页才会预填公开演示账号，且服务端拒绝修改演示
+密码。关闭该变量后，正式应用不返回演示凭据，也不限制正常账号修改密码。
+
+fresh 部署必须显式提供管理员邮箱和密码；脚本不会生成或回显密码。它们只写入服务器
+root-owned `.env`。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
+补丁分别创建独立账号，并使用同一组公开演示密码。
 
 准备应用自己的空数据库和受保护环境文件。至少配置：
 

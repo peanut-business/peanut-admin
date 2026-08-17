@@ -19,6 +19,12 @@ export interface WebsiteConfig {
   github_url: string;
 }
 
+export interface DemoLoginConfig {
+  enabled: boolean;
+  email: string;
+  password: string;
+}
+
 export function getWebsiteConfig() {
   return axios.get<WebsiteConfig>('/api/admin/config/website');
 }
@@ -28,5 +34,9 @@ export function saveWebsiteConfig(data: WebsiteConfig) {
 }
 
 export function getPublicBrandConfig() {
-  return axios.get<{ website: WebsiteConfig }>('/api/index/config');
+  return axios.get<{
+    website: WebsiteConfig;
+    tenantName: string;
+    demo: DemoLoginConfig;
+  }>('/api/index/config');
 }

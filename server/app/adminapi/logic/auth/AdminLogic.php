@@ -7,6 +7,7 @@ use app\common\logic\BaseLogic;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\org\OrgTenantContext;
+use app\common\service\DemoAccountPolicy;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
@@ -240,6 +241,7 @@ final class AdminLogic extends BaseLogic
                 $context->requestId,
             );
             if (!empty($params['password'])) {
+                DemoAccountPolicy::assertPasswordChangeAllowed(self::pdo(), $context->accountId);
                 $service->changePassword(
                     $context->tenantId,
                     $memberId,

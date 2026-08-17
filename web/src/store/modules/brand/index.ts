@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import defaultBrand from '@/generated/brand.json';
 import {
   getPublicBrandConfig,
+  type DemoLoginConfig,
   type WebsiteConfig,
 } from '@/api/system/config';
 
@@ -23,8 +24,8 @@ IMAGE_FIELDS.forEach((field) => {
   }
 });
 
-function applyDocumentBrand(website: WebsiteConfig) {
-  document.title = website.name;
+function applyDocumentBrand(website: WebsiteConfig, tenantName: string) {
+  document.title = tenantName ? `${tenantName} - ${website.name}` : website.name;
   let favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (!favicon) {
     favicon = document.createElement('link');
@@ -37,17 +38,36 @@ function applyDocumentBrand(website: WebsiteConfig) {
 const useBrandStore = defineStore('brand', {
   state: () => ({
     website: { ...fallback } as WebsiteConfig,
+    entryTenantName: '',
+    tenantName: '',
+    demo: { enabled: false, email: '', password: '' } as DemoLoginConfig,
     loaded: false,
   }),
   actions: {
     replace(website: WebsiteConfig) {
       this.website = { ...fallback, ...website };
-      applyDocumentBrand(this.website);
+      this.applyTitle();
+    },
+    applyTitle() {
+      applyDocumentBrand(
+        this.website,
+        this.tenantName || this.entryTenantName
+      );
+    },
+    setEntryTenantName(tenantName?: string) {
+      this.entryTenantName = tenantName?.trim() || '';
+      this.applyTitle();
+    },
+    setTenantName(tenantName?: string) {
+      this.tenantName = tenantName?.trim() || '';
+      this.applyTitle();
     },
     async load() {
       if (this.loaded) return;
       try {
         const { data } = await getPublicBrandConfig();
+        this.demo = data.demo || { enabled: false, email: '', password: '' };
+        this.setEntryTenantName(data.tenantName);
         this.replace(data.website);
       } catch {
         this.replace(fallback);

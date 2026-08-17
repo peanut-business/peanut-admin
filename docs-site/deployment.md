@@ -62,13 +62,29 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 归档并通过登记的 SSH 目标部署，不依赖服务器上的旧脚本或 Git 工作树：
 
 ```bash
-scripts/deploy-release v2.0.0 --target production --fresh --dry-run
-scripts/deploy-release v2.0.0 --target production --fresh --apply
+export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
+export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位且同时包含字母和数字>'
+scripts/deploy-release v2.0.0 --target production --fresh \
+  --confirm-destroy production --dry-run
+scripts/deploy-release v2.0.0 --target production --fresh \
+  --confirm-destroy production --apply
 scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
 ```
 
-`production --fresh` 是明确授权的单租户破坏性重建；`production-candidate` 是需要保留数据
-的多租户体验实例，只能 `--upgrade`。升级顺序固定为：解包同一 tag、构建 Web/Platform/
+| 参数 | 作用 |
+| --- | --- |
+| `--target` | 选择资源登记中的单租户生产实例或多租户候选实例 |
+| `--fresh` | 删除所选 Compose 项目的数据卷后从空库安装 |
+| `--upgrade` | 保留数据库与文件，构建新代码并执行追加迁移 |
+| `--confirm-destroy <target>` | fresh 强制确认，值必须与 target 完全相同 |
+| `--dry-run` / `--apply` | 只看计划，或实际执行 |
+| `--overlay <file.tar>` | 仅为可丢弃演示候选叠加有摘要的 demo patch |
+
+fresh 部署不会自动生成或回显密码，必须在执行前显式提供
+`PEANUT_GENERATED_ADMIN_EMAIL` 与 `PEANUT_GENERATED_ADMIN_PASSWORD`。密码仅允许使用适合
+dotenv 的字母、数字和常见安全符号；含 `$`、`#`、`&`、反斜杠或空白的值会在破坏性动作前被拒绝。
+
+升级顺序固定为：解包同一 tag、构建 Web/Platform/
 PC/UniApp/PHP 镜像、只启动 MySQL、执行 `migrate.php` 应用追加 migration、执行
 `migrate.php --current` 校验、再启动应用并做 health/version smoke。这样数据库升级与前后端
 升级属于同一个候选，不会出现只换镜像而遗漏 Schema 的情况。

@@ -56,6 +56,13 @@ SQL);
             throw new \DomainException('TENANT_OWNER_ADMIN_PRINCIPAL_INVALID');
         }
 
+        (new ApplicationTenantBootstrapService($this->pdo))->provision(
+            $tenantId,
+            $memberId,
+            $coreRoleId,
+            $tenantCode
+        );
+
         return $memberId;
     }
 }

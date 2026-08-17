@@ -8,6 +8,7 @@ use app\common\service\article\ArticleTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\service\ConfigService;
+use app\common\service\DemoAccountPolicy;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
 use app\common\service\config\PaConfigWebsiteStore;
@@ -15,6 +16,8 @@ use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationTenantContext;
+use app\common\service\tenant\TenantEntryBindingResolver;
+use think\facade\Db;
 
 class IndexLogic extends BaseLogic
 {
@@ -38,6 +41,8 @@ class IndexLogic extends BaseLogic
         return [
             'domain'   => $domain,
             'website'  => $website,
+            'tenantName' => self::entryTenantName(),
+            'demo'     => self::demoLogin(),
             'login'    => [
                 'login_way' => array_values(array_map('intval', $loginWay)),
                 'coerce_mobile' => (int)ConfigService::get('login', 'coerce_mobile', 0),
@@ -62,6 +67,60 @@ class IndexLogic extends BaseLogic
             ),
             'version'  => (string) config('project.version', '2.0.0'),
         ];
+    }
+
+    /** @return array{enabled:bool,email:string,password:string} */
+    private static function demoLogin(): array
+    {
+        if (!DemoAccountPolicy::enabled()) {
+            return ['enabled' => false, 'email' => '', 'password' => ''];
+        }
+        try {
+            $host = TenantEntryBindingResolver::normalizeHost((string)request()->host());
+            $tenantAHost = TenantEntryBindingResolver::normalizeHost(
+                (string)(getenv('PEANUT_DEMO_TENANT_A_HOST') ?: '')
+            );
+            $tenantBHost = TenantEntryBindingResolver::normalizeHost(
+                (string)(getenv('PEANUT_DEMO_TENANT_B_HOST') ?: '')
+            );
+            $sharedHosts = array_filter(array_map(
+                static fn(string $value): string => TenantEntryBindingResolver::normalizeHost($value),
+                explode(',', (string)(getenv('TENANT_ADMIN_HOSTS') ?: ''))
+            ));
+        } catch (\Throwable) {
+            return ['enabled' => false, 'email' => '', 'password' => ''];
+        }
+        if (hash_equals($tenantBHost, $host)) {
+            $emailKey = 'PEANUT_DEMO_TENANT_B_EMAIL';
+        } elseif (hash_equals($tenantAHost, $host) || in_array($host, $sharedHosts, true)) {
+            $emailKey = 'PEANUT_DEMO_TENANT_A_EMAIL';
+        } else {
+            return ['enabled' => false, 'email' => '', 'password' => ''];
+        }
+        return [
+            'enabled' => true,
+            'email' => trim((string)(getenv($emailKey) ?: '')),
+            'password' => (string)(getenv('PEANUT_DEMO_SHARED_PASSWORD') ?: ''),
+        ];
+    }
+
+    private static function entryTenantName(): string
+    {
+        try {
+            $tenantId = TenantEntryBindingResolver::production()->boundTenantId(
+                request(),
+                TenantEntryBindingResolver::ADMIN_CLIENT
+            );
+            if ($tenantId === null) {
+                return '';
+            }
+            return trim((string)Db::name('tenant')
+                ->where('id', $tenantId)
+                ->where('status', 'active')
+                ->value('name'));
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     private static function websiteService(): WebsiteConfigService
