@@ -37,6 +37,12 @@ final readonly class CoreTenantModuleAdminBridge
             $tenantContext->tenantId,
             $tenantContext->memberId
         )->keys();
+        if ($this->isTenantOwner($pdo, $tenantContext)) {
+            $permissions = array_values(array_unique([
+                ...$permissions,
+                ...$this->registeredPermissions($tenantContext->tenantId),
+            ]));
+        }
         $catalog = new PdoMenuCatalogRepository($pdo);
         $definitions = $catalog->activeDefinitions('tenant');
         $deploymentModules = $catalog->activeDeploymentModules();
@@ -153,5 +159,28 @@ SQL);
     public static function virtualMenuId(string $menuKey): int
     {
         return 2_000_000_000 + (int)sprintf('%u', crc32($menuKey)) % 100_000_000;
+    }
+
+    private function isTenantOwner(PDO $pdo, TenantContext $context): bool
+    {
+        $statement = $pdo->prepare(<<<'SQL'
+SELECT 1
+FROM pa_member_role mr
+JOIN pa_role r
+  ON r.tenant_id = mr.tenant_id
+ AND r.id = mr.role_id
+ AND r.`key` = 'core.tenant-owner'
+ AND r.is_builtin = 1
+ AND r.status = 'active'
+WHERE mr.tenant_id = :tenant_id
+  AND mr.tenant_member_id = :member_id
+LIMIT 1
+SQL);
+        $statement->execute([
+            'tenant_id' => $context->tenantId,
+            'member_id' => $context->memberId,
+        ]);
+
+        return $statement->fetchColumn() !== false;
     }
 }
