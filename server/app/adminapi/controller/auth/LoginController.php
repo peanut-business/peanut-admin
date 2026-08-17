@@ -8,6 +8,7 @@ use app\adminapi\logic\auth\LoginLogic;
 use app\adminapi\service\AdminPermissionService;
 use app\adminapi\service\AdminTokenService;
 use app\adminapi\validate\auth\LoginValidate;
+use app\common\service\DemoAccountPolicy;
 
 class LoginController extends BaseAdminController
 {
@@ -49,7 +50,10 @@ class LoginController extends BaseAdminController
             'roles'       => $roleNames,
             'menu'        => $accessData['menu'],
             'permissions' => $accessData['permissions'],
-            'canSwitchTenant' => !($this->request->tenantEntryBound ?? false),
+            'tenantName' => $admin['tenant_name'],
+            'canSwitchTenant' => !($this->request->tenantEntryBound ?? false)
+                && ($admin['switchable_tenant_count'] ?? 0) > 1,
+            'demoMode' => DemoAccountPolicy::isDemoEmail((string)$admin['username']),
         ]);
     }
 

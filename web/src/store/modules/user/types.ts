@@ -23,4 +23,6 @@ export interface UserState {
   permissions: string[];
   menu: ServerMenuRecord[];
   canSwitchTenant?: boolean;
+  tenantName: string;
+  demoMode: boolean;
 }

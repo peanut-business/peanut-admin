@@ -14,6 +14,7 @@ import {
 import { removeRouteListener } from '@/utils/route-listener';
 import { UserState } from './types';
 import useAppStore from '../app';
+import useBrandStore from '../brand';
 
 const useUserStore = defineStore('user', {
   state: (): UserState => ({
@@ -36,6 +37,8 @@ const useUserStore = defineStore('user', {
     permissions: [],
     menu: [],
     canSwitchTenant: false,
+    tenantName: '',
+    demoMode: false,
   }),
 
   getters: {
@@ -59,8 +62,10 @@ const useUserStore = defineStore('user', {
     async info() {
       const res = await getUserInfo();
       const appStore = useAppStore();
+      const brandStore = useBrandStore();
       appStore.setServerMenu(res.data.menu || []);
       this.setInfo(res.data);
+      brandStore.setTenantName(res.data.tenantName);
     },
 
     // Login
@@ -101,7 +106,9 @@ const useUserStore = defineStore('user', {
     },
     logoutCallBack() {
       const appStore = useAppStore();
+      const brandStore = useBrandStore();
       this.resetInfo();
+      brandStore.setTenantName();
       clearToken();
       removeRouteListener();
       appStore.clearServerMenu();

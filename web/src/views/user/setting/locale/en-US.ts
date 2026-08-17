@@ -101,6 +101,8 @@ export default {
   'userSetting.security.confirmPassword.placeholder':
     'Enter new password again',
   'userSetting.security.success': 'Password updated',
+  'userSetting.security.demoDisabled':
+    'Demo account passwords are locked and cannot be changed here.',
   'userSetting.security.error.oldRequired': 'Please enter current password',
   'userSetting.security.error.newRequired': 'Please enter new password',
   'userSetting.security.error.length': 'Password must be 6-32 characters',

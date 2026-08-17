@@ -7,7 +7,13 @@
           :src="brandStore.website.web_logo"
           style="width: 28px; height: 28px"
         />
-        <h5 class="brand-title">{{ brandStore.website.name }}</h5>
+        <h5 class="brand-title">
+          {{
+            userStore.tenantName
+              ? `${userStore.tenantName} - ${brandStore.website.name}`
+              : brandStore.website.name
+          }}
+        </h5>
         <el-button
           v-if="!topMenu && appStore.device === 'mobile'"
           class="mobile-menu-button"

@@ -56,9 +56,74 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ## Docker 生产部署（推荐）
 
-生产和开发 Compose 严格分离。根目录 `compose.yaml` 是生产入口，并引用 `deploy/docker-compose.prod.yml`；开发环境使用 `deploy/docker-compose.dev.yml`，不要混用。
+生产和开发 Compose 严格分离。根目录 `compose.yaml` 是生产入口，并引用
+`deploy/docker-compose.prod.yml`；开发环境使用 `deploy/docker-compose.dev.yml`，不要混用。
 
-### 执行前参数表
+### 统一无人值守发布
+
+仓库内的 `scripts/deploy-release` 是日常发布入口。它使用当前检出的控制脚本读取资源登记，
+但实际归档和部署的代码始终来自命令中指定的 annotated release tag。正式 `v2.0.0` 源码附件
+本身不包含这个后续加入的控制脚本；部署该版本时，应在含有脚本的当前仓库中执行命令，不能在
+服务器上继续调用旧脚本或依赖旧 Git 工作树。
+
+#### 命令参数
+
+| 参数 | 必填 | 默认值 | 作用 | 风险与停止线 |
+| --- | --- | --- | --- | --- |
+| `<vX.Y.Z>` | 是 | 无 | 选择要部署的不可变 annotated tag | 本地 tag、远端 tag 和 `RELEASE_METADATA.json` 身份不一致时停止 |
+| `--target <production\|production-candidate>` | 是 | 无 | 选择资源登记中的单租户正式实例或多租户候选实例 | 不接受未登记目标，也不会猜测 host、目录、端口或数据库 |
+| `--fresh` | 二选一 | 无 | 删除所选 Compose 项目的数据卷后从空库安装 | 属于破坏性操作，必须同时提供匹配 target 的 `--confirm-destroy` |
+| `--upgrade` | 二选一 | 无 | 保留数据库和持久文件，部署新代码并执行追加 migration | 仅用于已有受支持版本；不能把 1.x 数据库升级为 2.0 |
+| `--dry-run` | 二选一 | 无 | 校验 tag、登记和输入，只输出远端执行计划 | 不连接远端执行部署，建议每次 apply 前先运行 |
+| `--apply` | 二选一 | 无 | 通过登记的 SSH 目标执行计划 | 只有 dry-run 输出与预期一致后才使用 |
+| `--confirm-destroy <target>` | fresh 必填 | 无 | 对 fresh 的破坏性动作进行精确确认 | 值必须与 `--target` 完全一致 |
+| `--ssh-alias <alias>` | 否 | `oracle3` | 选择已配置的 SSH alias | alias 必须能无交互连接登记服务器，不能借此切换到未登记资源 |
+| `--admin-password <value>` | 否 | 读取环境变量 | 用命令行值覆盖 `PEANUT_GENERATED_ADMIN_PASSWORD` | 容易进入 shell history，日常发布应使用环境变量 |
+| `--overlay <file.tar>` | 否 | 无 | 为可丢弃的多租户演示候选叠加带摘要的 demo patch | 仅允许 `production-candidate + fresh`，禁止用于正式实例 |
+
+#### fresh 环境变量
+
+| 环境变量 | 必填场景 | 作用 | 约束 |
+| --- | --- | --- | --- |
+| `PEANUT_GENERATED_ADMIN_EMAIL` | 所有 fresh | 创建首个 Tenant owner | 必须是有效邮箱；不会由脚本猜测或生成 |
+| `PEANUT_GENERATED_ADMIN_PASSWORD` | 所有 fresh | 设置首个 Tenant owner 密码 | 至少 12 位，同时包含字母和数字 |
+| `PEANUT_GENERATED_PLATFORM_EMAIL` | 多租户 fresh | 创建独立 PlatformOperator | 必须与 Admin 邮箱不同 |
+| `PEANUT_GENERATED_PLATFORM_PASSWORD` | 多租户 fresh | 设置 PlatformOperator 密码 | 至少 12 位，同时包含字母和数字 |
+
+演示 overlay 还需要显式设置 `PEANUT_DEMO_MODE=enabled` 和对应的 `PEANUT_DEMO_*` 邮箱、
+共享密码、Tenant Host、文档地址。它们只用于可丢弃的候选站，不是生产应用默认配置。
+
+#### 最小操作示例
+
+```bash
+export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
+export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位且同时包含字母和数字>'
+scripts/deploy-release v2.0.0 --target production --fresh \
+  --confirm-destroy production --dry-run
+scripts/deploy-release v2.0.0 --target production --fresh \
+  --confirm-destroy production --apply
+scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
+```
+
+脚本不会回显密码。用于写入部署 `.env` 的值只接受字母、数字和有限的安全符号；含 `$`、
+`#`、`&`、反斜杠或空白的值会在任何破坏性动作发生前被拒绝。
+
+升级顺序固定为：解包同一 tag、构建 Web/Platform/
+PC/UniApp/PHP 镜像、只启动 MySQL、执行 `migrate.php` 应用追加 migration、执行
+`migrate.php --current` 校验、再启动应用并做 health/version smoke。这样数据库升级与前后端
+升级属于同一个候选，不会出现只换镜像而遗漏 Schema 的情况。
+
+脚本保留部署 `.env` 和备份目录，不复制旧目录中的 migration 或运行时代码；fresh 目标只
+使用 tag 内的 canonical Schema。2.0.0 不接管 1.x 数据库，旧系统数据若需迁移必须另立
+映射、校验和回滚方案。
+
+预期结果是：所选 tag 的前后端、PHP 镜像与数据库 migration 作为同一个候选完成更新，
+`migrate.php --current`、容器健康检查和版本 smoke 全部通过。任一步失败时停止，不自动改用
+其他数据库、端口或部署目录。
+
+### 手工 Docker Compose 部署
+
+#### 执行前参数表
 
 | 参数/文件 | 必填 | 默认值 | 作用 | 风险与停止线 |
 | --- | --- | --- | --- | --- |
@@ -70,11 +135,6 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 | `ADMIN_INITIAL_*` | 空库必填 | 无 | 创建首个 Tenant owner | 已有数据库不要再次填写并运行安装器 |
 | `PLATFORM_INITIAL_*` | 多租户空库必填 | 无 | 创建独立 PlatformOperator | 不会自动成为 TenantMember |
 | `PLATFORM_HOSTS`、`TENANT_ADMIN_HOSTS` | 多租户必填 | 无 | 限定 Host 入口 | 未登记 Host 必须拒绝 |
-
-正式 `v2.0.0` Release 不包含 `scripts/deploy-release`。无人值守发布脚本和演示补丁正在独立
-功能分支收口，尚未合入 `dev/main`，因此当前受支持的生产入口仍是本页下面的 Docker Compose
-流程。脚本只有在参数、凭据写入、fresh/upgrade 数据边界、备份、回滚和浏览器 smoke 全部通过后，
-才能进入日常发布路径。进度和完成条件见[后续产品能力路线图](/capabilities#后续产品能力路线图)。
 
 首次部署时拉取已经存在的应用仓、复制受保护的环境文件，然后执行：
 
