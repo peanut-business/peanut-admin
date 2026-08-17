@@ -116,9 +116,12 @@ INSERT INTO pa_tenant
   (id, code, name, display_name, status, activated_at, created_at, updated_at)
 VALUES
   (202, 'beta', 'Beta', 'Beta', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
-INSERT INTO pa_article (id, tenant_id, title, is_show) VALUES
-  (21, 101, 'Alpha Article', 1),
-  (22, 202, 'Beta Article', 1);
+INSERT INTO pa_article_cate (id, tenant_id, name, is_show) VALUES
+  (11, 101, 'Alpha Category', 1),
+  (12, 202, 'Beta Category', 1);
+INSERT INTO pa_article (id, tenant_id, cid, title, is_show) VALUES
+  (21, 101, 11, 'Alpha Article', 1),
+  (22, 202, 12, 'Beta Article', 1);
 UPDATE pa_decorate_page SET name = 'Alpha PC' WHERE tenant_id = 101 AND type = 4;
 SQL);
     $alphaPageId = (int)$pdo->query(

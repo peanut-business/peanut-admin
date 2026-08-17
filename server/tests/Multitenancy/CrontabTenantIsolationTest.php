@@ -200,7 +200,7 @@ try {
     expectCrontabTenant($dispatches[$sideEffects][0] === 'crontab:demo' && $dispatches[$sideEffects][3] === [], 'payload fields overrode the persisted job envelope');
     $sideEffects = count($dispatches);
 
-    Db::name('crontab')->where('id', $alphaId)->update(['command' => 'refund:reconcile', 'status' => CrontabEnum::START, 'error' => '']);
+    Db::name('crontab')->where('id', $alphaId)->update(['command' => 'generator:cleanup', 'status' => CrontabEnum::START, 'error' => '']);
     $blockedItem = CrontabTenantRepository::find($alpha, $alphaId)?->getData() ?? [];
     CrontabSchedulerService::start($alphaScope, $blockedItem);
     expectCrontabTenant(count($dispatches) === $sideEffects, 'unadopted command reached handler');

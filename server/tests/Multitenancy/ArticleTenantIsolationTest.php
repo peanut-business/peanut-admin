@@ -8,6 +8,7 @@ use app\common\service\article\ArticleTenantContext;
 use app\common\service\article\ArticleTenantRepository;
 use app\common\service\capability\ArticleCapabilityAuthorization;
 use app\common\service\decoration\DecorationSchemaService;
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Api\ApiException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -272,6 +273,7 @@ SQL);
 
     $alpha = tenantContext(101, 1001, 501, 'mt02-alpha');
     $beta = tenantContext(202, 2002, 502, 'mt02-beta');
+    $alphaMember = new AuthenticatedMemberContext(101, 501, 'fixture-alpha-member', 'mt02-alpha-member');
     $missingRequest = new stdClass();
     try {
         ArticleTenantContext::member($missingRequest);
@@ -309,9 +311,9 @@ SQL);
     ]), 'missing Article edit unexpectedly succeeded');
     expectArticleTenant(AdminArticleLogic::getError() === $crossEditError, 'cross-tenant edit enumerated the target');
 
-    expectArticleTenant(!ApiArticleLogic::addCollect($alpha, 22, 501), 'cross-tenant collection unexpectedly succeeded');
+    expectArticleTenant(!ApiArticleLogic::addCollect($alphaMember, 22, 501), 'cross-tenant collection unexpectedly succeeded');
     $crossCollectError = ApiArticleLogic::getError();
-    expectArticleTenant(!ApiArticleLogic::addCollect($alpha, 999999, 501), 'missing collection target unexpectedly succeeded');
+    expectArticleTenant(!ApiArticleLogic::addCollect($alphaMember, 999999, 501), 'missing collection target unexpectedly succeeded');
     expectArticleTenant(ApiArticleLogic::getError() === $crossCollectError, 'cross-tenant collection enumerated the target');
 
     $link = static fn(int $id): array => ['target_type' => 'article', 'target' => $id];
@@ -330,13 +332,13 @@ SQL);
     expectArticleTenant(deniedShape(fn() => $authorization->authorizedContext($alpha, '999999', 'write')) === $expectedDenied, 'CAP06 missing target denial shape changed');
     expectArticleTenant($authorization->authorizedContext($beta, '22', 'write')->tenantContext->tenantId === 202, 'Beta positive typed target failed');
 
-    expectArticleTenant(ApiArticleLogic::addCollect($alpha, $alphaArticleId, 501), ApiArticleLogic::getError());
+    expectArticleTenant(ApiArticleLogic::addCollect($alphaMember, $alphaArticleId, 501), ApiArticleLogic::getError());
     expectArticleTenant(ApiArticleLogic::detail($alpha, $alphaArticleId, 501)['collect'] === true, 'Alpha Article detail/collection failed');
     expectArticleTenant(count(ApiArticleLogic::lists($alpha, ['page_size' => 20], 501)['lists']) >= 1, 'Alpha list lost visible Article');
     expectArticleTenant(count(ApiArticleLogic::infoCenter($alpha)) >= 1, 'Alpha info center lost categories');
     expectArticleTenant(count(ApiArticleLogic::limitArticles($alpha, 'new', 20)) >= 1, 'Alpha aggregate lost Article');
     DecorationSchemaService::validateLink($alpha, $link($alphaArticleId));
-    ApiArticleLogic::cancelCollect($alpha, $alphaArticleId, 501);
+    ApiArticleLogic::cancelCollect($alphaMember, $alphaArticleId, 501);
 
     expectArticleTenant(
         $pdo->query('SELECT title, click_actual FROM pa_article WHERE id = 22')->fetch(PDO::FETCH_ASSOC) === $beforeBeta,
