@@ -42,8 +42,8 @@
   scaffold 原地升级不属于 2.0.0 支持面。
 - 登记多租户空库安装得到 87 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
   三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
-- `scaffold/releases/v2.0.0` 已从 source commit `24e06f5…`（tree `67e2156…`）完成唯一最终
-  reseal；inventory SHA-256 为 `ab6f790…`，manifest 文件 SHA-256 为 `ca55acd…`。本地多租户
+- `scaffold/releases/v2.0.0` 已从 source commit `71684a4…`（tree `629e333…`）完成唯一最终
+  reseal；inventory SHA-256 为 `54c173f…`，manifest 文件 SHA-256 为 `f9889fe…`。本地多租户
   体验使用登记资源 `peanut-admin-mysql84-local-multi-tenant-demo`、Platform
   `127.0.0.1:20176`、API `127.0.0.1:20178` 和管理端 `127.0.0.1:20179`，不得复用为生产资源。
 - 已部署的隔离 `production-candidate` 仍是 `d3d5900…`；它包含右上角头像空值/加载失败
