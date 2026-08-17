@@ -82,11 +82,22 @@ try {
         '--release-root', $root,
         'validate',
     ]);
-    releasePolicyExpect($checkedIn['exit'] === 0, 'checked-in empty transition registry must validate');
+    releasePolicyExpect($checkedIn['exit'] === 0, 'checked-in transition registry must validate');
     $checkedInPayload = json_decode($checkedIn['output'], true, 512, JSON_THROW_ON_ERROR);
     releasePolicyExpect(
-        ($checkedInPayload['transition_count'] ?? null) === 0,
-        'checked-in registry must report zero transitions before a post-2.0 release exists'
+        ($checkedInPayload['transition_count'] ?? null) === 1,
+        'checked-in registry must contain the v2.0.0 to v2.0.1 transition'
+    );
+    $checkedInResolved = releasePolicyRun($runner, [
+        '--release-root', $root,
+        'resolve', '--from', 'v2.0.0', '--to', 'v2.0.1',
+    ]);
+    releasePolicyExpect($checkedInResolved['exit'] === 0, 'checked-in v2.0.0 to v2.0.1 transition must resolve');
+    $checkedInTransition = json_decode($checkedInResolved['output'], true, 512, JSON_THROW_ON_ERROR)['transition'] ?? null;
+    releasePolicyExpect(
+        ($checkedInTransition['backup']['required'] ?? null) === true
+            && ($checkedInTransition['migrations'] ?? null) === [],
+        'the patch transition must require backup and declare no new migrations'
     );
 
     $migrationPath = $migrationDirectory . '/20260818_release_transition.sql';
