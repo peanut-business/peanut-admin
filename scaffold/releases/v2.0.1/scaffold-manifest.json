@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.1",
-        "source_commit": "8af53f150d4fa6132b5c114d91ed0e03450d75b8",
-        "source_tree": "74826b1a6a816e5c6620d607ef42abb7977af2ee",
-        "inventory_sha256": "ac2d71d19e56084638222348887d7f716a496cb3b3120bb337702ca7aaa7d063",
+        "source_commit": "b76f5d798cf700a3f272356048b62a8266f4823d",
+        "source_tree": "fd2a7e4c24640dd75bc3a72a403dfde8f0164275",
+        "inventory_sha256": "1f499402e91ab352488e17763f6282c46e9c736a6bc4325776197a7a74272258",
         "inventory_template_version": "2.0.1",
-        "managed_tree_sha256": "ec666ca6b8d96af2f1624b93a85698662adb1161369fe5ecacf9c3ffb47833fe",
+        "managed_tree_sha256": "ec7f01dbd31c5127b2116069a1fe251ebd1f595cdb66306dbbe1467dd5ed8bf8",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -510,6 +510,16 @@
             "owner": "frontend"
         },
         {
+            "path": "pc/tests/Productization/article-module-capability.test.mjs",
+            "source": "files/pc/tests/Productization/article-module-capability.test.mjs",
+            "template_sha256": "3d80f4d275770ae539e9cf0a8e6902fb18e9a48d095d000c144b352dcabd17fc",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
             "path": "pc/tsconfig.json",
             "source": "files/pc/tsconfig.json",
             "template_sha256": "56f5b528cc102a257b71c01305f8b1456762d85793bd610bf613f2d7c3e1fc84",
@@ -590,6 +600,26 @@
             "owner": "host"
         },
         {
+            "path": "plugins/official.article/README.md",
+            "source": "files/plugins/official.article/README.md",
+            "template_sha256": "2352ee100c4ce1163ab4535be893741edc9249f4ea3c95c42a0b89afe6ee5df2",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "plugins/official.article/plugin.json",
+            "source": "files/plugins/official.article/plugin.json",
+            "template_sha256": "680d7f3492580a9782f40805ee1a922c6d0757a8809f6ea55d1b117b9a5b56a4",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
             "path": "resources/project-resources.json",
             "source": "files/resources/project-resources.json",
             "template_sha256": "9d3acb96a95e3084fa4daa0ffe53e2b1d552f269a80b2390da69886a299aa4bd",
@@ -652,7 +682,7 @@
         {
             "path": "scripts/ci-server-check.sh",
             "source": "files/scripts/ci-server-check.sh",
-            "template_sha256": "71dc7596e35ea6e73c1acd0e4a16248003a5f3d99597a8bf31b30d8388689dba",
+            "template_sha256": "fb52c0f48530cf28565e01ed12d2d413d468109ef9a9b366e3d78e708ca3d51f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -962,7 +992,7 @@
         {
             "path": "server/config/modules.php",
             "source": "files/server/config/modules.php",
-            "template_sha256": "371006fd451e3f4746025b8c0d3c08e6791adf507278b2102929caacaff9e6b8",
+            "template_sha256": "b01ca3a39870271159785dd7ae65d8254be2c269728e9ee1076ff0adbabe792f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1222,7 +1252,17 @@
         {
             "path": "server/route/app.php",
             "source": "files/server/route/app.php",
-            "template_sha256": "181857b8a1fdf1c88c9d815f54a7ba6f2b0148b0f76ad3081491f66ffb2881cd",
+            "template_sha256": "256b029264ae0c90ef8aa20e6b0ec356ccb582b4a1eb967f587b2dd807103786",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "backend"
+        },
+        {
+            "path": "server/route/official_article.php",
+            "source": "files/server/route/official_article.php",
+            "template_sha256": "8dd6ee43f8199ce215dbc9c0b938f3db3fcef4dfa2c2e98a1a25d55a090c0af6",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1327,6 +1367,16 @@
             "transform": "tokens",
             "mode": 420,
             "policy": "generated",
+            "owner": "frontend"
+        },
+        {
+            "path": "uniapp/tests/Productization/article-module-capability.test.mjs",
+            "source": "files/uniapp/tests/Productization/article-module-capability.test.mjs",
+            "template_sha256": "24a19d70406553e07a0e29ea8d37278e621c10a638cd24c308eed7ff914f6162",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
             "owner": "frontend"
         },
         {
@@ -2370,6 +2420,26 @@
             "owner": "frontend"
         },
         {
+            "path": "web/src/modules/official-article/contribution.ts",
+            "source": "files/web/src/modules/official-article/contribution.ts",
+            "template_sha256": "1ad990b36059e3ef13a554efddcd974efea09b3c66bbef3eac9c5ba7a7d9b8b9",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-article/package.json",
+            "source": "files/web/src/modules/official-article/package.json",
+            "template_sha256": "32b93e376f0ae0dc103f65a9bfec176ab5c08811a3735704b34dcac37e59a3cb",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
             "path": "web/src/router/app-menus/index.ts",
             "source": "files/web/src/router/app-menus/index.ts",
             "template_sha256": "99c79658af49a19d68ead06f1288a750677b49d8049abc7a5d4824124ddef515",
@@ -2453,16 +2523,6 @@
             "path": "web/src/router/routes/modules/app-setting.ts",
             "source": "files/web/src/router/routes/modules/app-setting.ts",
             "template_sha256": "f2fc0295785758e4bd7feaf21d4f4e8463ea7049bf8b23ca0e28a6e820ff6735",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "frontend"
-        },
-        {
-            "path": "web/src/router/routes/modules/article.ts",
-            "source": "files/web/src/router/routes/modules/article.ts",
-            "template_sha256": "4e2754ccc2ef78bb51a1e33e497c54fda30018eec8b5295f1643e781e14da695",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

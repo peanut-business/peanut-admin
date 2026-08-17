@@ -56,8 +56,6 @@ use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\controller\finance\AccountLogController;
 use app\adminapi\controller\finance\RechargeController;
 use app\adminapi\controller\finance\RefundController;
-use app\adminapi\controller\article\ArticleController;
-use app\adminapi\controller\article\ArticleCateController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
@@ -392,23 +390,6 @@ Route::group('api/admin', function () {
     Route::get('notice/scene/lists',  [NoticeSceneController::class, 'lists']);
     Route::get('notice/scene/detail', [NoticeSceneController::class, 'detail']);
     Route::post('notice/scene/save',  [NoticeSceneController::class, 'save']);
-
-    // 内容管理 - 文章分类
-    Route::get('article.articleCate/lists',  [ArticleCateController::class, 'lists']);
-    Route::get('article.articleCate/all',    [ArticleCateController::class, 'all']);
-    Route::get('article.articleCate/detail', [ArticleCateController::class, 'detail']);
-    Route::post('article.articleCate/add',          [ArticleCateController::class, 'add']);
-    Route::post('article.articleCate/edit',         [ArticleCateController::class, 'edit']);
-    Route::post('article.articleCate/delete',       [ArticleCateController::class, 'delete']);
-    Route::post('article.articleCate/updateStatus', [ArticleCateController::class, 'updateStatus']);
-
-    // 内容管理 - 文章
-    Route::get('article.article/lists',  [ArticleController::class, 'lists']);
-    Route::get('article.article/detail', [ArticleController::class, 'detail']);
-    Route::post('article.article/add',          [ArticleController::class, 'add']);
-    Route::post('article.article/edit',         [ArticleController::class, 'edit']);
-    Route::post('article.article/delete',       [ArticleController::class, 'delete']);
-    Route::post('article.article/updateStatus', [ArticleController::class, 'updateStatus']);
 
     // 财务 - 账户流水
     Route::get('finance/account-log/lists', [AccountLogController::class, 'lists']);
