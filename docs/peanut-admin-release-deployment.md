@@ -81,7 +81,13 @@ scripts/deploy-release v2.0.0 --target production-candidate --fresh \
 
 fresh 部署必须显式提供管理员邮箱和密码；脚本不会生成或回显密码。它们只写入服务器
 root-owned `.env`。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
-补丁分别创建独立账号，并使用同一组公开演示密码。
+补丁分别创建独立 owner，并使用同一组公开演示密码。Tenant A 的 Account 还会成为 Tenant B
+的 active owner，因此公共 Admin 使用 Tenant A 账号时可以选择 A/B；Tenant A/B 的绑定 Host
+仍只能进入各自 Tenant。未知 Host 不会返回任何演示凭据。
+
+普通 `--upgrade` 保留远端现有演示配置，不会把调用端的空值写回 `.env`。`--fresh` 不带
+overlay 时会明确关闭并清空旧演示配置，避免同一部署目录从演示候选变成普通实例后继续暴露
+公开账号。overlay 只允许与 `--fresh` 一起使用。
 
 准备应用自己的空数据库和受保护环境文件。至少配置：
 

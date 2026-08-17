@@ -62,6 +62,70 @@ validate_env_value() {
     || fail "$name contains characters that cannot be written safely to the deployment .env"
 }
 
+normalize_email() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+validate_email() {
+  local name="$1" value="$2" local_part domain label
+  local labels=()
+  [[ ${#value} -le 254 && "$value" == *@* && "$value" != *@*@* ]] \
+    || fail "$name must be a valid email address"
+  local_part="${value%@*}"
+  domain="${value#*@}"
+  [[ ${#local_part} -le 64
+    && "$local_part" =~ ^[A-Za-z0-9.!+_-]+$
+    && "$local_part" != .* && "$local_part" != *.
+    && "$local_part" != *..* ]] || fail "$name must be a valid email address"
+  [[ "$domain" != .* && "$domain" != *. && "$domain" != *..* ]] \
+    || fail "$name must be a valid email address"
+  IFS='.' read -r -a labels <<<"$domain"
+  [[ ${#labels[@]} -ge 2 ]] || fail "$name must be a valid email address"
+  for label in "${labels[@]}"; do
+    [[ ${#label} -le 63 && "$label" =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$ ]] \
+      || fail "$name must be a valid email address"
+  done
+}
+
+validate_password() {
+  local name="$1" value="$2"
+  [[ ${#value} -ge 12 && "$value" =~ [A-Za-z] && "$value" =~ [0-9] ]] \
+    || fail "$name must be at least 12 characters and contain a letter and a digit"
+}
+
+validate_host() {
+  local name="$1" value="$2" label
+  local labels=()
+  [[ ${#value} -le 253
+    && "$value" == "$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+    && "$value" != .* && "$value" != *. && "$value" != *..* ]] \
+    || fail "$name must be a normalized lowercase Host"
+  IFS='.' read -r -a labels <<<"$value"
+  [[ ${#labels[@]} -ge 2 ]] || fail "$name must be a valid DNS Host"
+  for label in "${labels[@]}"; do
+    [[ ${#label} -le 63 && "$label" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]] \
+      || fail "$name must be a valid DNS Host"
+  done
+}
+
+validate_http_url() {
+  local name="$1" value="$2" authority host port
+  case "$value" in
+    http://*) authority="${value#http://}" ;;
+    https://*) authority="${value#https://}" ;;
+    *) fail "$name must be an HTTP(S) URL" ;;
+  esac
+  authority="${authority%%/*}"
+  [[ -n "$authority" && "$authority" != *@* ]] || fail "$name must be an HTTP(S) URL"
+  host="${authority%%:*}"
+  validate_host "$name Host" "$host"
+  if [[ "$authority" == *:* ]]; then
+    port="${authority##*:}"
+    [[ "$port" =~ ^[0-9]{1,5}$ && 10#$port -ge 1 && 10#$port -le 65535 ]] \
+      || fail "$name contains an invalid port"
+  fi
+}
+
 if [[ $# -eq 0 ]]; then
   usage >&2
   exit 64
@@ -106,6 +170,7 @@ if [[ "$MODE" == fresh && "$CONFIRM_DESTROY" != "$TARGET" ]]; then
   fail "--fresh requires --confirm-destroy $TARGET"
 fi
 if [[ -n "$OVERLAY" ]]; then
+  [[ "$MODE" == fresh ]] || fail '--overlay requires --fresh'
   [[ "$TARGET" == production-candidate ]] || fail '--overlay is allowed only for production-candidate'
   [[ -f "$OVERLAY" ]] || fail "overlay file is unavailable: $OVERLAY"
   [[ "$DEMO_MODE" == enabled ]] || fail 'overlay deployment requires PEANUT_DEMO_MODE=enabled'
@@ -113,6 +178,9 @@ if [[ -n "$OVERLAY" ]]; then
     "$DEMO_TENANT_A_HOST" "$DEMO_TENANT_B_HOST" "$DEMO_DOCS_URL"; do
     [[ -n "$value" ]] || fail 'overlay deployment is missing a required PEANUT_DEMO_* value'
   done
+fi
+if [[ "$MODE" == fresh && -z "$OVERLAY" && "$DEMO_MODE" == enabled ]]; then
+  fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
 fi
 [[ -f "$REGISTRY" ]] || fail "missing resource registry: $REGISTRY"
 command -v git >/dev/null || fail 'git is required'
@@ -165,33 +233,46 @@ metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // 
 if [[ "$MODE" == fresh && ( -z "$ADMIN_EMAIL" || -z "$ADMIN_PASSWORD" ) ]]; then
   fail 'fresh deployment requires PEANUT_GENERATED_ADMIN_EMAIL and PEANUT_GENERATED_ADMIN_PASSWORD'
 fi
+if [[ "$MODE" == fresh ]]; then
+  validate_env_value PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
+  validate_env_value PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+  validate_email PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
+  validate_password PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+fi
 if [[ "$MODE" == fresh && "$deployment_mode" == multi-tenant ]]; then
   [[ -n "$PLATFORM_EMAIL" && -n "$PLATFORM_PASSWORD" ]] \
     || fail 'fresh multi-tenant deployment requires PEANUT_GENERATED_PLATFORM_EMAIL and PEANUT_GENERATED_PLATFORM_PASSWORD'
+  validate_env_value PEANUT_GENERATED_PLATFORM_EMAIL "$PLATFORM_EMAIL"
+  validate_env_value PEANUT_GENERATED_PLATFORM_PASSWORD "$PLATFORM_PASSWORD"
+  validate_email PEANUT_GENERATED_PLATFORM_EMAIL "$PLATFORM_EMAIL"
+  validate_password PEANUT_GENERATED_PLATFORM_PASSWORD "$PLATFORM_PASSWORD"
+  [[ "$(normalize_email "$ADMIN_EMAIL")" != "$(normalize_email "$PLATFORM_EMAIL")" ]] \
+    || fail 'fresh multi-tenant deployment requires distinct Admin and Platform emails'
 fi
 if [[ "$MODE" == fresh && -n "$OVERLAY" ]]; then
+  validate_env_value PEANUT_DEMO_TENANT_A_EMAIL "$DEMO_TENANT_A_EMAIL"
+  validate_env_value PEANUT_DEMO_TENANT_B_EMAIL "$DEMO_TENANT_B_EMAIL"
+  validate_env_value PEANUT_DEMO_SHARED_PASSWORD "$DEMO_SHARED_PASSWORD"
+  validate_env_value PEANUT_DEMO_TENANT_A_HOST "$DEMO_TENANT_A_HOST"
+  validate_env_value PEANUT_DEMO_TENANT_B_HOST "$DEMO_TENANT_B_HOST"
+  validate_env_value PEANUT_DEMO_DOCS_URL "$DEMO_DOCS_URL"
+  validate_email PEANUT_DEMO_TENANT_A_EMAIL "$DEMO_TENANT_A_EMAIL"
+  validate_email PEANUT_DEMO_TENANT_B_EMAIL "$DEMO_TENANT_B_EMAIL"
+  validate_password PEANUT_DEMO_SHARED_PASSWORD "$DEMO_SHARED_PASSWORD"
+  validate_host PEANUT_DEMO_TENANT_A_HOST "$DEMO_TENANT_A_HOST"
+  validate_host PEANUT_DEMO_TENANT_B_HOST "$DEMO_TENANT_B_HOST"
+  validate_http_url PEANUT_DEMO_DOCS_URL "$DEMO_DOCS_URL"
+  [[ "$DEMO_TENANT_A_HOST" != "$DEMO_TENANT_B_HOST" ]] \
+    || fail 'fresh demo deployment requires distinct Tenant A and Tenant B Hosts'
   demo_emails=(
-    "$(printf '%s' "$ADMIN_EMAIL" | tr '[:upper:]' '[:lower:]')"
-    "$(printf '%s' "$PLATFORM_EMAIL" | tr '[:upper:]' '[:lower:]')"
-    "$(printf '%s' "$DEMO_TENANT_A_EMAIL" | tr '[:upper:]' '[:lower:]')"
-    "$(printf '%s' "$DEMO_TENANT_B_EMAIL" | tr '[:upper:]' '[:lower:]')"
+    "$(normalize_email "$ADMIN_EMAIL")"
+    "$(normalize_email "$PLATFORM_EMAIL")"
+    "$(normalize_email "$DEMO_TENANT_A_EMAIL")"
+    "$(normalize_email "$DEMO_TENANT_B_EMAIL")"
   )
   [[ "$(printf '%s\n' "${demo_emails[@]}" | sort -u | wc -l | tr -d ' ')" == 4 ]] \
     || fail 'fresh demo deployment requires distinct default Admin, Platform, Tenant A and Tenant B emails'
 fi
-for pair in \
-  "PEANUT_GENERATED_ADMIN_EMAIL=$ADMIN_EMAIL" \
-  "PEANUT_GENERATED_ADMIN_PASSWORD=$ADMIN_PASSWORD" \
-  "PEANUT_GENERATED_PLATFORM_EMAIL=$PLATFORM_EMAIL" \
-  "PEANUT_GENERATED_PLATFORM_PASSWORD=$PLATFORM_PASSWORD" \
-  "PEANUT_DEMO_TENANT_A_EMAIL=$DEMO_TENANT_A_EMAIL" \
-  "PEANUT_DEMO_TENANT_B_EMAIL=$DEMO_TENANT_B_EMAIL" \
-  "PEANUT_DEMO_SHARED_PASSWORD=$DEMO_SHARED_PASSWORD" \
-  "PEANUT_DEMO_TENANT_A_HOST=$DEMO_TENANT_A_HOST" \
-  "PEANUT_DEMO_TENANT_B_HOST=$DEMO_TENANT_B_HOST" \
-  "PEANUT_DEMO_DOCS_URL=$DEMO_DOCS_URL"; do
-  validate_env_value "${pair%%=*}" "${pair#*=}"
-done
 
 overlay_sha256=""
 if [[ -n "$OVERLAY" ]]; then
@@ -223,17 +304,21 @@ trap 'rm -f "$archive_file" "$secrets_file"' EXIT
 git archive --format=tar "$TAG" -o "$archive_file"
 umask 077
 {
-  printf 'ADMIN_INITIAL_EMAIL=%q\n' "$ADMIN_EMAIL"
-  printf 'ADMIN_INITIAL_PASSWORD=%q\n' "$ADMIN_PASSWORD"
-  printf 'PLATFORM_INITIAL_EMAIL=%q\n' "$PLATFORM_EMAIL"
-  printf 'PLATFORM_INITIAL_PASSWORD=%q\n' "$PLATFORM_PASSWORD"
-  printf 'PEANUT_DEMO_MODE=%q\n' "$DEMO_MODE"
-  printf 'PEANUT_DEMO_TENANT_A_EMAIL=%q\n' "$DEMO_TENANT_A_EMAIL"
-  printf 'PEANUT_DEMO_TENANT_B_EMAIL=%q\n' "$DEMO_TENANT_B_EMAIL"
-  printf 'PEANUT_DEMO_SHARED_PASSWORD=%q\n' "$DEMO_SHARED_PASSWORD"
-  printf 'PEANUT_DEMO_TENANT_A_HOST=%q\n' "$DEMO_TENANT_A_HOST"
-  printf 'PEANUT_DEMO_TENANT_B_HOST=%q\n' "$DEMO_TENANT_B_HOST"
-  printf 'PEANUT_DEMO_DOCS_URL=%q\n' "$DEMO_DOCS_URL"
+  if [[ "$MODE" == fresh ]]; then
+    printf 'ADMIN_INITIAL_EMAIL=%q\n' "$ADMIN_EMAIL"
+    printf 'ADMIN_INITIAL_PASSWORD=%q\n' "$ADMIN_PASSWORD"
+    if [[ "$deployment_mode" == multi-tenant ]]; then
+      printf 'PLATFORM_INITIAL_EMAIL=%q\n' "$PLATFORM_EMAIL"
+      printf 'PLATFORM_INITIAL_PASSWORD=%q\n' "$PLATFORM_PASSWORD"
+    fi
+    printf 'PEANUT_DEMO_MODE=%q\n' "$DEMO_MODE"
+    printf 'PEANUT_DEMO_TENANT_A_EMAIL=%q\n' "$DEMO_TENANT_A_EMAIL"
+    printf 'PEANUT_DEMO_TENANT_B_EMAIL=%q\n' "$DEMO_TENANT_B_EMAIL"
+    printf 'PEANUT_DEMO_SHARED_PASSWORD=%q\n' "$DEMO_SHARED_PASSWORD"
+    printf 'PEANUT_DEMO_TENANT_A_HOST=%q\n' "$DEMO_TENANT_A_HOST"
+    printf 'PEANUT_DEMO_TENANT_B_HOST=%q\n' "$DEMO_TENANT_B_HOST"
+    printf 'PEANUT_DEMO_DOCS_URL=%q\n' "$DEMO_DOCS_URL"
+  fi
 } >"$secrets_file"
 scp -q "$archive_file" "$SSH_ALIAS:$remote_archive" || fail 'cannot transfer immutable release archive'
 scp -q "$secrets_file" "$SSH_ALIAS:$remote_secrets" || fail 'cannot transfer deployment credential payload'
@@ -310,16 +395,22 @@ sudo -n rm -f "$archive"
 [[ -z "$overlay" ]] || sudo -n rm -f "$overlay"
 set_env_key() {
   local key="$1" value="$2"
-  local temporary
-  temporary="$(mktemp)"
-  sudo -n awk -v key="$key" -v value="$value" '
-    BEGIN { replaced = 0 }
-    $0 ~ "^" key "=" { if (!replaced) print key "=" value; replaced = 1; next }
-    { print }
-    END { if (!replaced) print key "=" value }
-  ' .env >"$temporary"
-  sudo -n install -m 600 "$temporary" .env
-  rm -f "$temporary"
+  sudo -n bash -c '
+    set -Eeuo pipefail
+    key="$1"
+    value="$2"
+    temporary="$(mktemp ./.env.deploy.XXXXXX)"
+    trap "rm -f -- \"$temporary\"" EXIT
+    awk -v key="$key" -v value="$value" '\''
+      BEGIN { replaced = 0 }
+      $0 ~ "^" key "=" { if (!replaced) print key "=" value; replaced = 1; next }
+      { print }
+      END { if (!replaced) print key "=" value }
+    '\'' .env >"$temporary"
+    chmod 600 "$temporary"
+    mv -f -- "$temporary" .env
+    trap - EXIT
+  ' -- "$key" "$value"
 }
 image_suffix="${tag#v}"
 if [[ -n "$expected_overlay_sha" ]]; then
@@ -337,7 +428,7 @@ if [[ "$mode" == fresh ]]; then
     set_env_key PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
   fi
 fi
-if [[ -n "$expected_overlay_sha" ]]; then
+if [[ "$mode" == fresh ]]; then
   for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
     PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
     set_env_key "$key" "${!key:-}"
@@ -362,7 +453,7 @@ if [[ "$mode" == fresh ]]; then
 fi
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/migrate.php </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/migrate.php --current </dev/null
-if [[ "$mode" == fresh && "$PEANUT_DEMO_MODE" == enabled ]]; then
+if [[ "$mode" == fresh && -n "$expected_overlay_sha" ]]; then
   demo_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/seed-multi-tenant-demo.php --apply </dev/null)"
   printf '%s\n' "$demo_result"
   tenant_a_id="$(printf '%s' "$demo_result" | jq -r '.tenant_a_id // empty')"

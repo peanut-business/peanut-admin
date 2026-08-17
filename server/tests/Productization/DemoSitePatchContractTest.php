@@ -39,9 +39,20 @@ foreach ([
     'PEANUT_DEMO_TENANT_B_EMAIL',
     'PEANUT_DEMO_SHARED_PASSWORD',
     'pa_tenant_entry_binding',
+    'demoMultiAssertSeedState',
+    'demoMultiEnsureSharedOwner',
+    'demoMultiAssertFinalState',
+    '$transactions->run(',
+    '$passwords->verify(',
 ] as $token) {
     $expect(str_contains($seed, $token), 'demo seed lost required guard: ' . $token);
 }
+$expect(
+    str_contains($seed, "'tenant-a'")
+        && str_contains($seed, "'tenant-b'")
+        && str_contains($seed, "['default', 'tenant-a', 'tenant-b']"),
+    'demo seed does not preserve the default Tenant plus independent A/B Tenant codes'
+);
 
 $admin = $read($root . '/server/app/adminapi/logic/auth/AdminLogic.php');
 $expect(
@@ -57,7 +68,16 @@ $expect(
 );
 
 $deploy = $read($root . '/scripts/deploy-release');
-foreach (['--confirm-destroy', '--overlay', 'seed-multi-tenant-demo.php', 'down --volumes'] as $token) {
+foreach ([
+    '--confirm-destroy',
+    '--overlay',
+    'seed-multi-tenant-demo.php',
+    'down --volumes',
+    "'--overlay requires --fresh'",
+    'mktemp ./.env.deploy.',
+    'mv -f -- "$temporary" .env',
+    'if [[ "$mode" == fresh ]]; then',
+] as $token) {
     $expect(str_contains($deploy, $token), 'deployment flow lost contract token: ' . $token);
 }
 $expect(
@@ -71,6 +91,13 @@ $expect(
 $expect(
     substr_count($deploy, '</dev/null') === 5,
     'remote one-shot Compose commands must close inherited standard input'
+);
+
+$index = $read($root . '/server/app/api/logic/IndexLogic.php');
+$expect(
+    str_contains($index, 'in_array($host, $sharedHosts, true)')
+        && str_contains($index, "return ['enabled' => false, 'email' => '', 'password' => ''];"),
+    'demo public config does not fail closed for unknown Hosts'
 );
 
 echo "DEMO-SITE-PATCH-CONTRACT-001 passed\n";

@@ -19,6 +19,8 @@ const user = read('web/src/store/modules/user/index.ts');
 expect(user.includes('brandStore.setTenantName(res.data.tenantName)'), 'user info does not restore the Tenant title');
 expect(user.includes('brandStore.setTenantName()'), 'logout does not clear the Tenant title');
 expect(user.includes("tenantName: ''") && user.includes('demoMode: false'), 'Tenant and demo state do not reset deterministically');
+const userTypes = read('web/src/store/modules/user/types.ts');
+expect(userTypes.includes('tenantName: string;') && userTypes.includes('demoMode: boolean;'), 'Tenant and demo reset fields remain optional in the state contract');
 
 const publicConfig = read('server/app/api/logic/IndexLogic.php');
 expect(publicConfig.includes("TenantEntryBindingResolver::ADMIN_CLIENT"), 'public brand config ignores the bound Admin Host');
