@@ -106,7 +106,7 @@ expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::formatP
 expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::pageByType'), 'admin type detail bypasses shared read DTO');
 expectContentDecoration(str_contains($pageLogic, 'DecorationTenantRepository::pages'), 'admin decoration page bypasses Tenant-first ownership');
 expectContentDecoration(!str_contains($pageLogic, 'resourcesForRead'), 'admin page keeps duplicate resource formatting');
-expectContentDecoration(str_contains($tabbarLogic, 'DecorationReadService::tabbar(false)'), 'admin tabbar bypasses shared read DTO');
+expectContentDecoration(str_contains($tabbarLogic, 'DecorationReadService::tabbar('), 'admin tabbar bypasses shared read DTO');
 
 foreach ([
     'app/api/controller/DecorationController.php',

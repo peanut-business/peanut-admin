@@ -6,6 +6,7 @@ use app\adminapi\logic\auth\RoleLogic;
 use app\adminapi\logic\dept\DeptLogic;
 use app\adminapi\logic\dept\JobsLogic;
 use app\common\service\org\OrgTenantContext;
+use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -39,6 +40,9 @@ function createOrgTenantSchema(PDO $pdo): void
         $pdo->exec(KernelSchema::createSql($table));
     }
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
+    foreach (ModuleSchema::tableNames() as $table) {
+        $pdo->exec(ModuleSchema::createSql($table));
+    }
     $pdo->exec(<<<'SQL'
 CREATE TABLE pa_jobs (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, name VARCHAR(50) NOT NULL DEFAULT '',
