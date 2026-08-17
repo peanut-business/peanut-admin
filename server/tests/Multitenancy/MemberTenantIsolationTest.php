@@ -8,6 +8,7 @@ use app\api\logic\AccountLogLogic as ApiAccountLogLogic;
 use app\common\enum\AccountLogEnum;
 use app\common\logic\AccountLogLogic;
 use app\common\service\MemberBalanceService;
+use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -170,7 +171,13 @@ SQL);
     $adminLogs = AdminAccountLogLogic::lists($alpha, ['page_size' => 20]);
     expectMemberTenant($adminLogs !== false, 'Alpha admin ledger query failed: ' . AdminAccountLogLogic::getError());
     expectMemberTenant(count($adminLogs['lists']) === 2, 'Alpha admin ledger leaked or lost rows');
-    $apiLogs = ApiAccountLogLogic::lists($beta, (int)$betaMember->id, []);
+    $betaMemberContext = new AuthenticatedMemberContext(
+        202,
+        (int)$betaMember->id,
+        'fixture-beta-member',
+        'mt03-member-beta-api-' . $runId,
+    );
+    $apiLogs = ApiAccountLogLogic::lists($betaMemberContext, (int)$betaMember->id, []);
     expectMemberTenant(count($apiLogs['lists']) === 1, 'Beta API ledger leaked or lost rows');
 
     expectMemberTenant(MemberTagLogic::delete($alpha, $betaTag) === false, 'Alpha deleted Beta tag');
