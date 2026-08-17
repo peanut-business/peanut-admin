@@ -63,7 +63,12 @@ try {
     foreach (ModuleSchema::tableNames() as $table) {
         $pdo->exec(ModuleSchema::createSql($table));
     }
-    $pdo->exec('ALTER TABLE `pa_login_challenge` ALTER COLUMN `client_key` DROP DEFAULT');
+    $pdo->exec(<<<'SQL'
+ALTER TABLE `pa_login_challenge`
+  ADD COLUMN `client_key` VARCHAR(64) NOT NULL AFTER `purpose`,
+  ADD CONSTRAINT `chk_login_challenge_client`
+    CHECK (REGEXP_LIKE(`client_key`, '^[a-z][a-z0-9-]{0,63}$', 'c'))
+SQL);
 
     $transactions = new PdoTransactionManager($pdo);
     $passwords = new PasswordHasher();

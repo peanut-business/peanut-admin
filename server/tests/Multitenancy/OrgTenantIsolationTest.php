@@ -5,12 +5,8 @@ use app\adminapi\logic\auth\AdminLogic;
 use app\adminapi\logic\auth\RoleLogic;
 use app\adminapi\logic\dept\DeptLogic;
 use app\adminapi\logic\dept\JobsLogic;
-use app\common\model\auth\Admin;
-use app\common\model\auth\AdminRole;
-use app\common\model\auth\SystemRole;
-use app\common\model\dept\Dept;
-use app\common\model\dept\Jobs;
 use app\common\service\org\OrgTenantContext;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -39,102 +35,34 @@ function orgTenantContext(int $tenantId, int $memberId, string $requestId): Tena
 
 function createOrgTenantSchema(PDO $pdo): void
 {
+    foreach (KernelSchema::tableNames() as $table) {
+        $pdo->exec(KernelSchema::createSql($table));
+    }
+    $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
     $pdo->exec(<<<'SQL'
-CREATE TABLE pa_tenant (id BIGINT UNSIGNED NOT NULL, status VARCHAR(32) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB;
-CREATE TABLE pa_admin (
- id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL,
- username VARCHAR(50) NOT NULL DEFAULT '', nickname VARCHAR(50) NOT NULL DEFAULT '',
- active_username VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, username, NULL)) STORED,
- active_nickname VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, nickname, NULL)) STORED,
- password VARCHAR(64) NOT NULL DEFAULT '', salt VARCHAR(16) NOT NULL DEFAULT '', avatar VARCHAR(255) NOT NULL DEFAULT '',
- root TINYINT NOT NULL DEFAULT 0, disable TINYINT NOT NULL DEFAULT 0, login_time INT UNSIGNED NOT NULL DEFAULT 0,
- login_ip VARCHAR(45) NOT NULL DEFAULT '', multipoint_login TINYINT NOT NULL DEFAULT 1,
- create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
- PRIMARY KEY (id), UNIQUE KEY uk_admin_tenant_id (tenant_id,id),
- UNIQUE KEY uk_admin_tenant_active_username (tenant_id,active_username),
- UNIQUE KEY uk_admin_tenant_active_nickname (tenant_id,active_nickname),
- CONSTRAINT fk_admin_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role (
- id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, name VARCHAR(50) NOT NULL DEFAULT '',
- active_name VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, name, NULL)) STORED,
- `desc` VARCHAR(255) NOT NULL DEFAULT '', sort SMALLINT NOT NULL DEFAULT 0,
- create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
- PRIMARY KEY (id), UNIQUE KEY uk_system_role_tenant_id (tenant_id,id),
- UNIQUE KEY uk_system_role_tenant_active_name (tenant_id,active_name),
- CONSTRAINT fk_system_role_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_dept (
- id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, pid INT UNSIGNED NOT NULL DEFAULT 0,
- name VARCHAR(50) NOT NULL DEFAULT '', leader VARCHAR(50) NOT NULL DEFAULT '', mobile VARCHAR(20) NOT NULL DEFAULT '',
- active_name VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, name, NULL)) STORED,
- sort SMALLINT NOT NULL DEFAULT 0, is_disable TINYINT NOT NULL DEFAULT 0, status TINYINT NOT NULL DEFAULT 1,
- create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
- PRIMARY KEY (id), UNIQUE KEY uk_dept_tenant_id (tenant_id,id),
- UNIQUE KEY uk_dept_tenant_active_name (tenant_id,active_name),
- CONSTRAINT fk_dept_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
-) ENGINE=InnoDB;
 CREATE TABLE pa_jobs (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, name VARCHAR(50) NOT NULL DEFAULT '',
  code VARCHAR(64) NOT NULL DEFAULT '', sort SMALLINT NOT NULL DEFAULT 0, is_disable TINYINT NOT NULL DEFAULT 0,
- active_name VARCHAR(50) GENERATED ALWAYS AS (IF(delete_time IS NULL, name, NULL)) STORED,
- active_code VARCHAR(64) GENERATED ALWAYS AS (IF(delete_time IS NULL, code, NULL)) STORED,
  status TINYINT NOT NULL DEFAULT 1, remark VARCHAR(200) NOT NULL DEFAULT '',
  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
- PRIMARY KEY (id), UNIQUE KEY uk_jobs_tenant_id (tenant_id,id),
- UNIQUE KEY uk_jobs_tenant_active_name (tenant_id,active_name),
- UNIQUE KEY uk_jobs_tenant_active_code (tenant_id,active_code),
- CONSTRAINT fk_jobs_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id)
+ PRIMARY KEY (id), KEY idx_jobs_tenant (tenant_id), UNIQUE KEY uk_jobs_tenant_code (tenant_id, code)
 ) ENGINE=InnoDB;
-CREATE TABLE pa_system_menu (
- id INT UNSIGNED NOT NULL, pid INT UNSIGNED NOT NULL DEFAULT 0, type CHAR(1) NOT NULL DEFAULT 'C',
- name VARCHAR(50) NOT NULL DEFAULT '', icon VARCHAR(100) NOT NULL DEFAULT '', sort SMALLINT NOT NULL DEFAULT 0,
- perms VARCHAR(100) NOT NULL DEFAULT '', paths VARCHAR(200) NOT NULL DEFAULT '', component VARCHAR(200) NOT NULL DEFAULT '',
- is_cache TINYINT NOT NULL DEFAULT 0, is_show TINYINT NOT NULL DEFAULT 1, is_disable TINYINT NOT NULL DEFAULT 0,
- PRIMARY KEY (id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin_role (
- id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, admin_id INT UNSIGNED NOT NULL, role_id INT UNSIGNED NOT NULL,
- PRIMARY KEY (id), UNIQUE KEY uk_admin_role_tenant (tenant_id,admin_id,role_id),
- CONSTRAINT fk_admin_role_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
- CONSTRAINT fk_admin_role_admin_owner FOREIGN KEY (tenant_id,admin_id) REFERENCES pa_admin(tenant_id,id) ON DELETE RESTRICT,
- CONSTRAINT fk_admin_role_role_owner FOREIGN KEY (tenant_id,role_id) REFERENCES pa_system_role(tenant_id,id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin_dept (
- tenant_id BIGINT UNSIGNED NOT NULL, admin_id INT UNSIGNED NOT NULL, dept_id INT UNSIGNED NOT NULL,
- PRIMARY KEY (admin_id,dept_id), UNIQUE KEY uk_admin_dept_tenant (tenant_id,admin_id,dept_id),
- CONSTRAINT fk_admin_dept_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
- CONSTRAINT fk_admin_dept_admin_owner FOREIGN KEY (tenant_id,admin_id) REFERENCES pa_admin(tenant_id,id) ON DELETE RESTRICT,
- CONSTRAINT fk_admin_dept_dept_owner FOREIGN KEY (tenant_id,dept_id) REFERENCES pa_dept(tenant_id,id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin_jobs (
- tenant_id BIGINT UNSIGNED NOT NULL, admin_id INT UNSIGNED NOT NULL, jobs_id INT UNSIGNED NOT NULL,
- PRIMARY KEY (admin_id,jobs_id), UNIQUE KEY uk_admin_jobs_tenant (tenant_id,admin_id,jobs_id),
- CONSTRAINT fk_admin_jobs_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
- CONSTRAINT fk_admin_jobs_admin_owner FOREIGN KEY (tenant_id,admin_id) REFERENCES pa_admin(tenant_id,id) ON DELETE RESTRICT,
- CONSTRAINT fk_admin_jobs_jobs_owner FOREIGN KEY (tenant_id,jobs_id) REFERENCES pa_jobs(tenant_id,id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role_menu (
- id INT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL, role_id INT UNSIGNED NOT NULL, menu_id INT UNSIGNED NOT NULL,
- PRIMARY KEY (id), UNIQUE KEY uk_role_menu_tenant (tenant_id,role_id,menu_id),
- CONSTRAINT fk_role_menu_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant(id),
- CONSTRAINT fk_role_menu_role_owner FOREIGN KEY (tenant_id,role_id) REFERENCES pa_system_role(tenant_id,id) ON DELETE RESTRICT,
- CONSTRAINT fk_role_menu_menu FOREIGN KEY (menu_id) REFERENCES pa_system_menu(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin_session (
- id INT UNSIGNED NOT NULL AUTO_INCREMENT, admin_id INT UNSIGNED NOT NULL, terminal TINYINT NOT NULL DEFAULT 1,
- token VARCHAR(64) NOT NULL DEFAULT '', login_ip VARCHAR(45) NOT NULL DEFAULT '', update_time INT UNSIGNED NOT NULL DEFAULT 0,
- expire_time INT UNSIGNED NOT NULL DEFAULT 0, PRIMARY KEY (id), UNIQUE KEY uk_token (token)
-) ENGINE=InnoDB;
-CREATE TABLE pa_config (
- id INT UNSIGNED NOT NULL AUTO_INCREMENT, type VARCHAR(30) NOT NULL DEFAULT '',
- name VARCHAR(60) NOT NULL DEFAULT '', value TEXT,
- create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0,
- PRIMARY KEY (id), UNIQUE KEY uk_type_name (type,name)
-) ENGINE=InnoDB;
-INSERT INTO pa_config (type,name,value) VALUES ('storage','default','local');
-INSERT INTO pa_tenant (id,status) VALUES (101,'active'),(202,'active');
-INSERT INTO pa_system_menu (id,name,type) VALUES (1,'Dashboard','C');
+INSERT INTO pa_tenant (id,code,name,display_name,status,activated_at,created_at,updated_at)
+VALUES
+ (101,'alpha','Alpha','Alpha','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),
+ (202,'beta','Beta','Beta','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3));
+INSERT INTO pa_account (id,display_name,created_at,updated_at) VALUES
+ (1501,'Alpha Operator',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),
+ (1502,'Beta Operator',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3));
+INSERT INTO pa_credential (account_id,kind,identifier_type,identifier_normalized,secret_hash,verified_at,secret_changed_at,created_at,updated_at)
+VALUES
+ (1501,'email_password','email','alpha-operator@example.test','fixture',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),
+ (1502,'email_password','email','beta-operator@example.test','fixture',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3));
+INSERT INTO pa_tenant_member (id,tenant_id,account_id,member_no,display_name,status,joined_at,created_at,updated_at)
+VALUES
+ (501,101,1501,'alpha-operator','Alpha Operator','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),
+ (502,202,1502,'beta-operator','Beta Operator','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3));
+INSERT INTO pa_system_menu (id,type,name,is_disable) VALUES (1,'C','Dashboard',0);
 SQL);
 }
 
@@ -180,12 +108,12 @@ try {
         expectOrgTenant(JobsLogic::add($context, ['tenant_id' => $payloadTenantId, 'name' => 'Operator', 'code' => 'OPS', 'status' => 1]), JobsLogic::getError());
     }
 
-    $alphaRole = (int)SystemRole::where(['tenant_id' => 101, 'name' => 'Manager'])->value('id');
-    $betaRole = (int)SystemRole::where(['tenant_id' => 202, 'name' => 'Manager'])->value('id');
-    $alphaDept = (int)Dept::where(['tenant_id' => 101, 'name' => 'Operations'])->value('id');
-    $betaDept = (int)Dept::where(['tenant_id' => 202, 'name' => 'Operations'])->value('id');
-    $alphaJobs = (int)Jobs::where(['tenant_id' => 101, 'code' => 'OPS'])->value('id');
-    $betaJobs = (int)Jobs::where(['tenant_id' => 202, 'code' => 'OPS'])->value('id');
+    $alphaRole = (int)$pdo->query("SELECT id FROM pa_role WHERE tenant_id=101 AND name='Manager'")->fetchColumn();
+    $betaRole = (int)$pdo->query("SELECT id FROM pa_role WHERE tenant_id=202 AND name='Manager'")->fetchColumn();
+    $alphaDept = (int)$pdo->query("SELECT id FROM pa_department WHERE tenant_id=101 AND name='Operations'")->fetchColumn();
+    $betaDept = (int)$pdo->query("SELECT id FROM pa_department WHERE tenant_id=202 AND name='Operations'")->fetchColumn();
+    $alphaJobs = (int)$pdo->query("SELECT id FROM pa_jobs WHERE tenant_id=101 AND code='OPS'")->fetchColumn();
+    $betaJobs = (int)$pdo->query("SELECT id FROM pa_jobs WHERE tenant_id=202 AND code='OPS'")->fetchColumn();
     expectOrgTenant($alphaRole > 0 && $betaRole > 0 && $alphaRole !== $betaRole, 'same role name was not Tenant-local');
     expectOrgTenant($alphaDept > 0 && $betaDept > 0 && $alphaDept !== $betaDept, 'same department name was not Tenant-local');
     expectOrgTenant($alphaJobs > 0 && $betaJobs > 0 && $alphaJobs !== $betaJobs, 'same job code was not Tenant-local');
@@ -208,21 +136,19 @@ try {
         'tenant_id' => 101, 'account' => 'shared-admin', 'name' => 'Shared Admin', 'password' => 'password123',
         'disable' => 0, 'multipoint_login' => 1, 'role_id' => [$betaRole], 'dept_id' => [$betaDept], 'jobs_id' => [$betaJobs],
     ]), AdminLogic::getError());
-    $alphaAdmin = (int)Admin::where(['tenant_id' => 101, 'username' => 'shared-admin'])->value('id');
-    $betaAdmin = (int)Admin::where(['tenant_id' => 202, 'username' => 'shared-admin'])->value('id');
+    $alphaAdmin = (int)$pdo->query("SELECT tm.id FROM pa_tenant_member tm JOIN pa_credential c ON c.account_id=tm.account_id WHERE tm.tenant_id=101 AND c.identifier_normalized='shared-admin'")->fetchColumn();
+    $betaAdmin = (int)$pdo->query("SELECT tm.id FROM pa_tenant_member tm JOIN pa_credential c ON c.account_id=tm.account_id WHERE tm.tenant_id=202 AND c.identifier_normalized='shared-admin'")->fetchColumn();
     expectOrgTenant(AdminLogic::detail($alpha, $betaAdmin) === [], 'cross-Tenant admin detail leaked');
     $alphaAdminList = AdminLogic::lists($alpha, []);
     expectOrgTenant($alphaAdminList !== false, 'admin list failed: ' . AdminLogic::getError());
     expectOrgTenant($alphaAdminList['count'] === 1, 'admin list crossed Tenant boundary');
     expectOrgTenant(!AdminLogic::updateStatus($alpha, $betaAdmin, 1), 'cross-Tenant admin status changed');
     expectOrgTenant(!AdminLogic::delete($alpha, $betaAdmin), 'cross-Tenant admin delete succeeded');
-    expectOrgTenant((int)Admin::where('id', $betaAdmin)->value('disable') === 0, 'cross-Tenant status denial mutated target');
+    expectOrgTenant($pdo->query("SELECT status FROM pa_tenant_member WHERE tenant_id=202 AND id={$betaAdmin}")->fetchColumn() === 'active', 'cross-Tenant status denial mutated target');
 
     foreach ([
-        "INSERT INTO pa_admin_role (tenant_id,admin_id,role_id) VALUES (202,{$alphaAdmin},{$betaRole})",
-        "INSERT INTO pa_admin_dept (tenant_id,admin_id,dept_id) VALUES (202,{$alphaAdmin},{$betaDept})",
-        "INSERT INTO pa_admin_jobs (tenant_id,admin_id,jobs_id) VALUES (202,{$alphaAdmin},{$betaJobs})",
-        "INSERT INTO pa_system_role_menu (tenant_id,role_id,menu_id) VALUES (202,{$alphaRole},1)",
+        "INSERT INTO pa_member_role (tenant_id,tenant_member_id,role_id,assigned_at) VALUES (202,{$alphaAdmin},{$betaRole},UTC_TIMESTAMP(3))",
+        "UPDATE pa_tenant_member SET primary_department_id={$betaDept} WHERE tenant_id=101 AND id={$alphaAdmin}",
     ] as $pollution) {
         try {
             $pdo->exec($pollution);
@@ -232,7 +158,7 @@ try {
         }
     }
 
-    expectOrgTenant(AdminRole::where(['tenant_id' => 101, 'admin_id' => $alphaAdmin, 'role_id' => $alphaRole])->count() === 1, 'owned admin role relation missing');
+    expectOrgTenant((int)$pdo->query("SELECT COUNT(*) FROM pa_member_role WHERE tenant_id=101 AND tenant_member_id={$alphaAdmin} AND role_id={$alphaRole}")->fetchColumn() === 1, 'owned admin role relation missing');
     expectOrgTenant(RoleLogic::edit($alpha, ['id' => $alphaRole, 'name' => 'Manager Alpha', 'menu_id' => [1]]), RoleLogic::getError());
     expectOrgTenant(DeptLogic::edit($alpha, ['id' => $alphaDept, 'pid' => 0, 'name' => 'Operations Alpha', 'status' => 1]), DeptLogic::getError());
     expectOrgTenant(JobsLogic::edit($alpha, ['id' => $alphaJobs, 'name' => 'Operator Alpha', 'code' => 'OPS-A', 'status' => 1]), JobsLogic::getError());

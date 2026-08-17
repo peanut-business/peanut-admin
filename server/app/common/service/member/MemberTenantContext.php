@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\member;
 
 use app\common\service\notice\NoticeTenantContext;
+use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -55,6 +56,13 @@ final class MemberTenantContext
                 NoticeTenantContext::VERIFICATION_ACTOR,
             ], true)
             && $context->operation !== ''
+            && $context->operationId !== '') {
+            return $context->tenantId;
+        }
+        if ($context instanceof TenantSystemContext
+            && $context->tenantId > 0
+            && $context->actorKey === ExternalTenantResolver::ACTOR
+            && $context->operation === 'payment.settle'
             && $context->operationId !== '') {
             return $context->tenantId;
         }
