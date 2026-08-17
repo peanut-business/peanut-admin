@@ -1,7 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\tenant\DefaultTenantBootstrap;
+use PeanutAdmin\Kernel\Identity\PasswordHasher;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
 /**
  * Peanut Admin fresh-database installer.
@@ -114,23 +122,6 @@ function initialPlatformCredentials(string $serverDir, string $adminEmail): ?arr
     return ['email' => $email, 'password' => (string)$password];
 }
 
-function replaceInitialAdminSeed(string $sql, string $password, ?string $salt = null): string
-{
-    validateInitialAdminPassword($password);
-    $salt ??= bin2hex(random_bytes(8));
-    if (preg_match('/^[a-f0-9]{16}$/', $salt) !== 1) {
-        throw new RuntimeException('管理员初始盐格式错误');
-    }
-
-    $seed = "VALUES (1,'admin','超级管理员', MD5(CONCAT(MD5('admin123456'),'abcd1234')), 'abcd1234', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());";
-    if (substr_count($sql, $seed) !== 1) {
-        throw new RuntimeException('管理员 seed 与安装合同不一致');
-    }
-    $digest = md5(md5($password) . $salt);
-    $replacement = "VALUES (1,'admin','超级管理员', '{$digest}', '{$salt}', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());";
-    return str_replace($seed, $replacement, $sql);
-}
-
 /** @return array<string, string> */
 function brandWebsiteDefaults(string $serverDir): array
 {
@@ -159,9 +150,18 @@ function sqlFiles(string $databaseDir): array
     return array_merge([$databaseDir . '/init.sql'], $migrations);
 }
 
+function loadCoreRuntime(string $serverDir): void
+{
+    $autoload = $serverDir . '/vendor/autoload.php';
+    if (!is_file($autoload)) {
+        throw new RuntimeException('缺少 Composer autoload，无法创建 Core Schema');
+    }
+    require_once $autoload;
+}
+
 function expectedTables(array $files): array
 {
-    $tables = [];
+    $tables = array_fill_keys(KernelSchema::tableNames(), true);
     foreach ($files as $file) {
         $sql = file_get_contents($file);
         if ($sql === false) {
@@ -177,15 +177,12 @@ function expectedTables(array $files): array
     return $names;
 }
 
-function executeSqlFiles(PDO $pdo, array $files, string $adminPassword): void
+function executeSqlFiles(PDO $pdo, array $files): void
 {
     foreach ($files as $file) {
         $sql = file_get_contents($file);
         if ($sql === false) {
             throw new RuntimeException('无法读取 SQL 文件：' . basename($file));
-        }
-        if (basename($file) === 'init.sql') {
-            $sql = replaceInitialAdminSeed($sql, $adminPassword);
         }
         try {
             $pdo->exec($sql);
@@ -216,28 +213,111 @@ function executeSqlFile(PDO $pdo, string $file): void
     }
 }
 
-/** @param array{email:string,password:string}|null $platformCredentials */
-function defaultTenantBootstrap(
+/**
+ * @param array{email:string,password:string}|null $platformCredentials
+ * @return array{tenant_id:int,account_id:int,member_id:int,operator_id:int}
+ */
+function initializeCoreIdentity(
     PDO $pdo,
-    string $serverDir,
     string $email,
     string $password,
     ?array $platformCredentials
-): DefaultTenantBootstrap
+): array
 {
-    $autoload = $serverDir . '/vendor/autoload.php';
-    if (!is_file($autoload)) {
-        throw new RuntimeException('缺少 Composer autoload，无法执行默认 Tenant bootstrap');
+    foreach (KernelSchema::tableNames() as $table) {
+        $pdo->exec(KernelSchema::createSql($table));
     }
-    require_once $autoload;
-    $bootstrap = new DefaultTenantBootstrap($pdo);
-    $bootstrap->prepare(
-        $email,
-        $password,
-        $platformCredentials['email'] ?? null,
-        $platformCredentials['password'] ?? null
+    ensureTenantChallengeClientKey($pdo);
+    $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
+
+    $service = new BootstrapService(
+        new PdoTransactionManager($pdo),
+        new PdoIdentityRepository($pdo),
+        new PdoTenantRepository($pdo),
+        new PdoMembershipRepository($pdo),
+        new PdoPlatformRepository($pdo),
+        new PdoAuditRepository($pdo),
+        new PasswordHasher()
     );
-    return $bootstrap;
+    $separatePlatformOperator = $platformCredentials !== null;
+    $platform = $service->bootstrapPlatformOwner(
+        $platformCredentials['email'] ?? $email,
+        $platformCredentials['password'] ?? $password,
+        $separatePlatformOperator ? 'Platform Operator' : '超级管理员',
+        'fresh-install-platform-owner'
+    );
+    $owner = $service->provisionTenantOwnerCandidate(
+        $platform->operatorId,
+        'default',
+        'Peanut Admin',
+        $email,
+        $separatePlatformOperator ? $password : null,
+        '超级管理员',
+        'fresh-install-default-owner'
+    );
+    $service->activateTenantOwner(
+        $platform->operatorId,
+        $owner->tenantId,
+        $owner->memberId,
+        'fresh-install-default-owner-activate'
+    );
+    $service->activateTenant(
+        $platform->operatorId,
+        $owner->tenantId,
+        'fresh-install-default-tenant-activate'
+    );
+
+    return [
+        'tenant_id' => $owner->tenantId,
+        'account_id' => $owner->accountId,
+        'member_id' => $owner->memberId,
+        'operator_id' => $platform->operatorId,
+    ];
+}
+
+/**
+ * The alpha.5 Core package persists the client binding but its exported
+ * fresh schema predates that column. Keep a fresh install compatible with the
+ * repository contract until the package's canonical KernelSchema is released.
+ */
+function ensureTenantChallengeClientKey(PDO $pdo): void
+{
+    $column = $pdo->query(
+        "SHOW COLUMNS FROM `pa_login_challenge` LIKE 'client_key'"
+    )->fetch(PDO::FETCH_ASSOC);
+    if ($column !== false) {
+        return;
+    }
+
+    $pdo->exec(<<<'SQL'
+ALTER TABLE `pa_login_challenge`
+  ADD COLUMN `client_key` VARCHAR(64) NOT NULL AFTER `purpose`,
+  ADD CONSTRAINT `chk_login_challenge_client`
+    CHECK (REGEXP_LIKE(`client_key`, '^[a-z][a-z0-9-]{0,63}$', 'c'))
+SQL);
+}
+
+/** @return array{tenant_count:int,owner_count:int,operator_count:int} */
+function coreIdentityCounts(PDO $pdo): array
+{
+    return [
+        'tenant_count' => (int)$pdo->query(
+            "SELECT COUNT(*) FROM pa_tenant WHERE code = 'default' AND status = 'active'"
+        )->fetchColumn(),
+        'owner_count' => (int)$pdo->query(<<<'SQL'
+SELECT COUNT(DISTINCT tm.id)
+FROM pa_tenant t
+JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+JOIN pa_credential c ON c.account_id = a.id AND c.status = 'active'
+JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
+JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
+WHERE t.code = 'default' AND t.status = 'active' AND r.`key` = 'core.tenant-owner'
+SQL)->fetchColumn(),
+        'operator_count' => (int)$pdo->query(
+            "SELECT COUNT(*) FROM pa_platform_operator WHERE status = 'active'"
+        )->fetchColumn(),
+    ];
 }
 
 /** @param array<string, string> $website */
@@ -284,6 +364,7 @@ function main(): int
 {
     $databaseDir = __DIR__;
     $serverDir = dirname($databaseDir);
+    loadCoreRuntime($serverDir);
     $config = loadConfig($serverDir);
     $database = $config['DB_NAME'];
 
@@ -332,24 +413,25 @@ function main(): int
             $actualStatement->execute([$database]);
             $actual = $actualStatement->fetchAll(PDO::FETCH_COLUMN);
             $missing = array_values(array_diff($expected, $actual));
-            $defaultAdmin = in_array('pa_admin', $actual, true)
-                ? (int)$pdo->query(
-                    "SELECT COUNT(*) FROM pa_admin WHERE username = 'admin' AND root = 1"
-                )->fetchColumn()
-                : 0;
             $activeMenus = in_array('pa_system_menu', $actual, true)
                 ? (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn()
                 : 0;
             $configCount = in_array('pa_config', $actual, true)
                 ? (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn()
                 : 0;
-            if ($missing !== [] || $defaultAdmin !== 1 || $activeMenus === 0 || $configCount === 0) {
+            $coreIdentity = $missing === []
+                ? coreIdentityCounts($pdo)
+                : ['tenant_count' => 0, 'owner_count' => 0, 'operator_count' => 0];
+            if ($missing !== []
+                || $activeMenus === 0
+                || $configCount === 0
+                || $coreIdentity !== ['tenant_count' => 1, 'owner_count' => 1, 'operator_count' => 1]) {
                 throw new RuntimeException('已有数据库结构不完整，拒绝跳过安装：' . json_encode(
                     [
                         'missing_tables' => $missing,
-                        'default_admin' => $defaultAdmin,
                         'active_menus' => $activeMenus,
                         'configs' => $configCount,
+                        'core_identity' => $coreIdentity,
                     ],
                     JSON_UNESCAPED_UNICODE
                 ));
@@ -367,33 +449,13 @@ function main(): int
         $adminEmail = initialAdminEmail($serverDir);
         $platformCredentials = initialPlatformCredentials($serverDir, $adminEmail);
         $brandDefaults = brandWebsiteDefaults($serverDir);
-        $mt02Migration = '20260812-default-tenant-bootstrap.sql';
-        $mt02File = $databaseDir . '/migrations/' . $mt02Migration;
-        $initFile = array_shift($files);
-        if (!is_string($initFile) || !is_file($mt02File)) {
-            throw new RuntimeException('缺少 MT02 默认 Tenant migration');
-        }
-        $beforeMt02 = array_values(array_filter(
-            $files,
-            static fn(string $file): bool => basename($file) < $mt02Migration
-        ));
-        $afterMt02 = array_values(array_filter(
-            $files,
-            static fn(string $file): bool => basename($file) > $mt02Migration
-        ));
-        executeSqlFiles($pdo, [$initFile, ...$beforeMt02], $adminPassword);
-        $tenantBootstrap = defaultTenantBootstrap(
+        $coreIdentity = initializeCoreIdentity(
             $pdo,
-            $serverDir,
             $adminEmail,
             $adminPassword,
             $platformCredentials
         );
-        executeSqlFile($pdo, $mt02File);
-        $tenantBootstrap->complete();
-        foreach ($afterMt02 as $file) {
-            executeSqlFile($pdo, $file);
-        }
+        executeSqlFiles($pdo, $files);
         seedBrandDefaults($pdo, $brandDefaults);
 
         $actualStatement = $pdo->prepare(
@@ -403,32 +465,34 @@ function main(): int
         $actual = $actualStatement->fetchAll(PDO::FETCH_COLUMN);
         $missing = array_values(array_diff($expected, $actual));
 
-        $defaultAdmin = (int)$pdo->query(
-            "SELECT COUNT(*) FROM pa_admin WHERE username = 'admin' AND root = 1"
-        )->fetchColumn();
         $activeMenus = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
         $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
+        $coreIdentityCounts = coreIdentityCounts($pdo);
 
-        if ($missing !== [] || $defaultAdmin !== 1 || $activeMenus === 0 || $configCount === 0) {
+        if ($missing !== []
+            || $activeMenus === 0
+            || $configCount === 0
+            || $coreIdentityCounts !== ['tenant_count' => 1, 'owner_count' => 1, 'operator_count' => 1]) {
             throw new RuntimeException('安装结果不完整：' . json_encode([
                 'missing_tables' => $missing,
-                'default_admin' => $defaultAdmin,
                 'active_menus' => $activeMenus,
                 'configs' => $configCount,
+                'core_identity' => $coreIdentityCounts,
             ], JSON_UNESCAPED_UNICODE));
         }
 
-        recordInstalledMigrations($pdo, [...$beforeMt02, $mt02File, ...$afterMt02]);
+        recordInstalledMigrations($pdo, $files);
 
         echo json_encode([
             'database' => $database,
             'sql_files' => count($files),
             'tables' => count($actual),
             'expected_tables' => count($expected),
-            'default_admin' => $defaultAdmin,
-            'admin_username' => 'admin',
             'active_menus' => $activeMenus,
             'configs' => $configCount,
+            'default_tenant_id' => $coreIdentity['tenant_id'],
+            'owner_account_id' => $coreIdentity['account_id'],
+            'owner_member_id' => $coreIdentity['member_id'],
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
     } finally {
         $releaseStatement = $pdo->prepare('SELECT RELEASE_LOCK(?)');

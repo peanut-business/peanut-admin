@@ -33,7 +33,7 @@ expectTaskHost(is_subclass_of(OperationLogExportProvider::class, \PeanutAdmin\Im
 expectTaskHost(is_subclass_of(AppFileMediaGateway::class, \PeanutAdmin\ImportExport\File\FileMediaGateway::class), 'private file gateway does not implement the Core contract');
 expectTaskHost(class_exists(TrustedJobPublisher::class) && class_exists(ImportExportService::class), 'locked Core async contracts are unavailable');
 
-$migrationSource = (string)file_get_contents($serverRoot . '/database/migrations/20260813_task_import_export.sql');
+$migrationSource = (string)file_get_contents($serverRoot . '/database/init.sql');
 expectTaskHost(str_contains($migrationSource, 'pa_task_job'), 'Task/Job schema is not owned by the application migration');
 expectTaskHost(str_contains($migrationSource, 'pa_import_export_operation'), 'Import/Export schema is not owned by the application migration');
 expectTaskHost(str_contains($migrationSource, 'pa_file_object'), 'private file metadata schema is not owned by the application migration');

@@ -87,7 +87,7 @@
   const loginForm = ref<FormInstance>();
 
   const userInfo = reactive({
-    username: 'admin',
+    username: '',
     password: '',
     tenantId: undefined as number | undefined,
     challengeToken: undefined as string | undefined,

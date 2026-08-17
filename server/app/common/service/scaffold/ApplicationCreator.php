@@ -57,7 +57,7 @@ final class ApplicationCreator
                     continue;
                 }
                 $source = $this->sourcePath((string)$entry['path']);
-                $actualSourceDigest = hash_file('sha256', $source);
+                $actualSourceDigest = self::sourceDigest($source, (string)$entry['path'], (string)$entry['transform']);
                 if (!is_string($actualSourceDigest) || !hash_equals((string)$entry['source_sha256'], $actualSourceDigest)) {
                     throw new RuntimeException('CREATE_APP_SOURCE_DIGEST_MISMATCH: ' . $entry['path']);
                 }
@@ -407,6 +407,20 @@ final class ApplicationCreator
         return ScaffoldPathGuard::existingFileWithin($this->sourceRoot, $path, 'CREATE_APP_SOURCE_PATH_INVALID');
     }
 
+    private static function sourceDigest(string $source, string $path, string $transform): string
+    {
+        // Generated metadata is rebuilt from parameters, so source prose changes
+        // must not invalidate the immutable application template identity.
+        if (in_array($transform, ['changelog', 'release-metadata'], true)) {
+            return hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
+        }
+        $digest = hash_file('sha256', $source);
+        if (!is_string($digest)) {
+            throw new RuntimeException('CREATE_APP_SOURCE_DIGEST_INVALID');
+        }
+        return $digest;
+    }
+
     /** @param array<string,mixed> $entry @param array<string,string> $parameters */
     private function transform(string $content, array $entry, array $parameters): string
     {
@@ -655,9 +669,17 @@ PHP;
     {
         return match ($path) {
             'docs-site/index.md' => "---\nlayout: home\nhero:\n  name: \"{{PRODUCT_NAME}}\"\n  text: \"Application documentation\"\n---\n\nThis site belongs to the generated application.\n",
-            'docs-site/getting-started.md' => "# Getting started\n\nRegister resources in `resources/project-resources.json`, configure `server/.env`, then install dependencies. A fresh database install requires an explicit `ADMIN_INITIAL_PASSWORD`.\n",
-            'docs-site/deployment.md' => "# Deployment\n\nUse the checked-in Compose and Docker sources. Register every deployment resource before connecting it; do not inherit the scaffold source environment.\n",
+            'docs-site/getting-started.md' => "# Getting started\n\nCopy the root `.env.example` to `.env`; do not maintain a second `server/.env`. Register this application's own database, ports, domains and external services in `resources/project-resources.json` before connecting anything.\n\nInstall only into a confirmed empty database. Set `ADMIN_INITIAL_EMAIL` and a strong `ADMIN_INITIAL_PASSWORD`, then run `php server/database/install.php` followed by `php server/database/migrate.php --current`. This 2.0 baseline does not adopt a 1.x database, legacy maps or a previous scaffold.\n",
+            'docs-site/deployment.md', 'docs/peanut-admin-release-deployment.md' => "# Deployment\n\nOne deployment is one application instance with its own database, secrets, file storage and lifecycle. Use the checked-in Compose and Docker sources only after registering this application's resources; never inherit the scaffold source environment.\n\n`server/database/init.sql` is the canonical fresh baseline. `server/database/migrations/` contains only additive changes after that baseline. A generated 2.0 application installs into an empty database and does not support legacy adoption or scaffold upgrade. Multi-tenant deployments require a separate PlatformOperator identity and the `/platform/` bundle.\n",
             'docs-site/api.md' => "# API and extensions\n\nApplication HTTP adapters and product modules are app-owned. Use `server/config/peanut.php` and `web/src/peanut.overrides.ts` as the stable Core Host extension entries.\n",
+            'docs-site/architecture/identity-and-tenancy.md' => "# Identity and tenancy\n\nAccount/Credential is the login identity; TenantMember is that account's membership in one Tenant; Tenant Role/RBAC grants permissions only in that Tenant. Business customers, suppliers and contacts remain application business records rather than Account fields.\n\nA PlatformOperator governs this application instance but does not become a TenantMember or gain arbitrary Tenant business-data access. Host-bound Tenant entry points restrict the session to the bound Tenant; only an explicitly configured shared Admin Host can offer Tenant switching to an account that has active memberships.\n",
+            'docs-site/architecture/official-module-qualification.md' => "# Official module qualification\n\nA module is usable only when its Plugin artifact is installed, the Tenant has the module enabled, and the current TenantMember has the required RBAC/data permission. Each module owns its schema and public contracts; it must not read or write another module's private tables.\n\nBefore declaring a module available, add its Tenant isolation, disabled-module and authorization checks. External providers such as payment, notifications and OAuth require their own production configuration and verification.\n",
+            'docs-site/capabilities.md' => "# Capability catalogue\n\nCore defaults are identity, Tenant membership, RBAC, audit, fresh installation/migration, Module lifecycle and the Admin Shell. Files, notifications, OAuth, payment, member CRM, tasks, import/export and content are optional application capabilities, not an excuse to bypass Tenant isolation.\n\nProduct-specific domains such as Party, Store, Warehouse, Supplier relationship, Product, Pricing, Inventory, Procurement and Trade belong in this application's Modules. Add only the domains this product owns, with their data owner, public contract and acceptance tests.\n",
+            'docs-site/guide/development.md', 'docs/peanut-admin-development-guide.md' => "# Development guide\n\nCore owns generic identity, tenancy and authorization contracts. This application owns routes, product settings, pages and business Runtime. A Module owns its tables, use cases, permissions, menu contributions and public DTO/command contracts.\n\nDevelop a vertical slice through route, controller, application service and Module contract. Supply TenantContext from trusted middleware; never accept a client-supplied Tenant ID as authorization. Add a normal Tenant A case and a denied Tenant B case before enabling the Module.\n",
+            'docs-site/guide/module-development.md', 'docs/plugin-module-development.md' => "# Module development\n\nPlace an application Module under `server/app/Modules/<Vendor>/<Module>/` with Domain, Application, Contracts, Infrastructure, Database, Resources and Tests. Put the matching management contribution in `web/src/modules/<module>/`.\n\nExpose commands and read-only DTOs from `Contracts`; callers must not join or mutate another Module's private tables. Plugin install, TenantModule enablement and member RBAC are separate gates. Document the Module's owner Tenant, migrations, menu/permission keys and cross-Tenant denial cases.\n",
+            'docs-site/platform.md' => "# Instance platform\n\nThe PlatformOperator control plane manages this one application's Tenant lifecycle, Owner invitations, entry bindings, TenantModule enablement, platform roles and audit. It is a separate `/platform/` frontend and session, not a Tenant business module or a cross-application operations system.\n\nA Tenant owner is an in-Tenant RBAC role. Platform identity does not imply Tenant business-data access.\n",
+            'docs-site/guide/user-manual.md', 'docs/peanut-admin-user-manual.md' => "# Administrator manual\n\nThis page is the product owner’s operating manual. Document the application's enabled Modules, its roles, approval and data-scope rules, and the support path for tenant owners. Do not document product-only fields as Peanut Core behavior.\n",
+            'docs-site/troubleshooting.md' => "# Troubleshooting\n\nConfirm the selected resource ID, environment, endpoint and database before retrying a connection or migration. Unknown Host names, disabled Tenant modules, suspended Tenants and missing member permissions fail closed by design.\n\nFor multi-tenant entry issues, first check the original Host is preserved by the proxy and whether the account has an active TenantMember relation. Do not bypass a failed boundary by adding a default Tenant ID.\n",
             'docs-site/releases.md' => "# Releases\n\nCreate application releases from immutable application commits. Regenerate legal metadata and dependency inventory for each release.\n",
             'docs-site/legal.md' => "# Legal\n\nReview the generated root legal files before redistribution. Dependency changes require a refreshed SBOM and third-party notices.\n",
             'docs-site/404.md' => "# Page not found\n\nReturn to the [documentation home](/).\n",

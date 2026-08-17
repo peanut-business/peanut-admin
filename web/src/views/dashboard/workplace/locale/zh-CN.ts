@@ -22,5 +22,9 @@ export default {
   'workplace.visitor.title': '访问量趋势图',
   'workplace.sale.title': '销售额趋势图',
   'workplace.support.title': '服务支持',
+  'workplace.empty.shortcuts': '暂无常用功能',
+  'workplace.empty.visitor': '暂无访问趋势数据',
+  'workplace.empty.sale': '暂无销售趋势数据',
+  'workplace.empty.support': '暂无服务支持信息',
   'workplace.loadFailed': '工作台数据加载失败',
 };

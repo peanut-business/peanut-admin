@@ -118,7 +118,7 @@ def main() -> int:
     stack_parser = subparsers.add_parser("local-stack-env")
     stack_parser.add_argument(
         "--deployment-target",
-        choices=("local-development", "local-production-preview"),
+        choices=("local-development", "local-production-preview", "local-multi-tenant-demo"),
         required=True,
     )
 
@@ -127,7 +127,7 @@ def main() -> int:
     registry = load_registry()
 
     if args.command == "validate":
-        for target in ("local-development", "local-production-preview", "production"):
+        for target in ("local-development", "local-production-preview", "local-multi-tenant-demo", "production", "production-candidate"):
             database = database_for_target(registry, target)
             endpoint_for_consumer(database, "container")
         database = database_for_target(registry, "local-development")
@@ -151,10 +151,14 @@ def main() -> int:
             "DEV_HTTP_PORT": 20187,
             "PHP_PORT": 20180,
             "VITE_PORT": 20181,
+            "PLATFORM_PORT": 20177,
             "MOBILE_PORT": 20182,
             "PC_PORT": 20185,
             "DOCS_PORT": 20186,
             "HTTP_PORT": 20190,
+            "MT_DEMO_PHP_PORT": 20178,
+            "MT_DEMO_VITE_PORT": 20179,
+            "MT_DEMO_PLATFORM_PORT": 20176,
         }
         registered_ports = {
             item.get("port_env"): item.get("port")

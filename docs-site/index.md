@@ -42,7 +42,7 @@ features:
 
 <div class="home-proof">
   <div class="home-proof-copy">
-    <p class="eyebrow">CURRENT BASELINE · V1.1.5</p>
+    <p class="eyebrow">CURRENT CANDIDATE · 2.0.0</p>
     <h2>从可运行模板，到可维护的产品 Host</h2>
     <p>Standalone 与多租户双模式、实例内 Tenant 平台管理、可信租户会话及代表业务隔离，已经收进同一条可验证的交付链。</p>
     <div class="home-proof-actions">
@@ -86,13 +86,13 @@ features:
 <div class="home-flow">
   <div class="home-section-heading">
     <p class="eyebrow">DELIVERY PATH</p>
-    <h2>创建只是开始，升级也必须可控</h2>
-    <p>把应用所有权、依赖边界和恢复路径放在同一条工作流里，避免长期维护演变成一次次重写。</p>
+    <h2>从干净基线创建，再按应用边界演进</h2>
+    <p>2.0.0 不接管 1.x 历史状态；新应用从空库、原生身份和明确所有权开始。</p>
   </div>
   <div class="home-flow-grid">
     <div><span>01</span><strong>创建</strong><p>从中性模板生成独立应用。</p></div>
     <div><span>02</span><strong>扩展</strong><p>业务留在 app-owned 边界。</p></div>
-    <div><span>03</span><strong>升级</strong><p>先预检，再应用，并可恢复。</p></div>
+    <div><span>03</span><strong>迁移</strong><p>只追加 2.0.0 基线后的变更。</p></div>
     <div><span>04</span><strong>交付</strong><p>固定制品、迁移与运行证据。</p></div>
   </div>
 </div>
@@ -101,7 +101,7 @@ features:
   <div>
     <p class="eyebrow">RELEASE BOUNDARY</p>
     <h2>发布身份清楚，产品边界同样清楚</h2>
-    <p>Peanut Admin 应用 <code>1.1.5</code> 以 annotated <code>v1.1.5</code> 与同 tag GitHub Release 发布。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；本版本不宣称包含完整 SaaS 商业能力。</p>
+    <p>Peanut Admin <code>2.0.0</code> 当前是 fresh-only 开发候选，尚未正式发布。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；DCS 业务模块和跨应用运营平台不进入本产品。</p>
   </div>
   <a href="/releases">查看版本与发布 <span>→</span></a>
 </div>

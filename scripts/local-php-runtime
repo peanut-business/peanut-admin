@@ -42,7 +42,7 @@ is_owned_process() {
     port=$(read_env PHP_PORT)
     command_line=$(ps -p "$(runtime_pid)" -o command= 2>/dev/null || true)
     case "$command_line" in
-        *"think run"*"--port $port"*) return 0 ;;
+        *"$php_bin"*"-S 0.0.0.0:$port"*"$repo_dir/server/public/router.php"*) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -101,8 +101,10 @@ start_runtime() {
         # shellcheck disable=SC1090 -- generated local environment is gitignored.
         . "$env_file"
         set +a
-        export APP_ENV=development
-        export PEANUT_DEPLOYMENT_TARGET=local-development
+        : "${APP_ENV:=development}"
+        export APP_ENV
+        deployment_target=${PEANUT_DEPLOYMENT_TARGET:-local-development}
+        export PEANUT_DEPLOYMENT_TARGET="$deployment_target"
         export HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= http_proxy= https_proxy= all_proxy=
         export NO_PROXY="127.0.0.1,localhost,192.168.192.2"
         export no_proxy="$NO_PROXY"
@@ -111,7 +113,9 @@ start_runtime() {
             -d upload_max_filesize=200M \
             -d post_max_size=210M \
             -d max_file_uploads=20 \
-            think run --host 0.0.0.0 --port "$port"
+            -S "0.0.0.0:$port" \
+            -t "$repo_dir/server/public" \
+            "$repo_dir/server/public/router.php"
     ) >> "$log_file" 2>&1 &
     pid=$!
     printf '%s\n' "$pid" > "$pid_file"

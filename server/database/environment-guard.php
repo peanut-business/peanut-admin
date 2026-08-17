@@ -61,9 +61,19 @@ function deploymentTargetContract(string $deploymentTarget): array
             'resource_environment' => 'local-production-preview',
             'default_consumer' => 'container',
         ],
+        'local-multi-tenant-demo' => [
+            'app_environment' => 'development',
+            'resource_environment' => 'local-multi-tenant-demo',
+            'default_consumer' => 'host',
+        ],
         'production' => [
             'app_environment' => 'production',
             'resource_environment' => 'production',
+            'default_consumer' => 'container',
+        ],
+        'production-candidate' => [
+            'app_environment' => 'production',
+            'resource_environment' => 'production-candidate',
             'default_consumer' => 'container',
         ],
         default => throw new RuntimeException("不支持的部署目标：{$deploymentTarget}"),
@@ -236,7 +246,7 @@ function assertP0eLeaseContract(
     string $deploymentMode
 ): void {
     $expectedCounts = [
-        'backup-dir' => 1,
+        'browser-host' => 2,
         'browser-session' => 1,
         'cache-dir' => 1,
         'candidate-tree' => 1,
@@ -250,7 +260,7 @@ function assertP0eLeaseContract(
         'gate' => 1,
         'http-port' => 1,
         'lease-proof-dir' => 1,
-        'mysql-db' => 9,
+        'mysql-db' => 5,
         'output-dir' => 1,
         'port' => 2,
         'resource-id' => 1,
@@ -262,7 +272,7 @@ function assertP0eLeaseContract(
         $actualCounts[$type] = count($values);
     }
     ksort($actualCounts, SORT_STRING);
-    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== 31) {
+    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== 28) {
         throw new RuntimeException('P0-E lease resource set 存在缺失、额外项或 cardinality 冲突');
     }
 
@@ -289,6 +299,7 @@ function assertP0eLeaseContract(
     assertLeaseResourceValues($resources, 'docs-port', ['20186']);
     assertLeaseResourceValues($resources, 'compose-project', ['peanut-p0e-' . $runId]);
     assertLeaseResourceValues($resources, 'browser-session', ['p0e-' . $runId]);
+    assertLeaseResourceValues($resources, 'browser-host', ['admin.p0e.localhost', 'platform.p0e.localhost']);
     assertLeaseResourceValues($resources, 'gate', [$metadata['gate']]);
     assertLeaseResourceValues($resources, 'worktree', [$metadata['worktree']]);
     if ($metadata['lease'] !== 'p0e-runtime-' . $runId
@@ -298,17 +309,13 @@ function assertP0eLeaseContract(
     }
 
     $outputDir = $resources['output-dir'][0];
-    $backupDir = $resources['backup-dir'][0];
     $cacheDir = $resources['cache-dir'][0];
     $proofDir = $resources['lease-proof-dir'][0];
     if (!isLexicallyAbsolutePath($outputDir)
-        || !isLexicallyAbsolutePath($backupDir)
         || !isLexicallyAbsolutePath($cacheDir)
         || !isLexicallyAbsolutePath($proofDir)
         || $outputDir !== rtrim($metadata['worktree'], '/') . '/output/p0e-' . $runId
-        || basename($backupDir) !== 'p0e-backup-' . $runId
         || basename($cacheDir) !== 'p0e-' . $runId
-        || !str_ends_with($backupDir, '/.local/state/peanut-admin/p0e-backup-' . $runId)
         || !str_ends_with($cacheDir, '/.cache/peanut-admin/p0e-' . $runId)
         || !str_ends_with($proofDir, '/peanut-admin-resource-leases/leases/' . $metadata['lease'])) {
         throw new RuntimeException('P0-E lease path identity 不匹配精确 run_id 合同');
@@ -399,8 +406,14 @@ function guardedDatabaseConfig(?string $leaseProofPath = null, ?int $now = null)
         if (!is_string($registeredName) || !hash_equals($registeredName, $actual['database'])) {
             throw new RuntimeException("数据库资源 {$resourceId} 的 database 不匹配固定登记值");
         }
-        if ($deploymentMode !== 'standalone') {
-            throw new RuntimeException('当前持久运行环境必须显式使用 DEPLOYMENT_MODE=standalone');
+        $deploymentModes = $database['deployment_modes'] ?? ['standalone'];
+        if (!is_array($deploymentModes)
+            || $deploymentModes === []
+            || array_filter($deploymentModes, static fn(mixed $mode): bool => !is_string($mode) || $mode === '') !== []) {
+            throw new RuntimeException("数据库资源 {$resourceId} 的 deployment_modes 登记无效");
+        }
+        if (!in_array($deploymentMode, $deploymentModes, true)) {
+            throw new RuntimeException("数据库资源 {$resourceId} 不允许 DEPLOYMENT_MODE={$deploymentMode}");
         }
     }
 
@@ -450,11 +463,12 @@ function waitForDatabase(array $config, int $seconds): PDO
     } while (true);
 }
 
-/** @return array{migration_count:int,latest_migration:string,admin_count:int,menu_count:int,config_count:int,bootstrap_count:int} */
+/** @return array{migration_count:int,latest_migration:string,management_member_count:int,menu_count:int,config_count:int,tenant_count:int,owner_count:int,operator_count:int} */
 function assertCurrentDatabase(PDO $pdo): array
 {
-    $files = glob(__DIR__ . '/migrations/*.sql') ?: [];
-    sort($files, SORT_STRING);
+    $migrations = glob(__DIR__ . '/migrations/*.sql') ?: [];
+    sort($migrations, SORT_STRING);
+    $files = [__DIR__ . '/init.sql', ...$migrations];
     $expected = [];
     foreach ($files as $file) {
         $checksum = hash_file('sha256', $file);
@@ -486,25 +500,41 @@ function assertCurrentDatabase(PDO $pdo): array
         throw new RuntimeException('数据库缺少迁移：' . implode(', ', $missing));
     }
 
-    $adminCount = (int)$pdo->query(
-        "SELECT COUNT(*) FROM pa_admin WHERE username = 'admin' AND root = 1 AND delete_time IS NULL"
-    )->fetchColumn();
     $menuCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
     $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
-    $bootstrapCount = (int)$pdo->query(
-        "SELECT COUNT(*) FROM pa_default_tenant_bootstrap WHERE status = 'completed'"
+    $tenantCount = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_tenant WHERE code = 'default' AND status = 'active'"
     )->fetchColumn();
-    if ($adminCount !== 1 || $menuCount < 1 || $configCount < 1 || $bootstrapCount !== 1) {
+    $ownerCount = (int)$pdo->query(<<<'SQL'
+SELECT COUNT(DISTINCT tm.id)
+FROM pa_tenant t
+JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+JOIN pa_credential c ON c.account_id = a.id AND c.status = 'active'
+JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
+JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
+WHERE t.code = 'default' AND t.status = 'active' AND r.`key` = 'core.tenant-owner'
+SQL)->fetchColumn();
+    $operatorCount = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_platform_operator WHERE status = 'active'"
+    )->fetchColumn();
+    if ($menuCount < 1
+        || $configCount < 1
+        || $tenantCount !== 1
+        || $ownerCount !== 1
+        || $operatorCount !== 1) {
         throw new RuntimeException('数据库基线数据不完整');
     }
 
     return [
         'migration_count' => count($actual),
         'latest_migration' => array_key_last($actual) ?? '',
-        'admin_count' => $adminCount,
+        'management_member_count' => $ownerCount,
         'menu_count' => $menuCount,
         'config_count' => $configCount,
-        'bootstrap_count' => $bootstrapCount,
+        'tenant_count' => $tenantCount,
+        'owner_count' => $ownerCount,
+        'operator_count' => $operatorCount,
     ];
 }
 

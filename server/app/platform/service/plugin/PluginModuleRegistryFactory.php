@@ -40,11 +40,11 @@ final readonly class PluginModuleRegistryFactory
     /** @param array<string,mixed> $deploymentConfig */
     public function fromPluginLock(PluginLockResolver $resolver, array $deploymentConfig): DeployedTenantModuleRegistry
     {
-        $legacyRoots = is_array($deploymentConfig['roots'] ?? null)
+        $configuredRoots = is_array($deploymentConfig['roots'] ?? null)
             ? array_values($deploymentConfig['roots'])
             : [];
         $roots = [
-            ...$this->resolveRoots($legacyRoots, false),
+            ...$this->resolveRoots($configuredRoots, false),
             ...$resolver->moduleRoots(),
         ];
         return $this->compile(array_values(array_unique($roots)), $deploymentConfig);

@@ -4,128 +4,52 @@ declare(strict_types=1);
 namespace app\adminapi\http\middleware;
 
 use app\adminapi\http\AdminRequest;
-use app\adminapi\service\AdminTenantContextResolver;
 use app\adminapi\service\AdminTokenService;
-use app\adminapi\service\TenantAdminPrincipalResolver;
-use app\common\model\auth\Admin;
+use app\adminapi\service\NativeAdminPrincipalRepository;
 use app\common\service\JsonService;
+use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\service\tenant\ApplicationHostPolicy;
 use app\tenant\service\TenantAuthRuntimeFactory;
-use PDO;
-use think\facade\Db;
 
-/**
- * 登录中间件（原生 TP 风格）
- *
- * 说明：是否需要登录由「路由是否挂载本中间件」决定，
- * 不再依赖 likeadmin 的 $request->controllerObject / notNeedLogin 约定。
- * 只要挂了本中间件，就必须持有有效 token。
- */
-class LoginMiddleware
+/** Establishes management identity only from a validated native Tenant session. */
+final class LoginMiddleware
 {
-    private ?AdminTenantContextResolver $tenantContexts;
-
-    public function __construct(?AdminTenantContextResolver $tenantContexts = null)
-    {
-        $this->tenantContexts = $tenantContexts;
-    }
-
     public function handle($request, \Closure $next)
     {
         $token = AdminTokenService::tokenFromRequest($request);
-
-        if (empty($token)) {
+        if ($token === '') {
             return JsonService::fail('请求缺少 token', null, 40100);
         }
-
-        if (str_starts_with($token, 'pa_tat_')) {
-            return $this->tenantSession($request, $next, $token);
-        }
-
-        $session = AdminTokenService::resolveToken($token);
-        if ($session === false) {
+        if (!str_starts_with($token, 'pa_tat_')) {
             return JsonService::fail('登录超时，请重新登录', null, 40100);
         }
-        $adminId = (int)$session['admin_id'];
-
-        $requestIp = $request->ip();
-        if (($session['login_ip'] ?? '') === '') {
-            if (!AdminTokenService::bindLoginIp($token, $requestIp)) {
-                return JsonService::fail('ip地址发生变化，请重新登录', null, 40100);
-            }
-        } elseif ($session['login_ip'] !== $requestIp) {
-            return JsonService::fail('ip地址发生变化，请重新登录', null, 40100);
-        }
-
-        $admin = Admin::with(['roles'])->findOrEmpty($adminId);
-        if ($admin->isEmpty()) {
-            return JsonService::fail('账号不存在', null, 40100);
-        }
-        if ($admin->disable) {
-            return JsonService::fail('账号已被禁用', null, 40300);
-        }
-
-        // Request 使用重载属性，必须先完成数组装配再一次性写入。
-        $adminInfo                = $admin->toArray();
-        $adminInfo['token']       = $token;
-        $adminInfo['terminal']    = (int)$session['terminal'];
-        $adminInfo['expire_time'] = (int)$session['expire_time'];
-        $request->adminInfo       = $adminInfo;
-        $request->adminId         = $adminId;
 
         try {
-            $request->tenantContext = $this->tenantContexts()->resolve(
-                $session,
-                $adminId,
+            ApplicationHostPolicy::production()->assertTenantAdmin($request);
+            $context = TenantAuthRuntimeFactory::service()->context(
                 $token,
                 AdminRequest::requestId($request),
             );
-        } catch (\Throwable) {
-            return JsonService::fail('租户上下文不可用', null, 40300);
-        }
-
-        return $next($request);
-    }
-
-    private function tenantSession($request, \Closure $next, string $token)
-    {
-        try {
-            $context = TenantAuthRuntimeFactory::service()->context(
-                $token,
-                AdminRequest::requestId($request)
+            $entryBindings = TenantEntryBindingResolver::production();
+            $entryBindings->assertTenantAccess(
+                $request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                $context->tenantId,
             );
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
-            }
-            $adminId = (new TenantAdminPrincipalResolver($pdo))->resolve($context);
-            $admin = Admin::with(['roles'])->findOrEmpty($adminId);
-            if ($admin->isEmpty() || (int)$admin->tenant_id !== $context->tenantId || (int)$admin->disable === 1) {
-                throw new \DomainException('TENANT_ADMIN_PRINCIPAL_UNAVAILABLE');
-            }
-
-            $adminInfo = $admin->toArray();
-            $adminInfo['token'] = $token;
-            $adminInfo['terminal'] = 1;
-            $request->adminInfo = $adminInfo;
-            $request->adminId = $adminId;
+            $principal = (new NativeAdminPrincipalRepository())->require($context);
+            $principal['token'] = $token;
+            $principal['terminal'] = 1;
+            $request->adminInfo = $principal;
+            $request->adminId = (int)$principal['id'];
             $request->tenantContext = $context;
+            $request->tenantEntryBound = $entryBindings->boundTenantId(
+                $request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+            ) !== null;
         } catch (\Throwable) {
             return JsonService::fail('租户会话不可用', null, 40300);
         }
 
         return $next($request);
-    }
-
-    private function tenantContexts(): AdminTenantContextResolver
-    {
-        if ($this->tenantContexts !== null) {
-            return $this->tenantContexts;
-        }
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-
-        return $this->tenantContexts = new AdminTenantContextResolver($pdo);
     }
 }

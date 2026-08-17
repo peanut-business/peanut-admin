@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\tenant\DefaultTenantBootstrap;
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -65,49 +63,6 @@ function mt05BootstrapUseDatabase(string $database): void
     putenv('DB_PASS=' . (getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev')));
 }
 
-function mt05BootstrapInstall(PDO $pdo, string $serverDir, string $adminPassword): void
-{
-    $files = sqlFiles($serverDir . '/database');
-    $mt02File = $serverDir . '/database/migrations/' . DefaultTenantBootstrap::MIGRATION;
-    $initFile = array_shift($files);
-    mt05BootstrapExpect(is_string($initFile), 'init fixture missing');
-    $before = array_values(array_filter(
-        $files,
-        static fn(string $file): bool => basename($file) < DefaultTenantBootstrap::MIGRATION
-    ));
-    $after = array_values(array_filter(
-        $files,
-        static fn(string $file): bool => basename($file) > DefaultTenantBootstrap::MIGRATION
-    ));
-    executeSqlFiles($pdo, [$initFile, ...$before], $adminPassword);
-    $adminEmail = initialAdminEmail($serverDir);
-    $bootstrap = defaultTenantBootstrap(
-        $pdo,
-        $serverDir,
-        $adminEmail,
-        $adminPassword,
-        initialPlatformCredentials($serverDir, $adminEmail)
-    );
-    executeSqlFile($pdo, $mt02File);
-    $bootstrap->complete();
-    foreach ($after as $file) {
-        executeSqlFile($pdo, $file);
-    }
-}
-
-function mt05BootstrapPrepareMigration(PDO $pdo, string $serverDir, string $adminPassword): void
-{
-    $files = sqlFiles($serverDir . '/database');
-    $initFile = array_shift($files);
-    mt05BootstrapExpect(is_string($initFile), 'init fixture missing');
-    $before = array_values(array_filter(
-        $files,
-        static fn(string $file): bool => basename($file) < DefaultTenantBootstrap::MIGRATION
-    ));
-    executeSqlFiles($pdo, [$initFile, ...$before], $adminPassword);
-    recordInstalledMigrations($pdo, $before);
-}
-
 function mt05BootstrapPlatformSessions(PDO $pdo): PlatformOperatorSessionService
 {
     $permissions = new PdoPlatformAuthorizationRepository($pdo);
@@ -121,19 +76,8 @@ function mt05BootstrapPlatformSessions(PDO $pdo): PlatformOperatorSessionService
             str_repeat('h', 32)
         ),
         new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
-        $permissions,
-        new PlatformOperatorAccountBoundary($pdo)
+        $permissions
     );
-}
-
-/** @return array{exit:int,output:string} */
-function mt05BootstrapRunMigration(string $serverDir): array
-{
-    $command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($serverDir . '/database/migrate.php');
-    $output = [];
-    $exit = 0;
-    exec($command . ' 2>&1', $output, $exit);
-    return ['exit' => $exit, 'output' => implode("\n", $output)];
 }
 
 $serverDir = dirname(__DIR__, 2);
@@ -187,13 +131,26 @@ try {
     );
 
     $identity = $install->query(<<<'SQL'
-SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id
+SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id,
+       a.status AS owner_account_status, tm.status AS owner_member_status,
+       c.status AS owner_credential_status, COUNT(DISTINCT r.id) AS owner_role_count
 FROM pa_platform_operator po
-CROSS JOIN pa_default_tenant_bootstrap b
-JOIN pa_tenant_member tm ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id
-WHERE po.status = 'active' AND b.id = 1
+JOIN pa_account platform_account ON platform_account.id = po.account_id AND platform_account.status = 'active'
+JOIN pa_tenant t ON t.code = 'default' AND t.status = 'active'
+JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+JOIN pa_credential c ON c.account_id = a.id AND c.status = 'active'
+JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
+JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
+  AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
+WHERE po.status = 'active'
+GROUP BY po.account_id, tm.account_id, a.status, tm.status, c.status
 SQL)->fetch();
     mt05BootstrapExpect(is_array($identity), 'multi-tenant identities missing');
+    mt05BootstrapExpect((string)$identity['owner_account_status'] === 'active', 'default owner account is not active');
+    mt05BootstrapExpect((string)$identity['owner_member_status'] === 'active', 'default owner member is not active');
+    mt05BootstrapExpect((string)$identity['owner_credential_status'] === 'active', 'default owner credential is not active');
+    mt05BootstrapExpect((int)$identity['owner_role_count'] === 1, 'default owner role is invalid');
     mt05BootstrapExpect(
         (int)$identity['platform_account_id'] !== (int)$identity['owner_account_id'],
         'platform operator and default owner reused one Account'
@@ -214,68 +171,6 @@ SQL)->fetch();
     mt05BootstrapExpect(
         str_starts_with($authentication->tokens->access->expose(), 'pa_pat_'),
         'fresh multi-tenant platform operator cannot login'
-    );
-
-    putenv('ADMIN_INITIAL_EMAIL');
-    putenv('ADMIN_INITIAL_PASSWORD');
-    putenv('PLATFORM_INITIAL_EMAIL');
-    putenv('PLATFORM_INITIAL_PASSWORD');
-    $migration = mt05BootstrapRunMigration($serverDir);
-    mt05BootstrapExpect($migration['exit'] === 0, 'up-to-date multi-tenant migration must not require bootstrap credentials');
-    mt05BootstrapExpect(
-        !str_contains($migration['output'], $adminPassword)
-            && !str_contains($migration['output'], $platformPassword),
-        'migration output exposed a bootstrap password'
-    );
-
-    $migrateName = 'pa_mt05_platform_migrate_' . $run;
-    $databases[] = $migrateName;
-    $migrate = mt05BootstrapDatabase($admin, $migrateName);
-    mt05BootstrapUseDatabase($migrateName);
-    mt05BootstrapPrepareMigration($migrate, $serverDir, $adminPassword);
-    putenv('ADMIN_INITIAL_EMAIL=' . $adminEmail);
-    putenv('ADMIN_INITIAL_PASSWORD=' . $adminPassword);
-    putenv('DEPLOYMENT_MODE=multi-tenant');
-    putenv('PLATFORM_INITIAL_EMAIL=' . $platformEmail);
-    putenv('PLATFORM_INITIAL_PASSWORD=' . $platformPassword);
-    $migration = mt05BootstrapRunMigration($serverDir);
-    mt05BootstrapExpect($migration['exit'] === 0, 'multi-tenant first migration failed');
-    mt05BootstrapExpect(
-        !str_contains($migration['output'], $adminPassword)
-            && !str_contains($migration['output'], $platformPassword),
-        'first migration output exposed a bootstrap password'
-    );
-    $migratedIdentity = $migrate->query(<<<'SQL'
-SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id
-FROM pa_platform_operator po
-CROSS JOIN pa_default_tenant_bootstrap b
-JOIN pa_tenant_member tm ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id
-WHERE po.status = 'active' AND b.id = 1
-SQL)->fetch();
-    mt05BootstrapExpect(
-        is_array($migratedIdentity)
-            && (int)$migratedIdentity['platform_account_id'] !== (int)$migratedIdentity['owner_account_id'],
-        'multi-tenant migration reused the owner Account for PlatformOperator'
-    );
-
-    $standaloneName = 'pa_mt05_standalone_' . $run;
-    $databases[] = $standaloneName;
-    $standalone = mt05BootstrapDatabase($admin, $standaloneName);
-    mt05BootstrapUseDatabase($standaloneName);
-    putenv('ADMIN_INITIAL_EMAIL=' . $adminEmail);
-    putenv('ADMIN_INITIAL_PASSWORD=' . $adminPassword);
-    putenv('DEPLOYMENT_MODE=standalone');
-    mt05BootstrapInstall($standalone, $serverDir, $adminPassword);
-    $shared = $standalone->query(<<<'SQL'
-SELECT po.account_id AS platform_account_id, tm.account_id AS owner_account_id
-FROM pa_platform_operator po
-CROSS JOIN pa_default_tenant_bootstrap b
-JOIN pa_tenant_member tm ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id
-WHERE po.status = 'active' AND b.id = 1
-SQL)->fetch();
-    mt05BootstrapExpect(
-        is_array($shared) && (int)$shared['platform_account_id'] === (int)$shared['owner_account_id'],
-        'standalone bootstrap compatibility changed'
     );
 
     echo "MT05-PLATFORM-BOOTSTRAP-001 passed\n";

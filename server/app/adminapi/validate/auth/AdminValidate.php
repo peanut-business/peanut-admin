@@ -3,25 +3,21 @@ declare(strict_types=1);
 
 namespace app\adminapi\validate\auth;
 
-use app\common\model\auth\Admin;
-use app\common\model\auth\SystemRole;
-use app\common\model\dept\Dept;
-use app\common\model\dept\Jobs;
 use think\Validate;
 
 class AdminValidate extends Validate
 {
     protected $rule = [
-        'id' => 'require|integer|gt:0|checkAdmin',
-        'account' => 'require|length:1,32|checkAccountUnique',
-        'name' => 'require|length:1,16|checkNameUnique',
-        'avatar' => 'max:255',
-        'password' => 'length:6,32',
+        'id' => 'require|integer|gt:0',
+        'account' => 'require|email|max:255',
+        'name' => 'require|length:1,120',
+        'avatar' => 'max:512',
+        'password' => 'length:12,128',
         'password_confirm' => 'requireWith:password|checkPasswordConfirm',
-        'role_id' => 'array|checkRoleIds',
-        'dept_id' => 'array|checkDeptIds',
-        'jobs_id' => 'array|checkJobsIds',
-        'disable' => 'require|in:0,1|checkRootDisable',
+        'role_id' => 'array',
+        'dept_id' => 'array',
+        'jobs_id' => 'array',
+        'disable' => 'require|in:0,1',
         'multipoint_login' => 'require|in:0,1',
         'page_no' => 'integer|gt:0',
         'page_size' => 'integer|between:1,25000',
@@ -86,9 +82,9 @@ class AdminValidate extends Validate
     public function sceneLists(): self
     {
         return $this->only($this->scene['lists'])
-            ->remove('account', 'require|checkAccountUnique')
-            ->remove('name', 'require|checkNameUnique')
-            ->remove('role_id', 'array|checkRoleIds')
+            ->remove('account', 'require')
+            ->remove('name', 'require')
+            ->remove('role_id', 'array')
             ->append('role_id', 'integer|gt:0');
     }
 
@@ -99,29 +95,6 @@ class AdminValidate extends Validate
             'role_id', 'dept_id', 'jobs_id', 'disable', 'multipoint_login',
         ])->append('password', 'require')
             ->append('role_id', 'require');
-    }
-
-    public function checkAdmin($value): bool|string
-    {
-        return Admin::findOrEmpty((int)$value)->isEmpty() ? '管理员不存在' : true;
-    }
-
-    public function checkAccountUnique($value, $rule, array $data): bool|string
-    {
-        $query = Admin::where('username', (string)$value);
-        if (!empty($data['id'])) {
-            $query->where('id', '<>', (int)$data['id']);
-        }
-        return $query->count() > 0 ? '账号已存在' : true;
-    }
-
-    public function checkNameUnique($value, $rule, array $data): bool|string
-    {
-        $query = Admin::where('nickname', (string)$value);
-        if (!empty($data['id'])) {
-            $query->where('id', '<>', (int)$data['id']);
-        }
-        return $query->count() > 0 ? '名称已存在' : true;
     }
 
     public function checkPasswordConfirm($value, $rule, array $data): bool|string
@@ -136,61 +109,10 @@ class AdminValidate extends Validate
         return hash_equals($password, (string)$value) ? true : '两次输入的密码不一致';
     }
 
-    public function checkRoleIds($value, $rule, array $data): bool|string
-    {
-        $ids = $this->normalizeIds($value);
-        $admin = !empty($data['id']) ? Admin::findOrEmpty((int)$data['id']) : null;
-        if ($ids === [] && !($admin && !$admin->isEmpty() && (int)$admin->root === 1)) {
-            return '请选择角色';
-        }
-        if ($ids !== [] && SystemRole::whereIn('id', $ids)->count() !== count($ids)) {
-            return '选择的角色不存在';
-        }
-        return true;
-    }
-
-    public function checkDeptIds($value): bool|string
-    {
-        $ids = $this->normalizeIds($value);
-        if ($ids !== [] && Dept::whereIn('id', $ids)->count() !== count($ids)) {
-            return '选择的部门不存在';
-        }
-        return true;
-    }
-
-    public function checkJobsIds($value): bool|string
-    {
-        $ids = $this->normalizeIds($value);
-        if ($ids !== [] && Jobs::whereIn('id', $ids)->count() !== count($ids)) {
-            return '选择的岗位不存在';
-        }
-        return true;
-    }
-
-    public function checkRootDisable($value, $rule, array $data): bool|string
-    {
-        if (empty($data['id']) || (int)$value === 0) {
-            return true;
-        }
-        $admin = Admin::findOrEmpty((int)$data['id']);
-        return !$admin->isEmpty() && (int)$admin->root === 1
-            ? '超级管理员不允许被禁用'
-            : true;
-    }
-
     public function checkPageEnd($value, $rule, array $data): bool|string
     {
         $start = (int)($data['page_start'] ?? 1);
         return (int)$value < $start ? '导出范围设置不正确，请重新选择' : true;
     }
 
-    /** @return int[] */
-    private function normalizeIds($value): array
-    {
-        if (!is_array($value)) {
-            return [];
-        }
-        $ids = array_values(array_unique(array_map('intval', $value)));
-        return array_values(array_filter($ids, static fn(int $id): bool => $id > 0));
-    }
 }

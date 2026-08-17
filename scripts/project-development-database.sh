@@ -36,7 +36,7 @@ case "${1:-}" in
         printf '%s\n' 'Company development database credentials synchronized to .local/stack.env'
         ;;
     status)
-        ssh "$remote" "/usr/local/bin/docker compose --env-file '$remote_env' -f '$remote_compose' ps && /usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'"
+        ssh -o BatchMode=yes "$remote" "/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'"
         ;;
     *)
         printf 'Usage: %s {provision|sync-credentials|status}\n' "$0" >&2

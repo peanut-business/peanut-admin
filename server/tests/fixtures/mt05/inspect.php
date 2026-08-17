@@ -69,18 +69,20 @@ try {
         'pa_account',
         'pa_tenant',
         'pa_tenant_member',
+        'pa_credential',
         'pa_role',
         'pa_member_role',
-        'pa_default_tenant_bootstrap',
+        'pa_platform_operator',
         'pa_module_installation',
         'pa_tenant_module',
     ] as $requiredTable) {
         expectInvariant(tableExists($pdo, $requiredTable), 'MT05_REQUIRED_TABLE_MISSING:' . $requiredTable);
     }
 
-    $migrationDir = dirname(__DIR__, 3) . '/database/migrations';
-    $migrationFiles = glob($migrationDir . '/*.sql') ?: [];
+    $databaseDir = dirname(__DIR__, 3) . '/database';
+    $migrationFiles = glob($databaseDir . '/migrations/*.sql') ?: [];
     sort($migrationFiles, SORT_STRING);
+    array_unshift($migrationFiles, $databaseDir . '/init.sql');
     $expectedLedger = [];
     foreach ($migrationFiles as $file) {
         $checksum = hash_file('sha256', $file);
@@ -115,26 +117,28 @@ try {
     expectInvariant((string)$defaultTenant['status'] === 'active', 'MT05_DEFAULT_TENANT_NOT_ACTIVE');
 
     $ownerStatement = $pdo->prepare(<<<'SQL'
-SELECT b.tenant_id, b.owner_account_id, b.owner_member_id, b.status AS bootstrap_status,
-       a.status AS account_status, tm.status AS member_status, COUNT(DISTINCT r.id) AS owner_role_count
-FROM pa_default_tenant_bootstrap b
-JOIN pa_account a ON a.id = b.owner_account_id
-JOIN pa_tenant_member tm
-  ON tm.tenant_id = b.tenant_id AND tm.id = b.owner_member_id AND tm.account_id = b.owner_account_id
+SELECT t.id AS tenant_id, tm.account_id AS owner_account_id, tm.id AS owner_member_id,
+       a.status AS account_status, tm.status AS member_status, c.status AS credential_status,
+       COUNT(DISTINCT r.id) AS owner_role_count
+FROM pa_tenant t
+JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
+JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
+JOIN pa_credential c ON c.account_id = a.id AND c.status = 'active'
 JOIN pa_member_role mr
   ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
 JOIN pa_role r
-  ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id AND r.`key` = 'core.tenant-owner'
-WHERE b.id = 1 AND b.tenant_id = ?
-GROUP BY b.tenant_id, b.owner_account_id, b.owner_member_id, b.status, a.status, tm.status
+  ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
+ AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
+WHERE t.id = ? AND t.code = 'default' AND t.status = 'active'
+GROUP BY t.id, tm.account_id, tm.id, a.status, tm.status, c.status
 SQL);
     $ownerStatement->execute([(int)$defaultTenant['id']]);
     $owners = $ownerStatement->fetchAll();
     expectInvariant(count($owners) === 1, 'MT05_DEFAULT_OWNER_COUNT_INVALID');
     $owner = $owners[0];
-    expectInvariant((string)$owner['bootstrap_status'] === 'completed', 'MT05_BOOTSTRAP_NOT_COMPLETED');
     expectInvariant((string)$owner['account_status'] === 'active', 'MT05_OWNER_ACCOUNT_NOT_ACTIVE');
     expectInvariant((string)$owner['member_status'] === 'active', 'MT05_OWNER_MEMBER_NOT_ACTIVE');
+    expectInvariant((string)$owner['credential_status'] === 'active', 'MT05_OWNER_CREDENTIAL_NOT_ACTIVE');
     expectInvariant((int)$owner['owner_role_count'] === 1, 'MT05_OWNER_ROLE_INVALID');
 
     $platformOperator = null;

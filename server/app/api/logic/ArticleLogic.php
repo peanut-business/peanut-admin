@@ -7,6 +7,7 @@ use app\common\logic\BaseLogic;
 use app\common\model\article\Article;
 use app\common\model\article\ArticleCollect;
 use app\common\service\article\ArticleTenantRepository;
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -81,7 +82,7 @@ class ArticleLogic extends BaseLogic
         return $article;
     }
 
-    public static function addCollect(TenantContext $context, int $articleId, int $memberId): bool
+    public static function addCollect(AuthenticatedMemberContext $context, int $articleId, int $memberId): bool
     {
         try {
             $article = ArticleTenantRepository::articles($context)->where('id', $articleId)
@@ -111,7 +112,7 @@ class ArticleLogic extends BaseLogic
         }
     }
 
-    public static function cancelCollect(TenantContext $context, int $articleId, int $memberId): void
+    public static function cancelCollect(AuthenticatedMemberContext $context, int $articleId, int $memberId): void
     {
         ArticleTenantRepository::collections($context)->where('member_id', $memberId)
             ->where('article_id', $articleId)
@@ -120,7 +121,7 @@ class ArticleLogic extends BaseLogic
     }
 
     /** 我的收藏列表，仅返回仍发布的文章。 */
-    public static function collectLists(TenantContext $context, int $memberId, array $params): array
+    public static function collectLists(AuthenticatedMemberContext $context, int $memberId, array $params): array
     {
         $page = max(1, (int) ($params['page_no'] ?? 1));
         $limit = max(1, (int) ($params['page_size'] ?? 15));

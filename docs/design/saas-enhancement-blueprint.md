@@ -69,6 +69,24 @@ DCS 中必须继续区分：
 
 Tenant 与 DCS 经营主体的具体对应关系尚未冻结。DCS 正式承接多租户能力前必须单独确定是一对一、可关联，还是完全分离；在此之前不能通过字段命名或外键暗中做决定。
 
+DCS 是从 Peanut Admin 脚手架生成的独立应用，不是本仓内建业务 Module。Peanut 只冻结
+以下采用边界，具体目录、表、状态机、API 和事件由 DCS 仓维护：
+
+- Product 拥有 SPU/SKU 和商品主数据；Inventory 只能引用 SKU，不能反向修改商品。
+- Procurement 拥有采购单和收货流程；创建采购单时通过 Product 查询合同校验并保存必要
+  快照，确认收货后调用 Inventory 入库命令。
+- Inventory 拥有余额、预占和流水；入库使用可信 TenantContext、Warehouse、SKU、数量和
+  幂等键，并在同一事务写余额与流水。
+- Module 之间只通过公开命令、查询 DTO 或具备 Outbox/重试/幂等的事件协作，不直接读写
+  其他 Module 私有表。
+- 当前 Peanut Host 没有已验证的通用 Outbox/Event Bus；在 DCS 批准事件基础设施前，优先
+  使用显式同步合同。
+
+同一应用中的门店、供应商和客户是 DCS Business Subject/Target，不是固定 `tenant_type`。
+需要供应商成员独立登录时，可以把供应商主体显式关联一个 Tenant，其账号使用通用
+Account/TenantMember/RBAC；但当前 Peanut 仓没有 Supplier、Relationship、Contract、
+ProductGrant 或供应商客户端 Runtime，这一模型仍是**推荐新增到 DCS**而非当前能力。
+
 ## 4. 四层产品边界
 
 ```text
@@ -244,28 +262,27 @@ PlatformOperator 只拥有明确的 `platform.*` 权限。它不能读取商品�
 
 ## 9. 当前实现事实
 
-截至 2026-08-13，MT05 最终代码候选
-`074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8`（tree
-`1a2df02e97414b5c236a842adf17804fb33e4699`）：
+截至 2026-08-16，Peanut Admin `v1.1.5` 的 `production-demonstrated` 结论仍是历史证据；
+不可变事实以 `docs/product-status/releases/v1.1.5.json` 记录。当前源码正在收敛为
+`2.0.0` fresh-only 候选，2.0 的最终运行资格不能由 1.x 证据替代：
 
-- Peanut Admin v1.0.0 产品化基线保持稳定；应用仓已接入默认 Tenant、可信
+- 应用仓已接入默认 Tenant、可信
   TenantContext、Tenant 选择/切换/撤销、PlatformOperator、Tenant 生命周期、首 owner
   和 TenantModule，不再是“完全未接入 Tenant Runtime”的单租户 Host。
 - 默认 Tenant/RBAC/组织映射和 Article、字典、装修、会员、文件、通知、OAuth、任务、
   日志等多批应用 Runtime 已按 Tenant-first 或显式实例 owner 边界落地；Admin/Role/
   Dept/Jobs CRUD、同步 XLSX、会员上传和实例工具也已收紧到可信 Tenant 或部署模式边界。
   这些独立切片已经由 MT05 固定候选集中验收，不再以单个 PR 数量代替阶段证据。
-- Core/Generator 公司级 MT01 基线和 Composer/npm Alpha.5 已固定，DCS 已获得
+- Core/Generator 公司级 MT01 基线和 Composer/npm Alpha.5 已固定；DCS 作为独立派生
+  应用已获得
   Product-only `CONDITIONAL` 采用结论；Generator 仍只创建新项目，不覆盖更新已有项目。
-- PM01 与 MT04 的后端和管理端主链已形成，父候选 `2def481…` 真实浏览器矩阵已通过双 Tenant、
-  首 owner、TenantModule、Tenant 切换、RBAC、Article、旧 token 与暂停拒绝，以及
-  Standalone 隐藏平台入口。PR #99 修正 harness 部署枚举后，最终候选的 Standalone
-  空库、`v1.0.0` 前滚和多租户空库均以 50 条 migration/81 张表通过，PlatformOperator
-  与默认 owner Account 分离。MT02–MT05 已完成；当前只剩 MT06 `v1.1.0` 稳定发布。
+- 1.x 的 MT02–MT06 已完成并随 `v1.1.0` 发布；`v1.1.5` 的 54 条 migration、双模式生成/
+  升级、生产 Compose 和真实浏览器资格均只属于历史版本。2.0 改用 canonical Schema、
+  空库安装和原生身份，PlatformOperator 与默认 Tenant owner Account 仍保持分离。
 - 公众号回复等需要外部回调可信 Tenant 路由的领域尚未形成完整闭包；不得仅添加
   `tenant_id` 伪装完成隔离，也不以该非代表域阻塞当前 MT05 代表业务闭环。
 - 独立运营平台尚未立项和实现，本蓝图只冻结边界与管理协议方向；它不属于当前
-  MT06 稳定多租户脚手架的业务实现范围。
+  稳定多租户脚手架的业务实现范围。
 - SaaS roadmap 目录中的 LikeAdmin/Likeshop、旧多包和超级管理员方案均为历史输入，
   不是现行实施合同。
 

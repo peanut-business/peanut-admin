@@ -23,7 +23,10 @@ expectNotificationHost(!VerificationCodeSecret::matches('4828', $codeHash), 'wro
 $channelService = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/NoticeChannelService.php'
 );
-foreach (['new AliyunSms', 'new TencentSms', "lock(true)", 'safeReceipt', 'sanitizeError'] as $marker) {
+foreach ([
+    'new AliyunSms', 'new TencentSms', "lock(true)", 'safeReceipt', 'sanitizeError',
+    "private const BINDING_PROVIDER = 'notice.sms'", "->where('tenant_id', \$tenantId)",
+] as $marker) {
     expectNotificationHost(str_contains($channelService, $marker), 'SMS Host invariant missing: ' . $marker);
 }
 
@@ -41,8 +44,12 @@ expectNotificationHost(
     'tenant-owned notification flow does not delegate to the application credential Host'
 );
 expectNotificationHost(
-    !str_contains($channelService, 'tenant_id'),
-    'application-owned provider credential Host was tenantized'
+    !str_contains($channelService, 'ConfigService'),
+    'SMS Host still reads or writes the global config table'
+);
+expectNotificationHost(
+    str_contains($verificationService, "\$this->sender->send(\n            \$context,"),
+    'verification flow does not pass its trusted Tenant context to the SMS Host'
 );
 expectNotificationHost(
     !str_contains($verificationService, "->where('is_verified', NoticeLog::VERIFIED_NO)"),
@@ -80,16 +87,18 @@ foreach ([
     expectNotificationHost(!is_file($serverRoot . '/' . $retiredPath), 'retired notification Runtime remains: ' . $retiredPath);
 }
 
-$migration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260811-notification-host-security.sql'
+$schema = (string)file_get_contents(
+    $serverRoot . '/database/init.sql'
 );
 expectNotificationHost(
-    str_contains($migration, 'CHANGE COLUMN `verify_code` `verify_code_hash` VARCHAR(255)'),
-    'verification-code hash migration is missing'
+    preg_match('/`verify_code_hash`\s+varchar\(255\)/i', $schema) === 1
+        && !preg_match('/`verify_code`\s+varchar/i', $schema),
+    'fresh Schema does not define only the hashed verification code column'
 );
 expectNotificationHost(
-    str_contains($migration, "REPLACE(`content`, `verify_code`, '****')"),
-    'legacy verification-code snapshot is not redacted'
+    !str_contains($schema, 'CHANGE COLUMN `verify_code`')
+        && !str_contains($schema, "REPLACE(`content`, `verify_code`, '****')"),
+    'fresh Schema still contains legacy verification-code transition SQL'
 );
 
 foreach ([
@@ -119,11 +128,7 @@ foreach ([
     expectNotificationHost(($evidence['cleanup'] ?? false) === true, 'M01 fixtures were not cleaned: ' . $evidenceFile);
 }
 
-expectNotificationHost(
-    !str_contains($channelService, 'PeanutAdmin\\'),
-    'application-owned channel credential Host deep imports core'
-);
-$tenantSources = [$verificationService, $logLogic, (string)file_get_contents(
+$tenantSources = [$channelService, $verificationService, $logLogic, (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/NoticeTenantRepository.php'
 )];
 foreach ($tenantSources as $source) {

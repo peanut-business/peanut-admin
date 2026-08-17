@@ -7,10 +7,10 @@
       "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "021da8369c7c456b4663ffc4e59b59a30ab3846ebcedd6d85327d3e7e8736ef9"
+        "sha256": "b3d1404217b51361bea8887a4efdb1ae17a8df431f5bb820695f7f88e55132fa"
       },
       "manifest": "plugins/fixture.delivery-record/plugin.json",
-      "manifest_sha256": "1ae05332cfeb4b5f3b684557deed628e912f18d18f03ceae132eb3f92cbcc46f",
+      "manifest_sha256": "bee230318e910882a7f0df259c0e4e5f90bb91d93f294d4074653e0205ce4c2a",
       "composer": [
         {
           "name": "peanut-business/fixture-delivery-record",

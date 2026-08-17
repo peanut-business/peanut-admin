@@ -87,84 +87,6 @@ try {
     foreach (ModuleSchema::tableNames() as $table) {
         $pdo->exec(ModuleSchema::createSql($table));
     }
-    $pdo->exec(<<<'SQL'
-CREATE TABLE pa_system_menu (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  is_disable TINYINT NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  name VARCHAR(50) NOT NULL,
-  `desc` VARCHAR(255) NOT NULL,
-  sort SMALLINT NOT NULL DEFAULT 0,
-  create_time INT UNSIGNED NOT NULL,
-  update_time INT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_role_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role_menu (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  role_id INT UNSIGNED NOT NULL,
-  menu_id INT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_role_menu_tenant (tenant_id, role_id, menu_id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  username VARCHAR(50) NOT NULL,
-  nickname VARCHAR(50) NOT NULL,
-  password VARCHAR(64) NOT NULL,
-  salt VARCHAR(16) NOT NULL,
-  avatar VARCHAR(255) NOT NULL,
-  root TINYINT NOT NULL,
-  disable TINYINT NOT NULL,
-  login_time INT UNSIGNED NOT NULL,
-  login_ip VARCHAR(45) NOT NULL,
-  multipoint_login TINYINT NOT NULL,
-  create_time INT UNSIGNED NOT NULL,
-  update_time INT UNSIGNED NOT NULL,
-  delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_admin_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin_role (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  admin_id INT UNSIGNED NOT NULL,
-  role_id INT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_admin_role_tenant (tenant_id, admin_id, role_id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_legacy_role_tenant_map (
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  legacy_role_id INT UNSIGNED NOT NULL,
-  role_id BIGINT UNSIGNED NOT NULL,
-  created_at DATETIME(3) NOT NULL,
-  PRIMARY KEY (tenant_id, legacy_role_id), UNIQUE KEY uk_core_role (tenant_id, role_id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_legacy_admin_tenant_map (
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  legacy_admin_id INT UNSIGNED NOT NULL,
-  account_id BIGINT UNSIGNED NOT NULL,
-  tenant_member_id BIGINT UNSIGNED NOT NULL,
-  created_at DATETIME(3) NOT NULL,
-  PRIMARY KEY (tenant_id, legacy_admin_id), UNIQUE KEY uk_legacy_admin_account (account_id),
-  UNIQUE KEY uk_member (tenant_id, tenant_member_id),
-  CONSTRAINT fk_legacy_admin_account FOREIGN KEY (account_id) REFERENCES pa_account (id)
-) ENGINE=InnoDB;
-INSERT INTO pa_system_menu (is_disable) VALUES (0), (0), (1);
-SQL);
-    $foreignKeyIndexMigration = file_get_contents(
-        dirname(__DIR__, 2) . '/database/migrations/20260813-legacy-admin-account-fk-index.sql'
-    );
-    lifecycleExpect(is_string($foreignKeyIndexMigration), 'legacy Admin Account foreign-key index migration is unreadable');
-    $pdo->exec($foreignKeyIndexMigration);
-    $constraintMigration = file_get_contents(
-        dirname(__DIR__, 2) . '/database/migrations/20260813-legacy-admin-account-tenant-scope.sql'
-    );
-    lifecycleExpect(is_string($constraintMigration), 'Tenant-scoped legacy Admin migration is unreadable');
-    $pdo->exec($constraintMigration);
-
     $transactions = new PdoTransactionManager($pdo);
     $bootstrap = new BootstrapService(
         $transactions,
@@ -238,16 +160,8 @@ SQL);
         'owner activation Tenant audit is missing'
     );
     lifecycleExpect(
-        (int)$pdo->query("SELECT COUNT(*) FROM pa_admin WHERE tenant_id={$tenantId} AND root=0 AND disable=0")->fetchColumn() === 1,
-        'provision did not establish the compatible non-root Admin principal'
-    );
-    lifecycleExpect(
-        (int)$pdo->query("SELECT COUNT(*) FROM pa_legacy_admin_tenant_map WHERE tenant_id={$tenantId} AND account_id={$candidate['account_id']} AND tenant_member_id={$candidate['member_id']}")->fetchColumn() === 1,
-        'owner Admin mapping does not point to the Core Account and TenantMember'
-    );
-    lifecycleExpect(
-        (int)$pdo->query("SELECT COUNT(*) FROM pa_system_role_menu WHERE tenant_id={$tenantId}")->fetchColumn() === 2,
-        'owner compatibility role did not receive the enabled Admin menu catalog'
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_member_role WHERE tenant_id={$tenantId} AND tenant_member_id={$candidate['member_id']} AND role_id={$candidate['role_id']}")->fetchColumn() === 1,
+        'owner membership does not point to the native Tenant role'
     );
 
     $secondCandidate = $service->provision(
@@ -269,16 +183,12 @@ SQL);
         'same Account must receive a distinct TenantMember in each Tenant'
     );
     lifecycleExpect(
-        (int)$pdo->query("SELECT COUNT(*) FROM pa_legacy_admin_tenant_map WHERE account_id={$candidate['account_id']}")->fetchColumn() === 2,
-        'same Account must map to one compatibility Admin per Tenant'
-    );
-    lifecycleExpect(
-        (int)$pdo->query("SELECT COUNT(*) FROM pa_legacy_admin_tenant_map WHERE tenant_id={$secondTenantId} AND account_id={$candidate['account_id']} AND tenant_member_id={$secondCandidate['member_id']}")->fetchColumn() === 1,
-        'second Tenant owner Admin mapping is missing'
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_member WHERE tenant_id={$secondTenantId} AND account_id={$candidate['account_id']} AND id={$secondCandidate['member_id']}")->fetchColumn() === 1,
+        'second Tenant owner membership is missing'
     );
 
     $tenantCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn();
-    $adminCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_admin')->fetchColumn();
+    $memberCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn();
     $failingOwnerAdmins = new class($pdo) implements TenantOwnerAdminProvisioner {
         private PdoTenantOwnerAdminProvisioner $delegate;
         public function __construct(PDO $pdo) { $this->delegate = new PdoTenantOwnerAdminProvisioner($pdo); }
@@ -310,8 +220,8 @@ SQL);
         'Rollback Owner',
         'pm01-http-rollback'
     ));
-    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn() === $tenantCount, 'owner Admin failure left a partial Core Tenant');
-    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_admin')->fetchColumn() === $adminCount, 'owner Admin failure left a partial Admin principal');
+    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn() === $tenantCount, 'owner provisioning failure left a partial Tenant');
+    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn() === $memberCount, 'owner provisioning failure left a partial TenantMember');
 
     lifecycleRejects(static fn() => $service->transition(
         'pm01-lifecycle-token',
@@ -377,6 +287,12 @@ SQL);
             && str_contains($route, "Route::post('api/platform/tenants/close'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle'"),
         'platform lifecycle HTTP routes lost their dedicated permissions'
+    );
+    $resendRoute = strpos($route, "Route::post('api/platform/tenants/invitations/resend'");
+    $inviteRoute = strpos($route, "Route::post('api/platform/tenants/invitations'");
+    lifecycleExpect(
+        $resendRoute !== false && $inviteRoute !== false && $resendRoute < $inviteRoute,
+        'specific invitation actions must precede the prefix-sensitive invitation collection route'
     );
 
     echo "PM01-PLATFORM-TENANT-LIFECYCLE-HTTP-001 passed\n";

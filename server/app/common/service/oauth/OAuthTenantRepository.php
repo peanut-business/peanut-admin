@@ -3,22 +3,23 @@ declare(strict_types=1);
 
 namespace app\common\service\oauth;
 
-use app\common\model\member\Member;
 use app\common\model\oauth\OAuthAttempt;
 use app\common\model\oauth\OAuthCompletionTicket;
 use app\common\model\oauth\OAuthIdentity;
 use app\common\model\oauth\OAuthPrincipal;
+use app\common\service\member\MemberTenantRepository;
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class OAuthTenantRepository
 {
-    public static function principals(TenantContext|TenantSystemContext $context)
+    public static function principals(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
     {
         return OAuthPrincipal::where('tenant_id', OAuthTenantContext::tenantId($context));
     }
 
-    public static function identities(TenantContext|TenantSystemContext $context)
+    public static function identities(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
     {
         return OAuthIdentity::where('tenant_id', OAuthTenantContext::tenantId($context));
     }
@@ -34,7 +35,7 @@ final class OAuthTenantRepository
     }
 
     public static function createPrincipal(
-        TenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         array $data
     ): OAuthPrincipal {
         unset($data['tenant_id']);
@@ -44,7 +45,7 @@ final class OAuthTenantRepository
     }
 
     public static function createIdentity(
-        TenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         array $data
     ): OAuthIdentity {
         unset($data['tenant_id']);
@@ -73,14 +74,16 @@ final class OAuthTenantRepository
         ] + $data);
     }
 
-    public static function subjectForOwnedMember(int $memberId, int $terminal): string
+    public static function subjectForOwnedMember(
+        AuthenticatedMemberContext|TenantContext $context,
+        int $memberId,
+        int $terminal
+    ): string
     {
-        $tenantId = (int)Member::where('id', $memberId)->value('tenant_id');
-        if ($tenantId < 1) {
+        if (MemberTenantRepository::members($context)->where('id', $memberId)->count() !== 1) {
             return '';
         }
-        return (string)OAuthIdentity::where([
-            'tenant_id' => $tenantId,
+        return (string)self::identities($context)->where([
             'provider' => 'wechat',
             'member_id' => $memberId,
             'terminal' => $terminal,

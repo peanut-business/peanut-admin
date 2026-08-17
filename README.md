@@ -1,25 +1,28 @@
 # Peanut Admin
 
 Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的企业应用脚手架。
-同一份 `1.1.5` release 同时支持单实例（`standalone`）和多租户（`multi-tenant`）部署，
-覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
+当前源码是 `2.0.0` fresh-only 开发候选，同一代码线支持单实例（`standalone`）和多租户
+（`multi-tenant`）部署，覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
 
-[在线应用](https://peanut-admin.007345.xyz) ·
+[1.x 历史演示应用](https://peanut-admin.007345.xyz) ·
 [文档中心](https://peanut-admin-doc.007345.xyz) ·
-[v1.1.5 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5) ·
+[1.x 历史 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5) ·
 [更新日志](CHANGELOG.md)
 
-## 当前稳定能力
+## 当前候选能力
 
 - 管理后台：菜单、角色、管理员、部门、岗位、字典、文件、定时任务、日志和系统设置。
 - 业务模块：会员、标签、余额、通知、充值退款、文章、装修、热门搜索和客服设置。
 - 多端应用：Vue 3 管理端、Nuxt 3 PC、UniApp H5/小程序。
 - 多租户：默认 Tenant、可信 TenantContext、Tenant-first 数据访问、缓存/文件/任务/审计隔离。
 - 实例内平台管理：独立 PlatformOperator、Tenant 生命周期、首个 owner 和 TenantModule 管理。
-- 交付：空库安装、`v1.0.0/v1.1.0 → v1.1.5` 前滚、54 条迁移账本和 Docker Compose 生产部署。
+- 交付：2.0.0 canonical Schema 空库安装、基线后追加迁移账本和 Docker Compose 候选部署。
 
-`1.1.5` 是稳定多租户应用脚手架，不包含套餐、订阅、计费、试用、发票、应用市场或
-跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并完成平台登记。
+`2.0.0` 不支持 1.x 数据库或脚手架原地升级，也不包含套餐、订阅、计费、试用、发票、
+应用市场或跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并
+完成平台登记。当前候选已有隔离的线上实例：Platform、公共 Admin 和四域名代理可访问；
+第二 Tenant、Owner 邀请与 Tenant 域名绑定已通过人工邀请模式完成。候选尚未创建正式 tag、
+GitHub Release 或完成正式双模式发布 Gate，体验实例不能替代发布证明。
 
 ## 技术栈
 
@@ -52,7 +55,7 @@ php scripts/create-app \
   --target=/absolute/path/to/acme-console
 cd /absolute/path/to/acme-console
 git init
-cp server/.env.example server/.env
+cp .env.example .env
 ```
 
 创建器使用完整版本化 inventory，生成 `.peanut/application-manifest.json` 和受管文件基线；
@@ -60,7 +63,8 @@ cp server/.env.example server/.env
 仍用于维护 Peanut Admin 参考应用，不再是创建正式下游应用的入口。详见
 [创建独立应用](docs/create-application.md)。
 
-编辑 `server/.env`，至少填写数据库连接、`JWT_SECRET` 和下列安装身份：
+编辑根目录 `.env`，至少填写数据库连接、`JWT_SECRET` 和下列安装身份。生产 Compose
+会自动把这些普通键映射为 ThinkPHP 所需的内部 `PHP_*` 进程变量，不需要维护第二份配置：
 
 ```dotenv
 DEPLOYMENT_MODE=standalone
@@ -71,7 +75,9 @@ PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 ```
 
 多租户部署把 `DEPLOYMENT_MODE` 改为 `multi-tenant`，并额外提供与管理员不同的
-`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`。HMAC 生成后必须稳定保存；随意更换
+`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`，再显式填写 `PLATFORM_HOSTS`、
+`TENANT_ADMIN_HOSTS` 与 Owner 邀请投递模式。Tenant 专属域名由 Platform 动态绑定，未知 Host
+会被应用拒绝。HMAC 生成后必须稳定保存；随意更换
 会使既有身份索引失配。
 
 ### 3. 安装与启动
@@ -92,22 +98,34 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 `PEANUT_LOCAL_ENV_FILE`）读取；每个 clone/worktree 可覆盖，`ensure_env` 不会重写已有值。
 非秘密示例见 `deploy/local-stack.env.example`。停止时运行
 `./scripts/local-stack.sh dev-down`，该命令会同时停止容器和受 PID/日志管理的宿主 PHP。
-使用账号 `admin` 和安装时提供的密码登录。
-安装器只接受空数据库；已有安装必须按[部署与升级文档](https://peanut-admin-doc.007345.xyz/deployment)
-执行备份和前滚迁移，不能重新运行空库安装器。
+使用安装时提供的管理员邮箱和密码登录。安装器只接受空数据库；1.x 数据库不能原地升级
+为 2.0.0，应保留旧实例并为新版本准备独立空库。
+
+隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定
+`admin.peanut-admin.test:20179`、`platform.peanut-admin.test:20176`、两个 Tenant 测试域名、
+API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
+由当前候选的项目 lease 同时持有这些资源。
 
 ## 生产入口
 
 | 入口 | 地址 |
 | --- | --- |
-| 应用首页 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
-| PC 客户端 | https://peanut-admin.007345.xyz/pc/ |
-| H5 客户端 | https://peanut-admin.007345.xyz/mobile/ |
+| 2.0 多租户候选 / 实例平台 | https://pa-platform.007345.xyz/platform/ |
+| 2.0 多租户候选 / 公共管理端 | https://pa-admin.007345.xyz/admin/ |
+| 2.0 多租户候选 / Tenant A 绑定入口 | https://pa-tenant-a.007345.xyz/admin/ |
+| 2.0 多租户候选 / Tenant B 绑定入口 | https://pa-tenant-b.007345.xyz/admin/ |
+| 1.x 历史演示应用 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
+| 1.x 历史演示应用 / PC | https://peanut-admin.007345.xyz/pc/ |
+| 1.x 历史演示应用 / H5 | https://peanut-admin.007345.xyz/mobile/ |
 | 官方文档 | https://peanut-admin-doc.007345.xyz |
 
-生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。首次部署、
-`standalone`/`multi-tenant` 配置、数据库备份、前滚顺序和回滚停止线见
-[部署与升级](https://peanut-admin-doc.007345.xyz/deployment)。
+正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表 2.0
+入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境，不是正式 Release。
+两个 Tenant 域名已完成 DNS、TLS、Host 保留、反向代理和应用内持续绑定；错误 Tenant 账号
+登录会被拒绝。当前候选使用登记的人工 Owner 邀请交付模式，不依赖生产邮件 Provider。
+首次部署、
+`standalone`/`multi-tenant` 配置、空库安装、数据库备份和回滚停止线见
+[部署与安装](https://peanut-admin-doc.007345.xyz/deployment)。
 
 ## 目录结构
 
@@ -115,6 +133,7 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 peanut-admin/
 ├── server/       # ThinkPHP 后端、数据库安装器与迁移
 ├── web/          # Vue 3 管理端
+├── platform/     # Vue 3 实例 Platform 控制面
 ├── pc/           # Nuxt 3 PC 客户端
 ├── uniapp/       # UniApp H5 / 小程序
 ├── docs-site/    # VitePress 官方文档站
@@ -137,7 +156,9 @@ peanut-admin/
 - [开始使用](https://peanut-admin-doc.007345.xyz/getting-started)
 - [管理员手册](https://peanut-admin-doc.007345.xyz/guide/user-manual)
 - [开发指南](https://peanut-admin-doc.007345.xyz/guide/development)
-- [部署与升级](https://peanut-admin-doc.007345.xyz/deployment)
+- [部署与安装](https://peanut-admin-doc.007345.xyz/deployment)
+- [实例平台管理](https://peanut-admin-doc.007345.xyz/platform)
+- [身份与租户边界](https://peanut-admin-doc.007345.xyz/architecture/identity-and-tenancy)
 - [版本与发布](https://peanut-admin-doc.007345.xyz/releases)
 
 文档源码位于 `docs-site/`，由 Cloudflare Pages 项目 `peanut-admin-docs` 发布到
@@ -152,8 +173,9 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 
 ## 版本与许可证
 
-当前稳定版本为 [`v1.1.5`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5)。
-发布附件包含源码归档、Release manifest、许可证、第三方告知和 SPDX SBOM。
+当前源码版本为 `2.0.0` 开发候选，尚未正式发布。最后一个已封存的 1.x 历史版本是
+[`v1.1.5`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5)；它的发布附件
+继续作为历史证据，不代表 2.0.0 已通过发布验收。
 
 Peanut Admin 应用当前采用专有 / All Rights Reserved 许可；公开 Core 包维持 Apache-2.0。
 具体边界见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和

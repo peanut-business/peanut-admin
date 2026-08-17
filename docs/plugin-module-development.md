@@ -1,67 +1,232 @@
 # 用 Module 开发独立业务
 
+> 本文是 Peanut Admin Module/Plugin 的详细开发参考。先读“5 分钟速读”，再按纵向切片
+> 完成第一个模块。本文只描述当前仓库已验证的扩展面；DCS 等派生应用的领域设计由其
+> 自己的仓库拥有。
+
+## 5 分钟速读
+
 Peanut Admin 把四件事分开：
 
-- **Module** 是业务代码的家。控制器、领域逻辑、数据表迁移、权限、菜单、设置和前端页面都放在同一个 Module 目录中。
-- **Plugin** 是安装包。一个 Plugin 可以携带一个或多个 Module，但它不拥有租户授权。
-- **Host** 是脚手架本身。它只负责校验安装包、执行迁移、登记资源，并在构建时汇总前端入口。
-- **TenantModule** 是某个租户的开通状态。安装 Plugin 不会替任何租户开通业务，也不会给成员授权。
+- **Module** 是业务代码和数据的唯一 owner。
+- **Plugin** 是一个或多个 Module 的不可变安装包。
+- **Host** 校验 Plugin、执行 Module migration、汇总菜单/权限/设置和前端入口。
+- **TenantModule** 表示某个 Tenant 是否开通 Module；成员权限是另一层判断。
 
-这意味着安装不会把 Controller、Model、Vue 页面复制到公共目录。PHP 代码保留在
-`server/app/Modules/<Module>/`，前端代码保留在 `web/src/modules/<module-slug>/`；Host
-只读取不可变的 `plugins.lock` 和静态 contribution。以后即使提供“应用市场”，市场也只是
-下载和分发 Plugin 的渠道，不会改变 Module 的业务边界和 Host 的安全规则。
+一个功能真正可用，需要同时满足：
 
-## 最小目录
+```text
+Plugin active
+  -> TenantModule enabled
+      -> TenantMember 拥有功能权限和数据权限
+          -> 可信 TenantContext 进入 Module Application Service
+```
+
+当前正式创建的应用以空 `plugins.lock` 开始，不携带源码仓的 fixture。安装 Plugin 不会把
+Controller、Model 或 Vue 文件复制进公共目录，卸载也不会默认删除业务表。
+
+## 当前支持边界
+
+| 能力 | 状态 | 当前合同 |
+| --- | --- | --- |
+| Plugin manifest 和不可变 lock | **当前已支持** | identity、来源、摘要和前后端包不一致时 fail closed |
+| Module migration | **当前已支持** | Module 自有、追加式、带校验和和 durable ledger |
+| 权限、菜单、设置登记 | **当前已支持** | 安装后登记，失败不进入 active |
+| TenantModule 开通/停用 | **当前已支持** | Plugin active 不替代租户开通 |
+| 前端 contribution | **当前已支持** | 从 lock 汇总路由入口，不复制到共享 views |
+| 同步 Module 命令停用 Guard | **当前已支持（fixture）** | 授予成员权限后停用仍返回 `MODULE_TENANT_DISABLED` |
+| Module HTTP/任务/回调/专属文件统一 Guard | **推荐新增** | 现有共享 Host 已做 Tenant 隔离，但不是可停用 Module 的完整运行时证明 |
+| 跨模块命令/查询扩展点 | **当前已支持** | PHP `Contracts/` 公开接口可由应用显式装配；当前没有两个 Module 的可运行示例 |
+| 两个 Module 的命令/查询示例 | **推荐新增** | 当前 fixture 只证明单 Module 合同，不能冒充跨 Module 运行证据 |
+| 通用 Outbox/事件总线 | **推荐新增** | 当前 fixture 没有事件，业务模块不能假定已有可靠事件传输 |
+| DCS Product 等领域模块 | **暂不建议放入 Peanut** | 只允许在 DCS 独立应用中实现 |
+
+## 真实目录与所有权
+
+源码仓的资格 fixture 使用以下真实布局：
 
 ```text
 plugins.lock
-plugins/<plugin-key>/plugin.json
-server/app/Modules/<Vendor>/<Module>/
+plugins/fixture.delivery-record/
+  plugin.json
+server/app/Modules/Fixture/DeliveryRecord/
   module.json
+  composer.json
   ModuleProvider.php
-  Database/Migrations/*.sql
-  Resources/permissions.json
-  Resources/menus.json
-  Resources/settings.json
-web/src/modules/<module-slug>/
+  Application/
+    DeliveryRecordAccess.php
+    DeliveryRecordService.php
+  Contracts/
+    DeliveryRecordCommands.php
+  Infrastructure/
+    Authorization/PdoDeliveryRecordAccess.php
+    Persistence/PdoDeliveryRecordRepository.php
+  Database/Migrations/
+    20260814050101_create_fixture_delivery_records.sql
+    OwnedMigration.php
+  Resources/
+    menus.json
+    permissions.json
+    setting-definitions.json
+web/src/modules/fixture-delivery-record/
   contribution.ts
-  views/*.vue
+  package.json
+  views/index.vue
 ```
 
-`plugin.json` 描述安装包及 Composer、npm、前端和 Module 身份；`module.json` 描述业务
-能力、依赖、数据所有权、权限和菜单。`plugins.lock` 固定实际部署的版本、来源和 SHA-256。
-Host 只接受 lock 中的内容，文件被改写、依赖缺失或前后端身份不一致都会在迁移前拒绝。
-空 `plugins` 列表表示尚未锁定任何 Plugin；正式 create-app 默认生成该状态，不会携带本仓
-演示 fixture。只有应用 owner 交付完整 manifest、Module 与 contribution 后才能加入 lock。
-兼容期内，已有 `PEANUT_MODULE_ROOTS` 会和 lock 中的 Module roots 合并编译；旧模块不要求
-随本功能顺手重构，后续可逐个包装成 Plugin 制品。
+目录职责：
 
-## 日常操作
+| 目录或文件 | owner 和用途 |
+| --- | --- |
+| `module.json` | Module 身份、依赖、数据表、公开合同、前后端入口和停用行为 |
+| `ModuleProvider.php` | 把公开合同装配到应用服务和基础设施 adapter |
+| `Application/` | 用例、事务编排、权限调用和失败语义 |
+| `Contracts/` | 其他模块唯一允许依赖的接口、DTO 和事件声明 |
+| `Infrastructure/` | PDO/ORM、外部服务和授权 adapter，不对其他模块公开 |
+| `Database/Migrations/` | 只创建或修改本 Module 声明拥有的表 |
+| `Resources/` | 权限、菜单和设置定义；不是业务真值表 |
+| `contribution.ts` | 前端路由和页面入口，声明 Module key 与所需权限 |
+| `plugins.lock` | 当前部署唯一允许加载的 Plugin 版本和内容摘要 |
+
+派生应用可以在同一结构中增加自己的 vendor/module 命名空间，例如
+`server/app/Modules/Acme/Inventory/`。不要把派生应用 Module 放进 `server/app/common/`，
+也不要复制 Peanut Core 类到应用目录。
+
+## 第一个纵向切片
+
+### 1. 定义数据 owner
+
+Module migration 必须在每张业务表上固定 `tenant_id`，索引和外键也要包含 Tenant 边界。
+fixture 的关键约束是：
+
+```sql
+UNIQUE KEY uk_fixture_delivery_tenant_ref (tenant_id, reference)
+FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id)
+```
+
+Repository 不能接收浏览器提交的任意 Tenant ID，而是从可信 `TenantContext` 取值：
+
+```php
+$statement->execute([
+    'tenant_id' => $context->tenantId,
+    'reference' => $reference,
+]);
+```
+
+### 2. 定义公开合同
+
+其他模块只依赖 `Contracts/DeliveryRecordCommands.php`：
+
+```php
+interface DeliveryRecordCommands
+{
+    public function record(TenantContext $context, string $reference): array;
+    public function list(TenantContext $context): array;
+}
+```
+
+合同使用稳定业务输入和 DTO，不泄漏 PDO、ThinkPHP Model 或私有表名。`ModuleProvider` 负责
+装配具体实现；调用方不能自行 new 另一个模块的 Repository。
+
+### 3. 登记权限和菜单
+
+`permissions.json` 声明 `fixture.delivery-record.read/create`；`menus.json` 把页面绑定到
+`admin-web`、路由、组件和读取权限。后端命令仍需再次调用统一 ModuleGuard 和授权 Repository，
+前端隐藏按钮不是安全边界。root、system actor、异步 worker、外部回调和模块专属文件入口也
+不能绕过 Module 状态；当前 fixture 只证明同步成员命令，正式 Module 必须为实际使用的其他
+入口补负向测试。
+
+管理端 HTTP 路由目前仍由应用在 `server/route/app.php` 显式登记。新增 API 时必须同时
+完成路由、Controller、Module Application Service、权限定义和聚焦测试，不能只增加菜单。
+
+### 4. 登记前端 contribution
+
+`web/src/modules/<slug>/contribution.ts` 声明懒加载页面、`tenantModuleKey` 和
+`requiredPermissions`。Host 从 lock 解析 contribution；未安装、租户未开通或权限不足时，
+路由和菜单都不能成为绕过入口。
+
+### 5. 安装和开通
+
+源码仓 fixture 的合同命令是：
 
 ```bash
+cd server
 php think plugin:install fixture.delivery-record
 php think plugin:upgrade fixture.delivery-record --dry-run
 php think plugin:rollback fixture.delivery-record
 php think plugin:uninstall fixture.delivery-record
 ```
 
-安装顺序是：预检 → 标记 installing → 执行 Module 自有的追加式迁移 → 登记权限、菜单和
-设置 → 全部成功后 active。任何一步失败都不会部分激活。重复安装同一不可变身份是幂等的；
-已执行迁移的内容或校验和发生变化会被拒绝。
+安装顺序为预检、`installing`、Module migration、登记资源、`active`。重复安装同一不可变
+身份返回 unchanged；已执行 migration 内容变化会被拒绝。`rollback` 只生成计划，卸载默认
+保留数据，并要求所有 TenantModule 已停用。
 
-升级命令带 `--dry-run` 时只输出计划；不带该选项才会执行升级。回滚只输出可执行计划，因为追加式迁移和业务数据不能靠猜测
-倒放。卸载默认保留数据，并且只在没有租户仍开通该 Module 时退役代码；删除业务表不是
-默认卸载动作。
+生产应用不会自带 fixture。应用 owner 必须先提供真实 Plugin artifact 和 lock 身份，再由
+PlatformOperator 开通 TenantModule，最后给 TenantMember 分配权限。
 
-## 租户开通和成员授权
+## 模块之间如何调用
 
-Plugin 安装完成后，平台管理员仍需显式启用 TenantModule。成员还必须拥有 Module 声明的
-权限，前端路由才可见。三种状态互不替代：
+### 同步命令和查询
 
-1. Plugin active：这台部署有这份代码。
-2. TenantModule enabled：这个租户购买或开通了业务。
-3. Member authorized：当前成员可以使用对应操作。
+需要立即得到结果且共享同一进程事务边界时，调用被依赖模块的公开合同：
 
-fixture `fixture.delivery-record` 仅用于证明这条纵向链路，不代表 DCS Product Module 已获
-采用批准，也不会启动或修改 DCS。
+```php
+// 推荐模式，示例接口由派生应用定义；Peanut 当前没有这些 DCS 类。
+$product = $productQueries->requireActiveSku($context, $skuId);
+$receipt = $inventoryCommands->receive(
+    $context,
+    new ReceiveStock($warehouseId, $product->skuId, $quantity, $idempotencyKey)
+);
+```
+
+调用方可以保存业务快照和返回 ID，但不能查询或更新 Product/Inventory 私有表。跨模块只读
+页面由应用查询编排层组合公开 DTO；不要用跨模块 JOIN 形成隐藏合同。
+
+### 领域事件
+
+需要解耦事务或通知多个消费者时，可以定义领域事件，但当前 Peanut Host 没有已验证的
+通用 Outbox/Event Bus。派生应用采用事件前必须补齐：
+
+- 事件 schema 和版本；
+- Outbox 与业务写入的同事务保证；
+- 至少一次投递下的消费者幂等；
+- 重试、死信、审计和可观测性；
+- 事件中 Tenant、主体和最小数据范围。
+
+在这些条件完成前，优先使用显式同步合同，不要用“发布事件”掩盖可靠性缺口。
+
+## DCS 采用边界
+
+DCS 是脚手架生成的独立应用，不是 Peanut Admin 内建业务域。Peanut 只提供 Account、
+Tenant、RBAC、Module/Plugin、审计等通用扩展面。Party、Store、Warehouse、Supplier、
+Product、Pricing、Inventory、Procurement 和 Trade 的表、状态机、API、事件与测试必须由
+DCS 仓拥有。
+
+Peanut 文档可以说明“如何写一个库存 Module”，但不能宣称 Peanut 已经提供库存业务。
+源码仓 `fixture.delivery-record` 也只证明纵向链路，不是 DCS Product 或 Delivery Runtime。
+
+## 最小测试
+
+一个正式 Module 至少拥有：
+
+1. manifest/lock 身份和路径安全测试；
+2. migration 所有权、校验和、重复安装和失败恢复测试；
+3. 两个 Tenant 的列表、详情和写入隔离测试；
+4. TenantModule 停用拒绝测试；
+5. 有权限、无权限和伪造 Tenant ID 的 API 测试；
+6. 前端 contribution、路由和按钮权限测试；
+7. 公开合同兼容测试；使用事件时再增加重复投递和重试测试。
+
+只修改一个 Module 时运行该 Module 的聚焦测试、受影响客户端类型检查和 `git diff --check`；
+不要为局部业务切片默认运行所有客户端和完整浏览器矩阵。
+
+## 常见错误
+
+| 现象 | 原因与处理 |
+| --- | --- |
+| Plugin 已安装但菜单不存在 | 检查 TenantModule、成员权限、client key 和 contribution 是否同时成立 |
+| 页面可见但 API 403 | 后端权限未授权，或请求没有可信 TenantContext；不要放宽为前端判断 |
+| migration 被拒绝 | 已应用内容或 checksum 改变；新增下一条 migration，不改写历史 |
+| Module 能读到另一 Tenant 数据 | Repository 没有从 TenantContext 约束查询；停止发布并补隔离测试 |
+| 新应用找不到 fixture | 正常行为；正式 create-app 生成空 Plugin lock，fixture 被 inventory 排除 |
+| 想直接调用另一模块 Model | 改为依赖其 `Contracts/` 查询或命令接口 |

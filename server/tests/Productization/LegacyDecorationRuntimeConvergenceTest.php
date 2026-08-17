@@ -75,7 +75,7 @@ expectLegacyDecorationConvergence(
 );
 
 $menuMigration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260814_legacy_decoration_entry_convergence.sql'
+    $serverRoot . '/database/init.sql'
 );
 foreach ([
     '/app-setting/decorate',
@@ -93,7 +93,7 @@ expectLegacyDecorationConvergence(
     'menu retirement does not remove role grants before menu nodes'
 );
 $decorationMenu = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260802_decoration_parity.sql'
+    $serverRoot . '/database/init.sql'
 );
 expectLegacyDecorationConvergence(
     substr_count($decorationMenu, "'移动端装修' AS `name`") === 1

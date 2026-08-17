@@ -6,6 +6,7 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 use app\common\service\external\ExternalTenantAudit;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantBindingRepository;
+use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
 
@@ -200,7 +201,8 @@ $paymentController = (string)file_get_contents($root . '/app/api/controller/Paym
 $officialController = (string)file_get_contents($root . '/app/api/controller/OfficialAccountController.php');
 $oauthController = (string)file_get_contents($root . '/app/api/controller/OAuthController.php');
 $settlement = (string)file_get_contents($root . '/app/api/logic/RechargeLogic.php');
-$migration = (string)file_get_contents($root . '/database/migrations/20260814_external_callback_tenant_routing.sql');
+$schema = (string)file_get_contents($root . '/database/init.sql');
+$bindingService = (string)file_get_contents($root . '/app/common/service/external/ExternalChannelBindingService.php');
 foreach ([$paymentController, $officialController, $oauthController] as $source) {
     externalExpect(!str_contains($source, "['tenant_id']") && !str_contains($source, "get('tenant_id")
         && !str_contains($source, "header('tenant_id"), 'callback wiring trusts request tenant_id');
@@ -209,8 +211,36 @@ externalExpect(strpos($paymentController, 'verifiedCallback(') < strpos($payment
 externalExpect(str_contains($settlement, 'settle(object $context'), 'settlement does not require a verified context port');
 externalExpect(!str_contains($settlement, 'VerifiedPaymentTenantResolver::resolve'), 'settlement still derives Tenant from an order number');
 foreach (['uk_external_callback_key', 'uk_external_provider_identity', 'uk_external_tenant_provider',
-    'pa_default_tenant_bootstrap', 'RANDOM_BYTES(32)', 'fk_external_binding_tenant'] as $marker) {
-    externalExpect(str_contains($migration, $marker), 'binding migration invariant missing: ' . $marker);
+    'fk_external_binding_tenant'] as $marker) {
+    externalExpect(str_contains($schema, $marker), 'binding schema invariant missing: ' . $marker);
 }
+externalExpect(
+    str_contains($schema, 'SELECT @pa_default_tenant_id, providers.`provider`')
+        && preg_match('/JSON_OBJECT\(\),\s*0,\s*0,\s*0\s+FROM/s', $schema) === 1,
+    'fresh schema does not seed explicit disabled provider placeholders'
+);
+foreach (['Db::transaction(', "->where('tenant_id', \$tenantId)", "->lock(true)",
+    "'callback_key' => \$callbackKey", 'bin2hex(random_bytes(32))'] as $marker) {
+    externalExpect(str_contains($bindingService, $marker), 'binding Runtime invariant missing: ' . $marker);
+}
+
+$keyTransition = new ReflectionMethod(ExternalChannelBindingService::class, 'callbackKeyForUpdate');
+$keyTransition->setAccessible(true);
+$provider = ExternalTenantResolver::WECHAT_PAYMENT;
+$placeholder = hash('sha256', 'fresh-default:' . $provider);
+$missingA = $keyTransition->invoke(null, $provider, '', false);
+$missingB = $keyTransition->invoke(null, $provider, '', false);
+$activated = $keyTransition->invoke(null, $provider, $placeholder, true);
+externalExpect(
+    is_string($missingA) && preg_match('/^[a-f0-9]{64}$/D', $missingA) === 1
+        && is_string($missingB) && $missingA !== $missingB,
+    'new Tenant bindings do not receive unique opaque callback keys'
+);
+externalExpect(
+    $keyTransition->invoke(null, $provider, $placeholder, false) === $placeholder
+        && is_string($activated) && $activated !== $placeholder
+        && $keyTransition->invoke(null, $provider, $activated, true) === $activated,
+    'callback key activation or stable-update lifecycle changed'
+);
 
 echo "EXTERNAL-CALLBACK-TENANT-ROUTING-001 passed\n";

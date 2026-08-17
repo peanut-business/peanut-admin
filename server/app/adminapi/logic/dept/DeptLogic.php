@@ -4,235 +4,131 @@ declare(strict_types=1);
 namespace app\adminapi\logic\dept;
 
 use app\common\logic\BaseLogic;
-use app\common\model\auth\AdminDept;
-use app\common\model\dept\Dept;
-use app\common\service\org\OrgTenantRepository;
+use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
+use PeanutAdmin\Kernel\Organization\Application\DepartmentAdminService;
 use think\facade\Db;
 
-class DeptLogic extends BaseLogic
+/** Compatibility department tree backed by native pa_department. */
+final class DeptLogic extends BaseLogic
 {
     public static function validationRules(string $scene): array
     {
-        $rules = [
-            'id' => 'require|integer|gt:0', 'name' => 'require|length:1,30',
+        $rules = ['id' => 'require|integer|gt:0', 'name' => 'require|length:1,120',
             'pid' => 'require|integer|egt:0', 'leader' => 'max:50', 'mobile' => 'max:20',
-            'sort' => 'integer|egt:0', 'status' => 'require|in:0,1',
-        ];
-        if ($scene === 'add') {
-            unset($rules['id']);
-        }
+            'sort' => 'integer|egt:0', 'status' => 'require|in:0,1'];
+        if ($scene === 'add') unset($rules['id']);
         return $rules;
     }
 
-    /** 部门树（支持名称和状态筛选，不分页） */
     public static function lists(TenantContext $context, array $params = []): array
     {
-        $where = [];
-        if (!empty($params['name'])) {
-            $where[] = ['name', 'like', '%' . trim((string)$params['name']) . '%'];
-        }
-        if (isset($params['status']) && $params['status'] !== '') {
-            $where[] = ['status', '=', (int)$params['status']];
-        }
-
-        $data = self::departments($context)->where($where)
-            ->append(['status_desc'])
-            ->order(['sort' => 'desc', 'id' => 'desc'])
-            ->select()
-            ->toArray();
-
-        return self::buildTree($data);
+        $items = self::service()->list($context->tenantId, new PageRequest(1, 100))['items'];
+        $items = array_values(array_filter($items, static fn(array $row): bool =>
+            (empty($params['name']) || str_contains((string)$row['name'], trim((string)$params['name'])))
+            && (!isset($params['status']) || $params['status'] === '' || self::statusInt($row['status']) === (int)$params['status'])));
+        return self::buildTree(array_map([self::class, 'compat'], $items));
     }
 
-    /** 正常部门树 */
     public static function all(TenantContext $context): array
     {
-        $data = self::departments($context)->where('status', 1)
-            ->order(['sort' => 'desc', 'id' => 'desc'])
-            ->select()
-            ->toArray();
-
-        return self::buildTree($data);
+        return self::lists($context, ['status' => 1]);
     }
 
-    /** 正常部门扁平列表（负责人部门选择器） */
     public static function leaderDept(TenantContext $context): array
     {
-        return self::departments($context)->field('id,name')
-            ->where('status', 1)
-            ->order(['sort' => 'desc', 'id' => 'desc'])
-            ->select()
-            ->toArray();
+        $flat = [];
+        foreach (self::service()->list($context->tenantId, new PageRequest(1, 100))['items'] as $row) {
+            if ($row['status'] === 'active') $flat[] = ['id' => (int)$row['id'], 'name' => $row['name']];
+        }
+        return $flat;
     }
 
     public static function detail(TenantContext $context, int $id): array
     {
-        return self::departments($context)->where('id', $id)->findOrEmpty()->toArray();
+        try { return self::compat(self::service()->get($context->tenantId, $id)); }
+        catch (\Throwable) { return []; }
     }
 
     public static function add(TenantContext $context, array $params): bool
     {
-        Db::startTrans();
         try {
-            $status = (int)$params['status'];
-            self::assertUniqueName($context, (string)$params['name']);
-            self::assertParent($context, (int)$params['pid']);
-            OrgTenantRepository::create($context, Dept::class, [
-                'pid'        => (int)$params['pid'],
-                'name'       => (string)$params['name'],
-                'leader'     => (string)($params['leader'] ?? ''),
-                'mobile'     => (string)($params['mobile'] ?? ''),
-                'sort'       => (int)($params['sort'] ?? 0),
-                'status'     => $status,
-                'is_disable' => $status === 1 ? 0 : 1,
-            ]);
-            Db::commit();
+            $department = self::service()->create($context->tenantId, self::code($params), (string)$params['name'],
+                (int)$params['pid'] > 0 ? (int)$params['pid'] : null, (int)($params['sort'] ?? 0),
+                $context->memberId, $context->accountId, $context->requestId);
+            if ((int)$params['status'] === 0) self::setStatus($context, $department, 0);
             return true;
-        } catch (\Throwable $e) {
-            Db::rollback();
-            self::setError($e->getMessage());
-            return false;
-        }
+        } catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
     }
 
     public static function edit(TenantContext $context, array $params): bool
     {
-        Db::startTrans();
         try {
-            $dept = self::departments($context)->where('id', (int)$params['id'])->lock(true)->findOrEmpty();
-            if ($dept->isEmpty()) {
-                throw new \RuntimeException('部门不存在');
+            $service = self::service();
+            $current = $service->get($context->tenantId, (int)$params['id']);
+            $updated = $service->update($context->tenantId, (int)$params['id'], (string)$current['code'],
+                (string)$params['name'], (int)($params['sort'] ?? 0), (int)$current['revision'],
+                $context->memberId, $context->accountId, $context->requestId);
+            $parent = (int)$params['pid'] > 0 ? (int)$params['pid'] : null;
+            $currentParent = $updated['parent_id'] === null ? null : (int)$updated['parent_id'];
+            if ($parent !== $currentParent) {
+                $updated = $service->move($context->tenantId, (int)$params['id'], $parent, (int)$updated['revision'],
+                    $context->memberId, $context->accountId, $context->requestId);
             }
-            $pid = (int)$dept->pid === 0 ? 0 : (int)$params['pid'];
-            self::assertParent($context, $pid, (int)$dept->id);
-            self::assertUniqueName($context, (string)$params['name'], (int)$dept->id);
-            $status = (int)$params['status'];
-            $dept->save([
-                'pid'        => $pid,
-                'name'       => (string)$params['name'],
-                'leader'     => (string)($params['leader'] ?? ''),
-                'mobile'     => (string)($params['mobile'] ?? ''),
-                'sort'       => (int)($params['sort'] ?? 0),
-                'status'     => $status,
-                'is_disable' => $status === 1 ? 0 : 1,
-            ]);
-            Db::commit();
+            self::setStatus($context, $updated, (int)$params['status']);
             return true;
-        } catch (\Throwable $e) {
-            Db::rollback();
-            self::setError($e->getMessage());
-            return false;
-        }
+        } catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
     }
 
     public static function delete(TenantContext $context, int $id): bool
     {
-        Db::startTrans();
         try {
-            $dept = self::departments($context)->where('id', $id)->lock(true)->findOrEmpty();
-            if ($dept->isEmpty()) {
-                throw new \RuntimeException('部门不存在');
-            }
-            if (self::departments($context)->where('pid', $id)->count() > 0) {
-                throw new \RuntimeException('已关联下级部门,暂不可删除');
-            }
-            if (OrgTenantRepository::query($context, AdminDept::class)->where('dept_id', $id)->count() > 0) {
-                throw new \RuntimeException('已关联管理员，暂不可删除');
-            }
-            if ((int)$dept->pid === 0) {
-                throw new \RuntimeException('顶级部门不可删除');
-            }
-
-            $dept->delete();
-            Db::commit();
+            $service = self::service(); $row = $service->get($context->tenantId, $id);
+            $service->archive($context->tenantId, $id, (int)$row['revision'], $context->memberId, $context->accountId, $context->requestId);
             return true;
-        } catch (\Throwable $e) {
-            Db::rollback();
-            self::setError($e->getMessage());
-            return false;
-        }
+        } catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
     }
 
     public static function updateStatus(TenantContext $context, int $id, int $status): bool
     {
-        Db::startTrans();
-        try {
-            $dept = self::departments($context)->where('id', $id)->lock(true)->findOrEmpty();
-            if ($dept->isEmpty()) {
-                throw new \RuntimeException('部门不存在');
-            }
-            $dept->save([
-                'status' => $status,
-                'is_disable' => $status === 1 ? 0 : 1,
-            ]);
-            Db::commit();
-            return true;
-        } catch (\Throwable $e) {
-            Db::rollback();
-            self::setError($e->getMessage());
-            return false;
-        }
+        try { self::setStatus($context, self::service()->get($context->tenantId, $id), $status); return true; }
+        catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
     }
 
-    private static function buildTree(array $data): array
+    private static function setStatus(TenantContext $context, array $row, int $status): void
     {
-        if (empty($data)) {
-            return [];
-        }
-        $pid = min(array_column($data, 'pid'));
-        return self::getTree($data, (int)$pid);
+        $pdo = self::pdo();
+        $target = $status === 1 ? 'active' : 'disabled';
+        if ($row['status'] === $target) return;
+        if ($row['status'] === 'archived') throw new \RuntimeException('部门已归档');
+        $statement = $pdo->prepare("UPDATE pa_department SET status=:status,revision=revision+1,updated_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=:tenant_id AND id=:id AND revision=:revision");
+        $statement->execute(['status' => $target, 'tenant_id' => $context->tenantId, 'id' => (int)$row['id'], 'revision' => (int)$row['revision']]);
+        if ($statement->rowCount() !== 1) throw new \RuntimeException('部门状态已被并发修改');
+        $pdo->prepare('UPDATE pa_tenant SET authorization_revision=authorization_revision+1,updated_at=CURRENT_TIMESTAMP(3) WHERE id=?')->execute([$context->tenantId]);
     }
 
-    private static function departments(TenantContext $context)
+    private static function compat(array $row): array
     {
-        return OrgTenantRepository::query($context, Dept::class);
+        return ['id' => (int)$row['id'], 'pid' => $row['parent_id'] === null ? 0 : (int)$row['parent_id'],
+            'code' => $row['code'], 'name' => $row['name'], 'leader' => '', 'mobile' => '',
+            'sort' => (int)$row['sort_order'], 'status' => self::statusInt($row['status']),
+            'is_disable' => self::statusInt($row['status']) === 1 ? 0 : 1,
+            'status_desc' => self::statusInt($row['status']) === 1 ? '正常' : '停用', 'revision' => (int)$row['revision']];
     }
 
-    private static function assertUniqueName(TenantContext $context, string $name, int $exceptId = 0): void
-    {
-        $query = self::departments($context)->where('name', trim($name));
-        if ($exceptId > 0) {
-            $query->where('id', '<>', $exceptId);
-        }
-        if ($query->count() > 0) {
-            throw new \RuntimeException('部门名称已存在');
-        }
-    }
-
-    private static function assertParent(TenantContext $context, int $parentId, int $currentId = 0): void
-    {
-        if ($parentId === 0) {
-            return;
-        }
-        $visited = [];
-        while ($parentId > 0) {
-            if ($parentId === $currentId || isset($visited[$parentId])) {
-                throw new \RuntimeException('上级部门不可是当前部门或其下级部门');
-            }
-            $visited[$parentId] = true;
-            $parent = self::departments($context)->where('id', $parentId)->findOrEmpty();
-            if ($parent->isEmpty()) {
-                throw new \RuntimeException('部门不存在');
-            }
-            if ((int)$parent->status !== 1) {
-                throw new \RuntimeException('上级部门已停用');
-            }
-            $parentId = (int)$parent->pid;
-        }
-    }
-
-    private static function getTree(array $data, int $pid, int $level = 0): array
+    private static function buildTree(array $data, int $pid = 0, int $level = 0): array
     {
         $tree = [];
-        foreach ($data as $item) {
-            if ((int)$item['pid'] !== $pid) {
-                continue;
-            }
-            $item['level'] = $level;
-            $item['children'] = self::getTree($data, (int)$item['id'], $level + 1);
-            $tree[] = $item;
-        }
+        foreach ($data as $item) if ($item['pid'] === $pid) { $item['level'] = $level; $item['children'] = self::buildTree($data, $item['id'], $level + 1); $tree[] = $item; }
         return $tree;
+    }
+
+    private static function statusInt(string $status): int { return $status === 'active' ? 1 : 0; }
+    private static function code(array $params): string { return 'application.department.' . bin2hex(random_bytes(8)); }
+    private static function service(): DepartmentAdminService { return new DepartmentAdminService(self::pdo()); }
+    private static function pdo(): PDO
+    {
+        $pdo = Db::connect()->connect(); if (!$pdo instanceof PDO) throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE'); return $pdo;
     }
 }

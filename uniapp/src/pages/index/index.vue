@@ -16,7 +16,7 @@
       </view>
 
       <swiper
-        v-else-if="decorationComponent.name === 'banner' && componentItems(decorationComponent).length"
+        v-else-if="decorationComponent.name === 'banner' && bannerItems(decorationComponent).length"
         class="banner"
         :class="`banner-style-${Number(decorationComponent.content.style || 1)}`"
         data-decoration-component="banner"
@@ -24,7 +24,7 @@
         :interval="4000"
         circular
       >
-        <swiper-item v-for="item in componentItems(decorationComponent)" :key="`${item.name}-${item.image}`">
+        <swiper-item v-for="item in bannerItems(decorationComponent)" :key="`${item.name}-${item.image}`">
           <view class="banner-item" :style="bannerItemStyle(decorationComponent, item)" @click="executeDecorationLink(item.link)">
             <image v-if="showBannerImage(decorationComponent, item)" :src="item.image" mode="aspectFill" class="banner-img" />
             <view v-if="item.name" class="banner-title">{{ item.name }}</view>
@@ -46,14 +46,14 @@
       </view>
 
       <swiper
-        v-else-if="decorationComponent.name === 'middle-banner' && componentItems(decorationComponent).length"
+        v-else-if="decorationComponent.name === 'middle-banner' && bannerItems(decorationComponent).length"
         class="middle-banner"
         data-decoration-component="middle-banner"
         :autoplay="true"
         :interval="5000"
         circular
       >
-        <swiper-item v-for="item in componentItems(decorationComponent)" :key="`${item.name}-${item.image}`">
+        <swiper-item v-for="item in bannerItems(decorationComponent)" :key="`${item.name}-${item.image}`">
           <view class="banner-item" @click="executeDecorationLink(item.link)">
             <image v-if="item.image" :src="item.image" mode="aspectFill" class="middle-banner-img" />
             <view v-if="item.name" class="banner-title">{{ item.name }}</view>
@@ -63,7 +63,7 @@
 
       <view v-else-if="decorationComponent.name === 'news'" class="article-section" data-decoration-component="news">
         <view class="section-title">最新资讯</view>
-        <view class="article-list">
+        <view v-if="articles.length" class="article-list">
           <view v-for="item in articles" :key="item.id" class="article-item" @click="goDetail(item.id)">
             <image :src="item.image" class="article-img" mode="aspectFill" />
             <view class="article-info">
@@ -74,6 +74,10 @@
               </view>
             </view>
           </view>
+        </view>
+        <view v-else class="article-empty">
+          <text class="article-empty-title">暂未发布资讯</text>
+          <text class="article-empty-copy">新的内容将在这里展示</text>
         </view>
       </view>
     </template>
@@ -111,6 +115,9 @@ const showTitleImage = computed(() => Number(meta.value.title_type) === 2 && typ
 const metaTextClass = computed(() => Number(meta.value.text_color) === 2 ? 'page-meta-dark' : 'page-meta-light')
 const componentItems = (component: DecorationComponent) => getDecorationItems(component)
   .filter((item) => item.is_show === undefined || item.is_show === 1)
+const isMeaningfulBannerValue = (value: unknown) => typeof value === 'string' && value.trim() !== ''
+const bannerItems = (component: DecorationComponent) => componentItems(component)
+  .filter((item) => isMeaningfulBannerValue(item.image) || isMeaningfulBannerValue(item.name) || isMeaningfulBannerValue(item.bg))
 const pageStyle = computed(() => {
   const style: Record<string, string> = {
     '--theme-primary': theme.value?.themeColor1 || '#2979ff',
@@ -130,9 +137,9 @@ const limitedNavItems = (component: DecorationComponent) => {
   return componentItems(component).slice(0, perLine * showLine)
 }
 const showBannerImage = (component: DecorationComponent, item: DecorationItem) =>
-  Number(component.content.bg_style || 1) === 1 || !item.bg
+  isMeaningfulBannerValue(item.image) && (Number(component.content.bg_style || 1) === 1 || !isMeaningfulBannerValue(item.bg))
 const bannerItemStyle = (component: DecorationComponent, item: DecorationItem) =>
-  Number(component.content.bg_style || 1) === 2 && item.bg
+  Number(component.content.bg_style || 1) === 2 && isMeaningfulBannerValue(item.bg)
     ? { backgroundImage: `url(${String(item.bg)})` }
     : {}
 
@@ -178,6 +185,9 @@ function goNews() { uni.navigateTo({ url: '/pages/news/news' }) }
 .nav-name { margin-top: 8rpx; color: #333; font-size: 24rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .article-section { padding: 24rpx; }
 .section-title { font-size: 32rpx; font-weight: 600; margin-bottom: 20rpx; color: var(--theme-primary); }
+.article-empty { display: flex; min-height: 200rpx; flex-direction: column; align-items: center; justify-content: center; gap: 12rpx; border: 2rpx dashed #cbd5e1; border-radius: 12rpx; background: #f8fafc; }
+.article-empty-title { color: #334155; font-size: 28rpx; font-weight: 600; }
+.article-empty-copy { color: #64748b; font-size: 24rpx; }
 .article-item { display: flex; background: #fff; border-radius: 12rpx; margin-bottom: 20rpx; overflow: hidden; }
 .article-img { width: 200rpx; height: 160rpx; flex-shrink: 0; }
 .article-info { flex: 1; padding: 16rpx 20rpx; display: flex; flex-direction: column; justify-content: space-between; }

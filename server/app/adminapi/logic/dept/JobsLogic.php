@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\adminapi\logic\dept;
 
 use app\common\logic\BaseLogic;
-use app\common\model\auth\AdminJobs;
 use app\common\model\dept\Jobs;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
@@ -159,9 +158,6 @@ class JobsLogic extends BaseLogic
             $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($jobs->isEmpty()) {
                 throw new \RuntimeException('岗位不存在');
-            }
-            if (OrgTenantRepository::query($context, AdminJobs::class)->where('jobs_id', $id)->count() > 0) {
-                throw new \RuntimeException('已关联管理员，暂不可删除');
             }
             $jobs->delete();
             Db::commit();
