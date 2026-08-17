@@ -47,6 +47,13 @@ CREATE TABLE pa_jobs (
  create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL,
  PRIMARY KEY (id), KEY idx_jobs_tenant (tenant_id), UNIQUE KEY uk_jobs_tenant_code (tenant_id, code)
 ) ENGINE=InnoDB;
+CREATE TABLE pa_system_menu (
+ id INT UNSIGNED NOT NULL, pid INT UNSIGNED NOT NULL DEFAULT 0, type CHAR(1) NOT NULL DEFAULT 'C',
+ name VARCHAR(50) NOT NULL DEFAULT '', icon VARCHAR(100) NOT NULL DEFAULT '', sort SMALLINT NOT NULL DEFAULT 0,
+ perms VARCHAR(100) NOT NULL DEFAULT '', paths VARCHAR(200) NOT NULL DEFAULT '', component VARCHAR(200) NOT NULL DEFAULT '',
+ is_cache TINYINT NOT NULL DEFAULT 0, is_show TINYINT NOT NULL DEFAULT 1, is_disable TINYINT NOT NULL DEFAULT 0,
+ PRIMARY KEY (id)
+) ENGINE=InnoDB;
 INSERT INTO pa_tenant (id,code,name,display_name,status,activated_at,created_at,updated_at)
 VALUES
  (101,'alpha','Alpha','Alpha','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),
