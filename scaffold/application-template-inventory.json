@@ -492,6 +492,15 @@
             "source_sha256": "b83b77005d3ba6852a2338a94facad7836ca1a3229e2e74cc64485636ce9a398"
         },
         {
+            "path": "docs-site/guide/scaffold-upgrade.md",
+            "target": "docs-site/guide/scaffold-upgrade.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "source_sha256": "0f3482608b9dcebcfee373c6fc8022b399ff8a13aae3d5261dd430530b2e698b"
+        },
+        {
             "path": "docs-site/guide/user-manual.md",
             "target": "docs-site/guide/user-manual.md",
             "classification": "app-owned",
@@ -2208,7 +2217,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "fb52c0f48530cf28565e01ed12d2d413d468109ef9a9b366e3d78e708ca3d51f"
+            "source_sha256": "c6ce9cb4851ee2f306a0492badaad1e9a3c847b5437bf8942b2665f1662cc1d9"
         },
         {
             "path": "scripts/combined-upgrade-qualification",
@@ -2241,7 +2250,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "7f4325c820629fc82a2101a96126135bbb71651c4e92bcbe28cfb25d4b105396"
+            "source_sha256": "03120757fc956e4452b311ad8629dbd9c34a2232793fed4946c3fc01961ac959"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -7574,6 +7583,14 @@
         {
             "path": "server/tests/Productization/ReleaseUpgradePolicyTest.php",
             "target": "server/tests/Productization/ReleaseUpgradePolicyTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "server/tests/Productization/Scaffold2xUpgradeQualificationTest.php",
+            "target": "server/tests/Productization/Scaffold2xUpgradeQualificationTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
