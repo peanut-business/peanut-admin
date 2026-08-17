@@ -2407,7 +2407,7 @@ SELECT @pa_default_tenant_id, providers.`provider`, SHA2(CONCAT('fresh-default:'
 FROM (SELECT 'payment.wechat' AS `provider` UNION ALL SELECT 'payment.alipay' UNION ALL SELECT 'wechat.official-account' UNION ALL SELECT 'oauth.wechat.oa' UNION ALL SELECT 'oauth.wechat.mini-program' UNION ALL SELECT 'oauth.wechat.open-pc') providers;
 
 INSERT INTO `pa_permission` (`key`,`module_key`,`type`,`name`,`description`,`risk_level`,`status`,`manifest_version`,`created_at`,`updated_at`,`retired_at`)
-SELECT DISTINCT `perms`,'peanut.admin',CASE WHEN `type`='A' THEN 'api' ELSE 'menu' END,`name`,NULL,'normal','active','fresh-schema-v1',TIMESTAMP('2026-08-16 00:00:00.000'),TIMESTAMP('2026-08-16 00:00:00.000'),NULL
+SELECT DISTINCT `perms`,CASE WHEN `perms` LIKE 'article.%' THEN 'official.article' ELSE 'peanut.admin' END,CASE WHEN `type`='A' THEN 'api' ELSE 'menu' END,`name`,NULL,'normal','active','fresh-schema-v1',TIMESTAMP('2026-08-16 00:00:00.000'),TIMESTAMP('2026-08-16 00:00:00.000'),NULL
 FROM `pa_system_menu` WHERE `perms`<>'' AND `is_disable`=0
 ON DUPLICATE KEY UPDATE `module_key`=VALUES(`module_key`),`type`=VALUES(`type`),`name`=VALUES(`name`),`status`='active',`updated_at`=VALUES(`updated_at`),`retired_at`=NULL;
 

@@ -206,8 +206,17 @@ qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")
         && str_contains($sources['module_availability'], 'assertDeployment(')
         && str_contains($sources['module_availability'], 'assertTenant(')
-        && str_contains($sources['fixture_module_access'], 'ModuleGuard')
-        && str_contains($sources['fixture_module_access'], 'assertMemberAccess(')
+        && (
+            str_contains($sources['fixture_module_access'], 'ModuleGuard')
+            || str_contains($sources['fixture_module_access'], 'ModuleExecutionGuard')
+        )
+        && (
+            str_contains($sources['fixture_module_access'], 'assertMemberAccess(')
+            || (
+                str_contains($sources['fixture_module_access'], 'ModuleExecutionGuard')
+                && str_contains($sources['fixture_module_access'], 'assertAdminPermission(')
+            )
+        )
         && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
     'optional Modules are not guarded by both module.json and Tenant enablement'
 );
