@@ -3172,7 +3172,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "e9d49717ef3adfa061415f47a7b2f9a18da56cbf4e67aa31e57c160d2f6de70b"
+            "source_sha256": "a4ae616ce8eab3e810e896b6ac63905c380842e4d38f4c19abd24de1e83e64d6"
         },
         {
             "path": "server/app/adminapi/logic/article/ArticleCateLogic.php",
@@ -4036,7 +4036,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "df790cb8ac8cc0037a9f2c5f1c1501e69e7b1f070a21fbf6d8790f318c51f10d"
+            "source_sha256": "0b0ed19d42c13d6b9c29a5312c64d0b5db25abcc1baeca29b408dd01b1bb77ae"
         },
         {
             "path": "server/app/api/logic/LoginLogic.php",
@@ -6677,7 +6677,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "7cbccb32c24ee1e273bdf53be41cb0dfc7e097cabaf7d28839a2f2811d0a3482"
+            "source_sha256": "11182d4582e8175ab3d3a9050ce07f91902df6ebf0266fa9aeecfeb05ee75c3b"
         },
         {
             "path": "server/config/route.php",
