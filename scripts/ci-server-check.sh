@@ -36,6 +36,7 @@ if [[ "$mode" == '--full' ]]; then
     server/tests/Productization/OfficialArticleModuleContractTest.php
     server/tests/Productization/PluginLifecycleMigrationContractTest.php
     server/tests/Productization/ReleaseUpgradePolicyTest.php
+    server/tests/Productization/Scaffold2xUpgradeQualificationTest.php
   )
   for test_file in "${tests[@]}"; do
     php "$test_file"
