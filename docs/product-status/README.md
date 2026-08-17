@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；发布后的无人值守部署、Standalone 与 Multi-tenant 正式线上交付、完整演示叠加层、2.x 派生应用升级和官方可选 Module 产品化尚未全部交付。
+> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；v2.0.1 已形成包含无人值守部署、2.x 派生应用升级和 Article 官方 Module 的开发候选，但完整发布资格、正式 Release 与线上双部署尚未完成。
 >
-> 事实基线：`dev@62c99ddebcd65549e3a12dc31aff16573c6ed3cf`，复核日期：`2026-08-17`。
+> 事实基线：`dev@82da1974c7a732264de35d8063ec08598fcadf6d`，复核日期：`2026-08-18`。
 
 ### 已验证可用
 
@@ -43,6 +43,7 @@ php scripts/check-product-capability-ledger
 | `PA-PLUGIN-001` | Plugin 与 Module 生命周期 | 已验证 | 安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture。 |
 | `PA-SCAFFOLD-001` | 创建独立应用 | 已验证 | create-app 已具备确定性生成、路径安全、品牌参数化、文件归属和不可变 Release 采用。 |
 | `PA-SCAFFOLD-003` | 新应用 Plugin 空锁合同 | 已验证 | 正式生成应用使用有效空 plugins.lock，不再引用仅供源仓测试的 fixture。 |
+| `PA-SCAFFOLD-004` | 2.x 派生应用受控升级 | 已验证 | 2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略与 preflight/apply/verify/recover 执行器已通过一次真实 v2.0.0 -> v2.0.1 派生应用资格，app-owned 字节保持且恢复闭环通过。 |
 | `PA-COMPAT-001` | 1.x 公开核心包升级兼容（历史） | 已验证 | 公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。 |
 | `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。 |
 | `PA-P0E-002` | 1.x 最终生成应用运行时验收（历史） | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
@@ -54,14 +55,8 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | 无人值守发布、Standalone 与 Multi-tenant 正式线上部署和完整演示补丁已有独立功能分支实现，但尚未合入或完成最终资格；当前正式支持面仍是 v2.0.0 Release 中的 Docker Compose 手工流程和基础 demo seeder。 |
-
-### 计划中或受阻
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-SCAFFOLD-004` | 2.x 派生应用受控升级 | 计划中 | 2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline，但当前没有 2.x preflight/plan/apply/verify/recover 升级命令；派生应用只能人工评估依赖和受管文件更新。 |
-| `PA-MODULE-002` | 官方可选 Module 产品化 | 计划中 | 文件、通知、OAuth、支付、会员、任务、导入导出和文章已经完成 Tenant 适配，但仍由应用 Host 直接拥有；将它们改造成可安装、逐 Tenant 开通和停用的官方 Module 尚未实现。 |
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.0.1 开发候选已经整合无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格已通过，但完整 P0-E、main/tag/GitHub Release 与双部署线上资格尚未完成。v2.0.0 正式 Release 的支持面仍是 Docker Compose 手工流程和基础 demo seeder。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已进入 v2.0.1 开发候选，并通过后端、Plugin/Module、Web、PC 与 UniApp 聚焦合同。它尚未完成固定候选真实数据库、Article 页面浏览器资格或正式 Release 身份。 |
 
 ### 暂缓或范围外
 

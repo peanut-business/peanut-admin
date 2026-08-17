@@ -23,6 +23,9 @@ require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Infrastructur
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Application/DeliveryRecordService.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/ModuleProvider.php';
+require dirname(__DIR__, 2) . '/app/Modules/Official/Article/Contracts/ArticleModuleAccess.php';
+require dirname(__DIR__, 2) . '/app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php';
+require dirname(__DIR__, 2) . '/app/Modules/Official/Article/ModuleProvider.php';
 
 function pluginModuleContractExpect(bool $condition, string $message): void
 {
@@ -33,6 +36,7 @@ function pluginModuleContractExpect(bool $condition, string $message): void
 
 $serverRoot = dirname(__DIR__, 2);
 $moduleRoot = $serverRoot . '/app/Modules/Fixture/DeliveryRecord';
+$articleModuleRoot = $serverRoot . '/app/Modules/Official/Article';
 $layout = new ModuleHostLayout('server/app/Modules', 'app\Modules', 'web/src/modules');
 $kernelRoot = dirname((new ReflectionClass(\PeanutAdmin\Kernel\Module\ModuleProvider::class))->getFileName(), 3);
 $compiler = new ModuleRegistryCompiler(
@@ -40,7 +44,7 @@ $compiler = new ModuleRegistryCompiler(
     new StrictVersionConstraintMatcher(),
     new ReflectionContractInspector(),
     '1.0.0',
-    ['fixture.delivery-record.list'],
+    ['fixture.delivery-record.list', 'official.article.cate', 'official.article.list'],
     $layout,
     [
         ...KernelSchema::tableNames(),
@@ -52,9 +56,14 @@ $compiler = new ModuleRegistryCompiler(
     ['admin-web', 'platform-web']
 );
 
-$manifest = (new ManifestLoader())->load($moduleRoot);
-$registry = $compiler->compile([$manifest]);
-pluginModuleContractExpect($registry->moduleKeys() === ['fixture.delivery-record'], 'fixture Module did not compile');
+$loader = new ManifestLoader();
+$manifest = $loader->load($moduleRoot);
+$articleManifest = $loader->load($articleModuleRoot);
+$registry = $compiler->compile([$manifest, $articleManifest]);
+pluginModuleContractExpect(
+    $registry->moduleKeys() === ['fixture.delivery-record', 'official.article'],
+    'source Modules did not compile together'
+);
 (new ModuleBoundaryChecker($registry, $layout, ['pa_']))->check();
 
 $missingDependency = $manifest->data;

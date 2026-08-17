@@ -11,13 +11,13 @@
     "ledger_count": 4
   },
   "target_release": {
-    "version": "2.0.0",
-    "source_commit": "71684a4a934dacdcac4805b1cda77d45d1e9cd40",
-    "source_tree": "629e3338ecd930a42897b8b82d03cd4e39ac8f37",
-    "manifest_sha256": "f9889fe1bf1e9607f45119a88ac7a9e8cb32170106c86f0e2ffbb582403a62d9",
-    "inventory_sha256": "54c173f25ecee8796cfef5aa63bc5e29847fc5a2f85c688897ca6ff84db66bd4",
-    "managed_tree_sha256": "eb8a0816d5a8c302d5177dde95616dff7f49dfdbf4d5f14379e2433d5f0d7c7a",
-    "file_count": 273,
+      "version": "2.0.1",
+    "source_commit": "b76f5d798cf700a3f272356048b62a8266f4823d",
+    "source_tree": "fd2a7e4c24640dd75bc3a72a403dfde8f0164275",
+    "manifest_sha256": "ae694b3a91506122b69df028f0c9012d3a591a1d7ee4742d50a7f5b7e644a184",
+    "inventory_sha256": "1f499402e91ab352488e17763f6282c46e9c736a6bc4325776197a7a74272258",
+    "managed_tree_sha256": "ec7f01dbd31c5127b2116069a1fe251ebd1f595cdb66306dbbe1467dd5ed8bf8",
+    "file_count": 283,
     "application_manifest_schema": 2,
     "default_application_version": "0.1.0",
     "default_uniapp_version_code": "10"

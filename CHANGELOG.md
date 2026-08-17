@@ -3,6 +3,40 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [2.0.1] - 2026-08-18
+
+### Added
+
+- A registered, unattended release command deploys an immutable annotated tag to
+  either the standalone production instance or the isolated multi-tenant candidate.
+- The same command supports destructive fresh installation with explicit confirmation
+  and preserved-data upgrades with migration and health verification.
+
+### Fixed
+
+- Tenant owner activation now initializes required application-owned data before the
+  new owner enters the management client.
+- Empty or failed user avatar images fall back to a local placeholder or user initial,
+  while the accessible user menu remains usable.
+- Tenant-bound management pages follow the active Tenant title, including shared-host
+  Tenant switches and dedicated Tenant domains.
+- Disposable multi-tenant demos provision distinct Platform, default owner, Tenant A
+  and Tenant B identities without weakening normal production password policy.
+
+### Upgrade notes
+
+- `v2.0.0` installations may move to `v2.0.1` with `scripts/deploy-release v2.0.1
+  --target <target> --upgrade --apply`. The command preserves the selected database
+  and persistent files, runs additive migrations, verifies `migrate.php --current`,
+  then checks the deployed version and health endpoint.
+- This patch adds no migration: the canonical baseline plus three 2.0 migrations
+  remain unchanged. It still does not support upgrading a 1.x database to 2.x.
+
+### Release boundaries
+
+- No new public Core package, prebuilt production image, DCS business module or SaaS
+  commercial control plane is included.
+
 ## [2.0.0] - 2026-08-17
 
 ### Security
@@ -188,6 +222,7 @@ and the two public core packages have independent version histories.
 - Real SMS, payment and WeChat/OAuth production availability still depends on
   deployment-specific credentials, platform registration and a low-risk smoke.
 
+[2.0.1]: https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.1
 [1.1.5]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5
 [1.1.4]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.4
 [1.1.3]: https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.3

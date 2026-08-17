@@ -22,6 +22,7 @@ class MenuLogic extends BaseLogic
     {
         $menus = SystemMenu::whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
+            ->whereNotIn('paths', ['/article', '/article/cate', '/article/list'])
             ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
         return linear_to_tree($menus);
     }
@@ -31,6 +32,7 @@ class MenuLogic extends BaseLogic
         $data = SystemMenu::where('is_disable', 0)
             ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
+            ->whereNotIn('paths', ['/article', '/article/cate', '/article/list'])
             ->field('id,pid,name')
             ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
         $moduleMenus = array_map(

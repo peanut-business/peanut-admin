@@ -1,0 +1,10 @@
+{
+  "name": "peanut-business/official-article",
+  "version": "1.0.0",
+  "type": "peanut-admin-module",
+  "autoload": {
+    "psr-4": {
+      "app\\Modules\\Official\\Article\\": "./"
+    }
+  }
+}

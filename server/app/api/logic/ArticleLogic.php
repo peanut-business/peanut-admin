@@ -126,7 +126,7 @@ class ArticleLogic extends BaseLogic
         $page = max(1, (int) ($params['page_no'] ?? 1));
         $limit = max(1, (int) ($params['page_size'] ?? 15));
         $tenantId = $context->tenantId;
-        $query = ArticleCollect::alias('c')
+        $query = ArticleTenantRepository::collections($context)->alias('c')
             ->join('article a', 'c.tenant_id = a.tenant_id AND c.article_id = a.id')
             ->where('c.tenant_id', $tenantId)
             ->where('a.tenant_id', $tenantId)

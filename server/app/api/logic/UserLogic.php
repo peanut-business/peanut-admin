@@ -6,11 +6,12 @@ namespace app\api\logic;
 use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
-use app\common\model\article\ArticleCollect;
+use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\FileService;
 use app\common\service\notice\VerificationCodeService;
 use app\common\service\member\MemberTenantRepository;
+use PeanutAdmin\Kernel\Module\ModuleException;
 
 class UserLogic extends BaseLogic
 {
@@ -28,15 +29,12 @@ class UserLogic extends BaseLogic
         $data['balance']    = $data['user_money'];
         unset($data['user_money']);
         $data['avatar']     = FileService::getFileUrl((string) $data['avatar']);
-        $data['collect_num'] = ArticleCollect::alias('c')
-            ->join('article a', 'c.tenant_id = a.tenant_id AND c.article_id = a.id')
-            ->where('c.tenant_id', $context->tenantId)
-            ->where('a.tenant_id', $context->tenantId)
-            ->where('c.member_id', $memberId)
-            ->where('c.status', 1)
-            ->where('a.is_show', 1)
-            ->where('a.delete_time', 'null')
-            ->count();
+        try {
+            $data['collect_num'] = (new ArticleModuleProvider())->collectionSummary()
+                ->countForMember($context, $memberId);
+        } catch (ModuleException) {
+            $data['collect_num'] = 0;
+        }
 
         return $data;
     }

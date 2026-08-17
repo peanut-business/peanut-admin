@@ -95,6 +95,12 @@ $repoRoot = dirname($serverRoot);
 $descriptor = (new PluginLockResolver($serverRoot, '../plugins.lock'))->require('fixture.delivery-record');
 pluginArtifactExpect($descriptor->key === 'fixture.delivery-record', 'locked Plugin did not resolve');
 pluginArtifactExpect(array_keys($descriptor->moduleRoots) === ['fixture.delivery-record'], 'Module root identity changed');
+$articleDescriptor = (new PluginLockResolver($serverRoot, '../plugins.lock'))->require('official.article');
+pluginArtifactExpect($articleDescriptor->key === 'official.article', 'official Article Plugin did not resolve');
+pluginArtifactExpect(
+    array_keys($articleDescriptor->moduleRoots) === ['official.article'],
+    'official Article Module root identity changed'
+);
 $resolver = new PluginLockResolver($serverRoot, '../plugins.lock');
 $sameJson = \Closure::bind(
     fn(mixed $left, mixed $right): bool => $this->sameJson($left, $right),
@@ -124,6 +130,16 @@ $validation = $validator->validate($manifest, $schema);
 if (!$validation->isValid()) {
     throw new RuntimeException(
         'plugin.json schema failed: ' . json_encode((new ErrorFormatter())->format($validation->error()))
+    );
+}
+$articlePluginManifest = json_decode(
+    (string)file_get_contents($repoRoot . '/plugins/official.article/plugin.json')
+);
+$articleValidation = $validator->validate($articlePluginManifest, $schema);
+if (!$articleValidation->isValid()) {
+    throw new RuntimeException(
+        'official article plugin.json schema failed: '
+        . json_encode((new ErrorFormatter())->format($articleValidation->error()))
     );
 }
 

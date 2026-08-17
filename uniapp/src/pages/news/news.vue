@@ -54,6 +54,7 @@ async function loadCategories() {
     const list = await getArticleCate()
     categories.value = [{ id: 0, name: '全部', image: '', sort: 0 }, ...list]
   } catch (error) {
+    categories.value = []
     console.error('Failed to load categories:', error)
   }
 }
@@ -63,6 +64,7 @@ async function loadArticles() {
     const data = await getArticleLists({ cate_id: currentCateId.value || undefined })
     articles.value = data.lists
   } catch (error) {
+    articles.value = []
     console.error('Failed to load articles:', error)
   }
 }

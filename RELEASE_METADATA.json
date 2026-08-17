@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "2.0.0",
-  "expected_tag": "v2.0.0",
-  "release_date": "2026-08-17",
+  "version": "2.0.1",
+  "expected_tag": "v2.0.1",
+  "release_date": "2026-08-18",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "proprietary",
@@ -33,15 +33,15 @@
   "lockfiles": {
     "server/composer.lock": "d7da2c611c7d74dea47f8256bb08841857c8433be56905dfdce78542875d17d3",
     "web/pnpm-lock.yaml": "1ba6d87a5ffe944c21bdad76b2309fe69919a0553128bd40c6b5dd429c0e9f79",
-    "pc/package-lock.json": "616c37b8cd183657096c9722441aac2738a8f710c182cfb03c68f32660f31946",
-    "uniapp/package-lock.json": "fceda8f31424e9051335cd2961a243df043c2a03e75db700811f3559c4bdb391",
+    "pc/package-lock.json": "fffbb4ed615abf9442a8fb09a35b9469dc527f21b80d28b69e3c1652fcbc69d9",
+    "uniapp/package-lock.json": "6e4b08abc959f3fc47dad130d20fc72d49b4dc33b8b88011b90009936c2aefb2",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "3180a5a9a715cffb7042994510defc155d1df5734c00dafe0b2a6a6a07b7e9fc",
-    "RELEASE_SBOM.spdx.json": "540558d156c7cdf66a31471d1a6d5191cbac4e541d8dd6b6cef3115f8536ebbe"
+    "THIRD_PARTY_NOTICES.md": "55aeb9b7fe46082f7f1f84b4617e049d06ade4f222820bd198c5fc186c5a395c",
+    "RELEASE_SBOM.spdx.json": "6001afdfd8ca86df0d9159dceb3fc71e70a9088e7d565a1cd0bc6652a4ae48ca"
   },
   "migrations": {
     "count": 3,
@@ -54,20 +54,20 @@
     "baseline": "server/database/init.sql plus the Core KernelSchema; post-baseline changes must be additive"
   },
   "technical_qualification": {
-    "phase": "2.0.0-candidate",
-    "result": "passed",
-    "final_candidate_commit": "78e9667f763591e1505054ec39fa060078b88d26",
-    "final_candidate_tree": "fbc3e3acc1845a202129c4ab7f34a4cf54ec0cc3",
-    "run_id": "p0e78e9667",
-    "groups_passed": 7,
-    "summary_sha256": "4d5b3de4e18cf624bf08834aa90c55e68f4ff9764e852a7b883ed7bbea905f1f",
-    "cleanup_residual_count": 0,
-    "lease_released": true,
+    "phase": "2.0.1-candidate",
+    "result": "pending",
+    "final_candidate_commit": null,
+    "final_candidate_tree": null,
+    "run_id": null,
+    "groups_passed": 0,
+    "summary_sha256": null,
+    "cleanup_residual_count": null,
+    "lease_released": false,
     "migrations": 3,
-    "scaffold_version": "2.0.0",
+    "scaffold_version": "2.0.1",
     "application_initial_version": "0.1.0",
-    "evidence": "The fixed fresh-only candidate passed all seven registered P0-E groups: generated application, standalone and multi-tenant fresh install, Plugin lifecycle, production Compose, and standalone and multi-tenant browser qualification. Cleanup left zero database, Compose, container, volume, network, image, listener or cache residuals and released the lease.",
-    "release_delta": "Native Account/Credential/TenantMember/RBAC identity, canonical fresh Schema, and retirement of 1.x migration/adoption runtime."
+    "evidence": "Focused create-app and v2.0.0-to-v2.0.1 scaffold upgrade qualification passed; the single fixed-candidate P0-E for this patch release is still pending.",
+    "release_delta": "Unattended registered deployment, preserved-data 2.0.x upgrade flow, demo Tenant provisioning, Tenant-aware titles, and avatar fallback fixes."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

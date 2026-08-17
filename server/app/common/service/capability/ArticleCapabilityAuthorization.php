@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\capability;
 
+use app\Modules\Official\Article\ModuleProvider;
 use PDO;
 use Closure;
 use PeanutAdmin\Kernel\Api\ApiException;
@@ -32,6 +33,7 @@ final class ArticleCapabilityAuthorization
         string $articleKey,
         string $operation,
     ): AuthorizedOperationContext {
+        (new ModuleProvider())->access($this->pdo)->assertTenant($tenant->tenantId);
         if ($operation === '' || preg_match('/^[1-9][0-9]*$/D', $articleKey) !== 1) {
             throw self::denied();
         }

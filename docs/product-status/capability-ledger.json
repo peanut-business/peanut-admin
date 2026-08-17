@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "dev",
-    "commit": "62c99ddebcd65549e3a12dc31aff16573c6ed3cf",
-    "reviewed_at": "2026-08-17"
+    "commit": "82da1974c7a732264de35d8063ec08598fcadf6d",
+    "reviewed_at": "2026-08-18"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；发布后的无人值守部署、Standalone 与 Multi-tenant 正式线上交付、完整演示叠加层、2.x 派生应用升级和官方可选 Module 产品化尚未全部交付。"
+    "summary": "当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；v2.0.1 已形成包含无人值守部署、2.x 派生应用升级和 Article 官方 Module 的开发候选，但完整发布资格、正式 Release 与线上双部署尚未完成。"
   },
   "capabilities": [
     {
@@ -317,8 +317,8 @@
       "id": "PA-SCAFFOLD-004",
       "name": "2.x 派生应用受控升级",
       "area": "scaffold",
-      "status": "planned",
-      "summary": "2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline，但当前没有 2.x preflight/plan/apply/verify/recover 升级命令；派生应用只能人工评估依赖和受管文件更新。",
+      "status": "verified",
+      "summary": "2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略与 preflight/apply/verify/recover 执行器已通过一次真实 v2.0.0 -> v2.0.1 派生应用资格，app-owned 字节保持且恢复闭环通过。",
       "acceptance": [
         "升级输入固定旧模板、当前应用和目标不可变 Release，先生成可审阅且无写操作的计划",
         "只处理 managed/generated-managed 与 Peanut 依赖，app-owned 业务代码、业务 Schema 和部署秘密不进入默认写集",
@@ -327,6 +327,14 @@
         "数据库 migration、Composer/npm lock 和应用业务迁移在同一发布计划中显式列出，但由各自 owner 执行和验证"
       ],
       "evidence": [
+        {
+          "kind": "git",
+          "ref": "1c1c37c5c367de1ad9f548339a5af457b359de7c"
+        },
+        {
+          "kind": "git",
+          "ref": "6a71f23f7c233f599ea10c34368e989fbd3dc09c"
+        },
         {
           "kind": "document",
           "ref": "docs/create-application.md"
@@ -339,10 +347,6 @@
       "dependencies": [
         "PA-SCAFFOLD-001",
         "PA-DELIVERY-003"
-      ],
-      "blockers": [
-        "2.x 当前没有可执行的升级计划、应用、验证和恢复 Runtime",
-        "尚未形成从一个 2.x scaffold Release 升级到下一不可变 Release 的真实派生应用资格证据"
       ],
       "paths": [
         "docs/create-application.md",
@@ -571,7 +575,7 @@
       "name": "2.0 发布后部署与演示闭环",
       "area": "release",
       "status": "in_progress",
-      "summary": "无人值守发布、Standalone 与 Multi-tenant 正式线上部署和完整演示补丁已有独立功能分支实现，但尚未合入或完成最终资格；当前正式支持面仍是 v2.0.0 Release 中的 Docker Compose 手工流程和基础 demo seeder。",
+      "summary": "v2.0.1 开发候选已经整合无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格已通过，但完整 P0-E、main/tag/GitHub Release 与双部署线上资格尚未完成。v2.0.0 正式 Release 的支持面仍是 Docker Compose 手工流程和基础 demo seeder。",
       "acceptance": [
         "从不可变 v2.0.0 tag 对登记目标执行非交互 fresh 或同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
         "Standalone 与 Multi-tenant 各形成一个独立部署、数据库、域名和最小浏览器证据",
@@ -580,6 +584,14 @@
         "经受控渠道向授权接收方交付访问方式；账本只记录无秘密的交付确认和已人工检查的浏览器截图结论"
       ],
       "evidence": [
+        {
+          "kind": "git",
+          "ref": "4cf95694f2f2692e049af6a8d99ab25dd046a8ba"
+        },
+        {
+          "kind": "git",
+          "ref": "1c1c37c5c367de1ad9f548339a5af457b359de7c"
+        },
         {
           "kind": "document",
           "ref": "docs-site/capabilities.md"
@@ -594,9 +606,8 @@
         "PA-NATIVE-001"
       ],
       "blockers": [
-        "部署功能分支尚未合入 dev/main，也没有形成绑定最终提交的 fresh/upgrade 资格证据",
-        "演示身份、Host、密码和环境文件持久化仍需完成阻塞问题收口",
-        "v2.0.0 Standalone 与 Multi-tenant 正式线上部署和浏览器 smoke 尚未执行"
+        "v2.0.1 开发候选尚未完成固定候选 P0-E，也尚未进入 main、annotated tag 和 GitHub Release",
+        "Standalone 与 Multi-tenant 正式线上部署及浏览器 smoke 尚未执行"
       ],
       "paths": [
         "docs-site/capabilities.md",
@@ -608,8 +619,8 @@
       "id": "PA-MODULE-002",
       "name": "官方可选 Module 产品化",
       "area": "plugins",
-      "status": "planned",
-      "summary": "文件、通知、OAuth、支付、会员、任务、导入导出和文章已经完成 Tenant 适配，但仍由应用 Host 直接拥有；将它们改造成可安装、逐 Tenant 开通和停用的官方 Module 尚未实现。",
+      "status": "in_progress",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已进入 v2.0.1 开发候选，并通过后端、Plugin/Module、Web、PC 与 UniApp 聚焦合同。它尚未完成固定候选真实数据库、Article 页面浏览器资格或正式 Release 身份。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",
@@ -618,6 +629,10 @@
         "共享基础设施与业务 Module 生命周期分离，停用业务 Module 不会错误关闭全局文件或调度能力"
       ],
       "evidence": [
+        {
+          "kind": "git",
+          "ref": "a189cd68d422b13e6207de405cd43bb1f647515d"
+        },
         {
           "kind": "document",
           "ref": "docs-site/architecture/official-module-qualification.md"
@@ -630,6 +645,10 @@
       "dependencies": [
         "PA-PLUGIN-001",
         "PA-NATIVE-001"
+      ],
+      "blockers": [
+        "固定候选 Article 真实数据库与页面浏览器资格尚未完成",
+        "v2.0.1 尚未形成正式 Release 身份"
       ],
       "paths": [
         "docs-site/architecture/official-module-qualification.md",

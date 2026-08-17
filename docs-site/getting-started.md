@@ -41,9 +41,9 @@ php scripts/create-app \
 ```
 
 生成结果包含 `.peanut/application-manifest.json` 和 managed baseline，可以证明采用了哪个
-Release、每个文件归谁所有。当前 `2.0.0` 尚未提供 2.x 一键升级器：Peanut 依赖和受管文件
-更新需要应用在独立分支受控采用；`app-owned` 业务代码和业务 migration 始终由应用自己维护。
-这不阻塞现在创建首个应用，但在下一次脚手架版本升级前需要完成受控升级能力。
+Release、每个文件归谁所有。当前已有 `v2.0.0 -> v2.0.1` 的 2.x 派生应用升级资格；执行器
+只更新受管文件并保留 `app-owned` 代码。Peanut 依赖、数据库 migration 和业务 migration
+仍需按发布计划由各自 owner 执行，不能把脚手架升级误解成业务数据迁移。
 
 ## 环境准备
 
