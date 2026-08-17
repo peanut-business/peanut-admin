@@ -367,6 +367,7 @@ try {
     foreach ($sourceOnlyInventory['files'] as &$entry) {
         if ($entry['path'] === 'docs-site/index.md') {
             $entry['transform'] = 'copy';
+            $entry['source_sha256'] = hash_file('sha256', $root . '/' . $entry['path']);
             break;
         }
     }
@@ -400,6 +401,7 @@ try {
     foreach ($managedChangeInventory['files'] as &$entry) {
         if ($entry['path'] === 'scripts/project-resource-registry') {
             $entry['transform'] = 'copy';
+            $entry['source_sha256'] = hash_file('sha256', $root . '/' . $entry['path']);
             break;
         }
     }

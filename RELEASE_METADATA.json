@@ -66,7 +66,7 @@
     "migrations": 3,
     "scaffold_version": "2.0.1",
     "application_initial_version": "0.1.0",
-    "evidence": "Pending the single fixed-candidate P0-E qualification for this patch release.",
+    "evidence": "Focused create-app and v2.0.0-to-v2.0.1 scaffold upgrade qualification passed; the single fixed-candidate P0-E for this patch release is still pending.",
     "release_delta": "Unattended registered deployment, preserved-data 2.0.x upgrade flow, demo Tenant provisioning, Tenant-aware titles, and avatar fallback fixes."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
