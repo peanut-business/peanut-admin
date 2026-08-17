@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/module-identity-tenancy-docs",
-    "commit": "55c330992eabba4c60413a3711bd6a7dc23fb8b5",
+    "commit": "78e9667f763591e1505054ec39fa060078b88d26",
     "reviewed_at": "2026-08-17"
   },
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 55c3309。最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 与线上部署仍是独立后续动作。"
+    "summary": "Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 78e9667。最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 与线上部署仍是独立后续动作。"
   },
   "capabilities": [
     {
@@ -18,7 +18,7 @@
       "name": "2.0.0 原生身份与干净安装基线",
       "area": "foundation",
       "status": "verified",
-      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 55c3309 的最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 仍未声明。",
+      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 78e9667 的最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 仍未声明。",
       "acceptance": [
         "Standalone 与 multi-tenant 从空库安装同一 canonical Schema",
         "管理端登录、Tenant 选择、RBAC 和暂停拒绝只使用原生身份链",
@@ -33,11 +33,11 @@
         },
         {
           "kind": "git",
-          "ref": "55c330992eabba4c60413a3711bd6a7dc23fb8b5"
+          "ref": "78e9667f763591e1505054ec39fa060078b88d26"
         },
         {
           "kind": "report",
-          "ref": "output/p0e-p0e55c3309/summary.json"
+          "ref": "output/p0e-p0e78e9667/summary.json"
         },
         {
           "kind": "resource",

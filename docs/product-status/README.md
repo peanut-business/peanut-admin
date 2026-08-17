@@ -26,15 +26,15 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 55c3309。最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 与线上部署仍是独立后续动作。
+> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 78e9667。最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 与线上部署仍是独立后续动作。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@55c330992eabba4c60413a3711bd6a7dc23fb8b5`，复核日期：`2026-08-17`。
+> 事实基线：`feat/module-identity-tenancy-docs@78e9667f763591e1505054ec39fa060078b88d26`，复核日期：`2026-08-17`。
 
 ### 已验证可用
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已验证 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 55c3309 的最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 仍未声明。 |
+| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已验证 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 78e9667 的最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 仍未声明。 |
 | `PA-FOUNDATION-001` | 1.x LikeAdmin 标准版基础能力对齐（历史） | 已验证 | 基础后台能力、空库安装、迁移账本和代表路由已有独立验证。 |
 | `PA-TENANCY-001` | 1.x 多租户隔离与平台租户治理（历史） | 已验证 | 1.x MT00 至 MT06 已完成并封存；2.0 复用其设计，但原生身份与 fresh Schema 组合仍需当前候选 Gate。 |
 | `PA-PRODUCT-001` | 1.x 产品化部署与发布基线（历史） | 已验证 | 生产 Compose、最低 CI、正式部署、法律制品和 v1.1.5 发布链已经封存。 |

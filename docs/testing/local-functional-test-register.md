@@ -85,7 +85,7 @@
 | UI-001 | 390×844 品牌/筛选/操作列 | 旧报告未在当前候选复现 | BLOCKED：真实浏览器 390×844 聚焦截图和操作可达性检查 |
 | UI-002 | 1176px 文章表格 | 当前操作列固定右侧，但未验证横向滚动和压缩 | PARTIAL：真实浏览器 1176px 验证操作列和横向滚动均可达 |
 | UI-003 | 自动折叠后子菜单浮层 | 当前使用 Element Plus `ElMenu collapse`，未验证浮层交互 | PARTIAL：窄桌面触发自动折叠后打开至少一个二级菜单并导航 |
-| UI-004 | 顶部头像破损 | 已实现空值默认头像、加载失败首字母 fallback 和可访问用户菜单按钮；最小 Web 合同已进入 CI | PASS（本地）：共享 Admin、Tenant A、Tenant B 均无 broken image、资源错误、加载残留或不可点击菜单；固定候选 `55c3309` 的 Standalone 与 Multi-tenant 浏览器组均通过。线上尚未更新到该候选，旧破图截图不得复用 |
+| UI-004 | 顶部头像破损 | 已实现空值默认头像、加载失败首字母 fallback 和可访问用户菜单按钮；最小 Web 合同已进入 CI | PASS（本地）：共享 Admin、Tenant A、Tenant B 均无 broken image、资源错误、加载残留或不可点击菜单；固定候选 `78e9667` 的 Standalone 与 Multi-tenant 浏览器组均通过。线上尚未更新到该候选，旧破图截图不得复用 |
 | UI-005 | 财务 `icon-fingerprint` 未注册 | 当前 `iconMap` 已映射为 Element Plus `Key` | PARTIAL：菜单真实渲染无控制台错误后升级 PASS |
 | A11Y-001 | 纯图标按钮/移动菜单/输入与开关命名、支付页签可访问树 | 折叠按钮已有名称；Navbar 多个图标按钮和移动菜单按钮源码未见 `aria-label`，支付页签仍需可访问树复现 | PARTIAL：先修复并用浏览器 accessibility snapshot 聚焦复测，不扩大为全站审计 |
 | BRAND-001 | 登录页旧品牌、重复文案、弱凭据 | 当前登录源码无 `Arco Design Pro`，密码默认空；用户名仍默认 `admin` | PARTIAL：真实浏览器核对可见文案和输入初始值后升级 PASS |
