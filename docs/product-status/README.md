@@ -26,7 +26,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；v2.0.1 已形成包含无人值守部署、2.x 派生应用升级和 Article 官方 Module 的开发候选，但完整发布资格、正式 Release 与线上双部署尚未完成。
+> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；v2.0.1 固定源码候选已通过 P0-E 7/7 与 2.x 派生应用升级资格，正在收口正式 Release，线上 Standalone/Multi-tenant 双部署仍未完成。
 >
 > 事实基线：`dev@82da1974c7a732264de35d8063ec08598fcadf6d`，复核日期：`2026-08-18`。
 
@@ -55,7 +55,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.0.1 开发候选已经整合无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格已通过，但完整 P0-E、main/tag/GitHub Release 与双部署线上资格尚未完成。v2.0.0 正式 Release 的支持面仍是 Docker Compose 手工流程和基础 demo seeder。 |
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.0.1 固定源码候选已整合无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格与固定候选 P0-E 7/7 已通过，证据为 9ffffed3d25857e99915b9d1da04e122c6a49080/tree 3a777f72928681c3d4e62adf86473cec506f4612、run p0e201r3。仍缺 main/tag/GitHub Release 收口和正式线上 Standalone/Multi-tenant 部署；v2.0.0 正式 Release 的支持面仍是 Docker Compose 手工流程和基础 demo seeder。 |
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；Article 首个官方可选 Module 已进入 v2.0.1 开发候选，并通过后端、Plugin/Module、Web、PC 与 UniApp 聚焦合同。它尚未完成固定候选真实数据库、Article 页面浏览器资格或正式 Release 身份。 |
 
 ### 暂缓或范围外
