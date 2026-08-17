@@ -124,7 +124,11 @@ createApplicationExpect(
     array_filter(array_keys($inventoryByPath), static fn(string $path): bool => str_starts_with($path, 'output/')) === [],
     'source qualification evidence must not participate in application template identity'
 );
-foreach (['CHANGELOG.md' => 'changelog', 'RELEASE_METADATA.json' => 'release-metadata'] as $path => $transform) {
+foreach ([
+    'CHANGELOG.md' => 'changelog',
+    'RELEASE_METADATA.json' => 'release-metadata',
+    'docs-site/capabilities.md' => 'docs-page',
+] as $path => $transform) {
     $semanticDigest = hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
     createApplicationExpect(
         ($inventoryByPath[$path]['source_sha256'] ?? null) === $semanticDigest,

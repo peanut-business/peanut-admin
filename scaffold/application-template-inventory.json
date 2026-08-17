@@ -390,7 +390,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "517ea194f78f3fa2ca5a5fe7db0f5a190738707f8d7e82143c747472c118784b"
+            "source_sha256": "d4a9076f81982a48ad40a7a025efc1089c0468291123b8cf25c09f5b1fb3b6a6"
         },
         {
             "path": "docs-site/api.md",
@@ -399,7 +399,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "d1b32330091ce056c1431f1f2e4f5a7c92176626a6d6667b830137e3ef366efc"
+            "source_sha256": "f2b0c3ada9d2349fafac20ec10558df624ff13c74fdd413862a013f2382a170c"
         },
         {
             "path": "docs-site/architecture/identity-and-tenancy.md",
@@ -408,7 +408,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "b5f7f8d5719f431302e1f9e16458bc56e748f2fe683371afd4ea850718619faf"
+            "source_sha256": "b032ec14a26a3e6c347f86f2593d62ea4744a4142f75bf13b34bd571a1a48eb2"
         },
         {
             "path": "docs-site/architecture/official-module-qualification.md",
@@ -417,7 +417,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ba4b5917015202235177711341c6386a3e11d7f7c8e266fb2c6d5a57fb69acdd"
+            "source_sha256": "421bd529362929a93ece275afdf11ae4deb6f73fce12d4285771160aafedde07"
         },
         {
             "path": "docs-site/capabilities.md",
@@ -426,7 +426,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ccccc2cae4d71e4db4e351a01fecb700df97d4ed5b35af5d9450bbe9e31594c1"
+            "source_sha256": "4e767326ddfe3d03f8f6c29ca87aaf6363f229d661845d2c2fd3e02e4282f50a"
         },
         {
             "path": "docs-site/deployment.md",
@@ -435,7 +435,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "c3726decb863f456779b1ecda4f841b6f5edf33c936a994c28ec8a17c166fc9b"
+            "source_sha256": "fb82dcc8c0a4e8c49c3faafe4eb70bfa7afbaf922eff26dff66eb60a2fbd44aa"
         },
         {
             "path": "docs-site/generated/brand.json",
@@ -453,7 +453,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "8e33a5cac323a2c01278717f671796a72e9bc5e06a22b21ce191e7959ec288c1"
+            "source_sha256": "2cbaaf15fd434ca23d1cd6f64d6c889b3b474616e582a713c9744469b484dad3"
         },
         {
             "path": "docs-site/guide/development.md",
@@ -462,7 +462,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "70fa38ee3baadaaa82a84d18e469bda6e7e892aa428a17de16fa2f115029e9c7"
+            "source_sha256": "292f24bb1d7cd92f5e1aa1de3df308ce502a894168b09f094b4719c2a71c6582"
         },
         {
             "path": "docs-site/guide/index.md",
@@ -471,7 +471,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ea877b1ad1497711e6b86b27a0d57e23e65bf3fc978c24b12ffbb0981564a85b"
+            "source_sha256": "e950e64c18a9608c0b53aac31ffedca4e24869f8355e7a8194afb33a5943468d"
         },
         {
             "path": "docs-site/guide/module-development.md",
@@ -480,7 +480,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "c4a4dd2c2ec1d2ab4968e6e0f5f5bf58d64031a1089573aaa12711224ae82014"
+            "source_sha256": "3453f13d71912cf2301dc7c30a625aeba884ce8d41cd456194e0e721766ebd04"
         },
         {
             "path": "docs-site/guide/reading-guide.md",
@@ -489,7 +489,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ab9b1d60c3d971bd943c36c992540e166a37e1e224a44f7be63429b5b134943c"
+            "source_sha256": "b83b77005d3ba6852a2338a94facad7836ca1a3229e2e74cc64485636ce9a398"
         },
         {
             "path": "docs-site/guide/user-manual.md",
@@ -498,7 +498,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "523a456183263aad6c8a3cb0bc2e1cb0ed950e8af0aa894b5926df6b7e58c4f6"
+            "source_sha256": "1c8b35b3e999028bd04d9e951987cfbe905cc701ab1d76e27a592cc87506bea5"
         },
         {
             "path": "docs-site/index.md",
@@ -507,7 +507,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ef97c1a52c97929ff7b7bad736a7322be4b4abbdfbf387c8eb8c451670efcfc9"
+            "source_sha256": "95993ae2c666ef2221dc5ede21457eab8c462d1801e8c93e1b3dedfb9837b657"
         },
         {
             "path": "docs-site/legal.md",
@@ -516,7 +516,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "70d19799d4618b8414269e226d35fb2bc2926fd2f530654b8f881c6244149c33"
+            "source_sha256": "4c242ce39a8e1a9e6e7c8fb68ab3d7da518640af7ea1e5876ea8c24d855e28c5"
         },
         {
             "path": "docs-site/package.json",
@@ -534,7 +534,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "dc1a3b2bda57dc561dd5c4676f474c8e7e3a5cb23c92adf2f6fba3a754fde8f6"
+            "source_sha256": "acd7ad882b58ec621980ba4811f37d9c7dea68654667afcaf7602ac8847dd43c"
         },
         {
             "path": "docs-site/pnpm-lock.yaml",
@@ -632,7 +632,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "6c8b583de3962111f2caa485bea1a808959645864836a3faddfe1d15f0bc41f4"
+            "source_sha256": "2d91256594f13125bcad382a5f085978ea42619d569d8b57533525650a4241e1"
         },
         {
             "path": "docs-site/scripts/sync-legal-assets.mjs",
@@ -650,7 +650,7 @@
             "owner": "application",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "2e6b2e5741766cb5a829fc6963d24f7745acfa453435351749886728e89e0c82"
+            "source_sha256": "29d6c3596bd19ce45a49119f354d51b117086fd7b4fe3bd32f4fc78a2fb73ac4"
         },
         {
             "path": "docs/2026-08-05-core-packages-production-claude-review-RESULT.md",
@@ -1483,7 +1483,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "ea02d5c5648eb0b8b67a8fa065498d80b329b38a4eded85cf930df70d487d2fe"
+            "source_sha256": "c6e0e921fd0023cb9c0679cfc676f15495114916a520c6793cf152b477d7f095"
         },
         {
             "path": "docs/peanut-admin-release-deployment.md",
@@ -1492,7 +1492,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "eef904c76e0e76d42da85371439481d013b5782fb505355fbc2d23506d697b47"
+            "source_sha256": "235e3d5a3e8f59effd3fbaea195fb4384166afe8e0388bc8be215e1306b385cb"
         },
         {
             "path": "docs/peanut-admin-user-manual.md",
@@ -1501,7 +1501,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "5bef7294f4af1128f8207206d6628958d573ac7862d68776379259e692e6c330"
+            "source_sha256": "075d9107bfb8f5975d6dcd6cf49703ed1753b745e1352da5dbdb6c3504879d30"
         },
         {
             "path": "docs/plans/multi-tenancy-platform-management-plan.md",
@@ -1534,7 +1534,7 @@
             "owner": "scaffold",
             "transform": "docs-page",
             "mode": 420,
-            "source_sha256": "1c9f0db84290b3d90bd561f2fc2316d557a0be8838e344fe0a7eb8bbcbc45090"
+            "source_sha256": "0863eb252bdfdab07b898cadfdf8a4cad2c01701d5d8d730c42e95848aa55da0"
         },
         {
             "path": "docs/product-status/README.md",

@@ -411,7 +411,7 @@ final class ApplicationCreator
     {
         // Generated metadata is rebuilt from parameters, so source prose changes
         // must not invalidate the immutable application template identity.
-        if (in_array($transform, ['changelog', 'release-metadata'], true)) {
+        if (in_array($transform, ['changelog', 'release-metadata', 'docs-page'], true)) {
             return hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
         }
         $digest = hash_file('sha256', $source);
