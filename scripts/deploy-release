@@ -171,10 +171,10 @@ if [[ "$MODE" == fresh && "$deployment_mode" == multi-tenant ]]; then
 fi
 if [[ "$MODE" == fresh && -n "$OVERLAY" ]]; then
   demo_emails=(
-    "${ADMIN_EMAIL,,}"
-    "${PLATFORM_EMAIL,,}"
-    "${DEMO_TENANT_A_EMAIL,,}"
-    "${DEMO_TENANT_B_EMAIL,,}"
+    "$(printf '%s' "$ADMIN_EMAIL" | tr '[:upper:]' '[:lower:]')"
+    "$(printf '%s' "$PLATFORM_EMAIL" | tr '[:upper:]' '[:lower:]')"
+    "$(printf '%s' "$DEMO_TENANT_A_EMAIL" | tr '[:upper:]' '[:lower:]')"
+    "$(printf '%s' "$DEMO_TENANT_B_EMAIL" | tr '[:upper:]' '[:lower:]')"
   )
   [[ "$(printf '%s\n' "${demo_emails[@]}" | sort -u | wc -l | tr -d ' ')" == 4 ]] \
     || fail 'fresh demo deployment requires distinct default Admin, Platform, Tenant A and Tenant B emails'
