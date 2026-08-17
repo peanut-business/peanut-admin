@@ -77,6 +77,19 @@ try {
             'deploy-release is missing its 2.x upgrade gate: ' . $requiredDeploymentGate
         );
     }
+    releasePolicyExpect(
+        str_contains(
+            $deployScript,
+            'git archive --format=tar "$TAG" resources/release-upgrade-transitions.json server/database/migrations scripts/release-upgrade-policy'
+        ) && str_contains($deployScript, '"$POLICY_ROOT/scripts/release-upgrade-policy"'),
+        'deploy-release must execute the policy validator from the immutable target release'
+    );
+    $backupPosition = strpos($deployScript, 'creating the required paired backup before source replacement');
+    $replacementPosition = strpos($deployScript, 'sudo -n find "$root" -mindepth 1 -maxdepth 1');
+    releasePolicyExpect(
+        $backupPosition !== false && $replacementPosition !== false && $backupPosition < $replacementPosition,
+        'deploy-release must finish its paired backup before replacing release source'
+    );
 
     $checkedIn = releasePolicyRun($runner, [
         '--release-root', $root,

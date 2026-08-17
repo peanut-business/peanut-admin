@@ -275,11 +275,11 @@ if [[ "$MODE" == upgrade ]]; then
     || fail "$TAG does not contain a 2.x release transition registry"
   POLICY_ROOT="$(mktemp -d -t peanut-admin-upgrade-policy.XXXXXX)"
   trap '[[ -z "$POLICY_ROOT" ]] || rm -rf "$POLICY_ROOT"' EXIT
-  git archive --format=tar "$TAG" resources/release-upgrade-transitions.json server/database/migrations \
+  git archive --format=tar "$TAG" resources/release-upgrade-transitions.json server/database/migrations scripts/release-upgrade-policy \
     | tar -xf - -C "$POLICY_ROOT" \
     || fail "cannot extract the $TAG release transition policy"
   transition_json="$(
-    scripts/release-upgrade-policy \
+    "$POLICY_ROOT/scripts/release-upgrade-policy" \
       --registry "$POLICY_ROOT/resources/release-upgrade-transitions.json" \
       --release-root "$POLICY_ROOT" \
       resolve --from "$FROM_TAG" --to "$TAG"
