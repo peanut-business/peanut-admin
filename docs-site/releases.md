@@ -7,14 +7,13 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-当前源码是 Peanut Admin `2.0.0` fresh-only 开发候选。它从已验证的多租户产品能力继续
-演进，但切换为原生 Account/TenantMember/RBAC、canonical Schema 和空库安装；不提供 1.x
-数据库或脚手架原地升级。
+Peanut Admin `2.0.0` 已完成 fresh-only 正式源码发布。该版本使用原生
+Account/TenantMember/RBAC、canonical Schema 和空库安装；不提供 1.x 数据库或脚手架原地升级。
 
-2.0.0 尚未创建 annotated tag、GitHub Release 或完成正式双模式 P0-E。隔离的
-`production-candidate` 体验环境已验证 Platform、公共 Admin、两个 Tenant Owner、Tenant A/B
-持续绑定和错误 Tenant 登录拒绝；候选身份以项目资源登记和根 `AGENTS.md` 为准。该环境不能替代
-正式发布证明。
+annotated tag [`v2.0.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.0)
+指向 `main@ec4ac732a498afe5e02eafb4a4855ec1f52aa68d`，固定候选 P0-E 7/7 通过。GitHub Release
+包含确定性源码包、外部 manifest、许可证、NOTICE、第三方告知和 SPDX SBOM。隔离的
+`production-candidate` 体验环境仍不是正式生产部署；2.0.0 线上部署与 smoke 留给独立工作流。
 
 ## 公开运行依赖
 
@@ -25,14 +24,15 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 内部领域目录不是独立包。应用只消费上述两个公开总包；Core/Generator 的公司级固定身份与 DCS Product-only 条件采用边界独立记录，不因应用版本发布而扩大授权。
 
-## 2.0.0 当前范围
+## 2.0.0 发布范围
 
-- **已验证的开发候选**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant 登录、三 Tenant 选择和 Store Demo 真实浏览器通过；管理身份、RBAC、业务会员独立身份与官方能力 Tenant 资格检查通过。
+- **已发布且已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant 登录、三 Tenant 选择和 Store Demo 真实浏览器通过；管理身份、RBAC、业务会员独立身份与官方能力 Tenant 资格检查通过。
 - **不再交付**：legacy Admin/Role/Dept 映射、default bootstrap 状态、兼容余额镜像和 1.x adopt/upgrade Runtime。
 - **已完成的生成边界**：create-app 2.0 inventory 与 `scaffold/releases/v2.0.0` 已按 fresh-only
   Runtime 重封，生成应用身份由确定性检查验证。
-- **已部署候选体验**：独立 `production-candidate` 使用四个 Cloudflare 域名、宝塔反向代理和单一多租户 origin；Platform、公共 Admin 与两个 Tenant 绑定入口均已存在。体验环境不是正式发布，也不能替代正式双模式 Gate。
-- **仍待完成**：正式双模式 P0-E、annotated tag、GitHub Release 和正式发布部署证明。
+- **发布制品**：规范源码包 SHA-256 为 `af9fc2f17d403faf8a3c461f7eb759f76e10260bfd1e0a8c4a9e1983eb53aa3c`；外部 `RELEASE_MANIFEST.json` SHA-256 为 `508fc3781242cc17fe63cca3ecbeffa9b67ebe67e0b225965515848c762d5844`。
+- **CI 例外**：PR #148/#149 的 GitHub Actions 因账户配额/付款限制未执行实际任务；用户明确批准以固定候选 P0-E 7/7 结果绕过。该事实不是 CI 通过。
+- **仍待独立执行**：从正式 Release 的生产部署、备份、迁移和线上 smoke；它们不属于本次源码发布。
 - **明确不做**：1.x 升级矩阵、DCS 领域 Runtime、跨应用联邦、完整 SaaS 商业化和真实外部渠道验证。
 
 ## 1.x 历史发布身份
@@ -60,5 +60,5 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 - [开发指南](/guide/development)
 - [许可证与第三方告知](/legal)
 
-[Changelog](/legal/CHANGELOG.txt) 保留 1.x 历史。2.0.0 只有在正式双模式 P0-E、版本元数据、
-tag 与 Release 全部完成后，才能新增正式发布身份。
+[Changelog](/legal/CHANGELOG.txt) 同时记录 2.0.0 与 1.x 历史。发布快照见仓库内
+`docs/product-status/releases/v2.0.0.json`。

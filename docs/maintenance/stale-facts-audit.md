@@ -41,7 +41,7 @@
 
 ## 模块、身份与租户文档审计（2026-08-16）
 
-本节以 2.0.0 fresh-only 候选代码、canonical Schema、当前 inventory 和 1.x 不可变发布
+本节最初以 2.0.0 fresh-only 候选代码、canonical Schema、当前 inventory 和 1.x 不可变发布
 快照交叉核验。第 1 至 40 行是 2026-08-14 的 1.x 历史审计，不是 2.0 当前操作入口。
 
 ### 原始问题覆盖矩阵
@@ -51,7 +51,7 @@
 
 | 原始问题 | 审计前覆盖 | 当前文档覆盖 | 当前实现状态 | 正式入口与未决项 |
 | --- | --- | --- | --- | --- |
-| 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 当前文档入口与语义检查已覆盖；正式发布仍待版本身份 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
+| 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 当前文档入口与语义检查已覆盖；2.0.0 源码已正式发布 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
 | Peanut Admin 架构、真实目录与所有权 | 只部分回答 | **文档结构已覆盖** | 当前目录已核验 | `docs-site/guide/development.md` |
 | Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 安装、治理、菜单/RBAC 和 fixture 同步命令 Guard 已支持；任务/回调/专属文件 Guard 与双 Module 示例待新增 | `docs-site/guide/module-development.md`、`docs-site/architecture/official-module-qualification.md` |
 | 前后端、路由、菜单、权限和测试路径 | 部分且有冲突 | **文档结构已覆盖** | 原生身份、官方能力 Tenant 资格和真实浏览器验证已通过 | `docs-site/guide/development.md`、`docs-site/api.md` |
@@ -80,11 +80,11 @@
 | `docs/peanut-admin-development-guide.md` | 生成应用携带的旧身份/升级说明 | 收敛为 2.0 当前入口，避免传播旧 Runtime |
 | `docs/peanut-admin-release-deployment.md` | 生成应用携带的 1.x 生产升级手册 | 收敛为 fresh deploy；历史生产记录不作命令入口 |
 | `docs/architecture/*.md`、`docs/design/saas-roadmap/` | 仅内部合同或路线输入 | 不作为新手入口；固定历史内容不冒充当前 Runtime |
-| `docs/product-status/releases/*` | 不可变 1.x 发布快照 | 保留追溯，不作为 2.0 完成证据 |
+| `docs/product-status/releases/*` | 不可变发布快照 | 1.x 保留追溯；2.0.0 新增正式源码发布快照 |
 
 ### 2.0 当前事实分类
 
-- **开发候选已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant
+- **正式源码版本已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant
   登录、三 Tenant 选择和 Store Demo 真实浏览器通过；原生管理身份、独立业务会员、
   canonical fresh Schema、应用 Host 的 Tenant 隔离和单一权威会员余额字段均通过。
 - **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC 和 fixture 同步命令
@@ -98,9 +98,8 @@
   或 2.0.0 发布证明。
 - **当前结论**：固定候选 `78e9667` 的 P0-E 七组已全部通过，包含生成应用、双模式空库、
   Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；截图人工检查确认
-  Admin 头像 fallback、Platform 页面、PC/H5 空资讯状态和文档资源均无明显视觉异常。正式
-  v2.0.0 tag、GitHub Release 与线上部署证明仍是独立后续动作；Core Alpha.5 的 KernelSchema
-  字段遗漏由独立 Core 工作流修正。
+  Admin 头像 fallback、Platform 页面、PC/H5 空资讯状态和文档资源均无明显视觉异常。
+  annotated `v2.0.0` tag 与 GitHub Release 已完成；线上生产部署证明仍是独立后续动作。
 - **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
   adopt、余额双写和旧 scaffold upgrade Runtime；它们不得进入生成应用。
 - **推荐新增**：供应商/门店/客户业务主体关联、participant policy、双 Module 合同示例。

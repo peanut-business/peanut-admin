@@ -26,17 +26,17 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 78e9667。最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 与线上部署仍是独立后续动作。
+> 总体状态：**已验证**。Peanut Admin v2.0.0 fresh-only 正式源码发布已完成：固定候选 78e9667 的 P0-E 七组全部通过，PR #148/#149 已合入 dev/main，annotated tag、GitHub Release、确定性源码包和法律附件一致。生产部署不在本轮范围内，必须由后续独立工作流验证。
 >
-> 事实基线：`feat/module-identity-tenancy-docs@78e9667f763591e1505054ec39fa060078b88d26`，复核日期：`2026-08-17`。
+> 事实基线：`main@ec4ac732a498afe5e02eafb4a4855ec1f52aa68d`，复核日期：`2026-08-17`。
 
 ### 已验证可用
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已验证 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 78e9667 的最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 仍未声明。 |
+| `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已验证 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 78e9667 的最终 P0-E 七组全部通过，并已作为 v2.0.0 正式源码 Release 发布。 |
 | `PA-FOUNDATION-001` | 1.x LikeAdmin 标准版基础能力对齐（历史） | 已验证 | 基础后台能力、空库安装、迁移账本和代表路由已有独立验证。 |
-| `PA-TENANCY-001` | 1.x 多租户隔离与平台租户治理（历史） | 已验证 | 1.x MT00 至 MT06 已完成并封存；2.0 复用其设计，但原生身份与 fresh Schema 组合仍需当前候选 Gate。 |
+| `PA-TENANCY-001` | 1.x 多租户隔离与平台租户治理（历史） | 已验证 | 1.x MT00 至 MT06 已完成并封存；2.0 以原生身份、fresh Schema 和当前 P0-E 重新验证，不依赖 1.x 兼容 Runtime。 |
 | `PA-PRODUCT-001` | 1.x 产品化部署与发布基线（历史） | 已验证 | 生产 Compose、最低 CI、正式部署、法律制品和 v1.1.5 发布链已经封存。 |
 | `PA-OWNERSHIP-001` | 核心包与应用唯一实现边界 | 已验证 | 权限、管理员、字典、文件、任务、会员财务、内容装修、通知、支付和 OAuth 已固定应用 Runtime 与核心边界。 |
 | `PA-BRAND-001` | 中性品牌与安全安装默认值 | 已验证 | 四端品牌消费、中性安装、显式初始密码和文档门户合同已完成。 |
@@ -48,6 +48,7 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-002` | 1.x 最终生成应用运行时验收（历史） | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
+| `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
 
 ### 暂缓或范围外
 
