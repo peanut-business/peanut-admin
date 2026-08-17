@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 与 v2.0.1 源码正式 Release 均已完成；v2.0.1 的线上 Standalone/Multi-tenant 双部署和 Article 专项真实页面资格仍未完成。
+> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 与 v2.0.1 源码正式 Release 均已完成；Article 专项真实数据库与页面资格已在当前候选通过，但 Module 非 HTTP 全入口合同和线上 Standalone/Multi-tenant 双部署仍未完成。
 >
-> 事实基线：`main@1c8aff4f1f19069bfe4480a8b29d59414d5c6816`，复核日期：`2026-08-18`。
+> 事实基线：`feat/module-execution-contract@b0ef43d7de7d3ff23d83fb58b786bde94e33ccd1`，复核日期：`2026-08-18`。
 
 ### 已验证可用
 
@@ -56,7 +56,7 @@ php scripts/check-product-capability-ledger
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.0.1 源码正式 Release 已发布，包含无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格与固定候选 P0-E 7/7 已通过，证据为 9ffffed3d25857e99915b9d1da04e122c6a49080/tree 3a777f72928681c3d4e62adf86473cec506f4612、run p0e201r3；正式 Release 为 annotated tag v2.0.1。线上 Standalone/Multi-tenant 部署仍未执行。 |
-| `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；统一 ModuleExecutionContext/Guard 已接入 Fixture 和 Article 的管理/公开入口。Article 首个官方可选 Module 已随 v2.0.1 源码 Release 交付 manifest、权限/菜单目录、管理端 contribution、后端 Guard、PC/UniApp 停用合同和 Plugin/Module 聚焦合同，但仍缺通用任务/worker/回调/模块文件入口合同，以及固定候选真实数据库与 Article 页面浏览器资格。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；统一 ModuleExecutionContext/Guard 已接入 Fixture 和 Article 的管理/公开入口。Article 首个官方可选 Module 已随 v2.0.1 源码 Release 交付基础合同，并在当前候选完成真实数据库、Tenant A/B 隔离、停用负向和共享 Admin/Tenant A/Tenant B 页面资格；通用任务/worker/回调/模块文件入口合同仍待补齐。 |
 
 ### 暂缓或范围外
 

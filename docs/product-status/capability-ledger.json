@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "main",
-    "commit": "1c8aff4f1f19069bfe4480a8b29d59414d5c6816",
+    "branch": "feat/module-execution-contract",
+    "commit": "b0ef43d7de7d3ff23d83fb58b786bde94e33ccd1",
     "reviewed_at": "2026-08-18"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 与 v2.0.1 源码正式 Release 均已完成；v2.0.1 的线上 Standalone/Multi-tenant 双部署和 Article 专项真实页面资格仍未完成。"
+    "summary": "当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 与 v2.0.1 源码正式 Release 均已完成；Article 专项真实数据库与页面资格已在当前候选通过，但 Module 非 HTTP 全入口合同和线上 Standalone/Multi-tenant 双部署仍未完成。"
   },
   "capabilities": [
     {
@@ -619,7 +619,7 @@
       "name": "官方可选 Module 产品化",
       "area": "plugins",
       "status": "in_progress",
-      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；统一 ModuleExecutionContext/Guard 已接入 Fixture 和 Article 的管理/公开入口。Article 首个官方可选 Module 已随 v2.0.1 源码 Release 交付 manifest、权限/菜单目录、管理端 contribution、后端 Guard、PC/UniApp 停用合同和 Plugin/Module 聚焦合同，但仍缺通用任务/worker/回调/模块文件入口合同，以及固定候选真实数据库与 Article 页面浏览器资格。",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出仍是 Tenant-first Host 能力；统一 ModuleExecutionContext/Guard 已接入 Fixture 和 Article 的管理/公开入口。Article 首个官方可选 Module 已随 v2.0.1 源码 Release 交付基础合同，并在当前候选完成真实数据库、Tenant A/B 隔离、停用负向和共享 Admin/Tenant A/Tenant B 页面资格；通用任务/worker/回调/模块文件入口合同仍待补齐。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",
@@ -639,6 +639,10 @@
         {
           "kind": "document",
           "ref": "docs-site/capabilities.md"
+        },
+        {
+          "kind": "report",
+          "ref": "output/playwright/article-module/b0ef43d/summary.json"
         }
       ],
       "dependencies": [
@@ -646,7 +650,7 @@
         "PA-NATIVE-001"
       ],
       "blockers": [
-        "Article 固定候选真实数据库与页面浏览器资格尚未完成"
+        "通用任务/worker、外部回调和模块专属文件入口尚未全部采用统一 ModuleExecutionGuard"
       ],
       "paths": [
         "server/app/common/service/module/ModuleExecutionContext.php",

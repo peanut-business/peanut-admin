@@ -1,7 +1,7 @@
 # 发布能力快照
 
 本目录只在**正式产品发布**时新增不可变快照，不按脚手架 release、普通 PR 或开发分支生成。
-当前最新快照为 [`v2.0.0.json`](v2.0.0.json)，状态是 `source-released`；它不包含生产部署证明。
+当前最新快照为 [`v2.0.1.json`](v2.0.1.json)，状态是 `source-released`；它不包含生产部署证明。
 
 快照应由发布流程从当时的 `capability-ledger.json` 生成，并记录：
 

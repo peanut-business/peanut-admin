@@ -23,7 +23,8 @@ Module 不重新认证账号，也不从请求参数推断租户。应用入口�
 | 外部回调 | `system()` | 先验签、解析 Tenant，再检查 Module 是否可用 |
 
 当前 Fixture Delivery Record、Article 管理入口和 Article 公开入口已采用统一的安装/Tenant
-开通合同；通用任务 envelope、模块 worker、外部回调和模块文件入口仍在后续资格范围内。
+开通合同；Article 的真实数据库、Tenant A/B 隔离、停用负向和页面浏览器专项也已在当前候选
+通过。通用任务 envelope、模块 worker、外部回调和模块文件入口仍在后续资格范围内。
 
 共享 TenantContext 不会抹平 DCS 模块的业务边界。Product、Pricing、Inventory、Procurement
 和 Trade 仍需各自声明依赖、自有表、权限和数据范围；跨 Tenant 协作使用显式参与方授权或

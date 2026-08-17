@@ -8,15 +8,17 @@
 
 ## 当前结论
 
-Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应用消费。当前没有未提交的
-代码变更，也没有需要重复运行的已通过 Gate。
+Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应用消费。当前候选仍在
+模块资格收口，已通过的 Gate 不重复运行。
 
-尚未完成的只有两条产品交付线：
+当前仍未完成的产品交付线有两条，另有一条模块通用合同仍在推进：
 
 1. 从不可变 `v2.0.1` Tag 完成一套 Standalone 和一套 Multi-tenant 线上部署，并分别完成
    备份、迁移、TLS、健康检查和最小浏览器验收。
 2. 把官方 Module 的多租户执行合同补齐到 HTTP、内部命令、任务/worker、外部回调和模块
-   文件入口，并完成 Article 的真实数据库与页面专项资格。
+   文件入口。
+3. Article 的真实数据库、Tenant A/B 隔离、停用负向和页面专项资格已在当前候选完成，
+   但仍需随代码候选合入后作为已发布能力重新冻结。
 
 ## 任务进度
 
@@ -28,8 +30,8 @@ Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应�
 | T04 | 头像 fallback 与共享浏览器验收 | 已完成 | 空值/加载失败 fallback、用户菜单、共享 Admin/Tenant A/Tenant B 截图人工检查通过 | 无 |
 | T05 | 文档与实现事实对照 | 已完成 | 当前版本、部署边界、Module 缺口和历史材料已重新分类 | 本页和公开入口同步 |
 | T06 | 文档状态收口 | 已完成 | 当前入口已统一到 v2.0.1；历史证据保留，docs-site 构建通过 | 无 |
-| T07 | Module 统一执行授权合同 | 部分完成 | `ModuleExecutionContext/Guard` 已接入 Fixture 和 Article 管理/公开入口；任务、worker、回调、模块文件入口仍待迁移 | 继续采用到非 HTTP 入口并完成停用复核 |
-| T08 | Article 官方 Module 专项资格 | 部分完成 | manifest、权限、菜单、管理端/公开 Guard 和客户端停用合同已交付 | 固定候选真实数据库、停用负向和页面浏览器资格 |
+| T07 | Module 统一执行授权合同 | 部分完成 | `ModuleExecutionContext/Guard` 已接入 Fixture 和 Article 管理/公开入口；任务、worker、回调、模块文件入口仍待迁移 | 继续采用到非 HTTP 入口，并补齐每类入口的停用负向 |
+| T08 | Article 官方 Module 专项资格 | 已完成（候选） | 当前候选已完成真实数据库安装、Tenant A/B 页面与数据隔离、停用负向和共享 Admin/Tenant A/Tenant B 浏览器截图；证据见 `output/playwright/article-module/b0ef43d/summary.json` | 随候选合入后冻结为发布快照；不把它扩大为通用 Module 全入口合同 |
 | T09 | v2.0.1 线上 Standalone 部署 | 未开始 | 发布脚本和资源登记已具备，尚未对线上目标执行 | fresh 部署、备份、TLS、smoke 和访问交付 |
 | T10 | v2.0.1 线上 Multi-tenant 部署 | 未开始 | 多租户本地候选已通过，线上目标尚未执行 | fresh 部署、域名/Host、Tenant A/B smoke 和访问交付 |
 | T11 | DCS 业务模块 | 范围外 | Peanut 只提供扩展边界；Party、Product、Inventory、Procurement 等不属于本仓 Runtime | 在 DCS 仓库按 Module 合同实现 |
@@ -58,7 +60,6 @@ Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应�
 ## 下一阶段顺序
 
 1. 完成本次文档状态收口并构建 docs-site。
-2. 冻结统一 Module 执行授权合同，先用 Article 或最小示例验证。
-3. 完成 Article 专项真实数据库和页面资格。
-4. 按资源登记执行线上 Standalone 与 Multi-tenant 部署。
-5. 用实际结果更新本页、能力账本和发布交付说明。
+2. 将 Article 候选证据随代码候选合入并冻结；继续补齐 Module 非 HTTP 入口合同。
+3. 按资源登记执行线上 Standalone 与 Multi-tenant 部署。
+4. 用实际部署结果更新本页、能力账本和发布交付说明。

@@ -80,16 +80,17 @@
 | `docs/peanut-admin-development-guide.md` | 生成应用携带的旧身份/升级说明 | 收敛为 2.0 当前入口，避免传播旧 Runtime |
 | `docs/peanut-admin-release-deployment.md` | 生成应用携带的 1.x 生产升级手册 | 收敛为 fresh deploy；历史生产记录不作命令入口 |
 | `docs/architecture/*.md`、`docs/design/saas-roadmap/` | 仅内部合同或路线输入 | 不作为新手入口；固定历史内容不冒充当前 Runtime |
-| `docs/product-status/releases/*` | 不可变发布快照 | 1.x 保留追溯；2.0.0 新增正式源码发布快照 |
+| `docs/product-status/releases/*` | 不可变发布快照 | 1.x 保留追溯；当前最新正式源码快照为 v2.0.1，生产部署证明仍单独记录 |
 
 ### 2.0 当前事实分类
 
 - **正式源码版本已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant
   登录、三 Tenant 选择和 Store Demo 真实浏览器通过；原生管理身份、独立业务会员、
   canonical fresh Schema、应用 Host 的 Tenant 隔离和单一权威会员余额字段均通过。
-- **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC 和 fixture 同步命令
-  Guard 已有证据；现有文件、通知、支付等只是 Tenant 适配的应用 Host，并非已交付官方可选
-  Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
+- **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC、fixture 同步命令和
+  Article HTTP/公开入口 Guard 已有证据；Article 的当前候选真实数据库、Tenant A/B 隔离、
+  停用负向和页面浏览器专项已通过。现有文件、通知、支付等只是 Tenant 适配的应用 Host，
+  并非已交付官方可选 Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
 - **已部署候选体验**：固定候选 `d3d5900` 的隔离 `production-candidate` 已更新为头像
   fallback 候选；部署源码关键文件摘要、`d3d5900` 镜像、容器健康和 origin health 已核对。
   线上 Tenant A/B 的旧截图生成于头像修复之前，仍保留为历史失败证据，不能冒充当前通过。
