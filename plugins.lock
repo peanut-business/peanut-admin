@@ -7,10 +7,10 @@
       "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "b3d1404217b51361bea8887a4efdb1ae17a8df431f5bb820695f7f88e55132fa"
+        "sha256": "d30877514de9923d012b49d4079f43badb4389c9af4f10a597a1e0b731472201"
       },
       "manifest": "plugins/fixture.delivery-record/plugin.json",
-      "manifest_sha256": "bee230318e910882a7f0df259c0e4e5f90bb91d93f294d4074653e0205ce4c2a",
+      "manifest_sha256": "dc79bb8879ff345773c5dfed811197a43f77d82f93b08dd5da368d4710c75bb6",
       "composer": [
         {
           "name": "peanut-business/fixture-delivery-record",
@@ -50,7 +50,7 @@
         "sha256": "e60b223f05d2228009682279a0efc989616d0462497b1f1adf4e2183eb7d384c"
       },
       "manifest": "plugins/official.article/plugin.json",
-      "manifest_sha256": "680d7f3492580a9782f40805ee1a922c6d0757a8809f6ea55d1b117b9a5b56a4",
+      "manifest_sha256": "fb145ab53fc11fc5056e52094b314a8b62a19604711d2ea124e17317945633e3",
       "composer": [
         {
           "name": "peanut-business/official-article",
