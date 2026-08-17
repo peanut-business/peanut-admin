@@ -15,6 +15,35 @@
 
 ## 首次部署
 
+### 无人值守发布脚本
+
+正式发布使用 `scripts/deploy-release`，不要在服务器上继续调用旧的
+`scripts/production-upgrade`。脚本从本地不可变 annotated tag 生成归档，传输到登记的
+`oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
+数据库资源。它不会通过默认值猜测另一套部署。
+
+```bash
+# 先只核对计划（不连接线上、不写入线上）
+scripts/deploy-release v2.0.0 --target production --fresh --dry-run
+scripts/deploy-release v2.0.0 --target production-candidate --upgrade --dry-run
+
+# 单租户：明确允许破坏性 fresh，旧 1.x 卷会被删除并从空库安装
+scripts/deploy-release v2.0.0 --target production --fresh --apply
+
+# 多租户：保留数据库和文件，只应用 2.0 基线后的追加迁移
+scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
+```
+
+`--fresh` 只允许登记的单租户 `production` 目标；多租户候选拒绝 fresh，以免误删租户数据。
+`--upgrade` 的固定顺序是：构建前端/后端镜像 → 只启动 MySQL → 用绕过应用 entrypoint 的
+PHP 容器执行 `migrate.php` 应用缺失追加迁移 → `migrate.php --current` 校验账本 → 启动
+PHP/Nginx/cron → origin 和版本 smoke。因而升级同时覆盖前端、后端和数据库；2.0.0 不提供
+1.x 原地升级，1.x 到 2.0 必须使用单独的业务数据迁移项目。
+
+脚本生成单租户 fresh 管理员初始密码（若 `.env` 没有提供），只写入服务器 root-owned
+`.env`，并在命令输出中一次性显示；请立即保存到受控凭据存储。候选多租户使用其登记的
+Platform/Tenant 管理凭据，不会覆盖现有密钥。
+
 准备应用自己的空数据库和受保护环境文件。至少配置：
 
 ```dotenv

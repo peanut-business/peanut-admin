@@ -56,6 +56,27 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ## Docker 生产部署（推荐）
 
+### 统一无人值守发布
+
+仓库内的 `scripts/deploy-release` 是新的发布入口。它从本地 annotated release tag 生成
+归档并通过登记的 SSH 目标部署，不依赖服务器上的旧脚本或 Git 工作树：
+
+```bash
+scripts/deploy-release v2.0.0 --target production --fresh --dry-run
+scripts/deploy-release v2.0.0 --target production --fresh --apply
+scripts/deploy-release v2.0.0 --target production-candidate --upgrade --apply
+```
+
+`production --fresh` 是明确授权的单租户破坏性重建；`production-candidate` 是需要保留数据
+的多租户体验实例，只能 `--upgrade`。升级顺序固定为：解包同一 tag、构建 Web/Platform/
+PC/UniApp/PHP 镜像、只启动 MySQL、执行 `migrate.php` 应用追加 migration、执行
+`migrate.php --current` 校验、再启动应用并做 health/version smoke。这样数据库升级与前后端
+升级属于同一个候选，不会出现只换镜像而遗漏 Schema 的情况。
+
+脚本保留部署 `.env` 和备份目录，不复制旧目录中的 migration 或运行时代码；fresh 目标只
+使用 tag 内的 canonical Schema。2.0.0 不接管 1.x 数据库，旧系统数据若需迁移必须另立
+映射、校验和回滚方案。
+
 生产和开发 Compose 严格分离。根目录 `compose.yaml` 是生产入口，并引用 `deploy/docker-compose.prod.yml`；开发环境使用 `deploy/docker-compose.dev.yml`，不要混用。首次部署时拉取已经存在的应用仓、复制受保护的环境文件，然后只执行一条构建并启动命令：
 
 ```bash

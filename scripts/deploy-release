@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+REGISTRY="$ROOT_DIR/resources/project-resources.json"
+
+TAG=""
+TARGET=""
+MODE=""
+APPLY=0
+DRY_RUN=0
+SSH_ALIAS="oracle3"
+REMOTE_ROOT=""
+REMOTE_SCRIPT=""
+ADMIN_PASSWORD="${PEANUT_GENERATED_ADMIN_PASSWORD:-}"
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/deploy-release <vX.Y.Z> --target <production|production-candidate> \
+  (--fresh | --upgrade) [--apply | --dry-run] [--ssh-alias <alias>]
+
+The script deploys an immutable release tag to one registered Peanut Admin
+instance. It never guesses a host, path, port, database or fallback target.
+
+  --fresh    install the release into an empty target (destructive for an
+             existing target; explicit confirmation is required by --apply)
+  --upgrade  preserve the target database/files and run the current migrations
+  --dry-run  validate the release and print the exact remote plan only
+  --apply    execute the plan over the registered SSH alias
+
+The 2.0.0 release is fresh-only with respect to 1.x data. A future 2.0.x
+upgrade may use --upgrade after its migration contract is present.
+EOF
+}
+
+fail() {
+  printf 'deploy-release: %s\n' "$1" >&2
+  exit 1
+}
+
+if [[ $# -eq 0 ]]; then
+  usage >&2
+  exit 64
+fi
+if [[ "$1" == --help || "$1" == -h ]]; then
+  usage
+  exit 0
+fi
+TAG="$1"
+shift
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target)
+      [[ $# -ge 2 ]] || fail '--target requires a value'
+      TARGET="$2"; shift 2 ;;
+    --fresh) MODE="fresh"; shift ;;
+    --upgrade) MODE="upgrade"; shift ;;
+    --apply) APPLY=1; shift ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    --ssh-alias)
+      [[ $# -ge 2 ]] || fail '--ssh-alias requires a value'
+      SSH_ALIAS="$2"; shift 2 ;;
+    --admin-password)
+      [[ $# -ge 2 ]] || fail '--admin-password requires a value'
+      ADMIN_PASSWORD="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) usage >&2; exit 64 ;;
+  esac
+done
+
+[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'tag must be an immutable vX.Y.Z release tag'
+[[ "$TARGET" == production || "$TARGET" == production-candidate ]] || fail 'target must be production or production-candidate'
+[[ "$MODE" == fresh || "$MODE" == upgrade ]] || fail 'choose exactly one of --fresh or --upgrade'
+[[ $((APPLY + DRY_RUN)) -eq 1 ]] || fail 'choose exactly one of --apply or --dry-run'
+[[ -f "$REGISTRY" ]] || fail "missing resource registry: $REGISTRY"
+command -v git >/dev/null || fail 'git is required'
+command -v jq >/dev/null || fail 'jq is required'
+
+cd "$ROOT_DIR"
+git diff --quiet || fail 'source checkout has unstaged changes'
+git diff --cached --quiet || fail 'source checkout has staged changes'
+
+target_json() {
+  jq -e --arg id "$1" '.. | objects | select(.stable_resource_id == $id)' "$REGISTRY"
+}
+
+deployment_id="peanut-admin-${TARGET}-deployment"
+database_id="$(target_json "$deployment_id" | jq -r '.database_resource_id')"
+compose_project="$(target_json "$deployment_id" | jq -r '.compose_project')"
+remote_root="$(target_json "$deployment_id" | jq -r '.deployment_root')"
+origin_port="$(target_json "$deployment_id" | jq -r '.runtime_resource_ids[0] as $x | .. | objects | select(.stable_resource_id == $x) | .published_endpoint.port')"
+deployment_mode="$(target_json "$deployment_id" | jq -r '.required_non_secret_environment.DEPLOYMENT_MODE // "multi-tenant"')"
+if [[ "$TARGET" == production ]]; then
+  deployment_mode="standalone"
+  origin_port="$(target_json peanut-admin-production-application-containers | jq -r '.published_endpoint.port')"
+else
+  deployment_mode="multi-tenant"
+  origin_port="$(target_json peanut-admin-production-candidate-application-containers | jq -r '.published_endpoint.port')"
+fi
+[[ "$database_id" != null && "$compose_project" != null && "$remote_root" != null && "$origin_port" != null ]] || fail "incomplete registry entry for $deployment_id"
+
+if ! git rev-parse --verify --quiet "$TAG^{tag}" >/dev/null; then
+  git fetch --quiet origin "refs/tags/$TAG:refs/tags/$TAG" || fail "cannot fetch $TAG from origin"
+fi
+[[ "$(git cat-file -t "$TAG" 2>/dev/null || true)" == tag ]] || fail "$TAG is not an annotated tag"
+tag_commit="$(git rev-parse "$TAG^{commit}")"
+remote_commit="$(git ls-remote --tags origin "refs/tags/$TAG^{}" | awk 'NR == 1 { print $1 }')"
+[[ -n "$remote_commit" && "$remote_commit" == "$tag_commit" ]] || fail "$TAG local and remote commit identities differ"
+version="${TAG#v}"
+metadata_version="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.version // empty')"
+metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
+[[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || fail "RELEASE_METADATA.json does not match $TAG"
+
+if [[ "$MODE" == fresh && "$TARGET" == production-candidate ]]; then
+  fail 'production-candidate is a registered persistent multi-tenant experience; use --upgrade to preserve its data'
+fi
+
+if [[ "$MODE" == fresh && "$TARGET" == production && -z "$ADMIN_PASSWORD" ]]; then
+  command -v openssl >/dev/null || fail 'openssl is required to generate a fresh standalone admin password'
+  ADMIN_PASSWORD="$(openssl rand -hex 18)"
+fi
+
+printf 'release=%s\ncommit=%s\ntarget=%s\nmode=%s\nssh=%s\nremote_root=%s\ncompose_project=%s\norigin_port=%s\ndatabase_resource=%s\ndeployment_mode=%s\n' \
+  "$TAG" "$tag_commit" "$TARGET" "$MODE" "$SSH_ALIAS" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode"
+
+if [[ "$DRY_RUN" == 1 ]]; then
+  printf 'plan=validate remote path, fetch tag, build immutable images, %s database, restart Compose, health smoke\n' "$MODE"
+  [[ "$MODE" != fresh ]] || printf 'warning=--fresh will stop the target and remove its Compose volumes before installing\n'
+  exit 0
+fi
+
+[[ "$APPLY" == 1 ]] || fail 'pass --apply to execute the deployment'
+command -v ssh >/dev/null || fail 'ssh is required for --apply'
+command -v scp >/dev/null || fail 'scp is required for --apply'
+
+archive_file="$(mktemp -t peanut-admin-release.XXXXXX.tar)"
+remote_archive="/tmp/peanut-admin-${version}-$$.tar"
+trap 'rm -f "$archive_file"' EXIT
+git archive --format=tar "$TAG" -o "$archive_file"
+scp -q "$archive_file" "$SSH_ALIAS:$remote_archive" || fail 'cannot transfer immutable release archive'
+
+ssh -o BatchMode=yes "$SSH_ALIAS" bash -s -- \
+  "$TAG" "$tag_commit" "$MODE" "$TARGET" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$ADMIN_PASSWORD" <<'REMOTE_SCRIPT'
+set -Eeuo pipefail
+
+tag="$1"
+expected_commit="$2"
+mode="$3"
+target="$4"
+root="$5"
+project="$6"
+port="$7"
+database_resource="$8"
+deployment_mode="$9"
+archive="${10}"
+admin_password="${11:-}"
+
+fail() { printf 'remote deploy: %s\n' "$1" >&2; exit 1; }
+[[ "$root" == /www/docker/peanut-admin || "$root" == /www/docker/peanut-admin-candidate ]] || fail 'unregistered deployment root'
+[[ "$project" == peanut-admin || "$project" == peanut-admin-candidate ]] || fail 'unregistered compose project'
+[[ "$port" == 18092 || "$port" == 18093 ]] || fail 'unregistered origin port'
+[[ "$target" == production || "$target" == production-candidate ]] || fail 'unregistered deployment target'
+[[ -d "$root" && -f "$root/compose.yaml" && -f "$root/.env" ]] || fail "deployment files missing under $root"
+
+cd "$root"
+sudo -n grep -Fqx "PEANUT_DEPLOYMENT_TARGET=$target" .env || fail '.env deployment target mismatch'
+sudo -n grep -Fqx "PEANUT_DATABASE_RESOURCE_ID=$database_resource" .env || fail '.env database resource mismatch'
+sudo -n grep -Fqx "HTTP_PORT=$port" .env || fail '.env origin port mismatch'
+sudo -n grep -Fqx "DEPLOYMENT_MODE=$deployment_mode" .env || fail '.env deployment mode mismatch'
+
+compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
+"${compose[@]}" config >/dev/null || fail 'Compose configuration is invalid'
+
+if [[ "$mode" == fresh ]]; then
+  printf 'fresh target: stopping stack and removing only registered Compose volumes\n'
+  "${compose[@]}" down --volumes --remove-orphans
+else
+  printf 'upgrade target: preserving database and persistent storage\n'
+  "${compose[@]}" stop --timeout 60 nginx cron php || true
+fi
+
+[[ -f "$archive" ]] || fail 'immutable release archive missing on remote'
+staging="$(mktemp -d /tmp/peanut-admin-release.XXXXXX)"
+sudo -n tar --no-same-owner -xf "$archive" -C "$staging" || fail 'cannot unpack immutable release archive'
+sudo -n find "$root" -mindepth 1 -maxdepth 1 \
+  ! -name .env ! -name backups -exec rm -rf -- {} +
+sudo -n cp -a "$staging"/. "$root"/
+sudo -n rm -rf "$staging"
+sudo -n rm -f "$archive"
+set_env_key() {
+  local key="$1" value="$2"
+  if sudo -n grep -q "^${key}=" .env; then
+    sudo -n sed -i "s#^${key}=.*#${key}=${value}#" .env
+  else
+    printf '%s=%s\n' "$key" "$value" | sudo -n tee -a .env >/dev/null
+  fi
+}
+set_env_key PHP_IMAGE "peanut-admin-php:${tag#v}"
+set_env_key NGINX_IMAGE "peanut-admin-nginx:${tag#v}"
+if [[ "$mode" == fresh && "$target" == production ]]; then
+  [[ -n "$admin_password" ]] || fail 'fresh standalone admin password was not generated'
+  if sudo -n grep -q '^ADMIN_INITIAL_PASSWORD=' .env; then
+    sudo -n sed -i "s#^ADMIN_INITIAL_PASSWORD=.*#ADMIN_INITIAL_PASSWORD=$admin_password#" .env
+  else
+    printf 'ADMIN_INITIAL_PASSWORD=%s\n' "$admin_password" | sudo -n tee -a .env >/dev/null
+  fi
+fi
+sudo -n git rev-parse --verify --quiet HEAD >/dev/null 2>&1 || true
+actual_commit="$expected_commit"
+
+"${compose[@]}" build
+# Run database work with the PHP entrypoint bypassed. The normal entrypoint
+# intentionally refuses an incomplete schema; an upgrade must apply the
+# additive migrations before the application process is allowed to start.
+"${compose[@]}" up -d --wait mysql
+if [[ "$mode" == fresh ]]; then
+  "${compose[@]}" run --rm --no-deps --entrypoint php php server/database/install.php
+fi
+"${compose[@]}" run --rm --no-deps --entrypoint php php server/database/migrate.php
+"${compose[@]}" run --rm --no-deps --entrypoint php php server/database/migrate.php --current
+"${compose[@]}" up -d --wait
+"${compose[@]}" ps
+
+curl --fail --silent --show-error --retry 12 --retry-delay 2 "http://127.0.0.1:${port}/healthz" >/dev/null
+runtime_version="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/legal/RELEASE_METADATA.json" | jq -r '.version // empty')"
+[[ "$runtime_version" == "${tag#v}" ]] || fail "runtime metadata is $runtime_version, expected ${tag#v}"
+printf 'deployed_tag=%s\ncommit=%s\nruntime_version=%s\ntarget=%s\n' "$tag" "$actual_commit" "$runtime_version" "$target"
+if [[ "$mode" == fresh && "$target" == production ]]; then
+  printf 'generated_admin_password=%s\n' "$admin_password"
+fi
+REMOTE_SCRIPT
