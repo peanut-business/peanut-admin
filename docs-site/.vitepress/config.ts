@@ -29,12 +29,13 @@ export default defineConfig({
     siteTitle: website.name,
     nav: [
       { text: '产品', link: '/' },
-      { text: '能力与场景', link: '/capabilities' },
+      { text: '能力与路线', link: '/capabilities' },
       ...productStatusNavigation,
       {
         text: '文档',
         items: [
           { text: '文档门户', link: '/guide/' },
+          { text: '文档阅读与命令参考', link: '/guide/reading-guide' },
           { text: '快速开始', link: '/getting-started' },
           { text: '实例平台管理', link: '/platform' },
           { text: '身份与租户', link: '/architecture/identity-and-tenancy' },
@@ -62,6 +63,7 @@ export default defineConfig({
           text: '文档门户',
           items: [
             { text: '文档首页', link: '/guide/' },
+            { text: '文档阅读与命令参考', link: '/guide/reading-guide' },
             { text: '快速开始', link: '/getting-started' },
             { text: '实例平台管理', link: '/platform' },
             { text: '身份与租户边界', link: '/architecture/identity-and-tenancy' },
@@ -95,7 +97,7 @@ export default defineConfig({
           text: '产品',
           items: [
             { text: '产品首页', link: '/' },
-            { text: '能力与场景', link: '/capabilities' },
+            { text: '能力与路线', link: '/capabilities' },
             ...productStatusNavigation,
           ],
         },
@@ -103,6 +105,7 @@ export default defineConfig({
           text: '使用文档',
           items: [
             { text: '文档门户', link: '/guide/' },
+            { text: '文档阅读与命令参考', link: '/guide/reading-guide' },
             { text: '开始使用', link: '/getting-started' },
             { text: '实例平台管理', link: '/platform' },
             { text: '身份与租户边界', link: '/architecture/identity-and-tenancy' },

@@ -62,6 +62,22 @@ canonical Schema 和空数据库安装入口，不携带 legacy 映射、bootstr
 owner、managed/app-owned 树摘要与 managed baseline 路径。它是来源审计与未来 2.x 生命周期
 设计的输入，但当前版本不提供 scaffold plan/apply/verify/recovery 命令。
 
+## 后续升级边界
+
+现在可以从 `v2.0.0` 创建并开发派生应用，但不能把它理解为“以后执行一条命令就会自动追上
+所有脚手架变化”。当前应按下表处理：
+
+| 变化类型 | 当前处理方式 | 所有权与停止线 |
+| --- | --- | --- |
+| `peanut-admin/core`、`@peanut-admin/admin` 依赖 | 应用在独立分支人工更新版本和 lock，并运行自己的兼容测试 | 包管理器只能修改 Peanut 依赖；失败时回退应用分支 |
+| `managed` / `generated-managed` 脚手架文件 | 人工比较新 Release 与应用 manifest/baseline，选择性采用 | 应用改过且目标也变化时停止，不静默覆盖 |
+| `app-owned` 业务代码、页面和配置 | 应用自行维护 | 脚手架升级永远不自动改写 |
+| 应用数据库 | 应用追加自己的 migration | 不复制 Peanut 新安装基线覆盖已有数据库 |
+| Peanut canonical migration | 随采用的 Peanut Release 显式执行 | 必须绑定目标 Release、迁移账本、备份和应用验证 |
+
+计划中的 2.x 升级器将提供 `preflight -> plan -> apply -> verify -> recover`，但仍只管理已登记
+的框架文件和 Peanut 依赖。它不会把业务代码变成脚手架所有，也不会替应用决定业务数据迁移。
+
 生成结果没有 `.git`，可直接执行 `git init` 成为独立仓库。连接任何资源前，应用 owner
 必须先补全 `resources/project-resources.json`；初始管理员密码仍只允许在空库安装时通过
 `ADMIN_INITIAL_PASSWORD` 显式提供。

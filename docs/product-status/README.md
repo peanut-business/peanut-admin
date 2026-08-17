@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**已验证**。Peanut Admin v2.0.0 fresh-only 正式源码发布已完成：固定候选 78e9667 的 P0-E 七组全部通过，PR #148/#149 已合入 dev/main，annotated tag、GitHub Release、确定性源码包和法律附件一致。生产部署不在本轮范围内，必须由后续独立工作流验证。
+> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 正式源码发布由 PA-DELIVERY-003 保持已验证；发布后的无人值守部署、Standalone 与 Multi-tenant 正式线上交付、完整演示叠加层、2.x 派生应用升级和官方可选 Module 产品化尚未全部交付。
 >
-> 事实基线：`main@ec4ac732a498afe5e02eafb4a4855ec1f52aa68d`，复核日期：`2026-08-17`。
+> 事实基线：`dev@62c99ddebcd65549e3a12dc31aff16573c6ed3cf`，复核日期：`2026-08-17`。
 
 ### 已验证可用
 
@@ -49,6 +49,19 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
+
+### 已实现或正在验收
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | 无人值守发布、Standalone 与 Multi-tenant 正式线上部署和完整演示补丁已有独立功能分支实现，但尚未合入或完成最终资格；当前正式支持面仍是 v2.0.0 Release 中的 Docker Compose 手工流程和基础 demo seeder。 |
+
+### 计划中或受阻
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-SCAFFOLD-004` | 2.x 派生应用受控升级 | 计划中 | 2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline，但当前没有 2.x preflight/plan/apply/verify/recover 升级命令；派生应用只能人工评估依赖和受管文件更新。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 计划中 | 文件、通知、OAuth、支付、会员、任务、导入导出和文章已经完成 Tenant 适配，但仍由应用 Host 直接拥有；将它们改造成可安装、逐 Tenant 开通和停用的官方 Module 尚未实现。 |
 
 ### 暂缓或范围外
 
