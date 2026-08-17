@@ -62,7 +62,7 @@ Module 都必须通过同一套 Tenant 资格；不满足就只能留在派生�
 - **进行中的首个候选**：Article 已形成固定功能提交，加入 manifest、权限/菜单目录、管理端
   contribution、ModuleInstallation/TenantModule Guard、Host 绑定解析和会员收藏公开查询合同；
   PC/UniApp 静态停用合同、Plugin/Module 和 Web 类型检查已通过。它仍缺真实数据库、浏览器、
-  `dev` 合入与正式 Release 身份，因此不能写成“当前已支持的官方 Module”。
+  因此只能写成“随 v2.0.1 交付基础合同、专项资格仍在进行”的官方 Module，不能把 Article 页面资格写成已完成。
 - **推荐新增**：把候选能力按稳定 manifest 拆成官方可选 Module，并逐一补齐 HTTP/内部命令、
   入队和 worker 执行、外部回调、模块专属文件入口的统一 Guard，以及独立 Provider、版本和浏览器验收。
 - **示例模板**：`fixture.delivery-record` 用于演示表、合同、权限、菜单和前端 contribution，不进入生产默认 lock。

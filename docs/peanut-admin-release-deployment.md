@@ -19,8 +19,8 @@
 
 ### 源仓维护者的无人值守发布脚本
 
-`scripts/deploy-release` 是当前 `dev` 的发布控制脚本，尚未随 `v2.0.0` Release 交付或完成
-Standalone/Multi-tenant 双部署生产资格，`v2.0.0` 生成的派生应用也不包含它。源仓维护者的
+`scripts/deploy-release` 已随 `v2.0.1` 源码 Release 交付，但 Standalone/Multi-tenant 双部署
+生产资格仍未完成，`v2.0.0` 生成的派生应用不包含它。源仓维护者的
 正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
 `scripts/production-upgrade`。脚本从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
