@@ -42,15 +42,15 @@
   scaffold 原地升级不属于 2.0.0 支持面。
 - 登记多租户空库安装得到 87 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
   三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
-- `scaffold/releases/v2.0.0` 已从 source commit `474a66e…`（tree `74faf78…`）完成唯一最终
-  reseal；inventory SHA-256 为 `bd97fc1…`，manifest 文件 SHA-256 为 `bb20cce…`。本地多租户
+- `scaffold/releases/v2.0.0` 已从 source commit `24e06f5…`（tree `67e2156…`）完成唯一最终
+  reseal；inventory SHA-256 为 `ab6f790…`，manifest 文件 SHA-256 为 `ca55acd…`。本地多租户
   体验使用登记资源 `peanut-admin-mysql84-local-multi-tenant-demo`、Platform
   `127.0.0.1:20176`、API `127.0.0.1:20178` 和管理端 `127.0.0.1:20179`，不得复用为生产资源。
 - 已部署的隔离 `production-candidate` 仍是 `d3d5900…`；它包含右上角头像空值/加载失败
   fallback、可访问用户菜单按钮和对应 Web 合同测试。共享 Admin、Tenant A、Tenant B 已在
   `79b1095…` 完成三域名截图、破图、加载、溢出和菜单人工检查；到当前 seal 候选没有 Web、
   Platform 或应用 Runtime 差异。此前占用登记端口 `20190` 的历史 Compose 监听已由 owner
-  释放；固定候选 `8221e27…` 随后的 P0-E 七组全部通过，且数据库、Compose、容器、卷、网络、
+  释放；固定候选 `55c3309…` 随后的 P0-E 七组全部通过，且数据库、Compose、容器、卷、网络、
   镜像、监听、缓存均零残留，租约已释放。线上候选更新和正式发布仍未完成。
 - 当前源码尚未形成正式 `v2.0.0` tag、GitHub Release 或生产部署证明；下面的 1.x 发布、
   P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 正式发布资格。

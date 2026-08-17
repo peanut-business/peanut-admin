@@ -96,7 +96,7 @@
   当前候选的本地共享 Admin、Platform、PC、H5 和文档截图已人工检查通过；线上 Tenant A/B
   尚未重新部署或重拍，因此不把本地截图写成线上证明。该候选体验不等于正式双模式 P0-E
   或 2.0.0 发布证明。
-- **当前结论**：固定候选 `8221e27` 的 P0-E 七组已全部通过，包含生成应用、双模式空库、
+- **当前结论**：固定候选 `55c3309` 的 P0-E 七组已全部通过，包含生成应用、双模式空库、
   Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；截图人工检查确认
   Admin 头像 fallback、Platform 页面、PC/H5 空资讯状态和文档资源均无明显视觉异常。正式
   v2.0.0 tag、GitHub Release 与线上部署证明仍是独立后续动作；Core Alpha.5 的 KernelSchema
