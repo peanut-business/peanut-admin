@@ -1,6 +1,8 @@
 # Peanut Admin 2.0 发布与部署
 
-> 本文件随 create-app 进入派生应用。详细说明位于 `docs-site/deployment.md`。
+> 本文件是 Peanut Admin 源仓的人类可读版本。create-app 会在派生应用的同一路径生成一份
+> 应用专属简版，不会复制完整 `docs-site/`。详细说明见公开的
+> [部署文档](https://peanut-admin-doc.007345.xyz/deployment)。
 
 ## 5 分钟速读
 
@@ -15,10 +17,11 @@
 
 ## 首次部署
 
-### 无人值守发布脚本
+### 源仓维护者的无人值守发布脚本
 
 `scripts/deploy-release` 是当前 `dev` 的发布控制脚本，尚未随 `v2.0.0` Release 交付或完成
-Standalone/Multi-tenant 双部署生产资格。正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
+Standalone/Multi-tenant 双部署生产资格，`v2.0.0` 生成的派生应用也不包含它。源仓维护者的
+正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
 `scripts/production-upgrade`。脚本从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
 数据库资源。它不会通过默认值猜测另一套部署。以下 `--apply` 命令是经资源 owner 授权后的
@@ -186,4 +189,4 @@ PHP-FPM 不对公网开放。
 未绑定公共 Admin 才允许账号在自己的 active TenantMember 列表中切换。
 
 完整 Compose profile、原生发布备选、Nginx location、定时任务、品牌同步、发布后检查和
-故障停止线见 `docs-site/deployment.md`。
+故障停止线见公开的 [部署文档](https://peanut-admin-doc.007345.xyz/deployment)。

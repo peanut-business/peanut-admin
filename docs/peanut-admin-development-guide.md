@@ -1,7 +1,9 @@
 # Peanut Admin 2.0 开发指南
 
-> 本文件随 create-app 进入派生应用。详细、可导航的版本位于
-> `docs-site/guide/development.md` 与 `docs-site/guide/module-development.md`。
+> 本文件是 Peanut Admin 源仓的人类可读版本。create-app 会在派生应用的同一路径生成一份
+> 应用专属简版，不会复制完整 `docs-site/`。详细、可导航的公开版本见
+> [开发与目录](https://peanut-admin-doc.007345.xyz/guide/development)和
+> [Module 开发教程](https://peanut-admin-doc.007345.xyz/guide/module-development)。
 
 ## 5 分钟速读
 
@@ -33,7 +35,7 @@ platform/                  Vue 实例 Platform 控制面
 pc/                        Nuxt PC 客户端
 uniapp/                    H5/小程序客户端
 plugins/ + plugins.lock    Plugin 制品与当前部署锁
-docs-site/                 当前公开教程、参考与故障处理
+docs-site/                 源仓公开教程、参考与故障处理；派生应用不复制
 resources/                 项目资源事实源
 scripts/                   创建应用、资源门禁和维护命令
 ```
@@ -58,9 +60,9 @@ Module 的不可变交付制品，不等于 Tenant 开通或成员授权。
 5. 最低测试覆盖 Tenant A 正常读写、Tenant B 读取/写入同一 ID 被拒绝、Tenant 暂停、
    Module 未开通和伪造资源 ID。
 
-完整纵向示例、目录树、跨 Module 商品入库流程和常见错误见
-`docs-site/guide/module-development.md`。API 响应、认证、权限和 Host 入口见
-`docs-site/api.md`。
+完整纵向示例、目录树、跨 Module 商品入库流程和常见错误见公开文档的
+[Module 开发教程](https://peanut-admin-doc.007345.xyz/guide/module-development)。API 响应、
+认证、权限和 Host 入口见 [API 与扩展](https://peanut-admin-doc.007345.xyz/api)。
 
 ## 资源与运行
 
@@ -90,9 +92,9 @@ scaffold 原地升级。
 
 ## 进一步阅读
 
-- 架构、身份、Tenant 与部署：`docs-site/guide/development.md`
-- Module 纵向教程：`docs-site/guide/module-development.md`
-- API 与扩展参考：`docs-site/api.md`
-- 开箱即用能力目录：`docs-site/capabilities.md`
-- 部署与故障停止线：`docs-site/deployment.md`
+- 架构、身份、Tenant 与部署：[开发与目录](https://peanut-admin-doc.007345.xyz/guide/development)
+- Module 纵向教程：[Module 开发教程](https://peanut-admin-doc.007345.xyz/guide/module-development)
+- API 与扩展参考：[API 与扩展](https://peanut-admin-doc.007345.xyz/api)
+- 开箱即用能力目录：[能力目录](https://peanut-admin-doc.007345.xyz/capabilities)
+- 部署与故障停止线：[部署](https://peanut-admin-doc.007345.xyz/deployment)
 - 管理员操作：`docs/peanut-admin-user-manual.md`
