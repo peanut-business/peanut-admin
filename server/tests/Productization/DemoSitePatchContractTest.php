@@ -61,6 +61,10 @@ foreach (['--confirm-destroy', '--overlay', 'seed-multi-tenant-demo.php', 'down 
     $expect(str_contains($deploy, $token), 'deployment flow lost contract token: ' . $token);
 }
 $expect(
+    str_contains($deploy, 'requires distinct default Admin, Platform, Tenant A and Tenant B emails'),
+    'fresh demo deployment does not reject identity collisions before database work'
+);
+$expect(
     substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 5,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );

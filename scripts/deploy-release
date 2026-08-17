@@ -169,6 +169,16 @@ if [[ "$MODE" == fresh && "$deployment_mode" == multi-tenant ]]; then
   [[ -n "$PLATFORM_EMAIL" && -n "$PLATFORM_PASSWORD" ]] \
     || fail 'fresh multi-tenant deployment requires PEANUT_GENERATED_PLATFORM_EMAIL and PEANUT_GENERATED_PLATFORM_PASSWORD'
 fi
+if [[ "$MODE" == fresh && -n "$OVERLAY" ]]; then
+  demo_emails=(
+    "${ADMIN_EMAIL,,}"
+    "${PLATFORM_EMAIL,,}"
+    "${DEMO_TENANT_A_EMAIL,,}"
+    "${DEMO_TENANT_B_EMAIL,,}"
+  )
+  [[ "$(printf '%s\n' "${demo_emails[@]}" | sort -u | wc -l | tr -d ' ')" == 4 ]] \
+    || fail 'fresh demo deployment requires distinct default Admin, Platform, Tenant A and Tenant B emails'
+fi
 for pair in \
   "PEANUT_GENERATED_ADMIN_EMAIL=$ADMIN_EMAIL" \
   "PEANUT_GENERATED_ADMIN_PASSWORD=$ADMIN_PASSWORD" \
