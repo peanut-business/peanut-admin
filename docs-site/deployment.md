@@ -148,11 +148,11 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 
 ### 状态说明
 
-2.0.0 当前是开发候选。隔离的 `production-candidate` 已使用独立空库、Compose project、
+2.0.0 已完成正式源码发布。隔离的 `production-candidate` 仍使用独立空库、Compose project、
 origin 和四个域名上线；Platform、公共 Admin、DNS、TLS、Host 保留和反向代理已验证。
 当前生产候选使用登记的人工 Owner 邀请交付模式，已创建第二 Tenant，并完成两个 Tenant
 域名的应用内持续绑定；跨域名或错误 Tenant 账号登录会被拒绝。该线上体验验收不能替代
-正式双模式 P0-E、annotated tag 或 GitHub Release。
+从 `v2.0.0` 正式 Release 执行的生产部署、备份、迁移和线上 smoke。
 
 | 候选体验入口 | 地址 |
 | --- | --- |

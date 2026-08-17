@@ -1,28 +1,29 @@
 # Peanut Admin
 
 Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的企业应用脚手架。
-当前源码是 `2.0.0` fresh-only 开发候选，同一代码线支持单实例（`standalone`）和多租户
+当前源码是已正式发布的 `2.0.0` fresh-only 版本，同一代码线支持单实例（`standalone`）和多租户
 （`multi-tenant`）部署，覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
 
 [1.x 历史演示应用](https://peanut-admin.007345.xyz) ·
 [文档中心](https://peanut-admin-doc.007345.xyz) ·
+[2.0.0 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.0) ·
 [1.x 历史 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5) ·
 [更新日志](CHANGELOG.md)
 
-## 当前候选能力
+## 当前版本能力
 
 - 管理后台：菜单、角色、管理员、部门、岗位、字典、文件、定时任务、日志和系统设置。
 - 业务模块：会员、标签、余额、通知、充值退款、文章、装修、热门搜索和客服设置。
 - 多端应用：Vue 3 管理端、Nuxt 3 PC、UniApp H5/小程序。
 - 多租户：默认 Tenant、可信 TenantContext、Tenant-first 数据访问、缓存/文件/任务/审计隔离。
 - 实例内平台管理：独立 PlatformOperator、Tenant 生命周期、首个 owner 和 TenantModule 管理。
-- 交付：2.0.0 canonical Schema 空库安装、基线后追加迁移账本和 Docker Compose 候选部署。
+- 交付：2.0.0 canonical Schema 空库安装、基线后追加迁移账本、Docker Compose 和不可变源码 Release。
 
 `2.0.0` 不支持 1.x 数据库或脚手架原地升级，也不包含套餐、订阅、计费、试用、发票、
 应用市场或跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并
-完成平台登记。当前候选已有隔离的线上实例：Platform、公共 Admin 和四域名代理可访问；
-第二 Tenant、Owner 邀请与 Tenant 域名绑定已通过人工邀请模式完成。候选尚未创建正式 tag、
-GitHub Release 或完成正式双模式发布 Gate，体验实例不能替代发布证明。
+完成平台登记。固定候选已完成 P0-E 7/7，并发布 annotated `v2.0.0` tag、GitHub Release、
+确定性源码包、许可证附件和 SPDX SBOM。现有隔离体验实例仍是独立的线上候选环境，不能替代
+尚未执行的 2.0.0 正式生产部署证明。
 
 ## 技术栈
 
@@ -104,7 +105,7 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定
 `admin.peanut-admin.test:20179`、`platform.peanut-admin.test:20176`、两个 Tenant 测试域名、
 API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
-由当前候选的项目 lease 同时持有这些资源。
+由当前运行任务的项目 lease 同时持有这些资源。
 
 ## 生产入口
 
@@ -120,9 +121,9 @@ API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动
 | 官方文档 | https://peanut-admin-doc.007345.xyz |
 
 正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表 2.0
-入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境，不是正式 Release。
+入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境，不是 2.0.0 正式生产部署。
 两个 Tenant 域名已完成 DNS、TLS、Host 保留、反向代理和应用内持续绑定；错误 Tenant 账号
-登录会被拒绝。当前候选使用登记的人工 Owner 邀请交付模式，不依赖生产邮件 Provider。
+登录会被拒绝。当前体验实例使用登记的人工 Owner 邀请交付模式，不依赖生产邮件 Provider。
 首次部署、
 `standalone`/`multi-tenant` 配置、空库安装、数据库备份和回滚停止线见
 [部署与安装](https://peanut-admin-doc.007345.xyz/deployment)。
@@ -173,9 +174,10 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 
 ## 版本与许可证
 
-当前源码版本为 `2.0.0` 开发候选，尚未正式发布。最后一个已封存的 1.x 历史版本是
-[`v1.1.5`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5)；它的发布附件
-继续作为历史证据，不代表 2.0.0 已通过发布验收。
+当前正式源码版本为 [`v2.0.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.0)。
+它只支持 fresh install，不提供 1.x 数据库或脚手架原地升级；最后一个已封存的 1.x 历史版本是
+[`v1.1.5`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5)。2.0.0 的生产部署
+和线上 smoke 将在独立工作流中完成，不属于本次源码发布证明。
 
 Peanut Admin 应用当前采用专有 / All Rights Reserved 许可；公开 Core 包维持 Apache-2.0。
 具体边界见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和

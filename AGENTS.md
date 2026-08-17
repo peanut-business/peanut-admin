@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-16
+> Last updated: 2026-08-17
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -29,9 +29,9 @@
 
 ---
 
-## 2. 当前状态（2026-08-16）
+## 2. 当前状态（2026-08-17）
 
-### 2.0 2.0.0 fresh-only 候选 — 开发实现与必要本地资格完成
+### 2.0 2.0.0 fresh-only 正式源码发布 — ✅ 完成
 
 - 当前开发分支已切换为原生 `Account/Credential/TenantMember/RBAC` 管理身份；业务会员
   `pa_member` 保持独立。
@@ -51,9 +51,14 @@
   `79b1095…` 完成三域名截图、破图、加载、溢出和菜单人工检查；到当前 seal 候选没有 Web、
   Platform 或应用 Runtime 差异。此前占用登记端口 `20190` 的历史 Compose 监听已由 owner
   释放；固定候选 `78e9667…` 随后的 P0-E 七组全部通过，且数据库、Compose、容器、卷、网络、
-  镜像、监听、缓存均零残留，租约已释放。线上候选更新和正式发布仍未完成。
-- 当前源码尚未形成正式 `v2.0.0` tag、GitHub Release 或生产部署证明；下面的 1.x 发布、
-  P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 正式发布资格。
+  镜像、监听、缓存均零残留，租约已释放。隔离体验环境仍是独立候选，不冒充正式生产部署。
+- PR #148 已合入 `dev=802ff047e66075672375b4823cfe1202a5e6d2c1`，PR #149 已合入
+  `main=ec4ac732a498afe5e02eafb4a4855ec1f52aa68d`；两者发布时文件树均为
+  `2404b62ab58e64d1d667455951219de40d7cea0f`。annotated tag `v2.0.0`（tag object
+  `769aa9d663a849bee5e5f284cc4f61a64179a1e1`）和同名 GitHub Release 已发布；规范源码包
+  SHA-256 为 `af9fc2f…`，外部 manifest SHA-256 为 `508fc378…`。GitHub Actions 因账户
+  配额/付款限制未执行实际任务，用户明确批准以已通过的固定候选 P0-E 7/7 作为发布门禁后
+  绕过；该例外不能写成 CI 通过。2.0.0 生产部署不在本轮源码发布范围内，后续必须独立执行。
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 
