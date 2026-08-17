@@ -24,7 +24,7 @@
   - Schema/API 合同和不可变依赖身份失败，阻塞依赖该产物的采用、合入或发布；
   - 格式、文档、依赖元数据和机械 CI 失败，只阻塞当前 PR 收口；
   - 外部 Registry、凭据或长 CI 等待，只阻塞对应外部动作和最终消费者验证。
-- “允许并行”不等于 Gate 通过。失败候选留在功能或 stacked-fix 分支；红色 required checks 不得进入 `dev` 或 `main`。
+- “允许并行”不等于 Gate 通过。失败候选留在功能或 stacked-fix 分支；实际执行的本地或独立资格 Gate 失败时不得进入 `dev` 或 `main`。GitHub Actions 状态不再作为合并证据或门禁。
 - 与受阻产物没有依赖、文件 owner 不冲突的工作继续推进。通常保持一条关键路径和最多两条真正有价值的独立工作线；没有并行项时说明具体依赖边。
 - “审计、准备、研究、即将开始”本身不算推进；至少形成 diff、commit、PR、fixture、可执行合同、命令结果或更新后的恢复指针之一。
 
@@ -75,22 +75,21 @@
 - 候选身份在内容与依赖全部冻结后只 seal 一次。Digest、archive、lock 和版本身份必须
   来自同一固定 tree；无关文档、合并提交或恢复指针变化不得触发 reseal。身份错误只
   修正错误字段和直接消费者，不重做已通过的内容资格。
-- 一个行为只有一个日常 CI owner。独立 Documentation、Security、Recovery、
-  Performance、Starter、浏览器或发布 workflow 已覆盖的 Gate，不得再由通用
-  `quality` 重复运行；固定候选全量入口可以聚合，但失败必须保留原 Gate 名称和日志
-  owner。结构合同必须断言当前专属 workflow，不得绑定已经退出的聚合位置；改变
-  workflow owner 时，同一 PR 必须同步这些结构断言。
+- 一个行为只有一个日常验证 owner。Documentation、Security、Recovery、Performance、
+  Starter、浏览器或发布脚本已覆盖的 Gate，不得再由通用检查重复运行；固定候选全量入口
+  可以聚合，但失败必须保留原 Gate 名称和日志 owner。结构合同绑定仓库内可执行脚本，
+  不依赖 GitHub Actions workflow 名称或状态。
 - Gate 必须按变更路径最小触发。纯文档、恢复指针和元数据 PR 不运行 PHP 数据库、
-  Web/PC/UniApp build、浏览器、Recovery 或 Performance；若分支保护要求固定 check
-  名称，未受影响的 job 应在变更分类后快速明确跳过，而不是安装依赖后跑全量。
+  Web/PC/UniApp build、浏览器、Recovery 或 Performance；只执行 Markdown、链接、受影响
+  文档构建和差异检查，不为固定 check 名称启动无关任务。
 - 外部发布在改版本或 dispatch 前完成一次只读 preflight：精确 package、repository、
   workflow/environment、OIDC/凭据可用性、目标版本不存在和候选内容身份。publish
   步骤成功后出现短时 Registry 404，先按传播竞态做一次有界可见性等待和只读查询，
   不得重新发布不可变版本或重跑资格 Gate。
-- CI 只做一次正常历史时长的有界等待，窗口结束查一次状态；禁止 10/15 秒 watch、
+- 本地或独立资格只做一次正常历史时长的有界执行；禁止轮询不存在的 GitHub Runner、
   不变状态重复播报、等待已关闭进程或重跑成功组。失败先按“代码/合同/环境/外部服务/
   传播竞态”归因；同一原因只保留一个修复 owner 和一次失败组重跑。所有声明检查必须
-  在最新 head 上 `COMPLETED/SUCCESS` 后才可合入；旧 head 结果和稍后才转绿不补正提前合入。
+  在最新 head 上真实完成；旧 head 结果不能替代当前候选。
 - 阶段状态必须用 `已完成 / 部分完成 / 未开始 / 外部阻塞`，并列出尚缺验收项和下一个
   可合入交付物。若只有个别切片通过，不得用 PR 数量或局部 Gate 宣称阶段完成；若
   权威计划落后于远端事实，先一次性重建矩阵，再继续实现，禁止边做边反复改指针。
@@ -102,7 +101,20 @@
   恢复或发布机制，这些 Gate 不得阻塞普通业务 PR；合入 `dev` 后也不重复 PR 已通过的
   同组检查。
 
-### 7.1 固定候选冻结与封存顺序
+### 7.1 本地分级验证与 GitHub Actions 退出
+
+- GitHub Actions 不再用于日常 PR、合并门禁或正式发布资格，也不因其排队、配额、付款、
+  Runner 或红色状态阻塞交付。GitHub 只承载源码、PR、Tag 和 Release 身份。
+- 纯文档只运行 Markdown/链接、受影响文档构建和 `git diff --check`；普通代码运行受影响
+  产品的 lint、静态检查和聚焦测试；Tenant、身份、权限、Schema、支付、部署等高风险变更
+  增加对应安全/完整性 Gate。
+- `dev` 日常合入以最新 head 的本地等价检查和 owner 审核为准。`dev` 到 `main` 或正式
+  Release 只对固定候选运行一次独立资格；可以使用登记的本地/隔离资源，但不得改回每 PR
+  全量验证。
+- PR 描述记录实际命令、结果和未运行项。没有真实执行的 GitHub 状态、跳过 job 或历史成功
+  run 不能冒充验证证据。
+
+### 7.2 固定候选冻结与封存顺序
 
 - 面向人类和主会话的业务解释见 `docs/operations/release-candidate-control.md`；执行时先读该说明，再按本节硬门禁操作。
 - 功能实现、阻塞缺陷修复和局部验证必须在最终封存前完成；仍有已知阻塞缺陷时，禁止
