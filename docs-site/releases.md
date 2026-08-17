@@ -7,13 +7,18 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-Peanut Admin `2.0.0` 已完成 fresh-only 正式源码发布。该版本使用原生
+Peanut Admin `2.0.0` 与 `2.0.1` 均已完成 fresh-only 正式源码发布。`2.0.1` 在此基础上交付无人值守发布脚本、2.x 派生应用升级策略与 Article 可选模块基础合同。版本使用原生
 Account/TenantMember/RBAC、canonical Schema 和空库安装；不提供 1.x 数据库或脚手架原地升级。
 
 annotated tag [`v2.0.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.0)
 指向 `main@ec4ac732a498afe5e02eafb4a4855ec1f52aa68d`，固定候选 P0-E 7/7 通过。GitHub Release
 包含确定性源码包、外部 manifest、许可证、NOTICE、第三方告知和 SPDX SBOM。隔离的
 `production-candidate` 体验环境仍不是正式生产部署；2.0.0 线上部署与 smoke 留给独立工作流。
+
+annotated tag [`v2.0.1`](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.1)
+指向 `main@1c8aff4f1f19069bfe4480a8b29d59414d5c6816`，固定候选 `9ffffed3…` 的 P0-E 7/7
+通过，且 `v2.0.0 -> v2.0.1` 派生应用升级资格通过。线上 Standalone/Multi-tenant 部署和
+Article 页面专项资格仍需独立工作流验证。
 
 ## 公开运行依赖
 
@@ -24,7 +29,7 @@ annotated tag [`v2.0.0`](https://github.com/peanut-business/peanut-admin/release
 
 内部领域目录不是独立包。应用只消费上述两个公开总包；Core/Generator 的公司级固定身份与 DCS Product-only 条件采用边界独立记录，不因应用版本发布而扩大授权。
 
-## 2.0.0 发布范围
+## 2.0.x 发布范围
 
 - **已发布且已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant 登录、三 Tenant 选择和 Store Demo 真实浏览器通过；管理身份、RBAC、业务会员独立身份与官方能力 Tenant 资格检查通过。
 - **不再交付**：legacy Admin/Role/Dept 映射、default bootstrap 状态、兼容余额镜像和 1.x adopt/upgrade Runtime。
@@ -32,7 +37,7 @@ annotated tag [`v2.0.0`](https://github.com/peanut-business/peanut-admin/release
   Runtime 重封，生成应用身份由确定性检查验证。
 - **发布制品**：规范源码包 SHA-256 为 `af9fc2f17d403faf8a3c461f7eb759f76e10260bfd1e0a8c4a9e1983eb53aa3c`；外部 `RELEASE_MANIFEST.json` SHA-256 为 `508fc3781242cc17fe63cca3ecbeffa9b67ebe67e0b225965515848c762d5844`。
 - **CI 例外**：PR #148/#149 的 GitHub Actions 因账户配额/付款限制未执行实际任务；用户明确批准以固定候选 P0-E 7/7 结果绕过。该事实不是 CI 通过。
-- **仍待独立执行**：从正式 Release 的生产部署、备份、迁移和线上 smoke；它们不属于本次源码发布。
+- **仍待独立执行**：从 `v2.0.1` 正式 Release 的 Standalone/Multi-tenant 生产部署、备份、迁移和线上 smoke；它们不属于源码 Release 本身。
 - **明确不做**：1.x 升级矩阵、DCS 领域 Runtime、跨应用联邦、完整 SaaS 商业化和真实外部渠道验证。
 
 ## 1.x 历史发布身份
@@ -61,4 +66,4 @@ annotated tag [`v2.0.0`](https://github.com/peanut-business/peanut-admin/release
 - [许可证与第三方告知](/legal)
 
 [Changelog](/legal/CHANGELOG.txt) 同时记录 2.0.0 与 1.x 历史。发布快照见仓库内
-`docs/product-status/releases/v2.0.0.json`。
+`docs/product-status/releases/v2.0.0.json` 与 `docs/product-status/releases/v2.0.1.json`。

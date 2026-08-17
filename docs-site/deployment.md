@@ -61,12 +61,11 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ### 统一无人值守发布
 
-仓库内的 `scripts/deploy-release` 是当前 `dev` 的发布控制入口，不是 `v2.0.0` Release
-附件中的已验证能力。它使用当前检出的控制脚本读取资源登记，
+仓库内的 `scripts/deploy-release` 已随 `v2.0.1` 源码 Release 交付。它使用当前检出的控制脚本读取资源登记，
 但实际归档和部署的代码始终来自命令中指定的 annotated release tag。正式 `v2.0.0` 源码附件
 本身不包含这个后续加入的控制脚本；部署该版本时，应在含有脚本的当前仓库中执行命令，不能在
 服务器上继续调用旧脚本或依赖旧 Git 工作树。下面的命令是后续独立部署工作流的操作参考，
-不表示 `v2.0.0` 已经完成 Standalone 与 Multi-tenant 的正式生产证明。
+不表示线上 Standalone 与 Multi-tenant 已经完成正式生产证明。
 
 #### 命令参数
 
@@ -247,7 +246,7 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 origin 和四个域名上线；Platform、公共 Admin、DNS、TLS、Host 保留和反向代理已验证。
 当前生产候选使用登记的人工 Owner 邀请交付模式，已创建第二 Tenant，并完成两个 Tenant
 域名的应用内持续绑定；跨域名或错误 Tenant 账号登录会被拒绝。该线上体验验收不能替代
-从 `v2.0.0` 正式 Release 执行的生产部署、备份、迁移和线上 smoke。
+从 `v2.0.1` 正式 Release 执行的生产部署、备份、迁移和线上 smoke。
 
 | 候选体验入口 | 地址 |
 | --- | --- |
