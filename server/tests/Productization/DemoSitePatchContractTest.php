@@ -60,5 +60,9 @@ $deploy = $read($root . '/scripts/deploy-release');
 foreach (['--confirm-destroy', '--overlay', 'seed-multi-tenant-demo.php', 'down --volumes'] as $token) {
     $expect(str_contains($deploy, $token), 'deployment flow lost contract token: ' . $token);
 }
+$expect(
+    substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 5,
+    'remote one-shot Compose commands must not consume the deployment heredoc'
+);
 
 echo "DEMO-SITE-PATCH-CONTRACT-001 passed\n";
