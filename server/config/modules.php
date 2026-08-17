@@ -12,6 +12,10 @@ return [
     'roots' => $roots,
     'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock'),
     'kernel_version' => (string)env('PEANUT_MODULE_KERNEL_VERSION', '1.0.0'),
-    'frontend_components' => ['fixture.delivery-record.list'],
+    'frontend_components' => [
+        'fixture.delivery-record.list',
+        'official.article.cate',
+        'official.article.list',
+    ],
     'registered_client_keys' => ['admin-web', 'platform-web'],
 ];

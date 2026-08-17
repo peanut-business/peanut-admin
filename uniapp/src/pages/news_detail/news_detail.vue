@@ -46,6 +46,7 @@ async function loadDetail(id: number) {
   try {
     article.value = await getArticleDetail(id)
   } catch (error) {
+    article.value = null
     console.error('Failed to load article detail:', error)
   }
 }

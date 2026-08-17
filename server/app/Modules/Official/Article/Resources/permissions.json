@@ -1,0 +1,15 @@
+[
+  {"key":"article.articleCate/lists","type":"api","name":"List article categories","risk_level":"normal"},
+  {"key":"article.articleCate/all","type":"api","name":"Read article categories","risk_level":"normal"},
+  {"key":"article.articleCate/detail","type":"api","name":"Read article category","risk_level":"normal"},
+  {"key":"article.articleCate/add","type":"action","name":"Create article category","risk_level":"sensitive"},
+  {"key":"article.articleCate/edit","type":"action","name":"Edit article category","risk_level":"sensitive"},
+  {"key":"article.articleCate/delete","type":"action","name":"Delete article category","risk_level":"critical"},
+  {"key":"article.articleCate/updateStatus","type":"action","name":"Change article category status","risk_level":"sensitive"},
+  {"key":"article.article/lists","type":"api","name":"List articles","risk_level":"normal"},
+  {"key":"article.article/detail","type":"api","name":"Read article","risk_level":"normal"},
+  {"key":"article.article/add","type":"action","name":"Create article","risk_level":"sensitive"},
+  {"key":"article.article/edit","type":"action","name":"Edit article","risk_level":"sensitive"},
+  {"key":"article.article/delete","type":"action","name":"Delete article","risk_level":"critical"},
+  {"key":"article.article/updateStatus","type":"action","name":"Change article status","risk_level":"sensitive"}
+]

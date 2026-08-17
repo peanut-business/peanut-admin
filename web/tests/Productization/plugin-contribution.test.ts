@@ -3,6 +3,7 @@ import {
   collectPluginContributions,
   routesForTenantModules,
 } from '../../src/core/plugin-contribution-policy';
+import articleContribution from '../../src/modules/official-article/contribution';
 
 function expect(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
@@ -48,6 +49,36 @@ expect(
     exact
   ).length === 1,
   'enabled and authorized fixture Module was not visible'
+);
+expect(
+  routesForTenantModules(
+    [articleContribution],
+    ['official.article'],
+    ['article.article/lists', 'article.articleCate/lists'],
+    exact
+  ).length === 1,
+  'enabled and authorized official Article Module was not visible'
+);
+expect(
+  routesForTenantModules([articleContribution], [], ['*'], exact).length === 0,
+  'official Article route bypassed TenantModule enablement'
+);
+const articleRoot = articleContribution.routes[0];
+expect(
+  articleRoot.meta?.tenantModuleKey === 'official.article' &&
+    articleRoot.children?.every(
+      (child) => child.meta?.tenantModuleKey === 'official.article'
+    ) === true,
+  'official Article deep-link child lost TenantModule metadata'
+);
+expect(
+  routesForTenantModules(
+    [articleContribution],
+    [],
+    ['article.article/lists', 'article.articleCate/lists'],
+    exact
+  ).flatMap((route) => route.children || []).length === 0,
+  'disabled official Article Module exposed a deep-link child route'
 );
 
 console.log('PLUGIN-FRONTEND-CONTRIBUTION-001 passed');
