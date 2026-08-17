@@ -128,29 +128,38 @@ expectContentDecoration(
     'shared decoration page read bypasses Tenant-first ownership'
 );
 
-$assetMigration = (string)file_get_contents(
+$assetSchema = (string)file_get_contents(
     $serverRoot . '/database/init.sql'
 );
 expectContentDecoration(
-    str_contains($assetMigration, 'MODIFY COLUMN `image` VARCHAR(2048)'),
+    preg_match('/`image`\s+VARCHAR\(2048\)/i', $assetSchema) === 1
+        || str_contains($assetSchema, 'MODIFY COLUMN `image` VARCHAR(2048)'),
     'article cover cannot hold stable absolute provenance'
 );
 expectContentDecoration(
-    str_contains($assetMigration, 'MODIFY COLUMN `selected` VARCHAR(2048)')
-        && str_contains($assetMigration, 'MODIFY COLUMN `unselected` VARCHAR(2048)'),
+    (preg_match('/`selected`\s+VARCHAR\(2048\)/i', $assetSchema) === 1
+        || str_contains($assetSchema, 'MODIFY COLUMN `selected` VARCHAR(2048)'))
+        && (preg_match('/`unselected`\s+VARCHAR\(2048\)/i', $assetSchema) === 1
+        || str_contains($assetSchema, 'MODIFY COLUMN `unselected` VARCHAR(2048)')),
     'tabbar icons cannot hold stable absolute provenance'
 );
 $initSql = (string)file_get_contents($serverRoot . '/database/init.sql');
-expectContentDecoration(str_contains($initSql, 'uk_member_article'), 'article collection idempotency key is missing');
+expectContentDecoration(
+    str_contains($initSql, 'uk_member_article')
+        || str_contains($initSql, 'uk_article_collect_tenant_member_article'),
+    'article collection idempotency key is missing'
+);
 $decorationMigration = (string)file_get_contents(
     $serverRoot . '/database/init.sql'
 );
 expectContentDecoration(
-    str_contains($decorationMigration, 'uk_decorate_page_type'),
+    str_contains($decorationMigration, 'uk_decorate_page_type')
+        || str_contains($decorationMigration, 'uk_decorate_page_tenant_type'),
     'decoration page type owner is not unique'
 );
 expectContentDecoration(
-    str_contains($decorationMigration, 'uk_decorate_tabbar_position'),
+    str_contains($decorationMigration, 'uk_decorate_tabbar_position')
+        || str_contains($decorationMigration, 'uk_decorate_tabbar_tenant_position'),
     'tabbar position owner is not unique'
 );
 
