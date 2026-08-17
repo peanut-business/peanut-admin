@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "2.0.1",
-        "source_commit": "f227a3ded999ef14125eb148455cd8dfbb19427b",
-        "source_tree": "aa6da50b7d6b56ccfdf15d1ddb10d75a9dfb4026",
-        "inventory_sha256": "a2c85b3bd5343328687027776e062cb7add3f096cfef4ba112abf446aef7250c",
+        "source_commit": "8af53f150d4fa6132b5c114d91ed0e03450d75b8",
+        "source_tree": "74826b1a6a816e5c6620d607ef42abb7977af2ee",
+        "inventory_sha256": "ac2d71d19e56084638222348887d7f716a496cb3b3120bb337702ca7aaa7d063",
         "inventory_template_version": "2.0.1",
-        "managed_tree_sha256": "0706f4665288a8ca90d28d10935e72d4f08bf45999b234e7f9cb74a8a757aaf4",
+        "managed_tree_sha256": "ec666ca6b8d96af2f1624b93a85698662adb1161369fe5ecacf9c3ffb47833fe",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -600,6 +600,16 @@
             "owner": "host"
         },
         {
+            "path": "resources/release-upgrade-transitions.json",
+            "source": "files/resources/release-upgrade-transitions.json",
+            "template_sha256": "e28c4746a3ac96113d83b3c06ea28aa2f4d722eb61317f979da243053a9f4145",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
             "path": "scripts/build-demo-site-patch",
             "source": "files/scripts/build-demo-site-patch",
             "template_sha256": "1c61344b089562215d598c6097283bc62c87be1d103ed979e683fd4eb69e137c",
@@ -642,7 +652,7 @@
         {
             "path": "scripts/ci-server-check.sh",
             "source": "files/scripts/ci-server-check.sh",
-            "template_sha256": "73f77219fd0f684ed69f30ddbcceeb0f1ef9f0bcb8cfdfe15eca8a49cd2f9034",
+            "template_sha256": "71dc7596e35ea6e73c1acd0e4a16248003a5f3d99597a8bf31b30d8388689dba",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -652,7 +662,7 @@
         {
             "path": "scripts/deploy-release",
             "source": "files/scripts/deploy-release",
-            "template_sha256": "7a139e007e2462824d876a9042c465b5c65c9c83695c811a0c10392cd1ebe73d",
+            "template_sha256": "9513f4c72ed17e7a01542f3e7e39be511eca453b85a2728869c9d1bdbd55fa60",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -703,6 +713,16 @@
             "path": "scripts/project-resource-registry",
             "source": "files/scripts/project-resource-registry",
             "template_sha256": "e673e6bbc0207b415242ae0f1931e81a8abc0b5e243df9e5b05982b52a8778f1",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 493,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "scripts/release-upgrade-policy",
+            "source": "files/scripts/release-upgrade-policy",
+            "template_sha256": "fed240b511d814c5fc73bbf97fcf2d077d6d5ede2d15e239142f8b4fdac56a86",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
