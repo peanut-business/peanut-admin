@@ -57,8 +57,11 @@ Module 都必须通过同一套 Tenant 资格；不满足就只能留在派生�
   原生菜单/RBAC 会交集 ModuleInstallation、TenantModule 和成员权限；源码 fixture 的同步业务命令
   也会在授权后再次检查 ModuleGuard。
 - **当前只是 Tenant 适配，不是可选 Module**：文件、通知、OAuth、支付、会员、任务、导入导出
-  和文章 Runtime 已按 Tenant 隔离，但仍由应用 Host 直接拥有，不能从“已隔离”推导为“已可安装/
+  Runtime 已按 Tenant 隔离，但仍由应用 Host 直接拥有，不能从“已隔离”推导为“已可安装/
   可停用”。共享文件基础设施也不应因某个业务 Module 停用而整体关闭。
+- **进行中的首个候选**：Article 已在独立工作树加入 manifest、权限/菜单目录、管理端
+  contribution、ModuleInstallation/TenantModule Guard 和 Host 绑定解析；它仍缺多端停用矩阵、
+  已合入提交与正式 Release 身份，因此不能写成“当前已支持的官方 Module”。
 - **推荐新增**：把候选能力按稳定 manifest 拆成官方可选 Module，并逐一补齐 HTTP/内部命令、
   入队和 worker 执行、外部回调、模块专属文件入口的统一 Guard，以及独立 Provider、版本和浏览器验收。
 - **示例模板**：`fixture.delivery-record` 用于演示表、合同、权限、菜单和前端 contribution，不进入生产默认 lock。

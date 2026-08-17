@@ -28,12 +28,12 @@ TenantModule 生命周期和全部入口 Guard 后，产品形态才算兑现。
 
 | 优先级 | 能力 | 当前真实状态 | 下一步产品形态 | 完成条件 |
 | --- | --- | --- | --- | --- |
-| P0 | 无人值守发布 | **进行中，尚未交付**：正式 Release 只有 Docker Compose 手工流程；自动发布脚本仍在独立功能分支 | 一个脚本支持固定 tag、登记目标、`fresh`/`upgrade`、数据库迁移、备份和非交互远程执行 | 合入 `dev/main`；参数和凭据写入可靠；fresh/upgrade 各有一次聚焦验证；失败不会留下半发布状态 |
+| P0 | 无人值守发布 | **开发实现已合入 `dev`，正式 Release 尚未交付**：脚本已有固定 tag、登记目标、`fresh`/`upgrade`、数据库迁移、备份和非交互远程执行；`v2.0.0` 正式附件仍只有 Docker Compose 手工流程 | 在下一不可变 Release 中交付同一脚本，并绑定 fresh/upgrade 资格证据 | 参数和凭据写入可靠；fresh/upgrade 各有一次聚焦验证；失败不会留下半发布状态；Release 内容与验证 tree 一致 |
 | P0 | Standalone 与多租户线上交付 | **源码已发布，正式生产证明未完成**：现有多租户地址是隔离体验候选，不是 `v2.0.0` 正式生产发布 | 从同一个不可变 tag 部署一个 Standalone 实例和一个 Multi-tenant 实例 | 固定 tag、资源、数据库和域名；完成备份/迁移、TLS、健康检查、最小浏览器矩阵和账号交付 |
 | P0 | 演示站叠加层 | **基础 seeder 已发布；完整演示补丁尚未交付** | 正常安装后显式叠加可丢弃的 Tenant A/B 数据、账号预填、演示账号保护和 Tenant 标题 | 只能用于登记的演示目标；身份/Host/密码一致；可重复执行或安全失败；不会改变普通生产升级配置 |
 | P0 | 文档事实自动收敛 | **长期入口已修正，自动防滞后未完成**：发布页、能力账本、首页、开发指南和能力目录已统一到正式 Release | 发布状态只由能力账本和不可变 Release 快照生成，公共入口不再手工复制旧状态 | 文档构建和状态检查能发现过期版本、候选措辞和能力表冲突 |
-| P1 | 2.x 派生应用受控升级 | **未交付**：create-app 已记录模板身份、文件 owner 和 managed baseline，但 2.x 没有可执行的 `preflight/plan/apply/verify/recover` | 从旧 Release、当前应用和目标 Release 生成三方计划，只更新受管文件与 Peanut 依赖，冲突时停止 | app-owned 字节保持；依赖、数据库 migration 和恢复步骤显式列出；至少通过一次真实 2.x→2.x 派生应用升级资格 |
-| P1 | 官方可选 Module 产品化 | **Tenant 适配已完成，尚未模块化**：文件、通知、OAuth、支付、会员、任务、导入导出和文章仍由应用 Host 直接拥有 | 每项能力拥有稳定 Plugin/Module manifest，可安装、逐 Tenant 开通和停用 | Plugin 安装、TenantModule、成员 RBAC、数据权限和所有入口 Guard 同时通过 |
+| P1 | 2.x 派生应用受控升级 | **进行中，尚未交付**：create-app 已记录模板身份、文件 owner 和 managed baseline；Release 转换白名单和部署端策略已有固定候选，派生应用三方计划、原子应用、验证和恢复仍未闭环 | 从旧 Release、当前应用和目标 Release 生成三方计划，只更新受管文件与 Peanut 依赖，冲突时停止 | app-owned 字节保持；依赖、数据库 migration 和恢复步骤显式列出；至少通过一次真实 2.x→2.x 派生应用升级资格 |
+| P1 | 官方可选 Module 产品化 | **进行中，尚未交付**：Article 是首个候选，manifest、权限/菜单目录、管理端 contribution 和后端 Guard 已在独立工作树实现；多端停用矩阵、合入提交和正式 Release 身份仍缺失。其他候选仍是 Tenant-first Host 能力 | 每项能力拥有稳定 Plugin/Module manifest，可安装、逐 Tenant 开通和停用 | Plugin 安装、TenantModule、成员 RBAC、数据权限和所有入口 Guard 同时通过 |
 | P1 | Module 全入口 Guard | **部分具备**：同步 fixture 命令已检查 ModuleGuard；通用任务、回调和模块文件入口没有统一合同 | HTTP、内部命令、入队、worker、外部回调和模块文件入口使用同一授权链 | 每类入口都有启用正向测试和停用负向测试；前端隐藏不能作为安全证据 |
 | P1 | 跨 Module 可运行示例 | **未完成**：当前只有单 Module 的 `fixture.delivery-record` | 两个最小 Module 演示公开命令、只读查询 DTO，以及必要时的版本化事件 | 示例可独立运行；调用方不依赖对方私有表或 Repository；失败场景没有部分写入 |
 | P1 | Tenant 隔离测试模板 | **已有大量产品测试，尚未整理成模板** | 新 Module 可复制的 Tenant A/B、伪造 ID、停用 Tenant/Module 和权限撤销测试骨架 | create-app 或开发文档提供模板；示例 Module 使用同一模板通过 |
@@ -83,7 +83,7 @@ TenantModule 启停、成员权限、SQL/文件/缓存/任务/回调隔离、审
 | 会员 CRM | **Tenant 适配已验证，尚非可选 Module（会员/财务，不是通用 CRM）**：`pa_member`、标签、单一权威余额、充值退款和独立会员登录存在 | **可选官方模块，否**。客户档案应与 Account/TenantMember 分离；行业字段差异大 | 客户身份关联、隐私、标签、等级/积分、数据留存 | 高，个人信息和营销规则变化频繁 |
 | 任务与定时任务 | **Tenant 适配已验证，尚非可选 Module**：显式命令、Cron、状态和 Tenant 边界存在；没有通用队列产品或 module-key task envelope | **可选官方模块或基础设施 adapter，按需**。无后台任务的应用不应承担调度器成本 | scheduler、幂等、锁、重试、监控、ModuleGuard | 中高，重复执行和失败恢复必须可观测 |
 | 导入导出 | **Tenant 适配已验证，尚非可选 Module**：管理员/岗位等 XLSX、两阶段导出和 Tenant-first 约束通过资格检查 | **可选官方模块，通常建议安装但默认最小权限**。常见且风险高，不应成为任意表导入器 | 文件、异步任务、字段映射、权限、数据校验 | 高，大数据量、隐私和部分失败难处理 |
-| 文章内容 | **Tenant 适配已验证，尚非可选 Module**：文章、分类、收藏、计数和多端读取通过 Tenant-first 资格检查 | **可选官方模块，否**。不是每个业务应用都需要 CMS | 文件素材、富文本安全、发布状态、客户端展示 | 中，内容安全和编辑器升级需要维护 |
+| 文章内容 | **官方 Module 候选正在验收，尚未交付**：既有文章、分类、收藏和多端读取已通过 Tenant-first 资格；候选已增加 manifest、权限/菜单目录、管理端 contribution、部署安装与 TenantModule Guard，但尚未形成已合入提交、完整多端停用矩阵或 Release 身份 | **可选官方模块，否**。不是每个业务应用都需要 CMS | 文件素材、富文本安全、发布状态、客户端展示 | 中，内容安全、跨端能力发现和编辑器升级需要维护 |
 
 ## DCS 业务模块
 
