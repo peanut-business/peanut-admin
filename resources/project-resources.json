@@ -712,7 +712,7 @@
       },
       {
         "stable_resource_id": "peanut-admin-github-repository",
-        "purpose": "source control and CI",
+        "purpose": "source control, pull requests, tags and releases; GitHub Actions is not a merge or qualification gate",
         "environments": [
           "development",
           "production"
@@ -723,7 +723,7 @@
         "database": null,
         "schema": null,
         "namespace": "peanut-business/peanut-admin",
-        "service_type": "GitHub",
+        "service_type": "GitHub source control; repository Actions disabled by project policy",
         "credential_ref": "developer gh/SSH credential provider",
         "data_source": "git@github.com:peanut-business/peanut-admin.git",
         "freshness_requirement": "fetch origin/dev before implementation",

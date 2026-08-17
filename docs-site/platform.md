@@ -31,11 +31,16 @@ Tenant 只是派生应用可评估的建模建议；采用前必须独立冻结�
 
 ## Tenant 生命周期
 
-1. 平台操作员填写 Tenant 编码、名称和 Owner 邮箱创建 Tenant。
-2. 系统校验邮箱格式并创建一次性邀请；邮箱对应的已有 Account 不会被覆盖密码，新账号必须在接受时设置密码。
-3. 接受邀请后建立 `Account -> TenantMember`、激活成员并授予 `core.tenant-owner`。
-4. 平台操作员将 Tenant 从 `provisioning` 激活。暂停或关闭会阻止新的 Tenant 操作。
-5. 已有 active Owner 的 Tenant 可以继续邀请其他 Owner；Core 会拒绝移除或暂停最后一个 active Owner。
+| 步骤 | 操作 | 系统结果 | 失败时怎么处理 |
+| --- | --- | --- | --- |
+| 1 | 填写 Tenant 编码、名称和 Owner 邮箱 | 创建 `provisioning` Tenant 和一次性邀请 | 邮箱格式、编码冲突或权限不足时修正输入，不手工插表 |
+| 2 | 交付邀请链接 | `auto` 交给真实 Provider；`manual` 只显示一次 | 没有 Provider 时显式使用人工模式，不伪造“已发送”状态 |
+| 3 | Owner 接受邀请 | 已有 Account 直接关联；新账号在接受时设置密码 | 不覆盖已有账号密码；Token 过期后重新签发邀请 |
+| 4 | 系统建立成员关系 | 创建 active TenantMember 并授予 `core.tenant-owner` | 邀请未完成前不要激活 Tenant |
+| 5 | PlatformOperator 激活 Tenant | Tenant 可以建立正常管理会话 | 暂停/关闭会阻止新操作，但不会把平台身份变成租户身份 |
+
+新建 Tenant 时填写邮箱，并不表示系统已找到一个有效登录账号，也不会立即创建明文密码。
+邮箱先作为 Owner 邀请目标；只有邀请被接受，才会得到可登录的 Account/TenantMember 和 Tenant 内 owner 角色。
 
 邀请 Token 只保存 SHA-256，接受成功后立即失效。`auto` 模式在生产/预发布要求真实投递
 Provider；显式 `manual` 模式允许已认证且具备权限的 PlatformOperator 取得只显示一次的
@@ -69,6 +74,16 @@ PlatformOperator、平台角色与权限、平台审计。所有写操作都需�
 
 平台页面不维护“当前租户”。Owner、入口和 Module 页面中的 Tenant 是操作员显式选择的治理目标，
 不会转换 PlatformOperator 的身份，也不会让平台会话进入该 Tenant 的业务数据。
+
+| 页面 | 当前功能 | 操作后的预期结果 |
+| --- | --- | --- |
+| Tenant 生命周期 | 创建、激活、暂停、关闭 Tenant | 生命周期状态变化并写平台审计 |
+| Owner 邀请 | 创建、重新签发、查看投递状态 | 接受后建立 TenantMember + owner RBAC |
+| 入口域名与客户端 | 绑定/停用 `host + client_key` | 登录和后续请求持续受同一 Tenant 约束 |
+| Module 目录 | 查看安装状态、为 Tenant 开通/停用 | 只改变 TenantModule，不自动给成员授权 |
+| PlatformOperator | 管理平台操作员 | 只影响平台控制面，不授予租户业务权限 |
+| 平台角色与权限 | 分配平台治理权限 | 不能复用 Tenant Role，也不能读取租户私有表 |
+| 平台审计 | 查询平台写操作 | 用于追溯 Tenant、Owner、入口和 Module 变更 |
 
 Platform API 只接受 `PLATFORM_HOSTS` 中的域名；Tenant 域或公共 Admin 域不能调用。Platform
 和 Tenant 浏览器会话分别使用独立 refresh Cookie 自动续期，任何一端的 Token 都不能投到

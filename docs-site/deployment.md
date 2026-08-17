@@ -56,7 +56,27 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ## Docker 生产部署（推荐）
 
-生产和开发 Compose 严格分离。根目录 `compose.yaml` 是生产入口，并引用 `deploy/docker-compose.prod.yml`；开发环境使用 `deploy/docker-compose.dev.yml`，不要混用。首次部署时拉取已经存在的应用仓、复制受保护的环境文件，然后只执行一条构建并启动命令：
+生产和开发 Compose 严格分离。根目录 `compose.yaml` 是生产入口，并引用 `deploy/docker-compose.prod.yml`；开发环境使用 `deploy/docker-compose.dev.yml`，不要混用。
+
+### 执行前参数表
+
+| 参数/文件 | 必填 | 默认值 | 作用 | 风险与停止线 |
+| --- | --- | --- | --- | --- |
+| `.env`（由 `.env.example` 复制） | 是 | 无 | 生产运行时配置 | 只保存在服务器权限目录，不提交 Git |
+| `DEPLOYMENT_MODE` | 是 | 无 | 选择单租户或多租户模式 | 只能写精确枚举值 |
+| `DB_*` / `PEANUT_DATABASE_RESOURCE_ID` | 是 | 无 | 选择已登记数据库 | 不得指向开发库或未知主机 |
+| `JWT_SECRET` | 是 | 无 | 会话签名密钥 | 发布后不能随意更换 |
+| `TENANT_IDENTIFIER_HMAC_KEY`、`PLATFORM_IDENTIFIER_HMAC_KEY` | 多租户必填 | 无 | 稳定身份索引 | 两项必须不同且至少 32 字节 |
+| `ADMIN_INITIAL_*` | 空库必填 | 无 | 创建首个 Tenant owner | 已有数据库不要再次填写并运行安装器 |
+| `PLATFORM_INITIAL_*` | 多租户空库必填 | 无 | 创建独立 PlatformOperator | 不会自动成为 TenantMember |
+| `PLATFORM_HOSTS`、`TENANT_ADMIN_HOSTS` | 多租户必填 | 无 | 限定 Host 入口 | 未登记 Host 必须拒绝 |
+
+正式 `v2.0.0` Release 不包含 `scripts/deploy-release`。无人值守发布脚本和演示补丁正在独立
+功能分支收口，尚未合入 `dev/main`，因此当前受支持的生产入口仍是本页下面的 Docker Compose
+流程。脚本只有在参数、凭据写入、fresh/upgrade 数据边界、备份、回滚和浏览器 smoke 全部通过后，
+才能进入日常发布路径。进度和完成条件见[后续产品能力路线图](/capabilities#后续产品能力路线图)。
+
+首次部署时拉取已经存在的应用仓、复制受保护的环境文件，然后执行：
 
 ```bash
 git clone git@github.com:peanut-business/peanut-admin.git /srv/peanut-admin
@@ -70,6 +90,8 @@ chmod 600 .env
 
 docker compose up -d --build
 ```
+
+预期结果：Compose 启动 PHP-FPM、Nginx 和 scheduler；空库创建默认 Tenant/owner，已有数据库只执行允许的前滚 migration。构建、数据库连接或 Host 校验失败时停止在该步，不重复运行安装器。
 
 生产镜像是多阶段构建：Tenant Admin 放到 `server/public/admin/`，独立 Platform 放到
 `server/public/platform/`，UniApp H5 放到 `server/public/mobile/`，Nuxt PC 放到
@@ -108,6 +130,17 @@ php server/database/migrate.php --current
 禁止把 1.x 数据库交给上述安装器或迁移器，也不要复制 1.x 的表、数据、migration ledger、
 scaffold baseline 或 app-owned 文件到 2.0.0 生成物。需要保留旧环境时并行运行旧版本实例，
 通过显式业务导出/导入项目迁移必要数据；本版本不提供通用迁移工具。
+
+### 安装与升级的区别
+
+| 场景 | 应执行 | 数据结果 |
+| --- | --- | --- |
+| 新实例 | 空库安装器，再运行 `migrate.php --current` | 建立 2.0 canonical Schema、默认 Tenant 和首 owner |
+| 同一 2.0 实例发布新代码 | 备份后运行普通 `migrate.php` | 只前滚缺失的 2.0 基线后 migration，保留现有 Tenant、成员和业务数据 |
+| 1.x 到 2.0 | 不使用本仓安装器“升级” | 继续运行旧实例；数据迁移另立项目，当前仓不承诺通用映射 |
+
+迁移只说明 Schema/Runtime 如何前滚，并不会自动重置管理员密码或重新邀请 Tenant Owner。
+账号、成员、角色和业务数据是否保留，必须由目标 migration 与独立验收证据逐项确认。
 
 ### 当前 Schema 边界
 
@@ -176,11 +209,19 @@ development，也不要在生产响应、日志或版本库中暴露 Token。
 
 无法使用 Docker 时，可以在构建机生成原生发布包，再交给 PHP-FPM 和 Nginx 主机：
 
+| 参数 | 必填 | 默认值 | 作用 | 注意 |
+| --- | --- | --- | --- | --- |
+| 输出目录 | 是 | 无 | 发布暂存目录，例如 `release/peanut-admin-2.0.0` | 目录名必须对应准备发布的版本 |
+| lockfile | 隐式必填 | 仓库当前文件 | 固定前端和 Composer 依赖 | lock 变化后必须重新生成包 |
+
 ```bash
 ./scripts/package-release.sh release/peanut-admin-<version>
 ```
 
 脚本按 lockfile 构建 `web/dist/`，复制到发布暂存目录的 `server/public/admin/`，安装生产 Composer 依赖，并生成目录和 `.tar.gz`。发布包不包含 `.env`、Node 依赖和运行日志。该备选脚本当前只包含管理端；完整三端发布以 Docker 多阶段方案为唯一推荐路径。
+
+预期结果：得到同名目录和 `.tar.gz`。因为它不包含 Platform、PC 和 UniApp H5 的完整推荐链路，
+不能用它替代正式多端 Docker 发布资格。
 
 Nginx 根目录指向发布制品的 `server/public/`：
 
@@ -246,6 +287,12 @@ Tenant Admin、Platform、H5 和 PC 静态文件分别位于 `server/public/admi
 首次安装前，脚手架默认品牌来自 `server/config/brand.json` 与 `server/public/brand/`。修改后运行 `node scripts/sync-brand-assets.mjs`，再构建四端和官网；安装完成后只通过管理端“应用设置 → 网站设置”修改 Runtime 品牌，不手改生成 JSON 或静态副本。
 
 官方网站与文档门户位于 `docs-site/`。目标站点地址只在构建时注入，用于 sitemap canonical host：
+
+| 参数 | 必填 | 默认值 | 作用 |
+| --- | --- | --- | --- |
+| `PEANUT_DOCS_SITE_URL` | 否 | 空 | sitemap 的正式 canonical host |
+| Pages project name | 发布时必填 | 无 | 选择唯一 Cloudflare Pages 项目 |
+| branch | 发布时必填 | 无 | 标记部署来源，不改变应用代码分支 |
 
 ```bash
 cd docs-site

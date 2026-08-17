@@ -12,6 +12,10 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
     <strong>快速开始</strong>
     <span>准备 PHP、MySQL、Node，完成空库安装与首次登录。</span>
   </a>
+  <a class="doc-entry" href="/guide/reading-guide">
+    <strong>文档阅读与命令参考</strong>
+    <span>先看参数表、前置条件、预期结果和停止线，再复制命令。</span>
+  </a>
   <a class="doc-entry" href="/guide/development">
     <strong>架构、目录与身份</strong>
     <span>Core/Host/应用/Module、部署实例、三类身份、Tenant 映射和 DCS 边界。</span>
@@ -33,8 +37,8 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
     <span>从目录、表、合同、权限和菜单到跨 Module 调用与最低测试。</span>
   </a>
   <a class="doc-entry" href="/capabilities">
-    <strong>开箱即用能力目录</strong>
-    <span>逐项区分当前能力、核心默认、可选官方模块、DCS 业务和示例。</span>
+    <strong>开箱即用能力与后续路线</strong>
+    <span>逐项区分当前能力、下一步产品形态、核心默认、可选官方模块、DCS 业务和示例。</span>
   </a>
   <a class="doc-entry" href="/architecture/official-module-qualification">
     <strong>官方模块资格</strong>
@@ -64,9 +68,9 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 
 ## 推荐阅读顺序
 
-1. 新安装者：快速开始 → 架构、目录与身份 → 部署与安装 → 故障处理 → 管理员手册。
-2. Module 开发者：架构、目录与身份 → 首个 Module 教程 → API 与扩展 → 开箱即用能力目录。
-3. 架构讨论：身份与 Tenant 边界 → 开箱即用能力目录 → 官方模块资格 → fresh baseline。
+1. 新安装者：文档阅读与命令参考 → 快速开始 → 架构、目录与身份 → 部署与安装 → 故障处理 → 管理员手册。
+2. Module 开发者：架构、目录与身份 → 首个 Module 教程 → API 与扩展 → 开箱即用能力与后续路线。
+3. 架构讨论：身份与 Tenant 边界 → 开箱即用能力与后续路线 → 官方模块资格 → fresh baseline。
 4. 发布负责人：版本与发布 → 部署与安装 → 产品状态。
 
 ## 当前讨论入口
@@ -84,6 +88,26 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 
 这些页面会明确标注“当前已支持、推荐新增、仅迁移需要、暂不建议、待核验”。设计建议
 不会被写成已经存在的 Runtime；DCS 具体领域文档仍由 DCS 仓库维护。
+
+## 当前文档覆盖状态
+
+下表描述的是“文档是否已经把问题讲清楚”，不是把计划能力写成已实现 Runtime。
+
+| 主题 | 当前文档状态 | 长期入口 |
+| --- | --- | --- |
+| 5 分钟速读 | 已补齐 | 门户、开始使用、部署、身份、Module 和命令页均先给结论 |
+| 脚本参数表 | 已补齐 | [文档阅读与命令参考](/guide/reading-guide)列必填项、默认值、作用、风险和示例 |
+| 前置条件、预期结果和失败处理 | 已补齐 | 开始使用、部署和故障页统一使用停止线，不把 HTTP 200 当业务验收 |
+| 目录结构与模块职责 | 已补齐 | [开发指南](/guide/development)和[Module 教程](/guide/module-development)提供真实目录与所有权 |
+| 派生应用创建与升级边界 | 已说明当前支持面；自动升级待交付 | [开始使用](/getting-started)说明 create-app 参数、人工采用边界和 2.x 当前仍无自动升级器 |
+| 三类身份、Tenant 选择与域名 | 已补齐 | [身份与 Tenant 边界](/architecture/identity-and-tenancy)和[实例 Platform](/platform) |
+| Module、Plugin、Host 和跨模块调用 | 已补齐 | [API 与扩展](/api#module-plugin-与-host)说明四道 Gate、DTO、命令和失败边界 |
+| 开箱即用能力和后续路线 | 已补齐 | [能力目录](/capabilities)分开记录当前事实、推荐产品形态和完成条件 |
+| 官方可选模块多租户 | 已补齐 | [官方模块资格](/architecture/official-module-qualification)明确所有官方 Module 必须多租户 |
+| 部署与迁移 | 已补齐当前事实 | `v2.0.0` 是 fresh-only；无人值守脚本未合入前不写成正式能力 |
+| 管理员操作 | 已覆盖当前页面 | [管理员手册](/guide/user-manual)按页面说明操作结果和权限边界 |
+| 故障处理 | 已补齐最小路径 | [故障处理](/troubleshooting)按资源、安装、身份、Host 和 Module Gate 排查 |
+| DCS 边界 | 已明确 | Peanut 只说明扩展机制；DCS 领域表、事件和业务流程留在 DCS 仓库 |
 
 ## 未决问题
 
