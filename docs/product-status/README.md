@@ -28,7 +28,7 @@ php scripts/check-product-capability-ledger
 <!-- CAPABILITY_STATUS_GENERATED_START -->
 > 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only 与 v2.0.1 源码正式 Release 均已完成；Article 专项真实数据库与页面资格已在当前候选通过，但 Module 非 HTTP 全入口合同和线上 Standalone/Multi-tenant 双部署仍未完成。
 >
-> 事实基线：`feat/module-execution-contract@b0ef43d7de7d3ff23d83fb58b786bde94e33ccd1`，复核日期：`2026-08-18`。
+> 事实基线：`feat/module-execution-contract@3dfac8fdd3c794f42c7d4096a5cdb10c69888817`，复核日期：`2026-08-18`。
 
 ### 已验证可用
 

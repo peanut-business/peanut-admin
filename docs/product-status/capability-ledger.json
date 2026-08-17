@@ -4,7 +4,7 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/module-execution-contract",
-    "commit": "b0ef43d7de7d3ff23d83fb58b786bde94e33ccd1",
+    "commit": "3dfac8fdd3c794f42c7d4096a5cdb10c69888817",
     "reviewed_at": "2026-08-18"
   },
   "overall": {
