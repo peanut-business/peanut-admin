@@ -13,7 +13,7 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class MemberTenantRepository
 {
-    public static function members(TenantContext|TenantSystemContext $context)
+    public static function members(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
     {
         return Member::where('tenant_id', MemberTenantContext::tenantId($context));
     }
@@ -28,7 +28,7 @@ final class MemberTenantRepository
         return MemberTagRelation::where('tenant_id', MemberTenantContext::tenantId($context));
     }
 
-    public static function balanceLogs(TenantContext|TenantSystemContext $context)
+    public static function balanceLogs(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
     {
         return MemberBalanceLog::where('tenant_id', MemberTenantContext::tenantId($context));
     }
@@ -45,7 +45,10 @@ final class MemberTenantRepository
         return MemberTag::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
     }
 
-    public static function createBalanceLog(TenantContext|TenantSystemContext $context, array $data): MemberBalanceLog
+    public static function createBalanceLog(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        array $data
+    ): MemberBalanceLog
     {
         if ($context instanceof TenantSystemContext) {
             FinanceTenantContext::tenantId($context);

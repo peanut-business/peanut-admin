@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\notice;
 
 use app\adminapi\controller\BaseAdminController;
+use app\common\service\member\MemberTenantContext;
 use app\common\service\notice\NoticeChannelService;
 
 /**
@@ -16,7 +17,7 @@ class NoticeChannelController extends BaseAdminController
      */
     public function detail(): \think\Response
     {
-        return $this->data(NoticeChannelService::detail());
+        return $this->data(NoticeChannelService::detail(MemberTenantContext::member($this->request)));
     }
 
     /**
@@ -30,7 +31,7 @@ class NoticeChannelController extends BaseAdminController
 
         unset($post['section']);
         try {
-            NoticeChannelService::save($section, $post);
+            NoticeChannelService::save(MemberTenantContext::member($this->request), $section, $post);
             return $this->success('保存成功');
         } catch (\Throwable $exception) {
             return $this->fail($exception->getMessage());

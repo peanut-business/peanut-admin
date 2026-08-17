@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use app\platform\identity\CorePlatformOperatorIdentityPort;
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\module\VerifiedTenantModuleRepository;
@@ -42,6 +41,7 @@ final class PlatformRuntimeFactory
 {
     private static ?PlatformOperatorSessionService $sessions = null;
     private static ?PlatformTenantQueryService $tenantQueries = null;
+    private static ?TenantEntryBindingAdminService $tenantEntryBindings = null;
     private static ?TenantGovernanceService $tenantGovernance = null;
     private static ?PlatformTenantModuleService $tenantModules = null;
     private static ?PlatformAccessAdminService $platformAccess = null;
@@ -73,8 +73,7 @@ final class PlatformRuntimeFactory
         return self::$sessions = new PlatformOperatorSessionService(
             $auth,
             new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
-            $permissions,
-            new PlatformOperatorAccountBoundary($pdo)
+            $permissions
         );
     }
 
@@ -92,6 +91,14 @@ final class PlatformRuntimeFactory
         return self::$tenantQueries = new PlatformTenantQueryService(
             self::sessions(),
             new PlatformWorkspaceQueryService(self::pdo())
+        );
+    }
+
+    public static function tenantEntryBindings(): TenantEntryBindingAdminService
+    {
+        return self::$tenantEntryBindings ??= new TenantEntryBindingAdminService(
+            self::pdo(),
+            self::sessions()
         );
     }
 

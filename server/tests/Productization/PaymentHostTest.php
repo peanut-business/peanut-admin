@@ -162,7 +162,7 @@ expectPaymentHost(
 );
 
 $paymentMigration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260802_recharge_payment_core.sql'
+    $serverRoot . '/database/init.sql'
 );
 foreach (['uk_pay_sn', 'uk_transaction_id'] as $index) {
     expectPaymentHost(str_contains($paymentMigration, $index), 'payment uniqueness guard missing: ' . $index);

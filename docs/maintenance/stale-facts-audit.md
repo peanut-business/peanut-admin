@@ -38,3 +38,70 @@
 `output/`、本审计登记和明确写有“禁止连接”的当前资源合同；根事实源的当前迁移数量
 必须等于 Git 跟踪的 migration 文件数，且不得恢复“MT06 是当前关键路径”；暂缓计划
 不得再次把 PRE-S01 写成当前首个可领取项。CI 对每个 PR 运行该检查。
+
+## 模块、身份与租户文档审计（2026-08-16）
+
+本节以 2.0.0 fresh-only 候选代码、canonical Schema、当前 inventory 和 1.x 不可变发布
+快照交叉核验。第 1 至 40 行是 2026-08-14 的 1.x 历史审计，不是 2.0 当前操作入口。
+
+### 原始问题覆盖矩阵
+
+“文档结构已覆盖”只说明正式入口已经明确回答问题；“开发候选已验证”与“正式发布”仍
+按发布身份分开。DCS 领域实现始终由 DCS 仓库负责。
+
+| 原始问题 | 审计前覆盖 | 当前文档覆盖 | 当前实现状态 | 正式入口与未决项 |
+| --- | --- | --- | --- | --- |
+| 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 当前文档入口与语义检查已覆盖；正式发布仍待版本身份 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
+| Peanut Admin 架构、真实目录与所有权 | 只部分回答 | **文档结构已覆盖** | 当前目录已核验 | `docs-site/guide/development.md` |
+| Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 安装、治理、菜单/RBAC 和 fixture 同步命令 Guard 已支持；任务/回调/专属文件 Guard 与双 Module 示例待新增 | `docs-site/guide/module-development.md`、`docs-site/architecture/official-module-qualification.md` |
+| 前后端、路由、菜单、权限和测试路径 | 部分且有冲突 | **文档结构已覆盖** | 原生身份、官方能力 Tenant 资格和真实浏览器验证已通过 | `docs-site/guide/development.md`、`docs-site/api.md` |
+| DCS 与 Peanut Admin 的边界 | 只部分回答 | **Peanut 采用边界已覆盖** | DCS Runtime 不在本仓 | `docs-site/guide/development.md`；详细领域文档归 DCS |
+| DCS owner 与商品、采购、库存数据流 | 只部分回答 | **推荐合同已覆盖** | 本仓不实现 | `docs-site/guide/module-development.md`；DCS 冻结表/API/事件/状态机 |
+| 平台、Tenant 管理成员与业务客户身份 | 尚未回答 | **文档结构已覆盖** | 原生管理身份与独立 `pa_member` 已通过开发候选资格 | `docs-site/guide/development.md`；客户/供应商关联仍待产品决策 |
+| 三类租户映射 | 只部分回答 | **文档结构已覆盖** | legacy 映射已退出；同应用关联和跨应用联邦未实现 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
+| 门店与供应商同应用协作和越权边界 | 只部分回答 | **推荐模型已覆盖** | DCS participant policy 未实现 | `docs-site/guide/development.md` |
+| 一部署、一实例、多 Tenant/客户端/Module | 只部分回答 | **文档结构已覆盖** | 当前部署合同支持 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
+| Platform 是否独立、是否存在“当前租户” | 尚未回答 | **已完整回答** | 独立 `/platform/` 前端、会话/RBAC/审计；只显式选择治理目标 Tenant | `docs-site/platform.md` |
+| 域名解析与租户切换是否冲突 | 尚未回答 | **已完整回答** | Host 绑定是持续边界；绑定入口禁切换，未绑定公共入口按 TenantMember 切换 | `docs-site/architecture/identity-and-tenancy.md`、`docs-site/platform.md` |
+| `.env` 与 `PHP_*` 配置关系 | 尚未回答 | **已完整回答** | 人工只维护根 `.env` 普通键；启动器/Compose 派生 ThinkPHP 内部 alias | `docs-site/getting-started.md`、`docs-site/guide/development.md` |
+| 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 与 create-app 2.0 release 已验证重封 | `docs-site/deployment.md` |
+| 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 开发候选实现与推荐层级已分栏；外部渠道生产验证另列 | `docs-site/capabilities.md` |
+| 文档与 Runtime/Schema 清理关系 | 只部分回答 | **已明确** | 本轮已由独立提交实施后再同步文档 | 本审计与 `docs/architecture/clean-native-multitenancy-baseline.md` |
+
+### 现有文档判定
+
+| 文档范围 | 审计结论 | 当前处理 |
+| --- | --- | --- |
+| `README.md`、`docs-site/getting-started.md` | 1.x 快速入口已过时 | 改为 2.0 空库安装和候选状态 |
+| `docs-site/guide/development.md` | 信息存在但难读，身份与兼容描述冲突 | 增加五分钟层、真实目录、三类身份/映射和部署边界 |
+| `docs/plugin-module-development.md` | 信息存在但难读且站点不可达 | 扩为纵向教程，并通过 `docs-site/guide/module-development.md` 进入导航 |
+| `docs-site/capabilities.md` | 完全缺失逐项产品建议 | 新增核心、官方可选、DCS、示例四层目录和维护成本 |
+| `docs-site/deployment.md` | 1.x upgrade 与当前安装混写 | 改为 2.0 fresh-only；1.x 只作历史事实 |
+| `docs/peanut-admin-development-guide.md` | 生成应用携带的旧身份/升级说明 | 收敛为 2.0 当前入口，避免传播旧 Runtime |
+| `docs/peanut-admin-release-deployment.md` | 生成应用携带的 1.x 生产升级手册 | 收敛为 fresh deploy；历史生产记录不作命令入口 |
+| `docs/architecture/*.md`、`docs/design/saas-roadmap/` | 仅内部合同或路线输入 | 不作为新手入口；固定历史内容不冒充当前 Runtime |
+| `docs/product-status/releases/*` | 不可变 1.x 发布快照 | 保留追溯，不作为 2.0 完成证据 |
+
+### 2.0 当前事实分类
+
+- **开发候选已验证**：fresh 安装得到 87 表、197 菜单、43 配置；原生 Platform/Tenant
+  登录、三 Tenant 选择和 Store Demo 真实浏览器通过；原生管理身份、独立业务会员、
+  canonical fresh Schema、应用 Host 的 Tenant 隔离和单一权威会员余额字段均通过。
+- **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC 和 fixture 同步命令
+  Guard 已有证据；现有文件、通知、支付等只是 Tenant 适配的应用 Host，并非已交付官方可选
+  Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
+- **已部署候选体验**：固定候选 `d3d5900` 的隔离 `production-candidate` 已更新为头像
+  fallback 候选；部署源码关键文件摘要、`d3d5900` 镜像、容器健康和 origin health 已核对。
+  线上 Tenant A/B 的旧截图生成于头像修复之前，仍保留为历史失败证据，不能冒充当前通过。
+  当前候选的本地共享 Admin、Platform、PC、H5 和文档截图已人工检查通过；线上 Tenant A/B
+  尚未重新部署或重拍，因此不把本地截图写成线上证明。该候选体验不等于正式双模式 P0-E
+  或 2.0.0 发布证明。
+- **当前结论**：固定候选 `78e9667` 的 P0-E 七组已全部通过，包含生成应用、双模式空库、
+  Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；截图人工检查确认
+  Admin 头像 fallback、Platform 页面、PC/H5 空资讯状态和文档资源均无明显视觉异常。正式
+  v2.0.0 tag、GitHub Release 与线上部署证明仍是独立后续动作；Core Alpha.5 的 KernelSchema
+  字段遗漏由独立 Core 工作流修正。
+- **仅迁移需要且已退出 2.0**：legacy Admin/Role/Dept map、默认 Tenant bootstrap、1.x
+  adopt、余额双写和旧 scaffold upgrade Runtime；它们不得进入生成应用。
+- **推荐新增**：供应商/门店/客户业务主体关联、participant policy、双 Module 合同示例。
+- **暂不建议**：跨应用主体联邦、通用 Outbox/Event Bus、DCS 领域 Runtime 和跨实例运营平台。

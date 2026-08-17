@@ -92,6 +92,7 @@ show_urls() {
     development_port=$(awk -F= '$1 == "DEV_HTTP_PORT" { print $2 }' "$env_file")
     php_port=$(awk -F= '$1 == "PHP_PORT" { print $2 }' "$env_file")
     admin_port=$(awk -F= '$1 == "VITE_PORT" { print $2 }' "$env_file")
+    platform_port=$(awk -F= '$1 == "PLATFORM_PORT" { print $2 }' "$env_file")
     pc_port=$(awk -F= '$1 == "PC_PORT" { print $2 }' "$env_file")
     mobile_port=$(awk -F= '$1 == "MOBILE_PORT" { print $2 }' "$env_file")
     docs_port=$(awk -F= '$1 == "DOCS_PORT" { print $2 }' "$env_file")
@@ -100,6 +101,7 @@ show_urls() {
         "Development: http://127.0.0.1:$development_port/admin/" \
         "API direct:  http://127.0.0.1:$php_port/" \
         "Admin direct:http://127.0.0.1:$admin_port/admin/" \
+        "Platform direct:http://127.0.0.1:$platform_port/platform/" \
         "PC direct:   http://127.0.0.1:$pc_port/pc/" \
         "Mobile direct:http://127.0.0.1:$mobile_port/mobile/" \
         "Docs:        http://127.0.0.1:$docs_port/" \
@@ -184,7 +186,7 @@ case "${1:-}" in
         log_file="$repo_dir/output/local-diagnostics/backend-live.log"
         printf 'Backend log: %s\n' "$log_file"
         "$repo_dir/scripts/local-php-runtime" logs
-        compose_dev logs --no-color --since "${LOG_SINCE:-10m}" -f nginx web pc mobile docs | tee -a "$log_file"
+        compose_dev logs --no-color --since "${LOG_SINCE:-10m}" -f nginx web platform pc mobile docs | tee -a "$log_file"
         ;;
     urls)
         ensure_env

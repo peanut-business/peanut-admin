@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-15
+> Last updated: 2026-08-16
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -29,13 +29,38 @@
 
 ---
 
-## 2. 当前状态（2026-08-15）
+## 2. 当前状态（2026-08-16）
+
+### 2.0 2.0.0 fresh-only 候选 — 开发实现与必要本地资格完成
+
+- 当前开发分支已切换为原生 `Account/Credential/TenantMember/RBAC` 管理身份；业务会员
+  `pa_member` 保持独立。
+- fresh install 使用 `server/database/init.sql` 与 Core KernelSchema 建立 canonical
+  Schema；`server/database/migrations/` 当前只有 Owner 邀请、Tenant 入口绑定和 Tenant
+  capability setting 三条 2.0 基线后追加 SQL，不包含 legacy/adopt/compatibility 迁移。
+- 1.x Admin/Role/Department 映射、默认 Tenant bootstrap、兼容余额镜像和 1.x 数据库/
+  scaffold 原地升级不属于 2.0.0 支持面。
+- 登记多租户空库安装得到 87 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
+  三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
+- `scaffold/releases/v2.0.0` 已从 source commit `71684a4…`（tree `629e333…`）完成唯一最终
+  reseal；inventory SHA-256 为 `54c173f…`，manifest 文件 SHA-256 为 `f9889fe…`。本地多租户
+  体验使用登记资源 `peanut-admin-mysql84-local-multi-tenant-demo`、Platform
+  `127.0.0.1:20176`、API `127.0.0.1:20178` 和管理端 `127.0.0.1:20179`，不得复用为生产资源。
+- 已部署的隔离 `production-candidate` 仍是 `d3d5900…`；它包含右上角头像空值/加载失败
+  fallback、可访问用户菜单按钮和对应 Web 合同测试。共享 Admin、Tenant A、Tenant B 已在
+  `79b1095…` 完成三域名截图、破图、加载、溢出和菜单人工检查；到当前 seal 候选没有 Web、
+  Platform 或应用 Runtime 差异。此前占用登记端口 `20190` 的历史 Compose 监听已由 owner
+  释放；固定候选 `78e9667…` 随后的 P0-E 七组全部通过，且数据库、Compose、容器、卷、网络、
+  镜像、监听、缓存均零残留，租约已释放。线上候选更新和正式发布仍未完成。
+- 当前源码尚未形成正式 `v2.0.0` tag、GitHub Release 或生产部署证明；下面的 1.x 发布、
+  P0-E 和生产记录均为不可变历史证据，不能代替 2.0.0 正式发布资格。
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 
 - 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
 - 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 当前数据库入口：`server/database/install.php` + `server/database/migrate.php` + `init.sql` + 54 migrations；下表中的 24 条账本是 parity 完成时的历史证据，`v1.1.0` 发布制品固定为 50 条
+- 1.x 数据库入口历史为 `install.php` + `migrate.php` + `init.sql` + 54 migrations；2.0 当前数据库入口为 `init.sql` + `KernelSchema` + 3 migrations；下表中的
+  24 条账本是 parity 时点证据，`v1.1.0` 发布制品固定为 50 条。该计数不是 2.0 当前 Schema。
 
 **独立验证结果（非 Codex 自报）：**
 
@@ -135,7 +160,7 @@ peanut-admin/
 │   ├── database/
 │   │   ├── install.php  # 一键安装（空库 → 全量初始化）
 │   │   ├── init.sql     # 基础表 + 种子数据
-│   │   └── migrations/  # 当前 54 个版本化迁移；v1.1.0 固定 50 个
+│   │   └── migrations/  # 2.0 基线后追加迁移；当前 3 条
 │   └── .env             # DB/JWT 配置（不提交）
 ├── web/             # 管理端前端（Vue3 + Element Plus）
 ├── pc/              # PC 消费端（Nuxt3）
@@ -153,9 +178,9 @@ peanut-admin/
 
 ## 4. 开发入口与安装身份
 
-- 初始管理员账号为 `admin`；密码必须在空库安装时通过
-  `ADMIN_INITIAL_PASSWORD` 显式提供，仓库没有可供当前环境复用的共享默认密码。
-  历史 parity 证据中出现的旧密码仅用于追溯，不是现行登录指引。
+- 初始管理员邮箱必须在空库安装时通过 `ADMIN_INITIAL_EMAIL` 提供，密码通过
+  `ADMIN_INITIAL_PASSWORD` 显式提供；仓库没有可供当前环境复用的共享默认账号或密码。
+  历史 parity 证据中的 `admin` 用户名和旧密码仅用于追溯，不是现行登录指引。
 - 管理端 API 登记默认值：`http://127.0.0.1:20180/`（由 `scripts/local-stack.sh dev-up` 托管）
 - 前端 Dev 登记默认值：`http://127.0.0.1:20181`（`pnpm dev`，位于 `web/`）
 - API 前缀：`admin/*`（管理端），`api/*`（前端/小程序）

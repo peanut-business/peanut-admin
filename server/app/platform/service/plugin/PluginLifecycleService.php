@@ -125,10 +125,15 @@ SQL);
             }
             $plugin = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_plugin_installation
-SET status='uninstalled',revision=revision+1,uninstalled_at=:now,last_error_code=NULL,updated_at=:now
+SET status='uninstalled',revision=revision+1,uninstalled_at=:uninstalled_at,
+    last_error_code=NULL,updated_at=:updated_at
 WHERE plugin_key=:plugin_key
 SQL);
-            $plugin->execute(['plugin_key' => $pluginKey, 'now' => $now]);
+            $plugin->execute([
+                'plugin_key' => $pluginKey,
+                'uninstalled_at' => $now,
+                'updated_at' => $now,
+            ]);
             $this->pdo->commit();
         } catch (\Throwable $exception) {
             if ($this->pdo->inTransaction()) {
@@ -175,7 +180,7 @@ INSERT INTO pa_plugin_installation (
  installed_at,created_at,updated_at
 ) VALUES (
  :plugin_key,:version,:source,:artifact_sha256,:lock_digest,
- :composer,:npm,:frontend,'installing',1,:now,:now,:now
+ :composer,:npm,:frontend,'installing',1,:installed_at,:created_at,:updated_at
 )
 ON DUPLICATE KEY UPDATE
  installed_version=VALUES(installed_version),source=VALUES(source),
@@ -184,12 +189,16 @@ ON DUPLICATE KEY UPDATE
  frontend_identity_json=VALUES(frontend_identity_json),status=VALUES(status),
  revision=revision+1,last_error_code=NULL,updated_at=VALUES(updated_at)
 SQL);
-            $statement->execute($this->pluginParameters($plugin, $now));
+            $statement->execute($this->pluginParameters($plugin) + [
+                'installed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
             $module = $this->pdo->prepare(<<<'SQL'
 INSERT INTO pa_module_installation (
  module_key,installed_version,manifest_schema_version,manifest_digest,status,revision,
  installed_at,created_at,updated_at
-) VALUES (:module_key,:version,:schema,:digest,:status,1,:now,:now,:now)
+ ) VALUES (:module_key,:version,:schema,:digest,:status,1,:installed_at,:created_at,:updated_at)
 ON DUPLICATE KEY UPDATE
  installed_version=VALUES(installed_version),manifest_schema_version=VALUES(manifest_schema_version),
  manifest_digest=VALUES(manifest_digest),status=VALUES(status),revision=revision+1,
@@ -202,7 +211,9 @@ SQL);
                     'schema' => $manifest->data['schema_version'],
                     'digest' => $manifest->digest,
                     'status' => $upgrade ? 'upgrading' : 'installing',
-                    'now' => $now,
+                    'installed_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]);
             }
             $this->pdo->commit();
@@ -361,15 +372,15 @@ SQL);
             $owner = $this->pdo->prepare('SELECT plugin_key FROM pa_plugin_module WHERE module_key=:module_key FOR UPDATE');
             $catalog = $this->pdo->prepare(<<<'SQL'
 INSERT INTO pa_plugin_module (plugin_key,module_key,module_version,manifest_digest,created_at,updated_at)
-VALUES (:plugin_key,:module_key,:module_version,:manifest_digest,:now,:now)
+VALUES (:plugin_key,:module_key,:module_version,:manifest_digest,:created_at,:updated_at)
 ON DUPLICATE KEY UPDATE
  module_version=VALUES(module_version),manifest_digest=VALUES(manifest_digest),updated_at=VALUES(updated_at)
 SQL);
             $module = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_module_installation
 SET installed_version=:version,manifest_schema_version=:schema,manifest_digest=:digest,
- status='active',revision=revision+1,activated_at=COALESCE(activated_at,:now),
- upgraded_at=:upgraded_at,last_error_code=NULL,updated_at=:now
+ status='active',revision=revision+1,activated_at=COALESCE(activated_at,:activated_at),
+ upgraded_at=:upgraded_at,last_error_code=NULL,updated_at=:updated_at
 WHERE module_key=:module_key
 SQL);
             foreach ($manifests as $moduleKey => $manifest) {
@@ -383,7 +394,8 @@ SQL);
                     'module_key' => $moduleKey,
                     'module_version' => $manifest->data['version'],
                     'manifest_digest' => $manifest->digest,
-                    'now' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]);
                 $module->execute([
                     'module_key' => $moduleKey,
@@ -391,19 +403,22 @@ SQL);
                     'schema' => $manifest->data['schema_version'],
                     'digest' => $manifest->digest,
                     'upgraded_at' => $upgrade ? $now : null,
-                    'now' => $now,
+                    'activated_at' => $now,
+                    'updated_at' => $now,
                 ]);
             }
             $pluginUpdate = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_plugin_installation SET
  installed_version=:version,source=:source,artifact_sha256=:artifact_sha256,lock_digest=:lock_digest,
  composer_identity_json=:composer,npm_identity_json=:npm,frontend_identity_json=:frontend,
- status='active',revision=revision+1,activated_at=COALESCE(activated_at,:now),
- upgraded_at=:upgraded_at,uninstalled_at=NULL,last_error_code=NULL,updated_at=:now
+ status='active',revision=revision+1,activated_at=COALESCE(activated_at,:activated_at),
+ upgraded_at=:upgraded_at,uninstalled_at=NULL,last_error_code=NULL,updated_at=:updated_at
 WHERE plugin_key=:plugin_key
 SQL);
-            $pluginUpdate->execute($this->pluginParameters($plugin, $now) + [
+            $pluginUpdate->execute($this->pluginParameters($plugin) + [
+                'activated_at' => $now,
                 'upgraded_at' => $upgrade ? $now : null,
+                'updated_at' => $now,
             ]);
             $this->pdo->commit();
         } catch (\Throwable $exception) {
@@ -573,7 +588,7 @@ SQL);
     }
 
     /** @return array<string,mixed> */
-    private function pluginParameters(PluginDescriptor $plugin, string $now): array
+    private function pluginParameters(PluginDescriptor $plugin): array
     {
         return [
             'plugin_key' => $plugin->key,
@@ -584,7 +599,6 @@ SQL);
             'composer' => $this->json($plugin->composer),
             'npm' => $this->json($plugin->npm),
             'frontend' => $this->json($plugin->frontend),
-            'now' => $now,
         ];
     }
 

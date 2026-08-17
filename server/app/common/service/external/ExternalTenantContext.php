@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\external;
 
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -25,8 +26,13 @@ final class ExternalTenantContext
         );
     }
 
-    public static function tenantId(TenantContext|TenantSystemContext $context): int
+    public static function tenantId(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context
+    ): int
     {
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context->tenantId;
+        }
         if ($context instanceof TenantContext) {
             if ($context->tenantId < 1 || $context->accountId < 1 || $context->memberId < 1
                 || $context->authorizationRevision < 1 || $context->sessionKey === ''

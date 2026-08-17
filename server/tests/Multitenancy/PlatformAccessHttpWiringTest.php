@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -47,8 +46,7 @@ function platformAccessHttpSessions(PDO $pdo): PlatformOperatorSessionService
             str_repeat('a', 32)
         ),
         new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
-        $permissions,
-        new PlatformOperatorAccountBoundary($pdo)
+        $permissions
     );
 }
 

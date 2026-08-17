@@ -11,7 +11,7 @@ use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
-/** 会员余额、兼容镜像和分类流水的唯一写入入口。 */
+/** 会员余额和分类流水的唯一写入入口。 */
 final class MemberBalanceService
 {
     /** 调用方必须已开启包含其领域状态变更的数据库事务。 */
@@ -64,7 +64,6 @@ final class MemberBalanceService
 
         $afterMoney = self::centsToMoney($afterCents);
         $member->user_money = $afterMoney;
-        $member->balance = $afterMoney;
         if ($rechargeDeltaCents !== 0) {
             $member->total_recharge_amount = self::centsToMoney($afterRechargeCents);
         }

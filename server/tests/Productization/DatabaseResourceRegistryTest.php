@@ -1,12 +1,31 @@
 <?php
 declare(strict_types=1);
 
+const P0E_FRESH_SCENARIO_MODES = [
+    'standalone_fresh' => 'standalone',
+    'multi_tenant_fresh' => 'multi-tenant',
+    'plugin_lifecycle' => 'multi-tenant',
+    'standalone_browser' => 'standalone',
+    'multi_tenant_browser' => 'multi-tenant',
+];
+const P0E_FRESH_GROUPS = [
+    'generated-application',
+    'standalone-fresh',
+    'multi-tenant-fresh',
+    'plugin-lifecycle',
+    'production-compose',
+    'standalone-browser',
+    'multi-tenant-browser',
+];
+
 $root = dirname(__DIR__, 3);
 $registryPath = $root . '/resources/project-resources.json';
 $p0eRegistryPath = $root . '/resources/p0e-runtime-qualification.json';
+$p0eMatrixPath = $root . '/server/tests/fixtures/p0e-runtime-qualification/matrix.json';
 $registryJson = (string)file_get_contents($registryPath);
 $registry = json_decode($registryJson, true, 512, JSON_THROW_ON_ERROR);
 $p0eRegistry = json_decode((string)file_get_contents($p0eRegistryPath), true, 512, JSON_THROW_ON_ERROR);
+$p0eMatrix = json_decode((string)file_get_contents($p0eMatrixPath), true, 512, JSON_THROW_ON_ERROR);
 
 $expect = static function (bool $condition, string $message): void {
     if (!$condition) {
@@ -37,6 +56,69 @@ $docsBackupMatches = array_values(array_filter(
     static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-docs-domain'
 ));
 $expect($docsBackupMatches === [], 'documentation domain must not be registered as a backup resource');
+
+$candidateDatabases = array_values(array_filter(
+    $registry['resources']['databases'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-candidate-mysql84'
+));
+$expect(count($candidateDatabases) === 1, 'production candidate database must be registered exactly once');
+$candidateDatabase = $candidateDatabases[0];
+$expect(($candidateDatabase['environments'] ?? null) === ['production-candidate'], 'candidate database environment changed');
+$expect(($candidateDatabase['database'] ?? null) === 'peanut_admin_candidate', 'candidate database name changed');
+$expect(($candidateDatabase['fresh_install_only'] ?? null) === true, 'candidate database lost the fresh-only boundary');
+$expect(($candidateDatabase['container_endpoint']['host'] ?? null) === 'mysql'
+    && ($candidateDatabase['container_endpoint']['port'] ?? null) === 3306, 'candidate database endpoint changed');
+
+$candidateDomains = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-candidate-domains'
+));
+$expect(count($candidateDomains) === 1, 'production candidate domain group must be registered exactly once');
+$expect(($candidateDomains[0]['hosts'] ?? null) === [
+    'pa-platform.007345.xyz',
+    'pa-admin.007345.xyz',
+    'pa-tenant-a.007345.xyz',
+    'pa-tenant-b.007345.xyz',
+], 'candidate domain list changed unexpectedly');
+$expect(($candidateDomains[0]['origin_endpoint']['port'] ?? null) === 18093, 'candidate origin port changed');
+
+$localDemoDomains = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-local-multi-tenant-demo-domains'
+));
+$expect(count($localDemoDomains) === 1, 'local multi-tenant demo domains must be registered exactly once');
+$expect(($localDemoDomains[0]['environments'] ?? null) === ['local-multi-tenant-demo'], 'local demo domains use the wrong environment');
+$expect(($localDemoDomains[0]['hosts'] ?? null) === [
+    'platform.peanut-admin.test',
+    'admin.peanut-admin.test',
+    'tenant-a.peanut-admin.test',
+    'tenant-b.peanut-admin.test',
+], 'local demo domain list changed unexpectedly');
+$expect(($localDemoDomains[0]['tenant_entry_bindings'] ?? null) === [
+    'tenant-a.peanut-admin.test' => 'tenant-a/admin-web',
+    'tenant-b.peanut-admin.test' => 'tenant-b/admin-web',
+], 'local demo Tenant host bindings changed unexpectedly');
+$productionDeployments = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-deployment'
+));
+$expect(count($productionDeployments) === 1, 'published production deployment must be registered exactly once');
+$expect(($productionDeployments[0]['environments'] ?? null) === ['production'], 'published deployment must remain production-only');
+$expect(($productionDeployments[0]['deployment_root'] ?? null) === '/www/docker/peanut-admin', 'published deployment root changed');
+$expect(($productionDeployments[0]['required_non_secret_environment']['PEANUT_DEPLOYMENT_TARGET'] ?? null) === 'production', 'published deployment target changed');
+
+$candidateDeployments = array_values(array_filter(
+    $registry['resources']['external_services'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-production-candidate-deployment'
+));
+$expect(count($candidateDeployments) === 1, 'production candidate deployment must be registered exactly once');
+$expect(($candidateDeployments[0]['environments'] ?? null) === ['production-candidate'], 'candidate deployment environment changed');
+$expect(($candidateDeployments[0]['deployment_root'] ?? null) === '/www/docker/peanut-admin-candidate', 'candidate deployment root changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['PEANUT_DEPLOYMENT_TARGET'] ?? null) === 'production-candidate', 'candidate deployment target changed');
+$expect(($candidateDeployments[0]['database_resource_id'] ?? null) === 'peanut-admin-production-candidate-mysql84', 'candidate deployment database changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['PLATFORM_HOSTS'] ?? null) === 'pa-platform.007345.xyz', 'candidate Platform Host boundary changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['TENANT_ADMIN_HOSTS'] ?? null) === 'pa-admin.007345.xyz', 'candidate shared Admin Host boundary changed');
+$expect(($candidateDeployments[0]['required_non_secret_environment']['OWNER_INVITATION_DELIVERY_MODE'] ?? null) === 'manual', 'candidate invitation handoff mode changed');
 
 $databases = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
@@ -80,6 +162,22 @@ $expect(($qualificationDatabase['database'] ?? null) === 'peanut_admin_developme
 $expect(($qualificationDatabase['namespace'] ?? null) === 'peanut_admin_development_p0e_<run_id>_', 'P0-E database namespace is invalid');
 $expect(($qualificationDatabase['run_id_pattern'] ?? null) === '^[a-z0-9]{1,11}$', 'P0-E run_id policy is invalid');
 $expect(($qualificationDatabase['database_name_max_length'] ?? null) === 64, 'P0-E database name limit is invalid');
+$expect(
+    ($qualificationDatabase['allowed_scenarios'] ?? null) === array_keys(P0E_FRESH_SCENARIO_MODES),
+    'P0-E database scenarios are not the 2.0 fresh-only set'
+);
+$expect(
+    array_keys($p0eMatrix['scenarios'] ?? []) === array_keys(P0E_FRESH_SCENARIO_MODES),
+    'P0-E matrix scenarios diverge from the registered 2.0 fresh-only set'
+);
+$expect(($p0eMatrix['groups'] ?? null) === P0E_FRESH_GROUPS, 'P0-E matrix does not contain the seven fresh-only Gate groups');
+$expect(
+    !str_contains((string)json_encode($p0eMatrix), 'v1_0_forward')
+        && !str_contains((string)json_encode($p0eMatrix), 'v1_1_forward')
+        && !str_contains((string)json_encode($p0eMatrix), 'migration_fault')
+        && !str_contains((string)json_encode($p0eMatrix), 'recovery'),
+    'P0-E matrix retained a 1.x upgrade or recovery fixture'
+);
 $expect(($qualificationDatabase['credential_ref'] ?? null) === 'mac-14:/Users/xing/.config/peanut-admin/development-db.env', 'P0-E credential reference changed unexpectedly');
 $expect(($qualificationDatabase['lifecycle'] ?? null) === 'ephemeral', 'P0-E database lifecycle must be ephemeral');
 $expect(($qualificationDatabase['fallback'] ?? null) === 'none', 'P0-E database must fail closed');
@@ -122,9 +220,9 @@ $expect(($administrativeTool['ssh_command'] ?? null) === '/usr/bin/ssh', 'P0-E S
 $expect(($administrativeTool['docker_command'] ?? null) === '/usr/local/bin/docker', 'P0-E remote Docker command is not absolute');
 $expect(($administrativeTool['container_name'] ?? null) === 'peanut-admin-mysql84-development', 'P0-E administration container changed');
 $expect(($administrativeTool['mysql_command'] ?? null) === '/usr/bin/mysql', 'P0-E MySQL command is not absolute');
-$expect(($administrativeTool['mysqldump_command'] ?? null) === '/usr/bin/mysqldump', 'P0-E mysqldump command is not absolute');
+$expect(!array_key_exists('mysqldump_command', $administrativeTool), 'fresh-only P0-E retained backup tooling');
 $expect(str_starts_with((string)($administrativeTool['container_image'] ?? ''), 'mysql:8.4.10@sha256:'), 'P0-E administration image is not immutable');
-$expect(($administrativeTool['fallback'] ?? null) === 'none; host mysql and mysqldump commands are forbidden', 'P0-E administration allowed a host CLI fallback');
+$expect(($administrativeTool['fallback'] ?? null) === 'none; host mysql commands are forbidden', 'P0-E administration allowed a host CLI fallback');
 
 foreach (['upstream_endpoint' => 'host', 'container_endpoint' => 'container'] as $key => $consumer) {
     $endpoint = $qualificationDatabase[$key] ?? null;
@@ -237,6 +335,10 @@ $expect($registeredPorts === [
     'DEV_HTTP_PORT' => 20187,
     'PHP_PORT' => 20180,
     'VITE_PORT' => 20181,
+    'PLATFORM_PORT' => 20177,
+    'MT_DEMO_PHP_PORT' => 20178,
+    'MT_DEMO_VITE_PORT' => 20179,
+    'MT_DEMO_PLATFORM_PORT' => 20176,
     'PC_PORT' => 20185,
     'MOBILE_PORT' => 20182,
     'DOCS_PORT' => 20186,
@@ -314,11 +416,7 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
         'expires_at' => (string)($now + 3600),
         'status' => 'ACTIVE',
     ];
-    $scenarios = [
-        'standalone_fresh', 'multi_tenant_fresh', 'v1_0_forward', 'v1_1_forward',
-        'migration_fault_source', 'migration_fault_restore', 'plugin_lifecycle',
-        'standalone_browser', 'multi_tenant_browser',
-    ];
+    $scenarios = array_keys(P0E_FRESH_SCENARIO_MODES);
     $resources = [
         'resource-id' => ['peanut-admin-p0e-mysql84-gate'],
         'environment' => ['development'],
@@ -337,9 +435,9 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
         'docs-port' => ['20186'],
         'cache-dir' => ['/Users/xing/.cache/peanut-admin/p0e-' . $runId],
         'output-dir' => [$worktree . '/output/p0e-' . $runId],
-        'backup-dir' => ['/Users/xing/.local/state/peanut-admin/p0e-backup-' . $runId],
         'compose-project' => ['peanut-p0e-' . $runId],
         'browser-session' => ['p0e-' . $runId],
+        'browser-host' => ['admin.p0e.localhost', 'platform.p0e.localhost'],
         'lease-proof-dir' => [
             '/Users/xing/Documents/company-projects/peanut-admin/.git/peanut-admin-resource-leases/leases/' . $lease,
         ],
@@ -386,11 +484,26 @@ $ordinaryEnvironments = [
         'DB_NAME' => 'peanut_admin_development', 'DB_USER' => 'test', 'DB_PASS' => 'test',
         'DEPLOYMENT_MODE' => 'standalone',
     ],
+    'local-multi-tenant-demo' => [
+        'APP_ENV' => 'development', 'PEANUT_DEPLOYMENT_TARGET' => 'local-multi-tenant-demo',
+        'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-mysql84-local-multi-tenant-demo',
+        'PEANUT_DATABASE_CONSUMER' => 'host',
+        'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-mysql84-local-multi-tenant-demo-host-direct',
+        'DB_HOST' => '192.168.192.2', 'DB_PORT' => '20183',
+        'DB_NAME' => 'peanut_admin_development_mtlocal01', 'DB_USER' => 'test', 'DB_PASS' => 'test',
+        'DEPLOYMENT_MODE' => 'multi-tenant',
+    ],
     'production' => [
         'APP_ENV' => 'production', 'PEANUT_DEPLOYMENT_TARGET' => 'production',
         'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-production-bundled-mysql84',
         'DB_HOST' => 'mysql', 'DB_PORT' => '3306', 'DB_NAME' => 'peanut_admin',
         'DB_USER' => 'test', 'DB_PASS' => 'test', 'DEPLOYMENT_MODE' => 'standalone',
+    ],
+    'production-candidate' => [
+        'APP_ENV' => 'production', 'PEANUT_DEPLOYMENT_TARGET' => 'production-candidate',
+        'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-production-candidate-mysql84',
+        'DB_HOST' => 'mysql', 'DB_PORT' => '3306', 'DB_NAME' => 'peanut_admin_candidate',
+        'DB_USER' => 'test', 'DB_PASS' => 'test', 'DEPLOYMENT_MODE' => 'multi-tenant',
     ],
 ];
 foreach ($ordinaryEnvironments as $case => $environment) {
@@ -405,14 +518,7 @@ $guardNow = 2_000_000_000;
 try {
     $activeProof = $temporary . '/active';
     resourceGuardWriteProof($activeProof, $guardRunId, $guardNow);
-    $scenarioModes = [
-        'standalone_fresh' => 'standalone', 'multi_tenant_fresh' => 'multi-tenant',
-        'v1_0_forward' => 'standalone', 'v1_1_forward' => 'standalone',
-        'migration_fault_source' => 'standalone', 'migration_fault_restore' => 'standalone',
-        'plugin_lifecycle' => 'multi-tenant', 'standalone_browser' => 'standalone',
-        'multi_tenant_browser' => 'multi-tenant',
-    ];
-    foreach ($scenarioModes as $scenario => $mode) {
+    foreach (P0E_FRESH_SCENARIO_MODES as $scenario => $mode) {
         resourceGuardSetEnvironment(resourceGuardP0eEnvironment($guardRunId, $scenario, $mode));
         $config = guardedDatabaseConfig($activeProof, $guardNow);
         $expect($config['consumer'] === 'container', "P0-E guard did not allow exact scenario {$scenario}");
@@ -424,6 +530,7 @@ try {
         'candidate' => static function (array &$metadata): void { $metadata['candidate'] = 'moving-head'; },
         'extra' => static function (array &$metadata, array &$resources): void { $resources['fallback'] = ['localhost']; },
         'missing-db' => static function (array &$metadata, array &$resources): void { array_pop($resources['mysql-db']); },
+        'missing-browser-host' => static function (array &$metadata, array &$resources): void { array_pop($resources['browser-host']); },
         'tree' => static function (array &$metadata, array &$resources): void { $resources['candidate-tree'] = ['tree']; },
         'proof-self' => static function (array &$metadata, array &$resources): void { $resources['lease-proof-dir'] = ['/tmp/other']; },
         'worktree' => static function (array &$metadata, array &$resources): void { $resources['worktree'] = ['/tmp/other']; },

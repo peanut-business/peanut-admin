@@ -22,26 +22,6 @@ foreach (['', 'short1', 'onlyletterslong', '123456789012'] as $weakPassword) {
     }
 }
 
-$password = 'FreshInstall2026';
-$salt = '0123456789abcdef';
-$seed = file_get_contents(dirname(__DIR__, 2) . '/database/init.sql');
-installerExpect(is_string($seed), 'installer test must read init.sql');
-$replaced = replaceInitialAdminSeed($seed, $password, $salt);
-$digest = md5(md5($password) . $salt);
-installerExpect(str_contains($replaced, "'{$digest}', '{$salt}'"), 'installer must inject the supplied password digest');
-installerExpect(
-    !str_contains($replaced, "MD5(CONCAT(MD5('admin123456')"),
-    'known password expression must not reach the database'
-);
-installerExpect(str_contains($replaced, '密码：admin123456'), 'installer must only replace the executable seed');
-
-try {
-    replaceInitialAdminSeed('SELECT 1;', $password, $salt);
-    throw new RuntimeException('missing admin seed must fail');
-} catch (RuntimeException $exception) {
-    installerExpect($exception->getMessage() === '管理员 seed 与安装合同不一致', 'seed drift must fail closed');
-}
-
 $website = brandWebsiteDefaults(dirname(__DIR__, 2));
 installerExpect($website['name'] === 'Peanut Admin', 'installer must load the canonical brand manifest');
 installerExpect($website['web_logo'] === 'brand/logo.svg', 'installer must seed canonical asset paths');

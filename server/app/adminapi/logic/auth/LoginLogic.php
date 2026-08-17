@@ -3,82 +3,78 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\auth;
 
-use app\adminapi\service\AdminLoginAttemptService;
-use app\adminapi\service\AdminLoginTenantGuard;
-use app\adminapi\service\AdminTokenService;
+use app\adminapi\http\AdminRequest;
+use app\adminapi\service\NativeAdminPrincipalRepository;
 use app\common\logic\BaseLogic;
-use app\common\model\auth\Admin;
+use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\service\tenant\ApplicationHostPolicy;
+use app\tenant\service\TenantAuthRuntimeFactory;
+use PeanutAdmin\Kernel\Auth\AuthException;
+use PeanutAdmin\Kernel\Auth\TenantAuthentication;
+use PeanutAdmin\Kernel\Auth\TenantSelectionRequired;
 
-class LoginLogic extends BaseLogic
+final class LoginLogic extends BaseLogic
 {
     public static function login(array $params): array|false
     {
-        $ip = request()->ip();
-        if (AdminLoginAttemptService::isLocked($ip)) {
-            self::setError(AdminLoginAttemptService::lockedMessage());
-            return false;
-        }
-
-        // Peanut 现有账号真源为 username；对外兼容 LikeAdmin 的 account 命名。
-        $admin = Admin::with(['roles'])
-            ->where('username', (string)$params['account'])
-            ->findOrEmpty();
-
-        if ($admin->isEmpty()) {
-            self::setError('账号不存在');
-            return false;
-        }
-        if ((int)$admin->disable === 1) {
-            self::setError('账号已禁用');
-            return false;
-        }
-
         try {
-            (new AdminLoginTenantGuard())->assertAllowed((int)$admin->id);
-        } catch (\Throwable) {
-            self::setError('租户不可用');
+            ApplicationHostPolicy::production()->assertTenantAdmin(request());
+            $tenantCode = TenantEntryBindingResolver::production()->loginTenantCode(
+                request(),
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
+            );
+            $outcome = TenantAuthRuntimeFactory::service()->login(
+                trim((string)$params['account']),
+                (string)$params['password'],
+                $tenantCode,
+                request()->ip(),
+                request()->header('User-Agent'),
+                AdminRequest::requestId(request()),
+            );
+            if ($outcome instanceof TenantSelectionRequired) {
+                return $outcome->responseData();
+            }
+            if (!$outcome instanceof TenantAuthentication) {
+                throw new \DomainException('TENANT_AUTHENTICATION_INVALID');
+            }
+
+            $principal = (new NativeAdminPrincipalRepository())->require($outcome->context);
+            return [
+                'state' => 'authenticated',
+                'token' => $outcome->tokens->access->expose(),
+                'access_token' => $outcome->tokens->access->expose(),
+                'token_type' => 'Bearer',
+                'expires_in' => 900,
+                'admin_id' => $principal['id'],
+                'account' => $principal['account'],
+                'username' => $principal['username'],
+                'name' => $principal['name'],
+                'avatar' => $principal['avatar'],
+                'role_name' => $principal['role_name'],
+                'terminal' => (int)$params['terminal'],
+                'context' => [
+                    'audience' => 'tenant',
+                    'account_id' => (string)$outcome->context->accountId,
+                    'tenant_id' => (string)$outcome->context->tenantId,
+                    'tenant_member_id' => (string)$outcome->context->memberId,
+                ],
+            ];
+        } catch (AuthException|\DomainException|\InvalidArgumentException) {
+            self::setError('账号或密码错误');
             return false;
         }
-
-        $password = md5(md5((string)$params['password']) . (string)$admin->salt);
-        if (!hash_equals((string)$admin->password, $password)) {
-            AdminLoginAttemptService::recordFailure($ip);
-            self::setError('密码错误');
-            return false;
-        }
-
-        AdminLoginAttemptService::clear($ip);
-
-        $admin->login_time = time();
-        $admin->login_ip   = $ip;
-        $admin->save();
-
-        $token = AdminTokenService::createToken(
-            (int)$admin->id,
-            (int)$params['terminal'],
-            (int)($admin->multipoint_login ?? 1),
-            $ip
-        );
-        $roleNames = $admin->roles->column('name');
-
-        return [
-            'token'     => $token,
-            'admin_id'  => (int)$admin->id,
-            'account'   => (string)$admin->username,
-            'username'  => (string)$admin->username,
-            'name'      => (string)($admin->nickname ?: $admin->username),
-            'avatar'    => (string)$admin->avatar,
-            'role_name' => implode('/', $roleNames),
-            'terminal'  => (int)$params['terminal'],
-        ];
     }
 
-    /**
-     * 参考 LikeAdmin：允许多处登录时退出仅由客户端丢弃 token；
-     * 不允许多处登录时，服务端同时将当前会话置为过期。
-     */
     public static function logout(string $token): void
     {
-        AdminTokenService::expireToken($token);
+        if (!str_starts_with($token, 'pa_tat_')) {
+            return;
+        }
+        try {
+            TenantAuthRuntimeFactory::service()->logout($token, 'admin-logout-' . bin2hex(random_bytes(8)));
+        } catch (\Throwable) {
+            // Logout is idempotent for the compatibility Admin endpoint.
+        }
     }
 }

@@ -82,10 +82,12 @@ $platformPermissionSource = (string)file_get_contents(dirname(__DIR__, 2) . '/ap
 expectAdminApiBoundary(str_contains($platformPermissionSource, "str_starts_with(\$permission, 'platform.')"), 'Platform permission catalog boundary is missing');
 expectAdminApiBoundary(!str_contains($platformLoginSource, 'AdminTokenService'), 'Platform login must not use Tenant Admin sessions');
 
-$migration = strtolower((string)file_get_contents(dirname(__DIR__, 2) . '/database/migrations/20260814_admin_api_default_deny.sql'));
+$schema = strtolower((string)file_get_contents(dirname(__DIR__, 2) . '/database/init.sql'));
 foreach (['admin/status', 'finance/recharge/refund', 'finance.refund/stat', 'log/export/status'] as $exactPermission) {
-    expectAdminApiBoundary(str_contains($migration, "'{$exactPermission}'"), 'exact status/compatibility permission is missing: ' . $exactPermission);
+    expectAdminApiBoundary(str_contains($schema, "'{$exactPermission}'"), 'exact status/compatibility permission is missing: ' . $exactPermission);
 }
-expectAdminApiBoundary(str_contains($migration, 'insert ignore into `pa_system_role_menu`'), 'migration must preserve existing legitimate role grants');
+expectAdminApiBoundary(str_contains($schema, 'insert into `pa_permission`'), 'fresh schema must seed the Core permission catalog');
+expectAdminApiBoundary(str_contains($schema, 'insert ignore into `pa_role_permission`'), 'fresh schema must grant permissions through Core RBAC');
+expectAdminApiBoundary(!str_contains($schema, 'pa_system_role_menu'), 'retired role-menu storage remains in the fresh schema');
 
 echo "ADMIN-API-PERMISSION-BOUNDARY-001 passed\n";

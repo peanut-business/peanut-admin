@@ -6,32 +6,18 @@ namespace app\adminapi\logic\setting;
 use app\common\enum\UserTerminalEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\finance\PaymentScene;
-use app\common\service\ConfigService;
-use think\facade\Db;
+use app\common\service\finance\RechargeTenantSettingService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class RechargeSettingLogic extends BaseLogic
 {
-    private const CONFIG_TYPE = 'recharge';
-
-    public static function getConfig(): array
+    public static function getConfig(TenantContext $context): array
     {
-        $scenes = PaymentScene::field('terminal,pay_way,status,is_default')
-            ->order('terminal', 'asc')
-            ->order('pay_way', 'asc')
-            ->select()
-            ->toArray();
-
-        return [
-            'status' => (int)ConfigService::get(self::CONFIG_TYPE, 'status', 0),
-            'min_amount' => self::amount(ConfigService::get(self::CONFIG_TYPE, 'min_amount', '0.01')),
-            'max_amount' => self::amount(ConfigService::get(self::CONFIG_TYPE, 'max_amount', '99999.00')),
-            'scenes' => array_map(static fn(array $scene): array => [
-                'terminal' => (int)$scene['terminal'],
-                'pay_way' => (int)$scene['pay_way'],
-                'status' => (int)$scene['status'],
-                'is_default' => (int)$scene['is_default'],
-            ], $scenes),
-        ];
+        $config = RechargeTenantSettingService::config($context);
+        $config['status'] = (int)$config['status'];
+        $config['min_amount'] = self::amount($config['min_amount']);
+        $config['max_amount'] = self::amount($config['max_amount']);
+        return $config;
     }
 
     /**
@@ -39,50 +25,42 @@ class RechargeSettingLogic extends BaseLogic
      *
      * @return array<int, array{pay_way:int,is_default:int}>
      */
-    public static function availablePayWays(int $terminal): array
+    public static function availablePayWays(TenantContext $context, int $terminal): array
     {
         if (!UserTerminalEnum::isValid($terminal)
-            || (int)ConfigService::get(self::CONFIG_TYPE, 'status', 0) !== 1) {
+            || (int)RechargeTenantSettingService::config($context)['status'] !== 1) {
             return [];
         }
 
         return array_values(array_filter(
-            PaymentScene::enabledPayWays($terminal),
-            static function (array $scene): bool {
-                return (int)$scene['pay_way'] === PaymentScene::PAY_WAY_WECHAT
-                    ? (int)ConfigService::get('pay', 'wx_pay_status', 0) === 1
-                    : (int)ConfigService::get('pay', 'ali_pay_status', 0) === 1;
-            }
+            RechargeTenantSettingService::enabledScenes($context, $terminal),
+            static fn(array $scene): bool => RechargeTenantSettingService::channelConfigured(
+                $context,
+                (int)$scene['pay_way']
+            )
         ));
     }
 
-    public static function save(array $params): bool
+    public static function save(TenantContext $context, array $params): bool
     {
         try {
-            Db::transaction(function () use ($params): void {
-                ConfigService::setMany(self::CONFIG_TYPE, [
-                    'status' => (int)$params['status'],
-                    'min_amount' => self::amount($params['min_amount']),
-                    'max_amount' => self::amount($params['max_amount']),
-                ]);
-
-                foreach ($params['scenes'] as $scene) {
-                    $identity = [
-                        'terminal' => (int)$scene['terminal'],
-                        'pay_way' => (int)$scene['pay_way'],
-                    ];
-                    $row = PaymentScene::where($identity)->lock(true)->findOrEmpty();
-                    $values = [
-                        'status' => (int)$scene['status'],
-                        'is_default' => (int)$scene['is_default'],
-                    ];
-                    if ($row->isEmpty()) {
-                        PaymentScene::create($identity + $values);
-                    } else {
-                        $row->save($values);
-                    }
+            foreach ($params['scenes'] as $scene) {
+                if ((int)$scene['status'] === 1
+                    && !RechargeTenantSettingService::channelConfigured($context, (int)$scene['pay_way'])) {
+                    throw new \RuntimeException(PaymentScene::getPayWayDesc((int)$scene['pay_way']) . '未启用，不能用于充值场景');
                 }
-            });
+            }
+            RechargeTenantSettingService::replace($context, [
+                'status' => (int)$params['status'],
+                'min_amount' => self::amount($params['min_amount']),
+                'max_amount' => self::amount($params['max_amount']),
+                'scenes' => array_map(static fn(array $scene): array => [
+                    'terminal' => (int)$scene['terminal'],
+                    'pay_way' => (int)$scene['pay_way'],
+                    'status' => (int)$scene['status'],
+                    'is_default' => (int)$scene['is_default'],
+                ], $params['scenes']),
+            ]);
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());

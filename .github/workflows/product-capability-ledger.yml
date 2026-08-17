@@ -5,6 +5,10 @@ on:
     branches:
       - dev
       - main
+    paths:
+      - 'docs/product-status/**'
+      - 'scripts/check-product-capability-ledger'
+      - '.github/workflows/product-capability-ledger.yml'
   workflow_dispatch:
 
 permissions:

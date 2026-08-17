@@ -27,7 +27,7 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 `scaffold/**` 中的 source-only inventory、release artifact 与历史证据本身不递归进入应用：
 
 - `managed`：框架与交付基础设施。创建时把逐文件基线复制到
-  `.peanut/scaffold-baseline/<template>/files/`；后续升级只能以该基线做显式三方决策。
+  `.peanut/scaffold-baseline/<template>/files/`，用于核对模板来源；2.0 不提供 1.x 原地升级。
 - `generated-managed`：由创建参数生成或同步的身份/元数据文件；本地修改后也不得被静默覆盖。
 - `app-owned`：应用业务、数据库、页面、文档与稳定 Host/override 入口。future scaffold 默认保留。
 - `excluded`：Peanut Admin 的历史证据、发布记录、内部设计/治理、缓存/构建/依赖、凭据和本机基础设施。
@@ -43,22 +43,24 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 source-only 或 app-owned 演进无需伪造新的模板身份，而任何 managed 字节变化仍必须先形成
 新的不可变 scaffold release。
 
-当前 inventory 采用不可变 scaffold `v1.1.9` release。该 identity 只属于 scaffold 命名空间，
-不是 Peanut Admin 产品 Tag/Release；既有 scaffold identity 均保持不变。`v1.1.9`
-继承 `v1.1.8` 的双模式 Runtime、application version 与法律 inventory 合同，并把演示数据
-实现纳入 managed 升级边界。生产管理端 builder 在执行 Vite 前，
+当前 inventory 采用 fresh-only scaffold `v2.0.0` release。该 identity 只属于 scaffold
+命名空间，不是 Peanut Admin 产品 Tag/Release；既有 1.x scaffold identity 只存在于
+Git/Release 历史，当前 inventory 与生成应用不携带其 release artifact 或 upgrade Runtime。
+`v2.0.0` 生成原生 Account/TenantMember/RBAC Runtime、
+canonical Schema 和空数据库安装入口，不携带 legacy 映射、bootstrap 或兼容镜像。生产
+管理端 builder 在执行 Vite 前，
 把应用根目录的 `plugins.lock` 精确复制为 `/build/plugins.lock`；Plugin contribution resolver
 仍直接读取这份 lock，缺失或无效内容继续 fail-closed，不会回退到默认或忽略 Plugin 状态。
 生产镜像同时构建 Standalone 与 multi-tenant 管理端 bundle，并在容器启动时按
 `DEPLOYMENT_MODE` 选择；PHP 镜像携带应用自己的 `resources/project-resources.json`，并把受管
 `server/database/seed-demo-data.php` 暴露为 `peanut-seed-demo-data`，供数据库环境门禁与显式
-演示初始化使用。根 `scripts/seed-demo-data` 仍是 app-owned 兼容入口；登记缺失或与显式部署
-目标不一致时仍 fail-closed。
+演示初始化使用。根 `scripts/seed-demo-data` 仍是 app-owned 命令入口；登记缺失或与显式部署
+目标不一致时仍 fail-closed。2.0.0 不提供 1.x scaffold preflight/apply/verify 或数据库
+`--adopt-existing` 路径；需要保留旧应用时继续运行旧版本实例并为新应用准备独立空库。
 
 生成的 `.peanut/application-manifest.json` v2 还固定 `application.version`、参数、每个生成文件的 SHA-256、mode、分类、
-owner、managed/app-owned 树摘要与 managed baseline 路径。它是
-后续 scaffold plan/apply/verify/recovery 的项目锁与三方输入；执行合同和命令见
-`docs/scaffold-upgrade.md`。
+owner、managed/app-owned 树摘要与 managed baseline 路径。它是来源审计与未来 2.x 生命周期
+设计的输入，但当前版本不提供 scaffold plan/apply/verify/recovery 命令。
 
 生成结果没有 `.git`，可直接执行 `git init` 成为独立仓库。连接任何资源前，应用 owner
 必须先补全 `resources/project-resources.json`；初始管理员密码仍只允许在空库安装时通过

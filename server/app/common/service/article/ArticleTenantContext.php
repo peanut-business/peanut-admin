@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\article;
 
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -11,13 +12,17 @@ final class ArticleTenantContext
 {
     public const PUBLIC_ACTOR = 'peanut.article.public-read';
 
-    public static function member(object $request): TenantContext
+    public static function member(object $request): AuthenticatedMemberContext|TenantContext
     {
-        $context = $request->tenantContext ?? null;
-        if (!$context instanceof TenantContext || !self::trustedMember($context)) {
-            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
+        $context = $request->authenticatedMemberContext ?? null;
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context;
         }
-        return $context;
+        $context = $request->tenantContext ?? null;
+        if ($context instanceof TenantContext && self::trustedMember($context)) {
+            return $context;
+        }
+        throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
     public static function read(object $request, string $operation): TenantContext|TenantSystemContext
@@ -36,7 +41,9 @@ final class ArticleTenantContext
         throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
-    public static function tenantId(TenantContext|TenantSystemContext $context): int
+    public static function tenantId(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context
+    ): int
     {
         if ($context->tenantId < 1) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);

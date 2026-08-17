@@ -6,6 +6,7 @@ namespace app\api\middleware;
 use app\api\service\UserTokenService;
 use app\common\model\member\Member;
 use app\common\service\JsonService;
+use app\common\service\member\MemberApiTenantContextResolver;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\member\MemberTenantRepository;
 
@@ -16,6 +17,10 @@ use app\common\service\member\MemberTenantRepository;
  */
 class CheckTokenMiddleware
 {
+    public function __construct(private ?MemberApiTenantContextResolver $tenantContexts = null)
+    {
+    }
+
     public function handle($request, \Closure $next)
     {
         $authorization = $request->header('Authorization', '');
@@ -34,9 +39,18 @@ class CheckTokenMiddleware
         }
 
         try {
+            $requestId = trim((string)$request->header('X-Request-Id', ''));
+            if ($requestId === '') {
+                $requestId = bin2hex(random_bytes(16));
+            }
+            $request->authenticatedMemberContext = $this->tenantContexts()->resolve(
+                $memberId,
+                $token,
+                $requestId,
+            );
             $context = MemberTenantContext::member($request);
         } catch (\Throwable) {
-            return JsonService::fail('缺少可信租户上下文', null, 40300);
+            return JsonService::fail('租户上下文不可用', null, 40300);
         }
         $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
         if ($member->isEmpty()) {
@@ -50,5 +64,10 @@ class CheckTokenMiddleware
         $request->memberInfo = $member->toArray();
 
         return $next($request);
+    }
+
+    private function tenantContexts(): MemberApiTenantContextResolver
+    {
+        return $this->tenantContexts ??= new MemberApiTenantContextResolver();
     }
 }

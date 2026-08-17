@@ -6,6 +6,7 @@ namespace app\common\service;
 use app\common\enum\FileEnum;
 use app\common\service\file\FileObjectNamespace;
 use app\common\service\file\FileTenantRepository;
+use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\storage\Driver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\file\UploadedFile;
@@ -16,17 +17,17 @@ use think\file\UploadedFile;
  */
 class UploadService
 {
-    public static function image(TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function image(AuthenticatedMemberContext|TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
         return self::save($context, FileEnum::IMAGE, $cid, $sourceId, $source);
     }
 
-    public static function video(TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function video(AuthenticatedMemberContext|TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
         return self::save($context, FileEnum::VIDEO, $cid, $sourceId, $source);
     }
 
-    public static function file(TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function file(AuthenticatedMemberContext|TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
         return self::save($context, FileEnum::FILE, $cid, $sourceId, $source);
     }
@@ -35,7 +36,7 @@ class UploadService
      * @param int $type FileEnum::IMAGE|VIDEO|FILE
      * @throws \Exception 校验失败
      */
-    protected static function save(TenantContext $context, int $type, int $cid, int $sourceId, int $source): array
+    protected static function save(AuthenticatedMemberContext|TenantContext $context, int $type, int $cid, int $sourceId, int $source): array
     {
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');

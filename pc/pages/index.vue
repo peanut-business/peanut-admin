@@ -27,8 +27,12 @@
         <NuxtLink to="/information" class="text-primary text-sm hover:underline">查看全部 →</NuxtLink>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="articles.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ArticleCard v-for="item in articles" :key="item.id" :article="item" />
+      </div>
+      <div v-else class="article-empty" role="status">
+        <span class="article-empty-title">暂未发布资讯</span>
+        <span class="article-empty-copy">新的内容将在这里展示</span>
       </div>
     </section>
   </div>
@@ -141,4 +145,7 @@ function executeDecorationLink(link: DecorationLink) {
 .pc-banner-item { position: relative; display: block; width: 100%; border: 0; padding: 0; background: transparent; cursor: pointer; }
 .pc-banner-item img { display: block; width: 100%; max-height: 420px; object-fit: cover; }
 .pc-banner-title { position: absolute; left: 1.25rem; bottom: 1rem; color: white; text-shadow: 0 1px 4px rgb(0 0 0 / 45%); }
+.article-empty { display: flex; min-height: 148px; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; border: 1px dashed #cbd5e1; border-radius: 0.75rem; background: #f8fafc; color: #475569; }
+.article-empty-title { font-size: 1rem; font-weight: 600; }
+.article-empty-copy { font-size: 0.875rem; color: #64748b; }
 </style>

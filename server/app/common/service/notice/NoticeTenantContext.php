@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -51,9 +52,12 @@ final class NoticeTenantContext
     }
 
     public static function verificationTenantId(
-        TenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $operation
     ): int {
+        if ($context instanceof AuthenticatedMemberContext) {
+            return $context->tenantId;
+        }
         if ($context instanceof TenantContext) {
             return self::tenantId($context);
         }

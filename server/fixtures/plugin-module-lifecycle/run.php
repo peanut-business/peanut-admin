@@ -8,6 +8,7 @@ use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\PluginModuleRegistryFactory;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Module\ModuleException;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -236,8 +237,11 @@ SQL);
         try {
             $commands->record($context, $phase);
             throw new RuntimeException("{$phase} write was accepted");
-        } catch (DomainException $exception) {
-            pluginLifecycleExpect($exception->getMessage() === 'FIXTURE_DELIVERY_RECORD_FORBIDDEN', "{$phase} refusal changed");
+        } catch (ModuleException $exception) {
+            $expectedCode = $phase === 'not-enabled'
+                ? 'MODULE_TENANT_DISABLED'
+                : 'AUTHORIZATION_PERMISSION_DENIED';
+            pluginLifecycleExpect($exception->errorCode === $expectedCode, "{$phase} refusal changed");
         }
     }
     $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key`='fixture.delivery-record.create'")->fetchColumn();
@@ -260,6 +264,15 @@ SQL);
         pluginLifecycleExpect($exception->errorCode === 'PLUGIN_TENANT_MODULE_ACTIVE', 'uninstall refusal code changed');
     }
     $pdo->exec("UPDATE pa_tenant_module SET status='disabled',disabled_at=UTC_TIMESTAMP(3),disabled_reason='fixture-test' WHERE module_key='fixture.delivery-record'");
+    try {
+        $commands->record($context, 'disabled-after-grant');
+        throw new RuntimeException('disabled Module accepted a command after permission grant');
+    } catch (ModuleException $exception) {
+        pluginLifecycleExpect(
+            $exception->errorCode === 'MODULE_TENANT_DISABLED',
+            'disabled Module command refusal changed'
+        );
+    }
     pluginLifecycleExpect(($service->uninstall('fixture.delivery-record')['preserve_data'] ?? null) === true, 'uninstall did not preserve data');
     pluginLifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_fixture_delivery_record')->fetchColumn() === 1, 'uninstall removed business data');
 

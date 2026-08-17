@@ -3,19 +3,66 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "feat/v1.1.5-production-seeder",
-    "commit": "b6495f90b713f2483de32006d529c168ca656d0f",
-    "reviewed_at": "2026-08-15"
+    "branch": "feat/module-identity-tenancy-docs",
+    "commit": "78e9667f763591e1505054ec39fa060078b88d26",
+    "reviewed_at": "2026-08-17"
   },
   "overall": {
     "id": "PA-DELIVERY-001",
     "status": "in_progress",
-    "summary": "Peanut Admin v1.1.5 与 scaffold v1.1.9 已通过最终 P0-E 16 组资格；尚需最新 head CI、dev/main、Tag、GitHub Release 与生产升级验证。"
+    "summary": "Peanut Admin 2.0.0 fresh-only Runtime、双层文档、三域名本地浏览器矩阵和最终 scaffold reseal 已完成到候选 78e9667。最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 与线上部署仍是独立后续动作。"
   },
   "capabilities": [
     {
+      "id": "PA-NATIVE-001",
+      "name": "2.0.0 原生身份与干净安装基线",
+      "area": "foundation",
+      "status": "verified",
+      "summary": "原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 78e9667 的最终 P0-E 七组全部通过，包含生成应用、双模式空库、Plugin 生命周期、生产 Compose、Standalone 与 Multi-tenant 浏览器；正式 v2.0.0 tag/release 仍未声明。",
+      "acceptance": [
+        "Standalone 与 multi-tenant 从空库安装同一 canonical Schema",
+        "管理端登录、Tenant 选择、RBAC 和暂停拒绝只使用原生身份链",
+        "create-app 2.0.0 生成物与源仓 Schema、Runtime 和文档一致",
+        "当前交付的官方能力全部通过强制 Tenant 资格合同",
+        "公开文档只指向 fresh install，不把 1.x 历史写成当前能力"
+      ],
+      "evidence": [
+        {
+          "kind": "document",
+          "ref": "docs/architecture/clean-native-multitenancy-baseline.md"
+        },
+        {
+          "kind": "git",
+          "ref": "78e9667f763591e1505054ec39fa060078b88d26"
+        },
+        {
+          "kind": "report",
+          "ref": "output/p0e-p0e78e9667/summary.json"
+        },
+        {
+          "kind": "resource",
+          "ref": "resources/project-resources.json"
+        }
+      ],
+      "dependencies": [
+        "PA-TENANCY-001",
+        "PA-OWNERSHIP-001"
+      ],
+      "blockers": [
+        "正式 v2.0.0 tag/GitHub Release 与线上部署尚未执行；它们不影响本地 P0-E 资格结论"
+      ],
+      "paths": [
+        "server/database/init.sql",
+        "server/database/install.php",
+        "server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php",
+        "server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php",
+        "server/tests/Productization/FreshSchemaBaselineTest.php",
+        "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
       "id": "PA-FOUNDATION-001",
-      "name": "LikeAdmin 标准版基础能力对齐",
+      "name": "1.x LikeAdmin 标准版基础能力对齐（历史）",
       "area": "foundation",
       "status": "verified",
       "summary": "基础后台能力、空库安装、迁移账本和代表路由已有独立验证。",
@@ -25,45 +72,82 @@
         "fresh、legacy adopt 与幂等重跑均有迁移证据"
       ],
       "evidence": [
-        {"kind": "document", "ref": "docs/likeadmin-parity-report.md"},
-        {"kind": "report", "ref": "output/playwright/v02/summary.json"}
+        {
+          "kind": "document",
+          "ref": "docs/likeadmin-parity-report.md"
+        },
+        {
+          "kind": "report",
+          "ref": "output/playwright/v02/summary.json"
+        }
       ],
-      "paths": ["server/database/install.php", "server/database/migrate.php"]
+      "paths": [
+        "server/database/install.php",
+        "server/database/migrate.php"
+      ]
     },
     {
       "id": "PA-TENANCY-001",
-      "name": "多租户隔离与平台租户治理",
+      "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
       "status": "verified",
-      "summary": "MT00 至 MT06 已完成，覆盖 TenantContext、数据隔离、平台 operator、TenantModule 和双部署模式。",
+      "summary": "1.x MT00 至 MT06 已完成并封存；2.0 复用其设计，但原生身份与 fresh Schema 组合仍需当前候选 Gate。",
       "acceptance": [
         "SQL 与非 SQL 代表域按 Tenant 隔离",
         "平台 operator 可治理 Tenant 生命周期与模块授权",
         "Standalone 与 multi-tenant 安装升级矩阵通过"
       ],
       "evidence": [
-        {"kind": "release", "ref": "v1.1.0"},
-        {"kind": "document", "ref": "docs/plans/multi-tenancy-platform-management-plan.md"}
+        {
+          "kind": "release",
+          "ref": "v1.1.0"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/plans/multi-tenancy-platform-management-plan.md"
+        }
       ],
-      "paths": ["docs/design/saas-enhancement-blueprint.md"]
+      "paths": [
+        "docs/design/saas-enhancement-blueprint.md"
+      ]
     },
     {
       "id": "PA-PRODUCT-001",
-      "name": "产品化部署与发布基线",
+      "name": "1.x 产品化部署与发布基线（历史）",
       "area": "productization",
       "status": "verified",
-      "summary": "生产 Compose、最低 CI、正式部署、法律制品和 v1.0.0 发布链已经封存。",
+      "summary": "生产 Compose、最低 CI、正式部署、法律制品和 v1.1.5 发布链已经封存。",
       "acceptance": [
         "不可变源码能够构建生产运行镜像",
         "正式部署入口通过最低外部 smoke",
         "Tag、GitHub Release、法律资产与源码身份一致"
       ],
       "evidence": [
-        {"kind": "release", "ref": "v1.0.0"},
-        {"kind": "document", "ref": "docs/architecture/pb09-formal-release-contract.md"},
-        {"kind": "report", "ref": "output/playwright/production-baseline/final-summary.json"}
+        {
+          "kind": "release",
+          "ref": "v1.0.0"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/architecture/pb09-formal-release-contract.md"
+        },
+        {
+          "kind": "report",
+          "ref": "output/playwright/production-baseline/final-summary.json"
+        },
+        {
+          "kind": "release",
+          "ref": "v1.1.5"
+        },
+        {
+          "kind": "report",
+          "ref": "docs/product-status/releases/v1.1.5.json"
+        }
       ],
-      "paths": ["compose.yaml", "docs/peanut-admin-release-deployment.md"]
+      "paths": [
+        "compose.yaml",
+        "docs/peanut-admin-release-deployment.md"
+      ]
     },
     {
       "id": "PA-OWNERSHIP-001",
@@ -77,10 +161,18 @@
         "Host、override、迁移和测试 owner 有明确停止线"
       ],
       "evidence": [
-        {"kind": "document", "ref": "docs/architecture/pb03-ownership-and-migration-gates.md"},
-        {"kind": "document", "ref": "docs/architecture/core-application-capability-graph.md"}
+        {
+          "kind": "document",
+          "ref": "docs/architecture/pb03-ownership-and-migration-gates.md"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/architecture/core-application-capability-graph.md"
+        }
       ],
-      "paths": ["docs/productization-baseline-plan.md"]
+      "paths": [
+        "docs/productization-baseline-plan.md"
+      ]
     },
     {
       "id": "PA-BRAND-001",
@@ -94,8 +186,14 @@
         "桌面与移动端代表入口通过真实浏览器验收"
       ],
       "evidence": [
-        {"kind": "document", "ref": "docs/architecture/pb08b-release-candidate-acceptance-contract.md"},
-        {"kind": "report", "ref": "output/playwright/pb08b/summary.json"}
+        {
+          "kind": "document",
+          "ref": "docs/architecture/pb08b-release-candidate-acceptance-contract.md"
+        },
+        {
+          "kind": "report",
+          "ref": "output/playwright/pb08b/summary.json"
+        }
       ]
     },
     {
@@ -110,10 +208,18 @@
         "禁用和卸载保留业务数据且 finally 清理无残留"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/116"},
-        {"kind": "git", "ref": "a686d0fc7201f6f3ea76148898e9d33388421192"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/116"
+        },
+        {
+          "kind": "git",
+          "ref": "a686d0fc7201f6f3ea76148898e9d33388421192"
+        }
       ],
-      "paths": ["server/database/migrations/20260814_plugin_module_lifecycle.sql"]
+      "paths": [
+        "server/app/platform/service/plugin/PluginLifecycleService.php"
+      ]
     },
     {
       "id": "PA-SCAFFOLD-001",
@@ -127,29 +233,55 @@
         "application manifest 区分不可变模板身份与实际生成源码身份"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/117"},
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/122"},
-        {"kind": "ci", "ref": "https://github.com/peanut-business/peanut-admin/actions/runs/31762310254"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/117"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/122"
+        },
+        {
+          "kind": "ci",
+          "ref": "https://github.com/peanut-business/peanut-admin/actions/runs/31762310254"
+        }
       ],
-      "paths": ["scripts/create-app", "docs/create-application.md", "scaffold/application-template-inventory.json"]
+      "paths": [
+        "scripts/create-app",
+        "docs/create-application.md",
+        "scaffold/application-template-inventory.json"
+      ]
     },
     {
       "id": "PA-SCAFFOLD-002",
-      "name": "安全的脚手架跨版本升级",
+      "name": "1.x 脚手架跨版本升级（历史）",
       "area": "scaffold",
-      "status": "verified",
-      "summary": "preflight、apply、verify、recover/rollback 已形成可执行闭环，默认保留 app-owned 文件。",
+      "status": "retired",
+      "summary": "1.x preflight/apply/verify/recover 证据已封存；2.0 当前 inventory 和生成应用不再携带该 Runtime。",
       "acceptance": [
         "managed 文件以三方基线决定 replace、preserve 或 blocked",
         "app-owned 文件字节保持且不进入默认写集",
         "故障后内容、mode、缺失和新增状态可精确恢复"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/119"},
-        {"kind": "git", "ref": "8f11f431791e01dc45d57729e279c97bc40a80bb"},
-        {"kind": "ci", "ref": "https://github.com/peanut-business/peanut-admin/actions/runs/31762310254"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/119"
+        },
+        {
+          "kind": "git",
+          "ref": "8f11f431791e01dc45d57729e279c97bc40a80bb"
+        },
+        {
+          "kind": "ci",
+          "ref": "https://github.com/peanut-business/peanut-admin/actions/runs/31762310254"
+        }
       ],
-      "paths": ["scripts/scaffold-upgrade", "docs/scaffold-upgrade.md", "scaffold/releases"]
+      "paths": [
+        "scripts/scaffold-upgrade",
+        "docs/scaffold-upgrade.md",
+        "scaffold/releases"
+      ]
     },
     {
       "id": "PA-SCAFFOLD-003",
@@ -163,14 +295,22 @@
         "非空 lock 仍保持 checksum、路径和制品 fail-closed"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/120"},
-        {"kind": "git", "ref": "da070bb7244d7095bb30c06df9fd9d6d126a8d11"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/120"
+        },
+        {
+          "kind": "git",
+          "ref": "da070bb7244d7095bb30c06df9fd9d6d126a8d11"
+        }
       ],
-      "paths": ["scaffold/releases/v1.1.1/scaffold-manifest.json"]
+      "paths": [
+        "scaffold/releases/v1.1.1/scaffold-manifest.json"
+      ]
     },
     {
       "id": "PA-COMPAT-001",
-      "name": "公开核心包升级不要求应用源码重构",
+      "name": "1.x 公开核心包升级兼容（历史）",
       "area": "compatibility",
       "status": "verified",
       "summary": "公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。",
@@ -180,11 +320,23 @@
         "公共入口、exports、deep-import 和 Host probe 均通过"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/118"},
-        {"kind": "ci", "ref": "https://github.com/peanut-business/peanut-admin/actions/runs/31758950929"},
-        {"kind": "git", "ref": "b43fed5e5a65e710726cc5d10bf4d7b87be71722"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/118"
+        },
+        {
+          "kind": "ci",
+          "ref": "https://github.com/peanut-business/peanut-admin/actions/runs/31758950929"
+        },
+        {
+          "kind": "git",
+          "ref": "b43fed5e5a65e710726cc5d10bf4d7b87be71722"
+        }
       ],
-      "paths": ["scripts/core-upgrade-compatibility", "docs/core-upgrade-compatibility.md"]
+      "paths": [
+        "scripts/core-upgrade-compatibility",
+        "docs/core-upgrade-compatibility.md"
+      ]
     },
     {
       "id": "PA-P0E-001",
@@ -199,15 +351,27 @@
         "项目运行与验收不读取 CompanyOS 或其他外部资源登记仓"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/121"},
-        {"kind": "git", "ref": "68251239d1b0c5a3dc1fb9d25b3ce3c50ae6b9c0"},
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/121"
+        },
+        {
+          "kind": "git",
+          "ref": "68251239d1b0c5a3dc1fb9d25b3ce3c50ae6b9c0"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/125"
+        }
       ],
-      "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json"]
+      "paths": [
+        "resources/project-resources.json",
+        "resources/p0e-runtime-qualification.json"
+      ]
     },
     {
       "id": "PA-P0E-002",
-      "name": "最终生成应用运行时验收",
+      "name": "1.x 最终生成应用运行时验收（历史）",
       "area": "qualification",
       "status": "verified",
       "summary": "固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。",
@@ -219,16 +383,30 @@
         "真实浏览器登录与代表业务页面通过"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"},
-        {"kind": "git", "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"},
-        {"kind": "git", "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/125"
+        },
+        {
+          "kind": "git",
+          "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"
+        },
+        {
+          "kind": "git",
+          "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"
+        }
       ],
-      "dependencies": ["PA-P0E-001", "PA-SCAFFOLD-001"],
-      "paths": ["docs/p0e-runtime-qualification.md"]
+      "dependencies": [
+        "PA-P0E-001",
+        "PA-SCAFFOLD-001"
+      ],
+      "paths": [
+        "docs/p0e-runtime-qualification.md"
+      ]
     },
     {
       "id": "PA-P0E-003",
-      "name": "最终升级应用运行时验收",
+      "name": "1.x 最终升级应用运行时验收（历史）",
       "area": "qualification",
       "status": "verified",
       "summary": "固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。",
@@ -240,19 +418,34 @@
         "故障注入后 recover 能恢复完整旧应用"
       ],
       "evidence": [
-        {"kind": "pull_request", "ref": "https://github.com/peanut-business/peanut-admin/pull/125"},
-        {"kind": "git", "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"},
-        {"kind": "git", "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"}
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/125"
+        },
+        {
+          "kind": "git",
+          "ref": "b757da6072de6babb3a41c2ce521ac0598803d76"
+        },
+        {
+          "kind": "git",
+          "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"
+        }
       ],
-      "dependencies": ["PA-SCAFFOLD-002", "PA-COMPAT-001", "PA-P0E-002"],
-      "paths": ["scripts/scaffold-upgrade"]
+      "dependencies": [
+        "PA-SCAFFOLD-002",
+        "PA-COMPAT-001",
+        "PA-P0E-002"
+      ],
+      "paths": [
+        "scripts/scaffold-upgrade"
+      ]
     },
     {
       "id": "PA-DELIVERY-002",
-      "name": "当前能力进入正式发布分支",
+      "name": "1.x 正式发布与生产证明（历史）",
       "area": "release",
-      "status": "in_progress",
-      "summary": "v1.1.5 与 scaffold v1.1.9 已通过 P0-E 16/16；正在等待最新 head CI，之后依次合入 dev/main、Tag/Release、生产升级与 smoke。",
+      "status": "verified",
+      "summary": "v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。",
       "acceptance": [
         "P0-E 最终生成和升级运行时 Gate 全部通过",
         "dev 到 main 的固定候选身份和 CI 完整",
@@ -260,9 +453,31 @@
         "生产升级完成备份、迁移和最低 smoke"
       ],
       "evidence": [
-        {"kind": "git", "ref": "8fa274b2f91f5f482a361ee137302fa3438b8a11"}
+        {
+          "kind": "tag",
+          "ref": "v1.1.5"
+        },
+        {
+          "kind": "release",
+          "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/142"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/143"
+        },
+        {
+          "kind": "report",
+          "ref": "docs/product-status/releases/v1.1.5.json"
+        }
       ],
-      "dependencies": ["PA-P0E-002", "PA-P0E-003"]
+      "dependencies": [
+        "PA-P0E-002",
+        "PA-P0E-003"
+      ]
     },
     {
       "id": "PA-GOVERNANCE-001",
@@ -275,9 +490,15 @@
         "资源、凭据引用、健康检查和 fallback 由 Peanut Admin 自身版本化登记约束"
       ],
       "evidence": [
-        {"kind": "resource", "ref": "resources/project-resources.json"}
+        {
+          "kind": "resource",
+          "ref": "resources/project-resources.json"
+        }
       ],
-      "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json"]
+      "paths": [
+        "resources/project-resources.json",
+        "resources/p0e-runtime-qualification.json"
+      ]
     },
     {
       "id": "PA-SAAS-001",
@@ -289,13 +510,18 @@
         "另行冻结商业范围、资源、数据边界和发布合同"
       ],
       "evidence": [
-        {"kind": "document", "ref": "docs/plans/saas-enhancement-development-plan.md"}
+        {
+          "kind": "document",
+          "ref": "docs/plans/saas-enhancement-development-plan.md"
+        }
       ],
       "deferral": {
         "reason": "当前优先完成可创建、可升级且不迫使业务源码重构的独立应用交付闭环。",
         "resume_when": "用户另行立项并批准 SaaS 商业化范围与验收计划。"
       },
-      "paths": ["docs/plans/saas-enhancement-development-plan.md"]
+      "paths": [
+        "docs/plans/saas-enhancement-development-plan.md"
+      ]
     },
     {
       "id": "PA-OPS-001",
@@ -307,7 +533,10 @@
         "独立项目拥有自身仓库、资源登记、权限模型和发布合同"
       ],
       "evidence": [
-        {"kind": "document", "ref": "docs/design/saas-enhancement-blueprint.md"}
+        {
+          "kind": "document",
+          "ref": "docs/design/saas-enhancement-blueprint.md"
+        }
       ],
       "deferral": {
         "reason": "产品边界明确要求独立应用。",
@@ -325,13 +554,18 @@
         "app-owned 文件不进入默认升级写集"
       ],
       "evidence": [
-        {"kind": "document", "ref": "docs/scaffold-upgrade.md"}
+        {
+          "kind": "document",
+          "ref": "docs/scaffold-upgrade.md"
+        }
       ],
       "deferral": {
         "reason": "这是产品安全边界，不是待补功能。",
         "resume_when": "不恢复；如需源码迁移，应建立独立、显式、可审阅的应用迁移工具。"
       },
-      "paths": ["docs/scaffold-upgrade.md"]
+      "paths": [
+        "docs/scaffold-upgrade.md"
+      ]
     },
     {
       "id": "PA-RELEASE-001",
@@ -343,7 +577,10 @@
         "部署构建绑定不可变源码 Tag 和法律制品"
       ],
       "evidence": [
-        {"kind": "document", "ref": "docs/architecture/pb09-formal-release-contract.md"}
+        {
+          "kind": "document",
+          "ref": "docs/architecture/pb09-formal-release-contract.md"
+        }
       ],
       "deferral": {
         "reason": "当前发布合同明确排除预构建镜像。",

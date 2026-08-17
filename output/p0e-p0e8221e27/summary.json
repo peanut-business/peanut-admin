@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "candidate": "8221e270329de4a79c217d3b6fdafba5d24ad988",
+  "candidate_tree": "4b3071a61b6e346ad5824e6073a9b38f079019a4",
+  "run_id": "p0e8221e27",
+  "resource_id": "peanut-admin-p0e-mysql84-gate",
+  "environment": "development",
+  "endpoint": "192.168.192.2:20183",
+  "groups": {
+    "generated-application": {
+      "status": "passed",
+      "finished_at": 1786909901
+    },
+    "standalone-fresh": {
+      "status": "passed",
+      "finished_at": 1786909908
+    },
+    "multi-tenant-fresh": {
+      "status": "passed",
+      "finished_at": 1786909914
+    },
+    "plugin-lifecycle": {
+      "status": "passed",
+      "finished_at": 1786909922
+    },
+    "production-compose": {
+      "status": "passed",
+      "finished_at": 1786909992
+    },
+    "standalone-browser": {
+      "status": "passed",
+      "finished_at": 1786910009
+    },
+    "multi-tenant-browser": {
+      "status": "passed",
+      "finished_at": 1786910043
+    }
+  },
+  "fresh_only_2_0": {
+    "generated_application": "groups/generated-application.json",
+    "standalone_fresh": "groups/standalone-fresh.json",
+    "multi_tenant_fresh": "groups/multi-tenant-fresh.json",
+    "plugin_lifecycle": "groups/plugin-lifecycle.json",
+    "production_compose": "groups/production-compose.json",
+    "browser": "browser/generated"
+  },
+  "cleanup": {
+    "database_residual_count": 0,
+    "compose_removed": true,
+    "container_residual_count": 0,
+    "volume_residual_count": 0,
+    "network_residual_count": 0,
+    "image_residual_count": 0,
+    "listener_residual_count": 0,
+    "docs_listener_stopped": true,
+    "cache_removed": true,
+    "output_preserved": "/Users/xing/.codex/worktrees/994a/peanut-admin/output/p0e-p0e8221e27",
+    "lease_released": true
+  }
+}

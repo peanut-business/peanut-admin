@@ -27,6 +27,20 @@ services:
     ports:
       - "127.0.0.1:${VITE_PORT:?set the registered admin port}:5173"
 
+  platform:
+    image: node:20.19.4-bookworm-slim
+    working_dir: /workspace/platform
+    command: ["sh", "-c", "test -x node_modules/.bin/vite || npm ci --legacy-peer-deps; exec node node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5177"]
+    environment:
+      <<: *node-environment
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+      VITE_API_PROXY_TARGET: http://host.docker.internal:${PHP_PORT:?set the registered host PHP port}
+    volumes:
+      - ../platform:/workspace/platform
+      - platform-node-modules:/workspace/platform/node_modules
+    ports:
+      - "127.0.0.1:${PLATFORM_PORT:?set the registered platform port}:5177"
+
   pc:
     image: node:20.19.4-bookworm-slim
     working_dir: /workspace/pc
@@ -88,6 +102,7 @@ services:
       NGINX_ENVSUBST_FILTER: ^PEANUT_API_
     depends_on:
       - web
+      - platform
       - pc
       - mobile
 
@@ -100,6 +115,7 @@ services:
 
 volumes:
   web-node-modules:
+  platform-node-modules:
   pc-node-modules:
   mobile-node-modules:
   docs-node-modules:

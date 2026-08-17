@@ -5,7 +5,6 @@ namespace app\adminapi\validate\setting;
 
 use app\common\enum\UserTerminalEnum;
 use app\common\model\finance\PaymentScene;
-use app\common\service\ConfigService;
 use think\Validate;
 
 class RechargeSettingValidate extends Validate
@@ -84,14 +83,6 @@ class RechargeSettingValidate extends Validate
             }
             if ($isDefault === 1 && $status !== PaymentScene::STATUS_ENABLED) {
                 return '默认支付渠道必须启用';
-            }
-            if ((int)$value === 1 && $status === PaymentScene::STATUS_ENABLED) {
-                $configured = $payWay === PaymentScene::PAY_WAY_WECHAT
-                    ? (int)ConfigService::get('pay', 'wx_pay_status', 0) === 1
-                    : (int)ConfigService::get('pay', 'ali_pay_status', 0) === 1;
-                if (!$configured) {
-                    return PaymentScene::getPayWayDesc($payWay) . '未启用，不能用于充值场景';
-                }
             }
             $key = $terminal . ':' . $payWay;
             if (isset($matrix[$key])) {

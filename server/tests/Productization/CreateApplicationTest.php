@@ -113,7 +113,31 @@ createApplicationExpect(is_string($systemTemporary), 'system temporary directory
 $temporary = $systemTemporary . '/peanut-create-app-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0775, true);
 $inventoryPath = $root . '/scaffold/application-template-inventory.json';
-$releasePath = $root . '/scaffold/releases/v1.1.9/scaffold-manifest.json';
+$inventory = json_decode((string)file_get_contents($inventoryPath), true, 512, JSON_THROW_ON_ERROR);
+$inventoryByPath = [];
+foreach ($inventory['files'] ?? [] as $entry) {
+    if (is_array($entry) && is_string($entry['path'] ?? null)) {
+        $inventoryByPath[$entry['path']] = $entry;
+    }
+}
+createApplicationExpect(
+    array_filter(array_keys($inventoryByPath), static fn(string $path): bool => str_starts_with($path, 'output/')) === [],
+    'source qualification evidence must not participate in application template identity'
+);
+foreach (['CHANGELOG.md' => 'changelog', 'RELEASE_METADATA.json' => 'release-metadata'] as $path => $transform) {
+    $semanticDigest = hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
+    createApplicationExpect(
+        ($inventoryByPath[$path]['source_sha256'] ?? null) === $semanticDigest,
+        "{$path} must use the versioned semantic source digest"
+    );
+    createApplicationExpect(
+        !hash_equals($semanticDigest, (string)hash_file('sha256', $root . '/' . $path)),
+        "{$path} semantic digest must not depend on release prose bytes"
+    );
+}
+$templateVersion = (string)($inventory['template_version'] ?? '');
+createApplicationExpect(preg_match('/^\d+\.\d+\.\d+$/D', $templateVersion) === 1, 'inventory template version must be SemVer');
+$releasePath = $root . '/scaffold/releases/v' . $templateVersion . '/scaffold-manifest.json';
 $identity = ['commit' => str_repeat('a', 40), 'tree' => str_repeat('b', 40)];
 
 try {
@@ -147,9 +171,9 @@ try {
         'generated application manifest must carry the default application version contract'
     );
     createApplicationExpect(
-        ($release['version'] ?? null) === '1.1.9'
+        ($release['version'] ?? null) === $templateVersion
             && (json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['application']['version'] ?? null) === '0.1.0',
-        'scaffold v1.1.9 must expose the independent default application version'
+        'current scaffold release must expose the independent default application version'
     );
 
     createApplicationExpect($manifestOne === $manifestTwo, 'same template identity and parameters must produce the same manifest');
@@ -164,7 +188,6 @@ try {
         );
     }
 
-    $inventory = json_decode((string)file_get_contents($inventoryPath), true, 512, JSON_THROW_ON_ERROR);
     $expected = ['.peanut/application-manifest.json'];
     foreach ($inventory['files'] as $entry) {
         if ($entry['classification'] === 'excluded') continue;

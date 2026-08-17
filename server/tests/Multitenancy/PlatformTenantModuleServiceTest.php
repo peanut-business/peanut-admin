@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use app\platform\identity\CorePlatformOperatorIdentityPort;
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\module\DeployedTenantModuleRegistry;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PlatformTenantModuleService;
@@ -95,8 +94,7 @@ function pm01ModuleSessions(PDO $pdo): PlatformOperatorSessionService
             str_repeat('m', 32)
         ),
         new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
-        $permissions,
-        new PlatformOperatorAccountBoundary($pdo)
+        $permissions
     );
 }
 
@@ -172,13 +170,8 @@ try {
         $pdo->exec(KernelSchema::createSql($table));
     }
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
-    $migration = file_get_contents(dirname(__DIR__, 2) . '/database/migrations/20260813_tenant_module_management.sql');
-    pm01ModuleExpect(is_string($migration), 'TenantModule migration is unavailable');
-    $pdo->exec($migration);
     foreach (ModuleSchema::tableNames() as $table) {
-        if ($table !== 'pa_module_installation') {
-            $pdo->exec(ModuleSchema::createSql($table));
-        }
+        $pdo->exec(ModuleSchema::createSql($table));
     }
     foreach (AuthorizationSchema::tableNames() as $table) {
         $pdo->exec(AuthorizationSchema::createSql($table));

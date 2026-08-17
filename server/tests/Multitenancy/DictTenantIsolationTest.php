@@ -52,7 +52,7 @@ function dictTenantPdo(string $host, int $port, string $password, string $databa
     );
 }
 
-function createDictTenantSchema(PDO $pdo, string $failure = ''): void
+function createDictTenantSchema(PDO $pdo): void
 {
     $pdo->exec(<<<'SQL'
 CREATE TABLE pa_tenant (
@@ -65,8 +65,13 @@ CREATE TABLE pa_dict_type (
   name VARCHAR(100) NOT NULL DEFAULT '', type VARCHAR(100) NOT NULL DEFAULT '',
   is_disable TINYINT NOT NULL DEFAULT 0, remark VARCHAR(255) NOT NULL DEFAULT '',
   create_time INT UNSIGNED NOT NULL DEFAULT 0, update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL DEFAULT NULL,
-  PRIMARY KEY (id), KEY idx_type (type)
+  delete_time INT UNSIGNED NULL DEFAULT NULL, tenant_id BIGINT UNSIGNED NOT NULL,
+  active_type VARCHAR(100) GENERATED ALWAYS AS (CASE WHEN delete_time IS NULL THEN type ELSE NULL END) STORED,
+  PRIMARY KEY (id), KEY idx_type (type),
+  UNIQUE KEY uk_dict_type_tenant_id (tenant_id, id),
+  UNIQUE KEY uk_dict_type_tenant_active_type (tenant_id, active_type),
+  KEY idx_dict_type_tenant_status_name (tenant_id, is_disable, name, id),
+  CONSTRAINT fk_dict_type_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE pa_dict_data (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -75,46 +80,28 @@ CREATE TABLE pa_dict_data (
   sort SMALLINT NOT NULL DEFAULT 0, is_disable TINYINT NOT NULL DEFAULT 0,
   remark VARCHAR(255) NOT NULL DEFAULT '', create_time INT UNSIGNED NOT NULL DEFAULT 0,
   update_time INT UNSIGNED NOT NULL DEFAULT 0, delete_time INT UNSIGNED NULL DEFAULT NULL,
-  PRIMARY KEY (id), KEY idx_type_id (type_id)
-) ENGINE=InnoDB;
-SQL);
-
-    if ($failure !== 'missing_bootstrap') {
-        $pdo->exec(<<<'SQL'
-CREATE TABLE pa_default_tenant_bootstrap (
-  id TINYINT UNSIGNED NOT NULL,
   tenant_id BIGINT UNSIGNED NOT NULL,
-  status VARCHAR(16) NOT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id), KEY idx_type_id (type_id),
+  UNIQUE KEY uk_dict_data_tenant_id (tenant_id, id),
+  KEY idx_dict_data_tenant_type_status_sort (tenant_id, type_id, is_disable, sort, id),
+  CONSTRAINT fk_dict_data_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_dict_data_tenant_type FOREIGN KEY (tenant_id, type_id) REFERENCES pa_dict_type (tenant_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 SQL);
-    }
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
-    if ($failure !== 'missing_bootstrap') {
-        $status = $failure === 'incomplete_bootstrap' ? 'running' : 'completed';
-        $pdo->exec("INSERT INTO pa_default_tenant_bootstrap (id, tenant_id, status) VALUES (1, 101, '{$status}')");
-    }
-    $pdo->exec("INSERT INTO pa_dict_type (id, name, type) VALUES (11, 'Legacy', 'shared_key')");
-    if ($failure === 'duplicate_type') {
-        $pdo->exec("INSERT INTO pa_dict_type (id, name, type) VALUES (12, 'Duplicate', 'shared_key')");
-    }
-    $typeId = $failure === 'orphan_data' ? 999 : 11;
-    $pdo->exec("INSERT INTO pa_dict_data (id, name, value, type_id, type_value, sort) VALUES (21, 'Legacy item', 'legacy', {$typeId}, 'shared_key', 10)");
 }
 
-function dictTenantColumnExists(PDO $pdo, string $table): bool
+function seedDictTenantSchema(PDO $pdo): void
 {
-    $statement = $pdo->prepare(<<<'SQL'
-SELECT COUNT(*) FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = 'tenant_id'
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active');
+INSERT INTO pa_dict_type (id, tenant_id, name, type) VALUES
+  (11, 101, 'Alpha', 'shared_key'),
+  (12, 202, 'Beta', 'shared_key');
+INSERT INTO pa_dict_data (id, tenant_id, name, value, type_id, type_value, sort) VALUES
+  (21, 101, 'Alpha item', 'alpha', 11, 'shared_key', 10),
+  (22, 202, 'Beta item', 'beta', 12, 'shared_key', 20);
 SQL);
-    $statement->execute(['table_name' => $table]);
-    return (int)$statement->fetchColumn() > 0;
 }
-
-$serverRoot = dirname(__DIR__, 2);
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260813_dict_tenant_ownership.sql');
-expectDictTenant($migration !== '', 'dictionary Tenant migration is missing');
 
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $port = (int)(getenv('DB_PORT') ?: 3306);
@@ -125,53 +112,12 @@ $admin = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
-$databases = [];
+$database = dictTenantDatabase($admin, 'peanut_admin_mt02_dict_');
 
 try {
-    foreach (['missing_bootstrap', 'incomplete_bootstrap', 'orphan_data', 'duplicate_type'] as $failure) {
-        $database = dictTenantDatabase($admin, 'peanut_admin_mt02_dict_preflight_');
-        $databases[] = $database;
-        $pdo = dictTenantPdo($host, $port, $password, $database);
-        createDictTenantSchema($pdo, $failure);
-        try {
-            $pdo->exec($migration);
-            throw new RuntimeException("{$failure} migration preflight unexpectedly succeeded");
-        } catch (PDOException) {
-            expectDictTenant(!dictTenantColumnExists($pdo, 'pa_dict_type'), "{$failure} changed dict_type schema");
-            expectDictTenant(!dictTenantColumnExists($pdo, 'pa_dict_data'), "{$failure} changed dict_data schema");
-        }
-    }
-
-    $database = dictTenantDatabase($admin, 'peanut_admin_mt02_dict_');
-    $databases[] = $database;
     $pdo = dictTenantPdo($host, $port, $password, $database);
     createDictTenantSchema($pdo);
-    $pdo->exec($migration);
-
-    foreach (['pa_dict_type', 'pa_dict_data'] as $table) {
-        expectDictTenant(
-            (int)$pdo->query("SELECT COUNT(*) FROM `{$table}` WHERE tenant_id = 101")->fetchColumn() > 0,
-            "{$table} legacy rows were not backfilled to the default Tenant"
-        );
-        expectDictTenant(
-            $pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}' AND COLUMN_NAME = 'tenant_id'")->fetchColumn() === 'NO',
-            "{$table}.tenant_id is nullable"
-        );
-    }
-    foreach ([
-        'pa_dict_type' => ['uk_dict_type_tenant_id', 'uk_dict_type_tenant_active_type'],
-        'pa_dict_data' => ['uk_dict_data_tenant_id', 'idx_dict_data_tenant_type_status_sort'],
-    ] as $table => $expectedIndexes) {
-        $indexes = $pdo->query(
-            "SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}'"
-        )->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($expectedIndexes as $index) {
-            expectDictTenant(in_array($index, $indexes, true), "{$table}.{$index} is missing");
-        }
-    }
-
-    $pdo->exec("INSERT INTO pa_dict_type (id, tenant_id, name, type) VALUES (12, 202, 'Beta', 'shared_key')");
-    $pdo->exec("INSERT INTO pa_dict_data (id, tenant_id, name, value, type_id, type_value, sort) VALUES (22, 202, 'Beta item', 'beta', 12, 'shared_key', 20)");
+    seedDictTenantSchema($pdo);
     try {
         $pdo->exec("INSERT INTO pa_dict_type (tenant_id, name, type) VALUES (202, 'Duplicate Beta', 'shared_key')");
         throw new RuntimeException('same-Tenant active dictionary type duplicate unexpectedly succeeded');
@@ -289,9 +235,7 @@ try {
         'cross-Tenant denial changed Beta data'
     );
 } finally {
-    foreach ($databases as $database) {
-        $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
-    }
+    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT02-DICT-TENANT-ISOLATION-001 passed\n";

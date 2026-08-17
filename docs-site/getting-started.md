@@ -21,28 +21,39 @@ description: Peanut Admin 本地开发环境的安装与启动步骤。
 ```bash
 git clone <repo-url>
 cd peanut-admin
-
-cd server
 cp .env.example .env
-# 编辑 .env，填写 DB_*、随机 JWT_SECRET 和首次安装用 ADMIN_INITIAL_PASSWORD
-composer install
-cd ..
+# 编辑根 .env，填写 DB_*、随机 JWT_SECRET、ADMIN_INITIAL_EMAIL 和 ADMIN_INITIAL_PASSWORD
+cd server && composer install && cd ..
 ```
 
-创建一个空的 MySQL 数据库：
+根 `.env` 是生产 Compose 的唯一人工配置样例；`PHP_*` 只由启动器自动派生给 ThinkPHP，
+不要手工维护第二份 `server/.env`。空库安装必须使用应用 owner 登记并确认为空的目标；
+Peanut Admin 维护仓的 `peanut-admin-mysql84-development` 是持久开发数据，不能假定为空。
+需要重建本地多租户体验时，使用隔离的
+`peanut-admin-mysql84-local-multi-tenant-demo`，并先取得对应 lease。资源选择器只写出非秘密
+连接信息；凭据只从登记的 credential reference 注入：
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE peanut_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+./scripts/project-resource-registry validate
+./scripts/project-resource-registry database-env \
+  --deployment-target local-development --consumer host
 ```
+
+不要依次尝试 `localhost`、默认端口或默认 root 密码，也不要静默创建未登记数据库。
 
 安装基础结构、增量迁移和种子数据：
 
 ```bash
 export ADMIN_INITIAL_PASSWORD='<至少 12 位且同时包含字母和数字>'
+export ADMIN_INITIAL_EMAIL='owner@example.com'
 php server/database/install.php
 ```
 
-安装器只接受空数据库，创建管理员 `admin`，且不会回显初始密码。已有环境不要重复运行首次安装器，也不要设置该变量：先完成数据库与存储备份，尚未进入迁移账本的历史安装只执行一次 `php server/database/migrate.php --adopt-existing`，已接管环境及后续发布执行 `php server/database/migrate.php`。命令会按账本处理未登记迁移并校验 SHA-256；不要手工改写账本或已登记迁移。
+安装器只接受已登记且已确认为空的数据库，创建默认 Tenant、原生 Account/TenantMember 和首
+owner，且不会回显初始密码。2.0.0 不支持接管 1.x 数据库；目标库已有任何表时停止，先登记并
+选择新的空库，不能把共享开发库重置为安装目标。
+安装后可执行 `php server/database/migrate.php --current` 校验 canonical `init.sql` 与基线后
+追加 migration 的 SHA-256。不要手工改写账本或已登记 SQL。
 
 ## 启动服务
 
@@ -53,13 +64,38 @@ php server/database/install.php
 ./scripts/local-stack.sh status
 ```
 
-默认打开 `http://127.0.0.1:20187/admin/`，使用管理员 `admin` 和安装时提供的密码登录；
+登记的默认网关为 `http://127.0.0.1:20187/admin/`，独立 Platform 为
+`http://127.0.0.1:20177/platform/`；直接开发端口分别为 Admin `20181`、API `20180`。
+使用安装时提供的管理员邮箱和密码登录 Tenant Admin；Platform 使用独立的
+`PLATFORM_INITIAL_EMAIL`/`PLATFORM_INITIAL_PASSWORD`。两套身份不能互换。
 首次登录后请改为个人凭据。本地监听来自 `.local/stack.env`（或
 `PEANUT_LOCAL_ENV_FILE`），其他 clone/worktree 可覆盖登记默认端口。停止服务运行
 `./scripts/local-stack.sh dev-down`。
+
+本项目维护者使用隔离的多租户体验环境时，`/etc/hosts` 中登记的四个名称都指向
+`127.0.0.1`：Platform `platform.peanut-admin.test`、公共 Admin
+`admin.peanut-admin.test`、两个 Tenant 入口 `tenant-a.peanut-admin.test` 与
+`tenant-b.peanut-admin.test`。Platform 使用端口 `20176`，三个 Admin 入口使用 `20179`，
+API 使用 `20178`。这些域名、端口和 demo 数据库必须由同一个
+`local-multi-tenant-demo` lease 持有，不能与日常 development 数据库混用。
+
+在 lease 已固定到当前提交后，使用项目脚本准备私有 env、应用当前 migration 并启动三个入口：
+
+```bash
+./scripts/local-multi-tenant-demo prepare
+./scripts/local-multi-tenant-demo up
+./scripts/local-multi-tenant-demo status
+./scripts/local-multi-tenant-demo credentials
+```
+
+脚本不会创建替代数据库，也不会打印数据库密码。`credentials` 只按本地体验要求显示合成的
+Tenant Owner 与 PlatformOperator 账号密码；停止时运行 `./scripts/local-multi-tenant-demo down`。
+如果电脑启用了 HTTP/HTTPS 系统代理，还必须把 `*.peanut-admin.test` 加入代理绕过列表；
+`/etc/hosts` 只负责解析到 `127.0.0.1`，不能阻止浏览器把这些请求交给代理。
 
 ## 下一步
 
 - 需要理解目录和分层时，阅读[开发与部署指南](/guide/development)。
 - 需要执行后台业务操作时，阅读[管理员使用手册](/guide/user-manual)。
 - 只查接口响应和认证规则时，阅读[API 约定](/api)。
+- 需要创建 Tenant、邀请 Owner 或配置域名时，阅读[实例平台管理](/platform)。

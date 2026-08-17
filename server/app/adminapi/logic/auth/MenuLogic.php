@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\auth;
 
+use app\adminapi\service\CoreTenantModuleAdminBridge;
 use app\adminapi\service\AdminPermissionService;
 use app\common\logic\BaseLogic;
 use app\common\model\auth\SystemMenu;
-use app\common\model\auth\SystemRoleMenu;
+use app\common\service\platform\InstanceControlPlanePolicy;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
 class MenuLogic extends BaseLogic
@@ -18,15 +20,30 @@ class MenuLogic extends BaseLogic
 
     public static function getAll(): array
     {
-        $menus = SystemMenu::order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
+        $menus = SystemMenu::whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
+            ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
         return linear_to_tree($menus);
     }
 
-    public static function getAllSimple(): array
+    public static function getAllSimple(TenantContext $context): array
     {
-        $data = SystemMenu::where('is_disable', 0)->field('id,pid,name')
+        $data = SystemMenu::where('is_disable', 0)
+            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
+            ->field('id,pid,name')
             ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
-        return linear_to_tree($data);
+        $moduleMenus = array_map(
+            static fn(array $menu): array => [
+                'id' => (int)$menu['id'],
+                'pid' => 0,
+                'name' => (string)$menu['name'],
+                'module_key' => (string)$menu['module_key'],
+                'managed' => true,
+            ],
+            (new CoreTenantModuleAdminBridge())->assignableMenuRecords($context->tenantId)
+        );
+        return [...linear_to_tree($data), ...$moduleMenus];
     }
 
     public static function detail(int $id): array
@@ -95,7 +112,8 @@ class MenuLogic extends BaseLogic
             if (SystemMenu::where('pid', $id)->count() > 0) {
                 throw new \RuntimeException('已关联下级菜单，暂不可删除');
             }
-            if (SystemRoleMenu::where('menu_id', $id)->count() > 0) {
+            $permission = trim((string)$menu->perms);
+            if ($permission !== '' && self::permissionAssigned($permission)) {
                 throw new \RuntimeException('菜单已被角色使用，暂不可删除');
             }
 
@@ -155,5 +173,13 @@ class MenuLogic extends BaseLogic
             }
             $parentId = (int)$parent->pid;
         }
+    }
+
+    private static function permissionAssigned(string $permission): bool
+    {
+        return Db::name('role_permission')->alias('rp')
+            ->join('permission p', 'p.id = rp.permission_id')
+            ->where('p.key', $permission)
+            ->count() > 0;
     }
 }

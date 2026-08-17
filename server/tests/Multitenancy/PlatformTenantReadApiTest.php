@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\platform\identity\PlatformOperatorAccountBoundary;
 use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\PlatformTenantQueryService;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
@@ -63,8 +62,7 @@ function platformTenantReadSessions(PDO $pdo): PlatformOperatorSessionService
             str_repeat('r', 32)
         ),
         new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache()),
-        $repository,
-        new PlatformOperatorAccountBoundary($pdo)
+        $repository
     );
 }
 
