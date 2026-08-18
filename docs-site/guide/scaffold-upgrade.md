@@ -8,7 +8,7 @@ description: 2.x 脚手架受管文件升级、应用代码所有权和数据库
 ## 5 分钟结论
 
 2.x 派生应用可以在两个不可变 scaffold Release 之间升级。当前已经用真实生成应用验证
-`v2.0.0 -> v2.0.1` 已完成 `preflight -> apply -> verify -> recover` 闭环；`v2.1.1` 沿用同一合同。
+`v2.0.0 -> v2.0.1` 已完成 `preflight -> apply -> verify -> recover` 闭环；`v2.1.4` 沿用同一合同。
 
 执行器只更新 Release manifest 中标为 `managed` 或 `generated-managed` 的 Peanut 框架文件。
 你的 `app-owned` 业务代码、页面、业务配置、业务 Schema 和部署密钥不会被自动覆盖；发现
@@ -22,7 +22,7 @@ description: 2.x 脚手架受管文件升级、应用代码所有权和数据库
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
   --from-manifest=/absolute/path/to/scaffold/releases/v2.0.0/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v2.1.1/scaffold-manifest.json
+  --to-manifest=/absolute/path/to/scaffold/releases/v2.1.4/scaffold-manifest.json
 ```
 
 只有输出 `status=ready` 且冲突数为 `0` 时才继续：

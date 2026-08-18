@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "feat/module-execution-contract",
-    "commit": "c28d30a98abb346123e9fbf7470970891cf477b0",
+    "branch": "main",
+    "commit": "36e92269ca1eb69585b41d78ef131fb298f9d206",
     "reviewed_at": "2026-08-18"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
-    "status": "in_progress",
-    "summary": "v2.1.0 已完成源码发布但发现 canonical init.sql 基线漂移，不能从 v2.0.1 原地升级；v2.1.1 修复候选已通过 P0-E 7/7，当前只剩正式发布、两套登记部署和 post-deployment 快照收口。"
+    "status": "verified",
+    "summary": "v2.1.4 已完成正式源码发布、P0-E 7/7、Standalone 升级、多租户演示站 fresh 部署和四域名浏览器验收；无秘密 post-deployment 快照已封存。"
   },
   "capabilities": [
     {
@@ -574,8 +574,8 @@
       "id": "PA-DELIVERY-004",
       "name": "2.0 发布后部署与演示闭环",
       "area": "release",
-      "status": "in_progress",
-      "summary": "v2.1.0 源码 Release 已发布但因 init.sql 基线漂移不能从 v2.0.1 升级；v2.1.1 修复候选已完成受影响的 P0-E 资格，当前只剩正式 Release、两套登记部署和 post-deployment 快照收口。",
+      "status": "verified",
+      "summary": "v2.1.4 已完成正式源码发布、生产单租户升级、多租户演示站 fresh 部署、四域名浏览器验收和无秘密 post-deployment 快照。",
       "acceptance": [
         "从不可变 v2.0.0 tag 对登记目标执行非交互 fresh 或同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
         "Standalone 与 Multi-tenant 各形成一个独立部署、数据库、域名和最小浏览器证据",
@@ -584,37 +584,20 @@
         "经受控渠道向授权接收方交付访问方式；账本只记录无秘密的交付确认和已人工检查的浏览器截图结论"
       ],
       "evidence": [
-        {
-          "kind": "git",
-          "ref": "4cf95694f2f2692e049af6a8d99ab25dd046a8ba"
-        },
-        {
-          "kind": "git",
-          "ref": "1c1c37c5c367de1ad9f548339a5af457b359de7c"
-        },
-        {
-          "kind": "document",
-          "ref": "docs-site/capabilities.md"
-        },
-        {
-          "kind": "resource",
-          "ref": "resources/project-resources.json"
-        }
+        {"kind": "release", "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v2.1.4"},
+        {"kind": "document", "ref": "docs/product-status/releases/v2.1.4.json"},
+        {"kind": "document", "ref": "docs/product-status/deployments/v2.1.4-online-experience.json"},
+        {"kind": "resource", "ref": "resources/project-resources.json"}
       ],
       "dependencies": [
         "PA-DELIVERY-003",
         "PA-NATIVE-001"
       ],
-      "blockers": [
-        "v2.1.1 annotated tag/GitHub Release 尚未创建",
-        "两套登记部署尚未完成 v2.1.1 部署",
-        "post-deployment 正式快照尚未封存"
-      ],
       "paths": [
         "docs-site/capabilities.md",
         "docs-site/deployment.md",
         "resources/project-resources.json",
-        "docs/product-status/deployments/v2.0.1-online-experience.json"
+        "docs/product-status/deployments/v2.1.4-online-experience.json"
       ]
     },
     {
@@ -623,7 +606,7 @@
       "area": "plugins",
       "status": "in_progress",
       "status": "verified",
-      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.0 固定候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格，v2.1.1 仅修复 canonical init.sql 基线身份。跨 Module 可运行示例不属于本次 Release 阻塞项。",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格。跨 Module 可运行示例不属于本次 Release 阻塞项。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",

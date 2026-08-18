@@ -23,17 +23,17 @@ TenantModule 生命周期和全部入口 Guard 后，产品形态才算兑现。
 
 ## 后续产品能力路线图
 
-`v2.1.1` 在既有 2.x 基线上交付官方能力 Module 化及 canonical baseline 修复。下面只列发布之后仍需推进的产品能力，不把 DCS 领域功能、
+`v2.1.4` 在既有 2.x 基线上完成官方能力 Module 化、canonical baseline 修复和登记部署收口。下面只列发布之后仍需推进的产品能力，不把 DCS 领域功能、
 完整 SaaS 或跨应用运营平台混进 Peanut Admin 的当前交付范围。
 
 | 优先级 | 能力 | 当前真实状态 | 下一步产品形态 | 完成条件 |
 | --- | --- | --- | --- | --- |
-| P0 | 无人值守发布 | **自 `v2.0.1` 起已交付**：脚本绑定固定 tag、登记目标、`fresh`/`upgrade`、数据库迁移、备份和非交互远程执行；`v2.1.1` 修复 2.1.0 基线校验问题 | 继续用同一脚本完成登记生产目标的独立部署或升级 | 参数和凭据写入可靠；fresh/upgrade 资格通过；失败不会留下半发布状态 |
-| P0 | Standalone 与多租户线上交付 | **v2.0.1 已按登记资源完成一套 Standalone 与一套 Multi-tenant candidate 部署**：两个 origin、Compose 健康状态、TLS/Host 和线上入口已验证；Multi-tenant 的共享 Admin、Tenant A、Tenant B 浏览器矩阵和截图人工检查通过。源码 Release 快照仍保持 source-only，部署证据见内部 post-deployment 快照 | 继续用同一脚本完成后续版本的登记目标升级 | 固定 tag、资源、数据库和域名；每次升级完成迁移、健康检查和受影响浏览器 smoke |
+| P0 | 无人值守发布 | **已由 `v2.1.4` 正式交付**：脚本绑定固定 tag、登记目标、`fresh`/`upgrade`、数据库迁移、备份和非交互远程执行；`v2.1.4` 已完成一次升级和一次 fresh 部署 | 继续用同一脚本完成后续版本的登记生产目标升级 | 参数和凭据写入可靠；fresh/upgrade 资格通过；失败不会留下半发布状态 |
+| P0 | Standalone 与多租户线上交付 | **`v2.1.4` 已按登记资源完成一套 Standalone 与一套 Multi-tenant candidate 部署**：两个 origin、Compose 健康状态、TLS/Host 和线上入口已验证；平台、共享 Admin、Tenant A、Tenant B 浏览器截图已人工检查。无秘密部署快照见内部 `docs/product-status/deployments/v2.1.4-online-experience.json` | 继续用同一脚本完成后续版本的登记目标升级 | 固定 tag、资源、数据库和域名；每次升级完成迁移、健康检查和受影响浏览器 smoke |
 | P0 | 演示站叠加层 | **v2.0.x 基础 seeder 和线上 production-candidate 演示叠加均已执行**：Tenant A/B、绑定 Host、标题、演示账号策略和合成数据已验证；普通生产目标不加载 overlay | 正常安装后显式叠加可丢弃的 Tenant A/B 数据、账号预填、演示账号保护和 Tenant 标题 | 只能用于登记的演示目标；身份/Host/密码一致；可重复执行或安全失败；不会改变普通生产升级配置 |
 | P0 | 文档事实自动收敛 | **长期入口已修正，自动防滞后未完成**：发布页、能力账本、首页、开发指南和能力目录已统一到正式 Release | 发布状态只由能力账本和不可变 Release 快照生成，公共入口不再手工复制旧状态 | 文档构建和状态检查能发现过期版本、候选措辞和能力表冲突 |
 | P1 | 2.x 派生应用受控升级 | **已验证一条 2.x 路径**：`v2.0.0 -> v2.0.1` 真实派生应用完成 preflight/apply/verify/recover，app-owned 修改保持；后续 Release 仍需重复同一资格 | 从旧 Release、当前应用和目标 Release 生成三方计划，只更新受管文件与 Peanut 依赖，冲突时停止 | 每个目标 Release 都有不可变 manifest；app-owned 字节保持；依赖、数据库 migration 和恢复步骤显式列出 |
-| P1 | 官方可选 Module 产品化 | **已进入 `v2.1.1`**：文件、通知、OAuth、支付、会员、任务、导入导出均有 manifest、Plugin 身份、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard | 每项能力拥有稳定 Plugin/Module manifest，可安装、逐 Tenant 开通和停用 | Plugin 安装、TenantModule、成员 RBAC、数据权限和所有入口 Guard 同时通过；固定候选资格与发布快照可追溯 |
+| P1 | 官方可选 Module 产品化 | **已随 `v2.1.4` 正式交付**：文件、通知、OAuth、支付、会员、任务、导入导出均有 manifest、Plugin 身份、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard | 每项能力拥有稳定 Plugin/Module manifest，可安装、逐 Tenant 开通和停用 | Plugin 安装、TenantModule、成员 RBAC、数据权限和所有入口 Guard 同时通过；固定候选资格与发布快照可追溯 |
 | P1 | Module 全入口 Guard | **当前交付入口已覆盖**：`ModuleExecutionContext/Guard` 已接入 Fixture 和 Article 的管理/公开入口，定时任务、Core worker、支付/公众号回调也有对应 Host Guard；Article/Fixture 当前没有业务 worker、回调或模块文件入口。未来 Module 新增这些入口时必须在自己的装配处接入 | HTTP、内部命令、入队、worker、外部回调和模块文件入口使用同一授权链 | 每类实际存在的入口都有启用正向测试和停用负向测试；前端隐藏不能作为安全证据 |
 | P1 | 跨 Module 可运行示例 | **未完成**：当前只有单 Module 的 `fixture.delivery-record` | 两个最小 Module 演示公开命令、只读查询 DTO，以及必要时的版本化事件 | 示例可独立运行；调用方不依赖对方私有表或 Repository；失败场景没有部分写入 |
 | P1 | Tenant 隔离测试模板 | **已有大量产品测试，尚未整理成模板** | 新 Module 可复制的 Tenant A/B、伪造 ID、停用 Tenant/Module 和权限撤销测试骨架 | create-app 或开发文档提供模板；示例 Module 使用同一模板通过 |
