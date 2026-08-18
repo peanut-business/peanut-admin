@@ -26,7 +26,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。v2.1.0 已完成源码发布但发现 canonical init.sql 基线漂移，不能从 v2.0.1 原地升级；v2.1.1 修复候选已通过 P0-E 7/7，当前只剩正式发布、两套登记部署和 post-deployment 快照收口。
+> 总体状态：**进行中**。v2.1.4 源码 Release 已发布；核心官方 Module 和 2.x 脚手架能力已完成，当前仍需完成精确候选锁、两套登记部署与 post-deployment 快照，才能宣布消费闭环完成。
 >
 > 事实基线：`feat/module-execution-contract@c28d30a98abb346123e9fbf7470970891cf477b0`，复核日期：`2026-08-18`。
 
@@ -56,7 +56,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.1.0 源码 Release 已发布但因 init.sql 基线漂移不能从 v2.0.1 升级；v2.1.1 修复候选已完成受影响的 P0-E 资格，当前只剩正式 Release、两套登记部署和 post-deployment 快照收口。 |
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.1.4 源码 Release 已发布；当前仍需把资格摘要、P0-E fixture、scaffold/inventory 和正式 tag 绑定到同一个外部候选锁，并完成两套登记部署与 post-deployment 快照。 |
 
 ### 暂缓或范围外
 

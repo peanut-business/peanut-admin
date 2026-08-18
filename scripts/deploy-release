@@ -207,6 +207,7 @@ fi
 command -v git >/dev/null || fail 'git is required'
 command -v jq >/dev/null || fail 'jq is required'
 command -v shasum >/dev/null || fail 'shasum is required'
+[[ -x "$ROOT_DIR/scripts/check-release-consistency" ]] || fail 'missing release consistency gate'
 
 cd "$ROOT_DIR"
 git diff --quiet || fail 'source checkout has unstaged changes'
@@ -222,6 +223,11 @@ compose_project="$(target_json "$deployment_id" | jq -r '.compose_project')"
 remote_root="$(target_json "$deployment_id" | jq -r '.deployment_root')"
 origin_port="$(target_json "$deployment_id" | jq -r '.runtime_resource_ids[0] as $x | .. | objects | select(.stable_resource_id == $x) | .published_endpoint.port')"
 deployment_mode="$(target_json "$deployment_id" | jq -r '.required_non_secret_environment.DEPLOYMENT_MODE // "multi-tenant"')"
+if [[ "$TARGET" == production ]]; then
+  "$ROOT_DIR/scripts/check-release-consistency" --tag "$TAG" --remote origin \
+    || fail "production release identity is not closed for $TAG"
+fi
+
 if [[ "$TARGET" == production ]]; then
   deployment_mode="standalone"
   origin_port="$(target_json peanut-admin-production-application-containers | jq -r '.published_endpoint.port')"

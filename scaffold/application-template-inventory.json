@@ -2306,6 +2306,14 @@
             "mode": 493
         },
         {
+            "path": "scripts/check-release-consistency",
+            "target": "scripts/check-release-consistency",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
             "path": "scripts/check-stale-facts.sh",
             "target": "scripts/check-stale-facts.sh",
             "classification": "managed",
@@ -2354,7 +2362,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "6a1ebfdb679c57034b2058cdc655a32fbec1eefc15b2a60a2fca6d8475e28bde"
+            "source_sha256": "c80e56cb252bf9fa4999eabbcd81167f2aae9487642029710d77b039ae0cfff7"
         },
         {
             "path": "scripts/generate-release-legal.mjs",

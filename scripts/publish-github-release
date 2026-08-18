@@ -8,27 +8,40 @@ REPOSITORY="peanut-business/peanut-admin"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/publish-github-release <version> [--prepare-only] [--output <absolute-dir>]
+Usage: scripts/publish-github-release <version> --qualification <summary.json> \
+  [--prepare-only] [--output <absolute-dir>]
 
 Creates the deterministic source archive, legal assets, external manifest and
-release notes from annotated tag v<version>. Without --prepare-only, publishes
-the six explicit assets as one GitHub Release after all identity checks pass.
+release notes from annotated tag v<version>. The qualification summary must be
+for the exact frozen tag commit/tree. Without --prepare-only, publishes the
+candidate lock and release assets as one GitHub Release after all checks pass.
 EOF
 }
 
 [[ $# -ge 1 ]] || { usage >&2; exit 2; }
+if [[ "$1" == --help || "$1" == -h ]]; then
+  usage
+  exit 0
+fi
 VERSION="$1"
 shift
 PREPARE_ONLY=0
 OUTPUT_DIR=''
+QUALIFICATION_FILE=''
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --prepare-only) PREPARE_ONLY=1; shift ;;
     --output) [[ $# -ge 2 ]] || { usage >&2; exit 2; }; OUTPUT_DIR="$2"; shift 2 ;;
+    --qualification) [[ $# -ge 2 ]] || { usage >&2; exit 2; }; QUALIFICATION_FILE="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
     *) printf 'publish-github-release: unknown option: %s\n' "$1" >&2; exit 2 ;;
   esac
 done
+
+[[ -n "$QUALIFICATION_FILE" && "$QUALIFICATION_FILE" == /* && -f "$QUALIFICATION_FILE" ]] || {
+  printf 'publish-github-release: --qualification must name an absolute existing summary.json\n' >&2
+  exit 2
+}
 
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
   printf 'publish-github-release: version must be stable semver without a v prefix\n' >&2
@@ -59,12 +72,12 @@ cd "$ROOT_DIR"
 }
 TAG_OBJECT="$(git rev-parse "$TAG^{tag}")"
 COMMIT="$(git rev-parse "$TAG^{commit}")"
-REMOTE_TAG_OBJECT="$(git ls-remote --tags origin "refs/tags/$TAG" | awk '{print $1}')"
-REMOTE_COMMIT="$(git ls-remote --tags origin "refs/tags/$TAG^{}" | awk '{print $1}')"
-[[ "$REMOTE_TAG_OBJECT" == "$TAG_OBJECT" && "$REMOTE_COMMIT" == "$COMMIT" ]] || {
-  printf 'publish-github-release: local and origin tag identities differ\n' >&2
+[[ -x "$ROOT_DIR/scripts/check-release-consistency" ]] || {
+  printf 'publish-github-release: missing release consistency gate\n' >&2
   exit 1
 }
+"$ROOT_DIR/scripts/check-release-consistency" --tag "$TAG" --qualification "$QUALIFICATION_FILE" \
+  --remote origin --write-lock "$OUTPUT_DIR/RELEASE_CANDIDATE_LOCK.json"
 
 if [[ "$PREPARE_ONLY" != 1 ]]; then
   [[ "$COMMIT" == "$(git rev-parse origin/main^{commit})" ]] || {
@@ -92,6 +105,7 @@ const cp = require('node:child_process')
 const crypto = require('node:crypto')
 const { VERSION, TAG, OUTPUT_DIR, TAG_OBJECT, COMMIT } = process.env
 const fromTag = (path) => cp.execFileSync('git', ['show', `${TAG}:${path}`], { encoding: 'utf8' })
+const candidateLock = JSON.parse(fs.readFileSync(`${OUTPUT_DIR}/RELEASE_CANDIDATE_LOCK.json`, 'utf8'))
 const metadataText = fromTag('RELEASE_METADATA.json')
 const metadata = JSON.parse(metadataText)
 if (metadata.version !== VERSION || metadata.expected_tag !== TAG) {
@@ -103,6 +117,7 @@ const names = [
   `peanut-admin-${VERSION}-NOTICE.txt`,
   `peanut-admin-${VERSION}-THIRD-PARTY-NOTICES.md`,
   `peanut-admin-${VERSION}-SBOM.spdx.json`,
+  'RELEASE_CANDIDATE_LOCK.json',
 ]
 const digest = (value) => crypto.createHash('sha256').update(value).digest('hex')
 const artifacts = Object.fromEntries(names.map((name) => {
@@ -129,7 +144,11 @@ const manifest = {
     path: 'RELEASE_METADATA.json',
     sha256: digest(Buffer.from(metadataText)),
   },
-  technical_qualification: metadata.technical_qualification,
+  technical_qualification: candidateLock.qualification,
+  candidate_lock: {
+    path: 'RELEASE_CANDIDATE_LOCK.json',
+    sha256: digest(fs.readFileSync(`${OUTPUT_DIR}/RELEASE_CANDIDATE_LOCK.json`)),
+  },
   public_runtime_dependencies: metadata.public_runtime_dependencies,
   exclusions: {
     prebuilt_images: !metadata.normative_artifact.prebuilt_images_published,
@@ -149,11 +168,11 @@ const next = tail.indexOf('\n## [', header.length)
 const section = (next < 0 ? tail : tail.slice(0, next)).trim()
 const archiveSha = artifacts[`peanut-admin-${VERSION}.tar.gz`].sha256
 const manifestSha = digest(fs.readFileSync(`${OUTPUT_DIR}/RELEASE_MANIFEST.json`))
-const notes = `# Peanut Admin ${VERSION}\n\nImmutable source: annotated tag \`${TAG}\` at commit \`${COMMIT}\`.\n\n${section}\n\n## Artifacts and verification\n\n- Normative deterministic source archive: \`peanut-admin-${VERSION}.tar.gz\`\n  - SHA-256: \`${archiveSha}\`\n- External release manifest: \`RELEASE_MANIFEST.json\`\n  - SHA-256: \`${manifestSha}\`\n\n\`RELEASE_MANIFEST.json\` records hashes and sizes for every other attached artifact. GitHub-generated source archives are convenience downloads; the attached deterministic archive is normative.\n`
+const notes = `# Peanut Admin ${VERSION}\n\nImmutable source: annotated tag \`${TAG}\` at commit \`${COMMIT}\`.\n\n${section}\n\n## Artifacts and verification\n\n- Normative deterministic source archive: \`peanut-admin-${VERSION}.tar.gz\`\n  - SHA-256: \`${archiveSha}\`\n- Candidate lock: \`RELEASE_CANDIDATE_LOCK.json\`\n- External release manifest: \`RELEASE_MANIFEST.json\`\n  - SHA-256: \`${manifestSha}\`\n\n\`RELEASE_CANDIDATE_LOCK.json\` binds the external qualification summary to this exact tag.\n\`RELEASE_MANIFEST.json\` records hashes and sizes for every other attached artifact. GitHub-generated source archives are convenience downloads; the attached deterministic archive is normative.\n`
 fs.writeFileSync(`${OUTPUT_DIR}/release-notes.md`, notes)
 NODE
 
-[[ "$(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type f | wc -l | tr -d ' ')" == 7 ]] || {
+[[ "$(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type f | wc -l | tr -d ' ')" == 8 ]] || {
   printf 'publish-github-release: unexpected output file count\n' >&2
   exit 1
 }
@@ -163,6 +182,7 @@ NODE
   "peanut-admin-$VERSION-NOTICE.txt" \
   "peanut-admin-$VERSION-THIRD-PARTY-NOTICES.md" \
   "peanut-admin-$VERSION-SBOM.spdx.json" \
+  RELEASE_CANDIDATE_LOCK.json \
   RELEASE_MANIFEST.json)
 
 if [[ "$PREPARE_ONLY" == 1 ]]; then
@@ -176,6 +196,7 @@ gh release create "$TAG" \
   "$OUTPUT_DIR/peanut-admin-$VERSION-NOTICE.txt" \
   "$OUTPUT_DIR/peanut-admin-$VERSION-THIRD-PARTY-NOTICES.md" \
   "$OUTPUT_DIR/peanut-admin-$VERSION-SBOM.spdx.json" \
+  "$OUTPUT_DIR/RELEASE_CANDIDATE_LOCK.json" \
   "$OUTPUT_DIR/RELEASE_MANIFEST.json" \
   --repo "$REPOSITORY" \
   --verify-tag \
