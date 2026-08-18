@@ -31,6 +31,27 @@
         "required": true
       },
       "migrations": []
+    },
+    {
+      "from": "v2.0.1",
+      "to": "v2.1.2",
+      "backup": {
+        "required": true
+      },
+      "migrations": [
+        {
+          "path": "server/database/migrations/20260818-official-module-permission-ownership.sql",
+          "sha256": "c574aa8a079ab229b4efa37b1a520891eb48d4eee04025f563c6a652850ce3f1"
+        }
+      ]
+    },
+    {
+      "from": "v2.1.1",
+      "to": "v2.1.2",
+      "backup": {
+        "required": true
+      },
+      "migrations": []
     }
   ]
 }
