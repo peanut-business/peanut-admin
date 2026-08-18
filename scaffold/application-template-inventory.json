@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "2.1.3",
+    "template_version": "2.1.4",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -2252,7 +2252,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "a22b9f428d22e17428d5ed4471d7cee96aa1c2d24df5ffefa093cc4035a1109b"
+            "source_sha256": "e0bc648b8d795b17447c726022106eb5a8982401c263bac4f2033d7702fcfe1c"
         },
         {
             "path": "scripts/build-application-template-inventory",

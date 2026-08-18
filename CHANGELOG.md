@@ -3,6 +3,20 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [2.1.4] - 2026-08-18
+
+### Fixed
+
+- Sealed the scaffold release artifact, source inventory and release metadata
+  from one immutable source tree.
+
+### Upgrade notes
+
+- Existing `v2.0.1` installations can upgrade directly to `v2.1.4`; the paired
+  backup and strict additive migration contract remain required.
+- `v2.1.2` and `v2.1.3` remain immutable pre-release candidates and are not
+  rewritten.
+
 ## [2.1.3] - 2026-08-18
 
 ### Fixed
