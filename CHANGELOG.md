@@ -3,6 +3,20 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [2.1.2] - 2026-08-18
+
+### Fixed
+
+- The additive official Module permission ownership migration now passes the
+  migration runner's strict safety gate without allowing arbitrary UPDATE
+  statements.
+
+### Upgrade notes
+
+- Existing `v2.0.1` installations can upgrade directly to `v2.1.2`; the same
+  paired backup and additive migration contract remains required.
+- `v2.1.1` remains an immutable historical release and is not rewritten.
+
 ## [2.1.1] - 2026-08-18
 
 ### Fixed
