@@ -397,7 +397,7 @@ if [[ -n "$OVERLAY" ]]; then
   scp -q "$OVERLAY" "$SSH_ALIAS:$remote_overlay" || fail 'cannot transfer demo overlay'
 fi
 
-ssh -o BatchMode=yes "$SSH_ALIAS" bash -s -- \
+ssh -o BatchMode=yes "$SSH_ALIAS" bash -s -- peanut-admin-deploy \
   "$TAG" "$FROM_TAG" "$tag_commit" "$MODE" "$TARGET" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$remote_overlay" "$overlay_sha256" "$TRANSITION_SHA256" "$BACKUP_RESOURCE_ID" "$BACKUP_ROOT" "$DATABASE_NAME" "$FROM_COMMIT" "$FROM_TREE" "$archive_sha256" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 
