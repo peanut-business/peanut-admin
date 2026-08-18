@@ -3,6 +3,49 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [2.1.0] - 2026-08-18
+
+### Added
+
+- File and media, notification, OAuth and channels, payment, member CRM, task
+  scheduling, and import/export are now first-class official optional Modules.
+- Each Module ships an immutable Plugin manifest, backend provider, owned menu and
+  permission catalog, Admin contribution, dependency declaration, and TenantModule
+  lifecycle contract.
+
+### Security
+
+- Module availability is enforced after trusted Tenant resolution for Admin,
+  member, anonymous Host-bound, scheduled, worker, payment, OAuth, and official
+  account callback entry points.
+- Disabling a Module for one Tenant rejects new operations without granting access
+  to another Tenant or disabling shared Core engines for unrelated Modules.
+
+### Changed
+
+- Module-owned routes moved beside their backend providers; the application route
+  file remains the bootstrap entry and no longer owns those domain routes directly.
+- Existing permission IDs and role grants are preserved while permission ownership
+  moves from the application host to the seven official Module keys.
+- Article declares its file-and-media dependency explicitly.
+
+### Upgrade notes
+
+- `v2.0.1` installations may move to `v2.1.0` with `scripts/deploy-release v2.1.0
+  --target <target> --upgrade --apply`. Back up persistent data first; the additive
+  migration updates permission ownership without replacing permission IDs or role
+  grants.
+- Version 2.1.0 remains fresh-only from the 2.x canonical baseline and does not add
+  a 1.x-to-2.x database adoption path.
+
+### Release boundaries
+
+- Shared file, scheduling, task, and import/export engines remain Core
+  infrastructure; the official Modules own product entry points and TenantModule
+  lifecycle, not duplicate engines.
+- No DCS domain Module, SaaS billing control plane, prebuilt production image, or
+  new public Core package is included.
+
 ## [2.0.1] - 2026-08-18
 
 ### Added

@@ -42,7 +42,7 @@ features:
 
 <div class="home-proof">
   <div class="home-proof-copy">
-    <p class="eyebrow">SOURCE RELEASE · 2.0.1</p>
+    <p class="eyebrow">SOURCE RELEASE · 2.1.0</p>
     <h2>从可运行模板，到可维护的产品 Host</h2>
     <p>Standalone 与多租户双模式、实例内 Tenant 平台管理、可信租户会话及代表业务隔离，已经收进同一条可验证的交付链。</p>
     <div class="home-proof-actions">
@@ -87,7 +87,7 @@ features:
   <div class="home-section-heading">
     <p class="eyebrow">DELIVERY PATH</p>
     <h2>从干净基线创建，再按应用边界演进</h2>
-    <p>2.0.x 不接管 1.x 历史状态；当前从 v2.0.1 发布消费，新应用从空库、原生身份和明确所有权开始。</p>
+    <p>2.x 不接管 1.x 历史状态；当前从 v2.1.0 发布消费，新应用从空库、原生身份和明确所有权开始。</p>
   </div>
   <div class="home-flow-grid">
     <div><span>01</span><strong>创建</strong><p>从中性模板生成独立应用。</p></div>
@@ -101,7 +101,7 @@ features:
   <div>
     <p class="eyebrow">RELEASE BOUNDARY</p>
     <h2>发布身份清楚，产品边界同样清楚</h2>
-    <p>Peanut Admin <code>2.0.1</code> 已完成 fresh-only 正式源码发布；生产部署仍按独立工作流执行。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；DCS 业务模块和跨应用运营平台不进入本产品。</p>
+    <p>Peanut Admin <code>2.1.0</code> 在 fresh-only 基线上交付 7 个可按 Tenant 启停的官方模块；生产部署仍按独立工作流执行。Composer <code>peanut-admin/core</code> 与 npm <code>@peanut-admin/admin</code> 是仅有的公开运行依赖；DCS 业务模块和跨应用运营平台不进入本产品。</p>
   </div>
   <a href="/releases">查看版本与发布 <span>→</span></a>
 </div>

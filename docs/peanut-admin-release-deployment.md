@@ -1,4 +1,4 @@
-# Peanut Admin 2.0 发布与部署
+# Peanut Admin 2.x 发布与部署
 
 > 本文件是 Peanut Admin 源仓的人类可读版本。create-app 会在派生应用的同一路径生成一份
 > 应用专属简版，不会复制完整 `docs-site/`。详细说明见公开的
@@ -6,21 +6,20 @@
 
 ## 5 分钟速读
 
-- 2.0 是 fresh-only：只向空数据库安装，不接管 1.x 表、migration ledger 或 scaffold。
+- 2.x 是 fresh-only：只向空数据库安装，不接管 1.x 表、migration ledger 或 scaffold。
 - 默认一套部署对应一个应用实例。一个实例可服务多个 Tenant、客户端和 Module。
 - 生产推荐从不可变源码版本构建 Docker Compose；数据库、密钥、文件空间和备份由该实例
   独立拥有。
 - `standalone` 与 `multi-tenant` 使用同一 canonical Schema；Standalone 也创建正式默认
   Tenant，不使用 legacy bootstrap。
-- 当前应用尚未完成正式发布时，不得把开发分支、未提交 worktree 或历史 1.x 生产记录写成
-  production-ready。
+- 只有 annotated tag、固定资格和独立部署证据齐全时，才能声明对应版本已正式发布并运行。
 
 ## 首次部署
 
 ### 源仓维护者的无人值守发布脚本
 
-`scripts/deploy-release` 已随 `v2.0.1` 源码 Release 交付。当前已用它完成一套 Standalone
-和一套 Multi-tenant candidate 的 `v2.0.1` fresh 部署；`v2.0.0` 生成的派生应用不包含它。
+`scripts/deploy-release` 自 `v2.0.1` 起随源码 Release 交付。当前 `v2.1.0` 继续使用同一
+无人值守合同；`v2.0.0` 生成的派生应用不包含这个后续加入的脚本。
 源仓维护者的正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
 `scripts/production-upgrade`。脚本从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
@@ -29,18 +28,18 @@
 
 ```bash
 # 先只核对计划（不连接线上、不写入线上）
-scripts/deploy-release v2.0.1 --target production --fresh \
+scripts/deploy-release v2.1.0 --target production --fresh \
   --confirm-destroy production --dry-run
-scripts/deploy-release v2.0.1 --target production --upgrade \
-  --from v2.0.0 --dry-run
+scripts/deploy-release v2.1.0 --target production --upgrade \
+  --from v2.0.1 --dry-run
 
 # 单租户：明确允许破坏性 fresh，旧 1.x 卷会被删除并从空库安装
 scripts/deploy-release v2.0.0 --target production --fresh \
   --confirm-destroy production --apply
 
 # 后续 2.x：自动创建登记的数据库/文件配对备份，再升级前后端和数据库
-scripts/deploy-release v2.0.1 --target production --upgrade \
-  --from v2.0.0 --apply
+scripts/deploy-release v2.1.0 --target production --upgrade \
+  --from v2.0.1 --apply
 ```
 
 | 参数 | 是否必填 | 含义 |
@@ -70,7 +69,7 @@ manifest、SHA-256、gzip 与 tar。没有备份登记时，upgrade 在本地 pr
 数据库资源，随后创建 Tenant A/B、独立 TenantMember/Owner、域名绑定和合成数据。
 
 ```bash
-scripts/build-demo-site-patch v2.0.1 output/deployment/demo-site-v2.0.1.tar
+scripts/build-demo-site-patch v2.1.0 output/deployment/demo-site-v2.1.0.tar
 
 export PEANUT_GENERATED_ADMIN_EMAIL='bootstrap@pa-demo.test'
 export PEANUT_GENERATED_ADMIN_PASSWORD='<bootstrap-password>'
@@ -84,9 +83,9 @@ export PEANUT_DEMO_TENANT_A_HOST='pa-tenant-a.007345.xyz'
 export PEANUT_DEMO_TENANT_B_HOST='pa-tenant-b.007345.xyz'
 export PEANUT_DEMO_DOCS_URL='https://peanut-admin-doc.007345.xyz'
 
-scripts/deploy-release v2.0.1 --target production-candidate --fresh \
+scripts/deploy-release v2.1.0 --target production-candidate --fresh \
   --confirm-destroy production-candidate \
-  --overlay output/deployment/demo-site-v2.0.1.tar --apply
+  --overlay output/deployment/demo-site-v2.1.0.tar --apply
 ```
 
 只有 `PEANUT_DEMO_MODE=enabled` 时，租户登录页才会预填公开演示账号，且服务端拒绝修改演示

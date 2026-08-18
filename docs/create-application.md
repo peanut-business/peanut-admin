@@ -75,8 +75,8 @@ owner、managed/app-owned 树摘要与 managed baseline 路径。它是来源审
 | 应用数据库 | 应用追加自己的 migration | 不复制 Peanut 新安装基线覆盖已有数据库 |
 | Peanut canonical migration | 随采用的 Peanut Release 显式执行 | 必须绑定目标 Release、迁移账本、备份和应用验证 |
 
-2.x 升级器已提供 `preflight -> apply -> verify -> recover`；当前 `v2.0.0 -> v2.0.1`
-已有真实派生应用资格。它只管理已登记的框架文件，不会把业务代码变成脚手架所有，也不会替
+2.x 升级器已提供 `preflight -> apply -> verify -> recover`；`v2.0.0 -> v2.0.1` 已有真实派生
+应用资格，`v2.1.0` 沿用相同所有权和恢复合同。它只管理已登记的框架文件，不会把业务代码变成脚手架所有，也不会替
 应用决定业务数据迁移。升级数据库和 Peanut 依赖时，必须同时参考对应 Release 的发布计划。
 
 生成结果没有 `.git`，可直接执行 `git init` 成为独立仓库。连接任何资源前，应用 owner

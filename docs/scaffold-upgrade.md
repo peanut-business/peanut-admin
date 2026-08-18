@@ -3,14 +3,14 @@
 ## 当前 2.x 路径
 
 2.x 派生应用现在可以使用同一套 `preflight -> apply -> verify -> recover` 执行器在不可变
-scaffold Release 之间升级。当前已有一次真实资格：从 `v2.0.0` 生成应用升级到 `v2.0.1`，
+scaffold Release 之间升级。`v2.0.0 -> v2.0.1` 已完成真实资格；`v2.1.0` 继续使用同一执行器，
 保留 `app-owned` 修改并完成恢复。
 
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
   --from-manifest=/absolute/path/to/scaffold/releases/v2.0.0/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v2.0.1/scaffold-manifest.json
+  --to-manifest=/absolute/path/to/scaffold/releases/v2.1.0/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json

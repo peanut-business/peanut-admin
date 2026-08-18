@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "2.0.1",
-  "expected_tag": "v2.0.1",
+  "version": "2.1.0",
+  "expected_tag": "v2.1.0",
   "release_date": "2026-08-18",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
@@ -33,41 +33,42 @@
   "lockfiles": {
     "server/composer.lock": "d7da2c611c7d74dea47f8256bb08841857c8433be56905dfdce78542875d17d3",
     "web/pnpm-lock.yaml": "1ba6d87a5ffe944c21bdad76b2309fe69919a0553128bd40c6b5dd429c0e9f79",
-    "pc/package-lock.json": "fffbb4ed615abf9442a8fb09a35b9469dc527f21b80d28b69e3c1652fcbc69d9",
-    "uniapp/package-lock.json": "6e4b08abc959f3fc47dad130d20fc72d49b4dc33b8b88011b90009936c2aefb2",
+    "pc/package-lock.json": "087f1e3629e50394a443ace9f0226aeaddddd70c4e95f3da3c93fd3fcb382e39",
+    "uniapp/package-lock.json": "047f3f7bbefd27bb85498669126ab3ce61024223e16729511cdea42cd6eedf96",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "55aeb9b7fe46082f7f1f84b4617e049d06ade4f222820bd198c5fc186c5a395c",
-    "RELEASE_SBOM.spdx.json": "6001afdfd8ca86df0d9159dceb3fc71e70a9088e7d565a1cd0bc6652a4ae48ca"
+    "THIRD_PARTY_NOTICES.md": "62a4644063c7b069ba339a89ed0159fe533e9adebd3fa946e3acbb1736151005",
+    "RELEASE_SBOM.spdx.json": "a9a4699d1692729b29a44ca95af1bd3389fc112d873408507b07cc5b11f83eaf"
   },
   "migrations": {
-    "count": 3,
-    "ordered_path_list_sha256": "93e476d8e94853101f0eb8ef24ed526308572dae2ea58214f97c46119627a812",
+    "count": 4,
+    "ordered_path_list_sha256": "3f57e741f21b3fd6bd004925a3c41922b9db724acbbb8f8b545452fa5aa46c62",
     "ordered_files": [
       "server/database/migrations/20260816-tenant-capability-setting.sql",
       "server/database/migrations/20260816-tenant-entry-binding.sql",
-      "server/database/migrations/20260816-tenant-owner-invitation.sql"
+      "server/database/migrations/20260816-tenant-owner-invitation.sql",
+      "server/database/migrations/20260818-official-module-permission-ownership.sql"
     ],
     "baseline": "server/database/init.sql plus the Core KernelSchema; post-baseline changes must be additive"
   },
   "technical_qualification": {
-    "phase": "2.0.1-qualified",
-    "result": "passed",
-    "final_candidate_commit": "9ffffed3d25857e99915b9d1da04e122c6a49080",
-    "final_candidate_tree": "3a777f72928681c3d4e62adf86473cec506f4612",
-    "run_id": "p0e201r3",
-    "groups_passed": 7,
-    "summary_sha256": "a615e8642ded9542d9a38d2d309da19c453262354eef1c2a2f609efc7951b92d",
-    "cleanup_residual_count": 0,
-    "lease_released": true,
-    "migrations": 3,
-    "scaffold_version": "2.0.1",
+    "phase": "2.1.0-prequalification",
+    "result": "pending",
+    "final_candidate_commit": "",
+    "final_candidate_tree": "",
+    "run_id": "",
+    "groups_passed": 0,
+    "summary_sha256": "",
+    "cleanup_residual_count": null,
+    "lease_released": false,
+    "migrations": 4,
+    "scaffold_version": "2.1.0",
     "application_initial_version": "0.1.0",
-    "evidence": "Focused create-app and v2.0.0-to-v2.0.1 scaffold upgrade qualification passed; fixed candidate 9ffffed3d25857e99915b9d1da04e122c6a49080 completed P0-E 7/7 with zero database, Compose, container, volume, network, image, listener and cache residuals. Browser evidence was manually inspected for broken images, layout overlap and inaccessible controls.",
-    "release_delta": "Unattended registered deployment, preserved-data 2.0.x upgrade flow, demo Tenant provisioning, Tenant-aware titles, and avatar fallback fixes."
+    "evidence": "Pending fixed-candidate P0-E qualification for the 2.1.0 scaffold and official Module lifecycle.",
+    "release_delta": "Seven Tenant-qualified official optional Modules, unified Module execution guards, Module-owned routing and permission ownership migration."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

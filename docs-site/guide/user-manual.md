@@ -6,7 +6,7 @@ description: Peanut Admin 管理后台的操作、权限和安全说明。
 # Peanut Admin 管理员使用手册
 
 > 适用对象：负责内容、会员、通知、财务、渠道和系统运维的后台管理员。
-> 文档口径：2.0.x fresh-only 正式源码版本（当前发布 v2.0.1）的 Tenant Admin 操作参考，不代表已完成生产部署。不同
+> 文档口径：2.x fresh-only 正式源码版本（当前发布 v2.1.0）的 Tenant Admin 操作参考。不同
 > Tenant、Role、TenantModule 和部署模式看到的菜单不同；下表仅说明当前 Host 直接拥有的代表业务入口，
 > 不能作为固定菜单数量或所有账号的承诺。
 

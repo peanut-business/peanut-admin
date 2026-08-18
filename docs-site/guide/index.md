@@ -113,7 +113,7 @@ description: Peanut Admin 快速开始、架构身份、模块开发、fresh 部
 | Module、Plugin、Host 和跨模块调用 | 已补齐 | [API 与扩展](/api#module-plugin-与-host)说明四道 Gate、DTO、命令和失败边界 |
 | 开箱即用能力和后续路线 | 已补齐 | [能力目录](/capabilities)分开记录当前事实、推荐产品形态和完成条件 |
 | 官方可选模块多租户 | 已补齐 | [官方模块资格](/architecture/official-module-qualification)明确所有官方 Module 必须多租户 |
-| 部署与迁移 | 已补齐当前事实 | `v2.0.x` 是 fresh-only；当前 `v2.0.1` 已正式源码 Release，含无人值守脚本和 2.x 升级资格；Standalone 与 Multi-tenant 线上体验部署已完成，后续版本按登记资源独立升级 |
+| 部署与迁移 | 已补齐当前事实 | `v2.x` 是 fresh-only；当前 `v2.1.0` 含无人值守脚本、7 个官方模块和 2.x 升级合同；Standalone 与 Multi-tenant 按登记资源独立升级 |
 | 管理员操作 | 已覆盖当前页面 | [管理员手册](/guide/user-manual)按页面说明操作结果和权限边界 |
 | 故障处理 | 已补齐最小路径 | [故障处理](/troubleshooting)按资源、安装、身份、Host 和 Module Gate 排查 |
 | DCS 边界 | 已明确 | Peanut 只说明扩展机制；DCS 领域表、事件和业务流程留在 DCS 仓库 |

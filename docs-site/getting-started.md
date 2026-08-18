@@ -21,7 +21,7 @@ description: Peanut Admin 本地开发环境的安装与启动步骤。
 
 ## 创建独立应用
 
-正式消费脚手架时使用当前正式的 `v2.0.1` Tag/Release，不从移动的 `dev` 分支或带未提交修改的
+正式消费脚手架时使用当前正式的 `v2.1.0` Tag/Release，不从移动的 `dev` 分支或带未提交修改的
 维护工作树生成应用。
 
 | 参数 | 必填 | 示例 | 作用 |
@@ -41,7 +41,8 @@ php scripts/create-app \
 ```
 
 生成结果包含 `.peanut/application-manifest.json` 和 managed baseline，可以证明采用了哪个
-Release、每个文件归谁所有。当前已有 `v2.0.0 -> v2.0.1` 的 2.x 派生应用升级资格；执行器
+Release、每个文件归谁所有。当前已有 `v2.0.0 -> v2.0.1` 的派生应用资格，`v2.0.1 -> v2.1.0`
+随本版本继续使用相同的 preflight/apply/verify/recover 合同；执行器
 只更新受管文件并保留 `app-owned` 代码。Peanut 依赖、数据库 migration 和业务 migration
 仍需按发布计划由各自 owner 执行，不能把脚手架升级误解成业务数据迁移。
 

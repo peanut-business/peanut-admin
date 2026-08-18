@@ -98,8 +98,8 @@ try {
     releasePolicyExpect($checkedIn['exit'] === 0, 'checked-in transition registry must validate');
     $checkedInPayload = json_decode($checkedIn['output'], true, 512, JSON_THROW_ON_ERROR);
     releasePolicyExpect(
-        ($checkedInPayload['transition_count'] ?? null) === 1,
-        'checked-in registry must contain the v2.0.0 to v2.0.1 transition'
+        ($checkedInPayload['transition_count'] ?? null) === 2,
+        'checked-in registry must contain both supported 2.x transitions'
     );
     $checkedInResolved = releasePolicyRun($runner, [
         '--release-root', $root,
@@ -111,6 +111,25 @@ try {
         ($checkedInTransition['backup']['required'] ?? null) === true
             && ($checkedInTransition['migrations'] ?? null) === [],
         'the patch transition must require backup and declare no new migrations'
+    );
+    $checkedInModuleUpgrade = releasePolicyRun($runner, [
+        '--release-root', $root,
+        'resolve', '--from', 'v2.0.1', '--to', 'v2.1.0',
+    ]);
+    releasePolicyExpect($checkedInModuleUpgrade['exit'] === 0, 'checked-in v2.0.1 to v2.1.0 transition must resolve');
+    $checkedInModuleTransition = json_decode(
+        $checkedInModuleUpgrade['output'],
+        true,
+        512,
+        JSON_THROW_ON_ERROR
+    )['transition'] ?? null;
+    releasePolicyExpect(
+        ($checkedInModuleTransition['backup']['required'] ?? null) === true
+            && ($checkedInModuleTransition['migrations'][0]['path'] ?? null)
+                === 'server/database/migrations/20260818-official-module-permission-ownership.sql'
+            && ($checkedInModuleTransition['migrations'][0]['sha256'] ?? null)
+                === hash_file('sha256', $root . '/server/database/migrations/20260818-official-module-permission-ownership.sql'),
+        'the 2.1.0 transition must bind the permission ownership migration and backup gate'
     );
 
     $migrationPath = $migrationDirectory . '/20260818_release_transition.sql';

@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 2.0.x（当前发布 v2.0.1）的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 2.x（当前发布 v2.1.0）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -11,7 +11,7 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 - 默认一套部署对应一个应用实例，拥有自己的数据库、密钥、文件和生命周期。
 - 一个实例可以有多个 Tenant、客户端和 Module；多个实例不能共享私有业务表。
-- 2.0.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.0.1。
+- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.1.0。
 - canonical `init.sql` 是完整应用 Schema；`migrations/` 只保存 2.0.0 基线之后的追加变更。
 - 管理身份直接使用 Account/Credential/TenantMember/RBAC，不创建 legacy 映射或兼容 Admin 表。
 - 旧 tag、Release、迁移和升级证据仍可追溯，但不进入当前 Runtime、Schema、create-app 或日常操作路径。
@@ -61,7 +61,7 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ### 统一无人值守发布
 
-仓库内的 `scripts/deploy-release` 已随 `v2.0.1` 源码 Release 交付。它使用当前检出的控制脚本读取资源登记，
+仓库内的 `scripts/deploy-release` 已随 `v2.0.1` 起的源码 Release 交付。它使用当前检出的控制脚本读取资源登记，
 但实际归档和部署的代码始终来自命令中指定的 annotated release tag。正式 `v2.0.0` 源码附件
 本身不包含这个后续加入的控制脚本；部署该版本时，应在含有脚本的当前仓库中执行命令，不能在
 服务器上继续调用旧脚本或依赖旧 Git 工作树。下面的命令既是后续版本的独立部署工作流参考，
@@ -99,11 +99,12 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 ```bash
 export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
 export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位且同时包含字母和数字>'
-scripts/deploy-release v2.0.1 --target production --fresh \
+scripts/deploy-release v2.1.0 --target production --fresh \
   --confirm-destroy production --dry-run
-scripts/deploy-release v2.0.1 --target production --fresh \
+scripts/deploy-release v2.1.0 --target production --fresh \
   --confirm-destroy production --apply
-scripts/deploy-release v2.0.1 --target production-candidate --upgrade --apply
+scripts/deploy-release v2.1.0 --target production-candidate --upgrade \
+  --from v2.0.1 --apply
 ```
 
 脚本不会回显密码。用于写入部署 `.env` 的值只接受字母、数字和有限的安全符号；含 `$`、
