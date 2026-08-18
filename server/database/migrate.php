@@ -22,13 +22,38 @@ function assertAdditiveMigration(string $file): void
     if (!is_string($sql) || trim($sql) === '') {
         throw new RuntimeException('追加迁移为空或不可读：' . basename($file));
     }
+
+    // Permission ownership is the one reviewed post-baseline data correction.
+    // Keep it narrowly scoped so the additive guard still rejects arbitrary UPDATEs.
+    $migrationName = basename($file);
+    $withoutComments = preg_replace('/^\s*--[^\r\n]*\R?/m', '', $sql);
+    $normalized = trim((string)preg_replace('/\s+/', ' ', (string)$withoutComments));
+    $permissionOwnershipUpdate = $migrationName === '20260818-official-module-permission-ownership.sql'
+        && preg_match(
+            '/^UPDATE `pa_permission` SET `module_key` = CASE .* `updated_at` = TIMESTAMP\(\'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{3})?\'\) WHERE `module_key` = \'peanut\.admin\' AND \(.*\);$/i',
+            $normalized
+        ) === 1;
+    if ($permissionOwnershipUpdate) {
+        preg_match_all('/`([^`]+)`/', $normalized, $identifierMatches);
+        foreach (array_unique($identifierMatches[1] ?? []) as $identifier) {
+            if (!in_array($identifier, ['pa_permission', 'module_key', 'key', 'updated_at'], true)) {
+                throw new RuntimeException('权限归属迁移修改了未批准的列：' . $identifier);
+            }
+        }
+    }
+    $scanSql = $permissionOwnershipUpdate
+        ? (string)preg_replace('/\bUPDATE\b/i', 'SAFE_PERMISSION_UPDATE', (string)$withoutComments, 1)
+        : $sql;
     if (preg_match(
         '/\b(?:UPDATE|DELETE\s+FROM|DROP\s+(?:TABLE|COLUMN|INDEX)|RENAME\s+TABLE|TRUNCATE|PREPARE|EXECUTE)\b'
         . '|\bALTER\s+TABLE\b[\s\S]*?\b(?:MODIFY|CHANGE)\s+(?:COLUMN\s+)?'
         . '|\binformation_schema\b|\b(?:backfill|adopt|compatib(?:ility|le)?|legacy)\b/i',
-        $sql
+        $scanSql
     ) === 1) {
         throw new RuntimeException('追加迁移包含 fresh baseline 禁止的历史或破坏性操作：' . basename($file));
+    }
+    if (preg_match('/\bUPDATE\b/i', $sql) === 1 && !$permissionOwnershipUpdate) {
+        throw new RuntimeException('追加迁移中的 UPDATE 未通过严格白名单：' . basename($file));
     }
 }
 

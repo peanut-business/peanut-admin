@@ -53,6 +53,7 @@ freshSchemaExpect(
         '20260816-tenant-capability-setting.sql',
         '20260816-tenant-entry-binding.sql',
         '20260816-tenant-owner-invitation.sql',
+        '20260818-official-module-permission-ownership.sql',
     ],
     'active migrations are not the reviewed post-2.0 additive set'
 );
