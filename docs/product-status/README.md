@@ -26,7 +26,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。v2.1.4 源码 Release 已发布；核心官方 Module 和 2.x 脚手架能力已完成，当前仍需完成精确候选锁、两套登记部署与 post-deployment 快照，才能宣布消费闭环完成。
+> 总体状态：**进行中**。v2.1.5 正在形成修正版消费候选；核心官方 Module 和 2.x 脚手架能力已完成，当前仍需完成一次固定候选资格、正式 Release 锁和两套登记部署与 post-deployment 快照，才能宣布消费闭环完成。
 >
 > 事实基线：`feat/module-execution-contract@c28d30a98abb346123e9fbf7470970891cf477b0`，复核日期：`2026-08-18`。
 
@@ -56,7 +56,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.1.4 源码 Release 已发布；当前仍需把资格摘要、P0-E fixture、scaffold/inventory 和正式 tag 绑定到同一个外部候选锁，并完成两套登记部署与 post-deployment 快照。 |
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.1.5 修正版消费候选正在形成；当前仍需把资格摘要、P0-E fixture、scaffold/inventory 和正式 tag 绑定到同一个外部候选锁，并完成两套登记部署与 post-deployment 快照。 |
 
 ### 暂缓或范围外
 
