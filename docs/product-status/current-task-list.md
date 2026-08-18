@@ -32,7 +32,7 @@ Tenant B 四个公网 Host 已完成真实浏览器验收。无秘密 post-deplo
 | T08 | Article 官方 Module 专项资格 | 已完成（候选） | 当前候选已完成真实数据库安装、Tenant A/B 页面与数据隔离、停用负向和共享 Admin/Tenant A/Tenant B 浏览器截图；证据见 `output/playwright/article-module/b0ef43d/summary.json` | 保持 Article 证据；不把它扩大为其他 Module 的资格替代 |
 | T09 | v2.1.4 线上 Standalone 部署 | 已完成 | 已按登记的 production 资源从 `v2.0.1` 升级到 `v2.1.4`；迁移、备份、Compose 健康和入口已验证，备份 `20260818T131425Z-1c8aff4f1f19` | 后续版本按同一脚本做受影响升级资格 |
 | T10 | v2.1.4 线上 Multi-tenant 部署 | 已完成 | 已按登记的 production-candidate 资源 fresh 部署并叠加演示层；平台、共享 Admin、Tenant A、Tenant B 四个 Host、标题、头像和页面矩阵通过；证据见 `docs/product-status/deployments/v2.1.4-online-experience.json` | 后续版本按同一脚本做受影响升级资格 |
-| T14 | v2.1.5 正式发布与 post-deployment 快照 | 进行中 | `v2.1.4` 的正式发布快照保留为历史基线；`v2.1.5` 尚需在最新 `origin/main` 上完成一次资格、同提交 tag、GitHub Release、单租户/多租户部署和无秘密快照 | 只允许最终 `origin/main` 候选进入资格；失败候选作废，不复制到 `main` 后继续沿用旧证据 |
+| T14 | v2.1.5 正式发布与 post-deployment 快照 | 已完成 | `v2.1.5` 已完成 P0-E 7/7、同提交 annotated tag、GitHub Release、生产单租户升级、多租户 Demo fresh 部署和无秘密快照；证据见 `docs/product-status/deployments/v2.1.5-online-experience.json` | 后续版本继续遵守 main-first、固定候选和一次资格规则 |
 | T11 | DCS 业务模块 | 范围外 | Peanut 只提供扩展边界；Party、Product、Inventory、Procurement 等不属于本仓 Runtime | 在 DCS 仓库按 Module 合同实现 |
 | T12 | 跨应用运营平台 | 独立项目 | 已授权独立立项，不进入 Peanut Admin Runtime | 在独立仓库推进 |
 | T13 | 完整 SaaS 商业化 | 暂缓 | 套餐、订阅、计费、应用市场不属于当前交付 | 等运营闭环和真实消费者成立后再立项 |
