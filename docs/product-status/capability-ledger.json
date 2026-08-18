@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "feat/module-execution-contract",
-    "commit": "8ef9841d2960fc8fd886107dbff3a2aa86e6abea",
+    "branch": "main",
+    "commit": "aefc5779c97db1cd17442269e50156baeaa4ba0c",
     "reviewed_at": "2026-08-19"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "v2.1.5 正在形成最终消费候选；v2.1.4 的正式源码发布和部署证据保留为历史基线，当前必须在最新 origin/main 上完成一次资格、tag、GitHub Release 和 Demo 部署收口。"
+    "summary": "v2.1.5 已形成正式消费候选：最新 origin/main、固定资格、同提交 tag、GitHub Release、生产单租户升级和多租户 Demo 部署已统一；后续版本继续沿用 main-first 固定候选流程。"
   },
   "capabilities": [
     {
