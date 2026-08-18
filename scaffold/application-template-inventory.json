@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "2.1.1",
+    "template_version": "2.1.3",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -2252,7 +2252,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "926b31bd10d2e487f6ad7a6259df6bd7ee692f335b3d9a75147f62da591ba2f0"
+            "source_sha256": "a22b9f428d22e17428d5ed4471d7cee96aa1c2d24df5ffefa093cc4035a1109b"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -7285,7 +7285,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "1e022d8740e2ec554b66b0a3bfd2529ea62e1c76287726ebe91c26b4861075e8"
+            "source_sha256": "0f70c2792f147d4891bfc063cca8a89f052d3e703dafc7fef6b7e6eb0ddf1296"
         },
         {
             "path": "server/database/migrations/.gitkeep",
@@ -8048,7 +8048,7 @@
             "owner": "application",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "9ca57b3f72d195d0ca791ba46d8323c825a25f2b3e458d8124ae93e778cb204b"
+            "source_sha256": "90761c506bfb4e89750785ead6e65a340706f6669172e08d8df48e95444c51eb"
         },
         {
             "path": "server/tests/Productization/InstallerBootstrapTest.php",
