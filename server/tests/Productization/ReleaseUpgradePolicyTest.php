@@ -98,7 +98,7 @@ try {
     releasePolicyExpect($checkedIn['exit'] === 0, 'checked-in transition registry must validate');
     $checkedInPayload = json_decode($checkedIn['output'], true, 512, JSON_THROW_ON_ERROR);
     releasePolicyExpect(
-        ($checkedInPayload['transition_count'] ?? null) === 5,
+        ($checkedInPayload['transition_count'] ?? null) === 8,
         'checked-in registry must contain all supported direct 2.x transitions'
     );
     $checkedInResolved = releasePolicyRun($runner, [

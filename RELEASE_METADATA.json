@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "2.1.2",
-  "expected_tag": "v2.1.2",
+  "version": "2.1.3",
+  "expected_tag": "v2.1.3",
   "release_date": "2026-08-18",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
@@ -55,7 +55,7 @@
     "baseline": "server/database/init.sql plus the Core KernelSchema; post-baseline changes must be additive"
   },
   "technical_qualification": {
-    "phase": "2.1.2-pending-qualification",
+    "phase": "2.1.3-pending-qualification",
     "result": "passed",
     "final_candidate_commit": "146954edd6e25bed6813ec020b26077a959d55c8",
     "final_candidate_tree": "f58999022bd234ee4d44a4c9601378743f5bf239",
@@ -65,10 +65,10 @@
     "cleanup_residual_count": 0,
     "lease_released": true,
     "migrations": 4,
-    "scaffold_version": "2.1.1",
+    "scaffold_version": "2.1.3",
     "application_initial_version": "0.1.0",
     "evidence": "Fixed candidate 146954edd6e25bed6813ec020b26077a959d55c8 completed P0-E 7/7 with zero database, Compose, container, volume, network, image, listener and cache residuals. The candidate restores the 2.0.1 init.sql checksum and keeps official Module ownership additive.",
-    "release_delta": "Keeps the canonical 2.0.1 init.sql checksum and hardens the migration runner with a strict whitelist for the reviewed official Module permission ownership update."
+    "release_delta": "Keeps the canonical 2.0.1 init.sql checksum, hardens the reviewed permission ownership migration, and synchronizes scaffold inventory identity for direct upgrades."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }
