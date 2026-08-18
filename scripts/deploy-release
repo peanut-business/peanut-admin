@@ -372,6 +372,9 @@ trap 'rm -f "$archive_file" "$secrets_file"; [[ -z "$POLICY_ROOT" ]] || rm -rf "
 git archive --format=tar "$TAG" -o "$archive_file"
 archive_sha256="$(shasum -a 256 "$archive_file" | awk '{print $1}')"
 [[ "$archive_sha256" =~ ^[0-9a-f]{64}$ ]] || fail 'cannot calculate release archive SHA-256'
+encode_remote_arg() {
+  [[ -n "$1" ]] && printf '%s' "$1" || printf '__PEANUT_EMPTY__'
+}
 umask 077
 {
   if [[ "$MODE" == fresh ]]; then
@@ -398,11 +401,15 @@ if [[ -n "$OVERLAY" ]]; then
 fi
 
 ssh -o BatchMode=yes "$SSH_ALIAS" bash -s -- peanut-admin-deploy \
-  "$TAG" "$FROM_TAG" "$tag_commit" "$MODE" "$TARGET" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$remote_overlay" "$overlay_sha256" "$TRANSITION_SHA256" "$BACKUP_RESOURCE_ID" "$BACKUP_ROOT" "$DATABASE_NAME" "$FROM_COMMIT" "$FROM_TREE" "$archive_sha256" <<'REMOTE_SCRIPT'
+  "$TAG" "$(encode_remote_arg "$FROM_TAG")" "$tag_commit" "$MODE" "$TARGET" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$(encode_remote_arg "$TRANSITION_SHA256")" "$(encode_remote_arg "$BACKUP_RESOURCE_ID")" "$(encode_remote_arg "$BACKUP_ROOT")" "$(encode_remote_arg "$DATABASE_NAME")" "$(encode_remote_arg "$FROM_COMMIT")" "$(encode_remote_arg "$FROM_TREE")" "$archive_sha256" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 
+decode_remote_arg() {
+  [[ "$1" == __PEANUT_EMPTY__ ]] && printf '' || printf '%s' "$1"
+}
+
 tag="$1"
-from_tag="$2"
+from_tag="$(decode_remote_arg "$2")"
 expected_commit="$3"
 mode="$4"
 target="$5"
@@ -413,14 +420,14 @@ database_resource="$9"
 deployment_mode="${10}"
 archive="${11}"
 secrets="${12}"
-overlay="${13:-}"
-expected_overlay_sha="${14:-}"
-expected_transition_sha="${15:-}"
-backup_resource="${16:-}"
-backup_root="${17:-}"
-database_name="${18:-}"
-from_commit="${19:-}"
-from_tree="${20:-}"
+overlay="$(decode_remote_arg "${13:-__PEANUT_EMPTY__}")"
+expected_overlay_sha="$(decode_remote_arg "${14:-__PEANUT_EMPTY__}")"
+expected_transition_sha="$(decode_remote_arg "${15:-__PEANUT_EMPTY__}")"
+backup_resource="$(decode_remote_arg "${16:-__PEANUT_EMPTY__}")"
+backup_root="$(decode_remote_arg "${17:-__PEANUT_EMPTY__}")"
+database_name="$(decode_remote_arg "${18:-__PEANUT_EMPTY__}")"
+from_commit="$(decode_remote_arg "${19:-__PEANUT_EMPTY__}")"
+from_tree="$(decode_remote_arg "${20:-__PEANUT_EMPTY__}")"
 expected_archive_sha="${21:-}"
 
 fail() { printf 'remote deploy: %s\n' "$1" >&2; exit 1; }
