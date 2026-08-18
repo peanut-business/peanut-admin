@@ -44,12 +44,12 @@ $expectedGroups = [
     'multi-tenant-browser',
 ];
 $expectedTarget = [
-    'version' => '2.1.0',
-    'source_commit' => '8d5c330c88a3c0c786302606ba16d35f612b7094',
-    'source_tree' => '6740e301214f97fe78ce4c83ced1b120c22b2995',
-    'manifest_sha256' => '4c6cd9a8aeb5a9402abb7505e23942209123223e9c4dc631a13ed5933b81fb49',
-    'inventory_sha256' => '8aaf57b7638be2a146edd0ea08cc25623f16bd25feec062bc46a70c3ff794331',
-    'managed_tree_sha256' => '1dcc95680a6dadbd35e9402d137447c0915da86aa6a1810b1505a2e591ca3eae',
+    'version' => '2.1.5',
+    'source_commit' => '3c05e2e816ab547152662d25cbd4f6f745d5f16c',
+    'source_tree' => 'f7a33f3a717bf5350ba7d0e0b6ccedc0d88d6755',
+    'manifest_sha256' => '94e3e5c38b9ee01dfd69eb0534e97258e52dd25d77ff3d100bb2752851e53dfc',
+    'inventory_sha256' => '8153a2bb2680149e88089507a614767ea2d7522abf45e7b0db75c1a953973077',
+    'managed_tree_sha256' => '8c4b82846c67a5575aefb5a51404ede93a5038a72227ca99cf31385ce249d856',
     'file_count' => 311,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
