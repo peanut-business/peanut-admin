@@ -79,7 +79,7 @@ DCS 或其他派生应用中重复这套门禁。
 | --- | --- | --- | --- |
 | Module HTTP/内部命令统一入口 | fixture 同步命令已使用 ModuleGuard | root、system actor 或无权限型命令不能只依赖菜单/RBAC | 正式 Module 的每个入口命中同一 Guard，并有停用负向测试 |
 | 模块任务与定时任务 | 共享调度器已有 TenantContext 和 Tenant active 检查；可调度命令必须在 `config/console.php` 声明 `module_key`；Core 导入导出 worker 在 handler 前复核 Tenant 状态 | Core TaskJob 的签名 envelope 尚未携带通用 `module_key`，业务模块任务仍不能声明并由 worker 统一复核 | 为业务 worker envelope 增加可信 Module 身份，并在停用后拒绝新执行 |
-| 模块外部回调 | 现有支付/OAuth 等 Host 已做 Tenant 路由 | 这些不是可停用 Module，不能证明模块回调会在停用后拒绝 | 可信绑定携带 module key，验签后、处理前 Guard |
+| 模块外部回调 | 支付/公众号 Core Host 已通过 `verifiedModuleCallback()` 在验签、Tenant 解析后执行 `core` Guard | Core Host 绑定仍不是可停用业务 Module；业务 Module 的绑定记录尚未携带可信 `module_key` | 业务 Module 的可信绑定携带 module key，验签后、处理前 Guard，并有停用负向 |
 | 模块专属文件入口 | 共享上传/素材已有 Tenant namespace | 共享基础设施不能整体关闭，模块下载/上传仍需自己的入口 Guard | 模块 Controller 在调用共享文件服务前 Guard |
 | 两 Module 可运行示例 | Contracts 目录和装配模式存在 | 不能证明真实跨模块 DTO/事务/失败合同 | 两个最小 Module 的命令、查询和禁止直表测试 |
 

@@ -50,6 +50,12 @@ final readonly class ModuleExecutionGuard
         $this->assertBackgroundTenant($context);
     }
 
+    public function assertExternalCallback(ModuleExecutionContext $context): void
+    {
+        $this->assertModule($context);
+        $this->assertBackgroundTenant($context);
+    }
+
     private function assertBackgroundTenant(ModuleExecutionContext $context): void
     {
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));

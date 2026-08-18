@@ -6,6 +6,10 @@ namespace app\common\service\external;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use app\common\service\module\ModuleExecutionContext;
+use app\common\service\module\ModuleExecutionGuard;
+use PDO;
+use think\facade\Db;
 
 final class ExternalTenantResolver
 {
@@ -44,6 +48,26 @@ final class ExternalTenantResolver
             fn(): array => $this->bindings->byCallbackKey($provider, $callbackKey),
             $verifier,
         );
+    }
+
+    /** Verify the provider first, then require the owning Module before returning a callback context. */
+    public function verifiedModuleCallback(
+        string $moduleKey,
+        string $provider,
+        string $callbackKey,
+        string $operation,
+        string $operationId,
+        callable $verifier,
+    ): ExternalTenantResolution {
+        $resolution = $this->verifiedCallback($provider, $callbackKey, $operation, $operationId, $verifier);
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new ExternalTenantResolutionException();
+        }
+        (new ModuleExecutionGuard($pdo, $moduleKey))->assertExternalCallback(
+            ModuleExecutionContext::system($moduleKey, $resolution->context),
+        );
+        return $resolution;
     }
 
     /** Public OAuth client identity is only a lookup candidate; uniqueness and active ownership are authoritative. */

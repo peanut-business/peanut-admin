@@ -18,7 +18,8 @@ class PaymentNotifyController extends BaseApiController
                 (string)$this->request->getContent(),
                 (array)$this->request->header()
             );
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+            $resolution = ExternalTenantResolver::production()->verifiedModuleCallback(
+                'core',
                 ExternalTenantResolver::WECHAT_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',
@@ -39,7 +40,8 @@ class PaymentNotifyController extends BaseApiController
     {
         try {
             $request = new CallbackRequest('', [], $this->request->post());
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+            $resolution = ExternalTenantResolver::production()->verifiedModuleCallback(
+                'core',
                 ExternalTenantResolver::ALIPAY_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',
