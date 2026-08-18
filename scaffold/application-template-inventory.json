@@ -181,7 +181,7 @@
             "owner": "scaffold",
             "transform": "sbom",
             "mode": 420,
-            "source_sha256": "a9a4699d1692729b29a44ca95af1bd3389fc112d873408507b07cc5b11f83eaf"
+            "source_sha256": "9e193e34e9420d51d72396b37a304a43aa89717630d66d6b7d166645b3b48fe0"
         },
         {
             "path": "THIRD_PARTY_NOTICES.md",
@@ -190,7 +190,7 @@
             "owner": "scaffold",
             "transform": "third-party-notices",
             "mode": 420,
-            "source_sha256": "62a4644063c7b069ba339a89ed0159fe533e9adebd3fa946e3acbb1736151005"
+            "source_sha256": "00215c61d644b6c6734a7e1282bde59cb0aeaf9c7325c345b580d48a44742b8b"
         },
         {
             "path": "compose.yaml",
