@@ -367,6 +367,7 @@ fi
 [[ "$APPLY" == 1 ]] || fail 'pass --apply to execute the deployment'
 command -v ssh >/dev/null || fail 'ssh is required for --apply'
 command -v scp >/dev/null || fail 'scp is required for --apply'
+SSH_KEEPALIVE_OPTS=(-o ServerAliveInterval=15 -o ServerAliveCountMax=120)
 
 archive_file="$(mktemp -t peanut-admin-release.XXXXXX.tar)"
 archive_sha256=""
@@ -399,14 +400,14 @@ umask 077
     printf 'PEANUT_DEMO_DOCS_URL=%q\n' "$DEMO_DOCS_URL"
   fi
 } >"$secrets_file"
-scp -q "$archive_file" "$SSH_ALIAS:$remote_archive" || fail 'cannot transfer immutable release archive'
-scp -q "$secrets_file" "$SSH_ALIAS:$remote_secrets" || fail 'cannot transfer deployment credential payload'
+scp "${SSH_KEEPALIVE_OPTS[@]}" -q "$archive_file" "$SSH_ALIAS:$remote_archive" || fail 'cannot transfer immutable release archive'
+scp "${SSH_KEEPALIVE_OPTS[@]}" -q "$secrets_file" "$SSH_ALIAS:$remote_secrets" || fail 'cannot transfer deployment credential payload'
 if [[ -n "$OVERLAY" ]]; then
   remote_overlay="/tmp/peanut-admin-demo-overlay-$$.tar"
-  scp -q "$OVERLAY" "$SSH_ALIAS:$remote_overlay" || fail 'cannot transfer demo overlay'
+  scp "${SSH_KEEPALIVE_OPTS[@]}" -q "$OVERLAY" "$SSH_ALIAS:$remote_overlay" || fail 'cannot transfer demo overlay'
 fi
 
-ssh -o BatchMode=yes "$SSH_ALIAS" bash -s -- \
+ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" bash -s -- \
   "$TAG" "$(encode_remote_arg "$FROM_TAG")" "$tag_commit" "$MODE" "$TARGET" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$(encode_remote_arg "$TRANSITION_SHA256")" "$(encode_remote_arg "$BACKUP_RESOURCE_ID")" "$(encode_remote_arg "$BACKUP_ROOT")" "$(encode_remote_arg "$DATABASE_NAME")" "$(encode_remote_arg "$FROM_COMMIT")" "$(encode_remote_arg "$FROM_TREE")" "$archive_sha256" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 
