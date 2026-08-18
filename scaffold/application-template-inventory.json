@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "2.1.4",
+    "template_version": "2.1.5",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -543,7 +543,7 @@
             "owner": "application",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "d9596fbc3100e6fea3a4df6eb651c855170bb3cfd65f5c09a43594d3e85704a4"
+            "source_sha256": "020af11cd3e521d0e09d8c9dba499f8f706a5e179e497b2af125c3fbe81576cb"
         },
         {
             "path": "docs-site/platform.md",
@@ -1611,6 +1611,14 @@
             "mode": 420
         },
         {
+            "path": "docs/product-status/deployments/v2.1.4-online-experience.json",
+            "target": "docs/product-status/deployments/v2.1.4-online-experience.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "docs/product-status/evidence-guide.md",
             "target": "docs/product-status/evidence-guide.md",
             "classification": "excluded",
@@ -1653,6 +1661,14 @@
         {
             "path": "docs/product-status/releases/v2.0.1.json",
             "target": "docs/product-status/releases/v2.0.1.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/releases/v2.1.4.json",
+            "target": "docs/product-status/releases/v2.1.4.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -2252,7 +2268,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 420,
-            "source_sha256": "e0bc648b8d795b17447c726022106eb5a8982401c263bac4f2033d7702fcfe1c"
+            "source_sha256": "63568ecf22ca3df6145e8f75c231a2d31429690567fc6bd070fc19d84ba40b7b"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -2300,6 +2316,14 @@
         {
             "path": "scripts/check-product-capability-ledger",
             "target": "scripts/check-product-capability-ledger",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493
+        },
+        {
+            "path": "scripts/check-release-consistency",
+            "target": "scripts/check-release-consistency",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -2354,7 +2378,7 @@
             "owner": "scaffold",
             "transform": "text",
             "mode": 493,
-            "source_sha256": "6a1ebfdb679c57034b2058cdc655a32fbec1eefc15b2a60a2fca6d8475e28bde"
+            "source_sha256": "c80e56cb252bf9fa4999eabbcd81167f2aae9487642029710d77b039ae0cfff7"
         },
         {
             "path": "scripts/generate-release-legal.mjs",

@@ -84,6 +84,9 @@ metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // 
 [[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || {
   fail "RELEASE_METADATA.json does not match $TAG (version=$metadata_version tag=$metadata_tag)"
 }
+[[ -x "$ROOT_DIR/scripts/check-release-consistency" ]] || fail 'missing release consistency gate'
+"$ROOT_DIR/scripts/check-release-consistency" --tag "$TAG" --remote origin \
+  || fail "production release identity is not closed for $TAG"
 
 if [[ "$BACKUP" == 1 ]]; then
   [[ -n "${PEANUT_BACKUP_COMMAND:-}" ]] || fail '--backup requires PEANUT_BACKUP_COMMAND'

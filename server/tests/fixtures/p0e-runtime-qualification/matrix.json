@@ -11,12 +11,12 @@
     "ledger_count": 5
   },
   "target_release": {
-      "version": "2.1.1",
-      "source_commit": "5b9ee9ad12dd061fcc09da16e1a98a0785385ee6",
-      "source_tree": "d555bc54776224f4aa88b9d8776d1bd7f8b0a48f",
-      "manifest_sha256": "23e0aa46bc578f5d0c58cdaa5f52d3dc55bc68a000d05095c2bb10642b796650",
-      "inventory_sha256": "b69b68479742c714ab3653f4afb2383abd7107f4b8067d56090d3df3a0fedde8",
-      "managed_tree_sha256": "425eb546f99e2a23bd6cb2d4eadaff720f80e3a6821daa29da81b9f32a863f8f",
+      "version": "2.1.5",
+      "source_commit": "b5a6fe91dea4e01ab9ae82294d8bcd73d3e4c78d",
+      "source_tree": "e7d8bcda391ea2aacf2213ed4b3343b91b6a2ed2",
+      "manifest_sha256": "c40344403b5d9c0b802ba48f776128c68a85fdd7ba2434c43ebf86c49bd75471",
+      "inventory_sha256": "dacad602d54f48f7088048c27c81b81f0f878179db26fd89eca375e7451965e8",
+      "managed_tree_sha256": "8c4b82846c67a5575aefb5a51404ede93a5038a72227ca99cf31385ce249d856",
     "file_count": 311,
     "application_manifest_schema": 2,
     "default_application_version": "0.1.0",

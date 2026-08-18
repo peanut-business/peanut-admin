@@ -61,7 +61,7 @@ function excluded(string $path): bool
             'scripts/select-legacy-pre-alpha5-fixture',
             'scripts/test-core-upgrade-public-entry-gate',
             'scripts/check-product-capability-ledger',
-            'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
+            'scripts/check-release-consistency', 'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
             'scripts/production-upgrade',
             'docs-site/.vitepress/theme/ProductStatus.vue',
             'docs-site/product-status.md',
@@ -201,7 +201,7 @@ foreach (inventoryGitFiles($root) as $path) {
 
 $inventory = [
     'schema_version' => 2,
-    'template_version' => '2.1.4',
+    'template_version' => '2.1.5',
     'protocol' => 'peanut.create-app-inventory.v2',
     'application' => ['version' => '0.1.0'],
     'variables' => ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],
