@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/module-execution-contract",
-    "commit": "50ae5aa979a394c3598a2f6a858dc546a684efcf",
+    "commit": "c28d30a98abb346123e9fbf7470970891cf477b0",
     "reviewed_at": "2026-08-18"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only、v2.0.1 源码正式 Release 以及 v2.0.1 Standalone/Multi-tenant 线上体验部署均已完成；Article 专项资格和当前已有 Module 入口合同已通过，剩余工作是后续官方能力产品化、跨 Module 示例和 post-deployment 发布快照。"
+    "summary": "v2.1.0 官方可选 Module 候选已完成固定 P0-E 7/7，具备正式源码发布条件。当前收口工作是创建不可变 Release、执行两套登记部署升级并封存 post-deployment 快照；跨 Module 可运行示例仍是后续产品化任务。"
   },
   "capabilities": [
     {
@@ -575,7 +575,7 @@
       "name": "2.0 发布后部署与演示闭环",
       "area": "release",
       "status": "in_progress",
-      "summary": "v2.0.1 源码正式 Release 已发布，包含无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格与固定候选 P0-E 7/7 已通过。随后已按登记资源完成 v2.0.1 Standalone 与 Multi-tenant candidate fresh 部署，两个 origin healthz、Compose 健康状态、域名/Host 绑定和共享 Admin/Tenant A/Tenant B 浏览器人工验收通过；无秘密证据见 `docs/product-status/deployments/v2.0.1-online-experience.json`。源码 Release 快照保持 source-only，post-deployment 快照尚未单独封存。",
+      "summary": "v2.1.0 固定候选已完成 P0-E 7/7，当前进入正式源码 Release、两套登记部署升级和 post-deployment 快照收口。部署前提是 Release tag、远端 main 身份和已登记资源租约一致。",
       "acceptance": [
         "从不可变 v2.0.0 tag 对登记目标执行非交互 fresh 或同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
         "Standalone 与 Multi-tenant 各形成一个独立部署、数据库、域名和最小浏览器证据",
@@ -606,7 +606,9 @@
         "PA-NATIVE-001"
       ],
       "blockers": [
-        "post-deployment 证据尚未创建新的不可变 Release 快照；不阻塞当前线上体验使用"
+        "v2.1.0 annotated tag/GitHub Release 尚未创建",
+        "两套登记部署尚未完成 v2.1.0 升级",
+        "post-deployment 正式快照尚未封存"
       ],
       "paths": [
         "docs-site/capabilities.md",
@@ -620,7 +622,8 @@
       "name": "官方可选 Module 产品化",
       "area": "plugins",
       "status": "in_progress",
-      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；静态合同已通过。真实数据库、Tenant A/B 和停用负向资格尚待收口，当前不能写成正式 Release 能力。当前没有漏迁移的业务 Module 非 HTTP 入口；后续新增 worker、回调或专属文件入口时必须在对应 Module 装配处补合同和停用负向。",
+      "status": "verified",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；固定候选 P0-E 已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格。跨 Module 可运行示例不属于本次 Release 阻塞项。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",
@@ -643,16 +646,12 @@
         },
         {
           "kind": "report",
-          "ref": "output/playwright/article-module/b0ef43d/summary.json"
+          "ref": "output/p0e-p0e210a1/summary.json"
         }
       ],
       "dependencies": [
         "PA-PLUGIN-001",
         "PA-NATIVE-001"
-      ],
-      "blockers": [
-        "7 个官方 Module 的真实数据库、Tenant A/B、停用负向和受影响浏览器资格尚未运行",
-        "跨 Module 可运行示例仍未完成"
       ],
       "paths": [
         "server/app/common/service/module/ModuleExecutionContext.php",

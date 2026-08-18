@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。当前产品路线仍在推进。Peanut Admin v2.0.0 fresh-only、v2.0.1 源码正式 Release 以及 v2.0.1 Standalone/Multi-tenant 线上体验部署均已完成；Article 专项资格和当前已有 Module 入口合同已通过，剩余工作是后续官方能力产品化、跨 Module 示例和 post-deployment 发布快照。
+> 总体状态：**进行中**。v2.1.0 官方可选 Module 候选已完成固定 P0-E 7/7，具备正式源码发布条件。当前收口工作是创建不可变 Release、执行两套登记部署升级并封存 post-deployment 快照；跨 Module 可运行示例仍是后续产品化任务。
 >
-> 事实基线：`feat/module-execution-contract@50ae5aa979a394c3598a2f6a858dc546a684efcf`，复核日期：`2026-08-18`。
+> 事实基线：`feat/module-execution-contract@c28d30a98abb346123e9fbf7470970891cf477b0`，复核日期：`2026-08-18`。
 
 ### 已验证可用
 
@@ -50,13 +50,13 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；固定候选 P0-E 已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
 
 ### 已实现或正在验收
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.0.1 源码正式 Release 已发布，包含无人值守发布脚本、Standalone/Multi-tenant 目标门禁、演示补丁、2.x 升级策略和 2.0.1 scaffold；派生应用的 preflight/apply/verify/recover 资格与固定候选 P0-E 7/7 已通过。随后已按登记资源完成 v2.0.1 Standalone 与 Multi-tenant candidate fresh 部署，两个 origin healthz、Compose 健康状态、域名/Host 绑定和共享 Admin/Tenant A/Tenant B 浏览器人工验收通过；无秘密证据见 `docs/product-status/deployments/v2.0.1-online-experience.json`。源码 Release 快照保持 source-only，post-deployment 快照尚未单独封存。 |
-| `PA-MODULE-002` | 官方可选 Module 产品化 | 进行中 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；静态合同已通过。真实数据库、Tenant A/B 和停用负向资格尚待收口，当前不能写成正式 Release 能力。当前没有漏迁移的业务 Module 非 HTTP 入口；后续新增 worker、回调或专属文件入口时必须在对应 Module 装配处补合同和停用负向。 |
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.1.0 固定候选已完成 P0-E 7/7，当前进入正式源码 Release、两套登记部署升级和 post-deployment 快照收口。部署前提是 Release tag、远端 main 身份和已登记资源租约一致。 |
 
 ### 暂缓或范围外
 
