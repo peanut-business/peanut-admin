@@ -87,7 +87,7 @@ features:
   <div class="home-section-heading">
     <p class="eyebrow">DELIVERY PATH</p>
     <h2>从干净基线创建，再按应用边界演进</h2>
-    <p>2.x 不接管 1.x 历史状态；当前从 v2.1.1 发布消费，新应用从空库、原生身份和明确所有权开始。</p>
+    <p>2.x 不接管 1.x 历史状态；当前从 v2.1.4 发布消费，新应用从空库、原生身份和明确所有权开始。</p>
   </div>
   <div class="home-flow-grid">
     <div><span>01</span><strong>创建</strong><p>从中性模板生成独立应用。</p></div>

@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。v2.1.0 已完成源码发布但发现 canonical init.sql 基线漂移，不能从 v2.0.1 原地升级；v2.1.1 修复候选已通过 P0-E 7/7，当前只剩正式发布、两套登记部署和 post-deployment 快照收口。
+> 总体状态：**已验证**。v2.1.4 已完成正式源码发布、P0-E 7/7、Standalone 升级、多租户演示站 fresh 部署和四域名浏览器验收；无秘密 post-deployment 快照已封存。
 >
-> 事实基线：`feat/module-execution-contract@c28d30a98abb346123e9fbf7470970891cf477b0`，复核日期：`2026-08-18`。
+> 事实基线：`main@36e92269ca1eb69585b41d78ef131fb298f9d206`，复核日期：`2026-08-18`。
 
 ### 已验证可用
 
@@ -50,13 +50,8 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
-| `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.0 固定候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格，v2.1.1 仅修复 canonical init.sql 基线身份。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
-
-### 已实现或正在验收
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 进行中 | v2.1.0 源码 Release 已发布但因 init.sql 基线漂移不能从 v2.0.1 升级；v2.1.1 修复候选已完成受影响的 P0-E 资格，当前只剩正式 Release、两套登记部署和 post-deployment 快照收口。 |
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.4 已完成正式源码发布、生产单租户升级、多租户演示站 fresh 部署、四域名浏览器验收和无秘密 post-deployment 快照。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
 
 ### 暂缓或范围外
 

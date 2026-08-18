@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 2.x（当前发布 v2.1.1）的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 2.x（当前发布 v2.1.4）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -11,7 +11,7 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 - 默认一套部署对应一个应用实例，拥有自己的数据库、密钥、文件和生命周期。
 - 一个实例可以有多个 Tenant、客户端和 Module；多个实例不能共享私有业务表。
-- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.1.1。
+- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.1.4。
 - canonical `init.sql` 是完整应用 Schema；`migrations/` 只保存 2.0.0 基线之后的追加变更。
 - 管理身份直接使用 Account/Credential/TenantMember/RBAC，不创建 legacy 映射或兼容 Admin 表。
 - 旧 tag、Release、迁移和升级证据仍可追溯，但不进入当前 Runtime、Schema、create-app 或日常操作路径。
@@ -99,11 +99,11 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 ```bash
 export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
 export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位且同时包含字母和数字>'
-scripts/deploy-release v2.1.1 --target production --fresh \
+scripts/deploy-release v2.1.4 --target production --fresh \
   --confirm-destroy production --dry-run
-scripts/deploy-release v2.1.1 --target production --fresh \
+scripts/deploy-release v2.1.4 --target production --fresh \
   --confirm-destroy production --apply
-scripts/deploy-release v2.1.1 --target production --upgrade \
+scripts/deploy-release v2.1.4 --target production --upgrade \
   --from v2.0.1 --apply
 ```
 
@@ -248,13 +248,13 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 证据固定成一份不可变记录。它用于证明“这个版本在这个环境真实运行过”；没有这份记录时，
 只能说源码 Release 已发布或体验部署已完成，不能把线上运行事实冒充为源码版本本身。
 
-2.0.1 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
+2.1.4 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
 `production-candidate` Multi-tenant 线上体验部署。两套 Compose 的 `.release-tag` 均为
-`v2.0.1`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
+`v2.1.4`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
 Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Tenant A/B 并完成两个 Tenant
 域名的应用内持续绑定；共享 Admin、Tenant A、Tenant B 浏览器矩阵通过，截图人工检查无破图、
 加载残留、重叠或不可点击菜单。该记录是 post-deployment 体验证据，不改写
-`docs/product-status/releases/v2.0.1.json` 的 source-only 历史快照。
+`docs/product-status/releases/v2.1.4.json` 的 production-demonstrated 快照；`v2.0.1` 快照仍保留为历史源码发布证据。
 
 | 候选体验入口 | 地址 |
 | --- | --- |

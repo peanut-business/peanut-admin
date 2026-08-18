@@ -7,7 +7,7 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-Peanut Admin `2.0.0` 与 `2.0.1` 建立 fresh-only 正式源码基线。`2.1.0` 在此基础上交付文件、通知、OAuth、支付、会员、任务和导入导出 7 个 Tenant-qualified 官方可选模块；当前修复版本为 `2.1.1`。版本使用原生
+Peanut Admin `2.0.0` 与 `2.0.1` 建立 fresh-only 正式源码基线。`2.1.0` 在此基础上交付文件、通知、OAuth、支付、会员、任务和导入导出 7 个 Tenant-qualified 官方可选模块；当前正式版本为 `2.1.4`。版本使用原生
 Account/TenantMember/RBAC、canonical Schema 和空库安装；不提供 1.x 数据库或脚手架原地升级。
 
 annotated tag [`v2.0.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.0)
@@ -25,8 +25,8 @@ annotated tag [`v2.1.0`](https://github.com/peanut-business/peanut-admin/release
 该源码版本误改了 canonical `init.sql` 校验值，因此不能从 `v2.0.1` 原地升级；不可变
 Release 保留为历史证据，不覆盖或重写。
 
-`v2.1.1` 恢复 2.0.1 的 canonical 基线，只通过追加 migration 更新 Module 权限归属。
-`v2.0.1 -> v2.1.1` 与 `v2.1.0 -> v2.1.1` 使用显式 transition 和配对备份；部署事实由独立
+`v2.1.4` 保持 2.0.1 的 canonical 基线，并通过追加 migration 更新 Module 权限归属。
+`v2.0.1 -> v2.1.4` 使用显式 transition 和配对备份；部署事实由独立
 post-deployment 快照记录，不改写源码 Release 身份。
 
 ## 公开运行依赖
@@ -46,7 +46,7 @@ post-deployment 快照记录，不改写源码 Release 身份。
   Runtime 重封，生成应用身份由确定性检查验证。
 - **发布制品**：规范源码包 SHA-256 为 `af9fc2f17d403faf8a3c461f7eb759f76e10260bfd1e0a8c4a9e1983eb53aa3c`；外部 `RELEASE_MANIFEST.json` SHA-256 为 `508fc3781242cc17fe63cca3ecbeffa9b67ebe67e0b225965515848c762d5844`。
 - **CI 例外**：PR #148/#149 的 GitHub Actions 因账户配额/付款限制未执行实际任务；用户明确批准以固定候选 P0-E 7/7 结果绕过。该事实不是 CI 通过。
-- **独立执行**：从 `v2.1.1` 正式 Release 的 Standalone/Multi-tenant 部署、备份、迁移和线上 smoke；它们不属于源码 Release 本身，完成后由 post-deployment 快照证明。
+- **独立执行**：从 `v2.1.4` 正式 Release 的 Standalone/Multi-tenant 部署、备份、迁移和线上 smoke 已完成；它们不属于源码 Release 本身，由 `docs/product-status/deployments/v2.1.4-online-experience.json` 快照证明。
 - **明确不做**：1.x 升级矩阵、DCS 领域 Runtime、跨应用联邦、完整 SaaS 商业化和真实外部渠道验证。
 
 ## 1.x 历史发布身份
