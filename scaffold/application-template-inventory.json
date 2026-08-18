@@ -543,7 +543,7 @@
             "owner": "application",
             "transform": "package",
             "mode": 420,
-            "source_sha256": "d9596fbc3100e6fea3a4df6eb651c855170bb3cfd65f5c09a43594d3e85704a4"
+            "source_sha256": "020af11cd3e521d0e09d8c9dba499f8f706a5e179e497b2af125c3fbe81576cb"
         },
         {
             "path": "docs-site/platform.md",
@@ -1611,6 +1611,14 @@
             "mode": 420
         },
         {
+            "path": "docs/product-status/deployments/v2.1.4-online-experience.json",
+            "target": "docs/product-status/deployments/v2.1.4-online-experience.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
             "path": "docs/product-status/evidence-guide.md",
             "target": "docs/product-status/evidence-guide.md",
             "classification": "excluded",
@@ -1653,6 +1661,14 @@
         {
             "path": "docs/product-status/releases/v2.0.1.json",
             "target": "docs/product-status/releases/v2.0.1.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420
+        },
+        {
+            "path": "docs/product-status/releases/v2.1.4.json",
+            "target": "docs/product-status/releases/v2.1.4.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
