@@ -44,13 +44,13 @@ $expectedGroups = [
     'multi-tenant-browser',
 ];
 $expectedTarget = [
-    'version' => '2.0.1',
-    'source_commit' => 'aadd84bbba384a820803cf7bac815f8574121986',
-    'source_tree' => '12447fb085810cb49316a5ad6bc5e803e8fee135',
-    'manifest_sha256' => 'c20b9a8a202e13e481b89cc3744d3d3dee01829c0377849d092fa155c8580283',
-    'inventory_sha256' => '9d84462b32772e376ed09475be42f75a8a54239d8abdff89b5f2ed0ab60a629b',
-    'managed_tree_sha256' => '62339a8acab1432c78792e6fc76c115c46b079006db4512441548f500f788202',
-    'file_count' => 283,
+    'version' => '2.1.0',
+    'source_commit' => '8d5c330c88a3c0c786302606ba16d35f612b7094',
+    'source_tree' => '6740e301214f97fe78ce4c83ced1b120c22b2995',
+    'manifest_sha256' => '4c6cd9a8aeb5a9402abb7505e23942209123223e9c4dc631a13ed5933b81fb49',
+    'inventory_sha256' => '8aaf57b7638be2a146edd0ea08cc25623f16bd25feec062bc46a70c3ff794331',
+    'managed_tree_sha256' => '1dcc95680a6dadbd35e9402d137447c0915da86aa6a1810b1505a2e591ca3eae',
+    'file_count' => 311,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
     'default_uniapp_version_code' => '10',
@@ -58,8 +58,8 @@ $expectedTarget = [
 
 $expect(($fixture['schema_version'] ?? null) === 1, 'P0-E fixture schema changed');
 $expect(($fixture['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E Gate identity changed');
-$expect(($fixture['database_resource']['migration_count'] ?? null) === 3, 'P0-E Gate no longer fixes the 2.0 post-baseline migration set');
-$expect(($fixture['database_resource']['ledger_count'] ?? null) === 4, 'P0-E Gate no longer fixes the canonical baseline ledger count');
+$expect(($fixture['database_resource']['migration_count'] ?? null) === 4, 'P0-E Gate no longer fixes the 2.x post-baseline migration set');
+$expect(($fixture['database_resource']['ledger_count'] ?? null) === 5, 'P0-E Gate no longer fixes the canonical baseline ledger count');
 $expect(!array_key_exists('baselines', $fixture), 'fresh-only P0-E fixture retained 1.x baselines');
 $expect(!array_key_exists('legacy_application', $fixture), 'fresh-only P0-E fixture retained a legacy application');
 $expect(($fixture['target_release'] ?? null) === $expectedTarget, 'P0-E target scaffold identity changed');
@@ -70,14 +70,15 @@ $expectedMigrationFiles = [
     'server/database/migrations/20260816-tenant-capability-setting.sql',
     'server/database/migrations/20260816-tenant-entry-binding.sql',
     'server/database/migrations/20260816-tenant-owner-invitation.sql',
+    'server/database/migrations/20260818-official-module-permission-ownership.sql',
 ];
-$expect(($releaseMetadata['migrations']['count'] ?? null) === 3, 'release metadata migration count is stale');
+$expect(($releaseMetadata['migrations']['count'] ?? null) === 4, 'release metadata migration count is stale');
 $expect(($releaseMetadata['migrations']['ordered_files'] ?? null) === $expectedMigrationFiles, 'release metadata migration list is stale');
 $expect(
-    ($releaseMetadata['migrations']['ordered_path_list_sha256'] ?? null) === '93e476d8e94853101f0eb8ef24ed526308572dae2ea58214f97c46119627a812',
+    ($releaseMetadata['migrations']['ordered_path_list_sha256'] ?? null) === '3f57e741f21b3fd6bd004925a3c41922b9db724acbbb8f8b545452fa5aa46c62',
     'release metadata migration path digest is stale'
 );
-$expect(($releaseMetadata['technical_qualification']['migrations'] ?? null) === 3, 'technical qualification migration count is stale');
+$expect(($releaseMetadata['technical_qualification']['migrations'] ?? null) === 4, 'technical qualification migration count is stale');
 
 $registered = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
