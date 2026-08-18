@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { isAbsolute } from 'node:path'
 import { readFileSync, writeFileSync } from 'node:fs'
 
-const options = { tag: '', candidate: '', qualification: '', remote: '', writeLock: '' }
+const options = { tag: '', candidate: '', qualification: '', remote: '', writeLock: '', requireMain: false }
 const args = process.argv.slice(2)
 for (let index = 0; index < args.length; index += 1) {
   const argument = args[index]
@@ -15,15 +15,18 @@ for (let index = 0; index < args.length; index += 1) {
   else if (argument === '--qualification' && value) options.qualification = value
   else if (argument === '--remote' && value) options.remote = value
   else if (argument === '--write-lock' && value) options.writeLock = value
+  else if (argument === '--require-main') options.requireMain = true
   else if (argument === '--help' || argument === '-h') {
     console.log(`Usage:
-  scripts/check-release-consistency --candidate <full-commit> --qualification <summary.json>
+  scripts/check-release-consistency --candidate <full-commit> --qualification <summary.json> [--require-main]
   scripts/check-release-consistency --tag vX.Y.Z [--qualification <summary.json>] [--remote origin]
       [--write-lock <absolute-file>]
 
 The candidate mode is the pre-tag release preflight. The tag mode verifies the
-immutable release identity. --write-lock requires qualification evidence and
-creates an external, non-self-referential candidate lock.`)
+immutable release identity. --require-main is the final-release gate and
+requires the candidate to be the current origin/main commit. --write-lock
+requires qualification evidence and creates an external, non-self-referential
+candidate lock.`)
     process.exit(0)
   } else {
     console.error(`check-release-consistency: unknown or incomplete argument: ${argument}`)
@@ -46,6 +49,10 @@ if (options.candidate && !/^[0-9a-f]{40}$/.test(options.candidate)) {
 }
 if (options.writeLock && (!options.qualification || !isAbsolute(options.writeLock))) {
   console.error('check-release-consistency: --write-lock requires --qualification and an absolute output path')
+  process.exit(64)
+}
+if (options.requireMain && !options.candidate) {
+  console.error('check-release-consistency: --require-main is only valid with --candidate')
   process.exit(64)
 }
 
@@ -83,6 +90,11 @@ try {
   commit = git(['rev-parse', `${reference}^{commit}`])
   tree = git(['rev-parse', `${reference}^{tree}`])
   if (options.candidate && commit !== options.candidate) failures.push('candidate commit identity changed')
+  if (options.requireMain) {
+    const mainCommit = gitOptional(['rev-parse', 'origin/main^{commit}'])
+    if (!mainCommit) failures.push('origin/main is unavailable for the final-release gate')
+    else if (mainCommit !== commit) failures.push(`candidate is not the current origin/main commit (origin/main=${mainCommit})`)
+  }
   metadataText = show('RELEASE_METADATA.json')
   ledgerText = show('docs/product-status/capability-ledger.json')
   inventoryText = show('scaffold/application-template-inventory.json')

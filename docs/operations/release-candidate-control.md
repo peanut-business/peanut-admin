@@ -73,16 +73,46 @@ Admin 应如何把两种工作分开。它不是新的业务功能，也不改�
 - `AGENT_EXECUTION_RULES.md`：规定冻结、失败、重跑和停止线；
 - 资格失败后：保留失败证据，回到开发阶段，修复后生成新候选，不能复用旧候选资源或证据。
 
+## 正式发布的固定顺序
+
+正式发布必须先把所有发布相关修改合入远端 `main`。不能先在功能分支上做最终 P0-E，之后
+再把提交复制、cherry-pick 或合并到 `main` 后直接发布；那会产生“检查过的提交”和“实际
+发布的提交”不是同一个的问题。
+
+固定顺序如下：
+
+```text
+开发阶段集中修复
+→ 合入远端 main
+→ 从最新 origin/main 取最终 commit/tree
+→ 运行一次最终 P0-E
+→ 对同一 commit 创建 annotated tag
+→ 生成外部 RELEASE_CANDIDATE_LOCK.json
+→ 发布 GitHub Release
+→ 使用同一 tag 部署单租户和多租户 Demo
+```
+
+最终资格前使用 `--require-main` 做一次身份检查：
+
+```bash
+scripts/check-release-consistency \
+  --candidate "$(git rev-parse origin/main^{commit})" \
+  --require-main
+```
+
+如果 `origin/main` 在资格完成后再次前进，候选立即失效，必须重新从新的 `origin/main`
+建立候选；不得把旧资格摘要绑定到新提交。
+
 ## 主会话执行顺序
 
 主会话遇到发布或 P0-E 任务时按以下顺序：
 
 1. 先读本文件、`AGENT_EXECUTION_RULES.md` 和资源登记；
 2. 处于开发阶段时，只做局部修复和局部验证；
-3. 所有阻塞项清零后，建立功能冻结提交；
-4. 一次性生成 inventory、scaffold 和候选身份；
-5. 从固定候选运行一次最终 P0-E；
-6. P0-E 通过后只更新文档、状态和发布记录；
+3. 所有阻塞项清零后，先合入最新 `origin/main`；
+4. 在 `origin/main` 的精确提交上建立功能冻结、inventory、scaffold 和候选身份；
+5. 从该 `origin/main` 固定候选运行一次最终 P0-E；
+6. P0-E 通过后只对同一 commit 创建 tag、生成候选锁并发布；
 7. 若失败，只允许一次定向诊断、一次修复和一次新候选重跑。
 
 ### 发布门禁的实际含义

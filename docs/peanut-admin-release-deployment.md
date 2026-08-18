@@ -18,12 +18,14 @@
 
 ### 发布前收口
 
-发布不是“打 tag 后再边修边发”。先在功能冻结提交上运行资格 Gate，生成外部
-`summary.json`；再用同一个 commit 创建 annotated tag，并把资格摘要传给发布脚本：
+发布不是“先在分支上验收，再把提交复制到 main”。必须先把发布相关修改合入远端 `main`，
+然后从最新 `origin/main` 取最终 commit，在这个提交上运行资格 Gate；资格通过后只能给同一
+个 commit 创建 annotated tag，并把资格摘要传给发布脚本：
 
 ```bash
 scripts/check-release-consistency \
-  --candidate <frozen-commit> \
+  --candidate <origin-main-commit> \
+  --require-main \
   --qualification /absolute/path/to/summary.json
 
 scripts/publish-github-release <version> \
@@ -31,7 +33,8 @@ scripts/publish-github-release <version> \
   --prepare-only --output /absolute/empty/release-dir
 ```
 
-发布脚本会生成 `RELEASE_CANDIDATE_LOCK.json`，并将它与源码归档、许可证文件和
+发布脚本会再次确认 tag、资格摘要和 `origin/main` 是同一提交，然后生成
+`RELEASE_CANDIDATE_LOCK.json`，并将它与源码归档、许可证文件和
 `RELEASE_MANIFEST.json` 一起发布。候选锁在 Release 外部保存精确 commit/tree 和资格摘要，
 不会把候选自己的 commit 写回候选文件，因此不会再因自引用而重复封存。
 
