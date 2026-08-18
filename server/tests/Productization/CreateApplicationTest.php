@@ -266,6 +266,9 @@ try {
     $generatedModulesConfig = (string)file_get_contents($first . '/server/config/modules.php');
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
     createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '')"), 'generated deployment must not enable an unowned Plugin lock');
+    foreach (['official.file.library', 'official.notification.channel', 'official.oauth.channel', 'official.payment.settings', 'official.member.list', 'official.task.schedules'] as $component) {
+        createApplicationExpect(str_contains($generatedModulesConfig, $component), 'official Module component was removed from generated deployment config: ' . $component);
+    }
     $releaseMetadata = json_decode((string)file_get_contents($first . '/RELEASE_METADATA.json'), true, 512, JSON_THROW_ON_ERROR);
     createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $releaseMetadata['version'] === '0.1.0', 'release metadata must be regenerated for the new application');
     createApplicationExpect(str_contains((string)file_get_contents($first . '/CHANGELOG.md'), "## 0.1.0\n"), 'changelog must use application.version');

@@ -816,8 +816,7 @@ PHP;
         $replacements = [
             "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"
                 => "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '')",
-            "'frontend_components' => [\n        'fixture.delivery-record.list',\n        'official.article.cate',\n        'official.article.list',\n    ]"
-                => "'frontend_components' => [\n        'official.article.cate',\n        'official.article.list',\n    ]",
+            "        'fixture.delivery-record.list',\n" => '',
         ];
         foreach ($replacements as $source => $target) {
             if (substr_count($content, $source) !== 1) {
