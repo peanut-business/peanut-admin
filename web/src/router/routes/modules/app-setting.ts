@@ -43,26 +43,6 @@ const APP_SETTING: AppRouteRecordRaw = {
       },
     },
     {
-      path: 'pay',
-      name: 'AppSettingPay',
-      component: () => import('@/views/app-setting/pay/index.vue'),
-      meta: {
-        locale: 'menu.appSetting.pay',
-        requiresAuth: true,
-        roles: ['admin'],
-      },
-    },
-    {
-      path: 'channel',
-      name: 'AppSettingChannel',
-      component: () => import('@/views/app-setting/channel/index.vue'),
-      meta: {
-        locale: 'menu.appSetting.channel',
-        requiresAuth: true,
-        roles: ['admin'],
-      },
-    },
-    {
       path: 'decorate',
       name: 'LegacyAppSettingDecorate',
       component: DEFAULT_LAYOUT,

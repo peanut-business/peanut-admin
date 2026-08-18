@@ -1,85 +1,365 @@
 {
-  "schema_version": 1,
-  "plugins": [
-    {
-      "key": "fixture.delivery-record",
-      "version": "1.0.0",
-      "source": {
-        "type": "canonical-contents",
-        "reference": "canonical-plugin-contents-v1",
-        "sha256": "d30877514de9923d012b49d4079f43badb4389c9af4f10a597a1e0b731472201"
-      },
-      "manifest": "plugins/fixture.delivery-record/plugin.json",
-      "manifest_sha256": "dc79bb8879ff345773c5dfed811197a43f77d82f93b08dd5da368d4710c75bb6",
-      "composer": [
+    "schema_version": 1,
+    "plugins": [
         {
-          "name": "peanut-business/fixture-delivery-record",
-          "version": "1.0.0",
-          "sha256": "a5862bdd2a37b5dade659e3b1a25ed8e56dea9a0d007901988602e2f68f6c551"
-        }
-      ],
-      "npm": [
+            "key": "fixture.delivery-record",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "d30877514de9923d012b49d4079f43badb4389c9af4f10a597a1e0b731472201"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/fixture-delivery-record",
+                    "version": "1.0.0",
+                    "sha256": "a5862bdd2a37b5dade659e3b1a25ed8e56dea9a0d007901988602e2f68f6c551"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/fixture-delivery-record",
+                    "version": "1.0.0",
+                    "integrity": "sha256-ZVeub731LcGgH1dsSLVy0OfmRUD5NjUgSVT9hHRFqHs="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/fixture-delivery-record",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/fixture-delivery-record/contribution.ts",
+                    "sha256": "d578952ab67873a1ba107bc7d1e30ddd8aa077fc578657c717471fd08074ad90"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "fixture.delivery-record",
+                    "root": "server/app/Modules/Fixture/DeliveryRecord"
+                }
+            ],
+            "manifest": "plugins/fixture.delivery-record/plugin.json",
+            "manifest_sha256": "dc79bb8879ff345773c5dfed811197a43f77d82f93b08dd5da368d4710c75bb6"
+        },
         {
-          "name": "@peanut-admin/fixture-delivery-record",
-          "version": "1.0.0",
-          "integrity": "sha256-ZVeub731LcGgH1dsSLVy0OfmRUD5NjUgSVT9hHRFqHs="
-        }
-      ],
-      "frontend": [
+            "key": "official.article",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "e0eb0978184bb41260a68d0ae8f4c66bc9adb4a579ee4e250ec895f00cae9adf"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-article",
+                    "version": "1.0.0",
+                    "sha256": "0d70212c546a2fa7b190f9ca77a5854eeadf9edad1e98b6da5285dd0172d4fc3"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-article",
+                    "version": "1.0.0",
+                    "integrity": "sha256-CT2Az249M0CTRSj6jltMKXQbSFSGjzapYLbHFkwv/GU="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-article",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-article/contribution.ts",
+                    "sha256": "1ad990b36059e3ef13a554efddcd974efea09b3c66bbef3eac9c5ba7a7d9b8b9"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.article",
+                    "root": "server/app/Modules/Official/Article"
+                }
+            ],
+            "manifest": "plugins/official.article/plugin.json",
+            "manifest_sha256": "b3d14d17c3f3580158bee9aa67cb700e6542287fecfffc5fe68b4eec6a1d30a2"
+        },
         {
-          "client_key": "admin-web",
-          "package": "@peanut-admin/fixture-delivery-record",
-          "version": "1.0.0",
-          "entry": "web/src/modules/fixture-delivery-record/contribution.ts",
-          "sha256": "d578952ab67873a1ba107bc7d1e30ddd8aa077fc578657c717471fd08074ad90"
-        }
-      ],
-      "modules": [
+            "key": "official.file",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "5a0bb606a237b68ea64a922babf6ce85a796d0c265ad0845b41333e62e8ad20b"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-file",
+                    "version": "1.0.0",
+                    "sha256": "10979da8db2e35f62efbf3d03da7e7ee5802cf527cab22ccde42afaf3c9390e5"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-file",
+                    "version": "1.0.0",
+                    "integrity": "sha256-VJBlYTJu2a1z2wX9eVJjdUR+G6g8BHc4m32h8PVc05c="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-file",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-file/contribution.ts",
+                    "sha256": "eb5ac2e76f2f30859062df53942872b09b31d5c607d61e6766c0fbbe066aa207"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.file",
+                    "root": "server/app/Modules/Official/File"
+                }
+            ],
+            "manifest": "plugins/official.file/plugin.json",
+            "manifest_sha256": "30be805915e1f0383433c4ae7aebc61be683178cef837c96942a59439cd51167"
+        },
         {
-          "key": "fixture.delivery-record",
-          "root": "server/app/Modules/Fixture/DeliveryRecord"
-        }
-      ]
-    },
-    {
-      "key": "official.article",
-      "version": "1.0.0",
-      "source": {
-        "type": "canonical-contents",
-        "reference": "canonical-plugin-contents-v1",
-        "sha256": "e60b223f05d2228009682279a0efc989616d0462497b1f1adf4e2183eb7d384c"
-      },
-      "manifest": "plugins/official.article/plugin.json",
-      "manifest_sha256": "fb145ab53fc11fc5056e52094b314a8b62a19604711d2ea124e17317945633e3",
-      "composer": [
+            "key": "official.import-export",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "9948640af118cf25ff9364399ba6b0e0db9d5729dd1943259a5e24332b047c94"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-import-export",
+                    "version": "1.0.0",
+                    "sha256": "4ed5a098e3c6fe7a090ce2c080543efaaa0120fdb653d22b3dbb50f332a6de8a"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-import-export",
+                    "version": "1.0.0",
+                    "integrity": "sha256-R9TS3d25osrNOc2blxMZXley5F1wK+pTGxkMkxgHsZQ="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-import-export",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-import-export/contribution.ts",
+                    "sha256": "dbf9ebb9953db9e97ed6b4d1b150f579e48d42c1cba06a2ce775b457882a9fa5"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.import-export",
+                    "root": "server/app/Modules/Official/ImportExport"
+                }
+            ],
+            "manifest": "plugins/official.import-export/plugin.json",
+            "manifest_sha256": "77367d8b8da11a1197db1f7c5a92e75d278405ab23e99b0373dfd44da4d6451a"
+        },
         {
-          "name": "peanut-business/official-article",
-          "version": "1.0.0",
-          "sha256": "0d70212c546a2fa7b190f9ca77a5854eeadf9edad1e98b6da5285dd0172d4fc3"
-        }
-      ],
-      "npm": [
+            "key": "official.member",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "ee79287d8c23d20b0fe57fb2302e631fc73c8d51885859178d08932d35b3602b"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-member",
+                    "version": "1.0.0",
+                    "sha256": "0a538f5cf95e17a1efd90021e4d8f5a15e78ec560dad8a333eeccf81f2dacb28"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-member",
+                    "version": "1.0.0",
+                    "integrity": "sha256-Kv1fy2fUFatnFibRWmtrz1kfSWo39FWZzVVtkZBaaTU="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-member",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-member/contribution.ts",
+                    "sha256": "6d181062aaa605c745baadc0bbbd251528ce23c1b4e8da2075f029b3c7a9c813"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.member",
+                    "root": "server/app/Modules/Official/Member"
+                }
+            ],
+            "manifest": "plugins/official.member/plugin.json",
+            "manifest_sha256": "36c385bcfa794d0d13b648641a591571fcb6c2810223a1c5083599ac6cd4e380"
+        },
         {
-          "name": "@peanut-admin/official-article",
-          "version": "1.0.0",
-          "integrity": "sha256-CT2Az249M0CTRSj6jltMKXQbSFSGjzapYLbHFkwv/GU="
-        }
-      ],
-      "frontend": [
+            "key": "official.notification",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "d37fe51ed1fc937385ccf6f79ce6d2504afce6e0a7d66cb8a368e4c04ea18a5e"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-notification",
+                    "version": "1.0.0",
+                    "sha256": "ab14243bda7cae3d616895642b71ae257e27ccc4017ebec74967469b5935b7d8"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-notification",
+                    "version": "1.0.0",
+                    "integrity": "sha256-qDKZuyRkhB9NsrIW6uRBjdpWWIPN+A4/D78zdin38yA="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-notification",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-notification/contribution.ts",
+                    "sha256": "26bfdba5cc1412afce4cf0132a71e3c3828cf4901af1d15ea27f4dea08219088"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.notification",
+                    "root": "server/app/Modules/Official/Notification"
+                }
+            ],
+            "manifest": "plugins/official.notification/plugin.json",
+            "manifest_sha256": "ffba068d49256ccc288c88a3848cd3711f63e3b72afa92ee9d90817f6508f635"
+        },
         {
-          "client_key": "admin-web",
-          "package": "@peanut-admin/official-article",
-          "version": "1.0.0",
-          "entry": "web/src/modules/official-article/contribution.ts",
-          "sha256": "1ad990b36059e3ef13a554efddcd974efea09b3c66bbef3eac9c5ba7a7d9b8b9"
-        }
-      ],
-      "modules": [
+            "key": "official.oauth",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "ca5e49bbc1d7669c205823fd3839352963ce4a33d81163a0ac86d8b13ab48ac6"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-oauth",
+                    "version": "1.0.0",
+                    "sha256": "e8577c132ae507fb50e7705482041003704166ab3bb71ab4d54a458af7d3cf7e"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-oauth",
+                    "version": "1.0.0",
+                    "integrity": "sha256-KcwPmbz1lUGOl9fhRrt1EQHjZcSR/H2XzSSb4UFBos0="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-oauth",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-oauth/contribution.ts",
+                    "sha256": "8b01e630a0e9ae493e73247c83228fa3d958a7043626fbfd319fa314c3a302dc"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.oauth",
+                    "root": "server/app/Modules/Official/Oauth"
+                }
+            ],
+            "manifest": "plugins/official.oauth/plugin.json",
+            "manifest_sha256": "91b852cf510c61dd0a89a9156dc5a5eed506ce5b7ce35c377c35c8ac40018668"
+        },
         {
-          "key": "official.article",
-          "root": "server/app/Modules/Official/Article"
+            "key": "official.payment",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "73b9987b59f35154d42a301fafc3a104773fb00d9e9c875aa097a8342bfcda06"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-payment",
+                    "version": "1.0.0",
+                    "sha256": "795cb263ab322a09ef203acdbe06f55695843b62455bf1b71ebd440d0df2a199"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-payment",
+                    "version": "1.0.0",
+                    "integrity": "sha256-/1flqNwzAK2An9Vt6JLnzG0KsNScKDhMYT/pl/xtCZM="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-payment",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-payment/contribution.ts",
+                    "sha256": "ba74451e4f4809917b5fa88b385a666e115fcb6ebd7038da87caadc5e3f371d2"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.payment",
+                    "root": "server/app/Modules/Official/Payment"
+                }
+            ],
+            "manifest": "plugins/official.payment/plugin.json",
+            "manifest_sha256": "27d35ceb6f1ff891a064b5d6a83e7af8cbfd9ea478a31022dcf262104e27d6b6"
+        },
+        {
+            "key": "official.task",
+            "version": "1.0.0",
+            "source": {
+                "type": "canonical-contents",
+                "reference": "canonical-plugin-contents-v1",
+                "sha256": "dc6633059ad7dea122c3d7d553555b73acede6ce1e8703d8ecedb1a1972b947e"
+            },
+            "composer": [
+                {
+                    "name": "peanut-business/official-task",
+                    "version": "1.0.0",
+                    "sha256": "3b2d16697434351c4edf9f987eec1aaea54918a82ad195f22620068e2a1e88a7"
+                }
+            ],
+            "npm": [
+                {
+                    "name": "@peanut-admin/official-task",
+                    "version": "1.0.0",
+                    "integrity": "sha256-RlQfi7KX5G07JRTdw65GgHyVQsVhopuB0BujNdEAdfs="
+                }
+            ],
+            "frontend": [
+                {
+                    "client_key": "admin-web",
+                    "package": "@peanut-admin/official-task",
+                    "version": "1.0.0",
+                    "entry": "web/src/modules/official-task/contribution.ts",
+                    "sha256": "929bd4fed57e60f52452d12fe857b50ce84a9f9873f6ae09f8c97cbdc142f453"
+                }
+            ],
+            "modules": [
+                {
+                    "key": "official.task",
+                    "root": "server/app/Modules/Official/Task"
+                }
+            ],
+            "manifest": "plugins/official.task/plugin.json",
+            "manifest_sha256": "77db60d7f2d044e9ae1ad3ea55da4c93386d44ecde1d9cf19f9caa713967e876"
         }
-      ]
-    }
-  ]
+    ]
 }

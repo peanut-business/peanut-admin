@@ -8,6 +8,10 @@ use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\service\module\ModuleExecutionContext;
+use app\common\service\module\ModuleExecutionGuard;
+use PDO;
+use think\facade\Db;
 
 class OAuthController extends BaseApiController
 {
@@ -38,6 +42,7 @@ class OAuthController extends BaseApiController
                     'oauth.begin',
                     $this->operationId(),
                 );
+            $this->assertModule($resolution->context);
             $result = OAuthLogic::begin(
                 $resolution->context,
                 $scene,
@@ -77,6 +82,7 @@ class OAuthController extends BaseApiController
                 (string)$params['state'],
                 $this->operationId(),
             );
+            $this->assertModule($resolution->context);
             $result = OAuthLogic::callback(
                 $resolution->context,
                 (string)$params['scene'],
@@ -109,6 +115,7 @@ class OAuthController extends BaseApiController
                     'oauth.mini-program',
                     $this->operationId(),
                 );
+            $this->assertModule($resolution->context);
             $result = OAuthLogic::miniProgramLogin(
                 $resolution->context,
                 (string)$params['code'],
@@ -130,6 +137,7 @@ class OAuthController extends BaseApiController
                 (string)$params['ticket'],
                 $this->operationId(),
             );
+            $this->assertModule($resolution->context);
             $result = OAuthLogic::complete($resolution->context, $params);
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
@@ -154,5 +162,16 @@ class OAuthController extends BaseApiController
     {
         $requestId = trim((string)$this->request->header('X-Request-Id', ''));
         return $requestId !== '' ? $requestId : bin2hex(random_bytes(16));
+    }
+
+    private function assertModule(\PeanutAdmin\Kernel\Context\TenantSystemContext $context): void
+    {
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('OAUTH_MODULE_DATABASE_UNAVAILABLE');
+        }
+        (new ModuleExecutionGuard($pdo, 'official.oauth'))->assertEnabled(
+            ModuleExecutionContext::system('official.oauth', $context),
+        );
     }
 }

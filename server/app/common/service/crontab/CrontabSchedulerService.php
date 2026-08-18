@@ -113,6 +113,9 @@ final class CrontabSchedulerService
             if (!$pdo instanceof PDO) {
                 throw new \RuntimeException('定时任务数据库不可用');
             }
+            (new ModuleExecutionGuard($pdo, 'official.task'))->assertScheduled(
+                ModuleExecutionContext::scheduled('official.task', $scope, 'scheduler.execute'),
+            );
             (new ModuleExecutionGuard($pdo, $moduleKey))->assertScheduled(
                 ModuleExecutionContext::scheduled($moduleKey, $scope, 'scheduler.execute'),
             );

@@ -8,7 +8,9 @@
   "license": "proprietary",
   "php_package": "peanut-business/official-article",
   "web_package": "@peanut-admin/official-article",
-  "dependencies": [],
+  "dependencies": [
+    {"module_key": "official.file", "version": "^1.0"}
+  ],
   "backend": {
     "provider": "app\\Modules\\Official\\Article\\ModuleProvider",
     "routes": "Http/routes.php",
@@ -31,6 +33,6 @@
   "tenant": {
     "enableable": true,
     "disable_behavior": "reject_new_operations",
-    "requires": []
+    "requires": ["official.file"]
   }
 }

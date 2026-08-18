@@ -1,0 +1,13 @@
+[
+  {"key":"file/lists","type":"api","name":"查看文件素材","risk_level":"normal"},
+  {"key":"file/move","type":"action","name":"移动文件素材","risk_level":"sensitive"},
+  {"key":"file/rename","type":"action","name":"重命名文件素材","risk_level":"sensitive"},
+  {"key":"file/delete","type":"action","name":"删除文件素材","risk_level":"critical"},
+  {"key":"file/cate/lists","type":"api","name":"查看素材分类","risk_level":"normal"},
+  {"key":"file/cate/add","type":"action","name":"新增素材分类","risk_level":"sensitive"},
+  {"key":"file/cate/edit","type":"action","name":"编辑素材分类","risk_level":"sensitive"},
+  {"key":"file/cate/delete","type":"action","name":"删除素材分类","risk_level":"critical"},
+  {"key":"upload/image","type":"action","name":"上传图片","risk_level":"sensitive"},
+  {"key":"upload/video","type":"action","name":"上传视频","risk_level":"sensitive"},
+  {"key":"upload/file","type":"action","name":"上传文件","risk_level":"sensitive"}
+]

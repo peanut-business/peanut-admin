@@ -46,8 +46,20 @@ foreach ([
     'finance_admin_context' => 'app/common/service/finance/FinanceTenantContext.php',
     'crontab_scheduler' => 'app/common/service/crontab/CrontabSchedulerService.php',
     'async_authorization' => 'app/common/service/async/AdminAsyncAuthorization.php',
+    'async_runtime' => 'app/common/service/async/TaskImportExportRuntime.php',
     'async_files' => 'app/common/service/export/AppFileMediaGateway.php',
     'routes' => 'route/app.php',
+    'official_file_routes' => 'app/Modules/Official/File/Http/routes.php',
+    'official_notification_routes' => 'app/Modules/Official/Notification/Http/routes.php',
+    'official_oauth_routes' => 'app/Modules/Official/Oauth/Http/routes.php',
+    'official_payment_routes' => 'app/Modules/Official/Payment/Http/routes.php',
+    'official_member_routes' => 'app/Modules/Official/Member/Http/routes.php',
+    'official_task_routes' => 'app/Modules/Official/Task/Http/routes.php',
+    'official_import_export_routes' => 'app/Modules/Official/ImportExport/Http/routes.php',
+    'official_module_middleware' => 'app/common/service/module/OfficialModuleMiddleware.php',
+    'module_execution_guard' => 'app/common/service/module/ModuleExecutionGuard.php',
+    'oauth_controller' => 'app/api/controller/OAuthController.php',
+    'console' => 'config/console.php',
     'module_manifest' => 'vendor/peanut-admin/core/kernel/src/Module/ManifestLoader.php',
     'module_availability' => 'vendor/peanut-admin/core/kernel/src/Host/ModuleAvailabilityAdapter.php',
     'deployed_module_registry' => 'app/platform/service/module/DeployedTenantModuleRegistry.php',
@@ -156,13 +168,26 @@ foreach (['member_admin_context', 'article_admin_context', 'file_admin_context',
     );
 }
 foreach ([
-    "PublicMemberTenantMiddleware::class, 'member.register'",
-    "PublicMemberTenantMiddleware::class, 'member.login'",
-    "PublicNoticeTenantMiddleware::class, 'notice.verification.send'",
-    "PublicNoticeTenantMiddleware::class, 'notice.verification.verify'",
-] as $routeGuard) {
-    qualificationExpect(str_contains($sources['routes'], $routeGuard), 'public Tenant guard is missing: ' . $routeGuard);
+    'official_member_routes' => [
+        "PublicMemberTenantMiddleware::class, 'member.register'",
+        "PublicMemberTenantMiddleware::class, 'member.login'",
+    ],
+    'official_notification_routes' => [
+        "PublicNoticeTenantMiddleware::class, 'notice.verification.send'",
+    ],
+] as $sourceKey => $routeGuards) {
+    foreach ($routeGuards as $routeGuard) {
+        qualificationExpect(
+            str_contains($sources[$sourceKey], $routeGuard),
+            'public Tenant guard is missing: ' . $routeGuard
+        );
+    }
 }
+qualificationExpect(
+    str_contains($sources['official_member_routes'], 'PublicNoticeTenantMiddleware::class')
+        && str_contains($sources['official_member_routes'], 'notice.verification.verify'),
+    'member password/mobile flows are missing the Tenant-owned notification guard'
+);
 
 $matrix = [
     'file_media' => ['trusted_context' => true, 'sql_scope' => true, 'non_sql_namespace' => true],
@@ -172,8 +197,8 @@ $matrix = [
     'payment_recharge_refund_callbacks' => ['trusted_context' => true, 'sql_scope' => true, 'external_owner_active' => true],
     'crontab_task_import_export' => ['trusted_context' => true, 'sql_scope' => true, 'non_sql_namespace' => true, 'execution_recheck' => true],
     'tenant_module' => [
-        'application_hosts_are_enableable_modules' => false,
-        'reason' => 'Application Host capabilities remain separate; only explicitly packaged official Modules use TenantModule.',
+        'official_capabilities_are_enableable_modules' => true,
+        'reason' => 'Shared engines stay in Core, while each official business entry is packaged and Tenant enableable.',
         'optional_module_manifest_required' => true,
         'optional_module_enable_guard_required' => true,
         'optional_module_guard_owner' => 'peanut-admin/core ModuleGuard plus permission catalog',
@@ -219,6 +244,40 @@ qualificationExpect(
         )
         && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
     'optional Modules are not guarded by both module.json and Tenant enablement'
+);
+
+$officialModules = [
+    'official.file' => 'official_file_routes',
+    'official.notification' => 'official_notification_routes',
+    'official.oauth' => 'official_oauth_routes',
+    'official.payment' => 'official_payment_routes',
+    'official.member' => 'official_member_routes',
+    'official.task' => 'official_task_routes',
+    'official.import-export' => 'official_import_export_routes',
+];
+foreach ($officialModules as $moduleKey => $routeSourceKey) {
+    $routeFile = 'official_' . str_replace(['official.', '-'], ['', '_'], $moduleKey) . '.php';
+    qualificationExpect(
+        str_contains($sources[$routeSourceKey], 'OfficialModuleMiddleware::class')
+            && str_contains($sources[$routeSourceKey], 'ModuleProvider')
+            && str_contains($sources['routes'], "'{$routeFile}'"),
+        'official Module HTTP entry is not loaded and Tenant guarded: ' . $moduleKey
+    );
+}
+qualificationExpect(
+    str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::admin(')
+        && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::system(')
+        && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::businessMember(')
+        && str_contains($sources['official_module_middleware'], 'assertEnabled($context)'),
+    'shared official Module middleware does not require a trusted Tenant context and TenantModule state'
+);
+qualificationExpect(
+    str_contains($sources['oauth_controller'], "new ModuleExecutionGuard(\$pdo, 'official.oauth')")
+        && str_contains($sources['external_resolver'], 'assertExternalCallback(')
+        && str_contains($sources['async_runtime'], "'official.import-export'")
+        && str_contains($sources['crontab_scheduler'], "ModuleExecutionContext::scheduled('official.task'")
+        && str_contains($sources['console'], "'refund:reconcile' => 'official.payment'"),
+    'external callback, worker or scheduler entry bypasses its official Module lifecycle'
 );
 
 $shippedManifests = glob($root . '/app/Modules/*/*/module.json') ?: [];

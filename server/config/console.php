@@ -19,7 +19,7 @@ return [
     // Every command that may run from the Tenant scheduler must declare its owning Module.
     // Core commands use the built-in `core` capability; application Modules register their key.
     'module_commands' => [
-        'crontab:demo' => 'core',
-        'refund:reconcile' => 'core',
+        'crontab:demo' => 'official.task',
+        'refund:reconcile' => 'official.payment',
     ],
 ];

@@ -1,0 +1,9 @@
+[
+  {"key":"notice/channel/detail","type":"api","name":"查看通知渠道","risk_level":"normal"},
+  {"key":"notice/channel/save","type":"action","name":"保存通知渠道","risk_level":"critical"},
+  {"key":"notice/log/lists","type":"api","name":"查看通知日志","risk_level":"normal"},
+  {"key":"notice/log/detail","type":"api","name":"查看通知详情","risk_level":"normal"},
+  {"key":"notice/scene/lists","type":"api","name":"查看通知场景","risk_level":"normal"},
+  {"key":"notice/scene/detail","type":"api","name":"查看通知场景详情","risk_level":"normal"},
+  {"key":"notice/scene/save","type":"action","name":"保存通知场景","risk_level":"sensitive"}
+]

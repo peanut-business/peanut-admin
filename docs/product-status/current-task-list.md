@@ -8,17 +8,19 @@
 
 ## 当前结论
 
-Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应用消费。当前候选仍在
-模块资格收口，已通过的 Gate 不重复运行。
+Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应用消费。Standalone 与
+Multi-tenant 线上体验部署、Tenant A/B 浏览器矩阵、头像人工验收和无秘密
+post-deployment 快照已经完成。7 个官方能力 Module 的实现主体已形成并通过静态合同；真实
+数据库、Tenant A/B 和停用负向资格仍待收口，不能提前写成正式 Release 能力。当前没有漏迁移
+的业务 Module 非 HTTP 入口；剩余工作是完成这 7 个 Module 的真实资格，以及是否把部署快照
+提升为新的正式发布记录。
 
-当前仍未完成的产品交付线有两条，另有一条模块通用合同仍在推进：
+当前仍未完成的产品交付线有一条，另有一条可选的发布证据收口工作：
 
-1. 从不可变 `v2.0.1` Tag 完成一套 Standalone 和一套 Multi-tenant 线上部署，并分别完成
-   备份、迁移、TLS、健康检查和最小浏览器验收。
-2. 把官方 Module 的多租户执行合同补齐到 HTTP、内部命令、任务/worker、外部回调和模块
-   文件入口。
-3. Article 的真实数据库、Tenant A/B 隔离、停用负向和页面专项资格已在当前候选完成，
-   但仍需随代码候选合入后作为已发布能力重新冻结。
+1. 完成 7 个官方 Module 的真实 Tenant A/B、停用负向和受影响浏览器资格，并补齐双 Module
+   可运行示例；未来真实 Module 声明任务、回调或专属文件入口时按合同接入。
+2. 如需对外宣称 post-deployment release，再单独封存部署快照；不修改
+   `v2.0.1` 源码发布快照。
 
 ## 任务进度
 
@@ -30,10 +32,10 @@ Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应�
 | T04 | 头像 fallback 与共享浏览器验收 | 已完成 | 空值/加载失败 fallback、用户菜单、共享 Admin/Tenant A/Tenant B 截图人工检查通过 | 无 |
 | T05 | 文档与实现事实对照 | 已完成 | 当前版本、部署边界、Module 缺口和历史材料已重新分类 | 本页和公开入口同步 |
 | T06 | 文档状态收口 | 已完成 | 当前入口已统一到 v2.0.1；历史证据保留，docs-site 构建通过 | 无 |
-| T07 | Module 统一执行授权合同 | 部分完成 | HTTP 管理/公开入口已接入；定时任务要求命令声明 `module_key` 并在执行前复核 Tenant/Module 状态；Core 导入导出 worker 已通过 `ModuleAwareTaskHandler` 在 handler 前复核；支付/公众号 Core 回调已改为验签后执行 `core` Guard；通用业务 worker envelope、业务 Module 回调、模块文件入口仍待迁移 | 将同一合同继续采用到业务 worker、业务 Module 回调和模块专属文件入口，并补齐停用负向 |
-| T08 | Article 官方 Module 专项资格 | 已完成（候选） | 当前候选已完成真实数据库安装、Tenant A/B 页面与数据隔离、停用负向和共享 Admin/Tenant A/Tenant B 浏览器截图；证据见 `output/playwright/article-module/b0ef43d/summary.json` | 随候选合入后冻结为发布快照；不把它扩大为通用 Module 全入口合同 |
-| T09 | v2.0.1 线上 Standalone 部署 | 未开始 | 发布脚本和资源登记已具备，尚未对线上目标执行 | fresh 部署、备份、TLS、smoke 和访问交付 |
-| T10 | v2.0.1 线上 Multi-tenant 部署 | 未开始 | 多租户本地候选已通过，线上目标尚未执行 | fresh 部署、域名/Host、Tenant A/B smoke 和访问交付 |
+| T07 | Module 统一执行授权合同 | 部分完成 | Article、Fixture 与 7 个官方 Module 的 HTTP/公开入口已接入 Module/Tenant/RBAC 合同；任务、导入导出 worker、支付/OAuth/公众号回调均有对应 Module key 复核；静态合同通过，真实租户资格尚未运行 | 完成 7 个 Module 的真实 Tenant A/B、停用负向和受影响浏览器资格；不为没有消费者的脚手架预先扩张 Runtime |
+| T08 | Article 官方 Module 专项资格 | 已完成（候选） | 当前候选已完成真实数据库安装、Tenant A/B 页面与数据隔离、停用负向和共享 Admin/Tenant A/Tenant B 浏览器截图；证据见 `output/playwright/article-module/b0ef43d/summary.json` | 保持 Article 证据；不把它扩大为其他 Module 的资格替代 |
+| T09 | v2.0.1 线上 Standalone 部署 | 已完成 | 已按登记的 production 资源 fresh 部署；服务、TLS、健康检查和访问入口已验证 | 无；后续版本按同一脚本做受影响升级资格 |
+| T10 | v2.0.1 线上 Multi-tenant 部署 | 已完成 | 已按登记的 production-candidate 资源 fresh 部署并叠加演示层；四域名 Host 绑定、Tenant A/B 数据、标题、头像和共享 Admin/Tenant A/Tenant B 浏览器矩阵通过；证据见 `output/deployment-v201/online-browser-matrix/cli-result.json` | 无；后续版本按同一脚本做受影响升级资格 |
 | T11 | DCS 业务模块 | 范围外 | Peanut 只提供扩展边界；Party、Product、Inventory、Procurement 等不属于本仓 Runtime | 在 DCS 仓库按 Module 合同实现 |
 | T12 | 跨应用运营平台 | 独立项目 | 已授权独立立项，不进入 Peanut Admin Runtime | 在独立仓库推进 |
 | T13 | 完整 SaaS 商业化 | 暂缓 | 套餐、订阅、计费、应用市场不属于当前交付 | 等运营闭环和真实消费者成立后再立项 |
@@ -59,7 +61,6 @@ Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应�
 
 ## 下一阶段顺序
 
-1. 完成本次文档状态收口并构建 docs-site。
-2. 将 Article 候选证据随代码候选合入并冻结；继续补齐 Module 非 HTTP 入口合同。
-3. 按资源登记执行线上 Standalone 与 Multi-tenant 部署。
-4. 用实际部署结果更新本页、能力账本和发布交付说明。
+1. 推进双 Module 可运行示例和后续真实 Module 的入口采用；不为没有消费者的脚手架预先扩张 Runtime。
+2. 如产品需要新的正式发布声明，再对现有 post-deployment 快照执行一次独立封存。
+3. 后续文档同步继续以能力账本和部署快照为准；不重封存已通过的 scaffold/P0-E。

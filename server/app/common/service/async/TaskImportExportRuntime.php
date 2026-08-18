@@ -79,7 +79,7 @@ final readonly class TaskImportExportRuntime
             new TaskHandlerRegistry([
                 new ModuleAwareTaskHandler(
                     $this->pdo,
-                    'core',
+                    'official.import-export',
                     new ImportExportTaskHandler(new CsvOperationRunner(
                         new PdoImportExportRepository($this->pdo),
                         $this->providers(),

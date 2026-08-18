@@ -1,0 +1,5 @@
+[
+  {"key":"log/export","type":"action","name":"导出操作日志","risk_level":"sensitive"},
+  {"key":"log/export/status","type":"api","name":"查看导出状态","risk_level":"normal"},
+  {"key":"log/export/download","type":"api","name":"下载导出文件","risk_level":"sensitive"}
+]

@@ -19,6 +19,25 @@ use think\facade\Db;
  */
 final readonly class CoreTenantModuleAdminBridge
 {
+    /** @return list<string> */
+    public static function officialModuleMenuPaths(): array
+    {
+        return [
+            '/system/file',
+            '/system/crontab',
+            '/notice/channel',
+            '/notice/template',
+            '/notice/log',
+            '/app-setting/channel',
+            '/app-setting/pay',
+            '/member/list',
+            '/member/tag',
+            '/finance/account-log',
+            '/finance/recharge',
+            '/finance/refund',
+        ];
+    }
+
     public function __construct(private ?PDO $pdo = null)
     {
     }

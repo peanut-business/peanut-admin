@@ -59,9 +59,9 @@ officialArticleExpect(str_contains($routes, 'ArticleModuleMiddleware::class'), '
 officialArticleExpect(!str_contains($hostRoutes, "Route::get('article.article"), 'Article Admin routes remain Host-owned');
 officialArticleExpect(!str_contains($hostRoutes, "Route::post('article.article"), 'Article Admin writes remain Host-owned');
 officialArticleExpect(
-    substr_count($menuLogic, "['/article', '/article/cate', '/article/list']") === 2
-        && str_contains($permissionService, "['/article', '/article/cate', '/article/list']"),
-    'legacy Article menu group remains visible beside the Module catalog'
+    str_contains($menuLogic, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths')
+        && str_contains($permissionService, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths'),
+    'legacy Article menu group is not excluded through the shared Module catalog bridge'
 );
 
 // Every public Article/PC entry must fail closed when the Tenant Module is disabled.

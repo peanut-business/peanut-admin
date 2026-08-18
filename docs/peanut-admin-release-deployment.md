@@ -19,17 +19,17 @@
 
 ### 源仓维护者的无人值守发布脚本
 
-`scripts/deploy-release` 已随 `v2.0.1` 源码 Release 交付，但 Standalone/Multi-tenant 双部署
-生产资格仍未完成，`v2.0.0` 生成的派生应用不包含它。源仓维护者的
-正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
+`scripts/deploy-release` 已随 `v2.0.1` 源码 Release 交付。当前已用它完成一套 Standalone
+和一套 Multi-tenant candidate 的 `v2.0.1` fresh 部署；`v2.0.0` 生成的派生应用不包含它。
+源仓维护者的正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
 `scripts/production-upgrade`。脚本从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
 数据库资源。它不会通过默认值猜测另一套部署。以下 `--apply` 命令是经资源 owner 授权后的
-操作模板，不是 `v2.0.0` 已执行生产部署的证据。
+操作模板；当前部署结果另见 `docs/product-status/deployments/v2.0.1-online-experience.json`。
 
 ```bash
 # 先只核对计划（不连接线上、不写入线上）
-scripts/deploy-release v2.0.0 --target production --fresh \
+scripts/deploy-release v2.0.1 --target production --fresh \
   --confirm-destroy production --dry-run
 scripts/deploy-release v2.0.1 --target production --upgrade \
   --from v2.0.0 --dry-run
@@ -70,7 +70,7 @@ manifest、SHA-256、gzip 与 tar。没有备份登记时，upgrade 在本地 pr
 数据库资源，随后创建 Tenant A/B、独立 TenantMember/Owner、域名绑定和合成数据。
 
 ```bash
-scripts/build-demo-site-patch v2.0.0 output/deployment/demo-site-v2.0.0.tar
+scripts/build-demo-site-patch v2.0.1 output/deployment/demo-site-v2.0.1.tar
 
 export PEANUT_GENERATED_ADMIN_EMAIL='bootstrap@pa-demo.test'
 export PEANUT_GENERATED_ADMIN_PASSWORD='<bootstrap-password>'
@@ -84,9 +84,9 @@ export PEANUT_DEMO_TENANT_A_HOST='pa-tenant-a.007345.xyz'
 export PEANUT_DEMO_TENANT_B_HOST='pa-tenant-b.007345.xyz'
 export PEANUT_DEMO_DOCS_URL='https://peanut-admin-doc.007345.xyz'
 
-scripts/deploy-release v2.0.0 --target production-candidate --fresh \
+scripts/deploy-release v2.0.1 --target production-candidate --fresh \
   --confirm-destroy production-candidate \
-  --overlay output/deployment/demo-site-v2.0.0.tar --apply
+  --overlay output/deployment/demo-site-v2.0.1.tar --apply
 ```
 
 只有 `PEANUT_DEMO_MODE=enabled` 时，租户登录页才会预填公开演示账号，且服务端拒绝修改演示

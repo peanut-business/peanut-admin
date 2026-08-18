@@ -15,7 +15,7 @@ class OfficialAccountController extends BaseApiController
         $params = $this->request->get();
         try {
             ExternalTenantResolver::production()->verifiedModuleCallback(
-                'core',
+                'official.oauth',
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.verify',
@@ -33,7 +33,7 @@ class OfficialAccountController extends BaseApiController
         $params = $this->request->get();
         try {
             $resolution = ExternalTenantResolver::production()->verifiedModuleCallback(
-                'core',
+                'official.oauth',
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.callback',

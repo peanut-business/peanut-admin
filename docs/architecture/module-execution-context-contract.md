@@ -33,8 +33,10 @@ Module 不重新认证账号，也不从请求参数推断租户。应用入口�
 - Fixture `delivery-record` 已使用统一的管理成员执行合同。
 - Article 管理入口和公开入口已使用统一的安装/Tenant 开通检查；Repository 的原有 Tenant
   条件仍保留，作为数据层防线。
-- 通用任务 envelope、模块专属 worker、外部回调和模块文件入口尚未全部迁移到同一合同，
-  因此官方 Module 的全入口资格仍未完成。
+- 当前随仓库交付的 Module 没有业务专属 worker、外部回调或模块文件入口：Article 和
+  Fixture 的实际入口均已覆盖，Core 的任务、回调、素材和导出仍由应用 Host 自己负责。
+  因此当前没有漏迁移的业务入口；以后某个 Module 新增这些入口时，必须在自己的
+  provider/handler/controller 装配处采用同一合同，并补启用正向与停用负向证据。
 
 ## Module 与业务能力的关系
 

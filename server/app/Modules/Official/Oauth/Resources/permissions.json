@@ -1,0 +1,19 @@
+[
+  {"key":"setting/web-page/config","type":"api","name":"查看网页渠道","risk_level":"normal"},
+  {"key":"setting/web-page/save","type":"action","name":"保存网页渠道","risk_level":"sensitive"},
+  {"key":"setting/mini-program/config","type":"api","name":"查看小程序渠道","risk_level":"normal"},
+  {"key":"setting/mini-program/save","type":"action","name":"保存小程序渠道","risk_level":"critical"},
+  {"key":"setting/official-account/config","type":"api","name":"查看公众号渠道","risk_level":"normal"},
+  {"key":"setting/official-account/save","type":"action","name":"保存公众号渠道","risk_level":"critical"},
+  {"key":"setting/official-account/menu","type":"api","name":"查看公众号菜单","risk_level":"normal"},
+  {"key":"setting/official-account/menu/save","type":"action","name":"保存公众号菜单","risk_level":"sensitive"},
+  {"key":"setting/official-account/menu/publish","type":"action","name":"发布公众号菜单","risk_level":"critical"},
+  {"key":"setting/official-account/reply/lists","type":"api","name":"查看公众号回复","risk_level":"normal"},
+  {"key":"setting/official-account/reply/detail","type":"api","name":"查看公众号回复详情","risk_level":"normal"},
+  {"key":"setting/official-account/reply/add","type":"action","name":"新增公众号回复","risk_level":"sensitive"},
+  {"key":"setting/official-account/reply/edit","type":"action","name":"编辑公众号回复","risk_level":"sensitive"},
+  {"key":"setting/official-account/reply/delete","type":"action","name":"删除公众号回复","risk_level":"critical"},
+  {"key":"setting/official-account/reply/status","type":"action","name":"切换公众号回复状态","risk_level":"sensitive"},
+  {"key":"setting/open-platform/config","type":"api","name":"查看开放平台配置","risk_level":"normal"},
+  {"key":"setting/open-platform/save","type":"action","name":"保存开放平台配置","risk_level":"critical"}
+]

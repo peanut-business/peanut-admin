@@ -23,10 +23,6 @@ require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Infrastructur
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Application/DeliveryRecordService.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/ModuleProvider.php';
-require dirname(__DIR__, 2) . '/app/Modules/Official/Article/Contracts/ArticleModuleAccess.php';
-require dirname(__DIR__, 2) . '/app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php';
-require dirname(__DIR__, 2) . '/app/Modules/Official/Article/ModuleProvider.php';
-
 function pluginModuleContractExpect(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -36,7 +32,9 @@ function pluginModuleContractExpect(bool $condition, string $message): void
 
 $serverRoot = dirname(__DIR__, 2);
 $moduleRoot = $serverRoot . '/app/Modules/Fixture/DeliveryRecord';
-$articleModuleRoot = $serverRoot . '/app/Modules/Official/Article';
+$officialModuleRoots = glob($serverRoot . '/app/Modules/Official/*', GLOB_ONLYDIR) ?: [];
+sort($officialModuleRoots, SORT_STRING);
+$moduleRoots = [$moduleRoot, ...$officialModuleRoots];
 $layout = new ModuleHostLayout('server/app/Modules', 'app\Modules', 'web/src/modules');
 $kernelRoot = dirname((new ReflectionClass(\PeanutAdmin\Kernel\Module\ModuleProvider::class))->getFileName(), 3);
 $compiler = new ModuleRegistryCompiler(
@@ -44,7 +42,16 @@ $compiler = new ModuleRegistryCompiler(
     new StrictVersionConstraintMatcher(),
     new ReflectionContractInspector(),
     '1.0.0',
-    ['fixture.delivery-record.list', 'official.article.cate', 'official.article.list'],
+    [
+        'fixture.delivery-record.list',
+        'official.article.cate', 'official.article.list',
+        'official.file.library',
+        'official.notification.channel', 'official.notification.template', 'official.notification.log',
+        'official.oauth.channel',
+        'official.payment.settings', 'official.payment.recharge', 'official.payment.refund',
+        'official.member.list', 'official.member.tag', 'official.member.account-log',
+        'official.task.schedules',
+    ],
     $layout,
     [
         ...KernelSchema::tableNames(),
@@ -57,16 +64,23 @@ $compiler = new ModuleRegistryCompiler(
 );
 
 $loader = new ManifestLoader();
-$manifest = $loader->load($moduleRoot);
-$articleManifest = $loader->load($articleModuleRoot);
-$registry = $compiler->compile([$manifest, $articleManifest]);
+$manifests = array_map(static fn(string $root) => $loader->load($root), $moduleRoots);
+$manifest = $manifests[0];
+$registry = $compiler->compile($manifests);
+$expectedKeys = array_map(
+    static fn(ManifestDocument $manifest): string => (string)$manifest->data['key'],
+    $manifests,
+);
+$actualKeys = $registry->moduleKeys();
+sort($expectedKeys, SORT_STRING);
+sort($actualKeys, SORT_STRING);
 pluginModuleContractExpect(
-    $registry->moduleKeys() === ['fixture.delivery-record', 'official.article'],
-    'source Modules did not compile together'
+    $actualKeys === $expectedKeys,
+    'source official Modules did not compile together'
 );
 (new ModuleBoundaryChecker($registry, $layout, ['pa_']))->check();
 
-$missingDependency = $manifest->data;
+$missingDependency = $manifests[0]->data;
 $missingDependency['dependencies'] = [['module_key' => 'fixture.missing', 'version' => '^1.0']];
 try {
     $compiler->compile([ManifestDocument::fromArray($manifest->root, $missingDependency)]);

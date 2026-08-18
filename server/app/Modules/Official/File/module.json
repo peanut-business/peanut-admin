@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "key": "official.file",
+  "name": "File and Media",
+  "description": "Tenant-owned media library, uploads and private file metadata.",
+  "version": "1.0.0",
+  "kernel_constraint": "^1.0",
+  "license": "proprietary",
+  "php_package": "peanut-business/official-file",
+  "web_package": "@peanut-admin/official-file",
+  "dependencies": [],
+  "backend": {"provider":"app\\Modules\\Official\\File\\ModuleProvider","routes":"Http/routes.php","menus":"Resources/menus.json","permissions":"Resources/permissions.json"},
+  "frontend": {"entry":"web/src/modules/official-file/contribution.ts"},
+  "database": {"owned_tables":["pa_file","pa_file_cate","pa_file_object"]},
+  "contracts": {"exports":[],"events":[]},
+  "tenant": {"enableable":true,"disable_behavior":"reject_new_operations","requires":[]}
+}

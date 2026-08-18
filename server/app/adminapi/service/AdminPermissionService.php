@@ -111,7 +111,12 @@ final class AdminPermissionService
             ->where('is_disable', 0)
             ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths());
-        $query->whereNotIn('paths', ['/article', '/article/cate', '/article/list']);
+        $query->whereNotIn('paths', [
+            '/article',
+            '/article/cate',
+            '/article/list',
+            ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
+        ]);
         if (!self::isRoot($admin)) {
             $query->where(static function ($query) use ($permissions): void {
                 $query->where('perms', '')->whereOr('perms', 'in', $permissions ?: ['__none__']);

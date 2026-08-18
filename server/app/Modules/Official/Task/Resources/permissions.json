@@ -1,0 +1,9 @@
+[
+  {"key":"crontab/lists","type":"api","name":"查看定时任务","risk_level":"normal"},
+  {"key":"crontab/detail","type":"api","name":"查看定时任务详情","risk_level":"normal"},
+  {"key":"crontab/expression","type":"api","name":"预览 Cron 表达式","risk_level":"normal"},
+  {"key":"crontab/add","type":"action","name":"新增定时任务","risk_level":"sensitive"},
+  {"key":"crontab/edit","type":"action","name":"编辑定时任务","risk_level":"sensitive"},
+  {"key":"crontab/delete","type":"action","name":"删除定时任务","risk_level":"critical"},
+  {"key":"crontab/operate","type":"action","name":"启停定时任务","risk_level":"critical"}
+]

@@ -22,13 +22,31 @@ Module 不重新认证账号，也不从请求参数推断租户。应用入口�
 | 定时任务/worker | `scheduled()` | 提交与执行前都要复核 Tenant 和 Module 状态 |
 | 外部回调 | `system()` | 先验签、解析 Tenant，再检查 Module 是否可用；当前支付/公众号 Core 回调已采用此顺序 |
 
-当前 Fixture Delivery Record、Article 管理入口和 Article 公开入口已采用统一的安装/Tenant
-开通合同；Article 的真实数据库、Tenant A/B 隔离、停用负向和页面浏览器专项也已在当前候选
-通过。定时任务已要求命令声明 `module_key` 并在执行前复核状态；Core 导入导出 worker
-已在 handler 前复核 Tenant 状态。Core TaskJob 的通用任务 envelope、业务模块 worker、
-外部回调的可复用 `verifiedModuleCallback()` 已用于支付/公众号 Core Host；业务 Module 的
-绑定字段、停用负向和模块文件入口仍在后续资格范围内。
+当前 Fixture、Article 以及 7 个官方能力 Module 的 HTTP 入口已采用统一的安装/Tenant
+开通合同；Article 已有真实数据库、Tenant A/B 隔离、停用负向和页面浏览器专项，7 个新增
+官方 Module 目前只完成源码和静态合同，真实租户资格仍待运行。定时任务、导入导出 worker、
+支付/OAuth/公众号回调都必须在实际业务 Module key 下复核状态。未来 Module 若声明新的
+worker、回调或专属文件入口，必须在自己的装配处采用同一合同，并补启用正向与停用负向证据。
 
 共享 TenantContext 不会抹平 DCS 模块的业务边界。Product、Pricing、Inventory、Procurement
 和 Trade 仍需各自声明依赖、自有表、权限和数据范围；跨 Tenant 协作使用显式参与方授权或
 投影，不能通过切换 TenantContext 读取对方数据。
+
+## 当前入口盘点
+
+这张表说明“已接入”与“当前没有消费者”的区别，避免把未来扩展条件误读成现有缺陷：
+
+| 当前随仓 Module/能力 | HTTP/公开入口 | 定时任务/worker | 外部回调 | 专属文件入口 |
+|---|---|---|---|---|
+| `official.article` | 已接入 | 无 | 无 | 无 |
+| `official.file` | 已接入 | 无 | 无 | 共享文件服务由 Tenant namespace 保护 |
+| `official.notification` | 已接入 | 无 | 验证码发送由 Tenant context 保护 | 无 |
+| `official.oauth` | 已接入 | 无 | OAuth/公众号回调由 resolver + Module guard 保护 | 无 |
+| `official.payment` | 已接入 | `refund:reconcile` 在执行前复核 Module | 支付回调验签后复核 Module | 无 |
+| `official.member` | 已接入 | 无 | 无 | 无 |
+| `official.task` | 已接入 | 调度器在 Tenant scope 内复核 Module | 无 | 无 |
+| `official.import-export` | 已接入 | 导出 worker 在 handler 前复核 Module | 无 | 导出文件使用 Tenant namespace |
+| `fixture.delivery-record` | 已接入 | 无 | 无 | 无 |
+
+当新 Module 增加后三列中的任一入口时，入口本身才成为该 Module 的必做资格项；不能因为
+脚手架目前没有这类消费者，就预先关闭或复制一套全局基础设施。

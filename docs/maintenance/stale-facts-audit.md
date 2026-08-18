@@ -53,7 +53,7 @@
 | --- | --- | --- | --- | --- |
 | 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 当前文档入口与语义检查已覆盖；2.0.0 源码已正式发布 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
 | Peanut Admin 架构、真实目录与所有权 | 只部分回答 | **文档结构已覆盖** | 当前目录已核验 | `docs-site/guide/development.md` |
-| Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 安装、治理、菜单/RBAC 和 fixture 同步命令 Guard 已支持；任务/回调/专属文件 Guard 与双 Module 示例待新增 | `docs-site/guide/module-development.md`、`docs-site/architecture/official-module-qualification.md` |
+| Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 安装、治理、菜单/RBAC、HTTP/公开入口和现有 Core 任务/回调 Guard 已支持；当前随仓 Module 没有业务 worker、业务回调或专属文件入口；双 Module 示例仍待新增 | `docs-site/guide/module-development.md`、`docs-site/architecture/official-module-qualification.md` |
 | 前后端、路由、菜单、权限和测试路径 | 部分且有冲突 | **文档结构已覆盖** | 原生身份、官方能力 Tenant 资格和真实浏览器验证已通过 | `docs-site/guide/development.md`、`docs-site/api.md` |
 | DCS 与 Peanut Admin 的边界 | 只部分回答 | **Peanut 采用边界已覆盖** | DCS Runtime 不在本仓 | `docs-site/guide/development.md`；详细领域文档归 DCS |
 | DCS owner 与商品、采购、库存数据流 | 只部分回答 | **推荐合同已覆盖** | 本仓不实现 | `docs-site/guide/module-development.md`；DCS 冻结表/API/事件/状态机 |
@@ -90,8 +90,9 @@
 - **Module 当前部分完成**：Plugin 安装、TenantModule 治理、菜单/RBAC、fixture 同步命令和
   Article HTTP/公开入口 Guard 已有证据；Article 的当前候选真实数据库、Tenant A/B 隔离、
   停用负向和页面浏览器专项已通过。现有文件、通知、支付等只是 Tenant 适配的应用 Host，
-  并非已交付官方可选 Module。任务、回调与模块专属文件入口的统一 Guard 仍是正式模块的采用条件。
-- **已部署候选体验**：固定候选 `d3d5900` 的隔离 `production-candidate` 已更新为头像
+  并非已交付官方可选 Module。盘点确认当前随仓 Module 没有业务 worker、业务回调或专属文件
+  入口，因此不存在漏迁移的现有消费者；未来 Module 新增这些入口时仍必须采用统一 Guard。
+- **已部署候选体验（2026-08-16 历史记录）**：固定候选 `d3d5900` 的隔离 `production-candidate` 已更新为头像
   fallback 候选；部署源码关键文件摘要、`d3d5900` 镜像、容器健康和 origin health 已核对。
   线上 Tenant A/B 的旧截图生成于头像修复之前，仍保留为历史失败证据，不能冒充当前通过。
   当前候选的本地共享 Admin、Platform、PC、H5 和文档截图已人工检查通过；线上 Tenant A/B

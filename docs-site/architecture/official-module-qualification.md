@@ -56,16 +56,19 @@ Module 都必须通过同一套 Tenant 资格；不满足就只能留在派生�
 - **当前已支持**：Core 身份、TenantMember、RBAC、审计、Plugin 安装与 TenantModule 治理；
   原生菜单/RBAC 会交集 ModuleInstallation、TenantModule 和成员权限；源码 fixture 的同步业务命令
   也会在授权后再次检查 ModuleGuard。
-- **当前只是 Tenant 适配，不是可选 Module**：文件、通知、OAuth、支付、会员、任务、导入导出
-  Runtime 已按 Tenant 隔离，但仍由应用 Host 直接拥有，不能从“已隔离”推导为“已可安装/
-  可停用”。共享文件基础设施也不应因某个业务 Module 停用而整体关闭。
+- **当前实现中，待资格验证**：文件、通知、OAuth、支付、会员、任务、导入导出已经拆出
+  独立 manifest、Plugin、Provider、路由、菜单/权限和前端 contribution，并在入口处使用
+  TenantModule Guard。真实数据库、Tenant A/B 和停用负向资格尚未在本候选运行，不能从静态实现
+  直接推导为已发布能力。共享文件基础设施仍不应因某个业务 Module 停用而整体关闭。
 - **当前候选已通过的专项**：Article 已形成 manifest、权限/菜单目录、管理端 contribution、
   ModuleInstallation/TenantModule Guard、Host 绑定解析和会员收藏公开查询合同；PC/UniApp
   静态停用合同、Plugin/Module 和 Web 类型检查、真实数据库、Tenant A/B 隔离、停用负向以及
-  共享 Admin/Tenant A/Tenant B 页面浏览器资格均有证据。该结论只覆盖 Article 专项，不代表
-  通用任务、worker、外部回调和模块文件入口合同已经完成。
-- **推荐新增**：把候选能力按稳定 manifest 拆成官方可选 Module，并逐一补齐 HTTP/内部命令、
-  入队和 worker 执行、外部回调、模块专属文件入口的统一 Guard，以及独立 Provider、版本和浏览器验收。
+  共享 Admin/Tenant A/Tenant B 页面浏览器资格均有证据。当前随仓库交付的两个 Module
+  没有业务专属 worker、外部回调或模块文件入口，因此这些入口不存在待迁移的现有消费者。
+  这条事实不降低未来 Module 的资格要求：一旦 manifest/provider 增加相应入口，就必须
+  在该 Module 中接入统一 Guard 并提供停用负向。
+- **尚缺资格收口**：为 7 个已拆出的官方 Module 补真实数据库、Tenant A/B、停用负向和受影响
+  浏览器证据；未来新增任务、回调或模块专属文件入口时，仍必须在对应 Module 内采用统一 Guard。
 - **示例模板**：`fixture.delivery-record` 用于演示表、合同、权限、菜单和前端 contribution，不进入生产默认 lock。
 - **暂不建议**：DCS 的 Party、Store、Warehouse、Supplier Relationship、Product、Pricing、Inventory、Procurement、Trade；这些属于派生应用。
 - **仅迁移需要**：legacy Admin/Role/Dept 映射、双写、镜像和旧 bootstrap；不允许出现在新装 Runtime。
@@ -78,9 +81,9 @@ DCS 或其他派生应用中重复这套门禁。
 | 缺口 | 已经能做什么 | 为什么阻断下游 | 完成条件 |
 | --- | --- | --- | --- |
 | Module HTTP/内部命令统一入口 | fixture 同步命令已使用 ModuleGuard | root、system actor 或无权限型命令不能只依赖菜单/RBAC | 正式 Module 的每个入口命中同一 Guard，并有停用负向测试 |
-| 模块任务与定时任务 | 共享调度器已有 TenantContext 和 Tenant active 检查；可调度命令必须在 `config/console.php` 声明 `module_key`；Core 导入导出 worker 在 handler 前复核 Tenant 状态 | Core TaskJob 的签名 envelope 尚未携带通用 `module_key`，业务模块任务仍不能声明并由 worker 统一复核 | 为业务 worker envelope 增加可信 Module 身份，并在停用后拒绝新执行 |
-| 模块外部回调 | 支付/公众号 Core Host 已通过 `verifiedModuleCallback()` 在验签、Tenant 解析后执行 `core` Guard | Core Host 绑定仍不是可停用业务 Module；业务 Module 的绑定记录尚未携带可信 `module_key` | 业务 Module 的可信绑定携带 module key，验签后、处理前 Guard，并有停用负向 |
-| 模块专属文件入口 | 共享上传/素材已有 Tenant namespace | 共享基础设施不能整体关闭，模块下载/上传仍需自己的入口 Guard | 模块 Controller 在调用共享文件服务前 Guard |
+| 模块任务与定时任务 | 共享调度器已有 TenantContext 和 Tenant active 检查；可调度命令必须在 `config/console.php` 声明 `module_key`；Core 导入导出 worker 在 handler 前复核 Tenant 状态 | 当前 Article/Fixture 没有业务 worker；Core TaskJob 的通用 envelope 仍是 Host 级能力，不能把它误写成“所有未来 Module 已自动具备” | 第一个 Module 声明 worker 时，在其 handler 注册处绑定可信 Module key，并增加停用负向 |
+| 模块外部回调 | 支付/公众号 Core Host 已通过 `verifiedModuleCallback()` 在验签、Tenant 解析后执行 `core` Guard | 当前没有业务 Module 回调消费者；Core 绑定不能冒充可停用业务 Module | 第一个 Module 声明回调时，绑定可信 Module key，验签后、处理前 Guard，并增加停用负向 |
+| 模块专属文件入口 | 共享上传/素材已有 Tenant namespace；当前没有业务 Module 专属文件 Controller | 共享基础设施不能整体关闭；只有新增专属入口时才需要额外 Module Guard | 第一个 Module 声明专属上传/下载时，在 Controller 调用共享文件服务前 Guard |
 | 两 Module 可运行示例 | Contracts 目录和装配模式存在 | 不能证明真实跨模块 DTO/事务/失败合同 | 两个最小 Module 的命令、查询和禁止直表测试 |
 
 这些缺口不会阻塞 Core、Platform 或现有应用 Host 的 Tenant 隔离，但会阻塞任何能力被宣称为

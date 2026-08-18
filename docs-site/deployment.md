@@ -64,8 +64,8 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 仓库内的 `scripts/deploy-release` 已随 `v2.0.1` 源码 Release 交付。它使用当前检出的控制脚本读取资源登记，
 但实际归档和部署的代码始终来自命令中指定的 annotated release tag。正式 `v2.0.0` 源码附件
 本身不包含这个后续加入的控制脚本；部署该版本时，应在含有脚本的当前仓库中执行命令，不能在
-服务器上继续调用旧脚本或依赖旧 Git 工作树。下面的命令是后续独立部署工作流的操作参考，
-不表示线上 Standalone 与 Multi-tenant 已经完成正式生产证明。
+服务器上继续调用旧脚本或依赖旧 Git 工作树。下面的命令既是后续版本的独立部署工作流参考，
+也是当前线上体验部署的可复用入口。
 
 #### 命令参数
 
@@ -242,16 +242,24 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 
 ### 状态说明
 
-2.0.1 已完成正式源码发布。隔离的 `production-candidate` 仍使用独立空库、Compose project、
-origin 和四个域名上线；Platform、公共 Admin、DNS、TLS、Host 保留和反向代理已验证。
-当前生产候选使用登记的人工 Owner 邀请交付模式，已创建第二 Tenant，并完成两个 Tenant
-域名的应用内持续绑定；跨域名或错误 Tenant 账号登录会被拒绝。该线上体验验收不能替代
-从 `v2.0.1` 正式 Release 执行的生产部署、备份、迁移和线上 smoke。
+`post-deployment 正式发布快照`不是新的代码版本或升级脚本，而是部署完成后把实际运行的
+源码 tag/tree、部署模式与资源、数据库迁移账本、服务健康检查、模块安装状态和浏览器 smoke
+证据固定成一份不可变记录。它用于证明“这个版本在这个环境真实运行过”；没有这份记录时，
+只能说源码 Release 已发布或体验部署已完成，不能把线上运行事实冒充为源码版本本身。
+
+2.0.1 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
+`production-candidate` Multi-tenant 线上体验部署。两套 Compose 的 `.release-tag` 均为
+`v2.0.1`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
+Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Tenant A/B 并完成两个 Tenant
+域名的应用内持续绑定；共享 Admin、Tenant A、Tenant B 浏览器矩阵通过，截图人工检查无破图、
+加载残留、重叠或不可点击菜单。该记录是 post-deployment 体验证据，不改写
+`docs/product-status/releases/v2.0.1.json` 的 source-only 历史快照。
 
 | 候选体验入口 | 地址 |
 | --- | --- |
 | 实例平台 | `https://pa-platform.007345.xyz/platform/` |
 | 公共管理端 | `https://pa-admin.007345.xyz/admin/` |
+| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` |
 | Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` |
 | Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` |
 

@@ -83,11 +83,12 @@ while IFS= read -r path; do
   fi
 
   case "$path" in
-    server/app/platform/service/plugin/*|server/app/command/Plugin*.php|server/app/Modules/Fixture/DeliveryRecord/*|server/app/Modules/Official/Article/*|server/config/modules.php|server/resources/schemas/plugin.schema.json|server/database/migrations/20260814_plugin_module_lifecycle.sql)
+    server/app/platform/service/plugin/*|server/app/command/Plugin*.php|server/app/Modules/Fixture/DeliveryRecord/*|server/app/Modules/Official/*|server/route/official_*.php|plugins/*|plugins.lock|server/config/modules.php|server/resources/schemas/plugin.schema.json|server/database/migrations/20260814_plugin_module_lifecycle.sql|server/database/migrations/20260818-official-module-permission-ownership.sql)
       select_test server/tests/Productization/PluginArtifactContractTest.php
       select_test server/tests/Productization/PluginModuleContractTest.php
       select_test server/tests/Productization/PluginLifecycleMigrationContractTest.php
       select_test server/tests/Productization/OfficialArticleModuleContractTest.php
+      select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
       ;;
     server/app/platform/controller/PlatformTenantController.php|server/app/platform/service/PlatformTenantQueryService.php|server/tests/Multitenancy/PlatformTenantReadApiTest.php)
       select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php

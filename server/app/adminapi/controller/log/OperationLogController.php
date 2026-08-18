@@ -8,6 +8,8 @@ use app\adminapi\logic\log\OperationLogLogic;
 use app\adminapi\service\AdminPermissionService;
 use app\common\service\async\TaskImportExportRuntime;
 use app\common\service\audit\OperationLogTenantContext;
+use app\common\service\module\ModuleExecutionContext;
+use app\common\service\module\ModuleExecutionGuard;
 use PDO;
 use think\facade\Db;
 
@@ -16,6 +18,9 @@ class OperationLogController extends BaseAdminController
     public function lists()
     {
         try {
+            if ((int)$this->request->get('export', 0) > 0) {
+                $this->assertExportModule();
+            }
             $res = OperationLogLogic::lists(
                 OperationLogTenantContext::member($this->request),
                 $this->request->get()
@@ -90,6 +95,21 @@ class OperationLogController extends BaseAdminController
             throw new \RuntimeException('ASYNC_DATABASE_UNAVAILABLE');
         }
         return TaskImportExportRuntime::fromConfig($pdo);
+    }
+
+    private function assertExportModule(): void
+    {
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('ASYNC_DATABASE_UNAVAILABLE');
+        }
+        (new ModuleExecutionGuard($pdo, 'official.import-export'))->assertEnabled(
+            ModuleExecutionContext::admin(
+                'official.import-export',
+                OperationLogTenantContext::member($this->request),
+                'http.admin.export',
+            ),
+        );
     }
 
     private function safeError(\Throwable $exception): string
