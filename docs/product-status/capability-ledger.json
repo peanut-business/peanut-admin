@@ -10,7 +10,7 @@
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "v2.1.0 官方可选 Module 候选已完成固定 P0-E 7/7，具备正式源码发布条件。当前收口工作是创建不可变 Release、执行两套登记部署升级并封存 post-deployment 快照；跨 Module 可运行示例仍是后续产品化任务。"
+    "summary": "v2.1.0 已完成源码发布但发现 canonical init.sql 基线漂移，不能从 v2.0.1 原地升级；当前 v2.1.1 修复候选正在进行受影响的升级资格、正式发布、两套登记部署和 post-deployment 快照收口。"
   },
   "capabilities": [
     {
@@ -575,7 +575,7 @@
       "name": "2.0 发布后部署与演示闭环",
       "area": "release",
       "status": "in_progress",
-      "summary": "v2.1.0 固定候选已完成 P0-E 7/7，当前进入正式源码 Release、两套登记部署升级和 post-deployment 快照收口。部署前提是 Release tag、远端 main 身份和已登记资源租约一致。",
+      "summary": "v2.1.0 源码 Release 已发布但因 init.sql 基线漂移不能从 v2.0.1 升级；v2.1.1 修复候选正在进行受影响的升级资格、两套登记部署和 post-deployment 快照收口。",
       "acceptance": [
         "从不可变 v2.0.0 tag 对登记目标执行非交互 fresh 或同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
         "Standalone 与 Multi-tenant 各形成一个独立部署、数据库、域名和最小浏览器证据",
@@ -606,8 +606,8 @@
         "PA-NATIVE-001"
       ],
       "blockers": [
-        "v2.1.0 annotated tag/GitHub Release 尚未创建",
-        "两套登记部署尚未完成 v2.1.0 升级",
+        "v2.1.1 annotated tag/GitHub Release 尚未创建",
+        "两套登记部署尚未完成 v2.1.1 部署",
         "post-deployment 正式快照尚未封存"
       ],
       "paths": [
@@ -623,7 +623,7 @@
       "area": "plugins",
       "status": "in_progress",
       "status": "verified",
-      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；固定候选 P0-E 已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格。跨 Module 可运行示例不属于本次 Release 阻塞项。",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.0 固定候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格，v2.1.1 仅修复 canonical init.sql 基线身份。跨 Module 可运行示例不属于本次 Release 阻塞项。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",

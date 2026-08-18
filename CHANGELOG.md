@@ -3,6 +3,26 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [2.1.1] - 2026-08-18
+
+### Fixed
+
+- Restored the immutable 2.0.1 `init.sql` baseline checksum. The official Module
+  permission ownership change remains in its additive migration, so existing 2.x
+  databases can upgrade without rewriting their canonical baseline identity.
+
+### Upgrade notes
+
+- Existing `v2.0.1` installations must upgrade directly to `v2.1.1`; do not use
+  the `v2.1.0` transition, which is rejected by the baseline checksum guard.
+- Fresh `v2.1.0` installations may upgrade to `v2.1.1` without another schema
+  change. Both supported paths still require the registered paired backup gate.
+
+### Release boundaries
+
+- This patch does not change the seven official Module Runtime contracts, publish
+  new Core packages, or add DCS/SaaS capabilities.
+
 ## [2.1.0] - 2026-08-18
 
 ### Added
