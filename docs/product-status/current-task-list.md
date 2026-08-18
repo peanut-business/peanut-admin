@@ -30,7 +30,7 @@ Peanut Admin `v2.0.1` 已完成正式源码发布，脚手架可以被派生应�
 | T04 | 头像 fallback 与共享浏览器验收 | 已完成 | 空值/加载失败 fallback、用户菜单、共享 Admin/Tenant A/Tenant B 截图人工检查通过 | 无 |
 | T05 | 文档与实现事实对照 | 已完成 | 当前版本、部署边界、Module 缺口和历史材料已重新分类 | 本页和公开入口同步 |
 | T06 | 文档状态收口 | 已完成 | 当前入口已统一到 v2.0.1；历史证据保留，docs-site 构建通过 | 无 |
-| T07 | Module 统一执行授权合同 | 部分完成 | `ModuleExecutionContext/Guard` 已接入 Fixture 和 Article 管理/公开入口；任务、worker、回调、模块文件入口仍待迁移 | 继续采用到非 HTTP 入口，并补齐每类入口的停用负向 |
+| T07 | Module 统一执行授权合同 | 部分完成 | HTTP 管理/公开入口已接入；定时任务要求命令声明 `module_key` 并在执行前复核 Tenant/Module 状态；Core 导入导出 worker 已通过 `ModuleAwareTaskHandler` 在 handler 前复核；通用业务 worker envelope、外部回调、模块文件入口仍待迁移 | 将同一合同继续采用到业务 worker、回调和模块专属文件入口，并补齐停用负向 |
 | T08 | Article 官方 Module 专项资格 | 已完成（候选） | 当前候选已完成真实数据库安装、Tenant A/B 页面与数据隔离、停用负向和共享 Admin/Tenant A/Tenant B 浏览器截图；证据见 `output/playwright/article-module/b0ef43d/summary.json` | 随候选合入后冻结为发布快照；不把它扩大为通用 Module 全入口合同 |
 | T09 | v2.0.1 线上 Standalone 部署 | 未开始 | 发布脚本和资源登记已具备，尚未对线上目标执行 | fresh 部署、备份、TLS、smoke 和访问交付 |
 | T10 | v2.0.1 线上 Multi-tenant 部署 | 未开始 | 多租户本地候选已通过，线上目标尚未执行 | fresh 部署、域名/Host、Tenant A/B smoke 和访问交付 |

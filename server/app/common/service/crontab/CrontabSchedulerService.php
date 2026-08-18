@@ -6,9 +6,13 @@ namespace app\common\service\crontab;
 use app\common\enum\CrontabEnum;
 use app\common\model\Crontab;
 use app\common\service\CrontabCommandService;
+use app\common\service\module\ModuleExecutionContext;
+use app\common\service\module\ModuleExecutionGuard;
 use app\common\service\tenant\TenantScope;
 use Cron\CronExpression;
 use think\facade\Console;
+use think\facade\Db;
+use PDO;
 
 final class CrontabSchedulerService
 {
@@ -101,6 +105,17 @@ final class CrontabSchedulerService
         try {
             $command = trim((string)($item['command'] ?? ''));
             CrontabCommandService::assertTenantAware($command);
+            $moduleKey = CrontabCommandService::moduleKey($command);
+            if ($moduleKey === null) {
+                throw new \RuntimeException('定时任务所属模块未注册');
+            }
+            $pdo = Db::connect()->connect();
+            if (!$pdo instanceof PDO) {
+                throw new \RuntimeException('定时任务数据库不可用');
+            }
+            (new ModuleExecutionGuard($pdo, $moduleKey))->assertScheduled(
+                ModuleExecutionContext::scheduled($moduleKey, $scope, 'scheduler.execute'),
+            );
             $params = (($item['params'] ?? '') !== '') ? explode(' ', (string)$item['params']) : [];
             ScheduledTenantContext::run($scope, static function () use ($command, $params): void {
                 if (self::$dispatcher !== null) {

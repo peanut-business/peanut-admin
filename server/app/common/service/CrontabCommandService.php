@@ -30,8 +30,22 @@ class CrontabCommandService
     public static function assertTenantAware(string $command): void
     {
         self::assertAllowed($command);
-        if (!in_array($command, self::TENANT_AWARE_COMMANDS, true)) {
+        if (!in_array($command, self::TENANT_AWARE_COMMANDS, true) || self::moduleKey($command) === null) {
             throw new \RuntimeException('定时任务命令尚未采用可信租户上下文');
         }
+    }
+
+    public static function moduleKey(string $command): ?string
+    {
+        $key = (array) config('console.module_commands', []);
+        $module = $key[trim($command)] ?? null;
+        if ($module === null || trim((string) $module) === '') {
+            return null;
+        }
+        $module = trim((string) $module);
+        if (preg_match('/^[a-z0-9][a-z0-9._-]{1,127}$/D', $module) !== 1) {
+            throw new \RuntimeException('定时任务所属模块标识无效');
+        }
+        return $module;
     }
 }

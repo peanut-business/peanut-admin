@@ -38,6 +38,33 @@ final readonly class ModuleExecutionGuard
         $this->guard->assertTenant($context->tenantId, $this->moduleKey, $now);
     }
 
+    public function assertScheduled(ModuleExecutionContext $context): void
+    {
+        $this->assertModule($context);
+        $this->assertBackgroundTenant($context);
+    }
+
+    public function assertWorker(ModuleExecutionContext $context): void
+    {
+        $this->assertModule($context);
+        $this->assertBackgroundTenant($context);
+    }
+
+    private function assertBackgroundTenant(ModuleExecutionContext $context): void
+    {
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        if (in_array($this->moduleKey, ['core', 'platform'], true)) {
+            $statement = $this->pdo->prepare("SELECT status FROM pa_tenant WHERE id = :tenant_id LIMIT 1");
+            $statement->execute(['tenant_id' => $context->tenantId]);
+            if ($statement->fetchColumn() !== 'active') {
+                throw new ModuleException('CONTEXT_TENANT_REQUIRED', 'Tenant is not active.');
+            }
+            return;
+        }
+        $this->guard->assertDeployment($this->moduleKey);
+        $this->guard->assertTenant($context->tenantId, $this->moduleKey, $now);
+    }
+
     public function assertAdminPermission(
         ModuleExecutionContext $context,
         string $permission,

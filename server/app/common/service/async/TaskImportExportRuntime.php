@@ -77,12 +77,16 @@ final readonly class TaskImportExportRuntime
             $workerId,
             new PdoTaskJobRepository($this->pdo),
             new TaskHandlerRegistry([
-                new ImportExportTaskHandler(new CsvOperationRunner(
-                    new PdoImportExportRepository($this->pdo),
-                    $this->providers(),
-                    $this->files(),
-                    new PdoAuditRepository($this->pdo),
-                )),
+                new ModuleAwareTaskHandler(
+                    $this->pdo,
+                    'core',
+                    new ImportExportTaskHandler(new CsvOperationRunner(
+                        new PdoImportExportRepository($this->pdo),
+                        $this->providers(),
+                        $this->files(),
+                        new PdoAuditRepository($this->pdo),
+                    )),
+                ),
             ]),
             new JobHandlerAdapter(
                 new TrustedEnvelopeCodec($this->signingKey),
