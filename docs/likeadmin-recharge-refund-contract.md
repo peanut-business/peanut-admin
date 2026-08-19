@@ -1,7 +1,9 @@
 # LikeAdmin 1.9.4 充值与退款契约
 
 > 任务：F02 充值与退款业务  
-> 状态：已完成，2026-08-01 双系统验收与隔离夹具清理通过  
+> 状态：已完成（历史 F02 单次全额退款基线），2026-08-01 双系统验收与隔离夹具清理通过
+>
+> 部分/多次退款扩展：实现中（数据库资格阻塞，暂后置）；不属于下方 F02 通过项。
 > 契约来源：LikeAdmin 1.9.4 后端、前端、安装 SQL 与退款查询命令的 CodeGraph/源码只读盘点
 
 ## 1. 实施边界与结论
@@ -9,7 +11,7 @@
 F02 复刻以下业务能力：
 
 - 充值记录筛选、分页、导出和退款入口；
-- 已支付充值单的部分退款、全额退款和同一订单多次退款；
+- 已支付充值单的首次全额退款；
 - 失败退款基于同一退款记录重试；
 - 退款记录、状态统计和每次渠道尝试日志；
 - 用户余额、累计充值金额和账户流水的一次性联动；
@@ -23,7 +25,7 @@ Peanut 保持现有 ThinkPHP `Controller → Validator → Logic → Model/Servi
 | API | 方法 | 权限字符 | 用途 |
 |---|---|---|---|
 | `/adminapi/recharge.recharge/lists` | GET | `recharge.recharge/lists` | 充值记录 |
-| `/adminapi/recharge.recharge/refund` | POST | `recharge.recharge/refund` | 部分/全额退款 |
+| `/adminapi/recharge.recharge/refund` | POST | `recharge.recharge/refund` | 首次全额退款（历史基线） |
 | `/adminapi/recharge.recharge/refundAgain` | POST | `recharge.recharge/refundAgain` | 失败重试 |
 | `/adminapi/finance.refund/record` | GET | `finance.refund/record` | 退款记录 |
 | `/adminapi/finance.refund/log` | GET | `finance.refund/log` | 退款尝试日志 |
@@ -68,7 +70,7 @@ pay_status_text, pay_way_text
 - `pay_time` 未支付时为空字符串，否则为格式化时间；
 - `create_time` 为格式化时间；
 - 只有 `pay_status=1` 的记录显示退款入口；
-- `refund_status=1` 表示订单已有退款记录，是否还能退款以 `refundable_amount` 为准。该字段不是最终渠道成功状态。
+- `refund_status=1` 表示已发起退款，退款入口禁用。该字段不是最终渠道成功状态。
 
 
 正常列表返回 `lists/count/page_no/page_size/extend`，其中 `extend=[]`。Peanut 只保留自身全局 envelope 差异，业务字段和口径与参考一致。
@@ -88,7 +90,9 @@ page_start, page_end, file_name
 充值单号、用户昵称、充值金额、支付方式、支付状态、支付时间、下单时间
 ```
 
-## 4. 部分与多次退款
+## 4. 增量问题：部分与多次退款（实现中，数据库资格阻塞）
+
+> 本节是后续目标契约，不是 F02 已通过能力。2026-08-20 在登记的 `audit20b` 现场验证 `30.00` 首笔及同一幂等 key 重放后，`70.00` 第二笔未通过；预期的两条退款记录、两条余额流水和累计金额断言未成立。当前最可能的阻塞点是 `pa_member_balance_log` 仍以 `(tenant_id, source_sn)` 唯一，而每笔退款沿用充值订单号作为 `source_sn`。该归因仍需代码修复后按失败组重跑确认。
 
 ### 4.1 请求和参考校验
 
@@ -135,7 +139,7 @@ remark = 充值订单退款
 
 退款额度由订单行锁与累计金额校验共同保证；每笔退款记录、余额流水和渠道日志独立保存。相同请求使用 `Idempotency-Key` 防止重复创建，不能仅依靠请求前校验。
 
-### 4.3 首次退款状态
+### 4.3 目标退款状态
 
 ```text
 充值单 refund_status：0 未发起 → 1 已发起
@@ -330,7 +334,7 @@ create_time, update_time
 | 退款统计使用 `order_amount` | 部分退款时金额口径错误 | 使用 `refund_amount` |
 | 充值支付回调无状态幂等和行锁 | 重复增加余额和累计充值 | 支付成功回调按订单锁和支付状态幂等处理 |
 
-这些差异属于安全性和可用性修复；退款金额与次数按本节部分/多次退款契约执行，失败仍可基于同一记录重试，真实渠道确认后才成功。
+这些差异属于安全性和可用性修复。首次全额退款基线已验收；部分/多次退款的金额与次数契约仍待数据库资格通过，失败重试和真实渠道确认规则沿用本节目标设计。
 
 ## 10. 验收矩阵
 
