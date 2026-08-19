@@ -45,7 +45,7 @@ fail-closed 处理。两种模式都要为 `TENANT_IDENTIFIER_HMAC_KEY` 与
 
 首次安装必须提供 `ADMIN_INITIAL_EMAIL` 和 `ADMIN_INITIAL_PASSWORD`。多租户模式另需
 提供与管理员邮箱不同的
-`PLATFORM_INITIAL_EMAIL` 和至少 12 位、同时含字母与数字的
+`PLATFORM_INITIAL_EMAIL` 和至少 6 位的
 `PLATFORM_INITIAL_PASSWORD`；它们只建立独立 PlatformOperator，不会把该身份加入默认
 Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不写进 Git 或日志。
 
@@ -87,9 +87,9 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 | 环境变量 | 必填场景 | 作用 | 约束 |
 | --- | --- | --- | --- |
 | `PEANUT_GENERATED_ADMIN_EMAIL` | 所有 fresh | 创建首个 Tenant owner | 必须是有效邮箱；不会由脚本猜测或生成 |
-| `PEANUT_GENERATED_ADMIN_PASSWORD` | 所有 fresh | 设置首个 Tenant owner 密码 | 至少 12 位，同时包含字母和数字 |
+| `PEANUT_GENERATED_ADMIN_PASSWORD` | 所有 fresh | 设置首个 Tenant owner 密码 | 至少 6 位 |
 | `PEANUT_GENERATED_PLATFORM_EMAIL` | 多租户 fresh | 创建独立 PlatformOperator | 必须与 Admin 邮箱不同 |
-| `PEANUT_GENERATED_PLATFORM_PASSWORD` | 多租户 fresh | 设置 PlatformOperator 密码 | 至少 12 位，同时包含字母和数字 |
+| `PEANUT_GENERATED_PLATFORM_PASSWORD` | 多租户 fresh | 设置 PlatformOperator 密码 | 至少 6 位 |
 
 演示 overlay 还需要显式设置 `PEANUT_DEMO_MODE=enabled` 和对应的 `PEANUT_DEMO_*` 邮箱、
 共享密码、Tenant Host、文档地址。它们只用于可丢弃的候选站，不是生产应用默认配置。
@@ -98,7 +98,7 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ```bash
 export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
-export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位且同时包含字母和数字>'
+export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 6 位>'
 scripts/deploy-release v2.1.4 --target production --fresh \
   --confirm-destroy production --dry-run
 scripts/deploy-release v2.1.4 --target production --fresh \
@@ -184,7 +184,7 @@ PlatformOperator；multi-tenant 模式必须创建独立 PlatformOperator。
 
 ```bash
 export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 12 位且同时包含字母和数字>'
+export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
 php server/database/install.php
 php server/database/migrate.php --current
 ```
@@ -259,9 +259,9 @@ Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Te
 | 体验入口 | 登录地址 | 账号 | 密码 |
 | --- | --- | --- | --- |
 | 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
-| 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
-| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
-| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `DemoTenant2026Pass` |
+| 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
 | Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
 
 Tenant A/B 是可丢弃候选环境中刻意公开的演示账号；服务端仅在 `PEANUT_DEMO_MODE=enabled`

@@ -36,7 +36,7 @@ final class AdminLogic extends BaseLogic
             'account' => 'require|email|max:255',
             'name' => 'require|length:1,120',
             'avatar' => 'max:512',
-            'password' => 'length:12,128',
+            'password' => 'length:6,128',
             'password_confirm' => 'requireWith:password|confirm',
             'role_id' => 'array',
             'dept_id' => 'array',

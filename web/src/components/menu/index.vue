@@ -84,7 +84,7 @@
   export default defineComponent({
     emits: ['collapse'],
     setup() {
-      const { t } = useI18n();
+      const { t, te } = useI18n();
       const appStore = useAppStore();
       const router = useRouter();
       const route = useRoute();
@@ -212,7 +212,15 @@
 
       const renderLabel = (item: RouteRecordRaw) => [
         renderIcon(item.meta?.icon),
-        h('span', null, t(item.meta?.locale || '')),
+        h(
+          'span',
+          null,
+          (() => {
+            const locale = String(item.meta?.locale || '');
+            if (locale && te(locale)) return t(locale);
+            return String(item.meta?.title || locale || item.name || '');
+          })()
+        ),
       ];
 
       const renderSubMenu = () => {

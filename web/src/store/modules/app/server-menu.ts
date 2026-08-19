@@ -57,6 +57,7 @@ export default function mapServerMenu(
               : staticRoute.meta?.tenantModuleKey,
           requiredPermissions:
             menu.required_permission || staticRoute.meta?.requiredPermissions,
+          title: menu.name || staticRoute.meta?.title,
           hideInMenu:
             Number(menu.is_show ?? 1) === 0 ||
             (!menu.module_key && staticRoute.meta?.hideInMenu === true),

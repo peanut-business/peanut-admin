@@ -34,6 +34,7 @@ import localeSettings from './zh-CN/settings';
 export default {
   'menu.dashboard': '仪表盘',
   'menu.user': '个人中心',
+  'menu.appSetting.website': '网站设置',
   'menu.appSetting.user': '用户设置',
   'menu.decoration': '装修管理',
   'menu.decoration.mobile': '移动端装修',

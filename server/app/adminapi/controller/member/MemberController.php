@@ -61,12 +61,14 @@ class MemberController extends BaseAdminController
     {
         $context = MemberTenantContext::member($this->request);
         $this->validateForTenant($context, $this->request->post(), 'balance');
+        $idempotencyKey = $this->idempotencyKey();
         $r = MemberLogic::adjustBalance(
             $context,
             (int)$this->request->post('id'),
             (float)$this->request->post('amount'),
             (string)$this->request->post('remark', ''),
-            $this->adminId
+            $this->adminId,
+            $idempotencyKey
         );
         return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
     }
@@ -76,8 +78,14 @@ class MemberController extends BaseAdminController
         $params = $this->request->post();
         $context = MemberTenantContext::member($this->request);
         $this->validateForTenant($context, $params, 'adjustMoney');
-        $r = MemberLogic::adjustUserMoney($context, $params, $this->adminId);
+        $r = MemberLogic::adjustUserMoney($context, $params, $this->adminId, $this->idempotencyKey());
         return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
+    }
+
+    private function idempotencyKey(): string
+    {
+        $key = trim((string)$this->request->header('Idempotency-Key', ''));
+        return $key;
     }
 
     private function validateForTenant($context, array $data, string $scene): void

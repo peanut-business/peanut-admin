@@ -9,7 +9,7 @@
 F02 复刻以下业务能力：
 
 - 充值记录筛选、分页、导出和退款入口；
-- 已支付充值单的全额首次退款；
+- 已支付充值单的部分退款、全额退款和同一订单多次退款；
 - 失败退款基于同一退款记录重试；
 - 退款记录、状态统计和每次渠道尝试日志；
 - 用户余额、累计充值金额和账户流水的一次性联动；
@@ -23,7 +23,7 @@ Peanut 保持现有 ThinkPHP `Controller → Validator → Logic → Model/Servi
 | API | 方法 | 权限字符 | 用途 |
 |---|---|---|---|
 | `/adminapi/recharge.recharge/lists` | GET | `recharge.recharge/lists` | 充值记录 |
-| `/adminapi/recharge.recharge/refund` | POST | `recharge.recharge/refund` | 首次退款 |
+| `/adminapi/recharge.recharge/refund` | POST | `recharge.recharge/refund` | 部分/全额退款 |
 | `/adminapi/recharge.recharge/refundAgain` | POST | `recharge.recharge/refundAgain` | 失败重试 |
 | `/adminapi/finance.refund/record` | GET | `finance.refund/record` | 退款记录 |
 | `/adminapi/finance.refund/log` | GET | `finance.refund/log` | 退款尝试日志 |
@@ -68,7 +68,8 @@ pay_status_text, pay_way_text
 - `pay_time` 未支付时为空字符串，否则为格式化时间；
 - `create_time` 为格式化时间；
 - 只有 `pay_status=1` 的记录显示退款入口；
-- `refund_status=1` 表示已发起退款，退款入口禁用。该字段不是最终渠道成功状态。
+- `refund_status=1` 表示订单已有退款记录，是否还能退款以 `refundable_amount` 为准。该字段不是最终渠道成功状态。
+
 
 正常列表返回 `lists/count/page_no/page_size/extend`，其中 `extend=[]`。Peanut 只保留自身全局 envelope 差异，业务字段和口径与参考一致。
 
@@ -87,14 +88,14 @@ page_start, page_end, file_name
 充值单号、用户昵称、充值金额、支付方式、支付状态、支付时间、下单时间
 ```
 
-## 4. 首次退款
+## 4. 部分与多次退款
 
 ### 4.1 请求和参考校验
 
 请求：
 
 ```json
-{"recharge_id": 1}
+{"recharge_id": 1, "refund_amount": "30.00"}
 ```
 
 校验顺序与文案：
@@ -102,21 +103,21 @@ page_start, page_end, file_name
 1. 缺少参数：`参数缺失`；
 2. 充值订单不存在：`充值订单不存在`；
 3. `pay_status != 1`：`当前订单不可退款`；
-4. 已发起退款：`订单已发起退款,退款失败请到退款记录重新退款`；
+4. 退款金额缺失时默认使用当前可退款余额；指定金额必须大于 0 且不超过当前可退款金额；
 5. 用户余额不足：`退款失败:用户余额已不足退款金额`。
 
-F02 只支持整笔充值单全额退款，退款金额等于 `order_amount`。
+同一充值单可按多笔退款记录累计退款；省略 `refund_amount` 时执行剩余金额的全额退款。
 
 ### 4.2 Peanut 原子业务阶段
 
 Peanut 在一个数据库事务中完成以下步骤，并对充值单和会员余额行加排他锁：
 
-1. 重新校验订单存在、已支付且尚未发起退款；
-2. 重新校验可用余额足以完成全额扣减；
+1. 在订单行锁内重新校验订单存在且已支付；
+2. 在同一订单锁内汇总历史退款，计算本次可退款余额并校验可用余额；
 3. 将充值单 `refund_status` 从 0 原子更新为 1；
-4. 用户 `user_money` 和 `total_recharge_amount` 各扣减一次订单金额；
+4. 用户 `user_money` 和 `total_recharge_amount` 各扣减一次本次退款金额；
 5. 写一条 `change_type=101, action=2` 的充值退款余额流水；
-6. 创建该充值单唯一的 `refund_record`，初始状态为 0；
+6. 创建一条独立的 `refund_record`，初始状态为 0；
 7. 创建首次 `refund_log`，初始状态为 0；
 8. 提交本地事务后调用支付渠道。
 
@@ -126,13 +127,13 @@ Peanut 在一个数据库事务中完成以下步骤，并对充值单和会员�
 change_object = 1
 change_type = 101
 action = 2
-change_amount = order_amount
+change_amount = 本次 refund_amount
 left_amount = 扣减后的 user_money
 source_sn = recharge_order.sn
 remark = 充值订单退款
 ```
 
-首次退款幂等由“行锁 + 条件更新 + 充值单唯一退款记录约束”共同保证。相同订单的并发或重复请求最多扣款一次、创建一条 `refund_record`；不得仅依靠请求前校验。
+退款额度由订单行锁与累计金额校验共同保证；每笔退款记录、余额流水和渠道日志独立保存。相同请求使用 `Idempotency-Key` 防止重复创建，不能仅依靠请求前校验。
 
 ### 4.3 首次退款状态
 
@@ -296,7 +297,7 @@ create_time, update_time
 要求：
 
 - `sn` 唯一；
-- `(order_type, order_id)` 唯一，保证一笔充值只有一条主退款记录；
+- `(tenant_id, order_type, order_id, refund_amount, id)` 组合索引支持累计退款查询；同一充值单允许多条退款记录；
 - 用户、状态和创建时间具备查询索引；
 - `refund_msg` 存放最近一次可诊断错误。
 
@@ -326,10 +327,10 @@ create_time, update_time
 | 重试新增日志但不把主记录恢复为 0 | 页面仍显示失败，状态不一致 | 重试开始时主记录和新日志统一为 0 |
 | 支付宝非成功响应可能仍被当成请求成功，轮询又无支付宝分支 | 永久退款中或假成功 | 非成功不得标成功；同步结果明确分类并保留原因 |
 | 微信只处理成功，不归档明确失败终态 | 永久退款中 | 明确失败转 2，未知或处理中才保持 0 |
-| 退款统计使用 `order_amount` | 部分退款时金额口径错误 | 使用 `refund_amount`；当前全额退款结果一致 |
+| 退款统计使用 `order_amount` | 部分退款时金额口径错误 | 使用 `refund_amount` |
 | 充值支付回调无状态幂等和行锁 | 重复增加余额和累计充值 | 支付成功回调按订单锁和支付状态幂等处理 |
 
-这些差异属于安全性和可用性修复，不改变“全额退款、首次只扣一次、失败可基于同一记录重试、真实渠道确认后才成功”的业务契约。
+这些差异属于安全性和可用性修复；退款金额与次数按本节部分/多次退款契约执行，失败仍可基于同一记录重试，真实渠道确认后才成功。
 
 ## 10. 验收矩阵
 

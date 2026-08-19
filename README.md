@@ -70,7 +70,7 @@ cp .env.example .env
 ```dotenv
 DEPLOYMENT_MODE=standalone
 ADMIN_INITIAL_EMAIL=admin@example.com
-ADMIN_INITIAL_PASSWORD=<至少 12 位且同时包含字母和数字>
+ADMIN_INITIAL_PASSWORD=<至少 6 位>
 TENANT_IDENTIFIER_HMAC_KEY=<至少 32 字节的稳定随机值>
 PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 ```
@@ -112,9 +112,9 @@ API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动
 | 入口 | 登录地址 | 账号 | 密码 |
 | --- | --- | --- | --- |
 | v2.1.5 多租户候选 / 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
-| v2.1.5 多租户候选 / 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
-| v2.1.5 多租户候选 / Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
-| v2.1.5 多租户候选 / Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `DemoTenant2026Pass` |
+| v2.1.5 多租户候选 / 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| v2.1.5 多租户候选 / Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| v2.1.5 多租户候选 / Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
 | v2.1.5 Standalone / 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
 | v2.1.5 Standalone / PC | `https://peanut-admin.007345.xyz/pc/` | 按业务会员登录 | 不公开 |
 | v2.1.5 Standalone / H5 | `https://peanut-admin.007345.xyz/mobile/` | 按业务会员登录 | 不公开 |

@@ -55,7 +55,7 @@ description: 用任务导向、参数表和停止线阅读 Peanut Admin 文档�
 
 ```bash
 export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 12 位、含字母和数字>'
+export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
 php server/database/install.php
 ```
 

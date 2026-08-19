@@ -47,7 +47,7 @@ export default {
   'userSetting.form.error.profile.maxLength': 'No more than 200 words',
   'userSetting.SecuritySettings.form.label.password': 'Login Password',
   'userSetting.SecuritySettings.placeholder.password':
-    'Has been set. The password must contain at least six letters, digits, and special characters except Spaces. The password must contain both uppercase and lowercase letters.',
+    'Has been set. The password must contain at least 6 characters.',
   'userSetting.SecuritySettings.form.label.securityQuestion':
     'Security Question',
   'userSetting.SecuritySettings.placeholder.securityQuestion':

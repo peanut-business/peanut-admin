@@ -22,7 +22,10 @@ $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 expectMemberFinance(MemberBalanceService::moneyToCents('10.10') === 1010, 'decimal amount conversion changed');
 expectMemberFinance(MemberBalanceService::moneyToCents(0.1) === 10, 'float amount conversion changed');
 expectMemberFinance(MemberBalanceService::centsToMoney(1010) === '10.10', 'money formatting changed');
-expectMemberFinance(str_contains($balanceService, 'Member::lock(true)'), 'balance owner must lock the member row');
+expectMemberFinance(
+    str_contains($balanceService, 'MemberTenantRepository::members($context)->lock(true)'),
+    'balance owner must lock the Tenant-scoped member row'
+);
 expectMemberFinance(str_contains($balanceService, 'AccountLogLogic::add'), 'balance owner must append a ledger row');
 expectMemberFinance(!str_contains($balanceService, '$member->balance'), 'balance owner must not write a compatibility mirror');
 expectMemberFinance(!str_contains($accountLog, "'after_amount' =>"), 'ledger owner must not write a compatibility mirror');
@@ -102,10 +105,15 @@ $paymentMigration = (string)file_get_contents(
     $serverRoot . '/database/init.sql'
 );
 $refundMigration = (string)file_get_contents(
-    $serverRoot . '/database/init.sql'
+    $serverRoot . '/database/migrations/20260820-recharge-partial-refund.sql'
 );
 expectMemberFinance(str_contains($paymentMigration, 'uk_transaction_id'), 'transaction id unique guard is missing');
-expectMemberFinance(str_contains($refundMigration, 'uk_order_type_order_id'), 'one-refund-per-order guard is missing');
+expectMemberFinance(
+    str_contains($refundMigration, 'idx_refund_record_tenant_order_amount')
+        && str_contains($refundMigration, 'DROP INDEX `uk_refund_record_tenant_order`')
+        && str_contains($refundMigration, 'DROP INDEX `uk_refund_record_order_global`'),
+    'partial-refund cumulative lookup schema is missing'
+);
 
 $rechargeEvidence = json_decode((string)file_get_contents(
     $repositoryRoot . '/output/playwright/s01/recharge-payment-summary.json'

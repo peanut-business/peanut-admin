@@ -48,7 +48,7 @@ flowchart LR
 |---|---|---|---|
 | 登录、管理员、角色、部门、岗位、菜单 | 应用 Logic/Model 完整实现；权限 Host/override 与管理员/RBAC CRUD 均已收口并有应用测试 owner | Kernel 已有多租户身份、会话、组织、RBAC、菜单、审计 | 核心拥有通用原语；应用拥有单租户管理员模型、LikeAdmin URI 语义、CRUD 事务与 ThinkPHP Host；不迁 Tenant schema |
 | 配置、支付配置、渠道配置 | `ConfigService` 与多组 Setting Logic | Settings 已有定义、作用域、校验、密钥保护和 `pa_setting_*` PDO 存储候选 | 应用拥有 key/schema/default 和 `pa_config`；核心候选获准且存储/schema 合同明确后才切换通用用例 |
-| 字典 | `pa_dict_type/pa_dict_data`、LikeAdmin CRUD/状态/选择器与 HTTP/UI 的唯一 Runtime | Tenant 三表、不可变 code、版本追加、ETag/幂等 Reference Codes 候选 | 当前 schema/API 不等价且核心无下游采用授权；PB04-03 保留应用唯一实现，不双写、不 deep import |
+| 字典 | `pa_dict_type/pa_dict_data` 租户 CRUD，加 `pa_system_dict_type/pa_system_dict_data` 只读系统参考码；选择器由应用合并读取 | Tenant 三表、不可变 code、版本追加、ETag/幂等 Reference Codes 候选 | 当前 schema/API 不等价且核心无下游采用授权；PB04-03 保留应用租户 Runtime 与独立系统参考码层，不双写、不 deep import |
 | 文件、素材、存储引擎 | `pa_file*`、公开素材 URL、分类/选择器和 local/qiniu/aliyun/qcloud 唯一 Runtime；`storage` 同时决定 URL 与删除 Provider | Tenant-private `pa_file_object`、archive、delivery grant 与 local-private 候选 | 当前可见性/schema/生命周期不等价且核心无采用授权；应用不双写、不 deep import，产品引用 provenance 延后各表 owner |
 | 定时任务、生成器、导入导出、日志、维护 | Crontab/Generator/OperationLog/System；PB04 已收口任务、XLSX、脱敏审计和只读环境探针 | Tenant Task Job、私有 CSV Import Export、platform Ops Console 候选 | 当前 audience/schema/重试/日志/文件语义不等价且核心无采用授权；应用保留唯一 Runtime，不双写、不 deep import |
 | 通知与短信 | 四个固定验证码 Scene、`NoticeChannelService`、Log/SMS；通用模板/SMTP Runtime 已退出 | Tenant message/outbox/Task 重试型 Notification SMS 与 Integration Security 候选，已发布但无应用采用授权 | PB07 通知切片保留应用唯一 Runtime：产品 scene、频控/消费、短信凭据、Provider 和同步结果均归应用；不升级依赖、不 deep import，未来采用须有新资格与显式决策 |

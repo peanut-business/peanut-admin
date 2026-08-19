@@ -32,16 +32,31 @@ function assertAdditiveMigration(string $file): void
         && preg_match(
             '/^UPDATE `pa_permission` SET `module_key` = CASE .* `updated_at` = TIMESTAMP\(\'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{3})?\'\) WHERE `module_key` = \'peanut\.admin\' AND \(.*\);$/i',
             $normalized
-        ) === 1;
-    if ($permissionOwnershipUpdate) {
+            ) === 1;
+    $websiteRouteUpdate = $migrationName === '20260820-tenant-website-rbac.sql'
+        && preg_match_all('/\bUPDATE\b/i', $normalized, $updateMatches) === 1
+        && str_contains($normalized, "UPDATE `pa_system_menu` SET `paths` = '/app-setting/website', `component` = 'system/config/index'");
+    if ($permissionOwnershipUpdate || $websiteRouteUpdate) {
         preg_match_all('/`([^`]+)`/', $normalized, $identifierMatches);
+        $allowedIdentifiers = $permissionOwnershipUpdate
+            ? ['pa_permission', 'module_key', 'key', 'updated_at']
+            : [
+                'pa_system_menu', 'pid', 'type', 'name', 'icon', 'sort', 'perms', 'paths',
+                'component', 'is_cache', 'is_show', 'is_disable', 'pa_permission', 'key',
+                'module_key', 'description', 'risk_level', 'status', 'manifest_version',
+                'created_at', 'updated_at', 'retired_at', 'pa_role_permission', 'tenant_id',
+                'role_id', 'permission_id', 'granted_by_member_id', 'granted_at', 'pa_role',
+                'is_builtin', 'pa_member_role', 'tenant_member_id', 'pa_tenant_setting',
+                'namespace', 'config_json', 'revision', 'create_time', 'update_time',
+                'pa_tenant', 'id', 'code', 'pa_config', 'value',
+            ];
         foreach (array_unique($identifierMatches[1] ?? []) as $identifier) {
-            if (!in_array($identifier, ['pa_permission', 'module_key', 'key', 'updated_at'], true)) {
+            if (!in_array($identifier, $allowedIdentifiers, true)) {
                 throw new RuntimeException('权限归属迁移修改了未批准的列：' . $identifier);
             }
         }
     }
-    $scanSql = $permissionOwnershipUpdate
+    $scanSql = $permissionOwnershipUpdate || $websiteRouteUpdate
         ? (string)preg_replace('/\bUPDATE\b/i', 'SAFE_PERMISSION_UPDATE', (string)$withoutComments, 1)
         : $sql;
     if (preg_match(
@@ -52,7 +67,7 @@ function assertAdditiveMigration(string $file): void
     ) === 1) {
         throw new RuntimeException('追加迁移包含 fresh baseline 禁止的历史或破坏性操作：' . basename($file));
     }
-    if (preg_match('/\bUPDATE\b/i', $sql) === 1 && !$permissionOwnershipUpdate) {
+    if (preg_match('/\bUPDATE\b/i', $sql) === 1 && !$permissionOwnershipUpdate && !$websiteRouteUpdate) {
         throw new RuntimeException('追加迁移中的 UPDATE 未通过严格白名单：' . basename($file));
     }
 }

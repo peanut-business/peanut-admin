@@ -34,8 +34,9 @@ Tenant B 四个公网 Host 已完成真实浏览器验收。无秘密 post-deplo
 | T10 | v2.1.4 线上 Multi-tenant 部署 | 已完成 | 已按登记的 production-candidate 资源 fresh 部署并叠加演示层；平台、共享 Admin、Tenant A、Tenant B 四个 Host、标题、头像和页面矩阵通过；证据见 `docs/product-status/deployments/v2.1.4-online-experience.json` | 后续版本按同一脚本做受影响升级资格 |
 | T14 | v2.1.5 正式发布与 post-deployment 快照 | 已完成 | `v2.1.5` 已完成 P0-E 7/7、同提交 annotated tag、GitHub Release、生产单租户升级、多租户 Demo fresh 部署和无秘密快照；证据见 `docs/product-status/deployments/v2.1.5-online-experience.json` | 后续版本继续遵守 main-first、固定候选和一次资格规则 |
 | T11 | DCS 业务模块 | 范围外 | Peanut 只提供扩展边界；Party、Product、Inventory、Procurement 等不属于本仓 Runtime | 在 DCS 仓库按 Module 合同实现 |
-| T12 | 跨应用运营平台 | 独立项目 | 已授权独立立项，不进入 Peanut Admin Runtime | 在独立仓库推进 |
+| T12 | 应用运维平台（远程升级与实例运维） | 下一步可执行（无阻塞） | 已解除前置阻塞；明确为基于当前脚手架（create-app）派生的完全独立顶层应用，专注于已部署生产实例的登记、健康巡检、备份存证与签名远程平滑升级 | 在独立工程推进 MVP 切片 |
 | T13 | 完整 SaaS 商业化 | 暂缓 | 套餐、订阅、计费、应用市场不属于当前交付 | 等运营闭环和真实消费者成立后再立项 |
+| T15 | 租户停用全局 Fail-Closed | 暂缓（已识别） | API/管理入口已有 Tenant 状态门禁，但 Nginx 直出 `/uploads/tenant_{id}/` 和未统一挂载状态中间件的公共内容入口仍可能在租户停用后继续可读 | 后续先盘点静态资源交付与公共路由，再决定签名 URL、反向代理鉴权或停用时撤销发布的统一方案 |
 
 ## 旧信息处理建议
 

@@ -148,9 +148,14 @@ export function updateMemberStatus(id: number, status: number) {
 export function adjustMemberBalance(
   id: number,
   amount: number,
-  remark: string
+  remark: string,
+  idempotencyKey = crypto.randomUUID(),
 ) {
-  return axios.post('/api/admin/member/adjustBalance', { id, amount, remark });
+  return axios.post(
+    '/api/admin/member/adjustBalance',
+    { id, amount, remark },
+    { headers: { 'Idempotency-Key': idempotencyKey } },
+  );
 }
 
 export function adjustMemberMoney(data: {
@@ -158,8 +163,10 @@ export function adjustMemberMoney(data: {
   action: 1 | 2;
   num: number;
   remark?: string;
-}) {
-  return axios.post('/api/admin/user.user/adjustMoney', data);
+}, idempotencyKey = crypto.randomUUID()) {
+  return axios.post('/api/admin/user.user/adjustMoney', data, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
 }
 
 // 标签

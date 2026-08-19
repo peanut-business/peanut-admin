@@ -34,6 +34,7 @@ import localeSettings from './en-US/settings';
 export default {
   'menu.dashboard': 'Dashboard',
   'menu.user': 'User Center',
+  'menu.appSetting.website': 'Website Settings',
   'menu.appSetting.user': 'User Settings',
   'menu.decoration': 'Decoration',
   'menu.decoration.mobile': 'Mobile Decoration',

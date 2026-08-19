@@ -101,8 +101,11 @@ validate_email() {
 
 validate_password() {
   local name="$1" value="$2"
-  [[ ${#value} -ge 12 && "$value" =~ [A-Za-z] && "$value" =~ [0-9] ]] \
-    || fail "$name must be at least 12 characters and contain a letter and a digit"
+  if [[ "$DEMO_MODE" == enabled && "$value" == peanut1234 ]]; then
+    return 0
+  fi
+  [[ ${#value} -ge 6 ]] \
+    || fail "$name must be at least 6 characters"
 }
 
 validate_host() {
@@ -202,6 +205,12 @@ if [[ -n "$OVERLAY" ]]; then
 fi
 if [[ "$MODE" == fresh && -z "$OVERLAY" && "$DEMO_MODE" == enabled ]]; then
   fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
+fi
+if [[ "$MODE" == fresh && -n "$OVERLAY" ]]; then
+  [[ "$DEMO_SHARED_PASSWORD" == peanut1234 ]] \
+    || fail 'demo deployments must use the fixed demo password peanut1234'
+  ADMIN_PASSWORD="$DEMO_SHARED_PASSWORD"
+  PLATFORM_PASSWORD="$DEMO_SHARED_PASSWORD"
 fi
 [[ -f "$REGISTRY" ]] || fail "missing resource registry: $REGISTRY"
 command -v git >/dev/null || fail 'git is required'
