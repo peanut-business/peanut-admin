@@ -32,7 +32,12 @@ class RechargeController extends BaseAdminController
         $params = $this->request->post();
         $context = FinanceTenantContext::member($this->request);
         $this->validateForTenant($context, $params, 'refund');
-        [$flag, $message] = RechargeLogic::refund($context, $params, $this->adminId);
+        [$flag, $message] = RechargeLogic::refund(
+            $context,
+            $params,
+            $this->adminId,
+            trim((string)$this->request->header('Idempotency-Key', '')),
+        );
         return $flag ? $this->success($message) : $this->fail($message);
     }
 

@@ -31,8 +31,13 @@ export default {
   'recharge.payStatus.1': '已支付',
 
   'recharge.action.refund': '退款',
-  'recharge.refund.confirm': '确认退款？',
   'recharge.refund.success': '退款请求已提交',
+  'recharge.refund.amount.title': '发起退款',
+  'recharge.refund.amount.prompt': '请输入退款金额，当前最多可退 {amount} 元',
+  'recharge.refund.amount.invalid': '请输入最多两位小数的正数金额',
+  'recharge.refund.amount.range': '退款金额必须在当前可退款范围内',
+  'recharge.refund.amount.confirm': '提交退款',
+  'recharge.refund.amount.cancel': '取消',
 
   'recharge.export.title': '导出设置',
   'recharge.export.confirm': '确认导出',

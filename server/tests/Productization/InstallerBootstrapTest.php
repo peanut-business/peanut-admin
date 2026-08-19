@@ -10,16 +10,20 @@ function installerExpect(bool $condition, string $message): void
     }
 }
 
-foreach (['', 'short1', 'onlyletterslong', '123456789012'] as $weakPassword) {
+foreach (['', '12345'] as $weakPassword) {
     try {
         validateInitialAdminPassword($weakPassword);
         throw new RuntimeException('weak initial password must fail');
     } catch (RuntimeException $exception) {
         installerExpect(
-            $exception->getMessage() === 'ADMIN_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字',
+            $exception->getMessage() === 'ADMIN_INITIAL_PASSWORD 至少 6 位',
             'weak password must fail at the installer boundary'
         );
     }
+}
+
+foreach (['123456', 'abcdef'] as $validPassword) {
+    validateInitialAdminPassword($validPassword);
 }
 
 $website = brandWebsiteDefaults(dirname(__DIR__, 2));

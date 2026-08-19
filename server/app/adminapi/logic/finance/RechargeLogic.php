@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\finance;
 
+use DateTimeImmutable;
+use PDO;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\RefundEnum;
 use app\common\logic\BaseLogic;
@@ -18,9 +20,12 @@ use app\common\service\tenant\TenantScope;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
+use PeanutAdmin\Kernel\Idempotency\IdempotencyKey;
+use PeanutAdmin\Kernel\Idempotency\IdempotencyRecord;
+use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use think\facade\Db;
 
-/** 充值记录查询、首次退款和失败重试。 */
+/** 充值记录查询、部分退款和失败重试。 */
 class RechargeLogic extends BaseLogic
 {
     private const EXPORT_MAX_ROWS = 25000;
@@ -73,26 +78,41 @@ class RechargeLogic extends BaseLogic
     }
 
     /**
-     * 首次全额退款。资格检查在行锁内再次执行，防止并发重复扣款。
+     * 创建一笔部分或全额退款。资格检查在订单行锁内执行，防止并发超额退款。
      * @return array{0:bool,1:string}
      */
-    public static function refund(object $context, array $params, int $adminId): array
+    public static function refund(
+        object $context,
+        array $params,
+        int $adminId,
+        string $idempotencyKey,
+    ): array
     {
+        $idempotency = null;
         Db::startTrans();
         try {
             /** @var RechargeOrder $order */
             $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$params['recharge_id']);
             self::assertRefundableOrder($order);
 
-            $existing = FinanceTenantRepository::records($context)->where([
-                'order_type' => RefundEnum::ORDER_TYPE_RECHARGE,
-                'order_id' => (int)$order->id,
-            ])->lock(true)->findOrEmpty();
-            if (!$existing->isEmpty()) {
-                throw new \RuntimeException('订单已发起退款,退款失败请到退款记录重新退款');
+            $requestedAmount = $params['refund_amount'] ?? null;
+            $requestedCents = $requestedAmount === null || $requestedAmount === ''
+                ? null
+                : MemberBalanceService::moneyToCents((string)$requestedAmount);
+            $idempotency = self::refundIdempotency()->beginTenant(
+                FinanceTenantContext::tenantId($context),
+                $adminId,
+                'recharge.refund.create',
+                IdempotencyKey::fromString($idempotencyKey),
+                self::refundRequestHash((int)$order->id, $requestedCents),
+                new DateTimeImmutable('+24 hours'),
+            );
+            if (!$idempotency->acquiredForExecution()) {
+                Db::commit();
+                return self::replayIdempotentRefund($idempotency);
             }
 
-            $amountCents = MemberBalanceService::moneyToCents((string)$order->order_amount);
+            $amountCents = self::requestedRefundAmountCents($context, $order, $requestedCents);
             $amount = $amountCents / 100;
 
             $order->refund_status = RechargeOrder::REFUND_STATUS_STARTED;
@@ -137,7 +157,9 @@ class RechargeLogic extends BaseLogic
         }
 
         // 渠道调用必须发生在本地原子业务事务提交后，避免渠道已受理而本地整体回滚。
-        return self::requestGatewayRefund($context, $order, $record, $log);
+        $result = self::requestGatewayRefund($context, $order, $record, $log);
+        self::finishRefundIdempotency($idempotency, $result);
+        return $result;
     }
 
     /**
@@ -239,9 +261,76 @@ class RechargeLogic extends BaseLogic
         if ((int)$order->pay_status !== RechargeOrder::PAY_STATUS_PAID) {
             throw new \RuntimeException('当前订单不可退款');
         }
-        if ((int)$order->refund_status === RechargeOrder::REFUND_STATUS_STARTED) {
-            throw new \RuntimeException('订单已发起退款,退款失败请到退款记录重新退款');
+    }
+
+    private static function requestedRefundAmountCents(object $context, RechargeOrder $order, mixed $requested): int
+    {
+        $orderCents = MemberBalanceService::moneyToCents((string)$order->order_amount);
+        $refundedCents = MemberBalanceService::moneyToCents((string)(FinanceTenantRepository::records($context)
+            ->where('order_type', RefundEnum::ORDER_TYPE_RECHARGE)
+            ->where('order_id', (int)$order->id)
+            ->sum('refund_amount') ?? 0));
+        $remainingCents = $orderCents - $refundedCents;
+        if ($remainingCents <= 0) {
+            throw new \RuntimeException('充值订单可退款金额已用尽');
         }
+
+        $amountCents = $requested === null ? $remainingCents : (int)$requested;
+        if ($amountCents <= 0 || $amountCents > $remainingCents) {
+            throw new \RuntimeException('退款金额超过当前可退款金额');
+        }
+
+        $member = FinanceTenantRepository::orders($context, 'ro')
+            ->join('member m', 'm.tenant_id = ro.tenant_id AND m.id = ro.user_id')
+            ->where('ro.id', (int)$order->id)
+            ->field('m.user_money')
+            ->findOrEmpty();
+        if ($member->isEmpty() || MemberBalanceService::moneyToCents((string)$member->user_money) < $amountCents) {
+            throw new \RuntimeException('退款失败:用户余额已不足退款金额');
+        }
+        return $amountCents;
+    }
+
+    private static function refundIdempotency(): PdoIdempotencyRepository
+    {
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('数据库连接不可用');
+        }
+        return new PdoIdempotencyRepository($pdo);
+    }
+
+    private static function refundRequestHash(int $orderId, ?int $amountCents): string
+    {
+        return hash('sha256', json_encode([
+            'recharge_id' => $orderId,
+            'refund_amount_cents' => $amountCents,
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    /** @return array{0:bool,1:string} */
+    private static function replayIdempotentRefund(IdempotencyRecord $idempotency): array
+    {
+        if ($idempotency->replayable()) {
+            $body = $idempotency->responseBody ?? [];
+            return [(bool)($body['success'] ?? false), (string)($body['message'] ?? '操作成功')];
+        }
+        throw new \RuntimeException('退款请求仍在处理中，请稍后查询退款记录');
+    }
+
+    /** @param array{0:bool,1:string} $result */
+    private static function finishRefundIdempotency(?IdempotencyRecord $idempotency, array $result): void
+    {
+        if ($idempotency === null || !$idempotency->acquiredForExecution()) {
+            return;
+        }
+        $repository = self::refundIdempotency();
+        $body = ['success' => $result[0], 'message' => $result[1]];
+        if ($result[0]) {
+            $repository->completeTenant($idempotency->id, 200, $body);
+            return;
+        }
+        $repository->failTenant($idempotency->id, 400, $body);
     }
 
     private static function createRefundLog(
@@ -361,6 +450,9 @@ class RechargeLogic extends BaseLogic
             ->field(
                 'ro.id,ro.sn,ro.order_amount,ro.pay_way,ro.pay_time,'
                 . 'ro.pay_status,ro.create_time,ro.refund_status,'
+                . "COALESCE((SELECT SUM(rr.refund_amount) FROM pa_refund_record rr"
+                . " WHERE rr.tenant_id = ro.tenant_id AND rr.order_type = 'recharge'"
+                . ' AND rr.order_id = ro.id), 0) AS refunded_amount,'
                 . 'u.avatar,u.nickname,u.account'
             );
 
@@ -399,6 +491,10 @@ class RechargeLogic extends BaseLogic
             $row['pay_way'] = (int)$row['pay_way'];
             $row['pay_status'] = (int)$row['pay_status'];
             $row['refund_status'] = (int)$row['refund_status'];
+            $orderCents = MemberBalanceService::moneyToCents((string)$row['order_amount']);
+            $refundedCents = MemberBalanceService::moneyToCents((string)($row['refunded_amount'] ?? 0));
+            $row['refunded_amount'] = MemberBalanceService::centsToMoney($refundedCents);
+            $row['refundable_amount'] = MemberBalanceService::centsToMoney(max(0, $orderCents - $refundedCents));
             $row['pay_way_text'] = [
                 RechargeOrder::PAY_WAY_BALANCE => '余额支付',
                 RechargeOrder::PAY_WAY_WECHAT => '微信支付',

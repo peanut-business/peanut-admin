@@ -87,6 +87,29 @@ CREATE TABLE pa_dict_data (
   CONSTRAINT fk_dict_data_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
   CONSTRAINT fk_dict_data_tenant_type FOREIGN KEY (tenant_id, type_id) REFERENCES pa_dict_type (tenant_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+CREATE TABLE pa_system_dict_type (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  code VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL DEFAULT '',
+  is_disable TINYINT NOT NULL DEFAULT 0,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  create_time INT UNSIGNED NOT NULL DEFAULT 0,
+  update_time INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id), UNIQUE KEY uk_system_dict_type_code (code)
+) ENGINE=InnoDB;
+CREATE TABLE pa_system_dict_data (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  type_code VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL DEFAULT '',
+  value VARCHAR(255) NOT NULL DEFAULT '',
+  sort SMALLINT NOT NULL DEFAULT 0,
+  is_disable TINYINT NOT NULL DEFAULT 0,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  create_time INT UNSIGNED NOT NULL DEFAULT 0,
+  update_time INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id), UNIQUE KEY uk_system_dict_data_type_value (type_code, value),
+  CONSTRAINT fk_system_dict_data_type FOREIGN KEY (type_code) REFERENCES pa_system_dict_type (code)
+) ENGINE=InnoDB;
 SQL);
 }
 

@@ -54,6 +54,7 @@ prepare_env() {
     set_env PLATFORM_PORT 20176
     set_env APP_ENV development
     set_env APP_DEBUG true
+    set_env PEANUT_DEMO_MODE enabled
     set_env PEANUT_DEPLOYMENT_TARGET local-multi-tenant-demo
     set_env DEPLOYMENT_MODE multi-tenant
     set_env PLATFORM_HOSTS platform.peanut-admin.test
@@ -61,9 +62,15 @@ prepare_env() {
     set_env VITE_ALLOWED_HOSTS platform.peanut-admin.test,admin.peanut-admin.test,tenant-a.peanut-admin.test,tenant-b.peanut-admin.test
     set_env OWNER_INVITATION_DELIVERY_MODE manual
     set_env ADMIN_INITIAL_EMAIL owner@local.test
-    set_env ADMIN_INITIAL_PASSWORD 'OwnerLocal2026!'
+    set_env ADMIN_INITIAL_PASSWORD 'peanut1234'
     set_env PLATFORM_INITIAL_EMAIL platform@local.test
-    set_env PLATFORM_INITIAL_PASSWORD 'PlatformLocal2026!'
+    set_env PLATFORM_INITIAL_PASSWORD 'peanut1234'
+    set_env PEANUT_DEMO_TENANT_A_EMAIL tenant-a@local.test
+    set_env PEANUT_DEMO_TENANT_B_EMAIL tenant-b@local.test
+    set_env PEANUT_DEMO_SHARED_PASSWORD 'peanut1234'
+    set_env PEANUT_DEMO_TENANT_A_HOST tenant-a.peanut-admin.test
+    set_env PEANUT_DEMO_TENANT_B_HOST tenant-b.peanut-admin.test
+    set_env PEANUT_DEMO_DOCS_URL http://docs.peanut-admin.test
     ensure_env_value JWT_SECRET "$(openssl rand -hex 32)"
     ensure_env_value TENANT_IDENTIFIER_HMAC_KEY "$(openssl rand -hex 32)"
     ensure_env_value PLATFORM_IDENTIFIER_HMAC_KEY "$(openssl rand -hex 32)"

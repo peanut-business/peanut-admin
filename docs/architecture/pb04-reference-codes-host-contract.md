@@ -10,19 +10,22 @@
 
 ## 1. 决策
 
-PB04-03 保留应用 `pa_dict_type` / `pa_dict_data` 为 Peanut Admin 字典的唯一 Runtime，不切换核心 Reference Codes：
+PB04-03 保留应用 `pa_dict_type` / `pa_dict_data` 为 Peanut Admin 租户扩展字典的唯一管理 Runtime，
+并增加独立的只读系统参考码层 `pa_system_dict_type` / `pa_system_dict_data`；不切换核心 Reference Codes：
 
 - 应用拥有字典类型、数据项、LikeAdmin 字段/状态/删除语义、ThinkPHP HTTP、管理页面和表迁移。
+- 系统参考码层只提供部署级固定枚举读取；系统项由迁移种子维护，租户不能通过字典 CRUD 修改或删除。
+- 业务读取按“系统项 + 当前租户扩展项”合并，重复 `value` 以系统项为准；第一阶段不支持租户覆盖系统项。
 - 核心 `PeanutAdmin\ReferenceCodes\` 仍是 Composer `peanut-admin/core` 内部命名空间，不是独立包；应用不得 deep import。
-- 当前应用没有消费核心 Reference Codes，没有第二套可运行字典实现，也不新增 PHP/Web override slot。
+- 当前应用没有消费核心 Reference Codes；系统参考码层不提供租户 CRUD，也不新增 PHP/Web override slot。
 - 核心候选没有 Peanut Admin 下游采用授权；Alpha.2 包发布资格不能替代独立采用决策。
 
 ## 2. 不等价事实
 
 | 维度 | 应用字典 | 核心 Reference Codes |
 |---|---|---|
-| schema | `pa_dict_type`、`pa_dict_data` 两表；软删；数据冗余 `type_value` | `pa_reference_code_set`、`entry`、`entry_version` 三表 |
-| scope | 单租户产品 Host | Tenant-owned |
+| schema | `pa_dict_type`、`pa_dict_data`（租户扩展）；`pa_system_dict_type`、`pa_system_dict_data`（系统只读） | `pa_reference_code_set`、`entry`、`entry_version` 三表 |
+| scope | 租户扩展按 Tenant 隔离；系统参考码部署级共享 | Tenant-owned |
 | 标识/版本 | 类型标识可编辑并事务同步数据项 | code 不可变、版本追加、退休永久保留 |
 | 并发/API | LikeAdmin CRUD/status envelope | 强 ETag、`Idempotency-Key`、稳定 Problem Details |
 | 权限 | `dict/type/*`、`dict/data/*` | `peanut.reference-codes.read/manage` |
@@ -39,6 +42,8 @@ DictTypeController / DictDataController
   → DictTypeLogic / DictDataLogic
   → DictType / DictData
   → pa_dict_type / pa_dict_data
+
+业务选择器读取：`DictDataLogic::byType` → `SystemDictRepository` + `DictTenantRepository`
 ```
 
 固定现有已验收语义：
@@ -53,7 +58,7 @@ DictTypeController / DictDataController
 
 ## 4. 数据、权限、安全与错误
 
-- schema/migration owner 是应用仓；本切片不改 schema、seed、权限字符或路由。
+- schema/migration owner 是应用仓；系统参考码只允许追加迁移和固定种子，不开放租户写入。
 - 所有管理写接口继续经过 Login、Auth 与 OperationLog middleware；不新增匿名或跨 audience API。
 - 类型改名/占用删除继续使用现有事务与行锁。失败返回现有业务错误 envelope，并保持数据不变。
 - 字典值可能被外部或未入库消费者保存；静态图谱未发现引用不等于可以级联删除，因此默认 fail-closed 拒绝占用类型删除。
@@ -64,11 +69,13 @@ DictTypeController / DictDataController
 允许写入：
 
 - `server/tests/Productization/ReferenceCodesHostTest.php`；
+- `server/app/common/service/dict/SystemDictRepository.php`；
+- `server/database/migrations/20260820-system-dictionary-layer.sql`；
 - `.github/workflows/ci.yml`，仅登记所有权测试；
 - `web/src/views/system/dict/locale/zh-CN.ts`、`en-US.ts`，仅修正删除确认文案；
 - 本合同、`docs/architecture/pb03-ownership-and-migration-gates.md`、`docs/architecture/core-application-capability-graph.md`、`docs/productization-baseline-plan.md`、`AGENTS.md`。
 
-禁止修改应用 Dict Controller/Validate/Logic/Model、数据库、路由、页面行为、核心仓、`vendor/`、`node_modules/` 和其他 PB04/产品领域。若静态检查发现 Runtime 语义与封存证据冲突，停止并另立 Runtime 合同。
+禁止把系统参考码接入核心 Reference Codes、修改 Dict Controller/Validate/Model 的租户 CRUD 语义、开放系统项写接口、修改核心仓、`vendor/`、`node_modules/` 和其他 PB04/产品领域。若静态检查发现 Runtime 语义与封存证据冲突，停止并另立 Runtime 合同。
 
 ## 6. 测试 owner 与最低证据
 
@@ -96,7 +103,7 @@ cd server
 
 ## 7. 停止线
 
-通过只表示应用字典的唯一 owner、核心未消费边界与测试证据已固定。它不批准核心 Reference Codes 下游采用，不修改核心 P1 状态，不迁 Tenant schema，不开始文件/素材、任务、运维或产品字典定义迁移。
+通过只表示应用租户字典与系统参考码层的唯一 owner、核心未消费边界与测试证据已固定。它不批准核心 Reference Codes 下游采用，不修改核心 P1 状态，不迁 Tenant schema，不开始文件/素材、任务、运维或产品字典定义迁移。
 
 ## 8. 实施证据
 

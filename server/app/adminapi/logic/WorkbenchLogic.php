@@ -5,26 +5,27 @@ namespace app\adminapi\logic;
 
 use app\common\logic\BaseLogic;
 use app\common\service\FileService;
-use app\common\service\config\PaConfigWebsiteStore;
+use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class WorkbenchLogic extends BaseLogic
 {
-    public static function index(): array
+    public static function index(TenantContext $context): array
     {
         return [
-            'version' => self::versionInfo(),
+            'version' => self::versionInfo($context),
             'today'   => self::today(),
             'menu'    => self::menu(),
             'visitor' => self::visitor(),
-            'support' => self::support(),
+            'support' => self::support($context),
             'sale'    => self::sale(),
         ];
     }
 
-    public static function versionInfo(): array
+    public static function versionInfo(TenantContext $context): array
     {
-        $website = self::websiteService()->get();
+        $website = self::websiteService($context)->get();
         return [
             'version' => (string) config('project.version', '2.0.1'),
             'website' => $website['official_url'],
@@ -40,10 +41,10 @@ class WorkbenchLogic extends BaseLogic
         ];
     }
 
-    private static function websiteService(): WebsiteConfigService
+    private static function websiteService(TenantContext $context): WebsiteConfigService
     {
         return new WebsiteConfigService(
-            new PaConfigWebsiteStore(),
+            new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
             static fn(string $value): string => FileService::setFileUrl($value),
         );
@@ -74,7 +75,7 @@ class WorkbenchLogic extends BaseLogic
             ['name' => '代码生成器', 'image' => 'menu_generator', 'url' => '/dev-tools/code'],
             ['name' => '素材中心', 'image' => 'menu_file', 'url' => '/system/file'],
             ['name' => '菜单权限', 'image' => 'menu_auth', 'url' => '/system/menu'],
-            ['name' => '网站信息', 'image' => 'menu_web', 'url' => '/system/config'],
+            ['name' => '网站信息', 'image' => 'menu_web', 'url' => '/app-setting/website'],
         ];
 
         return array_map(static function (array $item): array {
@@ -117,9 +118,9 @@ class WorkbenchLogic extends BaseLogic
         ];
     }
 
-    public static function support(): array
+    public static function support(TenantContext $context): array
     {
-        $website = self::websiteService()->get();
+        $website = self::websiteService($context)->get();
         return [
             [
                 'image' => FileService::getFileUrl(

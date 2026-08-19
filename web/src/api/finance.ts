@@ -55,6 +55,8 @@ export interface RechargeRecord {
   pay_status: 0 | 1;
   create_time: string;
   refund_status: 0 | 1;
+  refunded_amount: string;
+  refundable_amount: string;
   avatar: string;
   nickname: string;
   account: string;
@@ -123,10 +125,19 @@ export function exportRecharge(params: RechargeParams) {
   );
 }
 
-export function refundRecharge(rechargeId: number) {
-  return axios.post('/api/admin/recharge.recharge/refund', {
-    recharge_id: rechargeId,
-  });
+export function refundRecharge(
+  rechargeId: number,
+  refundAmount?: number | string,
+  idempotencyKey = crypto.randomUUID(),
+) {
+  return axios.post(
+    '/api/admin/recharge.recharge/refund',
+    {
+      recharge_id: rechargeId,
+      ...(refundAmount === undefined ? {} : { refund_amount: refundAmount }),
+    },
+    { headers: { 'Idempotency-Key': idempotencyKey } },
+  );
 }
 
 // ─── 退款模块 ────────────────────────────────────────────────────────────────

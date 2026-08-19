@@ -13,6 +13,17 @@ const APP_SETTING: AppRouteRecordRaw = {
   },
   children: [
     {
+      path: 'website',
+      name: 'AppSettingWebsite',
+      component: () => import('@/views/system/config/index.vue'),
+      meta: {
+        locale: 'menu.appSetting.website',
+        requiresAuth: true,
+        requiredPermissions: ['config/website'],
+        roles: ['admin'],
+      },
+    },
+    {
       path: 'user',
       name: 'AppSettingUser',
       component: () => import('@/views/app-setting/user/index.vue'),

@@ -11,7 +11,7 @@ use app\common\service\ConfigService;
 use app\common\service\DemoAccountPolicy;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
-use app\common\service\config\PaConfigWebsiteStore;
+use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
@@ -25,7 +25,7 @@ class IndexLogic extends BaseLogic
     public static function getConfigData(TenantContext|TenantSystemContext $context): array
     {
         $domain    = request()->domain();
-        $website = self::websiteService()->get();
+        $website = self::websiteService($context)->get();
         $loginWayRaw = ConfigService::get('login', 'login_way', '[1,2]');
         $loginWay = is_array($loginWayRaw) ? $loginWayRaw : json_decode((string)$loginWayRaw, true);
         if (!is_array($loginWay)) {
@@ -50,7 +50,7 @@ class IndexLogic extends BaseLogic
                 'third_auth' => (int)ConfigService::get('login', 'third_auth', 0),
                 'wechat_auth' => (int)ConfigService::get('login', 'wechat_auth', 0),
             ],
-            'copyright' => self::copyright(),
+            'copyright' => self::copyright($context),
             'site_statistics' => [
                 'clarity_code' => (string)ConfigService::get('site_statistics', 'clarity_code', ''),
             ],
@@ -123,23 +123,23 @@ class IndexLogic extends BaseLogic
         }
     }
 
-    private static function websiteService(): WebsiteConfigService
+    private static function websiteService(TenantContext|TenantSystemContext $context): WebsiteConfigService
     {
         return new WebsiteConfigService(
-            new PaConfigWebsiteStore(),
+            new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
             static fn(string $value): string => FileService::setFileUrl($value),
         );
     }
 
-    private static function copyright(): array
+    private static function copyright(TenantContext|TenantSystemContext $context): array
     {
-        $raw = ConfigService::get('copyright', 'config', '[]');
-        if (is_array($raw)) {
-            return $raw;
-        }
-        $decoded = json_decode((string)$raw, true);
-        return is_array($decoded) ? $decoded : [];
+        $document = \app\common\service\tenant\TenantSettingService::document(
+            $context,
+            'copyright',
+            ['config' => []],
+        );
+        return is_array($document['config'] ?? null) ? $document['config'] : [];
     }
 
     /** 政策协议（type: privacy | service） */

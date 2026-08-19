@@ -6,26 +6,30 @@ namespace app\adminapi\controller\config;
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\config\ConfigLogic;
 use app\adminapi\validate\config\WebsiteValidate;
+use app\common\service\member\MemberTenantContext;
 use InvalidArgumentException;
 
 class ConfigController extends BaseAdminController
 {
     public function getWebsite()
     {
-        return $this->data(ConfigLogic::getWebsite());
+        return $this->data(ConfigLogic::getWebsite(MemberTenantContext::member($this->request)));
     }
 
     public function saveWebsite()
     {
         try {
-            ConfigLogic::saveWebsite($this->request->post());
+            ConfigLogic::saveWebsite(
+                MemberTenantContext::member($this->request),
+                $this->request->post()
+            );
         } catch (InvalidArgumentException $exception) {
             return $this->fail($exception->getMessage());
         }
         return $this->success('操作成功');
     }
 
-    public function getCopyright() { return $this->data(ConfigLogic::getCopyright()); }
+    public function getCopyright() { return $this->data(ConfigLogic::getCopyright(MemberTenantContext::member($this->request))); }
     public function saveCopyright() { return $this->save('copyright', 'saveCopyright'); }
     public function getAgreement() { return $this->data(ConfigLogic::getAgreement()); }
     public function saveAgreement() { return $this->save('agreement', 'saveAgreement'); }
@@ -40,7 +44,11 @@ class ConfigController extends BaseAdminController
     {
         $params = $this->request->post();
         $this->validate($params, WebsiteValidate::class . '.' . $scene);
-        ConfigLogic::$method($params);
+        if ($method === 'saveCopyright') {
+            ConfigLogic::saveCopyright(MemberTenantContext::member($this->request), $params);
+        } else {
+            ConfigLogic::$method($params);
+        }
         return $this->success('操作成功');
     }
 }

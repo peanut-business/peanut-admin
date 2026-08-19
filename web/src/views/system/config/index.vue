@@ -1,8 +1,8 @@
 <template>
   <div class="container">
-    <Breadcrumb :items="['menu.system', 'menu.system.config']" />
+    <Breadcrumb :items="['menu.appSetting', 'menu.appSetting.website']" />
     <el-card class="general-card">
-      <template #header>{{ $t('menu.system.config') }}</template>
+      <template #header>{{ $t('menu.appSetting.website') }}</template>
       <div v-loading="loading" style="width: 100%">
         <el-form
           ref="formRef"

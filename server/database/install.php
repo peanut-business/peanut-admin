@@ -78,10 +78,14 @@ function initialAdminEmail(string $serverDir): string
 
 function validateInitialAdminPassword(string $password): void
 {
-    if (strlen($password) < 12
-        || preg_match('/[A-Za-z]/', $password) !== 1
-        || preg_match('/\d/', $password) !== 1) {
-        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字');
+    if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
+        if ($password !== 'peanut1234') {
+            throw new RuntimeException('演示模式的初始管理员密码必须统一为 peanut1234');
+        }
+        return;
+    }
+    if (strlen($password) < 6) {
+        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 6 位');
     }
 }
 
@@ -113,10 +117,14 @@ function initialPlatformCredentials(string $serverDir, string $adminEmail): ?arr
     $password = $environmentPassword !== false && $environmentPassword !== ''
         ? $environmentPassword
         : ($fileConfig['PLATFORM_INITIAL_PASSWORD'] ?? '');
-    if (strlen((string)$password) < 12
-        || preg_match('/[A-Za-z]/', (string)$password) !== 1
-        || preg_match('/\d/', (string)$password) !== 1) {
-        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 12 位且必须同时包含字母和数字');
+    if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
+        if ((string)$password !== 'peanut1234') {
+            throw new RuntimeException('演示模式的 Platform 初始密码必须统一为 peanut1234');
+        }
+        return ['email' => $email, 'password' => (string)$password];
+    }
+    if (strlen((string)$password) < 6) {
+        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 6 位');
     }
 
     return ['email' => $email, 'password' => (string)$password];
@@ -240,9 +248,17 @@ function initializeCoreIdentity(
         new PasswordHasher()
     );
     $separatePlatformOperator = $platformCredentials !== null;
+    $demoBootstrapPassword = \app\common\service\DemoAccountPolicy::enabled()
+        ? \app\common\service\DemoAccountPolicy::bootstrapPassword()
+        : null;
+    $platformPassword = $demoBootstrapPassword
+        ?? ($platformCredentials['password'] ?? $password);
+    $ownerPassword = $separatePlatformOperator
+        ? ($demoBootstrapPassword ?? $password)
+        : null;
     $platform = $service->bootstrapPlatformOwner(
         $platformCredentials['email'] ?? $email,
-        $platformCredentials['password'] ?? $password,
+        $platformPassword,
         $separatePlatformOperator ? 'Platform Operator' : '超级管理员',
         'fresh-install-platform-owner'
     );
@@ -251,7 +267,7 @@ function initializeCoreIdentity(
         'default',
         'Peanut Admin',
         $email,
-        $separatePlatformOperator ? $password : null,
+        $ownerPassword,
         '超级管理员',
         'fresh-install-default-owner'
     );
@@ -455,6 +471,15 @@ function main(): int
             $adminPassword,
             $platformCredentials
         );
+        if (\app\common\service\DemoAccountPolicy::enabled()) {
+            \app\common\service\DemoAccountPolicy::replaceCredentialHashes(
+                $pdo,
+                array_values(array_filter([
+                    $adminEmail,
+                    $platformCredentials['email'] ?? '',
+                ])),
+            );
+        }
         executeSqlFiles($pdo, $files);
         seedBrandDefaults($pdo, $brandDefaults);
 

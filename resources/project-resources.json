@@ -1025,21 +1025,21 @@
               "purpose": "shared Admin login with Tenant A and Tenant B selection",
               "url": "https://pa-admin.007345.xyz/admin/",
               "account": "tenant-a@pa-demo.example",
-              "password": "DemoTenant2026Pass"
+              "password": "peanut1234"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-tenant-a",
               "purpose": "Tenant A bound Admin login",
               "url": "https://pa-tenant-a.007345.xyz/admin/",
               "account": "tenant-a@pa-demo.example",
-              "password": "DemoTenant2026Pass"
+              "password": "peanut1234"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-tenant-b",
               "purpose": "Tenant B bound Admin login",
               "url": "https://pa-tenant-b.007345.xyz/admin/",
               "account": "tenant-b@pa-demo.example",
-              "password": "DemoTenant2026Pass"
+              "password": "peanut1234"
             }
           ]
         },

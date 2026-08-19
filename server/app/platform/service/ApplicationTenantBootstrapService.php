@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use PDO;
+use app\common\service\config\BrandDefaults;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
 final readonly class ApplicationTenantBootstrapService
@@ -18,6 +19,7 @@ final readonly class ApplicationTenantBootstrapService
         'pa_notice_scene',
         'pa_permission',
         'pa_role_permission',
+        'pa_tenant_setting',
         'pa_transaction_setting',
     ];
 
@@ -188,6 +190,11 @@ SQL);
 
     private function seedSettings(int $tenantId): void
     {
+        $website = json_encode(BrandDefaults::website(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $this->insertIgnore(
+            'INSERT IGNORE INTO pa_tenant_setting (tenant_id,namespace,config_json,revision,create_time,update_time) VALUES (?,\'website\',?,1,0,0)',
+            [$tenantId, $website]
+        );
         $this->insertIgnore(
             'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
             [$tenantId]
@@ -223,7 +230,7 @@ SQL);
             $statement->execute([
                 'tenant_id' => $tenantId,
                 'provider' => $provider,
-                'callback_key' => hash('sha256', "fresh:{$tenantCode}:{$provider}"),
+                'callback_key' => bin2hex(random_bytes(32)),
                 'identity_hash' => hash('sha256', "unconfigured:{$tenantCode}:{$provider}"),
                 'identity_hint' => '',
                 'tenant_scope' => $tenantId,

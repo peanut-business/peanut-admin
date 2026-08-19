@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\service\DemoAccountPolicy;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
@@ -68,15 +69,14 @@ function demoMultiHostList(string $name): array
     return array_values(array_unique($hosts));
 }
 
-function demoMultiOwner(PDO $pdo, int $tenantId, string $email): array
+function demoMultiOwner(PDO $pdo, PdoMembershipRepository $memberships, int $tenantId, string $email): array
 {
     $statement = $pdo->prepare(<<<'SQL'
 SELECT tm.account_id, tm.id AS member_id, tm.display_name, r.id AS role_id,
        c.identifier_normalized AS email, c.secret_hash
 FROM pa_tenant_member tm
 JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
-JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
-JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
+JOIN pa_role r ON r.tenant_id = tm.tenant_id
   AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
 JOIN pa_credential c ON c.account_id = tm.account_id
   AND c.kind = 'email_password' AND c.identifier_type = 'email' AND c.status = 'active'
@@ -90,7 +90,11 @@ SQL);
     if (count($owners) !== 1) {
         throw new RuntimeException("Tenant {$tenantId} does not have exactly one active owner for {$email}");
     }
-    return $owners[0];
+    $owner = $owners[0];
+    if (!$memberships->memberHasRole($tenantId, (int)$owner['member_id'], 'core.tenant-owner')) {
+        $memberships->assignRole($tenantId, (int)$owner['member_id'], (int)$owner['role_id']);
+    }
+    return $owner;
 }
 
 /** @return array{tenant_id:int,account_id:int,member_id:int,role_id:int,email:string} */
@@ -103,7 +107,8 @@ function demoMultiTenant(
     string $name,
     string $email,
     string $password,
-    PasswordHasher $passwords
+    PasswordHasher $passwords,
+    PdoMembershipRepository $memberships
 ): array {
     $statement = $pdo->prepare(
         'SELECT id, name, display_name, status FROM pa_tenant WHERE code = ? ORDER BY id LIMIT 1'
@@ -111,12 +116,13 @@ function demoMultiTenant(
     $statement->execute([$code]);
     $tenant = $statement->fetch(PDO::FETCH_ASSOC);
     if (!is_array($tenant)) {
+        $bootstrapPassword = DemoAccountPolicy::bootstrapPassword();
         $candidate = $bootstrap->provisionTenantOwnerCandidate(
             $platformOperatorId,
             $code,
             $name,
             $email,
-            $password,
+            $bootstrapPassword,
             "{$name} Owner",
             "demo-{$code}-provision"
         );
@@ -141,7 +147,9 @@ function demoMultiTenant(
         }
     }
 
-    $owner = demoMultiOwner($pdo, $tenantId, $email);
+    DemoAccountPolicy::replaceCredentialHashes($pdo, [$email]);
+
+    $owner = demoMultiOwner($pdo, $memberships, $tenantId, $email);
     if (!$passwords->verify($password, (string)$owner['secret_hash'])) {
         throw new RuntimeException("demo Tenant {$code} credential does not match the published password");
     }
@@ -380,6 +388,9 @@ function demoMultiMain(): int
     $tenantAEmail = strtolower(demoMultiRequired('PEANUT_DEMO_TENANT_A_EMAIL'));
     $tenantBEmail = strtolower(demoMultiRequired('PEANUT_DEMO_TENANT_B_EMAIL'));
     $sharedPassword = demoMultiRequired('PEANUT_DEMO_SHARED_PASSWORD');
+    if ($sharedPassword !== 'peanut1234') {
+        throw new RuntimeException('演示租户密码必须统一为 peanut1234');
+    }
     if (filter_var($tenantAEmail, FILTER_VALIDATE_EMAIL) === false
         || filter_var($tenantBEmail, FILTER_VALIDATE_EMAIL) === false
         || $tenantAEmail === $tenantBEmail) {
@@ -463,7 +474,8 @@ function demoMultiMain(): int
             'Tenant A',
             $tenantAEmail,
             $sharedPassword,
-            $passwords
+            $passwords,
+            $memberships
         );
         $tenantB = demoMultiTenant(
             $pdo,
@@ -474,7 +486,8 @@ function demoMultiMain(): int
             'Tenant B',
             $tenantBEmail,
             $sharedPassword,
-            $passwords
+            $passwords,
+            $memberships
         );
         demoMultiEnsureSharedOwner(
             $memberships,

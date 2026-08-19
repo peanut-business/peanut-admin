@@ -6,6 +6,7 @@ namespace app\adminapi\http\middleware;
 use app\adminapi\service\AdminApiAccessRegistry;
 use app\adminapi\service\AdminPermissionService;
 use app\common\service\JsonService;
+use app\common\service\DemoAccountPolicy;
 
 /**
  * 权限中间件（原生 TP 风格）
@@ -33,6 +34,11 @@ class AuthMiddleware
 
         if (!AdminPermissionService::canAccess($request->tenantContext ?? null, $adminInfo, $accessUri)) {
             return JsonService::fail('暂无访问权限', null, 40300);
+        }
+
+        if (in_array(strtoupper((string)$request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)
+            && DemoAccountPolicy::mutationLocked($adminInfo, $accessUri)) {
+            return JsonService::fail('演示账号已锁定关键配置和权限操作', null, 40300);
         }
 
         return $next($request);

@@ -7,44 +7,46 @@ use app\common\logic\BaseLogic;
 use app\common\service\ConfigService;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
-use app\common\service\config\PaConfigWebsiteStore;
+use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
+use app\common\service\member\AuthenticatedMemberContext;
+use app\common\service\tenant\TenantSettingService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class ConfigLogic extends BaseLogic
 {
-    public static function getWebsite(): array
+    public static function getWebsite(AuthenticatedMemberContext|TenantContext $context): array
     {
-        return self::websiteService()->get();
+        return self::websiteService($context)->get();
     }
 
-    public static function saveWebsite(array $params): bool
+    public static function saveWebsite(AuthenticatedMemberContext|TenantContext $context, array $params): bool
     {
-        self::websiteService()->save($params);
+        self::websiteService($context)->save($params);
         return true;
     }
 
-    private static function websiteService(): WebsiteConfigService
+    private static function websiteService(AuthenticatedMemberContext|TenantContext $context): WebsiteConfigService
     {
         return new WebsiteConfigService(
-            new PaConfigWebsiteStore(),
+            new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
             static fn(string $value): string => FileService::setFileUrl($value),
         );
     }
 
-    public static function getCopyright(): array
+    public static function getCopyright(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $value = ConfigService::get('copyright', 'config', '[]');
+        $value = TenantSettingService::document($context, 'copyright', ['config' => []])['config'] ?? [];
         if (is_array($value)) {
             return $value;
         }
-        $decoded = json_decode((string)$value, true);
-        return is_array($decoded) ? $decoded : [];
+        return [];
     }
 
-    public static function saveCopyright(array $params): bool
+    public static function saveCopyright(AuthenticatedMemberContext|TenantContext $context, array $params): bool
     {
-        ConfigService::setManyAtomic('copyright', ['config' => $params['config'] ?? []]);
+        TenantSettingService::replace($context, 'copyright', ['config' => $params['config'] ?? []]);
         return true;
     }
 

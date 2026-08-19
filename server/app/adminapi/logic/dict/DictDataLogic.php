@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\logic\dict;
 
 use app\common\logic\BaseLogic;
+use app\common\service\dict\SystemDictRepository;
 use app\common\service\dict\DictTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
@@ -40,11 +41,29 @@ class DictDataLogic extends BaseLogic
     /** 按类型标识取全部启用数据项（业务前端常用：下拉/枚举） */
     public static function byType(TenantContext $context, string $typeValue): array
     {
-        return DictTenantRepository::data($context)->where('type_value', $typeValue)
+        $system = SystemDictRepository::dataByType($typeValue);
+        $tenant = DictTenantRepository::data($context)->where('type_value', $typeValue)
             ->where('is_disable', 0)
             ->field('id,name,value,sort')
             ->order(['sort' => 'desc', 'id' => 'desc'])
-            ->select()->toArray();
+            ->select()
+            ->toArray();
+        foreach ($tenant as &$row) {
+            $row['source'] = 'tenant';
+        }
+        unset($row);
+
+        $seenValues = [];
+        $merged = [];
+        foreach ([...$system, ...$tenant] as $row) {
+            $value = (string)($row['value'] ?? '');
+            if (isset($seenValues[$value])) {
+                continue;
+            }
+            $seenValues[$value] = true;
+            $merged[] = $row;
+        }
+        return $merged;
     }
 
     public static function detail(TenantContext $context, int $id): array

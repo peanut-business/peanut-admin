@@ -31,8 +31,13 @@ export default {
   'recharge.payStatus.1': 'Paid',
 
   'recharge.action.refund': 'Refund',
-  'recharge.refund.confirm': 'Confirm refund?',
   'recharge.refund.success': 'Refund request submitted',
+  'recharge.refund.amount.title': 'Issue Refund',
+  'recharge.refund.amount.prompt': 'Enter refund amount; up to {amount} is available',
+  'recharge.refund.amount.invalid': 'Enter a positive amount with up to two decimals',
+  'recharge.refund.amount.range': 'Refund amount is outside the available range',
+  'recharge.refund.amount.confirm': 'Submit Refund',
+  'recharge.refund.amount.cancel': 'Cancel',
 
   'recharge.export.title': 'Export Settings',
   'recharge.export.confirm': 'Export',

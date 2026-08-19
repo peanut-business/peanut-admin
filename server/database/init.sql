@@ -2240,13 +2240,23 @@ INSERT INTO pa_system_menu
   (pid,type,name,icon,sort,perms,paths,component,is_cache,is_show,is_disable)
 SELECT (SELECT `id` FROM `pa_system_menu` WHERE `type`='M' AND `paths`='/app-setting' ORDER BY `id` LIMIT 1),'C',seed.name,seed.icon,seed.sort,'',seed.paths,seed.component,0,1,0
 FROM (
-  SELECT '网站设置' name,'icon-desktop' icon,90 sort,'/system/config' paths,'system/config/index' component
+  SELECT '网站设置' name,'icon-desktop' icon,90 sort,'/app-setting/website' paths,'system/config/index' component
   UNION ALL SELECT '用户设置','icon-user',80,'/app-setting/user','app-setting/user/index'
   UNION ALL SELECT '支付设置','icon-payment',70,'/app-setting/pay','app-setting/pay/index'
   UNION ALL SELECT '存储设置','icon-storage',60,'/system/storage','system/storage/index'
 ) seed
 WHERE (SELECT `id` FROM `pa_system_menu` WHERE `type`='M' AND `paths`='/app-setting' ORDER BY `id` LIMIT 1) IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM pa_system_menu m WHERE m.paths=seed.paths);
+INSERT INTO `pa_system_menu`
+  (`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`)
+SELECT 0, 'M', '个人中心', 'icon-user', 40, '', '/user', '', 0, 1, 0
+WHERE NOT EXISTS (SELECT 1 FROM `pa_system_menu` WHERE `type`='M' AND `paths`='/user');
+INSERT INTO `pa_system_menu`
+  (`pid`,`type`,`name`,`icon`,`sort`,`perms`,`paths`,`component`,`is_cache`,`is_show`,`is_disable`)
+SELECT parent.id, 'C', '个人设置', 'icon-user', 100, 'user:setting', '/user/setting', 'user/setting/index', 0, 1, 0
+FROM `pa_system_menu` parent
+WHERE parent.`type`='M' AND parent.`paths`='/user'
+  AND NOT EXISTS (SELECT 1 FROM `pa_system_menu` WHERE `paths`='/user/setting');
 INSERT INTO pa_system_menu
   (pid,type,name,icon,sort,perms,paths,component,is_cache,is_show,is_disable)
 SELECT parent.id,'A',seed.name,'',0,seed.perms,'','',0,1,0
