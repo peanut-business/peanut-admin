@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**已验证**。v2.1.5 已完成 main-first 固定候选、P0-E、同提交 tag、GitHub Release、双部署和无秘密 post-deployment 快照。
+> 总体状态：**已验证**。v2.1.5 已完成固定 tag、P0-E 7/7、GitHub Release、生产单租户升级、多租户 Demo 部署和无秘密 post-deployment 快照；后续版本继续沿用 main-first 固定候选流程。
 >
-> 事实基线：`origin/main@aefc5779c97db1cd17442269e50156baeaa4ba0c`，复核日期：`2026-08-19`。
+> 事实基线：`main@aefc5779c97db1cd17442269e50156baeaa4ba0c`，复核日期：`2026-08-20`。
 
 ### 已验证可用
 
@@ -50,13 +50,8 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
-| `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.5 P0-E 已在 Standalone/Multi-tenant 运行中复核该合同。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
-
-### 已实现或正在验收
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.5 已在同一固定 origin/main 候选完成 P0-E 7/7、annotated tag、GitHub Release、生产单租户升级、多租户 Demo fresh 部署和无秘密 post-deployment 快照；证据见 `docs/product-status/deployments/v2.1.5-online-experience.json`。 |
+| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付。 |
+| `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
 
 ### 暂缓或范围外
 

@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 2.x（当前发布 v2.1.4）的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 2.x（当前发布 v2.1.5）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -11,7 +11,7 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 - 默认一套部署对应一个应用实例，拥有自己的数据库、密钥、文件和生命周期。
 - 一个实例可以有多个 Tenant、客户端和 Module；多个实例不能共享私有业务表。
-- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.1.4。
+- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.1.5。
 - canonical `init.sql` 是完整应用 Schema；`migrations/` 只保存 2.0.0 基线之后的追加变更。
 - 管理身份直接使用 Account/Credential/TenantMember/RBAC，不创建 legacy 映射或兼容 Admin 表。
 - 旧 tag、Release、迁移和升级证据仍可追溯，但不进入当前 Runtime、Schema、create-app 或日常操作路径。
