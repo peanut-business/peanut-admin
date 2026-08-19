@@ -109,19 +109,24 @@ API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动
 
 ## 生产入口
 
-| 入口 | 地址 |
-| --- | --- |
-| 2.0 多租户候选 / 实例平台 | https://pa-platform.007345.xyz/platform/ |
-| 2.0 多租户候选 / 公共管理端 | https://pa-admin.007345.xyz/admin/ |
-| 2.0 多租户候选 / Tenant A 绑定入口 | https://pa-tenant-a.007345.xyz/admin/ |
-| 2.0 多租户候选 / Tenant B 绑定入口 | https://pa-tenant-b.007345.xyz/admin/ |
-| 1.x 历史演示应用 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
-| 1.x 历史演示应用 / PC | https://peanut-admin.007345.xyz/pc/ |
-| 1.x 历史演示应用 / H5 | https://peanut-admin.007345.xyz/mobile/ |
-| 官方文档 | https://peanut-admin-doc.007345.xyz |
+| 入口 | 登录地址 | 账号 | 密码 |
+| --- | --- | --- | --- |
+| v2.1.5 多租户候选 / 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
+| v2.1.5 多租户候选 / 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
+| v2.1.5 多租户候选 / Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
+| v2.1.5 多租户候选 / Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `DemoTenant2026Pass` |
+| v2.1.5 Standalone / 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
+| v2.1.5 Standalone / PC | `https://peanut-admin.007345.xyz/pc/` | 按业务会员登录 | 不公开 |
+| v2.1.5 Standalone / H5 | `https://peanut-admin.007345.xyz/mobile/` | 按业务会员登录 | 不公开 |
+| 官方文档 | `https://peanut-admin-doc.007345.xyz` | 无需登录 | 无 |
 
-正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表 2.0
-入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境，不是 2.0.0 正式生产部署。
+Tenant A/B 是可丢弃候选环境中刻意公开的演示账号；服务端仅在 `PEANUT_DEMO_MODE=enabled`
+时锁定这两个邮箱的密码修改。Platform、bootstrap 和 Standalone 管理员不受该演示锁保护，
+其凭据只通过项目资源登记中的私有引用交接，不写入公开文档。
+
+正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表多租户
+入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境；Standalone 是独立的
+可丢弃演示部署。
 两个 Tenant 域名已完成 DNS、TLS、Host 保留、反向代理和应用内持续绑定；错误 Tenant 账号
 登录会被拒绝。当前体验实例使用登记的人工 Owner 邀请交付模式，不依赖生产邮件 Provider。
 首次部署、
