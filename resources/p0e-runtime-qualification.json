@@ -74,6 +74,27 @@
         "health_check": "scripts/p0e-runtime-qualification run/resume remote administration preflight",
         "fallback": "none; host mysql commands are forbidden",
         "cleanup_responsibility": "not applicable; the tooling runs inside the existing persistent allocation"
+      },
+      {
+        "stable_resource_id": "peanut-admin-p0e-playwright-cli",
+        "purpose": "fixed local Playwright CLI wrapper for the P0-E Chromium browser groups",
+        "environments": ["development", "local-production-preview"],
+        "owner": "Peanut Admin P0-E qualification owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "candidate-worktree/.local/p0e-browser-cli-0.1.18",
+        "service_type": "pinned npm Playwright CLI wrapper",
+        "version": "0.1.18",
+        "package": "@playwright/cli",
+        "relative_path": ".local/p0e-browser-cli-0.1.18/playwright-cli",
+        "credential_ref": null,
+        "data_source": "npm package @playwright/cli@0.1.18",
+        "freshness_requirement": "the fixed wrapper must be executable and its --version output must contain playwright-cli and 0.1.18 before any P0-E resource claim",
+        "health_check": "scripts/p0e-browser-tooling check",
+        "fallback": "none",
+        "cleanup_responsibility": "the candidate worktree owner may remove the ignored .local wrapper and npm cache after evidence capture"
       }
     ]
   }
