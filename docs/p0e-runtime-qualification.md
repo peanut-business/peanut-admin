@@ -20,6 +20,9 @@ create-app、冻结依赖安装、Standalone/Multi-tenant 空库安装、Plugin 
   `peanut-admin-mysql84-development` 容器内运行 MySQL 8.4.10 CLI
 - Production-mode HTTP：`127.0.0.1:20190`
 - Docs preview：`127.0.0.1:20186`
+- Browser CLI：登记资源 `peanut-admin-p0e-playwright-cli`，固定 package
+  `@playwright/cli@0.1.18`，固定候选 worktree 路径
+  `.local/p0e-browser-cli-0.1.18/playwright-cli`
 - Fallback：无
 
 项目日常资源登记为 `resources/project-resources.json`；源仓 Gate 专用的远端管理绑定登记为
@@ -52,7 +55,15 @@ scripts/p0e-runtime-qualification plan \
 
 claim 必须精确绑定固定 resource/environment/endpoint、五个数据库、两种 deployment mode、
 两个端口、worktree、candidate tree、compose project、browser session、output/cache 路径和
-lease proof 目录。缺项或多项都拒绝运行。
+lease proof 目录。`plan` 会在 claim 前检查固定 Browser CLI 的可执行性和版本；缺项或多项都拒绝运行，
+不会启动数据库、容器或生成应用。准备本地工具：
+
+```bash
+scripts/p0e-browser-tooling install
+scripts/p0e-browser-tooling check
+```
+
+P0-E 不扫描其他 worktree 的临时 `pwcli-cache`，也不使用系统 Chrome、用户会话或未登记 fallback。
 
 ## Claim 与运行
 

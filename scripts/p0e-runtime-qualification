@@ -30,11 +30,13 @@ LEASE_TOOL = ROOT / "scripts/project-resource-lease"
 REGISTRY_TOOL = ROOT / "scripts/project-resource-registry"
 INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
 BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
+BROWSER_TOOLING = ROOT / "scripts/p0e-browser-tooling"
 DEVELOPMENT_DATABASE_SYNC = ROOT / "scripts/project-development-database.sh"
 LOCAL_STACK_ENV = ROOT / ".local/stack.env"
 PERSISTENT_DATABASE = "peanut_admin_development"
 RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
+BROWSER_TOOLING_ID = "peanut-admin-p0e-playwright-cli"
 GROUP_RESULT = re.compile(r"^[a-z0-9][a-z0-9.-]{0,63}$")
 
 
@@ -140,6 +142,52 @@ def prepare_database_credentials() -> None:
     os.environ["P0E_DB_PASSWORD"] = values["DB_PASS"]
 
 
+def registered_browser_cli_path(p0e_registry: dict[str, Any] | None = None) -> Path:
+    p0e_registry = p0e_registry or read_json(P0E_REGISTRY_PATH)
+    tooling = p0e_registry.get("resources", {}).get("tooling", [])
+    matches = [item for item in tooling if item.get("stable_resource_id") == BROWSER_TOOLING_ID]
+    if len(matches) != 1:
+        fail(f"registry must contain exactly one {BROWSER_TOOLING_ID}")
+    relative_path = matches[0].get("relative_path")
+    if not isinstance(relative_path, str) or not relative_path.startswith(".local/"):
+        fail("registered P0-E Playwright CLI path must stay inside the candidate .local directory")
+    path = ROOT / relative_path
+    if path.parent == ROOT or path.name != "playwright-cli":
+        fail("registered P0-E Playwright CLI path is invalid")
+    return path
+
+
+def preflight_browser_tooling() -> None:
+    cli = registered_browser_cli_path()
+    if not cli.is_file() or not os.access(cli, os.X_OK):
+        fail(
+            "P0-E Playwright CLI is unavailable before resource claim; "
+            f"run {BROWSER_TOOLING} install"
+        )
+    result = command([str(cli), "--version"], capture=True, check=False)
+    output = (result.stdout + result.stderr).strip()
+    if result.returncode != 0:
+        fail(f"P0-E Playwright CLI failed its preflight: {output[-300:]}")
+    registry = read_json(P0E_REGISTRY_PATH)
+    browser_tools = [
+        item for item in registry.get("resources", {}).get("tooling", [])
+        if item.get("stable_resource_id") == BROWSER_TOOLING_ID
+    ]
+    expected_package = browser_tools[0].get("package") if len(browser_tools) == 1 else None
+    expected_version = browser_tools[0].get("version") if len(browser_tools) == 1 else None
+    if not isinstance(expected_package, str) or not isinstance(expected_version, str):
+        fail("registered P0-E Playwright CLI package identity is invalid")
+    try:
+        wrapper_source = cli.read_text(encoding="utf-8")
+    except OSError as exception:
+        fail(f"P0-E Playwright CLI wrapper cannot be read: {exception}")
+    if f"--package {expected_package}@{expected_version}" not in wrapper_source or expected_version not in output:
+        fail(
+            "P0-E Playwright CLI version mismatch: "
+            f"expected {expected_package}@{expected_version}, got {output[-300:]}"
+        )
+
+
 def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     fixture = read_json(FIXTURE_PATH)
     registry = read_json(REGISTRY_PATH)
@@ -198,6 +246,19 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
             fail(f"registered P0-E administrative tooling disagrees on {key}")
     if admin_tool.get("fallback") != "none; host mysql commands are forbidden":
         fail("P0-E administrative tooling must forbid a host MySQL fallback")
+    browser_matches = [item for item in tooling if item.get("stable_resource_id") == BROWSER_TOOLING_ID]
+    if len(browser_matches) != 1:
+        fail(f"registry must contain exactly one {BROWSER_TOOLING_ID}")
+    browser_tool = browser_matches[0]
+    expected_browser_tool = {
+        "package": "@playwright/cli",
+        "version": "0.1.18",
+        "relative_path": ".local/p0e-browser-cli-0.1.18/playwright-cli",
+        "fallback": "none",
+    }
+    for key, value in expected_browser_tool.items():
+        if browser_tool.get(key) != value:
+            fail(f"registered P0-E Playwright tooling disagrees on {key}")
     browser_hosts = p0e_registry.get("browser_host_binding")
     expected_browser_hosts = {
         "stable_resource_id": "peanut-admin-p0e-browser-hosts",
@@ -318,6 +379,7 @@ def database_names(fixture: dict[str, Any], run_id: str) -> dict[str, str]:
 
 
 def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
+    preflight_browser_tooling()
     fixture, registry, _, admin_tool, browser_hosts = validate_fixture()
     names = database_names(fixture, args.run_id)
     paths = {
@@ -528,15 +590,14 @@ class Runner:
 
     def playwright_cli(self) -> str:
         explicit = os.environ.get("P0E_PLAYWRIGHT_CLI", "")
-        if explicit and Path(explicit).is_file() and os.access(explicit, os.X_OK):
+        registered = registered_browser_cli_path()
+        if explicit:
+            if Path(os.path.realpath(explicit)) != registered or not os.access(explicit, os.X_OK):
+                fail("P0E_PLAYWRIGHT_CLI must equal the registered fixed Playwright CLI path")
             return explicit
-        candidates = sorted(
-            ROOT.glob(".local/pwcli-cache-*/_npx/*/node_modules/.bin/playwright-cli"),
-            key=lambda path: path.stat().st_mtime,
-        )
-        if not candidates or not os.access(candidates[-1], os.X_OK):
-            fail("P0-E Playwright CLI is unavailable; install the registered local browser tooling first")
-        return str(candidates[-1])
+        if not registered.is_file() or not os.access(registered, os.X_OK):
+            fail(f"P0-E Playwright CLI is unavailable; run {BROWSER_TOOLING} install")
+        return str(registered)
 
     def remote_docker(
         self,
