@@ -248,21 +248,25 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 证据固定成一份不可变记录。它用于证明“这个版本在这个环境真实运行过”；没有这份记录时，
 只能说源码 Release 已发布或体验部署已完成，不能把线上运行事实冒充为源码版本本身。
 
-2.1.4 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
+2.1.5 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
 `production-candidate` Multi-tenant 线上体验部署。两套 Compose 的 `.release-tag` 均为
-`v2.1.4`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
+`v2.1.5`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
 Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Tenant A/B 并完成两个 Tenant
 域名的应用内持续绑定；共享 Admin、Tenant A、Tenant B 浏览器矩阵通过，截图人工检查无破图、
 加载残留、重叠或不可点击菜单。该记录是 post-deployment 体验证据，不改写
-`docs/product-status/releases/v2.1.4.json` 的 production-demonstrated 快照；`v2.0.1` 快照仍保留为历史源码发布证据。
+`docs/product-status/deployments/v2.1.5-online-experience.json` 的部署快照；`v2.0.1` 快照仍保留为历史源码发布证据。
 
-| 候选体验入口 | 地址 |
-| --- | --- |
-| 实例平台 | `https://pa-platform.007345.xyz/platform/` |
-| 公共管理端 | `https://pa-admin.007345.xyz/admin/` |
-| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` |
-| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` |
-| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` |
+| 体验入口 | 登录地址 | 账号 | 密码 |
+| --- | --- | --- | --- |
+| 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
+| 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
+| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `DemoTenant2026Pass` |
+| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `DemoTenant2026Pass` |
+| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
+
+Tenant A/B 是可丢弃候选环境中刻意公开的演示账号；服务端仅在 `PEANUT_DEMO_MODE=enabled`
+时锁定这两个邮箱的密码修改。Platform、bootstrap 和 Standalone 管理员不受该演示锁保护，
+其凭据只通过资源登记中的私有引用交接，不写入公开文档。
 
 邮件 Provider 是自动投递 Owner 邀请的可选生产集成，不是 Tenant 创建或域名绑定的 Runtime
 前置。人工模式下必须通过受控渠道交付一次性邀请 Token；不要把 `APP_ENV` 降级为
