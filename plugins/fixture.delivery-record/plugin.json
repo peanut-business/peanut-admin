@@ -5,7 +5,7 @@
   "source": {
     "type": "canonical-contents",
     "reference": "canonical-plugin-contents-v1",
-    "sha256": "d30877514de9923d012b49d4079f43badb4389c9af4f10a597a1e0b731472201"
+    "sha256": "e16269dce0cc46b1005939d86949107faa98cbe0f9ff2a2fc55afb94e7bdc796"
   },
   "composer": [
     {
@@ -27,7 +27,7 @@
       "package": "@peanut-admin/fixture-delivery-record",
       "version": "1.0.0",
       "entry": "web/src/modules/fixture-delivery-record/contribution.ts",
-      "sha256": "d578952ab67873a1ba107bc7d1e30ddd8aa077fc578657c717471fd08074ad90"
+      "sha256": "ddb64b2c302b8e9dd6c31b6c0df61c311dcca21b1f6c4a29128e761ea5901a3c"
     }
   ],
   "modules": [

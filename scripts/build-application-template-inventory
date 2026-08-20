@@ -62,7 +62,6 @@ function excluded(string $path): bool
             'scripts/test-core-upgrade-public-entry-gate',
             'scripts/check-product-capability-ledger',
             'scripts/check-release-consistency', 'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
-            'scripts/production-upgrade',
             'docs-site/.vitepress/theme/ProductStatus.vue',
             'docs-site/product-status.md',
             'server/tests/Productization/CreateApplicationTest.php',
@@ -161,6 +160,71 @@ function transform(string $path, string $classification): string
     return 'copy';
 }
 
+function adapterKind(string $path): ?string
+{
+    return match ($path) {
+        'server/app/common/service/tenant/TenantCache.php',
+        'server/app/common/service/tenant/TenantCacheStore.php',
+        'server/app/common/service/dict/SystemDictRepository.php',
+        'server/app/common/service/crontab/CrontabTenantLock.php',
+        'server/app/common/service/file/FileObjectNamespace.php',
+        'server/app/common/service/notice/NoticeSmsSender.php',
+        'server/app/common/service/notice/VerificationCodeSecret.php',
+        'server/app/common/service/oauth/OAuthBrowserCallbackService.php',
+        'server/app/common/service/org/OrgTenantContext.php',
+        'server/app/common/service/config/WebsiteConfigService.php',
+        'server/app/common/service/member/AuthenticatedMemberContext.php',
+        'server/app/common/service/module/ModuleExecutionContext.php',
+        'server/app/common/service/diagnostics/TenantDiagnosticAttributes.php',
+        'server/app/common/service/audit/OperationLogTenantContext.php',
+        'server/app/common/service/audit/OperationLogDiagnostics.php',
+        'server/app/common/service/transaction/TransactionSettingTenantContext.php',
+        'server/app/common/service/external/ExternalTenantAudit.php',
+        'server/app/common/service/external/ExternalTenantBinding.php',
+        'server/app/common/service/external/ExternalTenantBindingRepository.php',
+        'server/app/common/service/external/ExternalTenantResolution.php',
+        'server/app/common/service/external/ExternalTenantResolutionException.php',
+        'server/app/common/service/wechat/OfficialAccountService.php',
+        'server/app/common/service/notice/driver/sms/SmsDriver.php',
+        'server/app/common/service/oauth/contract/OAuthTransportInterface.php',
+        'server/app/common/service/oauth/dto/OAuthProfile.php',
+        'web/src/core/tenant-session.ts',
+        'web/src/store/modules/tab-bar/types.ts' => 'deprecated-bridge',
+        'server/app/common/service/tenant/ThinkPhpTenantCacheStore.php',
+        'server/app/common/service/tenant/TenantEntryBindingResolver.php',
+        'server/app/common/service/tenant/ApplicationHostPolicy.php',
+        'server/app/common/service/tenant/DefaultTenantContextResolver.php',
+        'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
+        'server/app/common/service/dict/DictionaryRuntimeFactory.php',
+        'server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php',
+        'server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php',
+        'server/app/common/service/crontab/CrontabSchedulerService.php',
+        'server/app/common/service/crontab/CrontabTenantContext.php',
+        'server/app/common/service/crontab/CrontabTenantRepository.php',
+        'server/app/common/service/file/FileTenantContext.php',
+        'server/app/common/service/file/FileTenantRepository.php',
+        'server/app/common/service/config/PaConfigWebsiteStore.php',
+        'server/app/common/service/config/TenantSettingWebsiteStore.php',
+        'server/app/common/service/export/AppFileMediaGateway.php',
+        'server/app/common/service/notice/ApplicationNoticeSmsSender.php',
+        'server/app/common/service/notice/NoticeChannelService.php',
+        'server/app/common/service/notice/NoticeTenantContext.php',
+        'server/app/common/service/notice/NoticeTenantRepository.php',
+        'server/app/common/service/notice/VerificationCodeService.php',
+        'server/app/common/service/oauth/OAuthTenantContext.php',
+        'server/app/common/service/oauth/OAuthTenantRepository.php',
+        'server/app/common/service/org/OrgTenantRepository.php',
+        'server/app/common/service/external/ExternalTenantResolver.php' => 'framework-adapter',
+        'server/app/common/service/config/BrandDefaults.php',
+        'server/app/common/service/export/OperationLogExportProvider.php',
+        'server/app/common/service/notice/driver/sms/AliyunSms.php',
+        'server/app/common/service/notice/driver/sms/TencentSms.php',
+        'server/app/common/service/oauth/WechatOAuthTransport.php',
+        'web/src/core/runtime.ts' => 'application-provider',
+        default => null,
+    };
+}
+
 function sourceDigest(string $absolute, string $path, string $transform): string
 {
     // These transforms intentionally rebuild the target from application parameters;
@@ -195,6 +259,10 @@ foreach (inventoryGitFiles($root) as $path) {
     ];
     if ($classification !== 'excluded') {
         $entry['source_sha256'] = sourceDigest($absolute, $path, $entry['transform']);
+    }
+    $adapterKind = adapterKind($path);
+    if ($adapterKind !== null) {
+        $entry['adapter_kind'] = $adapterKind;
     }
     $entries[] = $entry;
 }
