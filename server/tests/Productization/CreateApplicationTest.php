@@ -338,17 +338,17 @@ try {
 
     mkdir($temporary . '/non-empty');
     file_put_contents($temporary . '/non-empty/keep.txt', 'keep');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty'), 'CREATE_APP_TARGET_NOT_EMPTY');
-    createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug'), 'CREATE_APP_SLUG_INVALID');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'not-a-version'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape'), 'CREATE_APP_TARGET_PATH_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty', null, 'full'), 'CREATE_APP_TARGET_NOT_EMPTY');
+    createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug', null, 'full'), 'CREATE_APP_SLUG_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'not-a-version', 'full'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape', null, 'full'), 'CREATE_APP_TARGET_PATH_INVALID');
 
     mkdir($temporary . '/outside');
     symlink($temporary . '/outside', $temporary . '/linked-target');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-target'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-target', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
     mkdir($temporary . '/outside-parent');
     symlink($temporary . '/outside-parent', $temporary . '/linked-parent');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-parent/escape'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-parent/escape', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
 
     $generatedCi = (string)file_get_contents($first . '/.github/workflows/ci.yml');
     createApplicationExpect(!str_contains($generatedCi, 'stale-facts:') && !str_contains($generatedCi, 'create-app:'), 'generated CI must not depend on source-template governance jobs');
@@ -404,7 +404,7 @@ try {
     createApplicationWriteJson($sourceOnlyInventoryPath, $sourceOnlyInventory);
     $sourceOnlyTarget = $temporary . '/source-only-allowed';
     $sourceOnlyManifest = (new ApplicationCreator($root, $sourceOnlyInventoryPath, $identity, $releasePath))->create(
-        'Acme Console', 'acme-console', 'acme/acme-console', $sourceOnlyTarget
+        'Acme Console', 'acme-console', 'acme/acme-console', $sourceOnlyTarget, null, 'full'
     );
     createApplicationExpect($sourceOnlyManifest['template'] === $manifestOne['template'], 'app-owned/excluded-only source changes must retain release adoption');
     createApplicationExpect(
@@ -431,7 +431,7 @@ try {
     $managedChangeTarget = $temporary . '/managed-change-rejected';
     $managedChangeCreator = new ApplicationCreator($root, $managedChangeInventoryPath, $identity, $releasePath);
     createApplicationFails(
-        fn() => $managedChangeCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $managedChangeTarget),
+        fn() => $managedChangeCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $managedChangeTarget, null, 'full'),
         'CREATE_APP_ADOPTION_RENDER_MISMATCH'
     );
     createApplicationExpect(!file_exists($managedChangeTarget), 'managed source change committed an unsealed target');
