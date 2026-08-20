@@ -243,7 +243,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0b2d0909f850b75cc74c992c08768c6bdb661f54fdf0b75759fa562cca868d44"
+            "source_sha256": "015c2e6a7cd18480f5f1151d8b83d2c05c444329f79c5e123d7f0c80417a56f8"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -2349,6 +2349,19 @@
             ]
         },
         {
+            "path": "docs/operations/local-demo-access.md",
+            "target": "docs/operations/local-demo-access.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/operations/release-candidate-control.md",
             "target": "docs/operations/release-candidate-control.md",
             "classification": "excluded",
@@ -2654,6 +2667,19 @@
         {
             "path": "docs/product-status/releases/v2.1.4.json",
             "target": "docs/product-status/releases/v2.1.4.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/releases/v2.1.5.json",
+            "target": "docs/product-status/releases/v2.1.5.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3864,6 +3890,19 @@
         {
             "path": "scripts/p0e-browser-smoke",
             "target": "scripts/p0e-browser-smoke",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "scripts/p0e-browser-tooling",
+            "target": "scripts/p0e-browser-tooling",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
