@@ -106,8 +106,8 @@
 这是最值得关注的问题。核心库的 Kernel 已经有 20 个子模块：
 
 ```
-Auth, Authorization, Cache, Context, Host, Http, Idempotency, 
-Identity, Membership, Menu, Migration, Module, Organization, 
+Auth, Authorization, Cache, Context, Host, Http, Idempotency,
+Identity, Membership, Menu, Migration, Module, Organization,
 Override, Persistence, Platform, Tenancy ...
 ```
 
