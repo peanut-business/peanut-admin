@@ -88,6 +88,12 @@ PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅用于本机生产模式
 预览、生产构建和显式容器等价 Gate。
 
+若需要同时开发本地 `peanut-admin-core`，执行
+`scripts/local-core-composer install`（PHP）及 `scripts/local-core-web link`（Web）。前者仅在
+被 `.gitignore` 忽略的 `.local/` 中生成 Composer path overlay，后者仅替换本机
+`node_modules` 中的包软链接；两者都不改变正式清单或 lock 文件。发布安装继续使用固定的
+远程 tag。详见 `docs/development/local-core-composer.md`。
+
 ```bash
 ./scripts/local-stack.sh dev-up
 ./scripts/local-stack.sh status
