@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { sanitizeRichText } from '~/utils/sanitize-rich-text'
+import sanitizeRichText from '~/utils/sanitize-rich-text'
 
 definePageMeta({ layout: 'default' })
 

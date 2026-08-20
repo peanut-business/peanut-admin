@@ -2935,7 +2935,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f1bea424294602cfb253afd3f536354411931d4c148f1bcb16fc7db198aa7f18"
+            "source_sha256": "64f9532ea39641bc7c907db25dfe482ecf68c5141a5623f7717faad1e6ad0dc0"
         },
         {
             "path": "pc/pages/information/index.vue",
@@ -3000,7 +3000,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0b3a37baa09339eaef26c8cd83b1c7515bedff18872509a24aae66cb6fade393"
+            "source_sha256": "335e426f3b4fef6764ebe7de5edef75593ddbc7071762b0dbf909ec313090104"
         },
         {
             "path": "pc/pages/recharge.vue",
@@ -3221,7 +3221,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4bf5749ee394bfb8bb11afe94ec9d3f39681bd3724a07a67f0eb79d116b99710"
+            "source_sha256": "aa368d3c907faacba767b4fe6cec4c8311191def2cf1f78d667bc89c35bb8715"
         },
         {
             "path": "platform/.gitignore",
@@ -16400,7 +16400,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fe8a6d0989abb3f062acb5ae57e08d3d5d364bd976cf0af9fe2467f5d2efea26"
+            "source_sha256": "fcc3cdf1571eb4bb282725c4f56dc40284792aaf03c4be2f8854433d9c205420"
         },
         {
             "path": "web/src/utils/setup-mock.ts",
@@ -16722,7 +16722,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "696bf68f5a28754fa5167ee0ee676f79bde7cb6035bf37b5dcd29a2149266828"
+            "source_sha256": "30ec3d34d3aeef6524dbd870a77632bd7f37867da6c3f22a241f12c0f7b2e716"
         },
         {
             "path": "web/src/views/article/list/locale/en-US.ts",

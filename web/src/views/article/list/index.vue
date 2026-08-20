@@ -357,7 +357,7 @@
   } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import { getToken } from '@/utils/auth';
-  import { sanitizeRichText } from '@/utils/sanitize-rich-text';
+  import sanitizeRichText from '@/utils/sanitize-rich-text';
   import FilePicker from '@/components/file-picker/index.vue';
   import { uploadUrl } from '@/api/system/file';
   import {

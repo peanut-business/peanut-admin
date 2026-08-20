@@ -1,4 +1,6 @@
 import DOMPurify from 'dompurify';
 
-export const sanitizeRichText = (html: string | null | undefined): string =>
+const sanitizeRichText = (html: string | null | undefined): string =>
   DOMPurify.sanitize(html ?? '');
+
+export default sanitizeRichText;
