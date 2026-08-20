@@ -1,6 +1,14 @@
 <?php
 declare(strict_types=1);
 
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+
+$autoload = dirname(__DIR__) . '/vendor/autoload.php';
+if (!is_file($autoload)) {
+    throw new RuntimeException('缺少 Composer autoload，无法校验 Core Schema');
+}
+require_once $autoload;
+
 function requiredEnvironment(string $name): string
 {
     $value = getenv($name);
@@ -463,45 +471,99 @@ function waitForDatabase(array $config, int $seconds): PDO
     } while (true);
 }
 
-/** @return array{migration_count:int,latest_migration:string,management_member_count:int,menu_count:int,config_count:int,tenant_count:int,owner_count:int,operator_count:int} */
+/** @return list<string> */
+function canonicalBaselineTables(): array
+{
+    $tables = array_fill_keys(KernelSchema::tableNames(), true);
+    $schema = file_get_contents(__DIR__ . '/init.sql');
+    if (!is_string($schema)) {
+        throw new RuntimeException('无法读取完整基线 init.sql');
+    }
+    preg_match_all('/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+`([^`]+)`/i', $schema, $matches);
+    foreach ($matches[1] ?? [] as $table) {
+        $tables[(string)$table] = true;
+    }
+    unset($tables['pa_schema_migration']);
+    $names = array_keys($tables);
+    sort($names, SORT_STRING);
+    return $names;
+}
+
+/** @param array<string,list<string>> $requirements */
+function assertRequiredColumns(PDO $pdo, array $requirements): void
+{
+    $statement = $pdo->prepare(
+        'SELECT COLUMN_NAME FROM information_schema.COLUMNS '
+        . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+    );
+    foreach ($requirements as $table => $expected) {
+        $statement->execute([$table]);
+        $actual = array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        $missing = array_values(array_diff($expected, $actual));
+        if ($missing !== []) {
+            throw new RuntimeException("数据库关键列缺失：{$table}." . implode(', ', $missing));
+        }
+    }
+}
+
+/** @param array<string,list<string>> $requirements */
+function assertRequiredIndexes(PDO $pdo, array $requirements): void
+{
+    $statement = $pdo->prepare(
+        'SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS '
+        . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+    );
+    foreach ($requirements as $table => $expected) {
+        $statement->execute([$table]);
+        $actual = array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        $missing = array_values(array_diff($expected, $actual));
+        if ($missing !== []) {
+            throw new RuntimeException("数据库关键索引缺失：{$table}." . implode(', ', $missing));
+        }
+    }
+}
+
+/** @return array{baseline_table_count:int,installed_table_count:int,module_migration_count:int,management_member_count:int,menu_count:int,config_count:int,permission_count:int,tenant_count:int,owner_count:int,operator_count:int} */
 function assertCurrentDatabase(PDO $pdo): array
 {
-    $migrations = glob(__DIR__ . '/migrations/*.sql') ?: [];
-    sort($migrations, SORT_STRING);
-    $files = [__DIR__ . '/init.sql', ...$migrations];
-    $expected = [];
-    foreach ($files as $file) {
-        $checksum = hash_file('sha256', $file);
-        if ($checksum === false) {
-            throw new RuntimeException('无法计算迁移校验值：' . basename($file));
-        }
-        $expected[basename($file)] = $checksum;
+    $expected = canonicalBaselineTables();
+    $actual = array_map('strval', $pdo->query(
+        'SELECT TABLE_NAME FROM information_schema.TABLES '
+        . 'WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME'
+    )->fetchAll(PDO::FETCH_COLUMN));
+    if (in_array('pa_schema_migration', $actual, true)) {
+        throw new RuntimeException('数据库仍包含已退役的应用迁移账本 pa_schema_migration');
+    }
+    $missing = array_values(array_diff($expected, $actual));
+    if ($missing !== []) {
+        throw new RuntimeException('数据库缺少 v3.0 基线表：' . implode(', ', $missing));
     }
 
-    $rows = $pdo->query(
-        'SELECT migration, checksum, status FROM pa_schema_migration ORDER BY migration'
-    )->fetchAll();
-    $actual = [];
-    foreach ($rows as $row) {
-        $name = (string)$row['migration'];
-        if (!isset($expected[$name])) {
-            throw new RuntimeException('数据库存在代码中没有的迁移：' . $name);
-        }
-        if ((string)$row['status'] !== 'applied') {
-            throw new RuntimeException('数据库存在未完成迁移：' . $name);
-        }
-        if (!hash_equals($expected[$name], (string)$row['checksum'])) {
-            throw new RuntimeException('数据库迁移校验值与代码不一致：' . $name);
-        }
-        $actual[$name] = true;
-    }
-    $missing = array_values(array_diff(array_keys($expected), array_keys($actual)));
-    if ($missing !== []) {
-        throw new RuntimeException('数据库缺少迁移：' . implode(', ', $missing));
-    }
+    assertRequiredColumns($pdo, [
+        'pa_account' => ['id', 'status', 'security_revision'],
+        'pa_credential' => ['account_id', 'identifier_normalized', 'secret_hash', 'status'],
+        'pa_tenant' => ['id', 'code', 'status', 'authorization_revision'],
+        'pa_tenant_member' => ['tenant_id', 'account_id', 'status', 'authorization_revision'],
+        'pa_permission' => ['key', 'module_key', 'status'],
+        'pa_system_menu' => ['id', 'type', 'perms', 'component'],
+        'pa_config' => ['type', 'name', 'value'],
+        'pa_module_migration' => ['module_key', 'migration_key', 'checksum', 'status'],
+    ]);
+    assertRequiredIndexes($pdo, [
+        'pa_tenant' => ['PRIMARY', 'uk_tenant_code'],
+        'pa_tenant_member' => ['PRIMARY', 'uk_tenant_member_account'],
+        'pa_permission' => ['PRIMARY', 'uk_permission_key'],
+        'pa_system_menu' => ['PRIMARY'],
+        'pa_config' => ['PRIMARY', 'uk_type_name'],
+        'pa_module_migration' => ['PRIMARY', 'uk_module_migration'],
+    ]);
 
     $menuCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
     $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
+    $permissionCount = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_permission WHERE status = 'active'"
+    )->fetchColumn();
+    $moduleMigrationCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_module_migration')->fetchColumn();
     $tenantCount = (int)$pdo->query(
         "SELECT COUNT(*) FROM pa_tenant WHERE code = 'default' AND status = 'active'"
     )->fetchColumn();
@@ -520,6 +582,7 @@ SQL)->fetchColumn();
     )->fetchColumn();
     if ($menuCount < 1
         || $configCount < 1
+        || $permissionCount < 1
         || $tenantCount !== 1
         || $ownerCount !== 1
         || $operatorCount !== 1) {
@@ -527,11 +590,13 @@ SQL)->fetchColumn();
     }
 
     return [
-        'migration_count' => count($actual),
-        'latest_migration' => array_key_last($actual) ?? '',
+        'baseline_table_count' => count($expected),
+        'installed_table_count' => count($actual),
+        'module_migration_count' => $moduleMigrationCount,
         'management_member_count' => $ownerCount,
         'menu_count' => $menuCount,
         'config_count' => $configCount,
+        'permission_count' => $permissionCount,
         'tenant_count' => $tenantCount,
         'owner_count' => $ownerCount,
         'operator_count' => $operatorCount,

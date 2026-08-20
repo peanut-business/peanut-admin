@@ -8,7 +8,7 @@ use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
 use app\common\service\FileService;
-use app\common\service\ConfigService;
+use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\notice\VerificationCodeService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -23,7 +23,7 @@ class LoginLogic extends BaseLogic
     public static function register(TenantSystemContext $context, array $params): bool
     {
         try {
-            self::assertLoginWayEnabled(1);
+            self::assertLoginWayEnabled($context, 1);
             if (MemberTenantRepository::members($context)->where('account', $params['account'])->count()) {
                 throw new \Exception('账号已被注册');
             }
@@ -37,11 +37,7 @@ class LoginLogic extends BaseLogic
                 'account'  => $params['account'],
                 'password' => $password . ':' . $salt,  // 存 hash:salt
                 'nickname' => '用户' . substr($sn, -6),
-                'avatar'   => (string)ConfigService::get(
-                    'default_image',
-                    'user_avatar',
-                    (string)config('project.default_image.user_avatar', '')
-                ),
+                'avatar'   => self::defaultAvatar($context),
                 'status'   => 1,
             ]);
 
@@ -59,7 +55,7 @@ class LoginLogic extends BaseLogic
     public static function login(TenantSystemContext $context, array $params): array|false
     {
         try {
-            self::assertLoginWayEnabled(1);
+            self::assertLoginWayEnabled($context, 1);
             /** @var Member|null $member */
             $member = MemberTenantRepository::members($context)->where(function ($q) use ($params) {
                 $q->where('account', $params['account'])
@@ -104,7 +100,7 @@ class LoginLogic extends BaseLogic
     public static function mobileLogin(TenantContext|TenantSystemContext $context, array $params): array|false
     {
         try {
-            self::assertLoginWayEnabled(2);
+            self::assertLoginWayEnabled($context, 2);
             $mobile = (string) $params['mobile'];
             $service = new VerificationCodeService();
             if (!$service->verify($context, NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
@@ -120,11 +116,7 @@ class LoginLogic extends BaseLogic
                     'password' => '',
                     'mobile'   => $mobile,
                     'nickname' => '用户' . substr($sn, -6),
-                    'avatar'   => (string)ConfigService::get(
-                        'default_image',
-                        'user_avatar',
-                        (string)config('project.default_image.user_avatar', '')
-                    ),
+                    'avatar'   => self::defaultAvatar($context),
                     'status'   => 1,
                 ]);
             }
@@ -190,16 +182,21 @@ class LoginLogic extends BaseLogic
         return [md5(md5($password) . $salt), $salt];
     }
 
-    private static function assertLoginWayEnabled(int $way): void
+    private static function assertLoginWayEnabled(
+        TenantContext|TenantSystemContext $context,
+        int $way,
+    ): void
     {
-        $raw = ConfigService::get('login', 'login_way', '[1,2]');
-        $enabled = is_array($raw) ? $raw : json_decode((string)$raw, true);
-        if (!is_array($enabled)) {
-            $enabled = [1, 2];
-        }
-        if (!in_array($way, array_map('intval', $enabled), true)) {
+        $enabled = TenantApplicationSettingService::login($context)['login_way'];
+        if (!in_array($way, $enabled, true)) {
             throw new \RuntimeException('当前登录方式未启用');
         }
+    }
+
+    private static function defaultAvatar(TenantContext|TenantSystemContext $context): string
+    {
+        $avatar = trim((string)TenantApplicationSettingService::memberProfile($context)['user_avatar']);
+        return $avatar !== '' ? $avatar : (string)config('project.default_image.user_avatar', '');
     }
 
     /** 退出（JWT 无状态，客户端丢弃 token 即可） */

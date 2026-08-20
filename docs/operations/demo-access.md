@@ -2,11 +2,12 @@
 
 > Internal operator handoff for the disposable Peanut Admin demonstration environments.
 > This file is intentionally complete so operators do not need to search deployment hosts.
-> Do not copy the Platform, bootstrap, or Standalone administrator credentials into the public
-> docs site or README. If any private credential is rotated, update this handoff, the registered
-> Keychain/environment reference, and the verification date together.
+> All credentials in this file are owner-authorized disposable-demo credentials and may be copied
+> into the public docs site and README. If any credential is rotated, update this handoff, the
+> resource registry, public tables, and verification date together.
 
-Verified: 2026-08-20 against the registered `production-candidate` and `production` demo resources.
+Verified: 2026-08-20 by real browser login against every account below on the registered
+`production-candidate` and `production` demo resources.
 
 | Environment | Login URL | Account | Password | Password policy |
 | --- | --- | --- | --- | --- |
@@ -28,8 +29,16 @@ Unauthenticated addresses:
 - Multi-tenant candidate: `peanut-admin-production-candidate-deployment`
 - Candidate domains and public Tenant credentials: `peanut-admin-production-candidate-domains`
 - Standalone demo: `peanut-admin-production-deployment`
-- Standalone password handoff: macOS Keychain service `peanut-admin-production-admin`, account `admin`
+- Standalone legacy handoff reference: macOS Keychain service `peanut-admin-production-admin`,
+  account `admin` (secondary only; it may be stale and is not the current-login authority)
 
-The candidate is disposable and uses `PEANUT_DEMO_MODE=enabled`. The public Tenant credentials are
-the only credentials intended for the public docs site. Platform, bootstrap, and Standalone Admin
-credentials are complete here for internal handoff only.
+All accounts in this table are owner-authorized disposable-demo credentials and may be shown in the
+README and public deployment guide. The candidate uses `PEANUT_DEMO_MODE=enabled`, and protected
+demo mutations remain server-rejected.
+
+The application database is authoritative for current login success. Values such as
+`ADMIN_INITIAL_PASSWORD`, `PLATFORM_INITIAL_PASSWORD`, and `PEANUT_DEMO_SHARED_PASSWORD` in a
+deployment `.env` are installation inputs and may remain unchanged after a database password
+rotation. Keychain entries are handoff references and can likewise become stale. After any rotation,
+verify one real browser login per distinct account and update this file, the public tables, and the
+resource registry together.

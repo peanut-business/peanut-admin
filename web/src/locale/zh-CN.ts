@@ -14,7 +14,6 @@ import localeSystemCrontab from '@/views/system/crontab/locale/zh-CN';
 import localeSystemMaintenance from '@/views/system/maintenance/locale/zh-CN';
 import localeSystemLog from '@/views/system/log/locale/zh-CN';
 import localeSystemConfig from '@/views/system/config/locale/zh-CN';
-import localeSystemStorage from '@/views/system/storage/locale/zh-CN';
 import localeMemberList from '@/views/member/list/locale/zh-CN';
 import localeMemberTag from '@/views/member/tag/locale/zh-CN';
 import localeNoticeChannel from '@/views/notice/channel/locale/zh-CN';
@@ -65,7 +64,6 @@ export default {
   ...localeSystemMaintenance,
   ...localeSystemLog,
   ...localeSystemConfig,
-  ...localeSystemStorage,
   ...localeMemberList,
   ...localeMemberTag,
   ...localeNoticeChannel,

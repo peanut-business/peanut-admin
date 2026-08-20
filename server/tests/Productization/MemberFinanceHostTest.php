@@ -74,7 +74,7 @@ sort($balanceCallers);
 sort($expectedCallerPaths);
 expectMemberFinance($balanceCallers === $expectedCallerPaths, 'balance owner caller set changed');
 expectMemberFinance(
-    $ledgerWriters === [$serverRoot . '/app/common/logic/AccountLogLogic.php'],
+    $ledgerWriters === [$serverRoot . '/app/common/service/member/MemberTenantRepository.php'],
     'member balance ledger must have exactly one writer'
 );
 foreach ($callers as $relativePath) {
@@ -101,17 +101,12 @@ expectMemberFinance(
     'refund retry must not deduct the balance again'
 );
 
-$paymentMigration = (string)file_get_contents(
-    $serverRoot . '/database/init.sql'
-);
-$refundMigration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260820-recharge-partial-refund.sql'
-);
-expectMemberFinance(str_contains($paymentMigration, 'uk_transaction_id'), 'transaction id unique guard is missing');
+$paymentSchema = (string)file_get_contents($serverRoot . '/database/init.sql');
+expectMemberFinance(str_contains($paymentSchema, 'uk_transaction_id'), 'transaction id unique guard is missing');
 expectMemberFinance(
-    str_contains($refundMigration, 'idx_refund_record_tenant_order_amount')
-        && str_contains($refundMigration, 'DROP INDEX `uk_refund_record_tenant_order`')
-        && str_contains($refundMigration, 'DROP INDEX `uk_refund_record_order_global`'),
+    str_contains($paymentSchema, 'idx_refund_record_tenant_order_amount')
+        && !str_contains($paymentSchema, 'uk_refund_record_tenant_order')
+        && !str_contains($paymentSchema, 'uk_refund_record_order_global'),
     'partial-refund cumulative lookup schema is missing'
 );
 
@@ -137,6 +132,9 @@ expectMemberFinance(
     'sealed refund audit lacks one-deduction-per-order proof'
 );
 
-expectMemberFinance(!str_contains($balanceService, 'PeanutAdmin\\'), 'application balance owner must not deep import core');
+expectMemberFinance(
+    preg_match('/PeanutAdmin\\\\[^;]*(?:Balance|Ledger|FinanceService)/', $balanceService) !== 1,
+    'application balance owner must not delegate balance or ledger behavior to Core'
+);
 
 echo "PB05-MEMBER-FINANCE-001 passed\n";

@@ -14,6 +14,7 @@ class FileCateLogic extends BaseLogic
     /** 某类型下的稳定分类树（同级按 id 升序）。 */
     public static function lists(TenantContext $context, int $type): array
     {
+        self::clearError();
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');
         }
@@ -25,6 +26,7 @@ class FileCateLogic extends BaseLogic
 
     public static function add(TenantContext $context, array $params): bool
     {
+        self::clearError();
         $name = trim((string)($params['name'] ?? ''));
         if ($name === '') {
             self::setError('分类名称不能为空');
@@ -58,13 +60,13 @@ class FileCateLogic extends BaseLogic
             ]);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function edit(TenantContext $context, array $params): bool
     {
+        self::clearError();
         $name = trim((string)($params['name'] ?? ''));
         if ($name === '') {
             self::setError('分类名称不能为空');
@@ -79,14 +81,14 @@ class FileCateLogic extends BaseLogic
             $category->save(['name' => $name]);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     /** 删除分类子树、其中素材及存储对象，并返回三者结果。 */
     public static function delete(TenantContext $context, int $id): array
     {
+        self::clearError();
         if ($id <= 0) {
             throw new \InvalidArgumentException('分类 ID 无效');
         }
@@ -127,6 +129,7 @@ class FileCateLogic extends BaseLogic
     /** 校验根分类类型并返回包含自身的稳定子树 ID。 */
     public static function subtreeIds(TenantContext $context, int $id, int $type): array
     {
+        self::clearError();
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');
         }

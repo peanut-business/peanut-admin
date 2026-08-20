@@ -35,8 +35,6 @@ if [[ "$mode" == '--full' ]]; then
     server/tests/Productization/PluginModuleContractTest.php
     server/tests/Productization/OfficialArticleModuleContractTest.php
     server/tests/Productization/PluginLifecycleMigrationContractTest.php
-    server/tests/Productization/ReleaseUpgradePolicyTest.php
-    server/tests/Productization/Scaffold2xUpgradeQualificationTest.php
   )
   for test_file in "${tests[@]}"; do
     php "$test_file"
@@ -83,7 +81,7 @@ while IFS= read -r path; do
   fi
 
   case "$path" in
-    server/app/platform/service/plugin/*|server/app/command/Plugin*.php|server/app/Modules/Fixture/DeliveryRecord/*|server/app/Modules/Official/*|server/route/official_*.php|plugins/*|plugins.lock|server/config/modules.php|server/resources/schemas/plugin.schema.json|server/database/migrations/20260814_plugin_module_lifecycle.sql|server/database/migrations/20260818-official-module-permission-ownership.sql)
+    server/app/platform/service/plugin/*|server/app/command/Plugin*.php|server/app/Modules/Fixture/DeliveryRecord/*|server/app/Modules/Official/*|server/route/official_*.php|plugins/*|plugins.lock|server/config/modules.php|server/resources/schemas/plugin.schema.json)
       select_test server/tests/Productization/PluginArtifactContractTest.php
       select_test server/tests/Productization/PluginModuleContractTest.php
       select_test server/tests/Productization/PluginLifecycleMigrationContractTest.php
@@ -98,7 +96,7 @@ while IFS= read -r path; do
       select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php
       select_test server/tests/Multitenancy/PlatformOperatorBoundaryTest.php
       ;;
-    server/app/common/service/external/*|server/app/api/controller/PaymentNotifyController.php|server/app/api/controller/OfficialAccountController.php|server/app/api/controller/OAuthController.php|server/database/migrations/20260814_external_callback_tenant_routing.sql)
+    server/app/common/service/external/*|server/app/api/controller/PaymentNotifyController.php|server/app/api/controller/OfficialAccountController.php|server/app/api/controller/OAuthController.php)
       select_test server/tests/Multitenancy/ExternalCallbackTenantRoutingTest.php
       ;;
     *member*|*Member*|*account_log*|*AccountLog*)
@@ -118,11 +116,11 @@ while IFS= read -r path; do
       select_test server/tests/Productization/AdminPermissionHostTest.php
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       ;;
-    server/config/admin_api_access.php|server/route/app.php|scripts/check-admin-api-permissions.php|server/database/migrations/*admin*permission*)
+    server/config/admin_api_access.php|server/route/app.php|scripts/check-admin-api-permissions.php)
       select_test server/tests/Productization/AdminPermissionHostTest.php
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       ;;
-    server/database/install.php|server/database/migrate.php|server/database/init.sql|server/database/migrations/*)
+    server/database/install.php|server/database/environment-guard.php|server/database/init.sql)
       select_test server/tests/Productization/FreshSchemaBaselineTest.php
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php

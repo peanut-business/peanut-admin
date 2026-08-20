@@ -21,6 +21,13 @@ final class HotSearchTenantContext
         return $context;
     }
 
+    public static function read(object $request): TenantContext|TenantSystemContext
+    {
+        $context = $request->tenantContext ?? null;
+        self::tenantId($context);
+        return $context;
+    }
+
     public static function tenantId(TenantContext|TenantSystemContext|null $context): int
     {
         if ($context instanceof TenantContext && self::trustedMember($context)) {

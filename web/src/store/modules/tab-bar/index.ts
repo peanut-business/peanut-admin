@@ -1,5 +1,6 @@
 import type { RouteLocationNormalized } from 'vue-router';
 import { defineStore } from 'pinia';
+import { tabFromRoute } from '@peanut-admin/admin/shell';
 import {
   DEFAULT_ROUTE,
   DEFAULT_ROUTE_NAME,
@@ -7,17 +8,6 @@ import {
 } from '@/router/constants';
 import { isString } from '@/utils/is';
 import { TabBarState, TagProps } from './types';
-
-const formatTag = (route: RouteLocationNormalized): TagProps => {
-  const { name, meta, fullPath, query } = route;
-  return {
-    title: meta.locale || '',
-    name: String(name),
-    fullPath,
-    query,
-    ignoreCache: meta.ignoreCache,
-  };
-};
 
 const BAN_LIST = [REDIRECT_ROUTE_NAME];
 
@@ -39,7 +29,7 @@ const useAppStore = defineStore('tabBar', {
   actions: {
     updateTabList(route: RouteLocationNormalized) {
       if (BAN_LIST.includes(route.name as string)) return;
-      this.tagList.push(formatTag(route));
+      this.tagList.push(tabFromRoute(route));
       if (!route.meta.ignoreCache) {
         this.cacheTabList.add(route.name as string);
       }

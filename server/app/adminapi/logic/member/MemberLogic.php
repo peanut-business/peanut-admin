@@ -15,6 +15,9 @@ use app\common\service\MemberBalanceService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\XlsxExportService;
+use app\common\support\ExportPageInfo;
+use app\common\support\PaginationInput;
+use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Idempotency\IdempotencyKey;
 use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
@@ -34,7 +37,7 @@ class MemberLogic extends BaseLogic
     {
         try {
             $count = self::buildListQuery($context, $params)->count();
-            $pageSize = (int)($params['page_size'] ?? 15);
+            $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
             $pageSize = max(1, min(self::EXPORT_MAX_ROWS, $pageSize));
 
             if ((int)($params['export'] ?? 0) === 1) {
@@ -44,7 +47,8 @@ class MemberLogic extends BaseLogic
                 return self::export($context, $params, $count, $pageSize);
             }
 
-            $pageNo = max(1, (int)($params['page_no'] ?? 1));
+            $pagination = PaginationInput::from($params);
+            $pageNo = $pagination->page;
             $rows = self::buildListQuery($context, $params)
                 ->page($pageNo, $pageSize)
                 ->select()
@@ -111,17 +115,12 @@ class MemberLogic extends BaseLogic
 
     private static function exportInfo(int $count, int $pageSize): array
     {
-        $sumPage = max(1, (int)ceil($count / $pageSize));
-        return [
-            'count' => $count,
-            'page_size' => $pageSize,
-            'sum_page' => $sumPage,
-            'max_page' => (int)floor(self::EXPORT_MAX_ROWS / $pageSize),
-            'all_max_size' => self::EXPORT_MAX_ROWS,
-            'page_start' => 1,
-            'page_end' => min($sumPage, 200),
-            'file_name' => self::EXPORT_DEFAULT_NAME,
-        ];
+        return ExportPageInfo::from(
+            $count,
+            $pageSize,
+            self::EXPORT_MAX_ROWS,
+            self::EXPORT_DEFAULT_NAME,
+        )->toArray();
     }
 
     private static function export(TenantContext $context, array $params, int $count, int $pageSize): array
@@ -428,7 +427,11 @@ class MemberLogic extends BaseLogic
         if (MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty()->isEmpty()) {
             throw new \RuntimeException('用户不存在');
         }
-        $tagIds = array_values(array_unique(array_map('intval', $tagIds)));
+        $tagIds = PositiveIds::normalize(
+            $tagIds,
+            [PositiveIds::REJECT_INVALID],
+            '包含不存在的会员标签',
+        );
         if ($tagIds !== [] && MemberTenantRepository::tags($context)->whereIn('id', $tagIds)->count() !== count($tagIds)) {
             throw new \RuntimeException('包含不存在的会员标签');
         }

@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 use app\common\service\tenant\TenantCache;
 use app\common\service\tenant\TenantCacheStore;
-use app\common\service\tenant\TenantLockNamespace;
-use app\common\service\tenant\TenantNamespace;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantLockNamespace;
+use PeanutAdmin\Kernel\Tenancy\TenantNamespace;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 

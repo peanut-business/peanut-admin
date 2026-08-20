@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\logic;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
+use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\hot_search\HotSearchTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -12,7 +12,7 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 class SearchLogic extends BaseLogic
 {
     /** 热门搜索列表 */
-    public static function hotLists(TenantContext|TenantSystemContext|null $context = null): array
+    public static function hotLists(TenantContext|TenantSystemContext $context): array
     {
         $data = HotSearchTenantRepository::terms($context)
             ->field(['name', 'sort'])
@@ -21,7 +21,7 @@ class SearchLogic extends BaseLogic
             ->toArray();
 
         return [
-            'status' => (int) ConfigService::get('hot_search', 'status', 0),
+            'status' => (int)TenantApplicationSettingService::hotSearch($context)['status'],
             'data'   => $data,
         ];
     }

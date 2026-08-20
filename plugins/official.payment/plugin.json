@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "73b9987b59f35154d42a301fafc3a104773fb00d9e9c875aa097a8342bfcda06"
+        "sha256": "85b2700843fe2e5c701d41728d1be33a8cc16c68cea5cf72960f2213511a0ee9"
     },
     "composer": [
         {
@@ -27,7 +27,7 @@
             "package": "@peanut-admin/official-payment",
             "version": "1.0.0",
             "entry": "web/src/modules/official-payment/contribution.ts",
-            "sha256": "ba74451e4f4809917b5fa88b385a666e115fcb6ebd7038da87caadc5e3f371d2"
+            "sha256": "242654524ab2c3e7ea23e70b5d2de494f12c09a2f58b608107f821bb4777afdf"
         }
     ],
     "modules": [

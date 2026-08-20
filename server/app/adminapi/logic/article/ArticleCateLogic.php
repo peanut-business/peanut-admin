@@ -5,6 +5,7 @@ namespace app\adminapi\logic\article;
 
 use app\common\logic\BaseLogic;
 use app\common\service\article\ArticleTenantRepository;
+use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -19,16 +20,27 @@ class ArticleCateLogic extends BaseLogic
     /** 分页列表（含文章数） */
     public static function lists(TenantContext $context, array $params): array|false
     {
+        self::clearError();
         try {
             if (in_array((int) ($params['export'] ?? 0), [1, 2], true)) {
                 throw new \RuntimeException('该列表不支持导出');
             }
 
             $pageType = (int) ($params['page_type'] ?? 1);
-            $pageNo = $pageType === 0 ? 1 : max(1, (int) ($params['page_no'] ?? 1));
-            $pageSize = $pageType === 0
-                ? self::PAGE_SIZE_MAX
-                : max(1, min(self::PAGE_SIZE_MAX, (int) ($params['page_size'] ?? self::PAGE_SIZE_DEFAULT)));
+            if ($pageType === 0) {
+                $pageNo = 1;
+                $pageSize = self::PAGE_SIZE_MAX;
+            } else {
+                $requestedPageSize = (int)($params['page_size'] ?? $params['limit'] ?? self::PAGE_SIZE_DEFAULT);
+                if ($requestedPageSize <= 100) {
+                    $pagination = PaginationInput::from($params, 1, self::PAGE_SIZE_DEFAULT);
+                    $pageNo = $pagination->page;
+                    $pageSize = $pagination->pageSize;
+                } else {
+                    $pageNo = max(1, (int)($params['page_no'] ?? $params['page'] ?? 1));
+                    $pageSize = max(1, min(self::PAGE_SIZE_MAX, $requestedPageSize));
+                }
+            }
 
             $query = ArticleTenantRepository::categories($context)->field([
                 'id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time',
@@ -60,14 +72,14 @@ class ArticleCateLogic extends BaseLogic
                 'extend' => [],
             ];
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     /** 下拉用：全部启用分类 */
     public static function all(TenantContext $context): array
     {
+        self::clearError();
         $lists = ArticleTenantRepository::categories($context)->where('is_show', 1)
             ->field(['id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time'])
             ->order(['sort' => 'desc', 'id' => 'desc'])
@@ -79,6 +91,7 @@ class ArticleCateLogic extends BaseLogic
 
     public static function detail(TenantContext $context, int $id): array
     {
+        self::clearError();
         $articleCate = ArticleTenantRepository::categories($context)->field([
             'id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time',
         ])->where('id', $id)->findOrEmpty();
@@ -87,6 +100,7 @@ class ArticleCateLogic extends BaseLogic
 
     public static function add(TenantContext $context, array $params): bool
     {
+        self::clearError();
         ArticleTenantRepository::createCategory($context, [
             'name'    => $params['name'],
             'sort'    => (int) ($params['sort'] ?? 0),
@@ -97,6 +111,7 @@ class ArticleCateLogic extends BaseLogic
 
     public static function edit(TenantContext $context, array $params): bool
     {
+        self::clearError();
         try {
             $data = [
                 'name'    => $params['name'],
@@ -110,13 +125,13 @@ class ArticleCateLogic extends BaseLogic
             $category->save($data);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function delete(TenantContext $context, int $id): bool
     {
+        self::clearError();
         Db::startTrans();
         try {
             $articleCate = ArticleTenantRepository::categories($context)->where('id', $id)->lock(true)->findOrEmpty();
@@ -133,13 +148,13 @@ class ArticleCateLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function updateStatus(TenantContext $context, int $id, int $isShow): bool
     {
+        self::clearError();
         $updated = ArticleTenantRepository::categories($context)->where('id', $id)->update(['is_show' => $isShow]);
         if ($updated !== 1) {
             self::setError('资讯分类不存在');

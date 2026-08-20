@@ -10,7 +10,7 @@ function expectPlatformStorageBoundary(bool $condition, string $message): void
 
 $serverRoot = dirname(__DIR__, 2);
 $routes = (string)file_get_contents($serverRoot . '/route/app.php');
-$policy = (string)file_get_contents($serverRoot . '/app/common/service/platform/InstanceControlPlanePolicy.php');
+$policy = (string)file_get_contents($serverRoot . '/vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php');
 $permissions = (string)file_get_contents($serverRoot . '/app/adminapi/service/AdminPermissionService.php');
 
 foreach (['api/platform/infrastructure/storage', 'platform.ops.read',

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "2.1.5",
-  "expected_tag": "v2.1.5",
-  "release_date": "2026-08-18",
+  "version": "3.0.0",
+  "expected_tag": "v3.0.0",
+  "release_date": "2026-08-20",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "proprietary",
@@ -31,17 +31,17 @@
     "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.5"
   },
   "lockfiles": {
-    "server/composer.lock": "d7da2c611c7d74dea47f8256bb08841857c8433be56905dfdce78542875d17d3",
-    "web/pnpm-lock.yaml": "1ba6d87a5ffe944c21bdad76b2309fe69919a0553128bd40c6b5dd429c0e9f79",
-    "pc/package-lock.json": "087f1e3629e50394a443ace9f0226aeaddddd70c4e95f3da3c93fd3fcb382e39",
-    "uniapp/package-lock.json": "047f3f7bbefd27bb85498669126ab3ce61024223e16729511cdea42cd6eedf96",
+    "server/composer.lock": "4aa84b1cde4b97c98f394ded7782d4aca86fead62e94612a81161e0ec989263f",
+    "web/pnpm-lock.yaml": "013b1999d26d4e419b5bc66c8f657a371e63956a583252edd5f0ddd4e93250d4",
+    "pc/package-lock.json": "21060fd45566dfe3d6eb283d3c378abb539cb951c53cade052cd76405a378b69",
+    "uniapp/package-lock.json": "1c7805eaccc3b232777cfefaeae1fea6a47945e86ad7362b53d635293d10e2d4",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "62a4644063c7b069ba339a89ed0159fe533e9adebd3fa946e3acbb1736151005",
-    "RELEASE_SBOM.spdx.json": "a9a4699d1692729b29a44ca95af1bd3389fc112d873408507b07cc5b11f83eaf"
+    "THIRD_PARTY_NOTICES.md": "4564b7f7a03934f845fe13cb1990d59ec8c57c26ca23e952da7f17837e0fd380",
+    "RELEASE_SBOM.spdx.json": "aa694d0b77a343f2b63224699e464faff19da3a51e233eb2cf8ae5663e6f95ff"
   },
   "migrations": {
     "count": 4,
@@ -55,20 +55,20 @@
     "baseline": "server/database/init.sql plus the Core KernelSchema; post-baseline changes must be additive"
   },
   "technical_qualification": {
-    "phase": "2.1.5-pending-qualification",
-    "result": "passed",
-    "final_candidate_commit": "aefc5779c97db1cd17442269e50156baeaa4ba0c",
-    "final_candidate_tree": "240d3c3d28335c40a5efa595fbe9c221385b1911",
-    "run_id": "p0e215b",
-    "groups_passed": 7,
-    "summary_sha256": "31482f4e2841d4601f3635fdd8140adbae99ce91df48cc71e3bfbfe9562f2701",
-    "cleanup_residual_count": 0,
-    "lease_released": true,
+    "phase": "3.0.0-pending-qualification",
+    "result": "pending",
+    "final_candidate_commit": null,
+    "final_candidate_tree": null,
+    "run_id": null,
+    "groups_passed": 0,
+    "summary_sha256": null,
+    "cleanup_residual_count": null,
+    "lease_released": false,
     "migrations": 4,
-    "scaffold_version": "2.1.5",
+    "scaffold_version": "3.0.0",
     "application_initial_version": "0.1.0",
-    "evidence": "Fixed candidate aefc5779c97db1cd17442269e50156baeaa4ba0c completed P0-E 7/7 with zero database, Compose, container, volume, network, image, listener and cache residuals; lease released.",
-    "release_delta": "Carries the release-consistency gate and corrected scaffold identity from the v2.1.4 post-release fix."
+    "evidence": "Pending the single fixed-candidate P0-E qualification for the 3.0 baseline.",
+    "release_delta": "Fresh-only 3.0 baseline with unified version contract, secure defaults, profile-aware scaffold generation and non-destructive updates."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

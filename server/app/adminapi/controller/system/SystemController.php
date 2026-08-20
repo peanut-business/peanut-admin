@@ -19,6 +19,10 @@ class SystemController extends BaseAdminController
     /** 系统环境信息 */
     public function info()
     {
+        $denial = $this->instanceToolAccessDenial();
+        if ($denial !== null) {
+            return $denial;
+        }
         return $this->data(SystemLogic::getInfo());
     }
 

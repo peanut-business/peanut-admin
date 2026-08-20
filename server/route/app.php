@@ -15,6 +15,7 @@ use app\api\controller\DecorationController as ApiDecorationController;
 use app\api\middleware\CheckTokenMiddleware;
 use app\api\middleware\PublicArticleTenantMiddleware;
 use app\api\middleware\PublicDecorationTenantMiddleware;
+use app\api\middleware\PublicHotSearchTenantMiddleware;
 use app\adminapi\controller\config\ConfigController;
 use app\adminapi\controller\dept\DeptController;
 use app\adminapi\controller\dept\JobsController;
@@ -296,8 +297,6 @@ Route::group('api/admin', function () {
     Route::get('config/login', [ConfigController::class, 'getLogin']);
     Route::post('config/login/save', [ConfigController::class, 'saveLogin']);
 
-    // 系统配置 - 存储设置
-
     // 应用设置 - 热门搜索
     Route::get('setting/hot-search/config',  [HotSearchController::class, 'getConfig']);
     Route::post('setting/hot-search/save',   [HotSearchController::class, 'setConfig']);
@@ -329,7 +328,8 @@ Route::get('api/index/index',   [ApiIndexController::class, 'index'])
     ->middleware(PublicArticleTenantMiddleware::class, 'article.index');
 Route::get('api/index/config',  [ApiIndexController::class, 'config'])
     ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
-Route::get('api/index/policy',  [ApiIndexController::class, 'policy']);
+Route::get('api/index/policy',  [ApiIndexController::class, 'policy'])
+    ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
 
 Route::post('api/login/logout',   [ApiLoginController::class, 'logout']);
 
@@ -340,7 +340,8 @@ Route::get('api/article/lists',   [ApiArticleController::class, 'lists'])
 Route::get('api/article/detail',  [ApiArticleController::class, 'detail'])
     ->middleware(PublicArticleTenantMiddleware::class, 'article.detail');
 
-Route::get('api/search/hotLists', [ApiSearchController::class, 'hotLists']);
+Route::get('api/search/hotLists', [ApiSearchController::class, 'hotLists'])
+    ->middleware(PublicHotSearchTenantMiddleware::class);
 
 // 装修消费（匿名只读，保存后立即生效）
 Route::get('api/decoration/mobile', [ApiDecorationController::class, 'mobilePage'])

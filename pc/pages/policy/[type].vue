@@ -4,13 +4,15 @@
     <div
       v-if="policy?.content"
       class="bg-white rounded-xl p-8 shadow-sm prose max-w-none text-gray-600 leading-relaxed"
-      v-html="policy.content"
+      v-html="safePolicyContent"
     />
     <el-empty v-else description="内容加载中..." />
   </div>
 </template>
 
 <script setup lang="ts">
+import sanitizeRichText from '~/utils/sanitize-rich-text'
+
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
@@ -21,6 +23,7 @@ const { data } = await useFetch<{ code: number; data: { title: string; content: 
   `${apiBase}/api/index/policy?type=${type}`
 )
 const policy = computed(() => data.value?.data || null)
+const safePolicyContent = computed(() => sanitizeRichText(policy.value?.content))
 
 useHead({ title: computed(() => policy.value?.title || '政策') })
 </script>

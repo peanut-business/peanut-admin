@@ -74,11 +74,13 @@ if (options.tag && gitOptional(['cat-file', '-t', options.tag]) !== 'tag') {
 let commit = ''
 let tree = ''
 let metadataText = ''
+let versionContractText = ''
 let ledgerText = ''
 let inventoryText = ''
 let scaffoldText = ''
 let fixtureText = ''
 let metadata = null
+let versionContract = null
 let ledger = null
 let inventory = null
 let scaffold = null
@@ -96,9 +98,11 @@ try {
     else if (mainCommit !== commit) failures.push(`candidate is not the current origin/main commit (origin/main=${mainCommit})`)
   }
   metadataText = show('RELEASE_METADATA.json')
+  versionContractText = show('release-versions.json')
   ledgerText = show('docs/product-status/capability-ledger.json')
   inventoryText = show('scaffold/application-template-inventory.json')
   metadata = JSON.parse(metadataText)
+  versionContract = JSON.parse(versionContractText)
   ledger = JSON.parse(ledgerText)
   inventory = JSON.parse(inventoryText)
   version = metadata.version ?? ''
@@ -111,6 +115,11 @@ try {
 }
 
 const expectedTag = `v${version}`
+if (versionContract && (!/^\d+\.\d+\.\d+$/.test(versionContract.product_release ?? '')
+  || versionContract.product_release !== metadata?.version
+  || versionContract.scaffold_template !== inventory?.template_version)) {
+  failures.push('release version contract does not match metadata and inventory')
+}
 if (!/^\d+\.\d+\.\d+$/.test(version)) failures.push(`metadata version is invalid: ${version || 'missing'}`)
 if (metadata && metadata.expected_tag !== expectedTag) failures.push(`metadata expected_tag does not match ${expectedTag}`)
 if (options.tag && options.tag !== expectedTag) failures.push(`tag ${options.tag} does not match embedded version ${version}`)
@@ -206,6 +215,7 @@ if (options.writeLock) {
     },
     inputs: {
       release_metadata_sha256: sha256(metadataText),
+      version_contract_sha256: sha256(versionContractText),
       capability_ledger_sha256: sha256(ledgerText),
       application_template_inventory_sha256: sha256(inventoryText),
       scaffold_manifest_sha256: sha256(scaffoldText),

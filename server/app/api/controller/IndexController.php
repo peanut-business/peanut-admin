@@ -32,7 +32,13 @@ class IndexController extends BaseApiController
     public function policy()
     {
         $type   = $this->request->get('type/s', 'service');
-        $result = IndexLogic::getPolicyByType($type);
+        $result = IndexLogic::getPolicyByType(
+            DecorationTenantContext::read(
+                $this->request,
+                DecorationTenantContext::CONFIG_OPERATION
+            ),
+            $type,
+        );
         return $this->data($result);
     }
 }

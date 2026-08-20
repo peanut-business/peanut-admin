@@ -8,6 +8,8 @@ use app\common\logic\BaseLogic;
 use app\common\service\file\FileObjectNamespace;
 use app\common\service\file\FileTenantRepository;
 use app\common\service\storage\Driver;
+use app\common\support\PaginationInput;
+use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -41,8 +43,7 @@ class FileLogic extends BaseLogic
             $where[] = ['name', 'like', '%' . trim((string)$params['name']) . '%'];
         }
 
-        $pageNo   = max(1, (int)($params['page_no'] ?? 1));
-        $pageSize = min(100, max(1, (int)($params['page_size'] ?? 15)));
+        $pagination = PaginationInput::from($params);
 
         $countQuery = FileTenantRepository::files($context)->where($where);
         $listQuery = FileTenantRepository::files($context)->where($where);
@@ -55,10 +56,12 @@ class FileLogic extends BaseLogic
         $lists = $listQuery
             ->append(['url'])
             ->order(['id' => 'desc'])
-            ->page($pageNo, $pageSize)
+            ->page($pagination->page, $pagination->pageSize)
             ->select()
             ->toArray();
 
+        $pageNo = $pagination->page;
+        $pageSize = $pagination->pageSize;
         return compact('lists', 'count', 'pageNo', 'pageSize');
     }
 
@@ -154,16 +157,12 @@ class FileLogic extends BaseLogic
 
     private static function normalizeIds(array $ids): array
     {
-        $ids = array_map('intval', $ids);
-        if (empty($ids)) {
-            throw new \InvalidArgumentException('素材 ID 集合不能为空');
-        }
-        foreach ($ids as $id) {
-            if ($id <= 0) {
-                throw new \InvalidArgumentException('素材 ID 无效');
-            }
-        }
-        return array_values(array_unique($ids));
+        return PositiveIds::normalize(
+            $ids,
+            [PositiveIds::REJECT_INVALID, PositiveIds::REQUIRE_NON_EMPTY],
+            '素材 ID 无效',
+            '素材 ID 集合不能为空',
+        );
     }
 
     private static function integerValue(mixed $value, string $message): int

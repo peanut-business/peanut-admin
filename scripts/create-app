@@ -8,17 +8,18 @@ use app\common\service\scaffold\ScaffoldManifest;
 $root = dirname(__DIR__);
 require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
 require $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
+require $root . '/server/app/common/service/scaffold/VersionContract.php';
 require $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
 
 function createAppUsage(): never
 {
-    fwrite(STDERR, "Usage: php scripts/create-app --name=<product> --slug=<slug> --package=<vendor/name> --target=/absolute/path [--application-version=<semver>]\n");
+    fwrite(STDERR, "Usage: php scripts/create-app --name=<product> --slug=<slug> --package=<vendor/name> --target=/absolute/path [--application-version=<semver>] [--profile=minimal|standard|full]\n");
     exit(64);
 }
 
 $options = [];
 foreach (array_slice($argv, 1) as $argument) {
-    if (preg_match('/^--(name|slug|package|target|application-version)=(.*)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
+    if (preg_match('/^--(name|slug|package|target|application-version|profile)=(.*)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
         createAppUsage();
     }
     $options[$matches[1]] = $matches[2];
@@ -34,9 +35,11 @@ try {
     $inventoryRaw = file_get_contents($inventoryPath);
     $inventory = is_string($inventoryRaw) ? json_decode($inventoryRaw, true, 512, JSON_THROW_ON_ERROR) : null;
     $templateVersion = is_array($inventory) ? ($inventory['template_version'] ?? null) : null;
-    if (!is_string($templateVersion) || preg_match('/^\d+\.\d+\.\d+$/D', $templateVersion) !== 1) {
+    $versions = \app\common\service\scaffold\VersionContract::load($root . '/release-versions.json');
+    if (!is_string($templateVersion)) {
         throw new RuntimeException('CREATE_APP_ADOPTION_INVENTORY_VERSION_INVALID');
     }
+    $versions->assertSame($templateVersion, $versions->scaffoldTemplate(), 'CREATE_APP_ADOPTION_INVENTORY_VERSION_INVALID');
     $adoptionPath = $root . '/scaffold/releases/v' . $templateVersion . '/scaffold-manifest.json';
     $adoption = ScaffoldManifest::load($adoptionPath);
     if ($adoption->version() !== $templateVersion
@@ -48,13 +51,15 @@ try {
         $options['slug'],
         $options['package'],
         $options['target'],
-        $options['application-version'] ?? null
+        $options['application-version'] ?? null,
+        $options['profile'] ?? 'standard'
     );
     fwrite(STDOUT, json_encode([
         'status' => 'created',
         'target' => $options['target'],
         'template_version' => $manifest['template']['version'],
         'application_version' => $manifest['application']['version'],
+        'profile' => $manifest['application']['profile'],
         'source_commit' => $manifest['template']['source_commit'],
         'generation_source_commit' => $manifest['generation_source']['commit'],
         'managed_tree_sha256' => $manifest['digests']['managed_tree_sha256'],

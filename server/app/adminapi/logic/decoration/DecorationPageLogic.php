@@ -15,6 +15,7 @@ class DecorationPageLogic extends BaseLogic
 {
     public static function lists(TenantContext $context, array $allowedTypes): array
     {
+        self::clearError();
         return DecorationTenantRepository::pages($context)
             ->field(['id', 'type', 'name', 'update_time'])
             ->whereIn('type', $allowedTypes)->order('type', 'asc')->select()->toArray();
@@ -22,6 +23,7 @@ class DecorationPageLogic extends BaseLogic
 
     public static function detail(TenantContext $context, int $id, array $allowedTypes): array|false
     {
+        self::clearError();
         try {
             $page = DecorationTenantRepository::pages($context)->where('id', $id)->findOrEmpty();
             if ($page->isEmpty() || !in_array((int)$page->type, $allowedTypes, true)) {
@@ -29,23 +31,23 @@ class DecorationPageLogic extends BaseLogic
             }
             return DecorationReadService::formatPage($page->toArray());
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function detailByType(TenantContext $context, int $type): array|false
     {
+        self::clearError();
         try {
             return DecorationReadService::pageByType($context, $type);
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function save(TenantContext $context, array $params, array $allowedTypes): bool
     {
+        self::clearError();
         try {
             $type = (int)$params['type'];
             if (!in_array($type, $allowedTypes, true)) {
@@ -76,13 +78,13 @@ class DecorationPageLogic extends BaseLogic
             });
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function articleOptions(TenantContext $context, int $limit): array
     {
+        self::clearError();
         return ArticleTenantRepository::articles($context)->field(['id', 'title', 'image', 'abstract'])
             ->where('is_show', 1)->order('id', 'desc')->limit($limit)
             ->select()->toArray();

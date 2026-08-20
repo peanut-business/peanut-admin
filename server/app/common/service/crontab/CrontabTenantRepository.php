@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\crontab;
 
 use app\common\model\Crontab;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class CrontabTenantRepository

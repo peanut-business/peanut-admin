@@ -7,7 +7,7 @@ use think\Model;
 
 /**
  * Tenant-owned 热门搜索词（无软删，仅记录 create_time）。
- * hot_search.status 仍由 pa_config 提供实例级开关。
+ * 开关由 pa_tenant_setting 的 hot-search namespace 持有。
  */
 class HotSearch extends Model
 {

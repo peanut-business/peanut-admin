@@ -5,6 +5,7 @@ namespace app\common\model\article;
 
 use app\common\model\BaseModel;
 use app\common\service\ProductAssetReferenceService;
+use app\common\service\RichTextResourceService;
 use app\common\service\article\ArticleTenantRepository;
 use think\model\concern\SoftDelete;
 
@@ -39,32 +40,16 @@ class Article extends BaseModel
         return $value ? ProductAssetReferenceService::forStorage((string)$value) : '';
     }
 
-    /** 富文本内相对图片、视频地址补全当前文件域名。 */
+    /** Rich text is sanitized again when historical content is read. */
     public function getContentAttr($value): string
     {
-        if (empty($value)) {
-            return (string) $value;
-        }
-        return (string) preg_replace_callback(
-            '/(<(?:img|video)\b[^>]*?\bsrc=["\'])(?!https?:\/\/)([^"\']+)(["\'][^>]*>)/is',
-            static fn(array $matches): string => $matches[1]
-                . ProductAssetReferenceService::forRead($matches[2]) . $matches[3],
-            (string) $value
-        );
+        return RichTextResourceService::forRead((string)$value);
     }
 
-    /** 富文本入库时仅去除同源 local storage 域名。 */
+    /** Rich text is sanitized before any content reaches persistence. */
     public function setContentAttr($value): string
     {
-        if (empty($value)) {
-            return (string) $value;
-        }
-        return (string) preg_replace_callback(
-            '/(<(?:img|video)\b[^>]*?\bsrc=["\'])(https?:\/\/[^"\']+)(["\'][^>]*>)/is',
-            static fn(array $matches): string => $matches[1]
-                . ProductAssetReferenceService::forStorage($matches[2]) . $matches[3],
-            (string) $value
-        );
+        return RichTextResourceService::forStorage((string)$value);
     }
 
     /** 可见文章详情；读取即累计一次真实浏览量。 */

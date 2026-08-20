@@ -48,6 +48,8 @@ $ownedFiles = [
     'app/adminapi/logic/dict/DictDataLogic.php',
     'app/common/model/dict/DictType.php',
     'app/common/model/dict/DictData.php',
+    'app/common/service/dict/ThinkPhpTenantDictionaryProvider.php',
+    'app/common/service/dict/ThinkPhpSystemDictionaryProvider.php',
 ];
 $sources = [];
 foreach ($ownedFiles as $relativePath) {
@@ -58,19 +60,21 @@ foreach ($ownedFiles as $relativePath) {
 
 $typeLogic = $sources['app/adminapi/logic/dict/DictTypeLogic.php'];
 $dataLogic = $sources['app/adminapi/logic/dict/DictDataLogic.php'];
-expectReferenceCodes(str_contains($typeLogic, 'Db::transaction('), 'type mutations must retain a transaction');
-expectReferenceCodes(str_contains($typeLogic, '->lock(true)'), 'type mutations must retain row locks');
+$tenantProvider = $sources['app/common/service/dict/ThinkPhpTenantDictionaryProvider.php'];
+expectReferenceCodes(str_contains($tenantProvider, 'Db::transaction('), 'type mutations must retain a transaction');
+expectReferenceCodes(str_contains($tenantProvider, '->lock(true)'), 'type mutations must retain row locks');
 expectReferenceCodes(
-    str_contains($typeLogic, "DictTenantRepository::data(\$context)->where('type_id'")
-        && str_contains($typeLogic, "->update(['type_value'"),
+    str_contains($tenantProvider, "->where('type_id'")
+        && str_contains($tenantProvider, "'type_value' =>"),
     'type rename must synchronize data.type_value'
 );
 expectReferenceCodes(
-    str_contains($typeLogic, '字典类型已被数据项使用，请先删除数据项'),
+    str_contains($tenantProvider, '字典类型已被数据项使用，请先删除数据项'),
     'occupied type deletion must fail closed'
 );
 expectReferenceCodes(
-    preg_match("/byType\(.*?where\('is_disable', 0\)/s", $dataLogic) === 1,
+    str_contains($tenantProvider, "->where('is_disable', 0)")
+        && str_contains($dataLogic, 'enabledByType'),
     'byType must expose enabled data only'
 );
 

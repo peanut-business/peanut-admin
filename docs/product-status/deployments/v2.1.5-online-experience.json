@@ -37,7 +37,7 @@
       "tenant_seed": {
         "tenant_a_id": 2,
         "tenant_b_id": 3,
-        "shared_password_policy": "demo-only environment value; not recorded here"
+        "shared_password_policy": "not recorded in this immutable deployment-time snapshot; current validated demo access is maintained in docs/operations/demo-access.md"
       }
     }
   },
@@ -50,5 +50,5 @@
     ],
     "manual_visual_check": "passed: no broken images, empty image boxes, overlapping or clipped text, stuck loading state, mixed-language error, or inaccessible login controls observed"
   },
-  "secrets_policy": "No credentials, cookies, tokens, passwords or environment contents are recorded in this snapshot."
+  "secrets_policy": "No credentials, cookies, tokens, passwords or environment contents were recorded in this deployment-time snapshot. Current owner-authorized disposable-demo credentials are maintained separately in docs/operations/demo-access.md and resources/project-resources.json."
 }

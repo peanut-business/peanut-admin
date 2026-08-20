@@ -5,12 +5,12 @@
   "facts_baseline": {
     "branch": "main",
     "commit": "aefc5779c97db1cd17442269e50156baeaa4ba0c",
-    "reviewed_at": "2026-08-20"
+    "reviewed_at": "2026-08-21"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
-    "status": "verified",
-    "summary": "v2.1.5 已完成固定 tag、P0-E 7/7、GitHub Release、生产单租户升级、多租户 Demo 部署和无秘密 post-deployment 快照；后续版本继续沿用 main-first 固定候选流程。"
+    "status": "in_progress",
+    "summary": "v3.0.0 候选正在统一版本合同、脚手架工具、部署安全、Tenant 边界和富文本安全；历史 v2.1.5 资格证据保留为上一版本事实，3.0.0 尚未发布。"
   },
   "capabilities": [
     {
@@ -87,8 +87,7 @@
         }
       ],
       "paths": [
-        "server/database/install.php",
-        "server/database/migrate.php"
+        "server/database/install.php"
       ]
     },
     {
@@ -575,7 +574,7 @@
       "name": "2.0 发布后部署与演示闭环",
       "area": "release",
       "status": "verified",
-      "summary": "v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付。",
+      "summary": "v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。",
       "acceptance": [
         "从不可变 v2.0.0 tag 对登记目标执行非交互 fresh 或同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
         "Standalone 与 Multi-tenant 各形成一个独立部署、数据库、域名和最小浏览器证据",
