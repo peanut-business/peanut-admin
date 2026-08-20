@@ -149,9 +149,9 @@ try {
     $first = $temporary . '/first';
     $second = $temporary . '/second';
     $other = $temporary . '/other';
-    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first);
-    $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second);
-    $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other);
+    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, null, 'full');
+    $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second, null, 'full');
+    $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other, null, 'full');
     $release = json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['release'];
 
     createApplicationExpect($manifestOne['template'] === [
@@ -194,7 +194,7 @@ try {
 
     $expected = ['.peanut/application-manifest.json'];
     foreach ($inventory['files'] as $entry) {
-        if ($entry['classification'] === 'excluded' || !in_array('standard', $entry['profiles'], true)) continue;
+        if ($entry['classification'] === 'excluded' || !in_array('full', $entry['profiles'], true)) continue;
         $expected[] = $entry['target'];
         if (in_array($entry['classification'], ['managed', 'generated-managed'], true)) {
             $expected[] = '.peanut/scaffold-baseline/' . $inventory['template_version'] . '/files/' . $entry['target'];
