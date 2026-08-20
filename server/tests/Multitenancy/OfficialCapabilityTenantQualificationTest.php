@@ -19,32 +19,41 @@ $root = dirname(__DIR__, 2);
 $sources = [];
 foreach ([
     'default_context' => 'app/common/service/tenant/DefaultTenantContextResolver.php',
+    'default_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/DefaultTenantContextResolver.php',
     'entry_binding' => 'app/common/service/tenant/TenantEntryBindingResolver.php',
-    'entry_migration' => 'database/migrations/20260816-tenant-entry-binding.sql',
+    'entry_binding_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantEntryBindingResolver.php',
+    'entry_schema' => 'database/init.sql',
     'public_member_middleware' => 'app/api/middleware/PublicMemberTenantMiddleware.php',
     'tenant_session' => 'app/tenant/controller/TenantSessionController.php',
     'admin_login' => 'app/adminapi/logic/auth/LoginLogic.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
+    'authenticated_member_context_core' => 'vendor/peanut-admin/core/kernel/src/Context/AuthenticatedMemberContext.php',
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
     'member_middleware' => 'app/api/middleware/CheckTokenMiddleware.php',
     'file_repository' => 'app/common/service/file/FileTenantRepository.php',
     'file_namespace' => 'app/common/service/file/FileObjectNamespace.php',
+    'file_namespace_core' => 'vendor/peanut-admin/core/file-media/src/Storage/TenantObjectNamespace.php',
     'article_repository' => 'app/common/service/article/ArticleTenantRepository.php',
     'decoration_repository' => 'app/common/service/decoration/DecorationTenantRepository.php',
     'notice_repository' => 'app/common/service/notice/NoticeTenantRepository.php',
     'oauth_repository' => 'app/common/service/oauth/OAuthTenantRepository.php',
     'external_resolver' => 'app/common/service/external/ExternalTenantResolver.php',
+    'external_resolver_core' => 'vendor/peanut-admin/core/integration-security/src/External/ExternalTenantResolver.php',
+    'external_binding_contract' => 'app/common/service/external/ExternalTenantBindingRepository.php',
+    'external_audit_contract' => 'app/common/service/external/ExternalTenantAudit.php',
     'finance_repository' => 'app/common/service/finance/FinanceTenantRepository.php',
     'recharge_settings' => 'app/common/service/finance/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
     'notice_channel' => 'app/common/service/notice/NoticeChannelService.php',
-    'platform_storage' => 'app/common/service/platform/InstanceControlPlanePolicy.php',
+    'platform_storage' => 'vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php',
     'admin_permissions' => 'app/adminapi/service/AdminPermissionService.php',
     'member_admin_context' => 'app/common/service/member/MemberTenantContext.php',
     'article_admin_context' => 'app/common/service/article/ArticleTenantContext.php',
     'file_admin_context' => 'app/common/service/file/FileTenantContext.php',
     'finance_admin_context' => 'app/common/service/finance/FinanceTenantContext.php',
     'crontab_scheduler' => 'app/common/service/crontab/CrontabSchedulerService.php',
+    'scheduled_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/ScheduledTenantContext.php',
+    'tenant_scope_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantScope.php',
     'async_authorization' => 'app/common/service/async/AdminAsyncAuthorization.php',
     'async_runtime' => 'app/common/service/async/TaskImportExportRuntime.php',
     'async_files' => 'app/common/service/export/AppFileMediaGateway.php',
@@ -57,7 +66,10 @@ foreach ([
     'official_task_routes' => 'app/Modules/Official/Task/Http/routes.php',
     'official_import_export_routes' => 'app/Modules/Official/ImportExport/Http/routes.php',
     'official_module_middleware' => 'app/common/service/module/OfficialModuleMiddleware.php',
+    'module_execution_context' => 'app/common/service/module/ModuleExecutionContext.php',
+    'module_execution_context_core' => 'vendor/peanut-admin/core/kernel/src/Module/ModuleExecutionContext.php',
     'module_execution_guard' => 'app/common/service/module/ModuleExecutionGuard.php',
+    'module_guard_core' => 'vendor/peanut-admin/core/kernel/src/Module/ModuleGuard.php',
     'oauth_controller' => 'app/api/controller/OAuthController.php',
     'console' => 'config/console.php',
     'module_manifest' => 'vendor/peanut-admin/core/kernel/src/Module/ManifestLoader.php',
@@ -74,13 +86,24 @@ foreach ([
 foreach (['file_repository', 'article_repository', 'decoration_repository', 'notice_repository', 'oauth_repository', 'finance_repository'] as $key) {
     qualificationExpect(str_contains($sources[$key], 'tenant_id'), $key . ' lost SQL Tenant scope');
 }
-qualificationExpect(str_contains($sources['file_namespace'], 'tenants/v1/%d'), 'file objects lost Tenant namespace');
+qualificationExpect(
+    str_contains($sources['file_namespace'], 'TenantObjectNamespace::directory')
+        && str_contains($sources['file_namespace'], 'TenantObjectNamespace::ownsUri')
+        && str_contains($sources['file_namespace_core'], "sprintf('tenants/v1/%d/%s'")
+        && str_contains($sources['file_namespace_core'], "sprintf('tenants/v1/%d/'")
+        && str_contains($sources['file_namespace_core'], "str_contains(\$relativeDirectory, '..')")
+        && str_contains($sources['file_namespace_core'], 'assertTenantId($tenantId)'),
+    'file objects lost the Core-owned Tenant namespace'
+);
 qualificationExpect(str_contains($sources['async_files'], "'tenants/v1/%d/exports/'"), 'async exports lost private Tenant namespace');
 qualificationExpect(
-    str_contains($sources['default_context'], "Db::name('tenant')")
-        && str_contains($sources['default_context'], "where('code', 'default')")
-        && str_contains($sources['default_context'], "where('status', 'active')")
-        && !str_contains($sources['default_context'], 'default_tenant_bootstrap'),
+    str_contains($sources['default_context'], 'new CoreDefaultTenantContextResolver($pdo)')
+        && str_contains($sources['default_context'], 'CoreDefaultTenantContextResolver::operationId($request)')
+        && str_contains($sources['default_context_core'], "code = 'default'")
+        && str_contains($sources['default_context_core'], "status = 'active'")
+        && str_contains($sources['default_context_core'], 'LIMIT 2')
+        && str_contains($sources['default_context_core'], 'count($ids) !== 1')
+        && !str_contains($sources['default_context_core'], 'default_tenant_bootstrap'),
     'anonymous default-Tenant resolution does not fail closed'
 );
 qualificationExpect(
@@ -90,10 +113,15 @@ qualificationExpect(
     'member JWT ownership does not establish an active trusted Tenant context'
 );
 qualificationExpect(
-    str_contains($sources['authenticated_member_context'], 'public readonly int $memberId')
-        && !str_contains($sources['authenticated_member_context'], 'accountId')
-        && !str_contains($sources['authenticated_member_context'], 'tenantMember')
-        && !str_contains($sources['authenticated_member_context'], 'PeanutAdmin\\Kernel\\Auth'),
+    str_contains(
+        $sources['authenticated_member_context'],
+        'extends \\PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext'
+    )
+        && str_contains($sources['authenticated_member_context_core'], 'public readonly int $memberId')
+        && str_contains($sources['authenticated_member_context_core'], 'MEMBER_TENANT_CONTEXT_UNAVAILABLE')
+        && !str_contains($sources['authenticated_member_context_core'], 'accountId')
+        && !str_contains($sources['authenticated_member_context_core'], 'tenantMember')
+        && !str_contains($sources['authenticated_member_context_core'], 'PeanutAdmin\\Kernel\\Auth'),
     'application-member identity is mixed with Core Account or TenantMember identity'
 );
 qualificationExpect(
@@ -105,11 +133,18 @@ qualificationExpect(
     'member JWT context is still written into the Core TenantContext request boundary'
 );
 qualificationExpect(
-    str_contains($sources['entry_migration'], 'pa_tenant_entry_binding')
-        && str_contains($sources['entry_migration'], 'fk_tenant_entry_binding_tenant')
-        && str_contains($sources['entry_binding'], 'b.host = :host')
-        && str_contains($sources['entry_binding'], 'b.client_key = :client_key')
-        && str_contains($sources['entry_binding'], "tenant_status'] ?? null) !== 'active'"),
+    str_contains($sources['entry_schema'], 'pa_tenant_entry_binding')
+        && str_contains($sources['entry_schema'], 'fk_tenant_entry_binding_tenant')
+        && str_contains($sources['entry_binding'], 'new CoreTenantEntryBindingResolver($pdo, $defaultSystem)')
+        && str_contains($sources['entry_binding'], '$this->delegate->loginTenantCode(')
+        && str_contains($sources['entry_binding'], '$this->delegate->assertTenantAccess(')
+        && str_contains($sources['entry_binding'], '$this->delegate->system(')
+        && str_contains($sources['entry_binding'], 'DefaultTenantContextResolver::system(')
+        && str_contains($sources['entry_binding_core'], 'b.host = :host')
+        && str_contains($sources['entry_binding_core'], 'b.client_key = :client_key')
+        && str_contains($sources['entry_binding_core'], 'count($rows) !== 1')
+        && str_contains($sources['entry_binding_core'], "tenant_status'] ?? null) !== 'active'")
+        && str_contains($sources['entry_binding_core'], 'TENANT_ENTRY_BINDING_CONFLICT'),
     'Tenant entry bindings are not instance-owned and active-Tenant scoped'
 );
 qualificationExpect(
@@ -120,8 +155,19 @@ qualificationExpect(
     'Admin or anonymous member authentication bypasses Tenant entry resolution'
 );
 qualificationExpect(
-    str_contains($sources['external_resolver'], '!$binding->tenantActive')
-        && str_contains($sources['external_resolver'], 'count($bindings) !== 1'),
+    str_contains(
+        $sources['external_resolver'],
+        'new \\PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantResolver($bindings, $audit)'
+    )
+        && str_contains($sources['external_resolver'], '$this->core->verifiedCallback(')
+        && str_contains($sources['external_resolver'], '$this->core->bindingForTenant(')
+        && str_contains($sources['external_binding_contract'], 'extends \\PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantBindingRepository')
+        && str_contains($sources['external_audit_contract'], 'extends \\PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantAudit')
+        && str_contains($sources['external_resolver_core'], '!$binding->tenantActive')
+        && str_contains($sources['external_resolver_core'], 'count($bindings) !== 1')
+        && str_contains($sources['external_resolver_core'], '!$binding->active')
+        && str_contains($sources['external_resolver_core'], '!hash_equals($provider, $binding->provider)')
+        && str_contains($sources['external_resolver_core'], "\$this->audit->record('rejected'"),
     'external callbacks do not reject ambiguous or suspended Tenant ownership'
 );
 qualificationExpect(
@@ -131,7 +177,14 @@ qualificationExpect(
 );
 qualificationExpect(
     str_contains($sources['crontab_scheduler'], "t.status', 'active'")
-        && str_contains($sources['crontab_scheduler'], 'ScheduledTenantContext::run'),
+        && str_contains($sources['crontab_scheduler'], 'use PeanutAdmin\\Kernel\\Tenancy\\ScheduledTenantContext;')
+        && str_contains($sources['crontab_scheduler'], 'use PeanutAdmin\\Kernel\\Tenancy\\TenantScope;')
+        && str_contains($sources['crontab_scheduler'], 'ScheduledTenantContext::run')
+        && str_contains($sources['scheduled_context_core'], 'finally')
+        && str_contains($sources['scheduled_context_core'], 'self::$scope = null')
+        && str_contains($sources['scheduled_context_core'], "throw new \\RuntimeException('Scheduled TenantContext is required')")
+        && str_contains($sources['tenant_scope_core'], 'fromTrustedContext(')
+        && str_contains($sources['tenant_scope_core'], 'private function __construct('),
     'scheduled work does not re-establish active Tenant ownership'
 );
 qualificationExpect(
@@ -154,7 +207,10 @@ qualificationExpect(
 );
 qualificationExpect(
     str_contains($sources['platform_storage'], "'storage/setup'")
+        && str_contains($sources['admin_permissions'], 'use PeanutAdmin\\Kernel\\Platform\\InstanceControlPlanePolicy;')
         && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::isTenantAdminRoute')
+        && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::tenantAdminPermissions()')
+        && !is_file($root . '/app/common/service/platform/InstanceControlPlanePolicy.php')
         && str_contains($sources['routes'], 'api/platform/infrastructure/storage')
         && !str_contains($sources['routes'], "Route::post('storage/setup'"),
     'instance storage control remains reachable from a Tenant Admin audience'
@@ -265,10 +321,27 @@ foreach ($officialModules as $moduleKey => $routeSourceKey) {
     );
 }
 qualificationExpect(
-    str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::admin(')
+    str_contains(
+        $sources['module_execution_context'],
+        '\\PeanutAdmin\\Kernel\\Module\\ModuleExecutionContext::class'
+    )
+        && str_contains($sources['module_execution_context'], 'class_alias(')
+        && str_contains($sources['module_execution_context_core'], 'public static function admin(')
+        && str_contains($sources['module_execution_context_core'], 'public static function businessMember(')
+        && str_contains($sources['module_execution_context_core'], 'public static function system(')
+        && str_contains($sources['module_execution_context_core'], 'public static function scheduled(')
+        && str_contains($sources['module_execution_context_core'], 'authorizationRevision < 1')
+        && str_contains($sources['module_execution_context_core'], 'MODULE_CONTEXT_INVALID')
+        && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::admin(')
         && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::system(')
         && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::businessMember(')
-        && str_contains($sources['official_module_middleware'], 'assertEnabled($context)'),
+        && str_contains($sources['official_module_middleware'], 'assertEnabled($context)')
+        && str_contains($sources['module_execution_guard'], '$this->guard->assertDeployment(')
+        && str_contains($sources['module_execution_guard'], '$this->guard->assertTenant(')
+        && str_contains($sources['module_execution_guard'], 'PdoTenantAuthorizationRepository')
+        && str_contains($sources['module_execution_guard'], '$this->guard->assertMemberAccess(')
+        && str_contains($sources['module_guard_core'], "MODULE_TENANT_DISABLED")
+        && str_contains($sources['module_guard_core'], "AUTHORIZATION_PERMISSION_DENIED"),
     'shared official Module middleware does not require a trusted Tenant context and TenantModule state'
 );
 qualificationExpect(

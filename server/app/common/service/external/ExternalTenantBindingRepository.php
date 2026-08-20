@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\external;
 
-interface ExternalTenantBindingRepository
+interface ExternalTenantBindingRepository extends \PeanutAdmin\IntegrationSecurity\External\ExternalTenantBindingRepository
 {
     /** @return list<ExternalTenantBinding> */
     public function byCallbackKey(string $provider, string $callbackKey): array;

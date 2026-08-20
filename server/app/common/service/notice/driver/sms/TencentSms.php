@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\notice\driver\sms;
 
+use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
+
 /**
  * 腾讯云短信驱动（TC3-HMAC-SHA256 签名）
  * 文档：https://cloud.tencent.com/document/product/382/52071
@@ -10,7 +12,7 @@ namespace app\common\service\notice\driver\sms;
  * 配置 key（pa_config type=notice，name=sms_tencent，value=JSON）：
  *   secret_id, secret_key, sdk_app_id, sign_name, region
  */
-class TencentSms extends SmsDriver
+final class TencentSms extends TemplateSmsDriver
 {
     private string $secretId;
     private string $secretKey;

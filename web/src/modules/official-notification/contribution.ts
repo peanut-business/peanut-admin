@@ -1,4 +1,4 @@
-import type { PluginFrontendContribution } from '@/core/plugin-contribution-policy';
+import type { PluginFrontendContribution } from '@peanut-admin/admin/core';
 import { DEFAULT_LAYOUT } from '@/router/routes/base';
 
 const contribution: PluginFrontendContribution = {

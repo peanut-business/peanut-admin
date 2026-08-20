@@ -186,7 +186,7 @@
   import useUser from '@/hooks/user';
   import MenuComponent from '@/components/menu/index.vue';
   import { selectTenant, tenantSwitch } from '@/api/tenant-session';
-  import type { TenantChoice } from '@/core/tenant-session';
+  import type { TenantChoice } from '@peanut-admin/admin/core';
   import { getToken, setToken } from '@/utils/auth';
 
   const appStore = useAppStore();

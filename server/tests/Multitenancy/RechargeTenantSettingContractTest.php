@@ -9,7 +9,7 @@ function expectRechargeTenantSetting(bool $condition, string $message): void
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$migration = (string)file_get_contents($serverRoot . '/database/migrations/20260816-tenant-capability-setting.sql');
+$schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 $settingService = (string)file_get_contents($serverRoot . '/app/common/service/tenant/TenantSettingService.php');
 $rechargeService = (string)file_get_contents($serverRoot . '/app/common/service/finance/RechargeTenantSettingService.php');
 $adminLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/setting/RechargeSettingLogic.php');
@@ -17,7 +17,7 @@ $apiLogic = (string)file_get_contents($serverRoot . '/app/api/logic/RechargeLogi
 
 foreach (['`tenant_id`', '`namespace`', '`config_json`', 'uk_tenant_setting_namespace',
     'fk_tenant_setting_tenant'] as $marker) {
-    expectRechargeTenantSetting(str_contains($migration, $marker), 'Tenant setting schema missing: ' . $marker);
+    expectRechargeTenantSetting(str_contains($schema, $marker), 'Tenant setting schema missing: ' . $marker);
 }
 foreach (["where('tenant_id', \$tenantId)", "where('namespace', \$namespace)",
     "'revision' => (int)\$row['revision'] + 1"] as $marker) {

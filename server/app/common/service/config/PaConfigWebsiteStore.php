@@ -5,8 +5,9 @@ namespace app\common\service\config;
 
 use app\common\contract\config\WebsiteConfigStore;
 use app\common\service\ConfigService;
+use PeanutAdmin\Settings\Contract\WebsiteConfigStore as CoreWebsiteConfigStore;
 
-final class PaConfigWebsiteStore implements WebsiteConfigStore
+final class PaConfigWebsiteStore implements WebsiteConfigStore, CoreWebsiteConfigStore
 {
     private const TYPE = 'website';
 

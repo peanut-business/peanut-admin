@@ -241,19 +241,19 @@ entryBindingExpect(
     'Admin session requests lost the continuous Host boundary',
 );
 
-$migration = (string)file_get_contents(
-    dirname(__DIR__, 2) . '/database/migrations/20260816-tenant-entry-binding.sql'
+$schema = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/database/init.sql'
 );
 foreach (['pa_tenant_entry_binding', '`tenant_id`', '`host`', '`client_key`', 'fk_tenant_entry_binding_tenant'] as $token) {
-    entryBindingExpect(str_contains($migration, $token), 'Tenant entry migration lost contract token: ' . $token);
+    entryBindingExpect(str_contains($schema, $token), 'Tenant entry schema lost contract token: ' . $token);
 }
 entryBindingExpect(
-    str_contains($migration, 'UNIQUE KEY `uk_tenant_entry_binding` (`host`, `client_key`)'),
-    'Tenant entry migration lost the one Host/client invariant',
+    str_contains($schema, 'UNIQUE KEY `uk_tenant_entry_binding` (`host`, `client_key`)'),
+    'Tenant entry schema lost the one Host/client invariant',
 );
 entryBindingExpect(
-    str_contains($migration, "CHECK (`status` IN ('active', 'disabled'))"),
-    'Tenant entry migration lost its binding status constraint',
+    str_contains($schema, "CHECK (`status` IN ('active', 'disabled'))"),
+    'Tenant entry schema lost its binding status constraint',
 );
 
 echo "MT07-TENANT-ENTRY-BINDING-001 passed\n";

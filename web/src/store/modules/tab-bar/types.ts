@@ -1,12 +1,5 @@
-export interface TagProps {
-  title: string;
-  name: string;
-  fullPath: string;
-  query?: any;
-  ignoreCache?: boolean;
-}
-
-export interface TabBarState {
-  tagList: TagProps[];
-  cacheTabList: Set<string>;
-}
+/** @deprecated Application compatibility exports for the framework-neutral Shell tab contract. */
+export type {
+  ShellTab as TagProps,
+  ShellTabState as TabBarState,
+} from '@peanut-admin/admin/shell';

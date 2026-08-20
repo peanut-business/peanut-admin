@@ -55,22 +55,20 @@ ownerInvitationExpect(
 ownerInvitationExpect(!in_array($token->expose(), $delivery->__debugInfo(), true), 'delivery debug output exposes token');
 
 $serverRoot = dirname(__DIR__, 2);
-$migration = (string)file_get_contents(
-    $serverRoot . '/database/migrations/20260816-tenant-owner-invitation.sql'
-);
+$schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 foreach (['pending', 'accepted', 'revoked', 'expired'] as $status) {
-    ownerInvitationExpect(str_contains($migration, "'{$status}'"), "invitation status missing: {$status}");
+    ownerInvitationExpect(str_contains($schema, "'{$status}'"), "invitation status missing: {$status}");
 }
-ownerInvitationExpect(str_contains($migration, '`token_hash` CHAR(64)'), 'migration does not persist a token hash');
-ownerInvitationExpect(!str_contains($migration, '`token` VARCHAR'), 'migration persists a plaintext token column');
+ownerInvitationExpect(str_contains($schema, '`token_hash` CHAR(64)'), 'schema does not persist a token hash');
+ownerInvitationExpect(!str_contains($schema, '`token` VARCHAR'), 'schema persists a plaintext token column');
 ownerInvitationExpect(
-    str_contains($migration, 'GENERATED ALWAYS AS')
-        && str_contains($migration, 'uk_owner_invitation_pending_tenant'),
-    'migration lacks the one-pending-invitation concurrency guard'
+    str_contains($schema, 'GENERATED ALWAYS AS')
+        && str_contains($schema, 'uk_owner_invitation_pending_tenant'),
+    'schema lacks the one-pending-invitation concurrency guard'
 );
 ownerInvitationExpect(
-    str_contains($migration, 'pending_delivery') && str_contains($migration, 'delivery_error_code'),
-    'migration lacks honest delivery state'
+    str_contains($schema, 'pending_delivery') && str_contains($schema, 'delivery_error_code'),
+    'schema lacks honest delivery state'
 );
 
 $adminService = (string)file_get_contents(

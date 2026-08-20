@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\notice\driver\sms;
 
+use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
+
 /**
  * 阿里云短信驱动（RPC 查询字符串签名 v1.0）
  * 文档：https://help.aliyun.com/document_detail/101414.html
@@ -10,7 +12,7 @@ namespace app\common\service\notice\driver\sms;
  * 配置 key（pa_config type=notice，name=sms_aliyun，value=JSON）：
  *   access_key_id, access_key_secret, sign_name
  */
-class AliyunSms extends SmsDriver
+final class AliyunSms extends TemplateSmsDriver
 {
     private string $accessKeyId;
     private string $accessKeySecret;
