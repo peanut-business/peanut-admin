@@ -34,11 +34,14 @@ report_matches \
   '192\.168\.192\.2:3306/peanut_admin' \
   "${tracked[@]}"
 
-current_migration_count="$(git ls-files 'server/database/migrations/*.sql' | wc -l | tr -d ' ')"
-declared_migration_count="$(sed -nE 's/.*当前数据库入口.*\+ ([0-9]+) migrations.*/\1/p' AGENTS.md)"
-if [[ "$declared_migration_count" != "$current_migration_count" ]]; then
-  printf 'ERROR: AGENTS.md current migration count is %s, but Git tracks %s migration files\n' \
-    "${declared_migration_count:-missing}" "$current_migration_count" >&2
+application_migrations="$(find server/database/migrations -maxdepth 1 -type f -name '*.sql' -print 2>/dev/null || true)"
+if [[ -n "$application_migrations" ]]; then
+  printf 'ERROR: v3.0 fresh-only baseline still contains application migration files:\n%s\n' \
+    "$application_migrations" >&2
+  failed=1
+fi
+if [[ -e server/database/migrate.php ]]; then
+  printf 'ERROR: v3.0 fresh-only baseline still contains server/database/migrate.php\n' >&2
   failed=1
 fi
 

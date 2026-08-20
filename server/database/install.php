@@ -153,9 +153,7 @@ function brandWebsiteDefaults(string $serverDir): array
 
 function sqlFiles(string $databaseDir): array
 {
-    $migrations = glob($databaseDir . '/migrations/*.sql') ?: [];
-    sort($migrations, SORT_STRING);
-    return array_merge([$databaseDir . '/init.sql'], $migrations);
+    return [$databaseDir . '/init.sql'];
 }
 
 function loadCoreRuntime(string $serverDir): void
@@ -359,23 +357,6 @@ function seedBrandDefaults(PDO $pdo, array $website): void
     }
 }
 
-function recordInstalledMigrations(PDO $pdo, array $files): void
-{
-    $statement = $pdo->prepare(
-        'INSERT INTO pa_schema_migration '
-        . '(migration, checksum, batch, status, started_at, applied_at, error) '
-        . "VALUES (?, ?, 1, 'applied', ?, ?, '')"
-    );
-    $now = time();
-    foreach ($files as $file) {
-        $checksum = hash_file('sha256', $file);
-        if ($checksum === false) {
-            throw new RuntimeException('无法计算迁移校验值：' . basename($file));
-        }
-        $statement->execute([basename($file), $checksum, $now, $now]);
-    }
-}
-
 function main(): int
 {
     $databaseDir = __DIR__;
@@ -506,11 +487,9 @@ function main(): int
             ], JSON_UNESCAPED_UNICODE));
         }
 
-        recordInstalledMigrations($pdo, $files);
-
         echo json_encode([
             'database' => $database,
-            'sql_files' => count($files),
+            'baseline' => 'init.sql',
             'tables' => count($actual),
             'expected_tables' => count($expected),
             'active_menus' => $activeMenus,

@@ -32,6 +32,16 @@ function tableExists(PDO $pdo, string $table): bool
     return (int)$statement->fetchColumn() === 1;
 }
 
+function indexExists(PDO $pdo, string $table, string $index): bool
+{
+    $statement = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.STATISTICS '
+        . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?'
+    );
+    $statement->execute([$table, $index]);
+    return (int)$statement->fetchColumn() > 0;
+}
+
 try {
     $mode = requiredEnvironment('MT05_MODE');
     $deploymentMode = requiredEnvironment('MT05_DEPLOYMENT_MODE');
@@ -64,8 +74,9 @@ try {
         ]
     );
 
+    expectInvariant(!tableExists($pdo, 'pa_schema_migration'), 'MT05_APPLICATION_MIGRATION_LEDGER_PRESENT');
+
     foreach ([
-        'pa_schema_migration',
         'pa_account',
         'pa_tenant',
         'pa_tenant_member',
@@ -75,34 +86,39 @@ try {
         'pa_platform_operator',
         'pa_module_installation',
         'pa_tenant_module',
+        'pa_module_migration',
+        'pa_tenant_setting',
+        'pa_tenant_entry_binding',
+        'pa_tenant_owner_invitation',
+        'pa_tenant_idempotency_record',
+        'pa_system_dict_type',
+        'pa_system_dict_data',
     ] as $requiredTable) {
         expectInvariant(tableExists($pdo, $requiredTable), 'MT05_REQUIRED_TABLE_MISSING:' . $requiredTable);
     }
 
-    $databaseDir = dirname(__DIR__, 3) . '/database';
-    $migrationFiles = glob($databaseDir . '/migrations/*.sql') ?: [];
-    sort($migrationFiles, SORT_STRING);
-    array_unshift($migrationFiles, $databaseDir . '/init.sql');
-    $expectedLedger = [];
-    foreach ($migrationFiles as $file) {
-        $checksum = hash_file('sha256', $file);
-        expectInvariant(is_string($checksum), 'MT05_MIGRATION_CHECKSUM_FAILED:' . basename($file));
-        $expectedLedger[basename($file)] = $checksum;
+    foreach ([
+        ['pa_tenant_setting', 'uk_tenant_setting_namespace'],
+        ['pa_tenant_entry_binding', 'uk_tenant_entry_binding'],
+        ['pa_tenant_owner_invitation', 'uk_owner_invitation_pending_tenant'],
+        ['pa_tenant_idempotency_record', 'uk_tenant_idempotency'],
+        ['pa_refund_record', 'idx_refund_record_tenant_order_amount'],
+        ['pa_system_dict_type', 'uk_system_dict_type_code'],
+        ['pa_system_dict_data', 'uk_system_dict_data_type_value'],
+    ] as [$table, $index]) {
+        expectInvariant(indexExists($pdo, $table, $index), 'MT05_REQUIRED_INDEX_MISSING:' . $index);
     }
 
-    $ledger = $pdo->query(
-        'SELECT migration, checksum, batch, status, started_at, applied_at, error '
-        . 'FROM pa_schema_migration ORDER BY migration'
-    )->fetchAll();
-    expectInvariant(count($ledger) === count($expectedLedger), 'MT05_LEDGER_COUNT_MISMATCH');
-    foreach ($ledger as $row) {
-        $name = (string)$row['migration'];
-        expectInvariant(isset($expectedLedger[$name]), 'MT05_LEDGER_UNKNOWN_MIGRATION:' . $name);
-        expectInvariant(hash_equals($expectedLedger[$name], (string)$row['checksum']), 'MT05_LEDGER_CHECKSUM_MISMATCH:' . $name);
-        expectInvariant((string)$row['status'] === 'applied', 'MT05_LEDGER_NOT_APPLIED:' . $name);
-        expectInvariant($row['applied_at'] !== null, 'MT05_LEDGER_APPLIED_AT_MISSING:' . $name);
-        expectInvariant((string)$row['error'] === '', 'MT05_LEDGER_ERROR_PRESENT:' . $name);
-    }
+    $systemDictionaryTypes = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_system_dict_type "
+        . "WHERE code IN ('member_sex','member_status','member_channel','payment_status','refund_status')"
+    )->fetchColumn();
+    expectInvariant($systemDictionaryTypes === 5, 'MT05_SYSTEM_DICTIONARY_TYPE_SEED_INVALID');
+    $systemDictionaryData = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_system_dict_data "
+        . "WHERE type_code IN ('member_sex','member_status','member_channel','payment_status','refund_status')"
+    )->fetchColumn();
+    expectInvariant($systemDictionaryData === 16, 'MT05_SYSTEM_DICTIONARY_DATA_SEED_INVALID');
 
     $tableCount = (int)$pdo->query(
         'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()'
@@ -199,9 +215,10 @@ SQL)->fetchColumn();
         'mode' => $mode,
         'deployment_mode' => $deploymentMode,
         'database' => $database,
-        'migration_ledger' => [
-            'count' => count($ledger),
-            'rows' => $ledger,
+        'fresh_schema' => [
+            'application_migration_ledger_present' => false,
+            'system_dictionary_type_count' => $systemDictionaryTypes,
+            'system_dictionary_data_count' => $systemDictionaryData,
         ],
         'table_count' => $tableCount,
         'default_tenant' => $defaultTenant,

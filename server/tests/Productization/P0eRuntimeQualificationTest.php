@@ -58,27 +58,15 @@ $expectedTarget = [
 
 $expect(($fixture['schema_version'] ?? null) === 1, 'P0-E fixture schema changed');
 $expect(($fixture['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E Gate identity changed');
-$expect(($fixture['database_resource']['migration_count'] ?? null) === 4, 'P0-E Gate no longer fixes the 2.x post-baseline migration set');
-$expect(($fixture['database_resource']['ledger_count'] ?? null) === 5, 'P0-E Gate no longer fixes the canonical baseline ledger count');
+$expect(!array_key_exists('migration_count', $fixture['database_resource'] ?? []), 'P0-E Gate retained an application migration count');
+$expect(!array_key_exists('ledger_count', $fixture['database_resource'] ?? []), 'P0-E Gate retained an application migration ledger count');
 $expect(!array_key_exists('baselines', $fixture), 'fresh-only P0-E fixture retained 1.x baselines');
 $expect(!array_key_exists('legacy_application', $fixture), 'fresh-only P0-E fixture retained a legacy application');
 $expect(($fixture['target_release'] ?? null) === $expectedTarget, 'P0-E target scaffold identity changed');
 $expect(array_keys($fixture['scenarios'] ?? []) === $expectedScenarios, 'P0-E fresh-only scenario order or closure changed');
 $expect(($fixture['groups'] ?? null) === $expectedGroups, 'P0-E fresh-only group order or closure changed');
 
-$expectedMigrationFiles = [
-    'server/database/migrations/20260816-tenant-capability-setting.sql',
-    'server/database/migrations/20260816-tenant-entry-binding.sql',
-    'server/database/migrations/20260816-tenant-owner-invitation.sql',
-    'server/database/migrations/20260818-official-module-permission-ownership.sql',
-];
-$expect(($releaseMetadata['migrations']['count'] ?? null) === 4, 'release metadata migration count is stale');
-$expect(($releaseMetadata['migrations']['ordered_files'] ?? null) === $expectedMigrationFiles, 'release metadata migration list is stale');
-$expect(
-    ($releaseMetadata['migrations']['ordered_path_list_sha256'] ?? null) === '3f57e741f21b3fd6bd004925a3c41922b9db724acbbb8f8b545452fa5aa46c62',
-    'release metadata migration path digest is stale'
-);
-$expect(($releaseMetadata['technical_qualification']['migrations'] ?? null) === 4, 'technical qualification migration count is stale');
+$expect(!array_key_exists('migrations', $releaseMetadata), 'release metadata retained the retired application migration identity');
 
 $registered = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
@@ -180,6 +168,11 @@ $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease v
 $expect(str_contains($runnerSource, 'read_only: true'), 'container lease proof is not read-only');
 $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database refusal is missing');
 $expect(!str_contains($runnerSource, '["mysql"'), 'runner reintroduced a bare host MySQL client');
+$expect(
+    str_contains($runnerSource, '["php", "server/database/environment-guard.php", "--current"]'),
+    'P0-E install does not qualify the complete fresh schema through the environment guard'
+);
+$expect(!str_contains($runnerSource, 'server/database/migrate.php'), 'P0-E runner retained the application migration runner');
 
 $pluginFixture = (string)file_get_contents($root . '/server/fixtures/plugin-module-lifecycle/run.php');
 $expect(str_contains($pluginFixture, "upgrade('fixture.delivery-record', true)"), 'Plugin upgrade dry-run capability left the Gate fixture');

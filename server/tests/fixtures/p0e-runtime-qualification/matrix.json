@@ -6,9 +6,7 @@
     "environment": "development",
     "host": "192.168.192.2",
     "port": 20183,
-    "database_template": "peanut_admin_development_p0e_<run_id>_<scenario>",
-    "migration_count": 4,
-    "ledger_count": 5
+    "database_template": "peanut_admin_development_p0e_<run_id>_<scenario>"
   },
   "target_release": {
       "version": "2.1.5",

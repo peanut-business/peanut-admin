@@ -98,7 +98,7 @@
         "fallback": "none",
         "lifecycle": "persistent",
         "cleanup_responsibility": "Peanut Admin project owner; explicit owner gate required",
-        "backup_responsibility": "Peanut Admin project owner before each migration"
+        "backup_responsibility": "Peanut Admin project owner before destructive fresh reinstallation"
       },
       {
         "stable_resource_id": "peanut-admin-p0e-mysql84-gate",
@@ -142,16 +142,16 @@
           "network_scope": "Docker Desktop direct route to private direct-link LAN"
         },
         "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
-        "data_source": "the lease-fixed 2.0 fresh-only candidate tree and Gate-owned synthetic fixtures; 1.x databases, persistent development data and production data are forbidden",
-        "freshness_requirement": "each fixed candidate uses a new lease-bound run_id; every scenario target must be absent or empty before setup, and its ordered migration checksums and ledger must be verified against that candidate before evidence capture",
+        "data_source": "the lease-fixed 3.0 fresh-only candidate tree and Gate-owned synthetic fixtures; earlier application databases, persistent development data and production data are forbidden",
+        "freshness_requirement": "each fixed candidate uses a new lease-bound run_id; every scenario target must be absent or empty before setup, then must pass the candidate's KernelSchema plus init.sql baseline guard before evidence capture",
         "health_check": {
           "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
           "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer <host|container> --resource-id peanut-admin-p0e-mysql84-gate --database-name <exact_lease_database>",
-          "database": "after a successful claim, the Gate runner performs a credential-backed ping and SELECT DATABASE(), then verifies the candidate migration ledger"
+          "database": "after a successful claim, the Gate runner performs a credential-backed ping and SELECT DATABASE(), then verifies the candidate fresh baseline"
         },
         "fallback": "none",
         "lifecycle": "ephemeral",
-        "claim_precondition": "before connection, creation, backup, migration, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed candidate, worktree, Gate, this resource ID, exact run_id database names, backup path, cache path and output path",
+        "claim_precondition": "before connection, creation, backup, installation, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed candidate, worktree, Gate, this resource ID, exact run_id database names, backup path, cache path and output path",
         "creation_policy": "the active scripts/project-resource-lease owner may create only databases matching peanut_admin_development_p0e_<run_id>_<allowed_scenario>",
         "cleanup_responsibility": "the active P0-E lease owner drops only databases matching its exact run_id after evidence capture; unmatched, expired or ownerless databases require an explicit project-owner gate",
         "backup_responsibility": "not applicable; all scenarios start from absent or empty synthetic databases",
@@ -192,11 +192,11 @@
         },
         "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
         "data_source": "lease-owned synthetic multi-tenant demo data; persistent development and production data are forbidden",
-        "freshness_requirement": "an active local multi-tenant demo lease, the registered database health check and a current fresh-install ledger are required before application start",
+        "freshness_requirement": "an active local multi-tenant demo lease, the registered database health check and the current v3.0 fresh baseline are required before application start",
         "health_check": {
           "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
           "selection": "scripts/project-resource-registry database-env --deployment-target local-multi-tenant-demo --consumer host --resource-id peanut-admin-mysql84-local-multi-tenant-demo",
-          "database": "credential-backed ping, SELECT DATABASE() and server/database/migrate.php --current"
+          "database": "credential-backed ping, SELECT DATABASE() and server/database/environment-guard.php --current"
         },
         "fallback": "none",
         "lifecycle": "ephemeral",
@@ -234,7 +234,7 @@
         },
         "credential_ref": "oracle3:/www/docker/peanut-admin/.env (root-owned mode 0600; secret values are not stored in Git)",
         "data_source": "Docker volume peanut-admin_mysql-data on oracle3",
-        "freshness_requirement": "a verified peanut-admin-production-backups artifact pair, the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, and the explicit migration ledger must be confirmed before production application readiness",
+        "freshness_requirement": "the database must match the v3.0 KernelSchema plus init.sql baseline and must not contain pa_schema_migration before production application readiness",
         "health_check": {
           "allocation": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps mysql'",
           "host_connection": null,
@@ -243,7 +243,7 @@
         "fallback": "none",
         "lifecycle": "persistent",
         "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate",
-        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before each upgrade or migration"
+        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before destructive fresh reinstallation"
       },
       {
         "stable_resource_id": "peanut-admin-production-candidate-mysql84",
@@ -277,7 +277,7 @@
         },
         "credential_ref": "oracle3:/www/docker/peanut-admin-candidate/.env (root-owned mode 0600; secret values are not stored in Git)",
         "data_source": "fresh synthetic experience data in Docker volume peanut-admin-candidate_mysql-data on oracle3",
-        "freshness_requirement": "the volume and database must be absent before first installation; after start, SELECT DATABASE(), the canonical fresh ledger and environment-guard.php --current must match the fixed candidate",
+        "freshness_requirement": "the volume and database must be absent before first installation; after start, SELECT DATABASE() and environment-guard.php --current must match the fixed candidate's canonical v3.0 baseline",
         "health_check": {
           "allocation": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin-candidate && sudo -n docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps mysql'",
           "host_connection": null,
@@ -501,7 +501,7 @@
         "service_type": "Peanut Admin production PHP/Nginx images",
         "credential_ref": ".local/stack.env generated from the registered external credential reference",
         "data_source": "current worktree images",
-        "freshness_requirement": "current image and current migration ledger",
+        "freshness_requirement": "current image and v3.0 fresh baseline guard",
         "health_check": "scripts/local-environment-probe",
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh prod-down"
@@ -541,7 +541,7 @@
           "peanut-admin_php-runtime",
           "peanut-admin_php-storage"
         ],
-        "freshness_requirement": "before each update, verify the exact release checkout and images, preserve the existing peanut-admin Compose project and persistent volume bindings, verify the peanut-admin-production-backups pair, and pass the current migration ledger check",
+        "freshness_requirement": "v3.0 is fresh-only: verify the exact release checkout and images, explicitly recreate the registered target, then pass the KernelSchema plus init.sql baseline guard",
         "health_check": {
           "compose": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps'",
           "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18092/healthz'"
@@ -569,7 +569,7 @@
         "service_type": "mysql:8.4",
         "credential_ref": "oracle3:/www/docker/peanut-admin/.env (root-owned mode 0600; secret values are not stored in Git)",
         "data_source": "Docker volume peanut-admin_mysql-data on oracle3",
-        "freshness_requirement": "preserve the existing peanut-admin Compose project and peanut-admin_mysql-data volume binding, verify the peanut-admin-production-backups pair, then run the explicit migration ledger current check",
+        "freshness_requirement": "v3.0 is fresh-only: the volume must be newly created from the canonical baseline and pass environment-guard.php --current",
         "health_check": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin && sudo -n docker compose -f compose.yaml --profile bundled-db ps mysql' plus php server/database/environment-guard.php --current",
         "fallback": "none",
         "cleanup_responsibility": "production deployment owner; destructive cleanup requires an explicit gate",
@@ -616,7 +616,7 @@
         },
         "fallback": "none",
         "cleanup_responsibility": "Peanut Admin production candidate deployment owner; no automatic cleanup and destructive cleanup requires explicit approval",
-        "backup_responsibility": "not required for the first empty synthetic demo install; register paired backup resources before accepting valuable data or applying later migrations"
+        "backup_responsibility": "not required for the first empty synthetic demo install; this fresh-only target must be rebuilt rather than upgraded"
       },
       {
         "stable_resource_id": "peanut-admin-production-candidate-mysql84-container",
@@ -636,7 +636,7 @@
         "service_type": "mysql:8.4",
         "credential_ref": "oracle3:/www/docker/peanut-admin-candidate/.env (root-owned mode 0600; secret values are not stored in Git)",
         "data_source": "Docker volume peanut-admin-candidate_mysql-data on oracle3",
-        "freshness_requirement": "the candidate volume must be absent before first install; after creation verify MySQL health and canonical fresh migration ledger",
+        "freshness_requirement": "the candidate volume must be absent before first install; after creation verify MySQL health and the canonical v3.0 fresh baseline",
         "health_check": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin-candidate && sudo -n docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps mysql' plus php server/database/environment-guard.php --current",
         "fallback": "none",
         "cleanup_responsibility": "Peanut Admin production candidate deployment owner; destructive cleanup requires explicit approval",
@@ -848,13 +848,13 @@
         "backup_policy": {
           "required": false,
           "default": "skip",
-          "override": "scripts/production-upgrade <tag> --apply --backup with PEANUT_BACKUP_COMMAND",
-          "rationale": "This registered environment is a disposable demo. Its synthetic data may be rebuilt with the idempotent demo seeder; valuable data or irreversible migrations require an explicit backup override."
+          "override": "create the registered paired backup, then use scripts/deploy-release <tag> --target production --fresh --confirm-destroy production --apply",
+          "rationale": "v3.0 is fresh-only. This registered demo may be rebuilt; valuable data must be exported or backed up before an explicitly confirmed destructive reinstall."
         },
         "preflight_checks": {
           "environment_selection": "ssh -o BatchMode=yes oracle3 'sudo -n grep -Fqx PEANUT_DEPLOYMENT_TARGET=production /www/docker/peanut-admin/.env && sudo -n grep -Fqx PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-mysql84 /www/docker/peanut-admin/.env'",
           "backup_target": "optional by default for this rebuildable demo; when --backup is selected, peanut-admin-production-backups capacity, tools, quiescence, manifest and checksum checks must pass",
-          "failure_policy": "any missing or mismatched selector blocks migration and deployment; do not rewrite .env or select another database, path or host implicitly"
+          "failure_policy": "any missing or mismatched selector blocks installation and deployment; do not rewrite .env or select another database, path or host implicitly"
         },
         "health_check": {
           "ssh": "ssh -o BatchMode=yes oracle3 'test -d /www/docker/peanut-admin && test -r /www/docker/peanut-admin/compose.yaml'",
@@ -864,7 +864,7 @@
         "fallback": "none",
         "lifecycle": "persistent",
         "cleanup_responsibility": "Peanut Admin production deployment owner; no automatic cleanup and destructive cleanup requires an explicit gate",
-        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before each upgrade or migration"
+        "backup_responsibility": "Peanut Admin production deployment owner creates and verifies the peanut-admin-production-backups pair before destructive fresh reinstallation"
       },
       {
         "stable_resource_id": "peanut-admin-production-candidate-deployment",
@@ -917,11 +917,11 @@
         "demo_instance": true,
         "fresh_install_only": true,
         "data_source": "fixed candidate source and Docker Compose state under /www/docker/peanut-admin-candidate",
-        "freshness_requirement": "before allocation, record the fixed candidate commit/tree and verify the target path, Compose project, origin port, database/volumes and four hostnames are all unused; first start must produce a canonical fresh ledger",
+        "freshness_requirement": "before allocation, record the fixed candidate commit/tree and verify the target path, Compose project, origin port, database/volumes and four hostnames are all unused; first start must pass the canonical v3.0 baseline guard",
         "backup_policy": {
           "required": false,
           "default": "skip for first empty synthetic install",
-          "rationale": "This is a parallel disposable experience instance with no pre-existing data. Register paired backups before accepting valuable data or applying later migrations."
+          "rationale": "This is a parallel disposable experience instance with no pre-existing data. v3.0 application databases are rebuilt rather than upgraded."
         },
         "preflight_checks": {
           "isolation": "target path /www/docker/peanut-admin-candidate, Compose project peanut-admin-candidate, loopback port 18093, database/volumes and domains must be absent before allocation",
@@ -936,7 +936,7 @@
         "fallback": "none",
         "lifecycle": "persistent disposable demo",
         "cleanup_responsibility": "Peanut Admin production candidate deployment owner; no automatic cleanup and destructive cleanup requires explicit approval",
-        "backup_responsibility": "not required before the first empty synthetic installation; register a paired backup resource before later migrations or valuable data"
+        "backup_responsibility": "not required before the first empty synthetic installation; this fresh-only target must be rebuilt rather than upgraded"
       },
       {
         "stable_resource_id": "peanut-admin-cloudflare-dns-control-plane",
@@ -1188,7 +1188,7 @@
         "lifecycle": "persistent until explicit cleanup approval",
         "retention_policy": "no automatic pruning; retain each verified pair until a newer verified pair exists, its release smoke has passed, and the production deployment owner explicitly approves deletion of the exact older backup ID",
         "cleanup_responsibility": "Peanut Admin production deployment owner deletes only an explicitly approved backup ID directory; incomplete or failed sets remain isolated and require an explicit disposition decision",
-        "backup_responsibility": "Peanut Admin production deployment owner executes the registered paired backup method before each production upgrade or migration"
+        "backup_responsibility": "Peanut Admin production deployment owner executes the registered paired backup method before destructive fresh reinstallation"
       }
     ],
     "queues": {

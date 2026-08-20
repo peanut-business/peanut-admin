@@ -353,6 +353,22 @@ try {
     $generatedCi = (string)file_get_contents($first . '/.github/workflows/ci.yml');
     createApplicationExpect(!str_contains($generatedCi, 'stale-facts:') && !str_contains($generatedCi, 'create-app:'), 'generated CI must not depend on source-template governance jobs');
     createApplicationExpect(is_file($first . '/server/database/environment-guard.php'), 'production database guard must remain in the deployment inventory');
+    $generatedSchema = (string)file_get_contents($first . '/server/database/init.sql');
+    createApplicationExpect(!str_contains($generatedSchema, 'pa_schema_migration'), 'generated application retained the retired application migration ledger');
+    createApplicationExpect(!is_file($first . '/server/database/migrate.php'), 'generated application retained the retired migration runner');
+    foreach ([
+        'pa_tenant_setting',
+        'pa_tenant_entry_binding',
+        'pa_tenant_owner_invitation',
+        'pa_tenant_idempotency_record',
+        'pa_system_dict_type',
+        'pa_system_dict_data',
+    ] as $baselineTable) {
+        createApplicationExpect(
+            str_contains($generatedSchema, 'CREATE TABLE `' . $baselineTable . '`'),
+            'generated application fresh schema is missing: ' . $baselineTable
+        );
+    }
 
     $builderTarget = $temporary . '/builder-identity';
     $builderManifest = (new ApplicationCreator($root, $inventoryPath, $identity))->create(
