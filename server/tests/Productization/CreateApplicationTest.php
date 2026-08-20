@@ -90,7 +90,7 @@ function createApplicationTamperedReleaseFails(
     $target = $temporary . '/tampered-' . $case;
     $creator = new ApplicationCreator($root, $inventoryPath, $identity, $manifestPath);
     createApplicationFails(
-        fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $target),
+        fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $target, null, 'full'),
         $error
     );
     createApplicationExpect(!file_exists($target), 'failed adoption committed target: ' . $case);
