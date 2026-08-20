@@ -26,8 +26,9 @@ annotated tag [`v2.1.0`](https://github.com/peanut-business/peanut-admin/release
 Release 保留为历史证据，不覆盖或重写。
 
 `v2.1.4` 保持 2.0.1 的 canonical 基线，并通过追加 migration 更新 Module 权限归属。
-`v2.0.1 -> v2.1.4` 使用显式 transition 和配对备份；部署事实由独立
-post-deployment 快照记录，不改写源码 Release 身份。
+`v2.1.5` 在同一 fresh-only 线上完成 P0-E 7/7、`v2.1.4 -> v2.1.5` 配对备份升级、
+多租户 Demo fresh 部署和 post-deployment 快照；不可变事实见
+`docs/product-status/releases/v2.1.5.json`。当前 `v3.0.0` 候选不会改写上述历史身份。
 
 ## 公开运行依赖
 

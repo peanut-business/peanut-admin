@@ -1,6 +1,6 @@
 # 当前任务清单
 
-> 更新时间：2026-08-20
+> 更新时间：2026-08-21
 >
 > 本页是当前开发工作的人工阅读入口。能力的机器状态仍以
 > [`capability-ledger.json`](./capability-ledger.json) 为准；这里记录下一步要做什么、
@@ -32,7 +32,7 @@ Tenant B 四个公网 Host 已完成真实浏览器验收。无秘密 post-deplo
 | T08 | Article 官方 Module 专项资格 | 已完成（候选） | 当前候选已完成真实数据库安装、Tenant A/B 页面与数据隔离、停用负向和共享 Admin/Tenant A/Tenant B 浏览器截图；证据见 `output/playwright/article-module/b0ef43d/summary.json` | 保持 Article 证据；不把它扩大为其他 Module 的资格替代 |
 | T09 | v2.1.4 线上 Standalone 部署 | 已完成 | 已按登记的 production 资源从 `v2.0.1` 升级到 `v2.1.4`；迁移、备份、Compose 健康和入口已验证，备份 `20260818T131425Z-1c8aff4f1f19` | 后续版本按同一脚本做受影响升级资格 |
 | T10 | v2.1.4 线上 Multi-tenant 部署 | 已完成 | 已按登记的 production-candidate 资源 fresh 部署并叠加演示层；平台、共享 Admin、Tenant A、Tenant B 四个 Host、标题、头像和页面矩阵通过；证据见 `docs/product-status/deployments/v2.1.4-online-experience.json` | 后续版本按同一脚本做受影响升级资格 |
-| T14 | v2.1.5 正式发布与 post-deployment 快照 | 已完成 | `v2.1.5` 已完成 P0-E 7/7、同提交 annotated tag、GitHub Release、生产单租户升级、多租户 Demo fresh 部署和无秘密快照；证据见 `docs/product-status/deployments/v2.1.5-online-experience.json` | 后续版本继续遵守 main-first、固定候选和一次资格规则 |
+| T14 | v2.1.5 正式发布与 post-deployment 快照 | 已完成 | `v2.1.5` 已完成 P0-E 7/7、同提交 annotated tag、GitHub Release、生产单租户升级、多租户 Demo fresh 部署和无秘密快照；资格证据见 `output/p0e-p0e215b/summary.json`，部署证据见 `docs/product-status/deployments/v2.1.5-online-experience.json` | 后续版本继续遵守 main-first、固定候选和一次资格规则 |
 | T11 | DCS 业务模块 | 范围外 | Peanut 只提供扩展边界；Party、Product、Inventory、Procurement 等不属于本仓 Runtime | 在 DCS 仓库按 Module 合同实现 |
 | T12 | 应用运维平台（远程升级与实例运维） | 下一步可执行（无阻塞） | 已解除前置阻塞；明确为基于当前脚手架（create-app）派生的完全独立顶层应用，专注于已部署生产实例的登记、健康巡检、备份存证与签名远程平滑升级 | 在独立工程推进 MVP 切片 |
 | T13 | 完整 SaaS 商业化 | 暂缓 | 套餐、订阅、计费、应用市场不属于当前交付 | 等运营闭环和真实消费者成立后再立项 |

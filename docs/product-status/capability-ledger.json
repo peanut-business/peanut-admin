@@ -5,7 +5,7 @@
   "facts_baseline": {
     "branch": "main",
     "commit": "aefc5779c97db1cd17442269e50156baeaa4ba0c",
-    "reviewed_at": "2026-08-19"
+    "reviewed_at": "2026-08-21"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
@@ -573,8 +573,8 @@
       "id": "PA-DELIVERY-004",
       "name": "2.0 发布后部署与演示闭环",
       "area": "release",
-      "status": "in_progress",
-      "summary": "v2.1.4 的正式源码发布、生产单租户升级、多租户演示站 fresh 部署和 post-deployment 快照已封存为历史基线；v2.1.5 必须在最终 origin/main 提交上重新完成资格、发布和部署。",
+      "status": "verified",
+      "summary": "v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。",
       "acceptance": [
         "从不可变 v2.0.0 tag 对登记目标执行非交互 fresh 或同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
         "Standalone 与 Multi-tenant 各形成一个独立部署、数据库、域名和最小浏览器证据",
@@ -583,9 +583,10 @@
         "经受控渠道向授权接收方交付访问方式；账本只记录无秘密的交付确认和已人工检查的浏览器截图结论"
       ],
       "evidence": [
-        {"kind": "release", "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v2.1.4"},
-        {"kind": "document", "ref": "docs/product-status/releases/v2.1.4.json"},
-        {"kind": "document", "ref": "docs/product-status/deployments/v2.1.4-online-experience.json"},
+        {"kind": "release", "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v2.1.5"},
+        {"kind": "document", "ref": "docs/product-status/releases/v2.1.5.json"},
+        {"kind": "document", "ref": "docs/product-status/deployments/v2.1.5-online-experience.json"},
+        {"kind": "report", "ref": "output/p0e-p0e215b/summary.json"},
         {"kind": "resource", "ref": "resources/project-resources.json"}
       ],
       "dependencies": [
@@ -596,7 +597,9 @@
         "docs-site/capabilities.md",
         "docs-site/deployment.md",
         "resources/project-resources.json",
-        "docs/product-status/deployments/v2.1.4-online-experience.json"
+        "docs/product-status/releases/v2.1.5.json",
+        "docs/product-status/deployments/v2.1.5-online-experience.json",
+        "output/p0e-p0e215b/summary.json"
       ]
     },
     {

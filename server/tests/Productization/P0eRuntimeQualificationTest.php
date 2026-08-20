@@ -92,6 +92,15 @@ $expect(is_array($tooling), 'P0-E remote administration tooling is missing');
 $expect(($tooling['mysql_command'] ?? null) === '/usr/bin/mysql', 'P0-E MySQL CLI path changed');
 $expect(!array_key_exists('mysqldump_command', $tooling), 'fresh-only P0-E retained backup tooling');
 $expect(($tooling['fallback'] ?? null) === 'none; host mysql commands are forbidden', 'P0-E tooling fallback changed');
+$browserTooling = array_values(array_filter(
+    $p0eRegistry['resources']['tooling'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-p0e-playwright-cli'
+));
+$expect(count($browserTooling) === 1, 'P0-E fixed Playwright tooling registration is missing');
+$expect(($browserTooling[0]['package'] ?? null) === '@playwright/cli', 'P0-E Playwright package changed');
+$expect(($browserTooling[0]['version'] ?? null) === '0.1.18', 'P0-E Playwright version is not pinned');
+$expect(($browserTooling[0]['relative_path'] ?? null) === '.local/p0e-browser-cli-0.1.18/playwright-cli', 'P0-E Playwright path is not fixed');
+$expect(($browserTooling[0]['fallback'] ?? null) === 'none', 'P0-E Playwright tooling must fail closed');
 
 $candidate = trim((string)shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
 $runId = 'p0e' . bin2hex(random_bytes(4));
@@ -162,6 +171,9 @@ $expect(!str_contains($runClosure, 'forward') && !str_contains($runClosure, 'leg
 $expect(str_contains($runnerSource, 'self.generated,') && str_contains($runnerSource, 'plugin_lock_restored_sha256'), 'Plugin lifecycle is not exercised in the generated application');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
 $expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
+$expect(str_contains($runnerSource, 'preflight_browser_tooling'), 'browser tooling does not fail before resource claim');
+$expect(str_contains($runnerSource, 'registered_browser_cli_path'), 'browser tooling does not use the fixed registered path');
+$expect(!str_contains($runnerSource, 'pwcli-cache-*'), 'browser tooling retained temporary cache glob discovery');
 $expect(str_contains($runnerSource, 'prepare_database_credentials()'), 'P0-E runner does not synchronize the registered database credential source');
 $expect(str_contains($runnerSource, 'runtime-credentials.env'), 'P0-E runner does not retain per-run browser credentials for resume');
 $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease verification is not an exact-set comparison');

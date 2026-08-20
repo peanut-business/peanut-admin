@@ -112,7 +112,8 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定
 `admin.peanut-admin.test:20179`、`platform.peanut-admin.test:20176`、两个 Tenant 测试域名、
 API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
-由当前运行任务的项目 lease 同时持有这些资源。
+由当前运行任务的项目 lease 同时持有这些资源。账号、密码和本地入口见
+[`docs/operations/local-demo-access.md`](docs/operations/local-demo-access.md)。
 
 ## 生产入口
 

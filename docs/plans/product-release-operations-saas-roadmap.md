@@ -5,10 +5,10 @@
 > Peanut Admin 产品状态事实源：`docs/product-status/capability-ledger.json`
 > 应用内多租户计划：`docs/plans/multi-tenancy-platform-management-plan.md`
 >
-> 当前状态（2026-08-17）：`v2.0.0` fresh-only 源码已完成 P0-E 7/7、dev/main 合入、annotated
-> tag 与 GitHub Release；生产部署不在该源码发布内，见
-> `docs/product-status/releases/v2.0.0.json`。下文 R0/R1 的 `v1.1.x` 记录是历史路线证据，
-> 不应重新领取或当作 2.0.0 未发布。
+> 当前状态（2026-08-20）：`v2.1.5` 已完成固定 tag、P0-E 7/7、dev 合入、GitHub Release、
+> Standalone 升级、多租户 Demo 部署和不可变发布快照；见
+> `docs/product-status/releases/v2.1.5.json`。下文 R0/R1 的 `v1.1.x` 记录是历史路线证据，
+> 不应重新领取或当作当前 2.x 未发布。
 > R1 状态：`v1.1.3` 已于 2026-08-15 达到 `production-demonstrated`；OP02 的 Release
 > 前置已解除，但独立运营平台实现仍未开始。
 
