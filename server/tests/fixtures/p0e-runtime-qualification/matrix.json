@@ -10,9 +10,9 @@
   },
   "target_release": {
       "version": "3.0.0",
-      "source_commit": "6034e73d92972468d0dbfb767fb1e1267bf5f8b1",
-      "source_tree": "41b1f16fb063d5029f73f43b589af9468065055e",
-      "manifest_sha256": "973d790aadeebe9eeccf880078a11908f9cdf02dcbf1a52f72a14453a2b05188",
+      "source_commit": "e5079cd7675894e651f8d64dd56227a8528c7329",
+      "source_tree": "7043563a84bd17f266f2d9ad85843194b4c8806f",
+      "manifest_sha256": "7b257b5e47e300035ea19efa099b71e1f5ce098afbf327c12c16a4073c4034bb",
       "inventory_sha256": "755a9cc211708626e6a12939bb79a73ab6d8ca6b8330d435186bf3d9f0a67b41",
       "managed_tree_sha256": "6e72ba408051cf19d1aa6cf3c77b1673c8083136c992add83e4d459524416db2",
     "file_count": 315,
