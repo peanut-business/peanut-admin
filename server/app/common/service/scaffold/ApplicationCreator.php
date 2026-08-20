@@ -200,6 +200,9 @@ final class ApplicationCreator
         }
         ksort($current, SORT_STRING);
         $released = $adoption->files();
+        if (count($current) !== count($released)) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH');
+        }
         $releaseTree = [];
         foreach ($current as $path => $generated) {
             $artifact = $released[$path] ?? null;
@@ -241,13 +244,11 @@ final class ApplicationCreator
                 'sha256' => hash('sha256', $this->replaceReleaseTokens($artifactContent, $tokens, $tokens)),
             ];
         }
-        if (count($current) === count($released)) {
-            $releaseTreeDigest = $this->treeDigest($releaseTree);
-            $recordedTreeDigest = $release['managed_tree_sha256'] ?? null;
-            if (!is_string($recordedTreeDigest) || preg_match('/^[a-f0-9]{64}$/D', $recordedTreeDigest) !== 1
-                || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
-                throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
-            }
+        $releaseTreeDigest = $this->treeDigest($releaseTree);
+        $recordedTreeDigest = $release['managed_tree_sha256'] ?? null;
+        if (!is_string($recordedTreeDigest) || preg_match('/^[a-f0-9]{64}$/D', $recordedTreeDigest) !== 1
+            || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
         }
     }
 

@@ -14969,7 +14969,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8fab6941596c10d270555422def6362e62e76e84cca3d72a4acb9af8d67b00b6"
+            "source_sha256": "49ad4874a52a1cad012718497b06f736f6deafffe4a9f6e9c1a21992e703072b"
         },
         {
             "path": "web/src/api/user.ts",
@@ -16271,7 +16271,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f6409269cfc6d65915e7b718164b1ce396541859438f17727e322afeef02c798"
+            "source_sha256": "a6110082199208dd7ed0269843aa906822d36a4a8b00a6a547dda64562544ae7"
         },
         {
             "path": "web/src/store/modules/user/types.ts",
@@ -17041,7 +17041,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "15f65db16b3a1d0d70303ce4b9b3e6339a830d19fac2427392d769d60389ecc1"
+            "source_sha256": "a867aec28ba82c3ea3a69b895c457f6ff75e84b8963f9f1213169c15cafac870"
         },
         {
             "path": "web/src/views/login/index.vue",

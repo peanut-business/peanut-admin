@@ -44,13 +44,13 @@ $expectedGroups = [
     'multi-tenant-browser',
 ];
 $expectedTarget = [
-    'version' => '2.1.5',
-    'source_commit' => 'b5a6fe91dea4e01ab9ae82294d8bcd73d3e4c78d',
-    'source_tree' => 'e7d8bcda391ea2aacf2213ed4b3343b91b6a2ed2',
-    'manifest_sha256' => 'c40344403b5d9c0b802ba48f776128c68a85fdd7ba2434c43ebf86c49bd75471',
-    'inventory_sha256' => 'dacad602d54f48f7088048c27c81b81f0f878179db26fd89eca375e7451965e8',
-    'managed_tree_sha256' => '8c4b82846c67a5575aefb5a51404ede93a5038a72227ca99cf31385ce249d856',
-    'file_count' => 311,
+    'version' => '3.0.0',
+    'source_commit' => '620c38ecb6d1658d1a44c1632760ead3def06d17',
+    'source_tree' => '77e722656281f2b6355fdb1ea8faf17004ff0bf3',
+    'manifest_sha256' => '944cf161642915be64776d2d0e1312192d3d4d3a6f2c4f29f235e22833ee024a',
+    'inventory_sha256' => '755a9cc211708626e6a12939bb79a73ab6d8ca6b8330d435186bf3d9f0a67b41',
+    'managed_tree_sha256' => '6e72ba408051cf19d1aa6cf3c77b1673c8083136c992add83e4d459524416db2',
+    'file_count' => 315,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
     'default_uniapp_version_code' => '10',
@@ -123,7 +123,7 @@ $expect(($plan['candidate'] ?? null) === $candidate, 'plan candidate is not exac
 $expect(($plan['resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'plan resource identity changed');
 $expect(($plan['environment'] ?? null) === 'development', 'plan environment changed');
 $expect(($plan['endpoint'] ?? null) === '192.168.192.2:20183', 'plan endpoint changed');
-$expect(($plan['target_release'] ?? null) === $expectedTarget, 'plan did not bind the 2.0 scaffold release');
+$expect(($plan['target_release'] ?? null) === $expectedTarget, 'plan did not bind the 3.0 scaffold release');
 $expect(($plan['groups'] ?? null) === $expectedGroups, 'plan did not bind the fresh-only closure');
 $expect(!array_key_exists('legacy_application', $plan), 'plan retained a legacy application');
 $expect(!array_key_exists('backup-dir', $plan['paths'] ?? []), 'plan retained a recovery backup path');

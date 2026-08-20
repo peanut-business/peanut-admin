@@ -90,7 +90,7 @@ function createApplicationTamperedReleaseFails(
     $target = $temporary . '/tampered-' . $case;
     $creator = new ApplicationCreator($root, $inventoryPath, $identity, $manifestPath);
     createApplicationFails(
-        fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $target),
+        fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $target, null, 'full'),
         $error
     );
     createApplicationExpect(!file_exists($target), 'failed adoption committed target: ' . $case);
@@ -149,9 +149,9 @@ try {
     $first = $temporary . '/first';
     $second = $temporary . '/second';
     $other = $temporary . '/other';
-    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first);
-    $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second);
-    $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other);
+    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, null, 'full');
+    $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second, null, 'full');
+    $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other, null, 'full');
     $release = json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['release'];
 
     createApplicationExpect($manifestOne['template'] === [
@@ -194,7 +194,7 @@ try {
 
     $expected = ['.peanut/application-manifest.json'];
     foreach ($inventory['files'] as $entry) {
-        if ($entry['classification'] === 'excluded') continue;
+        if ($entry['classification'] === 'excluded' || !in_array('full', $entry['profiles'], true)) continue;
         $expected[] = $entry['target'];
         if (in_array($entry['classification'], ['managed', 'generated-managed'], true)) {
             $expected[] = '.peanut/scaffold-baseline/' . $inventory['template_version'] . '/files/' . $entry['target'];
@@ -338,17 +338,17 @@ try {
 
     mkdir($temporary . '/non-empty');
     file_put_contents($temporary . '/non-empty/keep.txt', 'keep');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty'), 'CREATE_APP_TARGET_NOT_EMPTY');
-    createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug'), 'CREATE_APP_SLUG_INVALID');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'v1'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape'), 'CREATE_APP_TARGET_PATH_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty', null, 'full'), 'CREATE_APP_TARGET_NOT_EMPTY');
+    createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug', null, 'full'), 'CREATE_APP_SLUG_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'not-a-version', 'full'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape', null, 'full'), 'CREATE_APP_TARGET_PATH_INVALID');
 
     mkdir($temporary . '/outside');
     symlink($temporary . '/outside', $temporary . '/linked-target');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-target'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-target', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
     mkdir($temporary . '/outside-parent');
     symlink($temporary . '/outside-parent', $temporary . '/linked-parent');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-parent/escape'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-parent/escape', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
 
     $generatedCi = (string)file_get_contents($first . '/.github/workflows/ci.yml');
     createApplicationExpect(!str_contains($generatedCi, 'stale-facts:') && !str_contains($generatedCi, 'create-app:'), 'generated CI must not depend on source-template governance jobs');
@@ -398,12 +398,13 @@ try {
         'owner' => 'template-source-only',
         'transform' => 'copy',
         'mode' => 0644,
+        'profiles' => ['minimal', 'standard', 'full'],
     ];
     $sourceOnlyInventoryPath = $temporary . '/source-only-inventory.json';
     createApplicationWriteJson($sourceOnlyInventoryPath, $sourceOnlyInventory);
     $sourceOnlyTarget = $temporary . '/source-only-allowed';
     $sourceOnlyManifest = (new ApplicationCreator($root, $sourceOnlyInventoryPath, $identity, $releasePath))->create(
-        'Acme Console', 'acme-console', 'acme/acme-console', $sourceOnlyTarget
+        'Acme Console', 'acme-console', 'acme/acme-console', $sourceOnlyTarget, null, 'full'
     );
     createApplicationExpect($sourceOnlyManifest['template'] === $manifestOne['template'], 'app-owned/excluded-only source changes must retain release adoption');
     createApplicationExpect(
@@ -430,7 +431,7 @@ try {
     $managedChangeTarget = $temporary . '/managed-change-rejected';
     $managedChangeCreator = new ApplicationCreator($root, $managedChangeInventoryPath, $identity, $releasePath);
     createApplicationFails(
-        fn() => $managedChangeCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $managedChangeTarget),
+        fn() => $managedChangeCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $managedChangeTarget, null, 'full'),
         'CREATE_APP_ADOPTION_RENDER_MISMATCH'
     );
     createApplicationExpect(!file_exists($managedChangeTarget), 'managed source change committed an unsealed target');

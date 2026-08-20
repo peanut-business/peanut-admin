@@ -32,7 +32,7 @@
   },
   "lockfiles": {
     "server/composer.lock": "4aa84b1cde4b97c98f394ded7782d4aca86fead62e94612a81161e0ec989263f",
-    "web/pnpm-lock.yaml": "013b1999d26d4e419b5bc66c8f657a371e63956a583252edd5f0ddd4e93250d4",
+    "web/pnpm-lock.yaml": "1e3c93cee5aa90713800e5dbbf13a29f2ad6133e020e9f78e01d5d13c9f2b170",
     "pc/package-lock.json": "21060fd45566dfe3d6eb283d3c378abb539cb951c53cade052cd76405a378b69",
     "uniapp/package-lock.json": "1c7805eaccc3b232777cfefaeae1fea6a47945e86ad7362b53d635293d10e2d4",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
@@ -42,17 +42,6 @@
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
     "THIRD_PARTY_NOTICES.md": "4564b7f7a03934f845fe13cb1990d59ec8c57c26ca23e952da7f17837e0fd380",
     "RELEASE_SBOM.spdx.json": "aa694d0b77a343f2b63224699e464faff19da3a51e233eb2cf8ae5663e6f95ff"
-  },
-  "migrations": {
-    "count": 4,
-    "ordered_path_list_sha256": "3f57e741f21b3fd6bd004925a3c41922b9db724acbbb8f8b545452fa5aa46c62",
-    "ordered_files": [
-      "server/database/migrations/20260816-tenant-capability-setting.sql",
-      "server/database/migrations/20260816-tenant-entry-binding.sql",
-      "server/database/migrations/20260816-tenant-owner-invitation.sql",
-      "server/database/migrations/20260818-official-module-permission-ownership.sql"
-    ],
-    "baseline": "server/database/init.sql plus the Core KernelSchema; post-baseline changes must be additive"
   },
   "technical_qualification": {
     "phase": "3.0.0-pending-qualification",
