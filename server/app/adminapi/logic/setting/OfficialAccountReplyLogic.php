@@ -11,13 +11,13 @@ use app\common\service\external\ExternalTenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\service\member\MemberTenantContext;
+use app\common\support\PaginationInput;
 
 class OfficialAccountReplyLogic extends BaseLogic
 {
     public static function lists(TenantContext $context, array $params): array
     {
-        $pageNo = max(1, (int)($params['page_no'] ?? 1));
-        $pageSize = min(100, max(1, (int)($params['page_size'] ?? 15)));
+        $pagination = PaginationInput::from($params);
         $tenantId = MemberTenantContext::tenantId($context);
         $query = OfficialAccountReply::where('tenant_id', $tenantId)->field([
             'id', 'name', 'keyword', 'reply_type', 'matching_type',
@@ -28,8 +28,13 @@ class OfficialAccountReplyLogic extends BaseLogic
         }
         $total = (clone $query)->count();
         $list = $query->order(['sort' => 'desc', 'id' => 'desc'])
-            ->page($pageNo, $pageSize)->select()->toArray();
-        return ['list' => $list, 'total' => $total, 'page_no' => $pageNo, 'page_size' => $pageSize];
+            ->page($pagination->page, $pagination->pageSize)->select()->toArray();
+        return [
+            'list' => $list,
+            'total' => $total,
+            'page_no' => $pagination->page,
+            'page_size' => $pagination->pageSize,
+        ];
     }
 
     public static function detail(TenantContext $context, int $id): array

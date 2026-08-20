@@ -9,6 +9,8 @@ use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\org\OrgTenantContext;
 use app\common\service\org\OrgTenantRepository;
+use app\common\support\ExportPageInfo;
+use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -20,6 +22,7 @@ class JobsLogic extends BaseLogic
     /** 将 Peanut 旧版 is_disable 请求转换为 LikeAdmin status 契约。 */
     public static function normalizeInput(array $params): array
     {
+        self::clearError();
         $params = OrgTenantContext::withoutPayloadTenant($params);
         if (!array_key_exists('status', $params) && array_key_exists('is_disable', $params)) {
             $params['status'] = (int)$params['is_disable'] === 0 ? 1 : 0;
@@ -29,6 +32,7 @@ class JobsLogic extends BaseLogic
 
     public static function validationRules(string $scene): array
     {
+        self::clearError();
         $rules = [
             'id' => 'require|integer|gt:0', 'name' => 'require|length:1,50',
             'code' => 'require|max:64', 'sort' => 'integer|egt:0',
@@ -47,10 +51,11 @@ class JobsLogic extends BaseLogic
      */
     public static function lists(TenantContext $context, array $params): array|false
     {
+        self::clearError();
         $params = self::normalizeInput($params);
         try {
             $count = self::buildListQuery($context, $params)->count();
-            $pageSize = (int)($params['page_size'] ?? 15);
+            $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
             $pageSize = max(1, min(self::EXPORT_MAX_ROWS, $pageSize));
 
             if ((int)($params['export'] ?? 0) === 1) {
@@ -60,7 +65,8 @@ class JobsLogic extends BaseLogic
                 return self::export($context, $params, $count, $pageSize);
             }
 
-            $pageNo = max(1, (int)($params['page_no'] ?? 1));
+            $pagination = PaginationInput::from($params);
+            $pageNo = $pagination->page;
             $rows = self::buildListQuery($context, $params)
                 ->append(['status_desc'])
                 ->page($pageNo, $pageSize)
@@ -74,14 +80,14 @@ class JobsLogic extends BaseLogic
                 'pageSize' => $pageSize,
             ];
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     /** 全部正常岗位（供选择器使用）。 */
     public static function all(TenantContext $context): array
     {
+        self::clearError();
         return self::jobs($context)->where('status', 1)
             ->field('id,name,code,status,is_disable')
             ->order(['sort' => 'desc', 'id' => 'desc'])
@@ -91,6 +97,7 @@ class JobsLogic extends BaseLogic
 
     public static function detail(TenantContext $context, int $id): array
     {
+        self::clearError();
         $jobs = self::jobs($context)->where('id', $id)->findOrEmpty();
         if ($jobs->isEmpty()) {
             return [];
@@ -100,6 +107,7 @@ class JobsLogic extends BaseLogic
 
     public static function add(TenantContext $context, array $params): bool
     {
+        self::clearError();
         $params = self::normalizeInput($params);
         Db::startTrans();
         try {
@@ -117,13 +125,13 @@ class JobsLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function edit(TenantContext $context, array $params): bool
     {
+        self::clearError();
         $params = self::normalizeInput($params);
         Db::startTrans();
         try {
@@ -146,13 +154,13 @@ class JobsLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function delete(TenantContext $context, int $id): bool
     {
+        self::clearError();
         Db::startTrans();
         try {
             $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
@@ -164,13 +172,13 @@ class JobsLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function updateStatus(TenantContext $context, int $id, int $status): bool
     {
+        self::clearError();
         Db::startTrans();
         try {
             $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
@@ -185,8 +193,7 @@ class JobsLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
@@ -223,17 +230,12 @@ class JobsLogic extends BaseLogic
 
     private static function exportInfo(int $count, int $pageSize): array
     {
-        $sumPage = max(1, (int)ceil($count / $pageSize));
-        return [
-            'count' => $count,
-            'page_size' => $pageSize,
-            'sum_page' => $sumPage,
-            'max_page' => (int)floor(self::EXPORT_MAX_ROWS / $pageSize),
-            'all_max_size' => self::EXPORT_MAX_ROWS,
-            'page_start' => 1,
-            'page_end' => min($sumPage, 200),
-            'file_name' => self::EXPORT_DEFAULT_NAME,
-        ];
+        return ExportPageInfo::from(
+            $count,
+            $pageSize,
+            self::EXPORT_MAX_ROWS,
+            self::EXPORT_DEFAULT_NAME,
+        )->toArray();
     }
 
     private static function export(TenantContext $context, array $params, int $count, int $pageSize): array

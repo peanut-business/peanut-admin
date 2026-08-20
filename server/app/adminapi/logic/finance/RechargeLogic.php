@@ -15,11 +15,13 @@ use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
-use app\common\service\tenant\TenantLockNamespace;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantLockNamespace;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
+use app\common\support\ExportPageInfo;
+use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Idempotency\IdempotencyKey;
 use PeanutAdmin\Kernel\Idempotency\IdempotencyRecord;
 use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
@@ -53,7 +55,7 @@ class RechargeLogic extends BaseLogic
             $pageType = (int)($params['page_type'] ?? 1);
             $pageNo = $pageType === 0
                 ? 1
-                : max(1, (int)($params['page_no'] ?? $params['page'] ?? 1));
+                : PaginationInput::from($params)->page;
             if ($pageType === 0) {
                 $pageSize = self::EXPORT_MAX_ROWS;
             }
@@ -522,17 +524,12 @@ class RechargeLogic extends BaseLogic
 
     private static function exportInfo(int $count, int $pageSize): array
     {
-        $sumPage = max(1, (int)ceil($count / $pageSize));
-        return [
-            'count' => $count,
-            'page_size' => $pageSize,
-            'sum_page' => $sumPage,
-            'max_page' => (int)floor(self::EXPORT_MAX_ROWS / $pageSize),
-            'all_max_size' => self::EXPORT_MAX_ROWS,
-            'page_start' => 1,
-            'page_end' => min($sumPage, 200),
-            'file_name' => self::EXPORT_DEFAULT_NAME,
-        ];
+        return ExportPageInfo::from(
+            $count,
+            $pageSize,
+            self::EXPORT_MAX_ROWS,
+            self::EXPORT_DEFAULT_NAME,
+        )->toArray();
     }
 
     private static function export(object $context, array $params, int $count, int $pageSize): array

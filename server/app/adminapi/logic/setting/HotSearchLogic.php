@@ -23,6 +23,7 @@ class HotSearchLogic extends BaseLogic
     /** 读取配置：开关 + 词条列表 */
     public static function getConfig(TenantContext $context): array
     {
+        self::clearError();
         return [
             'status' => (int) ConfigService::get(self::CONFIG_TYPE, 'status', 0),
             'data'   => HotSearchTenantRepository::terms($context)
@@ -39,6 +40,7 @@ class HotSearchLogic extends BaseLogic
      */
     public static function setConfig(TenantContext $context, array $params): bool
     {
+        self::clearError();
         HotSearchTenantContext::tenantId($context);
         $rows = [];
         foreach ((array) ($params['data'] ?? []) as $item) {
@@ -57,8 +59,7 @@ class HotSearchLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 }

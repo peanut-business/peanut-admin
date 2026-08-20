@@ -13,6 +13,7 @@ class OfficialAccountMenuLogic extends BaseLogic
 {
     public static function detail(TenantContext $context): array
     {
+        self::clearError();
         $stored = self::config($context);
         $menu = $stored['menu'] ?? [];
         return ['menu' => is_array($menu) ? $menu : []];
@@ -20,12 +21,12 @@ class OfficialAccountMenuLogic extends BaseLogic
 
     public static function save(TenantContext $context, array $menu): bool
     {
+        self::clearError();
         try {
             self::store($context, $menu);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
@@ -35,6 +36,7 @@ class OfficialAccountMenuLogic extends BaseLogic
         ?OfficialAccountService $service = null
     ): bool
     {
+        self::clearError();
         try {
             $config = self::config($context);
             $service ??= new OfficialAccountService();
@@ -46,8 +48,7 @@ class OfficialAccountMenuLogic extends BaseLogic
             self::store($context, $menu, $config);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 

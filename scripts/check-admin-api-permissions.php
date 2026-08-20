@@ -29,10 +29,7 @@ function adminApiMatrix(string $repositoryRoot, string $routeSource, array $acce
     }
 
     $permissionKeys = [];
-    $sqlFiles = array_merge(
-        [$repositoryRoot . '/server/database/init.sql'],
-        glob($repositoryRoot . '/server/database/migrations/*.sql') ?: [],
-    );
+    $sqlFiles = [$repositoryRoot . '/server/database/init.sql'];
     foreach ($sqlFiles as $sqlFile) {
         $sql = (string)file_get_contents($sqlFile);
         preg_match_all("/['\"]([a-z0-9_.-]+(?:\\/[a-z0-9_.-]+)+)['\"]/i", $sql, $permissions);

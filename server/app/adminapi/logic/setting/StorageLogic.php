@@ -25,6 +25,7 @@ class StorageLogic extends BaseLogic
     /** @notes 存储引擎列表 */
     public static function lists(): array
     {
+        self::clearError();
         $default = (string) ConfigService::get('storage', 'default', 'local');
         $data = [];
         foreach (self::ENGINES as $engine => $info) {
@@ -41,6 +42,7 @@ class StorageLogic extends BaseLogic
     /** @notes 某引擎的配置详情 */
     public static function detail(array $param): array
     {
+        self::clearError();
         $engine  = (string) ($param['engine'] ?? 'local');
         $default = (string) ConfigService::get('storage', 'default', '');
 
@@ -68,6 +70,7 @@ class StorageLogic extends BaseLogic
      */
     public static function setup(array $params)
     {
+        self::clearError();
         $engine = (string) ($params['engine'] ?? 'local');
         $status = (int) ($params['status'] ?? 0);
 
@@ -113,6 +116,7 @@ class StorageLogic extends BaseLogic
     /** @notes 切换默认引擎（再次点击当前默认则回落 local） */
     public static function change(array $params): bool
     {
+        self::clearError();
         try {
             $engine  = (string)($params['engine'] ?? 'local');
             $default = (string)ConfigService::get('storage', 'default', 'local');
@@ -124,8 +128,7 @@ class StorageLogic extends BaseLogic
             self::clearCache();
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
