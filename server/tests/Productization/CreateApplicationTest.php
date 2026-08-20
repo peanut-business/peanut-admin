@@ -340,7 +340,7 @@ try {
     file_put_contents($temporary . '/non-empty/keep.txt', 'keep');
     createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty'), 'CREATE_APP_TARGET_NOT_EMPTY');
     createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug'), 'CREATE_APP_SLUG_INVALID');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'v1'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'not-a-version'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
     createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape'), 'CREATE_APP_TARGET_PATH_INVALID');
 
     mkdir($temporary . '/outside');
