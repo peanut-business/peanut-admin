@@ -6,8 +6,11 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 WEB_DIR="${WEB_DIR:-$ROOT_DIR/web}"
 SERVER_DIR="${SERVER_DIR:-$ROOT_DIR/server}"
+CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
 SKIP_WEB_BUILD="${SKIP_WEB_BUILD:-0}"
 OUTPUT_DIR="${1:-$ROOT_DIR/release/peanut-admin}"
+WEB_CORE_LINK="$WEB_DIR/node_modules/@peanut-admin/admin"
+RESTORE_LOCAL_WEB_CORE=0
 
 if [[ "$OUTPUT_DIR" != /* ]]; then
   OUTPUT_DIR="$ROOT_DIR/$OUTPUT_DIR"
@@ -26,6 +29,17 @@ require_command() {
 [[ -d "$SERVER_DIR" ]] || die "server directory not found: $SERVER_DIR"
 [[ ! -e "$OUTPUT_DIR" ]] || die "output already exists; choose a new path or remove it explicitly: $OUTPUT_DIR"
 [[ ! -e "$OUTPUT_DIR.tar.gz" ]] || die "archive already exists; choose a new path or remove it explicitly: $OUTPUT_DIR.tar.gz"
+
+if [[ -L "$WEB_CORE_LINK" && -d "$CORE_DIR/packages/web" \
+  && "$(realpath "$WEB_CORE_LINK")" == "$(CDPATH= cd -- "$CORE_DIR/packages/web" && pwd)" ]]; then
+  RESTORE_LOCAL_WEB_CORE=1
+fi
+
+restore_local_web_core() {
+  if [[ "$RESTORE_LOCAL_WEB_CORE" == 1 ]]; then
+    PEANUT_ADMIN_CORE_DIR="$CORE_DIR" "$ROOT_DIR/scripts/local-core-web" link >/dev/null
+  fi
+}
 
 if [[ "$SKIP_WEB_BUILD" != "1" ]]; then
   require_command node
@@ -51,6 +65,7 @@ mkdir -p "$output_parent"
 stage_dir="$(mktemp -d "$output_parent/.peanut-admin-release.XXXXXX")"
 cleanup() {
   rm -rf -- "$stage_dir"
+  restore_local_web_core
 }
 trap cleanup EXIT
 
@@ -110,6 +125,7 @@ fi
 } > "$stage_dir/release-manifest.txt"
 
 mv -- "$stage_dir" "$OUTPUT_DIR"
+restore_local_web_core
 trap - EXIT
 printf 'release: %s\n' "$OUTPUT_DIR"
 tar -C "$(dirname -- "$OUTPUT_DIR")" -czf "$OUTPUT_DIR.tar.gz" "$(basename -- "$OUTPUT_DIR")"
