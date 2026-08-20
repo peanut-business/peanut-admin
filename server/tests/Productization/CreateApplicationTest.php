@@ -398,6 +398,7 @@ try {
         'owner' => 'template-source-only',
         'transform' => 'copy',
         'mode' => 0644,
+        'profiles' => ['minimal', 'standard', 'full'],
     ];
     $sourceOnlyInventoryPath = $temporary . '/source-only-inventory.json';
     createApplicationWriteJson($sourceOnlyInventoryPath, $sourceOnlyInventory);
