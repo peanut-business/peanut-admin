@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Peanut Admin HTTP API
+  version: 3.0.0
+  description: >-
+    Application HTTP contract for the identity, Tenant, article, file and
+    notification entry points. Runtime authorization and Tenant binding remain
+    enforced by the server middleware.
+servers:
+  - url: /
+tags:
+  - name: Auth
+  - name: Tenant
+  - name: Article
+  - name: File
+  - name: Notice
+paths:
+  /api/user/login:
+    post:
+      tags: [Auth]
+      operationId: userLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+  /api/tenant/session/select:
+    post:
+      tags: [Tenant]
+      operationId: selectTenant
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TenantSelectRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+  /api/article/lists:
+    get:
+      tags: [Article]
+      operationId: listArticles
+      parameters:
+        - {$ref: '#/components/parameters/PageNo'}
+        - {$ref: '#/components/parameters/PageSize'}
+        - in: query
+          name: cid
+          schema: {type: integer, minimum: 0}
+        - in: query
+          name: keyword
+          schema: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+  /api/article/detail:
+    get:
+      tags: [Article]
+      operationId: articleDetail
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: {type: integer, minimum: 1}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+  /upload/file:
+    post:
+      tags: [File]
+      operationId: uploadFile
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+                cid: {type: integer, minimum: 0}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+  /file/lists:
+    get:
+      tags: [File]
+      operationId: listFiles
+      security: [{bearerAuth: []}]
+      parameters:
+        - {$ref: '#/components/parameters/PageNo'}
+        - {$ref: '#/components/parameters/PageSize'}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+  /api/sms/send:
+    post:
+      tags: [Notice]
+      operationId: sendVerificationCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scene]
+              properties:
+                scene: {type: string}
+                mobile: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PageNo:
+      in: query
+      name: page_no
+      schema: {type: integer, minimum: 1, default: 1}
+    PageSize:
+      in: query
+      name: page_size
+      schema: {type: integer, minimum: 1, maximum: 200, default: 15}
+  schemas:
+    LoginRequest:
+      type: object
+      required: [account, password]
+      properties:
+        account: {type: string, minLength: 1}
+        password: {type: string, minLength: 1, format: password}
+        terminal: {type: integer, minimum: 1}
+    TenantSelectRequest:
+      type: object
+      required: [tenant_id]
+      properties:
+        tenant_id: {type: integer, minimum: 1}
+    ApiResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        code: {type: integer}
+        show: {type: boolean}
+        msg: {type: string}
+        data: {}
+  responses:
+    ApiResponse:
+      description: Standard Peanut Admin API response
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiResponse'}

@@ -5,7 +5,7 @@
     "owner": "Peanut Admin maintainers",
     "source": "this versioned file",
     "resource_observation_policy": "validate this registry against the live resource before each stateful operation",
-    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo credentials are fully recorded in docs/operations/demo-access.md for internal handoff, while only server-locked Tenant demo credentials may be copied into public README/docs-site tables",
+    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo credentials are intentionally public and recorded in docs/operations/demo-access.md, README.md, docs-site/deployment.md and the matching demo resource entries",
     "local_port_policy": "registered values are defaults; PEANUT_LOCAL_ENV_FILE or .local/stack.env is the per-clone runtime source and existing overrides are preserved"
   },
   "resources": {
@@ -839,7 +839,16 @@
         "service_type": "SSH-managed Docker Compose production deployment",
         "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin/.env",
         "application_admin_login": "admin@peanut-admin.007345.xyz",
-        "application_admin_credential_ref": "docs/operations/demo-access.md plus macOS Keychain service peanut-admin-production-admin, account admin",
+        "application_admin_credential_ref": "docs/operations/demo-access.md is authoritative for the owner-authorized demo login; macOS Keychain service peanut-admin-production-admin account admin is a secondary legacy handoff reference and may be stale",
+        "public_demo_access": {
+          "stable_access_id": "peanut-admin-public-demo-standalone-admin",
+          "classification": "owner-authorized intentionally public credential for the disposable production demo",
+          "verified_at": "2026-08-20",
+          "verification": "real browser login reached /admin/dashboard/workplace",
+          "url": "https://peanut-admin.007345.xyz/admin/",
+          "account": "admin@peanut-admin.007345.xyz",
+          "password": "peanut1234"
+        },
         "demo_instance": true,
         "documentation_resource_id": "peanut-admin-production-docs-domain",
         "demo_data_command": "sudo docker compose -f compose.yaml --profile bundled-db exec -T -e PEANUT_DEMO_MODE=enabled -e PEANUT_DEMO_TENANT_ID=<registered-active-tenant> -e PEANUT_DEMO_DOCS_URL=https://peanut-admin-doc.007345.xyz php peanut-seed-demo-data --apply",
@@ -868,7 +877,7 @@
       },
       {
         "stable_resource_id": "peanut-admin-production-candidate-deployment",
-        "purpose": "parallel fresh-only multi-tenant production experience deployment without replacing the published 1.x demo",
+        "purpose": "parallel fresh-only multi-tenant production experience deployment alongside the current Standalone demo",
         "environments": [
           "production-candidate"
         ],
@@ -908,11 +917,11 @@
         "namespace": "peanut-admin-production-candidate",
         "service_type": "SSH-managed Docker Compose production experience deployment",
         "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin-candidate/.env",
-        "application_credential_ref": "docs/operations/demo-access.md plus the root-owned oracle3 environment file",
+        "application_credential_ref": "docs/operations/demo-access.md is authoritative for current owner-authorized demo logins; the root-owned oracle3 environment file contains installation inputs and other deployment secrets but is not current-password authority",
         "bootstrap_admin_login": "admin@pa-demo.example",
-        "bootstrap_admin_credential_ref": "docs/operations/demo-access.md plus oracle3:/www/docker/peanut-admin-candidate/.env key ADMIN_INITIAL_PASSWORD (root-owned mode 0600)",
+        "bootstrap_admin_credential_ref": "docs/operations/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key ADMIN_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
         "platform_operator_login": "platform@pa-demo.example",
-        "platform_operator_credential_ref": "docs/operations/demo-access.md plus oracle3:/www/docker/peanut-admin-candidate/.env key PLATFORM_INITIAL_PASSWORD (root-owned mode 0600)",
+        "platform_operator_credential_ref": "docs/operations/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key PLATFORM_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
         "public_demo_access_resource_id": "peanut-admin-production-candidate-domains",
         "demo_instance": true,
         "fresh_install_only": true,
@@ -1018,8 +1027,22 @@
         "public_demo_access": {
           "classification": "intentionally public non-secret credentials for the disposable production-candidate demo only",
           "verified_at": "2026-08-20",
-          "password_change_policy": "PEANUT_DEMO_MODE=enabled and DemoAccountPolicy reject password changes for the two registered demo emails; Platform, bootstrap and production administrator credentials are private and excluded",
+          "password_change_policy": "all listed identities are owner-authorized disposable-demo credentials; protected demo mutations are rejected by the active demo policy",
           "entries": [
+            {
+              "stable_access_id": "peanut-admin-public-demo-platform",
+              "purpose": "instance Platform operator login",
+              "url": "https://pa-platform.007345.xyz/platform/",
+              "account": "platform@pa-demo.example",
+              "password": "peanut1234"
+            },
+            {
+              "stable_access_id": "peanut-admin-public-demo-bootstrap-admin",
+              "purpose": "default Tenant bootstrap Admin login",
+              "url": "https://pa-admin.007345.xyz/admin/",
+              "account": "admin@pa-demo.example",
+              "password": "peanut1234"
+            },
             {
               "stable_access_id": "peanut-admin-public-demo-shared-admin",
               "purpose": "shared Admin login with Tenant A and Tenant B selection",

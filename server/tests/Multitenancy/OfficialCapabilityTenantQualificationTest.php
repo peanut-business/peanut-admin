@@ -24,6 +24,9 @@ foreach ([
     'entry_binding_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantEntryBindingResolver.php',
     'entry_schema' => 'database/init.sql',
     'public_member_middleware' => 'app/api/middleware/PublicMemberTenantMiddleware.php',
+    'public_decoration_middleware' => 'app/api/middleware/PublicDecorationTenantMiddleware.php',
+    'public_notice_middleware' => 'app/api/middleware/PublicNoticeTenantMiddleware.php',
+    'public_hot_search_middleware' => 'app/api/middleware/PublicHotSearchTenantMiddleware.php',
     'tenant_session' => 'app/tenant/controller/TenantSessionController.php',
     'admin_login' => 'app/adminapi/logic/auth/LoginLogic.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
@@ -44,6 +47,7 @@ foreach ([
     'finance_repository' => 'app/common/service/finance/FinanceTenantRepository.php',
     'recharge_settings' => 'app/common/service/finance/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
+    'tenant_application_settings' => 'app/common/service/config/TenantApplicationSettingService.php',
     'notice_channel' => 'app/common/service/notice/NoticeChannelService.php',
     'platform_storage' => 'vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php',
     'admin_permissions' => 'app/adminapi/service/AdminPermissionService.php',
@@ -79,6 +83,10 @@ foreach ([
     'official_article_manifest' => 'app/Modules/Official/Article/module.json',
     'official_article_access' => 'app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php',
     'official_article_public' => 'app/api/middleware/PublicArticleTenantMiddleware.php',
+    'member_token' => 'app/api/service/UserTokenService.php',
+    'jwt_config' => 'config/jwt.php',
+    'menu_controller' => 'app/adminapi/controller/auth/MenuController.php',
+    'system_controller' => 'app/adminapi/controller/system/SystemController.php',
 ] as $key => $relative) {
     $sources[$key] = qualificationSource($root, $relative);
 }
@@ -140,6 +148,9 @@ qualificationExpect(
         && str_contains($sources['entry_binding'], '$this->delegate->assertTenantAccess(')
         && str_contains($sources['entry_binding'], '$this->delegate->system(')
         && str_contains($sources['entry_binding'], 'DefaultTenantContextResolver::system(')
+        && str_contains($sources['entry_binding'], 'DeploymentMode::Standalone')
+        && str_contains($sources['entry_binding'], 'public_default_tenant_fallback')
+        && str_contains($sources['entry_binding'], ': null')
         && str_contains($sources['entry_binding_core'], 'b.host = :host')
         && str_contains($sources['entry_binding_core'], 'b.client_key = :client_key')
         && str_contains($sources['entry_binding_core'], 'count($rows) !== 1')
@@ -153,6 +164,20 @@ qualificationExpect(
         && str_contains($sources['public_member_middleware'], 'TenantEntryBindingResolver::production()->system(')
         && !str_contains($sources['public_member_middleware'], 'DefaultTenantContextResolver::system('),
     'Admin or anonymous member authentication bypasses Tenant entry resolution'
+);
+foreach (['public_decoration_middleware', 'public_notice_middleware', 'public_hot_search_middleware'] as $key) {
+    qualificationExpect(
+        str_contains($sources[$key], 'TenantEntryBindingResolver::production()->system(')
+            && !str_contains($sources[$key], '= DefaultTenantContextResolver::system('),
+        $key . ' bypasses Host-bound Tenant entry resolution'
+    );
+}
+qualificationExpect(
+    str_contains($sources['routes'], "Route::get('api/search/hotLists'")
+        && str_contains($sources['routes'], 'PublicHotSearchTenantMiddleware::class')
+        && str_contains($sources['routes'], "Route::get('api/index/policy'")
+        && substr_count($sources['routes'], 'PublicDecorationTenantMiddleware::class') >= 6,
+    'public hot-search or policy route is missing a Host-bound Tenant guard'
 );
 qualificationExpect(
     str_contains(
@@ -204,6 +229,30 @@ qualificationExpect(
         && str_contains($sources['recharge_settings'], 'TenantSettingService::document')
         && str_contains($sources['recharge_settings'], 'ExternalChannelBindingService::config'),
     'recharge policy or payment channel configuration is not Tenant-owned'
+);
+foreach (['agreement', 'site-statistics', 'member-profile', 'login', 'web-page', 'hot-search'] as $namespace) {
+    qualificationExpect(
+        str_contains($sources['tenant_application_settings'], "'{$namespace}'"),
+        'Tenant application setting namespace is missing: ' . $namespace
+    );
+}
+qualificationExpect(
+    str_contains($sources['member_token'], "Config::get('jwt.expire'")
+        && str_contains($sources['member_token'], "'aud'")
+        && str_contains($sources['member_token'], "'sub'")
+        && str_contains($sources['member_token'], 'strlen($secret) < 32')
+        && !str_contains($sources['jwt_config'], 'peanut-admin-change-this-in-production')
+        && !str_contains($sources['member_token'], 'peanut-admin-secret-key'),
+    'member JWT is missing key strength, lifetime, issuer/audience, or subject validation'
+);
+qualificationExpect(
+    str_contains($sources['menu_controller'], 'instanceMenuDenial()')
+        && str_contains($sources['system_controller'], 'instanceToolAccessDenial()'),
+    'Tenant Admin can still reach an instance-global control plane'
+);
+qualificationExpect(
+    !is_file($root . '/app/adminapi/controller/setting/StorageController.php'),
+    'retired Tenant Admin storage controller remains available for accidental route registration'
 );
 qualificationExpect(
     str_contains($sources['platform_storage'], "'storage/setup'")

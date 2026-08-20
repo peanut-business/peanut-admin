@@ -9,7 +9,7 @@ use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
  * 腾讯云短信驱动（TC3-HMAC-SHA256 签名）
  * 文档：https://cloud.tencent.com/document/product/382/52071
  *
- * 配置 key（pa_config type=notice，name=sms_tencent，value=JSON）：
+ * 配置由当前 Tenant 的 notice.sms external binding 提供：
  *   secret_id, secret_key, sdk_app_id, sign_name, region
  */
 final class TencentSms extends TemplateSmsDriver

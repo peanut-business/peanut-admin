@@ -54,16 +54,34 @@ run_composer() {
         "$@"
 }
 
+LOCK_BACKUP=""
+preserve_application_lock() {
+    [[ -f "$SERVER_DIR/composer.lock" ]] || return 0
+    LOCK_BACKUP="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-composer-lock.XXXXXX")"
+    cp "$SERVER_DIR/composer.lock" "$LOCK_BACKUP"
+}
+
+restore_application_lock() {
+    if [[ -n "$LOCK_BACKUP" && -f "$LOCK_BACKUP" ]]; then
+        cp "$LOCK_BACKUP" "$SERVER_DIR/composer.lock"
+        rm -f "$LOCK_BACKUP"
+    fi
+}
+
 case "$ACTION" in
     install)
-        if [[ -f "$LOCAL_LOCK" ]]; then
-            run_composer install
-        else
-            cp "$SERVER_DIR/composer.lock" "$LOCAL_LOCK"
-            run_composer update peanut-admin/core --with-dependencies
-        fi
+        # The committed lock remains the source of truth for every non-Core
+        # dependency. Re-seed the ignored local lock so application dependency
+        # updates cannot leave the path-repository workflow stale.
+        preserve_application_lock
+        trap restore_application_lock EXIT
+        cp "$SERVER_DIR/composer.lock" "$LOCAL_LOCK"
+        run_composer update peanut-admin/core --with-dependencies
         ;;
     update|refresh)
+        preserve_application_lock
+        trap restore_application_lock EXIT
+        cp "$SERVER_DIR/composer.lock" "$LOCAL_LOCK"
         run_composer update peanut-admin/core --with-dependencies
         ;;
     manifest)

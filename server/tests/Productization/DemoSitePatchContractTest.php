@@ -73,10 +73,11 @@ foreach ([
     '--overlay',
     'seed-multi-tenant-demo.php',
     'down --volumes',
-    "'--overlay requires --fresh'",
+    "'v3.0 deployments require --fresh'",
+    "'v3.0 is fresh-only; application database upgrades are not supported'",
     'mktemp ./.env.deploy.',
     'mv -f -- "$temporary" .env',
-    'if [[ "$mode" == fresh ]]; then',
+    'server/database/install.php',
 ] as $token) {
     $expect(str_contains($deploy, $token), 'deployment flow lost contract token: ' . $token);
 }
@@ -84,12 +85,18 @@ $expect(
     str_contains($deploy, 'requires distinct default Admin, Platform, Tenant A and Tenant B emails'),
     'fresh demo deployment does not reject identity collisions before database work'
 );
+$buildPosition = strpos($deploy, '"${candidate_compose[@]}" build');
+$destroyPosition = strpos($deploy, '"${current_compose[@]}" down --volumes');
 $expect(
-    substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 5,
+    $buildPosition !== false && $destroyPosition !== false && $buildPosition < $destroyPosition,
+    'fresh deployment destroys the running target before the candidate image build succeeds'
+);
+$expect(
+    substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 4,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );
 $expect(
-    substr_count($deploy, '</dev/null') === 5,
+    substr_count($deploy, '</dev/null') === 4,
     'remote one-shot Compose commands must close inherited standard input'
 );
 

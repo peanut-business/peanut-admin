@@ -325,6 +325,7 @@
                 class="rich-editor__content"
                 contenteditable="true"
                 @input="onContentInput"
+                @paste.prevent="onContentPaste"
                 @keyup="saveContentRange"
                 @mouseup="saveContentRange"
               ></div>
@@ -356,6 +357,7 @@
   } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import { getToken } from '@/utils/auth';
+  import { sanitizeRichText } from '@/utils/sanitize-rich-text';
   import FilePicker from '@/components/file-picker/index.vue';
   import { uploadUrl } from '@/api/system/file';
   import {
@@ -520,9 +522,21 @@
   const syncEditor = async () => {
     await nextTick();
     if (contentEditorRef.value) {
-      contentEditorRef.value.innerHTML = form.value.content || '';
+      const sanitizedContent = sanitizeRichText(form.value.content);
+      form.value.content = sanitizedContent;
+      contentEditorRef.value.innerHTML = sanitizedContent;
     }
     formRef.value?.clearValidate();
+  };
+
+  const readEditorContent = (): string => {
+    const editor = contentEditorRef.value;
+    const content = editor?.innerHTML ?? form.value.content;
+    const sanitizedContent = sanitizeRichText(content);
+    if (editor && editor.innerHTML !== sanitizedContent) {
+      editor.innerHTML = sanitizedContent;
+    }
+    return sanitizedContent;
   };
 
   const openAdd = async () => {
@@ -543,7 +557,7 @@
       abstract: data.abstract || '',
       image: data.image || '',
       author: data.author || '',
-      content: data.content || '',
+      content: sanitizeRichText(data.content || ''),
       click_virtual: data.click_virtual || 0,
       sort: data.sort || 0,
       is_show: data.is_show,
@@ -552,8 +566,21 @@
     await syncEditor();
   };
 
-  const onContentInput = (event: Event) => {
-    form.value.content = (event.target as HTMLDivElement).innerHTML;
+  const onContentInput = () => {
+    form.value.content = readEditorContent();
+    saveContentRange();
+  };
+
+  const onContentPaste = (event: ClipboardEvent) => {
+    const clipboard = event.clipboardData;
+    if (!clipboard) return;
+    const html = clipboard.getData('text/html');
+    const text = clipboard.getData('text/plain');
+    const safe = html
+      ? sanitizeRichText(html)
+      : sanitizeRichText(text).replace(/\r?\n/g, '<br>');
+    document.execCommand('insertHTML', false, safe);
+    form.value.content = readEditorContent();
     saveContentRange();
   };
 
@@ -576,7 +603,7 @@
     contentEditorRef.value?.focus();
     document.execCommand(command);
     if (contentEditorRef.value) {
-      form.value.content = contentEditorRef.value.innerHTML;
+      form.value.content = readEditorContent();
     }
   };
 
@@ -627,7 +654,7 @@
     } else {
       editor.appendChild(media);
     }
-    form.value.content = editor.innerHTML;
+    form.value.content = readEditorContent();
   };
 
   const onContentMaterialSelected = (
@@ -657,9 +684,7 @@
   };
 
   const onSubmit = async () => {
-    if (contentEditorRef.value) {
-      form.value.content = contentEditorRef.value.innerHTML;
-    }
+    form.value.content = readEditorContent();
     const valid = await formRef.value?.validate().catch(() => false);
     if (!valid) return;
     if (form.value.id) {

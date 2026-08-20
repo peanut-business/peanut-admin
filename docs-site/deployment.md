@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 2.x（当前发布 v2.1.4）的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 3.0（当前候选 v3.0.0）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -258,15 +258,16 @@ Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Te
 
 | 体验入口 | 登录地址 | 账号 | 密码 |
 | --- | --- | --- | --- |
-| 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
+| 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | `peanut1234` |
+| bootstrap 管理端 | `https://pa-admin.007345.xyz/admin/` | `admin@pa-demo.example` | `peanut1234` |
 | 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
 | Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
 | Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
-| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
+| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | `peanut1234` |
 
-Tenant A/B 是可丢弃候选环境中刻意公开的演示账号；服务端仅在 `PEANUT_DEMO_MODE=enabled`
-时锁定这两个邮箱的密码修改。Platform、bootstrap 和 Standalone 管理员不受该演示锁保护，
-其凭据只通过资源登记中的私有引用交接，不写入公开文档。
+上表管理身份都是 owner 明确批准公开的可丢弃演示账号，统一密码为 `peanut1234`。当前账号
+事实源为源仓 `docs/operations/demo-access.md`；部署目录 `.env` 中的初始密码不会随数据库
+改密回写，不能作为当前登录密码依据。
 
 邮件 Provider 是自动投递 Owner 邀请的可选生产集成，不是 Tenant 创建或域名绑定的 Runtime
 前置。人工模式下必须通过受控渠道交付一次性邀请 Token；不要把 `APP_ENV` 降级为

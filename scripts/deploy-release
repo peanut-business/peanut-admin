@@ -9,6 +9,8 @@ REGISTRY="$ROOT_DIR/resources/project-resources.json"
 TAG=""
 TARGET=""
 FRESH=0
+INSTALL=0
+UPDATE=0
 APPLY=0
 DRY_RUN=0
 SSH_ALIAS="oracle3"
@@ -29,24 +31,25 @@ DEMO_DOCS_URL="${PEANUT_DEMO_DOCS_URL:-}"
 usage() {
   cat <<'EOF'
 Usage: scripts/deploy-release <vX.Y.Z> --target <production|production-candidate> \
-  --fresh [--apply | --dry-run] [--ssh-alias <alias>] \
+  (--install | --update | --fresh) [--apply | --dry-run] [--ssh-alias <alias>] \
   [--overlay <demo-patch.tar>] \
   [--confirm-destroy <target>]
 
 The script deploys an immutable release tag to one registered Peanut Admin
 instance. It never guesses a host, path, port, database or fallback target.
 
-  --fresh    install the release into an empty target (destructive for an
-             existing target; explicit confirmation is required by --apply)
+  --install  first installation; never removes an existing database or volume
+  --update   routine application update; preserves database and upload volumes
+  --fresh    destructive reinstall; explicit confirmation and paired backup are required
   --dry-run  validate the release and print the exact remote plan only
   --apply    execute the plan over the registered SSH alias
   --overlay  apply a checked demo-only source overlay before building
   --confirm-destroy
              required for --fresh; value must exactly equal the target
 
-The v3.0 baseline is fresh-only. Application database upgrades and the
-pa_schema_migration ledger are not supported; Plugin Module migrations retain
-their independent lifecycle.
+The application schema is not changed by routine updates. Fresh installation
+uses the canonical v3.0 baseline; Plugin Module migrations retain their
+independent lifecycle.
 EOF
 }
 
@@ -143,9 +146,11 @@ while [[ $# -gt 0 ]]; do
     --target)
       [[ $# -ge 2 ]] || fail '--target requires a value'
       TARGET="$2"; shift 2 ;;
+    --install) INSTALL=1; shift ;;
+    --update) UPDATE=1; shift ;;
     --fresh) FRESH=1; shift ;;
     --upgrade|--from)
-      fail 'v3.0 is fresh-only; application database upgrades are not supported' ;;
+      fail 'use --update for a routine application update; schema upgrades are not supported' ;;
     --apply) APPLY=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --ssh-alias)
@@ -167,10 +172,13 @@ done
 
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'tag must be an immutable vX.Y.Z release tag'
 [[ "$TARGET" == production || "$TARGET" == production-candidate ]] || fail 'target must be production or production-candidate'
-[[ "$FRESH" == 1 ]] || fail 'v3.0 deployments require --fresh'
+[[ $((INSTALL + UPDATE + FRESH)) -eq 1 ]] || fail 'choose exactly one of --install, --update or --fresh'
 [[ $((APPLY + DRY_RUN)) -eq 1 ]] || fail 'choose exactly one of --apply or --dry-run'
-if [[ "$CONFIRM_DESTROY" != "$TARGET" ]]; then
+if [[ "$FRESH" == 1 && "$CONFIRM_DESTROY" != "$TARGET" ]]; then
   fail "--fresh requires --confirm-destroy $TARGET"
+fi
+if [[ "$FRESH" != 1 && -n "$CONFIRM_DESTROY" ]]; then
+  fail '--confirm-destroy is only valid with --fresh'
 fi
 if [[ -n "$OVERLAY" ]]; then
   [[ "$TARGET" == production-candidate ]] || fail '--overlay is allowed only for production-candidate'
@@ -245,14 +253,14 @@ metadata_version="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.version // e
 metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
 [[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || fail "RELEASE_METADATA.json does not match $TAG"
 
-if [[ -z "$ADMIN_EMAIL" || -z "$ADMIN_PASSWORD" ]]; then
+if [[ "$UPDATE" != 1 && ( -z "$ADMIN_EMAIL" || -z "$ADMIN_PASSWORD" ) ]]; then
   fail 'fresh deployment requires PEANUT_GENERATED_ADMIN_EMAIL and PEANUT_GENERATED_ADMIN_PASSWORD'
 fi
 validate_env_value PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
 validate_env_value PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
 validate_email PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
 validate_password PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
-if [[ "$deployment_mode" == multi-tenant ]]; then
+if [[ "$UPDATE" != 1 && "$deployment_mode" == multi-tenant ]]; then
   [[ -n "$PLATFORM_EMAIL" && -n "$PLATFORM_PASSWORD" ]] \
     || fail 'fresh multi-tenant deployment requires PEANUT_GENERATED_PLATFORM_EMAIL and PEANUT_GENERATED_PLATFORM_PASSWORD'
   validate_env_value PEANUT_GENERATED_PLATFORM_EMAIL "$PLATFORM_EMAIL"
@@ -261,6 +269,9 @@ if [[ "$deployment_mode" == multi-tenant ]]; then
   validate_password PEANUT_GENERATED_PLATFORM_PASSWORD "$PLATFORM_PASSWORD"
   [[ "$(normalize_email "$ADMIN_EMAIL")" != "$(normalize_email "$PLATFORM_EMAIL")" ]] \
     || fail 'fresh multi-tenant deployment requires distinct Admin and Platform emails'
+fi
+if [[ -n "$OVERLAY" && "$UPDATE" == 1 ]]; then
+  fail '--overlay is only valid for --install or --fresh'
 fi
 if [[ -n "$OVERLAY" ]]; then
   validate_env_value PEANUT_DEMO_TENANT_A_EMAIL "$DEMO_TENANT_A_EMAIL"
@@ -294,13 +305,19 @@ if [[ -n "$OVERLAY" ]]; then
   [[ "$overlay_sha256" =~ ^[0-9a-f]{64}$ ]] || fail 'cannot calculate overlay SHA-256'
 fi
 
-printf 'release=%s\ncommit=%s\ntarget=%s\nmode=fresh\nssh=%s\nremote_root=%s\ncompose_project=%s\norigin_port=%s\ndatabase_resource=%s\ndeployment_mode=%s\n' \
-  "$TAG" "$tag_commit" "$TARGET" "$SSH_ALIAS" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode"
+mode=install
+[[ "$UPDATE" == 1 ]] && mode=update
+[[ "$FRESH" == 1 ]] && mode=fresh
+printf 'release=%s\ncommit=%s\ntarget=%s\nmode=%s\nssh=%s\nremote_root=%s\ncompose_project=%s\norigin_port=%s\ndatabase_resource=%s\ndeployment_mode=%s\n' \
+  "$TAG" "$tag_commit" "$TARGET" "$mode" "$SSH_ALIAS" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode"
 [[ -z "$overlay_sha256" ]] || printf 'overlay_sha256=%s\n' "$overlay_sha256"
 
 if [[ "$DRY_RUN" == 1 ]]; then
-  printf 'plan=validate remote path, fetch tag, apply checked overlay when present, build images, recreate database from the v3.0 baseline, restart Compose, health smoke\n'
-  printf 'warning=--fresh will stop the target and remove its Compose volumes before installing\n'
+  case "$mode" in
+    install) printf 'plan=validate candidate, build images, install the v3.0 baseline into an empty target, start the stack, health smoke\n' ;;
+    update) printf 'plan=validate running target, build candidate images while it remains available, replace only changed php/nginx/cron containers with up -d, health smoke\n' ;;
+    fresh) printf 'plan=validate candidate and paired DB/files backup, build images, then stop target, remove registered volumes, install baseline, health smoke\n'; printf 'warning=--fresh is destructive and requires --confirm-destroy=%s plus a verified paired backup\n' "$TARGET" ;;
+  esac
   exit 0
 fi
 
@@ -346,7 +363,7 @@ if [[ -n "$OVERLAY" ]]; then
 fi
 
 ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" bash -s -- \
-  "$TAG" "$tag_commit" "$TARGET" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" <<'REMOTE_SCRIPT'
+  "$TAG" "$tag_commit" "$TARGET" "$mode" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 
 decode_remote_arg() {
@@ -356,22 +373,24 @@ decode_remote_arg() {
 tag="$1"
 expected_commit="$2"
 target="$3"
-root="$4"
-project="$5"
-port="$6"
-database_resource="$7"
-deployment_mode="$8"
-archive="$9"
-secrets="${10}"
-overlay="$(decode_remote_arg "${11:-__PEANUT_EMPTY__}")"
-expected_overlay_sha="$(decode_remote_arg "${12:-__PEANUT_EMPTY__}")"
-expected_archive_sha="${13:-}"
+mode="$4"
+root="$5"
+project="$6"
+port="$7"
+database_resource="$8"
+deployment_mode="$9"
+archive="${10}"
+secrets="${11}"
+overlay="$(decode_remote_arg "${12:-__PEANUT_EMPTY__}")"
+expected_overlay_sha="$(decode_remote_arg "${13:-__PEANUT_EMPTY__}")"
+expected_archive_sha="${14:-}"
 
 fail() { printf 'remote deploy: %s\n' "$1" >&2; exit 1; }
 [[ "$root" == /www/docker/peanut-admin || "$root" == /www/docker/peanut-admin-candidate ]] || fail 'unregistered deployment root'
 [[ "$project" == peanut-admin || "$project" == peanut-admin-candidate ]] || fail 'unregistered compose project'
 [[ "$port" == 18092 || "$port" == 18093 ]] || fail 'unregistered origin port'
 [[ "$target" == production || "$target" == production-candidate ]] || fail 'unregistered deployment target'
+[[ "$mode" == install || "$mode" == update || "$mode" == fresh ]] || fail 'unregistered deployment mode'
 [[ -d "$root" && -f "$root/compose.yaml" && -f "$root/.env" ]] || fail "deployment files missing under $root"
 [[ -f "$secrets" ]] || fail 'deployment credential payload is missing'
 chmod 600 "$secrets"
@@ -387,16 +406,22 @@ sudo -n grep -Fqx "PEANUT_DATABASE_RESOURCE_ID=$database_resource" .env || fail 
 sudo -n grep -Fqx "HTTP_PORT=$port" .env || fail '.env origin port mismatch'
 sudo -n grep -Fqx "DEPLOYMENT_MODE=$deployment_mode" .env || fail '.env deployment mode mismatch'
 
-compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
-"${compose[@]}" config >/dev/null || fail 'Compose configuration is invalid'
+current_compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
+"${current_compose[@]}" config >/dev/null || fail 'Compose configuration is invalid'
+if [[ "$mode" == update ]]; then
+  running_services="$("${current_compose[@]}" ps --status running --services | sort | tr '\n' ' ')"
+  [[ "$running_services" == *php* && "$running_services" == *nginx* && "$running_services" == *cron* ]] \
+    || fail 'routine update requires the existing application services to be running'
+elif [[ "$mode" == install ]]; then
+  if sudo -n docker volume inspect "${project}_mysql-data" "${project}_php-storage" >/dev/null 2>&1; then
+    fail 'first installation requires absent database and upload volumes; use --update or an explicitly backed-up --fresh'
+  fi
+fi
 
 [[ -f "$archive" && "$expected_archive_sha" =~ ^[0-9a-f]{64}$ ]] \
   || fail 'immutable release archive identity is incomplete'
 actual_archive_sha="$(sha256sum "$archive" | awk '{print $1}')"
 [[ "$actual_archive_sha" == "$expected_archive_sha" ]] || fail 'immutable release archive SHA-256 mismatch'
-
-printf 'fresh target: stopping stack and removing only registered Compose volumes\n'
-"${compose[@]}" down --volumes --remove-orphans
 
 staging="$(mktemp -d /tmp/peanut-admin-release.XXXXXX)"
 sudo -n tar --no-same-owner -xf "$archive" -C "$staging" || fail 'cannot unpack immutable release archive'
@@ -408,6 +433,55 @@ if [[ -n "$overlay" ]]; then
   overlay_base_tag="$(jq -r '.base_tag // empty' "$staging/DEMO_PATCH_METADATA.json")"
   [[ "$overlay_base_tag" == "$tag" ]] || fail 'demo overlay targets another base release'
 fi
+
+[[ -f "$staging/compose.yaml" && -f "$staging/deploy/docker-compose.prod.yml" ]] \
+  || fail 'candidate Compose files are missing'
+image_suffix="${tag#v}"
+if [[ -n "$expected_overlay_sha" ]]; then
+  image_suffix="${image_suffix}-demo-${expected_overlay_sha:0:12}"
+fi
+php_image="peanut-admin-php:${image_suffix}"
+nginx_image="peanut-admin-nginx:${image_suffix}"
+candidate_compose=(
+  sudo -n env "PHP_IMAGE=$php_image" "NGINX_IMAGE=$nginx_image"
+  docker compose --env-file "$root/.env" -p "$project"
+  -f "$staging/compose.yaml" --profile bundled-db
+)
+"${candidate_compose[@]}" config >/dev/null || fail 'candidate Compose configuration is invalid'
+printf 'candidate: building images while the current stack remains available\n'
+"${candidate_compose[@]}" build
+sudo -n docker image inspect "$php_image" "$nginx_image" >/dev/null \
+  || fail 'candidate image identity is unavailable after build'
+
+verify_paired_backup() {
+  local backup_root="$root/backups" backup_dir
+  [[ "$target" == production ]] || fail 'destructive fresh requires a registered paired DB/files backup for this target'
+  [[ -d "$backup_root" ]] || fail 'registered paired backup directory is missing'
+  backup_dir="$(sudo -n find "$backup_root" -mindepth 1 -maxdepth 1 -type d -print | sort | tail -n 1)"
+  [[ -n "$backup_dir" ]] || fail 'no paired backup set is available'
+  [[ -f "$backup_dir/database.sql.gz" && -f "$backup_dir/php-storage.tar.gz" \
+    && -f "$backup_dir/manifest.json" && -f "$backup_dir/SHA256SUMS" ]] \
+    || fail 'latest backup set is not a complete DB/files pair'
+  sudo -n bash -c 'cd "$1" && sha256sum -c SHA256SUMS >/dev/null && gzip -t database.sql.gz && tar -tzf php-storage.tar.gz >/dev/null' \
+    bash "$backup_dir" \
+    || fail 'latest paired backup failed checksum or archive verification'
+  sudo -n jq -e --arg db "$database_resource" \
+    '.database_resource_id == $db and .application_resource_id == "peanut-admin-production-application-containers"' \
+    "$backup_dir/manifest.json" >/dev/null \
+    || fail 'paired backup manifest does not match the registered production resources'
+  printf 'verified_paired_backup=%s\n' "$(basename "$backup_dir")"
+}
+
+if [[ "$mode" == fresh ]]; then
+  verify_paired_backup
+  printf 'fresh target: candidate and paired backup are ready; stopping stack and removing only registered Compose volumes\n'
+  "${current_compose[@]}" down --volumes --remove-orphans
+elif [[ "$mode" == update ]]; then
+  printf 'update target: candidate is ready; preserving database and upload volumes\n'
+else
+  printf 'install target: candidate is ready; no existing volumes will be removed\n'
+fi
+
 sudo -n find "$root" -mindepth 1 -maxdepth 1 \
   ! -name .env ! -name backups ! -name .release-tag ! -name .release-commit \
   ! -name .demo-overlay-sha256 \
@@ -435,19 +509,17 @@ set_env_key() {
     trap - EXIT
   ' -- "$key" "$value"
 }
-image_suffix="${tag#v}"
-if [[ -n "$expected_overlay_sha" ]]; then
-  image_suffix="${image_suffix}-demo-${expected_overlay_sha:0:12}"
-fi
-set_env_key PHP_IMAGE "peanut-admin-php:${image_suffix}"
-set_env_key NGINX_IMAGE "peanut-admin-nginx:${image_suffix}"
-[[ -n "$ADMIN_INITIAL_EMAIL" && -n "$ADMIN_INITIAL_PASSWORD" ]] || fail 'fresh admin credentials are incomplete'
-set_env_key ADMIN_INITIAL_EMAIL "$ADMIN_INITIAL_EMAIL"
-set_env_key ADMIN_INITIAL_PASSWORD "$ADMIN_INITIAL_PASSWORD"
-if [[ "$deployment_mode" == multi-tenant ]]; then
-  [[ -n "$PLATFORM_INITIAL_EMAIL" && -n "$PLATFORM_INITIAL_PASSWORD" ]] || fail 'fresh Platform credentials are incomplete'
-  set_env_key PLATFORM_INITIAL_EMAIL "$PLATFORM_INITIAL_EMAIL"
-  set_env_key PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
+set_env_key PHP_IMAGE "$php_image"
+set_env_key NGINX_IMAGE "$nginx_image"
+if [[ "$mode" != update ]]; then
+  [[ -n "$ADMIN_INITIAL_EMAIL" && -n "$ADMIN_INITIAL_PASSWORD" ]] || fail 'fresh admin credentials are incomplete'
+  set_env_key ADMIN_INITIAL_EMAIL "$ADMIN_INITIAL_EMAIL"
+  set_env_key ADMIN_INITIAL_PASSWORD "$ADMIN_INITIAL_PASSWORD"
+  if [[ "$deployment_mode" == multi-tenant ]]; then
+    [[ -n "$PLATFORM_INITIAL_EMAIL" && -n "$PLATFORM_INITIAL_PASSWORD" ]] || fail 'fresh Platform credentials are incomplete'
+    set_env_key PLATFORM_INITIAL_EMAIL "$PLATFORM_INITIAL_EMAIL"
+    set_env_key PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
+  fi
 fi
 for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
   PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
@@ -457,7 +529,19 @@ actual_commit="$expected_commit"
 
 compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
 "${compose[@]}" config >/dev/null || fail 'updated Compose configuration is invalid'
-"${compose[@]}" build
+if [[ "$mode" == update ]]; then
+  # Runtime code is copied to the deployment root only; persistent volumes are
+  # never written by this script. MySQL is deliberately excluded from recreate.
+  "${compose[@]}" up -d --wait --no-deps php nginx cron
+  "${compose[@]}" ps
+  curl --fail --silent --show-error --retry 12 --retry-delay 2 "http://127.0.0.1:${port}/healthz" >/dev/null
+  runtime_version="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/legal/RELEASE_METADATA.json" | jq -r '.version // empty')"
+  [[ "$runtime_version" == "${tag#v}" ]] || fail "runtime metadata is $runtime_version, expected ${tag#v}"
+  printf '%s\n' "$tag" | sudo -n tee .release-tag >/dev/null
+  printf '%s\n' "$expected_commit" | sudo -n tee .release-commit >/dev/null
+  printf 'updated_tag=%s\ncommit=%s\nruntime_version=%s\ntarget=%s\n' "$tag" "$expected_commit" "$runtime_version" "$target"
+  exit 0
+fi
 # Run the fresh installer with the PHP entrypoint bypassed. The normal
 # entrypoint intentionally refuses an incomplete v3.0 baseline.
 "${compose[@]}" up -d --wait mysql

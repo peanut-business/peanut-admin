@@ -9,7 +9,7 @@ use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
  * 阿里云短信驱动（RPC 查询字符串签名 v1.0）
  * 文档：https://help.aliyun.com/document_detail/101414.html
  *
- * 配置 key（pa_config type=notice，name=sms_aliyun，value=JSON）：
+ * 配置由当前 Tenant 的 notice.sms external binding 提供：
  *   access_key_id, access_key_secret, sign_name
  */
 final class AliyunSms extends TemplateSmsDriver

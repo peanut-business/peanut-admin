@@ -24,6 +24,7 @@ web/.eslintcache
 # Claude / AI tooling
 .claude/
 web/.claude/
+.vscode/
 
 # Generated indexes & tool caches (regenerable — not source)
 .codegraph/

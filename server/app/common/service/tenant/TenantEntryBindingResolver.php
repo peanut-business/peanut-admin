@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace app\common\service\tenant;
 
 use PDO;
+use app\common\service\instance\DeploymentMode;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver as CoreTenantEntryBindingResolver;
+use think\facade\Config;
 use think\facade\Db;
 
 /** Resolves a request only through instance-owned Host and server-selected client bindings. */
@@ -27,7 +29,27 @@ final readonly class TenantEntryBindingResolver
     {
         $pdo = Db::connect()->connect();
         if (!$pdo instanceof PDO) throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
-        return new self($pdo, static fn (string $actor, string $operation, string $operationId): TenantSystemContext => DefaultTenantContextResolver::system($actor, $operation, $operationId));
+        $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
+        $allowDefault = $mode === DeploymentMode::Standalone
+            && filter_var(
+                Config::get('deployment.public_default_tenant_fallback', true),
+                FILTER_VALIDATE_BOOL
+            );
+
+        return new self(
+            $pdo,
+            $allowDefault
+                ? static fn (
+                    string $actor,
+                    string $operation,
+                    string $operationId
+                ): TenantSystemContext => DefaultTenantContextResolver::system(
+                    $actor,
+                    $operation,
+                    $operationId
+                )
+                : null,
+        );
     }
 
     public function loginTenantCode(

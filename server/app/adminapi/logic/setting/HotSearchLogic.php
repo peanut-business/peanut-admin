@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\logic\setting;
 
 use app\common\logic\BaseLogic;
-use app\common\service\ConfigService;
+use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\hot_search\HotSearchTenantContext;
 use app\common\service\hot_search\HotSearchTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -13,7 +13,7 @@ use think\facade\Db;
 /**
  * 热门搜索设置 Logic
  *
- * - 开关：ConfigService type=hot_search, name=status（0关 1开，实例级）
+ * - 开关：pa_tenant_setting namespace=hot-search（0关 1开）
  * - 词条：pa_hot_search（Tenant-owned name + sort），当前 Tenant「全删再全建」保存
  */
 class HotSearchLogic extends BaseLogic
@@ -25,7 +25,7 @@ class HotSearchLogic extends BaseLogic
     {
         self::clearError();
         return [
-            'status' => (int) ConfigService::get(self::CONFIG_TYPE, 'status', 0),
+            'status' => (int)TenantApplicationSettingService::hotSearch($context)['status'],
             'data'   => HotSearchTenantRepository::terms($context)
                 ->field(['id', 'name', 'sort'])
                 ->order(['sort' => 'desc', 'id' => 'desc'])
@@ -53,7 +53,9 @@ class HotSearchLogic extends BaseLogic
 
         Db::startTrans();
         try {
-            ConfigService::set(self::CONFIG_TYPE, 'status', (int) ($params['status'] ?? 0));
+            TenantApplicationSettingService::replaceHotSearch($context, [
+                'status' => (int)($params['status'] ?? 0),
+            ]);
             HotSearchTenantRepository::replace($context, $rows);
             Db::commit();
             return true;

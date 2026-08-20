@@ -45,7 +45,7 @@ CREATE TABLE `pa_config` (
   `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_type_name` (`type`, `name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='实例级配置（仅 Platform/部署拥有）';
 
 CREATE TABLE `pa_jobs` (
   `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1541,125 +1541,58 @@ VALUES
   ('refund_status', '成功', '1', 20, 'success'),
   ('refund_status', '失败', '2', 10, 'failed');
 
-INSERT IGNORE INTO `pa_config` (`type`,`name`,`value`) VALUES
-  ('web_page', 'status',      '1'),
-  ('web_page', 'page_status', '0'),
-  ('web_page', 'page_url',    ''),
-  ('mnp_setting', 'name',        ''),
-  ('mnp_setting', 'original_id', ''),
-  ('mnp_setting', 'qr_code',     ''),
-  ('mnp_setting', 'app_id',      ''),
-  ('mnp_setting', 'app_secret',  '');
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'tabbar','style','{"default_color":"#666666","selected_color":"#2F80ED"}'
-WHERE NOT EXISTS (SELECT 1 FROM `pa_config` WHERE `type`='tabbar' AND `name`='style');
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'web_page', 'status', '1'
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type` = 'web_page' AND `name` = 'status'
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'web_page', 'page_status', '0'
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type` = 'web_page' AND `name` = 'page_status'
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'web_page', 'page_url', ''
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type` = 'web_page' AND `name` = 'page_url'
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'mnp_setting', `seed`.`name`, ''
-FROM (
-  SELECT 'name' AS `name`
-  UNION ALL SELECT 'original_id'
-  UNION ALL SELECT 'qr_code'
-  UNION ALL SELECT 'app_id'
-  UNION ALL SELECT 'app_secret'
-) AS `seed`
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config`
-  WHERE `type` = 'mnp_setting' AND `name` = `seed`.`name`
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'oa_setting', `seed`.`name`, `seed`.`value`
-FROM (
-  SELECT 'name' AS `name`, '' AS `value`
-  UNION ALL SELECT 'original_id', ''
-  UNION ALL SELECT 'qr_code', ''
-  UNION ALL SELECT 'app_id', ''
-  UNION ALL SELECT 'app_secret', ''
-  UNION ALL SELECT 'token', ''
-  UNION ALL SELECT 'menu', '[]'
-) AS `seed`
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config`
-  WHERE `type` = 'oa_setting' AND `name` = `seed`.`name`
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'open_platform', `seed`.`name`, ''
-FROM (
-  SELECT 'app_id' AS `name`
-  UNION ALL SELECT 'app_secret'
-) AS `seed`
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config`
-  WHERE `type` = 'open_platform' AND `name` = `seed`.`name`
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'recharge', seed.name, seed.value, 0, 0
-FROM (
-  SELECT 'status' AS name, '0' AS value
-  UNION ALL SELECT 'min_amount', '0.01'
-  UNION ALL SELECT 'max_amount', '99999.00'
-) seed
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` c WHERE c.`type` = 'recharge' AND c.`name` = seed.name
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'pay', seed.name, '', 0, 0
-FROM (
-  SELECT 'wx_pay_platform_cert_path' AS name
-  UNION ALL SELECT 'ali_pay_seller_id'
-) seed
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` c WHERE c.`type` = 'pay' AND c.`name` = seed.name
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'login', seed.name, seed.value, 0, 0
-FROM (
-  SELECT 'third_auth' AS name,
-    IF(EXISTS(SELECT 1 FROM `pa_config` WHERE `type`='channel' AND `name` IN ('wechat_open_status','wechat_oa_status') AND `value`='1'),'1','0') AS value
-  UNION ALL
-  SELECT 'wechat_auth',
-    IF(EXISTS(SELECT 1 FROM `pa_config` WHERE `type`='channel' AND `name` IN ('wechat_open_status','wechat_oa_status') AND `value`='1'),'1','0')
-) seed
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` c WHERE c.`type`='login' AND c.`name`=seed.name
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'default_image', 'user_avatar', 'brand/avatar-member.svg', 0, 0
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type`='default_image' AND `name`='user_avatar'
-);
-
 INSERT INTO `pa_tenant_setting`
   (`tenant_id`,`namespace`,`config_json`,`revision`,`create_time`,`update_time`)
 SELECT @pa_default_tenant_id, 'website',
-       COALESCE((SELECT JSON_OBJECTAGG(config.`name`, config.`value`)
-                 FROM `pa_config` config WHERE config.`type` = 'website'), JSON_OBJECT()),
+       JSON_OBJECT(
+         'name', 'Peanut Admin',
+         'web_favicon', 'brand/favicon.svg',
+         'web_logo', 'brand/logo.svg',
+         'login_image', 'brand/login-background.svg',
+         'shop_name', 'Peanut Admin',
+         'shop_logo', 'brand/logo.svg',
+         'pc_logo', 'brand/logo.svg',
+         'pc_title', 'Peanut Admin',
+         'pc_ico', 'brand/favicon.svg',
+         'pc_desc', 'Peanut Admin 全端管理脚手架',
+         'pc_keywords', 'Peanut Admin,Vue 3,ThinkPHP 8,UniApp',
+         'h5_favicon', 'brand/favicon.svg',
+         'slogan', '连接管理端、PC 与移动端的中性应用基线',
+         'copyright', '花生科技',
+         'official_url', '',
+         'github_url', 'https://github.com/peanut-business/peanut-admin'
+       ),
        1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
 WHERE @pa_default_tenant_id IS NOT NULL;
 
 INSERT INTO `pa_tenant_setting`
   (`tenant_id`,`namespace`,`config_json`,`revision`,`create_time`,`update_time`)
 SELECT @pa_default_tenant_id, 'copyright',
-       JSON_OBJECT('config', COALESCE(
-         (SELECT CAST(config.`value` AS JSON)
-          FROM `pa_config` config
-         WHERE config.`type` = 'copyright' AND config.`name` = 'config'
-          LIMIT 1), JSON_ARRAY())),
+       JSON_OBJECT('config', JSON_ARRAY()),
        1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
+WHERE @pa_default_tenant_id IS NOT NULL;
+
+INSERT INTO `pa_tenant_setting`
+  (`tenant_id`,`namespace`,`config_json`,`revision`,`create_time`,`update_time`)
+SELECT @pa_default_tenant_id, seed.namespace, seed.config_json,
+       1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
+FROM (
+  SELECT 'agreement' AS namespace, JSON_OBJECT(
+    'service_title', '', 'service_content', '',
+    'privacy_title', '', 'privacy_content', ''
+  ) AS config_json
+  UNION ALL SELECT 'site-statistics', JSON_OBJECT('clarity_code', '')
+  UNION ALL SELECT 'member-profile', JSON_OBJECT('user_avatar', 'brand/avatar-member.svg')
+  UNION ALL SELECT 'login', JSON_OBJECT(
+    'login_way', JSON_ARRAY(1, 2),
+    'coerce_mobile', 0,
+    'login_agreement', 0,
+    'third_auth', 0,
+    'wechat_auth', 0
+  )
+  UNION ALL SELECT 'web-page', JSON_OBJECT('status', 1, 'page_status', 0, 'page_url', '')
+  UNION ALL SELECT 'hot-search', JSON_OBJECT('status', 0)
+) seed
 WHERE @pa_default_tenant_id IS NOT NULL;
 
 INSERT INTO `pa_crontab`
@@ -2426,7 +2359,6 @@ FROM (
   SELECT '网站设置' name,'icon-desktop' icon,90 sort,'/app-setting/website' paths,'system/config/index' component
   UNION ALL SELECT '用户设置','icon-user',80,'/app-setting/user','app-setting/user/index'
   UNION ALL SELECT '支付设置','icon-payment',70,'/app-setting/pay','app-setting/pay/index'
-  UNION ALL SELECT '存储设置','icon-storage',60,'/system/storage','system/storage/index'
 ) seed
 WHERE (SELECT `id` FROM `pa_system_menu` WHERE `type`='M' AND `paths`='/app-setting' ORDER BY `id` LIMIT 1) IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM pa_system_menu m WHERE m.paths=seed.paths);
@@ -2458,10 +2390,6 @@ FROM (
   UNION ALL SELECT '/app-setting/user','登录配置保存','config/login/save'
   UNION ALL SELECT '/app-setting/pay','支付配置查看','setting/pay/config'
   UNION ALL SELECT '/app-setting/pay','支付配置保存','setting/pay/save'
-  UNION ALL SELECT '/app-setting/storage','存储引擎列表','storage/lists'
-  UNION ALL SELECT '/app-setting/storage','存储配置查看','storage/detail'
-  UNION ALL SELECT '/app-setting/storage','存储配置保存','storage/setup'
-  UNION ALL SELECT '/app-setting/storage','默认存储切换','storage/change'
 ) seed
 JOIN pa_system_menu parent ON parent.paths=seed.parent_path AND parent.type='C'
 WHERE NOT EXISTS (
@@ -2586,8 +2514,6 @@ WHERE COALESCE(
   );
 
 DROP TEMPORARY TABLE `pa_admin_permission_seed`;
-
-DELETE FROM `pa_config` WHERE `type` IN ('customer_service','tabbar','transaction');
 
 DELETE FROM `pa_system_menu` WHERE `paths` IN ('/app-setting/decorate','/app-setting/customer-service') OR `perms` IN ('setting/decorate/config','setting/decorate/save','setting/customer-service/config','setting/customer-service/save','setting/pay/config/set');
 

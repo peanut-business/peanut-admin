@@ -5,12 +5,14 @@ namespace app\common\service\scaffold;
 
 use RuntimeException;
 
+require_once __DIR__ . '/VersionContract.php';
+
 final class ApplicationCreator
 {
     private const CLASSIFICATIONS = ['managed', 'generated-managed', 'app-owned', 'excluded'];
-    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices'];
+    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices', 'version-contract'];
     private const VARIABLES = ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
-    private const VERSION_PATTERN = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
+    private const PROFILES = ['minimal', 'standard', 'full'];
 
     /** @param array{commit:string,tree:string}|null $sourceIdentity */
     public function __construct(
@@ -27,10 +29,14 @@ final class ApplicationCreator
         string $slug,
         string $packageIdentity,
         string $target,
-        ?string $applicationVersion = null
+        ?string $applicationVersion = null,
+        string $profile = 'standard'
     ): array
     {
         $inventory = $this->loadInventory();
+        if (!in_array($profile, self::PROFILES, true)) {
+            throw new RuntimeException('CREATE_APP_PROFILE_INVALID');
+        }
         $parameters = $this->validateParameters(
             $productName,
             $slug,
@@ -53,7 +59,7 @@ final class ApplicationCreator
         try {
             $files = [];
             foreach ($inventory['files'] as $entry) {
-                if ($entry['classification'] === 'excluded') {
+                if ($entry['classification'] === 'excluded' || !in_array($profile, $entry['profiles'], true)) {
                     continue;
                 }
                 $source = $this->sourcePath((string)$entry['path']);
@@ -101,7 +107,8 @@ final class ApplicationCreator
                 $inventoryDigest,
                 $templateIdentity,
                 $parameters,
-                $files
+                $files,
+                $profile
             );
 
             if (is_dir($target) && !rmdir($target)) {
@@ -193,13 +200,12 @@ final class ApplicationCreator
         }
         ksort($current, SORT_STRING);
         $released = $adoption->files();
-        if (array_keys($current) !== array_keys($released)) {
-            throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH');
-        }
-
         $releaseTree = [];
-        foreach ($released as $path => $artifact) {
-            $generated = $current[$path];
+        foreach ($current as $path => $generated) {
+            $artifact = $released[$path] ?? null;
+            if (!is_array($artifact)) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH: ' . $path);
+            }
             if (($artifact['mode'] ?? null) !== ($generated['mode'] ?? null)
                 || ($artifact['classification'] ?? null) !== ($generated['classification'] ?? null)) {
                 throw new RuntimeException('CREATE_APP_ADOPTION_FILE_METADATA_MISMATCH: ' . $path);
@@ -235,11 +241,13 @@ final class ApplicationCreator
                 'sha256' => hash('sha256', $this->replaceReleaseTokens($artifactContent, $tokens, $tokens)),
             ];
         }
-        $releaseTreeDigest = $this->treeDigest($releaseTree);
-        $recordedTreeDigest = $release['managed_tree_sha256'] ?? null;
-        if (!is_string($recordedTreeDigest) || preg_match('/^[a-f0-9]{64}$/D', $recordedTreeDigest) !== 1
-            || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
-            throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
+        if (count($current) === count($released)) {
+            $releaseTreeDigest = $this->treeDigest($releaseTree);
+            $recordedTreeDigest = $release['managed_tree_sha256'] ?? null;
+            if (!is_string($recordedTreeDigest) || preg_match('/^[a-f0-9]{64}$/D', $recordedTreeDigest) !== 1
+                || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
+            }
         }
     }
 
@@ -271,9 +279,7 @@ final class ApplicationCreator
             || strlen($packageIdentity) > 120) {
             throw new RuntimeException('CREATE_APP_PACKAGE_IDENTITY_INVALID');
         }
-        if (preg_match(self::VERSION_PATTERN, $applicationVersion) !== 1) {
-            throw new RuntimeException('CREATE_APP_APPLICATION_VERSION_INVALID');
-        }
+        $this->versionContract()->assertValid($applicationVersion, 'CREATE_APP_APPLICATION_VERSION_INVALID');
         return [
             'APPLICATION_VERSION' => $applicationVersion,
             'PRODUCT_NAME' => $productName,
@@ -296,11 +302,13 @@ final class ApplicationCreator
             || !is_string($inventory['template_version'] ?? null)
             || !is_array($inventory['application'] ?? null)
             || array_keys($inventory['application']) !== ['version']
-            || preg_match(self::VERSION_PATTERN, (string)$inventory['application']['version']) !== 1
             || !is_array($inventory['variables'] ?? null)
             || !is_array($inventory['files'] ?? null)) {
             throw new RuntimeException('CREATE_APP_INVENTORY_SCHEMA_INVALID');
         }
+        $versions = $this->versionContract();
+        $versions->assertSame((string)$inventory['template_version'], $versions->scaffoldTemplate(), 'CREATE_APP_INVENTORY_TEMPLATE_VERSION_MISMATCH');
+        $versions->assertSame((string)$inventory['application']['version'], $versions->generatedApplicationDefault(), 'CREATE_APP_INVENTORY_APPLICATION_VERSION_MISMATCH');
         $variables = $inventory['variables'];
         sort($variables, SORT_STRING);
         if ($variables !== self::VARIABLES) {
@@ -322,6 +330,10 @@ final class ApplicationCreator
             if (!in_array($classification, self::CLASSIFICATIONS, true)
                 || !in_array($transform, self::TRANSFORMS, true)
                 || !is_string($entry['owner'] ?? null)
+                || !is_array($entry['profiles'] ?? null)
+                || array_values(array_unique($entry['profiles'])) !== $entry['profiles']
+                || array_diff($entry['profiles'], self::PROFILES) !== []
+                || $entry['profiles'] === []
                 || !in_array($entry['mode'] ?? null, [0644, 0755], true)) {
                 throw new RuntimeException('CREATE_APP_INVENTORY_ENTRY_INVALID: ' . $path);
             }
@@ -411,7 +423,7 @@ final class ApplicationCreator
     {
         // Generated metadata is rebuilt from parameters, so source prose changes
         // must not invalidate the immutable application template identity.
-        if (in_array($transform, ['changelog', 'release-metadata', 'docs-page'], true)) {
+        if (in_array($transform, ['changelog', 'release-metadata', 'docs-page', 'version-contract'], true)) {
             return hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
         }
         $digest = hash_file('sha256', $source);
@@ -442,6 +454,7 @@ final class ApplicationCreator
             'plugins-lock' => $this->pluginsLock(),
             'sbom' => $this->sbom($content, $parameters),
             'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
+            'version-contract' => $this->versionContractDocument($parameters),
             default => throw new RuntimeException('CREATE_APP_INVENTORY_TRANSFORM_UNKNOWN'),
         };
     }
@@ -690,6 +703,7 @@ PHP;
     /** @param array<string,string> $parameters */
     private function releaseMetadata(array $parameters): string
     {
+        $versions = $this->versionContract();
         $metadata = [
             'schema_version' => 1,
             'product' => $parameters['PRODUCT_NAME'],
@@ -698,11 +712,26 @@ PHP;
             'status' => 'generated-application-baseline',
             'release_policy' => 'replace this metadata from an immutable application release candidate before publishing',
             'public_runtime_dependencies' => [
-                'composer' => 'peanut-admin/core@0.1.0-alpha.5',
-                'frontend' => '@peanut-admin/admin@0.1.0-alpha.5',
+                'composer' => 'peanut-admin/core@' . $versions->corePhp(),
+                'frontend' => '@peanut-admin/admin@' . $versions->coreWeb(),
             ],
         ];
         return json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    /** @param array<string,string> $parameters */
+    private function versionContractDocument(array $parameters): string
+    {
+        $versions = $this->versionContract();
+        return json_encode([
+            'schema_version' => 1,
+            'protocol' => 'peanut.release-versions.v1',
+            'product_release' => $parameters['APPLICATION_VERSION'],
+            'scaffold_template' => $versions->scaffoldTemplate(),
+            'generated_application_default' => $parameters['APPLICATION_VERSION'],
+            'core_php' => $versions->corePhp(),
+            'core_web' => $versions->coreWeb(),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
     }
 
     /** @param array<string,string> $parameters */
@@ -885,7 +914,8 @@ PHP;
         string $inventoryDigest,
         array $templateIdentity,
         array $parameters,
-        array $files
+        array $files,
+        string $profile
     ): array {
         $baselineRoot = '.peanut/scaffold-baseline/' . $templateIdentity['version'] . '/files';
         foreach ($files as &$file) {
@@ -912,6 +942,7 @@ PHP;
                 'slug' => $parameters['SLUG'],
                 'package_identity' => $parameters['PACKAGE_IDENTITY'],
                 'version' => $parameters['APPLICATION_VERSION'],
+                'profile' => $profile,
             ],
             'template' => $templateIdentity,
             'generation_source' => [
@@ -934,6 +965,11 @@ PHP;
         $manifestPath = $stage . '/.peanut/application-manifest.json';
         $this->writeFile($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n", 0644);
         return $manifest;
+    }
+
+    private function versionContract(): VersionContract
+    {
+        return VersionContract::load($this->sourceRoot . '/release-versions.json');
     }
 
     /** @param list<array<string,mixed>> $files */
