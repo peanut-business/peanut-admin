@@ -8,12 +8,12 @@ class RichTextResourceService
 {
     public static function forStorage(string $html): string
     {
-        return self::transform($html, false);
+        return self::transform(HtmlSanitizerService::sanitize($html), false);
     }
 
     public static function forRead(string $html): string
     {
-        return self::transform($html, true);
+        return self::transform(HtmlSanitizerService::sanitize($html), true);
     }
 
     private static function transform(string $html, bool $forRead): string
@@ -24,7 +24,7 @@ class RichTextResourceService
 
         $convert = static function (string $url) use ($forRead): string {
             $url = trim($url);
-            if ($url === '' || preg_match('/^(?:data:|blob:|mailto:|tel:|javascript:|#)/i', $url)) {
+            if ($url === '' || preg_match('/^(?:mailto:|tel:|#)/i', $url)) {
                 return $url;
             }
             return $forRead ? FileService::getFileUrl($url) : FileService::setFileUrl($url);
@@ -35,11 +35,6 @@ class RichTextResourceService
             static fn(array $match): string => $match[1] . $match[2] . $convert($match[3]) . $match[2],
             $html
         ) ?? $html;
-
-        return preg_replace_callback(
-            '~(url\(\s*)(["\']?)([^)"\']+)\2(\s*\))~i',
-            static fn(array $match): string => $match[1] . $match[2] . $convert($match[3]) . $match[2] . $match[4],
-            $html
-        ) ?? $html;
+        return $html;
     }
 }

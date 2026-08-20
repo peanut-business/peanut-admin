@@ -7,7 +7,7 @@ use app\common\service\member\AuthenticatedMemberContext;
 use app\common\model\finance\RechargeOrder;
 use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

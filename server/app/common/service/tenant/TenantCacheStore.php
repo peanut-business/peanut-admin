@@ -3,12 +3,11 @@ declare(strict_types=1);
 
 namespace app\common\service\tenant;
 
-/** Minimal store port: intentionally excludes clear, key enumeration and raw store access. */
-interface TenantCacheStore
+use PeanutAdmin\Kernel\Tenancy\TenantCacheStore as CoreTenantCacheStore;
+
+/**
+ * @deprecated Use PeanutAdmin\Kernel\Tenancy\TenantCacheStore directly.
+ */
+interface TenantCacheStore extends CoreTenantCacheStore
 {
-    public function get(string $physicalKey, mixed $default = null): mixed;
-
-    public function set(string $physicalKey, mixed $value, int $ttlSeconds = 0): bool;
-
-    public function delete(string $physicalKey): bool;
 }

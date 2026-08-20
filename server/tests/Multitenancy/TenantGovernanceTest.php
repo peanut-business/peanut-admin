@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\tenant\TenantAvailabilityGuard;
+use PeanutAdmin\Kernel\Tenancy\TenantAvailabilityGuard;
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use app\platform\identity\UnavailablePlatformOperatorIdentityPort;

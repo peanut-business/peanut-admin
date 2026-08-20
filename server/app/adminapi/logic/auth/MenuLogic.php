@@ -7,7 +7,7 @@ use app\adminapi\service\CoreTenantModuleAdminBridge;
 use app\adminapi\service\AdminPermissionService;
 use app\common\logic\BaseLogic;
 use app\common\model\auth\SystemMenu;
-use app\common\service\platform\InstanceControlPlanePolicy;
+use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -15,11 +15,13 @@ class MenuLogic extends BaseLogic
 {
     public static function getMenuByAdminId(mixed $tenantContext, int $adminId): array
     {
+        self::clearError();
         return AdminPermissionService::menusForAdminId($tenantContext, $adminId);
     }
 
     public static function getAll(): array
     {
+        self::clearError();
         $menus = SystemMenu::whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
             ->whereNotIn('paths', [
@@ -34,6 +36,7 @@ class MenuLogic extends BaseLogic
 
     public static function getAllSimple(TenantContext $context): array
     {
+        self::clearError();
         $data = SystemMenu::where('is_disable', 0)
             ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
@@ -60,11 +63,13 @@ class MenuLogic extends BaseLogic
 
     public static function detail(int $id): array
     {
+        self::clearError();
         return SystemMenu::findOrEmpty($id)->toArray();
     }
 
     public static function add(array $params): bool
     {
+        self::clearError();
         Db::startTrans();
         try {
             self::assertParent((int)($params['pid'] ?? 0));
@@ -80,13 +85,13 @@ class MenuLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function edit(array $params): bool
     {
+        self::clearError();
         Db::startTrans();
         try {
             $id = (int)$params['id'];
@@ -108,13 +113,13 @@ class MenuLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function delete(int $id): bool
     {
+        self::clearError();
         Db::startTrans();
         try {
             $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
@@ -134,13 +139,13 @@ class MenuLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function updateStatus(int $id, int $isDisable): bool
     {
+        self::clearError();
         Db::startTrans();
         try {
             $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
@@ -152,8 +157,7 @@ class MenuLogic extends BaseLogic
             return true;
         } catch (\Throwable $e) {
             Db::rollback();
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 

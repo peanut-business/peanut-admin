@@ -11,16 +11,20 @@ const rootDir = resolve(scriptDir, '..')
 const checkOnly = process.argv.includes('--check')
 
 const expectedCounts = {
-  composer: 37,
-  web: 1015,
-  pc: 926,
+  composer: 42,
+  web: 1036,
+  pc: 928,
   uniapp: 1013,
   'docs-site': 174,
 }
 
 const readJson = (relativePath) => JSON.parse(readFileSync(resolve(rootDir, relativePath), 'utf8'))
+const versionContract = readJson('release-versions.json')
 const releaseMetadata = readJson('RELEASE_METADATA.json')
-const releaseVersion = releaseMetadata.version
+const releaseVersion = versionContract.product_release
+if (releaseMetadata.version !== releaseVersion || releaseMetadata.expected_tag !== `v${releaseVersion}`) {
+  throw new Error(`RELEASE_METADATA version contract mismatch: expected ${releaseVersion}`)
+}
 const releaseTag = releaseMetadata.expected_tag
 const releaseDate = releaseMetadata.release_date
 

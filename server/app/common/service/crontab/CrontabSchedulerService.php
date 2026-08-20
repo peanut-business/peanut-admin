@@ -8,7 +8,9 @@ use app\common\model\Crontab;
 use app\common\service\CrontabCommandService;
 use app\common\service\module\ModuleExecutionContext;
 use app\common\service\module\ModuleExecutionGuard;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Scheduling\ScheduleWindow;
+use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use Cron\CronExpression;
 use think\facade\Console;
 use think\facade\Db;
@@ -47,7 +49,8 @@ final class CrontabSchedulerService
             return false;
         }
         try {
-            if ($lastTime < 1) {
+            $window = new ScheduleWindow($lastTime, $now);
+            if ($window->isInitial()) {
                 return self::owned($scope, $jobId)
                     ->where('status', CrontabEnum::START)
                     ->where('last_time', 0)
@@ -68,7 +71,7 @@ final class CrontabSchedulerService
                 return false;
             }
 
-            if ($nextTime > $now) {
+            if (!$window->isDue($nextTime)) {
                 return false;
             }
 

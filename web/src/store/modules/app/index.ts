@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ElNotification, type NotificationHandle } from 'element-plus';
 import type { RouteRecordRaw } from 'vue-router';
+import { enabledTenantModulesFromRoutes } from '@peanut-admin/admin/core';
 import defaultSettings from '@/config/settings.json';
 import { getMenuList } from '@/api/user';
 import type { AppState, ServerMenuRecord } from './types';
@@ -46,14 +47,7 @@ const useAppStore = defineStore('app', {
     },
     setServerMenu(menu: ServerMenuRecord[]) {
       this.serverMenu = mapServerMenu(menu);
-      this.enabledTenantModules = Array.from(
-        new Set(
-          this.serverMenu
-            .flatMap((route) => [route, ...(route.children || [])])
-            .map((route) => route.meta?.tenantModuleKey)
-            .filter((key): key is string => typeof key === 'string')
-        )
-      );
+      this.enabledTenantModules = enabledTenantModulesFromRoutes(this.serverMenu);
       this.serverMenuLoaded = true;
     },
     async fetchServerMenuConfig() {

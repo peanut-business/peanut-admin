@@ -8,7 +8,7 @@ use think\console\Input;
 use think\console\Output;
 use think\facade\Db;
 use app\common\service\crontab\CrontabSchedulerService;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
 /**
  * 定时任务调度器。

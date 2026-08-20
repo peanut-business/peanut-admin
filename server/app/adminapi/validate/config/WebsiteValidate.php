@@ -13,7 +13,7 @@ class WebsiteValidate extends Validate
         'service_content' => 'max:200000',
         'privacy_title' => 'require|max:100',
         'privacy_content' => 'max:200000',
-        'clarity_code' => 'max:20000',
+        'clarity_code' => 'max:64|checkClarityId',
         'default_avatar' => 'require|max:500',
         'login_way' => 'require|array|checkLoginWay',
         'coerce_mobile' => 'require|in:0,1',
@@ -64,5 +64,12 @@ class WebsiteValidate extends Validate
             }
         }
         return true;
+    }
+
+    protected function checkClarityId(mixed $value): bool|string
+    {
+        return preg_match('/^[A-Za-z0-9_-]*$/D', (string)$value) === 1
+            ? true
+            : '统计标识只能包含字母、数字、下划线和连字符';
     }
 }

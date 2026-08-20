@@ -94,6 +94,25 @@ web/src/modules/fixture-delivery-record/
 
 ## 第一个纵向切片
 
+## 本地 Plugin 工具链
+
+工具不连接数据库；它们只读取 Module、前端 contribution 和 JSON schema。先完成 Module
+目录与前端 contribution，再生成 manifest 和 lock：
+
+```bash
+cd server
+php think plugin:make acme.inventory 1.0.0 \
+  --module=acme.inventory=server/app/Modules/Acme/Inventory
+php think plugin:lock --write
+php think plugin:lock --check
+```
+
+`plugin:make` 从每个 Module 的 `composer.json`，及同名 slug 前端目录
+`web/src/modules/<module-key-with-dashes>/` 自动生成 Composer、npm、frontend 和 canonical
+contents 摘要，并使用 `resources/schemas/plugin.schema.json` 与已安装的 `opis/json-schema`
+校验后写入 `plugins/<plugin-key>/plugin.json`。`plugin:lock --write` 对全部 manifest 重新校验
+并确定性写入 `plugins.lock`；`--check` 不写文件，适合提交前检查。
+
 ### 开始前
 
 确认 Module key、数据 owner、依赖 Module、目标客户端和停用行为已经写清楚。若无法回答“谁拥有表、谁能调用、停用后哪些入口必须拒绝”，先停在设计阶段，不要创建 migration。

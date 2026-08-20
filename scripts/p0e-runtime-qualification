@@ -230,12 +230,6 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         not isinstance(item, str) or not GROUP_RESULT.fullmatch(item) for item in groups
     ):
         fail("fixture groups are invalid")
-    migrations = sorted((ROOT / "server/database/migrations").glob("*.sql"))
-    if len(migrations) != db_fixture.get("migration_count"):
-        fail(
-            f"candidate migration count {len(migrations)} does not equal the fixed "
-            f"qualification count {db_fixture.get('migration_count')}"
-        )
     target = fixture.get("target_release")
     if not isinstance(target, dict):
         fail("target scaffold release fixture is missing")
@@ -760,7 +754,7 @@ class Runner:
 
     def assert_up_to_date(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
         result = command(
-            ["php", "server/database/migrate.php"],
+            ["php", "server/database/environment-guard.php", "--current"],
             cwd=project_root,
             env=self.db_env(database, mode),
             capture=True,
@@ -768,8 +762,8 @@ class Runner:
         with log.open("a", encoding="utf-8") as stream:
             stream.write(result.stdout)
         parsed = json.loads(result.stdout)
-        if parsed.get("status") != "current" or parsed.get("migration_count") != self.fixture["database_resource"]["ledger_count"]:
-            fail(f"migration idempotency/current assertion failed for {database}")
+        if parsed.get("status") != "current":
+            fail(f"fresh schema/current assertion failed for {database}")
 
     def inspect(self, database: str, mode: str, label: str, project_root: Path = ROOT) -> None:
         inspector_mode = "multitenant-empty" if mode == "multi-tenant" else "standalone-empty"
@@ -806,7 +800,7 @@ class Runner:
                     with contextlib.suppress(OSError):
                         directory.rmdir()
         parsed = json.loads(result.stdout)
-        if parsed.get("status") != "passed" or parsed.get("migration_ledger", {}).get("count") != self.fixture["database_resource"]["ledger_count"]:
+        if parsed.get("status") != "passed":
             fail(f"database inspection failed for {label}")
         self.write_json(self.output / "groups" / f"{label}.json", parsed)
 

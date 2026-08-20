@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\crontab\ScheduledTenantContext;
 use app\common\service\diagnostics\TenantDiagnosticAttributes;
+use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;

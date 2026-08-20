@@ -4,7 +4,6 @@ declare(strict_types=1);
 use app\adminapi\logic\dict\DictDataLogic;
 use app\adminapi\logic\dict\DictTypeLogic;
 use app\common\service\dict\DictTenantContext;
-use app\common\service\dict\DictTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -180,7 +179,7 @@ try {
         'name' => 'Alpha status',
         'type' => 'status',
     ]), DictTypeLogic::getError());
-    $alphaTypeId = (int)DictTenantRepository::types($alpha)->where('type', 'status')->value('id');
+    $alphaTypeId = (int)$pdo->query("SELECT id FROM pa_dict_type WHERE tenant_id = 101 AND type = 'status' LIMIT 1")->fetchColumn();
     expectDictTenant($alphaTypeId > 0, 'Alpha type was not created');
     expectDictTenant(
         (int)$pdo->query("SELECT tenant_id FROM pa_dict_type WHERE id = {$alphaTypeId}")->fetchColumn() === 101,
@@ -200,7 +199,7 @@ try {
         'value' => '1',
         'sort' => 30,
     ]), DictDataLogic::getError());
-    $alphaDataId = (int)DictTenantRepository::data($alpha)->where('type_id', $alphaTypeId)->value('id');
+    $alphaDataId = (int)$pdo->query("SELECT id FROM pa_dict_data WHERE tenant_id = 101 AND type_id = {$alphaTypeId} LIMIT 1")->fetchColumn();
     expectDictTenant($alphaDataId > 0, 'Alpha dictionary data was not created');
     expectDictTenant(array_column(DictDataLogic::byType($alpha, 'status'), 'value') === ['1'], 'Alpha byType lost owned data');
     expectDictTenant(DictDataLogic::byType($beta, 'status') === [], 'Beta byType leaked Alpha data');

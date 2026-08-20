@@ -10,21 +10,24 @@ use app\common\logic\BaseLogic;
 use app\common\model\generator\GeneratorColumn;
 use app\common\model\generator\GeneratorDownload;
 use app\common\model\generator\GeneratorTable;
+use app\common\support\PaginationInput;
 use think\facade\Db;
 
 class GeneratorLogic extends BaseLogic
 {
     public static function sourceTables(array $params): array
     {
-        $pageNo = max(1, (int) ($params['page_no'] ?? 1));
-        $pageSize = min(100, max(1, (int) ($params['page_size'] ?? 15)));
-        return GeneratorMetadataService::tables(trim((string) ($params['keyword'] ?? '')), $pageNo, $pageSize);
+        $pagination = PaginationInput::from($params);
+        return GeneratorMetadataService::tables(
+            trim((string) ($params['keyword'] ?? '')),
+            $pagination->page,
+            $pagination->pageSize,
+        );
     }
 
     public static function lists(int $adminId, array $params): array
     {
-        $pageNo = max(1, (int) ($params['page_no'] ?? 1));
-        $pageSize = min(100, max(1, (int) ($params['page_size'] ?? 15)));
+        $pagination = PaginationInput::from($params);
         $query = GeneratorTable::where('admin_id', $adminId);
         if (!empty($params['keyword'])) {
             $keyword = trim((string) $params['keyword']);
@@ -35,7 +38,12 @@ class GeneratorLogic extends BaseLogic
             });
         }
         $count = (clone $query)->count();
-        $lists = $query->order('id', 'desc')->page($pageNo, $pageSize)->select()->toArray();
+        $lists = $query->order('id', 'desc')
+            ->page($pagination->page, $pagination->pageSize)
+            ->select()
+            ->toArray();
+        $pageNo = $pagination->page;
+        $pageSize = $pagination->pageSize;
         return compact('lists', 'count', 'pageNo', 'pageSize');
     }
 

@@ -3,32 +3,46 @@ import type {
   TenantAuthentication,
   TenantSessionOutcome,
   TenantSelection,
-} from '@/core/tenant-session';
+} from '@peanut-admin/admin/core';
 
 const tenantClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
   withCredentials: true,
 });
 
-interface TenantEnvelope<T> {
-  data: T;
-  meta: { request_id: string };
+type TenantEnvelope<T> =
+  | {
+      data: T;
+      meta: { request_id: string };
+    }
+  | {
+      code: number;
+      msg: string;
+      data: null;
+    };
+
+function tenantData<T>(response: TenantEnvelope<T>): T {
+  if ('code' in response) {
+    throw new Error(response.msg || 'Tenant session request failed.');
+  }
+  return response.data;
 }
 
 export async function tenantLogin(email: string, password: string) {
-  const response = await tenantClient.post<TenantEnvelope<TenantSessionOutcome>>(
-    '/api/tenant/session/login',
-    { email, password }
-  );
-  return response.data.data;
+  const response = await tenantClient.post<
+    TenantEnvelope<TenantSessionOutcome>
+  >('/api/tenant/session/login', { email, password });
+  return tenantData(response.data);
 }
 
 export async function selectTenant(challengeToken: string, tenantId: number) {
-  const response = await tenantClient.post<TenantEnvelope<TenantAuthentication>>(
-    '/api/tenant/session/select',
-    { challenge_token: challengeToken, tenant_id: tenantId }
-  );
-  return response.data.data;
+  const response = await tenantClient.post<
+    TenantEnvelope<TenantAuthentication>
+  >('/api/tenant/session/select', {
+    challenge_token: challengeToken,
+    tenant_id: tenantId,
+  });
+  return tenantData(response.data);
 }
 
 export async function tenantSwitch(accessToken: string) {
@@ -37,14 +51,14 @@ export async function tenantSwitch(accessToken: string) {
     {},
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
-  return response.data.data;
+  return tenantData(response.data);
 }
 
 export async function refreshTenantSession() {
-  const response = await tenantClient.post<TenantEnvelope<TenantAuthentication>>(
-    '/api/tenant/session/refresh'
-  );
-  return response.data.data;
+  const response = await tenantClient.post<
+    TenantEnvelope<TenantAuthentication>
+  >('/api/tenant/session/refresh');
+  return tenantData(response.data);
 }
 
 export async function tenantLogout(accessToken: string) {

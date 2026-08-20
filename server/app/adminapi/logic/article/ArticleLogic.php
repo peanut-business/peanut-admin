@@ -5,6 +5,7 @@ namespace app\adminapi\logic\article;
 
 use app\common\logic\BaseLogic;
 use app\common\service\article\ArticleTenantRepository;
+use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 文章管理 Logic。 */
@@ -16,16 +17,27 @@ class ArticleLogic extends BaseLogic
     /** 分页列表。 */
     public static function lists(TenantContext $context, array $params): array|false
     {
+        self::clearError();
         try {
             if (in_array((int) ($params['export'] ?? 0), [1, 2], true)) {
                 throw new \RuntimeException('该列表不支持导出');
             }
 
             $pageType = (int) ($params['page_type'] ?? 1);
-            $pageNo = $pageType === 0 ? 1 : max(1, (int) ($params['page_no'] ?? 1));
-            $pageSize = $pageType === 0
-                ? self::PAGE_SIZE_MAX
-                : max(1, min(self::PAGE_SIZE_MAX, (int) ($params['page_size'] ?? self::PAGE_SIZE_DEFAULT)));
+            if ($pageType === 0) {
+                $pageNo = 1;
+                $pageSize = self::PAGE_SIZE_MAX;
+            } else {
+                $requestedPageSize = (int)($params['page_size'] ?? $params['limit'] ?? self::PAGE_SIZE_DEFAULT);
+                if ($requestedPageSize <= 100) {
+                    $pagination = PaginationInput::from($params, 1, self::PAGE_SIZE_DEFAULT);
+                    $pageNo = $pagination->page;
+                    $pageSize = $pagination->pageSize;
+                } else {
+                    $pageNo = max(1, (int)($params['page_no'] ?? $params['page'] ?? 1));
+                    $pageSize = max(1, min(self::PAGE_SIZE_MAX, $requestedPageSize));
+                }
+            }
 
             $query = ArticleTenantRepository::articles($context)->field(self::fields());
             if (!empty($params['title'])) {
@@ -63,13 +75,13 @@ class ArticleLogic extends BaseLogic
                 'extend' => [],
             ];
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function detail(TenantContext $context, int $id): array
     {
+        self::clearError();
         $article = ArticleTenantRepository::articles($context)->field(self::fields())->where('id', $id)->findOrEmpty();
         if ($article->isEmpty()) {
             return [];
@@ -79,6 +91,7 @@ class ArticleLogic extends BaseLogic
 
     public static function add(TenantContext $context, array $params): bool
     {
+        self::clearError();
         self::requireCategory($context, (int) $params['cid']);
         ArticleTenantRepository::createArticle($context, self::writeData($params));
         return true;
@@ -86,6 +99,7 @@ class ArticleLogic extends BaseLogic
 
     public static function edit(TenantContext $context, array $params): bool
     {
+        self::clearError();
         try {
             self::requireCategory($context, (int) $params['cid']);
             $article = ArticleTenantRepository::articles($context)->where('id', (int) $params['id'])->findOrEmpty();
@@ -95,13 +109,13 @@ class ArticleLogic extends BaseLogic
             $article->save(self::writeData($params));
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function delete(TenantContext $context, int $id): bool
     {
+        self::clearError();
         $article = ArticleTenantRepository::articles($context)->where('id', $id)->findOrEmpty();
         if ($article->isEmpty()) {
             self::setError('资讯不存在');
@@ -113,6 +127,7 @@ class ArticleLogic extends BaseLogic
 
     public static function updateStatus(TenantContext $context, int $id, int $isShow): bool
     {
+        self::clearError();
         $updated = ArticleTenantRepository::articles($context)->where('id', $id)->update(['is_show' => $isShow]);
         if ($updated !== 1) {
             self::setError('资讯不存在');

@@ -13,6 +13,7 @@ class RechargeSettingLogic extends BaseLogic
 {
     public static function getConfig(TenantContext $context): array
     {
+        self::clearError();
         $config = RechargeTenantSettingService::config($context);
         $config['status'] = (int)$config['status'];
         $config['min_amount'] = self::amount($config['min_amount']);
@@ -27,6 +28,7 @@ class RechargeSettingLogic extends BaseLogic
      */
     public static function availablePayWays(TenantContext $context, int $terminal): array
     {
+        self::clearError();
         if (!UserTerminalEnum::isValid($terminal)
             || (int)RechargeTenantSettingService::config($context)['status'] !== 1) {
             return [];
@@ -43,6 +45,7 @@ class RechargeSettingLogic extends BaseLogic
 
     public static function save(TenantContext $context, array $params): bool
     {
+        self::clearError();
         try {
             foreach ($params['scenes'] as $scene) {
                 if ((int)$scene['status'] === 1
@@ -63,8 +66,7 @@ class RechargeSettingLogic extends BaseLogic
             ]);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 

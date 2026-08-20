@@ -3,7 +3,7 @@ import {
   allowsInstanceTools,
   deploymentMode,
   routesForDeployment,
-} from '@/core/deployment-mode';
+} from '@peanut-admin/admin/shell';
 import { pluginRoutes } from './plugin-contributions';
 
 const modules = import.meta.glob('./modules/*.ts', { eager: true });

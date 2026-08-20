@@ -8,6 +8,7 @@ use app\common\logic\BaseLogic;
 use app\common\model\member\MemberBalanceLog;
 use app\common\service\FileService;
 use app\common\service\member\MemberTenantContext;
+use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /**
@@ -32,10 +33,20 @@ class AccountLogLogic extends BaseLogic
             }
 
             $pageType = (int)($params['page_type'] ?? 1);
-            $pageNo = $pageType === 0 ? 1 : max(1, (int)($params['page_no'] ?? 1));
-            $pageSize = $pageType === 0
-                ? self::PAGE_SIZE_MAX
-                : max(1, (int)($params['page_size'] ?? 15));
+            if ($pageType === 0) {
+                $pageNo = 1;
+                $pageSize = self::PAGE_SIZE_MAX;
+            } else {
+                $requestedPageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
+                if ($requestedPageSize <= 100) {
+                    $pagination = PaginationInput::from($params);
+                    $pageNo = $pagination->page;
+                    $pageSize = $pagination->pageSize;
+                } else {
+                    $pageNo = max(1, (int)($params['page_no'] ?? $params['page'] ?? 1));
+                    $pageSize = max(1, $requestedPageSize);
+                }
+            }
 
             $tenantId = MemberTenantContext::tenantId($context);
             $query = MemberBalanceLog::alias('al')

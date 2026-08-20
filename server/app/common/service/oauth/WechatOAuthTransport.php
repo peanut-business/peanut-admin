@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\oauth;
 
 use app\common\service\oauth\contract\OAuthTransportInterface;
-use app\common\service\oauth\dto\OAuthProfile;
+use PeanutAdmin\IntegrationSecurity\OAuth\OAuthProfile;
 
 /** 微信小程序、公众号和开放平台 PC 的生产 OAuth 传输。 */
 final class WechatOAuthTransport implements OAuthTransportInterface

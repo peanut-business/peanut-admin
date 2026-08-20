@@ -8,8 +8,9 @@ use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\Settings\Contract\WebsiteConfigStore as CoreWebsiteConfigStore;
 
-final class TenantSettingWebsiteStore implements WebsiteConfigStore
+final class TenantSettingWebsiteStore implements WebsiteConfigStore, CoreWebsiteConfigStore
 {
     public function __construct(
         private AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,

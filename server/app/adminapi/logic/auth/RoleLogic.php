@@ -5,9 +5,10 @@ namespace app\adminapi\logic\auth;
 
 use app\adminapi\service\CoreTenantModuleAdminBridge;
 use app\common\logic\BaseLogic;
+use app\common\support\PaginationInput;
+use app\common\support\PositiveIds;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 use think\facade\Db;
 
@@ -16,6 +17,7 @@ final class RoleLogic extends BaseLogic
 {
     public static function validationRules(string $scene): array
     {
+        self::clearError();
         return $scene === 'add'
             ? ['name' => 'require|length:1,120', 'menu_id' => 'array']
             : ['id' => 'require|integer|gt:0', 'name' => 'require|length:1,120', 'menu_id' => 'array'];
@@ -23,20 +25,27 @@ final class RoleLogic extends BaseLogic
 
     public static function lists(TenantContext $context, array $params): array
     {
-        $pageNo = max(1, (int)($params['page_no'] ?? 1));
-        $pageSize = min(100, max(1, (int)($params['page_size'] ?? 15)));
-        $result = self::service()->list($context->tenantId, new PageRequest($pageNo, $pageSize));
+        self::clearError();
+        $pagination = PaginationInput::from($params);
+        $result = self::service()->list($context->tenantId, $pagination->pageRequest);
         $lists = array_map(fn(array $row): array => self::compat($context, $row), $result['items']);
-        return ['lists' => $lists, 'count' => $result['total'], 'pageNo' => $pageNo, 'pageSize' => $pageSize];
+        return [
+            'lists' => $lists,
+            'count' => $result['total'],
+            'pageNo' => $pagination->page,
+            'pageSize' => $pagination->pageSize,
+        ];
     }
 
     public static function getAll(TenantContext $context): array
     {
+        self::clearError();
         return self::lists($context, ['page_size' => 100])['lists'];
     }
 
     public static function detail(TenantContext $context, int $id): array
     {
+        self::clearError();
         try {
             return self::compat($context, self::service()->get($context->tenantId, $id));
         } catch (\Throwable) {
@@ -46,6 +55,7 @@ final class RoleLogic extends BaseLogic
 
     public static function add(TenantContext $context, array $params): bool
     {
+        self::clearError();
         try {
             $service = self::service();
             $role = $service->create($context->tenantId, 'application.admin.' . bin2hex(random_bytes(8)),
@@ -57,13 +67,13 @@ final class RoleLogic extends BaseLogic
             }
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function edit(TenantContext $context, array $params): bool
     {
+        self::clearError();
         try {
             $service = self::service();
             $current = $service->get($context->tenantId, (int)$params['id']);
@@ -75,21 +85,20 @@ final class RoleLogic extends BaseLogic
             }
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function delete(TenantContext $context, int $id): bool
     {
+        self::clearError();
         try {
             $service = self::service();
             $role = $service->get($context->tenantId, $id);
             $service->archive($context->tenantId, $id, (int)$role['revision'], $context->memberId, $context->accountId, $context->requestId);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
@@ -124,7 +133,10 @@ final class RoleLogic extends BaseLogic
     private static function menuIds(array $params): array
     {
         $ids = $params['menu_id'] ?? $params['menu_ids'] ?? [];
-        return array_values(array_unique(array_filter(array_map('intval', is_array($ids) ? $ids : []), static fn(int $id): bool => $id > 0)));
+        return PositiveIds::normalize(
+            is_array($ids) ? $ids : [],
+            [PositiveIds::FILTER_INVALID],
+        );
     }
 
     /** @param list<int> $menuIds @return list<string> */

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use app\common\service\diagnostics\TenantDiagnosticAttributes;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
 require dirname(__DIR__, 2) . '/app/common/service/tenant/TenantScope.php';
 require dirname(__DIR__, 2) . '/app/common/service/diagnostics/TenantDiagnosticAttributes.php';

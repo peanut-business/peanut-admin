@@ -3,13 +3,23 @@ declare(strict_types=1);
 
 namespace app\common\service\tenant;
 
-/** Tenant-only cache facade; every operation is scoped at construction time. */
+use PeanutAdmin\Kernel\Tenancy\TenantCache as CoreTenantCache;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
+
+/**
+ * @deprecated Use PeanutAdmin\Kernel\Tenancy\TenantCache directly.
+ *
+ * This wrapper remains only to preserve the legacy ThinkPHP assembly entry point.
+ */
 final class TenantCache
 {
+    private CoreTenantCache $delegate;
+
     public function __construct(
-        private readonly TenantScope $scope,
-        private readonly TenantCacheStore $store
+        TenantScope $scope,
+        TenantCacheStore $store
     ) {
+        $this->delegate = new CoreTenantCache($scope, $store);
     }
 
     /** Production assembly: the caller must already hold an upstream-verified scope. */
@@ -20,23 +30,16 @@ final class TenantCache
 
     public function get(string $logicalKey, mixed $default = null): mixed
     {
-        return $this->store->get(TenantNamespace::cacheKey($this->scope, $logicalKey), $default);
+        return $this->delegate->get($logicalKey, $default);
     }
 
     public function set(string $logicalKey, mixed $value, int $ttlSeconds = 0): bool
     {
-        if ($ttlSeconds < 0) {
-            throw new \InvalidArgumentException('Tenant cache TTL cannot be negative');
-        }
-        return $this->store->set(
-            TenantNamespace::cacheKey($this->scope, $logicalKey),
-            $value,
-            $ttlSeconds
-        );
+        return $this->delegate->set($logicalKey, $value, $ttlSeconds);
     }
 
     public function delete(string $logicalKey): bool
     {
-        return $this->store->delete(TenantNamespace::cacheKey($this->scope, $logicalKey));
+        return $this->delegate->delete($logicalKey);
     }
 }

@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 use app\common\service\tenant\TenantCache;
 use app\common\service\tenant\TenantCacheStore;
-use app\common\service\tenant\TenantNamespace;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantNamespace;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use app\common\service\tenant\ThinkPhpTenantCacheStore;
 use think\facade\Cache;
 

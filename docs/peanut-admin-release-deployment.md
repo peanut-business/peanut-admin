@@ -1,4 +1,4 @@
-# Peanut Admin 2.x 发布与部署
+# Peanut Admin 发布与部署
 
 > 本文件是 Peanut Admin 源仓的人类可读版本。create-app 会在派生应用的同一路径生成一份
 > 应用专属简版，不会复制完整 `docs-site/`。详细说明见公开的
@@ -6,7 +6,7 @@
 
 ## 5 分钟速读
 
-- 2.x 是 fresh-only：只向空数据库安装，不接管 1.x 表、migration ledger 或 scaffold。
+- 3.0 的首次安装使用 fresh 基线；常规更新只替换应用容器，绝不删除数据库或上传卷。
 - 默认一套部署对应一个应用实例。一个实例可服务多个 Tenant、客户端和 Module。
 - 生产推荐从不可变源码版本构建 Docker Compose；数据库、密钥、文件空间和备份由该实例
   独立拥有。
@@ -40,49 +40,44 @@ scripts/publish-github-release <version> \
 
 ### 源仓维护者的无人值守发布脚本
 
-`scripts/deploy-release` 自 `v2.0.1` 起随源码 Release 交付。当前 `v2.1.1` 继续使用同一
-无人值守合同；`v2.0.0` 生成的派生应用不包含这个后续加入的脚本。
-源仓维护者的正式发布工作流使用这个脚本时，不要在服务器上继续调用旧的
-`scripts/production-upgrade`。脚本从本地不可变 annotated tag 生成归档，传输到登记的
+`scripts/deploy-release` 明确区分首次安装、常规更新和破坏性 fresh，不提供应用数据库
+原地 schema 升级。源仓维护者不要在服务器上调用旧的 `scripts/production-upgrade`。脚本
+从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
-数据库资源。它不会通过默认值猜测另一套部署。以下 `--apply` 命令是经资源 owner 授权后的
-操作模板；当前部署结果另见 `docs/product-status/deployments/v2.0.1-online-experience.json`。
+数据库资源。它不会通过默认值猜测另一套部署。
 
 ```bash
-# 先只核对计划（不连接线上、不写入线上）
-scripts/deploy-release v2.1.1 --target production --fresh \
+# 首次安装（目标卷必须不存在）；先只核对计划
+scripts/deploy-release v3.0.0 --target production-candidate --install --dry-run
+
+# 常规更新：旧服务必须运行，保留数据库与上传卷
+scripts/deploy-release v3.0.0 --target production --update --dry-run
+
+# 破坏性 fresh：先核对计划（要求已验证 DB/files 配对备份）
+scripts/deploy-release v3.0.0 --target production --fresh \
   --confirm-destroy production --dry-run
-scripts/deploy-release v2.1.1 --target production --upgrade \
-  --from v2.0.1 --dry-run
 
-# 单租户：明确允许破坏性 fresh，旧 1.x 卷会被删除并从空库安装
-scripts/deploy-release v2.0.0 --target production --fresh \
+# 明确允许破坏性 fresh；候选校验和镜像构建成功后才停止旧服务并删除登记卷
+scripts/deploy-release v3.0.0 --target production --fresh \
   --confirm-destroy production --apply
-
-# 后续 2.x：自动创建登记的数据库/文件配对备份，再升级前后端和数据库
-scripts/deploy-release v2.1.1 --target production --upgrade \
-  --from v2.0.1 --apply
 ```
 
 | 参数 | 是否必填 | 含义 |
 | --- | --- | --- |
-| `<vX.Y.Z>` | 是 | 已发布的 annotated tag，例如 `v2.0.0` |
+| `<vX.Y.Z>` | 是 | 已发布的 annotated tag，例如 `v3.0.0` |
 | `--target` | 是 | 只接受登记的 `production` 或 `production-candidate` |
-| `--fresh` / `--upgrade` | 二选一 | fresh 删除该目标的 Compose 卷并空库安装；upgrade 保留数据并执行迁移 |
-| `--from <vX.Y.Z>` | upgrade 必填 | 声明目标当前精确版本；脚本会在远端再次核对 `.release-tag`，不一致立即停止 |
+| `--install` / `--update` / `--fresh` | 三选一 | 首次安装、常规应用更新或破坏性重装 |
 | `--confirm-destroy <target>` | fresh 必填 | 值必须与 `--target` 完全一致，避免误删另一实例 |
 | `--dry-run` / `--apply` | 二选一 | 只展示计划，或实际执行 |
 | `--overlay <file.tar>` | 否 | 仅用于登记的演示候选，把有摘要的 demo patch 叠加到正式 tag |
 
-`--upgrade` 只接受目标 Release 中显式批准的 2.x transition，并要求 `--from` 与远端当前
-`.release-tag` 完全一致。固定顺序是：校验 source/target 与 transition → 构建前端/后端镜像
-→ 只启动 MySQL → 用绕过应用 entrypoint 的 PHP 容器执行 `migrate.php` 应用缺失追加迁移
-→ `migrate.php --current` 校验账本 → 启动 PHP/Nginx/cron → origin 和版本 smoke。因而升级
-同时覆盖前端、后端和数据库；2.0.0 不提供 1.x 原地升级，1.x 到 2.0 必须使用单独的业务
-数据迁移项目。首个后续 2.x Release 发布前，升级器框架存在不等于已有可执行 transition。
-目标部署还必须登记配对备份资源；脚本在停止写入后自动备份数据库和 PHP 文件空间，并校验
-manifest、SHA-256、gzip 与 tar。没有备份登记时，upgrade 在本地 preflight 就停止；可丢弃的
-演示实例应继续使用 fresh 重建，不得用“数据不重要”绕过正式升级合同。
+三种模式都会先校验 tag、归档摘要、目标登记和候选 Compose，并在旧服务仍运行时解包和
+构建带不可变版本标签的 PHP/Nginx 镜像。`--install` 要求数据库和上传卷不存在，然后安装
+完整基线；`--update` 要求旧 PHP/Nginx/cron 正在运行，只执行 `up -d --no-deps php nginx cron`（Compose
+仅重建配置或镜像有变化的应用容器），不会执行 `down --volumes`、删除数据库或上传卷；`--fresh`
+则必须显式 `--confirm-destroy=<target>`，并验证登记的数据库 dump 与 php-storage 配对备份
+后，才允许停止服务、删除登记卷并安装基线。候选解包、配置或镜像构建失败时，旧服务和
+数据卷保持不动；脚本的代码归档只写部署根目录，不写持久卷。
 
 ### 演示站补丁
 
@@ -91,23 +86,22 @@ manifest、SHA-256、gzip 与 tar。没有备份登记时，upgrade 在本地 pr
 数据库资源，随后创建 Tenant A/B、独立 TenantMember/Owner、域名绑定和合成数据。
 
 ```bash
-scripts/build-demo-site-patch v2.1.1 output/deployment/demo-site-v2.1.1.tar
+scripts/build-demo-site-patch v3.0.0 output/deployment/demo-site-v3.0.0.tar
 
-export PEANUT_GENERATED_ADMIN_EMAIL='bootstrap@pa-demo.test'
+export PEANUT_GENERATED_ADMIN_EMAIL='admin@pa-demo.example'
 export PEANUT_GENERATED_ADMIN_PASSWORD='peanut1234'
-export PEANUT_GENERATED_PLATFORM_EMAIL='platform@pa-demo.test'
+export PEANUT_GENERATED_PLATFORM_EMAIL='platform@pa-demo.example'
 export PEANUT_GENERATED_PLATFORM_PASSWORD='peanut1234'
 export PEANUT_DEMO_MODE=enabled
-export PEANUT_DEMO_TENANT_A_EMAIL='tenant-a@pa-demo.test'
-export PEANUT_DEMO_TENANT_B_EMAIL='tenant-b@pa-demo.test'
+export PEANUT_DEMO_TENANT_A_EMAIL='tenant-a@pa-demo.example'
+export PEANUT_DEMO_TENANT_B_EMAIL='tenant-b@pa-demo.example'
 export PEANUT_DEMO_SHARED_PASSWORD='peanut1234'
 export PEANUT_DEMO_TENANT_A_HOST='pa-tenant-a.007345.xyz'
 export PEANUT_DEMO_TENANT_B_HOST='pa-tenant-b.007345.xyz'
 export PEANUT_DEMO_DOCS_URL='https://peanut-admin-doc.007345.xyz'
 
-scripts/deploy-release v2.1.1 --target production-candidate --fresh \
-  --confirm-destroy production-candidate \
-  --overlay output/deployment/demo-site-v2.1.1.tar --apply
+scripts/deploy-release v3.0.0 --target production-candidate --install \
+  --overlay output/deployment/demo-site-v3.0.0.tar --apply
 ```
 
 只有 `PEANUT_DEMO_MODE=enabled` 时，租户登录页才会预填公开演示账号；服务端会拒绝演示账号
@@ -121,25 +115,31 @@ root-owned `.env`。演示候选中的 bootstrap 管理员只拥有系统默认 
 的 active owner，因此公共 Admin 使用 Tenant A 账号时可以选择 A/B；Tenant A/B 的绑定 Host
 仍只能进入各自 Tenant。未知 Host 不会返回任何演示凭据。
 
-普通 `--upgrade` 保留远端现有演示配置，不会把调用端的空值写回 `.env`。`--fresh` 不带
-overlay 时会明确关闭并清空旧演示配置，避免同一部署目录从演示候选变成普通实例后继续暴露
-公开账号。overlay 只允许与 `--fresh` 一起使用。
+`--fresh` 不带 overlay 时会明确关闭并清空旧演示配置，避免同一部署目录从演示候选变成
+普通实例后继续暴露公开账号。overlay 只允许与 `--fresh` 一起使用。
 
 准备应用自己的空数据库和受保护环境文件。至少配置：
 
 ```dotenv
 DEPLOYMENT_MODE=standalone
+PUBLIC_DEFAULT_TENANT_FALLBACK=true
 DB_HOST=<database-host>
 DB_PORT=3306
 DB_NAME=<empty-database>
 DB_USER=<application-user>
 DB_PASS=<secret>
-JWT_SECRET=<stable-secret>
+JWT_SECRET=<openssl rand -hex 32 生成的稳定密钥>
+JWT_EXPIRE=7200
 TENANT_IDENTIFIER_HMAC_KEY=<at-least-32-bytes>
 PLATFORM_IDENTIFIER_HMAC_KEY=<different-at-least-32-bytes>
 ADMIN_INITIAL_EMAIL=owner@example.com
 ADMIN_INITIAL_PASSWORD=<at-least-12-letters-and-digits>
 ```
+
+`JWT_SECRET` 没有默认值，必须是至少 32 字节的部署专用随机值，不得复用示例文本。
+`JWT_EXPIRE` 是会员 API Token 的唯一有效期配置，默认为 7200 秒。当前会员 Token
+固定使用 HS256，并严格校验 `iss`/`aud`/`sub`/`iat`/`nbf`/`exp`；此合同不保留
+旧 JWT 的兼容入口，升级后旧 Token 全部失效，会员需重新登录。
 
 多租户模式将 `DEPLOYMENT_MODE` 改为 `multi-tenant`，并增加与管理员不同的
 `PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`，同时配置：
@@ -171,26 +171,21 @@ curl -fsS http://127.0.0.1:18092/healthz
 ## 数据库边界
 
 `server/database/install.php` 创建 Core Schema、应用 `init.sql`、默认 Tenant、首 owner 和
-必要的 PlatformOperator。安装后只运行：
+必要的 PlatformOperator。安装后只运行当前基线检查：
 
 ```bash
-php server/database/migrate.php --current
+php server/database/environment-guard.php --current
 ```
 
-禁止执行或恢复 1.x 的 `--adopt-existing`、legacy Admin/Role/Dept map、默认 Tenant
-bootstrap、余额双写或旧 scaffold upgrade Runtime。需要保留旧系统时，继续隔离运行旧
-实例，并为 2.0 准备独立空库；业务数据迁移必须另立字段映射、校验和回滚方案。
-旧接管和升级步骤只随对应 1.x tag、Release 与文档快照保留为历史证据，不得复制到 2.0
-部署流程，也不得把旧 migration 数量、`admin` 用户名或 scaffold identity 当作当前默认值。
-
-2.0 基线后的 SQL 只允许追加 migration。不要改写已登记 SQL 或删除账本。发布前创建数据库
-与文件存储的同一时点备份；若新 Schema 已不兼容旧 Runtime，不能直接切回旧镜像，只能
-继续前滚修复或恢复配对备份。
+禁止执行或恢复旧 `migrate.php`、`pa_schema_migration`、legacy Admin/Role/Dept map、默认
+Tenant bootstrap、余额双写或旧 scaffold upgrade Runtime。需要保留旧系统时，继续隔离运行
+旧实例，并为 3.0 准备独立空库；业务数据迁移必须另立字段映射、校验和回滚方案。Plugin
+Module 自己的 `pa_module_migration` 属于插件生命周期，不是应用升级账本。
 
 ## 发布最低检查
 
 1. 固定源码 commit/tag 与版本元数据一致。
-2. 从空库完成一次目标部署模式安装和 `migrate.php --current`。
+2. 从空库完成一次目标部署模式安装和 `environment-guard.php --current`。
 3. 管理员登录、菜单/RBAC、Tenant 切换或 Standalone 默认 Tenant 正常。
 4. 使用第二 Tenant 验证一个列表、详情和写操作均 fail closed；绑定 Tenant Host 不允许切换。
 5. `/admin/`、`/platform/`、`/mobile/`、`/pc/`、`/api/`、上传和导出入口可访问，Platform API

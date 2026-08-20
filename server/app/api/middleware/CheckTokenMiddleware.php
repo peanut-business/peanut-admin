@@ -23,11 +23,7 @@ class CheckTokenMiddleware
 
     public function handle($request, \Closure $next)
     {
-        $authorization = $request->header('Authorization', '');
-        $token         = '';
-        if (str_starts_with($authorization, 'Bearer ')) {
-            $token = substr($authorization, 7);
-        }
+        $token = self::bearerToken((string)$request->header('Authorization', ''));
 
         if (empty($token)) {
             return JsonService::fail('请求缺少 token', null, 40100);
@@ -64,6 +60,15 @@ class CheckTokenMiddleware
         $request->memberInfo = $member->toArray();
 
         return $next($request);
+    }
+
+    private static function bearerToken(string $authorization): string
+    {
+        return preg_match(
+            '/^Bearer +([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/iD',
+            $authorization,
+            $matches,
+        ) === 1 ? $matches[1] : '';
     }
 
     private function tenantContexts(): MemberApiTenantContextResolver

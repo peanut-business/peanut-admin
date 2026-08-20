@@ -45,7 +45,7 @@ CREATE TABLE `pa_config` (
   `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_type_name` (`type`, `name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='实例级配置（仅 Platform/部署拥有）';
 
 CREATE TABLE `pa_jobs` (
   `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -482,12 +482,11 @@ CREATE TABLE `pa_refund_record` (
   KEY `idx_refund_status`(`refund_status`),
   KEY `idx_create_time`  (`create_time`),
   UNIQUE KEY `uk_refund_record_tenant_id` (`tenant_id`, `id`),
-  UNIQUE KEY `uk_refund_record_tenant_order` (`tenant_id`, `order_type`, `order_id`),
+  KEY `idx_refund_record_tenant_order_amount` (`tenant_id`, `order_type`, `order_id`, `refund_amount`, `id`),
   KEY `idx_refund_record_tenant_status_time` (`tenant_id`, `refund_status`, `create_time`, `id`),
   CONSTRAINT `fk_refund_record_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `pa_tenant` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_refund_record_member` FOREIGN KEY (`tenant_id`, `user_id`) REFERENCES `pa_member` (`tenant_id`, `id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_refund_record_order` FOREIGN KEY (`tenant_id`, `order_id`) REFERENCES `pa_recharge_order` (`tenant_id`, `id`) ON DELETE RESTRICT,
-  UNIQUE KEY `uk_refund_record_order_global` (`order_type`,`order_id`)
+  CONSTRAINT `fk_refund_record_order` FOREIGN KEY (`tenant_id`, `order_id`) REFERENCES `pa_recharge_order` (`tenant_id`, `id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录';
 
 CREATE TABLE `pa_generator_table` (
@@ -681,17 +680,157 @@ CREATE TABLE `pa_oauth_attempt` (
   CONSTRAINT `fk_oauth_attempt_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `pa_tenant` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='OAuth一次性state';
 
-CREATE TABLE `pa_schema_migration` (
-  `migration` varchar(191) NOT NULL COMMENT '迁移文件名',
-  `checksum` char(64) NOT NULL COMMENT '迁移文件 SHA-256',
-  `batch` int unsigned NOT NULL DEFAULT 0 COMMENT '执行批次',
-  `status` varchar(16) NOT NULL DEFAULT 'running' COMMENT 'running/applied/failed',
-  `started_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT '开始时间',
-  `applied_at` bigint unsigned DEFAULT NULL COMMENT '完成时间',
-  `error` varchar(1000) NOT NULL DEFAULT '' COMMENT '失败摘要',
-  PRIMARY KEY (`migration`),
-  KEY `idx_status_batch` (`status`, `batch`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据库迁移账本';
+CREATE TABLE `pa_tenant_setting` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenant_id` BIGINT UNSIGNED NOT NULL,
+  `namespace` VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `config_json` JSON NOT NULL,
+  `revision` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tenant_setting_namespace` (`tenant_id`, `namespace`),
+  CONSTRAINT `fk_tenant_setting_tenant`
+    FOREIGN KEY (`tenant_id`) REFERENCES `pa_tenant` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_tenant_setting_namespace`
+    CHECK (REGEXP_LIKE(`namespace`, '^[a-z][a-z0-9.-]{0,63}$', 'c'))
+) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  COMMENT='Tenant-owned application capability settings';
+
+CREATE TABLE `pa_tenant_entry_binding` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenant_id` BIGINT UNSIGNED NOT NULL,
+  `host` VARCHAR(253) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `client_key` VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `status` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'active',
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tenant_entry_binding` (`host`, `client_key`),
+  KEY `idx_tenant_entry_lookup` (`host`, `client_key`, `status`, `tenant_id`),
+  CONSTRAINT `fk_tenant_entry_binding_tenant`
+    FOREIGN KEY (`tenant_id`) REFERENCES `pa_tenant` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `chk_tenant_entry_binding_status`
+    CHECK (`status` IN ('active', 'disabled')),
+  CONSTRAINT `chk_tenant_entry_binding_host`
+    CHECK (`host` = LOWER(`host`) AND CHAR_LENGTH(`host`) BETWEEN 1 AND 253),
+  CONSTRAINT `chk_tenant_entry_binding_client`
+    CHECK (REGEXP_LIKE(`client_key`, '^[a-z][a-z0-9-]{0,63}$', 'c'))
+) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `pa_tenant_owner_invitation` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenant_id` BIGINT UNSIGNED NOT NULL,
+  `email_normalized` VARCHAR(255) NOT NULL,
+  `display_name` VARCHAR(120) NOT NULL,
+  `token_hash` CHAR(64) NOT NULL,
+  `status` VARCHAR(16) NOT NULL DEFAULT 'pending',
+  `delivery_status` VARCHAR(32) NOT NULL DEFAULT 'pending_delivery',
+  `delivery_provider` VARCHAR(64) NULL,
+  `delivery_message_id` VARCHAR(190) NULL,
+  `delivery_attempts` INT UNSIGNED NOT NULL DEFAULT 0,
+  `delivery_error_code` VARCHAR(96) NULL,
+  `last_delivery_at` DATETIME(3) NULL,
+  `generation` INT UNSIGNED NOT NULL DEFAULT 1,
+  `expires_at` DATETIME(3) NOT NULL,
+  `accepted_at` DATETIME(3) NULL,
+  `revoked_at` DATETIME(3) NULL,
+  `accepted_account_id` BIGINT UNSIGNED NULL,
+  `accepted_member_id` BIGINT UNSIGNED NULL,
+  `invited_by_operator_id` BIGINT UNSIGNED NOT NULL,
+  `revoked_by_operator_id` BIGINT UNSIGNED NULL,
+  `created_at` DATETIME(3) NOT NULL,
+  `updated_at` DATETIME(3) NOT NULL,
+  `pending_tenant_id` BIGINT UNSIGNED GENERATED ALWAYS AS (
+    CASE WHEN `status` = 'pending' THEN `tenant_id` ELSE NULL END
+  ) STORED,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_owner_invitation_token_hash` (`token_hash`),
+  UNIQUE KEY `uk_owner_invitation_pending_tenant` (`pending_tenant_id`),
+  KEY `idx_owner_invitation_tenant_time` (`tenant_id`, `created_at`, `id`),
+  KEY `idx_owner_invitation_status_expiry` (`status`, `expires_at`, `id`),
+  CONSTRAINT `fk_owner_invitation_tenant` FOREIGN KEY (`tenant_id`)
+    REFERENCES `pa_tenant` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_owner_invitation_account` FOREIGN KEY (`accepted_account_id`)
+    REFERENCES `pa_account` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_owner_invitation_member` FOREIGN KEY (`tenant_id`, `accepted_member_id`)
+    REFERENCES `pa_tenant_member` (`tenant_id`, `id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_owner_invitation_inviter` FOREIGN KEY (`invited_by_operator_id`)
+    REFERENCES `pa_platform_operator` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_owner_invitation_revoker` FOREIGN KEY (`revoked_by_operator_id`)
+    REFERENCES `pa_platform_operator` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `chk_owner_invitation_status` CHECK (
+    `status` IN ('pending', 'accepted', 'revoked', 'expired')
+  ),
+  CONSTRAINT `chk_owner_invitation_delivery_status` CHECK (
+    `delivery_status` IN ('pending_delivery', 'sent', 'failed')
+  ),
+  CONSTRAINT `chk_owner_invitation_accepted` CHECK (
+    (`status` = 'accepted' AND `accepted_at` IS NOT NULL
+      AND `accepted_account_id` IS NOT NULL AND `accepted_member_id` IS NOT NULL)
+    OR (`status` <> 'accepted' AND `accepted_at` IS NULL
+      AND `accepted_account_id` IS NULL AND `accepted_member_id` IS NULL)
+  ),
+  CONSTRAINT `chk_owner_invitation_revoked` CHECK (
+    (`status` = 'revoked' AND `revoked_at` IS NOT NULL AND `revoked_by_operator_id` IS NOT NULL)
+    OR (`status` <> 'revoked' AND `revoked_at` IS NULL AND `revoked_by_operator_id` IS NULL)
+  )
+) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `pa_tenant_idempotency_record` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenant_id` BIGINT UNSIGNED NOT NULL,
+  `tenant_member_id` BIGINT UNSIGNED NOT NULL,
+  `operation_key` VARCHAR(160) NOT NULL,
+  `idempotency_key_hash` CHAR(64) NOT NULL,
+  `request_hash` CHAR(64) NOT NULL,
+  `status` VARCHAR(16) NOT NULL,
+  `response_status` SMALLINT UNSIGNED NULL,
+  `response_body_json` JSON NULL,
+  `resource_type` VARCHAR(160) NULL,
+  `resource_id` VARCHAR(128) NULL,
+  `expires_at` DATETIME(3) NOT NULL,
+  `created_at` DATETIME(3) NOT NULL,
+  `updated_at` DATETIME(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tenant_idempotency` (`tenant_id`, `tenant_member_id`, `operation_key`, `idempotency_key_hash`),
+  KEY `idx_tenant_idempotency_expiry` (`expires_at`, `status`, `id`),
+  CONSTRAINT `fk_tenant_idempotency_member`
+    FOREIGN KEY (`tenant_id`, `tenant_member_id`)
+    REFERENCES `pa_tenant_member` (`tenant_id`, `id`) ON DELETE RESTRICT,
+  CONSTRAINT `chk_tenant_idempotency_status`
+    CHECK (`status` IN ('processing','completed','failed'))
+) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `pa_system_dict_type` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(100) NOT NULL,
+  `name` VARCHAR(100) NOT NULL DEFAULT '',
+  `is_disable` TINYINT(1) NOT NULL DEFAULT 0,
+  `remark` VARCHAR(255) NOT NULL DEFAULT '',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_system_dict_type_code` (`code`),
+  KEY `idx_system_dict_type_status` (`is_disable`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统只读字典类型';
+
+CREATE TABLE `pa_system_dict_data` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `type_code` VARCHAR(100) NOT NULL,
+  `name` VARCHAR(100) NOT NULL DEFAULT '',
+  `value` VARCHAR(255) NOT NULL DEFAULT '',
+  `sort` SMALLINT NOT NULL DEFAULT 0,
+  `is_disable` TINYINT(1) NOT NULL DEFAULT 0,
+  `remark` VARCHAR(255) NOT NULL DEFAULT '',
+  `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_system_dict_data_type_value` (`type_code`, `value`),
+  KEY `idx_system_dict_data_lookup` (`type_code`, `is_disable`, `sort`, `id`),
+  CONSTRAINT `fk_system_dict_data_type`
+    FOREIGN KEY (`type_code`) REFERENCES `pa_system_dict_type` (`code`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统只读字典数据';
 
 CREATE TABLE `pa_customer_service_setting` (
   `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1375,109 +1514,86 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 SET @pa_default_tenant_id = (SELECT `id` FROM `pa_tenant` WHERE `code`='default' AND `status`='active' ORDER BY `id` LIMIT 1);
 
-INSERT IGNORE INTO `pa_config` (`type`,`name`,`value`) VALUES
-  ('web_page', 'status',      '1'),
-  ('web_page', 'page_status', '0'),
-  ('web_page', 'page_url',    ''),
-  ('mnp_setting', 'name',        ''),
-  ('mnp_setting', 'original_id', ''),
-  ('mnp_setting', 'qr_code',     ''),
-  ('mnp_setting', 'app_id',      ''),
-  ('mnp_setting', 'app_secret',  '');
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'tabbar','style','{"default_color":"#666666","selected_color":"#2F80ED"}'
-WHERE NOT EXISTS (SELECT 1 FROM `pa_config` WHERE `type`='tabbar' AND `name`='style');
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'web_page', 'status', '1'
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type` = 'web_page' AND `name` = 'status'
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'web_page', 'page_status', '0'
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type` = 'web_page' AND `name` = 'page_status'
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'web_page', 'page_url', ''
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type` = 'web_page' AND `name` = 'page_url'
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'mnp_setting', `seed`.`name`, ''
+INSERT INTO `pa_system_dict_type` (`code`, `name`, `remark`)
+VALUES
+  ('member_sex', '会员性别', '系统固定枚举，租户不可修改'),
+  ('member_status', '会员状态', '系统固定枚举，租户不可修改'),
+  ('member_channel', '会员注册渠道', '系统固定枚举，租户不可修改'),
+  ('payment_status', '支付状态', '系统固定枚举，租户不可修改'),
+  ('refund_status', '退款状态', '系统固定枚举，租户不可修改');
+
+INSERT INTO `pa_system_dict_data` (`type_code`, `name`, `value`, `sort`, `remark`)
+VALUES
+  ('member_sex', '未知', '0', 30, 'unknown'),
+  ('member_sex', '男', '1', 20, 'male'),
+  ('member_sex', '女', '2', 10, 'female'),
+  ('member_status', '正常', '1', 20, 'active'),
+  ('member_status', '禁用', '0', 10, 'disabled'),
+  ('member_channel', '微信小程序', '1', 60, 'wechat_mmp'),
+  ('member_channel', '微信公众号', '2', 50, 'wechat_oa'),
+  ('member_channel', 'H5', '3', 40, 'h5'),
+  ('member_channel', 'PC', '4', 30, 'pc'),
+  ('member_channel', 'iOS', '5', 20, 'ios'),
+  ('member_channel', 'Android', '6', 10, 'android'),
+  ('payment_status', '待支付', '0', 20, 'unpaid'),
+  ('payment_status', '已支付', '1', 10, 'paid'),
+  ('refund_status', '处理中', '0', 30, 'processing'),
+  ('refund_status', '成功', '1', 20, 'success'),
+  ('refund_status', '失败', '2', 10, 'failed');
+
+INSERT INTO `pa_tenant_setting`
+  (`tenant_id`,`namespace`,`config_json`,`revision`,`create_time`,`update_time`)
+SELECT @pa_default_tenant_id, 'website',
+       JSON_OBJECT(
+         'name', 'Peanut Admin',
+         'web_favicon', 'brand/favicon.svg',
+         'web_logo', 'brand/logo.svg',
+         'login_image', 'brand/login-background.svg',
+         'shop_name', 'Peanut Admin',
+         'shop_logo', 'brand/logo.svg',
+         'pc_logo', 'brand/logo.svg',
+         'pc_title', 'Peanut Admin',
+         'pc_ico', 'brand/favicon.svg',
+         'pc_desc', 'Peanut Admin 全端管理脚手架',
+         'pc_keywords', 'Peanut Admin,Vue 3,ThinkPHP 8,UniApp',
+         'h5_favicon', 'brand/favicon.svg',
+         'slogan', '连接管理端、PC 与移动端的中性应用基线',
+         'copyright', '花生科技',
+         'official_url', '',
+         'github_url', 'https://github.com/peanut-business/peanut-admin'
+       ),
+       1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
+WHERE @pa_default_tenant_id IS NOT NULL;
+
+INSERT INTO `pa_tenant_setting`
+  (`tenant_id`,`namespace`,`config_json`,`revision`,`create_time`,`update_time`)
+SELECT @pa_default_tenant_id, 'copyright',
+       JSON_OBJECT('config', JSON_ARRAY()),
+       1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
+WHERE @pa_default_tenant_id IS NOT NULL;
+
+INSERT INTO `pa_tenant_setting`
+  (`tenant_id`,`namespace`,`config_json`,`revision`,`create_time`,`update_time`)
+SELECT @pa_default_tenant_id, seed.namespace, seed.config_json,
+       1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
 FROM (
-  SELECT 'name' AS `name`
-  UNION ALL SELECT 'original_id'
-  UNION ALL SELECT 'qr_code'
-  UNION ALL SELECT 'app_id'
-  UNION ALL SELECT 'app_secret'
-) AS `seed`
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config`
-  WHERE `type` = 'mnp_setting' AND `name` = `seed`.`name`
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'oa_setting', `seed`.`name`, `seed`.`value`
-FROM (
-  SELECT 'name' AS `name`, '' AS `value`
-  UNION ALL SELECT 'original_id', ''
-  UNION ALL SELECT 'qr_code', ''
-  UNION ALL SELECT 'app_id', ''
-  UNION ALL SELECT 'app_secret', ''
-  UNION ALL SELECT 'token', ''
-  UNION ALL SELECT 'encoding_aes_key', ''
-  UNION ALL SELECT 'encryption_type', '1'
-  UNION ALL SELECT 'menu', '[]'
-) AS `seed`
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config`
-  WHERE `type` = 'oa_setting' AND `name` = `seed`.`name`
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`)
-SELECT 'open_platform', `seed`.`name`, ''
-FROM (
-  SELECT 'app_id' AS `name`
-  UNION ALL SELECT 'app_secret'
-) AS `seed`
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config`
-  WHERE `type` = 'open_platform' AND `name` = `seed`.`name`
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'recharge', seed.name, seed.value, 0, 0
-FROM (
-  SELECT 'status' AS name, '0' AS value
-  UNION ALL SELECT 'min_amount', '0.01'
-  UNION ALL SELECT 'max_amount', '99999.00'
+  SELECT 'agreement' AS namespace, JSON_OBJECT(
+    'service_title', '', 'service_content', '',
+    'privacy_title', '', 'privacy_content', ''
+  ) AS config_json
+  UNION ALL SELECT 'site-statistics', JSON_OBJECT('clarity_code', '')
+  UNION ALL SELECT 'member-profile', JSON_OBJECT('user_avatar', 'brand/avatar-member.svg')
+  UNION ALL SELECT 'login', JSON_OBJECT(
+    'login_way', JSON_ARRAY(1, 2),
+    'coerce_mobile', 0,
+    'login_agreement', 0,
+    'third_auth', 0,
+    'wechat_auth', 0
+  )
+  UNION ALL SELECT 'web-page', JSON_OBJECT('status', 1, 'page_status', 0, 'page_url', '')
+  UNION ALL SELECT 'hot-search', JSON_OBJECT('status', 0)
 ) seed
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` c WHERE c.`type` = 'recharge' AND c.`name` = seed.name
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'pay', seed.name, '', 0, 0
-FROM (
-  SELECT 'wx_pay_platform_cert_path' AS name
-  UNION ALL SELECT 'ali_pay_seller_id'
-) seed
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` c WHERE c.`type` = 'pay' AND c.`name` = seed.name
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'login', seed.name, seed.value, 0, 0
-FROM (
-  SELECT 'third_auth' AS name,
-    IF(EXISTS(SELECT 1 FROM `pa_config` WHERE `type`='channel' AND `name` IN ('wechat_open_status','wechat_oa_status') AND `value`='1'),'1','0') AS value
-  UNION ALL
-  SELECT 'wechat_auth',
-    IF(EXISTS(SELECT 1 FROM `pa_config` WHERE `type`='channel' AND `name` IN ('wechat_open_status','wechat_oa_status') AND `value`='1'),'1','0')
-) seed
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` c WHERE c.`type`='login' AND c.`name`=seed.name
-);
-INSERT INTO `pa_config` (`type`,`name`,`value`,`create_time`,`update_time`)
-SELECT 'default_image', 'user_avatar', 'brand/avatar-member.svg', 0, 0
-WHERE NOT EXISTS (
-  SELECT 1 FROM `pa_config` WHERE `type`='default_image' AND `name`='user_avatar'
-);
+WHERE @pa_default_tenant_id IS NOT NULL;
 
 INSERT INTO `pa_crontab`
   (`name`,`type`,`command`,`params`,`status`,`expression`,`error`,`last_time`,`time`,`max_time`,`sort`,`remark`,`create_time`,`update_time`,`tenant_id`)
@@ -2243,7 +2359,6 @@ FROM (
   SELECT '网站设置' name,'icon-desktop' icon,90 sort,'/app-setting/website' paths,'system/config/index' component
   UNION ALL SELECT '用户设置','icon-user',80,'/app-setting/user','app-setting/user/index'
   UNION ALL SELECT '支付设置','icon-payment',70,'/app-setting/pay','app-setting/pay/index'
-  UNION ALL SELECT '存储设置','icon-storage',60,'/system/storage','system/storage/index'
 ) seed
 WHERE (SELECT `id` FROM `pa_system_menu` WHERE `type`='M' AND `paths`='/app-setting' ORDER BY `id` LIMIT 1) IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM pa_system_menu m WHERE m.paths=seed.paths);
@@ -2275,10 +2390,6 @@ FROM (
   UNION ALL SELECT '/app-setting/user','登录配置保存','config/login/save'
   UNION ALL SELECT '/app-setting/pay','支付配置查看','setting/pay/config'
   UNION ALL SELECT '/app-setting/pay','支付配置保存','setting/pay/save'
-  UNION ALL SELECT '/app-setting/storage','存储引擎列表','storage/lists'
-  UNION ALL SELECT '/app-setting/storage','存储配置查看','storage/detail'
-  UNION ALL SELECT '/app-setting/storage','存储配置保存','storage/setup'
-  UNION ALL SELECT '/app-setting/storage','默认存储切换','storage/change'
 ) seed
 JOIN pa_system_menu parent ON parent.paths=seed.parent_path AND parent.type='C'
 WHERE NOT EXISTS (
@@ -2404,8 +2515,6 @@ WHERE COALESCE(
 
 DROP TEMPORARY TABLE `pa_admin_permission_seed`;
 
-DELETE FROM `pa_config` WHERE `type` IN ('customer_service','tabbar','transaction');
-
 DELETE FROM `pa_system_menu` WHERE `paths` IN ('/app-setting/decorate','/app-setting/customer-service') OR `perms` IN ('setting/decorate/config','setting/decorate/save','setting/customer-service/config','setting/customer-service/save','setting/pay/config/set');
 
 INSERT INTO `pa_customer_service_setting` (`tenant_id`,`qr_file_id`,`wechat`,`phone`,`service_time`,`create_time`,`update_time`) VALUES (@pa_default_tenant_id,NULL,'','','',0,0);
@@ -2417,7 +2526,27 @@ SELECT @pa_default_tenant_id, providers.`provider`, SHA2(CONCAT('fresh-default:'
 FROM (SELECT 'payment.wechat' AS `provider` UNION ALL SELECT 'payment.alipay' UNION ALL SELECT 'wechat.official-account' UNION ALL SELECT 'oauth.wechat.oa' UNION ALL SELECT 'oauth.wechat.mini-program' UNION ALL SELECT 'oauth.wechat.open-pc') providers;
 
 INSERT INTO `pa_permission` (`key`,`module_key`,`type`,`name`,`description`,`risk_level`,`status`,`manifest_version`,`created_at`,`updated_at`,`retired_at`)
-SELECT DISTINCT `perms`,'peanut.admin',CASE WHEN `type`='A' THEN 'api' ELSE 'menu' END,`name`,NULL,'normal','active','fresh-schema-v1',TIMESTAMP('2026-08-16 00:00:00.000'),TIMESTAMP('2026-08-16 00:00:00.000'),NULL
+SELECT DISTINCT `perms`,CASE
+  WHEN `perms` LIKE 'file/%' OR `perms` LIKE 'upload/%' THEN 'official.file'
+  WHEN `perms` LIKE 'notice/%' THEN 'official.notification'
+  WHEN `perms` LIKE 'setting/web-page/%'
+    OR `perms` LIKE 'setting/mini-program/%'
+    OR `perms` LIKE 'setting/official-account/%'
+    OR `perms` LIKE 'setting/open-platform/%' THEN 'official.oauth'
+  WHEN `perms` LIKE 'setting/pay/%'
+    OR `perms` LIKE 'setting/recharge/%'
+    OR `perms` LIKE 'finance/recharge/%'
+    OR `perms` LIKE 'recharge.recharge/%'
+    OR `perms` LIKE 'finance/refund/%'
+    OR `perms` LIKE 'finance.refund/%' THEN 'official.payment'
+  WHEN `perms` LIKE 'member/%'
+    OR `perms` LIKE 'user.user/%'
+    OR `perms` LIKE 'finance/account-log/%'
+    OR `perms` LIKE 'finance.account_log/%' THEN 'official.member'
+  WHEN `perms` LIKE 'crontab/%' THEN 'official.task'
+  WHEN `perms` IN ('log/export', 'log/export/status', 'log/export/download') THEN 'official.import-export'
+  ELSE 'peanut.admin'
+END,CASE WHEN `type`='A' THEN 'api' ELSE 'menu' END,`name`,NULL,'normal','active','fresh-schema-v1',TIMESTAMP('2026-08-16 00:00:00.000'),TIMESTAMP('2026-08-16 00:00:00.000'),NULL
 FROM `pa_system_menu` WHERE `perms`<>'' AND `is_disable`=0
 ON DUPLICATE KEY UPDATE `module_key`=VALUES(`module_key`),`type`=VALUES(`type`),`name`=VALUES(`name`),`status`='active',`updated_at`=VALUES(`updated_at`),`retired_at`=NULL;
 
@@ -2425,7 +2554,7 @@ INSERT IGNORE INTO `pa_role_permission` (`tenant_id`,`role_id`,`permission_id`,`
 SELECT role.`tenant_id`,role.`id`,permission.`id`,membership.`tenant_member_id`,TIMESTAMP('2026-08-16 00:00:00.000')
 FROM `pa_role` role
 JOIN `pa_member_role` membership ON membership.`tenant_id`=role.`tenant_id` AND membership.`role_id`=role.`id`
-JOIN `pa_permission` permission ON permission.`module_key`='peanut.admin' AND permission.`status`='active'
+JOIN `pa_permission` permission ON permission.`status`='active'
 WHERE role.`tenant_id`=@pa_default_tenant_id AND role.`key`='core.tenant-owner' AND role.`status`='active';
 
 SET @pa_default_tenant_id = NULL;

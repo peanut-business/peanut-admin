@@ -8,9 +8,9 @@ import {
 import { setToken, clearToken } from '@/utils/auth';
 import { selectTenant, tenantLogin, tenantLogout } from '@/api/tenant-session';
 import {
-  isMultiTenantDeployment,
   isTenantAccessToken,
-} from '@/core/tenant-session';
+} from '@peanut-admin/admin/core';
+import { isMultiTenantDeployment } from '@/core/tenant-session';
 import { removeRouteListener } from '@/utils/route-listener';
 import { UserState } from './types';
 import useAppStore from '../app';

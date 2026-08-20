@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\common\service\payment;
 
-use app\common\service\ConfigService;
 use app\common\service\payment\callback\AlipayCallbackParser;
 use app\common\service\payment\callback\WechatCallbackParser;
 use app\common\service\payment\contract\CallbackParserInterface;
@@ -23,13 +22,10 @@ final class PaymentServiceFactory
     private array $config;
     private PaymentTransportInterface $transport;
 
-    /**
-     * 生产调用不传参数，从 pa_config 的 pay 类型读取配置并使用 cURL。
-     * 验收可传入固定配置与假传输，保证不会调用真实商户。
-     */
-    public function __construct(?array $config = null, ?PaymentTransportInterface $transport = null)
+    /** Tenant binding supplies config; tests may supply a fake transport. */
+    public function __construct(array $config, ?PaymentTransportInterface $transport = null)
     {
-        $this->config = $config ?? ConfigService::get('pay');
+        $this->config = $config;
         $this->transport = $transport ?? new CurlPaymentTransport();
     }
 

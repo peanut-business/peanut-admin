@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\crontab;
 
-use app\common\service\tenant\TenantLockNamespace;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\PdoTenantLockStore;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use think\facade\Db;
 
 final class CrontabTenantLock
@@ -14,25 +14,26 @@ final class CrontabTenantLock
         if ($jobId < 1) {
             throw new \InvalidArgumentException('Scheduled job ID is invalid');
         }
-        return (new TenantLockNamespace($scope))->name('crontab:job:' . $jobId);
+        return \PeanutAdmin\Kernel\Tenancy\TenantNamespace::lockName($scope, 'crontab:job:' . $jobId);
     }
 
     public static function acquire(TenantScope $scope, int $jobId): bool
     {
-        $rows = Db::query(
-            'SELECT GET_LOCK(:lock_name, 0) AS acquired',
-            ['lock_name' => self::name($scope, $jobId)]
-        );
-        return (int)($rows[0]['acquired'] ?? 0) === 1;
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof \PDO) {
+            throw new \RuntimeException('Crontab database is unavailable');
+        }
+
+        return (new PdoTenantLockStore($pdo))->acquire($scope, 'crontab:job:' . $jobId);
     }
 
     public static function release(TenantScope $scope, int $jobId): void
     {
         try {
-            Db::query(
-                'SELECT RELEASE_LOCK(:lock_name)',
-                ['lock_name' => self::name($scope, $jobId)]
-            );
+            $pdo = Db::connect()->connect();
+            if ($pdo instanceof \PDO) {
+                (new PdoTenantLockStore($pdo))->release($scope, 'crontab:job:' . $jobId);
+            }
         } catch (\Throwable) {
         }
     }

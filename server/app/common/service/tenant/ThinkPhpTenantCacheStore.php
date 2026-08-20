@@ -15,11 +15,11 @@ final class ThinkPhpTenantCacheStore implements TenantCacheStore
 
     public function set(string $physicalKey, mixed $value, int $ttlSeconds = 0): bool
     {
-        return (bool)Cache::set($physicalKey, $value, $ttlSeconds);
+        return (bool) Cache::set($physicalKey, $value, $ttlSeconds);
     }
 
     public function delete(string $physicalKey): bool
     {
-        return (bool)Cache::delete($physicalKey);
+        return (bool) Cache::delete($physicalKey);
     }
 }

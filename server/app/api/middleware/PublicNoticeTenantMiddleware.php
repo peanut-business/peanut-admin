@@ -6,8 +6,9 @@ namespace app\api\middleware;
 use app\common\service\JsonService;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\tenant\DefaultTenantContextResolver;
+use app\common\service\tenant\TenantEntryBindingResolver;
 
-/** Establishes the active default-Tenant context for anonymous verification-code operations. */
+/** Establishes the Host-bound Tenant context for anonymous verification-code operations. */
 final class PublicNoticeTenantMiddleware
 {
     private const OPERATIONS = ['notice.verification.send', 'notice.verification.verify'];
@@ -18,13 +19,15 @@ final class PublicNoticeTenantMiddleware
             return JsonService::fail('默认租户不可用', null, 50300);
         }
         try {
-            $request->tenantContext = DefaultTenantContextResolver::system(
+            $request->tenantContext = TenantEntryBindingResolver::production()->system(
+                $request,
+                TenantEntryBindingResolver::MEMBER_CLIENT,
                 NoticeTenantContext::VERIFICATION_ACTOR,
                 $operation,
                 DefaultTenantContextResolver::operationId($request),
             );
         } catch (\Throwable) {
-            return JsonService::fail('默认租户不可用', null, 50300);
+            return JsonService::fail('租户入口不可用', null, 50300);
         }
 
         return $next($request);

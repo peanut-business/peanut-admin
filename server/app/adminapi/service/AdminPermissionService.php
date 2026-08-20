@@ -5,7 +5,7 @@ namespace app\adminapi\service;
 
 use app\common\model\auth\SystemMenu;
 use app\common\service\CoreServiceOverrides;
-use app\common\service\platform\InstanceControlPlanePolicy;
+use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
