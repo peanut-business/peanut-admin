@@ -194,7 +194,7 @@ try {
 
     $expected = ['.peanut/application-manifest.json'];
     foreach ($inventory['files'] as $entry) {
-        if ($entry['classification'] === 'excluded') continue;
+        if ($entry['classification'] === 'excluded' || !in_array('standard', $entry['profiles'], true)) continue;
         $expected[] = $entry['target'];
         if (in_array($entry['classification'], ['managed', 'generated-managed'], true)) {
             $expected[] = '.peanut/scaffold-baseline/' . $inventory['template_version'] . '/files/' . $entry['target'];

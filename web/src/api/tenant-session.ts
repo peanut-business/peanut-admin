@@ -22,8 +22,15 @@ type TenantEnvelope<T> =
     };
 
 function tenantData<T>(response: TenantEnvelope<T>): T {
-  if ('code' in response) {
-    throw new Error(response.msg || 'Tenant session request failed.');
+  if (
+    !response ||
+    typeof response !== 'object' ||
+    'code' in response ||
+    response.data === null ||
+    response.data === undefined
+  ) {
+    const failed = response as Partial<{ msg: string }> | null | undefined;
+    throw new Error(failed?.msg || 'Tenant session returned no session data.');
   }
   return response.data;
 }

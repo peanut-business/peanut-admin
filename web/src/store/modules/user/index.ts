@@ -84,6 +84,9 @@ const useUserStore = defineStore('user', {
             loginForm.username,
             loginForm.password
           );
+          if (!outcome || typeof outcome !== 'object') {
+            throw new Error('Tenant session returned no session data.');
+          }
           if (outcome.state === 'tenant_selection_required') {
             if (!loginForm.tenantId) return outcome;
             const authenticated = await selectTenant(
