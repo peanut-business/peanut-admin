@@ -868,6 +868,14 @@ class Runner:
 
     def generated_application(self) -> None:
         log = self.group_log("generated-application")
+        composer_env = {"COMPOSER_CACHE_DIR": str(self.cache / "composer")}
+        if self.created_candidate_vendor:
+            command(
+                ["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"],
+                cwd=ROOT / "server",
+                env=composer_env,
+                log=log,
+            )
         create_app_excludes = self.cache / "create-app-git-excludes"
         create_app_excludes.write_text(
             f"/{self.output.relative_to(ROOT).as_posix()}/\n",
@@ -881,11 +889,8 @@ class Runner:
             "GIT_CONFIG_KEY_0": "core.excludesFile",
             "GIT_CONFIG_VALUE_0": str(create_app_excludes),
         }, log=log)
-        composer_env = {"COMPOSER_CACHE_DIR": str(self.cache / "composer")}
         command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=self.generated / "server", env=composer_env, log=log)
         command(["php", "-r", "require 'vendor/autoload.php'; echo 'autoload=ok\\n';"], cwd=self.generated / "server", log=log)
-        if self.created_candidate_vendor:
-            command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=ROOT / "server", env=composer_env, log=log)
         command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=self.generated / "web", log=log)
         command(["pnpm", "run", "build"], cwd=self.generated / "web", log=log)
         command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=self.generated / "pc", log=log)
