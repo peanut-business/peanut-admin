@@ -841,7 +841,9 @@ class Runner:
         )
         result = command(
             ["php", "-r", guard_php],
-            cwd=project_root,
+            # The generated application intentionally omits the qualification-only
+            # P0-E resource registration; the candidate root owns this Gate contract.
+            cwd=ROOT,
             env=self.db_env(database, mode) | {"P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"]},
             capture=True,
         )
