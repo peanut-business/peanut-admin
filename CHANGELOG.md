@@ -3,6 +3,13 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [3.0.4] - 2026-08-21
+
+### Fixed
+
+- Shared Admin Hosts now receive only the `member-api` default-Tenant binding; `admin-web`
+  remains unbound so Tenant-owner login can select an active Tenant membership.
+
 ## [3.0.3] - 2026-08-21
 
 ### Fixed

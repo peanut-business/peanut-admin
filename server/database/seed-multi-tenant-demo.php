@@ -32,10 +32,11 @@ function demoMultiRequired(string $name): string
     return $value;
 }
 
-function demoMultiBinding(PDO $pdo, int $tenantId, string $host): void
+/** @param list<string> $clientKeys */
+function demoMultiBinding(PDO $pdo, int $tenantId, string $host, array $clientKeys = ['admin-web', 'member-api']): void
 {
     $host = TenantEntryBindingResolver::normalizeHost($host);
-    foreach (['admin-web', 'member-api'] as $clientKey) {
+    foreach ($clientKeys as $clientKey) {
         $query = $pdo->prepare(
             'SELECT id, tenant_id, status FROM pa_tenant_entry_binding WHERE host = ? AND client_key = ? LIMIT 1'
         );
@@ -358,9 +359,7 @@ SQL);
     }
     $expectedBindings = [];
     foreach ($sharedAdminHosts as $host) {
-        foreach (['admin-web', 'member-api'] as $clientKey) {
-            $expectedBindings[$host . "\0" . $clientKey] = ['default', 'active'];
-        }
+        $expectedBindings[$host . "\0member-api"] = ['default', 'active'];
     }
     foreach ([$tenantAHost => 'tenant-a', $tenantBHost => 'tenant-b'] as $host => $code) {
         foreach (['admin-web', 'member-api'] as $clientKey) {
@@ -518,7 +517,7 @@ function demoMultiMain(): int
             throw new RuntimeException('demo default Tenant is unavailable');
         }
         foreach ($sharedAdminHosts as $sharedAdminHost) {
-            demoMultiBinding($pdo, (int)$defaultTenant['id'], $sharedAdminHost);
+            demoMultiBinding($pdo, (int)$defaultTenant['id'], $sharedAdminHost, ['member-api']);
         }
         demoMultiBinding($pdo, $tenantA['tenant_id'], $tenantAHost);
         demoMultiBinding($pdo, $tenantB['tenant_id'], $tenantBHost);
