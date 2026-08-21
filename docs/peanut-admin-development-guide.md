@@ -1,4 +1,4 @@
-# Peanut Admin 2.0 开发指南
+# Peanut Admin 3.0 开发指南
 
 > 本文件是 Peanut Admin 源仓的人类可读版本。create-app 会在派生应用的同一路径生成一份
 > 应用专属简版，不会复制完整 `docs-site/`。详细、可导航的公开版本见
@@ -13,7 +13,7 @@
   实例不能共享私有表。
 - 管理登录唯一使用 `Account/Credential`，租户成员唯一使用 `TenantMember`；客户侧业务
   会员使用独立 `pa_member`。登录身份、组织成员和业务档案不得混写。
-- 2.0 只支持空库安装。`server/database/init.sql` 是 canonical Schema，
+- 3.0 只支持空库安装。`server/database/init.sql` 是 canonical Schema，
   `server/database/migrations/` 只接收基线后的追加式变更。
 - 新业务放入独立 Module，通过公开命令、查询 DTO 或已验证的事件合同协作，不直接访问
   其他 Module 私有表。
@@ -78,16 +78,16 @@ ID、环境和地址，再连接数据库、启动服务或执行迁移。派生
 ```bash
 export DEPLOYMENT_MODE=standalone
 export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
+export ADMIN_INITIAL_PASSWORD='<至少 12 位；演示模式固定为 peanut1234>'
 export TENANT_IDENTIFIER_HMAC_KEY='<至少 32 字节稳定随机值>'
 export PLATFORM_IDENTIFIER_HMAC_KEY='<另一项至少 32 字节稳定随机值>'
 
 php server/database/install.php
-php server/database/migrate.php --current
+php server/database/install.php --migrate --current
 ```
 
 `multi-tenant` 模式另需独立的 `PLATFORM_INITIAL_EMAIL` 与
-`PLATFORM_INITIAL_PASSWORD`。2.0 不接受 1.x 数据库、`--adopt-existing`、legacy map 或
+`PLATFORM_INITIAL_PASSWORD`。3.0 不接受旧大版本数据库、`--adopt-existing`、legacy map 或
 scaffold 原地升级。
 
 ## 进一步阅读

@@ -16,7 +16,7 @@ final class TenantOwnerInvitationValidate extends Validate
         'tenant_id' => 'require|integer|gt:0',
         'invitation_id' => 'require|integer|gt:0',
         'token' => 'require|regex:/^[A-Za-z0-9_-]{43}$/',
-        'new_account_password' => 'max:4096',
+        'new_account_password' => 'length:12,128',
     ];
 
     protected $scene = [

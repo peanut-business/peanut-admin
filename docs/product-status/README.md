@@ -26,9 +26,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。v3.0.0 候选正在统一版本合同、脚手架工具、部署安全、Tenant 边界和富文本安全；历史 v2.1.5 资格证据保留为上一版本事实，3.0.0 尚未发布。
+> 总体状态：**进行中**。v3.0.5 候选在 v3.0.4 基础上统一演示密码合同、修正 255 字符邮箱登录边界，并收口发布、create-app、独立应用和脚手架升级文档；共享 Admin Host 只保留 member-api 默认绑定，admin-web 登录按 TenantMember 触发 Tenant 选择。
 >
-> 事实基线：`main@aefc5779c97db1cd17442269e50156baeaa4ba0c`，复核日期：`2026-08-21`。
+> 事实基线：`main@3c9f84102bb3fba161883fd683063c5d451217e2`，复核日期：`2026-08-21`。
 
 ### 已验证可用
 

@@ -3,6 +3,16 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [3.0.5] - Pending qualification
+
+### Fixed
+
+- Demo overlays and local demo scripts now use `peanut1234`; the shorter credential is accepted
+  only while `PEANUT_DEMO_MODE=enabled`, while normal account passwords retain Core policy.
+- Admin login validation now matches the Core email contract through 255 characters.
+- Release, `create-app`, independent application, and scaffold-upgrade documentation now describe
+  the main/tag/manual Release flow and the separate application lifecycle.
+
 ## [3.0.4] - 2026-08-21
 
 ### Fixed
@@ -29,8 +39,8 @@ and the two public core packages have independent version histories.
 
 ### Fixed
 
-- Unified the disposable Demo password with Core Alpha.6's 12-character minimum so fresh
-  Standalone and Multi-tenant Demo installations can bootstrap successfully.
+- Unified the disposable Demo password as `peanut1234`. This ten-character credential is
+  accepted only by the Demo overlay; normal accounts continue to use Core's stronger policy.
 
 ## [3.0.0] - 2026-08-20
 

@@ -2,10 +2,10 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "Peanut Admin 3.0.0 release dependency SBOM",
-  "documentNamespace": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.0/sbom",
+  "name": "Peanut Admin 3.0.5 release dependency SBOM",
+  "documentNamespace": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.5/sbom",
   "creationInfo": {
-    "created": "2026-08-20T00:00:00Z",
+    "created": "2026-08-21T00:00:00Z",
     "creators": [
       "Organization: 花生科技",
       "Tool: scripts/generate-release-legal.mjs"
@@ -31,7 +31,7 @@
     {
       "name": "Peanut Admin",
       "SPDXID": "SPDXRef-Package-Peanut-Admin",
-      "versionInfo": "3.0.0",
+      "versionInfo": "3.0.5",
       "downloadLocation": "https://github.com/peanut-business/peanut-admin",
       "filesAnalyzed": false,
       "licenseConcluded": "LicenseRef-Peanut-Admin-Proprietary",
@@ -42,7 +42,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:github/peanut-business/peanut-admin@3.0.0"
+          "referenceLocator": "pkg:github/peanut-business/peanut-admin@3.0.5"
         }
       ]
     },
@@ -409,8 +409,8 @@
     },
     {
       "name": "peanut-admin/core",
-      "SPDXID": "SPDXRef-Package-composer-7b47073ddf220de36ff6",
-      "versionInfo": "0.1.0-alpha.6",
+      "SPDXID": "SPDXRef-Package-composer-96ba36dc253139e9a689",
+      "versionInfo": "0.1.0-alpha.7",
       "downloadLocation": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
@@ -422,7 +422,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.6"
+          "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.7"
         }
       ]
     },
@@ -42779,9 +42779,9 @@
     },
     {
       "name": "@peanut-admin/admin",
-      "SPDXID": "SPDXRef-Package-web-a0fda5a76b14e826d643",
-      "versionInfo": "0.1.0-alpha.6",
-      "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.6",
+      "SPDXID": "SPDXRef-Package-web-a14e652561c2b68a3a80",
+      "versionInfo": "0.1.0-alpha.7",
+      "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.7",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "Apache-2.0",
@@ -42792,7 +42792,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.6"
+          "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.7"
         }
       ]
     },
@@ -60737,7 +60737,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-composer-7b47073ddf220de36ff6",
+      "relatedSpdxElement": "SPDXRef-Package-composer-96ba36dc253139e9a689",
       "comment": "composer; runtime"
     },
     {
@@ -74117,7 +74117,7 @@
     {
       "spdxElementId": "SPDXRef-Package-Peanut-Admin",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-web-a0fda5a76b14e826d643",
+      "relatedSpdxElement": "SPDXRef-Package-web-a14e652561c2b68a3a80",
       "comment": "web; static-build-input"
     },
     {

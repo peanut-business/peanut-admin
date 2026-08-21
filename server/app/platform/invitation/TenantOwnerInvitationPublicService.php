@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\invitation;
 
+use app\common\service\ApplicationPasswordPolicy;
 use app\platform\service\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -10,7 +11,6 @@ use PDO;
 use PeanutAdmin\Kernel\Identity\AccountStatus;
 use PeanutAdmin\Kernel\Identity\CredentialStatus;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
-use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\MembershipRepository;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
@@ -35,7 +35,7 @@ final class TenantOwnerInvitationPublicService
         $this->identity = new PdoIdentityRepository($pdo);
         $this->memberships = new PdoMembershipRepository($pdo);
         $this->audit = new PdoAuditRepository($pdo);
-        $this->passwords = new PasswordHasher();
+        $this->passwords = ApplicationPasswordPolicy::hasher();
     }
 
     /** @return array<string,mixed> */

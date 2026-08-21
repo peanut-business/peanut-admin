@@ -11,12 +11,12 @@ Verified: 2026-08-20 by real browser login against every account below on the re
 
 | Environment | Login URL | Account | Password | Password policy |
 | --- | --- | --- | --- | --- |
-| Production-candidate Platform | https://pa-platform.007345.xyz/platform/ | `platform@pa-demo.example` | `peanut1234xx` | Demo credential; Platform mutations are server-rejected while demo mode is enabled |
-| Production-candidate bootstrap Admin | https://pa-admin.007345.xyz/admin/ | `admin@pa-demo.example` | `peanut1234xx` | Demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production-candidate shared Admin | https://pa-admin.007345.xyz/admin/ | `tenant-a@pa-demo.example` | `peanut1234xx` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production-candidate Tenant A | https://pa-tenant-a.007345.xyz/admin/ | `tenant-a@pa-demo.example` | `peanut1234xx` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production-candidate Tenant B | https://pa-tenant-b.007345.xyz/admin/ | `tenant-b@pa-demo.example` | `peanut1234xx` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production Standalone Admin demo | https://peanut-admin.007345.xyz/admin/ | `admin@peanut-admin.007345.xyz` | `peanut1234xx` | Demo credential; critical mutations are server-rejected while demo mode is enabled |
+| Production-candidate Platform | https://pa-platform.007345.xyz/platform/ | `platform@pa-demo.example` | `peanut1234` | Demo credential; Platform mutations are server-rejected while demo mode is enabled |
+| Production-candidate bootstrap Admin | https://pa-admin.007345.xyz/admin/ | `admin@pa-demo.example` | `peanut1234` | Demo credential; critical mutations are server-rejected while demo mode is enabled |
+| Production-candidate shared Admin | https://pa-admin.007345.xyz/admin/ | `tenant-a@pa-demo.example` | `peanut1234` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
+| Production-candidate Tenant A | https://pa-tenant-a.007345.xyz/admin/ | `tenant-a@pa-demo.example` | `peanut1234` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
+| Production-candidate Tenant B | https://pa-tenant-b.007345.xyz/admin/ | `tenant-b@pa-demo.example` | `peanut1234` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
+| Production Standalone Admin demo | https://peanut-admin.007345.xyz/admin/ | `admin@peanut-admin.007345.xyz` | `peanut1234` | Demo credential; critical mutations are server-rejected while demo mode is enabled |
 
 Unauthenticated addresses:
 

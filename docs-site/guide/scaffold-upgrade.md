@@ -1,14 +1,14 @@
 ---
 title: 派生应用升级
-description: 2.x 脚手架受管文件升级、应用代码所有权和数据库迁移边界。
+description: 3.x 脚手架受管文件升级、应用代码所有权和数据库迁移边界。
 ---
 
 # 派生应用升级
 
 ## 5 分钟结论
 
-2.x 派生应用可以在两个不可变 scaffold Release 之间升级。当前已经用真实生成应用验证
-`v2.0.0 -> v2.0.1` 已完成 `preflight -> apply -> verify -> recover` 闭环；`v2.1.4` 沿用同一合同。
+3.x 派生应用可以在两个不可变 scaffold Release 之间升级。当前 `v3.0.4` 是基线，后续
+3.x release 沿用 `preflight -> apply -> verify -> recover` 合同。
 
 执行器只更新 Release manifest 中标为 `managed` 或 `generated-managed` 的 Peanut 框架文件。
 你的 `app-owned` 业务代码、页面、业务配置、业务 Schema 和部署密钥不会被自动覆盖；发现
@@ -21,8 +21,8 @@ description: 2.x 脚手架受管文件升级、应用代码所有权和数据库
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
-  --from-manifest=/absolute/path/to/scaffold/releases/v2.0.0/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v2.1.4/scaffold-manifest.json
+  --from-manifest=/absolute/path/to/scaffold/releases/v3.0.4/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v3.0.5/scaffold-manifest.json
 ```
 
 只有输出 `status=ready` 且冲突数为 `0` 时才继续：
@@ -48,7 +48,7 @@ php scripts/scaffold-upgrade recover \
 ## 它不负责什么
 
 脚手架执行器不运行 Composer/npm，不执行数据库 migration，也不重启应用服务。部署中的
-前端、后端和数据库升级由 `scripts/deploy-release --upgrade --from <当前版本>` 负责，并且
+前端、后端和数据库升级由 `scripts/deploy-release --update --from <当前版本>` 负责，并且
 必须使用同一个不可变 Release、显式 transition、配对备份和迁移账本。应用自己的业务 migration
 仍由应用 owner 维护；2.0.0 也不接受 1.x 数据库或脚手架原地升级。
 

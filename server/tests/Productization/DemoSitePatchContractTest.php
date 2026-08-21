@@ -48,6 +48,10 @@ foreach ([
     $expect(str_contains($seed, $token), 'demo seed lost required guard: ' . $token);
 }
 $expect(
+    str_contains($seed, "demoMultiBinding(\$pdo, (int)\$defaultTenant['id'], \$sharedAdminHost, ['member-api']);"),
+    'shared Admin demo Host must leave admin-web unbound so account-driven Tenant selection is exercised'
+);
+$expect(
     str_contains($seed, "'tenant-a'")
         && str_contains($seed, "'tenant-b'")
         && str_contains($seed, "['default', 'tenant-a', 'tenant-b']"),

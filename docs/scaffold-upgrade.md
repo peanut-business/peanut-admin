@@ -1,16 +1,16 @@
 # 脚手架升级执行器
 
-## 当前 2.x 路径
+## 当前 3.x 路径
 
-2.x 派生应用现在可以使用同一套 `preflight -> apply -> verify -> recover` 执行器在不可变
-scaffold Release 之间升级。`v2.0.0 -> v2.0.1` 已完成真实资格；`v2.1.1` 继续使用同一执行器，
-保留 `app-owned` 修改并完成恢复。
+3.x 派生应用现在可以使用同一套 `preflight -> apply -> verify -> recover` 执行器在不可变
+scaffold Release 之间升级。`v3.0.4` 是当前脚手架基线，后续 3.x patch/minor release
+继续使用同一执行器，保留 `app-owned` 修改并完成恢复。
 
 ```bash
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
-  --from-manifest=/absolute/path/to/scaffold/releases/v2.0.0/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v2.1.1/scaffold-manifest.json
+  --from-manifest=/absolute/path/to/scaffold/releases/v3.0.4/scaffold-manifest.json \
+  --to-manifest=/absolute/path/to/scaffold/releases/v3.0.5/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
@@ -28,9 +28,9 @@ php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/applicatio
 `--fresh`（配对备份、显式确认和重建空库）。升级前先运行 `preflight`，看到 `status=ready`
 且冲突为 0 后再 apply。
 
-## 1.x 历史归档
+## 1.x/2.x 历史归档
 
-> 以下内容是 1.x 的历史证据，不是 2.x 的默认安装或升级路径。2.0.0 仍然是 fresh-only，
+> 以下内容是旧版本的历史证据，不是 3.x 的默认安装或升级路径。3.x 仍然是 fresh-only，
 > 不接受 1.x 数据库或脚手架原地升级。
 
 `scripts/scaffold-upgrade` 曾为 `scripts/create-app` 创建的独立应用提供可执行的

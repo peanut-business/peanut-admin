@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
@@ -79,13 +78,13 @@ function initialAdminEmail(string $serverDir): string
 function validateInitialAdminPassword(string $password): void
 {
     if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
-        if ($password !== 'peanut1234xx') {
-            throw new RuntimeException('演示模式的初始管理员密码必须统一为 peanut1234xx');
+        if ($password !== 'peanut1234') {
+            throw new RuntimeException('演示模式的初始管理员密码必须统一为 peanut1234');
         }
         return;
     }
-    if (strlen($password) < 6) {
-        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 6 位');
+    if (strlen($password) < 12) {
+        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 12 位');
     }
 }
 
@@ -118,13 +117,13 @@ function initialPlatformCredentials(string $serverDir, string $adminEmail): ?arr
         ? $environmentPassword
         : ($fileConfig['PLATFORM_INITIAL_PASSWORD'] ?? '');
     if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
-        if ((string)$password !== 'peanut1234xx') {
-            throw new RuntimeException('演示模式的 Platform 初始密码必须统一为 peanut1234xx');
+        if ((string)$password !== 'peanut1234') {
+            throw new RuntimeException('演示模式的 Platform 初始密码必须统一为 peanut1234');
         }
         return ['email' => $email, 'password' => (string)$password];
     }
-    if (strlen((string)$password) < 6) {
-        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 6 位');
+    if (strlen((string)$password) < 12) {
+        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 12 位');
     }
 
     return ['email' => $email, 'password' => (string)$password];
@@ -243,7 +242,7 @@ function initializeCoreIdentity(
         new PdoMembershipRepository($pdo),
         new PdoPlatformRepository($pdo),
         new PdoAuditRepository($pdo),
-        new PasswordHasher()
+        \app\common\service\ApplicationPasswordPolicy::hasher()
     );
     $separatePlatformOperator = $platformCredentials !== null;
     $demoBootstrapPassword = \app\common\service\DemoAccountPolicy::enabled()

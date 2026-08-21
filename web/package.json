@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@peanut-admin/admin": "0.1.0-alpha.6",
+    "@peanut-admin/admin": "0.1.0-alpha.7",
     "@vueuse/core": "^9.3.0",
     "axios": "^0.24.0",
     "dayjs": "^1.11.5",

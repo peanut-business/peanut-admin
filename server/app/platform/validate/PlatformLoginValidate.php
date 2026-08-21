@@ -8,7 +8,7 @@ use think\Validate;
 final class PlatformLoginValidate extends Validate
 {
     protected $rule = [
-        'email' => 'require|email|max:190',
+        'email' => 'require|email|max:255',
         'password' => 'require|max:4096',
     ];
 }
