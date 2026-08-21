@@ -95,8 +95,8 @@ validate_password() {
   if [[ "$DEMO_MODE" == enabled && "$value" == peanut1234 ]]; then
     return 0
   fi
-  [[ ${#value} -ge 6 ]] \
-    || fail "$name must be at least 6 characters"
+  [[ ${#value} -ge 12 ]] \
+    || fail "$name must be at least 12 characters"
 }
 
 validate_host() {
