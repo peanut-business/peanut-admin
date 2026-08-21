@@ -257,10 +257,12 @@ metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // 
 if [[ "$UPDATE" != 1 && ( -z "$ADMIN_EMAIL" || -z "$ADMIN_PASSWORD" ) ]]; then
   fail 'fresh deployment requires PEANUT_GENERATED_ADMIN_EMAIL and PEANUT_GENERATED_ADMIN_PASSWORD'
 fi
-validate_env_value PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
-validate_env_value PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
-validate_email PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
-validate_password PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+if [[ "$UPDATE" != 1 ]]; then
+  validate_env_value PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
+  validate_env_value PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+  validate_email PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
+  validate_password PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+fi
 if [[ "$UPDATE" != 1 && "$deployment_mode" == multi-tenant ]]; then
   [[ -n "$PLATFORM_EMAIL" && -n "$PLATFORM_PASSWORD" ]] \
     || fail 'fresh multi-tenant deployment requires PEANUT_GENERATED_PLATFORM_EMAIL and PEANUT_GENERATED_PLATFORM_PASSWORD'
@@ -388,6 +390,7 @@ secrets="${11}"
 overlay="$(decode_remote_arg "${12:-__PEANUT_EMPTY__}")"
 expected_overlay_sha="$(decode_remote_arg "${13:-__PEANUT_EMPTY__}")"
 expected_archive_sha="${14:-}"
+version="${tag#v}"
 
 fail() { printf 'remote deploy: %s\n' "$1" >&2; exit 1; }
 [[ "$root" == /www/docker/peanut-admin || "$root" == /www/docker/peanut-admin-candidate ]] || fail 'unregistered deployment root'
