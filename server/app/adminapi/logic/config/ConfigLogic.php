@@ -31,7 +31,7 @@ class ConfigLogic extends BaseLogic
         return new WebsiteConfigService(
             new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
-            static fn(string $value): string => FileService::setFileUrl($value),
+            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
         );
     }
 
@@ -68,9 +68,15 @@ class ConfigLogic extends BaseLogic
     {
         TenantApplicationSettingService::replaceAgreement($context, [
             'service_title' => trim((string)$params['service_title']),
-            'service_content' => RichTextResourceService::forStorage((string)$params['service_content']),
+            'service_content' => RichTextResourceService::forStorage(
+                (string)$params['service_content'],
+                $context,
+            ),
             'privacy_title' => trim((string)$params['privacy_title']),
-            'privacy_content' => RichTextResourceService::forStorage((string)$params['privacy_content']),
+            'privacy_content' => RichTextResourceService::forStorage(
+                (string)$params['privacy_content'],
+                $context,
+            ),
         ]);
         return true;
     }
@@ -109,7 +115,7 @@ class ConfigLogic extends BaseLogic
     ): bool
     {
         TenantApplicationSettingService::replaceMemberProfile($context, [
-            'user_avatar' => FileService::setFileUrl((string)$params['default_avatar']),
+            'user_avatar' => FileService::setTenantFileUrl($context, (string)$params['default_avatar']),
         ]);
         return true;
     }

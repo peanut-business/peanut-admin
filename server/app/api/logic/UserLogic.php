@@ -74,7 +74,7 @@ class UserLogic extends BaseLogic
 
             $value = $params['value'];
             if ($field === 'avatar') {
-                $value = FileService::setFileUrl((string) $value);
+                $value = FileService::setTenantFileUrl($context, (string) $value);
             }
 
             if (MemberTenantRepository::members($context)->where('id', $memberId)->update([$field => $value]) !== 1) {

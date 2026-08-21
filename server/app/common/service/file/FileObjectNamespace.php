@@ -26,6 +26,11 @@ final class FileObjectNamespace
         return TenantObjectNamespace::ownsUri(FileTenantContext::tenantId($context), $uri);
     }
 
+    public static function ownsTenantUri(int $tenantId, string $uri): bool
+    {
+        return TenantObjectNamespace::ownsUri($tenantId, $uri);
+    }
+
     public static function assertOwnedUri(AuthenticatedMemberContext|TenantContext $context, string $uri): void
     {
         if ($uri === '' || !self::ownsUri($context, $uri)) {

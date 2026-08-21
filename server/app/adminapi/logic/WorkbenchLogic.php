@@ -46,7 +46,7 @@ class WorkbenchLogic extends BaseLogic
         return new WebsiteConfigService(
             new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
-            static fn(string $value): string => FileService::setFileUrl($value),
+            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
         );
     }
 
