@@ -1,6 +1,6 @@
 # 当前任务清单
 
-> 更新时间：2026-08-21
+> 更新时间：2026-08-22
 >
 > 本页是当前开发工作的人工阅读入口。能力的机器状态仍以
 > [`capability-ledger.json`](./capability-ledger.json) 为准；这里记录下一步要做什么、
@@ -9,7 +9,9 @@
 ## 当前结论
 
 Peanut Admin `v2.1.5` 的正式源码发布和部署证据已封存为历史基线；当前正式消费版本为
-`v3.0.4`。下一补丁必须绑定最新 `origin/main`，再创建 tag、GitHub Release 和演示部署。
+`v3.0.5`。该版本已绑定 `origin/main` 的固定候选，完成 annotated tag、GitHub Release、
+L2 P0-E 7/7，以及登记的 Standalone/Multi-tenant Demo 更新和登录核验。后续补丁仍必须遵守
+main-first、固定候选和一次资格规则。
 此前 `v2.1.4` 已完成正式源码发布和部署收口：P0-E 7/7 通过，Standalone 从
 `v2.0.1` 升级，多租户候选从空库 fresh 安装并叠加可丢弃演示层，平台/共享 Admin/Tenant A/
 Tenant B 四个公网 Host 已完成真实浏览器验收。无秘密 post-deployment 快照已封存；后续
