@@ -1013,28 +1013,29 @@ class Runner:
         """
         host = self.plan["browser_hosts"]["tenant_admin"]
         escaped_host = host.replace("'", "''")
-        database_sql = (
-            "INSERT INTO pa_tenant_entry_binding (tenant_id, host, client_key, status) "
-            "SELECT t.id, '" + escaped_host + "', 'admin-web', 'active' "
-            "FROM pa_tenant t "
-            "WHERE t.code = 'default' "
-            "AND NOT EXISTS ("
-            "SELECT 1 FROM pa_tenant_entry_binding b "
-            "WHERE b.host = '" + escaped_host + "' AND b.client_key = 'admin-web'"
-            ");"
-        )
-        self.remote_mysql(database_sql, database=database)
-        count = self.remote_mysql(
-            "SELECT COUNT(*) FROM pa_tenant_entry_binding "
-            "WHERE host = '" + escaped_host + "' AND client_key = 'admin-web'",
-            database=database,
-        ).strip()
-        if count != "1":
-            fail("multi-tenant browser fixture did not create its Host binding")
+        for client in ("admin-web", "member-api"):
+            database_sql = (
+                "INSERT INTO pa_tenant_entry_binding (tenant_id, host, client_key, status) "
+                "SELECT t.id, '" + escaped_host + "', '" + client + "', 'active' "
+                "FROM pa_tenant t "
+                "WHERE t.code = 'default' "
+                "AND NOT EXISTS ("
+                "SELECT 1 FROM pa_tenant_entry_binding b "
+                "WHERE b.host = '" + escaped_host + "' AND b.client_key = '" + client + "'"
+                ");"
+            )
+            self.remote_mysql(database_sql, database=database)
+            count = self.remote_mysql(
+                "SELECT COUNT(*) FROM pa_tenant_entry_binding "
+                "WHERE host = '" + escaped_host + "' AND client_key = '" + client + "'",
+                database=database,
+            ).strip()
+            if count != "1":
+                fail(f"multi-tenant browser fixture did not create its {client} Host binding")
         with log.open("a", encoding="utf-8") as stream:
             stream.write(
                 "P0-E browser fixture seeded default Tenant binding "
-                f"host={host} client=admin-web\n"
+                f"host={host} clients=admin-web,member-api\n"
             )
 
     def plugin_lifecycle_at(self, project_root: Path, scenario: str, group: str) -> None:
