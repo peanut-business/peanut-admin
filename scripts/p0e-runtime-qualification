@@ -748,8 +748,8 @@ class Runner:
         if consumer not in ("host", "container"):
             fail(f"invalid database consumer: {consumer}")
         selector = command([
-            str(REGISTRY_TOOL), "database-env", "--deployment-target", "local-production-preview",
-            "--consumer", "container", "--resource-id", RESOURCE_ID, "--database-name", database,
+            str(REGISTRY_TOOL), "database-env", "--deployment-target", "local-development",
+            "--consumer", "host", "--resource-id", RESOURCE_ID, "--database-name", database,
         ], capture=True).stdout
         values: dict[str, str] = {}
         for line in selector.splitlines():
@@ -764,6 +764,8 @@ class Runner:
         values.update({
             "APP_ENV": "production",
             "PEANUT_DEPLOYMENT_TARGET": "local-production-preview",
+            "PEANUT_DATABASE_CONSUMER": "container",
+            "PEANUT_DATABASE_ENDPOINT_ID": "peanut-admin-p0e-mysql84-gate-docker-direct",
             "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
             "DB_USER": required_environment("P0E_DB_USER"),
             "DB_PASS": required_environment("P0E_DB_PASSWORD"),
