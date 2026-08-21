@@ -9,6 +9,12 @@
         "vue"
     ],
     "homepage": "https://github.com/scaffold-vendor-token/scaffold-package-token",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/peanut-opensource/peanut-admin-core-php.git"
+        }
+    ],
     "license": "proprietary",
     "authors": [
         {
@@ -25,7 +31,7 @@
         "qiniu/php-sdk": "^7.4",
         "aliyuncs/oss-sdk-php": "^2.4",
         "qcloud/cos-sdk-v5": "^2.5",
-        "peanut-admin/core": "0.1.0-alpha.6",
+        "peanut-admin/core": "0.1.0-alpha.7",
         "symfony/html-sanitizer": "^7.3",
         "composer/semver": "^3.4",
         "opis/json-schema": "^2.6"
