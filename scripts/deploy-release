@@ -21,6 +21,8 @@ ADMIN_PASSWORD="${PEANUT_GENERATED_ADMIN_PASSWORD:-}"
 PLATFORM_EMAIL="${PEANUT_GENERATED_PLATFORM_EMAIL:-}"
 PLATFORM_PASSWORD="${PEANUT_GENERATED_PLATFORM_PASSWORD:-}"
 DEMO_MODE="${PEANUT_DEMO_MODE:-disabled}"
+DEMO_MODE_SET=0
+[[ -n "${PEANUT_DEMO_MODE+x}" ]] && DEMO_MODE_SET=1
 DEMO_TENANT_A_EMAIL="${PEANUT_DEMO_TENANT_A_EMAIL:-}"
 DEMO_TENANT_B_EMAIL="${PEANUT_DEMO_TENANT_B_EMAIL:-}"
 DEMO_SHARED_PASSWORD="${PEANUT_DEMO_SHARED_PASSWORD:-}"
@@ -190,7 +192,7 @@ if [[ -n "$OVERLAY" ]]; then
     [[ -n "$value" ]] || fail 'overlay deployment is missing a required PEANUT_DEMO_* value'
   done
 fi
-if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled ]]; then
+if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled && "$UPDATE" != 1 ]]; then
   fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
 fi
 if [[ -n "$OVERLAY" ]]; then
@@ -257,10 +259,12 @@ metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // 
 if [[ "$UPDATE" != 1 && ( -z "$ADMIN_EMAIL" || -z "$ADMIN_PASSWORD" ) ]]; then
   fail 'fresh deployment requires PEANUT_GENERATED_ADMIN_EMAIL and PEANUT_GENERATED_ADMIN_PASSWORD'
 fi
-validate_env_value PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
-validate_env_value PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
-validate_email PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
-validate_password PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+if [[ "$UPDATE" != 1 ]]; then
+  validate_env_value PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
+  validate_env_value PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+  validate_email PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
+  validate_password PEANUT_GENERATED_ADMIN_PASSWORD "$ADMIN_PASSWORD"
+fi
 if [[ "$UPDATE" != 1 && "$deployment_mode" == multi-tenant ]]; then
   [[ -n "$PLATFORM_EMAIL" && -n "$PLATFORM_PASSWORD" ]] \
     || fail 'fresh multi-tenant deployment requires PEANUT_GENERATED_PLATFORM_EMAIL and PEANUT_GENERATED_PLATFORM_PASSWORD'
@@ -388,6 +392,7 @@ secrets="${11}"
 overlay="$(decode_remote_arg "${12:-__PEANUT_EMPTY__}")"
 expected_overlay_sha="$(decode_remote_arg "${13:-__PEANUT_EMPTY__}")"
 expected_archive_sha="${14:-}"
+version="${tag#v}"
 
 fail() { printf 'remote deploy: %s\n' "$1" >&2; exit 1; }
 [[ "$root" == /www/docker/peanut-admin || "$root" == /www/docker/peanut-admin-candidate ]] || fail 'unregistered deployment root'
@@ -418,8 +423,8 @@ if [[ "$mode" == update ]]; then
   current_version="${current_tag#v}"
   current_major="${current_version%%.*}"
   target_major="${version%%.*}"
-  [[ "$current_major" == "$target_major" ]] || fail "major release change ${current_tag} -> ${TAG} requires --fresh"
-  [[ "$(printf '%s\n%s\n' "$current_version" "$version" | sort -V | tail -n 1)" == "$version" && "$current_version" != "$version" ]] || fail "target release ${TAG} must be newer than current ${current_tag}"
+  [[ "$current_major" == "$target_major" ]] || fail "major release change ${current_tag} -> ${tag} requires --fresh"
+  [[ "$(printf '%s\n%s\n' "$current_version" "$version" | sort -V | tail -n 1)" == "$version" && "$current_version" != "$version" ]] || fail "target release ${tag} must be newer than current ${current_tag}"
   running_services="$("${current_compose[@]}" ps --status running --services | sort | tr '\n' ' ')"
   [[ "$running_services" == *php* && "$running_services" == *nginx* && "$running_services" == *cron* ]] \
     || fail 'routine update requires the existing application services to be running'
@@ -535,10 +540,18 @@ if [[ "$mode" != update ]]; then
     set_env_key PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
   fi
 fi
-for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
-  PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
-  set_env_key "$key" "${!key:-}"
-done
+if [[ "$mode" != update ]]; then
+  for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
+    PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
+    set_env_key "$key" "${!key:-}"
+  done
+elif [[ "$DEMO_MODE_SET" == 1 ]]; then
+  set_env_key PEANUT_DEMO_MODE "$DEMO_MODE"
+  for key in PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
+    PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
+    [[ -n "${!key:-}" ]] && set_env_key "$key" "${!key}"
+  done
+fi
 actual_commit="$expected_commit"
 
 compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
