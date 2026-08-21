@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.1",
-  "expected_tag": "v3.0.1",
-  "release_date": "2026-08-20",
+  "version": "3.0.2",
+  "expected_tag": "v3.0.2",
+  "release_date": "2026-08-21",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "proprietary",
@@ -45,7 +45,7 @@
     "RELEASE_SBOM.spdx.json": "9d60baba9de25b5f4479700d76ffcd6bd3251612ae750a8d42d3dd1004ec40c2"
   },
   "technical_qualification": {
-    "phase": "3.0.1-pending-qualification",
+    "phase": "3.0.2-pending-qualification",
     "result": "pending",
     "final_candidate_commit": null,
     "final_candidate_tree": null,
@@ -55,10 +55,10 @@
     "cleanup_residual_count": null,
     "lease_released": false,
     "migrations": 4,
-    "scaffold_version": "3.0.1",
+    "scaffold_version": "3.0.2",
     "application_initial_version": "0.1.0",
-    "evidence": "Pending the single fixed-candidate P0-E qualification for the 3.0 baseline.",
-    "release_delta": "Fresh-only 3.0 baseline with unified version contract, secure defaults, profile-aware scaffold generation and non-destructive updates."
+    "evidence": "Pending the single fixed-candidate P0-E qualification for the 3.0.2 Demo binding fix.",
+    "release_delta": "Demo Host bindings now seed both admin-web and member-api clients, keeping anonymous configuration available for the published multi-tenant demo."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }
