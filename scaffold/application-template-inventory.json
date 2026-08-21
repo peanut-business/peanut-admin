@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.1",
+    "template_version": "3.0.2",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -11595,7 +11595,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "22c5a2b2735b8b87dd3a5db92273eded8ef891a95a6fa7cd59f027dd3c66b76c"
+            "source_sha256": "4dc1803341c61a2dd49bcdaac0b05be86b86741b206cb23b0de050c7548da728"
         },
         {
             "path": "server/extend/.gitignore",
