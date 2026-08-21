@@ -265,7 +265,8 @@ function demoMultiAssertFinalState(
     string $tenantBEmail,
     string $sharedPassword,
     string $tenantAHost,
-    string $tenantBHost
+    string $tenantBHost,
+    array $sharedAdminHosts
 ): void {
     $tenants = $pdo->query(
         'SELECT code, name, display_name, status FROM pa_tenant ORDER BY code'
@@ -344,26 +345,31 @@ SQL)->fetchColumn();
         }
     }
 
-    $binding = $pdo->prepare(<<<'SQL'
+    $binding = $pdo->query(<<<'SQL'
 SELECT b.host, b.client_key, t.code, b.status
 FROM pa_tenant_entry_binding b
 JOIN pa_tenant t ON t.id = b.tenant_id
-WHERE b.client_key IN ('admin-web', 'member-api') AND b.host IN (?, ?)
+WHERE b.client_key IN ('admin-web', 'member-api')
 ORDER BY b.host, b.client_key
 SQL);
-    $binding->execute([$tenantAHost, $tenantBHost]);
     $bindings = [];
     foreach ($binding->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $bindings[$row['host'] . "\0" . $row['client_key']] = [$row['code'], $row['status']];
     }
+    $expectedBindings = [];
+    foreach ($sharedAdminHosts as $host) {
+        foreach (['admin-web', 'member-api'] as $clientKey) {
+            $expectedBindings[$host . "\0" . $clientKey] = ['default', 'active'];
+        }
+    }
+    foreach ([$tenantAHost => 'tenant-a', $tenantBHost => 'tenant-b'] as $host => $code) {
+        foreach (['admin-web', 'member-api'] as $clientKey) {
+            $expectedBindings[$host . "\0" . $clientKey] = [$code, 'active'];
+        }
+    }
+    ksort($expectedBindings, SORT_STRING);
     $bindingCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_entry_binding')->fetchColumn();
-    $expectedBindings = [
-        $tenantAHost . "\0admin-web" => ['tenant-a', 'active'],
-        $tenantAHost . "\0member-api" => ['tenant-a', 'active'],
-        $tenantBHost . "\0admin-web" => ['tenant-b', 'active'],
-        $tenantBHost . "\0member-api" => ['tenant-b', 'active'],
-    ];
-    if ($bindings !== $expectedBindings || $bindingCount !== 4) {
+    if ($bindings !== $expectedBindings || $bindingCount !== count($expectedBindings)) {
         throw new RuntimeException('demo Tenant Host bindings do not match the final plan');
     }
 }
@@ -410,9 +416,13 @@ function demoMultiMain(): int
     $tenantBHost = TenantEntryBindingResolver::normalizeHost(
         demoMultiRequired('PEANUT_DEMO_TENANT_B_HOST')
     );
+    $sharedAdminHosts = demoMultiHostList('TENANT_ADMIN_HOSTS');
+    if ($sharedAdminHosts === []) {
+        throw new RuntimeException('demo shared Admin Hosts are required');
+    }
     $reservedHosts = array_merge(
         demoMultiHostList('PLATFORM_HOSTS'),
-        demoMultiHostList('TENANT_ADMIN_HOSTS')
+        $sharedAdminHosts
     );
     if (hash_equals($tenantAHost, $tenantBHost)
         || in_array($tenantAHost, $reservedHosts, true)
@@ -460,7 +470,8 @@ function demoMultiMain(): int
         $tenantBEmail,
         $sharedPassword,
         $tenantAHost,
-        $tenantBHost
+        $tenantBHost,
+        $sharedAdminHosts
     ): array {
         demoMultiAssertSeedState($pdo);
         $platforms = $pdo->query(
@@ -500,6 +511,15 @@ function demoMultiMain(): int
             $tenantA['account_id'],
             $tenantB['role_id']
         );
+        $defaultTenant = $pdo->query(
+            "SELECT id FROM pa_tenant WHERE code = 'default' AND status = 'active' LIMIT 1"
+        )->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($defaultTenant)) {
+            throw new RuntimeException('demo default Tenant is unavailable');
+        }
+        foreach ($sharedAdminHosts as $sharedAdminHost) {
+            demoMultiBinding($pdo, (int)$defaultTenant['id'], $sharedAdminHost);
+        }
         demoMultiBinding($pdo, $tenantA['tenant_id'], $tenantAHost);
         demoMultiBinding($pdo, $tenantB['tenant_id'], $tenantBHost);
         demoMultiAssertFinalState(
@@ -509,7 +529,8 @@ function demoMultiMain(): int
             $tenantBEmail,
             $sharedPassword,
             $tenantAHost,
-            $tenantBHost
+            $tenantBHost,
+            $sharedAdminHosts
         );
         return [$tenantA, $tenantB];
     });

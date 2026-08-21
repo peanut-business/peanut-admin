@@ -3,6 +3,13 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [3.0.3] - 2026-08-21
+
+### Fixed
+
+- Multi-tenant Demo seeding now binds the registered shared Admin Hosts to the default Tenant
+  for both `admin-web` and `member-api`, in addition to the Tenant A/B bindings.
+
 ## [3.0.2] - 2026-08-21
 
 ### Fixed
