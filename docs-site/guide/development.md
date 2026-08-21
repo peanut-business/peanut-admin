@@ -316,7 +316,7 @@ php server/database/install.php
 ~~~
 
 安装器会创建默认 Tenant、原生 Account/Credential/TenantMember 和内建
-`core.tenant-owner` Role。空库安装必须显式提供有效 `ADMIN_INITIAL_EMAIL`，以及至少 6 位的
+`core.tenant-owner` Role。空库安装必须显式提供有效 `ADMIN_INITIAL_EMAIL`，以及至少 12 位的
 `ADMIN_INITIAL_PASSWORD`；安装器不会回显密码。日常开发统一使用登记的宿主 PHP 8.3.24 与 Composer 2.8.10：
 
 ~~~bash

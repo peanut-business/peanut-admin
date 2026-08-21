@@ -92,7 +92,7 @@ Peanut Admin 维护仓的 `peanut-admin-mysql84-development` 是持久开发数�
 | 参数 | 必填 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `ADMIN_INITIAL_EMAIL` | 是 | 无 | 首个 Tenant owner 的登录邮箱 |
-| `ADMIN_INITIAL_PASSWORD` | 是 | 无 | 至少 6 位 |
+| `ADMIN_INITIAL_PASSWORD` | 是 | 无 | 普通应用至少 12 位；演示模式固定为 peanut1234 |
 | `DEPLOYMENT_MODE` | 是 | 无 | 只能是 `standalone` 或 `multi-tenant` |
 | `DB_*` | 是 | 无 | 来自已登记的空数据库资源 |
 | `PLATFORM_INITIAL_*` | 仅多租户 | 无 | 独立 PlatformOperator；不能与 owner 邮箱相同 |
@@ -100,7 +100,7 @@ Peanut Admin 维护仓的 `peanut-admin-mysql84-development` 是持久开发数�
 安装基础结构、增量迁移和种子数据：
 
 ```bash
-export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
+export ADMIN_INITIAL_PASSWORD='<至少 12 位>'
 export ADMIN_INITIAL_EMAIL='owner@example.com'
 php server/database/install.php
 ```

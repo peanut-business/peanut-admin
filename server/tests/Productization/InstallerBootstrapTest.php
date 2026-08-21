@@ -10,19 +10,19 @@ function installerExpect(bool $condition, string $message): void
     }
 }
 
-foreach (['', '12345'] as $weakPassword) {
+foreach (['', '12345678901'] as $weakPassword) {
     try {
         validateInitialAdminPassword($weakPassword);
         throw new RuntimeException('weak initial password must fail');
     } catch (RuntimeException $exception) {
         installerExpect(
-            $exception->getMessage() === 'ADMIN_INITIAL_PASSWORD 至少 6 位',
+            $exception->getMessage() === 'ADMIN_INITIAL_PASSWORD 至少 12 位',
             'weak password must fail at the installer boundary'
         );
     }
 }
 
-foreach (['123456', 'abcdef'] as $validPassword) {
+foreach (['123456789012', 'abcdefghijkl'] as $validPassword) {
     validateInitialAdminPassword($validPassword);
 }
 

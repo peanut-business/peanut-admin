@@ -71,7 +71,7 @@ cp .env.example .env
 ```dotenv
 DEPLOYMENT_MODE=standalone
 ADMIN_INITIAL_EMAIL=admin@example.com
-ADMIN_INITIAL_PASSWORD=<至少 6 位>
+ADMIN_INITIAL_PASSWORD=<至少 12 位；演示模式固定为 peanut1234>
 TENANT_IDENTIFIER_HMAC_KEY=<至少 32 字节的稳定随机值>
 PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 ```

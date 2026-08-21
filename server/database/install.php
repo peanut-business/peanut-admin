@@ -84,8 +84,8 @@ function validateInitialAdminPassword(string $password): void
         }
         return;
     }
-    if (strlen($password) < 6) {
-        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 6 位');
+    if (strlen($password) < 12) {
+        throw new RuntimeException('ADMIN_INITIAL_PASSWORD 至少 12 位');
     }
 }
 
@@ -123,8 +123,8 @@ function initialPlatformCredentials(string $serverDir, string $adminEmail): ?arr
         }
         return ['email' => $email, 'password' => (string)$password];
     }
-    if (strlen((string)$password) < 6) {
-        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 6 位');
+    if (strlen((string)$password) < 12) {
+        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 12 位');
     }
 
     return ['email' => $email, 'password' => (string)$password];
