@@ -423,8 +423,8 @@ if [[ "$mode" == update ]]; then
   current_version="${current_tag#v}"
   current_major="${current_version%%.*}"
   target_major="${version%%.*}"
-  [[ "$current_major" == "$target_major" ]] || fail "major release change ${current_tag} -> ${TAG} requires --fresh"
-  [[ "$(printf '%s\n%s\n' "$current_version" "$version" | sort -V | tail -n 1)" == "$version" && "$current_version" != "$version" ]] || fail "target release ${TAG} must be newer than current ${current_tag}"
+  [[ "$current_major" == "$target_major" ]] || fail "major release change ${current_tag} -> ${tag} requires --fresh"
+  [[ "$(printf '%s\n%s\n' "$current_version" "$version" | sort -V | tail -n 1)" == "$version" && "$current_version" != "$version" ]] || fail "target release ${tag} must be newer than current ${current_tag}"
   running_services="$("${current_compose[@]}" ps --status running --services | sort | tr '\n' ' ')"
   [[ "$running_services" == *php* && "$running_services" == *nginx* && "$running_services" == *cron* ]] \
     || fail 'routine update requires the existing application services to be running'
