@@ -601,7 +601,7 @@
               value: string,
               callback: (message?: string | Error) => void
             ) => {
-              if (value && (value.length < 6 || value.length > 32)) {
+              if (value && (value.length < 12 || value.length > 128)) {
                 callback(new Error(t('systemAdmin.field.password.length')));
                 return;
               }
@@ -612,8 +612,8 @@
       : [
           { required: true, message: t('systemAdmin.field.password.required') },
           {
-            min: 6,
-            max: 32,
+            min: 12,
+            max: 128,
             message: t('systemAdmin.field.password.length'),
           },
         ],

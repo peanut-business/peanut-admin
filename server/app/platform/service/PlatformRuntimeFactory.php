@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
+use app\common\service\ApplicationPasswordPolicy;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PlatformTenantModuleService;
@@ -15,7 +16,6 @@ use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
-use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -63,7 +63,7 @@ final class PlatformRuntimeFactory
         $auth = new PlatformAuthService(
             new PdoTransactionManager($pdo),
             new PdoPlatformAuthRepository($pdo),
-            new PasswordHasher(),
+            ApplicationPasswordPolicy::hasher(),
             new SystemClock(),
             new TokenIssuer(),
             $key
@@ -104,7 +104,7 @@ final class PlatformRuntimeFactory
 
     public static function platformAccess(): PlatformAccessAdminService
     {
-        return self::$platformAccess ??= new PlatformAccessAdminService(self::pdo());
+        return self::$platformAccess ??= new PlatformAccessAdminService(self::pdo(), ApplicationPasswordPolicy::hasher());
     }
 
     public static function tenantGovernance(): TenantGovernanceService
@@ -136,7 +136,7 @@ final class PlatformRuntimeFactory
                 new PdoMembershipRepository($pdo),
                 new PdoPlatformRepository($pdo),
                 new PdoAuditRepository($pdo),
-                new PasswordHasher()
+                ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $modules),
             new PdoTenantOwnerAdminProvisioner($pdo)
@@ -179,7 +179,7 @@ final class PlatformRuntimeFactory
                 new PdoMembershipRepository($pdo),
                 new PdoPlatformRepository($pdo),
                 new PdoAuditRepository($pdo),
-                new PasswordHasher()
+                ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $manager),
             new PdoTenantOwnerAdminProvisioner($pdo)

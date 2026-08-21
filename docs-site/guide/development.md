@@ -52,7 +52,7 @@ peanut-admin/
 │   ├── config/              ThinkPHP、数据库、JWT、控制台等配置
 │   ├── route/app.php        管理端和用户端路由
 │   ├── database/init.sql    新环境的一次性全量表结构与种子
-│   ├── database/migrations/ 版本化增量 SQL（由 database/migrate.php 执行）
+│   ├── database/migrations/ 版本化增量 SQL（由 database/install.php --migrate 执行）
 │   ├── public/index.php     PHP-FPM/内置服务器入口
 │   ├── public/storage/      本地存储和导出文件的公开目录
 │   └── runtime/             日志、缓存和运行时文件（需可写）
@@ -246,7 +246,7 @@ Module 必须为自己的 Store/Warehouse 等资源提供 target resolver，并�
 - 数据库默认 MySQL，编码 utf8mb4，表前缀由 DB_PREFIX 控制，默认 pa_；配置来源是 server/config/database.php。
 - 新环境先创建空数据库并配置根 `.env`；生产由 Compose 注入环境，本地维护环境由资源登记和启动器注入。再执行 `php server/database/install.php`。安装器创建 Core 原生 Schema，执行 canonical `server/database/init.sql` 和基线之后的追加式 migration，并校验表、菜单、配置、默认 Tenant 与首 owner；目标库已有任何表时拒绝运行。
 - `server/database/init.sql` 是 2.0.0 的完整应用基线，`server/database/migrations/` 只接收该基线之后的追加变更。安装结果把 `init.sql` 和后续 migration 的名称、SHA-256、批次与状态写入 `pa_schema_migration`。
-- `pa_schema_migration` 属于 canonical `init.sql`。`php server/database/migrate.php --current` 校验基线身份和全部已登记文件；普通 `migrate.php` 只执行缺失的基线后追加 migration。
+- `pa_schema_migration` 属于 canonical `init.sql`。`php server/database/install.php --migrate --current` 校验基线身份和全部已登记文件；普通 `install.php --migrate` 只执行缺失的基线后追加 migration。
 - 2.0.0 不支持接管 1.x 历史安装。需要保留旧环境时继续运行旧版本实例，为 2.0.0 准备独立空库，并把业务数据迁移作为独立、显式、可验收的项目处理。
 - server/database/import.php 是读取 .env 后通过 PDO 执行 init.sql 的一次性脚本，文件注释明确提示“用完即删”；优先使用可审计的 mysql 导入命令，除非环境确实需要该脚本。
 - 金额、状态和软删除字段应沿用已有表的类型/命名；涉及旧数据兼容时在迁移中写幂等的 information_schema 检查，并先发布迁移再发布依赖字段的 PHP 代码。
@@ -316,7 +316,7 @@ php server/database/install.php
 ~~~
 
 安装器会创建默认 Tenant、原生 Account/Credential/TenantMember 和内建
-`core.tenant-owner` Role。空库安装必须显式提供有效 `ADMIN_INITIAL_EMAIL`，以及至少 6 位的
+`core.tenant-owner` Role。空库安装必须显式提供有效 `ADMIN_INITIAL_EMAIL`，以及至少 12 位的
 `ADMIN_INITIAL_PASSWORD`；安装器不会回显密码。日常开发统一使用登记的宿主 PHP 8.3.24 与 Composer 2.8.10：
 
 ~~~bash
@@ -330,8 +330,8 @@ php server/database/install.php
 （或 `PEANUT_LOCAL_ENV_FILE`），可按 clone/worktree 覆盖，示例见
 `deploy/local-stack.env.example`。停止使用 `./scripts/local-stack.sh dev-down`。
 
-安装后可执行 `php server/database/migrate.php --current` 校验当前数据库与源码基线。后续发布
-只执行普通 `migrate.php` 应用 2.0.0 之后的追加 migration；失败时保持旧版本运行，核对实际
+安装后可执行 `php server/database/install.php --migrate --current` 校验当前数据库与源码基线。后续发布
+只执行普通 `install.php --migrate` 应用 3.0 之后的追加 migration；失败时保持旧版本运行，核对实际
 DDL 后编写前滚修复，不得删除账本记录或改写已登记 SQL。
 
 ## 7. 客户端开发与构建命令

@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 3.0（当前候选 v3.0.0）的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 3.0（当前版本 v3.0.4）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -11,7 +11,7 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 - 默认一套部署对应一个应用实例，拥有自己的数据库、密钥、文件和生命周期。
 - 一个实例可以有多个 Tenant、客户端和 Module；多个实例不能共享私有业务表。
-- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；历史正式版本为 v2.1.5，当前 v3.0.0 仍处于候选收口阶段。
+- 3.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持旧大版本数据库或脚手架原地升级；当前正式版本为 v3.0.4。
 - canonical `init.sql` 是完整应用 Schema；`migrations/` 只保存 2.0.0 基线之后的追加变更。
 - 管理身份直接使用 Account/Credential/TenantMember/RBAC，不创建 legacy 映射或兼容 Admin 表。
 - 旧 tag、Release、迁移和升级证据仍可追溯，但不进入当前 Runtime、Schema、create-app 或日常操作路径。
@@ -45,7 +45,7 @@ fail-closed 处理。两种模式都要为 `TENANT_IDENTIFIER_HMAC_KEY` 与
 
 首次安装必须提供 `ADMIN_INITIAL_EMAIL` 和 `ADMIN_INITIAL_PASSWORD`。多租户模式另需
 提供与管理员邮箱不同的
-`PLATFORM_INITIAL_EMAIL` 和至少 6 位的
+`PLATFORM_INITIAL_EMAIL` 和至少 12 位的
 `PLATFORM_INITIAL_PASSWORD`；它们只建立独立 PlatformOperator，不会把该身份加入默认
 Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不写进 Git 或日志。
 
@@ -74,7 +74,7 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 | `<vX.Y.Z>` | 是 | 无 | 选择要部署的不可变 annotated tag | 本地 tag、远端 tag 和 `RELEASE_METADATA.json` 身份不一致时停止 |
 | `--target <production\|production-candidate>` | 是 | 无 | 选择资源登记中的单租户正式实例或多租户候选实例 | 不接受未登记目标，也不会猜测 host、目录、端口或数据库 |
 | `--fresh` | 二选一 | 无 | 删除所选 Compose 项目的数据卷后从空库安装 | 属于破坏性操作，必须同时提供匹配 target 的 `--confirm-destroy` |
-| `--upgrade` | 二选一 | 无 | 保留数据库和持久文件，部署新代码并执行追加 migration | 仅用于已有受支持版本；不能把 1.x 数据库升级为 2.0 |
+| `--update` | 二选一 | 无 | 保留数据库和持久文件，部署新代码并执行追加 migration | 仅用于同一大版本；跨大版本必须 fresh |
 | `--dry-run` | 二选一 | 无 | 校验 tag、登记和输入，只输出远端执行计划 | 不连接远端执行部署，建议每次 apply 前先运行 |
 | `--apply` | 二选一 | 无 | 通过登记的 SSH 目标执行计划 | 只有 dry-run 输出与预期一致后才使用 |
 | `--confirm-destroy <target>` | fresh 必填 | 无 | 对 fresh 的破坏性动作进行精确确认 | 值必须与 `--target` 完全一致 |
@@ -87,9 +87,9 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 | 环境变量 | 必填场景 | 作用 | 约束 |
 | --- | --- | --- | --- |
 | `PEANUT_GENERATED_ADMIN_EMAIL` | 所有 fresh | 创建首个 Tenant owner | 必须是有效邮箱；不会由脚本猜测或生成 |
-| `PEANUT_GENERATED_ADMIN_PASSWORD` | 所有 fresh | 设置首个 Tenant owner 密码 | 至少 6 位 |
+| `PEANUT_GENERATED_ADMIN_PASSWORD` | 所有 fresh | 设置首个 Tenant owner 密码 | 普通应用至少 12 位；演示 overlay 固定为 peanut1234 |
 | `PEANUT_GENERATED_PLATFORM_EMAIL` | 多租户 fresh | 创建独立 PlatformOperator | 必须与 Admin 邮箱不同 |
-| `PEANUT_GENERATED_PLATFORM_PASSWORD` | 多租户 fresh | 设置 PlatformOperator 密码 | 至少 6 位 |
+| `PEANUT_GENERATED_PLATFORM_PASSWORD` | 多租户 fresh | 设置 PlatformOperator 密码 | 普通应用至少 12 位；演示 overlay 固定为 peanut1234 |
 
 演示 overlay 还需要显式设置 `PEANUT_DEMO_MODE=enabled` 和对应的 `PEANUT_DEMO_*` 邮箱、
 共享密码、Tenant Host、文档地址。它们只用于可丢弃的候选站，不是生产应用默认配置。
@@ -98,21 +98,21 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ```bash
 export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
-export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 6 位>'
-scripts/deploy-release v2.1.4 --target production --fresh \
+export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位>'
+scripts/deploy-release v3.0.4 --target production --fresh \
   --confirm-destroy production --dry-run
-scripts/deploy-release v2.1.4 --target production --fresh \
+scripts/deploy-release v3.0.4 --target production --fresh \
   --confirm-destroy production --apply
-scripts/deploy-release v2.1.4 --target production --upgrade \
-  --from v2.0.1 --apply
+scripts/deploy-release v3.0.4 --target production --update \
+  --from v3.0.3 --apply
 ```
 
 脚本不会回显密码。用于写入部署 `.env` 的值只接受字母、数字和有限的安全符号；含 `$`、
 `#`、`&`、反斜杠或空白的值会在任何破坏性动作发生前被拒绝。
 
 升级顺序固定为：解包同一 tag、构建 Web/Platform/
-PC/UniApp/PHP 镜像、只启动 MySQL、执行 `migrate.php` 应用追加 migration、执行
-`migrate.php --current` 校验、再启动应用并做 health/version smoke。这样数据库升级与前后端
+PC/UniApp/PHP 镜像、只启动 MySQL、执行 `server/database/install.php --migrate` 应用追加 migration、执行
+`server/database/install.php --migrate --current` 校验、再启动应用并做 health/version smoke。这样数据库升级与前后端
 升级属于同一个候选，不会出现只换镜像而遗漏 Schema 的情况。
 
 脚本保留部署 `.env` 和备份目录，不复制旧目录中的 migration 或运行时代码；fresh 目标只
@@ -120,7 +120,7 @@ PC/UniApp/PHP 镜像、只启动 MySQL、执行 `migrate.php` 应用追加 migra
 映射、校验和回滚方案。
 
 预期结果是：所选 tag 的前后端、PHP 镜像与数据库 migration 作为同一个候选完成更新，
-`migrate.php --current`、容器健康检查和版本 smoke 全部通过。任一步失败时停止，不自动改用
+`server/database/install.php --migrate --current`、容器健康检查和版本 smoke 全部通过。任一步失败时停止，不自动改用
 其他数据库、端口或部署目录。
 
 ### 手工 Docker Compose 部署
@@ -177,16 +177,16 @@ Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。使用 Nginx、�
 
 ## Fresh-only 基线
 
-2.0.0 只有一条数据库路径：空库安装。`install.php` 创建 Core Schema、应用 canonical
+3.0 只有一条数据库路径：空库安装。`install.php` 创建 Core Schema、应用 canonical
 `init.sql`、默认 Tenant 和首个 Tenant owner。Standalone 不创建独立
 PlatformOperator；multi-tenant 模式必须创建独立 PlatformOperator。
-安装后执行 `migrate.php --current` 只核对 `init.sql` 与基线后追加 migration 的 checksum。
+安装后执行 `server/database/install.php --migrate --current` 只核对 `init.sql` 与基线后追加 migration 的 checksum。
 
 ```bash
 export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
+export ADMIN_INITIAL_PASSWORD='<至少 12 位>'
 php server/database/install.php
-php server/database/migrate.php --current
+php server/database/install.php --migrate --current
 ```
 
 禁止把 1.x 数据库交给上述安装器或迁移器，也不要复制 1.x 的表、数据、migration ledger、
@@ -197,9 +197,9 @@ scaffold baseline 或 app-owned 文件到 2.0.0 生成物。需要保留旧环�
 
 | 场景 | 应执行 | 数据结果 |
 | --- | --- | --- |
-| 新实例 | 空库安装器，再运行 `migrate.php --current` | 建立 2.0 canonical Schema、默认 Tenant 和首 owner |
-| 同一 2.0 实例发布新代码 | 备份后运行普通 `migrate.php` | 只前滚缺失的 2.0 基线后 migration，保留现有 Tenant、成员和业务数据 |
-| 1.x 到 2.0 | 不使用本仓安装器“升级” | 继续运行旧实例；数据迁移另立项目，当前仓不承诺通用映射 |
+| 新实例 | 空库安装器，再运行 `install.php --migrate --current` | 建立 3.0 canonical Schema、默认 Tenant 和首 owner |
+| 同一 3.x 实例发布新代码 | 备份后运行 `install.php --migrate` | 只前滚缺失的 3.x migration，保留现有 Tenant、成员和业务数据 |
+| 旧大版本到 3.0 | 不使用本仓安装器“升级” | 继续运行旧实例；按发布计划 fresh/rebuild，数据迁移另立项目 |
 
 迁移只说明 Schema/Runtime 如何前滚，并不会自动重置管理员密码或重新邀请 Tenant Owner。
 账号、成员、角色和业务数据是否保留，必须由目标 migration 与独立验收证据逐项确认。
@@ -259,9 +259,9 @@ Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Te
 | 体验入口 | 登录地址 | 账号 | 密码 |
 | --- | --- | --- | --- |
 | 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
-| 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234xx` |
-| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234xx` |
-| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234xx` |
+| 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
 | Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
 
 Tenant A/B 是可丢弃候选环境中刻意公开的演示账号；服务端仅在 `PEANUT_DEMO_MODE=enabled`

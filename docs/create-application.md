@@ -43,10 +43,10 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 source-only 或 app-owned 演进无需伪造新的模板身份，而任何 managed 字节变化仍必须先形成
 新的不可变 scaffold release。
 
-当前 inventory 采用 fresh-only scaffold `v3.0.0` release。该 identity 只属于 scaffold
+当前 inventory 采用 fresh-only scaffold `v3.0.4` release。该 identity 只属于 scaffold
 命名空间，不是 Peanut Admin 产品 Tag/Release；既有 1.x scaffold identity 只存在于
 Git/Release 历史，当前 inventory 与生成应用不携带其 release artifact 或 upgrade Runtime。
-`v3.0.0` 生成原生 Account/TenantMember/RBAC Runtime、
+`v3.0.4` 生成原生 Account/TenantMember/RBAC Runtime、
 canonical Schema 和空数据库安装入口，不携带 legacy 映射、bootstrap 或兼容镜像。生产
 管理端 builder 在执行 Vite 前，
 把应用根目录的 `plugins.lock` 精确复制为 `/build/plugins.lock`；Plugin contribution resolver
@@ -64,7 +64,7 @@ owner、managed/app-owned 树摘要与 managed baseline 路径。它是来源审
 
 ## 后续升级边界
 
-现在可以从 `v3.0.0` 创建并开发派生应用，但不能把它理解为“以后执行一条命令就会自动追上
+现在可以从 `v3.0.4` 创建并开发派生应用，但不能把它理解为“以后执行一条命令就会自动追上
 所有脚手架变化”。当前应按下表处理：
 
 | 变化类型 | 当前处理方式 | 所有权与停止线 |

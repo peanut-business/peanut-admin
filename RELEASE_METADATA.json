@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.4",
-  "expected_tag": "v3.0.4",
+  "version": "3.0.5",
+  "expected_tag": "v3.0.5",
   "release_date": "2026-08-21",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
@@ -26,14 +26,14 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.6",
-    "web_npm": "@peanut-admin/admin@0.1.0-alpha.6",
+    "composer": "peanut-admin/core@0.1.0-alpha.7",
+    "web_npm": "@peanut-admin/admin@0.1.0-alpha.7",
     "pc_npm": "@peanut-admin/admin@0.1.0-alpha.5",
     "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.5"
   },
   "lockfiles": {
-    "server/composer.lock": "452c77a1ec5674637f8a6420f566249fc1c95320464ec170f63e93fc3dff4a08",
-    "web/pnpm-lock.yaml": "3cebe7b267217b711f12c8e51e2cfff018d4362b2e35d4cdc8d2716a8f7aedd7",
+    "server/composer.lock": "cd789aa4ea69a98a8ceb5c1dba88c23b388055eb699876659487712afc694170",
+    "web/pnpm-lock.yaml": "3f900a9f7ee7879bd1ed822231b46af985bcd42c0a979bdf009528f29fb84cee",
     "pc/package-lock.json": "21060fd45566dfe3d6eb283d3c378abb539cb951c53cade052cd76405a378b69",
     "uniapp/package-lock.json": "1c7805eaccc3b232777cfefaeae1fea6a47945e86ad7362b53d635293d10e2d4",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
@@ -41,24 +41,24 @@
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "838465191e1effc71ffe129ebba97f5999d313168058ab6260ce8d9d204e170e",
-    "RELEASE_SBOM.spdx.json": "9d60baba9de25b5f4479700d76ffcd6bd3251612ae750a8d42d3dd1004ec40c2"
+    "THIRD_PARTY_NOTICES.md": "f77dd2ae21d361f462b57c7ec664f9486ae45c971f14b1d2d51fc343b07ec395",
+    "RELEASE_SBOM.spdx.json": "a784e1c2fb937e166909643d314882411d95ce43168aa6be5586c8b3750b6630"
   },
   "technical_qualification": {
-    "phase": "3.0.4-pending-qualification",
-    "result": "pending",
-    "final_candidate_commit": null,
-    "final_candidate_tree": null,
-    "run_id": null,
-    "groups_passed": 0,
-    "summary_sha256": null,
-    "cleanup_residual_count": null,
-    "lease_released": false,
+    "phase": "3.0.5-qualified",
+    "result": "passed",
+    "final_candidate_commit": "ea87c53df14e598470a077199cb87568c5b3d951",
+    "final_candidate_tree": "53cd29d4e686f7a285da3f1be81fbcb70a7586a8",
+    "run_id": "p0e305b",
+    "groups_passed": 7,
+    "summary_sha256": "7c90faccead089e5b62802cecfdcfc58a4333ac26c8d78150d0bf4b3009257e4",
+    "cleanup_residual_count": 0,
+    "lease_released": true,
     "migrations": 4,
-    "scaffold_version": "3.0.4",
+    "scaffold_version": "3.0.5",
     "application_initial_version": "0.1.0",
-    "evidence": "Pending the single fixed-candidate P0-E qualification for the 3.0.4 Demo binding fix.",
-    "release_delta": "Shared Admin Hosts seed only the member-api default Tenant binding, preserving account-driven Tenant selection for admin-web login."
+    "evidence": "Local fixed candidate passed all seven L2 P0-E groups with zero resource residuals.",
+    "release_delta": "Demo overlays use peanut1234 only in demo mode; application-owned 12–128 password policy is injected over Core's loose default; Core and Web lockfiles consume alpha.7; current release docs describe the main/tag/create-app lifecycle."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

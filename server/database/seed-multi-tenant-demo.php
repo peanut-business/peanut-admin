@@ -5,7 +5,6 @@ declare(strict_types=1);
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\DemoAccountPolicy;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
-use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
@@ -398,8 +397,8 @@ function demoMultiMain(): int
     $tenantAEmail = strtolower(demoMultiRequired('PEANUT_DEMO_TENANT_A_EMAIL'));
     $tenantBEmail = strtolower(demoMultiRequired('PEANUT_DEMO_TENANT_B_EMAIL'));
     $sharedPassword = demoMultiRequired('PEANUT_DEMO_SHARED_PASSWORD');
-    if ($sharedPassword !== 'peanut1234xx') {
-        throw new RuntimeException('演示租户密码必须统一为 peanut1234xx');
+    if ($sharedPassword !== 'peanut1234') {
+        throw new RuntimeException('演示租户密码必须统一为 peanut1234');
     }
     if (filter_var($tenantAEmail, FILTER_VALIDATE_EMAIL) === false
         || filter_var($tenantBEmail, FILTER_VALIDATE_EMAIL) === false
@@ -448,7 +447,7 @@ function demoMultiMain(): int
 
     $transactions = new PdoTransactionManager($pdo);
     $memberships = new PdoMembershipRepository($pdo);
-    $passwords = new PasswordHasher();
+    $passwords = \app\common\service\ApplicationPasswordPolicy::hasher();
     $bootstrap = new BootstrapService(
         $transactions,
         new PdoIdentityRepository($pdo),

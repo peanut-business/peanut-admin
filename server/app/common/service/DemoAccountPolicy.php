@@ -8,7 +8,11 @@ use PDO;
 /** Keeps public demo credentials and password locking out of normal deployments. */
 final class DemoAccountPolicy
 {
-    private const FIXED_PASSWORD = 'peanut1234xx';
+    /**
+     * Disposable demo credential only. Normal account passwords continue to
+     * use Core's stronger minimum-length policy.
+     */
+    private const FIXED_PASSWORD = 'peanut1234';
 
     public static function enabled(): bool
     {

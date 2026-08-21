@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\tenant\service;
 
+use app\common\service\ApplicationPasswordPolicy;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
-use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use think\facade\Config;
 use think\facade\Db;
@@ -44,7 +44,7 @@ final class TenantAuthRuntimeFactory
         return self::$service = new TenantAuthService(
             new PdoTransactionManager($pdo),
             new PdoTenantAuthRepository($pdo),
-            new PasswordHasher(),
+            ApplicationPasswordPolicy::hasher(),
             new SystemClock(),
             new TokenIssuer(),
             $key

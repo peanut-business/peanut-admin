@@ -8,8 +8,8 @@
 
 ## 当前结论
 
-Peanut Admin `v2.1.5` 的正式源码发布和部署证据已封存为历史基线；当前正在收口 `v3.0.0`
-消费版本，最终 P0-E 必须绑定最新 `origin/main`，再创建 tag、GitHub Release 和演示部署。
+Peanut Admin `v2.1.5` 的正式源码发布和部署证据已封存为历史基线；当前正式消费版本为
+`v3.0.4`。下一补丁必须绑定最新 `origin/main`，再创建 tag、GitHub Release 和演示部署。
 此前 `v2.1.4` 已完成正式源码发布和部署收口：P0-E 7/7 通过，Standalone 从
 `v2.0.1` 升级，多租户候选从空库 fresh 安装并叠加可丢弃演示层，平台/共享 Admin/Tenant A/
 Tenant B 四个公网 Host 已完成真实浏览器验收。无秘密 post-deployment 快照已封存；后续

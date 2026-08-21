@@ -96,7 +96,7 @@ export default {
   'userSetting.security.oldPassword.placeholder': 'Enter current password',
   'userSetting.security.newPassword': 'New Password',
   'userSetting.security.newPassword.placeholder':
-    'Enter new password (6-32 chars)',
+    'Enter new password (12-128 chars)',
   'userSetting.security.confirmPassword': 'Confirm New Password',
   'userSetting.security.confirmPassword.placeholder':
     'Enter new password again',
@@ -105,7 +105,7 @@ export default {
     'Demo account passwords are locked and cannot be changed here.',
   'userSetting.security.error.oldRequired': 'Please enter current password',
   'userSetting.security.error.newRequired': 'Please enter new password',
-  'userSetting.security.error.length': 'Password must be 6-32 characters',
+  'userSetting.security.error.length': 'Password must be 12-128 characters',
   'userSetting.security.error.confirmRequired': 'Please confirm new password',
   'userSetting.security.error.mismatch': 'Passwords do not match',
 };

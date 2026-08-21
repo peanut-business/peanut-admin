@@ -192,8 +192,8 @@
     password: [
       { required: true, message: t('userSetting.security.error.newRequired') },
       {
-        min: 6,
-        max: 32,
+        min: 12,
+        max: 128,
         message: t('userSetting.security.error.length'),
       },
     ],

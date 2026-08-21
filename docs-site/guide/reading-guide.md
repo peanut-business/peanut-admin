@@ -55,11 +55,11 @@ description: 用任务导向、参数表和停止线阅读 Peanut Admin 文档�
 
 ```bash
 export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
+export ADMIN_INITIAL_PASSWORD='<至少 12 位；演示模式固定为 peanut1234>'
 php server/database/install.php
 ```
 
-预期结果：安装器创建 canonical Schema、默认 Tenant、Account/Credential/TenantMember 和首 owner；不会回显密码。然后执行 `php server/database/migrate.php --current`，只核对 checksum，不修改账本。
+预期结果：安装器创建 canonical Schema、默认 Tenant、Account/Credential/TenantMember 和首 owner；不会回显密码。然后执行 `php server/database/install.php --migrate --current`，只核对 checksum，不修改账本。
 
 ### 多租户本地体验：`scripts/local-multi-tenant-demo`
 

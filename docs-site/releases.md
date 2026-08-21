@@ -7,7 +7,8 @@ description: Peanut Admin 应用与两个公开核心包的当前发布事实。
 
 ## 当前结论
 
-Peanut Admin `2.0.0` 与 `2.0.1` 建立历史 fresh-only 正式源码基线。当前 `3.0.0` 是统一版本合同下的 fresh-only 发布候选，仍需完成固定资格后才可称为正式版本。版本使用原生
+Peanut Admin `2.0.0` 与 `2.0.1` 建立历史 fresh-only 正式源码基线。当前正式应用版本为
+`3.0.4`，脚手架同样以 `v3.0.4` 作为生成基线。版本使用原生
 Account/TenantMember/RBAC、canonical Schema 和空库安装；不提供 1.x 数据库或脚手架原地升级。
 
 annotated tag [`v2.0.0`](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.0)
@@ -28,7 +29,7 @@ Release 保留为历史证据，不覆盖或重写。
 `v2.1.4` 保持 2.0.1 的 canonical 基线，并通过追加 migration 更新 Module 权限归属。
 `v2.1.5` 在同一 fresh-only 线上完成 P0-E 7/7、`v2.1.4 -> v2.1.5` 配对备份升级、
 多租户 Demo fresh 部署和 post-deployment 快照；不可变事实见
-`docs/product-status/releases/v2.1.5.json`。当前 `v3.0.0` 候选不会改写上述历史身份。
+`docs/product-status/releases/v2.1.5.json`。当前 `v3.0.4` 已在上述历史身份之上独立发布，不改写历史 tag。
 
 ## 公开运行依赖
 

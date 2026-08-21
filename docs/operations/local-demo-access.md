@@ -5,15 +5,15 @@
 
 Verified: 2026-08-20 against the versioned `scripts/local-multi-tenant-demo` defaults.
 
-All local demo accounts use the shared demo password `peanut1234xx`. Password changes are locked
+All local demo accounts use the shared demo password `peanut1234`. Password changes are locked
 when `PEANUT_DEMO_MODE=enabled`.
 
 | Environment | Login URL | Account | Password |
 | --- | --- | --- | --- |
-| Local Platform | http://platform.peanut-admin.test:20176/platform/ | `platform@local.test` | `peanut1234xx` |
-| Local shared Admin | http://admin.peanut-admin.test:20179/admin/ | `owner@local.test` | `peanut1234xx` |
-| Local Tenant A | http://tenant-a.peanut-admin.test:20179/admin/ | `tenant-a@local.test` | `peanut1234xx` |
-| Local Tenant B | http://tenant-b.peanut-admin.test:20179/admin/ | `tenant-b@local.test` | `peanut1234xx` |
+| Local Platform | http://platform.peanut-admin.test:20176/platform/ | `platform@local.test` | `peanut1234` |
+| Local shared Admin | http://admin.peanut-admin.test:20179/admin/ | `owner@local.test` | `peanut1234` |
+| Local Tenant A | http://tenant-a.peanut-admin.test:20179/admin/ | `tenant-a@local.test` | `peanut1234` |
+| Local Tenant B | http://tenant-b.peanut-admin.test:20179/admin/ | `tenant-b@local.test` | `peanut1234` |
 
 ## Runtime resources
 
