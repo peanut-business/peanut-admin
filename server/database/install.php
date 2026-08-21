@@ -79,8 +79,8 @@ function initialAdminEmail(string $serverDir): string
 function validateInitialAdminPassword(string $password): void
 {
     if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
-        if ($password !== 'peanut1234xx') {
-            throw new RuntimeException('演示模式的初始管理员密码必须统一为 peanut1234xx');
+        if ($password !== 'peanut1234') {
+            throw new RuntimeException('演示模式的初始管理员密码必须统一为 peanut1234');
         }
         return;
     }
@@ -118,8 +118,8 @@ function initialPlatformCredentials(string $serverDir, string $adminEmail): ?arr
         ? $environmentPassword
         : ($fileConfig['PLATFORM_INITIAL_PASSWORD'] ?? '');
     if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
-        if ((string)$password !== 'peanut1234xx') {
-            throw new RuntimeException('演示模式的 Platform 初始密码必须统一为 peanut1234xx');
+        if ((string)$password !== 'peanut1234') {
+            throw new RuntimeException('演示模式的 Platform 初始密码必须统一为 peanut1234');
         }
         return ['email' => $email, 'password' => (string)$password];
     }

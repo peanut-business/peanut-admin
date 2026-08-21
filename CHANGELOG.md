@@ -29,8 +29,8 @@ and the two public core packages have independent version histories.
 
 ### Fixed
 
-- Unified the disposable Demo password with Core Alpha.6's 12-character minimum so fresh
-  Standalone and Multi-tenant Demo installations can bootstrap successfully.
+- Unified the disposable Demo password as `peanut1234`. This ten-character credential is
+  accepted only by the Demo overlay; normal accounts continue to use Core's stronger policy.
 
 ## [3.0.0] - 2026-08-20
 

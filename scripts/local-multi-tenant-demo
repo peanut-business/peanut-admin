@@ -62,12 +62,12 @@ prepare_env() {
     set_env VITE_ALLOWED_HOSTS platform.peanut-admin.test,admin.peanut-admin.test,tenant-a.peanut-admin.test,tenant-b.peanut-admin.test
     set_env OWNER_INVITATION_DELIVERY_MODE manual
     set_env ADMIN_INITIAL_EMAIL owner@local.test
-    set_env ADMIN_INITIAL_PASSWORD 'peanut1234xx'
+    set_env ADMIN_INITIAL_PASSWORD 'peanut1234'
     set_env PLATFORM_INITIAL_EMAIL platform@local.test
-    set_env PLATFORM_INITIAL_PASSWORD 'peanut1234xx'
+    set_env PLATFORM_INITIAL_PASSWORD 'peanut1234'
     set_env PEANUT_DEMO_TENANT_A_EMAIL tenant-a@local.test
     set_env PEANUT_DEMO_TENANT_B_EMAIL tenant-b@local.test
-    set_env PEANUT_DEMO_SHARED_PASSWORD 'peanut1234xx'
+    set_env PEANUT_DEMO_SHARED_PASSWORD 'peanut1234'
     set_env PEANUT_DEMO_TENANT_A_HOST tenant-a.peanut-admin.test
     set_env PEANUT_DEMO_TENANT_B_HOST tenant-b.peanut-admin.test
     set_env PEANUT_DEMO_DOCS_URL http://docs.peanut-admin.test

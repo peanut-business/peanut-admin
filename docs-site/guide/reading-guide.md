@@ -59,7 +59,7 @@ export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
 php server/database/install.php
 ```
 
-预期结果：安装器创建 canonical Schema、默认 Tenant、Account/Credential/TenantMember 和首 owner；不会回显密码。然后执行 `php server/database/migrate.php --current`，只核对 checksum，不修改账本。
+预期结果：安装器创建 canonical Schema、默认 Tenant、Account/Credential/TenantMember 和首 owner；不会回显密码。然后执行 `php server/database/install.php --migrate --current`，只核对 checksum，不修改账本。
 
 ### 多租户本地体验：`scripts/local-multi-tenant-demo`
 

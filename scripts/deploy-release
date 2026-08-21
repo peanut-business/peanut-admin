@@ -92,7 +92,7 @@ validate_email() {
 
 validate_password() {
   local name="$1" value="$2"
-  if [[ "$DEMO_MODE" == enabled && "$value" == peanut1234xx ]]; then
+  if [[ "$DEMO_MODE" == enabled && "$value" == peanut1234 ]]; then
     return 0
   fi
   [[ ${#value} -ge 6 ]] \
@@ -194,8 +194,8 @@ if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled ]]; then
   fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
 fi
 if [[ -n "$OVERLAY" ]]; then
-  [[ "$DEMO_SHARED_PASSWORD" == peanut1234xx ]] \
-    || fail 'demo deployments must use the fixed demo password peanut1234xx'
+  [[ "$DEMO_SHARED_PASSWORD" == peanut1234 ]] \
+    || fail 'demo deployments must use the fixed demo password peanut1234'
   ADMIN_PASSWORD="$DEMO_SHARED_PASSWORD"
   PLATFORM_PASSWORD="$DEMO_SHARED_PASSWORD"
 fi

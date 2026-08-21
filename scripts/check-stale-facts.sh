@@ -25,6 +25,8 @@ while IFS= read -r path; do
   [[ "$path" == output/* ]] && continue
   [[ "$path" == docs/maintenance/stale-facts-audit.md ]] && continue
   [[ "$path" == docs/development-database-resource.md ]] && continue
+  [[ "$path" == docs/architecture/* ]] && continue
+  [[ "$path" == docs/product-status/releases/* ]] && continue
   [[ "$path" == scripts/check-stale-facts.sh ]] && continue
   tracked+=("$path")
 done < <(git ls-files)
@@ -64,6 +66,29 @@ report_matches \
   'paused SaaS plan was restored as a current PRE-S01 work pointer' \
   '当前首个可领取项仍是 PRE-S01' \
   docs/plans/saas-enhancement-development-plan.md
+
+# Current operator guidance is intentionally checked separately from immutable historical
+# release records. These checks prevent a published contract from silently drifting back to
+# the retired demo credential or the removed migration command.
+report_matches \
+  'retired demo credential appears in current operator guidance' \
+  'peanut1234xx' \
+  README.md docs/operations docs/peanut-admin-release-deployment.md docs-site resources/project-resources.json scripts/local-multi-tenant-demo scripts/deploy-release server/app/common/service/DemoAccountPolicy.php server/database/install.php server/database/seed-multi-tenant-demo.php
+
+report_matches \
+  'removed deploy-release upgrade flag appears in current docs' \
+  'scripts/deploy-release[^[:cntrl:]]*--upgrade' \
+  README.md docs/create-application.md docs/scaffold-upgrade.md docs/operations docs/peanut-admin-development-guide.md docs/peanut-admin-release-deployment.md docs-site
+
+report_matches \
+  'removed database migration entrypoint appears in current docs' \
+  'server/database/migrate\.php|database/migrate\.php' \
+  README.md docs/create-application.md docs/scaffold-upgrade.md docs/operations docs/peanut-admin-development-guide.md docs/peanut-admin-release-deployment.md docs-site
+
+report_matches \
+  'current public docs still identify the retired v2/v3.0.0 baseline' \
+  '当前[^[:cntrl:]]*v3\.0\.0|当前源码[^[:cntrl:]]*2\.0\.0|当前正式源码版本[^[:cntrl:]]*v2\.0\.0' \
+  README.md docs-site/getting-started.md docs-site/deployment.md docs-site/releases.md docs/create-application.md docs/peanut-admin-development-guide.md
 
 if [[ "$failed" -ne 0 ]]; then
   exit 1

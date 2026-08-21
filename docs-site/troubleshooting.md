@@ -33,7 +33,7 @@ description: Peanut Admin 安装、启动、登录、租户入口与 Module 开�
 | --- | --- |
 | `install.php` 拒绝目标库 | 确认目标是登记的空库。2.0.x 不接管 1.x 或已有应用 Schema；为新实例登记独立空库，不要清空共享 development 数据。 |
 | 数据库连接失败 | 从资源登记导出非秘密连接参数，再按登记 health check 核验目标。凭据只从 credential reference 注入，不尝试 `localhost`、默认端口或默认账号。 |
-| `migrate.php --current` 校验失败 | 核对当前 checkout 与 `init.sql`、基线后 migration 的账本身份。不要修改已应用 SQL 或删除 `pa_schema_migration` 记录；需要变更时新增 migration。 |
+| `install.php --migrate --current` 校验失败 | 核对当前 checkout 与 `init.sql`、基线后 migration 的账本身份。不要修改已应用 SQL 或删除 `pa_schema_migration` 记录；需要变更时新增 migration。 |
 | 需要保留 1.x 环境 | 继续运行旧实例，并把数据迁移作为独立、可验收项目。不要对 2.0.x 使用 adopt、兼容 bootstrap 或旧映射表。 |
 
 完整安装顺序与回滚停止线见[部署与安装](/deployment#fresh-only-基线)。

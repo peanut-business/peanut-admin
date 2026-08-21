@@ -6,6 +6,7 @@ description: Peanut Admin 本地开发环境的安装与启动步骤。
 # 开始使用
 
 本页给出从仓库到可登录开发环境的最短路径。生产环境请同时阅读[部署清单](/deployment)和[开发与部署指南](/guide/development)。
+框架发布、`create-app`、独立应用发布以及脚手架升级的完整边界见[生命周期说明](/guide/release-and-application-lifecycle)。
 
 ## 5 分钟速读
 
@@ -21,7 +22,7 @@ description: Peanut Admin 本地开发环境的安装与启动步骤。
 
 ## 创建独立应用
 
-正式消费脚手架时使用当前正式的 `v2.1.4` Tag/Release，不从移动的 `dev` 分支或带未提交修改的
+正式消费脚手架时使用当前正式的 `v3.0.4` Tag/Release，不从移动的 `dev` 分支或带未提交修改的
 维护工作树生成应用。
 
 | 参数 | 必填 | 示例 | 作用 |
@@ -41,8 +42,8 @@ php scripts/create-app \
 ```
 
 生成结果包含 `.peanut/application-manifest.json` 和 managed baseline，可以证明采用了哪个
-Release、每个文件归谁所有。当前已有 `v2.0.0 -> v2.0.1` 的派生应用资格，`v2.0.1 -> v2.1.4`
-随本版本继续使用相同的 preflight/apply/verify/recover 合同；执行器
+Release、每个文件归谁所有。当前 `v3.0.4` 是派生应用基线；后续 3.x release 继续使用相同的
+preflight/apply/verify/recover 合同；执行器
 只更新受管文件并保留 `app-owned` 代码。Peanut 依赖、数据库 migration 和业务 migration
 仍需按发布计划由各自 owner 执行，不能把脚手架升级误解成业务数据迁移。
 
@@ -107,7 +108,7 @@ php server/database/install.php
 安装器只接受已登记且已确认为空的数据库，创建默认 Tenant、原生 Account/TenantMember 和首
 owner，且不会回显初始密码。2.0.0 不支持接管 1.x 数据库；目标库已有任何表时停止，先登记并
 选择新的空库，不能把共享开发库重置为安装目标。
-安装后可执行 `php server/database/migrate.php --current` 校验 canonical `init.sql` 与基线后
+安装后可执行 `php server/database/install.php --migrate --current` 校验 canonical `init.sql` 与基线后
 追加 migration 的 SHA-256。不要手工改写账本或已登记 SQL。
 
 预期结果：安装器明确完成 canonical Schema、默认 Tenant 和首 owner 创建，并且不会回显密码。
