@@ -26,8 +26,8 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.6",
-    "web_npm": "@peanut-admin/admin@0.1.0-alpha.6",
+    "composer": "peanut-admin/core@0.1.0-alpha.7",
+    "web_npm": "@peanut-admin/admin@0.1.0-alpha.7",
     "pc_npm": "@peanut-admin/admin@0.1.0-alpha.5",
     "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.5"
   },
