@@ -762,6 +762,7 @@ class Runner:
         if values.get("DB_NAME") != database or values.get("DB_NAME") == PERSISTENT_DATABASE:
             fail("database selector returned a forbidden database")
         values.update({
+            "APP_ENV": "development",
             "DB_USER": required_environment("P0E_DB_USER"),
             "DB_PASS": required_environment("P0E_DB_PASSWORD"),
             "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
