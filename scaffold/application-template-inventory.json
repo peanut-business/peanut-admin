@@ -271,7 +271,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "aa694d0b77a343f2b63224699e464faff19da3a51e233eb2cf8ae5663e6f95ff"
+            "source_sha256": "9d60baba9de25b5f4479700d76ffcd6bd3251612ae750a8d42d3dd1004ec40c2"
         },
         {
             "path": "THIRD_PARTY_NOTICES.md",
@@ -285,7 +285,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4564b7f7a03934f845fe13cb1990d59ec8c57c26ca23e952da7f17837e0fd380"
+            "source_sha256": "199e8a38999e7557d337e2ba246ac4000d2a95b2a91778f41c95fed26a2bf43d"
         },
         {
             "path": "compose.yaml",

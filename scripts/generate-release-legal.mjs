@@ -12,7 +12,7 @@ const checkOnly = process.argv.includes('--check')
 
 const expectedCounts = {
   composer: 42,
-  web: 1036,
+  web: 1031,
   pc: 928,
   uniapp: 1013,
   'docs-site': 174,
@@ -27,6 +27,8 @@ if (releaseMetadata.version !== releaseVersion || releaseMetadata.expected_tag !
 }
 const releaseTag = releaseMetadata.expected_tag
 const releaseDate = releaseMetadata.release_date
+const corePhpVersion = versionContract.core_php
+const coreWebVersion = versionContract.core_web
 
 const normalizeLicense = (license, name, version) => {
   if ((name === 'trim' && version === '0.0.1') ||
@@ -290,7 +292,7 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 
 ## Distribution boundary
 
-- The normative GitHub Release distributes this repository's source. It does not attach prebuilt PHP/Nginx images or publish a new core package.
+- The normative GitHub Release distributes this repository's source. It does not attach prebuilt PHP/Nginx images; the fixed core packages are published separately in their public registries.
 - Production Compose builds static management, PC and H5 assets and installs the 33 Composer production packages listed below. No \`node_modules\` directory is copied into the final images.
 - The exhaustive package/version/license/source inventory for the five locked dependency graphs is \`RELEASE_SBOM.spdx.json\` (SPDX 2.3). Build-only entries are retained there so source-release recipients can reproduce the build and its notices.
 - Each installed dependency may include additional license or notice files. Those files remain authoritative for that dependency and must not be removed from redistributed dependency archives.
@@ -302,8 +304,8 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | Arco Design Pro Vue | MIT | The initial management client used Arco Design Pro Vue material; applicable upstream MIT attribution is retained. Source: https://github.com/arco-design/arco-design-pro-vue |
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at \`server/LICENSE.txt\`. Source: https://github.com/top-think/framework |
-| \`peanut-admin/core\` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.5. Source: https://github.com/peanut-opensource/peanut-admin-core |
-| \`@peanut-admin/admin\` | Apache-2.0 | npm core package locked at 0.1.0-alpha.5 for Web, PC and UniApp. Source: https://github.com/peanut-opensource/peanut-admin |
+| \`peanut-admin/core\` | Apache-2.0 | Composer core package locked at ${corePhpVersion}. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
+| \`@peanut-admin/admin\` | Apache-2.0 | npm core package locked at ${coreWebVersion} for Web, PC and UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
 
 ## License handling
 
