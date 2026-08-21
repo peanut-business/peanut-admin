@@ -119,17 +119,17 @@ API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动
 
 | 入口 | 登录地址 | 账号 | 密码 |
 | --- | --- | --- | --- |
-| 历史 v2.1.5 多租户候选 / 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | `peanut1234` |
-| 历史 v2.1.5 多租户候选 / bootstrap 管理端 | `https://pa-admin.007345.xyz/admin/` | `admin@pa-demo.example` | `peanut1234` |
-| 历史 v2.1.5 多租户候选 / 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
-| 历史 v2.1.5 多租户候选 / Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
-| 历史 v2.1.5 多租户候选 / Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
-| 历史 v2.1.5 Standalone / 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | `peanut1234` |
+| 历史 v2.1.5 多租户候选 / 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | `peanut1234xx` |
+| 历史 v2.1.5 多租户候选 / bootstrap 管理端 | `https://pa-admin.007345.xyz/admin/` | `admin@pa-demo.example` | `peanut1234xx` |
+| 历史 v2.1.5 多租户候选 / 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234xx` |
+| 历史 v2.1.5 多租户候选 / Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234xx` |
+| 历史 v2.1.5 多租户候选 / Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234xx` |
+| 历史 v2.1.5 Standalone / 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | `peanut1234xx` |
 | 历史 v2.1.5 Standalone / PC | `https://peanut-admin.007345.xyz/pc/` | 按业务会员登录 | 不公开 |
 | 历史 v2.1.5 Standalone / H5 | `https://peanut-admin.007345.xyz/mobile/` | 按业务会员登录 | 不公开 |
 | 官方文档 | `https://peanut-admin-doc.007345.xyz` | 无需登录 | 无 |
 
-上表管理身份都是 owner 明确批准公开的可丢弃演示账号，统一密码为 `peanut1234`。当前完整
+上表管理身份都是 owner 明确批准公开的可丢弃演示账号，统一密码为 `peanut1234xx`。当前完整
 事实源为 [`docs/operations/demo-access.md`](docs/operations/demo-access.md)；部署目录 `.env`
 中的 `*_INITIAL_PASSWORD` 只是首次安装输入，账号在数据库中改密后不会回写，不能据此判断
 当前登录密码。

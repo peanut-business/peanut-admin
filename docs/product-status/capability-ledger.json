@@ -10,7 +10,7 @@
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "v3.0.0 候选正在统一版本合同、脚手架工具、部署安全、Tenant 边界和富文本安全；历史 v2.1.5 资格证据保留为上一版本事实，3.0.0 尚未发布。"
+    "summary": "v3.0.1 候选修复了 Demo 初始密码与 Core Alpha.6 最小长度合同不一致的问题；历史 v2.1.5 和 v3.0.0 资格证据保留为上一版本事实，3.0.1 尚待独立资格。"
   },
   "capabilities": [
     {

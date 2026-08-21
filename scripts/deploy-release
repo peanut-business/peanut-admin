@@ -92,7 +92,7 @@ validate_email() {
 
 validate_password() {
   local name="$1" value="$2"
-  if [[ "$DEMO_MODE" == enabled && "$value" == peanut1234 ]]; then
+  if [[ "$DEMO_MODE" == enabled && "$value" == peanut1234xx ]]; then
     return 0
   fi
   [[ ${#value} -ge 6 ]] \
@@ -194,8 +194,8 @@ if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled ]]; then
   fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
 fi
 if [[ -n "$OVERLAY" ]]; then
-  [[ "$DEMO_SHARED_PASSWORD" == peanut1234 ]] \
-    || fail 'demo deployments must use the fixed demo password peanut1234'
+  [[ "$DEMO_SHARED_PASSWORD" == peanut1234xx ]] \
+    || fail 'demo deployments must use the fixed demo password peanut1234xx'
   ADMIN_PASSWORD="$DEMO_SHARED_PASSWORD"
   PLATFORM_PASSWORD="$DEMO_SHARED_PASSWORD"
 fi
@@ -363,7 +363,10 @@ if [[ -n "$OVERLAY" ]]; then
   scp "${SSH_KEEPALIVE_OPTS[@]}" -q "$OVERLAY" "$SSH_ALIAS:$remote_overlay" || fail 'cannot transfer demo overlay'
 fi
 
-ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" bash -s -- \
+# The registered deployment roots are root-owned (0700) on oracle3.  Execute the
+# remote control script through the registered non-interactive sudo boundary so
+# its preflight, Compose and filesystem operations all observe the same target.
+ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" sudo -n bash -s -- \
   "$TAG" "$tag_commit" "$TARGET" "$mode" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 

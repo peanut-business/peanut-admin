@@ -90,13 +90,13 @@ scripts/deploy-release v3.0.0 --target production --fresh \
 scripts/build-demo-site-patch v3.0.0 output/deployment/demo-site-v3.0.0.tar
 
 export PEANUT_GENERATED_ADMIN_EMAIL='admin@pa-demo.example'
-export PEANUT_GENERATED_ADMIN_PASSWORD='peanut1234'
+export PEANUT_GENERATED_ADMIN_PASSWORD='peanut1234xx'
 export PEANUT_GENERATED_PLATFORM_EMAIL='platform@pa-demo.example'
-export PEANUT_GENERATED_PLATFORM_PASSWORD='peanut1234'
+export PEANUT_GENERATED_PLATFORM_PASSWORD='peanut1234xx'
 export PEANUT_DEMO_MODE=enabled
 export PEANUT_DEMO_TENANT_A_EMAIL='tenant-a@pa-demo.example'
 export PEANUT_DEMO_TENANT_B_EMAIL='tenant-b@pa-demo.example'
-export PEANUT_DEMO_SHARED_PASSWORD='peanut1234'
+export PEANUT_DEMO_SHARED_PASSWORD='peanut1234xx'
 export PEANUT_DEMO_TENANT_A_HOST='pa-tenant-a.007345.xyz'
 export PEANUT_DEMO_TENANT_B_HOST='pa-tenant-b.007345.xyz'
 export PEANUT_DEMO_DOCS_URL='https://peanut-admin-doc.007345.xyz'
@@ -107,7 +107,7 @@ scripts/deploy-release v3.0.0 --target production-candidate --install \
 
 只有 `PEANUT_DEMO_MODE=enabled` 时，租户登录页才会预填公开演示账号；服务端会拒绝演示账号
 修改密码、菜单、角色、管理员、组织、配置、装修，以及 Platform 端的权限和租户关键操作。
-演示候选的 bootstrap、Platform 和 Tenant A/B 初始密码统一为 `peanut1234`。关闭该变量后，
+演示候选的 bootstrap、Platform 和 Tenant A/B 初始密码统一为 `peanut1234xx`。关闭该变量后，
 正式应用不返回演示凭据，也不限制正常账号修改密码。
 
 fresh 部署必须显式提供管理员邮箱和密码；脚本不会生成或回显密码。它们只写入服务器

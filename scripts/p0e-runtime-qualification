@@ -1002,6 +1002,42 @@ class Runner:
         self.inspect(database, mode, group)
         self.drop_database(database)
 
+    def seed_multi_tenant_browser_binding(self, database: str, log: Path) -> None:
+        """Give the fresh browser fixture a Host-bound default Tenant entry.
+
+        A multi-tenant install intentionally starts without any public Tenant Host
+        binding.  The browser qualification uses the registered shared Admin Host,
+        so it needs one explicit synthetic binding before exercising anonymous
+        config reads and the owner login flow.  This is fixture data only; it is
+        not part of the generated application or the released database baseline.
+        """
+        host = self.plan["browser_hosts"]["tenant_admin"]
+        escaped_host = host.replace("'", "''")
+        for client in ("admin-web", "member-api"):
+            database_sql = (
+                "INSERT INTO pa_tenant_entry_binding (tenant_id, host, client_key, status) "
+                "SELECT t.id, '" + escaped_host + "', '" + client + "', 'active' "
+                "FROM pa_tenant t "
+                "WHERE t.code = 'default' "
+                "AND NOT EXISTS ("
+                "SELECT 1 FROM pa_tenant_entry_binding b "
+                "WHERE b.host = '" + escaped_host + "' AND b.client_key = '" + client + "'"
+                ");"
+            )
+            self.remote_mysql(database_sql, database=database)
+            count = self.remote_mysql(
+                "SELECT COUNT(*) FROM pa_tenant_entry_binding "
+                "WHERE host = '" + escaped_host + "' AND client_key = '" + client + "'",
+                database=database,
+            ).strip()
+            if count != "1":
+                fail(f"multi-tenant browser fixture did not create its {client} Host binding")
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write(
+                "P0-E browser fixture seeded default Tenant binding "
+                f"host={host} clients=admin-web,member-api\n"
+            )
+
     def plugin_lifecycle_at(self, project_root: Path, scenario: str, group: str) -> None:
         database = self.plan["databases"][scenario]
         log = self.group_log(group)
@@ -1218,6 +1254,7 @@ class Runner:
                 self.create_database(database)
                 self.install_current(database, mode, self.group_log(group), project_root=project_root)
             self.inspect(database, mode, f"{group}-database", project_root=project_root)
+            self.seed_multi_tenant_browser_binding(database, self.group_log(group))
             self.write_compose_env(database, mode)
             self.compose(
                 "up", "-d", "--no-build", "--force-recreate", "php", "nginx", "cron",
