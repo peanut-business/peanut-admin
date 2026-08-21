@@ -3777,7 +3777,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3d9081267c2b7cc59eafd30c6659966dc62287f66a16699ec17da5dc16d96d14"
+            "source_sha256": "ca7d11db2f868ba674a816fdeb03ea15aa5c2070a411c7390c3c4aa91cc7a475"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -11525,7 +11525,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7146be45a0ebea85f4adaf7823703bd8302e8a22d54b340ac8965ae18d1cd364"
+            "source_sha256": "0048ea3cd29601db08fc9cb5609a142b39b6410b078aa01b5f9a23d0a0fb0af2"
         },
         {
             "path": "server/database/import.php",
@@ -11553,7 +11553,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "88b34abefdf3e5bae4ab2d717d6cdbfbfb1a05f4dd4b0bb61e833af8329f96f0"
+            "source_sha256": "34f83b716ea2a5df72980f526d9f6cd610195c6d7ddf101540ee07aa1b9bb96e"
         },
         {
             "path": "server/database/install.php",
@@ -11567,7 +11567,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dfe111a23e8d27213261f511c5c688245439c8d57026a15a155e3f7b5009950d"
+            "source_sha256": "259fd947755d20d2924d36999d5644cec74d832673c0e0ead85d70ac111df558"
         },
         {
             "path": "server/database/seed-demo-data.php",
@@ -12728,7 +12728,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0cf947e1d59dfcd1230215d8a9dd061d238cefa9dd8161eb040d67bcb258781d"
+            "source_sha256": "c7969e8f4d98a4ad74dd3607d0ad73fd2761c507a85ff6850df7b85925f18cb1"
         },
         {
             "path": "server/tests/Productization/InstallerBootstrapTest.php",

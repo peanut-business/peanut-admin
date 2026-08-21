@@ -39,14 +39,14 @@ freshSchemaExpect(str_contains($installer, 'KernelSchema::tableNames()'), 'insta
 freshSchemaExpect(str_contains($installer, 'BootstrapService'), 'installer does not use the native Core bootstrap service');
 freshSchemaExpect(str_contains($installer, "'default'"), 'installer does not create the formal default Tenant');
 freshSchemaExpect(str_contains($installer, "'core.tenant-owner'"), 'installer health contract does not verify the native owner role');
-freshSchemaExpect(!is_file($serverRoot . '/database/migrate.php'), 'retired application migration runner remains active');
+freshSchemaExpect(str_contains($installer, "'--migrate'"), 'application migration runner is not available');
 freshSchemaExpect((glob($serverRoot . '/database/migrations/*.sql') ?: []) === [], 'post-baseline application migrations remain active');
 
 foreach (['information_schema', 'ALTER TABLE', 'PREPARE ', 'EXECUTE ', 'DEALLOCATE PREPARE'] as $transitionSql) {
     freshSchemaExpect(!str_contains($schema, $transitionSql), "transition SQL remains in canonical schema: {$transitionSql}");
 }
 
-freshSchemaExpect(!in_array('pa_schema_migration', $applicationTables, true), 'application migration ledger remains in the canonical schema');
+freshSchemaExpect(in_array('pa_schema_migration', $applicationTables, true), 'application migration ledger is missing from the canonical schema');
 foreach ([
     'pa_jobs',
     'pa_plugin_installation',

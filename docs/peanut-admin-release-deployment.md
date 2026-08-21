@@ -177,10 +177,12 @@ curl -fsS http://127.0.0.1:18092/healthz
 php server/database/environment-guard.php --current
 ```
 
-禁止执行或恢复旧 `migrate.php`、`pa_schema_migration`、legacy Admin/Role/Dept map、默认
-Tenant bootstrap、余额双写或旧 scaffold upgrade Runtime。需要保留旧系统时，继续隔离运行
-旧实例，并为 3.0 准备独立空库；业务数据迁移必须另立字段映射、校验和回滚方案。Plugin
-Module 自己的 `pa_module_migration` 属于插件生命周期，不是应用升级账本。
+3.0 首次安装仍必须使用空库；跨大版本不得原地升级，必须先备份并走显式 `--fresh` 重建。
+同一大版本的普通更新使用 `scripts/deploy-release --update`，由
+`php server/database/install.php --migrate --target-version=X.Y.Z` 校验 checksum 并按账本
+执行追加 SQL；不得手工修改或删除已应用记录。需要保留旧系统时，继续隔离运行旧实例，并为
+3.0 准备独立空库。Plugin Module 自己的 `pa_module_migration` 属于插件生命周期，应用追加
+migration 使用 `pa_schema_migration`。
 
 ## 发布最低检查
 

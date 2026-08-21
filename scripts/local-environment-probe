@@ -549,6 +549,7 @@ class Probe:
                 "status",
                 "baseline_table_count",
                 "installed_table_count",
+                "application_migration_count",
                 "module_migration_count",
             )
             if key in baseline_details

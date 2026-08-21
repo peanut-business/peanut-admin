@@ -483,7 +483,6 @@ function canonicalBaselineTables(): array
     foreach ($matches[1] ?? [] as $table) {
         $tables[(string)$table] = true;
     }
-    unset($tables['pa_schema_migration']);
     $names = array_keys($tables);
     sort($names, SORT_STRING);
     return $names;
@@ -523,7 +522,7 @@ function assertRequiredIndexes(PDO $pdo, array $requirements): void
     }
 }
 
-/** @return array{baseline_table_count:int,installed_table_count:int,module_migration_count:int,management_member_count:int,menu_count:int,config_count:int,permission_count:int,tenant_count:int,owner_count:int,operator_count:int} */
+/** @return array{baseline_table_count:int,installed_table_count:int,application_migration_count:int,module_migration_count:int,management_member_count:int,menu_count:int,config_count:int,permission_count:int,tenant_count:int,owner_count:int,operator_count:int} */
 function assertCurrentDatabase(PDO $pdo): array
 {
     $expected = canonicalBaselineTables();
@@ -531,9 +530,6 @@ function assertCurrentDatabase(PDO $pdo): array
         'SELECT TABLE_NAME FROM information_schema.TABLES '
         . 'WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME'
     )->fetchAll(PDO::FETCH_COLUMN));
-    if (in_array('pa_schema_migration', $actual, true)) {
-        throw new RuntimeException('数据库仍包含已退役的应用迁移账本 pa_schema_migration');
-    }
     $missing = array_values(array_diff($expected, $actual));
     if ($missing !== []) {
         throw new RuntimeException('数据库缺少 v3.0 基线表：' . implode(', ', $missing));
@@ -548,6 +544,7 @@ function assertCurrentDatabase(PDO $pdo): array
         'pa_system_menu' => ['id', 'type', 'perms', 'component'],
         'pa_config' => ['type', 'name', 'value'],
         'pa_module_migration' => ['module_key', 'migration_key', 'checksum', 'status'],
+        'pa_schema_migration' => ['migration_id', 'release_version', 'checksum', 'status'],
     ]);
     assertRequiredIndexes($pdo, [
         'pa_tenant' => ['PRIMARY', 'uk_tenant_code'],
@@ -556,6 +553,7 @@ function assertCurrentDatabase(PDO $pdo): array
         'pa_system_menu' => ['PRIMARY'],
         'pa_config' => ['PRIMARY', 'uk_type_name'],
         'pa_module_migration' => ['PRIMARY', 'uk_module_migration'],
+        'pa_schema_migration' => ['PRIMARY', 'idx_schema_migration_status'],
     ]);
 
     $menuCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
@@ -564,6 +562,7 @@ function assertCurrentDatabase(PDO $pdo): array
         "SELECT COUNT(*) FROM pa_permission WHERE status = 'active'"
     )->fetchColumn();
     $moduleMigrationCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_module_migration')->fetchColumn();
+    $applicationMigrationCount = (int)$pdo->query("SELECT COUNT(*) FROM pa_schema_migration WHERE status = 'applied'")->fetchColumn();
     $tenantCount = (int)$pdo->query(
         "SELECT COUNT(*) FROM pa_tenant WHERE code = 'default' AND status = 'active'"
     )->fetchColumn();
@@ -592,6 +591,7 @@ SQL)->fetchColumn();
     return [
         'baseline_table_count' => count($expected),
         'installed_table_count' => count($actual),
+        'application_migration_count' => $applicationMigrationCount,
         'module_migration_count' => $moduleMigrationCount,
         'management_member_count' => $ownerCount,
         'menu_count' => $menuCount,
