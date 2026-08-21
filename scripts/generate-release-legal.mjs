@@ -29,6 +29,8 @@ const releaseTag = releaseMetadata.expected_tag
 const releaseDate = releaseMetadata.release_date
 const corePhpVersion = versionContract.core_php
 const coreWebVersion = versionContract.core_web
+const corePcVersion = readJson('pc/package.json').dependencies['@peanut-admin/admin']
+const coreUniappVersion = readJson('uniapp/package.json').dependencies['@peanut-admin/admin']
 
 const normalizeLicense = (license, name, version) => {
   if ((name === 'trim' && version === '0.0.1') ||
@@ -305,7 +307,7 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at \`server/LICENSE.txt\`. Source: https://github.com/top-think/framework |
 | \`peanut-admin/core\` | Apache-2.0 | Composer core package locked at ${corePhpVersion}. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
-| \`@peanut-admin/admin\` | Apache-2.0 | npm core package locked at ${coreWebVersion} for Web, PC and UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
+| \`@peanut-admin/admin\` | Apache-2.0 | npm core package locked at ${coreWebVersion} for Web, ${corePcVersion} for PC and ${coreUniappVersion} for UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
 
 ## License handling
 

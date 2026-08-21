@@ -27,8 +27,9 @@
   },
   "public_runtime_dependencies": {
     "composer": "peanut-admin/core@0.1.0-alpha.6",
-    "web_pc_npm": "@peanut-admin/admin@0.1.0-alpha.6",
-    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.6"
+    "web_npm": "@peanut-admin/admin@0.1.0-alpha.6",
+    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.5",
+    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.5"
   },
   "lockfiles": {
     "server/composer.lock": "452c77a1ec5674637f8a6420f566249fc1c95320464ec170f63e93fc3dff4a08",
@@ -40,7 +41,7 @@
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "199e8a38999e7557d337e2ba246ac4000d2a95b2a91778f41c95fed26a2bf43d",
+    "THIRD_PARTY_NOTICES.md": "838465191e1effc71ffe129ebba97f5999d313168058ab6260ce8d9d204e170e",
     "RELEASE_SBOM.spdx.json": "9d60baba9de25b5f4479700d76ffcd6bd3251612ae750a8d42d3dd1004ec40c2"
   },
   "technical_qualification": {
