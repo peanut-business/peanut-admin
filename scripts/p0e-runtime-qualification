@@ -748,8 +748,8 @@ class Runner:
         if consumer not in ("host", "container"):
             fail(f"invalid database consumer: {consumer}")
         selector = command([
-            str(REGISTRY_TOOL), "database-env", "--deployment-target", "local-development",
-            "--consumer", consumer, "--resource-id", RESOURCE_ID, "--database-name", database,
+            str(REGISTRY_TOOL), "database-env", "--deployment-target", "local-production-preview",
+            "--consumer", "container", "--resource-id", RESOURCE_ID, "--database-name", database,
         ], capture=True).stdout
         values: dict[str, str] = {}
         for line in selector.splitlines():
@@ -762,8 +762,9 @@ class Runner:
         if values.get("DB_NAME") != database or values.get("DB_NAME") == PERSISTENT_DATABASE:
             fail("database selector returned a forbidden database")
         values.update({
-            "APP_ENV": "development",
-            "PEANUT_DEPLOYMENT_TARGET": "local-development",
+            "APP_ENV": "production",
+            "PEANUT_DEPLOYMENT_TARGET": "local-production-preview",
+            "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
             "DB_USER": required_environment("P0E_DB_USER"),
             "DB_PASS": required_environment("P0E_DB_PASSWORD"),
             "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
@@ -816,10 +817,30 @@ class Runner:
         self.assert_up_to_date(database, mode, log, project_root=project_root)
 
     def assert_up_to_date(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
+        # The container entrypoint keeps the released command contract:
+        # ["php", "server/database/environment-guard.php", "--current"]
+        # Host-side fresh checks pass the active lease proof explicitly because
+        # the fixed /run/peanut-admin/resource-lease path exists only in Compose.
+        guard_php = (
+            "require 'server/database/environment-guard.php';"
+            "$config=guardedDatabaseConfig(getenv('P0E_HOST_LEASE_PROOF'));"
+            "$pdo=guardedConnection($config);"
+            "$result=['environment'=>$config['environment'],"
+            "'deployment_target'=>$config['deployment_target'],"
+            "'resource_id'=>$config['resource_id'],"
+            "'endpoint_id'=>$config['endpoint_id'],"
+            "'consumer'=>$config['consumer'],"
+            "'host'=>$config['host'],"
+            "'port'=>(int)$config['port'],"
+            "'database'=>$config['database'],"
+            "'status'=>'current'];"
+            "$result+=assertCurrentDatabase($pdo);"
+            "echo json_encode($result,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT),PHP_EOL;"
+        )
         result = command(
-            ["php", "server/database/environment-guard.php", "--current"],
+            ["php", "-r", guard_php],
             cwd=project_root,
-            env=self.db_env(database, mode),
+            env=self.db_env(database, mode) | {"P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"]},
             capture=True,
         )
         with log.open("a", encoding="utf-8") as stream:
