@@ -3,6 +3,16 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [3.0.5] - Pending qualification
+
+### Fixed
+
+- Demo overlays and local demo scripts now use `peanut1234`; the shorter credential is accepted
+  only while `PEANUT_DEMO_MODE=enabled`, while normal account passwords retain Core policy.
+- Admin login validation now matches the Core email contract through 255 characters.
+- Release, `create-app`, independent application, and scaffold-upgrade documentation now describe
+  the main/tag/manual Release flow and the separate application lifecycle.
+
 ## [3.0.4] - 2026-08-21
 
 ### Fixed
