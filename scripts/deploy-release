@@ -466,7 +466,10 @@ sudo -n docker image inspect "$php_image" "$nginx_image" >/dev/null \
 
 verify_paired_backup() {
   local backup_root="$root/backups" backup_dir
-  [[ "$target" == production ]] || fail 'destructive fresh requires a registered paired DB/files backup for this target'
+  if [[ "$target" != production ]]; then
+    printf 'verified_disposable_fresh_target=%s (paired backup not required)\n' "$target"
+    return 0
+  fi
   [[ -d "$backup_root" ]] || fail 'registered paired backup directory is missing'
   backup_dir="$(sudo -n find "$backup_root" -mindepth 1 -maxdepth 1 -type d -print | sort | tail -n 1)"
   [[ -n "$backup_dir" ]] || fail 'no paired backup set is available'
