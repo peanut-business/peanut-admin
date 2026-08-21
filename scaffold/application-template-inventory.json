@@ -11147,7 +11147,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0588003e030544b59af27f9792bded01171c5a8388936a3e095a14e4650a58cf"
+            "source_sha256": "62cd64cfa46fd337660fd48b7c71c023c32af47ba81d8a2c4707be107463a6e2"
         },
         {
             "path": "server/composer.lock",
@@ -11161,7 +11161,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4aa84b1cde4b97c98f394ded7782d4aca86fead62e94612a81161e0ec989263f"
+            "source_sha256": "452c77a1ec5674637f8a6420f566249fc1c95320464ec170f63e93fc3dff4a08"
         },
         {
             "path": "server/config/admin_api_access.php",
@@ -14521,7 +14521,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fbce20586cbe5b1c357ae029822a19c7c7d8bb02d84d82894187755ddd2d4f61"
+            "source_sha256": "e0dc6f01e11ab7440e9ade267e8b729aed2b8dc7ad8b321ad556bb0862685fc1"
         },
         {
             "path": "web/pnpm-lock.yaml",
@@ -14535,7 +14535,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1e3c93cee5aa90713800e5dbbf13a29f2ad6133e020e9f78e01d5d13c9f2b170"
+            "source_sha256": "3cebe7b267217b711f12c8e51e2cfff018d4362b2e35d4cdc8d2716a8f7aedd7"
         },
         {
             "path": "web/public/brand/avatar-admin.svg",
