@@ -19,7 +19,7 @@ Scaffold Product Token itself is proprietary software: Copyright (c) 2026 applic
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at `server/LICENSE.txt`. Source: https://github.com/top-think/framework |
 | `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.6. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
-| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.6 for Web, PC and UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
+| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.6 for Web, 0.1.0-alpha.5 for PC and 0.1.0-alpha.5 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
 
 ## License handling
 

@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "3.0.0",
-        "source_commit": "c69f608f2284e3a38afa83eb22f0cdfb134f589d",
-        "source_tree": "d0367644f22fe3a238276a102f0b4b1094458db1",
-        "inventory_sha256": "fceb2fd990515071af5c00a148ddd32eacfe6469e1df304ff112c2410c77dfb8",
+        "source_commit": "6cfb486033d00d09e882a20bc8498e10c25d9920",
+        "source_tree": "259cedd1900dcc8847ed6d6184f6f40cafef1adc",
+        "inventory_sha256": "0b4e69ae757c8df12bdbe5403630a2151a66553936267a32707852a35c6f89f7",
         "inventory_template_version": "3.0.0",
-        "managed_tree_sha256": "322bc7519d568741edb6b24dfed32fd64ad31ef8c8ef9f44acf6d396a4d74840",
+        "managed_tree_sha256": "292f3004133fc63c6f3ab0e345376c9a4cdce129a158201b8ca1cfceb3853e29",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -132,7 +132,7 @@
         {
             "path": "THIRD_PARTY_NOTICES.md",
             "source": "files/THIRD_PARTY_NOTICES.md",
-            "template_sha256": "e47967f29fd64b5cc6b33876fb0dfbf3a76d7837e5969ff636642500ca427781",
+            "template_sha256": "1a7c7df32062ba05fbb4a0ec475b54a62212c65d165656b1da50b2bd2047887f",
             "classification": "generated-managed",
             "transform": "tokens",
             "mode": 420,
