@@ -34,8 +34,8 @@ Release 保留为历史证据，不覆盖或重写。
 
 | 生态 | 包 | 应用当前锁定事实 |
 |---|---|---|
-| Composer | `peanut-admin/core` | `0.1.0-alpha.5`（Packagist） |
-| npm | `@peanut-admin/admin` | `0.1.0-alpha.5`（Web/PC/UniApp，npm Registry） |
+| Composer | `peanut-admin/core` | `0.1.0-alpha.6`（Packagist） |
+| npm | `@peanut-admin/admin` | Web `0.1.0-alpha.6`；PC/UniApp `0.1.0-alpha.5`（npm Registry） |
 
 内部领域目录不是独立包。应用只消费上述两个公开总包；Core/Generator 的公司级固定身份与 DCS Product-only 条件采用边界独立记录，不因应用版本发布而扩大授权。
 

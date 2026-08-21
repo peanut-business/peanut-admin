@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "3.0.0",
-        "source_commit": "f1f6664d8c16fc7244d2570772cf2090ec2cc641",
-        "source_tree": "0393b1119b043268b33a0d5680699be3698d1e31",
-        "inventory_sha256": "5b4ae1ca6daa913b1e4de88ad02183fea695076a76e9c6370f3a60bf8bd2eeec",
+        "source_commit": "6cfb486033d00d09e882a20bc8498e10c25d9920",
+        "source_tree": "259cedd1900dcc8847ed6d6184f6f40cafef1adc",
+        "inventory_sha256": "0b4e69ae757c8df12bdbe5403630a2151a66553936267a32707852a35c6f89f7",
         "inventory_template_version": "3.0.0",
-        "managed_tree_sha256": "5dee3f1752aa6b19cf549ac9629acacdffb98497f26604f65fbc70635dc64dbd",
+        "managed_tree_sha256": "292f3004133fc63c6f3ab0e345376c9a4cdce129a158201b8ca1cfceb3853e29",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -112,7 +112,7 @@
         {
             "path": "RELEASE_METADATA.json",
             "source": "files/RELEASE_METADATA.json",
-            "template_sha256": "49f40a75b62e7793cae070f650b96b589d901e04fd1bbe9d3da347006cb22983",
+            "template_sha256": "d070bad723d688e60956814e81bcf57a43e6bd33ff59edee1e5a9f68d5b9f988",
             "classification": "generated-managed",
             "transform": "tokens",
             "mode": 420,
@@ -122,7 +122,7 @@
         {
             "path": "RELEASE_SBOM.spdx.json",
             "source": "files/RELEASE_SBOM.spdx.json",
-            "template_sha256": "45008e812823b25075fcbe87a71765d961a7f64132215215f8809d0733b6e489",
+            "template_sha256": "394847732401924bf4b94b71b2eb176bc848940a57d88cbc0e8a4e6d04f966ac",
             "classification": "generated-managed",
             "transform": "tokens",
             "mode": 420,
@@ -132,7 +132,7 @@
         {
             "path": "THIRD_PARTY_NOTICES.md",
             "source": "files/THIRD_PARTY_NOTICES.md",
-            "template_sha256": "e27192c455d1759ad3b0f5b43c03f43571bcfba68a3fa34fe7e99670bce2d61b",
+            "template_sha256": "1a7c7df32062ba05fbb4a0ec475b54a62212c65d165656b1da50b2bd2047887f",
             "classification": "generated-managed",
             "transform": "tokens",
             "mode": 420,
@@ -702,7 +702,7 @@
         {
             "path": "release-versions.json",
             "source": "files/release-versions.json",
-            "template_sha256": "8e1595d095e303fb94a369a04a155042bdf6f760b35afc6c69b23e987a400ca1",
+            "template_sha256": "cd7f105504f272d6726e4ac341a0f7630e0a168c8f14da9505ff1b8a7b262dac",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -942,7 +942,7 @@
         {
             "path": "server/composer.json",
             "source": "files/server/composer.json",
-            "template_sha256": "2b812dbf2ce5728359ed7dd4e67c7686475918056f8da5554fdd1917b6e63bc4",
+            "template_sha256": "8c989fc9620bf48c65976038e3421c83b645e2339f131b1a1a01d437c6aa52bd",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -952,7 +952,7 @@
         {
             "path": "server/composer.lock",
             "source": "files/server/composer.lock",
-            "template_sha256": "7f1a63f423eba18afaca6c0fa73ef6acdcdc5fa8aadf965d641556962f9ea070",
+            "template_sha256": "99d1d2c9bcd5552ad438b731088211fe9d1dbea6c6639e481aec0a4229540dc4",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1812,7 +1812,7 @@
         {
             "path": "web/package.json",
             "source": "files/web/package.json",
-            "template_sha256": "56ea89484cf29a060d9c3eeb0a8b3c24c13decb0f94b1a2206476482b47a9faf",
+            "template_sha256": "c21c497222b9261d504219cc18fee624affeb50767e2b8e9d5e0762dd4933eb2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1822,7 +1822,7 @@
         {
             "path": "web/pnpm-lock.yaml",
             "source": "files/web/pnpm-lock.yaml",
-            "template_sha256": "1e3c93cee5aa90713800e5dbbf13a29f2ad6133e020e9f78e01d5d13c9f2b170",
+            "template_sha256": "3cebe7b267217b711f12c8e51e2cfff018d4362b2e35d4cdc8d2716a8f7aedd7",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

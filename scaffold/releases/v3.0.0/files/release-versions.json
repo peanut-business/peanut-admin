@@ -4,6 +4,6 @@
     "product_release": "999999.999999.999999",
     "scaffold_template": "3.0.0",
     "generated_application_default": "999999.999999.999999",
-    "core_php": "0.1.0-alpha.5",
-    "core_web": "0.1.0-alpha.5"
+    "core_php": "0.1.0-alpha.6",
+    "core_web": "0.1.0-alpha.6"
 }

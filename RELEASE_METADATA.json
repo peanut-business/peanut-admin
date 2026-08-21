@@ -14,7 +14,7 @@
   "normative_artifact": {
     "type": "source-release",
     "prebuilt_images_published": false,
-    "new_core_packages_published": false,
+    "new_core_packages_published": true,
     "saas_included": false
   },
   "supported_build_and_runtime": {
@@ -26,13 +26,14 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.5",
-    "web_pc_npm": "@peanut-admin/admin@0.1.0-alpha.5",
+    "composer": "peanut-admin/core@0.1.0-alpha.6",
+    "web_npm": "@peanut-admin/admin@0.1.0-alpha.6",
+    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.5",
     "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.5"
   },
   "lockfiles": {
-    "server/composer.lock": "4aa84b1cde4b97c98f394ded7782d4aca86fead62e94612a81161e0ec989263f",
-    "web/pnpm-lock.yaml": "1e3c93cee5aa90713800e5dbbf13a29f2ad6133e020e9f78e01d5d13c9f2b170",
+    "server/composer.lock": "452c77a1ec5674637f8a6420f566249fc1c95320464ec170f63e93fc3dff4a08",
+    "web/pnpm-lock.yaml": "3cebe7b267217b711f12c8e51e2cfff018d4362b2e35d4cdc8d2716a8f7aedd7",
     "pc/package-lock.json": "21060fd45566dfe3d6eb283d3c378abb539cb951c53cade052cd76405a378b69",
     "uniapp/package-lock.json": "1c7805eaccc3b232777cfefaeae1fea6a47945e86ad7362b53d635293d10e2d4",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
@@ -40,8 +41,8 @@
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "4564b7f7a03934f845fe13cb1990d59ec8c57c26ca23e952da7f17837e0fd380",
-    "RELEASE_SBOM.spdx.json": "aa694d0b77a343f2b63224699e464faff19da3a51e233eb2cf8ae5663e6f95ff"
+    "THIRD_PARTY_NOTICES.md": "838465191e1effc71ffe129ebba97f5999d313168058ab6260ce8d9d204e170e",
+    "RELEASE_SBOM.spdx.json": "9d60baba9de25b5f4479700d76ffcd6bd3251612ae750a8d42d3dd1004ec40c2"
   },
   "technical_qualification": {
     "phase": "3.0.0-pending-qualification",
