@@ -874,7 +874,7 @@ class Runner:
         )
         command([
             "php", "scripts/create-app", "--name=P0E Qualification", "--slug=p0e-qualification",
-            "--package=p0e/qualification", f"--target={self.generated}",
+            "--package=p0e/qualification", "--profile=full", f"--target={self.generated}",
         ], env={
             "GIT_CONFIG_COUNT": "1",
             "GIT_CONFIG_KEY_0": "core.excludesFile",
