@@ -1,6 +1,6 @@
 # Scaffold Product Token Third-Party Notices
 
-Generated for Scaffold Product Token 3.0.0 on 2026-08-20.
+Generated for Scaffold Product Token 3.0.5 on 2026-08-21.
 
 Scaffold Product Token itself is proprietary software: Copyright (c) 2026 application owner. All rights reserved. Third-party components remain governed by their own licenses. Nothing in the Scaffold Product Token proprietary license restricts rights granted by those third-party licenses.
 
@@ -18,8 +18,8 @@ Scaffold Product Token itself is proprietary software: Copyright (c) 2026 applic
 | Arco Design Pro Vue | MIT | The initial management client used Arco Design Pro Vue material; applicable upstream MIT attribution is retained. Source: https://github.com/arco-design/arco-design-pro-vue |
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at `server/LICENSE.txt`. Source: https://github.com/top-think/framework |
-| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.6. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
-| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.6 for Web, 0.1.0-alpha.5 for PC and 0.1.0-alpha.5 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
+| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.7. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
+| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.7 for Web, 0.1.0-alpha.5 for PC and 0.1.0-alpha.5 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
 
 ## License handling
 
@@ -107,7 +107,7 @@ These 33 packages are installed with `composer install --no-dev` in the producti
 | `opis/json-schema` | `2.6.0` | `Apache-2.0` | https://github.com/opis/json-schema.git |
 | `opis/string` | `2.1.0` | `Apache-2.0` | https://github.com/opis/string.git |
 | `opis/uri` | `1.1.0` | `Apache-2.0` | https://github.com/opis/uri.git |
-| `peanut-admin/core` | `0.1.0-alpha.6` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core-php.git |
+| `peanut-admin/core` | `0.1.0-alpha.7` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core-php.git |
 | `psr/container` | `2.0.2` | `MIT` | https://github.com/php-fig/container.git |
 | `psr/http-client` | `1.0.3` | `MIT` | https://github.com/php-fig/http-client.git |
 | `psr/http-factory` | `1.1.0` | `MIT` | https://github.com/php-fig/http-factory.git |
