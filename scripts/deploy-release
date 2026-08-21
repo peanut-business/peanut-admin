@@ -21,6 +21,8 @@ ADMIN_PASSWORD="${PEANUT_GENERATED_ADMIN_PASSWORD:-}"
 PLATFORM_EMAIL="${PEANUT_GENERATED_PLATFORM_EMAIL:-}"
 PLATFORM_PASSWORD="${PEANUT_GENERATED_PLATFORM_PASSWORD:-}"
 DEMO_MODE="${PEANUT_DEMO_MODE:-disabled}"
+DEMO_MODE_SET=0
+[[ -n "${PEANUT_DEMO_MODE+x}" ]] && DEMO_MODE_SET=1
 DEMO_TENANT_A_EMAIL="${PEANUT_DEMO_TENANT_A_EMAIL:-}"
 DEMO_TENANT_B_EMAIL="${PEANUT_DEMO_TENANT_B_EMAIL:-}"
 DEMO_SHARED_PASSWORD="${PEANUT_DEMO_SHARED_PASSWORD:-}"
@@ -190,7 +192,7 @@ if [[ -n "$OVERLAY" ]]; then
     [[ -n "$value" ]] || fail 'overlay deployment is missing a required PEANUT_DEMO_* value'
   done
 fi
-if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled ]]; then
+if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled && "$UPDATE" != 1 ]]; then
   fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
 fi
 if [[ -n "$OVERLAY" ]]; then
@@ -538,10 +540,18 @@ if [[ "$mode" != update ]]; then
     set_env_key PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
   fi
 fi
-for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
-  PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
-  set_env_key "$key" "${!key:-}"
-done
+if [[ "$mode" != update ]]; then
+  for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
+    PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
+    set_env_key "$key" "${!key:-}"
+  done
+elif [[ "$DEMO_MODE_SET" == 1 ]]; then
+  set_env_key PEANUT_DEMO_MODE "$DEMO_MODE"
+  for key in PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
+    PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
+    [[ -n "${!key:-}" ]] && set_env_key "$key" "${!key}"
+  done
+fi
 actual_commit="$expected_commit"
 
 compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
