@@ -73,7 +73,7 @@ report_matches \
 report_matches \
   'retired demo credential appears in current operator guidance' \
   'peanut1234xx' \
-  README.md docs/operations docs/peanut-admin-release-deployment.md docs-site resources/project-resources.json scripts/local-multi-tenant-demo scripts/deploy-release server/app/common/service/DemoAccountPolicy.php server/database/install.php server/database/seed-multi-tenant-demo.php
+  README.md docs/operations/demo-access.md docs/operations/local-demo-access.md docs/operations/release-and-application-lifecycle.md docs/peanut-admin-release-deployment.md docs-site resources/project-resources.json scripts/local-multi-tenant-demo scripts/deploy-release server/app/common/service/DemoAccountPolicy.php server/database/install.php server/database/seed-multi-tenant-demo.php
 
 report_matches \
   'removed deploy-release upgrade flag appears in current docs' \
