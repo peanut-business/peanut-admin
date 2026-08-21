@@ -763,6 +763,7 @@ class Runner:
             fail("database selector returned a forbidden database")
         values.update({
             "APP_ENV": "development",
+            "PEANUT_DEPLOYMENT_TARGET": "local-development",
             "DB_USER": required_environment("P0E_DB_USER"),
             "DB_PASS": required_environment("P0E_DB_PASSWORD"),
             "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
