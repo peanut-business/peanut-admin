@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
@@ -243,7 +242,7 @@ function initializeCoreIdentity(
         new PdoMembershipRepository($pdo),
         new PdoPlatformRepository($pdo),
         new PdoAuditRepository($pdo),
-        new PasswordHasher()
+        \app\common\service\ApplicationPasswordPolicy::hasher()
     );
     $separatePlatformOperator = $platformCredentials !== null;
     $demoBootstrapPassword = \app\common\service\DemoAccountPolicy::enabled()

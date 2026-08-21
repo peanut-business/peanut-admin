@@ -8,6 +8,7 @@ use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\org\OrgTenantContext;
 use app\common\service\DemoAccountPolicy;
+use app\common\service\ApplicationPasswordPolicy;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
@@ -107,7 +108,7 @@ final class AdminLogic extends BaseLogic
                 throw new \RuntimeException('请选择角色');
             }
             $department = self::firstId($params['dept_id'] ?? []);
-            $service = new MemberAdminService(self::pdo());
+            $service = new MemberAdminService(self::pdo(), ApplicationPasswordPolicy::hasher());
             $member = $service->createPending(
                 $context->tenantId,
                 (string)$params['account'],
@@ -162,7 +163,7 @@ final class AdminLogic extends BaseLogic
             if (!empty($params['password'])) {
                 throw new \RuntimeException('密码只能由账号本人修改');
             }
-            $service = new MemberAdminService(self::pdo());
+            $service = new MemberAdminService(self::pdo(), ApplicationPasswordPolicy::hasher());
             $member = $service->get($context->tenantId, (int)$params['id']);
             $member = $service->update(
                 $context->tenantId,
@@ -202,7 +203,7 @@ final class AdminLogic extends BaseLogic
             return false;
         }
         try {
-            $service = new MemberAdminService(self::pdo());
+            $service = new MemberAdminService(self::pdo(), ApplicationPasswordPolicy::hasher());
             $member = $service->get($context->tenantId, $id);
             $service->leave(
                 $context->tenantId,
@@ -226,7 +227,7 @@ final class AdminLogic extends BaseLogic
             return false;
         }
         try {
-            $service = new MemberAdminService(self::pdo());
+            $service = new MemberAdminService(self::pdo(), ApplicationPasswordPolicy::hasher());
             self::transitionStatus($service, $context, $service->get($context->tenantId, $id), $disable);
             return true;
         } catch (\Throwable $e) {
@@ -241,7 +242,7 @@ final class AdminLogic extends BaseLogic
             if ($memberId !== $context->memberId) {
                 throw new \DomainException('TENANT_ADMIN_PRINCIPAL_INVALID');
             }
-            $service = new AccountSelfService(self::pdo());
+            $service = new AccountSelfService(self::pdo(), ApplicationPasswordPolicy::hasher());
             $profile = $service->profile($context->tenantId, $memberId, $context->accountId);
             $service->updateProfile(
                 $context->tenantId,

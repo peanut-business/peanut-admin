@@ -5,7 +5,6 @@ declare(strict_types=1);
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\DemoAccountPolicy;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
-use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
@@ -448,7 +447,7 @@ function demoMultiMain(): int
 
     $transactions = new PdoTransactionManager($pdo);
     $memberships = new PdoMembershipRepository($pdo);
-    $passwords = new PasswordHasher();
+    $passwords = \app\common\service\ApplicationPasswordPolicy::hasher();
     $bootstrap = new BootstrapService(
         $transactions,
         new PdoIdentityRepository($pdo),
