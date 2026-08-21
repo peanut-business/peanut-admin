@@ -2,6 +2,21 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- Durable application migration ledger. The 3.0 baseline is fresh-only, but
+-- minor/patch releases may append migrations and apply them exactly once.
+CREATE TABLE `pa_schema_migration` (
+  `migration_id` VARCHAR(190) NOT NULL,
+  `release_version` VARCHAR(32) NOT NULL,
+  `checksum` CHAR(64) NOT NULL,
+  `status` ENUM('applying','applied','failed') NOT NULL DEFAULT 'applying',
+  `started_at` DATETIME NOT NULL,
+  `finished_at` DATETIME NULL,
+  `error_code` VARCHAR(255) NULL,
+  PRIMARY KEY (`migration_id`),
+  KEY `idx_schema_migration_status` (`status`, `migration_id`),
+  KEY `idx_schema_migration_release` (`release_version`, `migration_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应用追加迁移账本';
+
 CREATE TABLE `pa_system_menu` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `pid`        INT UNSIGNED NOT NULL DEFAULT 0,

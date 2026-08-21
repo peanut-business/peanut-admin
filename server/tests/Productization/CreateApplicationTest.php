@@ -354,8 +354,8 @@ try {
     createApplicationExpect(!str_contains($generatedCi, 'stale-facts:') && !str_contains($generatedCi, 'create-app:'), 'generated CI must not depend on source-template governance jobs');
     createApplicationExpect(is_file($first . '/server/database/environment-guard.php'), 'production database guard must remain in the deployment inventory');
     $generatedSchema = (string)file_get_contents($first . '/server/database/init.sql');
-    createApplicationExpect(!str_contains($generatedSchema, 'pa_schema_migration'), 'generated application retained the retired application migration ledger');
-    createApplicationExpect(!is_file($first . '/server/database/migrate.php'), 'generated application retained the retired migration runner');
+    createApplicationExpect(str_contains($generatedSchema, 'pa_schema_migration'), 'generated application is missing the application migration ledger');
+    createApplicationExpect(str_contains((string)file_get_contents($first . '/server/database/install.php'), "'--migrate'"), 'generated application is missing the migration runner');
     foreach ([
         'pa_tenant_setting',
         'pa_tenant_entry_binding',

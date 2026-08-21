@@ -3777,7 +3777,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3d9081267c2b7cc59eafd30c6659966dc62287f66a16699ec17da5dc16d96d14"
+            "source_sha256": "730134e97320a3f5f94c50aad05c64611bfeb00326486c51dab76624634f2363"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -11147,7 +11147,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0588003e030544b59af27f9792bded01171c5a8388936a3e095a14e4650a58cf"
+            "source_sha256": "62cd64cfa46fd337660fd48b7c71c023c32af47ba81d8a2c4707be107463a6e2"
         },
         {
             "path": "server/composer.lock",
@@ -11161,7 +11161,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4aa84b1cde4b97c98f394ded7782d4aca86fead62e94612a81161e0ec989263f"
+            "source_sha256": "452c77a1ec5674637f8a6420f566249fc1c95320464ec170f63e93fc3dff4a08"
         },
         {
             "path": "server/config/admin_api_access.php",
@@ -11525,7 +11525,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7146be45a0ebea85f4adaf7823703bd8302e8a22d54b340ac8965ae18d1cd364"
+            "source_sha256": "0048ea3cd29601db08fc9cb5609a142b39b6410b078aa01b5f9a23d0a0fb0af2"
         },
         {
             "path": "server/database/import.php",
@@ -11553,7 +11553,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "88b34abefdf3e5bae4ab2d717d6cdbfbfb1a05f4dd4b0bb61e833af8329f96f0"
+            "source_sha256": "34f83b716ea2a5df72980f526d9f6cd610195c6d7ddf101540ee07aa1b9bb96e"
         },
         {
             "path": "server/database/install.php",
@@ -11567,7 +11567,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dfe111a23e8d27213261f511c5c688245439c8d57026a15a155e3f7b5009950d"
+            "source_sha256": "69ca8cdae2386454cf70043fa0457fa04403927fe1bd3748713f1a35f8366a38"
         },
         {
             "path": "server/database/seed-demo-data.php",
@@ -12728,7 +12728,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0cf947e1d59dfcd1230215d8a9dd061d238cefa9dd8161eb040d67bcb258781d"
+            "source_sha256": "c7969e8f4d98a4ad74dd3607d0ad73fd2761c507a85ff6850df7b85925f18cb1"
         },
         {
             "path": "server/tests/Productization/InstallerBootstrapTest.php",
@@ -14521,7 +14521,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fbce20586cbe5b1c357ae029822a19c7c7d8bb02d84d82894187755ddd2d4f61"
+            "source_sha256": "e0dc6f01e11ab7440e9ade267e8b729aed2b8dc7ad8b321ad556bb0862685fc1"
         },
         {
             "path": "web/pnpm-lock.yaml",
@@ -14535,7 +14535,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1e3c93cee5aa90713800e5dbbf13a29f2ad6133e020e9f78e01d5d13c9f2b170"
+            "source_sha256": "3cebe7b267217b711f12c8e51e2cfff018d4362b2e35d4cdc8d2716a8f7aedd7"
         },
         {
             "path": "web/public/brand/avatar-admin.svg",

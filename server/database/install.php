@@ -357,6 +357,138 @@ function seedBrandDefaults(PDO $pdo, array $website): void
     }
 }
 
+/** @return list<string> */
+function applicationMigrationFiles(string $databaseDir): array
+{
+    $directory = $databaseDir . '/migrations';
+    if (!is_dir($directory)) {
+        return [];
+    }
+    $files = [];
+    foreach (glob($directory . '/*.sql') ?: [] as $file) {
+        if (!is_file($file) || is_link($file) || preg_match('/^[0-9]{8}-[a-z0-9][a-z0-9_-]*\.sql$/D', basename($file)) !== 1) {
+            throw new RuntimeException('迁移文件名无效：' . basename($file));
+        }
+        $files[] = $file;
+    }
+    sort($files, SORT_STRING);
+    return $files;
+}
+
+function migrationReleaseVersion(string $sql, string $targetVersion): string
+{
+    if (preg_match('/^\s*--\s*peanut-release:\s*(\d+\.\d+\.\d+)\s*$/mi', $sql, $matches) === 1) {
+        $version = $matches[1];
+        if (preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version) !== 1) {
+            throw new RuntimeException('迁移 release 版本无效：' . $version);
+        }
+        return $version;
+    }
+    return $targetVersion;
+}
+
+/** @return array{status:string,target_version:string,applied:list<string>,pending:list<string>} */
+function migrateDatabase(string $serverDir, string $targetVersion, bool $dryRun = false): array
+{
+    if (preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $targetVersion) !== 1) {
+        throw new RuntimeException('目标版本必须是 X.Y.Z');
+    }
+    loadCoreRuntime($serverDir);
+    $config = loadConfig($serverDir);
+    if (!preg_match('/^[A-Za-z0-9_]+$/D', $config['DB_NAME'])) {
+        throw new RuntimeException('DB_NAME 只能包含字母、数字和下划线');
+    }
+    $pdo = new PDO(
+        sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $config['DB_HOST'], $config['DB_PORT'], $config['DB_NAME']),
+        $config['DB_USER'],
+        $config['DB_PASS'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
+    );
+    $exists = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pa_schema_migration'")->fetchColumn();
+    if ($exists !== 1) {
+        throw new RuntimeException('MIGRATION_LEDGER_MISSING: 目标数据库不是 3.0+ 基线，请使用 fresh 重建');
+    }
+    $lockName = 'peanut_migrate_' . substr(hash('sha256', $config['DB_NAME']), 0, 48);
+    $lock = $pdo->prepare('SELECT GET_LOCK(?, 10)');
+    $lock->execute([$lockName]);
+    if ((int)$lock->fetchColumn() !== 1) {
+        throw new RuntimeException('无法获取迁移锁，请稍后重试');
+    }
+    try {
+        $pending = [];
+        foreach (applicationMigrationFiles(__DIR__) as $file) {
+            $id = basename($file, '.sql');
+            $sql = file_get_contents($file);
+            if (!is_string($sql) || trim($sql) === '') {
+                throw new RuntimeException('迁移文件为空：' . $id);
+            }
+            $checksum = hash('sha256', $sql);
+            $releaseVersion = migrationReleaseVersion($sql, $targetVersion);
+            if (version_compare($releaseVersion, $targetVersion, '>')) {
+                continue;
+            }
+            $statement = $pdo->prepare('SELECT checksum,status FROM pa_schema_migration WHERE migration_id = ?');
+            $statement->execute([$id]);
+            $row = $statement->fetch();
+            if (is_array($row)) {
+                if (!hash_equals((string)$row['checksum'], $checksum)) {
+                    throw new RuntimeException('MIGRATION_CHECKSUM_CHANGED: ' . $id);
+                }
+                if ($row['status'] === 'applied') {
+                    continue;
+                }
+                if ($row['status'] === 'failed') {
+                    throw new RuntimeException('MIGRATION_PREVIOUSLY_FAILED: ' . $id);
+                }
+                if ($row['status'] === 'applying') {
+                    throw new RuntimeException('MIGRATION_INCOMPLETE: ' . $id);
+                }
+            }
+            $pending[] = ['id' => $id, 'file' => $file, 'sql' => $sql, 'checksum' => $checksum, 'release_version' => $releaseVersion, 'status' => is_array($row) ? (string)$row['status'] : null];
+        }
+        if ($dryRun) {
+            return ['status' => $pending === [] ? 'up_to_date' : 'ready', 'target_version' => $targetVersion, 'applied' => [], 'pending' => array_column($pending, 'id')];
+        }
+        $applied = [];
+        foreach ($pending as $migration) {
+            $now = gmdate('Y-m-d H:i:s');
+            $pdo->prepare(
+                'INSERT INTO pa_schema_migration (migration_id,release_version,checksum,status,started_at,finished_at,error_code) VALUES (?,?,?,?,?,NULL,NULL) '
+                . 'ON DUPLICATE KEY UPDATE release_version=VALUES(release_version),checksum=VALUES(checksum),status=\'applying\',started_at=VALUES(started_at),finished_at=NULL,error_code=NULL'
+            )->execute([$migration['id'], $migration['release_version'], $migration['checksum'], 'applying', $now]);
+            try {
+                $pdo->exec($migration['sql']);
+                $pdo->prepare('UPDATE pa_schema_migration SET status=\'applied\',finished_at=?,error_code=NULL WHERE migration_id=?')->execute([gmdate('Y-m-d H:i:s'), $migration['id']]);
+                $applied[] = $migration['id'];
+            } catch (Throwable $exception) {
+                $pdo->prepare('UPDATE pa_schema_migration SET status=\'failed\',finished_at=?,error_code=? WHERE migration_id=?')->execute([gmdate('Y-m-d H:i:s'), substr($exception->getMessage(), 0, 255), $migration['id']]);
+                throw new RuntimeException('MIGRATION_FAILED: ' . $migration['id'], 0, $exception);
+            }
+        }
+        return ['status' => $applied === [] ? 'up_to_date' : 'applied', 'target_version' => $targetVersion, 'applied' => $applied, 'pending' => []];
+    } finally {
+        $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute([$lockName]);
+    }
+}
+
+function migrationArguments(array $arguments): ?array
+{
+    if (!in_array('--migrate', $arguments, true)) {
+        return null;
+    }
+    $target = null;
+    $dryRun = in_array('--dry-run', $arguments, true);
+    foreach ($arguments as $argument) {
+        if (preg_match('/^--target-version=(.+)$/D', (string)$argument, $matches) === 1) {
+            $target = $matches[1];
+        }
+    }
+    if ($target === null) {
+        throw new RuntimeException('--migrate requires --target-version=X.Y.Z');
+    }
+    return [$target, $dryRun];
+}
+
 function main(): int
 {
     $databaseDir = __DIR__;
@@ -508,6 +640,11 @@ function main(): int
 
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
     try {
+        $migration = migrationArguments($_SERVER['argv'] ?? []);
+        if ($migration !== null) {
+            echo json_encode(migrateDatabase(dirname(__DIR__), $migration[0], $migration[1]), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
+            exit(0);
+        }
         exit(main());
     } catch (Throwable $exception) {
         fwrite(STDERR, '安装失败：' . $exception->getMessage() . PHP_EOL);

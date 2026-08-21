@@ -40,8 +40,9 @@ scripts/publish-github-release <version> \
 
 ### 源仓维护者的无人值守发布脚本
 
-`scripts/deploy-release` 明确区分首次安装、常规更新和破坏性 fresh，不提供应用数据库
-原地 schema 升级。源仓维护者不要在服务器上调用旧的 `scripts/production-upgrade`。脚本
+`scripts/deploy-release` 明确区分首次安装、同大版本常规更新和破坏性 fresh。常规更新会
+保留数据库与上传卷，并执行不可变、追加式的应用 migration；源仓维护者不要在服务器上调用旧的
+`scripts/production-upgrade`。脚本
 从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
 数据库资源。它不会通过默认值猜测另一套部署。
@@ -177,10 +178,12 @@ curl -fsS http://127.0.0.1:18092/healthz
 php server/database/environment-guard.php --current
 ```
 
-禁止执行或恢复旧 `migrate.php`、`pa_schema_migration`、legacy Admin/Role/Dept map、默认
-Tenant bootstrap、余额双写或旧 scaffold upgrade Runtime。需要保留旧系统时，继续隔离运行
-旧实例，并为 3.0 准备独立空库；业务数据迁移必须另立字段映射、校验和回滚方案。Plugin
-Module 自己的 `pa_module_migration` 属于插件生命周期，不是应用升级账本。
+3.0 首次安装仍必须使用空库；跨大版本不得原地升级，必须先备份并走显式 `--fresh` 重建。
+同一大版本的普通更新使用 `scripts/deploy-release --update`，由
+`php server/database/install.php --migrate --target-version=X.Y.Z` 校验 checksum 并按账本
+执行追加 SQL；不得手工修改或删除已应用记录。需要保留旧系统时，继续隔离运行旧实例，并为
+3.0 准备独立空库。Plugin Module 自己的 `pa_module_migration` 属于插件生命周期，应用追加
+migration 使用 `pa_schema_migration`。
 
 ## 发布最低检查
 

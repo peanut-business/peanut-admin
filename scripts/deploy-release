@@ -47,9 +47,10 @@ instance. It never guesses a host, path, port, database or fallback target.
   --confirm-destroy
              required for --fresh; value must exactly equal the target
 
-The application schema is not changed by routine updates. Fresh installation
-uses the canonical v3.0 baseline; Plugin Module migrations retain their
-independent lifecycle.
+Routine updates preserve the database and apply append-only application
+migrations from server/database/migrations. Fresh installation uses the
+canonical v3.0 baseline; Plugin Module migrations retain their independent
+lifecycle.
 EOF
 }
 
@@ -150,7 +151,7 @@ while [[ $# -gt 0 ]]; do
     --update) UPDATE=1; shift ;;
     --fresh) FRESH=1; shift ;;
     --upgrade|--from)
-      fail 'use --update for a routine application update; schema upgrades are not supported' ;;
+      fail 'use --update for a routine application update; --upgrade is deprecated' ;;
     --apply) APPLY=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --ssh-alias)
@@ -409,6 +410,13 @@ sudo -n grep -Fqx "DEPLOYMENT_MODE=$deployment_mode" .env || fail '.env deployme
 current_compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
 "${current_compose[@]}" config >/dev/null || fail 'Compose configuration is invalid'
 if [[ "$mode" == update ]]; then
+  current_tag="$(sudo -n sh -c 'cat .release-tag 2>/dev/null || true' | tr -d '\r\n')"
+  [[ "$current_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'routine update requires a registered current .release-tag'
+  current_version="${current_tag#v}"
+  current_major="${current_version%%.*}"
+  target_major="${version%%.*}"
+  [[ "$current_major" == "$target_major" ]] || fail "major release change ${current_tag} -> ${TAG} requires --fresh"
+  [[ "$(printf '%s\n%s\n' "$current_version" "$version" | sort -V | tail -n 1)" == "$version" && "$current_version" != "$version" ]] || fail "target release ${TAG} must be newer than current ${current_tag}"
   running_services="$("${current_compose[@]}" ps --status running --services | sort | tr '\n' ' ')"
   [[ "$running_services" == *php* && "$running_services" == *nginx* && "$running_services" == *cron* ]] \
     || fail 'routine update requires the existing application services to be running'
@@ -532,6 +540,9 @@ compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --
 if [[ "$mode" == update ]]; then
   # Runtime code is copied to the deployment root only; persistent volumes are
   # never written by this script. MySQL is deliberately excluded from recreate.
+  "${compose[@]}" up -d --wait mysql
+  migration_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$version")" || fail "database migration failed: $migration_result"
+  printf '%s\n' "$migration_result"
   "${compose[@]}" up -d --wait --no-deps php nginx cron
   "${compose[@]}" ps
   curl --fail --silent --show-error --retry 12 --retry-delay 2 "http://127.0.0.1:${port}/healthz" >/dev/null
