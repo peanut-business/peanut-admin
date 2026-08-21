@@ -2348,6 +2348,19 @@
             ]
         },
         {
+            "path": "docs/operations/business-flow-audit-2026-08-21.md",
+            "target": "docs/operations/business-flow-audit-2026-08-21.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/operations/demo-access.md",
             "target": "docs/operations/demo-access.md",
             "classification": "excluded",
