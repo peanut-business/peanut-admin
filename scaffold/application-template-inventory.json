@@ -3777,7 +3777,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ca7d11db2f868ba674a816fdeb03ea15aa5c2070a411c7390c3c4aa91cc7a475"
+            "source_sha256": "730134e97320a3f5f94c50aad05c64611bfeb00326486c51dab76624634f2363"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -11567,7 +11567,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "259fd947755d20d2924d36999d5644cec74d832673c0e0ead85d70ac111df558"
+            "source_sha256": "69ca8cdae2386454cf70043fa0457fa04403927fe1bd3748713f1a35f8366a38"
         },
         {
             "path": "server/database/seed-demo-data.php",
