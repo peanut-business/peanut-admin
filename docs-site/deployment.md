@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 3.0（当前版本 v3.0.4）的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 3.0（当前版本 v3.0.5）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -11,7 +11,7 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 - 默认一套部署对应一个应用实例，拥有自己的数据库、密钥、文件和生命周期。
 - 一个实例可以有多个 Tenant、客户端和 Module；多个实例不能共享私有业务表。
-- 3.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持旧大版本数据库或脚手架原地升级；当前正式版本为 v3.0.4。
+- 3.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持旧大版本数据库或脚手架原地升级；当前正式版本为 v3.0.5。
 - canonical `init.sql` 是完整应用 Schema；`migrations/` 只保存 2.0.0 基线之后的追加变更。
 - 管理身份直接使用 Account/Credential/TenantMember/RBAC，不创建 legacy 映射或兼容 Admin 表。
 - 旧 tag、Release、迁移和升级证据仍可追溯，但不进入当前 Runtime、Schema、create-app 或日常操作路径。
@@ -248,25 +248,17 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 证据固定成一份不可变记录。它用于证明“这个版本在这个环境真实运行过”；没有这份记录时，
 只能说源码 Release 已发布或体验部署已完成，不能把线上运行事实冒充为源码版本本身。
 
-2.1.5 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
+3.0.5 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
 `production-candidate` Multi-tenant 线上体验部署。两套 Compose 的 `.release-tag` 均为
-`v2.1.5`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
+`v3.0.5`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
 Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Tenant A/B 并完成两个 Tenant
 域名的应用内持续绑定；共享 Admin、Tenant A、Tenant B 浏览器矩阵通过，截图人工检查无破图、
 加载残留、重叠或不可点击菜单。该记录是 post-deployment 体验证据，不改写
 `docs/product-status/deployments/v2.1.5-online-experience.json` 的部署快照；`v2.0.1` 快照仍保留为历史源码发布证据。
 
-| 体验入口 | 登录地址 | 账号 | 密码 |
-| --- | --- | --- | --- |
-| 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
-| 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
-| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
-| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
-| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
-
-Tenant A/B 是可丢弃候选环境中刻意公开的演示账号；服务端仅在 `PEANUT_DEMO_MODE=enabled`
-时锁定这两个邮箱的密码修改。Platform、bootstrap 和 Standalone 管理员不受该演示锁保护，
-其凭据只通过资源登记中的私有引用交接，不写入公开文档。
+当前本地和线上 Demo 的完整登录表（包括 Platform、bootstrap、Tenant A/B 和 Standalone）见
+[Demo 登录信息](/demo-access)。该页面是唯一账号事实源；本页不再复制登录表，公开 Demo
+凭据的可见性和密码策略均以该页面及资源登记为准。
 
 邮件 Provider 是自动投递 Owner 邀请的可选生产集成，不是 Tenant 创建或域名绑定的 Runtime
 前置。人工模式下必须通过受控渠道交付一次性邀请 Token；不要把 `APP_ENV` 降级为

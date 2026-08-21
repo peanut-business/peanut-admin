@@ -5,7 +5,7 @@
     "owner": "Peanut Admin maintainers",
     "source": "this versioned file",
     "resource_observation_policy": "validate this registry against the live resource before each stateful operation",
-    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo credentials are intentionally public and recorded in docs/operations/demo-access.md, README.md, docs-site/deployment.md and the matching demo resource entries",
+    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo credentials are intentionally public and documented in docs-site/demo-access.md, with matching machine-readable demo resource entries",
     "local_port_policy": "registered values are defaults; PEANUT_LOCAL_ENV_FILE or .local/stack.env is the per-clone runtime source and existing overrides are preserved"
   },
   "resources": {
@@ -465,6 +465,15 @@
         "data_source": "local production-mode Compose stack",
         "freshness_requirement": "current worktree image",
         "health_check": "GET /healthz",
+        "public_demo_access": {
+          "stable_access_id": "peanut-admin-local-public-demo-standalone-admin",
+          "classification": "owner-authorized intentionally public credential for the disposable local production preview",
+          "verified_at": "2026-08-22",
+          "verification": "GET /healthz and API login accepted the registered demo account",
+          "url": "http://127.0.0.1:20190/admin/",
+          "account": "admin@example.com",
+          "password": "peanut1234"
+        },
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh prod-down"
       }
@@ -839,7 +848,7 @@
         "service_type": "SSH-managed Docker Compose production deployment",
         "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin/.env",
         "application_admin_login": "admin@peanut-admin.007345.xyz",
-        "application_admin_credential_ref": "docs/operations/demo-access.md is authoritative for the owner-authorized demo login; macOS Keychain service peanut-admin-production-admin account admin is a secondary legacy handoff reference and may be stale",
+        "application_admin_credential_ref": "docs-site/demo-access.md is authoritative for the owner-authorized demo login; macOS Keychain service peanut-admin-production-admin account admin is a secondary legacy handoff reference and may be stale",
         "public_demo_access": {
           "stable_access_id": "peanut-admin-public-demo-standalone-admin",
           "classification": "owner-authorized intentionally public credential for the disposable production demo",
@@ -917,11 +926,11 @@
         "namespace": "peanut-admin-production-candidate",
         "service_type": "SSH-managed Docker Compose production experience deployment",
         "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin-candidate/.env",
-        "application_credential_ref": "docs/operations/demo-access.md is authoritative for current owner-authorized demo logins; the root-owned oracle3 environment file contains installation inputs and other deployment secrets but is not current-password authority",
+        "application_credential_ref": "docs-site/demo-access.md is authoritative for current owner-authorized demo logins; the root-owned oracle3 environment file contains installation inputs and other deployment secrets but is not current-password authority",
         "bootstrap_admin_login": "admin@pa-demo.example",
-        "bootstrap_admin_credential_ref": "docs/operations/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key ADMIN_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
+        "bootstrap_admin_credential_ref": "docs-site/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key ADMIN_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
         "platform_operator_login": "platform@pa-demo.example",
-        "platform_operator_credential_ref": "docs/operations/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key PLATFORM_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
+        "platform_operator_credential_ref": "docs-site/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key PLATFORM_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
         "public_demo_access_resource_id": "peanut-admin-production-candidate-domains",
         "demo_instance": true,
         "fresh_install_only": true,
