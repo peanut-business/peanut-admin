@@ -243,7 +243,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7d57d375b8af2bacc2272af256c7b0a32a7242f7dc15cb61941b96d0a42eeacc"
+            "source_sha256": "47152e9ef58e16b3c8a0c42be1062f2877d3f90c9966a9249a0145eb1d1bc367"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -3802,7 +3802,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bab7be680de17b91327f66c55fdb77814d1efe8380d3744eade0f03668b42541"
+            "source_sha256": "40e1275991826b9d2c463cf085c796af29ed84d2c723ccd587dbbca4804ae0c2"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -5940,7 +5940,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cc0ddeb873a30f20d388e1cdbb2380da931a2f293deb5bd3c404ea5ce0b2f577"
+            "source_sha256": "709afcfdaca7fb3519ff515448867cc0509c0857c0ee861b44ecedbd7ee16dd1"
         },
         {
             "path": "server/app/adminapi/logic/auth/LoginLogic.php",
@@ -6612,7 +6612,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "28b6e52b8877c9700a32914a1a6523e27755d6a446e98e3cc3b1d67cd01f4568"
+            "source_sha256": "2c82cdca7cfe247260ea75421a4e2e6d0e7898f55bb5bfb7ffac27141b2d0c4d"
         },
         {
             "path": "server/app/adminapi/validate/auth/EditSelfValidate.php",
@@ -11592,7 +11592,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "69ca8cdae2386454cf70043fa0457fa04403927fe1bd3748713f1a35f8366a38"
+            "source_sha256": "680885d3b95a56fb0174ffbdb5d15cfcc77413c6e1f466d2fdbbbfcbcba29c28"
         },
         {
             "path": "server/database/seed-demo-data.php",
