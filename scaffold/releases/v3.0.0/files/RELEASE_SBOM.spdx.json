@@ -410,9 +410,9 @@
         },
         {
             "name": "peanut-admin/core",
-            "SPDXID": "SPDXRef-Package-composer-1706c6317332924328a6",
-            "versionInfo": "0.1.0-alpha.5",
-            "downloadLocation": "https://github.com/peanut-opensource/peanut-admin-core.git",
+            "SPDXID": "SPDXRef-Package-composer-7b47073ddf220de36ff6",
+            "versionInfo": "0.1.0-alpha.6",
+            "downloadLocation": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
             "licenseDeclared": "Apache-2.0",
@@ -423,7 +423,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.5"
+                    "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.6"
                 }
             ]
         },
@@ -42780,9 +42780,9 @@
         },
         {
             "name": "@peanut-admin/admin",
-            "SPDXID": "SPDXRef-Package-web-985a5b442791ddb63748",
-            "versionInfo": "0.1.0-alpha.5",
-            "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.5",
+            "SPDXID": "SPDXRef-Package-web-a0fda5a76b14e826d643",
+            "versionInfo": "0.1.0-alpha.6",
+            "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.6",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
             "licenseDeclared": "Apache-2.0",
@@ -42793,7 +42793,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.5"
+                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.6"
                 }
             ]
         },
@@ -52317,25 +52317,6 @@
             ]
         },
         {
-            "name": "isomorphic.js",
-            "SPDXID": "SPDXRef-Package-web-3146f9631ce05121290f",
-            "versionInfo": "0.2.5",
-            "downloadLocation": "https://registry.npmjs.org/isomorphic.js/0.2.5",
-            "filesAnalyzed": false,
-            "licenseConcluded": "NOASSERTION",
-            "licenseDeclared": "MIT",
-            "copyrightText": "NOASSERTION",
-            "primaryPackagePurpose": "SOURCE",
-            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
-            "externalRefs": [
-                {
-                    "referenceCategory": "PACKAGE-MANAGER",
-                    "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/isomorphic.js@0.2.5"
-                }
-            ]
-        },
-        {
             "name": "js-levenshtein",
             "SPDXID": "SPDXRef-Package-web-877f690f38056688ec3b",
             "versionInfo": "1.1.6",
@@ -52864,25 +52845,6 @@
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
                     "referenceLocator": "pkg:npm/levn@0.4.1"
-                }
-            ]
-        },
-        {
-            "name": "lib0",
-            "SPDXID": "SPDXRef-Package-web-62fabee87e54373f2acc",
-            "versionInfo": "0.2.117",
-            "downloadLocation": "https://registry.npmjs.org/lib0/0.2.117",
-            "filesAnalyzed": false,
-            "licenseConcluded": "NOASSERTION",
-            "licenseDeclared": "MIT",
-            "copyrightText": "NOASSERTION",
-            "primaryPackagePurpose": "SOURCE",
-            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
-            "externalRefs": [
-                {
-                    "referenceCategory": "PACKAGE-MANAGER",
-                    "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/lib0@0.2.117"
                 }
             ]
         },
@@ -60411,44 +60373,6 @@
             ]
         },
         {
-            "name": "y-protocols",
-            "SPDXID": "SPDXRef-Package-web-b4f7b93b2696f0f30f93",
-            "versionInfo": "1.0.7",
-            "downloadLocation": "https://registry.npmjs.org/y-protocols/1.0.7",
-            "filesAnalyzed": false,
-            "licenseConcluded": "NOASSERTION",
-            "licenseDeclared": "MIT",
-            "copyrightText": "NOASSERTION",
-            "primaryPackagePurpose": "SOURCE",
-            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
-            "externalRefs": [
-                {
-                    "referenceCategory": "PACKAGE-MANAGER",
-                    "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/y-protocols@1.0.7"
-                }
-            ]
-        },
-        {
-            "name": "y-websocket",
-            "SPDXID": "SPDXRef-Package-web-a4f8a48405582a04a5ce",
-            "versionInfo": "3.1.0",
-            "downloadLocation": "https://registry.npmjs.org/y-websocket/3.1.0",
-            "filesAnalyzed": false,
-            "licenseConcluded": "NOASSERTION",
-            "licenseDeclared": "MIT",
-            "copyrightText": "NOASSERTION",
-            "primaryPackagePurpose": "SOURCE",
-            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
-            "externalRefs": [
-                {
-                    "referenceCategory": "PACKAGE-MANAGER",
-                    "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/y-websocket@3.1.0"
-                }
-            ]
-        },
-        {
             "name": "y18n",
             "SPDXID": "SPDXRef-Package-web-afe9b9be2c15ef270b76",
             "versionInfo": "5.0.8",
@@ -60639,25 +60563,6 @@
             ]
         },
         {
-            "name": "yjs",
-            "SPDXID": "SPDXRef-Package-web-0c01515a35cbc823c084",
-            "versionInfo": "13.6.32",
-            "downloadLocation": "https://registry.npmjs.org/yjs/13.6.32",
-            "filesAnalyzed": false,
-            "licenseConcluded": "NOASSERTION",
-            "licenseDeclared": "MIT",
-            "copyrightText": "NOASSERTION",
-            "primaryPackagePurpose": "SOURCE",
-            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
-            "externalRefs": [
-                {
-                    "referenceCategory": "PACKAGE-MANAGER",
-                    "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/yjs@13.6.32"
-                }
-            ]
-        },
-        {
             "name": "yn",
             "SPDXID": "SPDXRef-Package-web-d211d0a7893278451c0e",
             "versionInfo": "3.1.1",
@@ -60833,7 +60738,7 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-composer-1706c6317332924328a6",
+            "relatedSpdxElement": "SPDXRef-Package-composer-7b47073ddf220de36ff6",
             "comment": "composer; runtime"
         },
         {
@@ -74213,7 +74118,7 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-web-985a5b442791ddb63748",
+            "relatedSpdxElement": "SPDXRef-Package-web-a0fda5a76b14e826d643",
             "comment": "web; static-build-input"
         },
         {
@@ -77225,12 +77130,6 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-web-3146f9631ce05121290f",
-            "comment": "web; static-build-input"
-        },
-        {
-            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-877f690f38056688ec3b",
             "comment": "web; static-build-input"
         },
@@ -77394,12 +77293,6 @@
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-145cb84cdc12a9b3acbe",
-            "comment": "web; static-build-input"
-        },
-        {
-            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-            "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-web-62fabee87e54373f2acc",
             "comment": "web; static-build-input"
         },
         {
@@ -79781,18 +79674,6 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-web-b4f7b93b2696f0f30f93",
-            "comment": "web; static-build-input"
-        },
-        {
-            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-            "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-web-a4f8a48405582a04a5ce",
-            "comment": "web; static-build-input"
-        },
-        {
-            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-afe9b9be2c15ef270b76",
             "comment": "web; static-build-input"
         },
@@ -79848,12 +79729,6 @@
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-9f8ee7429b0cc7410314",
-            "comment": "web; static-build-input"
-        },
-        {
-            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
-            "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-web-0c01515a35cbc823c084",
             "comment": "web; static-build-input"
         },
         {
