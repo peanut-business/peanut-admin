@@ -35,25 +35,27 @@ function demoMultiRequired(string $name): string
 function demoMultiBinding(PDO $pdo, int $tenantId, string $host): void
 {
     $host = TenantEntryBindingResolver::normalizeHost($host);
-    $query = $pdo->prepare(
-        "SELECT id, tenant_id, status FROM pa_tenant_entry_binding WHERE host = ? AND client_key = 'admin-web' LIMIT 1"
-    );
-    $query->execute([$host]);
-    $row = $query->fetch(PDO::FETCH_ASSOC);
-    if (is_array($row) && (int)$row['tenant_id'] !== $tenantId) {
-        throw new RuntimeException("demo Tenant host is already owned by another Tenant: {$host}");
-    }
-    if (is_array($row)) {
-        $update = $pdo->prepare(
-            "UPDATE pa_tenant_entry_binding SET status = 'active', updated_at = UTC_TIMESTAMP(3) WHERE id = ?"
+    foreach (['admin-web', 'member-api'] as $clientKey) {
+        $query = $pdo->prepare(
+            'SELECT id, tenant_id, status FROM pa_tenant_entry_binding WHERE host = ? AND client_key = ? LIMIT 1'
         );
-        $update->execute([(int)$row['id']]);
-        return;
+        $query->execute([$host, $clientKey]);
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row) && (int)$row['tenant_id'] !== $tenantId) {
+            throw new RuntimeException("demo Tenant host is already owned by another Tenant: {$host}");
+        }
+        if (is_array($row)) {
+            $update = $pdo->prepare(
+                'UPDATE pa_tenant_entry_binding SET status = \'active\', updated_at = UTC_TIMESTAMP(3) WHERE id = ?'
+            );
+            $update->execute([(int)$row['id']]);
+            continue;
+        }
+        $insert = $pdo->prepare(
+            'INSERT INTO pa_tenant_entry_binding (tenant_id,host,client_key,status) VALUES (?,?,?,\'active\')'
+        );
+        $insert->execute([$tenantId, $host, $clientKey]);
     }
-    $insert = $pdo->prepare(
-        "INSERT INTO pa_tenant_entry_binding (tenant_id,host,client_key,status) VALUES (?,?,'admin-web','active')"
-    );
-    $insert->execute([$tenantId, $host]);
 }
 
 /** @return list<string> */
@@ -343,22 +345,25 @@ SQL)->fetchColumn();
     }
 
     $binding = $pdo->prepare(<<<'SQL'
-SELECT b.host, t.code, b.status
+SELECT b.host, b.client_key, t.code, b.status
 FROM pa_tenant_entry_binding b
 JOIN pa_tenant t ON t.id = b.tenant_id
-WHERE b.client_key = 'admin-web' AND b.host IN (?, ?)
-ORDER BY b.host
+WHERE b.client_key IN ('admin-web', 'member-api') AND b.host IN (?, ?)
+ORDER BY b.host, b.client_key
 SQL);
     $binding->execute([$tenantAHost, $tenantBHost]);
     $bindings = [];
     foreach ($binding->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        $bindings[$row['host']] = [$row['code'], $row['status']];
+        $bindings[$row['host'] . "\0" . $row['client_key']] = [$row['code'], $row['status']];
     }
     $bindingCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_entry_binding')->fetchColumn();
-    if (($bindings[$tenantAHost] ?? null) !== ['tenant-a', 'active']
-        || ($bindings[$tenantBHost] ?? null) !== ['tenant-b', 'active']
-        || count($bindings) !== 2
-        || $bindingCount !== 2) {
+    $expectedBindings = [
+        $tenantAHost . "\0admin-web" => ['tenant-a', 'active'],
+        $tenantAHost . "\0member-api" => ['tenant-a', 'active'],
+        $tenantBHost . "\0admin-web" => ['tenant-b', 'active'],
+        $tenantBHost . "\0member-api" => ['tenant-b', 'active'],
+    ];
+    if ($bindings !== $expectedBindings || $bindingCount !== 4) {
         throw new RuntimeException('demo Tenant Host bindings do not match the final plan');
     }
 }
