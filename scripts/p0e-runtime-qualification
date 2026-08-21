@@ -1128,7 +1128,7 @@ class Runner:
             "  default:\n"
             "    ipam:\n"
             "      config:\n"
-            "        - subnet: 172.31.240.0/24\n"
+            "        - subnet: 192.168.224.0/20\n"
         )
         self.compose_overlay.write_text(overlay, encoding="utf-8")
         self.compose_overlay.chmod(0o600)
