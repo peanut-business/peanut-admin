@@ -89,9 +89,12 @@ class DecorationSchemaService
         }
     }
 
-    public static function resourcesForStorage(mixed $value): mixed
+    public static function resourcesForStorage(
+        mixed $value,
+        ?object $context = null
+    ): mixed
     {
-        return self::transformResources($value, false);
+        return self::transformResources($value, false, null, $context);
     }
 
     public static function resourcesForRead(mixed $value): mixed
@@ -331,11 +334,21 @@ class DecorationSchemaService
         }
     }
 
-    private static function transformResources(mixed $value, bool $absolute, ?string $key = null): mixed
+    private static function transformResources(
+        mixed $value,
+        bool $absolute,
+        ?string $key = null,
+        ?object $context = null,
+    ): mixed
     {
         if (is_array($value)) {
             foreach ($value as $childKey => $child) {
-                $value[$childKey] = self::transformResources($child, $absolute, (string)$childKey);
+                $value[$childKey] = self::transformResources(
+                    $child,
+                    $absolute,
+                    (string)$childKey,
+                    $context,
+                );
             }
             return $value;
         }
@@ -345,7 +358,7 @@ class DecorationSchemaService
         if ($absolute) {
             return ProductAssetReferenceService::forRead($value);
         }
-        return ProductAssetReferenceService::forStorage($value);
+        return ProductAssetReferenceService::forStorage($value, null, $context);
     }
 
     private static function binary(mixed $value, string $label): void

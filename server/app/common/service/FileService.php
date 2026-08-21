@@ -3,7 +3,12 @@ declare(strict_types=1);
 
 namespace app\common\service;
 
+use app\common\service\member\AuthenticatedMemberContext;
+use app\common\service\member\MemberTenantContext;
+use app\common\service\file\FileObjectNamespace;
 use app\common\service\storage\Driver;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /**
  * 文件服务：相对 uri ↔ 可访问 URL 转换，支持多存储引擎。
@@ -57,6 +62,25 @@ class FileService
         return ltrim(str_replace($domain . '/', '', $url), '/');
     }
 
+    /** Normalize a resource submitted inside a tenant-owned record. */
+    public static function setTenantFileUrl(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        string $url = ''
+    ): string {
+        $normalized = self::setFileUrl($url);
+        if (self::tenantObjectPath($normalized) === null) {
+            return $normalized;
+        }
+
+        if (!FileObjectNamespace::ownsTenantUri(
+            MemberTenantContext::tenantId($context),
+            $normalized
+        )) {
+            throw new \RuntimeException('素材对象不属于当前租户');
+        }
+        return $normalized;
+    }
+
     /** 当前默认引擎的云端访问域名；local 或未配置时返回 '' */
     private static function cloudDomain(?string $storage = null): string
     {
@@ -69,6 +93,19 @@ class FileService
         }
         $config = Driver::engineConfig($engine);
         return (string) ($config['domain'] ?? '');
+    }
+
+    private static function tenantObjectPath(string $value): ?string
+    {
+        $path = $value;
+        if (preg_match('#^https?://#i', $value) === 1) {
+            $path = (string)(parse_url($value, PHP_URL_PATH) ?? '');
+        }
+        $path = ltrim($path, '/');
+        if (str_starts_with($path, 'storage/')) {
+            $path = substr($path, strlen('storage/'));
+        }
+        return preg_match('#^tenants/v1/[1-9][0-9]*/#D', $path) === 1 ? $path : null;
     }
 
     /** 拼接 domain 与 uri，规范化斜杠并补 http 协议 */

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\adminapi\logic\article;
 
 use app\common\logic\BaseLogic;
+use app\common\service\ProductAssetReferenceService;
+use app\common\service\RichTextResourceService;
 use app\common\service\article\ArticleTenantRepository;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -93,7 +95,7 @@ class ArticleLogic extends BaseLogic
     {
         self::clearError();
         self::requireCategory($context, (int) $params['cid']);
-        ArticleTenantRepository::createArticle($context, self::writeData($params));
+        ArticleTenantRepository::createArticle($context, self::writeData($context, $params));
         return true;
     }
 
@@ -106,7 +108,7 @@ class ArticleLogic extends BaseLogic
             if ($article->isEmpty()) {
                 throw new \RuntimeException('资讯不存在');
             }
-            $article->save(self::writeData($params));
+            $article->save(self::writeData($context, $params));
             return true;
         } catch (\Throwable $e) {
             return self::fail($e);
@@ -145,16 +147,23 @@ class ArticleLogic extends BaseLogic
         ];
     }
 
-    private static function writeData(array $params): array
+    private static function writeData(TenantContext $context, array $params): array
     {
         return [
             'cid' => (int) $params['cid'],
             'title' => (string) $params['title'],
             'desc' => (string) ($params['desc'] ?? ''),
             'abstract' => (string) ($params['abstract'] ?? ''),
-            'image' => (string) ($params['image'] ?? ''),
+            'image' => ProductAssetReferenceService::forStorage(
+                (string) ($params['image'] ?? ''),
+                null,
+                $context,
+            ),
             'author' => (string) ($params['author'] ?? ''),
-            'content' => (string) ($params['content'] ?? ''),
+            'content' => RichTextResourceService::forStorage(
+                (string) ($params['content'] ?? ''),
+                $context,
+            ),
             'click_virtual' => (int) ($params['click_virtual'] ?? 0),
             'is_show' => (int) $params['is_show'],
             'sort' => (int) ($params['sort'] ?? 0),

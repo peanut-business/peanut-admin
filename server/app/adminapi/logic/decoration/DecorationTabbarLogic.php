@@ -25,8 +25,8 @@ class DecorationTabbarLogic extends BaseLogic
             DecorationSchemaService::validateTabbar($context, $style, $items);
             Db::transaction(function () use ($context, $style, $items): void {
                 DecorationTabbarTenantRepository::replace($context, $style, array_map(
-                    static function (array $item): array {
-                        return DecorationSchemaService::resourcesForStorage($item);
+                    static function (array $item) use ($context): array {
+                        return DecorationSchemaService::resourcesForStorage($item, $context);
                     },
                     $items
                 ));

@@ -175,7 +175,7 @@ class OAuthLogic extends BaseLogic
                 }
                 $member->nickname = $nickname;
                 if (trim((string)($params['avatar'] ?? '')) !== '') {
-                    $member->avatar = FileService::setFileUrl((string)$params['avatar']);
+                    $member->avatar = FileService::setTenantFileUrl($context, (string)$params['avatar']);
                 }
             }
 

@@ -56,7 +56,7 @@ class OfficialAccountLogic extends BaseLogic
         $data = [
             'name' => trim((string)($params['name'] ?? '')),
             'original_id' => trim((string)($params['original_id'] ?? '')),
-            'qr_code' => self::relativeFile((string)($params['qr_code'] ?? '')),
+            'qr_code' => self::relativeFile($context, (string)($params['qr_code'] ?? '')),
             'app_id' => trim((string)$params['app_id']),
             'app_secret' => $secret,
             'token' => trim((string)($params['token'] ?? '')),
@@ -78,13 +78,13 @@ class OfficialAccountLogic extends BaseLogic
         return true;
     }
 
-    private static function relativeFile(string $value): string
+    private static function relativeFile(TenantContext $context, string $value): string
     {
         $value = trim($value);
         if ($value === '') {
             return '';
         }
-        $uri = FileService::setFileUrl($value);
+        $uri = FileService::setTenantFileUrl($context, $value);
         if (preg_match('#^https?://#i', $uri)) {
             $uri = (string)parse_url($uri, PHP_URL_PATH);
         }

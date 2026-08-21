@@ -240,7 +240,7 @@ class MemberLogic extends BaseLogic
             $member = MemberTenantRepository::createMember($context, [
                 'sn'       => Member::generateSn($context),
                 'nickname' => $params['nickname'],
-                'avatar'   => $params['avatar']   ?? '',
+                'avatar'   => FileService::setTenantFileUrl($context, (string)($params['avatar'] ?? '')),
                 'mobile'   => $params['mobile']   ?? '',
                 'email'    => $params['email']    ?? '',
                 'sex'      => (int)($params['sex'] ?? 0),
@@ -269,7 +269,11 @@ class MemberLogic extends BaseLogic
             }
             $data = [];
             foreach (['nickname', 'avatar', 'mobile', 'email', 'birthday'] as $f) {
-                if (isset($params[$f])) $data[$f] = $params[$f];
+                if (isset($params[$f])) {
+                    $data[$f] = $f === 'avatar'
+                        ? FileService::setTenantFileUrl($context, (string)$params[$f])
+                        : $params[$f];
+                }
             }
             foreach (['sex', 'status'] as $f) {
                 if (isset($params[$f])) $data[$f] = (int)$params[$f];
@@ -291,8 +295,12 @@ class MemberLogic extends BaseLogic
     public static function setUserInfo(TenantContext $context, array $params): bool
     {
         try {
+            $field = (string)$params['field'];
+            $value = $field === 'avatar'
+                ? FileService::setTenantFileUrl($context, (string)$params['value'])
+                : $params['value'];
             $updated = MemberTenantRepository::members($context)->where('id', (int)$params['id'])->update([
-                (string)$params['field'] => $params['value'],
+                $field => $value,
             ]);
             if ($updated !== 1) {
                 throw new \RuntimeException('用户不存在');
