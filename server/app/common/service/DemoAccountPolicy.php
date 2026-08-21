@@ -8,7 +8,7 @@ use PDO;
 /** Keeps public demo credentials and password locking out of normal deployments. */
 final class DemoAccountPolicy
 {
-    private const FIXED_PASSWORD = 'peanut1234';
+    private const FIXED_PASSWORD = 'peanut1234xx';
 
     public static function enabled(): bool
     {

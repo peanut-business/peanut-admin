@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.0",
+    "template_version": "3.0.1",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -243,7 +243,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "015c2e6a7cd18480f5f1151d8b83d2c05c444329f79c5e123d7f0c80417a56f8"
+            "source_sha256": "dbfa064b0d7603b4df4c474e67b8300c8e3874f01b2ffad9c8c366a59ee08366"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -3574,7 +3574,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5246704ef3b582f18eaca5031fedccef3e967c8e97e1fc20500d5ff67f7e12b3"
+            "source_sha256": "f6fd96264ef7b199559626c77d2b21a46401b9ef7539adde77c9ebf3ab89b17c"
         },
         {
             "path": "scripts/build-application-template-inventory",
@@ -3777,7 +3777,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "730134e97320a3f5f94c50aad05c64611bfeb00326486c51dab76624634f2363"
+            "source_sha256": "95db98ed03b416ca725d944bc3ec8d307470cc273168be2ed8a72824d3d95699"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -3859,7 +3859,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b0221265b114c4479071c18559ed91c7ecb855e305977868d6b925e8188899da"
+            "source_sha256": "b6f4298503fd00dafa39e24c17337d202b85bbf846a34c425d441fd93b0ff532"
         },
         {
             "path": "scripts/local-php-runtime",
@@ -8421,7 +8421,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bf27a30d87f87c6bf74a48c97216119d10d6db8322c03560b68aebe35b789844"
+            "source_sha256": "078e3f43c2929d0911b4155b33829341fe688d9d410af69ca11a497a5d045efb"
         },
         {
             "path": "server/app/common/service/FileService.php",
@@ -11567,7 +11567,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "69ca8cdae2386454cf70043fa0457fa04403927fe1bd3748713f1a35f8366a38"
+            "source_sha256": "ca12e9b3167a0d84f0665d93b6525b416639a5af189bcb9b5f0c14aae0d0b781"
         },
         {
             "path": "server/database/seed-demo-data.php",
@@ -11595,7 +11595,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c1b288ebe78a043e3896475dc245d8a39cd5215ac1f5f1644701d466e09468e7"
+            "source_sha256": "22c5a2b2735b8b87dd3a5db92273eded8ef891a95a6fa7cd59f027dd3c66b76c"
         },
         {
             "path": "server/extend/.gitignore",

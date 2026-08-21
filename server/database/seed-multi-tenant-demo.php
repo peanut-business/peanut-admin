@@ -388,8 +388,8 @@ function demoMultiMain(): int
     $tenantAEmail = strtolower(demoMultiRequired('PEANUT_DEMO_TENANT_A_EMAIL'));
     $tenantBEmail = strtolower(demoMultiRequired('PEANUT_DEMO_TENANT_B_EMAIL'));
     $sharedPassword = demoMultiRequired('PEANUT_DEMO_SHARED_PASSWORD');
-    if ($sharedPassword !== 'peanut1234') {
-        throw new RuntimeException('演示租户密码必须统一为 peanut1234');
+    if ($sharedPassword !== 'peanut1234xx') {
+        throw new RuntimeException('演示租户密码必须统一为 peanut1234xx');
     }
     if (filter_var($tenantAEmail, FILTER_VALIDATE_EMAIL) === false
         || filter_var($tenantBEmail, FILTER_VALIDATE_EMAIL) === false

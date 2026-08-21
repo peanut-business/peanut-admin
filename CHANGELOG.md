@@ -3,7 +3,15 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [3.0.1] - 2026-08-21
+
+### Fixed
+
+- Unified the disposable Demo password with Core Alpha.6's 12-character minimum so fresh
+  Standalone and Multi-tenant Demo installations can bootstrap successfully.
+
 ## [3.0.0] - 2026-08-20
+
 
 ### Changed
 

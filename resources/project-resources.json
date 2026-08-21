@@ -847,7 +847,7 @@
           "verification": "real browser login reached /admin/dashboard/workplace",
           "url": "https://peanut-admin.007345.xyz/admin/",
           "account": "admin@peanut-admin.007345.xyz",
-          "password": "peanut1234"
+          "password": "peanut1234xx"
         },
         "demo_instance": true,
         "documentation_resource_id": "peanut-admin-production-docs-domain",
@@ -1034,35 +1034,35 @@
               "purpose": "instance Platform operator login",
               "url": "https://pa-platform.007345.xyz/platform/",
               "account": "platform@pa-demo.example",
-              "password": "peanut1234"
+          "password": "peanut1234xx"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-bootstrap-admin",
               "purpose": "default Tenant bootstrap Admin login",
               "url": "https://pa-admin.007345.xyz/admin/",
               "account": "admin@pa-demo.example",
-              "password": "peanut1234"
+          "password": "peanut1234xx"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-shared-admin",
               "purpose": "shared Admin login with Tenant A and Tenant B selection",
               "url": "https://pa-admin.007345.xyz/admin/",
               "account": "tenant-a@pa-demo.example",
-              "password": "peanut1234"
+          "password": "peanut1234xx"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-tenant-a",
               "purpose": "Tenant A bound Admin login",
               "url": "https://pa-tenant-a.007345.xyz/admin/",
               "account": "tenant-a@pa-demo.example",
-              "password": "peanut1234"
+          "password": "peanut1234xx"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-tenant-b",
               "purpose": "Tenant B bound Admin login",
               "url": "https://pa-tenant-b.007345.xyz/admin/",
               "account": "tenant-b@pa-demo.example",
-              "password": "peanut1234"
+          "password": "peanut1234xx"
             }
           ]
         },
