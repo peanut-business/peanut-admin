@@ -74,7 +74,11 @@ try {
         ]
     );
 
-    expectInvariant(!tableExists($pdo, 'pa_schema_migration'), 'MT05_APPLICATION_MIGRATION_LEDGER_PRESENT');
+    expectInvariant(tableExists($pdo, 'pa_schema_migration'), 'MT05_APPLICATION_MIGRATION_LEDGER_MISSING');
+    $applicationMigrationCount = (int)$pdo->query(
+        "SELECT COUNT(*) FROM pa_schema_migration WHERE status = 'applied'"
+    )->fetchColumn();
+    expectInvariant($applicationMigrationCount === 0, 'MT05_APPLICATION_MIGRATION_LEDGER_NON_EMPTY');
 
     foreach ([
         'pa_account',
@@ -216,7 +220,7 @@ SQL)->fetchColumn();
         'deployment_mode' => $deploymentMode,
         'database' => $database,
         'fresh_schema' => [
-            'application_migration_ledger_present' => false,
+            'application_migration_ledger_applied_count' => $applicationMigrationCount,
             'system_dictionary_type_count' => $systemDictionaryTypes,
             'system_dictionary_data_count' => $systemDictionaryData,
         ],
