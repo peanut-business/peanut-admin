@@ -203,6 +203,7 @@ $oauthController = (string)file_get_contents($root . '/app/api/controller/OAuthC
 $settlement = (string)file_get_contents($root . '/app/api/logic/RechargeLogic.php');
 $schema = (string)file_get_contents($root . '/database/init.sql');
 $bindingService = (string)file_get_contents($root . '/app/common/service/external/ExternalChannelBindingService.php');
+$bootstrapService = (string)file_get_contents($root . '/app/platform/service/ApplicationTenantBootstrapService.php');
 foreach ([$paymentController, $officialController, $oauthController] as $source) {
     externalExpect(!str_contains($source, "['tenant_id']") && !str_contains($source, "get('tenant_id")
         && !str_contains($source, "header('tenant_id"), 'callback wiring trusts request tenant_id');
@@ -223,6 +224,11 @@ foreach (['Db::transaction(', "->where('tenant_id', \$tenantId)", "->lock(true)"
     "'callback_key' => \$callbackKey", 'bin2hex(random_bytes(32))'] as $marker) {
     externalExpect(str_contains($bindingService, $marker), 'binding Runtime invariant missing: ' . $marker);
 }
+externalExpect(
+    str_contains($bootstrapService, "'callback_key' => bin2hex(random_bytes(32))")
+        && !str_contains($bootstrapService, 'hash(\'sha256\', "fresh:{$tenantCode}:{$provider}")'),
+    'Tenant bootstrap still derives callback keys from tenant identity'
+);
 
 $keyTransition = new ReflectionMethod(ExternalChannelBindingService::class, 'callbackKeyForUpdate');
 $keyTransition->setAccessible(true);

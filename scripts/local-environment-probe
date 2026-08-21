@@ -525,20 +525,20 @@ class Probe:
             {"values": runtime_php, "errors": php_errors} if php_errors else {"values": runtime_php},
         )
 
-        migration_ok, migration_output = self.run_command(
+        baseline_ok, baseline_output = self.run_command(
             [str(REPO / "scripts/local-stack.sh"), "database-host-status"], timeout=30
         )
-        migration_details: dict[str, Any] = {}
-        if migration_ok:
+        baseline_details: dict[str, Any] = {}
+        if baseline_ok:
             try:
-                migration_details = json.loads(migration_output)
+                baseline_details = json.loads(baseline_output)
             except json.JSONDecodeError:
-                migration_ok = False
-                migration_details = {"error": "migration guard returned invalid JSON"}
+                baseline_ok = False
+                baseline_details = {"error": "database baseline guard returned invalid JSON"}
         else:
-            migration_details = {"error": migration_output or "migration guard failed"}
-        allowed_migration_fields = {
-            key: migration_details[key]
+            baseline_details = {"error": baseline_output or "database baseline guard failed"}
+        allowed_baseline_fields = {
+            key: baseline_details[key]
             for key in (
                 "environment",
                 "deployment_target",
@@ -547,19 +547,21 @@ class Probe:
                 "port",
                 "database",
                 "status",
-                "migration_count",
-                "latest_migration",
+                "baseline_table_count",
+                "installed_table_count",
+                "application_migration_count",
+                "module_migration_count",
             )
-            if key in migration_details
+            if key in baseline_details
         }
-        if "error" in migration_details:
-            allowed_migration_fields["error"] = migration_details["error"]
-        migration_ok = migration_ok and migration_details.get("status") == "current"
+        if "error" in baseline_details:
+            allowed_baseline_fields["error"] = baseline_details["error"]
+        baseline_ok = baseline_ok and baseline_details.get("status") == "current"
         self.add(
-            "runtime.database_migrations",
-            migration_ok,
-            "registered development database migration ledger is current",
-            allowed_migration_fields,
+            "runtime.database_baseline",
+            baseline_ok,
+            "registered development database matches the v3.0 fresh baseline",
+            allowed_baseline_fields,
         )
 
     def report(self) -> dict[str, Any]:
@@ -609,7 +611,7 @@ def main() -> int:
                 "runtime.http_entries",
                 "runtime.storage_routes",
                 "runtime.php_upload_limits",
-                "runtime.database_migrations",
+                "runtime.database_baseline",
             ):
                 probe.skip(check_id, "not run in config-only mode")
         else:

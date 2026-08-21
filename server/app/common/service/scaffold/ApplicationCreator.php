@@ -5,12 +5,14 @@ namespace app\common\service\scaffold;
 
 use RuntimeException;
 
+require_once __DIR__ . '/VersionContract.php';
+
 final class ApplicationCreator
 {
     private const CLASSIFICATIONS = ['managed', 'generated-managed', 'app-owned', 'excluded'];
-    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices'];
+    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices', 'version-contract'];
     private const VARIABLES = ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
-    private const VERSION_PATTERN = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
+    private const PROFILES = ['minimal', 'standard', 'full'];
 
     /** @param array{commit:string,tree:string}|null $sourceIdentity */
     public function __construct(
@@ -27,10 +29,14 @@ final class ApplicationCreator
         string $slug,
         string $packageIdentity,
         string $target,
-        ?string $applicationVersion = null
+        ?string $applicationVersion = null,
+        string $profile = 'standard'
     ): array
     {
         $inventory = $this->loadInventory();
+        if (!in_array($profile, self::PROFILES, true)) {
+            throw new RuntimeException('CREATE_APP_PROFILE_INVALID');
+        }
         $parameters = $this->validateParameters(
             $productName,
             $slug,
@@ -53,7 +59,7 @@ final class ApplicationCreator
         try {
             $files = [];
             foreach ($inventory['files'] as $entry) {
-                if ($entry['classification'] === 'excluded') {
+                if ($entry['classification'] === 'excluded' || !in_array($profile, $entry['profiles'], true)) {
                     continue;
                 }
                 $source = $this->sourcePath((string)$entry['path']);
@@ -101,7 +107,8 @@ final class ApplicationCreator
                 $inventoryDigest,
                 $templateIdentity,
                 $parameters,
-                $files
+                $files,
+                $profile
             );
 
             if (is_dir($target) && !rmdir($target)) {
@@ -193,13 +200,15 @@ final class ApplicationCreator
         }
         ksort($current, SORT_STRING);
         $released = $adoption->files();
-        if (array_keys($current) !== array_keys($released)) {
+        if (count($current) !== count($released)) {
             throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH');
         }
-
         $releaseTree = [];
-        foreach ($released as $path => $artifact) {
-            $generated = $current[$path];
+        foreach ($current as $path => $generated) {
+            $artifact = $released[$path] ?? null;
+            if (!is_array($artifact)) {
+                throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_SET_MISMATCH: ' . $path);
+            }
             if (($artifact['mode'] ?? null) !== ($generated['mode'] ?? null)
                 || ($artifact['classification'] ?? null) !== ($generated['classification'] ?? null)) {
                 throw new RuntimeException('CREATE_APP_ADOPTION_FILE_METADATA_MISMATCH: ' . $path);
@@ -271,9 +280,7 @@ final class ApplicationCreator
             || strlen($packageIdentity) > 120) {
             throw new RuntimeException('CREATE_APP_PACKAGE_IDENTITY_INVALID');
         }
-        if (preg_match(self::VERSION_PATTERN, $applicationVersion) !== 1) {
-            throw new RuntimeException('CREATE_APP_APPLICATION_VERSION_INVALID');
-        }
+        $this->versionContract()->assertValid($applicationVersion, 'CREATE_APP_APPLICATION_VERSION_INVALID');
         return [
             'APPLICATION_VERSION' => $applicationVersion,
             'PRODUCT_NAME' => $productName,
@@ -296,11 +303,13 @@ final class ApplicationCreator
             || !is_string($inventory['template_version'] ?? null)
             || !is_array($inventory['application'] ?? null)
             || array_keys($inventory['application']) !== ['version']
-            || preg_match(self::VERSION_PATTERN, (string)$inventory['application']['version']) !== 1
             || !is_array($inventory['variables'] ?? null)
             || !is_array($inventory['files'] ?? null)) {
             throw new RuntimeException('CREATE_APP_INVENTORY_SCHEMA_INVALID');
         }
+        $versions = $this->versionContract();
+        $versions->assertSame((string)$inventory['template_version'], $versions->scaffoldTemplate(), 'CREATE_APP_INVENTORY_TEMPLATE_VERSION_MISMATCH');
+        $versions->assertSame((string)$inventory['application']['version'], $versions->generatedApplicationDefault(), 'CREATE_APP_INVENTORY_APPLICATION_VERSION_MISMATCH');
         $variables = $inventory['variables'];
         sort($variables, SORT_STRING);
         if ($variables !== self::VARIABLES) {
@@ -322,6 +331,10 @@ final class ApplicationCreator
             if (!in_array($classification, self::CLASSIFICATIONS, true)
                 || !in_array($transform, self::TRANSFORMS, true)
                 || !is_string($entry['owner'] ?? null)
+                || !is_array($entry['profiles'] ?? null)
+                || array_values(array_unique($entry['profiles'])) !== $entry['profiles']
+                || array_diff($entry['profiles'], self::PROFILES) !== []
+                || $entry['profiles'] === []
                 || !in_array($entry['mode'] ?? null, [0644, 0755], true)) {
                 throw new RuntimeException('CREATE_APP_INVENTORY_ENTRY_INVALID: ' . $path);
             }
@@ -411,7 +424,7 @@ final class ApplicationCreator
     {
         // Generated metadata is rebuilt from parameters, so source prose changes
         // must not invalidate the immutable application template identity.
-        if (in_array($transform, ['changelog', 'release-metadata', 'docs-page'], true)) {
+        if (in_array($transform, ['changelog', 'release-metadata', 'docs-page', 'version-contract'], true)) {
             return hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
         }
         $digest = hash_file('sha256', $source);
@@ -442,6 +455,7 @@ final class ApplicationCreator
             'plugins-lock' => $this->pluginsLock(),
             'sbom' => $this->sbom($content, $parameters),
             'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
+            'version-contract' => $this->versionContractDocument($parameters),
             default => throw new RuntimeException('CREATE_APP_INVENTORY_TRANSFORM_UNKNOWN'),
         };
     }
@@ -661,7 +675,7 @@ function guardedDatabaseConfig(): array
     ];
 }
 PHP;
-        $content = preg_replace('/function guardedDatabaseConfig\(\): array\n\{.*?\n\}\n\nfunction guardedConnection/s', $replacement . "\n\nfunction guardedConnection", $content, 1) ?? $content;
+        $content = preg_replace('/function guardedDatabaseConfig\([^)]*\): array\s*\{.*?\n\}\n\nfunction guardedConnection/s', $replacement . "\n\nfunction guardedConnection", $content, 1) ?? $content;
         return $content;
     }
 
@@ -669,17 +683,17 @@ PHP;
     {
         return match ($path) {
             'docs-site/index.md' => "---\nlayout: home\nhero:\n  name: \"{{PRODUCT_NAME}}\"\n  text: \"Application documentation\"\n---\n\nThis site belongs to the generated application.\n",
-            'docs-site/getting-started.md' => "# Getting started\n\nCopy the root `.env.example` to `.env`; do not maintain a second `server/.env`. Register this application's own database, ports, domains and external services in `resources/project-resources.json` before connecting anything.\n\nInstall only into a confirmed empty database. Set `ADMIN_INITIAL_EMAIL` and a strong `ADMIN_INITIAL_PASSWORD`, then run `php server/database/install.php` followed by `php server/database/migrate.php --current`. This 2.0 baseline does not adopt a 1.x database, legacy maps or a previous scaffold.\n",
-            'docs-site/deployment.md', 'docs/peanut-admin-release-deployment.md' => "# Deployment\n\nOne deployment is one application instance with its own database, secrets, file storage and lifecycle. Use the checked-in Compose and Docker sources only after registering this application's resources; never inherit the scaffold source environment.\n\n`server/database/init.sql` is the canonical fresh baseline. `server/database/migrations/` contains only additive changes after that baseline. A generated 2.0 application installs into an empty database and does not support legacy adoption or scaffold upgrade. Multi-tenant deployments require a separate PlatformOperator identity and the `/platform/` bundle.\n",
+            'docs-site/getting-started.md' => "# Getting started\n\nCopy the root `.env.example` to `.env`; do not maintain a second `server/.env`. Register this application's own database, ports, domains and external services in `resources/project-resources.json` before connecting anything.\n\nInstall 3.0 only into a confirmed empty database. Set `ADMIN_INITIAL_EMAIL` and a strong `ADMIN_INITIAL_PASSWORD`, then run `php server/database/install.php` followed by `php server/database/environment-guard.php --current`. Later patch/minor releases use the standard update path and apply append-only files in `server/database/migrations/`; a different major release requires a fresh rebuild.\n",
+            'docs-site/deployment.md', 'docs/peanut-admin-release-deployment.md' => "# Deployment\n\nOne deployment is one application instance with its own database, secrets, file storage and lifecycle. Use the checked-in Compose and Docker sources only after registering this application's resources; never inherit the scaffold source environment.\n\n`server/database/init.sql` together with Core `KernelSchema` is the complete canonical fresh baseline. {{PRODUCT_NAME}} 3.0 is fresh-only across the major-version boundary; normal patch/minor updates preserve data, install locked dependencies, and apply append-only `server/database/migrations/*.sql` through `php server/database/install.php --migrate --target-version=X.Y.Z`. A newer major release must use the explicit, backed-up `--fresh` path. Plugin Module migrations keep their independent lifecycle. Multi-tenant deployments require a separate PlatformOperator identity and the `/platform/` bundle.\n",
             'docs-site/api.md' => "# API and extensions\n\nApplication HTTP adapters and product modules are app-owned. Use `server/config/peanut.php` and `web/src/peanut.overrides.ts` as the stable Core Host extension entries.\n",
             'docs-site/architecture/identity-and-tenancy.md' => "# Identity and tenancy\n\nAccount/Credential is the login identity; TenantMember is that account's membership in one Tenant; Tenant Role/RBAC grants permissions only in that Tenant. Business customers, suppliers and contacts remain application business records rather than Account fields.\n\nA PlatformOperator governs this application instance but does not become a TenantMember or gain arbitrary Tenant business-data access. Host-bound Tenant entry points restrict the session to the bound Tenant; only an explicitly configured shared Admin Host can offer Tenant switching to an account that has active memberships.\n",
             'docs-site/architecture/official-module-qualification.md' => "# Official module qualification\n\nA module is usable only when its Plugin artifact is installed, the Tenant has the module enabled, and the current TenantMember has the required RBAC/data permission. Each module owns its schema and public contracts; it must not read or write another module's private tables.\n\nBefore declaring a module available, add its Tenant isolation, disabled-module and authorization checks. External providers such as payment, notifications and OAuth require their own production configuration and verification.\n",
-            'docs-site/capabilities.md' => "# Capability catalogue\n\nCore defaults are identity, Tenant membership, RBAC, audit, fresh installation/migration, Module lifecycle and the Admin Shell. Files, notifications, OAuth, payment, member CRM, tasks, import/export and content are optional application capabilities, not an excuse to bypass Tenant isolation.\n\nProduct-specific domains such as Party, Store, Warehouse, Supplier relationship, Product, Pricing, Inventory, Procurement and Trade belong in this application's Modules. Add only the domains this product owns, with their data owner, public contract and acceptance tests.\n",
+            'docs-site/capabilities.md' => "# Capability catalogue\n\nCore defaults are identity, Tenant membership, RBAC, audit, fresh installation, Module lifecycle and the Admin Shell. Files, notifications, OAuth, payment, member CRM, tasks, import/export and content are optional application capabilities, not an excuse to bypass Tenant isolation.\n\nProduct-specific domains such as Party, Store, Warehouse, Supplier relationship, Product, Pricing, Inventory, Procurement and Trade belong in this application's Modules. Add only the domains this product owns, with their data owner, public contract and acceptance tests.\n",
             'docs-site/guide/development.md', 'docs/peanut-admin-development-guide.md' => "# Development guide\n\nCore owns generic identity, tenancy and authorization contracts. This application owns routes, product settings, pages and business Runtime. A Module owns its tables, use cases, permissions, menu contributions and public DTO/command contracts.\n\nDevelop a vertical slice through route, controller, application service and Module contract. Supply TenantContext from trusted middleware; never accept a client-supplied Tenant ID as authorization. Add a normal Tenant A case and a denied Tenant B case before enabling the Module.\n",
             'docs-site/guide/module-development.md', 'docs/plugin-module-development.md' => "# Module development\n\nPlace an application Module under `server/app/Modules/<Vendor>/<Module>/` with Domain, Application, Contracts, Infrastructure, Database, Resources and Tests. Put the matching management contribution in `web/src/modules/<module>/`.\n\nExpose commands and read-only DTOs from `Contracts`; callers must not join or mutate another Module's private tables. Plugin install, TenantModule enablement and member RBAC are separate gates. Document the Module's owner Tenant, migrations, menu/permission keys and cross-Tenant denial cases.\n",
             'docs-site/platform.md' => "# Instance platform\n\nThe PlatformOperator control plane manages this one application's Tenant lifecycle, Owner invitations, entry bindings, TenantModule enablement, platform roles and audit. It is a separate `/platform/` frontend and session, not a Tenant business module or a cross-application operations system.\n\nA Tenant owner is an in-Tenant RBAC role. Platform identity does not imply Tenant business-data access.\n",
             'docs-site/guide/user-manual.md', 'docs/peanut-admin-user-manual.md' => "# Administrator manual\n\nThis page is the product owner’s operating manual. Document the application's enabled Modules, its roles, approval and data-scope rules, and the support path for tenant owners. Do not document product-only fields as Peanut Core behavior.\n",
-            'docs-site/troubleshooting.md' => "# Troubleshooting\n\nConfirm the selected resource ID, environment, endpoint and database before retrying a connection or migration. Unknown Host names, disabled Tenant modules, suspended Tenants and missing member permissions fail closed by design.\n\nFor multi-tenant entry issues, first check the original Host is preserved by the proxy and whether the account has an active TenantMember relation. Do not bypass a failed boundary by adding a default Tenant ID.\n",
+            'docs-site/troubleshooting.md' => "# Troubleshooting\n\nConfirm the selected resource ID, environment, endpoint and database before retrying a connection or fresh installation. Unknown Host names, disabled Tenant modules, suspended Tenants and missing member permissions fail closed by design.\n\nFor multi-tenant entry issues, first check the original Host is preserved by the proxy and whether the account has an active TenantMember relation. Do not bypass a failed boundary by adding a default Tenant ID.\n",
             'docs-site/releases.md' => "# Releases\n\nCreate application releases from immutable application commits. Regenerate legal metadata and dependency inventory for each release.\n",
             'docs-site/legal.md' => "# Legal\n\nReview the generated root legal files before redistribution. Dependency changes require a refreshed SBOM and third-party notices.\n",
             'docs-site/404.md' => "# Page not found\n\nReturn to the [documentation home](/).\n",
@@ -690,6 +704,7 @@ PHP;
     /** @param array<string,string> $parameters */
     private function releaseMetadata(array $parameters): string
     {
+        $versions = $this->versionContract();
         $metadata = [
             'schema_version' => 1,
             'product' => $parameters['PRODUCT_NAME'],
@@ -698,11 +713,26 @@ PHP;
             'status' => 'generated-application-baseline',
             'release_policy' => 'replace this metadata from an immutable application release candidate before publishing',
             'public_runtime_dependencies' => [
-                'composer' => 'peanut-admin/core@0.1.0-alpha.5',
-                'frontend' => '@peanut-admin/admin@0.1.0-alpha.5',
+                'composer' => 'peanut-admin/core@' . $versions->corePhp(),
+                'frontend' => '@peanut-admin/admin@' . $versions->coreWeb(),
             ],
         ];
         return json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    /** @param array<string,string> $parameters */
+    private function versionContractDocument(array $parameters): string
+    {
+        $versions = $this->versionContract();
+        return json_encode([
+            'schema_version' => 1,
+            'protocol' => 'peanut.release-versions.v1',
+            'product_release' => $parameters['APPLICATION_VERSION'],
+            'scaffold_template' => $versions->scaffoldTemplate(),
+            'generated_application_default' => $parameters['APPLICATION_VERSION'],
+            'core_php' => $versions->corePhp(),
+            'core_web' => $versions->coreWeb(),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
     }
 
     /** @param array<string,string> $parameters */
@@ -885,7 +915,8 @@ PHP;
         string $inventoryDigest,
         array $templateIdentity,
         array $parameters,
-        array $files
+        array $files,
+        string $profile
     ): array {
         $baselineRoot = '.peanut/scaffold-baseline/' . $templateIdentity['version'] . '/files';
         foreach ($files as &$file) {
@@ -912,6 +943,7 @@ PHP;
                 'slug' => $parameters['SLUG'],
                 'package_identity' => $parameters['PACKAGE_IDENTITY'],
                 'version' => $parameters['APPLICATION_VERSION'],
+                'profile' => $profile,
             ],
             'template' => $templateIdentity,
             'generation_source' => [
@@ -934,6 +966,11 @@ PHP;
         $manifestPath = $stage . '/.peanut/application-manifest.json';
         $this->writeFile($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n", 0644);
         return $manifest;
+    }
+
+    private function versionContract(): VersionContract
+    {
+        return VersionContract::load($this->sourceRoot . '/release-versions.json');
     }
 
     /** @param list<array<string,mixed>> $files */

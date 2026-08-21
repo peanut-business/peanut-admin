@@ -8,6 +8,8 @@ use app\common\logic\BaseLogic;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\audit\OperationLogTenantRepository;
+use app\common\support\ExportPageInfo;
+use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -21,7 +23,7 @@ class OperationLogLogic extends BaseLogic
     {
         $query = self::buildQuery($context, $params);
         $count = $query->count();
-        $pageSize = min(self::EXPORT_MAX_ROWS, max(1, (int)($params['page_size'] ?? 15)));
+        $pageSize = min(self::EXPORT_MAX_ROWS, max(1, (int)($params['page_size'] ?? $params['limit'] ?? 15)));
         if ((int)($params['export'] ?? 0) === 1) {
             return self::exportInfo($count, $pageSize);
         }
@@ -29,7 +31,8 @@ class OperationLogLogic extends BaseLogic
             return self::export($context, $params, $count, $pageSize);
         }
 
-        $pageNo = max(1, (int)($params['page_no'] ?? 1));
+        $pagination = PaginationInput::from($params);
+        $pageNo = $pagination->page;
         $lists = self::buildQuery($context, $params)
             ->order('id', 'desc')
             ->page($pageNo, min(100, $pageSize))
@@ -70,17 +73,12 @@ class OperationLogLogic extends BaseLogic
 
     private static function exportInfo(int $count, int $pageSize): array
     {
-        $sumPage = max(1, (int)ceil($count / $pageSize));
-        return [
-            'count' => $count,
-            'page_size' => $pageSize,
-            'sum_page' => $sumPage,
-            'max_page' => (int)floor(self::EXPORT_MAX_ROWS / $pageSize),
-            'all_max_size' => self::EXPORT_MAX_ROWS,
-            'page_start' => 1,
-            'page_end' => min($sumPage, 200),
-            'file_name' => self::EXPORT_DEFAULT_NAME,
-        ];
+        return ExportPageInfo::from(
+            $count,
+            $pageSize,
+            self::EXPORT_MAX_ROWS,
+            self::EXPORT_DEFAULT_NAME,
+        )->toArray();
     }
 
     private static function export(TenantContext $context, array $params, int $count, int $pageSize): array

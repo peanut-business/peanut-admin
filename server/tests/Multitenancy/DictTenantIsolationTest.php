@@ -4,7 +4,6 @@ declare(strict_types=1);
 use app\adminapi\logic\dict\DictDataLogic;
 use app\adminapi\logic\dict\DictTypeLogic;
 use app\common\service\dict\DictTenantContext;
-use app\common\service\dict\DictTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -87,6 +86,29 @@ CREATE TABLE pa_dict_data (
   CONSTRAINT fk_dict_data_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT,
   CONSTRAINT fk_dict_data_tenant_type FOREIGN KEY (tenant_id, type_id) REFERENCES pa_dict_type (tenant_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+CREATE TABLE pa_system_dict_type (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  code VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL DEFAULT '',
+  is_disable TINYINT NOT NULL DEFAULT 0,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  create_time INT UNSIGNED NOT NULL DEFAULT 0,
+  update_time INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id), UNIQUE KEY uk_system_dict_type_code (code)
+) ENGINE=InnoDB;
+CREATE TABLE pa_system_dict_data (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  type_code VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL DEFAULT '',
+  value VARCHAR(255) NOT NULL DEFAULT '',
+  sort SMALLINT NOT NULL DEFAULT 0,
+  is_disable TINYINT NOT NULL DEFAULT 0,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  create_time INT UNSIGNED NOT NULL DEFAULT 0,
+  update_time INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id), UNIQUE KEY uk_system_dict_data_type_value (type_code, value),
+  CONSTRAINT fk_system_dict_data_type FOREIGN KEY (type_code) REFERENCES pa_system_dict_type (code)
+) ENGINE=InnoDB;
 SQL);
 }
 
@@ -157,7 +179,7 @@ try {
         'name' => 'Alpha status',
         'type' => 'status',
     ]), DictTypeLogic::getError());
-    $alphaTypeId = (int)DictTenantRepository::types($alpha)->where('type', 'status')->value('id');
+    $alphaTypeId = (int)$pdo->query("SELECT id FROM pa_dict_type WHERE tenant_id = 101 AND type = 'status' LIMIT 1")->fetchColumn();
     expectDictTenant($alphaTypeId > 0, 'Alpha type was not created');
     expectDictTenant(
         (int)$pdo->query("SELECT tenant_id FROM pa_dict_type WHERE id = {$alphaTypeId}")->fetchColumn() === 101,
@@ -177,7 +199,7 @@ try {
         'value' => '1',
         'sort' => 30,
     ]), DictDataLogic::getError());
-    $alphaDataId = (int)DictTenantRepository::data($alpha)->where('type_id', $alphaTypeId)->value('id');
+    $alphaDataId = (int)$pdo->query("SELECT id FROM pa_dict_data WHERE tenant_id = 101 AND type_id = {$alphaTypeId} LIMIT 1")->fetchColumn();
     expectDictTenant($alphaDataId > 0, 'Alpha dictionary data was not created');
     expectDictTenant(array_column(DictDataLogic::byType($alpha, 'status'), 'value') === ['1'], 'Alpha byType lost owned data');
     expectDictTenant(DictDataLogic::byType($beta, 'status') === [], 'Beta byType leaked Alpha data');

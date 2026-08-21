@@ -22,7 +22,10 @@ $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 expectMemberFinance(MemberBalanceService::moneyToCents('10.10') === 1010, 'decimal amount conversion changed');
 expectMemberFinance(MemberBalanceService::moneyToCents(0.1) === 10, 'float amount conversion changed');
 expectMemberFinance(MemberBalanceService::centsToMoney(1010) === '10.10', 'money formatting changed');
-expectMemberFinance(str_contains($balanceService, 'Member::lock(true)'), 'balance owner must lock the member row');
+expectMemberFinance(
+    str_contains($balanceService, 'MemberTenantRepository::members($context)->lock(true)'),
+    'balance owner must lock the Tenant-scoped member row'
+);
 expectMemberFinance(str_contains($balanceService, 'AccountLogLogic::add'), 'balance owner must append a ledger row');
 expectMemberFinance(!str_contains($balanceService, '$member->balance'), 'balance owner must not write a compatibility mirror');
 expectMemberFinance(!str_contains($accountLog, "'after_amount' =>"), 'ledger owner must not write a compatibility mirror');
@@ -71,7 +74,7 @@ sort($balanceCallers);
 sort($expectedCallerPaths);
 expectMemberFinance($balanceCallers === $expectedCallerPaths, 'balance owner caller set changed');
 expectMemberFinance(
-    $ledgerWriters === [$serverRoot . '/app/common/logic/AccountLogLogic.php'],
+    $ledgerWriters === [$serverRoot . '/app/common/service/member/MemberTenantRepository.php'],
     'member balance ledger must have exactly one writer'
 );
 foreach ($callers as $relativePath) {
@@ -98,14 +101,14 @@ expectMemberFinance(
     'refund retry must not deduct the balance again'
 );
 
-$paymentMigration = (string)file_get_contents(
-    $serverRoot . '/database/init.sql'
+$paymentSchema = (string)file_get_contents($serverRoot . '/database/init.sql');
+expectMemberFinance(str_contains($paymentSchema, 'uk_transaction_id'), 'transaction id unique guard is missing');
+expectMemberFinance(
+    str_contains($paymentSchema, 'idx_refund_record_tenant_order_amount')
+        && !str_contains($paymentSchema, 'uk_refund_record_tenant_order')
+        && !str_contains($paymentSchema, 'uk_refund_record_order_global'),
+    'partial-refund cumulative lookup schema is missing'
 );
-$refundMigration = (string)file_get_contents(
-    $serverRoot . '/database/init.sql'
-);
-expectMemberFinance(str_contains($paymentMigration, 'uk_transaction_id'), 'transaction id unique guard is missing');
-expectMemberFinance(str_contains($refundMigration, 'uk_order_type_order_id'), 'one-refund-per-order guard is missing');
 
 $rechargeEvidence = json_decode((string)file_get_contents(
     $repositoryRoot . '/output/playwright/s01/recharge-payment-summary.json'
@@ -129,6 +132,9 @@ expectMemberFinance(
     'sealed refund audit lacks one-deduction-per-order proof'
 );
 
-expectMemberFinance(!str_contains($balanceService, 'PeanutAdmin\\'), 'application balance owner must not deep import core');
+expectMemberFinance(
+    preg_match('/PeanutAdmin\\\\[^;]*(?:Balance|Ledger|FinanceService)/', $balanceService) !== 1,
+    'application balance owner must not delegate balance or ledger behavior to Core'
+);
 
 echo "PB05-MEMBER-FINANCE-001 passed\n";

@@ -10,6 +10,7 @@ use app\common\model\refund\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
+use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 退款统计、记录和操作日志查询。 */
@@ -64,12 +65,20 @@ class RefundLogic extends BaseLogic
             $query = self::buildBaseQuery($context, $params, true);
             $count = (clone $query)->count();
             $pageType = (int)($params['page_type'] ?? 1);
-            $pageNo = $pageType === 0
-                ? 1
-                : max(1, (int)($params['page_no'] ?? $params['page'] ?? 1));
-            $pageSize = $pageType === 0
-                ? self::PAGE_SIZE_MAX
-                : max(1, (int)($params['page_size'] ?? $params['limit'] ?? 15));
+            if ($pageType === 0) {
+                $pageNo = 1;
+                $pageSize = self::PAGE_SIZE_MAX;
+            } else {
+                $requestedPageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
+                if ($requestedPageSize <= 100) {
+                    $pagination = PaginationInput::from($params);
+                    $pageNo = $pagination->page;
+                    $pageSize = $pagination->pageSize;
+                } else {
+                    $pageNo = max(1, (int)($params['page_no'] ?? $params['page'] ?? 1));
+                    $pageSize = max(1, $requestedPageSize);
+                }
+            }
 
             $lists = $query
                 ->field('r.*,u.nickname,u.avatar')

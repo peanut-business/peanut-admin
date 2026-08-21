@@ -63,19 +63,6 @@ foreach (['pa_resource_operation_target_type', 'pa_resource_operation_permission
         "{$table} must reference native Core pa_permission"
     );
 }
-$runner = (string)file_get_contents(dirname(__DIR__, 2) . '/database/migrate.php');
-pluginMigrationExpect(
-    str_contains($runner, 'assertFreshBaselineLedger'),
-    'migration runner does not require the canonical fresh baseline identity'
-);
-pluginMigrationExpect(
-    str_contains($runner, 'assertAdditiveMigration'),
-    'migration runner does not enforce additive post-baseline migrations'
-);
-pluginMigrationExpect(
-    !str_contains($runner, '--adopt-existing'),
-    'migration runner still exposes the retired pre-baseline adoption path'
-);
 foreach (['deployment', 'tenant', 'target'] as $scope) {
     pluginMigrationExpect(
         str_contains($sql, "CONSTRAINT `chk_setting_{$scope}_storage`"),

@@ -4,7 +4,8 @@ Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的
 当前源码是已正式发布的 `2.0.0` fresh-only 版本，同一代码线支持单实例（`standalone`）和多租户
 （`multi-tenant`）部署，覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
 
-[1.x 历史演示应用](https://peanut-admin.007345.xyz) ·
+[当前 Standalone 演示](https://peanut-admin.007345.xyz/admin/) ·
+[当前多租户演示](https://pa-admin.007345.xyz/admin/) ·
 [文档中心](https://peanut-admin-doc.007345.xyz) ·
 [2.0.0 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.0) ·
 [1.x 历史 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5) ·
@@ -70,7 +71,7 @@ cp .env.example .env
 ```dotenv
 DEPLOYMENT_MODE=standalone
 ADMIN_INITIAL_EMAIL=admin@example.com
-ADMIN_INITIAL_PASSWORD=<至少 12 位且同时包含字母和数字>
+ADMIN_INITIAL_PASSWORD=<至少 6 位>
 TENANT_IDENTIFIER_HMAC_KEY=<至少 32 字节的稳定随机值>
 PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 ```
@@ -87,6 +88,12 @@ PLATFORM_IDENTIFIER_HMAC_KEY=<另一份至少 32 字节的稳定随机值>
 `/opt/homebrew/bin/php` 8.3.24 与 `/usr/local/bin/composer` 2.8.10 托管宿主 API，Web、PC、
 Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅用于本机生产模式
 预览、生产构建和显式容器等价 Gate。
+
+若需要同时开发本地 `peanut-admin-core`，执行
+`scripts/local-core-composer install`（PHP）及 `scripts/local-core-web link`（Web）。前者仅在
+被 `.gitignore` 忽略的 `.local/` 中生成 Composer path overlay，后者仅替换本机
+`node_modules` 中的包软链接；两者都不改变正式清单或 lock 文件。发布安装继续使用固定的
+远程 tag。详见 `docs/development/local-core-composer.md`。
 
 ```bash
 ./scripts/local-stack.sh dev-up
@@ -105,23 +112,31 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定
 `admin.peanut-admin.test:20179`、`platform.peanut-admin.test:20176`、两个 Tenant 测试域名、
 API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
-由当前运行任务的项目 lease 同时持有这些资源。
+由当前运行任务的项目 lease 同时持有这些资源。账号、密码和本地入口见
+[`docs/operations/local-demo-access.md`](docs/operations/local-demo-access.md)。
 
 ## 生产入口
 
-| 入口 | 地址 |
-| --- | --- |
-| 2.0 多租户候选 / 实例平台 | https://pa-platform.007345.xyz/platform/ |
-| 2.0 多租户候选 / 公共管理端 | https://pa-admin.007345.xyz/admin/ |
-| 2.0 多租户候选 / Tenant A 绑定入口 | https://pa-tenant-a.007345.xyz/admin/ |
-| 2.0 多租户候选 / Tenant B 绑定入口 | https://pa-tenant-b.007345.xyz/admin/ |
-| 1.x 历史演示应用 / 管理端 | https://peanut-admin.007345.xyz/admin/ |
-| 1.x 历史演示应用 / PC | https://peanut-admin.007345.xyz/pc/ |
-| 1.x 历史演示应用 / H5 | https://peanut-admin.007345.xyz/mobile/ |
-| 官方文档 | https://peanut-admin-doc.007345.xyz |
+| 入口 | 登录地址 | 账号 | 密码 |
+| --- | --- | --- | --- |
+| 历史 v2.1.5 多租户候选 / 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | `peanut1234` |
+| 历史 v2.1.5 多租户候选 / bootstrap 管理端 | `https://pa-admin.007345.xyz/admin/` | `admin@pa-demo.example` | `peanut1234` |
+| 历史 v2.1.5 多租户候选 / 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| 历史 v2.1.5 多租户候选 / Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| 历史 v2.1.5 多租户候选 / Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
+| 历史 v2.1.5 Standalone / 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | `peanut1234` |
+| 历史 v2.1.5 Standalone / PC | `https://peanut-admin.007345.xyz/pc/` | 按业务会员登录 | 不公开 |
+| 历史 v2.1.5 Standalone / H5 | `https://peanut-admin.007345.xyz/mobile/` | 按业务会员登录 | 不公开 |
+| 官方文档 | `https://peanut-admin-doc.007345.xyz` | 无需登录 | 无 |
 
-正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表 2.0
-入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境，不是 2.0.0 正式生产部署。
+上表管理身份都是 owner 明确批准公开的可丢弃演示账号，统一密码为 `peanut1234`。当前完整
+事实源为 [`docs/operations/demo-access.md`](docs/operations/demo-access.md)；部署目录 `.env`
+中的 `*_INITIAL_PASSWORD` 只是首次安装输入，账号在数据库中改密后不会回写，不能据此判断
+当前登录密码。
+
+正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表多租户
+入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境；Standalone 是独立的
+可丢弃演示部署。
 两个 Tenant 域名已完成 DNS、TLS、Host 保留、反向代理和应用内持续绑定；错误 Tenant 账号
 登录会被拒绝。当前体验实例使用登记的人工 Owner 邀请交付模式，不依赖生产邮件 Provider。
 首次部署、

@@ -3,59 +3,35 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller\setting;
 
-use app\adminapi\controller\BaseAdminController;
+use app\adminapi\controller\AbstractTenantCrudController;
 use app\adminapi\logic\setting\OfficialAccountReplyLogic;
 use app\adminapi\validate\setting\OfficialAccountReplyValidate;
 use app\common\service\member\MemberTenantContext;
+use PeanutAdmin\Kernel\Auth\AuthException;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\response\Json;
 
-class OfficialAccountReplyController extends BaseAdminController
+class OfficialAccountReplyController extends AbstractTenantCrudController
 {
-    public function lists()
+    protected const CRUD_LOGIC = OfficialAccountReplyLogic::class;
+    protected const CRUD_VALIDATE = OfficialAccountReplyValidate::class;
+    protected const CRUD_NOT_FOUND_MESSAGE = '自动回复不存在';
+    protected const CRUD_DELETE_SUCCESS_MESSAGE = '删除成功';
+    protected const CRUD_VALIDATE_LISTS = true;
+    protected const CRUD_STATUS_FIELD = 'status';
+
+    protected function resolveCrudContext(): TenantContext
     {
-        $params = $this->request->get();
-        $this->validate($params, OfficialAccountReplyValidate::class . '.lists');
-        return $this->data(OfficialAccountReplyLogic::lists(MemberTenantContext::member($this->request), $params));
+        $context = MemberTenantContext::member($this->request);
+        if (!$context instanceof TenantContext) {
+            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
+        }
+
+        return $context;
     }
 
-    public function detail()
+    protected function renderLists(array|false $result): Json
     {
-        $params = $this->request->get();
-        $this->validate($params, OfficialAccountReplyValidate::class . '.detail');
-        $result = OfficialAccountReplyLogic::detail(MemberTenantContext::member($this->request), (int)$params['id']);
-        return $result === [] ? $this->fail('自动回复不存在') : $this->data($result);
-    }
-
-    public function add()
-    {
-        return $this->operate('add', 'add');
-    }
-
-    public function edit()
-    {
-        return $this->operate('edit', 'edit');
-    }
-
-    public function delete()
-    {
-        $params = $this->request->post();
-        $this->validate($params, OfficialAccountReplyValidate::class . '.delete');
-        $result = OfficialAccountReplyLogic::delete(MemberTenantContext::member($this->request), (int)$params['id']);
-        return $result ? $this->success('删除成功') : $this->fail(OfficialAccountReplyLogic::getError());
-    }
-
-    public function updateStatus()
-    {
-        $params = $this->request->post();
-        $this->validate($params, OfficialAccountReplyValidate::class . '.status');
-        $result = OfficialAccountReplyLogic::updateStatus(MemberTenantContext::member($this->request), (int)$params['id'], (int)$params['status']);
-        return $result ? $this->success('操作成功') : $this->fail(OfficialAccountReplyLogic::getError());
-    }
-
-    private function operate(string $scene, string $method)
-    {
-        $params = $this->request->post();
-        $this->validate($params, OfficialAccountReplyValidate::class . '.' . $scene);
-        $result = OfficialAccountReplyLogic::$method(MemberTenantContext::member($this->request), $params);
-        return $result ? $this->success('操作成功') : $this->fail(OfficialAccountReplyLogic::getError());
+        return $this->data($result);
     }
 }

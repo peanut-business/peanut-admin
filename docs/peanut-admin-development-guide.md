@@ -78,7 +78,7 @@ ID、环境和地址，再连接数据库、启动服务或执行迁移。派生
 ```bash
 export DEPLOYMENT_MODE=standalone
 export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 12 位且同时包含字母和数字>'
+export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
 export TENANT_IDENTIFIER_HMAC_KEY='<至少 32 字节稳定随机值>'
 export PLATFORM_IDENTIFIER_HMAC_KEY='<另一项至少 32 字节稳定随机值>'
 

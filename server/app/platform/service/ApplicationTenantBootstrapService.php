@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use PDO;
+use app\common\service\config\BrandDefaults;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
 final readonly class ApplicationTenantBootstrapService
@@ -18,6 +19,7 @@ final readonly class ApplicationTenantBootstrapService
         'pa_notice_scene',
         'pa_permission',
         'pa_role_permission',
+        'pa_tenant_setting',
         'pa_transaction_setting',
     ];
 
@@ -188,6 +190,37 @@ SQL);
 
     private function seedSettings(int $tenantId): void
     {
+        $settings = [
+            'website' => BrandDefaults::website(),
+            'copyright' => ['config' => []],
+            'agreement' => [
+                'service_title' => '',
+                'service_content' => '',
+                'privacy_title' => '',
+                'privacy_content' => '',
+            ],
+            'site-statistics' => ['clarity_code' => ''],
+            'member-profile' => ['user_avatar' => 'brand/avatar-member.svg'],
+            'login' => [
+                'login_way' => [1, 2],
+                'coerce_mobile' => 0,
+                'login_agreement' => 0,
+                'third_auth' => 0,
+                'wechat_auth' => 0,
+            ],
+            'web-page' => ['status' => 1, 'page_status' => 0, 'page_url' => ''],
+            'hot-search' => ['status' => 0],
+        ];
+        foreach ($settings as $namespace => $document) {
+            $encoded = json_encode(
+                $document,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+            );
+            $this->insertIgnore(
+                'INSERT IGNORE INTO pa_tenant_setting (tenant_id,namespace,config_json,revision,create_time,update_time) VALUES (?,?,?,1,0,0)',
+                [$tenantId, $namespace, $encoded],
+            );
+        }
         $this->insertIgnore(
             'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
             [$tenantId]
@@ -223,7 +256,7 @@ SQL);
             $statement->execute([
                 'tenant_id' => $tenantId,
                 'provider' => $provider,
-                'callback_key' => hash('sha256', "fresh:{$tenantCode}:{$provider}"),
+                'callback_key' => bin2hex(random_bytes(32)),
                 'identity_hash' => hash('sha256', "unconfigured:{$tenantCode}:{$provider}"),
                 'identity_hint' => '',
                 'tenant_scope' => $tenantId,

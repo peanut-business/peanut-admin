@@ -12,7 +12,7 @@ use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
 
-/** 充值列表、首次退款和失败重试参数验证。 */
+/** 充值列表、部分退款和失败重试参数验证。 */
 class RechargeValidate extends Validate
 {
     private ?TenantContext $tenantContext = null;
@@ -36,6 +36,7 @@ class RechargeValidate extends Validate
         'export' => 'in:1,2',
         'file_name' => 'max:100',
         'recharge_id' => 'require|checkRecharge',
+        'refund_amount' => 'float|gt:0',
         'record_id' => 'require|checkRecord',
     ];
 
@@ -43,6 +44,8 @@ class RechargeValidate extends Validate
         'end_time.checkTimeRange' => '搜索的时间范围不正确',
         'recharge_id.require' => '参数缺失',
         'record_id.require' => '参数缺失',
+        'refund_amount.float' => '退款金额格式不正确',
+        'refund_amount.gt' => '退款金额必须大于零',
     ];
 
     public function sceneLists(): self
@@ -56,7 +59,7 @@ class RechargeValidate extends Validate
 
     public function sceneRefund(): self
     {
-        return $this->only(['recharge_id']);
+        return $this->only(['recharge_id', 'refund_amount']);
     }
 
     public function sceneAgain(): self
@@ -91,15 +94,6 @@ class RechargeValidate extends Validate
         if ((int)$order->pay_status !== RechargeOrder::PAY_STATUS_PAID) {
             return '当前订单不可退款';
         }
-        if ((int)$order->refund_status === RechargeOrder::REFUND_STATUS_STARTED) {
-            return '订单已发起退款,退款失败请到退款记录重新退款';
-        }
-
-        $member = MemberTenantRepository::members($this->requireContext())->findOrEmpty((int)$order->user_id);
-        if ($member->isEmpty() || (float)$member->user_money < (float)$order->order_amount) {
-            return '退款失败:用户余额已不足退款金额';
-        }
-
         return true;
     }
 

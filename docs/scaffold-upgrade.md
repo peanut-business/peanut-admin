@@ -23,8 +23,10 @@ php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/applicatio
 这条执行器只更新 manifest 中标为 `managed` 或 `generated-managed` 的框架文件，并原子保存
 恢复材料；`app-owned` 业务代码、业务 Schema、部署密钥和业务迁移不会被自动改写。它也不
 执行 Composer/npm、数据库 migration 或服务重启。部署中的前后端与数据库升级由
-`scripts/deploy-release --upgrade --from <当前版本>` 另行完成，二者必须使用同一不可变 Release
-和配对备份策略。升级前先运行 `preflight`，看到 `status=ready` 且冲突为 0 后再 apply。
+`scripts/deploy-release --update` 另行完成：同一大版本会安装锁定依赖并执行
+`php server/database/install.php --migrate --target-version=X.Y.Z`，跨大版本则必须走
+`--fresh`（配对备份、显式确认和重建空库）。升级前先运行 `preflight`，看到 `status=ready`
+且冲突为 0 后再 apply。
 
 ## 1.x 历史归档
 

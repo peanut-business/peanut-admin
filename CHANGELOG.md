@@ -3,6 +3,26 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [3.0.0] - 2026-08-20
+
+### Changed
+
+- Established the fresh-only application baseline with a single version contract,
+  fixed Composer/npm lockfiles and profile-aware application tooling.
+- Local development may link the adjacent Core worktree through `scripts/core-dev`;
+  production builds install the pinned Registry packages with `--prefer-dist` and
+  `--frozen-lockfile` and never include local links.
+- Application release identity is independent from the Peanut Admin Core package
+  release. Core Alpha.6 is not a prerequisite for the 3.0.0 application release;
+  the scaffold release is sealed and published as a separate subsequent artifact.
+
+### Release boundaries
+
+- T15 (tenant global fail-closed for static/public delivery) and T16 (partial or
+  multi-refund expansion) remain deferred and are not part of 3.0.0.
+- The application continues to consume the fixed `0.1.0-alpha.5` Core packages
+  until a later dependency update is explicitly qualified.
+
 ## [2.1.5] - 2026-08-18
 
 ### Fixed

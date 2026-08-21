@@ -11,6 +11,7 @@ class NoticeSceneLogic extends BaseLogic
 {
     public static function lists(TenantContext $context): array
     {
+        self::clearError();
         $list = NoticeTenantRepository::scenes($context)->field([
             'id', 'code', 'name', 'description', 'recipient', 'variables',
             'sms_template_id', 'sms_content', 'sms_status', 'update_time',
@@ -21,11 +22,13 @@ class NoticeSceneLogic extends BaseLogic
 
     public static function detail(TenantContext $context, int $id): array
     {
+        self::clearError();
         return NoticeTenantRepository::scenes($context)->where('id', $id)->findOrEmpty()->toArray();
     }
 
     public static function save(TenantContext $context, array $params): bool
     {
+        self::clearError();
         try {
             $scene = NoticeTenantRepository::scenes($context)
                 ->where('id', (int) $params['id'])
@@ -40,8 +43,7 @@ class NoticeSceneLogic extends BaseLogic
             $scene->save();
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 }

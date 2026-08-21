@@ -5,10 +5,10 @@
 > Peanut Admin 产品状态事实源：`docs/product-status/capability-ledger.json`
 > 应用内多租户计划：`docs/plans/multi-tenancy-platform-management-plan.md`
 >
-> 当前状态（2026-08-17）：`v2.0.0` fresh-only 源码已完成 P0-E 7/7、dev/main 合入、annotated
-> tag 与 GitHub Release；生产部署不在该源码发布内，见
-> `docs/product-status/releases/v2.0.0.json`。下文 R0/R1 的 `v1.1.x` 记录是历史路线证据，
-> 不应重新领取或当作 2.0.0 未发布。
+> 当前状态（2026-08-20）：`v2.1.5` 已完成固定 tag、P0-E 7/7、dev 合入、GitHub Release、
+> Standalone 升级、多租户 Demo 部署和不可变发布快照；见
+> `docs/product-status/releases/v2.1.5.json`。下文 R0/R1 的 `v1.1.x` 记录是历史路线证据，
+> 不应重新领取或当作当前 2.x 未发布。
 > R1 状态：`v1.1.3` 已于 2026-08-15 达到 `production-demonstrated`；OP02 的 Release
 > 前置已解除，但独立运营平台实现仍未开始。
 
@@ -63,28 +63,31 @@ R1 的串行职责：
 8. 对 `peanut-admin.007345.xyz:443` 做登录、API、核心页面、数据库迁移和 TLS 最低 smoke；
 9. 更新能力账本和不可变发布快照，释放 lease 并清理本次临时资源。
 
-### OP01：运营平台产品与架构设计
+### OP01：应用运维平台（Ops Platform）产品与架构设计 — [可执行 / 无阻塞]
 
-OP01 从现在开始在独立项目推进，不等待 scaffold：
+应用运维平台（Peanut Application Ops Platform，专注于已部署实例的健康监测、备份存证、授权维护与无感远程平滑升级）即日起作为独立立项启动，无前置阻塞：
 
-- 产品愿景、角色、业务边界和成功指标；
-- Application、Release、Artifact、DeploymentInstance、Environment、Entitlement；
-- UpgradePlan/Run、BackupEvidence、HealthSnapshot、OperationsAuditEvent；
-- 控制面/实例 Agent 边界、签名任务、幂等、审计、失败和离线策略；
-- MVP 纵向切片、验收矩阵、安全边界和资源登记。
+- **架构定位与边界**：
+  - 区别于系统内部的租户平台管理（Platform 端：前端独立、后端共享同一个 API Host 服务）；
+  - **应用运维平台是一个完全独立的、由 Peanut Admin 脚手架（`create-app`）派生构建的独立顶层应用**（拥有独立仓库、独立数据库、独立部署环境与独立的业务生命周期）；
+- **核心运维模型**：
+  - Application、Release、Artifact、DeploymentInstance（生产/预发常驻实例）、Environment、Entitlement；
+  - UpgradePlan/Run、BackupEvidence、HealthSnapshot、OperationsAuditEvent；
+  - 实例出站 Agent 协议、非侵入式签名任务下发、幂等执行、离线高可用策略；
+- **环境管控分层原则**：
+  - **生产/预发常驻环境**：接入运维平台，享受自动备份证明、签名版本分发与平滑远程升级服务；
+  - **本地开发环境**：保留本地 Git 分支合并与 CLI 工具（`scaffold-upgrade`）自主升级，不进行远程强推管控。
 
-OP01 此阶段不生成 Peanut 应用、不选择临时 Peanut commit、不实现依赖 scaffold 的 Runtime。
+### OP02：首个应用登记与远程平滑升级闭环 — [可执行 / 无阻塞]
 
-### OP02：首个运营闭环
+基于已达到 `consumable` 的正式 Release 脚手架生成运维平台自身工程，并闭环实现：
 
-Peanut Admin 达到 `consumable` 后，运营平台固定该正式 Release 生成自身应用基线，并实现：
-
-1. 登记一个 Peanut Admin 演示实例；
-2. 查看版本、健康和最后备份证明；
-3. 创建并签名一个兼容升级计划；
-4. 实例侧主动出站领取、校验并幂等执行；
-5. 回传成功、失败或回滚结果及完整审计；
-6. 运营平台离线时，业务实例继续提供核心服务。
+1. **实例服务登记**：安全登记已部署的 Peanut Admin 生产/演示实例（由实例主动出站握手，不保存用户敏感密码，不直连业务库）；
+2. **状态与健康巡检**：查看实例当前运行版本、服务健康快照及最近备份证明；
+3. **签名远程升级服务**：在运维平台创建并签名目标版本升级任务；
+4. **实例端幂等执行**：实例端 Agent 校验签名后，在本地安全调用 `scripts/scaffold-upgrade` 与部署升级链路；
+5. **双向审计与零损回滚**：回传升级执行结果、自动化 Smoke 验证及审计日志；若失败自动回滚；
+6. **离线自治**：运维平台离线或网络波动时，业务实例核心服务不受任何影响。
 
 ## 4. 发布交接合同
 

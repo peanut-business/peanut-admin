@@ -7,9 +7,10 @@ use app\common\model\config\Config;
 use think\facade\Db;
 
 /**
- * 系统配置读写服务（可复用基础设施）
+ * 实例级配置读写服务。
  *
- * pa_config 是 (type, name, value) 的键值表，唯一键 (type, name)。
+ * pa_config 仅保存 Platform/部署拥有的配置（当前为 storage）。
+ * Tenant 可修改的展示、登录、通知、支付等设置不得使用本服务。
  * 值统一以字符串存储；数组/对象写入时 json 编码，读取时按需由调用方解码。
  */
 class ConfigService

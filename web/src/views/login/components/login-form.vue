@@ -76,7 +76,7 @@
   import { useBrandStore, useUserStore } from '@/store';
   import useLoading from '@/hooks/loading';
   import type { LoginData } from '@/api/user';
-  import type { TenantChoice } from '@/core/tenant-session';
+  import type { TenantChoice } from '@peanut-admin/admin/core';
 
   const router = useRouter();
   const { t } = useI18n();
@@ -111,7 +111,12 @@
     setLoading(true);
     try {
       const outcome = await userStore.login({ ...userInfo } as LoginData);
-      if ('state' in outcome && outcome.state === 'tenant_selection_required') {
+      if (
+        outcome &&
+        typeof outcome === 'object' &&
+        'state' in outcome &&
+        outcome.state === 'tenant_selection_required'
+      ) {
         tenantChoices.value = outcome.tenants;
         userInfo.challengeToken = outcome.challenge_token;
         userInfo.tenantId = tenantChoices.value[0]?.tenant_id;

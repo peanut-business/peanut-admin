@@ -67,11 +67,20 @@ expectOAuthChannelHost(
 );
 
 $routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
+$oauthRouteSource = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Oauth/Http/routes.php'
+);
 foreach (['setting/channel/config', 'setting/channel/save'] as $legacyRoute) {
-    expectOAuthChannelHost(!str_contains($routeSource, $legacyRoute), 'legacy Channel route remains: ' . $legacyRoute);
+    expectOAuthChannelHost(
+        !str_contains($routeSource, $legacyRoute) && !str_contains($oauthRouteSource, $legacyRoute),
+        'legacy Channel route remains: ' . $legacyRoute
+    );
 }
 foreach (['api/oauth/wechat/redirect/pc', 'api/oauth/wechat/redirect/official-account'] as $callbackRoute) {
-    expectOAuthChannelHost(str_contains($routeSource, $callbackRoute), 'callback bridge route is missing: ' . $callbackRoute);
+    expectOAuthChannelHost(
+        str_contains($oauthRouteSource, $callbackRoute),
+        'callback bridge route is missing: ' . $callbackRoute
+    );
 }
 foreach ([
     'app/adminapi/controller/setting/ChannelController.php',
@@ -116,13 +125,15 @@ expectOAuthChannelHost(
     'UniApp completion state is not consumed once'
 );
 
-$migration = (string)file_get_contents(
+$freshSchema = (string)file_get_contents(
     $serverRoot . '/database/init.sql'
 );
 foreach (['wechat_open_secret', 'wechat_oa_secret', 'qq_secret', 'encoding_aes_key', 'encryption_type'] as $field) {
-    expectOAuthChannelHost(str_contains($migration, $field), 'retired credential cleanup is missing: ' . $field);
+    expectOAuthChannelHost(
+        !str_contains($freshSchema, $field),
+        'retired credential remains in the fresh schema: ' . $field
+    );
 }
-
 $oauthEvidence = json_decode((string)file_get_contents(
     $repositoryRoot . '/output/playwright/s01/wechat-oauth-summary.json'
 ), true, 512, JSON_THROW_ON_ERROR);

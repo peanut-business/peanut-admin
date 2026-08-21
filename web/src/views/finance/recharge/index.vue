@@ -146,23 +146,17 @@
           fixed="right"
         >
           <template #default="{ row }">
-            <el-popconfirm
+            <el-button
               v-if="row.pay_status === 1"
-              :title="$t('recharge.refund.confirm')"
-              @confirm="handleRefund(row.id)"
+              v-permission="['recharge.recharge/refund']"
+              link
+              type="primary"
+              size="small"
+              :disabled="Number(row.refundable_amount) <= 0"
+              :loading="refundingId === row.id"
+              @click="handleRefund(row)"
+              >{{ $t('recharge.action.refund') }}</el-button
             >
-              <template #reference>
-                <el-button
-                  v-permission="['recharge.recharge/refund']"
-                  link
-                  type="primary"
-                  size="small"
-                  :disabled="row.refund_status === 1"
-                  :loading="refundingId === row.id"
-                  >{{ $t('recharge.action.refund') }}</el-button
-                >
-              </template>
-            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -250,7 +244,7 @@
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
-  import { ElMessage } from 'element-plus';
+  import { ElMessage, ElMessageBox } from 'element-plus';
   import { Download, Refresh, Search } from '@element-plus/icons-vue';
   import { useI18n } from 'vue-i18n';
   import useLoading from '@/hooks/loading';
@@ -338,10 +332,35 @@
   };
 
   const refundingId = ref(0);
-  const handleRefund = async (id: number) => {
-    refundingId.value = id;
+  const handleRefund = async (row: RechargeRecord) => {
+    const remaining = Number(row.refundable_amount || 0);
+    if (remaining <= 0) return;
+    let amount: number;
     try {
-      await refundRecharge(id);
+      const result = await ElMessageBox.prompt(
+        t('recharge.refund.amount.prompt', { amount: remaining.toFixed(2) }),
+        t('recharge.refund.amount.title'),
+        {
+          inputValue: remaining.toFixed(2),
+          inputPattern: /^\d+(\.\d{1,2})?$/,
+          inputErrorMessage: t('recharge.refund.amount.invalid'),
+          confirmButtonText: t('recharge.refund.amount.confirm'),
+          cancelButtonText: t('recharge.refund.amount.cancel'),
+        },
+      );
+      amount = Number(result.value);
+    } catch (error) {
+      if (error === 'cancel' || error === 'close') return;
+      throw error;
+    }
+    if (!Number.isFinite(amount) || amount <= 0 || amount > remaining) {
+      ElMessage.warning(t('recharge.refund.amount.range'));
+      return;
+    }
+
+    refundingId.value = row.id;
+    try {
+      await refundRecharge(row.id, amount);
       ElMessage.success(t('recharge.refund.success'));
       await fetchData(pagination.current);
     } finally {

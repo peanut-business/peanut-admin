@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\member;
 
+use DateTimeImmutable;
+use PDO;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\MemberChannelEnum;
 use app\common\logic\BaseLogic;
@@ -13,7 +15,12 @@ use app\common\service\MemberBalanceService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\XlsxExportService;
+use app\common\support\ExportPageInfo;
+use app\common\support\PaginationInput;
+use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Idempotency\IdempotencyKey;
+use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use think\facade\Db;
 
 class MemberLogic extends BaseLogic
@@ -30,7 +37,7 @@ class MemberLogic extends BaseLogic
     {
         try {
             $count = self::buildListQuery($context, $params)->count();
-            $pageSize = (int)($params['page_size'] ?? 15);
+            $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
             $pageSize = max(1, min(self::EXPORT_MAX_ROWS, $pageSize));
 
             if ((int)($params['export'] ?? 0) === 1) {
@@ -40,7 +47,8 @@ class MemberLogic extends BaseLogic
                 return self::export($context, $params, $count, $pageSize);
             }
 
-            $pageNo = max(1, (int)($params['page_no'] ?? 1));
+            $pagination = PaginationInput::from($params);
+            $pageNo = $pagination->page;
             $rows = self::buildListQuery($context, $params)
                 ->page($pageNo, $pageSize)
                 ->select()
@@ -107,17 +115,12 @@ class MemberLogic extends BaseLogic
 
     private static function exportInfo(int $count, int $pageSize): array
     {
-        $sumPage = max(1, (int)ceil($count / $pageSize));
-        return [
-            'count' => $count,
-            'page_size' => $pageSize,
-            'sum_page' => $sumPage,
-            'max_page' => (int)floor(self::EXPORT_MAX_ROWS / $pageSize),
-            'all_max_size' => self::EXPORT_MAX_ROWS,
-            'page_start' => 1,
-            'page_end' => min($sumPage, 200),
-            'file_name' => self::EXPORT_DEFAULT_NAME,
-        ];
+        return ExportPageInfo::from(
+            $count,
+            $pageSize,
+            self::EXPORT_MAX_ROWS,
+            self::EXPORT_DEFAULT_NAME,
+        )->toArray();
     }
 
     private static function export(TenantContext $context, array $params, int $count, int $pageSize): array
@@ -315,24 +318,53 @@ class MemberLogic extends BaseLogic
     }
 
     /** 调整用户余额并写入分类账户流水。 */
-    public static function adjustUserMoney(TenantContext $context, array $params, int $adminId): bool
+    public static function adjustUserMoney(
+        TenantContext $context,
+        array $params,
+        int $adminId,
+        string $idempotencyKey,
+    ): bool
     {
         Db::startTrans();
         try {
             $action = (int)$params['action'];
+            $memberId = (int)$params['user_id'];
+            $amountCents = MemberBalanceService::moneyToCents(abs((float)$params['num']));
+            $remark = (string)($params['remark'] ?? '');
+            $idempotency = self::balanceAdjustmentIdempotency()->beginTenant(
+                MemberTenantContext::tenantId($context),
+                $adminId,
+                'member.balance.adjust',
+                IdempotencyKey::fromString($idempotencyKey),
+                self::balanceAdjustmentRequestHash($memberId, $action, $amountCents, $remark),
+                new DateTimeImmutable('+24 hours'),
+            );
+            if (!$idempotency->acquiredForExecution()) {
+                if (!$idempotency->replayable()) {
+                    throw new \RuntimeException('余额调账请求仍在处理中，请稍后查询流水');
+                }
+                Db::commit();
+                return true;
+            }
+
             $changeType = $action === AccountLogEnum::INC
                 ? AccountLogEnum::USER_MONEY_INC_ADMIN
                 : AccountLogEnum::USER_MONEY_DEC_ADMIN;
             MemberBalanceService::applyInTransaction(
                 $context,
-                (int)$params['user_id'],
+                $memberId,
                 $changeType,
                 $action,
-                MemberBalanceService::moneyToCents(abs((float)$params['num'])),
+                $amountCents,
                 '',
-                (string)($params['remark'] ?? ''),
+                $remark,
                 [],
                 $adminId
+            );
+            self::balanceAdjustmentIdempotency()->completeTenant(
+                $idempotency->id,
+                200,
+                ['success' => true],
             );
             Db::commit();
             return true;
@@ -344,7 +376,14 @@ class MemberLogic extends BaseLogic
     }
 
     /** Peanut 旧版 signed amount API 的兼容入口。 */
-    public static function adjustBalance(TenantContext $context, int $id, float $amount, string $remark, int $adminId): bool
+    public static function adjustBalance(
+        TenantContext $context,
+        int $id,
+        float $amount,
+        string $remark,
+        int $adminId,
+        string $idempotencyKey,
+    ): bool
     {
         if ($amount == 0.0) {
             self::setError('调整金额不能为 0');
@@ -356,7 +395,30 @@ class MemberLogic extends BaseLogic
             'action' => $amount > 0 ? AccountLogEnum::INC : AccountLogEnum::DEC,
             'num' => abs($amount),
             'remark' => $remark,
-        ], $adminId);
+        ], $adminId, $idempotencyKey);
+    }
+
+    private static function balanceAdjustmentIdempotency(): PdoIdempotencyRepository
+    {
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('数据库连接不可用');
+        }
+        return new PdoIdempotencyRepository($pdo);
+    }
+
+    private static function balanceAdjustmentRequestHash(
+        int $memberId,
+        int $action,
+        int $amountCents,
+        string $remark,
+    ): string {
+        return hash('sha256', json_encode([
+            'member_id' => $memberId,
+            'action' => $action,
+            'amount_cents' => $amountCents,
+            'remark' => $remark,
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
     /** 全量替换标签关联 */
@@ -365,7 +427,11 @@ class MemberLogic extends BaseLogic
         if (MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty()->isEmpty()) {
             throw new \RuntimeException('用户不存在');
         }
-        $tagIds = array_values(array_unique(array_map('intval', $tagIds)));
+        $tagIds = PositiveIds::normalize(
+            $tagIds,
+            [PositiveIds::REJECT_INVALID],
+            '包含不存在的会员标签',
+        );
         if ($tagIds !== [] && MemberTenantRepository::tags($context)->whereIn('id', $tagIds)->count() !== count($tagIds)) {
             throw new \RuntimeException('包含不存在的会员标签');
         }

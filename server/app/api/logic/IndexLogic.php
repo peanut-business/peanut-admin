@@ -7,11 +7,11 @@ use app\common\logic\BaseLogic;
 use app\common\service\article\ArticleTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use app\common\service\ConfigService;
 use app\common\service\DemoAccountPolicy;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
-use app\common\service\config\PaConfigWebsiteStore;
+use app\common\service\config\TenantApplicationSettingService;
+use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
@@ -25,16 +25,14 @@ class IndexLogic extends BaseLogic
     public static function getConfigData(TenantContext|TenantSystemContext $context): array
     {
         $domain    = request()->domain();
-        $website = self::websiteService()->get();
-        $loginWayRaw = ConfigService::get('login', 'login_way', '[1,2]');
-        $loginWay = is_array($loginWayRaw) ? $loginWayRaw : json_decode((string)$loginWayRaw, true);
-        if (!is_array($loginWay)) {
-            $loginWay = [1, 2];
-        }
+        $website = self::websiteService($context)->get();
+        $login = TenantApplicationSettingService::login($context);
+        $statistics = TenantApplicationSettingService::statistics($context);
+        $webPageSetting = TenantApplicationSettingService::webPage($context);
         $webPage   = [
-            'status'      => (int) ConfigService::get('web_page', 'status', 1),
-            'page_status' => (int) ConfigService::get('web_page', 'page_status', 0),
-            'page_url'    => (string) ConfigService::get('web_page', 'page_url', ''),
+            'status'      => (int)$webPageSetting['status'],
+            'page_status' => (int)$webPageSetting['page_status'],
+            'page_url'    => (string)$webPageSetting['page_url'],
             'url'         => rtrim($domain, '/') . '/mobile',
         ];
 
@@ -44,15 +42,15 @@ class IndexLogic extends BaseLogic
             'tenantName' => self::entryTenantName(),
             'demo'     => self::demoLogin(),
             'login'    => [
-                'login_way' => array_values(array_map('intval', $loginWay)),
-                'coerce_mobile' => (int)ConfigService::get('login', 'coerce_mobile', 0),
-                'login_agreement' => (int)ConfigService::get('login', 'login_agreement', 0),
-                'third_auth' => (int)ConfigService::get('login', 'third_auth', 0),
-                'wechat_auth' => (int)ConfigService::get('login', 'wechat_auth', 0),
+                'login_way' => $login['login_way'],
+                'coerce_mobile' => (int)$login['coerce_mobile'],
+                'login_agreement' => (int)$login['login_agreement'],
+                'third_auth' => (int)$login['third_auth'],
+                'wechat_auth' => (int)$login['wechat_auth'],
             ],
-            'copyright' => self::copyright(),
+            'copyright' => self::copyright($context),
             'site_statistics' => [
-                'clarity_code' => (string)ConfigService::get('site_statistics', 'clarity_code', ''),
+                'clarity_code' => (string)$statistics['clarity_code'],
             ],
             'web_page' => $webPage,
             'tabbar'   => DecorationReadService::tabbar(
@@ -123,32 +121,37 @@ class IndexLogic extends BaseLogic
         }
     }
 
-    private static function websiteService(): WebsiteConfigService
+    private static function websiteService(TenantContext|TenantSystemContext $context): WebsiteConfigService
     {
         return new WebsiteConfigService(
-            new PaConfigWebsiteStore(),
+            new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
             static fn(string $value): string => FileService::setFileUrl($value),
         );
     }
 
-    private static function copyright(): array
+    private static function copyright(TenantContext|TenantSystemContext $context): array
     {
-        $raw = ConfigService::get('copyright', 'config', '[]');
-        if (is_array($raw)) {
-            return $raw;
-        }
-        $decoded = json_decode((string)$raw, true);
-        return is_array($decoded) ? $decoded : [];
+        $document = \app\common\service\tenant\TenantSettingService::document(
+            $context,
+            'copyright',
+            ['config' => []],
+        );
+        return is_array($document['config'] ?? null) ? $document['config'] : [];
     }
 
     /** 政策协议（type: privacy | service） */
-    public static function getPolicyByType(string $type): array
+    public static function getPolicyByType(
+        TenantContext|TenantSystemContext $context,
+        string $type,
+    ): array
     {
+        $setting = TenantApplicationSettingService::agreement($context);
+        $prefix = $type === 'privacy' ? 'privacy' : 'service';
         return [
-            'title'   => (string) ConfigService::get('agreement', $type . '_title', ''),
+            'title'   => (string)$setting[$prefix . '_title'],
             'content' => RichTextResourceService::forRead(
-                (string)ConfigService::get('agreement', $type . '_content', '')
+                (string)$setting[$prefix . '_content']
             ),
         ];
     }

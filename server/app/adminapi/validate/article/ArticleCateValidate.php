@@ -4,18 +4,10 @@ declare(strict_types=1);
 namespace app\adminapi\validate\article;
 
 use app\common\service\article\ArticleTenantRepository;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\Validate;
+use app\common\validate\TenantContextValidate;
 
-class ArticleCateValidate extends Validate
+class ArticleCateValidate extends TenantContextValidate
 {
-    private ?TenantContext $tenantContext = null;
-
-    public function forTenant(TenantContext $context): self
-    {
-        $this->tenantContext = $context;
-        return $this;
-    }
     protected $rule = [
         'id'         => 'require|checkArticleCate',
         'name'       => 'require|length:1,90',
@@ -62,13 +54,13 @@ class ArticleCateValidate extends Validate
 
     protected function checkArticleCate($value): bool|string
     {
-        return ArticleTenantRepository::categories($this->requireContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
+        return ArticleTenantRepository::categories($this->requireTenantContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
             ? '资讯分类不存在' : true;
     }
 
     protected function checkDeleteArticleCate($value): bool|string
     {
-        return ArticleTenantRepository::articles($this->requireContext())->where('cid', (int) $value)->findOrEmpty()->isEmpty()
+        return ArticleTenantRepository::articles($this->requireTenantContext())->where('cid', (int) $value)->findOrEmpty()->isEmpty()
             ? true
             : '资讯分类已使用，请先删除绑定该资讯分类的资讯';
     }
@@ -78,10 +70,5 @@ class ArticleCateValidate extends Validate
         return (int) $value > 25000
             ? '已超出系统限制数量，请分页查询或导出，当前最多记录数为：25000'
             : true;
-    }
-
-    private function requireContext(): TenantContext
-    {
-        return $this->tenantContext ?? throw new \RuntimeException('缺少可信租户上下文');
     }
 }

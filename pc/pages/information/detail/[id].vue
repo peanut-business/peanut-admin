@@ -25,7 +25,7 @@
         </div>
 
         <!-- Article body -->
-        <div class="prose max-w-none text-gray-700 leading-relaxed" v-html="article.content" />
+        <div class="prose max-w-none text-gray-700 leading-relaxed" v-html="safeArticleContent" />
       </div>
     </div>
     <el-empty v-else description="文章不存在" />
@@ -33,6 +33,8 @@
 </template>
 
 <script setup lang="ts">
+import sanitizeRichText from '~/utils/sanitize-rich-text'
+
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
@@ -51,6 +53,7 @@ const { data } = await useFetch<{ code: number; data: ArticleDetail }>(
   { headers: userStore.token ? { Authorization: `Bearer ${userStore.token}` } : {} }
 )
 const article = ref(data.value?.data || null)
+const safeArticleContent = computed(() => sanitizeRichText(article.value?.content))
 
 async function toggleCollect() {
   if (!userStore.isLoggedIn) return navigateTo('/login')

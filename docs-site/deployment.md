@@ -1,6 +1,6 @@
 ---
 title: 部署与安装
-description: Peanut Admin 2.x（当前发布 v2.1.4）的应用实例边界、Docker 部署、空库安装与回滚停止线。
+description: Peanut Admin 3.0（当前候选 v3.0.0）的应用实例边界、Docker 部署、空库安装与回滚停止线。
 ---
 
 # 部署与安装
@@ -11,7 +11,7 @@ Peanut Admin 的生产部署面向已经存在的应用仓。服务器只需要 
 
 - 默认一套部署对应一个应用实例，拥有自己的数据库、密钥、文件和生命周期。
 - 一个实例可以有多个 Tenant、客户端和 Module；多个实例不能共享私有业务表。
-- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；当前正式发布为 v2.1.4。
+- 2.x 是 fresh-only 主版本线：新应用从空数据库安装，不支持 1.x 数据库或脚手架原地升级；历史正式版本为 v2.1.5，当前 v3.0.0 仍处于候选收口阶段。
 - canonical `init.sql` 是完整应用 Schema；`migrations/` 只保存 2.0.0 基线之后的追加变更。
 - 管理身份直接使用 Account/Credential/TenantMember/RBAC，不创建 legacy 映射或兼容 Admin 表。
 - 旧 tag、Release、迁移和升级证据仍可追溯，但不进入当前 Runtime、Schema、create-app 或日常操作路径。
@@ -45,7 +45,7 @@ fail-closed 处理。两种模式都要为 `TENANT_IDENTIFIER_HMAC_KEY` 与
 
 首次安装必须提供 `ADMIN_INITIAL_EMAIL` 和 `ADMIN_INITIAL_PASSWORD`。多租户模式另需
 提供与管理员邮箱不同的
-`PLATFORM_INITIAL_EMAIL` 和至少 12 位、同时含字母与数字的
+`PLATFORM_INITIAL_EMAIL` 和至少 6 位的
 `PLATFORM_INITIAL_PASSWORD`；它们只建立独立 PlatformOperator，不会把该身份加入默认
 Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不写进 Git 或日志。
 
@@ -87,9 +87,9 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 | 环境变量 | 必填场景 | 作用 | 约束 |
 | --- | --- | --- | --- |
 | `PEANUT_GENERATED_ADMIN_EMAIL` | 所有 fresh | 创建首个 Tenant owner | 必须是有效邮箱；不会由脚本猜测或生成 |
-| `PEANUT_GENERATED_ADMIN_PASSWORD` | 所有 fresh | 设置首个 Tenant owner 密码 | 至少 12 位，同时包含字母和数字 |
+| `PEANUT_GENERATED_ADMIN_PASSWORD` | 所有 fresh | 设置首个 Tenant owner 密码 | 至少 6 位 |
 | `PEANUT_GENERATED_PLATFORM_EMAIL` | 多租户 fresh | 创建独立 PlatformOperator | 必须与 Admin 邮箱不同 |
-| `PEANUT_GENERATED_PLATFORM_PASSWORD` | 多租户 fresh | 设置 PlatformOperator 密码 | 至少 12 位，同时包含字母和数字 |
+| `PEANUT_GENERATED_PLATFORM_PASSWORD` | 多租户 fresh | 设置 PlatformOperator 密码 | 至少 6 位 |
 
 演示 overlay 还需要显式设置 `PEANUT_DEMO_MODE=enabled` 和对应的 `PEANUT_DEMO_*` 邮箱、
 共享密码、Tenant Host、文档地址。它们只用于可丢弃的候选站，不是生产应用默认配置。
@@ -98,7 +98,7 @@ Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不
 
 ```bash
 export PEANUT_GENERATED_ADMIN_EMAIL='owner@example.com'
-export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 12 位且同时包含字母和数字>'
+export PEANUT_GENERATED_ADMIN_PASSWORD='<至少 6 位>'
 scripts/deploy-release v2.1.4 --target production --fresh \
   --confirm-destroy production --dry-run
 scripts/deploy-release v2.1.4 --target production --fresh \
@@ -184,7 +184,7 @@ PlatformOperator；multi-tenant 模式必须创建独立 PlatformOperator。
 
 ```bash
 export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 12 位且同时包含字母和数字>'
+export ADMIN_INITIAL_PASSWORD='<至少 6 位>'
 php server/database/install.php
 php server/database/migrate.php --current
 ```
@@ -248,21 +248,25 @@ Platform 默认与当前实例同库同部署，但使用独立 `/platform/` 前
 证据固定成一份不可变记录。它用于证明“这个版本在这个环境真实运行过”；没有这份记录时，
 只能说源码 Release 已发布或体验部署已完成，不能把线上运行事实冒充为源码版本本身。
 
-2.1.4 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
+2.1.5 已完成正式源码发布，并已按登记资源完成一套 Standalone 与一套
 `production-candidate` Multi-tenant 线上体验部署。两套 Compose 的 `.release-tag` 均为
-`v2.1.4`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
+`v2.1.5`，origin healthz、容器健康状态、DNS/TLS/Host 保留和反向代理已验证。
 Multi-tenant 当前使用登记的人工 Owner 邀请交付模式，已创建 Tenant A/B 并完成两个 Tenant
 域名的应用内持续绑定；共享 Admin、Tenant A、Tenant B 浏览器矩阵通过，截图人工检查无破图、
 加载残留、重叠或不可点击菜单。该记录是 post-deployment 体验证据，不改写
-`docs/product-status/releases/v2.1.4.json` 的 production-demonstrated 快照；`v2.0.1` 快照仍保留为历史源码发布证据。
+`docs/product-status/deployments/v2.1.5-online-experience.json` 的部署快照；`v2.0.1` 快照仍保留为历史源码发布证据。
 
-| 候选体验入口 | 地址 |
-| --- | --- |
-| 实例平台 | `https://pa-platform.007345.xyz/platform/` |
-| 公共管理端 | `https://pa-admin.007345.xyz/admin/` |
-| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` |
-| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` |
-| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` |
+| 体验入口 | 登录地址 | 账号 | 密码 |
+| --- | --- | --- | --- |
+| 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | 私有凭据，不公开 |
+| 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
+| Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
+| Standalone 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | 私有凭据，不公开 |
+
+Tenant A/B 是可丢弃候选环境中刻意公开的演示账号；服务端仅在 `PEANUT_DEMO_MODE=enabled`
+时锁定这两个邮箱的密码修改。Platform、bootstrap 和 Standalone 管理员不受该演示锁保护，
+其凭据只通过资源登记中的私有引用交接，不写入公开文档。
 
 邮件 Provider 是自动投递 Owner 邀请的可选生产集成，不是 Tenant 创建或域名绑定的 Runtime
 前置。人工模式下必须通过受控渠道交付一次性邀请 Token；不要把 `APP_ENV` 降级为

@@ -39,6 +39,7 @@ class PayConfigLogic extends BaseLogic
 
     public static function getConfig(TenantContext $context): array
     {
+        self::clearError();
         $stored = [
             ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
             ...ExternalChannelBindingService::config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
@@ -62,6 +63,7 @@ class PayConfigLogic extends BaseLogic
 
     public static function setConfig(TenantContext $context, array $params): bool
     {
+        self::clearError();
         try {
             $stored = [
                 ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
@@ -100,8 +102,7 @@ class PayConfigLogic extends BaseLogic
             });
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 

@@ -1,12 +1,12 @@
 # Peanut Admin Third-Party Notices
 
-Generated for Peanut Admin 2.1.1 on 2026-08-18.
+Generated for Peanut Admin 3.0.0 on 2026-08-20.
 
 Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. All rights reserved. Third-party components remain governed by their own licenses. Nothing in the Peanut Admin proprietary license restricts rights granted by those third-party licenses.
 
 ## Distribution boundary
 
-- The normative GitHub Release distributes this repository's source. It does not attach prebuilt PHP/Nginx images or publish a new core package.
+- The normative GitHub Release distributes this repository's source. It does not attach prebuilt PHP/Nginx images; the fixed core packages are published separately in their public registries.
 - Production Compose builds static management, PC and H5 assets and installs the 33 Composer production packages listed below. No `node_modules` directory is copied into the final images.
 - The exhaustive package/version/license/source inventory for the five locked dependency graphs is `RELEASE_SBOM.spdx.json` (SPDX 2.3). Build-only entries are retained there so source-release recipients can reproduce the build and its notices.
 - Each installed dependency may include additional license or notice files. Those files remain authoritative for that dependency and must not be removed from redistributed dependency archives.
@@ -18,8 +18,8 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | Arco Design Pro Vue | MIT | The initial management client used Arco Design Pro Vue material; applicable upstream MIT attribution is retained. Source: https://github.com/arco-design/arco-design-pro-vue |
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at `server/LICENSE.txt`. Source: https://github.com/top-think/framework |
-| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.5. Source: https://github.com/peanut-opensource/peanut-admin-core |
-| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.5 for Web, PC and UniApp. Source: https://github.com/peanut-opensource/peanut-admin |
+| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.6. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
+| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.6 for Web, 0.1.0-alpha.5 for PC and 0.1.0-alpha.5 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
 
 ## License handling
 
@@ -35,7 +35,7 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 |---|---|---:|
 | composer | `Apache-2.0` | 12 |
 | composer | `BSD-3-Clause` | 1 |
-| composer | `MIT` | 24 |
+| composer | `MIT` | 29 |
 | docs-site | `BSD-2-Clause` | 1 |
 | docs-site | `BSD-3-Clause` | 1 |
 | docs-site | `CC0-1.0` | 1 |
@@ -50,11 +50,12 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | pc | `CC-BY-4.0` | 1 |
 | pc | `CC0-1.0` | 3 |
 | pc | `ISC` | 52 |
-| pc | `MIT` | 798 |
+| pc | `MIT` | 799 |
 | pc | `MIT OR Apache-2.0` | 1 |
 | pc | `MIT OR CC0-1.0` | 1 |
 | pc | `MIT-0` | 3 |
 | pc | `MPL-2.0` | 12 |
+| pc | `MPL-2.0 OR Apache-2.0` | 1 |
 | uniapp | `Apache-2.0` | 47 |
 | uniapp | `BlueOak-1.0.0` | 1 |
 | uniapp | `BSD-2-Clause` | 12 |
@@ -66,18 +67,19 @@ Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. Al
 | uniapp | `MIT AND Zlib` | 1 |
 | uniapp | `MIT OR CC0-1.0` | 1 |
 | web | `0BSD` | 3 |
-| web | `Apache-2.0` | 17 |
+| web | `Apache-2.0` | 18 |
 | web | `BlueOak-1.0.0` | 3 |
 | web | `BSD-2-Clause` | 28 |
 | web | `BSD-3-Clause` | 13 |
 | web | `CC-BY-3.0` | 1 |
 | web | `CC-BY-4.0` | 1 |
 | web | `CC0-1.0` | 3 |
-| web | `ISC` | 52 |
+| web | `ISC` | 53 |
 | web | `LicenseRef-BSD-ambiguous` | 1 |
-| web | `MIT` | 885 |
+| web | `MIT` | 897 |
 | web | `MIT OR Apache-2.0` | 2 |
-| web | `MIT OR CC0-1.0` | 5 |
+| web | `MIT OR CC0-1.0` | 6 |
+| web | `MPL-2.0 OR Apache-2.0` | 1 |
 | web | `Python-2.0` | 1 |
 
 ## Composer production packages
@@ -87,8 +89,9 @@ These 33 packages are installed with `composer install --no-dev` in the producti
 | Package | Version | License | Source |
 |---|---|---|---|
 | `aliyuncs/oss-sdk-php` | `v2.7.3` | `MIT` | https://github.com/aliyun/aliyun-oss-php-sdk.git |
+| `composer/semver` | `3.4.4` | `MIT` | https://github.com/composer/semver.git |
 | `dragonmantank/cron-expression` | `v3.6.0` | `MIT` | https://github.com/dragonmantank/cron-expression.git |
-| `firebase/php-jwt` | `v6.11.1` | `BSD-3-Clause` | https://github.com/googleapis/php-jwt.git |
+| `firebase/php-jwt` | `v7.1.0` | `BSD-3-Clause` | https://github.com/googleapis/php-jwt.git |
 | `guzzlehttp/command` | `1.5.3` | `MIT` | https://github.com/guzzle/command.git |
 | `guzzlehttp/guzzle` | `7.15.3` | `MIT` | https://github.com/guzzle/guzzle.git |
 | `guzzlehttp/guzzle-services` | `1.7.3` | `MIT` | https://github.com/guzzle/guzzle-services.git |
@@ -98,10 +101,13 @@ These 33 packages are installed with `composer install --no-dev` in the producti
 | `league/flysystem` | `3.35.2` | `MIT` | https://github.com/thephpleague/flysystem.git |
 | `league/flysystem-local` | `3.31.0` | `MIT` | https://github.com/thephpleague/flysystem-local.git |
 | `league/mime-type-detection` | `1.17.0` | `MIT` | https://github.com/thephpleague/mime-type-detection.git |
+| `league/uri` | `7.8.1` | `MIT` | https://github.com/thephpleague/uri.git |
+| `league/uri-interfaces` | `7.8.1` | `MIT` | https://github.com/thephpleague/uri-interfaces.git |
+| `masterminds/html5` | `2.11.0` | `MIT` | https://github.com/Masterminds/html5-php.git |
 | `opis/json-schema` | `2.6.0` | `Apache-2.0` | https://github.com/opis/json-schema.git |
 | `opis/string` | `2.1.0` | `Apache-2.0` | https://github.com/opis/string.git |
 | `opis/uri` | `1.1.0` | `Apache-2.0` | https://github.com/opis/uri.git |
-| `peanut-admin/core` | `0.1.0-alpha.5` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core.git |
+| `peanut-admin/core` | `0.1.0-alpha.6` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core-php.git |
 | `psr/container` | `2.0.2` | `MIT` | https://github.com/php-fig/container.git |
 | `psr/http-client` | `1.0.3` | `MIT` | https://github.com/php-fig/http-client.git |
 | `psr/http-factory` | `1.1.0` | `MIT` | https://github.com/php-fig/http-factory.git |
@@ -112,6 +118,7 @@ These 33 packages are installed with `composer install --no-dev` in the producti
 | `qiniu/php-sdk` | `v7.4.0` | `MIT` | https://github.com/qiniu/php-sdk.git |
 | `ralouphie/getallheaders` | `3.0.3` | `MIT` | https://github.com/ralouphie/getallheaders.git |
 | `symfony/deprecation-contracts` | `v3.7.1` | `MIT` | https://github.com/symfony/deprecation-contracts.git |
+| `symfony/html-sanitizer` | `v7.4.14` | `MIT` | https://github.com/symfony/html-sanitizer.git |
 | `symfony/polyfill-php80` | `v1.37.0` | `MIT` | https://github.com/symfony/polyfill-php80.git |
 | `topthink/framework` | `v8.1.4` | `Apache-2.0` | https://github.com/top-think/framework.git |
 | `topthink/think-container` | `v3.0.2` | `Apache-2.0` | https://github.com/top-think/think-container.git |
@@ -165,6 +172,7 @@ The following deduplicated package/version entries are outside the common MIT, A
 | web | `type-fest` | `0.6.0` | `MIT OR CC0-1.0` | https://registry.npmjs.org/type-fest/0.6.0 |
 | web | `type-fest` | `0.8.1` | `MIT OR CC0-1.0` | https://registry.npmjs.org/type-fest/0.8.1 |
 | web | `type-fest` | `1.4.0` | `MIT OR CC0-1.0` | https://registry.npmjs.org/type-fest/1.4.0 |
+| web | `type-fest` | `4.41.0` | `MIT OR CC0-1.0` | https://registry.npmjs.org/type-fest/4.41.0 |
 | pc | `@csstools/selector-resolve-nested` | `3.1.0` | `MIT-0` | https://registry.npmmirror.com/@csstools/selector-resolve-nested/-/selector-resolve-nested-3.1.0.tgz |
 | pc | `@csstools/selector-specificity` | `5.0.0` | `MIT-0` | https://registry.npmmirror.com/@csstools/selector-specificity/-/selector-specificity-5.0.0.tgz |
 | pc | `postcss-nesting` | `13.0.2` | `MIT-0` | https://registry.npmmirror.com/postcss-nesting/-/postcss-nesting-13.0.2.tgz |
@@ -180,6 +188,7 @@ The following deduplicated package/version entries are outside the common MIT, A
 | pc | `lightningcss-linux-x64-musl` | `1.33.0` | `MPL-2.0` | https://registry.npmmirror.com/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.33.0.tgz |
 | pc | `lightningcss-win32-arm64-msvc` | `1.33.0` | `MPL-2.0` | https://registry.npmmirror.com/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.33.0.tgz |
 | pc | `lightningcss-win32-x64-msvc` | `1.33.0` | `MPL-2.0` | https://registry.npmmirror.com/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.33.0.tgz |
+| web | `dompurify` | `3.4.14` | `MPL-2.0 OR Apache-2.0` | https://registry.npmjs.org/dompurify/3.4.14 |
 | web | `argparse` | `2.0.1` | `Python-2.0` | https://registry.npmjs.org/argparse/2.0.1 |
 
 ## Obtaining license texts

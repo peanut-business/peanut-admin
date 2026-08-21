@@ -7,7 +7,7 @@ use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
-use app\common\service\ConfigService;
+use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\FileService;
 use app\common\service\notice\VerificationCodeService;
 use app\common\service\oauth\OAuthTenantContext;
@@ -228,7 +228,7 @@ class OAuthLogic extends BaseLogic
             throw new \RuntimeException('账号已被禁用');
         }
         $needProfile = $created && $scene === 'mnp';
-        $needMobile = (int)ConfigService::get('login', 'coerce_mobile', 0) === 1
+        $needMobile = (int)TenantApplicationSettingService::login($context)['coerce_mobile'] === 1
             && trim((string)$member->mobile) === '';
         if ($needProfile || $needMobile) {
             return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
@@ -403,7 +403,7 @@ class OAuthLogic extends BaseLogic
             'nickname' => mb_substr($profile->nickname() ?: ('微信用户' . substr($sn, -6)), 0, 50),
             'avatar' => $profile->avatar() !== ''
                 ? $profile->avatar()
-                : (string)ConfigService::get('default_image', 'user_avatar', ''),
+                : self::defaultAvatar($context),
             'mobile' => '',
             'channel' => $terminal,
             'is_new_user' => 1,
@@ -425,6 +425,12 @@ class OAuthLogic extends BaseLogic
         if ($changed) {
             $member->save();
         }
+    }
+
+    private static function defaultAvatar(TenantContext|TenantSystemContext $context): string
+    {
+        $avatar = trim((string)TenantApplicationSettingService::memberProfile($context)['user_avatar']);
+        return $avatar !== '' ? $avatar : (string)config('project.default_image.user_avatar', '');
     }
 
     private static function completionResult(

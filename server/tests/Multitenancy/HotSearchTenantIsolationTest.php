@@ -50,14 +50,17 @@ CREATE TABLE pa_hot_search (
   KEY idx_hot_search_tenant_sort (tenant_id, sort, id),
   CONSTRAINT fk_hot_search_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
-CREATE TABLE pa_config (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  type VARCHAR(30) NOT NULL DEFAULT '',
-  name VARCHAR(60) NOT NULL DEFAULT '',
-  value TEXT,
+CREATE TABLE pa_tenant_setting (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  namespace VARCHAR(64) NOT NULL,
+  config_json JSON NOT NULL,
+  revision BIGINT UNSIGNED NOT NULL DEFAULT 1,
   create_time INT UNSIGNED NOT NULL DEFAULT 0,
   update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (id), UNIQUE KEY uk_type_name (type, name)
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_tenant_setting_namespace (tenant_id, namespace),
+  CONSTRAINT fk_tenant_setting_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 SQL);
 }
@@ -70,7 +73,9 @@ INSERT INTO pa_hot_search (id, tenant_id, name, sort) VALUES
   (11, 101, 'Alpha seed', 10),
   (21, 202, 'Same term', 30),
   (22, 202, 'Beta only', 20);
-INSERT INTO pa_config (type, name, value) VALUES ('hot_search', 'status', '1');
+INSERT INTO pa_tenant_setting (tenant_id, namespace, config_json) VALUES
+  (101, 'hot-search', JSON_OBJECT('status', 1)),
+  (202, 'hot-search', JSON_OBJECT('status', 1));
 SQL);
 }
 
@@ -108,7 +113,7 @@ try {
     $alpha = hotSearchTenantContext(101, 501, 'mt03-hot-search-alpha-' . $runId);
     $beta = hotSearchTenantContext(202, 502, 'mt03-hot-search-beta-' . $runId);
     $before = $pdo->query("SELECT id, name, sort FROM pa_hot_search WHERE tenant_id = 202 ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
-    $statusBefore = (string)$pdo->query("SELECT value FROM pa_config WHERE type = 'hot_search' AND name = 'status'")->fetchColumn();
+    $statusBefore = (string)$pdo->query("SELECT config_json FROM pa_tenant_setting WHERE tenant_id = 202 AND namespace = 'hot-search'")->fetchColumn();
 
     try {
         HotSearchTenantContext::member(new stdClass());
@@ -121,8 +126,8 @@ try {
         'missing context changed Beta terms'
     );
     expectHotSearchTenant(
-        (string)$pdo->query("SELECT value FROM pa_config WHERE type = 'hot_search' AND name = 'status'")->fetchColumn() === $statusBefore,
-        'missing context changed instance status'
+        (string)$pdo->query("SELECT config_json FROM pa_tenant_setting WHERE tenant_id = 202 AND namespace = 'hot-search'")->fetchColumn() === $statusBefore,
+        'missing context changed Beta status'
     );
     try {
         ApiSearchLogic::hotLists();
@@ -145,18 +150,28 @@ try {
     expectHotSearchTenant((int)$pdo->query("SELECT COUNT(*) FROM pa_hot_search WHERE tenant_id = 101")->fetchColumn() === 2, 'Alpha replacement did not remain Tenant-scoped');
     expectHotSearchTenant((int)$pdo->query("SELECT COUNT(*) FROM pa_hot_search WHERE tenant_id = 202 AND name = 'Same term'")->fetchColumn() === 1, 'Beta same-name term was deleted');
     expectHotSearchTenant((int)$pdo->query("SELECT COUNT(*) FROM pa_hot_search WHERE tenant_id = 202 AND name = 'Alpha only'")->fetchColumn() === 0, 'payload forged hot-search owner');
-    expectHotSearchTenant((string)$pdo->query("SELECT value FROM pa_config WHERE type = 'hot_search' AND name = 'status'")->fetchColumn() === '0', 'instance-level status was not updated');
+    expectHotSearchTenant(
+        (int)$pdo->query("SELECT JSON_UNQUOTE(JSON_EXTRACT(config_json, '$.status')) FROM pa_tenant_setting WHERE tenant_id = 101 AND namespace = 'hot-search'")->fetchColumn() === 0,
+        'Alpha status was not updated'
+    );
+    expectHotSearchTenant(
+        (int)$pdo->query("SELECT JSON_UNQUOTE(JSON_EXTRACT(config_json, '$.status')) FROM pa_tenant_setting WHERE tenant_id = 202 AND namespace = 'hot-search'")->fetchColumn() === 1,
+        'Alpha status update changed Beta status'
+    );
 
     $adminAlpha = AdminHotSearchLogic::getConfig($alpha);
     $adminBeta = AdminHotSearchLogic::getConfig($beta);
     expectHotSearchTenant(array_column($adminAlpha['data'], 'name') === ['Same term', 'Alpha only'], 'admin Alpha list leaked or lost terms');
     expectHotSearchTenant(array_column($adminBeta['data'], 'name') === ['Same term', 'Beta only'], 'admin Beta list leaked or lost terms');
-    expectHotSearchTenant($adminAlpha['status'] === 0 && $adminBeta['status'] === 0, 'status was incorrectly represented as Tenant-owned');
+    expectHotSearchTenant($adminAlpha['status'] === 0 && $adminBeta['status'] === 1, 'status is not Tenant-owned');
 
     $publicAlpha = new TenantSystemContext(101, HotSearchTenantContext::PUBLIC_ACTOR, HotSearchTenantContext::PUBLIC_LIST_OPERATION, 'public-alpha-' . $runId);
     $publicBeta = new TenantSystemContext(202, HotSearchTenantContext::PUBLIC_ACTOR, HotSearchTenantContext::PUBLIC_LIST_OPERATION, 'public-beta-' . $runId);
-    expectHotSearchTenant(array_column(ApiSearchLogic::hotLists($publicAlpha)['data'], 'name') === ['Same term', 'Alpha only'], 'public Alpha read crossed Tenant');
-    expectHotSearchTenant(array_column(ApiSearchLogic::hotLists($publicBeta)['data'], 'name') === ['Same term', 'Beta only'], 'public Beta read crossed Tenant');
+    $publicAlphaResult = ApiSearchLogic::hotLists($publicAlpha);
+    $publicBetaResult = ApiSearchLogic::hotLists($publicBeta);
+    expectHotSearchTenant(array_column($publicAlphaResult['data'], 'name') === ['Same term', 'Alpha only'], 'public Alpha read crossed Tenant');
+    expectHotSearchTenant(array_column($publicBetaResult['data'], 'name') === ['Same term', 'Beta only'], 'public Beta read crossed Tenant');
+    expectHotSearchTenant($publicAlphaResult['status'] === 0 && $publicBetaResult['status'] === 1, 'public status crossed Tenant');
     try {
         ApiSearchLogic::hotLists(new TenantSystemContext(101, 'untrusted.actor', HotSearchTenantContext::PUBLIC_LIST_OPERATION, 'forged-' . $runId));
         throw new RuntimeException('untrusted public context unexpectedly read hot-search terms');

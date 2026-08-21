@@ -44,13 +44,13 @@ $expectedGroups = [
     'multi-tenant-browser',
 ];
 $expectedTarget = [
-    'version' => '2.1.5',
-    'source_commit' => 'b5a6fe91dea4e01ab9ae82294d8bcd73d3e4c78d',
-    'source_tree' => 'e7d8bcda391ea2aacf2213ed4b3343b91b6a2ed2',
-    'manifest_sha256' => 'c40344403b5d9c0b802ba48f776128c68a85fdd7ba2434c43ebf86c49bd75471',
-    'inventory_sha256' => 'dacad602d54f48f7088048c27c81b81f0f878179db26fd89eca375e7451965e8',
-    'managed_tree_sha256' => '8c4b82846c67a5575aefb5a51404ede93a5038a72227ca99cf31385ce249d856',
-    'file_count' => 311,
+    'version' => '3.0.0',
+    'source_commit' => '6cfb486033d00d09e882a20bc8498e10c25d9920',
+    'source_tree' => '259cedd1900dcc8847ed6d6184f6f40cafef1adc',
+    'manifest_sha256' => '65d4f1f9507cbede54c79efe40b8afe6734d80eafa85536342c4e55fb817e31e',
+    'inventory_sha256' => '0b4e69ae757c8df12bdbe5403630a2151a66553936267a32707852a35c6f89f7',
+    'managed_tree_sha256' => '292f3004133fc63c6f3ab0e345376c9a4cdce129a158201b8ca1cfceb3853e29',
+    'file_count' => 315,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
     'default_uniapp_version_code' => '10',
@@ -58,27 +58,15 @@ $expectedTarget = [
 
 $expect(($fixture['schema_version'] ?? null) === 1, 'P0-E fixture schema changed');
 $expect(($fixture['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E Gate identity changed');
-$expect(($fixture['database_resource']['migration_count'] ?? null) === 4, 'P0-E Gate no longer fixes the 2.x post-baseline migration set');
-$expect(($fixture['database_resource']['ledger_count'] ?? null) === 5, 'P0-E Gate no longer fixes the canonical baseline ledger count');
+$expect(!array_key_exists('migration_count', $fixture['database_resource'] ?? []), 'P0-E Gate retained an application migration count');
+$expect(!array_key_exists('ledger_count', $fixture['database_resource'] ?? []), 'P0-E Gate retained an application migration ledger count');
 $expect(!array_key_exists('baselines', $fixture), 'fresh-only P0-E fixture retained 1.x baselines');
 $expect(!array_key_exists('legacy_application', $fixture), 'fresh-only P0-E fixture retained a legacy application');
 $expect(($fixture['target_release'] ?? null) === $expectedTarget, 'P0-E target scaffold identity changed');
 $expect(array_keys($fixture['scenarios'] ?? []) === $expectedScenarios, 'P0-E fresh-only scenario order or closure changed');
 $expect(($fixture['groups'] ?? null) === $expectedGroups, 'P0-E fresh-only group order or closure changed');
 
-$expectedMigrationFiles = [
-    'server/database/migrations/20260816-tenant-capability-setting.sql',
-    'server/database/migrations/20260816-tenant-entry-binding.sql',
-    'server/database/migrations/20260816-tenant-owner-invitation.sql',
-    'server/database/migrations/20260818-official-module-permission-ownership.sql',
-];
-$expect(($releaseMetadata['migrations']['count'] ?? null) === 4, 'release metadata migration count is stale');
-$expect(($releaseMetadata['migrations']['ordered_files'] ?? null) === $expectedMigrationFiles, 'release metadata migration list is stale');
-$expect(
-    ($releaseMetadata['migrations']['ordered_path_list_sha256'] ?? null) === '3f57e741f21b3fd6bd004925a3c41922b9db724acbbb8f8b545452fa5aa46c62',
-    'release metadata migration path digest is stale'
-);
-$expect(($releaseMetadata['technical_qualification']['migrations'] ?? null) === 4, 'technical qualification migration count is stale');
+$expect(!array_key_exists('migrations', $releaseMetadata), 'release metadata retained the retired application migration identity');
 
 $registered = array_values(array_filter(
     $registry['resources']['databases'] ?? [],
@@ -104,6 +92,15 @@ $expect(is_array($tooling), 'P0-E remote administration tooling is missing');
 $expect(($tooling['mysql_command'] ?? null) === '/usr/bin/mysql', 'P0-E MySQL CLI path changed');
 $expect(!array_key_exists('mysqldump_command', $tooling), 'fresh-only P0-E retained backup tooling');
 $expect(($tooling['fallback'] ?? null) === 'none; host mysql commands are forbidden', 'P0-E tooling fallback changed');
+$browserTooling = array_values(array_filter(
+    $p0eRegistry['resources']['tooling'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-p0e-playwright-cli'
+));
+$expect(count($browserTooling) === 1, 'P0-E fixed Playwright tooling registration is missing');
+$expect(($browserTooling[0]['package'] ?? null) === '@playwright/cli', 'P0-E Playwright package changed');
+$expect(($browserTooling[0]['version'] ?? null) === '0.1.18', 'P0-E Playwright version is not pinned');
+$expect(($browserTooling[0]['relative_path'] ?? null) === '.local/p0e-browser-cli-0.1.18/playwright-cli', 'P0-E Playwright path is not fixed');
+$expect(($browserTooling[0]['fallback'] ?? null) === 'none', 'P0-E Playwright tooling must fail closed');
 
 $candidate = trim((string)shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
 $runId = 'p0e' . bin2hex(random_bytes(4));
@@ -126,7 +123,7 @@ $expect(($plan['candidate'] ?? null) === $candidate, 'plan candidate is not exac
 $expect(($plan['resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'plan resource identity changed');
 $expect(($plan['environment'] ?? null) === 'development', 'plan environment changed');
 $expect(($plan['endpoint'] ?? null) === '192.168.192.2:20183', 'plan endpoint changed');
-$expect(($plan['target_release'] ?? null) === $expectedTarget, 'plan did not bind the 2.0 scaffold release');
+$expect(($plan['target_release'] ?? null) === $expectedTarget, 'plan did not bind the 3.0 scaffold release');
 $expect(($plan['groups'] ?? null) === $expectedGroups, 'plan did not bind the fresh-only closure');
 $expect(!array_key_exists('legacy_application', $plan), 'plan retained a legacy application');
 $expect(!array_key_exists('backup-dir', $plan['paths'] ?? []), 'plan retained a recovery backup path');
@@ -174,12 +171,20 @@ $expect(!str_contains($runClosure, 'forward') && !str_contains($runClosure, 'leg
 $expect(str_contains($runnerSource, 'self.generated,') && str_contains($runnerSource, 'plugin_lock_restored_sha256'), 'Plugin lifecycle is not exercised in the generated application');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
 $expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
+$expect(str_contains($runnerSource, 'preflight_browser_tooling'), 'browser tooling does not fail before resource claim');
+$expect(str_contains($runnerSource, 'registered_browser_cli_path'), 'browser tooling does not use the fixed registered path');
+$expect(!str_contains($runnerSource, 'pwcli-cache-*'), 'browser tooling retained temporary cache glob discovery');
 $expect(str_contains($runnerSource, 'prepare_database_credentials()'), 'P0-E runner does not synchronize the registered database credential source');
 $expect(str_contains($runnerSource, 'runtime-credentials.env'), 'P0-E runner does not retain per-run browser credentials for resume');
 $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease verification is not an exact-set comparison');
 $expect(str_contains($runnerSource, 'read_only: true'), 'container lease proof is not read-only');
 $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database refusal is missing');
 $expect(!str_contains($runnerSource, '["mysql"'), 'runner reintroduced a bare host MySQL client');
+$expect(
+    str_contains($runnerSource, '["php", "server/database/environment-guard.php", "--current"]'),
+    'P0-E install does not qualify the complete fresh schema through the environment guard'
+);
+$expect(!str_contains($runnerSource, 'server/database/migrate.php'), 'P0-E runner retained the application migration runner');
 
 $pluginFixture = (string)file_get_contents($root . '/server/fixtures/plugin-module-lifecycle/run.php');
 $expect(str_contains($pluginFixture, "upgrade('fixture.delivery-record', true)"), 'Plugin upgrade dry-run capability left the Gate fixture');

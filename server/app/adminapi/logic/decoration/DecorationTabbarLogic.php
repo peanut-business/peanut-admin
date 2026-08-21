@@ -14,11 +14,13 @@ class DecorationTabbarLogic extends BaseLogic
 {
     public static function detail(TenantContext $context): array
     {
+        self::clearError();
         return DecorationReadService::tabbar($context, false);
     }
 
     public static function save(TenantContext $context, array $style, array $items): bool
     {
+        self::clearError();
         try {
             DecorationSchemaService::validateTabbar($context, $style, $items);
             Db::transaction(function () use ($context, $style, $items): void {
@@ -31,8 +33,7 @@ class DecorationTabbarLogic extends BaseLogic
             });
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 }

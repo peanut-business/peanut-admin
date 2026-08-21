@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\finance;
 
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\tenant\TenantScope;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use app\common\service\external\ExternalTenantContext;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\AuthException;

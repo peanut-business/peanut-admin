@@ -11,7 +11,6 @@ function freshSchemaExpect(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 $installer = (string)file_get_contents($serverRoot . '/database/install.php');
-$runner = (string)file_get_contents($serverRoot . '/database/migrate.php');
 $guard = (string)file_get_contents($serverRoot . '/database/environment-guard.php');
 preg_match_all('/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+`([^`]+)`/i', $schema, $matches);
 $applicationTables = array_values(array_unique($matches[1] ?? []));
@@ -40,37 +39,42 @@ freshSchemaExpect(str_contains($installer, 'KernelSchema::tableNames()'), 'insta
 freshSchemaExpect(str_contains($installer, 'BootstrapService'), 'installer does not use the native Core bootstrap service');
 freshSchemaExpect(str_contains($installer, "'default'"), 'installer does not create the formal default Tenant');
 freshSchemaExpect(str_contains($installer, "'core.tenant-owner'"), 'installer health contract does not verify the native owner role');
-freshSchemaExpect(str_contains($runner, "[\$databaseDir . '/init.sql'"), 'migration ledger does not bind canonical init.sql');
-freshSchemaExpect(str_contains($runner, 'assertAdditiveMigration'), 'post-baseline migrations are not constrained to additive changes');
-freshSchemaExpect(!str_contains($runner, '--adopt-existing'), 'retired database adoption option remains active');
-$activeMigrations = array_map(
-    'basename',
-    glob($serverRoot . '/database/migrations/*.sql') ?: []
-);
-sort($activeMigrations, SORT_STRING);
-freshSchemaExpect(
-    $activeMigrations === [
-        '20260816-tenant-capability-setting.sql',
-        '20260816-tenant-entry-binding.sql',
-        '20260816-tenant-owner-invitation.sql',
-        '20260818-official-module-permission-ownership.sql',
-    ],
-    'active migrations are not the reviewed post-2.0 additive set'
-);
-foreach ($activeMigrations as $migration) {
-    freshSchemaExpect(
-        preg_match('/(?:legacy|compat|bootstrap|mapping|adopt)/i', $migration) !== 1,
-        'transition migration remains active: ' . $migration
-    );
-}
+freshSchemaExpect(str_contains($installer, "'--migrate'"), 'application migration runner is not available');
+freshSchemaExpect((glob($serverRoot . '/database/migrations/*.sql') ?: []) === [], 'post-baseline application migrations remain active');
 
 foreach (['information_schema', 'ALTER TABLE', 'PREPARE ', 'EXECUTE ', 'DEALLOCATE PREPARE'] as $transitionSql) {
     freshSchemaExpect(!str_contains($schema, $transitionSql), "transition SQL remains in canonical schema: {$transitionSql}");
 }
 
-freshSchemaExpect(count($applicationTables) === 61, 'canonical application table set changed unexpectedly');
-foreach (['pa_jobs', 'pa_schema_migration', 'pa_plugin_installation', 'pa_task_job', 'pa_external_channel_binding'] as $table) {
+freshSchemaExpect(in_array('pa_schema_migration', $applicationTables, true), 'application migration ledger is missing from the canonical schema');
+foreach ([
+    'pa_jobs',
+    'pa_plugin_installation',
+    'pa_module_migration',
+    'pa_task_job',
+    'pa_external_channel_binding',
+    'pa_tenant_setting',
+    'pa_tenant_entry_binding',
+    'pa_tenant_owner_invitation',
+    'pa_tenant_idempotency_record',
+    'pa_system_dict_type',
+    'pa_system_dict_data',
+] as $table) {
     freshSchemaExpect(in_array($table, $applicationTables, true), "canonical business table missing: {$table}");
+}
+foreach ([
+    'uk_tenant_setting_namespace',
+    'uk_tenant_entry_binding',
+    'uk_owner_invitation_pending_tenant',
+    'uk_tenant_idempotency',
+    'idx_refund_record_tenant_order_amount',
+    'uk_system_dict_type_code',
+    'uk_system_dict_data_type_value',
+] as $index) {
+    freshSchemaExpect(str_contains($schema, '`' . $index . '`'), "canonical schema index missing: {$index}");
+}
+foreach (['member_sex', 'member_status', 'member_channel', 'payment_status', 'refund_status'] as $dictionary) {
+    freshSchemaExpect(str_contains($schema, "'{$dictionary}'"), "canonical system dictionary seed missing: {$dictionary}");
 }
 
 echo "FRESH-SCHEMA-BASELINE-001 passed\n";

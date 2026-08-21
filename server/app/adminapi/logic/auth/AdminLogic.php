@@ -8,6 +8,9 @@ use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\org\OrgTenantContext;
 use app\common\service\DemoAccountPolicy;
+use app\common\support\ExportPageInfo;
+use app\common\support\PaginationInput;
+use app\common\support\PositiveIds;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
@@ -22,6 +25,7 @@ final class AdminLogic extends BaseLogic
 
     public static function normalizeInput(array $params): array
     {
+        self::clearError();
         $params = OrgTenantContext::withoutPayloadTenant($params);
         $params['account'] ??= $params['username'] ?? null;
         $params['name'] ??= $params['nickname'] ?? null;
@@ -31,12 +35,13 @@ final class AdminLogic extends BaseLogic
 
     public static function validationRules(string $scene): array
     {
+        self::clearError();
         $rules = [
             'id' => 'require|integer|gt:0',
             'account' => 'require|email|max:255',
             'name' => 'require|length:1,120',
             'avatar' => 'max:512',
-            'password' => 'length:12,128',
+            'password' => 'length:6,128',
             'password_confirm' => 'requireWith:password|confirm',
             'role_id' => 'array',
             'dept_id' => 'array',
@@ -54,8 +59,12 @@ final class AdminLogic extends BaseLogic
 
     public static function lists(TenantContext $context, array $params): array|false
     {
+        self::clearError();
         try {
-            $pageSize = max(1, min(self::EXPORT_MAX_ROWS, (int)($params['page_size'] ?? 15)));
+            $pageSize = max(1, min(
+                self::EXPORT_MAX_ROWS,
+                (int)($params['page_size'] ?? $params['limit'] ?? 15),
+            ));
             $rows = self::rows($context, $params);
             $count = count($rows);
             if ((int)($params['export'] ?? 0) === 1) {
@@ -64,7 +73,8 @@ final class AdminLogic extends BaseLogic
             if ((int)($params['export'] ?? 0) === 2) {
                 return self::export($context, $params, $rows);
             }
-            $pageNo = max(1, (int)($params['page_no'] ?? 1));
+            $pagination = PaginationInput::from($params);
+            $pageNo = $pagination->page;
             return [
                 'lists' => array_slice($rows, ($pageNo - 1) * $pageSize, $pageSize),
                 'count' => $count,
@@ -72,13 +82,13 @@ final class AdminLogic extends BaseLogic
                 'pageSize' => $pageSize,
             ];
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function detail(TenantContext $context, int $id): array
     {
+        self::clearError();
         foreach (self::rows($context, ['id' => $id]) as $row) {
             if ($row['id'] === $id) {
                 return $row;
@@ -89,6 +99,7 @@ final class AdminLogic extends BaseLogic
 
     public static function add(TenantContext $context, array $params): bool
     {
+        self::clearError();
         $params = self::normalizeInput($params);
         try {
             $roles = self::normalizeIds($params['role_id'] ?? []);
@@ -139,13 +150,13 @@ final class AdminLogic extends BaseLogic
             }
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function edit(TenantContext $context, array $params): bool
     {
+        self::clearError();
         $params = self::normalizeInput($params);
         try {
             if (!empty($params['password'])) {
@@ -179,13 +190,13 @@ final class AdminLogic extends BaseLogic
             self::transitionStatus($service, $context, $member, (int)$params['disable']);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function delete(TenantContext $context, int $id, int $selfId = 0): bool
     {
+        self::clearError();
         if ($id === $selfId) {
             self::setError('不能操作当前登录的管理员');
             return false;
@@ -203,13 +214,13 @@ final class AdminLogic extends BaseLogic
             );
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function updateStatus(TenantContext $context, int $id, int $disable, int $selfId = 0): bool
     {
+        self::clearError();
         if ($id === $selfId) {
             self::setError('不能操作当前登录的管理员');
             return false;
@@ -219,13 +230,13 @@ final class AdminLogic extends BaseLogic
             self::transitionStatus($service, $context, $service->get($context->tenantId, $id), $disable);
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
     public static function editSelf(TenantContext $context, int $memberId, array $params): bool
     {
+        self::clearError();
         try {
             if ($memberId !== $context->memberId) {
                 throw new \DomainException('TENANT_ADMIN_PRINCIPAL_INVALID');
@@ -256,8 +267,7 @@ final class AdminLogic extends BaseLogic
             }
             return true;
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+            return self::fail($e);
         }
     }
 
@@ -347,10 +357,12 @@ SQL;
 
     private static function exportInfo(int $count, int $pageSize): array
     {
-        $sumPage = max(1, (int)ceil($count / $pageSize));
-        return ['count' => $count, 'page_size' => $pageSize, 'sum_page' => $sumPage,
-            'max_page' => (int)floor(self::EXPORT_MAX_ROWS / $pageSize), 'all_max_size' => self::EXPORT_MAX_ROWS,
-            'page_start' => 1, 'page_end' => min($sumPage, 200), 'file_name' => self::EXPORT_DEFAULT_NAME];
+        return ExportPageInfo::from(
+            $count,
+            $pageSize,
+            self::EXPORT_MAX_ROWS,
+            self::EXPORT_DEFAULT_NAME,
+        )->toArray();
     }
 
     /** @param list<array<string,mixed>> $rows */
@@ -375,9 +387,7 @@ SQL;
     /** @return list<int> */
     private static function normalizeIds(array $ids): array
     {
-        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0)));
-        sort($ids, SORT_NUMERIC);
-        return $ids;
+        return PositiveIds::normalize($ids, [PositiveIds::FILTER_INVALID, PositiveIds::SORT]);
     }
 
     private static function pdo(): PDO

@@ -46,13 +46,25 @@ foreach ($actions as $action) {
 }
 
 $system = (string)file_get_contents($serverRoot . '/app/adminapi/controller/system/SystemController.php');
-instanceToolExpect(
-    preg_match(
-        '/public function clearCache\(\)\s*\{\s*\$denial = \$this->instanceToolAccessDenial\(\);\s*if \(\$denial !== null\).*?return \$denial;.*?SystemLogic::clearCache\(\);/s',
-        $system
-    ) === 1,
-    'global cache clearing must deny before Cache or filesystem side effects'
-);
+foreach (['info' => 'SystemLogic::getInfo', 'clearCache' => 'SystemLogic::clearCache'] as $action => $effect) {
+    instanceToolExpect(
+        preg_match(
+            '/public function ' . $action . '\(\)\s*\{\s*\$denial = \$this->instanceToolAccessDenial\(\);\s*if \(\$denial !== null\).*?return \$denial;.*?' . preg_quote($effect, '/') . '\(/s',
+            $system
+        ) === 1,
+        "system {$action} must deny before instance information or side effects"
+    );
+}
+$menu = (string)file_get_contents($serverRoot . '/app/adminapi/controller/auth/MenuController.php');
+foreach (['lists', 'detail', 'add', 'edit', 'delete', 'updateStatus'] as $action) {
+    instanceToolExpect(
+        preg_match(
+            '/public function ' . $action . '\(\).*?\$this->instanceMenuDenial\(\)/s',
+            $menu
+        ) === 1,
+        "global menu action {$action} is still exposed in multi-tenant mode"
+    );
+}
 instanceToolExpect(
     substr_count($generator, "JsonService::fail('实例级开发工具仅在 standalone 部署中可用', null, 40300)") === 1
         && substr_count($system, "JsonService::fail('实例级维护工具仅在 standalone 部署中可用', null, 40300)") === 1,
