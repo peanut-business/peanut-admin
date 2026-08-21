@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.2",
+    "template_version": "3.0.3",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -3777,7 +3777,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "95db98ed03b416ca725d944bc3ec8d307470cc273168be2ed8a72824d3d95699"
+            "source_sha256": "572c89c5cd3e2fa020db6f1a4509d0449ae2db57e207b3b0fcff6c77997564e1"
         },
         {
             "path": "scripts/generate-release-legal.mjs",
@@ -11595,7 +11595,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4dc1803341c61a2dd49bcdaac0b05be86b86741b206cb23b0de050c7548da728"
+            "source_sha256": "67dcab5d58ad0cdaa8a8baa64e7790f4ddd8e6b633253d99d36627bc877ed168"
         },
         {
             "path": "server/extend/.gitignore",
