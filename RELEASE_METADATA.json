@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.3",
-  "expected_tag": "v3.0.3",
+  "version": "3.0.4",
+  "expected_tag": "v3.0.4",
   "release_date": "2026-08-21",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
@@ -45,7 +45,7 @@
     "RELEASE_SBOM.spdx.json": "9d60baba9de25b5f4479700d76ffcd6bd3251612ae750a8d42d3dd1004ec40c2"
   },
   "technical_qualification": {
-    "phase": "3.0.3-pending-qualification",
+    "phase": "3.0.4-pending-qualification",
     "result": "pending",
     "final_candidate_commit": null,
     "final_candidate_tree": null,
@@ -55,10 +55,10 @@
     "cleanup_residual_count": null,
     "lease_released": false,
     "migrations": 4,
-    "scaffold_version": "3.0.3",
+    "scaffold_version": "3.0.4",
     "application_initial_version": "0.1.0",
-    "evidence": "Pending the single fixed-candidate P0-E qualification for the 3.0.3 Demo binding fix.",
-    "release_delta": "Demo Host seeding now covers the shared Admin default Tenant as well as Tenant A and Tenant B for both admin-web and member-api clients."
+    "evidence": "Pending the single fixed-candidate P0-E qualification for the 3.0.4 Demo binding fix.",
+    "release_delta": "Shared Admin Hosts seed only the member-api default Tenant binding, preserving account-driven Tenant selection for admin-web login."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }
