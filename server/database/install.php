@@ -366,7 +366,7 @@ function applicationMigrationFiles(string $databaseDir): array
     }
     $files = [];
     foreach (glob($directory . '/*.sql') ?: [] as $file) {
-        if (!is_file($file) || is_link($file) || preg_match('/^[0-9]{8}_[a-z0-9][a-z0-9_-]*\.sql$/D', basename($file)) !== 1) {
+        if (!is_file($file) || is_link($file) || preg_match('/^[0-9]{8}-[a-z0-9][a-z0-9_-]*\.sql$/D', basename($file)) !== 1) {
             throw new RuntimeException('迁移文件名无效：' . basename($file));
         }
         $files[] = $file;
@@ -378,7 +378,11 @@ function applicationMigrationFiles(string $databaseDir): array
 function migrationReleaseVersion(string $sql, string $targetVersion): string
 {
     if (preg_match('/^\s*--\s*peanut-release:\s*(\d+\.\d+\.\d+)\s*$/mi', $sql, $matches) === 1) {
-        return $matches[1];
+        $version = $matches[1];
+        if (preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version) !== 1) {
+            throw new RuntimeException('迁移 release 版本无效：' . $version);
+        }
+        return $version;
     }
     return $targetVersion;
 }
@@ -419,6 +423,10 @@ function migrateDatabase(string $serverDir, string $targetVersion, bool $dryRun 
                 throw new RuntimeException('迁移文件为空：' . $id);
             }
             $checksum = hash('sha256', $sql);
+            $releaseVersion = migrationReleaseVersion($sql, $targetVersion);
+            if (version_compare($releaseVersion, $targetVersion, '>')) {
+                continue;
+            }
             $statement = $pdo->prepare('SELECT checksum,status FROM pa_schema_migration WHERE migration_id = ?');
             $statement->execute([$id]);
             $row = $statement->fetch();
@@ -429,8 +437,14 @@ function migrateDatabase(string $serverDir, string $targetVersion, bool $dryRun 
                 if ($row['status'] === 'applied') {
                     continue;
                 }
+                if ($row['status'] === 'failed') {
+                    throw new RuntimeException('MIGRATION_PREVIOUSLY_FAILED: ' . $id);
+                }
+                if ($row['status'] === 'applying') {
+                    throw new RuntimeException('MIGRATION_INCOMPLETE: ' . $id);
+                }
             }
-            $pending[] = ['id' => $id, 'file' => $file, 'sql' => $sql, 'checksum' => $checksum, 'release_version' => migrationReleaseVersion($sql, $targetVersion), 'status' => is_array($row) ? (string)$row['status'] : null];
+            $pending[] = ['id' => $id, 'file' => $file, 'sql' => $sql, 'checksum' => $checksum, 'release_version' => $releaseVersion, 'status' => is_array($row) ? (string)$row['status'] : null];
         }
         if ($dryRun) {
             return ['status' => $pending === [] ? 'up_to_date' : 'ready', 'target_version' => $targetVersion, 'applied' => [], 'pending' => array_column($pending, 'id')];

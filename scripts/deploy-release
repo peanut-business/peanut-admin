@@ -47,9 +47,10 @@ instance. It never guesses a host, path, port, database or fallback target.
   --confirm-destroy
              required for --fresh; value must exactly equal the target
 
-The application schema is not changed by routine updates. Fresh installation
-uses the canonical v3.0 baseline; Plugin Module migrations retain their
-independent lifecycle.
+Routine updates preserve the database and apply append-only application
+migrations from server/database/migrations. Fresh installation uses the
+canonical v3.0 baseline; Plugin Module migrations retain their independent
+lifecycle.
 EOF
 }
 
@@ -150,7 +151,7 @@ while [[ $# -gt 0 ]]; do
     --update) UPDATE=1; shift ;;
     --fresh) FRESH=1; shift ;;
     --upgrade|--from)
-      fail 'use --update for a routine application update; schema upgrades are not supported' ;;
+      fail 'use --update for a routine application update; --upgrade is deprecated' ;;
     --apply) APPLY=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --ssh-alias)

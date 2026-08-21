@@ -72,7 +72,7 @@ owner、managed/app-owned 树摘要与 managed baseline 路径。它是来源审
 | `peanut-admin/core`、`@peanut-admin/admin` 依赖 | 应用在独立分支人工更新版本和 lock，并运行自己的兼容测试 | 包管理器只能修改 Peanut 依赖；失败时回退应用分支 |
 | `managed` / `generated-managed` 脚手架文件 | 人工比较新 Release 与应用 manifest/baseline，选择性采用 | 应用改过且目标也变化时停止，不静默覆盖 |
 | `app-owned` 业务代码、页面和配置 | 应用自行维护 | 脚手架升级永远不自动改写 |
-| 应用数据库 | 3.0 首次安装必须为空；同一大版本通过 `install.php --migrate --target-version=X.Y.Z` 执行追加 migration | 不复制 Peanut 新安装基线覆盖已有数据库；跨大版本必须 fresh/rebuild |
+| 应用数据库 | 3.0 首次安装必须为空；同一大版本通过 `install.php --migrate --target-version=X.Y.Z` 执行按发布版本筛选的追加 migration（文件名 `YYYYMMDD-<描述>.sql`） | 不复制 Peanut 新安装基线覆盖已有数据库；跨大版本必须 fresh/rebuild |
 | Peanut canonical migration | 随采用的 Release 显式执行并写入 `pa_schema_migration` 账本 | 必须绑定目标 Release、迁移 checksum、备份和应用验证 |
 
 2.x/3.x 升级器已提供 `preflight -> apply -> verify -> recover`；同一大版本的部署更新

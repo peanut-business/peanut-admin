@@ -40,8 +40,9 @@ scripts/publish-github-release <version> \
 
 ### 源仓维护者的无人值守发布脚本
 
-`scripts/deploy-release` 明确区分首次安装、常规更新和破坏性 fresh，不提供应用数据库
-原地 schema 升级。源仓维护者不要在服务器上调用旧的 `scripts/production-upgrade`。脚本
+`scripts/deploy-release` 明确区分首次安装、同大版本常规更新和破坏性 fresh。常规更新会
+保留数据库与上传卷，并执行不可变、追加式的应用 migration；源仓维护者不要在服务器上调用旧的
+`scripts/production-upgrade`。脚本
 从本地不可变 annotated tag 生成归档，传输到登记的
 `oracle3` 部署目录，保留 `.env` 与备份目录，并按目标选择独立的 Compose project、端口和
 数据库资源。它不会通过默认值猜测另一套部署。
