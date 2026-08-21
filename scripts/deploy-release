@@ -363,7 +363,10 @@ if [[ -n "$OVERLAY" ]]; then
   scp "${SSH_KEEPALIVE_OPTS[@]}" -q "$OVERLAY" "$SSH_ALIAS:$remote_overlay" || fail 'cannot transfer demo overlay'
 fi
 
-ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" bash -s -- \
+# The registered deployment roots are root-owned (0700) on oracle3.  Execute the
+# remote control script through the registered non-interactive sudo boundary so
+# its preflight, Compose and filesystem operations all observe the same target.
+ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" sudo -n bash -s -- \
   "$TAG" "$tag_commit" "$TARGET" "$mode" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 
