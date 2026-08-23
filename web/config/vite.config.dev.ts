@@ -7,6 +7,9 @@ const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '')
   .split(',')
   .map((host) => host.trim())
   .filter(Boolean);
+const tenantEntryHost = process.env.VITE_TENANT_ENTRY_HOST || '';
+
+const proxyHeaders = tenantEntryHost ? { host: tenantEntryHost } : undefined;
 
 export default mergeConfig(
   {
@@ -21,14 +24,17 @@ export default mergeConfig(
         '/api': {
           target: apiProxyTarget,
           changeOrigin: false,
+          headers: proxyHeaders,
         },
         '/brand': {
           target: apiProxyTarget,
           changeOrigin: false,
+          headers: proxyHeaders,
         },
         '/storage': {
           target: apiProxyTarget,
           changeOrigin: false,
+          headers: proxyHeaders,
         },
       },
     },

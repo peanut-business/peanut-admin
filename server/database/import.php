@@ -1,21 +1,19 @@
 <?php
 /**
- * 一次性种子导入脚本（临时）：用 .env 里的 DB 配置，通过 PDO 执行 init.sql。
+ * 一次性种子导入脚本（临时）：用已登记的进程 DB 配置，通过 PDO 执行 init.sql。
  * init.sql 幂等（CREATE IF NOT EXISTS + INSERT IGNORE），可重复运行。
  * 用完即删。
  */
 declare(strict_types=1);
 
-$root = dirname(__DIR__);
-$env  = parse_ini_file($root . '/.env', true);
-$db   = $env['DB_HOST'] ?? '127.0.0.1';
-$get  = fn(string $k, string $d = '') => $env[$k] ?? getenv($k) ?: $d;
+require_once __DIR__ . '/environment-guard.php';
 
-$host = $get('DB_HOST', '127.0.0.1');
-$port = $get('DB_PORT', '3306');
-$name = $get('DB_NAME', '');
-$user = $get('DB_USER', 'root');
-$pass = $get('DB_PASS', '');
+$config = guardedDatabaseConfig();
+$host = $config['host'];
+$port = $config['port'];
+$name = $config['database'];
+$user = $config['user'];
+$pass = $config['password'];
 
 $dsn = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4";
 echo "连接 $dsn (user=$user)\n";

@@ -5,7 +5,7 @@
     "owner": "Peanut Admin maintainers",
     "source": "this versioned file",
     "resource_observation_policy": "validate this registry against the live resource before each stateful operation",
-    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo credentials are intentionally public and recorded in docs/operations/demo-access.md, README.md, docs-site/deployment.md and the matching demo resource entries",
+    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo credentials are intentionally public and documented in docs-site/demo-access.md, with matching machine-readable demo resource entries",
     "local_port_policy": "registered values are defaults; PEANUT_LOCAL_ENV_FILE or .local/stack.env is the per-clone runtime source and existing overrides are preserved"
   },
   "resources": {
@@ -279,9 +279,9 @@
         "data_source": "fresh synthetic experience data in Docker volume peanut-admin-candidate_mysql-data on oracle3",
         "freshness_requirement": "the volume and database must be absent before first installation; after start, SELECT DATABASE() and environment-guard.php --current must match the fixed candidate's canonical v3.0 baseline",
         "health_check": {
-          "allocation": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin-candidate && sudo -n docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps mysql'",
+          "allocation": "ssh -o BatchMode=yes oracle3 \"sudo -n sh -c 'cd /www/docker/peanut-admin-candidate && docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps mysql'\"",
           "host_connection": null,
-          "container_connection": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin-candidate && sudo -n docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db exec -T php php server/database/environment-guard.php --current'"
+          "container_connection": "ssh -o BatchMode=yes oracle3 \"sudo -n sh -c 'cd /www/docker/peanut-admin-candidate && docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db exec -T php php server/database/environment-guard.php --current'\""
         },
         "fallback": "none",
         "lifecycle": "persistent disposable demo",
@@ -465,6 +465,15 @@
         "data_source": "local production-mode Compose stack",
         "freshness_requirement": "current worktree image",
         "health_check": "GET /healthz",
+        "public_demo_access": {
+          "stable_access_id": "peanut-admin-local-public-demo-standalone-admin",
+          "classification": "owner-authorized intentionally public credential for the disposable local production preview",
+          "verified_at": "2026-08-22",
+          "verification": "GET /healthz and API login accepted the registered demo account",
+          "url": "http://127.0.0.1:20190/admin/",
+          "account": "admin@example.com",
+          "password": "peanut1234"
+        },
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh prod-down"
       }
@@ -502,7 +511,11 @@
         "credential_ref": ".local/stack.env generated from the registered external credential reference",
         "data_source": "current worktree images",
         "freshness_requirement": "current image and v3.0 fresh baseline guard",
-        "health_check": "scripts/local-environment-probe",
+        "health_check": {
+          "compose": "PEANUT_DEPLOYMENT_TARGET=local-production-preview docker compose --env-file .local/stack.env -f deploy/docker-compose.prod.yml ps",
+          "origin": "curl -fsS http://127.0.0.1:20190/healthz",
+          "database": "scripts/local-stack.sh database-host-status"
+        },
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh prod-down"
       },
@@ -611,7 +624,7 @@
         ],
         "freshness_requirement": "verify the exact candidate commit/tree, images, empty candidate database volume, multi-tenant environment selectors and origin port before first start",
         "health_check": {
-          "compose": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin-candidate && sudo -n docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps'",
+          "compose": "ssh -o BatchMode=yes oracle3 \"sudo -n sh -c 'cd /www/docker/peanut-admin-candidate && docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps'\"",
           "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18093/healthz'"
         },
         "fallback": "none",
@@ -637,7 +650,7 @@
         "credential_ref": "oracle3:/www/docker/peanut-admin-candidate/.env (root-owned mode 0600; secret values are not stored in Git)",
         "data_source": "Docker volume peanut-admin-candidate_mysql-data on oracle3",
         "freshness_requirement": "the candidate volume must be absent before first install; after creation verify MySQL health and the canonical v3.0 fresh baseline",
-        "health_check": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin-candidate && sudo -n docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps mysql' plus php server/database/environment-guard.php --current",
+        "health_check": "ssh -o BatchMode=yes oracle3 \"sudo -n sh -c 'cd /www/docker/peanut-admin-candidate && docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps mysql'\" plus php server/database/environment-guard.php --current",
         "fallback": "none",
         "cleanup_responsibility": "Peanut Admin production candidate deployment owner; destructive cleanup requires explicit approval",
         "backup_responsibility": "not required before the first empty synthetic demo installation"
@@ -839,7 +852,7 @@
         "service_type": "SSH-managed Docker Compose production deployment",
         "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin/.env",
         "application_admin_login": "admin@peanut-admin.007345.xyz",
-        "application_admin_credential_ref": "docs/operations/demo-access.md is authoritative for the owner-authorized demo login; macOS Keychain service peanut-admin-production-admin account admin is a secondary legacy handoff reference and may be stale",
+        "application_admin_credential_ref": "docs-site/demo-access.md is authoritative for the owner-authorized demo login; macOS Keychain service peanut-admin-production-admin account admin is a secondary legacy handoff reference and may be stale",
         "public_demo_access": {
           "stable_access_id": "peanut-admin-public-demo-standalone-admin",
           "classification": "owner-authorized intentionally public credential for the disposable production demo",
@@ -917,11 +930,11 @@
         "namespace": "peanut-admin-production-candidate",
         "service_type": "SSH-managed Docker Compose production experience deployment",
         "credential_ref": "operator-local SSH configuration for alias oracle3; deployment secrets remain in oracle3:/www/docker/peanut-admin-candidate/.env",
-        "application_credential_ref": "docs/operations/demo-access.md is authoritative for current owner-authorized demo logins; the root-owned oracle3 environment file contains installation inputs and other deployment secrets but is not current-password authority",
+        "application_credential_ref": "docs-site/demo-access.md is authoritative for current owner-authorized demo logins; the root-owned oracle3 environment file contains installation inputs and other deployment secrets but is not current-password authority",
         "bootstrap_admin_login": "admin@pa-demo.example",
-        "bootstrap_admin_credential_ref": "docs/operations/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key ADMIN_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
+        "bootstrap_admin_credential_ref": "docs-site/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key ADMIN_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
         "platform_operator_login": "platform@pa-demo.example",
-        "platform_operator_credential_ref": "docs/operations/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key PLATFORM_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
+        "platform_operator_credential_ref": "docs-site/demo-access.md; oracle3:/www/docker/peanut-admin-candidate/.env key PLATFORM_INITIAL_PASSWORD is an installation input and may be stale after database password rotation",
         "public_demo_access_resource_id": "peanut-admin-production-candidate-domains",
         "demo_instance": true,
         "fresh_install_only": true,
@@ -938,8 +951,8 @@
           "failure_policy": "do not fall back to /www/docker/peanut-admin, port 18092, peanut_admin, existing volumes or peanut-admin.007345.xyz"
         },
         "health_check": {
-          "ssh": "ssh -o BatchMode=yes oracle3 'test -d /www/docker/peanut-admin-candidate && test -r /www/docker/peanut-admin-candidate/compose.yaml'",
-          "compose": "ssh -o BatchMode=yes oracle3 'cd /www/docker/peanut-admin-candidate && sudo -n docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps'",
+          "ssh": "ssh -o BatchMode=yes oracle3 \"sudo -n sh -c 'test -d /www/docker/peanut-admin-candidate && test -r /www/docker/peanut-admin-candidate/compose.yaml'\"",
+          "compose": "ssh -o BatchMode=yes oracle3 \"sudo -n sh -c 'cd /www/docker/peanut-admin-candidate && docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps'\"",
           "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18093/healthz'"
         },
         "fallback": "none",

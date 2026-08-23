@@ -17,6 +17,7 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parent.parent
 REGISTRY_PATH = REPO / "resources/project-resources.json"
+DAILY_DEVELOPMENT_DATABASE_ID = "peanut-admin-mysql84-development"
 
 
 def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str, str]]:
@@ -24,10 +25,13 @@ def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str,
     databases = [
         item
         for item in registry["resources"]["databases"]
-        if "development" in item["environments"]
+        if item.get("stable_resource_id") == DAILY_DEVELOPMENT_DATABASE_ID
     ]
     if len(databases) != 1:
-        raise ValueError("resource registry must select one development database")
+        raise ValueError(
+            "resource registry must contain exactly one daily development database: "
+            + DAILY_DEVELOPMENT_DATABASE_ID
+        )
     database = databases[0]
     endpoint = database["upstream_endpoint"]
     expected_database = {
@@ -47,9 +51,20 @@ def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str,
         "DOCS_PORT": "development_docs",
         "HTTP_PORT": "production_preview_gateway",
     }
-    expected_ports = {
-        port_names[item["port_env"]]: int(item["port"])
+    selected_listeners = {
+        item.get("port_env"): item
         for item in registry["resources"]["local_listeners"]
+        if item.get("port_env") in port_names
+    }
+    missing_listeners = sorted(set(port_names) - set(selected_listeners))
+    if missing_listeners:
+        raise ValueError(
+            "resource registry is missing probe listeners: "
+            + ", ".join(missing_listeners)
+        )
+    expected_ports = {
+        port_names[port_env]: int(selected_listeners[port_env]["port"])
+        for port_env in port_names
     }
     port_env_names = {value: key for key, value in port_names.items()}
     return expected_database, expected_ports, port_env_names

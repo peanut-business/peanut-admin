@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic;
 
+use app\adminapi\service\CoreTenantModuleAdminBridge;
 use app\common\logic\BaseLogic;
 use app\common\service\FileService;
 use app\common\service\config\TenantSettingWebsiteStore;
@@ -16,7 +17,7 @@ class WorkbenchLogic extends BaseLogic
         return [
             'version' => self::versionInfo($context),
             'today'   => self::today(),
-            'menu'    => self::menu(),
+            'menu'    => self::menu($context),
             'visitor' => self::visitor(),
             'support' => self::support($context),
             'sale'    => self::sale(),
@@ -65,7 +66,7 @@ class WorkbenchLogic extends BaseLogic
         ];
     }
 
-    public static function menu(): array
+    public static function menu(TenantContext $context): array
     {
         $items = [
             ['name' => '管理员', 'image' => 'menu_admin', 'url' => '/system/admin'],
@@ -77,6 +78,12 @@ class WorkbenchLogic extends BaseLogic
             ['name' => '菜单权限', 'image' => 'menu_auth', 'url' => '/system/menu'],
             ['name' => '网站信息', 'image' => 'menu_web', 'url' => '/app-setting/website'],
         ];
+        $moduleMenus = (new CoreTenantModuleAdminBridge())->accessData($context)['menu'];
+        $items = array_values(array_filter(
+            $items,
+            static fn(array $item): bool => $item['url'] !== '/system/file'
+                || self::menuContainsPath($moduleMenus, '/system/file')
+        ));
 
         return array_map(static function (array $item): array {
             $item['image'] = FileService::getFileUrl(
@@ -84,6 +91,21 @@ class WorkbenchLogic extends BaseLogic
             );
             return $item;
         }, $items);
+    }
+
+    /** @param list<array<string,mixed>> $menus */
+    private static function menuContainsPath(array $menus, string $path): bool
+    {
+        foreach ($menus as $menu) {
+            if (($menu['paths'] ?? null) === $path) {
+                return true;
+            }
+            $children = $menu['children'] ?? [];
+            if (is_array($children) && self::menuContainsPath($children, $path)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static function visitor(): array

@@ -305,6 +305,8 @@
 
   .peanut-menu {
     min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     flex: 1;
     border-right: none;
   }

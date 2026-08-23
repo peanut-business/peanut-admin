@@ -1,13 +1,13 @@
 # Peanut Admin
 
 Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的企业应用脚手架。
-当前源码是已正式发布的 `3.0.4` fresh-only 版本，同一代码线支持单实例（`standalone`）和多租户
+当前源码是已正式发布的 `3.0.5` fresh-only 版本，同一代码线支持单实例（`standalone`）和多租户
 （`multi-tenant`）部署，覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
 
 [当前 Standalone 演示](https://peanut-admin.007345.xyz/admin/) ·
 [当前多租户演示](https://pa-admin.007345.xyz/admin/) ·
 [文档中心](https://peanut-admin-doc.007345.xyz) ·
-[3.0.4 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.4) ·
+[3.0.5 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.5) ·
 [1.x 历史 Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5) ·
 [更新日志](CHANGELOG.md)
 
@@ -18,13 +18,13 @@ Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的
 - 多端应用：Vue 3 管理端、Nuxt 3 PC、UniApp H5/小程序。
 - 多租户：默认 Tenant、可信 TenantContext、Tenant-first 数据访问、缓存/文件/任务/审计隔离。
 - 实例内平台管理：独立 PlatformOperator、Tenant 生命周期、首个 owner 和 TenantModule 管理。
-- 交付：3.0.4 canonical Schema 空库安装、基线后追加迁移账本、Docker Compose 和不可变源码 Release。
+- 交付：3.0.5 canonical Schema 空库安装、基线后追加迁移账本、Docker Compose 和不可变源码 Release。
 
 `3.0` 不支持旧大版本数据库或脚手架原地升级，也不包含套餐、订阅、计费、试用、发票、
 应用市场或跨实例运营平台。短信、支付、微信/OAuth 和对象存储仍需部署方提供真实凭据并
-完成平台登记。固定候选已完成 P0-E 7/7，并发布 annotated `v2.0.0` tag、GitHub Release、
-确定性源码包、许可证附件和 SPDX SBOM。现有隔离体验实例仍是独立的线上候选环境，不能替代
-尚未执行的 2.0.0 正式生产部署证明。
+完成平台登记。固定候选已完成 P0-E 7/7，并发布 annotated `v3.0.5` tag、GitHub Release、
+确定性源码包、许可证附件和 SPDX SBOM。当前线上 Standalone 与 Multi-tenant Demo 已按登记资源
+更新到 3.0.5；它们是可丢弃体验实例，不替代正式业务生产环境的独立部署证明。
 
 ## 技术栈
 
@@ -112,28 +112,14 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 隔离的本地多租户体验使用 `./scripts/local-multi-tenant-demo up`，固定
 `admin.peanut-admin.test:20179`、`platform.peanut-admin.test:20176`、两个 Tenant 测试域名、
 API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
-由当前运行任务的项目 lease 同时持有这些资源。账号、密码和本地入口见
-[`docs/operations/local-demo-access.md`](docs/operations/local-demo-access.md)。
+由当前运行任务的项目 lease 同时持有这些资源。资源和启动步骤见
+[`docs/operations/local-demo-access.md`](docs/operations/local-demo-access.md)；账号、密码和本地入口见
+下方的[统一 Demo 登录信息](docs-site/demo-access.md)。
 
-## 生产入口
+## Demo 登录
 
-| 入口 | 登录地址 | 账号 | 密码 |
-| --- | --- | --- | --- |
-| 当前 production-candidate 多租户 / 实例平台 | `https://pa-platform.007345.xyz/platform/` | `platform@pa-demo.example` | `peanut1234` |
-| 当前 production-candidate 多租户 / bootstrap 管理端 | `https://pa-admin.007345.xyz/admin/` | `admin@pa-demo.example` | `peanut1234` |
-| 当前 production-candidate 多租户 / 公共管理端 | `https://pa-admin.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
-| 当前 production-candidate 多租户 / Tenant A 绑定入口 | `https://pa-tenant-a.007345.xyz/admin/` | `tenant-a@pa-demo.example` | `peanut1234` |
-| 当前 production-candidate 多租户 / Tenant B 绑定入口 | `https://pa-tenant-b.007345.xyz/admin/` | `tenant-b@pa-demo.example` | `peanut1234` |
-| 当前 production Standalone / 管理端 | `https://peanut-admin.007345.xyz/admin/` | `admin@peanut-admin.007345.xyz` | `peanut1234` |
-| 历史 v2.1.5 Standalone / PC | `https://peanut-admin.007345.xyz/pc/` | 按业务会员登录 | 不公开 |
-| 历史 v2.1.5 Standalone / H5 | `https://peanut-admin.007345.xyz/mobile/` | 按业务会员登录 | 不公开 |
-| 官方文档 | `https://peanut-admin-doc.007345.xyz` | 无需登录 | 无 |
-
-上表管理身份都是 owner 明确批准公开的可丢弃演示账号，统一密码为 `peanut1234`。该密码只在
-演示 overlay 中使用；普通本地安装和正式应用仍必须使用满足 Core 密码策略的强密码。当前完整
-事实源为 [`docs/operations/demo-access.md`](docs/operations/demo-access.md)；部署目录 `.env`
-中的 `*_INITIAL_PASSWORD` 只是首次安装输入，账号在数据库中改密后不会回写，不能据此判断
-当前登录密码。
+本地单租户、本地多租户和线上 Demo 的登录地址、账号、密码统一见[Demo 登录信息](docs-site/demo-access.md)。
+该页面是唯一用户可见的登录表；README、部署文档和运维交接文档不再维护重复表格。
 
 正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表多租户
 入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境；Standalone 是独立的
@@ -190,7 +176,7 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 
 ## 版本与许可证
 
-当前正式源码版本为 [`v3.0.4`](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.4)。
+当前正式源码版本为 [`v3.0.5`](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.5)。
 它只支持 fresh install，不提供 1.x 数据库或脚手架原地升级；最后一个已封存的 1.x 历史版本是
 [`v1.1.5`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5)。2.0.0 的生产部署
 和线上 smoke 将在独立工作流中完成，不属于本次源码发布证明。

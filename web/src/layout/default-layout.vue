@@ -135,8 +135,7 @@
 
   .menu-wrapper {
     height: 100%;
-    overflow: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     :deep(.el-menu) {
       ::-webkit-scrollbar {
         width: 12px;

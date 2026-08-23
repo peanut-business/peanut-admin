@@ -44,6 +44,29 @@ final readonly class PluginLifecycleService
     }
 
     /** @return array<string,mixed> */
+    public function reconcile(string $pluginKey): array
+    {
+        $current = $this->pluginInstallation($pluginKey, false);
+        if (!is_array($current)) {
+            return $this->install($pluginKey);
+        }
+
+        if ((string)$current['status'] !== 'active') {
+            throw new PluginLifecycleException(
+                'PLUGIN_STATE_INVALID',
+                'Plugin reconciliation only accepts an active installation.'
+            );
+        }
+
+        $plugin = $this->resolver->require($pluginKey);
+        if ($this->sameIdentity($plugin, $current)) {
+            return $plugin->publicIdentity() + ['operation' => 'unchanged'];
+        }
+
+        return $this->upgrade($pluginKey, false);
+    }
+
+    /** @return array<string,mixed> */
     public function upgrade(string $pluginKey, bool $dryRun): array
     {
         $plugin = $this->resolver->require($pluginKey);

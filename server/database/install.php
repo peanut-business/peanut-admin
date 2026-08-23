@@ -13,62 +13,37 @@ use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 /**
  * Peanut Admin fresh-database installer.
  *
- * Run from the repository root or server directory after creating an empty
- * database and configuring server/.env:
+ * Run from the repository root or server directory after selecting a
+ * registered database through process environment variables:
  *
  *     php server/database/install.php
  */
 
-const REQUIRED_CONFIG = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'];
+require_once __DIR__ . '/environment-guard.php';
 
 function loadConfig(string $serverDir): array
 {
-    $fileConfig = loadFileConfig($serverDir);
-
-    $config = [];
-    foreach (REQUIRED_CONFIG as $name) {
-        $environment = getenv($name);
-        $value = $environment !== false && $environment !== ''
-            ? $environment
-            : ($fileConfig[$name] ?? '');
-        if ($value === '') {
-            throw new RuntimeException("缺少数据库配置：{$name}");
-        }
-        $config[$name] = (string)$value;
-    }
-    return $config;
-}
-
-/** @return array<string, mixed> */
-function loadFileConfig(string $serverDir): array
-{
-    $envFile = $serverDir . '/.env';
-    if (!is_file($envFile)) {
-        return [];
-    }
-    $parsed = parse_ini_file($envFile, false, INI_SCANNER_RAW);
-    if ($parsed === false) {
-        throw new RuntimeException('无法解析 server/.env');
-    }
-    return $parsed;
+    $config = guardedDatabaseConfig();
+    return [
+        'DB_HOST' => $config['host'],
+        'DB_PORT' => $config['port'],
+        'DB_NAME' => $config['database'],
+        'DB_USER' => $config['user'],
+        'DB_PASS' => $config['password'],
+    ];
 }
 
 function initialAdminPassword(string $serverDir): string
 {
     $environment = getenv('ADMIN_INITIAL_PASSWORD');
-    $password = $environment !== false && $environment !== ''
-        ? $environment
-        : (loadFileConfig($serverDir)['ADMIN_INITIAL_PASSWORD'] ?? '');
-    validateInitialAdminPassword((string)$password);
-    return (string)$password;
+    validateInitialAdminPassword($environment === false ? '' : $environment);
+    return $environment === false ? '' : $environment;
 }
 
 function initialAdminEmail(string $serverDir): string
 {
     $environment = getenv('ADMIN_INITIAL_EMAIL');
-    $email = $environment !== false && $environment !== ''
-        ? $environment
-        : (loadFileConfig($serverDir)['ADMIN_INITIAL_EMAIL'] ?? '');
+    $email = $environment === false ? '' : $environment;
     if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
         throw new RuntimeException('ADMIN_INITIAL_EMAIL 必须是有效邮箱');
     }
@@ -91,19 +66,14 @@ function validateInitialAdminPassword(string $password): void
 /** @return array{email:string,password:string}|null */
 function initialPlatformCredentials(string $serverDir, string $adminEmail): ?array
 {
-    $fileConfig = loadFileConfig($serverDir);
     $environmentMode = getenv('DEPLOYMENT_MODE');
-    $mode = $environmentMode !== false && $environmentMode !== ''
-        ? $environmentMode
-        : ($fileConfig['DEPLOYMENT_MODE'] ?? '');
+    $mode = $environmentMode === false ? '' : $environmentMode;
     if ($mode !== 'multi-tenant') {
         return null;
     }
 
     $environmentEmail = getenv('PLATFORM_INITIAL_EMAIL');
-    $email = $environmentEmail !== false && $environmentEmail !== ''
-        ? $environmentEmail
-        : ($fileConfig['PLATFORM_INITIAL_EMAIL'] ?? '');
+    $email = $environmentEmail === false ? '' : $environmentEmail;
     if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
         throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须是有效邮箱');
     }
@@ -113,9 +83,7 @@ function initialPlatformCredentials(string $serverDir, string $adminEmail): ?arr
     }
 
     $environmentPassword = getenv('PLATFORM_INITIAL_PASSWORD');
-    $password = $environmentPassword !== false && $environmentPassword !== ''
-        ? $environmentPassword
-        : ($fileConfig['PLATFORM_INITIAL_PASSWORD'] ?? '');
+    $password = $environmentPassword === false ? '' : $environmentPassword;
     if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
         if ((string)$password !== 'peanut1234') {
             throw new RuntimeException('演示模式的 Platform 初始密码必须统一为 peanut1234');

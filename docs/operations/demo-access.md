@@ -1,44 +1,15 @@
 # Demo access handoff
 
-> Internal operator handoff for the disposable Peanut Admin demonstration environments.
-> This file is intentionally complete so operators do not need to search deployment hosts.
-> All credentials in this file are owner-authorized disposable-demo credentials and may be copied
-> into the public docs site and README. If any credential is rotated, update this handoff, the
-> resource registry, public tables, and verification date together.
-
-Verified: 2026-08-20 by real browser login against every account below on the registered
-`production-candidate` and `production` demo resources.
-
-| Environment | Login URL | Account | Password | Password policy |
-| --- | --- | --- | --- | --- |
-| Production-candidate Platform | https://pa-platform.007345.xyz/platform/ | `platform@pa-demo.example` | `peanut1234` | Demo credential; Platform mutations are server-rejected while demo mode is enabled |
-| Production-candidate bootstrap Admin | https://pa-admin.007345.xyz/admin/ | `admin@pa-demo.example` | `peanut1234` | Demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production-candidate shared Admin | https://pa-admin.007345.xyz/admin/ | `tenant-a@pa-demo.example` | `peanut1234` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production-candidate Tenant A | https://pa-tenant-a.007345.xyz/admin/ | `tenant-a@pa-demo.example` | `peanut1234` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production-candidate Tenant B | https://pa-tenant-b.007345.xyz/admin/ | `tenant-b@pa-demo.example` | `peanut1234` | Public demo credential; critical mutations are server-rejected while demo mode is enabled |
-| Production Standalone Admin demo | https://peanut-admin.007345.xyz/admin/ | `admin@peanut-admin.007345.xyz` | `peanut1234` | Demo credential; critical mutations are server-rejected while demo mode is enabled |
-
-Unauthenticated addresses:
-
-- PC: https://peanut-admin.007345.xyz/pc/
-- H5: https://peanut-admin.007345.xyz/mobile/
-- Docs: https://peanut-admin-doc.007345.xyz
+账号、地址和验证日期统一维护在公开的 [Demo 登录信息](../../docs-site/demo-access.md) 页面；本文件
+不再复制登录表，避免 README、运维文档和 docs-site 出现不一致。
 
 ## Resource references
 
 - Multi-tenant candidate: `peanut-admin-production-candidate-deployment`
 - Candidate domains and public Tenant credentials: `peanut-admin-production-candidate-domains`
 - Standalone demo: `peanut-admin-production-deployment`
-- Standalone legacy handoff reference: macOS Keychain service `peanut-admin-production-admin`,
-  account `admin` (secondary only; it may be stale and is not the current-login authority)
+- Local single-tenant preview: `peanut-admin-local-production-preview-gateway`
 
-All accounts in this table are owner-authorized disposable-demo credentials and may be shown in the
-README and public deployment guide. The candidate uses `PEANUT_DEMO_MODE=enabled`, and protected
-demo mutations remain server-rejected.
-
-The application database is authoritative for current login success. Values such as
-`ADMIN_INITIAL_PASSWORD`, `PLATFORM_INITIAL_PASSWORD`, and `PEANUT_DEMO_SHARED_PASSWORD` in a
-deployment `.env` are installation inputs and may remain unchanged after a database password
-rotation. Keychain entries are handoff references and can likewise become stale. After any rotation,
-verify one real browser login per distinct account and update this file, the public tables, and the
-resource registry together.
+资源登记中的 `.env` 密码键和 Keychain 仅是安装或交接引用，不是当前登录密码事实源。密码轮换后，
+以应用数据库的真实登录结果为准，并同步更新[统一 Demo 登录信息](../../docs-site/demo-access.md)
+和 `resources/project-resources.json`。

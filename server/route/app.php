@@ -31,6 +31,7 @@ use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
+use app\Modules\Official\Article\Http\ArticleModuleMiddleware;
 use app\platform\controller\PlatformSessionController;
 use app\platform\controller\PlatformAccessController;
 use app\platform\controller\PlatformTenantBoundaryController;
@@ -309,7 +310,6 @@ Route::group('api/admin', function () {
     Route::get('decoration/mobile/page/lists', [DecorationPageController::class, 'mobileLists']);
     Route::get('decoration/mobile/page/detail', [DecorationPageController::class, 'mobileDetail']);
     Route::post('decoration/mobile/page/save', [DecorationPageController::class, 'mobileSave']);
-    Route::get('decoration/mobile/article', [DecorationPageController::class, 'article']);
     Route::get('decoration/tabbar/detail', [DecorationTabbarController::class, 'detail']);
     Route::post('decoration/tabbar/save', [DecorationTabbarController::class, 'save']);
     Route::get('decoration/pc/page/lists', [DecorationPageController::class, 'pcLists']);
@@ -317,6 +317,17 @@ Route::group('api/admin', function () {
     Route::post('decoration/pc/page/save', [DecorationPageController::class, 'pcSave']);
 
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
+
+// The decoration article picker needs its Module guard after the native session
+// is established but before RBAC and operation logging inspect the request.
+Route::group('api/admin', function (): void {
+    Route::get('decoration/mobile/article', [DecorationPageController::class, 'article']);
+})->middleware([
+    LoginMiddleware::class,
+    ArticleModuleMiddleware::class,
+    AuthMiddleware::class,
+    OperationLogMiddleware::class,
+]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 用户端 API（/api/user/ 和 /api/  命名空间）
