@@ -157,6 +157,7 @@ start_clients() {
             cd "$repo_dir/web"
             VITE_API_PROXY_TARGET=http://127.0.0.1:20178 VITE_OPEN_BROWSER=false \
                 VITE_DEPLOYMENT_MODE=multi-tenant \
+                VITE_TENANT_ENTRY_HOST=admin.peanut-admin.test \
                 exec node node_modules/vite/bin/vite.js --config ./config/vite.config.dev.ts \
                 --host 127.0.0.1 --port 20179
         ) >> "$admin_log" 2>&1 &
@@ -197,9 +198,9 @@ case "${1:-}" in
         assert_lease
         [ -f "$env_file" ] || prepare_env
         load_env
-        APP_ENV=development PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \
+        PHP_ENV_NAME=registered APP_ENV=development PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \
             php "$repo_dir/server/database/install.php" --skip-if-installed
-        APP_ENV=development PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \
+        PHP_ENV_NAME=registered APP_ENV=development PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \
             php "$repo_dir/server/database/environment-guard.php" --current
         PEANUT_LOCAL_ENV_FILE="$env_file" PEANUT_PHP_PID_FILE="$php_pid" \
             PEANUT_PHP_LOG_FILE="$php_log" PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \

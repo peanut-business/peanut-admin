@@ -10,7 +10,7 @@ import { selectTenant, tenantLogin, tenantLogout } from '@/api/tenant-session';
 import {
   isTenantAccessToken,
 } from '@peanut-admin/admin/core';
-import { isMultiTenantDeployment } from '@/core/tenant-session';
+import isMultiTenantDeployment from '@/core/tenant-session';
 import { removeRouteListener } from '@/utils/route-listener';
 import { UserState } from './types';
 import useAppStore from '../app';

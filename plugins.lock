@@ -87,7 +87,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "1c34c06a62f1af3661c52b324b64649741dcb9841102ec7295a1e7c367bea126"
+                "sha256": "91030fb7ec37b8bc448fe6c441bc777e19a9aa04d6c39fb61c5d9b7ee528ce4d"
             },
             "composer": [
                 {
@@ -109,7 +109,7 @@
                     "package": "@peanut-admin/official-file",
                     "version": "1.0.0",
                     "entry": "web/src/modules/official-file/contribution.ts",
-                    "sha256": "a3819b6098f9a136a48443386928b0a5dd61f654870de9c94ee63123d9f1a3cf"
+                    "sha256": "088e59645ed33ad61179694feb01fddea811c68cd349173d10b37c77eabfebe6"
                 }
             ],
             "modules": [
@@ -119,7 +119,7 @@
                 }
             ],
             "manifest": "plugins/official.file/plugin.json",
-            "manifest_sha256": "bbd2ea9b403a5c5e6a8459a3287312ff5a850083c4a6f06fb19f513aa2ff8620"
+            "manifest_sha256": "3bf33252a3cd7b01b252718a3792625f1b7c8e09ee9aa35f6b1176d9dce8ce92"
         },
         {
             "key": "official.import-export",

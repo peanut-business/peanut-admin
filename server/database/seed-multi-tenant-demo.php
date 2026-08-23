@@ -5,6 +5,7 @@ declare(strict_types=1);
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\DemoAccountPolicy;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
+use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
@@ -173,6 +174,7 @@ function demoMultiTenant(
 }
 
 function demoMultiEnsureSharedOwner(
+    PDO $pdo,
     PdoMembershipRepository $memberships,
     int $tenantId,
     int $accountId,
@@ -180,13 +182,20 @@ function demoMultiEnsureSharedOwner(
 ): int {
     $member = $memberships->byTenantAndAccount($tenantId, $accountId, true);
     if ($member === null) {
-        $member = $memberships->createPending($tenantId, $accountId, 'Tenant A Owner');
+        $member = $memberships->createPending($tenantId, $accountId, 'Tenant B Shared Admin');
     }
     if ($member->status === TenantMemberStatus::Pending) {
         $member = $memberships->transition($tenantId, $member->id, TenantMemberStatus::Active);
     } elseif ($member->status !== TenantMemberStatus::Active) {
         throw new RuntimeException('shared demo Account has an inactive Tenant B membership');
     }
+    $rename = $pdo->prepare(<<<'SQL'
+UPDATE pa_tenant_member
+SET display_name = 'Tenant B Shared Admin', updated_at = CURRENT_TIMESTAMP(3)
+WHERE tenant_id = :tenant_id AND id = :member_id
+  AND display_name <> 'Tenant B Shared Admin'
+SQL);
+    $rename->execute(['tenant_id' => $tenantId, 'member_id' => $member->id]);
     if (!$memberships->memberHasRole($tenantId, $member->id, 'core.tenant-owner')) {
         $memberships->assignRole($tenantId, $member->id, $ownerRoleId);
     }
@@ -288,7 +297,7 @@ function demoMultiAssertFinalState(
     }
 
     $statement = $pdo->prepare(<<<'SQL'
-SELECT t.code, c.identifier_normalized AS email, c.secret_hash
+SELECT t.code, tm.display_name, c.identifier_normalized AS email, c.secret_hash
 FROM pa_tenant t
 JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
 JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
@@ -303,13 +312,13 @@ SQL);
     $statement->execute();
     $owners = $statement->fetchAll(PDO::FETCH_ASSOC);
     $expectedOwners = [
-        "tenant-a\0{$tenantAEmail}",
-        "tenant-b\0{$tenantAEmail}",
-        "tenant-b\0{$tenantBEmail}",
+        "tenant-a\0{$tenantAEmail}\0Tenant A Owner",
+        "tenant-b\0{$tenantAEmail}\0Tenant B Shared Admin",
+        "tenant-b\0{$tenantBEmail}\0Tenant B Owner",
     ];
     sort($expectedOwners, SORT_STRING);
     $actualOwners = array_map(
-        static fn(array $row): string => $row['code'] . "\0" . $row['email'],
+        static fn(array $row): string => $row['code'] . "\0" . $row['email'] . "\0" . $row['display_name'],
         $owners
     );
     if ($actualOwners !== $expectedOwners) {
@@ -504,6 +513,7 @@ function demoMultiMain(): int
             $memberships
         );
         demoMultiEnsureSharedOwner(
+            $pdo,
             $memberships,
             $tenantB['tenant_id'],
             $tenantA['account_id'],
