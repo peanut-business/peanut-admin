@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\validate\notice;
 
-use app\common\service\notice\NoticeTenantRepository;
+use app\Modules\Official\Notification\ModuleProvider;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
 
@@ -39,12 +39,9 @@ class NoticeSceneValidate extends Validate
 
     protected function checkScene($value): bool|string
     {
-        return NoticeTenantRepository::scenes($this->requireContext())
-            ->where('id', (int) $value)
-            ->findOrEmpty()
-            ->isEmpty()
-            ? '通知场景不存在'
-            : true;
+        return (new ModuleProvider())->queries()->sceneExists($this->requireContext(), (int) $value)
+            ? true
+            : '通知场景不存在';
     }
 
     protected function checkTemplateId($value, $rule, array $data): bool|string

@@ -24,11 +24,22 @@ $channelService = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/NoticeChannelService.php'
 );
 foreach ([
-    'new AliyunSms', 'new TencentSms', "lock(true)", 'safeReceipt', 'sanitizeError',
-    "private const BINDING_PROVIDER = 'notice.sms'", "->where('tenant_id', \$tenantId)",
+    'new AliyunSms', 'new TencentSms', 'ExternalChannelBindingService::mutate', 'safeReceipt', 'sanitizeError',
+    "private const BINDING_PROVIDER = 'notice.sms'",
 ] as $marker) {
     expectNotificationHost(str_contains($channelService, $marker), 'SMS Host invariant missing: ' . $marker);
 }
+expectNotificationHost(
+    !str_contains($channelService, 'external_channel_binding'),
+    'SMS Host bypasses the External Channel binding owner'
+);
+$applicationService = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Notification/Application/NotificationApplicationService.php'
+);
+expectNotificationHost(
+    str_contains($applicationService, "->where('l.tenant_id', \$tenantId)"),
+    'notification application service does not scope log reads to its trusted Tenant'
+);
 
 $verificationService = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/VerificationCodeService.php'
@@ -42,6 +53,16 @@ $applicationSender = (string)file_get_contents(
 expectNotificationHost(
     str_contains($applicationSender, 'NoticeChannelService::sendSms'),
     'tenant-owned notification flow does not delegate to the application credential Host'
+);
+expectNotificationHost(
+    str_contains($applicationSender, "getenv('APP_ENV') ?: ''")
+        && str_contains($applicationSender, "'delivery' => 'simulated'"),
+    'development SMS delivery is not simulated before the External Channel Host'
+);
+expectNotificationHost(
+    str_contains($verificationService, "? '1234'")
+        && str_contains($verificationService, "getenv('APP_ENV') ?: ''"),
+    'development verification code is not fixed to 1234'
 );
 expectNotificationHost(
     !str_contains($channelService, 'ConfigService'),

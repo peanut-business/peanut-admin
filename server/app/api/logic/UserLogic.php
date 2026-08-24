@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
+use app\Modules\Official\Notification\ModuleProvider;
 use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\model\member\Member;
 use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\FileService;
-use app\common\service\notice\VerificationCodeService;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Module\ModuleException;
 
@@ -131,9 +131,14 @@ class UserLogic extends BaseLogic
             $scene = empty($member->mobile)
                 ? NoticeSceneEnum::BIND_MOBILE
                 : NoticeSceneEnum::CHANGE_MOBILE;
-            $service = new VerificationCodeService();
-            if (!$service->verify($context, $scene, $mobile, (string) ($params['code'] ?? ''))) {
-                throw new \Exception($service->getError());
+            $result = (new ModuleProvider())->verification()->verifyCode(
+                $context,
+                $scene,
+                $mobile,
+                (string) ($params['code'] ?? ''),
+            );
+            if (!$result->accepted) {
+                throw new \Exception($result->error);
             }
             MemberTenantRepository::members($context)->where('id', $memberId)->update(['mobile' => $mobile]);
             return true;

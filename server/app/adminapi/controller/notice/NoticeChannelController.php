@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller\notice;
 
+use app\Modules\Official\Notification\ModuleProvider;
 use app\adminapi\controller\BaseAdminController;
 use app\common\service\member\MemberTenantContext;
-use app\common\service\notice\NoticeChannelService;
 
 /**
  * 通知渠道配置控制器
@@ -17,7 +17,7 @@ class NoticeChannelController extends BaseAdminController
      */
     public function detail(): \think\Response
     {
-        return $this->data(NoticeChannelService::detail(MemberTenantContext::member($this->request)));
+        return $this->data((new ModuleProvider())->queries()->channelDetail(MemberTenantContext::member($this->request)));
     }
 
     /**
@@ -31,7 +31,7 @@ class NoticeChannelController extends BaseAdminController
 
         unset($post['section']);
         try {
-            NoticeChannelService::save(MemberTenantContext::member($this->request), $section, $post);
+            (new ModuleProvider())->commands()->saveChannel(MemberTenantContext::member($this->request), $section, $post);
             return $this->success('保存成功');
         } catch (\Throwable $exception) {
             return $this->fail($exception->getMessage());

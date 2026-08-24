@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
+use app\Modules\Official\Notification\ModuleProvider;
 use app\api\service\UserTokenService;
 use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
@@ -10,7 +11,6 @@ use app\common\model\member\Member;
 use app\common\service\FileService;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\member\MemberTenantRepository;
-use app\common\service\notice\VerificationCodeService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -102,9 +102,14 @@ class LoginLogic extends BaseLogic
         try {
             self::assertLoginWayEnabled($context, 2);
             $mobile = (string) $params['mobile'];
-            $service = new VerificationCodeService();
-            if (!$service->verify($context, NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
-                throw new \RuntimeException($service->getError());
+            $result = (new ModuleProvider())->verification()->verifyCode(
+                $context,
+                NoticeSceneEnum::LOGIN_CODE,
+                $mobile,
+                (string) $params['code'],
+            );
+            if (!$result->accepted) {
+                throw new \RuntimeException($result->error);
             }
 
             $member = MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty();
@@ -139,14 +144,14 @@ class LoginLogic extends BaseLogic
                 throw new \RuntimeException('手机号未绑定账号');
             }
 
-            $service = new VerificationCodeService();
-            if (!$service->verify(
+            $result = (new ModuleProvider())->verification()->verifyCode(
                 $context,
                 NoticeSceneEnum::RESET_PASSWORD,
                 (string) $params['mobile'],
                 (string) $params['code']
-            )) {
-                throw new \RuntimeException($service->getError());
+            );
+            if (!$result->accepted) {
+                throw new \RuntimeException($result->error);
             }
 
             [$hash, $salt] = self::passwordHash((string) $params['password']);

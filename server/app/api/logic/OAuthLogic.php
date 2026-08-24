@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
+use app\Modules\Official\Notification\ModuleProvider;
 use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\FileService;
-use app\common\service\notice\VerificationCodeService;
 use app\common\service\oauth\OAuthTenantContext;
 use app\common\service\oauth\OAuthTenantRepository;
 use app\common\service\oauth\WechatOAuthTransport;
@@ -189,14 +189,14 @@ class OAuthLogic extends BaseLogic
                 if (!$occupied->isEmpty()) {
                     throw new \RuntimeException('手机号已被其他账号绑定');
                 }
-                $verification = new VerificationCodeService();
-                if (!$verification->verify(
+                $result = (new ModuleProvider())->verification()->verifyCode(
                     $context,
                     NoticeSceneEnum::BIND_MOBILE,
                     $mobile,
                     (string)($params['code'] ?? '')
-                )) {
-                    throw new \RuntimeException($verification->getError());
+                );
+                if (!$result->accepted) {
+                    throw new \RuntimeException($result->error);
                 }
                 $member->mobile = $mobile;
             }

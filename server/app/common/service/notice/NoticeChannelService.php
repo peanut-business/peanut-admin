@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
+use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\notice\driver\sms\AliyunSms;

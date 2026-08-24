@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\notice;
 
+use app\Modules\Official\Notification\ModuleProvider;
 use app\common\logic\BaseLogic;
-use app\common\service\notice\NoticeTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class NoticeSceneLogic extends BaseLogic
@@ -12,35 +12,20 @@ class NoticeSceneLogic extends BaseLogic
     public static function lists(TenantContext $context): array
     {
         self::clearError();
-        $list = NoticeTenantRepository::scenes($context)->field([
-            'id', 'code', 'name', 'description', 'recipient', 'variables',
-            'sms_template_id', 'sms_content', 'sms_status', 'update_time',
-        ])->order('id', 'asc')->select()->toArray();
-
-        return ['list' => $list, 'total' => count($list)];
+        return (new ModuleProvider())->queries()->scenes($context);
     }
 
     public static function detail(TenantContext $context, int $id): array
     {
         self::clearError();
-        return NoticeTenantRepository::scenes($context)->where('id', $id)->findOrEmpty()->toArray();
+        return (new ModuleProvider())->queries()->sceneDetail($context, $id);
     }
 
     public static function save(TenantContext $context, array $params): bool
     {
         self::clearError();
         try {
-            $scene = NoticeTenantRepository::scenes($context)
-                ->where('id', (int) $params['id'])
-                ->findOrEmpty();
-            if ($scene->isEmpty()) {
-                throw new \RuntimeException('通知场景不存在');
-            }
-
-            $scene->sms_template_id = trim((string) ($params['sms_template_id'] ?? ''));
-            $scene->sms_content = trim((string) ($params['sms_content'] ?? ''));
-            $scene->sms_status = (int) $params['sms_status'];
-            $scene->save();
+            (new ModuleProvider())->commands()->saveScene($context, $params);
             return true;
         } catch (\Throwable $e) {
             return self::fail($e);

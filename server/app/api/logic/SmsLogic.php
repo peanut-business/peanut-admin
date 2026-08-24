@@ -3,11 +3,10 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
+use app\Modules\Official\Notification\ModuleProvider;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\member\Member;
 use app\common\service\member\MemberTenantRepository;
-use app\common\service\notice\VerificationCodeService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -24,9 +23,9 @@ class SmsLogic extends BaseLogic
             return false;
         }
 
-        $service = new VerificationCodeService();
-        if (!$service->send($context, $scene, $mobile)) {
-            self::setError($service->getError());
+        $result = (new ModuleProvider())->verification()->sendCode($context, $scene, $mobile);
+        if (!$result->success) {
+            self::setError($result->error);
             return false;
         }
         return true;
