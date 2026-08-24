@@ -1,9 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\service\AdminPermissionService;
-use app\adminapi\service\NativeAdminPrincipalRepository;
+use app\common\service\authorization\AdminAuthorizationService;
+use app\common\service\async\AdminAsyncAuthorization;
 use app\common\service\async\TaskImportExportRuntime;
+use PeanutAdmin\ImportExport\Application\ImportExportService;
+use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
+use PeanutAdmin\Kernel\Context\RequestedTargetSet;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
@@ -152,14 +155,41 @@ SQL);
     $alphaTenant = asyncTenantContext(101, 1001, 501, 'fresh-async-alpha-' . $runId);
     $betaTenant = asyncTenantContext(202, 1002, 502, 'fresh-async-beta-' . $runId);
     $noExportTenant = asyncTenantContext(101, 1003, 503, 'fresh-async-no-export-' . $runId);
-    $principals = new NativeAdminPrincipalRepository($pdo);
-    $alpha = AdminPermissionService::authorizedAsyncExport($alphaTenant, $principals->require($alphaTenant));
-    $beta = AdminPermissionService::authorizedAsyncExport($betaTenant, $principals->require($betaTenant));
+    $authorization = new AdminAuthorizationService($pdo);
+    $alpha = $authorization->authorizedAsyncExport($alphaTenant, $authorization->principal($alphaTenant));
+    $beta = $authorization->authorizedAsyncExport($betaTenant, $authorization->principal($betaTenant));
     try {
-        AdminPermissionService::authorizedAsyncExport($noExportTenant, $principals->require($noExportTenant));
+        $authorization->authorizedAsyncExport($noExportTenant, $authorization->principal($noExportTenant));
         throw new RuntimeException('native permission-less async submission succeeded');
     } catch (DomainException $exception) {
         expectAsyncTenant($exception->getMessage() === 'ASYNC_EXPORT_PERMISSION_DENIED', 'native permission denial shape changed');
+    }
+
+    $revalidator = new AdminAsyncAuthorization($pdo);
+    $validEnvelope = new VerifiedJobEnvelope(
+        101,
+        1001,
+        501,
+        ImportExportService::RESOURCE_KEY,
+        'create',
+        [],
+        'envelope-' . $runId,
+        'trace-' . $runId,
+    );
+    $reauthorized = $revalidator->reauthorize($validEnvelope);
+    expectAsyncTenant($reauthorized->resourceKey === ImportExportService::RESOURCE_KEY, 'valid async resource changed');
+    expectAsyncTenant($reauthorized->operation === 'create' && $reauthorized->targets === [], 'valid async operation changed');
+    foreach ([
+        new VerifiedJobEnvelope(101, 1001, 501, 'wrong.resource', 'create', [], 'bad-resource', 'trace'),
+        new VerifiedJobEnvelope(101, 1001, 501, ImportExportService::RESOURCE_KEY, 'delete', [], 'bad-operation', 'trace'),
+        new VerifiedJobEnvelope(101, 1001, 501, ImportExportService::RESOURCE_KEY, 'create', [new RequestedTargetSet('file', ['1'])], 'bad-targets', 'trace'),
+    ] as $invalidEnvelope) {
+        try {
+            $revalidator->reauthorize($invalidEnvelope);
+            throw new RuntimeException('invalid async envelope was accepted');
+        } catch (PeanutAdmin\Kernel\Auth\AuthException) {
+            // Expected: the signed envelope fields are part of the authorization contract.
+        }
     }
 
     $runtime = new TaskImportExportRuntime($pdo, $signingKey, $privateRoot);

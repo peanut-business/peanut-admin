@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\service;
+namespace app\common\service\authorization;
 
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;

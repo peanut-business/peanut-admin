@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\service;
+namespace app\common\service\authorization;
 
+use app\common\dto\authorization\AdminPrincipal;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
@@ -14,8 +15,7 @@ final class NativeAdminPrincipalRepository
     {
     }
 
-    /** @return array<string,mixed> */
-    public function require(TenantContext $context): array
+    public function require(TenantContext $context): AdminPrincipal
     {
         $statement = $this->connection()->prepare(<<<'SQL'
 SELECT
@@ -80,27 +80,25 @@ SQL);
         }
 
         $roles = $this->roles($context->tenantId, $context->memberId);
-        return [
-            'id' => (int)$row['id'],
-            'tenant_id' => (int)$row['tenant_id'],
-            'tenant_name' => (string)$row['tenant_name'],
-            'account_id' => (int)$row['account_id'],
-            'username' => (string)$row['username'],
-            'switchable_tenant_count' => (int)$row['switchable_tenant_count'],
-            'account' => (string)$row['username'],
-            'nickname' => (string)($row['display_name'] ?: $row['username']),
-            'name' => (string)($row['display_name'] ?: $row['username']),
-            'avatar' => (string)($row['avatar_uri'] ?? ''),
-            'root' => (int)$row['root'],
-            'disable' => 0,
-            'roles' => $roles,
-            'role_name' => implode('/', array_column($roles, 'name')),
-            'authorization_revision' => (int)$row['authorization_revision'],
-            'primary_department_id' => $row['primary_department_id'] === null
+        return new AdminPrincipal(
+            id: (int)$row['id'],
+            tenantId: (int)$row['tenant_id'],
+            accountId: (int)$row['account_id'],
+            tenantName: (string)$row['tenant_name'],
+            username: (string)$row['username'],
+            nickname: (string)($row['display_name'] ?: $row['username']),
+            name: (string)($row['display_name'] ?: $row['username']),
+            avatar: (string)($row['avatar_uri'] ?? ''),
+            root: (int)$row['root'] === 1,
+            switchableTenantCount: (int)$row['switchable_tenant_count'],
+            roles: $roles,
+            roleName: implode('/', array_column($roles, 'name')),
+            authorizationRevision: (int)$row['authorization_revision'],
+            primaryDepartmentId: $row['primary_department_id'] === null
                 ? null
                 : (int)$row['primary_department_id'],
-            'last_login_at' => $row['last_login_at'],
-        ];
+            lastLoginAt: $row['last_login_at'],
+        );
     }
 
     /** @return list<array{id:int,key:string,name:string,is_builtin:bool}> */

@@ -85,7 +85,7 @@ $expect(
 );
 $workbench = $read($root . '/server/app/adminapi/logic/WorkbenchLogic.php');
 $expect(
-    str_contains($workbench, 'CoreTenantModuleAdminBridge')
+    str_contains($workbench, 'AdminAuthorizationService')
         && str_contains($workbench, "self::menuContainsPath(\$moduleMenus, '/system/file')"),
     'workbench file shortcut is not derived from the effective Tenant Module menu'
 );

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\auth;
 
-use app\adminapi\service\CoreTenantModuleAdminBridge;
+use app\common\service\authorization\AdminAuthorizationService;
 use app\common\logic\BaseLogic;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
@@ -111,7 +111,7 @@ final class RoleLogic extends BaseLogic
             $statement = self::pdo()->prepare("SELECT id FROM pa_system_menu WHERE is_disable=0 AND perms IN ({$placeholders}) ORDER BY id");
             $statement->execute($keys);
             $menus = array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
-            foreach ((new CoreTenantModuleAdminBridge(self::pdo()))->assignableMenuRecords($context->tenantId) as $menu) {
+            foreach ((new AdminAuthorizationService(self::pdo()))->assignableMenuRecords($context) as $menu) {
                 if (in_array((string)$menu['required_permission'], $keys, true)) {
                     $menus[] = (int)$menu['id'];
                 }
@@ -148,7 +148,7 @@ final class RoleLogic extends BaseLogic
         $statement->execute($menuIds);
         $keys = array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
         $selected = array_fill_keys($menuIds, true);
-        foreach ((new CoreTenantModuleAdminBridge(self::pdo()))->assignableMenuRecords($tenantId) as $menu) {
+        foreach ((new AdminAuthorizationService(self::pdo()))->assignableMenuRecordsForTenant($tenantId) as $menu) {
             if (isset($selected[(int)$menu['id']]) && trim((string)$menu['required_permission']) !== '') {
                 $keys[] = (string)$menu['required_permission'];
             }

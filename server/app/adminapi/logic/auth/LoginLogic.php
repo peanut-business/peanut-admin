@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\logic\auth;
 
 use app\adminapi\http\AdminRequest;
-use app\adminapi\service\NativeAdminPrincipalRepository;
+use app\common\service\authorization\AdminAuthorizationService;
 use app\common\logic\BaseLogic;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
@@ -39,7 +39,7 @@ final class LoginLogic extends BaseLogic
                 throw new \DomainException('TENANT_AUTHENTICATION_INVALID');
             }
 
-            $principal = (new NativeAdminPrincipalRepository())->require($outcome->context);
+            $principal = (new AdminAuthorizationService())->principal($outcome->context)->toArray();
             return [
                 'state' => 'authenticated',
                 'token' => $outcome->tokens->access->expose(),
