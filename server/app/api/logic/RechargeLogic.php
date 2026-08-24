@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
+use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
+use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\UserTerminalEnum;
 use app\common\logic\BaseLogic;
@@ -13,7 +15,6 @@ use app\common\service\MemberBalanceService;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\finance\RechargeTenantSettingService;
-use app\common\service\member\MemberTenantRepository;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\PaymentEvent;
 use app\common\service\payment\dto\PrepayRequest;
@@ -28,8 +29,8 @@ class RechargeLogic extends BaseLogic
     {
         try {
             self::assertTerminal($terminal);
-            $member = MemberTenantRepository::members($context)->findOrEmpty($memberId);
-            if ($member->isEmpty()) {
+            $member = (new MemberModuleProvider())->queries()->balanceSnapshot($context, $memberId);
+            if ($member === null) {
                 throw new \RuntimeException('用户不存在');
             }
 
@@ -46,7 +47,7 @@ class RechargeLogic extends BaseLogic
             return [
                 'status' => (int)$setting['status'],
                 'min_amount' => self::moneyString($setting['min_amount']),
-                'balance' => self::moneyString($member->user_money),
+                'balance' => MemberBalanceService::centsToMoney($member->balanceCents),
                 'terminal' => $terminal,
                 'channels' => array_map(static fn(array $scene): array => [
                     'pay_way' => (int)$scene['pay_way'],
@@ -81,8 +82,7 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('充值金额超过单次上限');
             }
 
-            $member = MemberTenantRepository::members($context)->findOrEmpty($memberId);
-            if ($member->isEmpty()) {
+            if ((new MemberModuleProvider())->queries()->balanceSnapshot($context, $memberId) === null) {
                 throw new \RuntimeException('用户不存在');
             }
             $defaultScene = RechargeTenantSettingService::defaultScene($context, $terminal);
@@ -292,17 +292,19 @@ class RechargeLogic extends BaseLogic
                 throw new \RuntimeException('支付交易流水已被使用');
             }
 
-            MemberBalanceService::applyInTransaction(
+            (new MemberModuleProvider())->balanceCommands()->applyInTransaction(
                 $context,
-                (int)$order->user_id,
-                AccountLogEnum::USER_MONEY_INC_RECHARGE,
-                AccountLogEnum::INC,
-                $orderCents,
-                (string)$order->sn,
-                '用户充值',
-                [],
-                0,
-                $orderCents
+                new MemberBalanceMutation(
+                    (int)$order->user_id,
+                    AccountLogEnum::USER_MONEY_INC_RECHARGE,
+                    AccountLogEnum::INC,
+                    $orderCents,
+                    (string)$order->sn,
+                    '用户充值',
+                    [],
+                    0,
+                    $orderCents,
+                ),
             );
 
             $order->pay_status = RechargeOrder::PAY_STATUS_PAID;

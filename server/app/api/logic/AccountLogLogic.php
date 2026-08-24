@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
+use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\common\logic\BaseLogic;
-use app\common\model\member\MemberBalanceLog;
-use app\common\service\member\MemberTenantRepository;
 use app\common\service\member\AuthenticatedMemberContext;
 
 class AccountLogLogic extends BaseLogic
@@ -16,14 +15,14 @@ class AccountLogLogic extends BaseLogic
         $page  = max(1, (int) ($params['page_no'] ?? 1));
         $limit = (int) ($params['page_size'] ?? 15);
 
-        $query = MemberTenantRepository::balanceLogs($context)->where('member_id', $memberId);
+        $result = (new MemberModuleProvider())->queries()
+            ->balanceLogsForMember($context, $memberId, $page, $limit);
 
-        $count = $query->count();
-        $lists = $query->order('id', 'desc')
-            ->page($page, $limit)
-            ->select()
-            ->toArray();
-
-        return ['lists' => $lists, 'count' => $count, 'page_no' => $page, 'page_size' => $limit];
+        return [
+            'lists' => $result->items,
+            'count' => $result->total,
+            'page_no' => $result->page,
+            'page_size' => $result->pageSize,
+        ];
     }
 }

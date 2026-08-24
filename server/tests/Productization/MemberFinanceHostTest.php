@@ -16,6 +16,9 @@ $serverRoot = dirname(__DIR__, 2);
 $repositoryRoot = dirname($serverRoot);
 $balanceServicePath = $serverRoot . '/app/common/service/MemberBalanceService.php';
 $balanceService = (string)file_get_contents($balanceServicePath);
+$balanceContractPath = $serverRoot . '/app/Modules/Official/Member/Application/MemberBalanceContractService.php';
+$balanceContract = (string)file_get_contents($balanceContractPath);
+$memberManifest = (string)file_get_contents($serverRoot . '/app/Modules/Official/Member/module.json');
 $accountLog = (string)file_get_contents($serverRoot . '/app/common/logic/AccountLogLogic.php');
 $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 
@@ -69,17 +72,26 @@ $callers = [
     'app/api/logic/RechargeLogic.php',
     'app/adminapi/logic/finance/RechargeLogic.php',
 ];
-$expectedCallerPaths = array_map(static fn(string $path): string => $serverRoot . '/' . $path, $callers);
-sort($balanceCallers);
-sort($expectedCallerPaths);
-expectMemberFinance($balanceCallers === $expectedCallerPaths, 'balance owner caller set changed');
+expectMemberFinance(
+    $balanceCallers === [$balanceContractPath],
+    'Member balance contract must be the only caller of the unique writer: ' . implode(', ', $balanceCallers)
+);
+expectMemberFinance(
+    str_contains($memberManifest, 'Contracts\\\\MemberQueries')
+        && str_contains($memberManifest, 'Contracts\\\\MemberBalanceCommands'),
+    'official.member must export the query and balance command contracts'
+);
+expectMemberFinance(
+    str_contains($balanceContract, 'MemberBalanceService::applyInTransaction'),
+    'Member balance command must delegate to the unique writer'
+);
 expectMemberFinance(
     $ledgerWriters === [$serverRoot . '/app/common/service/member/MemberTenantRepository.php'],
     'member balance ledger must have exactly one writer'
 );
 foreach ($callers as $relativePath) {
     $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
-    $call = strpos($source, 'MemberBalanceService::applyInTransaction');
+    $call = strpos($source, 'balanceCommands()->applyInTransaction');
     expectMemberFinance($call !== false, 'balance path bypasses the unique owner: ' . $relativePath);
     expectMemberFinance(strrpos(substr($source, 0, $call), 'Db::startTrans()') !== false, 'balance path lacks an outer transaction: ' . $relativePath);
     expectMemberFinance(strpos($source, 'Db::commit()', $call) !== false, 'balance path lacks an atomic commit: ' . $relativePath);
@@ -88,16 +100,20 @@ foreach ($callers as $relativePath) {
 
 $settle = (string)file_get_contents($serverRoot . '/app/api/logic/RechargeLogic.php');
 $paidGuard = strpos($settle, 'pay_status === RechargeOrder::PAY_STATUS_PAID');
-$credit = strpos($settle, 'MemberBalanceService::applyInTransaction');
+$credit = strpos($settle, 'balanceCommands()->applyInTransaction');
 expectMemberFinance($paidGuard !== false && $credit !== false && $paidGuard < $credit, 'paid callback guard must precede credit');
 expectMemberFinance(strpos($settle, "where('sn', \$orderSn)->lock(true)") < $paidGuard, 'recharge order must be locked before the paid guard');
+expectMemberFinance(
+    !str_contains($settle, 'MemberTenantRepository::members'),
+    'Payment must query Member through the public contract'
+);
 
 $refund = (string)file_get_contents($serverRoot . '/app/adminapi/logic/finance/RechargeLogic.php');
 $retryStart = strpos($refund, 'public static function refundAgain');
 $retryEnd = strpos($refund, 'private static function retryLockName', $retryStart ?: 0);
 expectMemberFinance($retryStart !== false && $retryEnd !== false, 'refund retry boundary is missing');
 expectMemberFinance(
-    !str_contains(substr($refund, $retryStart, $retryEnd - $retryStart), 'MemberBalanceService::applyInTransaction'),
+    !str_contains(substr($refund, $retryStart, $retryEnd - $retryStart), 'balanceCommands()->applyInTransaction'),
     'refund retry must not deduct the balance again'
 );
 
