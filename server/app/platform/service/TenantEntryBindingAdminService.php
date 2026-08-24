@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
+use app\common\service\audit\AuditContractHost;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\platform\context\PlatformOperatorContext;
 use PDO;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 
 final readonly class TenantEntryBindingAdminService
@@ -174,13 +175,15 @@ SQL);
         string $reason,
         array $metadata
     ): void {
-        (new PdoAuditRepository($this->pdo))->appendPlatform(
+        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
             $eventType,
             'platform.tenant.update',
             $context->core->requestId,
             $context->core->operatorId,
             $context->core->accountId,
-            $metadata + ['reason' => trim($reason)]
+            $metadata,
+            AuditOutcome::Success,
+            trim($reason),
         );
     }
 }

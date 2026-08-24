@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\external;
 
+use app\common\service\audit\AuditContractHost;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\module\ModuleExecutionContext;
 use app\platform\service\module\PdoModuleGovernanceProvider;
@@ -31,7 +32,10 @@ final class ExternalTenantResolver
 
     public static function production(): self
     {
-        return new self(new ThinkPhpExternalTenantBindingRepository(), new ThinkPhpExternalTenantAudit());
+        return new self(
+            new ThinkPhpExternalTenantBindingRepository(),
+            new ThinkPhpExternalTenantAudit(AuditContractHost::production()),
+        );
     }
 
     public function verifiedCallback(string $provider, string $callbackKey, string $operation, string $operationId, callable $verifier): ExternalTenantResolution

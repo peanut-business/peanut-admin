@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\async;
 
+use app\common\service\audit\AuditContractHost;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\ImportExport\Application\OperationRecord;
@@ -14,7 +15,6 @@ use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
 use PeanutAdmin\Kernel\Async\JobHandlerAdapter;
 use PeanutAdmin\Kernel\Async\TrustedEnvelopeCodec;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\TaskJob\Application\TaskJobService;
 use PeanutAdmin\TaskJob\Execution\LocalWorker;
 use PeanutAdmin\TaskJob\Execution\TaskHandlerRegistry;
@@ -84,7 +84,7 @@ final readonly class TaskImportExportRuntime
                         new PdoImportExportRepository($this->pdo),
                         $this->providers(),
                         $this->files(),
-                        new PdoAuditRepository($this->pdo),
+                        AuditContractHost::fromPdo($this->pdo),
                     )),
                 ),
             ]),
@@ -114,7 +114,7 @@ final readonly class TaskImportExportRuntime
                 new TrustedEnvelopeCodec($this->signingKey),
             ),
             new TaskJobService($jobs),
-            new PdoAuditRepository($this->pdo),
+            AuditContractHost::fromPdo($this->pdo),
         );
     }
 
