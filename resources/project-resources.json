@@ -1232,10 +1232,10 @@
       "reason": "the current product has no registered queue service"
     },
     "object_storage": {
-      "status": "registered",
+      "status": "registered_pending_credential",
       "resources": [
         {
-          "stable_resource_id": "peanut-admin-cos-storage-acceptance",
+          "stable_resource_id": "peanut-admin-cos-acceptance-20260824",
           "purpose": "isolated private Tencent COS bucket for unified storage acceptance",
           "environments": [
             "acceptance"
