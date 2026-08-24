@@ -55,7 +55,7 @@ final readonly class QcloudStorageDriver implements StorageDriver
 
     private function client(): Client
     {
-        $credentials = (array)($this->account['credentials'] ?? []);
+        $credentials = (array)($this->account['resolved_credentials'] ?? []);
         return new Client([
             'region' => (string)($this->space['region'] ?? ''),
             'credentials' => [

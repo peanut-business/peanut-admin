@@ -17,9 +17,10 @@ final readonly class StorageService
         $route=$this->repository->route($purpose,$access); $driver=StorageDriverFactory::make($route,$route);
         $size=filesize($sourcePath);$sha=hash_file('sha256',$sourcePath);
         if(!is_int($size)||!is_string($sha))throw new \RuntimeException('文件信息读取失败');
-        $driver->put($objectKey,$sourcePath);
-        try{$this->repository->insertObject(['file_key'=>$fileKey,'tenant_id'=>$tenantId,'purpose'=>$purpose,'access_type'=>$access,'storage_space_id'=>(int)$route['space_id'],'object_key'=>$objectKey,'disposition'=>StoragePurpose::disposition($purpose),'original_name'=>$originalName,'media_type'=>$mediaType!==''?$mediaType:'application/octet-stream','size_bytes'=>$size,'sha256'=>$sha,'created_by_member_id'=>$memberId&&$memberId>0?$memberId:null]);}
-        catch(\Throwable $e){$driver->delete($objectKey);throw $e;}
+        $this->repository->reserveObject(['file_key'=>$fileKey,'tenant_id'=>$tenantId,'purpose'=>$purpose,'access_type'=>$access,'storage_space_id'=>(int)$route['space_id'],'object_key'=>$objectKey,'disposition'=>StoragePurpose::disposition($purpose),'original_name'=>$originalName,'media_type'=>$mediaType!==''?$mediaType:'application/octet-stream','size_bytes'=>$size,'sha256'=>$sha,'created_by_member_id'=>$memberId&&$memberId>0?$memberId:null]);
+        try{$driver->put($objectKey,$sourcePath);}
+        catch(\Throwable $e){try{$driver->delete($objectKey);}catch(\Throwable){}$this->repository->markObjectWriteFailed($tenantId,$fileKey);throw $e;}
+        if(!$this->repository->markObjectReady($tenantId,$fileKey))throw new \RuntimeException('文件对象账本未能切换到 ready，需人工修复');
         $object=$this->repository->objectForTenant($tenantId,$fileKey);
         return ['file_key'=>$fileKey,'object_key'=>$objectKey,'access_type'=>$access,'url'=>$this->url($object??throw new \RuntimeException('文件对象记录创建失败')),'original_name'=>$originalName];
     }

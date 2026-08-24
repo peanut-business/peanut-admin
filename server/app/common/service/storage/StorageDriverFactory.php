@@ -9,8 +9,15 @@ use app\common\service\storage\driver\QiniuStorageDriver;
 
 final class StorageDriverFactory
 {
-    public static function make(array $account, array $space): StorageDriver
+    public static function make(array $account, array $space, ?StorageCredentialResolver $resolver = null): StorageDriver
     {
+        if ((string)($account['driver'] ?? '') !== 'local') {
+            $account['resolved_credentials'] = ($resolver ?? new FailClosedStorageCredentialResolver())->resolve(
+                (string)($account['driver'] ?? ''),
+                (string)($account['credential_ref'] ?? ''),
+                (array)($account['credentials'] ?? []),
+            );
+        }
         return match ((string)($account['driver'] ?? '')) {
             'local' => new LocalStorageDriver($space),
             'qiniu' => new QiniuStorageDriver($account, $space),

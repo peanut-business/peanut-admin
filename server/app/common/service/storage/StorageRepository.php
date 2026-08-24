@@ -22,7 +22,7 @@ final readonly class StorageRepository
     {
         $access = StorageAccess::assertType($access);
         $statement = $this->pdo->prepare(<<<'SQL'
-SELECT a.id account_id,a.account_key,a.driver,a.name account_name,a.credentials,a.status account_status,
+SELECT a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.credentials,a.status account_status,
        s.id space_id,s.space_key,s.name space_name,s.access_type,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status
 FROM pa_storage_route r JOIN pa_storage_space s ON s.id=r.space_id JOIN pa_storage_account a ON a.id=s.account_id
 WHERE r.route_key IN (:purpose,:default_route) AND r.access_type=:access AND s.access_type=:access
@@ -56,12 +56,24 @@ SQL);
         return is_array($row)?$this->decode($row):null;
     }
 
-    public function insertObject(array $data): void
+    public function reserveObject(array $data): void
     {
         $statement=$this->pdo->prepare(<<<'SQL'
 INSERT INTO pa_file_object (file_key,tenant_id,purpose,access_type,storage_space_id,object_key,disposition,original_name,media_type,size_bytes,sha256,status,created_by_member_id,revision,created_at,updated_at,archived_at)
-VALUES (:file_key,:tenant_id,:purpose,:access_type,:storage_space_id,:object_key,:disposition,:original_name,:media_type,:size_bytes,:sha256,'ready',:created_by_member_id,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),NULL)
+VALUES (:file_key,:tenant_id,:purpose,:access_type,:storage_space_id,:object_key,:disposition,:original_name,:media_type,:size_bytes,:sha256,'pending_write',:created_by_member_id,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),NULL)
 SQL); $statement->execute($data);
+    }
+
+    public function markObjectReady(int $tenantId, string $fileKey): bool
+    {
+        $s=$this->pdo->prepare("UPDATE pa_file_object SET status='ready',updated_at=UTC_TIMESTAMP(3),revision=revision+1 WHERE tenant_id=:tenant_id AND file_key=:file_key AND status='pending_write'");
+        $s->execute(['tenant_id'=>$tenantId,'file_key'=>$fileKey]); return $s->rowCount()===1;
+    }
+
+    public function markObjectWriteFailed(int $tenantId, string $fileKey): void
+    {
+        $s=$this->pdo->prepare("UPDATE pa_file_object SET status='write_failed',updated_at=UTC_TIMESTAMP(3),revision=revision+1 WHERE tenant_id=:tenant_id AND file_key=:file_key AND status='pending_write'");
+        $s->execute(['tenant_id'=>$tenantId,'file_key'=>$fileKey]);
     }
 
     public function archive(int $tenantId,string $fileKey): bool
@@ -77,8 +89,8 @@ SQL); $statement->execute($data);
 
     public function accounts(): array
     {
-        $rows=$this->pdo->query('SELECT id,account_key,driver,name,credentials,status,created_at,updated_at FROM pa_storage_account ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
-        return array_map(function(array $r):array{$r=$this->decode($r);foreach(array_keys((array)$r['credentials']) as $k)if(str_contains((string)$k,'secret'))$r['credentials'][$k]='******';return $r;},$rows);
+        $rows=$this->pdo->query('SELECT id,account_key,driver,name,credential_ref,credentials,status,created_at,updated_at FROM pa_storage_account ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(fn(array $r):array=>$this->decode($r),$rows);
     }
     public function spaces(): array
     {
@@ -91,7 +103,7 @@ SQL); $statement->execute($data);
 
     private function objectSelect(): string
     {
-        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credentials,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
+        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.credentials,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
     }
     private function decode(array $row): array
     {
