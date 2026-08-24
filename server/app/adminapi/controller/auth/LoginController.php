@@ -5,7 +5,8 @@ namespace app\adminapi\controller\auth;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\auth\LoginLogic;
-use app\adminapi\service\AdminPermissionService;
+use app\common\dto\authorization\AdminPrincipal;
+use app\common\service\authorization\AdminAuthorizationService;
 use app\adminapi\service\AdminTokenService;
 use app\adminapi\validate\auth\LoginValidate;
 use app\common\service\DemoAccountPolicy;
@@ -35,7 +36,10 @@ class LoginController extends BaseAdminController
         $admin = $this->adminInfo;
         if ($admin === []) return $this->fail('管理员不存在');
         $roleNames = array_column($admin['roles'] ?? [], 'name');
-        $accessData = AdminPermissionService::accessData($this->request->tenantContext ?? null, $admin);
+        $accessData = (new AdminAuthorizationService())->accessData(
+            $this->request->tenantContext,
+            AdminPrincipal::fromArray($admin),
+        );
 
         return $this->data([
             'id'          => $admin['id'],
@@ -48,8 +52,8 @@ class LoginController extends BaseAdminController
             'role'        => $admin['root'] ? 'admin' : 'user',
             'root'        => $admin['root'],
             'roles'       => $roleNames,
-            'menu'        => $accessData['menu'],
-            'permissions' => $accessData['permissions'],
+            'menu'        => $accessData->menu,
+            'permissions' => $accessData->permissions,
             'tenantName' => $admin['tenant_name'],
             'canSwitchTenant' => !($this->request->tenantEntryBound ?? false)
                 && ($admin['switchable_tenant_count'] ?? 0) > 1,

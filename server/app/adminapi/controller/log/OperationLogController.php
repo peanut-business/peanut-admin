@@ -5,7 +5,8 @@ namespace app\adminapi\controller\log;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\log\OperationLogLogic;
-use app\adminapi\service\AdminPermissionService;
+use app\common\dto\authorization\AdminPrincipal;
+use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\async\TaskImportExportRuntime;
 use app\common\service\audit\OperationLogTenantContext;
 use app\common\service\module\ModuleExecutionContext;
@@ -49,7 +50,10 @@ class OperationLogController extends BaseAdminController
     {
         try {
             $context = OperationLogTenantContext::member($this->request);
-            $authorized = AdminPermissionService::authorizedAsyncExport($context, $this->adminInfo);
+            $authorized = (new AdminAuthorizationService())->authorizedAsyncExport(
+                $context,
+                AdminPrincipal::fromArray($this->adminInfo),
+            );
             $idempotencyKey = trim((string)$this->request->header('Idempotency-Key', ''));
             $operation = $this->runtime()->submitOperationLogExport($authorized, $idempotencyKey);
             return $this->data($operation->toPublicArray());
@@ -62,7 +66,10 @@ class OperationLogController extends BaseAdminController
     {
         try {
             $context = OperationLogTenantContext::member($this->request);
-            $authorized = AdminPermissionService::authorizedAsyncExport($context, $this->adminInfo);
+            $authorized = (new AdminAuthorizationService())->authorizedAsyncExport(
+                $context,
+                AdminPrincipal::fromArray($this->adminInfo),
+            );
             $operation = $this->runtime()->operation(
                 $authorized,
                 (string)$this->request->get('operation_key', '')
@@ -77,7 +84,10 @@ class OperationLogController extends BaseAdminController
     {
         try {
             $context = OperationLogTenantContext::member($this->request);
-            $authorized = AdminPermissionService::authorizedAsyncExport($context, $this->adminInfo);
+            $authorized = (new AdminAuthorizationService())->authorizedAsyncExport(
+                $context,
+                AdminPrincipal::fromArray($this->adminInfo),
+            );
             $file = $this->runtime()->download(
                 $authorized,
                 (string)$this->request->get('file_key', '')

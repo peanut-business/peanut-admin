@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\service\AdminPermissionService;
+use app\common\service\authorization\AdminAuthorizationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -14,13 +15,32 @@ function expectRbacTenant(bool $condition, string $message): void
     }
 }
 
-function rbacTenantContext(int $tenantId, int $memberId, string $requestId): TenantContext
+/** @param list<array<string,mixed>> $menus */
+function containsImportExportMenu(array $menus): bool
+{
+    $forbiddenPermissions = [
+        'log/export',
+        'log/export/status',
+        'log/export/download',
+    ];
+    foreach ($menus as $menu) {
+        if (($menu['module_key'] ?? null) === 'official.import-export'
+            || in_array((string)($menu['perms'] ?? ''), $forbiddenPermissions, true)
+            || containsImportExportMenu(is_array($menu['children'] ?? null) ? $menu['children'] : [])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function rbacTenantContext(int $tenantId, int $accountId, int $memberId, string $requestId): TenantContext
 {
     return TenantContext::fromValidatedSession(new ValidatedTenantSession(
         $memberId,
         'rbac-session-' . $tenantId . '-' . $memberId,
         $tenantId,
-        $tenantId + 1000,
+        $accountId,
         $memberId,
         'admin-web',
         new DateTimeImmutable('2031-01-01T00:00:00Z'),
@@ -28,81 +48,46 @@ function rbacTenantContext(int $tenantId, int $memberId, string $requestId): Ten
     ), $requestId);
 }
 
-function createRbacTenantSchema(PDO $pdo): void
+function createNativeRbacSchema(PDO $pdo, string $serverRoot): void
 {
+    foreach (KernelSchema::tableNames() as $table) {
+        $pdo->exec(KernelSchema::createSql($table));
+    }
+    $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
     $pdo->exec(<<<'SQL'
-CREATE TABLE pa_admin (
-  id INT UNSIGNED NOT NULL,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  username VARCHAR(50) NOT NULL DEFAULT '',
-  nickname VARCHAR(50) NOT NULL DEFAULT '',
-  password VARCHAR(64) NOT NULL DEFAULT '',
-  salt VARCHAR(16) NOT NULL DEFAULT '',
-  avatar VARCHAR(255) NOT NULL DEFAULT '',
-  root TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  disable TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_admin_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role (
-  id INT UNSIGNED NOT NULL,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  name VARCHAR(50) NOT NULL DEFAULT '',
-  `desc` VARCHAR(255) NOT NULL DEFAULT '',
-  sort SMALLINT NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_system_role_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_admin_role (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  admin_id INT UNSIGNED NOT NULL,
-  role_id INT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_admin_role_tenant (tenant_id, admin_id, role_id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_menu (
-  id INT UNSIGNED NOT NULL,
-  pid INT UNSIGNED NOT NULL DEFAULT 0,
-  type CHAR(1) NOT NULL,
-  name VARCHAR(50) NOT NULL DEFAULT '',
-  icon VARCHAR(100) NOT NULL DEFAULT '',
-  sort SMALLINT NOT NULL DEFAULT 0,
-  perms VARCHAR(100) NOT NULL DEFAULT '',
-  paths VARCHAR(200) NOT NULL DEFAULT '',
-  component VARCHAR(200) NOT NULL DEFAULT '',
-  is_cache TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  is_show TINYINT UNSIGNED NOT NULL DEFAULT 1,
-  is_disable TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_system_role_menu (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  role_id INT UNSIGNED NOT NULL,
-  menu_id INT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_role_menu_tenant (tenant_id, role_id, menu_id)
-) ENGINE=InnoDB;
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (1, 'default', 'Default', 'Default', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
 SQL);
+    $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
+    expectRbacTenant($schema !== '', 'canonical application schema is missing');
+    $pdo->exec($schema);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: (getenv('MYSQL_HOST') ?: '127.0.0.1');
-$port = (int)(getenv('DB_PORT') ?: (getenv('MYSQL_PORT') ?: 3306));
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
-$runId = strtolower(bin2hex(random_bytes(6)));
-$database = 'peanut_admin_mt03_rbac_' . $runId;
+$host = trim((string)getenv('DB_HOST'));
+$port = (int)(getenv('DB_PORT') ?: 0);
+$user = trim((string)(getenv('DB_USER') ?: getenv('MYSQL_USER')));
+$password = (string)(getenv('DB_PASS') ?: getenv('MYSQL_PASSWORD'));
+$database = trim((string)getenv('DB_NAME'));
+if ($host === '' || $port < 1 || $user === '' || $password === '' || $database === '') {
+    throw new RuntimeException('registered database environment is required');
+}
+
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
+$admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
 
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -111,95 +96,135 @@ try {
             PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
         ]
     );
-    createRbacTenantSchema($pdo);
-    $pdo->exec(<<<'SQL'
-INSERT INTO pa_admin (id,tenant_id,username,nickname) VALUES
-  (1,101,'alpha-admin','Alpha Admin'),
-  (2,202,'beta-admin','Beta Admin'),
-  (3,101,'alpha-root','Alpha Root');
-UPDATE pa_admin SET root=1 WHERE id=3;
-INSERT INTO pa_system_role (id,tenant_id,name) VALUES
-  (11,101,'Alpha Role'),
-  (22,202,'Beta Role');
-INSERT INTO pa_system_menu (id,pid,type,name,perms,paths) VALUES
-  (1011,0,'C','Alpha Page','alpha/page','/alpha'),
-  (1012,1011,'A','Alpha Read','alpha/read',''),
-  (2021,0,'C','Beta Page','beta/page','/beta'),
-  (2022,2021,'A','Beta Read','beta/read','');
--- Both pivot rows are intentionally polluted: they claim Beta ownership for Alpha admin/role IDs.
-INSERT INTO pa_admin_role (tenant_id,admin_id,role_id) VALUES (202,1,22);
-INSERT INTO pa_system_role_menu (tenant_id,role_id,menu_id) VALUES (202,11,2021),(202,11,2022),(202,22,2021),(202,22,2022);
+    createNativeRbacSchema($pdo, $serverRoot);
+    $now = '2030-01-01 00:00:00.000';
+    $pdo->exec(<<<SQL
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (101, 'alpha', 'Alpha', 'Alpha', 'active', '{$now}', '{$now}', '{$now}'),
+  (202, 'beta', 'Beta', 'Beta', 'active', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_account (id, display_name, status, created_at, updated_at) VALUES
+  (1001, 'Alpha member', 'active', '{$now}', '{$now}'),
+  (1002, 'Beta member', 'active', '{$now}', '{$now}'),
+  (1003, 'Alpha root', 'active', '{$now}', '{$now}'),
+  (1004, 'Beta root', 'active', '{$now}', '{$now}');
+INSERT INTO pa_credential
+  (account_id, kind, identifier_type, identifier_normalized, secret_hash, status, verified_at, secret_changed_at, created_at, updated_at)
+VALUES
+  (1001, 'email_password', 'email', 'alpha@example.test', REPEAT('a', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  (1002, 'email_password', 'email', 'beta@example.test', REPEAT('b', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  (1003, 'email_password', 'email', 'alpha-root@example.test', REPEAT('c', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  (1004, 'email_password', 'email', 'beta-root@example.test', REPEAT('d', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_tenant_member
+  (id, tenant_id, account_id, display_name, status, authorization_revision, joined_at, created_at, updated_at)
+VALUES
+  (501, 101, 1001, 'Alpha member', 'active', 1, '{$now}', '{$now}', '{$now}'),
+  (502, 202, 1002, 'Beta member', 'active', 1, '{$now}', '{$now}', '{$now}'),
+  (503, 101, 1003, 'Alpha root', 'active', 1, '{$now}', '{$now}', '{$now}'),
+  (504, 202, 1004, 'Beta root', 'active', 1, '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_module_installation
+  (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
+VALUES
+  ('official.file', '1.0.0', 1, 'bf73f0ebf4f6ae796e045fbc536a24c6e3545e2e5c4ce8c2d058c870a1d396c2', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.task', '1.0.0', 1, 'c0acd57abad366b0b4360a85500f295438abed063b3977be4454ec455faf1fd6', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.import-export', '1.0.0', 1, '42b79e202d3b7eb1df8ca51bd50ee937336fe1d966eb1132996ebff6a81f52d6', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_tenant_module
+  (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
+VALUES
+  (101, 'official.file', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (101, 'official.task', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (101, 'official.import-export', 'enabled', 'manual', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_permission
+  (`key`, module_key, type, name, description, risk_level, status, manifest_version, created_at, updated_at, retired_at)
+VALUES
+  ('log/export', 'official.import-export', 'api', 'Export operation logs', NULL, 'sensitive', 'active', 'fresh-schema-v1', '{$now}', '{$now}', NULL)
+ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at), retired_at = NULL;
+INSERT INTO pa_role
+  (id, tenant_id, `key`, name, is_builtin, status, authorization_revision, created_at, updated_at)
+VALUES
+  (11, 101, 'alpha.export', 'Alpha export', 0, 'active', 1, '{$now}', '{$now}'),
+  (22, 202, 'beta.export', 'Beta export', 0, 'active', 1, '{$now}', '{$now}'),
+  (33, 101, 'core.tenant-owner', 'Alpha owner', 1, 'active', 1, '{$now}', '{$now}'),
+  (44, 202, 'core.tenant-owner', 'Beta owner', 1, 'active', 1, '{$now}', '{$now}');
+INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at) VALUES
+  (101, 501, 11, '{$now}'),
+  (202, 502, 22, '{$now}'),
+  (101, 503, 33, '{$now}'),
+  (202, 504, 44, '{$now}');
 SQL);
+    $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'log/export'")->fetchColumn();
+    expectRbacTenant($permissionId > 0, 'canonical export permission is missing');
+    $pdo->prepare(
+        'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
+    )->execute([101, 11, $permissionId, $now]);
 
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
     putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
+    putenv('PHP_DB_USER=' . $user);
     putenv('PHP_DB_PASS=' . $password);
     putenv('PHP_DB_PREFIX=pa_');
     $app = new think\App($serverRoot);
     $app->initialize();
 
-    $alphaContext = rbacTenantContext(101, 501, 'mt03-rbac-alpha-' . $runId);
-    $betaContext = rbacTenantContext(202, 502, 'mt03-rbac-beta-' . $runId);
-    $forgedAdmin = [
-        'id' => 1,
-        'tenant_id' => 101,
-        'root' => 0,
-        'roles' => [['id' => 22]],
-    ];
+    $authorization = new AdminAuthorizationService($pdo);
+    $alphaContext = rbacTenantContext(101, 1001, 501, 'native-rbac-alpha-' . $database);
+    $betaContext = rbacTenantContext(202, 1002, 502, 'native-rbac-beta-' . $database);
+    $alphaRootContext = rbacTenantContext(101, 1003, 503, 'native-rbac-alpha-root-' . $database);
+    $betaRootContext = rbacTenantContext(202, 1004, 504, 'native-rbac-beta-root-' . $database);
+    $alpha = $authorization->principal($alphaContext);
+    $beta = $authorization->principal($betaContext);
+    $alphaRoot = $authorization->principal($alphaRootContext);
+    $betaRoot = $authorization->principal($betaRootContext);
+
     expectRbacTenant(
-        AdminPermissionService::canAccess($alphaContext, $forgedAdmin, 'beta/read') === false,
-        'cross-Tenant admin_role granted a registered Beta permission'
+        $authorization->decide($alphaContext, $alpha, 'log/export')->allowed,
+        'same-Tenant RBAC permission was denied'
     );
     expectRbacTenant(
-        AdminPermissionService::menusForAdmin($alphaContext, $forgedAdmin) === [],
-        'cross-Tenant admin_role granted a Beta menu'
+        !$authorization->decide($betaContext, $alpha, 'log/export')->allowed,
+        'mismatched TenantContext accepted an Alpha principal'
     );
     expectRbacTenant(
-        AdminPermissionService::canAccess($betaContext, $forgedAdmin, 'beta/read') === false,
-        'mismatched TenantContext was accepted for an Alpha admin'
-    );
-    expectRbacTenant(
-        AdminPermissionService::canAccess(null, $forgedAdmin, 'beta/read') === false,
+        !$authorization->decide(null, $alpha, 'log/export')->allowed,
         'missing TenantContext did not fail closed'
     );
-
-    $pdo->exec('INSERT INTO pa_admin_role (tenant_id,admin_id,role_id) VALUES (101,1,11)');
     expectRbacTenant(
-        AdminPermissionService::canAccess($alphaContext, $forgedAdmin, 'beta/read') === false,
-        'cross-Tenant system_role_menu granted a registered Beta permission'
+        $authorization->decide($alphaRootContext, $alphaRoot, 'log/export')->allowed,
+        'root did not bypass role grant for an active Module permission'
     );
     expectRbacTenant(
-        AdminPermissionService::menusForAdmin($alphaContext, $forgedAdmin) === [],
-        'cross-Tenant system_role_menu granted a Beta menu'
-    );
-
-    $pdo->exec('INSERT INTO pa_system_role_menu (tenant_id,role_id,menu_id) VALUES (101,11,1011),(101,11,1012)');
-    expectRbacTenant(
-        AdminPermissionService::canAccess($alphaContext, $forgedAdmin, 'alpha/read'),
-        'same-Tenant role permission was denied'
-    );
-    $rootAdmin = ['id' => 3, 'tenant_id' => 101, 'root' => 1];
-    expectRbacTenant(
-        AdminPermissionService::canAccess($alphaContext, $rootAdmin, 'alpha/read'),
-        'root did not bypass role ownership for a registered same-Tenant permission'
-    );
-    expectRbacTenant(
-        AdminPermissionService::canAccess($alphaContext, $rootAdmin, 'unregistered/read') === false,
+        !$authorization->decide($alphaRootContext, $alphaRoot, 'unregistered/read')->allowed,
         'root bypassed route registration'
     );
     expectRbacTenant(
-        AdminPermissionService::canAccess($betaContext, $rootAdmin, 'beta/read') === false,
-        'root bypassed the TenantContext boundary'
+        !$authorization->decide($betaRootContext, $betaRoot, 'log/export')->allowed,
+        'root bypassed disabled Tenant Module'
     );
-    $menus = AdminPermissionService::menusForAdmin($alphaContext, $forgedAdmin);
+
+    $data = $authorization->accessData($alphaContext, $alpha);
+    expectRbacTenant($data->menu !== [], 'enabled Tenant Module menu projection was empty');
     expectRbacTenant(
-        count($menus) === 1 && (int)$menus[0]['id'] === 1011,
-        'same-Tenant role menu was not returned'
+        !containsImportExportMenu($authorization->accessData($betaContext, $beta)->menu),
+        'disabled Tenant Module menu leaked into Beta'
+    );
+
+    $pdo->exec('DELETE FROM pa_role_permission WHERE tenant_id = 101 AND role_id = 11');
+    expectRbacTenant(
+        !$authorization->decide($alphaContext, $alpha, 'log/export')->allowed,
+        'revoked RBAC permission still authorized'
+    );
+    $pdo->prepare(
+        'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
+    )->execute([101, 11, $permissionId, $now]);
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101");
+    expectRbacTenant(
+        !$authorization->decide($alphaRootContext, $alphaRoot, 'log/export')->allowed,
+        'root bypassed Module revocation'
     );
 } finally {
     $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
-echo "MT03-ADMIN-RBAC-TENANT-ISOLATION-001 passed\n";
+echo "NATIVE-ADMIN-RBAC-TENANT-ISOLATION-001 passed\n";

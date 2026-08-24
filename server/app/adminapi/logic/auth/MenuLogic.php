@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\auth;
 
-use app\adminapi\service\CoreTenantModuleAdminBridge;
-use app\adminapi\service\AdminPermissionService;
+use app\common\service\authorization\AdminAuthorizationService;
+use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\logic\BaseLogic;
 use app\common\model\auth\SystemMenu;
 use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
@@ -16,7 +16,7 @@ class MenuLogic extends BaseLogic
     public static function getMenuByAdminId(mixed $tenantContext, int $adminId): array
     {
         self::clearError();
-        return AdminPermissionService::menusForAdminId($tenantContext, $adminId);
+        return (new AdminAuthorizationService())->menusForAdminId($tenantContext, $adminId);
     }
 
     public static function getAll(): array
@@ -56,7 +56,7 @@ class MenuLogic extends BaseLogic
                 'module_key' => (string)$menu['module_key'],
                 'managed' => true,
             ],
-            (new CoreTenantModuleAdminBridge())->assignableMenuRecords($context->tenantId)
+            (new AdminAuthorizationService())->assignableMenuRecords($context)
         );
         return [...linear_to_tree($data), ...$moduleMenus];
     }

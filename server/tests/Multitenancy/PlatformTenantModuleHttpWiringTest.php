@@ -56,7 +56,7 @@ $registryFactory = (string)file_get_contents(
 );
 $routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
 $adminBridge = (string)file_get_contents(
-    dirname(__DIR__, 2) . '/app/adminapi/service/CoreTenantModuleAdminBridge.php'
+    dirname(__DIR__, 2) . '/app/common/service/authorization/CoreTenantModuleAdminBridge.php'
 );
 $serverMenuMapper = (string)file_get_contents(
     dirname(__DIR__, 3) . '/web/src/store/modules/app/server-menu.ts'

@@ -5,7 +5,7 @@ namespace app\adminapi\http\middleware;
 
 use app\adminapi\http\AdminRequest;
 use app\adminapi\service\AdminTokenService;
-use app\adminapi\service\NativeAdminPrincipalRepository;
+use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
@@ -36,7 +36,7 @@ final class LoginMiddleware
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 $context->tenantId,
             );
-            $principal = (new NativeAdminPrincipalRepository())->require($context);
+            $principal = (new AdminAuthorizationService())->principal($context)->toArray();
             $principal['token'] = $token;
             $principal['terminal'] = 1;
             $request->adminInfo = $principal;

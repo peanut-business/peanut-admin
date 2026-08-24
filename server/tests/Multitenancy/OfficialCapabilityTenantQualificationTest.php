@@ -50,7 +50,7 @@ foreach ([
     'tenant_application_settings' => 'app/common/service/config/TenantApplicationSettingService.php',
     'notice_channel' => 'app/common/service/notice/NoticeChannelService.php',
     'platform_storage' => 'vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php',
-    'admin_permissions' => 'app/adminapi/service/AdminPermissionService.php',
+    'admin_permissions' => 'app/common/service/authorization/AdminAuthorizationService.php',
     'member_admin_context' => 'app/common/service/member/MemberTenantContext.php',
     'article_admin_context' => 'app/common/service/article/ArticleTenantContext.php',
     'file_admin_context' => 'app/common/service/file/FileTenantContext.php',
@@ -213,8 +213,12 @@ qualificationExpect(
     'scheduled work does not re-establish active Tenant ownership'
 );
 qualificationExpect(
-    str_contains($sources['async_authorization'], "t.status = 'active'")
-        && str_contains($sources['async_authorization'], 'authorization_revision'),
+    str_contains($sources['async_authorization'], 'AdminAuthorizationService')
+        && str_contains($sources['async_authorization'], '->principal($context)')
+        && str_contains($sources['async_authorization'], '->authorizedOperation(')
+        && str_contains($sources['async_authorization'], 'envelope->resourceKey')
+        && str_contains($sources['async_authorization'], 'envelope->operation')
+        && str_contains($sources['async_authorization'], 'envelope->requestedTargets'),
     'async work does not recheck Tenant availability and authorization'
 );
 qualificationExpect(

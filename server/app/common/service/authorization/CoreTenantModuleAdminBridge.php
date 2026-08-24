@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\service;
+namespace app\common\service\authorization;
 
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
@@ -141,6 +141,42 @@ final readonly class CoreTenantModuleAdminBridge
         }
         $statement->execute($parameters);
         return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+    }
+
+    /** @return list<string> */
+    public function registeredSystemMenuPermissions(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $pdo = $this->connection();
+        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $installed = array_fill_keys(array_map(
+            static fn($module): string => $module->moduleKey,
+            $qualification->installedModules()
+        ), true);
+        $active = array_fill_keys(array_values(array_filter(
+            $qualification->activeTenantModuleKeys($tenantId),
+            static fn(string $moduleKey): bool => isset($installed[$moduleKey])
+        )), true);
+        $rows = $pdo->query(
+            "SELECT DISTINCT m.perms, p.module_key, p.status AS permission_status "
+            . "FROM pa_system_menu m LEFT JOIN pa_permission p ON p.`key` = m.perms "
+            . "WHERE m.is_disable = 0 AND m.perms <> ''"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $permissions = [];
+        foreach ($rows as $row) {
+            $moduleKey = $row['module_key'] ?? null;
+            if ($moduleKey !== null && $moduleKey !== '') {
+                if (($row['permission_status'] ?? null) !== 'active' || !isset($active[$moduleKey])) {
+                    continue;
+                }
+            }
+            $permissions[] = (string)$row['perms'];
+        }
+
+        return array_values(array_unique($permissions));
     }
 
     private function connection(): PDO

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic;
 
-use app\adminapi\service\CoreTenantModuleAdminBridge;
+use app\common\service\authorization\AdminAuthorizationService;
 use app\common\logic\BaseLogic;
 use app\common\service\FileService;
 use app\common\service\config\TenantSettingWebsiteStore;
@@ -78,7 +78,7 @@ class WorkbenchLogic extends BaseLogic
             ['name' => '菜单权限', 'image' => 'menu_auth', 'url' => '/system/menu'],
             ['name' => '网站信息', 'image' => 'menu_web', 'url' => '/app-setting/website'],
         ];
-        $moduleMenus = (new CoreTenantModuleAdminBridge())->accessData($context)['menu'];
+        $moduleMenus = (new AdminAuthorizationService())->moduleMenuRecords($context);
         $items = array_values(array_filter(
             $items,
             static fn(array $item): bool => $item['url'] !== '/system/file'

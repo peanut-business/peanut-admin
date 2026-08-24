@@ -52,7 +52,7 @@ $repository = (string)file_get_contents($serverRoot . '/app/common/service/artic
 $capability = (string)file_get_contents($serverRoot . '/app/common/service/capability/ArticleCapabilityAuthorization.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicArticleTenantMiddleware.php');
 $menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/auth/MenuLogic.php');
-$permissionService = (string)file_get_contents($serverRoot . '/app/adminapi/service/AdminPermissionService.php');
+$permissionService = (string)file_get_contents($serverRoot . '/app/common/service/authorization/AdminAuthorizationService.php');
 officialArticleExpect(substr_count($routes, "Route::get('article.article") === 5, 'Article GET route count changed');
 officialArticleExpect(substr_count($routes, "Route::post('article.article") === 8, 'Article POST route count changed');
 officialArticleExpect(str_contains($routes, 'ArticleModuleMiddleware::class'), 'Article routes lost ModuleGuard middleware');
