@@ -52,15 +52,16 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$pluginLock = json_decode((string)file_get_contents(dirname($serverRoot) . '/plugins.lock'), true, 512, JSON_THROW_ON_ERROR);
-$pluginIdentity = [];
-foreach ($pluginLock['plugins'] ?? [] as $plugin) {
-    if (is_array($plugin) && isset($plugin['key'], $plugin['version'], $plugin['manifest_sha256'])) {
-        $pluginIdentity[(string)$plugin['key']] = [(string)$plugin['version'], (string)$plugin['manifest_sha256']];
-    }
-}
-[$taskVersion, $taskManifestDigest] = $pluginIdentity['official.task'] ?? throw new RuntimeException('official.task Plugin identity is missing');
-[$importExportVersion, $importExportManifestDigest] = $pluginIdentity['official.import-export'] ?? throw new RuntimeException('official.import-export Plugin identity is missing');
+$taskManifestPath = $serverRoot . '/app/Modules/Official/Task/module.json';
+$importExportManifestPath = $serverRoot . '/app/Modules/Official/ImportExport/module.json';
+$taskManifest = json_decode((string)file_get_contents($taskManifestPath), true, 512, JSON_THROW_ON_ERROR);
+$importExportManifest = json_decode((string)file_get_contents($importExportManifestPath), true, 512, JSON_THROW_ON_ERROR);
+$taskVersion = (string)($taskManifest['version'] ?? '');
+$importExportVersion = (string)($importExportManifest['version'] ?? '');
+$taskManifestDigest = hash_file('sha256', $taskManifestPath);
+$importExportManifestDigest = hash_file('sha256', $importExportManifestPath);
+expectAsyncTenant($taskVersion !== '' && is_string($taskManifestDigest), 'official.task Module manifest is unavailable');
+expectAsyncTenant($importExportVersion !== '' && is_string($importExportManifestDigest), 'official.import-export Module manifest is unavailable');
 $host = (string)getenv('DB_HOST');
 $port = (int)getenv('DB_PORT');
 $database = (string)getenv('DB_NAME');
