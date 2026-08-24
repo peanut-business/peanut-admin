@@ -30,18 +30,26 @@ function dictTenantContext(int $tenantId, int $memberId, string $requestId): Ten
     ), $requestId);
 }
 
-function dictTenantDatabase(PDO $admin, string $prefix): string
+function dictTenantDatabase(PDO $admin, string $database): string
 {
-    $database = $prefix . strtolower(bin2hex(random_bytes(5)));
     $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     return $database;
+}
+
+function dictTenantEnv(string $name): string
+{
+    $value = getenv($name);
+    if ($value === false || $value === '') {
+        throw new RuntimeException("missing required environment variable: {$name}");
+    }
+    return $value;
 }
 
 function dictTenantPdo(string $host, int $port, string $password, string $database): PDO
 {
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        dictTenantEnv('DB_USER'),
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -125,16 +133,19 @@ INSERT INTO pa_dict_data (id, tenant_id, name, value, type_id, type_value, sort)
 SQL);
 }
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = dictTenantEnv('DB_HOST');
+$port = (int)dictTenantEnv('DB_PORT');
+$user = dictTenantEnv('DB_USER');
+$password = dictTenantEnv('DB_PASS');
+$adminPassword = dictTenantEnv('MYSQL_ROOT_PASSWORD');
+$database = dictTenantEnv('DB_NAME');
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
     'root',
-    $password,
+    $adminPassword,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
-$database = dictTenantDatabase($admin, 'peanut_admin_mt02_dict_');
+$database = dictTenantDatabase($admin, $database);
 
 try {
     $pdo = dictTenantPdo($host, $port, $password, $database);
@@ -150,7 +161,7 @@ try {
     putenv('PHP_DB_HOST=' . $host);
     putenv('PHP_DB_PORT=' . $port);
     putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
+    putenv('PHP_DB_USER=' . $user);
     putenv('PHP_DB_PASS=' . $password);
     putenv('PHP_DB_PREFIX=pa_');
     $app = new think\App();

@@ -37,7 +37,10 @@ class DictDataLogic extends BaseLogic
     /** 按类型标识取全部启用数据项（业务前端常用：下拉/枚举） */
     public static function byType(TenantContext $context, string $typeValue): array
     {
-        return DictionaryRuntimeFactory::service()->enabledByType($context, $typeValue);
+        return array_map(
+            static fn ($entry): array => $entry->toArray(),
+            DictionaryRuntimeFactory::service()->enabledByType($context, $typeValue),
+        );
     }
 
     public static function detail(TenantContext $context, int $id): array
