@@ -52,6 +52,15 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
+$pluginLock = json_decode((string)file_get_contents(dirname($serverRoot) . '/plugins.lock'), true, 512, JSON_THROW_ON_ERROR);
+$pluginIdentity = [];
+foreach ($pluginLock['plugins'] ?? [] as $plugin) {
+    if (is_array($plugin) && isset($plugin['key'], $plugin['version'], $plugin['manifest_sha256'])) {
+        $pluginIdentity[(string)$plugin['key']] = [(string)$plugin['version'], (string)$plugin['manifest_sha256']];
+    }
+}
+[$taskVersion, $taskManifestDigest] = $pluginIdentity['official.task'] ?? throw new RuntimeException('official.task Plugin identity is missing');
+[$importExportVersion, $importExportManifestDigest] = $pluginIdentity['official.import-export'] ?? throw new RuntimeException('official.import-export Plugin identity is missing');
 $host = (string)getenv('DB_HOST');
 $port = (int)getenv('DB_PORT');
 $database = (string)getenv('DB_NAME');
@@ -107,8 +116,8 @@ INSERT INTO pa_module_installation
   (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
 VALUES
   ('peanut.admin', '2.0.0', 1, REPEAT('d', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.task', '1.0.0', 1, REPEAT('e', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.import-export', '1.0.0', 1, REPEAT('f', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+  ('official.task', '{$taskVersion}', 1, '{$taskManifestDigest}', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.import-export', '{$importExportVersion}', 1, '{$importExportManifestDigest}', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_tenant_module
   (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
 VALUES
