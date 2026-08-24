@@ -5,8 +5,8 @@ namespace app\api\middleware;
 
 use app\common\service\article\ArticleTenantContext;
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
 use app\common\service\JsonService;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\common\service\tenant\DefaultTenantContextResolver;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -29,7 +29,9 @@ final class PublicArticleTenantMiddleware
             if (!$pdo instanceof \PDO) {
                 throw new \RuntimeException('ARTICLE_MODULE_DATABASE_UNAVAILABLE');
             }
-            (new ModuleExecutionGuard($pdo, 'official.article'))->assertEnabled(
+            PdoModuleGovernanceProvider::forExecution($pdo)
+                ->executionGuard('official.article')
+                ->assertEnabled(
                 ModuleExecutionContext::system('official.article', $request->tenantContext),
             );
         } catch (ModuleException $exception) {

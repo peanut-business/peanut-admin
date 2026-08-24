@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Http;
 
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
 use app\common\service\JsonService;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PDO;
@@ -24,7 +24,9 @@ final class ArticleModuleMiddleware
             if (!$context instanceof TenantContext) {
                 throw new \PeanutAdmin\Kernel\Auth\AuthException('CONTEXT_TENANT_REQUIRED', 403);
             }
-            (new ModuleExecutionGuard($pdo, 'official.article'))->assertEnabled(
+            PdoModuleGovernanceProvider::forExecution($pdo)
+                ->executionGuard('official.article')
+                ->assertEnabled(
                 ModuleExecutionContext::admin('official.article', $context, 'http.admin'),
             );
         } catch (ModuleException $exception) {

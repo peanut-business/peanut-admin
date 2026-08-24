@@ -5,7 +5,7 @@ namespace app\common\service\external;
 
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -46,7 +46,9 @@ final class ExternalTenantResolver
         if (!$pdo instanceof PDO) {
             throw new ExternalTenantResolutionException();
         }
-        (new ModuleExecutionGuard($pdo, $moduleKey))->assertExternalCallback(ModuleExecutionContext::system($moduleKey, $resolution->context));
+        PdoModuleGovernanceProvider::forExecution($pdo)
+            ->executionGuard($moduleKey)
+            ->assertExternalCallback(ModuleExecutionContext::system($moduleKey, $resolution->context));
         return $resolution;
     }
 

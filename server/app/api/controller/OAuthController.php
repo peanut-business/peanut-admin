@@ -9,7 +9,7 @@ use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use think\facade\Db;
 
@@ -170,7 +170,9 @@ class OAuthController extends BaseApiController
         if (!$pdo instanceof PDO) {
             throw new \RuntimeException('OAUTH_MODULE_DATABASE_UNAVAILABLE');
         }
-        (new ModuleExecutionGuard($pdo, 'official.oauth'))->assertEnabled(
+        PdoModuleGovernanceProvider::forExecution($pdo)
+            ->executionGuard('official.oauth')
+            ->assertEnabled(
             ModuleExecutionContext::system('official.oauth', $context),
         );
     }

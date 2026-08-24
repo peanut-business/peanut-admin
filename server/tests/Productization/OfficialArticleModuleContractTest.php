@@ -116,7 +116,7 @@ officialArticleExpect(str_contains($capability, 'assertTenant('), 'Article typed
 officialArticleExpect(
     str_contains($publicMiddleware, 'TenantEntryBindingResolver::production()->system(')
         && str_contains($publicMiddleware, 'ModuleExecutionContext::system(')
-        && str_contains($publicMiddleware, 'ModuleExecutionGuard'),
+        && str_contains($publicMiddleware, 'PdoModuleGovernanceProvider::forExecution'),
     'public Article entry is not Host-bound and Module guarded'
 );
 

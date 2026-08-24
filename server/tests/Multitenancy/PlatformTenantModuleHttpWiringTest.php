@@ -63,7 +63,7 @@ $serverMenuMapper = (string)file_get_contents(
 );
 pm01ModuleHttpExpect(
     str_contains($runtime, "'MODULE_REGISTRY_UNAVAILABLE'")
-        && str_contains($runtime, 'PluginModuleRegistryFactory')
+        && str_contains($runtime, 'PdoModuleGovernanceProvider')
         && str_contains($registryFactory, 'DeployedTenantModuleRegistry::compile')
         && str_contains($registryFactory, 'ModuleBoundaryChecker')
         && str_contains($runtime, 'VerifiedTenantModuleRepository'),

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace app\platform\query;
 
+use app\common\contract\module\ModuleQualificationQuery;
+use app\common\contract\module\ModuleQualification;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\context\PlatformOperatorContext;
 use app\platform\service\PlatformOperatorSessionService;
 use PDO;
@@ -13,7 +16,8 @@ final readonly class PlatformControlPlaneQueryService
 {
     public function __construct(
         private PDO $pdo,
-        private PlatformOperatorSessionService $sessions
+        private PlatformOperatorSessionService $sessions,
+        private ?ModuleQualificationQuery $qualification = null,
     ) {
     }
 
@@ -104,23 +108,40 @@ SQL, [], $page);
         PageRequest $page
     ): array {
         $this->sessions->assertAllowed($context, 'platform.tenant.read');
-        return $this->page(<<<'SQL'
-SELECT tm.id, :selected_tenant_id AS tenant_id, mi.module_key,
-       COALESCE(tm.status, 'not_enabled') AS status,
-       COALESCE(tm.source, 'not_configured') AS source,
-       COALESCE(tm.config_revision, 0) AS config_revision,
-       tm.effective_at, tm.expires_at, tm.enabled_at, tm.disabled_at,
-       tm.disabled_reason, tm.created_at, tm.updated_at,
-       mi.installed_version, mi.status AS installation_status
-FROM pa_module_installation mi
-LEFT JOIN pa_tenant_module tm
-  ON tm.tenant_id = :joined_tenant_id AND tm.module_key = mi.module_key
-WHERE mi.status = 'active'
-ORDER BY mi.module_key ASC
-SQL, [
-            'selected_tenant_id' => $tenantId,
-            'joined_tenant_id' => $tenantId,
-        ], $page);
+        $qualification = $this->qualification ?? PdoModuleGovernanceProvider::forApplication($this->pdo)
+            ->qualification();
+        $states = [];
+        foreach ($qualification->tenantModuleStates($tenantId) as $state) {
+            $states[$state->moduleKey] = $state->toArray();
+        }
+
+        $rows = array_map(
+            static function (ModuleQualification $module) use ($states, $tenantId): array {
+                $state = $states[$module->moduleKey] ?? null;
+                return [
+                    'id' => $state['id'] ?? null,
+                    'tenant_id' => $tenantId,
+                    'module_key' => $module->moduleKey,
+                    'status' => $state['status'] ?? 'not_enabled',
+                    'source' => $state['source'] ?? 'not_configured',
+                    'config_revision' => $state['config_revision'] ?? 0,
+                    'effective_at' => $state['effective_at'] ?? null,
+                    'expires_at' => $state['expires_at'] ?? null,
+                    'enabled_at' => $state['enabled_at'] ?? null,
+                    'disabled_at' => $state['disabled_at'] ?? null,
+                    'disabled_reason' => $state['disabled_reason'] ?? null,
+                    'created_at' => $state['created_at'] ?? null,
+                    'updated_at' => $state['updated_at'] ?? null,
+                    'installed_version' => $module->version,
+                    'installation_status' => $module->status,
+                ];
+            },
+            $qualification->installedModules()
+        );
+        return [
+            'items' => array_slice($rows, $page->offset(), $page->pageSize),
+            'total' => count($rows),
+        ];
     }
 
     /** @return array<string,mixed> */
