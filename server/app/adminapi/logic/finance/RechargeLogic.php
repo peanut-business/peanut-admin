@@ -22,8 +22,7 @@ use app\common\service\MemberBalanceService;
 use app\common\service\idempotency\IdempotencyRuntimeFactory;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
-use PeanutAdmin\Kernel\Tenancy\TenantLockNamespace;
-use PeanutAdmin\Kernel\Tenancy\TenantScope;
+use app\common\service\payment\PaymentRetryLock;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
@@ -233,11 +232,7 @@ class RechargeLogic extends BaseLogic
 
     private static function retryLockName(object $context, int $recordId): string
     {
-        $scope = TenantScope::fromTrustedContext(
-            FinanceTenantContext::tenantId($context),
-            $context->requestId,
-        );
-        return (new TenantLockNamespace($scope))->name('recharge:refund-retry:' . $recordId);
+        return PaymentRetryLock::name($context, $recordId);
     }
 
     /** MySQL 会话级互斥覆盖完整渠道调用周期，避免快速失败时排队请求再次获准。 */
