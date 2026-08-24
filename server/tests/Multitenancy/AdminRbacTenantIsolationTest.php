@@ -107,9 +107,9 @@ VALUES
 INSERT INTO pa_module_installation
   (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
 VALUES
-  ('official.file', '1.0.0', 1, '3bf33252a3cd7b01b252718a3792625f1b7c8e09ee9aa35f6b1176d9dce8ce92', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.task', '1.0.0', 1, 'f64484bedbc5e14bc228773396dd28447bcf501f7741cc145e736e299a78f173', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.import-export', '1.0.0', 1, 'ffd55e06ea1c3502238eb9c55c6b65c3f33872694b341667ae875d8b657d1a54', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+  ('official.file', '1.0.0', 1, 'bf73f0ebf4f6ae796e045fbc536a24c6e3545e2e5c4ce8c2d058c870a1d396c2', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.task', '1.0.0', 1, 'c0acd57abad366b0b4360a85500f295438abed063b3977be4454ec455faf1fd6', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.import-export', '1.0.0', 1, '42b79e202d3b7eb1df8ca51bd50ee937336fe1d966eb1132996ebff6a81f52d6', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_tenant_module
   (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
 VALUES
