@@ -1,3 +1,5 @@
+-- peanut-release: 3.0.6
+
 CREATE TABLE `pa_payment_tenant_channel_grant` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `tenant_id` BIGINT UNSIGNED NOT NULL,
