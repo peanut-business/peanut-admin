@@ -25,11 +25,11 @@ final readonly class StorageRepository
 SELECT a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.status account_status,
        s.id space_id,s.space_key,s.name space_name,s.access_type,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status
 FROM pa_storage_route r JOIN pa_storage_space s ON s.id=r.space_id JOIN pa_storage_account a ON a.id=s.account_id
-WHERE r.route_key IN (:purpose,:default_route) AND r.access_type=:access AND s.access_type=:access
+WHERE r.route_key IN (:purpose,:default_route) AND r.access_type=:route_access AND s.access_type=:space_access
   AND s.status='active' AND a.status='active'
 ORDER BY CASE WHEN r.route_key=:purpose_order THEN 0 ELSE 1 END LIMIT 1
 SQL);
-        $statement->execute(['purpose'=>$purpose,'default_route'=>'default.'.$access,'access'=>$access,'purpose_order'=>$purpose]);
+        $statement->execute(['purpose'=>$purpose,'default_route'=>'default.'.$access,'route_access'=>$access,'space_access'=>$access,'purpose_order'=>$purpose]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) throw new \RuntimeException('文件用途没有可用的存储路由');
         return $this->decode($row);

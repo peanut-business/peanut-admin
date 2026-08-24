@@ -64,10 +64,11 @@ ALTER TABLE `pa_file_object` DROP FOREIGN KEY `fk_file_object_member`, DROP INDE
  CHANGE COLUMN `storage_key` `object_key` VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, MODIFY `storage_space_id` BIGINT UNSIGNED NOT NULL,
  ADD UNIQUE KEY `uk_file_object_storage` (`storage_space_id`,`object_key`), ADD KEY `idx_file_object_purpose` (`tenant_id`,`purpose`,`status`,`id`),
  ADD CONSTRAINT `fk_file_object_space` FOREIGN KEY (`storage_space_id`) REFERENCES `pa_storage_space` (`id`) ON DELETE RESTRICT,
- ADD CONSTRAINT `fk_file_object_member` FOREIGN KEY (`tenant_id`,`created_by_member_id`) REFERENCES `pa_tenant_member` (`tenant_id`,`id`) ON DELETE RESTRICT,
  DROP CHECK `chk_file_object_status`, DROP CHECK `chk_file_object_archive_shape`,
  ADD CONSTRAINT `chk_file_object_purpose` CHECK (`purpose` REGEXP '^[a-z][a-z0-9._-]{2,95}$'), ADD CONSTRAINT `chk_file_object_access` CHECK (`access_type` IN ('public','private')),
  ADD CONSTRAINT `chk_file_object_disposition` CHECK (`disposition` IN ('inline','attachment')),
  ADD CONSTRAINT `chk_file_object_status` CHECK (`status` IN ('pending_write','write_failed','ready','archived')),
  ADD CONSTRAINT `chk_file_object_archive_shape` CHECK (((`status` IN ('pending_write','write_failed','ready')) AND `archived_at` IS NULL) OR (`status`='archived' AND `archived_at` IS NOT NULL));
+ALTER TABLE `pa_file_object`
+ ADD CONSTRAINT `fk_file_object_member` FOREIGN KEY (`tenant_id`,`created_by_member_id`) REFERENCES `pa_tenant_member` (`tenant_id`,`id`) ON DELETE RESTRICT;
 DELETE FROM `pa_config` WHERE `type`='storage';
