@@ -24,7 +24,9 @@ final readonly class QcloudStorageDriver implements StorageDriver
                 'Body' => $stream,
             ]);
         } finally {
-            fclose($stream);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
         }
     }
 
