@@ -36,21 +36,14 @@ function oauthTenantContext(int $tenantId, int $memberId, string $requestId): Te
     ), $requestId);
 }
 
-function oauthPdo(string $host, int $port, string $password, string $database): PDO
+function oauthPdo(string $host, int $port, string $user, string $password, string $database): PDO
 {
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
-}
-
-function oauthDatabase(PDO $admin): string
-{
-    $name = 'peanut_admin_oauth_fresh_' . strtolower(bin2hex(random_bytes(5)));
-    $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
-    return $name;
 }
 
 function oauthFreshSchema(PDO $pdo, string $serverRoot): void
@@ -71,14 +64,22 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
-$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-$database = oauthDatabase($admin);
+$host = (string)getenv('DB_HOST');
+$port = (int)getenv('DB_PORT');
+$database = (string)getenv('DB_NAME');
+$user = (string)getenv('DB_USER');
+$password = (string)getenv('DB_PASS');
+expectOAuthTenant(
+    $host !== '' && $port > 0 && $database !== '' && $user !== '' && $password !== '',
+    'registered P0-E database credentials are required'
+);
+expectOAuthTenant(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'OAuth Tenant Gate requires its exact registered P0-E plugin_lifecycle database'
+);
 
 try {
-    $pdo = oauthPdo($host, $port, $password, $database);
+    $pdo = oauthPdo($host, $port, $user, $password, $database);
     oauthFreshSchema($pdo, $serverRoot);
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_tenant
@@ -105,7 +106,7 @@ FROM pa_external_channel_binding
 WHERE tenant_id = 101 AND provider = 'oauth.wechat.oa';
 SQL);
     putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
+    putenv('PHP_DB_USER=' . $user); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
     $app = new think\App(); $app->initialize();
 
     $alpha = oauthTenantContext(101, 11, 'fresh-oauth-alpha');
@@ -152,7 +153,6 @@ SQL);
     $controller = (string)file_get_contents($serverRoot . '/app/api/controller/OAuthController.php');
     expectOAuthTenant(str_contains($controller, 'ExternalTenantResolver::production()->onlyActiveBinding('), 'OAuth begin does not use the trusted external binding resolver');
 } finally {
-    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "OAuth tenant isolation passed\n";
