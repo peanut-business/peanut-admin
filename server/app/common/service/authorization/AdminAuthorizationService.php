@@ -8,6 +8,7 @@ use app\common\contract\authorization\AuthorizedOperationFactory;
 use app\common\dto\authorization\AdminAccessData;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\dto\authorization\PermissionDecision;
+use app\common\model\auth\SystemMenu;
 use app\common\service\CoreServiceOverrides;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
