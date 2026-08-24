@@ -1042,17 +1042,23 @@ class Runner:
         database = self.plan["databases"][scenario]
         log = self.group_log(group)
         self.create_database(database)
-        registry = project_root / "resources/project-resources.json"
-        source_registry = ROOT / "resources/project-resources.json"
-        original_registry: bytes | None = None
-        original_mode: int | None = None
+        bridged_files = [
+            "resources/project-resources.json",
+            "server/database/environment-guard.php",
+        ]
+        originals: list[tuple[Path, bytes, int]] = []
         if project_root != ROOT:
-            if not registry.is_file() or registry.is_symlink() or not source_registry.is_file() or source_registry.is_symlink():
-                fail("generated application resource registry identity changed")
-            original_registry = registry.read_bytes()
-            original_mode = registry.stat().st_mode & 0o777
-            registry.write_bytes(source_registry.read_bytes())
-            registry.chmod(source_registry.stat().st_mode & 0o777)
+            for relative in bridged_files:
+                target = project_root / relative
+                source = ROOT / relative
+                if not target.is_file() or target.is_symlink() or not source.is_file() or source.is_symlink():
+                    fail(f"generated application qualification bridge identity changed: {relative}")
+                originals.append((target, target.read_bytes(), target.stat().st_mode & 0o777))
+            for relative in bridged_files:
+                target = project_root / relative
+                source = ROOT / relative
+                target.write_bytes(source.read_bytes())
+                target.chmod(source.stat().st_mode & 0o777)
         try:
             self.install_current(database, "multi-tenant", log, project_root=project_root)
             command(
@@ -1063,13 +1069,12 @@ class Runner:
             )
             self.inspect(database, "multi-tenant", group, project_root=project_root)
         finally:
-            if original_registry is not None and original_mode is not None:
-                registry.write_bytes(original_registry)
-                registry.chmod(original_mode)
-        if original_registry is not None and (
-            registry.read_bytes() != original_registry or (registry.stat().st_mode & 0o777) != original_mode
-        ):
-            fail("generated application resource registry was not restored")
+            for target, original, mode in originals:
+                target.write_bytes(original)
+                target.chmod(mode)
+        for target, original, mode in originals:
+            if target.read_bytes() != original or (target.stat().st_mode & 0o777) != mode:
+                fail(f"generated application qualification bridge was not restored: {target.relative_to(project_root)}")
         self.drop_database(database)
 
     def plugin_lifecycle(self) -> None:
