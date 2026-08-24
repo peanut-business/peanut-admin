@@ -56,6 +56,6 @@ final readonly class ImportExportApplicationService implements ImportExportComma
     {
         /** @var array<string,mixed> $payload */
         $payload = $operation->toPublicArray();
-        return new AsyncExportOperation($payload);
+        return AsyncExportOperation::fromPublicArray($payload);
     }
 }

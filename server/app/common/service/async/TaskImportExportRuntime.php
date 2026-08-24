@@ -6,6 +6,7 @@ namespace app\common\service\async;
 use app\common\service\audit\AuditContractHost;
 use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
 use app\Modules\Official\ImportExport\Contracts\ImportExportQueries;
+use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
 use app\Modules\Official\ImportExport\ModuleProvider as ImportExportModuleProvider;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
@@ -16,6 +17,7 @@ use PeanutAdmin\ImportExport\Execution\CsvOperationRunner;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
 use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
+use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 use app\common\service\export\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 
@@ -50,6 +52,11 @@ final readonly class TaskImportExportRuntime
         return (new ImportExportModuleProvider())->queries($this->pdo, $this->tasks);
     }
 
+    public function operation(AuthorizedOperationContext $context, string $operationKey): AsyncExportOperation
+    {
+        return $this->queries()->operation($this->asOperation($context, 'read'), $operationKey);
+    }
+
     /** @return array{path:string,filename:string} */
     public function download(AuthorizedOperationContext $context, string $fileKey): array
     {
@@ -81,6 +88,17 @@ final readonly class TaskImportExportRuntime
     private function files(): AppFileMediaGateway
     {
         return new AppFileMediaGateway($this->pdo, $this->privateRoot);
+    }
+
+    private function asOperation(AuthorizedOperationContext $source, string $operation): AuthorizedOperationContext
+    {
+        return AuthorizedOperationContext::fromDecision(AuthorizationDecision::allow(
+            $source->tenantContext,
+            ImportExportService::RESOURCE_KEY,
+            $operation,
+            [],
+            hash('sha256', $source->authorizationBasisDigest . '|async-export|' . $operation),
+        ));
     }
 
 }
