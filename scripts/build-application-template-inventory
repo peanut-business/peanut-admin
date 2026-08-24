@@ -58,6 +58,7 @@ function excluded(string $path): bool
         ], true))
         || in_array($path, [
             'AGENTS.md', 'AGENT_EXECUTION_RULES.md',
+            'resources/codegraph-registry.json', 'resources/service-registry.json',
             'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
             'scripts/core-upgrade-compatibility', 'scripts/combined-upgrade-qualification',
             'scripts/select-legacy-pre-alpha5-fixture',
