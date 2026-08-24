@@ -4,17 +4,20 @@ declare(strict_types=1);
 namespace app\common\service\async;
 
 use app\common\service\audit\AuditContractHost;
+use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
+use app\Modules\Official\ImportExport\Contracts\ImportExportQueries;
+use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
+use app\Modules\Official\ImportExport\ModuleProvider as ImportExportModuleProvider;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
-use PeanutAdmin\ImportExport\Application\OperationRecord;
 use PeanutAdmin\ImportExport\Contract\DataProviderRegistry;
 use PeanutAdmin\ImportExport\Execution\CsvOperationRunner;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
-use PeanutAdmin\ImportExport\Execution\ImportExportTaskSubmissionProvider;
 use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
+use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 use app\common\service\export\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 
@@ -39,20 +42,19 @@ final readonly class TaskImportExportRuntime
         );
     }
 
-    public function submitOperationLogExport(
-        AuthorizedOperationContext $context,
-        string $idempotencyKey,
-    ): OperationRecord {
-        return $this->service()->submitExport(
-            $context,
-            OperationLogExportProvider::KEY,
-            $idempotencyKey,
-        );
+    public function commands(): ImportExportCommands
+    {
+        return (new ImportExportModuleProvider())->commands($this->pdo, $this->tasks);
     }
 
-    public function operation(AuthorizedOperationContext $context, string $operationKey): OperationRecord
+    public function queries(): ImportExportQueries
     {
-        return $this->service()->detail($this->asOperation($context, 'read'), $operationKey);
+        return (new ImportExportModuleProvider())->queries($this->pdo, $this->tasks);
+    }
+
+    public function operation(AuthorizedOperationContext $context, string $operationKey): AsyncExportOperation
+    {
+        return $this->queries()->operation($this->asOperation($context, 'read'), $operationKey);
     }
 
     /** @return array{path:string,filename:string} */
@@ -78,17 +80,6 @@ final readonly class TaskImportExportRuntime
         );
     }
 
-    private function service(): ImportExportService
-    {
-        return new ImportExportService(
-            new PdoImportExportRepository($this->pdo),
-            $this->providers(),
-            $this->tasks->publisher(new ImportExportTaskSubmissionProvider()),
-            $this->tasks->jobs(),
-            AuditContractHost::fromPdo($this->pdo),
-        );
-    }
-
     private function providers(): DataProviderRegistry
     {
         return new DataProviderRegistry([new OperationLogExportProvider($this->pdo)]);
@@ -101,14 +92,13 @@ final readonly class TaskImportExportRuntime
 
     private function asOperation(AuthorizedOperationContext $source, string $operation): AuthorizedOperationContext
     {
-        return AuthorizedOperationContext::fromDecision(
-            \PeanutAdmin\Kernel\Context\AuthorizationDecision::allow(
-                $source->tenantContext,
-                ImportExportService::RESOURCE_KEY,
-                $operation,
-                [],
-                hash('sha256', $source->authorizationBasisDigest . '|async-export|' . $operation),
-            )
-        );
+        return AuthorizedOperationContext::fromDecision(AuthorizationDecision::allow(
+            $source->tenantContext,
+            ImportExportService::RESOURCE_KEY,
+            $operation,
+            [],
+            hash('sha256', $source->authorizationBasisDigest . '|async-export|' . $operation),
+        ));
     }
+
 }
