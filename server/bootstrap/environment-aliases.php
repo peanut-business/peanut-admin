@@ -29,7 +29,6 @@ $environmentKeys = [
     'DB_CHARSET',
     'DB_PREFIX',
     'ASYNC_SIGNING_KEY',
-    'ASYNC_PRIVATE_STORAGE_ROOT',
     'ASYNC_WORKER_LIMIT',
     'DEFAULT_LANG',
     'PROJECT_VERSION',

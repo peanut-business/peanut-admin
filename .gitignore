@@ -41,3 +41,4 @@ uniapp/dist/
 
 # Runtime-generated storage (uploads/exports)
 server/public/storage/
+server/private/storage/

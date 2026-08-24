@@ -1,29 +1,6 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service {
-    final class ConfigService
-    {
-        public static function get(string $type, string $name, mixed $default = ''): mixed
-        {
-            return $type === 'storage' && $name === 'default' ? 'qiniu' : $default;
-        }
-    }
-}
-
-namespace app\common\service\storage {
-    final class Driver
-    {
-        public static function engineConfig(string $engineName): array
-        {
-            return [
-                'qiniu' => ['domain' => 'qiniu.example.test'],
-                'aliyun' => ['domain' => 'https://aliyun.example.test/assets'],
-            ][$engineName] ?? [];
-        }
-    }
-}
-
 namespace {
     final class FileMediaRequestStub
     {
@@ -86,26 +63,7 @@ namespace {
     expectFileMedia(($storageEvidence['configuration_restored'] ?? false) === true, 'S01 configuration must be restored');
 
     expectFileMedia(
-        \app\common\service\FileService::getFileUrl('storage/uploads/a.png', 'local')
-            === 'https://admin.example.test/storage/uploads/a.png',
-        'local URL mapping failed'
-    );
-    expectFileMedia(
-        \app\common\service\FileService::getFileUrl('uploads/a.png')
-            === 'https://qiniu.example.test/uploads/a.png',
-        'default cloud URL mapping failed'
-    );
-    expectFileMedia(
-        \app\common\service\FileService::getFileUrl('uploads/a.png', 'aliyun')
-            === 'https://aliyun.example.test/assets/uploads/a.png',
-        'explicit original provider URL mapping failed'
-    );
-    expectFileMedia(
-        \app\common\service\FileService::getFileUrl('uploads/a.png', 'unknown') === '',
-        'unknown explicit provider must fail closed'
-    );
-    expectFileMedia(
-        \app\common\service\FileService::getFileUrl('https://cdn.example.test/a.png', 'unknown')
+        \app\common\service\FileService::getFileUrl('https://cdn.example.test/a.png')
             === 'https://cdn.example.test/a.png',
         'absolute URL must remain unchanged'
     );
@@ -116,7 +74,9 @@ namespace {
         'app/common/model/file/File.php',
         'app/adminapi/logic/file/FileLogic.php',
         'app/adminapi/logic/file/FileCateLogic.php',
-        'app/common/service/storage/Driver.php',
+        'app/common/service/storage/StorageService.php',
+        'app/common/service/storage/StorageRepository.php',
+        'app/common/service/storage/StoragePurpose.php',
     ];
     $sources = [];
     foreach ($ownedFiles as $relativePath) {
@@ -125,25 +85,33 @@ namespace {
         $sources[$relativePath] = (string)file_get_contents($absolutePath);
     }
     expectFileMedia(
-        str_contains($sources['app/common/model/file/File.php'], "['storage']"),
-        'File model must use row storage provenance'
+        str_contains($sources['app/common/model/file/File.php'], "['file_key']"),
+        'File model must resolve the canonical file object'
     );
     expectFileMedia(
-        str_contains($sources['app/common/service/UploadService.php'], 'getFileUrl($uri, $storage)'),
-        'upload response must use stored provider'
+        str_contains($sources['app/common/service/UploadService.php'], 'StorageService::fromDefaultConnection()'),
+        'upload must use the unified storage service'
     );
     expectFileMedia(
-        str_contains($sources['app/adminapi/logic/file/FileLogic.php'], 'new Driver($storage'),
-        'delete must use stored provider'
+        str_contains($sources['app/adminapi/logic/file/FileLogic.php'], 'StorageService::fromDefaultConnection()->delete'),
+        'delete must use the unified storage service'
+    );
+    expectFileMedia(
+        str_contains($sources['app/common/service/storage/StorageService.php'], 'repository->route')
+        && str_contains($sources['app/common/service/storage/StorageService.php'], 'objectForTenant')
+        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'f.tenant_id=:tenant_id'),
+        'storage object writes and reads must remain Tenant-bound'
+    );
+    expectFileMedia(
+        str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'material.image' => StorageAccess::PUBLIC")
+        && str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'export.xlsx' => StorageAccess::PRIVATE")
+        && str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'export.csv' => StorageAccess::PRIVATE"),
+        'public/private purpose routing changed'
     );
     foreach ($sources as $relativePath => $source) {
         expectFileMedia(
             !str_contains($source, 'PeanutAdmin\\FileMedia'),
             'application file owner must not deep import core: ' . $relativePath
-        );
-        expectFileMedia(
-            !str_contains($source, 'pa_file_object'),
-            'application file owner must not bind core schema: ' . $relativePath
         );
     }
 

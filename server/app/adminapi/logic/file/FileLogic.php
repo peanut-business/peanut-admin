@@ -5,9 +5,8 @@ namespace app\adminapi\logic\file;
 
 use app\common\enum\FileEnum;
 use app\common\logic\BaseLogic;
-use app\common\service\file\FileObjectNamespace;
 use app\common\service\file\FileTenantRepository;
-use app\common\service\storage\Driver;
+use app\common\service\storage\StorageService;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -125,22 +124,14 @@ class FileLogic extends BaseLogic
         $deleted = 0;
         foreach ($rows as $row) {
             $fileId = (int)$row['id'];
-            $uri = (string)$row['uri'];
-            FileObjectNamespace::assertOwnedUri($context, $uri);
-            $storage = trim((string)($row['storage'] ?? ''));
+            $fileKey = (string)$row['file_key'];
             Db::startTrans();
             try {
                 if (!$row->delete()) {
                     throw new \RuntimeException('素材记录删除失败');
                 }
 
-                if ($storage === '' && str_starts_with(ltrim($uri, '/'), 'storage/')) {
-                    $storage = 'local';
-                }
-                $driver = new Driver($storage !== '' ? $storage : null);
-                if (!$driver->delete($uri)) {
-                    throw new \RuntimeException($driver->getError() ?: '存储对象删除失败');
-                }
+                StorageService::fromDefaultConnection()->delete((int)$context->tenantId, $fileKey);
                 Db::commit();
                 $deleted++;
             } catch (\Throwable $e) {

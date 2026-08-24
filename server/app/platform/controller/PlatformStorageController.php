@@ -1,36 +1,14 @@
 <?php
 declare(strict_types=1);
-
 namespace app\platform\controller;
-
-use app\adminapi\logic\setting\StorageLogic;
-use app\adminapi\validate\setting\StorageValidate;
-
+use app\common\service\storage\StorageConfigurationService;
 final class PlatformStorageController extends BasePlatformController
 {
-    public function lists()
-    {
-        return $this->data(StorageLogic::lists());
-    }
-
-    public function detail()
-    {
-        $this->validate($this->request->get(), StorageValidate::class . '.detail');
-        return $this->data(StorageLogic::detail($this->request->get()));
-    }
-
-    public function setup()
-    {
-        $this->validate($this->request->post(), StorageValidate::class . '.setup');
-        $result = StorageLogic::setup($this->request->post());
-        return $result === true ? $this->success('操作成功') : $this->success((string)$result);
-    }
-
-    public function change()
-    {
-        $this->validate($this->request->post(), StorageValidate::class . '.change');
-        return StorageLogic::change($this->request->post())
-            ? $this->success('操作成功')
-            : $this->fail(StorageLogic::getError());
-    }
+    public function snapshot(){return $this->data($this->service()->snapshot());}
+    public function createAccount(){return $this->data(['id'=>$this->service()->createAccount($this->request->post())]);}
+    public function updateAccount(){$this->service()->updateAccount($this->request->post());return $this->success('存储账号已更新');}
+    public function createSpace(){return $this->data(['id'=>$this->service()->createSpace($this->request->post())]);}
+    public function updateSpace(){$this->service()->updateSpace($this->request->post());return $this->success('Space 已更新');}
+    public function setRoute(){$this->service()->setRoute($this->request->post());return $this->success('存储路由已更新');}
+    private function service():StorageConfigurationService{return StorageConfigurationService::fromDefaultConnection();}
 }

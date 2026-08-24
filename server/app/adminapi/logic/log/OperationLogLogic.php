@@ -110,14 +110,14 @@ class OperationLogLogic extends BaseLogic
             (string)$row['params'],
             empty($row['create_time']) ? '' : date('Y-m-d H:i:s', (int)$row['create_time']),
         ], $rows);
-        $uri = XlsxExportService::createForTenant(
+        $file = XlsxExportService::createForTenant(
             $context,
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['ID', '管理员', 'IP', '请求地址', '方法', '参数', '操作时间'],
             $sheetRows,
             'operation-logs'
         );
-        return ['url' => FileService::getFileUrl($uri), 'file_name' => basename($uri)];
+        return ['url' => $file['url'], 'file_name' => $file['original_name']];
     }
 
     /** 清空旧日志并原子保留本次清理审计；审计写入失败时删除整体回滚。 */

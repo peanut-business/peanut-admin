@@ -373,10 +373,10 @@ SQL;
             throw new \RuntimeException('没有数据，无法导出');
         }
         $rows = array_slice($rows, 0, self::EXPORT_MAX_ROWS);
-        $uri = XlsxExportService::createForTenant($context, (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
+        $file = XlsxExportService::createForTenant($context, (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['账号', '名称', '角色', '部门', '创建时间', '最近登录时间', '最近登录IP', '状态'],
             array_map(static fn(array $row): array => [$row['account'], $row['name'], $row['role_name'], $row['dept_name'], $row['create_time'], $row['login_time'], $row['login_ip'], $row['disable_desc']], $rows));
-        return ['url' => FileService::getFileUrl($uri), 'file_name' => basename($uri)];
+        return ['url' => $file['url'], 'file_name' => $file['original_name']];
     }
 
     private static function firstId(array $ids): ?int

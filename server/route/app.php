@@ -10,6 +10,7 @@ use app\api\controller\IndexController as ApiIndexController;
 use app\api\controller\LoginController as ApiLoginController;
 use app\api\controller\ArticleController as ApiArticleController;
 use app\api\controller\SearchController as ApiSearchController;
+use app\api\controller\StorageController as ApiStorageController;
 use app\api\controller\PcController as ApiPcController;
 use app\api\controller\DecorationController as ApiDecorationController;
 use app\api\middleware\CheckTokenMiddleware;
@@ -109,16 +110,22 @@ Route::get('api/platform/tenant-entry-bindings', [PlatformTenantEntryBindingCont
 Route::post('api/platform/tenant-entry-bindings/enable', [PlatformTenantEntryBindingController::class, 'enable'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
-Route::get('api/platform/infrastructure/storage', [PlatformStorageController::class, 'lists'])
+Route::get('api/platform/infrastructure/storage', [PlatformStorageController::class, 'snapshot'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
-Route::get('api/platform/infrastructure/storage/detail', [PlatformStorageController::class, 'detail'])
-    ->middleware(PlatformLoginMiddleware::class)
-    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
-Route::post('api/platform/infrastructure/storage/setup', [PlatformStorageController::class, 'setup'])
+Route::post('api/platform/infrastructure/storage/account', [PlatformStorageController::class, 'createAccount'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
-Route::post('api/platform/infrastructure/storage/change', [PlatformStorageController::class, 'change'])
+Route::post('api/platform/infrastructure/storage/account/update', [PlatformStorageController::class, 'updateAccount'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/infrastructure/storage/space', [PlatformStorageController::class, 'createSpace'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/infrastructure/storage/space/update', [PlatformStorageController::class, 'updateSpace'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/infrastructure/storage/route', [PlatformStorageController::class, 'setRoute'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
 Route::post('api/platform/tenant-entry-bindings/disable', [PlatformTenantEntryBindingController::class, 'disable'])
@@ -343,6 +350,7 @@ Route::get('api/index/policy',  [ApiIndexController::class, 'policy'])
     ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
 
 Route::post('api/login/logout',   [ApiLoginController::class, 'logout']);
+Route::get('api/storage/private', [ApiStorageController::class, 'privateFile']);
 
 Route::get('api/article/cate',    [ApiArticleController::class, 'cate'])
     ->middleware(PublicArticleTenantMiddleware::class, 'article.cate');

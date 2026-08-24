@@ -96,7 +96,7 @@ class OperationLogController extends BaseAdminController
                 $authorized,
                 (string)$this->request->get('file_key', '')
             );
-            return download($file['path'], $file['filename']);
+            return redirect($file['url']);
         } catch (\Throwable $exception) {
             return $this->fail($this->safeError($exception));
         }
