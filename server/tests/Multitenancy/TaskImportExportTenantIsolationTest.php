@@ -143,17 +143,6 @@ SQL);
     );
     $insertPermission->execute([101, 11, $exportPermission, $now]);
 
-    $taskDisabled = $runtime->submitOperationLogExport($alpha, 'task-disabled-' . $runId);
-    $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");
-    expectAsyncTenant($runtime->runTenant(101, 'fresh-task-disabled-' . $runId) === 1, 'disabled Task Module job was not examined');
-    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$taskDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Task Module executed');
-    $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.task'");
-
-    $importExportDisabled = $runtime->submitOperationLogExport($alpha, 'import-export-disabled-' . $runId);
-    $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.import-export'");
-    expectAsyncTenant($runtime->runTenant(101, 'fresh-import-export-disabled-' . $runId) === 1, 'disabled Import/Export Module job was not examined');
-    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$importExportDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Import/Export Module executed');
-    $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.import-export'");
     $insertPermission->execute([202, 22, $exportPermission, $now]);
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_operation_log (tenant_id, admin_id, username, uri, method, params, create_time) VALUES
@@ -211,6 +200,18 @@ SQL);
     }
 
     $runtime = new TaskImportExportRuntime($pdo, $signingKey, $privateRoot);
+    $taskDisabled = $runtime->submitOperationLogExport($alpha, 'task-disabled-' . $runId);
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-task-disabled-' . $runId) === 1, 'disabled Task Module job was not examined');
+    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$taskDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Task Module executed');
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.task'");
+
+    $importExportDisabled = $runtime->submitOperationLogExport($alpha, 'import-export-disabled-' . $runId);
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.import-export'");
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-import-export-disabled-' . $runId) === 1, 'disabled Import/Export Module job was not examined');
+    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$importExportDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Import/Export Module executed');
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.import-export'");
+
     $operation = $runtime->submitOperationLogExport($alpha, 'alpha-idempotency-' . $runId);
     $duplicate = $runtime->submitOperationLogExport($alpha, 'alpha-idempotency-' . $runId);
     expectAsyncTenant($duplicate->operationKey === $operation->operationKey, 'idempotent submission created a second operation');
