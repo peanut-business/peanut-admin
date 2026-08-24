@@ -45,6 +45,20 @@ final class MemberTenantRepository
         return MemberTag::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
     }
 
+    /** @param list<int> $tagIds */
+    public static function createTagRelations(TenantContext $context, int $memberId, array $tagIds): void
+    {
+        $tenantId = MemberTenantContext::tenantId($context);
+        (new MemberTagRelation())->insertAll(array_map(
+            static fn(int $tagId): array => [
+                'tenant_id' => $tenantId,
+                'member_id' => $memberId,
+                'tag_id' => $tagId,
+            ],
+            $tagIds,
+        ));
+    }
+
     public static function createBalanceLog(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         array $data

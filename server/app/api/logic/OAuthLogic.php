@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\logic;
 
 use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\logic\BaseLogic;
@@ -168,14 +169,15 @@ class OAuthLogic extends BaseLogic
                 throw new \RuntimeException('用户不存在或已禁用');
             }
 
+            $nickname = null;
+            $avatar = null;
             if ((int)$ticket->need_profile === 1) {
                 $nickname = trim((string)($params['nickname'] ?? ''));
                 if ($nickname === '' || mb_strlen($nickname) > 50) {
                     throw new \RuntimeException('请填写有效昵称');
                 }
-                $member->nickname = $nickname;
                 if (trim((string)($params['avatar'] ?? '')) !== '') {
-                    $member->avatar = FileService::setTenantFileUrl($context, (string)$params['avatar']);
+                    $avatar = FileService::setTenantFileUrl($context, (string)$params['avatar']);
                 }
             }
 
@@ -198,13 +200,22 @@ class OAuthLogic extends BaseLogic
                 if (!$result->accepted) {
                     throw new \RuntimeException($result->error);
                 }
-                $member->mobile = $mobile;
+                (new MemberModuleProvider())->identityCommands()->bindVerifiedMobile(
+                    $context,
+                    (int)$member->id,
+                    $mobile,
+                );
             }
 
-            $member->is_new_user = 0;
-            $member->login_time = time();
-            $member->login_ip = request()->ip();
-            $member->save();
+            (new MemberModuleProvider())->profileCommands()->completeOAuthProfile(
+                $context,
+                (int)$member->id,
+                $nickname,
+                $avatar,
+                time(),
+                request()->ip(),
+            );
+            $member = MemberTenantRepository::members($context)->findOrEmpty((int)$member->id);
             $ticket->used_at = time();
             $ticket->save();
             Db::commit();
@@ -233,9 +244,7 @@ class OAuthLogic extends BaseLogic
         if ($needProfile || $needMobile) {
             return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
         }
-        $member->login_time = time();
-        $member->login_ip = request()->ip();
-        $member->save();
+        (new MemberModuleProvider())->identityCommands()->recordLogin($context, (int)$member->id, request()->ip());
         return self::fullLoginResult($member);
     }
 
@@ -280,7 +289,7 @@ class OAuthLogic extends BaseLogic
                         $identity->principal_id = $principalId;
                         $identity->save();
                     }
-                    self::updateProfile($member, $profile);
+                    $member = self::updateProfile($context, $member, $profile);
                     Db::commit();
                     return [$member, false];
                 }
@@ -343,7 +352,7 @@ class OAuthLogic extends BaseLogic
                     'member_id' => (int)$member->id,
                     'terminal' => (int)$sceneMeta['terminal'],
                 ]);
-                self::updateProfile($member, $profile);
+                $member = self::updateProfile($context, $member, $profile);
                 Db::commit();
                 return [$member, $created];
             } catch (\Throwable $e) {
@@ -392,39 +401,28 @@ class OAuthLogic extends BaseLogic
         int $terminal
     ): Member
     {
-        $sn = Member::generateSn($context);
-        do {
-            $account = 'wx_' . strtolower(bin2hex(random_bytes(6)));
-        } while (MemberTenantRepository::members($context)->withTrashed()->where('account', $account)->count() > 0);
-        return MemberTenantRepository::createMember($context, [
-            'sn' => $sn,
-            'account' => $account,
-            'password' => '',
-            'nickname' => mb_substr($profile->nickname() ?: ('微信用户' . substr($sn, -6)), 0, 50),
+        return (new MemberModuleProvider())->identityCommands()->createOAuthMember($context, [
+            'nickname' => $profile->nickname(),
             'avatar' => $profile->avatar() !== ''
                 ? $profile->avatar()
                 : self::defaultAvatar($context),
-            'mobile' => '',
             'channel' => $terminal,
-            'is_new_user' => 1,
-            'status' => 1,
         ]);
     }
 
-    private static function updateProfile(Member $member, OAuthProfile $profile): void
+    private static function updateProfile(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        Member $member,
+        OAuthProfile $profile,
+    ): Member
     {
-        $changed = false;
-        if ($profile->nickname() !== '' && trim((string)$member->nickname) === '') {
-            $member->nickname = mb_substr($profile->nickname(), 0, 50);
-            $changed = true;
-        }
-        if ($profile->avatar() !== '' && trim((string)$member->avatar) === '') {
-            $member->avatar = $profile->avatar();
-            $changed = true;
-        }
-        if ($changed) {
-            $member->save();
-        }
+        (new MemberModuleProvider())->profileCommands()->fillOAuthProfile(
+            $context,
+            (int)$member->id,
+            $profile->nickname(),
+            $profile->avatar(),
+        );
+        return MemberTenantRepository::members($context)->findOrEmpty((int)$member->id);
     }
 
     private static function defaultAvatar(TenantContext|TenantSystemContext $context): string

@@ -14,6 +14,28 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class MemberQueryService implements MemberQueries
 {
+    public function memberFields(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+        array $fields,
+    ): array {
+        $member = MemberTenantRepository::members($context)
+            ->field($fields)->findOrEmpty($memberId);
+        if ($member->isEmpty()) {
+            return [];
+        }
+        $data = $member->toArray();
+        if (in_array('password', $fields, true)) {
+            $data['password'] = (string)$member->getData('password');
+        }
+        return $data;
+    }
+
+    public function tags(TenantContext|TenantSystemContext $context): array
+    {
+        return MemberTenantRepository::tags($context)->order('id', 'desc')->select()->toArray();
+    }
+
     public function balanceSnapshot(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         int $memberId,
