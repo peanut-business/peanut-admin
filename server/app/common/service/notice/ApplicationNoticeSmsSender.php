@@ -16,6 +16,19 @@ final class ApplicationNoticeSmsSender implements NoticeSmsSender
         array $variables,
         ?callable $beforeSend = null
     ): array {
+        if ((string) (getenv('APP_ENV') ?: '') === 'development') {
+            if ($beforeSend !== null) {
+                $beforeSend('development');
+            }
+
+            return [
+                'success' => true,
+                'provider' => 'development',
+                'error' => '',
+                'result' => ['delivery' => 'simulated'],
+            ];
+        }
+
         return NoticeChannelService::sendSms($context, $mobile, $templateId, $variables, $beforeSend);
     }
 }
