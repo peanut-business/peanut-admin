@@ -7,7 +7,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "e16269dce0cc46b1005939d86949107faa98cbe0f9ff2a2fc55afb94e7bdc796"
+                "sha256": "459c02a102b5eb89bcf1f8ddb1ff0342c2674dee2167ed323dc4771f4e99e40d"
             },
             "composer": [
                 {
@@ -39,7 +39,7 @@
                 }
             ],
             "manifest": "plugins/fixture.delivery-record/plugin.json",
-            "manifest_sha256": "0533fcf654cc07361e592cc844884491bc099b80b6c307d0958ceab599dab05c"
+            "manifest_sha256": "a18b8e2d31b3b1bc96704478453f531ee2faf1965111c93707c0b2856b4659a9"
         },
         {
             "key": "official.article",
@@ -47,7 +47,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "f473f54eef2ab57b25f7ffc7baa054e6105c29422a2e176365a38860f630d8b4"
+                "sha256": "1e18acaa110cf7995f048982de010ee6b1c45c7f656f8e52520ffd1dc2ed4bc6"
             },
             "composer": [
                 {
@@ -79,7 +79,7 @@
                 }
             ],
             "manifest": "plugins/official.article/plugin.json",
-            "manifest_sha256": "19dda317c61700aca7f51ce082d971659d871745692c454e89b141bed94014c2"
+            "manifest_sha256": "b42cf2a7d3672b155a3e0e9620d3e6c703f7b4345028b073bc6578990d39a3a1"
         },
         {
             "key": "official.file",
