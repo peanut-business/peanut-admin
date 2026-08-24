@@ -29,14 +29,18 @@ foreach ([$noticeController, $menuController] as $controller) {
 
 foreach ([
     "private const BINDING_PROVIDER = 'notice.sms'",
-    "->where('tenant_id', \$tenantId)",
-    "'config_json' => json_encode(",
+    'ExternalChannelBindingService::mutate',
     "'sms_default'",
     "'sms_aliyun'",
     "'sms_tencent'",
 ] as $marker) {
     expectChannelBindingTenant(str_contains($noticeService, $marker), 'Tenant SMS binding invariant missing: ' . $marker);
 }
+expectChannelBindingTenant(
+    !str_contains($noticeService, 'external_channel_binding')
+        && !str_contains($noticeService, "Db::name('external_channel_binding')"),
+    'NoticeChannelService still accesses the shared external binding table directly'
+);
 expectChannelBindingTenant(
     !str_contains($noticeService, 'ConfigService'),
     'Tenant SMS configuration falls back to global pa_config'
