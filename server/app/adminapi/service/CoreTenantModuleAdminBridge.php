@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\service;
 
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\PdoTenantAuthorizationRepository;
@@ -64,8 +65,12 @@ final readonly class CoreTenantModuleAdminBridge
         }
         $catalog = new PdoMenuCatalogRepository($pdo);
         $definitions = $catalog->activeDefinitions('tenant');
-        $deploymentModules = $catalog->activeDeploymentModules();
-        $tenantModules = $catalog->activeTenantModules($tenantContext->tenantId);
+        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $deploymentModules = array_map(
+            static fn($module): string => $module->moduleKey,
+            $qualification->installedModules()
+        );
+        $tenantModules = $qualification->activeTenantModuleKeys($tenantContext->tenantId);
         $visible = (new MenuRegistry($definitions))->visible(
             'admin-web',
             static fn(string $moduleKey): bool => in_array($moduleKey, $deploymentModules, true),
@@ -87,8 +92,12 @@ final readonly class CoreTenantModuleAdminBridge
         }
         $pdo = $this->connection();
         $catalog = new PdoMenuCatalogRepository($pdo);
-        $deploymentModules = $catalog->activeDeploymentModules();
-        $tenantModules = $catalog->activeTenantModules($tenantId);
+        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $deploymentModules = array_map(
+            static fn($module): string => $module->moduleKey,
+            $qualification->installedModules()
+        );
+        $tenantModules = $qualification->activeTenantModuleKeys($tenantId);
         $visible = (new MenuRegistry($catalog->activeDefinitions('tenant')))->visible(
             'admin-web',
             static fn(string $moduleKey): bool => in_array($moduleKey, $deploymentModules, true),
@@ -105,21 +114,32 @@ final readonly class CoreTenantModuleAdminBridge
         if ($tenantId < 1) {
             return [];
         }
-        $statement = $this->connection()->prepare(<<<'SQL'
-SELECT DISTINCT p.`key`
-FROM pa_permission p
-JOIN pa_module_installation installation
-  ON installation.module_key = p.module_key AND installation.status = 'active'
-JOIN pa_tenant_module tenant_module
-  ON tenant_module.module_key = p.module_key
- AND tenant_module.tenant_id = :tenant_id
- AND tenant_module.status = 'enabled'
-WHERE p.status = 'active'
-  AND (tenant_module.effective_at IS NULL OR tenant_module.effective_at <= CURRENT_TIMESTAMP(3))
-  AND (tenant_module.expires_at IS NULL OR tenant_module.expires_at > CURRENT_TIMESTAMP(3))
-ORDER BY p.`key`
-SQL);
-        $statement->execute(['tenant_id' => $tenantId]);
+        $pdo = $this->connection();
+        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $installed = array_fill_keys(array_map(
+            static fn($module): string => $module->moduleKey,
+            $qualification->installedModules()
+        ), true);
+        $active = array_values(array_filter(
+            $qualification->activeTenantModuleKeys($tenantId),
+            static fn(string $moduleKey): bool => isset($installed[$moduleKey])
+        ));
+        if ($active === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_map(
+            static fn(int $index): string => ':module_' . $index,
+            array_keys($active)
+        ));
+        $statement = $pdo->prepare(
+            "SELECT DISTINCT p.`key` FROM pa_permission p WHERE p.status = 'active' "
+            . "AND p.module_key IN ({$placeholders}) ORDER BY p.`key`"
+        );
+        $parameters = [];
+        foreach ($active as $index => $moduleKey) {
+            $parameters['module_' . $index] = $moduleKey;
+        }
+        $statement->execute($parameters);
         return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
     }
 

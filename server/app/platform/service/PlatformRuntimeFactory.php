@@ -6,10 +6,9 @@ namespace app\platform\service;
 use app\common\service\ApplicationPasswordPolicy;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\module\VerifiedTenantModuleRepository;
-use app\platform\service\plugin\PluginLockResolver;
-use app\platform\service\plugin\PluginModuleRegistryFactory;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -151,17 +150,11 @@ final class PlatformRuntimeFactory
 
         $pdo = self::pdo();
         $config = Config::get('modules', []);
-        $serverRoot = dirname(__DIR__, 3);
         if (!is_array($config)) {
             throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
         }
-        $factory = new PluginModuleRegistryFactory($pdo, $serverRoot);
-        $lockPath = trim((string)($config['plugin_lock'] ?? ''));
-        if ($lockPath !== '' && is_file($serverRoot . '/' . ltrim($lockPath, '/'))) {
-            $registry = $factory->fromPluginLock(new PluginLockResolver($serverRoot, $lockPath), $config);
-        } else {
-            $registry = $factory->fromDeploymentConfig($config);
-        }
+        $governance = new PdoModuleGovernanceProvider($pdo, dirname(__DIR__, 3), $config);
+        $registry = $governance->registry();
         $validator = new OpisTenantModuleConfigValidator();
         $repository = new VerifiedTenantModuleRepository(
             new PdoModuleRuntimeRepository($pdo, true),

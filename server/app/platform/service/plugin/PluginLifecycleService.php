@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
+use app\common\contract\module\PluginLifecycleCommands;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -16,7 +17,7 @@ use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
 use PeanutAdmin\Settings\Persistence\PdoSettingRepository;
 
 /** Deployment-scoped Plugin lifecycle. It deliberately never mutates pa_tenant_module. */
-final readonly class PluginLifecycleService
+final readonly class PluginLifecycleService implements PluginLifecycleCommands
 {
     /** @param array<string,mixed> $moduleConfig */
     public function __construct(

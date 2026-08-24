@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\async;
 
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\TaskJob\Execution\JobExecution;
 use PeanutAdmin\TaskJob\Execution\TaskHandler;
@@ -35,7 +35,9 @@ final readonly class ModuleAwareTaskHandler implements TaskHandler
             $context->tenantContext,
             'async.worker',
         );
-        (new ModuleExecutionGuard($this->pdo, $this->moduleKey))->assertWorker($moduleContext);
+        PdoModuleGovernanceProvider::forExecution($this->pdo)
+            ->executionGuard($this->moduleKey)
+            ->assertWorker($moduleContext);
         $this->inner->handle($context, $execution);
     }
 }

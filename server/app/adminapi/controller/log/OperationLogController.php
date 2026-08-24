@@ -9,7 +9,7 @@ use app\adminapi\service\AdminPermissionService;
 use app\common\service\async\TaskImportExportRuntime;
 use app\common\service\audit\OperationLogTenantContext;
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use think\facade\Db;
 
@@ -103,7 +103,9 @@ class OperationLogController extends BaseAdminController
         if (!$pdo instanceof PDO) {
             throw new \RuntimeException('ASYNC_DATABASE_UNAVAILABLE');
         }
-        (new ModuleExecutionGuard($pdo, 'official.import-export'))->assertEnabled(
+        PdoModuleGovernanceProvider::forExecution($pdo)
+            ->executionGuard('official.import-export')
+            ->assertEnabled(
             ModuleExecutionContext::admin(
                 'official.import-export',
                 OperationLogTenantContext::member($this->request),

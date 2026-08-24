@@ -11,8 +11,6 @@ use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
-use app\platform\service\plugin\PluginLockResolver;
-use app\platform\service\plugin\PluginModuleRegistryFactory;
 
 /** Applies explicit application product profiles through the canonical TenantModule runtime. */
 final readonly class ProductTenantModuleProfileService
@@ -105,14 +103,11 @@ final readonly class ProductTenantModuleProfileService
 
     private function registry(): DeployedTenantModuleRegistry
     {
-        $lockPath = trim((string)($this->deploymentConfig['plugin_lock'] ?? ''));
-        if ($lockPath === '') {
-            throw new ModuleException('PLUGIN_LOCK_INVALID', 'Plugin lock is not configured.');
-        }
-        return (new PluginModuleRegistryFactory($this->pdo, $this->serverRoot))->fromPluginLock(
-            new PluginLockResolver($this->serverRoot, $lockPath),
+        return (new PdoModuleGovernanceProvider(
+            $this->pdo,
+            $this->serverRoot,
             $this->deploymentConfig
-        );
+        ))->registry();
     }
 
     /** @param list<string> $tenantCodes @return list<array{id:int,code:string}> */

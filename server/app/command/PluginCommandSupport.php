@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginLifecycleService;
-use app\platform\service\plugin\PluginLockResolver;
-use app\platform\service\plugin\PluginModuleRegistryFactory;
 use PDO;
 use think\console\Output;
 use think\facade\Config;
@@ -14,7 +12,7 @@ use think\facade\Db;
 
 trait PluginCommandSupport
 {
-    private function pluginLifecycle(): PluginLifecycleService
+    private function pluginLifecycle(): \app\common\contract\module\PluginLifecycleCommands
     {
         $pdo = Db::connect()->connect();
         if (!$pdo instanceof PDO) {
@@ -25,20 +23,10 @@ trait PluginCommandSupport
         if (!is_array($config)) {
             throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
         }
-        $lockPath = trim((string)($config['plugin_lock'] ?? ''));
-        if ($lockPath === '') {
-            throw new PluginLifecycleException('PLUGIN_LOCK_INVALID', 'Plugin lock path is not configured.');
-        }
-        $resolver = new PluginLockResolver($serverRoot, $lockPath);
-        return new PluginLifecycleService(
-            $pdo,
-            $resolver,
-            new PluginModuleRegistryFactory($pdo, $serverRoot),
-            $config
-        );
+        return (new PdoModuleGovernanceProvider($pdo, $serverRoot, $config))->pluginLifecycle();
     }
 
-    /** @param callable(PluginLifecycleService):array<string,mixed> $operation */
+    /** @param callable(\app\common\contract\module\PluginLifecycleCommands):array<string,mixed> $operation */
     private function runPluginOperation(Output $output, callable $operation): int
     {
         try {

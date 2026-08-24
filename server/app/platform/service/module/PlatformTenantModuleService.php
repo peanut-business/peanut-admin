@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\module;
 
+use app\common\contract\module\TenantModuleCommands;
 use DateTimeImmutable;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -10,7 +11,7 @@ use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\TenantGovernanceService;
 
 /** Permission-gated application closure for instance-local TenantModule governance. */
-final readonly class PlatformTenantModuleService
+final readonly class PlatformTenantModuleService implements TenantModuleCommands
 {
     private const PERMISSION = 'platform.tenant.module.manage';
 
