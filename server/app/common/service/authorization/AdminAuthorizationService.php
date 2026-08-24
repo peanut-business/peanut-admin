@@ -8,7 +8,6 @@ use app\common\contract\authorization\AuthorizedOperationFactory;
 use app\common\dto\authorization\AdminAccessData;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\dto\authorization\PermissionDecision;
-use app\common\model\auth\SystemMenu;
 use app\common\service\CoreServiceOverrides;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
@@ -87,15 +86,14 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             return PermissionDecision::deny($accessUri, 'PLATFORM_ROUTE_FORBIDDEN');
         }
 
-        $registered = SystemMenu::where('is_disable', 0)
-            ->where('perms', '<>', '')
-            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
-            ->column('perms');
         $bridge = new CoreTenantModuleAdminBridge($this->pdo);
         $registered = [
-            ...$registered,
-            ...$bridge->registeredPermissions($tenantContext->tenantId),
+            ...$bridge->registeredSystemMenuPermissions($tenantContext->tenantId),
         ];
+        $registered = array_values(array_diff(
+            array_unique($registered),
+            InstanceControlPlanePolicy::tenantAdminPermissions()
+        ));
         $owned = $bridge->accessData($tenantContext)['permissions'];
         $allowed = CoreServiceOverrides::adminPermissionPolicy()->canAccess(
             $admin->root,
