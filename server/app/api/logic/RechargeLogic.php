@@ -5,12 +5,12 @@ namespace app\api\logic;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
 use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Oauth\ModuleProvider as OAuthModuleProvider;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\UserTerminalEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\finance\PaymentScene;
 use app\common\model\finance\RechargeOrder;
-use app\common\model\oauth\OAuthIdentity;
 use app\common\service\MemberBalanceService;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
@@ -162,7 +162,7 @@ class RechargeLogic extends BaseLogic
         try {
             if ($payWay === PaymentScene::PAY_WAY_WECHAT
                 && in_array((int)$order['order_terminal'], [1, 2], true)) {
-                $openid = OAuthIdentity::subjectForMember(
+                $openid = (new OAuthModuleProvider())->queries()->wechatSubjectForMember(
                     $context,
                     $memberId,
                     (int)$order['order_terminal']
