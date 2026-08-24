@@ -40,8 +40,12 @@ expectTaskHost(str_contains($migrationSource, 'pa_file_object'), 'private file m
 expectTaskHost(!str_contains($migrationSource, 'public/storage'), 'async migration refers to public storage');
 
 $runtimeSource = (string)file_get_contents($serverRoot . '/app/common/service/async/TaskImportExportRuntime.php');
-expectTaskHost(str_contains($runtimeSource, 'TrustedJobPublisher'), 'Host does not use the trusted Core publisher');
-expectTaskHost(str_contains($runtimeSource, 'AdminAsyncAuthorization'), 'worker does not revalidate async authorization');
+expectTaskHost(str_contains($runtimeSource, 'TaskModuleProvider'), 'Import/Export does not use the official Task Runtime');
+expectTaskHost(!str_contains($runtimeSource, 'PdoTaskJobRepository'), 'Import/Export bypasses the official Task Runtime repository boundary');
+expectTaskHost(!str_contains($runtimeSource, 'TrustedJobPublisher'), 'Import/Export bypasses the official Task Runtime publisher boundary');
+$taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
+expectTaskHost(str_contains($taskRuntimeSource, 'TrustedJobPublisher'), 'official.task does not own trusted submission');
+expectTaskHost(str_contains($taskRuntimeSource, 'LocalWorker'), 'official.task does not own worker execution');
 $gatewaySource = (string)file_get_contents($serverRoot . '/app/common/service/export/AppFileMediaGateway.php');
 expectTaskHost(!str_contains($gatewaySource, "'/public/"), 'private gateway writes below public/');
 

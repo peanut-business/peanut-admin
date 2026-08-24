@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\async;
 
 use app\common\service\audit\AuditContractHost;
+use app\Modules\Official\Task\Contracts\TaskJobRuntime;
+use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\ImportExport\Application\OperationRecord;
@@ -12,28 +14,20 @@ use PeanutAdmin\ImportExport\Execution\CsvOperationRunner;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskSubmissionProvider;
 use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
-use PeanutAdmin\Kernel\Async\JobHandlerAdapter;
-use PeanutAdmin\Kernel\Async\TrustedEnvelopeCodec;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
-use PeanutAdmin\TaskJob\Application\TaskJobService;
-use PeanutAdmin\TaskJob\Execution\LocalWorker;
-use PeanutAdmin\TaskJob\Execution\TaskHandlerRegistry;
-use PeanutAdmin\TaskJob\Persistence\PdoTaskJobRepository;
-use PeanutAdmin\TaskJob\Submission\TaskSubmissionRegistry;
-use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use app\common\service\export\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 
 final readonly class TaskImportExportRuntime
 {
+    private TaskJobRuntime $tasks;
+
     public function __construct(
         private PDO $pdo,
         private string $signingKey,
         private string $privateRoot,
     ) {
-        if (strlen($signingKey) < 32) {
-            throw new \RuntimeException('ASYNC_SIGNING_KEY_INVALID');
-        }
+        $this->tasks = (new TaskModuleProvider())->jobs($this->pdo, $this->signingKey);
     }
 
     public static function fromConfig(PDO $pdo): self
@@ -69,51 +63,28 @@ final readonly class TaskImportExportRuntime
 
     public function runTenant(int $tenantId, string $workerId): int
     {
-        if ($tenantId < 1) {
-            throw new \RuntimeException('ASYNC_TENANT_INVALID');
-        }
-        $worker = new LocalWorker(
+        return $this->tasks->runTenant(
             $tenantId,
             $workerId,
-            new PdoTaskJobRepository($this->pdo),
-            new TaskHandlerRegistry([
-                new ModuleAwareTaskHandler(
-                    $this->pdo,
-                    'official.import-export',
-                    new ImportExportTaskHandler(new CsvOperationRunner(
-                        new PdoImportExportRepository($this->pdo),
-                        $this->providers(),
-                        $this->files(),
-                        AuditContractHost::fromPdo($this->pdo),
-                    )),
-                ),
-            ]),
-            new JobHandlerAdapter(
-                new TrustedEnvelopeCodec($this->signingKey),
+            new ImportExportTaskWorkerDefinition(
+                new ImportExportTaskHandler(new CsvOperationRunner(
+                    new PdoImportExportRepository($this->pdo),
+                    $this->providers(),
+                    $this->files(),
+                    AuditContractHost::fromPdo($this->pdo),
+                )),
                 new AdminAsyncAuthorization($this->pdo),
             ),
         );
-
-        $processed = 0;
-        $limit = min(1000, max(1, (int)config('async.worker_limit', 25)));
-        while ($processed < $limit && $worker->runOnce() !== null) {
-            ++$processed;
-        }
-        return $processed;
     }
 
     private function service(): ImportExportService
     {
-        $jobs = new PdoTaskJobRepository($this->pdo);
         return new ImportExportService(
             new PdoImportExportRepository($this->pdo),
             $this->providers(),
-            new TrustedJobPublisher(
-                $jobs,
-                new TaskSubmissionRegistry([new ImportExportTaskSubmissionProvider()]),
-                new TrustedEnvelopeCodec($this->signingKey),
-            ),
-            new TaskJobService($jobs),
+            $this->tasks->publisher(new ImportExportTaskSubmissionProvider()),
+            $this->tasks->jobs(),
             AuditContractHost::fromPdo($this->pdo),
         );
     }

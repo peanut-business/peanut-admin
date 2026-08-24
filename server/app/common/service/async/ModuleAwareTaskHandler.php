@@ -30,13 +30,16 @@ final readonly class ModuleAwareTaskHandler implements TaskHandler
 
     public function handle(AuthorizedOperationContext $context, JobExecution $execution): void
     {
+        $governance = PdoModuleGovernanceProvider::forExecution($this->pdo);
+        $governance->executionGuard('official.task')->assertWorker(
+            ModuleExecutionContext::admin('official.task', $context->tenantContext, 'async.worker'),
+        );
         $moduleContext = ModuleExecutionContext::admin(
             $this->moduleKey,
             $context->tenantContext,
             'async.worker',
         );
-        PdoModuleGovernanceProvider::forExecution($this->pdo)
-            ->executionGuard($this->moduleKey)
+        $governance->executionGuard($this->moduleKey)
             ->assertWorker($moduleContext);
         $this->inner->handle($context, $execution);
     }
