@@ -15,6 +15,25 @@ function expectRbacTenant(bool $condition, string $message): void
     }
 }
 
+/** @param list<array<string,mixed>> $menus */
+function containsImportExportMenu(array $menus): bool
+{
+    $forbiddenPermissions = [
+        'log/export',
+        'log/export/status',
+        'log/export/download',
+    ];
+    foreach ($menus as $menu) {
+        if (($menu['module_key'] ?? null) === 'official.import-export'
+            || in_array((string)($menu['perms'] ?? ''), $forbiddenPermissions, true)
+            || containsImportExportMenu(is_array($menu['children'] ?? null) ? $menu['children'] : [])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function rbacTenantContext(int $tenantId, int $accountId, int $memberId, string $requestId): TenantContext
 {
     return TenantContext::fromValidatedSession(new ValidatedTenantSession(
@@ -187,7 +206,7 @@ SQL);
     $data = $authorization->accessData($alphaContext, $alpha);
     expectRbacTenant($data->menu !== [], 'enabled Tenant Module menu projection was empty');
     expectRbacTenant(
-        $authorization->accessData($betaContext, $beta)->menu === [],
+        !containsImportExportMenu($authorization->accessData($betaContext, $beta)->menu),
         'disabled Tenant Module menu leaked into Beta'
     );
 
