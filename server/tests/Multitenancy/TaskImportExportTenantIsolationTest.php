@@ -52,16 +52,15 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$taskManifestPath = $serverRoot . '/app/Modules/Official/Task/module.json';
-$importExportManifestPath = $serverRoot . '/app/Modules/Official/ImportExport/module.json';
-$taskManifest = json_decode((string)file_get_contents($taskManifestPath), true, 512, JSON_THROW_ON_ERROR);
-$importExportManifest = json_decode((string)file_get_contents($importExportManifestPath), true, 512, JSON_THROW_ON_ERROR);
-$taskVersion = (string)($taskManifest['version'] ?? '');
-$importExportVersion = (string)($importExportManifest['version'] ?? '');
-$taskManifestDigest = hash_file('sha256', $taskManifestPath);
-$importExportManifestDigest = hash_file('sha256', $importExportManifestPath);
-expectAsyncTenant($taskVersion !== '' && is_string($taskManifestDigest), 'official.task Module manifest is unavailable');
-expectAsyncTenant($importExportVersion !== '' && is_string($importExportManifestDigest), 'official.import-export Module manifest is unavailable');
+$manifestLoader = new PeanutAdmin\Kernel\Module\ManifestLoader();
+$taskManifest = $manifestLoader->load($serverRoot . '/app/Modules/Official/Task');
+$importExportManifest = $manifestLoader->load($serverRoot . '/app/Modules/Official/ImportExport');
+$taskVersion = (string)($taskManifest->data['version'] ?? '');
+$importExportVersion = (string)($importExportManifest->data['version'] ?? '');
+$taskManifestDigest = $taskManifest->digest;
+$importExportManifestDigest = $importExportManifest->digest;
+expectAsyncTenant($taskVersion !== '' && $taskManifestDigest !== '', 'official.task Module manifest is unavailable');
+expectAsyncTenant($importExportVersion !== '' && $importExportManifestDigest !== '', 'official.import-export Module manifest is unavailable');
 $host = (string)getenv('DB_HOST');
 $port = (int)getenv('DB_PORT');
 $database = (string)getenv('DB_NAME');
