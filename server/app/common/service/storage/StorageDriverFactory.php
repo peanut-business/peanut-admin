@@ -15,7 +15,6 @@ final class StorageDriverFactory
             $account['resolved_credentials'] = ($resolver ?? new FailClosedStorageCredentialResolver())->resolve(
                 (string)($account['driver'] ?? ''),
                 (string)($account['credential_ref'] ?? ''),
-                (array)($account['credentials'] ?? []),
             );
         }
         return match ((string)($account['driver'] ?? '')) {

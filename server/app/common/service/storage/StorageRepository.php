@@ -22,7 +22,7 @@ final readonly class StorageRepository
     {
         $access = StorageAccess::assertType($access);
         $statement = $this->pdo->prepare(<<<'SQL'
-SELECT a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.credentials,a.status account_status,
+SELECT a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.status account_status,
        s.id space_id,s.space_key,s.name space_name,s.access_type,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status
 FROM pa_storage_route r JOIN pa_storage_space s ON s.id=r.space_id JOIN pa_storage_account a ON a.id=s.account_id
 WHERE r.route_key IN (:purpose,:default_route) AND r.access_type=:access AND s.access_type=:access
@@ -89,7 +89,7 @@ SQL); $statement->execute($data);
 
     public function accounts(): array
     {
-        $rows=$this->pdo->query('SELECT id,account_key,driver,name,credential_ref,credentials,status,created_at,updated_at FROM pa_storage_account ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+        $rows=$this->pdo->query('SELECT id,account_key,driver,name,credential_ref,status,created_at,updated_at FROM pa_storage_account ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
         return array_map(fn(array $r):array=>$this->decode($r),$rows);
     }
     public function spaces(): array
@@ -103,11 +103,10 @@ SQL); $statement->execute($data);
 
     private function objectSelect(): string
     {
-        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.credentials,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
+        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
     }
     private function decode(array $row): array
     {
-        if(isset($row['credentials'])&&is_string($row['credentials'])){$v=json_decode($row['credentials'],true);$row['credentials']=is_array($v)?$v:[];}
         return $row;
     }
 }

@@ -5,7 +5,7 @@ namespace app\common\service\storage;
 
 final class FailClosedStorageCredentialResolver implements StorageCredentialResolver
 {
-    public function resolve(string $driver, string $credentialRef, array $bindings = []): array
+    public function resolve(string $driver, string $credentialRef): array
     {
         if ($driver === 'local') {
             return [];
