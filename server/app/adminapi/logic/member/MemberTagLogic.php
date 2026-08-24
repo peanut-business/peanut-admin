@@ -4,54 +4,51 @@ declare(strict_types=1);
 namespace app\adminapi\logic\member;
 
 use app\common\logic\BaseLogic;
-use app\common\model\member\MemberTag;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\ModuleProvider;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class MemberTagLogic extends BaseLogic
 {
     public static function lists(TenantContext $context): array
     {
-        return MemberTenantRepository::tags($context)->order('id', 'desc')->select()->toArray();
+        return (new ModuleProvider())->queries()->tags($context);
     }
 
     public static function add(TenantContext $context, array $params): bool
     {
-        if (MemberTenantRepository::tags($context)->where('name', $params['name'])->count() > 0) {
-            self::setError('标签名称已存在');
+        try {
+            (new ModuleProvider())->tagCommands()->create($context, (string)$params['name'], (string)($params['remark'] ?? ''));
+            return true;
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
             return false;
         }
-        MemberTenantRepository::createTag($context, ['name' => $params['name'], 'remark' => $params['remark'] ?? '']);
-        return true;
     }
 
     public static function edit(TenantContext $context, array $params): bool
     {
-        if (MemberTenantRepository::tags($context)->where('name', $params['name'])->where('id', '<>', $params['id'])->count() > 0) {
-            self::setError('标签名称已存在');
+        try {
+            (new ModuleProvider())->tagCommands()->update(
+                $context,
+                (int)$params['id'],
+                (string)$params['name'],
+                isset($params['remark']) ? (string)$params['remark'] : null,
+            );
+            return true;
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
             return false;
         }
-        $tag = MemberTenantRepository::tags($context)->where('id', (int)$params['id'])->findOrEmpty();
-        if ($tag->isEmpty()) {
-            self::setError('标签不存在');
-            return false;
-        }
-        $data = [];
-        if (isset($params['name']))   $data['name']   = $params['name'];
-        if (isset($params['remark'])) $data['remark'] = $params['remark'];
-        $tag->save($data);
-        return true;
     }
 
     public static function delete(TenantContext $context, int $id): bool
     {
-        $tag = MemberTenantRepository::tags($context)->where('id', $id)->findOrEmpty();
-        if ($tag->isEmpty()) {
-            self::setError('标签不存在');
+        try {
+            (new ModuleProvider())->tagCommands()->delete($context, $id);
+            return true;
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
             return false;
         }
-        MemberTenantRepository::relations($context)->where('tag_id', $id)->delete();
-        $tag->delete();
-        return true;
     }
 }

@@ -11,8 +11,6 @@ use app\common\contract\idempotency\IdempotencyCommand;
 use app\common\contract\idempotency\IdempotencyReceipt;
 use app\common\enum\MemberChannelEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\member\Member;
-use app\common\model\member\MemberTagRelation;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
 use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\common\service\FileService;
@@ -23,7 +21,6 @@ use app\common\service\member\MemberTenantRepository;
 use app\common\service\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
-use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -73,22 +70,21 @@ class MemberLogic extends BaseLogic
 
     public static function detail(TenantContext $context, int $id): array
     {
-        $member = MemberTenantRepository::members($context)->field([
+        $data = (new MemberModuleProvider())->queries()->memberFields($context, $id, [
             'id', 'sn', 'account', 'nickname', 'avatar', 'real_name',
             'sex', 'mobile', 'create_time', 'login_time', 'channel',
             'user_money',
-        ])->findOrEmpty($id);
-        if ($member->isEmpty()) {
+        ]);
+        if ($data === []) {
             return [];
         }
 
-        $data = $member->toArray();
         $data['id'] = (int)$data['id'];
-        $data['sex'] = (int)$member->getData('sex');
-        $data['channel'] = MemberChannelEnum::getDesc((int)$member->getData('channel'));
-        $data['create_time'] = self::formatTime($member->getData('create_time'));
-        $data['login_time'] = self::formatTime($member->getData('login_time'));
-        $data['user_money'] = (float)$member->getData('user_money');
+        $data['sex'] = (int)$data['sex'];
+        $data['channel'] = MemberChannelEnum::getDesc((int)$data['channel']);
+        $data['create_time'] = self::formatTime($data['create_time']);
+        $data['login_time'] = self::formatTime($data['login_time']);
+        $data['user_money'] = (float)$data['user_money'];
         $data['balance'] = $data['user_money'];
         return $data;
     }
@@ -241,8 +237,7 @@ class MemberLogic extends BaseLogic
     {
         Db::startTrans();
         try {
-            $member = MemberTenantRepository::createMember($context, [
-                'sn'       => Member::generateSn($context),
+            (new MemberModuleProvider())->profileCommands()->createAdminMember($context, [
                 'nickname' => $params['nickname'],
                 'avatar'   => FileService::setTenantFileUrl($context, (string)($params['avatar'] ?? '')),
                 'mobile'   => $params['mobile']   ?? '',
@@ -250,10 +245,7 @@ class MemberLogic extends BaseLogic
                 'sex'      => (int)($params['sex'] ?? 0),
                 'birthday' => $params['birthday']  ?? null,
                 'status'   => (int)($params['status'] ?? 1),
-            ]);
-            if (!empty($params['tag_ids'])) {
-                self::syncTags($context, (int)$member->id, $params['tag_ids']);
-            }
+            ], (array)($params['tag_ids'] ?? []));
             Db::commit();
             return true;
         } catch (\Throwable $e) {
@@ -267,10 +259,6 @@ class MemberLogic extends BaseLogic
     {
         Db::startTrans();
         try {
-            $member = MemberTenantRepository::members($context)->where('id', (int)$params['id'])->findOrEmpty();
-            if ($member->isEmpty()) {
-                throw new \RuntimeException('用户不存在');
-            }
             $data = [];
             foreach (['nickname', 'avatar', 'mobile', 'email', 'birthday'] as $f) {
                 if (isset($params[$f])) {
@@ -282,10 +270,12 @@ class MemberLogic extends BaseLogic
             foreach (['sex', 'status'] as $f) {
                 if (isset($params[$f])) $data[$f] = (int)$params[$f];
             }
-            $member->save($data);
-            if (array_key_exists('tag_ids', $params)) {
-                self::syncTags($context, (int)$params['id'], (array)($params['tag_ids'] ?? []));
-            }
+            (new MemberModuleProvider())->profileCommands()->updateAdminMember(
+                $context,
+                (int)$params['id'],
+                $data,
+                array_key_exists('tag_ids', $params) ? (array)($params['tag_ids'] ?? []) : null,
+            );
             Db::commit();
             return true;
         } catch (\Throwable $e) {
@@ -303,12 +293,12 @@ class MemberLogic extends BaseLogic
             $value = $field === 'avatar'
                 ? FileService::setTenantFileUrl($context, (string)$params['value'])
                 : $params['value'];
-            $updated = MemberTenantRepository::members($context)->where('id', (int)$params['id'])->update([
-                $field => $value,
-            ]);
-            if ($updated !== 1) {
-                throw new \RuntimeException('用户不存在');
-            }
+            (new MemberModuleProvider())->profileCommands()->updateAdminField(
+                $context,
+                (int)$params['id'],
+                $field,
+                $value,
+            );
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -319,9 +309,7 @@ class MemberLogic extends BaseLogic
     public static function updateStatus(TenantContext $context, int $id, int $status): bool
     {
         try {
-            if (MemberTenantRepository::members($context)->where('id', $id)->update(['status' => $status]) !== 1) {
-                throw new \RuntimeException('用户不存在');
-            }
+            (new MemberModuleProvider())->profileCommands()->updateStatus($context, $id, $status);
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -431,25 +419,4 @@ class MemberLogic extends BaseLogic
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
-    /** 全量替换标签关联 */
-    private static function syncTags(TenantContext $context, int $memberId, array $tagIds): void
-    {
-        if (MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty()->isEmpty()) {
-            throw new \RuntimeException('用户不存在');
-        }
-        $tagIds = PositiveIds::normalize(
-            $tagIds,
-            [PositiveIds::REJECT_INVALID],
-            '包含不存在的会员标签',
-        );
-        if ($tagIds !== [] && MemberTenantRepository::tags($context)->whereIn('id', $tagIds)->count() !== count($tagIds)) {
-            throw new \RuntimeException('包含不存在的会员标签');
-        }
-        MemberTenantRepository::relations($context)->where('member_id', $memberId)->delete();
-        if (!empty($tagIds)) {
-            $tenantId = MemberTenantContext::tenantId($context);
-            $rows = array_map(fn($tid) => ['tenant_id' => $tenantId, 'member_id' => $memberId, 'tag_id' => (int)$tid], $tagIds);
-            (new MemberTagRelation)->insertAll($rows);
-        }
-    }
 }
