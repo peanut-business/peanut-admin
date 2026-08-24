@@ -2,12 +2,12 @@
 -- Instance accounts, immutable spaces, public/private routes and one object ledger.
 CREATE TABLE `pa_storage_account` (
  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `account_key` VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
- `driver` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, `name` VARCHAR(128) NOT NULL, `credential_ref` VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NULL,
+ `driver` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, `name` VARCHAR(128) NOT NULL, `credential_ciphertext` MEDIUMTEXT NULL, `credential_key_version` VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL, `credential_rotated_at` DATETIME(3) NULL,
  `status` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'active', `created_at` DATETIME(3) NOT NULL, `updated_at` DATETIME(3) NOT NULL,
  PRIMARY KEY (`id`), UNIQUE KEY `uk_storage_account_key` (`account_key`),
  CONSTRAINT `chk_storage_account_driver` CHECK (`driver` IN ('local','qiniu','aliyun','qcloud')),
  CONSTRAINT `chk_storage_account_status` CHECK (`status` IN ('active','disabled')),
- CONSTRAINT `chk_storage_account_credential_ref` CHECK ((`driver`='local' AND `credential_ref` IS NULL) OR (`driver`<>'local' AND `credential_ref` IS NOT NULL))
+ CONSTRAINT `chk_storage_account_credentials` CHECK ((`driver`='local' AND `credential_ciphertext` IS NULL AND `credential_key_version` IS NULL AND `credential_rotated_at` IS NULL) OR (`driver`<>'local' AND `credential_ciphertext` IS NOT NULL AND `credential_key_version` IS NOT NULL AND `credential_rotated_at` IS NOT NULL))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 CREATE TABLE `pa_storage_space` (
  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `space_key` VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, `account_id` BIGINT UNSIGNED NOT NULL,
@@ -29,22 +29,13 @@ CREATE TABLE `pa_storage_route` (
  CONSTRAINT `chk_storage_route_key` CHECK (`route_key` REGEXP '^[a-z][a-z0-9._-]{2,95}$')
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `pa_storage_account` (`account_key`,`driver`,`name`,`credential_ref`,`status`,`created_at`,`updated_at`) VALUES ('local','local','本地存储',NULL,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3));
+INSERT INTO `pa_storage_account` (`account_key`,`driver`,`name`,`credential_ciphertext`,`credential_key_version`,`credential_rotated_at`,`status`,`created_at`,`updated_at`) VALUES ('local','local','本地存储',NULL,NULL,NULL,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3));
 INSERT INTO `pa_storage_space` (`space_key`,`account_id`,`name`,`access_type`,`local_path`,`status`,`created_at`,`updated_at`)
  SELECT 'local-public',`id`,'本地公开文件','public','public/storage','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3) FROM `pa_storage_account` WHERE `account_key`='local';
 INSERT INTO `pa_storage_space` (`space_key`,`account_id`,`name`,`access_type`,`local_path`,`status`,`created_at`,`updated_at`)
  SELECT 'local-private',`id`,'本地私有文件','private','private/storage','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3) FROM `pa_storage_account` WHERE `account_key`='local';
-INSERT INTO `pa_storage_account` (`account_key`,`driver`,`name`,`credential_ref`,`status`,`created_at`,`updated_at`)
- SELECT CONCAT('legacy-',`name`),`name`,CONCAT('既有',`name`,'账号'),CONCAT('secret.storage.',REPLACE(CONCAT('legacy-',`name`),'-','.')),'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)
- FROM `pa_config` WHERE `type`='storage' AND `name` IN ('qiniu','aliyun','qcloud') AND JSON_VALID(`value`) AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(`value`,'$.bucket')),'')<>'';
-INSERT INTO `pa_storage_space` (`space_key`,`account_id`,`name`,`access_type`,`bucket`,`region`,`endpoint`,`access_domain`,`status`,`created_at`,`updated_at`)
- SELECT CONCAT('legacy-',c.`name`,'-public'),a.`id`,CONCAT('既有',c.`name`,'公开空间'),'public',JSON_UNQUOTE(JSON_EXTRACT(c.`value`,'$.bucket')),NULLIF(JSON_UNQUOTE(JSON_EXTRACT(c.`value`,'$.region')),''),
- CASE WHEN c.`name`='aliyun' THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(c.`value`,'$.domain')),'') ELSE NULL END,NULLIF(JSON_UNQUOTE(JSON_EXTRACT(c.`value`,'$.domain')),''),'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)
- FROM `pa_config` c JOIN `pa_storage_account` a ON a.`account_key`=CONCAT('legacy-',c.`name`) WHERE c.`type`='storage' AND c.`name` IN ('qiniu','aliyun','qcloud');
 INSERT INTO `pa_storage_route` (`route_key`,`access_type`,`space_id`,`updated_at`)
- SELECT 'default.public','public',COALESCE(cloud_space.`id`,local_space.`id`),UTC_TIMESTAMP(3) FROM `pa_storage_space` local_space
- LEFT JOIN `pa_config` selected ON selected.`type`='storage' AND selected.`name`='default'
- LEFT JOIN `pa_storage_space` cloud_space ON cloud_space.`space_key`=CONCAT('legacy-',selected.`value`,'-public') WHERE local_space.`space_key`='local-public';
+ SELECT 'default.public','public',`id`,UTC_TIMESTAMP(3) FROM `pa_storage_space` WHERE `space_key`='local-public';
 INSERT INTO `pa_storage_route` (`route_key`,`access_type`,`space_id`,`updated_at`) SELECT 'default.private','private',`id`,UTC_TIMESTAMP(3) FROM `pa_storage_space` WHERE `space_key`='local-private';
 
 ALTER TABLE `pa_file_object` MODIFY `sha256` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL, MODIFY `created_by_member_id` BIGINT UNSIGNED NULL,

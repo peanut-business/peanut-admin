@@ -22,7 +22,7 @@ final readonly class StorageRepository
     {
         $access = StorageAccess::assertType($access);
         $statement = $this->pdo->prepare(<<<'SQL'
-SELECT a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.status account_status,
+SELECT a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ciphertext,a.credential_key_version,a.status account_status,
        s.id space_id,s.space_key,s.name space_name,s.access_type,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status
 FROM pa_storage_route r JOIN pa_storage_space s ON s.id=r.space_id JOIN pa_storage_account a ON a.id=s.account_id
 WHERE r.route_key IN (:purpose,:default_route) AND r.access_type=:route_access AND s.access_type=:space_access
@@ -70,10 +70,11 @@ SQL); $statement->execute($data);
         $s->execute(['tenant_id'=>$tenantId,'file_key'=>$fileKey]); return $s->rowCount()===1;
     }
 
-    public function markObjectWriteFailed(int $tenantId, string $fileKey): void
+    public function markObjectWriteFailed(int $tenantId, string $fileKey): bool
     {
         $s=$this->pdo->prepare("UPDATE pa_file_object SET status='write_failed',updated_at=UTC_TIMESTAMP(3),revision=revision+1 WHERE tenant_id=:tenant_id AND file_key=:file_key AND status='pending_write'");
         $s->execute(['tenant_id'=>$tenantId,'file_key'=>$fileKey]);
+        return $s->rowCount()===1;
     }
 
     public function archive(int $tenantId,string $fileKey): bool
@@ -89,7 +90,7 @@ SQL); $statement->execute($data);
 
     public function accounts(): array
     {
-        $rows=$this->pdo->query('SELECT id,account_key,driver,name,credential_ref,status,created_at,updated_at FROM pa_storage_account ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+        $rows=$this->pdo->query("SELECT id,account_key,driver,name,CASE WHEN credential_ciphertext IS NULL THEN NULL ELSE '********' END credential_masked,credential_key_version,credential_rotated_at,status,created_at,updated_at FROM pa_storage_account ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
         return array_map(fn(array $r):array=>$this->decode($r),$rows);
     }
     public function spaces(): array
@@ -103,7 +104,7 @@ SQL); $statement->execute($data);
 
     private function objectSelect(): string
     {
-        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ref,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
+        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ciphertext,a.credential_key_version,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
     }
     private function decode(array $row): array
     {

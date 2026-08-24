@@ -1232,8 +1232,34 @@
       "reason": "the current product has no registered queue service"
     },
     "object_storage": {
-      "status": "not_applicable",
-      "reason": "the current product defaults to application-managed file storage; external object storage has no project allocation"
+      "status": "registered",
+      "resources": [
+        {
+          "stable_resource_id": "peanut-admin-cos-storage-acceptance",
+          "purpose": "isolated private Tencent COS bucket for unified storage acceptance",
+          "environments": [
+            "acceptance"
+          ],
+          "owner": "Peanut Admin storage acceptance owner",
+          "host": "cos.ap-guangzhou.myqcloud.com",
+          "port": 443,
+          "database": null,
+          "schema": null,
+          "namespace": "peanut-admin-storage-acceptance-20260824-1252029442",
+          "service_type": "Tencent Cloud COS private bucket",
+          "version": "Tencent COS SDK regional API",
+          "region": "ap-guangzhou",
+          "credential_ref": "deployment environment variable PEANUT_STORAGE_CREDENTIAL_MASTER_KEY; COS SecretId and SecretKey are entered through the Platform storage account API and persisted only as pa_storage_account encrypted ciphertext (no value is stored in Git or this registry)",
+          "data_source": "empty owner-created acceptance bucket",
+          "freshness_requirement": "before a stateful rehearsal, claim this exact resource, verify the deployment master-key variable is present without printing it, configure an acceptance-only account and private Space, then use a unique tenant/file-key prefix",
+          "health_check": "after an active resource lease and Platform account configuration, use the Tencent COS SDK against this exact bucket to perform the scoped object write/read/delete rehearsal",
+          "fallback": "none",
+          "lifecycle": "acceptance-only; no production data",
+          "cleanup_responsibility": "Peanut Admin storage acceptance owner deletes only the exact rehearsal object prefix after evidence capture",
+          "backup_responsibility": "not applicable; the bucket is empty and stores only disposable acceptance objects",
+          "allocation_state": "bucket allocated; deployment master-key variable and acceptance account credential entry are required before a stateful rehearsal"
+        }
+      ]
     }
   }
 }

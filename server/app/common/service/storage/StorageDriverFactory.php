@@ -12,10 +12,7 @@ final class StorageDriverFactory
     public static function make(array $account, array $space, ?StorageCredentialResolver $resolver = null): StorageDriver
     {
         if ((string)($account['driver'] ?? '') !== 'local') {
-            $account['resolved_credentials'] = ($resolver ?? new FailClosedStorageCredentialResolver())->resolve(
-                (string)($account['driver'] ?? ''),
-                (string)($account['credential_ref'] ?? ''),
-            );
+            $account['resolved_credentials'] = ($resolver ?? new FailClosedStorageCredentialResolver())->resolve($account);
         }
         return match ((string)($account['driver'] ?? '')) {
             'local' => new LocalStorageDriver($space),
