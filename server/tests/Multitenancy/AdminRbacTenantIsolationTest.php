@@ -107,15 +107,19 @@ VALUES
 INSERT INTO pa_module_installation
   (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
 VALUES
-  ('peanut.admin', '2.0.0', 1, REPEAT('d', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+  ('official.file', '1.0.0', 1, '3bf33252a3cd7b01b252718a3792625f1b7c8e09ee9aa35f6b1176d9dce8ce92', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.task', '1.0.0', 1, 'f64484bedbc5e14bc228773396dd28447bcf501f7741cc145e736e299a78f173', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.import-export', '1.0.0', 1, 'ffd55e06ea1c3502238eb9c55c6b65c3f33872694b341667ae875d8b657d1a54', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_tenant_module
   (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
 VALUES
-  (101, 'peanut.admin', 'enabled', 'manual', '{$now}', '{$now}', '{$now}');
+  (101, 'official.file', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (101, 'official.task', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (101, 'official.import-export', 'enabled', 'manual', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_permission
   (`key`, module_key, type, name, description, risk_level, status, manifest_version, created_at, updated_at, retired_at)
 VALUES
-  ('log/export', 'peanut.admin', 'api', 'Export operation logs', NULL, 'normal', 'active', 'fresh-schema-v1', '{$now}', '{$now}', NULL)
+  ('log/export', 'official.import-export', 'api', 'Export operation logs', NULL, 'sensitive', 'active', 'fresh-schema-v1', '{$now}', '{$now}', NULL)
 ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at), retired_at = NULL;
 INSERT INTO pa_role
   (id, tenant_id, `key`, name, is_builtin, status, authorization_revision, created_at, updated_at)
