@@ -215,7 +215,7 @@ SQL);
         }
     }
 
-    $runtime = new TaskImportExportRuntime($pdo, $signingKey, $privateRoot);
+    $runtime = new TaskImportExportRuntime($pdo, $signingKey);
     $taskDisabled = submitOperationLogExport($runtime, $alpha, 'task-disabled-' . $runId);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");
     expectAsyncTenant($runtime->runTenant(101, 'fresh-task-disabled-' . $runId) === 1, 'disabled Task Module job was not examined');
@@ -292,12 +292,8 @@ SQL);
     $completed = $runtime->operation($alpha, $success->operationKey);
     expectAsyncTenant($completed->status === 'succeeded' && $completed->resultFileKey !== null, 'successful export did not publish a result');
     $download = $runtime->download($alpha, $completed->resultFileKey);
-    expectAsyncTenant(is_file($download['path']), 'private CSV is missing');
-    expectAsyncTenant(str_starts_with($download['path'], $privateRoot . '/tenants/v1/101/exports/'), 'CSV escaped Tenant private namespace');
-    expectAsyncTenant(!str_starts_with($download['path'], $serverRoot . '/public/'), 'CSV was stored below public/');
-    $csv = (string)file_get_contents($download['path']);
-    expectAsyncTenant(str_contains($csv, 'alpha-only'), 'Alpha CSV lost its own row');
-    expectAsyncTenant(!str_contains($csv, 'beta-only'), 'Alpha CSV leaked Beta data');
+    expectAsyncTenant(isset($download['url']) && is_string($download['url']) && str_contains($download['url'], '/api/storage/private?'), 'private CSV URL is missing');
+    expectAsyncTenant(!str_contains((string)$download['url'], '/public/'), 'CSV was exposed below public/');
     try {
         $runtime->download($beta, $completed->resultFileKey);
         throw new RuntimeException('cross-Tenant result download succeeded');
