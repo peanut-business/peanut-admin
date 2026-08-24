@@ -52,26 +52,26 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
+$host = (string)getenv('DB_HOST');
+$port = (int)getenv('DB_PORT');
+$database = (string)getenv('DB_NAME');
+$user = (string)getenv('DB_USER');
+$password = (string)getenv('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(6)));
-$database = 'peanut_admin_fresh_async_' . $runId;
-$privateRoot = sys_get_temp_dir() . '/peanut-admin-fresh-async-' . $runId;
+$privateRoot = (string)getenv('ASYNC_PRIVATE_ROOT');
 $signingKey = hash('sha256', 'fresh-async-' . $runId) . hash('sha256', 'second-' . $runId);
 
-$admin = new PDO(
-    "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
-    $password,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+expectAsyncTenant($host !== '' && $port > 0 && $user !== '' && $password !== '', 'registered P0-E database credentials are required');
+expectAsyncTenant(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'Task async Gate requires its exact registered P0-E plugin_lifecycle database'
 );
-$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
+expectAsyncTenant($privateRoot !== '' && !file_exists($privateRoot), 'lease-owned async private root must be absent');
 
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -106,12 +106,18 @@ VALUES
 INSERT INTO pa_module_installation
   (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
 VALUES
-  ('peanut.admin', '2.0.0', 1, REPEAT('d', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+  ('peanut.admin', '2.0.0', 1, REPEAT('d', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.task', '1.0.0', 1, REPEAT('e', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.import-export', '1.0.0', 1, REPEAT('f', 64), 'active', '{$now}', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_tenant_module
   (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
 VALUES
   (101, 'peanut.admin', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
-  (202, 'peanut.admin', 'enabled', 'manual', '{$now}', '{$now}', '{$now}');
+  (202, 'peanut.admin', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (101, 'official.task', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (202, 'official.task', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (101, 'official.import-export', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (202, 'official.import-export', 'enabled', 'manual', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_permission
   (`key`, module_key, type, name, description, risk_level, status, manifest_version, created_at, updated_at)
 VALUES
@@ -136,6 +142,18 @@ SQL);
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
     );
     $insertPermission->execute([101, 11, $exportPermission, $now]);
+
+    $taskDisabled = $runtime->submitOperationLogExport($alpha, 'task-disabled-' . $runId);
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-task-disabled-' . $runId) === 1, 'disabled Task Module job was not examined');
+    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$taskDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Task Module executed');
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.task'");
+
+    $importExportDisabled = $runtime->submitOperationLogExport($alpha, 'import-export-disabled-' . $runId);
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.import-export'");
+    expectAsyncTenant($runtime->runTenant(101, 'fresh-import-export-disabled-' . $runId) === 1, 'disabled Import/Export Module job was not examined');
+    expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$importExportDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Import/Export Module executed');
+    $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.import-export'");
     $insertPermission->execute([202, 22, $exportPermission, $now]);
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_operation_log (tenant_id, admin_id, username, uri, method, params, create_time) VALUES
@@ -255,7 +273,6 @@ SQL);
         expectAsyncTenant($exception->getMessage() === 'IMPORT_EXPORT_FILE_UNAVAILABLE', 'cross-Tenant download enumerated ownership');
     }
 } finally {
-    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
     if (is_dir($privateRoot)) {
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($privateRoot, FilesystemIterator::SKIP_DOTS),
