@@ -336,17 +336,9 @@ qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")
         && str_contains($sources['module_availability'], 'assertDeployment(')
         && str_contains($sources['module_availability'], 'assertTenant(')
-        && (
-            str_contains($sources['fixture_module_access'], 'ModuleGuard')
-            || str_contains($sources['fixture_module_access'], 'ModuleExecutionGuard')
-        )
-        && (
-            str_contains($sources['fixture_module_access'], 'assertMemberAccess(')
-            || (
-                str_contains($sources['fixture_module_access'], 'ModuleExecutionGuard')
-                && str_contains($sources['fixture_module_access'], 'assertAdminPermission(')
-            )
-        )
+        && str_contains($sources['fixture_module_access'], 'PdoModuleGovernanceProvider::forExecution')
+        && str_contains($sources['fixture_module_access'], '->executionGuard(')
+        && str_contains($sources['fixture_module_access'], '->assertAdminPermission(')
         && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
     'optional Modules are not guarded by both module.json and Tenant enablement'
 );
@@ -394,7 +386,7 @@ qualificationExpect(
     'shared official Module middleware does not require a trusted Tenant context and TenantModule state'
 );
 qualificationExpect(
-    str_contains($sources['oauth_controller'], "new ModuleExecutionGuard(\$pdo, 'official.oauth')")
+    str_contains($sources['oauth_controller'], 'PdoModuleGovernanceProvider::forExecution')
         && str_contains($sources['external_resolver'], 'assertExternalCallback(')
         && str_contains($sources['async_runtime'], "'official.import-export'")
         && str_contains($sources['crontab_scheduler'], "ModuleExecutionContext::scheduled('official.task'")
