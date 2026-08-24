@@ -814,8 +814,40 @@ class Runner:
             self.remote_mysql(f"REVOKE ALL PRIVILEGES ON `{database}`.* FROM '{escaped_user}'@'%'")
         self.remote_mysql(f"DROP DATABASE IF EXISTS `{database}`")
 
+    @contextlib.contextmanager
+    def generated_install_bridge(self, project_root: Path) -> Any:
+        if project_root == ROOT:
+            yield
+            return
+        bridged_files = [
+            "resources/project-resources.json",
+            "server/database/environment-guard.php",
+        ]
+        originals: list[tuple[Path, bytes, int]] = []
+        for relative in bridged_files:
+            target = project_root / relative
+            source = ROOT / relative
+            if not target.is_file() or target.is_symlink() or not source.is_file() or source.is_symlink():
+                fail(f"generated application qualification bridge identity changed: {relative}")
+            originals.append((target, target.read_bytes(), target.stat().st_mode & 0o777))
+        for relative in bridged_files:
+            target = project_root / relative
+            source = ROOT / relative
+            target.write_bytes(source.read_bytes())
+            target.chmod(source.stat().st_mode & 0o777)
+        try:
+            yield
+        finally:
+            for target, original, mode in originals:
+                target.write_bytes(original)
+                target.chmod(mode)
+        for target, original, mode in originals:
+            if target.read_bytes() != original or (target.stat().st_mode & 0o777) != mode:
+                fail(f"generated application qualification bridge was not restored: {target.relative_to(project_root)}")
+
     def install_current(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
-        command(["php", "server/database/install.php"], cwd=project_root, env=self.db_env(database, mode), log=log)
+        with self.generated_install_bridge(project_root):
+            command(["php", "server/database/install.php"], cwd=project_root, env=self.db_env(database, mode), log=log)
         self.assert_up_to_date(database, mode, log, project_root=project_root)
 
     def assert_up_to_date(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
@@ -1042,39 +1074,14 @@ class Runner:
         database = self.plan["databases"][scenario]
         log = self.group_log(group)
         self.create_database(database)
-        bridged_files = [
-            "resources/project-resources.json",
-            "server/database/environment-guard.php",
-        ]
-        originals: list[tuple[Path, bytes, int]] = []
-        if project_root != ROOT:
-            for relative in bridged_files:
-                target = project_root / relative
-                source = ROOT / relative
-                if not target.is_file() or target.is_symlink() or not source.is_file() or source.is_symlink():
-                    fail(f"generated application qualification bridge identity changed: {relative}")
-                originals.append((target, target.read_bytes(), target.stat().st_mode & 0o777))
-            for relative in bridged_files:
-                target = project_root / relative
-                source = ROOT / relative
-                target.write_bytes(source.read_bytes())
-                target.chmod(source.stat().st_mode & 0o777)
-        try:
-            self.install_current(database, "multi-tenant", log, project_root=project_root)
-            command(
-                ["php", "server/fixtures/plugin-module-lifecycle/run.php"],
-                cwd=project_root,
-                env=self.db_env(database, "multi-tenant"),
-                log=log,
-            )
-            self.inspect(database, "multi-tenant", group, project_root=project_root)
-        finally:
-            for target, original, mode in originals:
-                target.write_bytes(original)
-                target.chmod(mode)
-        for target, original, mode in originals:
-            if target.read_bytes() != original or (target.stat().st_mode & 0o777) != mode:
-                fail(f"generated application qualification bridge was not restored: {target.relative_to(project_root)}")
+        self.install_current(database, "multi-tenant", log, project_root=project_root)
+        command(
+            ["php", "server/fixtures/plugin-module-lifecycle/run.php"],
+            cwd=project_root,
+            env=self.db_env(database, "multi-tenant"),
+            log=log,
+        )
+        self.inspect(database, "multi-tenant", group, project_root=project_root)
         self.drop_database(database)
 
     def plugin_lifecycle(self) -> None:
