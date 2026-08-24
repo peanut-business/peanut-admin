@@ -98,9 +98,16 @@ $middlewareSource = (string)file_get_contents(
 );
 $logicSource = (string)file_get_contents($serverRoot . '/app/adminapi/logic/log/OperationLogLogic.php');
 $serviceSource = (string)file_get_contents($serverRoot . '/app/adminapi/service/OperationLogService.php');
+$auditHostSource = (string)file_get_contents($serverRoot . '/app/common/service/audit/AuditContractHost.php');
+$projectionSource = (string)file_get_contents($serverRoot . '/app/common/service/audit/OperationLogProjection.php');
 expectOpsHost(!str_contains($middlewareSource, 'OperationLog::create'), 'middleware must use the unique log service');
 expectOpsHost(!str_contains($logicSource, 'OperationLog::create'), 'clear must use the unique log service');
-expectOpsHost(substr_count($serviceSource, 'OperationLog::create') === 1, 'log service must be the unique writer');
+expectOpsHost(str_contains($serviceSource, 'AuditContractHost'), 'log service must use the unified audit host');
+expectOpsHost(str_contains($auditHostSource, 'OperationLogProjection'), 'audit host must use the operation log projection');
+expectOpsHost(
+    substr_count($projectionSource, 'OperationLogTenantRepository::createForTenant') === 1,
+    'operation log projection must be the unique OperationLog writer'
+);
 expectOpsHost(str_contains($logicSource, 'Db::transaction'), 'log clear must be transactional');
 expectOpsHost(str_contains($logicSource, "'log/clear'"), 'log clear must retain an audit tombstone');
 expectOpsHost(!str_contains($serviceSource, 'PeanutAdmin\\OpsConsole'), 'application log owner must not deep import core');
