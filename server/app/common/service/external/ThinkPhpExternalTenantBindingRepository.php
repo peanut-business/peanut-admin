@@ -56,36 +56,12 @@ final class ThinkPhpExternalTenantBindingRepository implements ExternalTenantBin
 
     public function byOAuthState(string $provider, string $stateHash): array
     {
-        return $this->bindings(
-            Db::name('oauth_attempt')->alias('o')
-                ->field($this->bindingFields())
-                ->join('external_channel_binding b', 'b.tenant_id = o.tenant_id')
-                ->join('tenant t', 't.id = b.tenant_id')
-                ->where('b.provider', $provider)
-                ->where('o.state_hash', $stateHash)
-                ->whereNull('o.used_at')
-                ->where('o.expires_at', '>=', time())
-                ->limit(2)->select()->toArray()
-        );
+        return (new \app\Modules\Official\Oauth\ModuleProvider())->commands()->locateState($provider, $stateHash);
     }
 
     public function byOAuthTicket(string $ticketHash): array
     {
-        return $this->bindings(
-            Db::name('oauth_completion_ticket')->alias('o')
-                ->field($this->bindingFields())
-                ->join('external_channel_binding b', 'b.id = o.binding_id AND b.tenant_id = o.tenant_id')
-                ->join('tenant t', 't.id = b.tenant_id')
-                ->where('o.token_hash', $ticketHash)
-                ->whereNull('o.used_at')
-                ->where('o.expires_at', '>=', time())
-                ->whereIn('b.provider', [
-                    ExternalTenantResolver::WECHAT_MINI_PROGRAM,
-                    ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH,
-                    ExternalTenantResolver::WECHAT_OPEN_PLATFORM,
-                ])
-                ->limit(2)->select()->toArray()
-        );
+        return (new \app\Modules\Official\Oauth\ModuleProvider())->commands()->locateTicket($ticketHash);
     }
 
     /** @param list<array<string, mixed>> $rows @return list<ExternalTenantBinding> */

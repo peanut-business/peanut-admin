@@ -2,9 +2,11 @@
 declare(strict_types=1);
 
 use app\common\model\oauth\OAuthIdentity;
+use app\common\service\external\ExternalTenantResolver;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\oauth\OAuthTenantContext;
 use app\common\service\oauth\OAuthTenantRepository;
+use app\Modules\Official\Oauth\Application\OAuthCallbackLocator;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -142,6 +144,36 @@ SQL);
         'binding_id' => 202, 'need_profile' => 1, 'need_mobile' => 0, 'expires_at' => time() + 600,
     ]);
     expectOAuthTenant((int)OAuthTenantRepository::completionTickets($alpha)->where('token_hash', str_repeat('d', 64))->count() === 0, 'Alpha read Beta completion ticket');
+
+    $officialProvider = ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH;
+    $openPlatformProvider = ExternalTenantResolver::WECHAT_OPEN_PLATFORM;
+    $validStateHash = str_repeat('a', 64);
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $validStateHash)) === 1, 'valid OAuth state was not located');
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($openPlatformProvider, $validStateHash)) === 0, 'wrong OAuth binding provider accepted state');
+    $expiredStateHash = str_repeat('e', 64);
+    OAuthTenantRepository::createAttempt(new TenantSystemContext(101, MemberTenantContext::PUBLIC_AUTH_ACTOR, 'member.oauth-begin', 'expired-state'), [
+        'state_hash' => $expiredStateHash, 'scene' => 'oa', 'return_path' => '/expired', 'expires_at' => time() - 1,
+    ]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $expiredStateHash)) === 0, 'expired OAuth state was accepted');
+    OAuthTenantRepository::attempts($alpha)->where('state_hash', $validStateHash)->update(['used_at' => time()]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $validStateHash)) === 0, 'replayed OAuth state was accepted');
+
+    $alphaBindingId = (int)$pdo->query("SELECT id FROM pa_external_channel_binding WHERE tenant_id = 101 AND provider = 'oauth.wechat.oa'")->fetchColumn();
+    expectOAuthTenant($alphaBindingId > 0, 'Alpha OAuth binding is missing');
+    $ticketHash = str_repeat('f', 64);
+    $expiredTicketHash = str_repeat('9', 64);
+    OAuthTenantRepository::createCompletionTicket($alpha, [
+        'token_hash' => $ticketHash, 'binding_id' => $alphaBindingId, 'member_id' => 11,
+        'need_profile' => 0, 'need_mobile' => 0, 'expires_at' => time() + 600,
+    ]);
+    OAuthTenantRepository::createCompletionTicket($alpha, [
+        'token_hash' => $expiredTicketHash, 'binding_id' => $alphaBindingId, 'member_id' => 11,
+        'need_profile' => 0, 'need_mobile' => 0, 'expires_at' => time() - 1,
+    ]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($ticketHash)) === 1, 'valid OAuth ticket was not located');
+    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($expiredTicketHash)) === 0, 'expired OAuth ticket was accepted');
+    OAuthTenantRepository::completionTickets($alpha)->where('token_hash', $ticketHash)->update(['used_at' => time()]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($ticketHash)) === 0, 'replayed OAuth ticket was accepted');
 
     try {
         OAuthTenantContext::tenantId(new TenantSystemContext(202, 'forged.actor', 'member.oauth-begin', 'forged'));
