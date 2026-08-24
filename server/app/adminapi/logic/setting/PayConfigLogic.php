@@ -6,6 +6,7 @@ namespace app\adminapi\logic\setting;
 use app\common\logic\BaseLogic;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\service\payment\PaymentChannelGrantService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -92,6 +93,7 @@ class PayConfigLogic extends BaseLogic
                     trim((string)$data['wx_pay_appid']) !== '' && trim((string)$data['wx_pay_mch_id']) !== ''
                         ? (string)$data['wx_pay_appid'] . ':' . (string)$data['wx_pay_mch_id'] : '',
                 );
+                PaymentChannelGrantService::ensureSelfGrant($context, ExternalTenantResolver::WECHAT_PAYMENT);
                 ExternalChannelBindingService::update(
                     $context,
                     ExternalTenantResolver::ALIPAY_PAYMENT,
@@ -99,6 +101,7 @@ class PayConfigLogic extends BaseLogic
                     trim((string)$data['ali_pay_app_id']) !== '' && trim((string)$data['ali_pay_seller_id']) !== ''
                         ? (string)$data['ali_pay_app_id'] . ':' . (string)$data['ali_pay_seller_id'] : '',
                 );
+                PaymentChannelGrantService::ensureSelfGrant($context, ExternalTenantResolver::ALIPAY_PAYMENT);
             });
             return true;
         } catch (\Throwable $e) {
