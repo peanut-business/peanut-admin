@@ -13,6 +13,15 @@ final class OAuthCallbackLocator
     /** @return list<ExternalTenantBinding> */
     public static function byState(string $provider, string $stateHash): array
     {
+        $scene = match ($provider) {
+            ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH => 'oa',
+            ExternalTenantResolver::WECHAT_OPEN_PLATFORM => 'open_pc',
+            default => null,
+        };
+        if ($scene === null) {
+            return [];
+        }
+
         return self::bindings(
             Db::name('oauth_attempt')->alias('o')
                 ->field(self::bindingFields())
@@ -20,6 +29,7 @@ final class OAuthCallbackLocator
                 ->join('tenant t', 't.id = b.tenant_id')
                 ->where('b.provider', $provider)
                 ->where('o.state_hash', $stateHash)
+                ->where('o.scene', $scene)
                 ->whereNull('o.used_at')
                 ->where('o.expires_at', '>=', time())
                 ->limit(2)->select()->toArray()
