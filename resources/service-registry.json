@@ -1,0 +1,1306 @@
+{
+  "schema_version": 1,
+  "project_id": "peanut-admin",
+  "title": "Peanut Admin 服务层登记",
+  "visibility": "internal",
+  "authority": {
+    "owner": "Peanut Admin maintainers",
+    "source": "this versioned file",
+    "scope": "内部复用服务的责任、成熟度、数据归属、依赖、阻塞和推进顺序",
+    "precedence": "Module 自有表仍以对应 module.json 为直接事实；运行资源仍以 resources/project-resources.json 为事实源；本登记负责跨 Module 服务边界和推进状态",
+    "update_policy": "服务合同、owner、数据归属、依赖、成熟度、阻塞或推进状态变化时同步更新"
+  },
+  "facts_baseline": {
+    "reviewed_at": "2026-08-25",
+    "git_head_observed": "d1d9e474f7c80c1199c1c556c1f1f2baba525879",
+    "worktree_state_observed": "clean_governance_snapshot",
+    "evidence_scope": "当前工作区静态代码、Module/Plugin 清单、调用关系和 Schema 定义；未连接数据库或启动 Runtime",
+    "codegraph": {
+      "registry": "resources/codegraph-registry.json",
+      "path": ".codegraph/",
+      "versioned": false,
+      "status": "initialized",
+      "files": 5227,
+      "nodes": 43981,
+      "edges": 88865
+    }
+  },
+  "definitions": {
+    "maturity": {
+      "formed": "已有唯一或基本唯一服务入口，主要调用方已经采用",
+      "formed_with_leaks": "已有服务入口，但仍有调用方越过服务直接访问表、模型或底层原语",
+      "partial": "已有可复用实现，但应用服务、公开合同或唯一装配尚未收口",
+      "primitive_only": "只有底层原语，多个业务仍自行编排",
+      "in_progress_elsewhere": "当前由其他已存在任务推进，最终合同尚未冻结"
+    },
+    "availability": {
+      "always_on": "应用基础设施，业务 Module 可以依赖但 Tenant 不单独停用",
+      "enableable_plugin": "按 Plugin 安装和 TenantModule 开通控制的新操作能力",
+      "hybrid": "底层安全与装配始终存在，面向 Tenant 的业务能力可启停"
+    },
+    "delivery_readiness": {
+      "ready_now": "当前无已知外部依赖或共享写集阻塞，可以创建独立任务推进完成",
+      "decision_blocked": "实现前需要确认本登记列出的架构决定",
+      "dependency_blocked": "必须等待登记的上游服务合同冻结",
+      "coordination_blocked": "当前存在未知或重叠的写入 owner，必须先收口共享写集",
+      "owned_elsewhere": "已有独立任务负责，本轮只登记和消费其最终合同"
+    }
+  },
+  "execution_model": {
+    "principle": "服务登记项是持久化目标，不是一次性对话任务；对话只是目标的执行者，主对话负责依赖调度、回收和最终验收",
+    "persistent_goal": "持续监管并完成登记中的 14 个服务目标；主会话必须持续等待、回收和核验专用对话，按最新 origin/dev、固定 commit/tree、最低充分验证、数据 owner 和 PR 合入事实更新状态。无用户决策时自动选择无副作用方案、修正候选或重做；仅在破坏性数据迁移、身份/RBAC/Schema/资金语义、跨 owner 写集、未冻结存储合同或未登记资源等真实停止线暂停并说明。一个服务完成或阻塞解除后立即重算依赖并启动下一个 ready 服务，不能因对话 idle、消息已发送或一次等待超时而结束目标。存储由既有 owner 唯一负责但纳入同样监管；通知允许 development 固定验证码/模拟发送先合入，真实短信为后置独立 Gate。持续到所有可执行服务完成、剩余阻塞有明确解除条件并完成最终业务收口。",
+    "goal_lifecycle": "active_until_all_executable_services_closed",
+    "review_objective": "先逐个服务复核 canonical dev、当前工作树和既有专门对话留下的修改，再决定保留、修正或废弃重做；未提交 diff、对话完成状态、分支存在和规划文本都不是完成证据",
+    "goal_states": [
+      "not_started",
+      "ready",
+      "active",
+      "waiting_for_return",
+      "awaiting_acceptance",
+      "blocked",
+      "complete"
+    ],
+    "start_rule": "只有目标为 ready、写集 owner 唯一、直接依赖已冻结且没有高风险待确认项时，才启动专门对话",
+    "wait_rule": "启动后目标保持 active 或 waiting_for_return；主对话必须等待该对话返回结果、阻塞或需要确认，不能以已发送消息视为完成",
+    "acceptance_rule": "目标对话返回后，主对话核对 diff/commit、最低充分验证、调用方迁移和数据 owner，再把目标置为 complete 或 blocked",
+    "integration_rule": "服务目标完成最低充分验证、精确写集复核通过且没有未解决阻塞后，允许将该验收通过候选通过正常功能分支/PR 流程合入 canonical dev；未验收、混入其他 owner 或仅有未提交 diff 的候选禁止合入",
+    "candidate_rule": "所有非 canonical dev 的未提交服务工作树都视为不可信候选；必须先确认基线、精确写集、唯一 owner 和是否夹带其他服务，再允许采用",
+    "baseline_rule": "服务复核从最新 canonical dev 建立干净、独立 owner 的执行工作树；不同基线或重叠写集不得直接拼接，错误候选可以整体废弃并按最终设计重做",
+    "verification_rule": "每个服务只运行一次与变更风险匹配的最低充分验证；验证证据必须来自当前候选，不得用旧 head、历史对话或未运行的计划替代",
+    "model_rule": "模型按任务风险和复杂度选择：低风险、边界清晰、机械重复、静态检查和简单验证优先使用 Luna；普通跨文件实现或需要更强代码理解使用 Terra，必要时再使用 gpt-5.4-mini；RBAC、身份、Schema、资金、事务和跨模块架构等高风险任务不得只按价格选择 Luna，应使用更强模型；Sol 只用于复杂规划、关键架构决策和最终收口，不默认使用 max；默认不使用 supercodes，不为同一问题重复高成本探索",
+    "requeue_rule": "目标完成或被解除阻塞后，主对话重新计算依赖图并只领取当前 ready 的下一个目标；不重复领取已有 owner 的目标",
+    "decision_rule": "遇到问题不默认停止；若当前代码事实足以支持无外部副作用、可逆、不扩大授权且不改变产品语义的决定，主对话自动选择证据最强的方案、修正计划或实现并继续",
+    "redo_rule": "既有规划或实现若与最终目标或当前事实冲突，可以废弃并按最终设计重做；不为保留错误方案新增兼容层、双写、镜像或 fallback",
+    "high_risk_rule": "只有破坏性操作、真实外部资源、身份/RBAC 业务语义、Module 治理产品语义、未冻结存储合同、跨 owner 写入归属、复杂资金/事务语义或其他会实质改变结果的未授权决定，才暂停并回主对话说明影响",
+    "storage_rule": "PA-SVC-STORAGE 由既有专门目标唯一负责；本队列只观察其状态并消费冻结合同，不重复启动或修改存储目标"
+  },
+  "execution_tracking": {
+    "observed_at": "2026-08-25",
+    "purpose": "把服务目标的实际执行状态与对话 UI 状态分开登记；对话完成不等于服务完成，只有候选、验证、owner 和集成证据齐全才算 complete",
+    "supervision_mode": "active_wait_threads",
+    "goal_status": "active",
+    "supervision_policy": "主控对话使用 wait_threads 持续等待 active 服务返回；返回后立即核对候选、验证、owner 和阻塞并推进下一个 ready 服务。不依赖定时任务，不以定时轮询代替任务监管。",
+    "title_status_convention": "专用对话标题必须以中文状态后缀显示实际服务状态：｜执行中、｜待验收、｜阻塞、｜已完成、｜规划完成·等待依赖、｜未启动·等待依赖或｜由既有对话负责·待交接；状态变化时主对话同步改名",
+    "monitoring_checks": [
+      "对话状态为 idle/notLoaded 但服务仍有未提交候选时，自动标记 awaiting_acceptance，不得继续显示执行中或已完成",
+      "对话状态为 active 且超过一次观察周期没有返回时，保持执行中并继续 wait，不得把发送消息当作完成",
+      "blocked 必须同时登记具体 blocker、影响范围和解除条件；解除后重新计算 ready 队列",
+      "complete 必须同时有固定 commit/tree、最低验证、数据 owner 和业务回报；缺一项不得改为已完成",
+      "每次状态变化同步更新对话中文标题、execution_tracking 和人类可读状态表"
+      ,"RBAC 验收前先运行 PluginLockResolver 的 canonical contents 检查；若出现 PLUGIN_ARTIFACT_MISMATCH，且漂移文件属于 Module Governance 写集，则将 RBAC 标为 dependency_blocked，转交 Module Governance owner，不得在 RBAC 工作树修改 plugins.lock"
+      ,"RBAC 数据库夹具中的每个 module_key 必须能在当前 plugins.lock/module.json 清单解析；Unknown module 只记为 fixture blocker，不能新增伪 Module 或改变产品权限模型"
+      ,"RBAC 合入检测必须同时查询远端 dev 的 PR merge commit/tree；候选 commit 可能被 squash，不能只用候选 commit 是否为 dev ancestor 判断。若 PR 已合入且固定 tree、最低验证、owner 和业务回报齐全，应自动从 awaiting_acceptance 收口为 complete；旧 resolved blocker 不得继续阻塞"
+      ,"PA-SVC-STORAGE 纳入每轮监管：核对既有对话、worktree、远端 dev、固定 commit/tree、冻结合同、Driver/Account/Space、public/private、对象账本和最低验收证据；notLoaded/idle 不得视为完成，且本队列不得修改存储实现或启动第二个 owner"
+    ],
+      "status_vocabulary": {
+      "not_started": "尚未启动专用实现对话",
+      "planning": "对话只完成事实盘点或方案规划，尚无可验收实现",
+      "active": "专用对话正在修改或验证当前候选",
+      "awaiting_acceptance": "实现已返回，等待主对话核对写集、验证和数据 owner",
+      "partial": "已有一个或多个实现切片固定并合入 dev，但服务整体仍有未完成边界",
+      "blocked": "有明确阻塞，未允许继续实施或集成",
+      "complete": "已有固定提交、最低验证和业务摘要，并已按规则合入 dev",
+      "owned_elsewhere": "由其他既有目标唯一负责，本队列只消费其最终合同"
+    },
+    "completion_report_required": [
+      "业务上解决了什么问题",
+      "实际修改和主要调用方",
+      "用户可感知的变化",
+      "副作用、兼容性或权限/数据风险",
+      "未完成项和明确阻塞",
+      "固定 commit/tree、验证命令和结果",
+      "下一步是否可以继续以及由哪个服务负责"
+    ],
+    "services": {
+      "PA-SVC-TENANT-SETTINGS": {
+        "service_status": "complete",
+        "thread_id": "01a02eee-d220-7ef3-8a89-da9988418f56",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/tenant-settings-exec", "commit": "dd5e66f797e0d9a07ae50a3c4f01ed8f1f98a990", "merge_commit": "e411025409a22b3d68636945bcd6c27607c40bcb", "tree": "d0e820ce5d54d84448a86178115badc0ef1e38c9", "base": "fd29cffe029b588a6ee510f1149e30f246da7511", "integration": "merged_to_dev", "pr": "#229"},
+        "business_summary": "已按 4A 将 Tenant 设置服务作为唯一写入 owner；业务设置读取/替换和新租户默认设置均通过服务合同，bootstrap 不再直接装配 PDO 写入适配器。候选尚未提交。",
+        "side_effects": "不改变设置字段和默认值；收紧了写入边界，绕过服务的 bootstrap 直接写表路径被移除。",
+        "next_action": "已合入 dev；后续业务继续通过 TenantSettings Query/Command 和 bootstrap 合同消费，不新增直接写表路径。",
+        "blockers": []
+      },
+      "PA-SVC-ADMIN-AUTHORIZATION": {
+        "service_status": "complete",
+        "thread_id": "01a02ef3-77a6-7b33-9b95-8e52421630ab",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+      "candidate": {
+          "worktree": "/Users/xing/.codex/worktrees/d7ba/peanut-admin",
+          "commit": "ab8bcb9bc9c204a067e7a10f8ae83fd9594f0685",
+          "merge_commit": "fd29cffe029b588a6ee510f1149e30f246da7511",
+          "tree": "cbaeef4fbe991c669a67095beb4b97361ac43440",
+          "integration": "merged_to_dev",
+          "pr": "#228",
+          "base": "caff48186c6e274b17d71cdae0313e892eaf43c5"
+        },
+        "business_summary": "管理员身份、Tenant 边界、Module 开通、路由登记和 RBAC 判定已统一到 common 授权服务；root 仍跳过角色授予，但不跳过 Tenant、Module 和路由登记。",
+        "side_effects": "同步请求会拒绝未登记路由、未启用 Module 和跨租户身份；没有修改身份模型、Schema、Module owner 或存储合同。额外 TaskImportExportHostTest 的既有参数类型失败不属于本服务写集。",
+        "next_action": "服务已可供下游消费；后续业务服务通过 AdminAuthorizationQuery、PermissionDecision 和 AuthorizedOperationFactory 复用，不再回退到旧 AdminPermissionService。",
+        "blockers": []
+      },
+      "PA-SVC-DICTIONARY": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-32ce-79f1-8328-5058269c21a0",
+        "thread_status": "notLoaded",
+        "phase": "merged_to_dev",
+        "candidate": {"commit": "9bafc3f", "integration": "merged_to_dev", "pr": "#222"},
+        "business_summary": "统一系统参考码和租户可写字典的读取合同，业务代码不再各自拼接字典查询。",
+        "side_effects": "保留旧 SystemDictRepository 入口，避免不必要的兼容性破坏；未合并字典 Schema。",
+        "next_action": "后续新业务优先使用字典合同，旧调用方按实际重复度逐步迁移。",
+        "blockers": []
+      },
+      "PA-SVC-EXTERNAL-CHANNEL": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-4f70-7f03-a00c-464c8461d4bf",
+        "thread_status": "notLoaded",
+        "phase": "merged_to_dev",
+        "candidate": {"commit": "88992ee", "integration": "merged_to_dev", "pr": "#223"},
+        "business_summary": "由统一服务负责外部渠道绑定和可信回调解析，短信等业务不再直接写共享绑定表。",
+        "side_effects": "pa_external_channel_binding 的日常写入 owner 固定为本服务；业务 Module 只能通过合同访问。",
+        "next_action": "后续支付、OAuth 和通知都消费该合同，不再新增直写路径。",
+        "blockers": []
+      },
+      "PA-SVC-MODULE-GOVERNANCE": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-5068-7ac1-a943-43978762ab28",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {
+          "worktree": "/Users/xing/.codex/worktrees/aa76/peanut-admin",
+          "commit": "caff48186c6e274b17d71cdae0313e892eaf43c5",
+          "source_commit": "59fff672de25a40f0f61f5bb8bc1622e8b94d744",
+          "integration": "merged_to_dev",
+          "pr": "#227",
+          "base": "origin/dev"
+        },
+        "business_summary": "Plugin/Module 治理服务已完成；本轮补充修正两个已合入模块内容的 canonical/manifest digest，解除下游 RBAC 初始化验收的基线漂移。",
+        "side_effects": "只更新 plugins.lock 和两个 Plugin manifest 的内容身份，不改变 Module 路由、资格或数据 Schema；PR #227 已合入 dev。",
+        "next_action": "PR #233 的 notification/task digest 修正已随 PR #230 合入 dev=006440817…；后续服务消费 canonical Module identities，不再重复修改 plugins.lock。",
+        "blockers": []
+      },
+      "PA-SVC-IDEMPOTENCY": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-328a-7281-b426-4708df9fd74a",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"commit": "3413392", "integration": "merged_to_dev", "pr": "#225"},
+        "business_summary": "统一命令开始、重放、完成和失败的幂等编排，余额和退款调用方使用同一执行器。",
+        "side_effects": "不改变余额/退款状态机和事务顺序；重复命令返回既有结果而不是重复执行。",
+        "next_action": "导入导出和其他异步命令继续复用该服务。",
+        "blockers": []
+      },
+      "PA-SVC-AUDIT": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-75d7-76a0-82a0-bbe75f03374d",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"commit": "f5846eb", "integration": "merged_to_dev", "pr": "#226"},
+        "business_summary": "统一审计事件、主体、操作、资源、trace 和脱敏规则，同时保留 Tenant/Platform 各自查询投影。",
+        "side_effects": "不合并审计表，不做 Schema 迁移；不同受众仍保留各自投影。",
+        "next_action": "后续任务和导入导出接入统一事件合同。",
+        "blockers": []
+      },
+      "PA-SVC-STORAGE": {
+        "service_status": "awaiting_acceptance",
+        "thread_id": "01a02d5d-54a9-75f2-8aad-87c05eea3fa7",
+        "thread_status": "idle",
+        "phase": "credential_cipher_candidate_review",
+        "supervision": "active_monitoring",
+        "monitoring_scope": ["existing storage thread", "candidate commit/tree", "frozen contract", "Driver/Account/Space", "public/private", "file object ledger", "minimum acceptance", "dev integration"],
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/storage-contract-fix", "commit": "80112717124659006a09a6fb7276662704428d29", "tree": "e3360e71f763667ad15779873020fbdb877fb236", "base": "d1d9e474f7c80c1199c1c556c1f1f2baba525879", "integration": "unmerged_candidate", "pr": "#232"},
+        "business_summary": "存储 owner 已按用户确认改为数据库直接保存 SecretId/SecretKey 的应用密文；主密钥只来自部署环境，管理端掩码、解密失败拒绝调用，且资源登记已记录用户确认的 QcloudCOSFullAccess。PR #232 已对齐最新 dev 并通过 diff-check、受影响 PHP lint 和密文往返验证。",
+        "side_effects": "Schema/迁移从 credential_ref-only 改为 credential_ciphertext + key_version；删除旧 StorageLogic/Driver/engine、pa_config storage 配置并重建 pa_file/pa_file_object 关系仍属于候选迁移，必须先做备份演练。",
+        "next_action": "按用户确认采用腾讯云预置的全 COS 权限；不再等待最小权限策略。原 owner 已完成候选资源登记和静态收口；现在只等待真实 COS 上传、下载、删除及破坏性迁移前备份恢复证据，完成后主会话再验收并合入 dev。",
+        "blockers": ["PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE", "PA-SVC-STORAGE-BACKUP-REHEARSAL"]
+      },
+      "PA-SVC-NOTIFICATION": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-7e38-7612-bd14-13d3d9554721",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {
+          "worktree": "/Users/xing/.codex/worktrees/8f73/peanut-admin",
+          "commit": "f585627558545f7d4b55162480b208522bb7f478",
+          "tree": "1c44df490b07c05fe14bcbaf1bbffce0bb7ab9f0",
+          "merge_commit": "51b85343225107fb18811130ecb364d45d7ae23d",
+          "integration": "merged_to_dev",
+          "pr": "#231",
+          "base": "e411025409a22b3d68636945bcd6c27607c40bcb"
+        },
+        "business_summary": "已形成 NotificationApplicationService 及 Notification/Verification 合同，注册、手机登录、重置密码、绑定手机和 OAuth 补手机号调用方已切到统一入口；候选已重建到最新 dev，等待运行验收。",
+        "side_effects": "按用户授权恢复 development 环境固定验证码 1234 和模拟短信回执；非 development 仍使用随机验证码和真实 Provider。该临时行为尚未经过真实短信安全验收，候选尚未合入 dev。",
+        "temporary_acceptance_exception": {
+          "enabled": true,
+          "scope": "APP_ENV=development",
+          "behavior": "验证码固定为 1234，短信发送返回 development simulated 成功",
+          "reason": "当前无法真实发送短信，先支持开发和内部验收",
+          "final_gate": "独立验收真实 Provider 发送、回执、验证码并发消费、Tenant 隔离和安全语义后，才能决定是否保留或移除该临时行为",
+          "production_claim": "不得写成生产短信能力已验收"
+        },
+        "next_action": "已合入 dev；真实 Provider、回执、并发消费和安全语义仍作为后置独立 Gate，不得把 development 模拟发送写成生产能力。",
+        "blockers": []
+      },
+      "PA-SVC-MEMBER": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-c758-7123-94e5-adc7bd467700",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/1dfe/peanut-admin", "commit": "aa238f8c1d3fb15b50ea33965c19e438c57f0738", "tree": "fe5fd3190b1110d5a1a8438a5dafffa330a7e843", "base": "116d5ab259010f10545a0f36415f96efaea9a102", "merge_commit": "d393292d4c3d11303fb37c7c60989f30f239342e", "merge_tree": "661c66481ce391062fa227c7b6bc35a1c018f8dc", "integration": "merged_to_dev", "pr": "#237", "verification": "php -l changed PHP files; git diff --check; PB05-MEMBER-FINANCE-001; Member JWT contract; MT03-MEMBER-TENANT-001 passed"},
+        "business_summary": "会员资料、标签、账号/手机号登录、重置密码、绑定手机号和 OAuth 建立会员均已通过 official.member 合同；余额唯一 writer 和 Tenant 账本边界保持不变。",
+        "side_effects": "手机号和账号绑定严格按 Tenant 隔离，重复绑定被拒绝；未改身份 Schema、支付私有表或统一存储合同。真实短信 Provider 安全语义仍由通知服务后置验收。",
+        "next_action": "已合入 dev；OAuth 后续只消费 Member 身份合同，头像/文件接入等待统一存储合同，不回退到旧 Member 直写路径。",
+        "blockers": []
+      },
+      "PA-SVC-PAYMENT": {
+        "service_status": "complete",
+        "thread_id": "01a02ef3-77a6-7b33-9b95-8e3e4f19b21b",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/e954/peanut-admin", "commit": "f373f335b71f0e28b0010aa32eda5fceceb7935f", "tree": "644333733675fdcce317caf6adb81908d7d03e95", "base": "6f7547bde8c1a4313fc334fdd38ab9e1e11e2f4f", "merge_commit": "d1d9e474f7c80c1199c1c556c1f1f2baba525879", "merge_tree": "644333733675fdcce317caf6adb81908d7d03e95", "integration": "merged_to_dev", "pr": "#240", "verification": "PHP lint; git diff --check; PluginLockResolver all official plugins passed after latest dev merge; PB07-PAYMENT-HOST-001 passed; PAYMENT-DYNAMIC-PAY240DYN-001 passed: two Tenant shared channel, cross-Tenant callback rejection, revoked-grant rejection and partial-refund idempotency; isolated database peanut_admin_development_p0e_paydyn_payment dropped after evidence"},
+        "business_summary": "Tenant Channel Grant、Tenant-owned 支付授权快照、跨租户回调校验和独立退款流水身份已形成候选；充值入账继续使用充值单号，退款余额流水改用独立 RefundRecord sn，保留余额流水唯一约束。",
+        "side_effects": "支付预支付和回调要求 Tenant 的显式渠道授权，并把 binding/grant/merchant 引用快照写入订单；撤销授权只拒绝新请求，不改变已存在订单。退款每次操作拥有独立 source，部分退款不会与充值入账冲突。迁移新增 payment_tenant_channel_grant，不放宽余额唯一约束。",
+        "next_action": "服务已合入 dev；后续业务通过 PaymentChannelGrantCommands/PaymentChannelGrantService 消费租户渠道授权，不新增跨租户直读或旧退款 source 复用。",
+        "blockers": []
+      },
+      "PA-SVC-OAUTH": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-b0fd-7e00-bd23-939278828218",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/0223/peanut-admin", "commit": "c65cd46cfbb19a8722fb45c927487fffcb2cfdd2", "tree": "032839e6e2133f270185ba0e750ff21a9a70326f", "base": "99779d64339c4f13ebc75e2048cc5a64af2c13b2", "merge_commit": "6f7547bde8c1a4313fc334fdd38ab9e1e11e2f4f", "merge_tree": "032839e6e2133f270185ba0e750ff21a9a70326f", "integration": "merged_to_dev", "pr": "#239", "verification": "PB07-OAUTH-CHANNEL-HOST-001; PLUGIN-ARTIFACT-CONTRACT-001; PHP lint; git diff --check; /private/tmp/peanut-admin-oauthc65/oauth-tenant-isolation.log: OAuth tenant isolation passed; wrong binding provider negative fixed and rerun passed"},
+        "business_summary": "OAuth 成为 state/ticket 的唯一 owner；登录、回调、绑定和 External Channel 调用统一通过 OAuthCommands/locator 窄合同，Tenant 隔离与错误 provider 负向验收通过，并已合入 dev。",
+        "side_effects": "收紧跨 Module 读取边界；错误 provider/binding、过期或重放的 state/ticket 会拒绝；未改 OAuth Schema、外部渠道绑定 owner、身份模型或统一存储合同。头像/文件交付仍等待存储合同。",
+        "next_action": "下游继续消费 OAuthCommands，不新增 state/ticket 直读；头像/文件相关切片等待统一存储完成。",
+        "blockers": []
+      },
+      "PA-SVC-TASK": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-8772-7552-a72f-0e250fd28aca",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/0367/peanut-admin", "commit": "7618254d92a13f708ac79f5b9b067f35aa82a808", "tree": "0cc551f97563be192cb247fcc0821c3277bbf8d9", "base": "51b85343225107fb18811130ecb364d45d7ae23d", "merge_commit": "00644081714bff105c26a5360c7cd20450bb1d4c", "integration": "merged_to_dev", "pr": "#230", "gate_evidence": "output/task-gate-task8255/summary.txt"},
+        "business_summary": "Task 候选已将 scheduler、可信 TaskJob、worker、执行前 Module/授权复核和 Module identity fixture 固定在 7618254d…；登记 P0-E 资源上幂等、Task/Import-Export 停用负向、结果下载/跨 Tenant 负向均通过。",
+        "side_effects": "相对最新 origin/dev 的写集包含 Task Runtime、异步验收 fixture 和测试；不改变身份模型、Schema owner 或存储合同。额外原子失败注入因登记账号缺少 SUPER 被明确 skipped；TaskImportExportHostTest 的既有 CrontabLogic 参数类型失败不属于本服务写集。",
+        "next_action": "已合入 dev=006440817…；后续导入导出服务可消费 Task Runtime，继续保留 atomic injection 的资源权限限制说明。",
+        "blockers": []
+      },
+      "PA-SVC-IMPORT-EXPORT": {
+        "service_status": "complete",
+        "thread_id": "01a02eef-ccbf-7fd2-b535-c8260bc3fa4b",
+        "thread_status": "idle",
+        "phase": "merged_to_dev",
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/34a0/peanut-admin", "commit": "e19d62de3a3a83e0b71d1faf95a61b35f2b74ca8", "tree": "8d269d7046b93ce485409e77033031461d31851f", "base": "116d5ab259010f10545a0f36415f96efaea9a102", "merge_commit": "a8df5ae0d57415e7429cb3c3b0af0df21025f0c4", "merge_tree": "8d269d7046b93ce485409e77033031461d31851f", "integration": "merged_to_dev", "pr": "#236", "verification": "php -l changed PHP files; git diff --check; MT03-TASK-IMPORT-EXPORT-TENANT-ISOLATION-001 passed (atomic injection skipped: registered app account lacks SUPER)"},
+        "business_summary": "CSV 异步和既有同步 XLSX 已并存；操作日志导出通过 official.import-export Commands/Queries，Tenant 隔离、停用 Module、撤销权限、幂等和私有结果下载均已通过登记资源验收。",
+        "side_effects": "不改变同步 XLSX、任务/文件 Schema 或存储合同；CSV 结果仍为 Tenant-private。统一存储合同冻结后可再接对象交付，不阻塞本服务合同。",
+        "next_action": "已合入 dev；后续业务按场景选择 CSV 或 XLSX，异步任务继续复用 Task Runtime；不在本服务重新修改 plugins.lock。",
+        "blockers": []
+      }
+    }
+  },
+  "architecture_rules": [
+    "Controller、Command、Worker 和跨 Module 业务代码优先调用应用服务或 Module 公开合同，不直接查写其他服务拥有的表",
+    "应用服务编排事务、Repository、Model 和外部 Provider；Model 只维护自身局部不变量或纯字段转换，不反向调用会访问数据库、网络或启动事务的应用服务",
+    "跨 Module 同步协作只依赖 Contracts 接口和 DTO；当前没有已验证的通用 Outbox/Event Bus，不以领域事件替代可靠同步合同",
+    "通用服务优先收口；可启停业务服务在其通用依赖冻结后再推进",
+    "一个服务只有一个日常写入 owner；同一业务事实不保留双写、兼容镜像或备用 Runtime",
+    "服务登记不意味着独立进程、独立仓库或微服务部署"
+  ],
+  "groups": [
+    {
+      "group_id": "shared-foundation",
+      "name": "始终可用的通用服务",
+      "priority": 1,
+      "service_ids": [
+        "PA-SVC-TENANT-SETTINGS",
+        "PA-SVC-ADMIN-AUTHORIZATION",
+        "PA-SVC-DICTIONARY",
+        "PA-SVC-EXTERNAL-CHANNEL",
+        "PA-SVC-MODULE-GOVERNANCE",
+        "PA-SVC-IDEMPOTENCY",
+        "PA-SVC-AUDIT"
+      ]
+    },
+    {
+      "group_id": "storage-hybrid",
+      "name": "统一存储混合边界",
+      "priority": 2,
+      "service_ids": [
+        "PA-SVC-STORAGE"
+      ]
+    },
+    {
+      "group_id": "enableable-business",
+      "name": "可启停业务服务",
+      "priority": 3,
+      "service_ids": [
+        "PA-SVC-NOTIFICATION",
+        "PA-SVC-MEMBER",
+        "PA-SVC-PAYMENT",
+        "PA-SVC-OAUTH",
+        "PA-SVC-TASK",
+        "PA-SVC-IMPORT-EXPORT"
+      ]
+    }
+  ],
+  "blocking_issues": [
+    {
+      "blocker_id": "PA-SVC-B001",
+      "name": "统一存储真实 COS 验收凭据尚未创建",
+      "status": "superseded",
+      "kind": "dependency",
+      "fact": "旧 B001 曾把最小权限子用户和用户确认误当作当前停止线；用户已确认采用 QcloudCOSFullAccess，候选也已记录该策略。当前剩余停止线已拆为真实 COS 生命周期和迁移备份恢复两项验收证据。",
+      "recommendation": "不再等待最小权限策略或新的产品决策；只跟踪 PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE 和 PA-SVC-STORAGE-BACKUP-REHEARSAL。",
+      "resolution_condition": "已由新的两项存储验收状态替代；旧 B001 不得继续阻塞 Member/OAuth。",
+      "affected_service_ids": [
+        "PA-SVC-STORAGE",
+        "PA-SVC-OAUTH"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-PAYMENT-HOST-DEEP-IMPORT",
+      "name": "支付 Host 合同仍拒绝应用层深层 Kernel 导入",
+      "status": "resolved_observed",
+      "kind": "contract",
+      "fact": "支付候选 bc035df828ed94452a36461da2b6cfe12fafa254 已保留 Payment Host 边界，并在补齐 Module manifest/lock 身份后通过 Composer autoload 运行 PaymentHostTest.php。",
+      "recommendation": "保留 PaymentHostTest.php 通过证据；该修复尚未合入 dev，合入前不声称支付服务整体完成。",
+      "resolution_condition": "PaymentHostTest.php 在支付候选上通过，且支付调用方不再直接 deep-import Core Kernel；资金事务和外部 Provider 语义保持不变。",
+      "candidate": "bc035df828ed94452a36461da2b6cfe12fafa254",
+      "resolved_evidence": "PB07-PAYMENT-HOST-001 passed; PLUGIN-ARTIFACT-CONTRACT-001 passed",
+      "affected_service_ids": ["PA-SVC-PAYMENT"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-PAYMENT-SCENE-OWNER",
+      "name": "支付场景与共享收款渠道授权尚未实现",
+      "status": "resolved_observed",
+      "kind": "implementation-contract",
+      "fact": "用户已确认每个 Tenant 必须独立配置支付场景，同时允许同一老板的多个 Tenant 通过显式授权复用一个 Merchant Account/Group；PR #240 已实现 Tenant Channel Grant、订单授权快照、撤销后拒绝新请求和跨 Tenant 回调校验，并已合入 dev。",
+      "recommendation": "保留 PR #240 候选的 Tenant-owned Scene、External Channel-owned binding 和显式 Grant 边界；运行证据由 PA-SVC-PAYMENT-DYNAMIC-GATE 统一跟踪，不允许隐式全局共享。",
+      "resolution_condition": "已满足：两个 Tenant 共用账户、跨 Tenant 回调拒绝和撤销授权负向均在隔离验收库通过。",
+      "resolved_commit": "f373f335b71f0e28b0010aa32eda5fceceb7935f",
+      "resolved_evidence": "PAYMENT-DYNAMIC-PAY240DYN-001 passed; merge d1d9e474f7c80c1199c1c556c1f1f2baba525879",
+      "affected_service_ids": ["PA-SVC-PAYMENT"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-PAYMENT-REFUND-SOURCE-ID",
+      "name": "退款流水与充值入账复用 sourceSn",
+      "status": "resolved_user_decision",
+      "kind": "funds-transaction-semantics",
+      "fact": "用户已确认采用独立 refund operation/source ID；支付候选 5379e53… 已在余额扣款前生成 RefundRecord sn，并用该 sn 作为余额流水 source，充值入账仍使用充值订单号。",
+      "recommendation": "在同一候选上运行部分退款、重复退款请求和失败重试的资金幂等验收；不放宽 (tenant_id, source_sn) 唯一约束。",
+      "resolution_condition": "已满足产品决定和代码实现；部分退款不会冲突且重复请求不重复扣款的最低运行 Gate 已通过。",
+      "resolved_commit": "f373f335b71f0e28b0010aa32eda5fceceb7935f",
+      "resolved_evidence": "PAYMENT-DYNAMIC-PAY240DYN-001 passed; RefundRecord sn 独立 source 验证通过",
+      "affected_service_ids": ["PA-SVC-PAYMENT"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-PAYMENT-DYNAMIC-GATE",
+      "name": "支付授权与退款幂等尚缺登记资源上的最低运行验收",
+      "status": "resolved_observed",
+      "kind": "resource",
+      "fact": "支付候选已在登记 mac-14 MySQL 容器派生的隔离验收库完成四项最低运行验证：两个 Tenant 共用同一 Merchant Account/Group、跨 Tenant 回调拒绝、撤销授权拒绝新请求，以及独立退款 source 的部分退款/重复请求幂等。",
+      "recommendation": "保留 PAYMENT-DYNAMIC-PAY240DYN-001 证据；后续支付业务只消费已合入 dev 的授权合同。",
+      "resolution_condition": "已满足：动态四项 Gate 在固定候选上全部通过并已合入 dev。",
+      "resolved_commit": "f373f335b71f0e28b0010aa32eda5fceceb7935f",
+      "resolved_evidence": "PAYMENT-DYNAMIC-PAY240DYN-001 passed; merge d1d9e474f7c80c1199c1c556c1f1f2baba525879",
+      "affected_service_ids": ["PA-SVC-PAYMENT"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-OAUTH-CALLBACK-OWNER",
+      "name": "OAuth state/ticket 回调定位 owner 未冻结",
+      "status": "resolved_user_decision",
+      "kind": "cross-module-architecture",
+      "fact": "用户已确认 2A；候选 3f91837… 已由 OAuth 暴露 locateState/locateTicket 窄合同，External Channel 的 repository 不再直接读取 oauth_attempt/oauth_completion_ticket。",
+      "recommendation": "在同一候选上完成错误 binding、过期/重放和跨 Tenant 拒绝运行验收；OAuth 保持 state/ticket 唯一 owner。",
+      "resolution_condition": "已满足产品决策和代码边界；剩余运行证据由 PA-SVC-OAUTH-TENANT-ISOLATION-RESOURCE 跟踪。",
+      "resolved_commit": "3f918377a0857d6e5acf1c783a2eaeb1d83d9f87",
+      "resolved_evidence": "PB07-OAUTH-CHANNEL-HOST-001; PLUGIN-ARTIFACT-CONTRACT-001; PHP lint",
+      "affected_service_ids": ["PA-SVC-OAUTH", "PA-SVC-EXTERNAL-CHANNEL"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-OAUTH-VERIFICATION-AUTOLOAD",
+      "name": "OAuth 候选完整树合同验证尚未完成",
+      "status": "resolved_observed",
+      "kind": "verification-environment",
+      "fact": "OAuth 候选 3f91837… 已包含 callback locator 代码及重新封存的 OAuth Module manifest/lock digest；在完整候选树上 PluginArtifactContractTest 和 PB07-OAUTH-CHANNEL-HOST-001 均通过。",
+      "recommendation": "保留静态合同通过证据；租户隔离运行证据另由新增资源阻塞项跟踪，不再把 digest/autoload 漂移当作当前阻塞。",
+      "resolution_condition": "已满足：OAuth candidate 3f91837… 的 PluginArtifactContractTest 与 PB07-OAUTH-CHANNEL-HOST-001 通过。",
+      "resolved_commit": "3f918377a0857d6e5acf1c783a2eaeb1d83d9f87",
+      "resolved_evidence": "PLUGIN-ARTIFACT-CONTRACT-001 passed; PB07-OAUTH-CHANNEL-HOST-001 passed",
+      "affected_service_ids": ["PA-SVC-OAUTH"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-OAUTH-TENANT-ISOLATION-RESOURCE",
+      "name": "OAuth 租户隔离运行验收尚未取得安全资源执行证据",
+      "status": "resolved_observed",
+      "kind": "resource",
+      "fact": "OAuth 候选已在固定隔离运行资源上完成 Alpha/Beta Tenant 隔离、错误 provider/binding、过期和重放 state/ticket 负向验收；证据为 /private/tmp/peanut-admin-oauthc65/oauth-tenant-isolation.log。",
+      "recommendation": "保留 OAuth state/ticket 唯一 owner；后续文件/头像切片等待统一存储合同，不再重复运行本 Gate。",
+      "resolution_condition": "已满足：OAuthTenantIsolationTest 及其直接负向场景通过并已合入 dev。",
+      "resolved_commit": "6f7547bde8c1a4313fc334fdd38ab9e1e11e2f4f",
+      "resolved_evidence": "oauth-tenant-isolation.log: OAuth tenant isolation passed; wrong binding provider negative fixed and rerun passed",
+      "affected_service_ids": ["PA-SVC-OAUTH"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-MEMBER-VERIFY-AUTOLOAD",
+      "name": "会员候选合同脚本缺少 Composer autoload",
+      "status": "resolved_observed",
+      "kind": "verification-environment",
+      "fact": "初次验收因 server/vendor/autoload.php 缺失未能启动；候选 owner 随后按现有 composer.lock 补齐依赖，MemberFinanceHostTest.php 已通过。直接受影响的 PaymentHostTest.php 仍命中 Payment 自身既有的 PeanutAdmin\\Kernel 深层导入断言，不归 Member 写集。",
+      "recommendation": "保留 MemberFinanceHostTest 通过证据；PaymentHostTest 的既有失败转交 PA-SVC-PAYMENT 单独处理，不回退 Member 合同。",
+      "resolution_condition": "已满足 Member 侧条件：依赖已存在且 MemberFinanceHostTest.php 通过；PaymentHostTest 的既有 Payment owner 断言另行收口。",
+      "resolved_evidence": "MemberFinanceHostTest.php passed; PaymentHostTest.php failed on pre-existing Payment deep-import assertion",
+      "affected_service_ids": ["PA-SVC-MEMBER", "PA-SVC-PAYMENT"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-STORAGE-CONTRACT-SECRET-REF",
+      "name": "存储账户仍保留真实凭据形状",
+      "status": "resolved_observed",
+      "kind": "contract",
+      "fact": "用户已改为确认 SecretId/SecretKey 可直接进入数据库，但必须保存为应用密文；最新候选使用 credential_ciphertext + credential_key_version，主密钥只来自部署环境，管理端仅返回掩码，无法解密时拒绝调用。",
+      "recommendation": "保留当前密文合同；不再要求 credential_ref-only。继续验收真实 COS 生命周期和迁移备份恢复，不在聊天或版本库记录密钥。",
+      "resolution_condition": "最新候选的 Schema、Repository 和 Provider 装配均不暴露明文凭据，并有密文往返与 fail-closed 证据。",
+      "resolved_commit": "dba4c6b519dd585669128d3ced26d8041df3c874",
+      "affected_service_ids": ["PA-SVC-STORAGE", "PA-SVC-OAUTH"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-STORAGE-DEV-BASELINE",
+      "name": "存储候选尚未与最新 dev 保持完整基线",
+      "status": "resolved_observed",
+      "kind": "coordination",
+      "fact": "修正候选相对 origin/dev=e4110254… 删除已合入 Tenant Settings 合同文件；若直接采用会破坏 PA-SVC-TENANT-SETTINGS 的服务边界。",
+      "recommendation": "存储 owner 从 e4110254… 重新对齐并保留 Tenant Settings 合同，只提交存储写集。",
+      "resolution_condition": "完整 diff 不再删除或回退已合入 Tenant Settings 合同，且固定 tree 与验证结果一致。",
+      "resolved_commit": "69b1f22fea6ded1e5ded0b6f6e5087e773e942d7",
+      "affected_service_ids": ["PA-SVC-STORAGE", "PA-SVC-TENANT-SETTINGS"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE",
+      "name": "统一存储尚缺真实 COS 生命周期验收",
+      "status": "external_pending",
+      "kind": "external-resource",
+      "fact": "用户已确认采用腾讯云预置的 QcloudCOSFullAccess；代码候选已完成密文和静态合同验证，但尚未在登记验收桶上取得真实上传、下载、删除和删除后读取失败证据。",
+      "recommendation": "外部运行时提供全 COS 权限账户后，由统一存储 owner 只对登记验收桶执行一次生命周期验收；不在仓库或聊天记录凭据。",
+      "resolution_condition": "在 peanut-admin-cos-acceptance-20260824 上取得上传、下载、删除、read-after-delete 和失败账本证据。",
+      "affected_service_ids": ["PA-SVC-STORAGE"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-STORAGE-BACKUP-REHEARSAL",
+      "name": "统一存储破坏性迁移尚缺备份恢复演练",
+      "status": "acceptance_pending",
+      "kind": "data-safety",
+      "fact": "PR #232 的迁移会删除旧 pa_file URI/storage 字段和旧 storage 配置行，并重建 pa_file/pa_file_object 关系；当前尚无配对备份、恢复和迁移后核对证据。",
+      "recommendation": "在采用候选前，由存储 owner 按登记资源完成一次可恢复备份和恢复核对；失败时不得合入 dev。",
+      "resolution_condition": "备份可读、恢复到隔离目标、迁移前后对象账本可核对，且失败路径有留存证据。",
+      "affected_service_ids": ["PA-SVC-STORAGE"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-TASK-RUNTIME-GATE",
+      "name": "Task 最低运行验收尚未取得登记资源租约",
+      "status": "resolved_observed",
+      "kind": "resource",
+      "fact": "Task 候选已通过 PHP lint、diff-check 和公开合同静态核对，但 Tenant A/B 隔离、lease fencing、幂等、重试及 Module 停用负向 Gate 会创建数据库/临时资源，原对话尚未提供成功租约或运行结果。",
+      "recommendation": "由 Task owner 使用 resources/project-resources.json 登记的 peanut-admin-p0e-mysql84-gate，通过 project-resource-lease claim 后，在 peanut_admin_development_p0e_<run_id>_<scenario> 上只跑最低相关 Gate。",
+      "resolution_condition": "固定候选上实际运行并回报上述 Gate；失败则保留失败证据和最小修复，不得合入 dev。",
+      "resolved_candidate": "c28533aee45db0e0403393132203469f8b1ff51b",
+      "resolved_evidence": "Tenant A/B isolation, lease fencing, and manual retry passed on registered P0-E resource; remaining failures are Plugin digest identity, not resource access.",
+      "affected_service_ids": ["PA-SVC-TASK", "PA-SVC-IMPORT-EXPORT"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-TASK-MODULE-DIGEST",
+      "name": "Task 候选的 official.task canonical digest 未重封存",
+      "status": "resolved_observed",
+      "kind": "coordination",
+      "fact": "Task 候选曾因 official.task canonical digest 失败；PR #233 的 fixed merge be8d3d0… 已把 notification/task digest 修正带入 Task 候选，随后 7618254d… 在登记 P0-E 资源上通过最低动态 Gate。",
+      "recommendation": "由 PA-SVC-MODULE-GOVERNANCE owner 独立重封存 official.task 的 plugins.lock 与 manifest digest，再回跑同一候选的剩余异步 Gate。",
+      "resolution_condition": "已满足：PR #233 固定 merge be8d3d0…，Task 候选 7618254d… 的幂等、Module 停用负向和结果下载负向 Gate 通过。",
+      "resolved_commit": "be8d3d0a5bebdc15e44b7fdd6e34af2d1a020249",
+      "resolved_evidence": "output/task-gate-task8255/summary.txt",
+      "affected_service_ids": ["PA-SVC-TASK", "PA-SVC-MODULE-GOVERNANCE", "PA-SVC-IMPORT-EXPORT"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-NOTIFICATION-DEV-BASELINE",
+      "name": "通知候选未基于最新 Tenant Settings 合入基线",
+      "status": "resolved_observed",
+      "kind": "coordination",
+      "fact": "候选 880d8c1… 的父线仍停在 fd29cff…；相对 origin/dev=e4110254… 删除已合入的 Tenant Settings 合同文件，不能作为通知服务验收候选。",
+      "recommendation": "由通知 owner 从最新 dev 重建并只保留通知/验证码写集；固定验证码继续留到最后独立验收。",
+      "resolution_condition": "候选以 e4110254… 为基线，完整 diff 不回退 Tenant Settings 合同，且静态/合同验证重新通过。",
+      "resolved_commit": "f585627",
+      "affected_service_ids": ["PA-SVC-NOTIFICATION", "PA-SVC-TENANT-SETTINGS"],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B002",
+      "name": "Plugin 与 TenantModule 共享写集已有活跃修改",
+      "status": "resolved_user_decision",
+      "kind": "coordination",
+      "fact": "这组写集曾在本次 e147 分析工作树未提交，但已由“Peanut Admin 第一批修复主控”对话负责并通过 PR #221 合入 canonical dev（4f42cf676a91d3b5068a78984a8a5a2dad6bdc92）。e147 仍停在 4b5cefd 的陈旧副本，因此显示同名未提交文件，不代表 canonical 项目仍被该写集阻塞",
+      "recommendation": "后续服务任务从 canonical dev 的干净基线开始；涉及 plugins.lock 的任务仍串行，并由单一 owner 更新共享 lock",
+      "resolution_condition": "已满足：PR #221 已合入 canonical dev，并提供可复用的固定提交身份",
+      "resolved_commit": "4f42cf676a91d3b5068a78984a8a5a2dad6bdc92",
+      "affected_service_ids": [
+        "PA-SVC-MODULE-GOVERNANCE",
+        "PA-SVC-NOTIFICATION",
+        "PA-SVC-MEMBER",
+        "PA-SVC-PAYMENT",
+        "PA-SVC-OAUTH",
+        "PA-SVC-TASK",
+        "PA-SVC-IMPORT-EXPORT"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B003",
+      "name": "外部渠道绑定表的唯一 owner 尚未显式登记",
+      "status": "confirmed",
+      "kind": "architecture-decision",
+      "fact": "支付、OAuth 和短信共同使用 pa_external_channel_binding；用户已确认由 PA-SVC-EXTERNAL-CHANNEL 作为始终可用的唯一 owner，NoticeChannelService 的直写路径仍需在该服务任务中收口",
+      "recommendation": "确认 PA-SVC-EXTERNAL-CHANNEL 为始终可用的唯一 owner；通知、支付和 OAuth 只通过其合同管理 Provider 绑定和可信回调解析",
+      "resolution_condition": "已满足：用户确认 PA-SVC-EXTERNAL-CHANNEL 为唯一 owner，业务 Module 不直接写共享表",
+      "confirmed_decision": "PA-SVC-EXTERNAL-CHANNEL 是 pa_external_channel_binding 的唯一写入 owner；业务 Module 只能通过合同读写",
+      "affected_service_ids": [
+        "PA-SVC-EXTERNAL-CHANNEL",
+        "PA-SVC-NOTIFICATION",
+        "PA-SVC-PAYMENT",
+        "PA-SVC-OAUTH"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B004",
+      "name": "统一审计是合同收口还是 Schema 合并",
+      "status": "confirmed",
+      "kind": "architecture-decision",
+      "fact": "用户已确认采用合同统一、投影保留的 B 方案：Tenant 管理操作、Platform 控制面、外部 Tenant 解析和异步任务继续保留各自存储投影",
+      "recommendation": "只统一审计事件合同、主体/操作/trace 字段和脱敏规则；保留不同 audience 的存储与查询投影，不做审计表合并",
+      "resolution_condition": "已满足：用户确认统一事件合同和适配器，不合并现有审计 Schema",
+      "confirmed_decision": "统一 AuditEvent、actor、operation、resource、trace、outcome、reason 和脱敏规则；保留现有 Tenant/Platform 等投影",
+      "affected_service_ids": [
+        "PA-SVC-AUDIT",
+        "PA-SVC-MODULE-GOVERNANCE",
+        "PA-SVC-IMPORT-EXPORT"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B005",
+      "name": "Tenant 设置的运行时写入 owner 未收口",
+      "status": "resolved_user_decision",
+      "kind": "coordination",
+      "fact": "ApplicationTenantBootstrapService::seedSettings 在新 Tenant owner 邀请和管理员 provision 流程中直接 INSERT IGNORE pa_tenant_setting；这不是只发生在 fresh install 的一次性种子路径",
+      "recommendation": "由 PA-SVC-TENANT-SETTINGS 统一承接该写入；bootstrap 只调用服务，不直接写 pa_tenant_setting",
+      "resolution_condition": "已满足：用户确认 4A，Tenant 设置服务为唯一写入 owner，bootstrap 不保留直接写表例外",
+      "affected_service_ids": [
+        "PA-SVC-TENANT-SETTINGS",
+        "PA-SVC-ADMIN-AUTHORIZATION"
+      ],
+        "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B006",
+      "name": "Plugin canonical contents digest 与 dev 基线漂移",
+      "status": "resolved_elsewhere",
+      "kind": "coordination",
+      "fact": "RBAC 候选初始化应用时在 server/app/platform/service/plugin/PluginLockResolver.php:182 报 PLUGIN_ARTIFACT_MISMATCH；只读复算 origin/dev=f5846eb 显示 official.article 与 fixture.delivery-record 的 plugins.lock source.sha256 不再匹配实际 Module 文件。差异来自 bb494ae 对 ArticleModuleMiddleware.php 与 PdoDeliveryRecordAccess.php 的已合入治理修改，RBAC 候选未修改这些文件。",
+      "recommendation": "由 PA-SVC-MODULE-GOVERNANCE 原 owner 在独立工作树核对两项内容并按 canonical-contents 规则只更新对应 digest，或明确回退具体漂移文件；RBAC 工作树不得越权改 plugins.lock。",
+      "resolution_condition": "已满足：PR #227 已合入 dev（caff48186c6e274b17d71cdae0313e892eaf43c5），随后 PR #228 已在该基线完成 RBAC 最低验收并合入 dev（fd29cffe029b588a6ee510f1149e30f246da7511）。",
+      "resolved_commit": "caff48186c6e274b17d71cdae0313e892eaf43c5",
+      "affected_service_ids": [
+        "PA-SVC-MODULE-GOVERNANCE",
+        "PA-SVC-ADMIN-AUTHORIZATION"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B007",
+      "name": "RBAC 数据库验收夹具使用未登记的 peanut.admin Module",
+      "status": "resolved_elsewhere",
+      "kind": "fixture",
+      "fact": "候选 ea2e7a7… 先发现夹具使用不存在的 peanut.admin，随后 899f344… 已改为真实 official.* 并使用 module.json 的 ManifestDocument digest；该夹具问题已解除。",
+      "recommendation": "由 RBAC owner 只修正测试夹具，使安装记录使用当前 plugins.lock/module.json 中真实存在的 Module，并把 manifest_digest 填为对应 module.json SHA-256；保留 Tenant、root、路由登记和禁用 Module 断言，不新增 peanut.admin manifest，不改产品 Schema 或权限模型。",
+      "resolution_condition": "已满足：commit 899f344… 已修正真实 Module 与 module.json digest；剩余失败已转为 B008 的产品授权语义问题。",
+      "resolved_commit": "899f344a5bdf4b54d44388af0fba48b84904b08b",
+      "affected_service_ids": [
+        "PA-SVC-ADMIN-AUTHORIZATION"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B008",
+      "name": "root 绕过 Tenant Module 启用资格",
+      "status": "resolved_elsewhere",
+      "kind": "authorization-semantics",
+      "fact": "候选 7e4993d/6b0034… 已让 root 受 active Tenant Module 约束，并让带 permission 的兼容菜单按 active Module 过滤；独立验收中 root 禁用 Module 断言已通过。剩余失败是 B009 的过宽菜单断言。",
+      "recommendation": "保留已实现的四层规则，不把 root 改为普通角色；只收窄测试对菜单的断言范围。",
+      "resolution_condition": "已满足产品语义修复：root 受 Module 禁用约束，兼容菜单按 active Module 过滤；剩余仅需 B009 夹具断言修正。",
+      "resolved_commit": "6b003410d6cb0ad510ef3960d2a967bfd622273b",
+      "affected_service_ids": [
+        "PA-SVC-ADMIN-AUTHORIZATION"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B009",
+      "name": "RBAC 菜单验收断言把合法核心菜单误判为泄漏",
+      "status": "resolved_elsewhere",
+      "kind": "fixture",
+      "fact": "候选 6b0034… 的真实数据库验收中，root 的 Module gate 已通过；Beta 菜单仍非空触发测试失败，原因为断言直接要求整个 menu === []。commit ab8bcb9… 已把断言收窄为禁止导入导出专属权限/路径，同时保留合法核心后台菜单。",
+      "recommendation": "只修测试断言，递归确认 Beta 不包含 log/export、log/export/status、log/export/download 或 official.import-export 的菜单/权限；不删除合法核心菜单，不放宽 Module gate。",
+      "resolution_condition": "已满足：commit ab8bcb9… 收窄断言，AdminRbacTenantIsolationTest.php 在新租约/新数据库上通过，其余 Tenant/RBAC/root/路由/撤销断言保持通过。",
+      "resolved_commit": "ab8bcb9bc9c204a067e7a10f8ae83fd9594f0685",
+      "affected_service_ids": [
+        "PA-SVC-ADMIN-AUTHORIZATION"
+      ],
+      "requires_user_confirmation": false
+    },
+    {
+      "blocker_id": "PA-SVC-B010",
+      "name": "Task 候选越过 Module Governance 修改共享 Plugin digest",
+      "status": "resolved_observed",
+      "kind": "coordination",
+      "fact": "PA-SVC-TASK 候选 eca00c7 同时修改 plugins.lock 与 plugins/official.task/plugin.json 的 canonical/manifest digest；这属于 Module Governance 唯一 owner 的共享写集，不属于 Task 业务实现写集。",
+      "recommendation": "Task owner 恢复这两个共享文件到最新 dev，保留 Task 自有合同和 Runtime；由 Module Governance owner 在独立候选中根据最终 Task tree 重封存 digest。",
+      "resolution_condition": "已满足：Task 候选 40a9987… 相对 origin/dev 不再包含共享 Plugin digest 修改；Module Governance PR #227 已在 origin/dev 固定提交 caff481… 完成身份重封存。",
+      "resolved_commit": "4b1f8aeb8a7e2eae673cfa18b86404d8e9e076b4",
+      "affected_service_ids": ["PA-SVC-TASK", "PA-SVC-MODULE-GOVERNANCE"],
+      "requires_user_confirmation": false
+    }
+  ],
+  "services": [
+    {
+      "stable_service_id": "PA-SVC-TENANT-SETTINGS",
+      "name": "Tenant 配置与应用设置服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "application foundation / Settings Host",
+      "responsibility": "按 Tenant 和 namespace 原子读取、替换和版本化应用设置，并由 typed facade 固定各业务默认值与字段规则",
+      "explicit_exclusions": [
+        "Plugin/TenantModule 的 pa_setting_* 定义和值",
+        "外部渠道凭据",
+        "存储 Driver 配置"
+      ],
+      "current_implementation": [
+        "server/app/common/service/tenant/TenantSettingService.php",
+        "server/app/common/service/config/TenantApplicationSettingService.php",
+        "server/app/common/service/config/WebsiteConfigService.php",
+        "server/app/common/service/config/TenantSettingWebsiteStore.php"
+      ],
+      "actual_callers": [
+        "网站与工作台",
+        "登录和会员默认资料",
+        "协议与统计",
+        "热搜与 Web 页面",
+        "充值设置"
+      ],
+      "data_ownership": {
+        "owned_tables": ["pa_tenant_setting"],
+        "shared_or_read_only_tables": [],
+        "policy": "保留 namespace 文档存储；不与 pa_setting_* 合并"
+      },
+      "dependencies": ["TenantContext"],
+      "current_issue": "TenantSettings Query/Commands 和 bootstrap 合同已合入 dev；ApplicationTenantBootstrapService 通过服务承接设置写入。",
+      "recommended_boundary": "TenantSettingsQuery、TenantSettingsCommands 和 typed setting definitions；业务代码不直接访问 pa_tenant_setting",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": true,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "核对固定候选的调用方和默认设置行为后创建 PR；不修改 Schema 或身份模型"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-ADMIN-AUTHORIZATION",
+      "name": "管理身份与 RBAC 授权服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "application foundation / native Admin Host",
+      "responsibility": "从可信 Tenant 管理主体产生权限判定、菜单投影和异步授权上下文",
+      "explicit_exclusions": [
+        "业务会员认证",
+        "PlatformOperator 会话与权限",
+        "具体业务对象的数据权限规则"
+      ],
+      "current_implementation": [
+        "server/app/adminapi/service/AdminPermissionService.php",
+        "server/app/adminapi/service/CoreTenantModuleAdminBridge.php",
+        "server/app/adminapi/service/NativeAdminPrincipalRepository.php"
+      ],
+      "actual_callers": [
+        "Admin 登录",
+        "HTTP AuthMiddleware",
+        "菜单与按钮权限",
+        "操作日志异步导出授权"
+      ],
+      "data_ownership": {
+        "owned_tables": [
+          "pa_account",
+          "pa_credential",
+          "pa_tenant_member",
+          "pa_role",
+          "pa_permission",
+          "pa_member_role",
+          "pa_role_permission"
+        ],
+        "shared_or_read_only_tables": ["pa_system_menu"],
+        "policy": "原生身份和 RBAC 为权威；菜单只是授权投影和兼容 Host"
+      },
+      "dependencies": ["TenantContext", "Module registry"],
+      "current_issue": "已迁移到 common authorization 边界并合入 dev；root 的 Module 资格和兼容菜单过滤已修正，Tenant/RBAC/Module/路由隔离验收通过",
+      "recommended_boundary": "AdminAuthorizationQuery、PermissionDecision 和 AuthorizedOperationFactory；保留 Platform 与业务会员的独立 audience",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "后续业务服务消费已收口的授权合同；继续观察是否出现真实授权语义回归"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-DICTIONARY",
+      "name": "字典与参考码服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "application foundation / Dictionary Host",
+      "responsibility": "提供 Tenant 可维护字典和 deployment-owned 系统参考码的统一查询，并保留各自写入权限",
+      "explicit_exclusions": [
+        "业务 Module 内的封闭枚举",
+        "把系统参考码改成 Tenant 可写数据"
+      ],
+      "current_implementation": [
+        "server/app/common/service/dict/DictionaryRuntimeFactory.php",
+        "server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php",
+        "server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php"
+      ],
+      "actual_callers": [
+        "字典类型管理",
+        "字典条目管理",
+        "业务选择器和状态名称的潜在 Module 调用方"
+      ],
+      "data_ownership": {
+        "owned_tables": [
+          "pa_dict_type",
+          "pa_dict_data",
+          "pa_system_dict_type",
+          "pa_system_dict_data"
+        ],
+        "shared_or_read_only_tables": [],
+        "policy": "Tenant 字典可写、系统参考码只读；两组表不合并"
+      },
+      "dependencies": ["TenantContext"],
+      "current_issue": "系统参考码与租户字典查询合同已合入 dev；旧 Repository 作为兼容入口保留，新业务应使用统一 Query/Commands。",
+      "recommended_boundary": "DictionaryQuery、TenantDictionaryCommands 和 SystemReferenceCodeQuery；按 source 返回明确 DTO",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": true,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "固定应用装配和公开查询合同，替换业务代码中的重复字典表读取"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-EXTERNAL-CHANNEL",
+      "name": "外部渠道绑定与可信回调路由服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "application foundation / Integration Security Host",
+      "responsibility": "管理 Tenant 与外部 Provider 的唯一绑定、凭据文档、启停、callback key、身份摘要、可信 Tenant 解析和解析审计",
+      "explicit_exclusions": [
+        "支付订单和退款状态机",
+        "OAuth principal/identity",
+        "短信 Scene、模板和发送日志"
+      ],
+      "current_implementation": [
+        "server/app/common/service/external/ExternalChannelBindingService.php",
+        "server/app/common/service/external/ExternalTenantResolver.php",
+        "server/app/common/service/external/ThinkPhpExternalTenantBindingRepository.php"
+      ],
+      "actual_callers": [
+        "支付配置与回调",
+        "公众号、开放平台和小程序",
+        "OAuth",
+        "短信 Provider"
+      ],
+      "data_ownership": {
+        "owned_tables": [],
+        "shared_or_read_only_tables": ["pa_external_channel_binding"],
+        "policy": "本服务唯一拥有 pa_external_channel_binding 的写入权；业务 Module 只能通过合同访问"
+      },
+      "dependencies": ["TenantContext", "Audit contract", "ModuleExecutionGuard for Module callbacks"],
+      "current_issue": "ExternalChannelBindingService 已成为共享绑定表的唯一写入 owner；通知、支付和 OAuth 通过 mutate/config/callbackKey 合同访问。",
+      "recommended_boundary": "ExternalBindingQuery、ExternalBindingCommands、VerifiedCallbackResolver；Provider 业务校验由插件提供 policy，不允许插件直写共享表",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": true,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "收口唯一写入 owner，迁移 NoticeChannelService 直写，并固定绑定与可信回调合同"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-MODULE-GOVERNANCE",
+      "name": "Plugin 与 Module 能力治理及执行服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "platform control plane / Module Host",
+      "responsibility": "管理 Plugin 部署生命周期、Module registry、TenantModule 开通与依赖校验，并在 HTTP、worker、schedule 和 callback 执行前复核资格",
+      "explicit_exclusions": [
+        "具体业务 Module 的领域授权",
+        "业务服务自身事务",
+        "跨应用运营平台"
+      ],
+      "current_implementation": [
+        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "server/app/platform/service/module/PlatformTenantModuleService.php",
+        "server/app/common/service/module/ModuleExecutionGuard.php",
+        "server/app/common/service/module/OfficialModuleMiddleware.php"
+      ],
+      "actual_callers": [
+        "Platform Plugin/Module 管理",
+        "全部官方 Module HTTP 路由",
+        "Article 公共 API",
+        "异步 worker 和 Crontab",
+        "OAuth 与支付外部回调"
+      ],
+      "data_ownership": {
+        "owned_tables": [
+          "pa_plugin_installation",
+          "pa_plugin_module",
+          "pa_module_installation",
+          "pa_module_migration",
+          "pa_tenant_module"
+        ],
+        "shared_or_read_only_tables": [],
+        "policy": "部署安装与 Tenant 开通分层；Plugin lifecycle 不直接修改 pa_tenant_module"
+      },
+      "dependencies": ["Admin authorization", "Audit contract"],
+      "current_issue": "Module 生命周期、canonical digest、Tenant 开通和执行 Guard 已合入 dev；后续只消费固定 Module identity，不重复改共享 lock。",
+      "recommended_boundary": "PluginLifecycleCommands、TenantModuleCommands、ModuleQualificationQuery 和 ModuleExecutionGuard 四个窄合同，共享一个 verified registry",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": true,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "从 canonical dev 干净基线开始，收口 PluginLifecycle、TenantModule、资格查询和执行 Guard 四个窄合同"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-IDEMPOTENCY",
+      "name": "Tenant 幂等命令执行服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "application foundation / Kernel Idempotency Host",
+      "responsibility": "统一 Tenant、actor、operation、Idempotency-Key、请求摘要、过期时间、执行占用和结果回放语义",
+      "explicit_exclusions": [
+        "替业务服务决定事务范围",
+        "替业务服务定义响应 DTO",
+        "以幂等记录代替领域唯一约束"
+      ],
+      "current_implementation": [
+        "PeanutAdmin Kernel Idempotency primitives",
+        "server/app/adminapi/logic/member/MemberLogic.php",
+        "server/app/adminapi/logic/finance/RechargeLogic.php",
+        "server/app/common/service/async/TaskImportExportRuntime.php"
+      ],
+      "actual_callers": [
+        "会员余额调账",
+        "充值退款",
+        "异步导出提交"
+      ],
+      "data_ownership": {
+        "owned_tables": ["pa_tenant_idempotency_record"],
+        "shared_or_read_only_tables": [],
+        "policy": "一个通用 repository 和应用编排合同；领域表仍保留自己的唯一约束"
+      },
+      "dependencies": ["TenantContext"],
+      "current_issue": "余额、退款和异步命令已通过统一 IdempotentCommandExecutor 编排 begin/replay/complete/fail。",
+      "recommended_boundary": "IdempotentCommandExecutor 与 IdempotencyResult；允许调用方提供同事务 command closure，不隐藏事务边界",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": true,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "优先建立通用 wrapper，并迁移余额调账、退款和导出三个真实调用方"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-AUDIT",
+      "name": "统一审计事件服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "application foundation / shared Audit Contract Host; existing projections retain their audience owners",
+      "responsibility": "统一审计事件的主体、Tenant、operation、resource、trace/request、结果、原因、元数据和脱敏规则，并投影到对应 audience 的存储",
+      "explicit_exclusions": [
+        "普通应用日志",
+        "通知发送日志",
+        "支付和退款领域流水",
+        "默认合并 Tenant 与 Platform 审计表"
+      ],
+      "current_implementation": [
+        "server/app/adminapi/service/OperationLogService.php",
+        "server/app/common/service/audit/OperationLogTenantRepository.php",
+        "PeanutAdmin Kernel PdoAuditRepository",
+        "server/app/common/service/external/ThinkPhpExternalTenantAudit.php"
+      ],
+      "actual_callers": [
+        "Tenant Admin HTTP 操作",
+        "Platform Tenant 与 Module 治理",
+        "Owner 邀请",
+        "外部 Tenant 解析",
+        "异步导入导出"
+      ],
+      "data_ownership": {
+        "owned_tables": [],
+        "shared_or_read_only_tables": ["pa_operation_log", "pa_platform_audit_event"],
+        "policy": "统一事件合同和脱敏规则；保留 audience-specific projection，不合并现有 Schema"
+      },
+      "dependencies": ["TenantContext", "PlatformOperatorContext"],
+      "current_issue": "AuditEvent、actor、operation、resource、trace 和脱敏规则已统一，并保留 Tenant/Platform 查询投影。",
+      "recommended_boundary": "AuditEvent、AuditActor、AuditSink 和 RedactionPolicy；用 adapter 写入现有 Tenant/Platform projection",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": true,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "建立 AuditEvent、RedactionPolicy 和 projection adapter，先迁移模块治理与外部解析写入"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-STORAGE",
+      "name": "统一存储与文件媒体服务",
+      "group_id": "storage-hybrid",
+      "availability": "hybrid",
+      "maturity": "in_progress_elsewhere",
+      "owner": "existing dedicated storage-service task",
+      "responsibility": "统一存储 Driver、Account、Space、public/private 可见性、上传交付和文件对象账本；最终边界以现有任务冻结结果为准",
+      "explicit_exclusions": [
+        "本登记任务不修改或验收存储实现",
+        "业务内容、会员、OAuth 和导出自己的领域规则"
+      ],
+      "current_implementation": [
+        "server/app/Modules/Official/File/module.json",
+        "server/app/common/service/FileService.php",
+        "server/app/common/service/UploadService.php",
+        "server/app/common/service/storage/"
+      ],
+      "actual_callers": [
+        "official.article",
+        "official.member",
+        "official.oauth",
+        "official.import-export",
+        "管理端和会员端上传"
+      ],
+      "data_ownership": {
+        "owned_tables": ["pa_file", "pa_file_cate", "pa_file_object"],
+        "shared_or_read_only_tables": [],
+        "policy": "当前 manifest 事实；Account/Space 等最终 owner 等待现有任务冻结"
+      },
+      "dependencies": ["TenantContext", "Module governance"],
+      "current_issue": "PR #232 已形成唯一 Driver/Account/Space、public/private 和对象账本候选，但尚未取得真实 COS 生命周期及破坏性迁移备份恢复证据，不能作为最终合入事实",
+      "recommended_boundary": "保持现有存储任务唯一 owner；本登记只消费其固定合同和验收证据，不重复修改存储实现",
+      "delivery": {
+        "readiness": "owned_elsewhere",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": ["PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE", "PA-SVC-STORAGE-BACKUP-REHEARSAL"],
+        "blockers": ["PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE", "PA-SVC-STORAGE-BACKUP-REHEARSAL"],
+        "recommended_next_action": "原 owner 完成两项验收后，由主控合入 PR #232 并关闭存储目标"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-NOTIFICATION",
+      "name": "通知与验证码服务",
+      "group_id": "enableable-business",
+      "availability": "enableable_plugin",
+      "maturity": "partial",
+      "owner": "official.notification",
+      "responsibility": "管理通知渠道、Scene、模板、发送日志、验证码频控和一次消费核验",
+      "explicit_exclusions": [
+        "外部 Provider 绑定和 callback Tenant 解析",
+        "会员注册或找回密码业务状态机"
+      ],
+      "current_implementation": [
+        "server/app/Modules/Official/Notification/module.json",
+        "server/app/common/service/notice/NoticeChannelService.php",
+        "server/app/common/service/notice/VerificationCodeService.php"
+      ],
+      "actual_callers": [
+        "注册",
+        "手机登录",
+        "重置密码",
+        "绑定手机",
+        "OAuth 补手机号"
+      ],
+      "data_ownership": {
+        "owned_tables": ["pa_notice_log", "pa_notice_scene", "pa_notice_template"],
+        "shared_or_read_only_tables": ["pa_external_channel_binding"],
+        "policy": "通知只拥有通知事实；Provider 绑定通过 PA-SVC-EXTERNAL-CHANNEL"
+      },
+      "dependencies": ["PA-SVC-EXTERNAL-CHANNEL", "PA-SVC-MODULE-GOVERNANCE"],
+      "current_issue": "Notification/Verification contracts 和主要调用方已合入 dev；development 固定验证码仅是本地验收策略，真实 Provider 属于后置业务 Gate。",
+      "recommended_boundary": "NotificationCommands、VerificationCodeCommands 和 DeliveryResult；验证码作为通知子能力，不单独拆服务",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "已合入 dev；真实 Provider 短信安全语义作为后置独立验收"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-MEMBER",
+      "name": "会员账户与 CRM 服务",
+      "group_id": "enableable-business",
+      "availability": "enableable_plugin",
+      "maturity": "partial",
+      "owner": "official.member",
+      "responsibility": "管理业务会员身份、会话、资料、标签、余额和分类流水，并向支付/OAuth 提供窄合同",
+      "explicit_exclusions": [
+        "Tenant 管理员身份和 RBAC",
+        "支付订单和退款状态",
+        "文件对象生命周期"
+      ],
+      "current_implementation": [
+        "server/app/Modules/Official/Member/module.json",
+        "server/app/common/service/MemberBalanceService.php",
+        "server/app/api/service/UserTokenService.php",
+        "server/app/adminapi/logic/member/"
+      ],
+      "actual_callers": [
+        "管理端会员 CRUD 和余额调账",
+        "会员端注册、登录与资料",
+        "支付充值与退款",
+        "OAuth 身份绑定"
+      ],
+      "data_ownership": {
+        "owned_tables": [
+          "pa_member",
+          "pa_member_balance_log",
+          "pa_member_tag",
+          "pa_member_tag_relation"
+        ],
+        "shared_or_read_only_tables": [],
+        "policy": "MemberBalanceService 保持余额和流水唯一 writer；其他 Module 只能调用合同"
+      },
+        "dependencies": ["PA-SVC-STORAGE"],
+      "current_issue": "会员身份、资料、标签和余额合同已合入 dev；头像和文件对象路径在存储合入后做受影响回归。",
+      "recommended_boundary": "MemberQueries、MemberProfileCommands、MemberIdentityCommands 和 MemberBalanceCommands；Token 只作为内部认证 adapter",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "已合入 dev；OAuth 继续消费会员身份合同，头像/文件仍等待存储合同"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-PAYMENT",
+      "name": "支付、充值与退款服务",
+      "group_id": "enableable-business",
+      "availability": "enableable_plugin",
+      "maturity": "formed",
+      "owner": "official.payment",
+      "responsibility": "管理支付配置、预支付、可信回调、充值订单、退款状态机、重试和渠道结果",
+      "explicit_exclusions": [
+        "直接拥有会员资料或余额表",
+        "直接管理外部 Provider 绑定",
+        "通用幂等记录实现"
+      ],
+      "current_implementation": [
+        "server/app/Modules/Official/Payment/module.json",
+        "server/app/common/service/payment/PaymentServiceFactory.php",
+        "server/app/api/logic/RechargeLogic.php",
+        "server/app/adminapi/logic/finance/RechargeLogic.php",
+        "server/app/command/RefundReconcile.php"
+      ],
+      "actual_callers": [
+        "会员端充值",
+        "微信和支付宝通知",
+        "管理端退款",
+        "退款 reconcile"
+      ],
+      "data_ownership": {
+        "owned_tables": [
+          "pa_payment_scene",
+          "pa_recharge_order",
+          "pa_refund_log",
+          "pa_refund_record"
+        ],
+        "shared_or_read_only_tables": ["pa_member", "pa_member_balance_log", "pa_external_channel_binding"],
+        "policy": "订单和退款归 Payment；余额通过 Member 合同，渠道绑定通过 External Channel 合同"
+      },
+      "dependencies": ["PA-SVC-MEMBER"],
+      "current_issue": "Payment Channel Grant、Tenant 授权快照、跨租户回调校验和独立退款 source 已合入 dev；动态四项资金/授权最低验收已通过",
+      "recommended_boundary": "PaymentCommands、PaymentCallbackHandler、RefundCommands 和 PaymentQuery；Payment Scene 按 Tenant 拥有，Merchant Account/Group 通过 External Channel 的 Tenant Channel Grant 显式复用；本地原子事务提交后才调用外部退款",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "后续支付业务通过 PaymentChannelGrantCommands/PaymentChannelGrantService 消费已合入 dev 的租户授权合同"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-OAUTH",
+      "name": "OAuth 与微信渠道服务",
+      "group_id": "enableable-business",
+      "availability": "enableable_plugin",
+      "maturity": "formed",
+      "owner": "official.oauth",
+      "responsibility": "管理 OAuth state/ticket、外部身份、会员绑定、公众号回调、菜单与回复、小程序和开放平台交互",
+      "explicit_exclusions": [
+        "会员账户权威资料",
+        "通知验证码事实",
+        "文件对象与 Provider 绑定的底层生命周期"
+      ],
+      "current_implementation": [
+        "server/app/Modules/Official/Oauth/module.json",
+        "server/app/api/logic/OAuthLogic.php",
+        "server/app/common/service/oauth/OAuthBrowserCallbackService.php",
+        "server/app/common/service/wechat/OfficialAccountService.php"
+      ],
+      "actual_callers": [
+        "PC 微信登录",
+        "公众号 OAuth",
+        "小程序登录",
+        "会员绑定",
+        "公众号服务端回调"
+      ],
+      "data_ownership": {
+        "owned_tables": [
+          "pa_oauth_attempt",
+          "pa_oauth_completion_ticket",
+          "pa_oauth_identity",
+          "pa_oauth_principal",
+          "pa_official_account_reply"
+        ],
+        "shared_or_read_only_tables": ["pa_member", "pa_notice_log", "pa_external_channel_binding"],
+        "policy": "OAuth 只写自己的身份和票据；会员、验证码、渠道绑定和文件分别通过对应合同"
+      },
+        "dependencies": ["PA-SVC-STORAGE", "PA-SVC-MEMBER"],
+      "current_issue": "OAuthCommands 和 state/ticket locator 合同已合入 dev；External Channel 通过 OAuth 窄合同读取 locator，Tenant 隔离运行证据已通过；仅文件/头像下游交付等待统一存储合同",
+      "recommended_boundary": "OAuthCommands、OAuthCompletionCommands、ChannelAdminCommands 和 OAuthResult DTO；所有跨域动作通过上游合同",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "OAuth state/ticket 服务已合入 dev；文件/头像交付切片等待统一存储合同，不重复运行已通过的 Tenant 隔离 Gate"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-TASK",
+      "name": "Tenant 任务与异步执行服务",
+      "group_id": "enableable-business",
+      "availability": "enableable_plugin",
+      "maturity": "partial",
+      "owner": "official.task",
+      "responsibility": "管理 Tenant 定时计划、可信任务提交、Job/Attempt/Event、领取、重试、执行结果和执行前 Module/授权复核",
+      "explicit_exclusions": [
+        "具体业务 handler 的领域逻辑",
+        "导入导出 operation 和 row error",
+        "通用事件总线"
+      ],
+      "current_implementation": [
+        "server/app/Modules/Official/Task/module.json",
+        "server/app/common/service/crontab/CrontabSchedulerService.php",
+        "server/app/common/service/async/ModuleAwareTaskHandler.php",
+        "server/app/command/TenantTaskWorker.php"
+      ],
+      "actual_callers": [
+        "Crontab 调度命令",
+        "Tenant worker",
+        "official.import-export",
+        "未来各 Module 后台任务"
+      ],
+      "data_ownership": {
+        "owned_tables": ["pa_crontab", "pa_task_job", "pa_task_job_attempt", "pa_task_job_event"],
+        "shared_or_read_only_tables": [],
+        "policy": "Task 只拥有调度和执行事实；业务 payload/handler 由提交 Module 拥有"
+      },
+      "dependencies": ["PA-SVC-MODULE-GOVERNANCE", "PA-SVC-AUDIT", "Admin authorization"],
+      "current_issue": "Task Runtime、scheduler、Module/授权复核、幂等和结果下载隔离已合入 dev；原子失败注入因登记账号缺少 SUPER 明确 skipped。",
+      "recommended_boundary": "TaskSubmission、TaskLease/Worker、ScheduleCommands 和 HandlerRegistry；执行前统一复核 Module 与授权 revision",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "已合入 dev；后续异步业务继续消费 Task Runtime"
+      }
+    },
+    {
+      "stable_service_id": "PA-SVC-IMPORT-EXPORT",
+      "name": "导入导出服务",
+      "group_id": "enableable-business",
+      "availability": "enableable_plugin",
+      "maturity": "partial",
+      "owner": "official.import-export",
+      "responsibility": "管理 Provider 注册、导入导出 operation、异步提交、行错误、状态查询和授权下载",
+      "explicit_exclusions": [
+        "各业务域的行转换和校验规则",
+        "任务调度与 worker 生命周期",
+        "文件对象存储实现"
+      ],
+      "current_implementation": [
+        "server/app/Modules/Official/ImportExport/module.json",
+        "server/app/common/service/async/TaskImportExportRuntime.php",
+        "server/app/common/service/export/OperationLogExportProvider.php",
+        "server/app/common/service/XlsxExportService.php"
+      ],
+      "actual_callers": [
+        "操作日志异步导出",
+        "会员同步 XLSX 导出",
+        "管理员与岗位同步 XLSX 导出",
+        "财务同步 XLSX 导出"
+      ],
+      "data_ownership": {
+        "owned_tables": ["pa_import_export_operation", "pa_import_export_row_error"],
+        "shared_or_read_only_tables": ["pa_task_job", "pa_file_object", "pa_operation_log"],
+        "policy": "operation 归 ImportExport；任务、文件和业务数据通过各自合同"
+      },
+        "dependencies": ["PA-SVC-STORAGE"],
+      "current_issue": "CSV 异步 Commands/Queries 与既有同步 XLSX 已按场景并存并合入 dev；对象交付在存储合入后做一次受影响回归。",
+      "recommended_boundary": "ImportExportCommands、OperationQuery、DataProviderRegistry 和 AuthorizedFileDelivery；业务 Provider 留在所属 Module",
+      "delivery": {
+        "readiness": "complete",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "已合入 dev；业务按场景选择 CSV 异步或 XLSX，结果对象交付等待存储合同"
+      }
+    }
+  ],
+  "rollout": {
+    "do_not_start": "不要重复启动已完成的 13 个服务，也不要启动第二个存储 owner；真实短信、真实支付和其他 Provider 联调留在后置验收",
+    "ready_now_service_ids": [],
+    "after_architecture_confirmation_service_ids": [],
+    "after_shared_write_set_service_ids": [],
+    "business_sequence": ["PA-SVC-STORAGE", "PA-SVC-MEMBER", "PA-SVC-OAUTH", "PA-SVC-IMPORT-EXPORT"],
+    "coordination_policy": "每个服务使用独立任务；涉及 plugins.lock 的任务串行并由单一 owner 更新共享 lock；所有服务完成后由主任务按本登记做一次收口核验"
+  }
+}

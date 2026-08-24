@@ -12,6 +12,20 @@
 部署前必须先读取对应文件并显式选择资源 ID、环境和登记地址；本项目登记是唯一事实源，
 使用前还必须按登记的健康检查核验真实资源。
 
+本项目内部复用服务的责任、成熟度、owner、数据归属、依赖、阻塞和推进顺序统一登记在
+`resources/service-registry.json`，人类可读入口为
+`docs/architecture/service-layer-registry.md`；对话执行状态、业务回报和完成模板见
+`docs/architecture/service-execution-status.md`。开始服务层或跨 Module 调用改造前必须先读取该
+登记；Module 自有表仍以对应 `module.json` 为直接事实，运行资源仍以项目资源登记为事实源。
+
+本项目 CodeGraph 的适用范围、每个 worktree 独立索引规则和缺失语义登记在
+`resources/codegraph-registry.json`。需要调用关系、影响范围、服务层、Module 边界或架构事实的
+代码任务，第一步必须运行 `scripts/project-codegraph ensure`；纯文档、简单机械修改和已明确
+单文件局部查看可不启用。当前 worktree 没有 `.codegraph` 时，不得直接写成“项目没有知识图谱”，
+先运行 `scripts/project-codegraph status` 查看其他实际存在的 worktree，再只初始化当前 worktree。
+不同 worktree 的索引禁止复制或共享；其他项目是否需要 CodeGraph 由其自身事实源决定，不由本条
+扩展为全局要求。
+
 ---
 
 ## 1. 项目身份

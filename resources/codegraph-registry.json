@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "project_id": "peanut-admin",
+  "title": "Peanut Admin CodeGraph 适用范围与工作树索引登记",
+  "visibility": "internal",
+  "authority": {
+    "owner": "Peanut Admin maintainers",
+    "source": "this versioned file",
+    "scope": "是否需要 CodeGraph、索引与源码快照的对应关系、工作树发现和缺失语义",
+    "not_global_policy": "本登记只约束 Peanut Admin；其他项目必须由自己的事实源决定是否需要知识图谱"
+  },
+  "policy": {
+    "project_applicability": "required_for_code_analysis",
+    "required_for": [
+      "跨文件调用关系和影响范围分析",
+      "服务层盘点、Module 边界和数据归属分析",
+      "架构决策、重构前依赖核对和测试影响分析",
+      "任何需要把代码事实写入架构或服务登记的任务"
+    ],
+    "optional_for": [
+      "纯文档、链接和元数据修改",
+      "单文件且调用关系不变的机械格式修复",
+      "只读查看已经明确文件和行号的局部问题"
+    ],
+    "per_worktree_index": true,
+    "index_directory": ".codegraph/",
+    "index_versioning": "ignored_regenerable_cache",
+    "sharing": "forbidden_to_copy_or_symlink_between_worktrees",
+    "before_code_analysis": "scripts/project-codegraph ensure",
+    "read_only_discovery": "scripts/project-codegraph status",
+    "worktree_inventory": "scripts/project-codegraph worktrees",
+    "missing_index_semantics": "当前 worktree 缺索引不等于项目没有索引；必须先报告其他已登记 worktree 的状态，再初始化当前 worktree",
+    "stale_index_semantics": "索引存在但有 Pending Changes 时，先执行 sync；不能用旧快照替代当前源码事实",
+    "tool_missing_semantics": "codegraph 不可用时报告工具缺失并停止依赖图谱的分析，不静默宣称项目没有图谱"
+  },
+  "bootstrap": {
+    "command": "scripts/project-codegraph ensure",
+    "behavior": {
+      "missing_current_index": "运行 codegraph init 仅初始化当前 worktree",
+      "existing_current_index": "运行 codegraph sync 仅同步当前 worktree",
+      "other_worktrees": "只发现和报告，不自动写入、不复制索引"
+    },
+    "source_identity": [
+      "当前 worktree absolute path",
+      "当前 HEAD commit",
+      "git worktree list --porcelain 中的实际存在路径"
+    ]
+  },
+  "observed_baseline": {
+    "reviewed_at": "2026-08-23",
+    "canonical_checkout": "/Users/xing/Documents/company-projects/peanut-admin",
+    "current_worktree_at_review": "/Users/xing/.codex/worktrees/e147/peanut-admin",
+    "current_worktree_index": {
+      "status": "present_and_up_to_date",
+      "files": 5227,
+      "nodes": 43981,
+      "edges": 88865
+    },
+    "canonical_index": {
+      "status": "present_and_up_to_date",
+      "files": 2949,
+      "nodes": 26921,
+      "edges": 58624
+    }
+  },
+  "operational_rules": [
+    "CodeGraph 是代码库/worktree 本地索引，不是跨对话或跨项目的全局图谱",
+    "新建 Peanut Admin worktree 后必须先执行 ensure，再做需要图谱的代码分析",
+    "不能因为当前目录没有 .codegraph 就写成整个项目没有知识图谱",
+    "不能把 canonical checkout 的索引当作当前 worktree 的精确事实",
+    "不要求没有架构或调用关系需求的项目建立 CodeGraph"
+  ]
+}
