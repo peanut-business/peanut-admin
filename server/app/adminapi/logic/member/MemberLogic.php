@@ -6,12 +6,16 @@ namespace app\adminapi\logic\member;
 use DateTimeImmutable;
 use PDO;
 use app\common\enum\AccountLogEnum;
+use app\common\contract\idempotency\IdempotentCommandExecutor;
+use app\common\contract\idempotency\IdempotencyCommand;
+use app\common\contract\idempotency\IdempotencyReceipt;
 use app\common\enum\MemberChannelEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
 use app\common\model\member\MemberTagRelation;
 use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
+use app\common\service\idempotency\IdempotencyRuntimeFactory;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\XlsxExportService;
@@ -19,8 +23,6 @@ use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Idempotency\IdempotencyKey;
-use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use think\facade\Db;
 
 class MemberLogic extends BaseLogic
@@ -335,20 +337,20 @@ class MemberLogic extends BaseLogic
     {
         Db::startTrans();
         try {
+            $idempotency = self::balanceAdjustmentIdempotency();
             $action = (int)$params['action'];
             $memberId = (int)$params['user_id'];
             $amountCents = MemberBalanceService::moneyToCents(abs((float)$params['num']));
             $remark = (string)($params['remark'] ?? '');
-            $idempotency = self::balanceAdjustmentIdempotency()->beginTenant(
-                MemberTenantContext::tenantId($context),
-                $adminId,
+            $lease = $idempotency->begin(IdempotencyCommand::tenant(
+                $context,
                 'member.balance.adjust',
-                IdempotencyKey::fromString($idempotencyKey),
+                $idempotencyKey,
                 self::balanceAdjustmentRequestHash($memberId, $action, $amountCents, $remark),
                 new DateTimeImmutable('+24 hours'),
-            );
-            if (!$idempotency->acquiredForExecution()) {
-                if (!$idempotency->replayable()) {
+            ));
+            if (!$lease->isExecutionOwner()) {
+                if (!$lease->isReplayable()) {
                     throw new \RuntimeException('余额调账请求仍在处理中，请稍后查询流水');
                 }
                 Db::commit();
@@ -369,11 +371,7 @@ class MemberLogic extends BaseLogic
                 [],
                 $adminId
             );
-            self::balanceAdjustmentIdempotency()->completeTenant(
-                $idempotency->id,
-                200,
-                ['success' => true],
-            );
+            $idempotency->complete($lease, new IdempotencyReceipt(200, ['success' => true]));
             Db::commit();
             return true;
         } catch (\Throwable $e) {
@@ -406,13 +404,13 @@ class MemberLogic extends BaseLogic
         ], $adminId, $idempotencyKey);
     }
 
-    private static function balanceAdjustmentIdempotency(): PdoIdempotencyRepository
+    private static function balanceAdjustmentIdempotency(): IdempotentCommandExecutor
     {
         $pdo = Db::connect()->connect();
         if (!$pdo instanceof PDO) {
             throw new \RuntimeException('数据库连接不可用');
         }
-        return new PdoIdempotencyRepository($pdo);
+        return IdempotencyRuntimeFactory::forPdo($pdo);
     }
 
     private static function balanceAdjustmentRequestHash(
