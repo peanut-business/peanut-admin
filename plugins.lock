@@ -247,7 +247,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-            "sha256": "75a8cd6511eec54bbc0ad1cb0e4e8ddf29a675d3988df66a47dad945f8b3ea4f"
+                "sha256": "fe843b70503b2cbedd47cbac7088e3926d3f31b6b5c96a164633387834d1923a"
             },
             "composer": [
                 {
@@ -279,7 +279,7 @@
                 }
             ],
             "manifest": "plugins/official.oauth/plugin.json",
-        "manifest_sha256": "43ae60712e129c45c75e0daa74aa128fb71e86b2b8fa3e2ed58dbfa02b030eb1"
+            "manifest_sha256": "ea607451096f96953d8e0cefea74d831ed723e88dbea181274170f10f27df69b"
         },
         {
             "key": "official.payment",
