@@ -23,7 +23,10 @@ require_once __DIR__ . '/environment-guard.php';
 
 function loadConfig(string $serverDir): array
 {
-    $config = guardedDatabaseConfig();
+    $hostLeaseProof = getenv('P0E_HOST_LEASE_PROOF');
+    $config = guardedDatabaseConfig(
+        $hostLeaseProof === false || trim($hostLeaseProof) === '' ? null : $hostLeaseProof
+    );
     return [
         'DB_HOST' => $config['host'],
         'DB_PORT' => $config['port'],

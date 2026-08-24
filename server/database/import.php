@@ -8,7 +8,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/environment-guard.php';
 
-$config = guardedDatabaseConfig();
+$hostLeaseProof = getenv('P0E_HOST_LEASE_PROOF');
+$config = guardedDatabaseConfig(
+    $hostLeaseProof === false || trim($hostLeaseProof) === '' ? null : $hostLeaseProof
+);
 $host = $config['host'];
 $port = $config['port'];
 $name = $config['database'];
