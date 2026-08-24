@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\platform\service\module;
 
+use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 
 /** Applies explicit application product profiles through the canonical TenantModule runtime. */
@@ -58,7 +58,7 @@ final readonly class ProductTenantModuleProfileService
             $repository,
             new OpisTenantModuleConfigValidator()
         );
-        $audit = new PdoAuditRepository($this->pdo);
+        $audit = AuditContractHost::fromPdo($this->pdo);
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
         return (new PdoTransactionManager($this->pdo))->run(function () use (

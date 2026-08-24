@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use app\common\service\ApplicationPasswordPolicy;
+use app\common\service\audit\AuditContractHost;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PdoModuleGovernanceProvider;
@@ -21,7 +22,6 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
@@ -114,6 +114,7 @@ final class PlatformRuntimeFactory
 
         $pdo = self::pdo();
         $transactions = new PdoTransactionManager($pdo);
+        $audit = AuditContractHost::fromPdo($pdo);
         $modules = new TenantModuleManager(
             new CompiledModuleRegistry([], [], [], [], 'platform-lifecycle-only'),
             new PdoModuleRuntimeRepository($pdo),
@@ -134,7 +135,7 @@ final class PlatformRuntimeFactory
                 new PdoTenantRepository($pdo),
                 new PdoMembershipRepository($pdo),
                 new PdoPlatformRepository($pdo),
-                new PdoAuditRepository($pdo),
+                $audit,
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $modules),
@@ -162,6 +163,7 @@ final class PlatformRuntimeFactory
         );
         $manager = new TenantModuleManager($registry->compiled(), $repository, $validator);
         $transactions = new PdoTransactionManager($pdo);
+        $audit = AuditContractHost::fromPdo($pdo);
         $governance = new TenantGovernanceService(
             self::identities(),
             $transactions,
@@ -171,7 +173,7 @@ final class PlatformRuntimeFactory
                 new PdoTenantRepository($pdo),
                 new PdoMembershipRepository($pdo),
                 new PdoPlatformRepository($pdo),
-                new PdoAuditRepository($pdo),
+                $audit,
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $manager),

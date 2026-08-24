@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\platform\invitation;
 
 use app\common\service\ApplicationPasswordPolicy;
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -13,7 +14,6 @@ use PeanutAdmin\Kernel\Identity\CredentialStatus;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
 use PeanutAdmin\Kernel\Membership\MembershipRepository;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
@@ -26,7 +26,7 @@ final class TenantOwnerInvitationPublicService
     private PdoTransactionManager $transactions;
     private PdoIdentityRepository $identity;
     private MembershipRepository $memberships;
-    private PdoAuditRepository $audit;
+    private AuditContractHost $audit;
     private PasswordHasher $passwords;
 
     public function __construct(private readonly PDO $pdo)
@@ -34,7 +34,7 @@ final class TenantOwnerInvitationPublicService
         $this->transactions = new PdoTransactionManager($pdo);
         $this->identity = new PdoIdentityRepository($pdo);
         $this->memberships = new PdoMembershipRepository($pdo);
-        $this->audit = new PdoAuditRepository($pdo);
+        $this->audit = AuditContractHost::fromPdo($pdo);
         $this->passwords = ApplicationPasswordPolicy::hasher();
     }
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\invitation;
 
+use app\common\service\audit\AuditContractHost;
 use app\platform\context\PlatformOperatorContext;
 use app\platform\service\PlatformOperatorSessionService;
 use DateTimeImmutable;
@@ -11,7 +12,6 @@ use PDO;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
 use PeanutAdmin\Kernel\Membership\MembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
@@ -26,7 +26,7 @@ final class TenantOwnerInvitationAdminService
     private PdoTransactionManager $transactions;
     private PdoTenantRepository $tenants;
     private MembershipRepository $memberships;
-    private PdoAuditRepository $audit;
+    private AuditContractHost $audit;
     private OwnerInvitationRuntimePolicy $runtimePolicy;
 
     public function __construct(
@@ -40,7 +40,7 @@ final class TenantOwnerInvitationAdminService
         $this->transactions = new PdoTransactionManager($pdo);
         $this->tenants = new PdoTenantRepository($pdo);
         $this->memberships = new PdoMembershipRepository($pdo);
-        $this->audit = new PdoAuditRepository($pdo);
+        $this->audit = AuditContractHost::fromPdo($pdo);
     }
 
     /** @return array<string,mixed> */
