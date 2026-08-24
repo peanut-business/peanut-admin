@@ -195,11 +195,14 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             '/article/list',
             ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
         ]);
-        if (!$admin->root) {
-            $query->where(static function ($query) use ($permissions): void {
-                $query->where('perms', '')->whereOr('perms', 'in', $permissions ?: ['__none__']);
-            });
-        }
+        $registered = (new CoreTenantModuleAdminBridge($this->pdo))
+            ->registeredSystemMenuPermissions($tenantContext->tenantId);
+        $visiblePermissions = $admin->root
+            ? $registered
+            : array_values(array_intersect($permissions, $registered));
+        $query->where(static function ($query) use ($visiblePermissions): void {
+            $query->where('perms', '')->whereOr('perms', 'in', $visiblePermissions ?: ['__none__']);
+        });
 
         return linear_to_tree($query->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray());
     }
