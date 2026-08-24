@@ -9,9 +9,9 @@ use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
-use app\common\service\diagnostics\TenantDiagnosticAttributes;
 use app\common\service\finance\FinanceTenantRepository;
-use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
+use app\common\service\payment\PaymentScheduledTenantContext;
+use app\common\service\payment\PaymentTenantDiagnostics;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
@@ -28,8 +28,8 @@ class RefundReconcile extends Command
 
     protected function execute(Input $input, Output $output)
     {
-        $scope = ScheduledTenantContext::require();
-        $diagnostics = TenantDiagnosticAttributes::fromScope($scope);
+        $scope = PaymentScheduledTenantContext::require();
+        $diagnostics = PaymentTenantDiagnostics::fromScope($scope);
         $records = FinanceTenantRepository::records($scope)
             ->where('order_type', RefundEnum::ORDER_TYPE_RECHARGE)
             ->where('refund_status', RefundEnum::REFUND_ING)

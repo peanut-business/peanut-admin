@@ -132,10 +132,15 @@ foreach ([$wechatPrepay, $wechatRefund] as $source) {
 
 $settlement = (string)file_get_contents($serverRoot . '/app/api/logic/RechargeLogic.php');
 foreach (["where('sn', \$orderSn)->lock(true)", "\$currency !== 'CNY'",
-    '$callbackCents !== $orderCents', '支付渠道不一致', '支付交易流水冲突',
-    'MemberBalanceService::applyInTransaction'] as $marker) {
+    '$callbackCents !== $orderCents', '支付渠道不一致', '支付交易流水冲突'] as $marker) {
     expectPaymentHost(str_contains($settlement, $marker), 'settlement invariant missing: ' . $marker);
 }
+expectPaymentHost(
+    str_contains($settlement, 'MemberModuleProvider')
+        && str_contains($settlement, 'balanceCommands()->applyInTransaction')
+        && str_contains($settlement, 'MemberBalanceMutation'),
+    'settlement does not use the public Member balance contract'
+);
 $adminRefund = (string)file_get_contents(
     $serverRoot . '/app/adminapi/logic/finance/RechargeLogic.php'
 );
