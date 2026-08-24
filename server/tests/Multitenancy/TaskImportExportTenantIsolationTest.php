@@ -4,9 +4,11 @@ declare(strict_types=1);
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\async\AdminAsyncAuthorization;
 use app\common\service\async\TaskImportExportRuntime;
+use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
 use PeanutAdmin\Kernel\Context\RequestedTargetSet;
+use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
@@ -32,6 +34,14 @@ function asyncTenantContext(int $tenantId, int $accountId, int $memberId, string
         new DateTimeImmutable('2031-01-01T00:00:00Z'),
         1,
     ), $requestId);
+}
+
+function submitOperationLogExport(TaskImportExportRuntime $runtime, AuthorizedOperationContext $context, string $idempotencyKey): object
+{
+    return $runtime->commands()->submitCsvExport(
+        $context,
+        CsvExportOperation::operationLog($idempotencyKey),
+    );
 }
 
 function asyncTenantSchema(PDO $pdo, string $serverRoot): void
@@ -206,13 +216,13 @@ SQL);
     }
 
     $runtime = new TaskImportExportRuntime($pdo, $signingKey, $privateRoot);
-    $taskDisabled = $runtime->submitOperationLogExport($alpha, 'task-disabled-' . $runId);
+    $taskDisabled = submitOperationLogExport($runtime, $alpha, 'task-disabled-' . $runId);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");
     expectAsyncTenant($runtime->runTenant(101, 'fresh-task-disabled-' . $runId) === 1, 'disabled Task Module job was not examined');
     expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$taskDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Task Module executed');
     $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.task'");
 
-    $importExportDisabled = $runtime->submitOperationLogExport($alpha, 'import-export-disabled-' . $runId);
+    $importExportDisabled = submitOperationLogExport($runtime, $alpha, 'import-export-disabled-' . $runId);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.import-export'");
     expectAsyncTenant($runtime->runTenant(101, 'fresh-import-export-disabled-' . $runId) === 1, 'disabled Import/Export Module job was not examined');
     expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$importExportDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Import/Export Module executed');
@@ -220,8 +230,8 @@ SQL);
 
     $operationCountBeforeIdempotency = (int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn();
     $jobCountBeforeIdempotency = (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn();
-    $operation = $runtime->submitOperationLogExport($alpha, 'alpha-idempotency-' . $runId);
-    $duplicate = $runtime->submitOperationLogExport($alpha, 'alpha-idempotency-' . $runId);
+    $operation = submitOperationLogExport($runtime, $alpha, 'alpha-idempotency-' . $runId);
+    $duplicate = submitOperationLogExport($runtime, $alpha, 'alpha-idempotency-' . $runId);
     expectAsyncTenant($duplicate->operationKey === $operation->operationKey, 'idempotent submission created a second operation');
     expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn() === $operationCountBeforeIdempotency + 1, 'idempotent operation count changed');
     expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn() === $jobCountBeforeIdempotency + 1, 'idempotent job count changed');
@@ -247,7 +257,7 @@ SQL);
     }
     if (!$atomicInjectionSkipped) {
         try {
-            $runtime->submitOperationLogExport($alpha, 'atomic-failure-' . $runId);
+        submitOperationLogExport($runtime, $alpha, 'atomic-failure-' . $runId);
             throw new RuntimeException('atomic failure injection unexpectedly committed');
         } catch (Throwable $exception) {
             expectAsyncTenant(str_contains($exception->getMessage(), 'injected audit failure'), 'atomic failure injection was not reached');
@@ -265,19 +275,19 @@ SQL);
     expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote($jobKey))->fetchColumn() === 'dead', 'forged envelope did not fail closed');
     expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_file_object')->fetchColumn() === 0, 'forged envelope produced an artifact');
 
-    $suspended = $runtime->submitOperationLogExport($alpha, 'suspended-' . $runId);
+    $suspended = submitOperationLogExport($runtime, $alpha, 'suspended-' . $runId);
     $pdo->exec("UPDATE pa_tenant SET status = 'suspended', suspended_at = UTC_TIMESTAMP(3) WHERE id = 101");
     expectAsyncTenant($runtime->runTenant(101, 'fresh-suspended-' . $runId) === 1, 'suspended Tenant job was not examined');
     expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$suspended->taskJobKey))->fetchColumn() === 'dead', 'suspended Tenant job executed');
     $pdo->exec("UPDATE pa_tenant SET status = 'active', suspended_at = NULL WHERE id = 101");
 
-    $revoked = $runtime->submitOperationLogExport($alpha, 'revoked-' . $runId);
+    $revoked = submitOperationLogExport($runtime, $alpha, 'revoked-' . $runId);
     $pdo->exec("DELETE FROM pa_role_permission WHERE tenant_id = 101 AND role_id = 11 AND permission_id = {$exportPermission}");
     expectAsyncTenant($runtime->runTenant(101, 'fresh-revoked-' . $runId) === 1, 'revoked job was not examined');
     expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$revoked->taskJobKey))->fetchColumn() === 'dead', 'revoked native Permission still executed');
     $insertPermission->execute([101, 11, $exportPermission, $now]);
 
-    $success = $runtime->submitOperationLogExport($alpha, 'success-' . $runId);
+    $success = submitOperationLogExport($runtime, $alpha, 'success-' . $runId);
     expectAsyncTenant($runtime->runTenant(101, 'fresh-success-' . $runId) === 1, 'successful job was not processed');
     $completed = $runtime->operation($alpha, $success->operationKey);
     expectAsyncTenant($completed->status === 'succeeded' && $completed->resultFileKey !== null, 'successful export did not publish a result');
