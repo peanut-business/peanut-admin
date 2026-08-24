@@ -10,7 +10,6 @@ use app\common\enum\notice\NoticeSceneEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\FileService;
 use app\common\service\oauth\OAuthTenantContext;
 use app\common\service\oauth\OAuthTenantRepository;
 use app\common\service\oauth\WechatOAuthTransport;
@@ -177,7 +176,8 @@ class OAuthLogic extends BaseLogic
                     throw new \RuntimeException('请填写有效昵称');
                 }
                 if (trim((string)($params['avatar'] ?? '')) !== '') {
-                    $avatar = FileService::setTenantFileUrl($context, (string)$params['avatar']);
+                    // Storage URL ownership remains outside OAuth; Member persists the opaque value.
+                    $avatar = (string)$params['avatar'];
                 }
             }
 
@@ -474,7 +474,7 @@ class OAuthLogic extends BaseLogic
             'id' => (int)$member->id,
             'sn' => (string)$member->sn,
             'nickname' => (string)$member->nickname,
-            'avatar' => FileService::getFileUrl((string)$member->avatar),
+            'avatar' => \app\common\service\FileService::getFileUrl((string)$member->avatar),
             'mobile' => (string)$member->mobile,
         ];
     }
