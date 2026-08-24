@@ -5,6 +5,7 @@ namespace app\platform\service;
 
 use PDO;
 use app\common\service\config\BrandDefaults;
+use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
 final readonly class ApplicationTenantBootstrapService
@@ -190,7 +191,7 @@ SQL);
 
     private function seedSettings(int $tenantId): void
     {
-        $settings = [
+        $documents = [
             'website' => BrandDefaults::website(),
             'copyright' => ['config' => []],
             'agreement' => [
@@ -211,16 +212,8 @@ SQL);
             'web-page' => ['status' => 1, 'page_status' => 0, 'page_url' => ''],
             'hot-search' => ['status' => 0],
         ];
-        foreach ($settings as $namespace => $document) {
-            $encoded = json_encode(
-                $document,
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
-            );
-            $this->insertIgnore(
-                'INSERT IGNORE INTO pa_tenant_setting (tenant_id,namespace,config_json,revision,create_time,update_time) VALUES (?,?,?,1,0,0)',
-                [$tenantId, $namespace, $encoded],
-            );
-        }
+        TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->pdo)
+            ->seedDefaults($tenantId, $documents);
         $this->insertIgnore(
             'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
             [$tenantId]

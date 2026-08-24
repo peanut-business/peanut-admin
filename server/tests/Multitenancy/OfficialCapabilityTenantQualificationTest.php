@@ -47,6 +47,10 @@ foreach ([
     'finance_repository' => 'app/common/service/finance/FinanceTenantRepository.php',
     'recharge_settings' => 'app/common/service/finance/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
+    'tenant_settings_provider' => 'app/common/service/tenant/ThinkPhpTenantSettingsProvider.php',
+    'tenant_settings_runtime' => 'app/common/service/tenant/TenantSettingsRuntimeFactory.php',
+    'tenant_settings_bootstrap_runtime' => 'app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php',
+    'application_tenant_bootstrap' => 'app/platform/service/ApplicationTenantBootstrapService.php',
     'tenant_application_settings' => 'app/common/service/config/TenantApplicationSettingService.php',
     'notice_channel' => 'app/common/service/notice/NoticeChannelService.php',
     'platform_storage' => 'vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php',
@@ -228,9 +232,14 @@ qualificationExpect(
     'notification Provider configuration is not Tenant-owned'
 );
 qualificationExpect(
-    str_contains($sources['tenant_settings'], "where('tenant_id', \$tenantId)")
-        && str_contains($sources['tenant_settings'], "where('namespace', \$namespace)")
-        && str_contains($sources['recharge_settings'], 'TenantSettingService::document')
+    str_contains($sources['tenant_settings'], 'implements TenantSettingsQuery, TenantSettingsCommands')
+        && str_contains($sources['tenant_settings_runtime'], 'new TenantSettingService(new ThinkPhpTenantSettingsProvider())')
+        && str_contains($sources['tenant_settings_provider'], "where('tenant_id', \$tenantId)")
+        && str_contains($sources['tenant_settings_provider'], "where('namespace', \$namespace)")
+        && str_contains($sources['recharge_settings'], 'TenantSettingsRuntimeFactory::service()->get')
+        && str_contains($sources['tenant_settings_bootstrap_runtime'], 'new PdoTenantSettingsBootstrapProvider($pdo)')
+        && str_contains($sources['application_tenant_bootstrap'], 'TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->pdo)')
+        && !str_contains($sources['application_tenant_bootstrap'], 'PdoTenantSettingsBootstrapProvider')
         && str_contains($sources['recharge_settings'], 'ExternalChannelBindingService::config'),
     'recharge policy or payment channel configuration is not Tenant-owned'
 );

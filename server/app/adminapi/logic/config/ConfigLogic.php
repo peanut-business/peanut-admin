@@ -10,7 +10,6 @@ use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class ConfigLogic extends BaseLogic
@@ -37,7 +36,7 @@ class ConfigLogic extends BaseLogic
 
     public static function getCopyright(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $value = TenantSettingService::document($context, 'copyright', ['config' => []])['config'] ?? [];
+        $value = TenantApplicationSettingService::copyright($context)['config'] ?? [];
         if (is_array($value)) {
             return $value;
         }
@@ -46,7 +45,7 @@ class ConfigLogic extends BaseLogic
 
     public static function saveCopyright(AuthenticatedMemberContext|TenantContext $context, array $params): bool
     {
-        TenantSettingService::replace($context, 'copyright', ['config' => $params['config'] ?? []]);
+        TenantApplicationSettingService::replaceCopyright($context, ['config' => $params['config'] ?? []]);
         return true;
     }
 

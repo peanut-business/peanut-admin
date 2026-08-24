@@ -132,11 +132,7 @@ class IndexLogic extends BaseLogic
 
     private static function copyright(TenantContext|TenantSystemContext $context): array
     {
-        $document = \app\common\service\tenant\TenantSettingService::document(
-            $context,
-            'copyright',
-            ['config' => []],
-        );
+        $document = TenantApplicationSettingService::copyright($context);
         return is_array($document['config'] ?? null) ? $document['config'] : [];
     }
 
