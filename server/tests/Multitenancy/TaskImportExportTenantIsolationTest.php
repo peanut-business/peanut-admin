@@ -218,11 +218,13 @@ SQL);
     expectAsyncTenant($pdo->query("SELECT status FROM pa_task_job WHERE job_key = " . $pdo->quote((string)$importExportDisabled->taskJobKey))->fetchColumn() === 'dead', 'disabled Import/Export Module executed');
     $pdo->exec("UPDATE pa_tenant_module SET status = 'enabled', disabled_at = NULL WHERE tenant_id = 101 AND module_key = 'official.import-export'");
 
+    $operationCountBeforeIdempotency = (int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn();
+    $jobCountBeforeIdempotency = (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn();
     $operation = $runtime->submitOperationLogExport($alpha, 'alpha-idempotency-' . $runId);
     $duplicate = $runtime->submitOperationLogExport($alpha, 'alpha-idempotency-' . $runId);
     expectAsyncTenant($duplicate->operationKey === $operation->operationKey, 'idempotent submission created a second operation');
-    expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn() === 1, 'idempotent operation count changed');
-    expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn() === 1, 'idempotent job count changed');
+    expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn() === $operationCountBeforeIdempotency + 1, 'idempotent operation count changed');
+    expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn() === $jobCountBeforeIdempotency + 1, 'idempotent job count changed');
 
     $pdo->exec(<<<'SQL'
 CREATE TRIGGER reject_async_submit_audit BEFORE INSERT ON pa_tenant_audit_event
