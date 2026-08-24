@@ -7,12 +7,17 @@ use DateTimeImmutable;
 use PDO;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\RefundEnum;
+use app\common\contract\idempotency\IdempotentCommandExecutor;
+use app\common\contract\idempotency\IdempotencyCommand;
+use app\common\contract\idempotency\IdempotencyReceipt;
+use app\common\contract\idempotency\IdempotencyResult;
 use app\common\logic\BaseLogic;
 use app\common\model\finance\RechargeOrder;
 use app\common\model\refund\RefundLog;
 use app\common\model\refund\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
+use app\common\service\idempotency\IdempotencyRuntimeFactory;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
 use PeanutAdmin\Kernel\Tenancy\TenantLockNamespace;
@@ -22,9 +27,6 @@ use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
-use PeanutAdmin\Kernel\Idempotency\IdempotencyKey;
-use PeanutAdmin\Kernel\Idempotency\IdempotencyRecord;
-use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use think\facade\Db;
 
 /** 充值记录查询、部分退款和失败重试。 */
@@ -91,8 +93,10 @@ class RechargeLogic extends BaseLogic
     ): array
     {
         $idempotency = null;
+        $lease = null;
         Db::startTrans();
         try {
+            $idempotency = self::refundIdempotency();
             /** @var RechargeOrder $order */
             $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$params['recharge_id']);
             self::assertRefundableOrder($order);
@@ -101,17 +105,16 @@ class RechargeLogic extends BaseLogic
             $requestedCents = $requestedAmount === null || $requestedAmount === ''
                 ? null
                 : MemberBalanceService::moneyToCents((string)$requestedAmount);
-            $idempotency = self::refundIdempotency()->beginTenant(
-                FinanceTenantContext::tenantId($context),
-                $adminId,
+            $lease = $idempotency->begin(IdempotencyCommand::tenant(
+                $context,
                 'recharge.refund.create',
-                IdempotencyKey::fromString($idempotencyKey),
+                $idempotencyKey,
                 self::refundRequestHash((int)$order->id, $requestedCents),
                 new DateTimeImmutable('+24 hours'),
-            );
-            if (!$idempotency->acquiredForExecution()) {
+            ));
+            if (!$lease->isExecutionOwner()) {
                 Db::commit();
-                return self::replayIdempotentRefund($idempotency);
+                return self::replayIdempotentRefund($lease);
             }
 
             $amountCents = self::requestedRefundAmountCents($context, $order, $requestedCents);
@@ -160,7 +163,7 @@ class RechargeLogic extends BaseLogic
 
         // 渠道调用必须发生在本地原子业务事务提交后，避免渠道已受理而本地整体回滚。
         $result = self::requestGatewayRefund($context, $order, $record, $log);
-        self::finishRefundIdempotency($idempotency, $result);
+        self::finishRefundIdempotency($idempotency, $lease, $result);
         return $result;
     }
 
@@ -293,13 +296,13 @@ class RechargeLogic extends BaseLogic
         return $amountCents;
     }
 
-    private static function refundIdempotency(): PdoIdempotencyRepository
+    private static function refundIdempotency(): IdempotentCommandExecutor
     {
         $pdo = Db::connect()->connect();
         if (!$pdo instanceof PDO) {
             throw new \RuntimeException('数据库连接不可用');
         }
-        return new PdoIdempotencyRepository($pdo);
+        return IdempotencyRuntimeFactory::forPdo($pdo);
     }
 
     private static function refundRequestHash(int $orderId, ?int $amountCents): string
@@ -311,28 +314,31 @@ class RechargeLogic extends BaseLogic
     }
 
     /** @return array{0:bool,1:string} */
-    private static function replayIdempotentRefund(IdempotencyRecord $idempotency): array
+    private static function replayIdempotentRefund(IdempotencyResult $idempotency): array
     {
-        if ($idempotency->replayable()) {
-            $body = $idempotency->responseBody ?? [];
+        if ($idempotency->isReplayable()) {
+            $body = $idempotency->responseBody();
             return [(bool)($body['success'] ?? false), (string)($body['message'] ?? '操作成功')];
         }
         throw new \RuntimeException('退款请求仍在处理中，请稍后查询退款记录');
     }
 
     /** @param array{0:bool,1:string} $result */
-    private static function finishRefundIdempotency(?IdempotencyRecord $idempotency, array $result): void
+    private static function finishRefundIdempotency(
+        ?IdempotentCommandExecutor $idempotency,
+        ?IdempotencyResult $lease,
+        array $result,
+    ): void
     {
-        if ($idempotency === null || !$idempotency->acquiredForExecution()) {
+        if ($idempotency === null || $lease === null || !$lease->isExecutionOwner()) {
             return;
         }
-        $repository = self::refundIdempotency();
         $body = ['success' => $result[0], 'message' => $result[1]];
         if ($result[0]) {
-            $repository->completeTenant($idempotency->id, 200, $body);
+            $idempotency->complete($lease, new IdempotencyReceipt(200, $body));
             return;
         }
-        $repository->failTenant($idempotency->id, 400, $body);
+        $idempotency->fail($lease, new IdempotencyReceipt(400, $body));
     }
 
     private static function createRefundLog(
