@@ -104,16 +104,23 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = (string)getenv('DB_HOST');
+$port = (int)getenv('DB_PORT');
+$database = (string)getenv('DB_NAME');
+$user = (string)getenv('DB_USER');
+$password = (string)getenv('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
-$database = 'peanut_admin_mt03_member_' . $runId;
-$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
-$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+expectMemberTenant(
+    $host !== '' && $port > 0 && $database !== '' && $user !== '' && $password !== '',
+    'registered P0-E database credentials are required'
+);
+expectMemberTenant(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'Member Tenant Gate requires its exact registered P0-E plugin_lifecycle database'
+);
 
 try {
-    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
+    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
     createMemberTenantSchema($pdo);
     $pdo->exec("INSERT INTO pa_tenant (id,status) VALUES (101,'active'),(202,'active')");
     $pdo->exec(<<<'SQL'
@@ -130,7 +137,7 @@ VALUES
   (41, 101, 'FLOW-SAME', 11, 1, 100, 1, 10.00, 10.00, 0, 'SOURCE-SAME', 'alpha', 0, 1);
 SQL);
     putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
+    putenv('PHP_DB_USER=' . $user); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
     $app = new think\App(); $app->initialize();
     set_error_handler(static function (int $severity, string $message, string $file, int $line): never {
         throw new ErrorException($message, 0, $severity, $file, $line);
@@ -209,7 +216,6 @@ SQL);
         $output = [];
     }
 } finally {
-    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT03-MEMBER-TENANT-001 passed\n";
