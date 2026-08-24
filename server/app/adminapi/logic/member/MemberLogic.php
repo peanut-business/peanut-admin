@@ -13,6 +13,8 @@ use app\common\enum\MemberChannelEnum;
 use app\common\logic\BaseLogic;
 use app\common\model\member\Member;
 use app\common\model\member\MemberTagRelation;
+use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
+use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
 use app\common\service\idempotency\IdempotencyRuntimeFactory;
@@ -360,16 +362,18 @@ class MemberLogic extends BaseLogic
             $changeType = $action === AccountLogEnum::INC
                 ? AccountLogEnum::USER_MONEY_INC_ADMIN
                 : AccountLogEnum::USER_MONEY_DEC_ADMIN;
-            MemberBalanceService::applyInTransaction(
+            (new MemberModuleProvider())->balanceCommands()->applyInTransaction(
                 $context,
-                $memberId,
-                $changeType,
-                $action,
-                $amountCents,
-                '',
-                $remark,
-                [],
-                $adminId
+                new MemberBalanceMutation(
+                    $memberId,
+                    $changeType,
+                    $action,
+                    $amountCents,
+                    '',
+                    $remark,
+                    [],
+                    $adminId,
+                ),
             );
             $idempotency->complete($lease, new IdempotencyReceipt(200, ['success' => true]));
             Db::commit();

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\logic\finance;
 
+use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
+use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use DateTimeImmutable;
 use PDO;
 use app\common\enum\AccountLogEnum;
@@ -123,18 +125,20 @@ class RechargeLogic extends BaseLogic
             $order->refund_status = RechargeOrder::REFUND_STATUS_STARTED;
             $order->save();
 
-            MemberBalanceService::applyInTransaction(
+            (new MemberModuleProvider())->balanceCommands()->applyInTransaction(
                 $context,
-                (int)$order->user_id,
-                AccountLogEnum::USER_MONEY_DEC_RECHARGE_REFUND,
-                AccountLogEnum::DEC,
-                $amountCents,
-                (string)$order->sn,
-                '充值订单退款',
-                [],
-                $adminId,
-                -$amountCents,
-                '退款失败:用户余额已不足退款金额'
+                new MemberBalanceMutation(
+                    (int)$order->user_id,
+                    AccountLogEnum::USER_MONEY_DEC_RECHARGE_REFUND,
+                    AccountLogEnum::DEC,
+                    $amountCents,
+                    (string)$order->sn,
+                    '充值订单退款',
+                    [],
+                    $adminId,
+                    -$amountCents,
+                    '退款失败:用户余额已不足退款金额',
+                ),
             );
 
             /** @var RefundRecord $record */
