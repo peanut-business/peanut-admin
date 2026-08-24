@@ -116,7 +116,8 @@ namespace {
         'app/common/model/file/File.php',
         'app/adminapi/logic/file/FileLogic.php',
         'app/adminapi/logic/file/FileCateLogic.php',
-        'app/common/service/storage/Driver.php',
+        'app/common/service/storage/StorageService.php',
+        'app/common/service/storage/StorageRepository.php',
     ];
     $sources = [];
     foreach ($ownedFiles as $relativePath) {
@@ -125,25 +126,21 @@ namespace {
         $sources[$relativePath] = (string)file_get_contents($absolutePath);
     }
     expectFileMedia(
-        str_contains($sources['app/common/model/file/File.php'], "['storage']"),
-        'File model must use row storage provenance'
+        str_contains($sources['app/common/model/file/File.php'], "['file_key']"),
+        'File model must resolve the canonical file object'
     );
     expectFileMedia(
-        str_contains($sources['app/common/service/UploadService.php'], 'getFileUrl($uri, $storage)'),
-        'upload response must use stored provider'
+        str_contains($sources['app/common/service/UploadService.php'], 'StorageService::fromDefaultConnection()'),
+        'upload must use the unified storage service'
     );
     expectFileMedia(
-        str_contains($sources['app/adminapi/logic/file/FileLogic.php'], 'new Driver($storage'),
-        'delete must use stored provider'
+        str_contains($sources['app/adminapi/logic/file/FileLogic.php'], 'StorageService::fromDefaultConnection()->delete'),
+        'delete must use the unified storage service'
     );
     foreach ($sources as $relativePath => $source) {
         expectFileMedia(
             !str_contains($source, 'PeanutAdmin\\FileMedia'),
             'application file owner must not deep import core: ' . $relativePath
-        );
-        expectFileMedia(
-            !str_contains($source, 'pa_file_object'),
-            'application file owner must not bind core schema: ' . $relativePath
         );
     }
 

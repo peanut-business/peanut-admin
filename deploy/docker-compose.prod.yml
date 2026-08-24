@@ -71,6 +71,7 @@ services:
     volumes:
       - php-runtime:/var/www/peanut-admin/server/runtime
       - php-storage:/var/www/peanut-admin/server/public/storage
+      - php-private-storage:/var/www/peanut-admin/server/private/storage
     healthcheck:
       test: ["CMD-SHELL", "test -f /tmp/peanut-ready && php-fpm -t"]
       interval: 10s
@@ -137,6 +138,7 @@ services:
     volumes:
       - php-runtime:/var/www/peanut-admin/server/runtime
       - php-storage:/var/www/peanut-admin/server/public/storage
+      - php-private-storage:/var/www/peanut-admin/server/private/storage
     depends_on:
       php:
         condition: service_healthy
@@ -153,3 +155,4 @@ volumes:
   mysql-data:
   php-runtime:
   php-storage:
+  php-private-storage:

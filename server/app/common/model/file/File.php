@@ -16,9 +16,6 @@ class File extends BaseModel
     /** 追加：绝对可访问 URL（相对 uri 拼域名） */
     public function getUrlAttr($value, $data): string
     {
-        return FileService::getFileUrl(
-            (string)($data['uri'] ?? ''),
-            isset($data['storage']) ? (string)$data['storage'] : null
-        );
+        return FileService::getFileUrl((string)($data['file_key'] ?? ''));
     }
 }

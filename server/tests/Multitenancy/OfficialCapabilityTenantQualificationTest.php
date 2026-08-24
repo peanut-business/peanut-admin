@@ -268,7 +268,7 @@ qualificationExpect(
     'retired Tenant Admin storage controller remains available for accidental route registration'
 );
 qualificationExpect(
-    str_contains($sources['platform_storage'], "'storage/setup'")
+    str_contains($sources['platform_storage'], 'StorageConfigurationService')
         && str_contains($sources['admin_permissions'], 'use PeanutAdmin\\Kernel\\Platform\\InstanceControlPlanePolicy;')
         && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::isTenantAdminRoute')
         && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::tenantAdminPermissions()')

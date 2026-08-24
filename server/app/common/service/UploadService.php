@@ -4,10 +4,9 @@ declare(strict_types=1);
 namespace app\common\service;
 
 use app\common\enum\FileEnum;
-use app\common\service\file\FileObjectNamespace;
 use app\common\service\file\FileTenantRepository;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\storage\Driver;
+use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\file\UploadedFile;
 
@@ -79,14 +78,14 @@ class UploadService
         $originName = $uploaded->getOriginalName();
         $name = mb_substr((string)pathinfo($originName, PATHINFO_FILENAME), 0, 120) . '.' . $ext;
 
-        // 交由存储引擎上传：local 落盘 public/storage/，云引擎上传至对应 bucket
-        $subDir = FileObjectNamespace::directory($context, $type);
-        $driver = new Driver();
-        $driver->setUploadFile($uploaded);
-        if (!$driver->upload($subDir)) {
-            throw new \Exception($driver->getError() ?: '文件上传失败');
-        }
-        $uri = $driver->buildUri($subDir);
+        $purpose = match ($type) {
+            FileEnum::IMAGE => 'material.image', FileEnum::VIDEO => 'material.video', FileEnum::FILE => 'material.file',
+        };
+        $tenantId = FileTenantRepository::tenantId($context);
+        $stored = StorageService::fromDefaultConnection()->storePath(
+            $tenantId, (int)$context->memberId, $purpose, $uploaded->getPathname(), $name,
+            (string)($uploaded->getMime() ?: 'application/octet-stream')
+        );
 
         try {
             $file = FileTenantRepository::createFile($context, [
@@ -95,25 +94,21 @@ class UploadService
                 'source'    => $source,
                 'type'      => $type,
                 'name'      => $name,
-                'uri'       => $uri,
-                'storage'   => $driver->getEngineName(),
+                'file_key'  => $stored['file_key'],
             ]);
         } catch (\Throwable $e) {
-            if (!$driver->delete($uri)) {
-                throw new \RuntimeException('素材记录写入失败，且存储对象清理失败：' . ($driver->getError() ?: '未知错误'), 0, $e);
-            }
+            StorageService::fromDefaultConnection()->delete($tenantId, $stored['file_key']);
             throw $e;
         }
 
-        $storage = $driver->getEngineName();
         return [
             'id'   => $file->id,
             'cid'  => $file->cid,
             'type' => $file->type,
             'name' => $file->name,
-            'uri'  => $uri,
-            'storage' => $storage,
-            'url'  => FileService::getFileUrl($uri, $storage),
+            'file_key' => $stored['file_key'],
+            'uri'  => $stored['file_key'],
+            'url'  => $stored['url'],
         ];
     }
 }

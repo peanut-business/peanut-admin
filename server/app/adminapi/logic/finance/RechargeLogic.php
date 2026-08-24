@@ -571,7 +571,7 @@ class RechargeLogic extends BaseLogic
             ->limit($offset, $limit)
             ->select()
             ->toArray();
-        $uri = XlsxExportService::createForTenant(
+        $file = XlsxExportService::createForTenant(
             $context,
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['充值单号', '用户昵称', '充值金额', '支付方式', '支付状态', '支付时间', '下单时间'],
@@ -587,8 +587,8 @@ class RechargeLogic extends BaseLogic
         );
 
         return [
-            'url' => FileService::getFileUrl($uri),
-            'file_name' => basename($uri),
+            'url' => $file['url'],
+            'file_name' => $file['original_name'],
         ];
     }
 

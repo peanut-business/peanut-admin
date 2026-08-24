@@ -267,7 +267,7 @@ class JobsLogic extends BaseLogic
             ->select()
             ->toArray();
         $rows = self::formatRows($rows);
-        $uri = XlsxExportService::createForTenant(
+        $file = XlsxExportService::createForTenant(
             $context,
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['岗位编码', '岗位名称', '备注', '状态', '添加时间'],
@@ -281,8 +281,8 @@ class JobsLogic extends BaseLogic
         );
 
         return [
-            'url' => FileService::getFileUrl($uri),
-            'file_name' => basename($uri),
+            'url' => $file['url'],
+            'file_name' => $file['original_name'],
         ];
     }
 

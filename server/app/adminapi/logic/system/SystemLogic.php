@@ -47,6 +47,12 @@ class SystemLogic extends BaseLogic
                 'status'  => self::directoryWritable('public/storage'),
                 'remark'  => '',
             ],
+            [
+                'dir'     => '/private/storage',
+                'require' => 'private/storage目录可写且不公开',
+                'status'  => self::directoryWritable('private/storage'),
+                'remark'  => '',
+            ],
         ];
 
         return [

@@ -81,7 +81,7 @@ COPY server/public server/public
 COPY --from=composer-deps /build/server/vendor server/vendor
 COPY deploy/docker/php-entrypoint.sh /usr/local/bin/peanut-php-entrypoint
 
-RUN mkdir -p server/runtime server/public/storage \
+RUN mkdir -p server/runtime server/public/storage server/private/storage \
     && cd server \
     && php think service:discover \
     && php think vendor:publish \
@@ -90,7 +90,7 @@ RUN mkdir -p server/runtime server/public/storage \
     && chmod +x server/database/seed-multi-tenant-demo.php \
     && ln -s /var/www/peanut-admin/server/database/seed-demo-data.php /usr/local/bin/peanut-seed-demo-data \
     && ln -s /var/www/peanut-admin/server/database/seed-multi-tenant-demo.php /usr/local/bin/peanut-seed-multi-tenant-demo \
-    && chown -R www-data:www-data server/runtime server/public/storage
+    && chown -R www-data:www-data server/runtime server/public/storage server/private/storage
 
 EXPOSE 9000
 
