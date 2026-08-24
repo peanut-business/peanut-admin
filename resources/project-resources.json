@@ -1250,6 +1250,7 @@
           "version": "Tencent COS SDK regional API",
           "region": "ap-guangzhou",
           "credential_ref": "deployment environment variable PEANUT_STORAGE_CREDENTIAL_MASTER_KEY; COS SecretId and SecretKey are entered through the Platform storage account API and persisted only as pa_storage_account encrypted ciphertext (no value is stored in Git or this registry)",
+          "credential_policy": "owner-confirmed QcloudCOSFullAccess",
           "data_source": "empty owner-created acceptance bucket",
           "freshness_requirement": "before a stateful rehearsal, claim this exact resource, verify the deployment master-key variable is present without printing it, configure an acceptance-only account and private Space, then use a unique tenant/file-key prefix",
           "health_check": "after an active resource lease and Platform account configuration, use the Tencent COS SDK against this exact bucket to perform the scoped object write/read/delete rehearsal",
