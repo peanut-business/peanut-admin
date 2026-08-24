@@ -12,7 +12,7 @@
   },
   "facts_baseline": {
     "reviewed_at": "2026-08-25",
-    "git_head_observed": "d1d9e474f7c80c1199c1c556c1f1f2baba525879",
+    "git_head_observed": "c63994e9284f2c335b669bd40147c3ad7cd9aba2",
     "worktree_state_observed": "clean_governance_snapshot",
     "evidence_scope": "当前工作区静态代码、Module/Plugin 清单、调用关系和 Schema 定义；未连接数据库或启动 Runtime",
     "codegraph": {
@@ -78,7 +78,7 @@
     "observed_at": "2026-08-25",
     "purpose": "把服务目标的实际执行状态与对话 UI 状态分开登记；对话完成不等于服务完成，只有候选、验证、owner 和集成证据齐全才算 complete",
     "supervision_mode": "active_wait_threads",
-    "goal_status": "active",
+    "goal_status": "complete",
     "supervision_policy": "主控对话使用 wait_threads 持续等待 active 服务返回；返回后立即核对候选、验证、owner 和阻塞并推进下一个 ready 服务。不依赖定时任务，不以定时轮询代替任务监管。",
     "title_status_convention": "专用对话标题必须以中文状态后缀显示实际服务状态：｜执行中、｜待验收、｜阻塞、｜已完成、｜规划完成·等待依赖、｜未启动·等待依赖或｜由既有对话负责·待交接；状态变化时主对话同步改名",
     "monitoring_checks": [
@@ -205,17 +205,17 @@
         "blockers": []
       },
       "PA-SVC-STORAGE": {
-        "service_status": "awaiting_acceptance",
+        "service_status": "complete",
         "thread_id": "01a02d5d-54a9-75f2-8aad-87c05eea3fa7",
         "thread_status": "idle",
-        "phase": "credential_cipher_candidate_review",
+        "phase": "merged_to_dev",
         "supervision": "active_monitoring",
         "monitoring_scope": ["existing storage thread", "candidate commit/tree", "frozen contract", "Driver/Account/Space", "public/private", "file object ledger", "minimum acceptance", "dev integration"],
-        "candidate": {"worktree": "/Users/xing/.codex/worktrees/storage-contract-fix", "commit": "80112717124659006a09a6fb7276662704428d29", "tree": "e3360e71f763667ad15779873020fbdb877fb236", "base": "d1d9e474f7c80c1199c1c556c1f1f2baba525879", "integration": "unmerged_candidate", "pr": "#232"},
-        "business_summary": "存储 owner 已按用户确认改为数据库直接保存 SecretId/SecretKey 的应用密文；主密钥只来自部署环境，管理端掩码、解密失败拒绝调用，且资源登记已记录用户确认的 QcloudCOSFullAccess。PR #232 已对齐最新 dev 并通过 diff-check、受影响 PHP lint 和密文往返验证。",
-        "side_effects": "Schema/迁移从 credential_ref-only 改为 credential_ciphertext + key_version；删除旧 StorageLogic/Driver/engine、pa_config storage 配置并重建 pa_file/pa_file_object 关系仍属于候选迁移，必须先做备份演练。",
-        "next_action": "按用户确认采用腾讯云预置的全 COS 权限；不再等待最小权限策略。原 owner 已完成候选资源登记和静态收口；现在只等待真实 COS 上传、下载、删除及破坏性迁移前备份恢复证据，完成后主会话再验收并合入 dev。",
-        "blockers": ["PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE", "PA-SVC-STORAGE-BACKUP-REHEARSAL"]
+        "candidate": {"worktree": "/Users/xing/.codex/worktrees/storage-contract-fix", "commit": "b38f8dd1517ff0e4dc5e11c551f34162b5d83969", "tree": "d713772fc0708dc05770567265d7cd15d47d32ae", "base": "d1d9e474f7c80c1199c1c556c1f1f2baba525879", "merge_commit": "c63994e9284f2c335b669bd40147c3ad7cd9aba2", "integration": "merged_to_dev", "pr": "#232", "verification": "COS HeadBucket/upload/download/delete/read-after-delete; encrypted credential round trip; isolated 91-table backup/restore; migration ledger applied; Qcloud upload stream fix PHP lint"},
+        "business_summary": "统一存储已成为 Account/Space、Driver、public/private 路由和文件对象账本的唯一服务 owner；SecretId/SecretKey 以应用密文落库，部署主密钥外置。登记 COS 验收桶真实上传、下载、删除和删除后读取失败均通过，PR #232 已合入 dev。",
+        "side_effects": "Schema/迁移从 credential_ref-only 改为 credential_ciphertext + key_version；旧 StorageLogic/Driver/engine 和 pa_config storage 配置退出。Qcloud 上传流关闭逻辑增加有效资源判断，避免 SDK 已关闭流后重复 fclose。真实生产 Provider/对象存储凭据仍属后置验收。",
+        "next_action": "下游会员头像、OAuth 文件和导入导出对象交付继续通过统一存储合同消费；不新增 Module 直写对象或共享绑定路径。",
+        "blockers": []
       },
       "PA-SVC-NOTIFICATION": {
         "service_status": "complete",
@@ -252,7 +252,7 @@
         "candidate": {"worktree": "/Users/xing/.codex/worktrees/1dfe/peanut-admin", "commit": "aa238f8c1d3fb15b50ea33965c19e438c57f0738", "tree": "fe5fd3190b1110d5a1a8438a5dafffa330a7e843", "base": "116d5ab259010f10545a0f36415f96efaea9a102", "merge_commit": "d393292d4c3d11303fb37c7c60989f30f239342e", "merge_tree": "661c66481ce391062fa227c7b6bc35a1c018f8dc", "integration": "merged_to_dev", "pr": "#237", "verification": "php -l changed PHP files; git diff --check; PB05-MEMBER-FINANCE-001; Member JWT contract; MT03-MEMBER-TENANT-001 passed"},
         "business_summary": "会员资料、标签、账号/手机号登录、重置密码、绑定手机号和 OAuth 建立会员均已通过 official.member 合同；余额唯一 writer 和 Tenant 账本边界保持不变。",
         "side_effects": "手机号和账号绑定严格按 Tenant 隔离，重复绑定被拒绝；未改身份 Schema、支付私有表或统一存储合同。真实短信 Provider 安全语义仍由通知服务后置验收。",
-        "next_action": "已合入 dev；OAuth 后续只消费 Member 身份合同，头像/文件接入等待统一存储合同，不回退到旧 Member 直写路径。",
+        "next_action": "已合入 dev；头像上传边界已由文件媒体 Host 静态回归确认继续消费统一存储，不回退到旧 Member 直写路径。旧 MemberUploadTenantWiringTest 的过时路由/root 夹具另列低风险清理。",
         "blockers": []
       },
       "PA-SVC-PAYMENT": {
@@ -273,8 +273,8 @@
         "phase": "merged_to_dev",
         "candidate": {"worktree": "/Users/xing/.codex/worktrees/0223/peanut-admin", "commit": "c65cd46cfbb19a8722fb45c927487fffcb2cfdd2", "tree": "032839e6e2133f270185ba0e750ff21a9a70326f", "base": "99779d64339c4f13ebc75e2048cc5a64af2c13b2", "merge_commit": "6f7547bde8c1a4313fc334fdd38ab9e1e11e2f4f", "merge_tree": "032839e6e2133f270185ba0e750ff21a9a70326f", "integration": "merged_to_dev", "pr": "#239", "verification": "PB07-OAUTH-CHANNEL-HOST-001; PLUGIN-ARTIFACT-CONTRACT-001; PHP lint; git diff --check; /private/tmp/peanut-admin-oauthc65/oauth-tenant-isolation.log: OAuth tenant isolation passed; wrong binding provider negative fixed and rerun passed"},
         "business_summary": "OAuth 成为 state/ticket 的唯一 owner；登录、回调、绑定和 External Channel 调用统一通过 OAuthCommands/locator 窄合同，Tenant 隔离与错误 provider 负向验收通过，并已合入 dev。",
-        "side_effects": "收紧跨 Module 读取边界；错误 provider/binding、过期或重放的 state/ticket 会拒绝；未改 OAuth Schema、外部渠道绑定 owner、身份模型或统一存储合同。头像/文件交付仍等待存储合同。",
-        "next_action": "下游继续消费 OAuthCommands，不新增 state/ticket 直读；头像/文件相关切片等待统一存储完成。",
+        "side_effects": "收紧跨 Module 读取边界；错误 provider/binding、过期或重放的 state/ticket 会拒绝；未改 OAuth Schema、外部渠道绑定 owner、身份模型或统一存储合同。头像文件边界已在存储合入后完成受影响回归。",
+        "next_action": "下游继续消费 OAuthCommands 和统一文件合同，不新增 state/ticket 直读；真实微信凭据仍属后置验收。",
         "blockers": []
       },
       "PA-SVC-TASK": {
@@ -491,22 +491,24 @@
     {
       "blocker_id": "PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE",
       "name": "统一存储尚缺真实 COS 生命周期验收",
-      "status": "external_pending",
+      "status": "resolved_observed",
       "kind": "external-resource",
-      "fact": "用户已确认采用腾讯云预置的 QcloudCOSFullAccess；代码候选已完成密文和静态合同验证，但尚未在登记验收桶上取得真实上传、下载、删除和删除后读取失败证据。",
-      "recommendation": "外部运行时提供全 COS 权限账户后，由统一存储 owner 只对登记验收桶执行一次生命周期验收；不在仓库或聊天记录凭据。",
-      "resolution_condition": "在 peanut-admin-cos-acceptance-20260824 上取得上传、下载、删除、read-after-delete 和失败账本证据。",
+      "fact": "登记子用户已绑定 QcloudCOSFullAccess；在 peanut-admin-storage-acceptance-20260824-1252029442（ap-guangzhou）上取得 HeadBucket、上传、账本 ready、下载内容一致、删除和 read-after-delete 失败证据。",
+      "recommendation": "保留本次隔离 COS 验收证据；真实生产对象存储凭据和容量/成本策略作为后置发布验收，不回写本登记密钥。",
+      "resolution_condition": "已满足：真实 COS 生命周期和失败账本证据已记录，且 PR #232 已合入 dev。",
+      "resolved_evidence": "/private/tmp/pa-storage-evidence/stgacc25a/cos-runtime.json; PR #232 merge c63994e9284f2c335b669bd40147c3ad7cd9aba2",
       "affected_service_ids": ["PA-SVC-STORAGE"],
       "requires_user_confirmation": false
     },
     {
       "blocker_id": "PA-SVC-STORAGE-BACKUP-REHEARSAL",
       "name": "统一存储破坏性迁移尚缺备份恢复演练",
-      "status": "acceptance_pending",
+      "status": "resolved_observed",
       "kind": "data-safety",
-      "fact": "PR #232 的迁移会删除旧 pa_file URI/storage 字段和旧 storage 配置行，并重建 pa_file/pa_file_object 关系；当前尚无配对备份、恢复和迁移后核对证据。",
-      "recommendation": "在采用候选前，由存储 owner 按登记资源完成一次可恢复备份和恢复核对；失败时不得合入 dev。",
-      "resolution_condition": "备份可读、恢复到隔离目标、迁移前后对象账本可核对，且失败路径有留存证据。",
+      "fact": "存储迁移会删除旧 pa_file URI/storage 字段和旧 storage 配置行；本次已在隔离租约中完成 91 张表基线备份、gzip/SHA-256 校验、恢复到第二个隔离库、核心身份计数核对，再应用迁移并确认 pa_schema_migration=applied。",
+      "recommendation": "生产迁移仍按项目资源登记执行配对备份和恢复门禁；本次服务收口不把隔离演练冒充生产备份。",
+      "resolution_condition": "已满足本轮服务验收：隔离备份可读、可恢复、账本可核对，且迁移成功证据已留存。",
+      "resolved_evidence": "/private/tmp/pa-storage-evidence/stgacc25a/baseline.sql.gz; SHA256SUMS; restore database peanut_admin_development_p0e_stgacc25a_plugin_lifecycle",
       "affected_service_ids": ["PA-SVC-STORAGE"],
       "requires_user_confirmation": false
     },
@@ -995,7 +997,7 @@
       "name": "统一存储与文件媒体服务",
       "group_id": "storage-hybrid",
       "availability": "hybrid",
-      "maturity": "in_progress_elsewhere",
+      "maturity": "complete",
       "owner": "existing dedicated storage-service task",
       "responsibility": "统一存储 Driver、Account、Space、public/private 可见性、上传交付和文件对象账本；最终边界以现有任务冻结结果为准",
       "explicit_exclusions": [
@@ -1021,14 +1023,14 @@
         "policy": "当前 manifest 事实；Account/Space 等最终 owner 等待现有任务冻结"
       },
       "dependencies": ["TenantContext", "Module governance"],
-      "current_issue": "PR #232 已形成唯一 Driver/Account/Space、public/private 和对象账本候选，但尚未取得真实 COS 生命周期及破坏性迁移备份恢复证据，不能作为最终合入事实",
+      "current_issue": "PR #232 已合入 dev；统一 Driver/Account/Space、public/private、对象账本、密文凭据和迁移证据均已固定。真实生产对象存储凭据和容量策略属于后置发布验收",
       "recommended_boundary": "保持现有存储任务唯一 owner；本登记只消费其固定合同和验收证据，不重复修改存储实现",
       "delivery": {
-        "readiness": "owned_elsewhere",
+        "readiness": "complete",
         "can_start_dedicated_thread_now": false,
-        "prerequisites": ["PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE", "PA-SVC-STORAGE-BACKUP-REHEARSAL"],
-        "blockers": ["PA-SVC-STORAGE-COS-RUNTIME-ACCEPTANCE", "PA-SVC-STORAGE-BACKUP-REHEARSAL"],
-        "recommended_next_action": "原 owner 完成两项验收后，由主控合入 PR #232 并关闭存储目标"
+        "prerequisites": [],
+        "blockers": [],
+        "recommended_next_action": "继续由统一存储 owner 维护合同；下游通过 StorageService/StorageConfigurationService 消费，不新增直写路径"
       }
     },
     {
@@ -1107,14 +1109,14 @@
         "policy": "MemberBalanceService 保持余额和流水唯一 writer；其他 Module 只能调用合同"
       },
         "dependencies": ["PA-SVC-STORAGE"],
-      "current_issue": "会员身份、资料、标签和余额合同已合入 dev；头像和文件对象路径在存储合入后做受影响回归。",
+      "current_issue": "会员身份、资料、标签和余额合同已合入 dev；文件媒体 Host 已确认头像路径继续由统一存储服务和 Tenant 对象账本负责。",
       "recommended_boundary": "MemberQueries、MemberProfileCommands、MemberIdentityCommands 和 MemberBalanceCommands；Token 只作为内部认证 adapter",
       "delivery": {
         "readiness": "complete",
         "can_start_dedicated_thread_now": false,
         "prerequisites": [],
         "blockers": [],
-        "recommended_next_action": "已合入 dev；OAuth 继续消费会员身份合同，头像/文件仍等待存储合同"
+        "recommended_next_action": "已合入 dev；OAuth 继续消费会员身份合同，头像/文件继续消费统一存储合同"
       }
     },
     {
@@ -1202,14 +1204,14 @@
         "policy": "OAuth 只写自己的身份和票据；会员、验证码、渠道绑定和文件分别通过对应合同"
       },
         "dependencies": ["PA-SVC-STORAGE", "PA-SVC-MEMBER"],
-      "current_issue": "OAuthCommands 和 state/ticket locator 合同已合入 dev；External Channel 通过 OAuth 窄合同读取 locator，Tenant 隔离运行证据已通过；仅文件/头像下游交付等待统一存储合同",
+      "current_issue": "OAuthCommands 和 state/ticket locator 合同已合入 dev；External Channel 通过 OAuth 窄合同读取 locator，Tenant 隔离运行证据及存储合入后的文件边界回归均已通过",
       "recommended_boundary": "OAuthCommands、OAuthCompletionCommands、ChannelAdminCommands 和 OAuthResult DTO；所有跨域动作通过上游合同",
       "delivery": {
         "readiness": "complete",
         "can_start_dedicated_thread_now": false,
         "prerequisites": [],
         "blockers": [],
-        "recommended_next_action": "OAuth state/ticket 服务已合入 dev；文件/头像交付切片等待统一存储合同，不重复运行已通过的 Tenant 隔离 Gate"
+        "recommended_next_action": "OAuth state/ticket 服务已合入 dev；文件/头像继续消费统一存储合同，不重复运行已通过的 Tenant 隔离 Gate"
       }
     },
     {
@@ -1284,19 +1286,19 @@
         "policy": "operation 归 ImportExport；任务、文件和业务数据通过各自合同"
       },
         "dependencies": ["PA-SVC-STORAGE"],
-      "current_issue": "CSV 异步 Commands/Queries 与既有同步 XLSX 已按场景并存并合入 dev；对象交付在存储合入后做一次受影响回归。",
+      "current_issue": "CSV 异步 Commands/Queries 与既有同步 XLSX 已按场景并存并合入 dev；存储合入后的对象交付回归已确认 ready、私有 URL 和跨 Tenant 拒绝。",
       "recommended_boundary": "ImportExportCommands、OperationQuery、DataProviderRegistry 和 AuthorizedFileDelivery；业务 Provider 留在所属 Module",
       "delivery": {
         "readiness": "complete",
         "can_start_dedicated_thread_now": false,
         "prerequisites": [],
         "blockers": [],
-        "recommended_next_action": "已合入 dev；业务按场景选择 CSV 异步或 XLSX，结果对象交付等待存储合同"
+        "recommended_next_action": "已合入 dev；业务按场景选择 CSV 异步或 XLSX，结果对象交付继续消费统一存储合同"
       }
     }
   ],
   "rollout": {
-    "do_not_start": "不要重复启动已完成的 13 个服务，也不要启动第二个存储 owner；真实短信、真实支付和其他 Provider 联调留在后置验收",
+    "do_not_start": "不要重复启动已完成的 14 个服务，也不要启动第二个存储 owner；真实短信、真实支付和其他 Provider 联调留在后置验收",
     "ready_now_service_ids": [],
     "after_architecture_confirmation_service_ids": [],
     "after_shared_write_set_service_ids": [],
