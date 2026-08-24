@@ -12,12 +12,17 @@ use app\common\logic\BaseLogic;
 use app\common\model\finance\PaymentScene;
 use app\common\model\finance\RechargeOrder;
 use app\common\service\MemberBalanceService;
+use app\common\service\external\ExternalTenantContext;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\finance\RechargeTenantSettingService;
+use app\common\service\module\ModuleExecutionContext;
+use app\common\service\payment\PaymentChannelGrantService;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\PaymentEvent;
 use app\common\service\payment\dto\PrepayRequest;
+use app\platform\service\module\PdoModuleGovernanceProvider;
+use PDO;
 use think\facade\Db;
 
 /** 用户充值订单和幂等入账状态机。 */
@@ -111,7 +116,7 @@ class RechargeLogic extends BaseLogic
         }
     }
 
-    /** 锁定本人未支付订单并固化本次支付渠道和请求号。 */
+    /** 锁定本人未支付订单并固化本次支付渠道、授权和请求号。 */
     public static function prepareAttempt(object $context, int $memberId, int $orderId, int $payWay): array|false
     {
         Db::startTrans();
@@ -130,11 +135,20 @@ class RechargeLogic extends BaseLogic
             if (!RechargeTenantSettingService::channelConfigured($context, $payWay)) {
                 throw new \RuntimeException('支付渠道未启用或配置不完整');
             }
+            $provider = PaymentChannelGrantService::providerForPayWay($payWay);
+            $grant = PaymentChannelGrantService::activeGrantForTenant($context, $provider, true);
 
             $order->pay_way = $payWay;
             $order->pay_sn = RechargeOrder::generatePaySn();
+            $order->payment_binding_id = (int)$grant['external_binding_id'];
+            $order->payment_grant_id = (int)$grant['id'];
+            $order->payment_merchant_account_ref = (string)($grant['merchant_account_ref'] ?? '');
+            $order->payment_merchant_group_ref = (string)($grant['merchant_group_ref'] ?? '');
             $order->save();
-            $result = $order->toArray();
+            $result = [
+                'order' => $order->toArray(),
+                'grant' => $grant,
+            ];
             Db::commit();
             return $result;
         } catch (\Throwable $e) {
@@ -154,12 +168,14 @@ class RechargeLogic extends BaseLogic
         string $clientIp = '',
         string $openid = ''
     ): array|false {
-        $order = self::prepareAttempt($context, $memberId, $orderId, $payWay);
-        if ($order === false) {
+        $attempt = self::prepareAttempt($context, $memberId, $orderId, $payWay);
+        if ($attempt === false) {
             return false;
         }
 
         try {
+            $order = $attempt['order'];
+            $grant = $attempt['grant'];
             if ($payWay === PaymentScene::PAY_WAY_WECHAT
                 && in_array((int)$order['order_terminal'], [1, 2], true)) {
                 $openid = (new OAuthModuleProvider())->queries()->wechatSubjectForMember(
@@ -176,6 +192,8 @@ class RechargeLogic extends BaseLogic
                 PaymentScene::PAY_WAY_ALIPAY => 'alipay',
                 default => throw new \RuntimeException('支付渠道不受支持'),
             };
+            $notifyUrl = rtrim($notifyUrl, '/')
+                . '/api/payment/notify/' . $channel . '/' . (string)$grant['callback_key'];
             $request = new PrepayRequest(
                 (string)$order['sn'],
                 self::moneyToCents((string)$order['order_amount']),
@@ -186,7 +204,7 @@ class RechargeLogic extends BaseLogic
                 $openid,
                 $clientIp
             );
-            $result = PaymentServiceFactory::forTenant($context, $channel)->prepay($channel)->prepay($request);
+            $result = (new PaymentServiceFactory($grant['config']))->prepay($channel)->prepay($request);
             return [
                 'order' => self::formatOrder($order),
                 'payment' => $result->toArray(),
@@ -230,6 +248,39 @@ class RechargeLogic extends BaseLogic
      * 可信渠道回调的唯一入账入口。
      * @param PaymentEvent|array{order_sn:string,pay_way:int,transaction_id:string,amount_cents?:int,amount?:string|float|int,currency:string,status?:string} $payment
      */
+    public static function settleVerifiedCallback(int $paymentBindingId, PaymentEvent $event, int $payWay): bool
+    {
+        try {
+            if ($paymentBindingId < 1) {
+                throw new \RuntimeException('支付回调授权缺失');
+            }
+            $order = RechargeOrder::where('sn', $event->orderSn())
+                ->where('payment_binding_id', $paymentBindingId)
+                ->findOrEmpty();
+            if ($order->isEmpty()) {
+                throw new \RuntimeException('充值订单不存在');
+            }
+            $context = ExternalTenantContext::verified(
+                (int)$order->tenant_id,
+                'payment.settle',
+                'payment:' . hash('sha256', $event->orderSn() . ':' . (string)$paymentBindingId)
+            );
+            self::assertPaymentExternalCallbackEnabled($context);
+            return self::settle($context, [
+                'order_sn' => $event->orderSn(),
+                'pay_way' => $payWay,
+                'transaction_id' => $event->transactionId(),
+                'amount_cents' => $event->amount(),
+                'currency' => $event->currency(),
+                'status' => $event->status(),
+                'payment_binding_id' => $paymentBindingId,
+            ]);
+        } catch (\Throwable $e) {
+            self::setError($e->getMessage());
+            return false;
+        }
+    }
+
     public static function settle(object $context, PaymentEvent|array $payment): bool
     {
         Db::startTrans();
@@ -247,9 +298,13 @@ class RechargeLogic extends BaseLogic
             $orderSn = trim((string)($payment['order_sn'] ?? ''));
             $transactionId = trim((string)($payment['transaction_id'] ?? ''));
             $payWay = (int)($payment['pay_way'] ?? 0);
+            $bindingId = (int)($payment['payment_binding_id'] ?? 0);
             $currency = strtoupper(trim((string)($payment['currency'] ?? '')));
             if ($orderSn === '' || $transactionId === '') {
                 throw new \RuntimeException('支付回调订单或交易流水缺失');
+            }
+            if ($bindingId < 1) {
+                throw new \RuntimeException('支付回调授权缺失');
             }
             if ($currency !== 'CNY') {
                 throw new \RuntimeException('支付币种不一致');
@@ -276,6 +331,10 @@ class RechargeLogic extends BaseLogic
             }
             if ((int)$order->pay_way !== $payWay) {
                 throw new \RuntimeException('支付渠道不一致');
+            }
+            if ((int)($order->payment_binding_id ?? 0) !== $bindingId
+                || (int)($order->payment_grant_id ?? 0) < 1) {
+                throw new \RuntimeException('支付渠道授权不一致');
             }
 
             if ((int)$order->pay_status === RechargeOrder::PAY_STATUS_PAID) {
@@ -329,6 +388,17 @@ class RechargeLogic extends BaseLogic
         if ((int)$order->pay_status !== RechargeOrder::PAY_STATUS_UNPAID) {
             throw new \RuntimeException('充值订单已支付');
         }
+    }
+
+    private static function assertPaymentExternalCallbackEnabled(object $context): void
+    {
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('支付模块执行环境不可用');
+        }
+        PdoModuleGovernanceProvider::forExecution($pdo)
+            ->executionGuard('official.payment')
+            ->assertExternalCallback(ModuleExecutionContext::system('official.payment', $context));
     }
 
     private static function assertTerminal(int $terminal): void

@@ -120,6 +120,8 @@ class RechargeLogic extends BaseLogic
 
             $amountCents = self::requestedRefundAmountCents($context, $order, $requestedCents);
             $amount = $amountCents / 100;
+            // Each refund operation owns its ledger source; the recharge order may be refunded in parts.
+            $refundSn = RefundRecord::generateSn();
 
             $order->refund_status = RechargeOrder::REFUND_STATUS_STARTED;
             $order->save();
@@ -131,7 +133,7 @@ class RechargeLogic extends BaseLogic
                     AccountLogEnum::USER_MONEY_DEC_RECHARGE_REFUND,
                     AccountLogEnum::DEC,
                     $amountCents,
-                    (string)$order->sn,
+                    $refundSn,
                     '充值订单退款',
                     [],
                     $adminId,
@@ -142,7 +144,7 @@ class RechargeLogic extends BaseLogic
 
             /** @var RefundRecord $record */
             $record = FinanceTenantRepository::createRecord($context, [
-                'sn' => RefundRecord::generateSn(),
+                'sn' => $refundSn,
                 'user_id' => (int)$order->user_id,
                 'order_id' => (int)$order->id,
                 'order_sn' => (string)$order->sn,
