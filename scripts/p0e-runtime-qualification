@@ -1042,14 +1042,34 @@ class Runner:
         database = self.plan["databases"][scenario]
         log = self.group_log(group)
         self.create_database(database)
-        self.install_current(database, "multi-tenant", log, project_root=project_root)
-        command(
-            ["php", "server/fixtures/plugin-module-lifecycle/run.php"],
-            cwd=project_root,
-            env=self.db_env(database, "multi-tenant"),
-            log=log,
-        )
-        self.inspect(database, "multi-tenant", group, project_root=project_root)
+        registry = project_root / "resources/project-resources.json"
+        source_registry = ROOT / "resources/project-resources.json"
+        original_registry: bytes | None = None
+        original_mode: int | None = None
+        if project_root != ROOT:
+            if not registry.is_file() or registry.is_symlink() or not source_registry.is_file() or source_registry.is_symlink():
+                fail("generated application resource registry identity changed")
+            original_registry = registry.read_bytes()
+            original_mode = registry.stat().st_mode & 0o777
+            registry.write_bytes(source_registry.read_bytes())
+            registry.chmod(source_registry.stat().st_mode & 0o777)
+        try:
+            self.install_current(database, "multi-tenant", log, project_root=project_root)
+            command(
+                ["php", "server/fixtures/plugin-module-lifecycle/run.php"],
+                cwd=project_root,
+                env=self.db_env(database, "multi-tenant"),
+                log=log,
+            )
+            self.inspect(database, "multi-tenant", group, project_root=project_root)
+        finally:
+            if original_registry is not None and original_mode is not None:
+                registry.write_bytes(original_registry)
+                registry.chmod(original_mode)
+        if original_registry is not None and (
+            registry.read_bytes() != original_registry or (registry.stat().st_mode & 0o777) != original_mode
+        ):
+            fail("generated application resource registry was not restored")
         self.drop_database(database)
 
     def plugin_lifecycle(self) -> None:
