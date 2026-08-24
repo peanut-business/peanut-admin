@@ -5,6 +5,7 @@ namespace app\adminapi\controller\log;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\logic\log\OperationLogLogic;
+use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\async\TaskImportExportRuntime;
@@ -55,7 +56,10 @@ class OperationLogController extends BaseAdminController
                 AdminPrincipal::fromArray($this->adminInfo),
             );
             $idempotencyKey = trim((string)$this->request->header('Idempotency-Key', ''));
-            $operation = $this->runtime()->submitOperationLogExport($authorized, $idempotencyKey);
+            $operation = $this->runtime()->commands()->submitCsvExport(
+                $authorized,
+                CsvExportOperation::operationLog($idempotencyKey),
+            );
             return $this->data($operation->toPublicArray());
         } catch (\Throwable $exception) {
             return $this->fail($this->safeError($exception));
@@ -70,7 +74,7 @@ class OperationLogController extends BaseAdminController
                 $context,
                 AdminPrincipal::fromArray($this->adminInfo),
             );
-            $operation = $this->runtime()->operation(
+            $operation = $this->runtime()->queries()->operation(
                 $authorized,
                 (string)$this->request->get('operation_key', '')
             );
