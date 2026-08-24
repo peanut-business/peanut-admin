@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
 use think\facade\Db;
-use app\common\service\crontab\CrontabSchedulerService;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
 /**
@@ -28,7 +28,7 @@ class Crontab extends Command
             return 0;
         }
         try {
-            CrontabSchedulerService::runDue(time());
+            (new TaskModuleProvider())->scheduler()->runDue(time());
         } finally {
             self::releaseSchedulerLock();
         }
@@ -39,7 +39,7 @@ class Crontab extends Command
     /** Compatibility entry for explicit trusted scheduler callers. */
     public static function start(TenantScope $scope, array $item): void
     {
-        CrontabSchedulerService::start($scope, $item);
+        (new TaskModuleProvider())->scheduler()->start($scope, $item);
     }
 
     private static function acquireSchedulerLock(): bool
