@@ -19,12 +19,12 @@
 | --- | --- | --- |
 | 方案正文来源 | `a0c9e7150cc1fd93e6b8499cf9762910834353b5` / tree `11b76a0cd747dbba2240862ca6a89d8c2800108e` | PR #252 的合入提交；用于固定本文方案正文的代码状态 |
 | 快照时 `origin/dev` | 同上 | 2026-08-25 16:29 记录的干净集成评审入口 |
-| 当前 `origin/dev` | `741f4f793de97c1d05f47fa75f4edd87f1e5cd30` / tree `f0d909d7d07a6b7bc0111adda02c51b0a4b9f7e5` | PR #253 合入后的最新远端基线，包含本节快照补充 |
-| 关联 PR | [#252](https://github.com/peanut-business/peanut-admin/pull/252)、[#253](https://github.com/peanut-business/peanut-admin/pull/253) | #252 合入方案正文；#253 合入分支状态说明 |
+| 后续文档同步 | PR #253 合入 `741f4f793de97c1d05f47fa75f4edd87f1e5cd30`；PR #254 合入 `13deb68f23e3f772d9591105098dbf3c21e58d7b` | 仅同步本节评审元数据，不改变方案正文或运行时 |
+| 评审入口 | 每次评审前重新执行 `git ls-remote origin refs/heads/dev` | 不把动态 `dev` HEAD 永久写死在架构正文中 |
 
-评审 Claude 应以当前 `origin/dev` 的完整 commit/tree 读取本文和代码，并把方案正文的
-代码依据追溯到上述 #252 commit/tree。只引用分支名、聊天结论或某个候选分支的 tip，
-都不足以证明方案已经进入 `dev`。
+评审 Claude 应以评审开始时重新读取的 `origin/dev` 完整 commit/tree 读取本文和代码，
+并把方案正文的代码依据追溯到上述 #252 commit/tree。只引用分支名、聊天结论或某个
+候选分支的 tip，都不足以证明方案已经进入 `dev`。
 
 ### 0.2 当前工作树不是评审基线
 
@@ -35,7 +35,8 @@
 | `/private/tmp/peanut-admin-module-separation-status` | `codex/module-development-release-status` / `a0c9e7150cc1fd93e6b8499cf9762910834353b5` | 干净，指向评审基线；是 PR #252 合入后的追溯 worktree | 仅用于核对，不作为独立架构事实 |
 
 因此，当前主工作树里看到的未提交修改不能被 Claude 当作本方案的一部分；方案正文和
-分支状态说明是否进入 `dev`，分别以 0.1 所列的 #252/#253 完整 commit/tree 为准。
+分支状态说明是否进入 `dev`，分别以 0.1 所列的 #252 及后续文档同步 PR 的完整 commit/tree
+为准。
 
 ### 0.3 历史服务分支和 worktree 的收口规则
 
