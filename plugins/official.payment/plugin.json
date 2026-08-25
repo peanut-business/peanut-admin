@@ -5,13 +5,13 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "517dc0a718fb14cb861b6a08d757ca1fe83514082e051fe64e339df9aad5f62e"
+        "sha256": "e0efeb701b0070315bef3fcf13529bece19a0dcfbd5acb1c70052ec56fecfbec"
     },
     "composer": [
         {
             "name": "peanut-business/official-payment",
             "version": "1.0.0",
-            "sha256": "795cb263ab322a09ef203acdbe06f55695843b62455bf1b71ebd440d0df2a199"
+            "sha256": "f9dd52e52b5828d0471320979904053beb909e2ebca19e6821be497133f7743a"
         }
     ],
     "npm": [

@@ -5,13 +5,13 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "2dd8449e8efb9062cbce0844e6ac62c931aabe932b0ca7fadc8c276a66162c6a"
+        "sha256": "45a5bb1f5ae4aea84710816aef952d3484db559f77192d5315a9caf720bf16cd"
     },
     "composer": [
         {
             "name": "peanut-business/official-member",
             "version": "1.0.0",
-            "sha256": "0a538f5cf95e17a1efd90021e4d8f5a15e78ec560dad8a333eeccf81f2dacb28"
+            "sha256": "5a7fe6ff5a9b6236c83e29a8127242055515caed0f295a23ff3ee662a6f34271"
         }
     ],
     "npm": [
