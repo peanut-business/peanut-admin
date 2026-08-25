@@ -227,8 +227,20 @@ try {
     $sourcePlugins = (new PluginLockResolver($root . '/server', '../plugins.lock'))->all();
     createApplicationExpect($sourcePlugins !== [], 'source fixture lock must resolve at least one fixture Plugin');
     $generatedLock = json_decode((string)file_get_contents($first . '/plugins.lock'), true, 64, JSON_THROW_ON_ERROR);
-    createApplicationExpect($generatedLock === ['schema_version' => 1, 'plugins' => []], 'generated Plugin lock must be explicitly empty');
-    createApplicationExpect((new PluginLockResolver($first . '/server', '../plugins.lock'))->all() === [], 'empty generated Plugin lock must resolve without artifacts');
+    $expectedOfficialPlugins = array_values(array_filter(
+        $sourcePlugins,
+        static fn(object $plugin): bool => str_starts_with($plugin->key, 'official.')
+    ));
+    $generatedPlugins = (new PluginLockResolver($first . '/server', '../plugins.lock'))->all();
+    createApplicationExpect($expectedOfficialPlugins !== [], 'source lock must contain official Plugins');
+    createApplicationExpect(
+        array_keys($generatedPlugins) === array_map(static fn(object $plugin): string => $plugin->key, $expectedOfficialPlugins),
+        'generated Plugin lock must contain exactly the official Plugin set'
+    );
+    createApplicationExpect(
+        !array_key_exists('fixture.delivery-record', $generatedPlugins),
+        'source-only fixture Plugin leaked into the generated Plugin lock'
+    );
     $generatedProductionDockerfile = (string)file_get_contents($first . '/deploy/docker/production.Dockerfile');
     createApplicationExpect(
         preg_match('/COPY plugins\\.lock \/build\/plugins\\.lock\\R+COPY web\/ \.\/\\R+RUN pnpm exec vue-tsc --noEmit/', $generatedProductionDockerfile) === 1,
@@ -265,7 +277,7 @@ try {
     );
     $generatedModulesConfig = (string)file_get_contents($first . '/server/config/modules.php');
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
-    createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '')"), 'generated deployment must not enable an unowned Plugin lock');
+    createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"), 'generated deployment must enable its scaffold-owned official Plugin lock');
     foreach (['official.file.library', 'official.notification.channel', 'official.oauth.channel', 'official.payment.settings', 'official.member.list', 'official.task.schedules'] as $component) {
         createApplicationExpect(str_contains($generatedModulesConfig, $component), 'official Module component was removed from generated deployment config: ' . $component);
     }
