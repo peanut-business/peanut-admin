@@ -7,6 +7,50 @@
 >
 > 本文只提出结构和迁移方案，不修改运行时代码、Schema、数据库或发布流程。
 
+## 0. 评审基线与分支状态快照
+
+本节是给评审人的“取证入口”，不是永久架构事实。分支会继续移动，后续评审应先用
+`git ls-remote origin refs/heads/dev` 重新核对；本快照记录的是 **2026-08-25
+16:29（Asia/Shanghai）** 的实际状态。
+
+### 0.1 唯一评审基线
+
+| 项目 | 实际值 | 评审含义 |
+| --- | --- | --- |
+| 远端分支 | `origin/dev` | 当前唯一干净的集成评审入口 |
+| commit | `a0c9e7150cc1fd93e6b8499cf9762910834353b5` | PR #252 的合入提交 |
+| tree | `11b76a0cd747dbba2240862ca6a89d8c2800108e` | 评审必须固定到的完整文件树 |
+| PR | [#252](https://github.com/peanut-business/peanut-admin/pull/252) | 已合入 `dev`，不是开放中的候选 |
+
+评审 Claude 应从上述完整 commit/tree 读取本文和代码。只引用分支名、聊天结论或某个
+候选分支的 tip，都不足以证明方案已经进入 `dev`。
+
+### 0.2 当前工作树不是评审基线
+
+| 位置 | 分支/HEAD | 状态 | 是否用于本次评审 |
+| --- | --- | --- | --- |
+| `/Users/xing/.codex/worktrees/e147/peanut-admin` | `codex/service-layer-registry` / `18947bde44f8d669f943b846586fd3ec45bc0236` | 有未提交和未跟踪修改，包含服务登记及其他工作内容 | 否 |
+| `/Users/xing/Documents/company-projects/peanut-admin` | 本地 `dev` / `037e6998ea2104bf30219b313a802eafb9c1ecee` | 相对 `origin/dev` 落后且含本地偏移 | 否 |
+| `/private/tmp/peanut-admin-module-separation-status` | `codex/module-development-release-status` / `a0c9e7150cc1fd93e6b8499cf9762910834353b5` | 干净，指向评审基线；是 PR #252 合入后的追溯 worktree | 仅用于核对，不作为独立架构事实 |
+
+因此，当前主工作树里看到的未提交修改不能被 Claude 当作本方案的一部分；本方案已经
+进入 `dev` 的内容只以 0.1 的 commit/tree 为准。
+
+### 0.3 历史服务分支和 worktree 的收口规则
+
+截至快照，仓库仍留有若干服务、能力包和资格修复分支及其 worktree。它们分为两类：
+
+1. **分支 tip 已经是 `origin/dev` 的祖先**：说明该 tip 的内容已出现在当前 `dev` 历史中，
+   但不自动说明 worktree 可以删除；仍须确认 PR 已合入、worktree 干净、没有活跃 owner，
+   再按执行规则清理。
+2. **分支 tip 不是 `origin/dev` 的祖先**：不能据此断言成果未合入。可能是 squash merge、
+   后续候选取代，或仍有独有修改；必须逐分支核对 PR 合入提交的完整 tree、独有 diff、
+   未提交内容和服务 owner。未核对前只能标为“待收口”，不能标为完成或直接删除。
+
+本快照中尤其要注意：`codex/service-layer-registry`、本地 `dev`、统一存储工作树以及
+若干服务专用工作树都不等于评审基线。**idle 不代表完成，非 ancestor 不代表未合入**；
+服务登记和 PR/tree 证据优先于对话标题、分支状态和聊天回报。
+
 ## 1. 结论摘要
 
 Peanut 当前把两类问题混在了一起：
