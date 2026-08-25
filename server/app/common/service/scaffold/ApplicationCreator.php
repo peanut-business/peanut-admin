@@ -452,7 +452,7 @@ final class ApplicationCreator
             'license' => $this->render($this->license(), $parameters),
             'modules-config' => $this->modulesConfig($content),
             'package' => $this->packageTransform($content, $parameters, (string)$entry['path']),
-            'plugins-lock' => $this->pluginsLock(),
+            'plugins-lock' => $this->pluginsLock($content),
             'sbom' => $this->sbom($content, $parameters),
             'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
             'version-contract' => $this->versionContractDocument($parameters),
@@ -843,24 +843,49 @@ PHP;
 
     private function modulesConfig(string $content): string
     {
-        $replacements = [
-            "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"
-                => "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '')",
-            "        'fixture.delivery-record.list',\n" => '',
-        ];
-        foreach ($replacements as $source => $target) {
-            if (substr_count($content, $source) !== 1) {
-                throw new RuntimeException('CREATE_APP_MODULES_CONFIG_SOURCE_INVALID');
-            }
-            $content = str_replace($source, $target, $content);
+        if (substr_count($content, "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')") !== 1
+            || substr_count($content, "        'fixture.delivery-record.list',\n") !== 1
+        ) {
+            throw new RuntimeException('CREATE_APP_MODULES_CONFIG_SOURCE_INVALID');
         }
-        return $content;
+        return str_replace("        'fixture.delivery-record.list',\n", '', $content);
     }
 
-    private function pluginsLock(): string
+    private function pluginsLock(string $content): string
     {
+        try {
+            $source = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID', 0, $exception);
+        }
+        if (!is_array($source)
+            || ($source['schema_version'] ?? null) !== 1
+            || !is_array($source['plugins'] ?? null)
+            || !array_is_list($source['plugins'])
+        ) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
+        }
+        $official = [];
+        $keys = [];
+        foreach ($source['plugins'] as $plugin) {
+            $key = is_array($plugin) ? ($plugin['key'] ?? null) : null;
+            if (!is_string($key) || $key === '') {
+                throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
+            }
+            if (!str_starts_with($key, 'official.')) {
+                continue;
+            }
+            if (isset($keys[$key])) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
+            }
+            $keys[$key] = true;
+            $official[] = $plugin;
+        }
+        if ($official === []) {
+            throw new RuntimeException('CREATE_APP_OFFICIAL_PLUGIN_SET_EMPTY');
+        }
         return json_encode(
-            ['schema_version' => 1, 'plugins' => []],
+            ['schema_version' => 1, 'plugins' => $official],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
         ) . "\n";
     }

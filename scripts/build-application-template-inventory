@@ -148,6 +148,10 @@ function transform(string $path, string $classification): string
     if ($path === 'server/config/modules.php') return 'modules-config';
     if ($path === '.github/workflows/ci.yml') return 'ci';
     if ($path === 'server/database/environment-guard.php') return 'environment-guard';
+    if ((str_starts_with($path, 'server/app/Modules/') && basename($path) === 'composer.json')
+        || (str_starts_with($path, 'web/src/modules/') && basename($path) === 'package.json')) {
+        return 'text';
+    }
     if ((str_starts_with($path, 'docs-site/') || str_starts_with($path, 'docs/')) && str_ends_with($path, '.md')) return 'docs-page';
     if (preg_match('#(^|/)(config/brand|generated/brand)\.json$#', $path) === 1) return 'brand';
     if (preg_match('#/brand/(logo|favicon)\.svg$#', $path) === 1) return 'brand-asset';

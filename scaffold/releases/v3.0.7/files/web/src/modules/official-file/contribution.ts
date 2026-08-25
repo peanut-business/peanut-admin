@@ -1,0 +1,15 @@
+import type { PluginFrontendContribution } from '@peanut-admin/admin/core';
+import { DEFAULT_LAYOUT } from '@/router/routes/base';
+
+const contribution: PluginFrontendContribution = {
+  moduleKey: 'official.file',
+  routes: [{
+    path: '/system/file', name: 'officialFileRoot', component: DEFAULT_LAYOUT,
+    meta: { requiresAuth: true, tenantModuleKey: 'official.file', requiredPermissions: 'file/lists' },
+    children: [{
+      path: '', name: 'SystemFile', component: () => import('@/views/system/file/index.vue'),
+      meta: { locale: 'menu.system.file', requiresAuth: true, tenantModuleKey: 'official.file', requiredPermissions: 'file/lists' },
+    }],
+  }],
+};
+export default contribution;

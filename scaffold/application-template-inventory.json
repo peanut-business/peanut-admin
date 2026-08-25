@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.6",
+    "template_version": "3.0.7",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -3496,7 +3496,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5ececa21f80da4dca3c3fbb6261fb830e1517287d181de80a48e9eeab3ec8b07"
+            "source_sha256": "d5dee122a52945ff35f68089292e31e5074bf4a33b83b16fdb96f136c2765eff"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -3550,7 +3550,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b42cf2a7d3672b155a3e0e9620d3e6c703f7b4345028b073bc6578990d39a3a1"
+            "source_sha256": "386d8f9586b00561322c5e2cbae84f546360a517f60de089ae484c63c2ccab86"
         },
         {
             "path": "plugins/official.file/plugin.json",
@@ -3564,7 +3564,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3bf33252a3cd7b01b252718a3792625f1b7c8e09ee9aa35f6b1176d9dce8ce92"
+            "source_sha256": "9d484990b0f73d1a63d1a6c8edb0eac3623ce429b4fd336c71fb0e5e89b56b09"
         },
         {
             "path": "plugins/official.import-export/plugin.json",
@@ -3578,7 +3578,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a3c47cd714a404c6fbc70b42818b02938661b8ed430afa604ce052971196bfa0"
+            "source_sha256": "0db128b0cdec64552ac806637e9fe98304f9a55c55292d2a37730faa7936bb1f"
         },
         {
             "path": "plugins/official.member/plugin.json",
@@ -3592,7 +3592,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fb9045a5f23cf7e1539e419a0e0024b2c8132d8e884a47f9dfe304a53b241c33"
+            "source_sha256": "ee700dc76929b3f1986e374b41060ccb242bd9241e2415a655b057e1af5e89d1"
         },
         {
             "path": "plugins/official.notification/plugin.json",
@@ -3606,7 +3606,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7be52d862cba5f4304df7c5d2be7e59d99a1d69db1804e9f378966265a7792aa"
+            "source_sha256": "e7bc9338c79c6b2bdbc6c28c34be935bf1711ac553585606b3bad3fdc2a1a4b9"
         },
         {
             "path": "plugins/official.oauth/plugin.json",
@@ -3620,7 +3620,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2b67a57e44b8e3752e21be21fc97cfc3a769dde1215bc5ecf2c7ff49c1155504"
+            "source_sha256": "61297a4ce9f74f175e86dcba99a53c291e5fb279d590afdb74b21c04ea4e4dc7"
         },
         {
             "path": "plugins/official.payment/plugin.json",
@@ -3634,7 +3634,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "95db518a938981a97b67b86430d442b86f7c494cfe60f993d2c1e943d7eee09d"
+            "source_sha256": "7a356b8d5b5b685b5369fa3161e1c00c426ff9bd7f36973ae47a9130d80f22b8"
         },
         {
             "path": "plugins/official.task/plugin.json",
@@ -3648,7 +3648,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b0790be7c9897ddef97caecb8bf266f2c7ea3e260c08dfffc8a52e1a71d3e4d7"
+            "source_sha256": "8dfd4948a5c88666a0eb4bf6e45830b6c7b80198e92edcfb209102e6f18f8c6b"
         },
         {
             "path": "release-versions.json",
@@ -4733,7 +4733,7 @@
             "target": "server/app/Modules/Official/Article/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -4817,14 +4817,14 @@
             "target": "server/app/Modules/Official/File/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
             ],
-            "source_sha256": "10979da8db2e35f62efbf3d03da7e7ee5802cf527cab22ccde42afaf3c9390e5"
+            "source_sha256": "043318630579ada2787d74812f26851880645dff846da30b464127e3c2b5c73f"
         },
         {
             "path": "server/app/Modules/Official/File/module.json",
@@ -4971,14 +4971,14 @@
             "target": "server/app/Modules/Official/ImportExport/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
             ],
-            "source_sha256": "4ed5a098e3c6fe7a090ce2c080543efaaa0120fdb653d22b3dbb50f332a6de8a"
+            "source_sha256": "a94758080d4f2b85c4c5387e3a82fd147a70f0e4822cf99e2b26f7856128aa5c"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/module.json",
@@ -5237,14 +5237,14 @@
             "target": "server/app/Modules/Official/Member/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
             ],
-            "source_sha256": "0a538f5cf95e17a1efd90021e4d8f5a15e78ec560dad8a333eeccf81f2dacb28"
+            "source_sha256": "5a7fe6ff5a9b6236c83e29a8127242055515caed0f295a23ff3ee662a6f34271"
         },
         {
             "path": "server/app/Modules/Official/Member/module.json",
@@ -5405,14 +5405,14 @@
             "target": "server/app/Modules/Official/Notification/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
             ],
-            "source_sha256": "ab14243bda7cae3d616895642b71ae257e27ccc4017ebec74967469b5935b7d8"
+            "source_sha256": "da92474a54dfd9786389ddbc6125b0148f675de833694f63d56dd243bc56fd1f"
         },
         {
             "path": "server/app/Modules/Official/Notification/module.json",
@@ -5559,14 +5559,14 @@
             "target": "server/app/Modules/Official/Oauth/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
             ],
-            "source_sha256": "e8577c132ae507fb50e7705482041003704166ab3bb71ab4d54a458af7d3cf7e"
+            "source_sha256": "68d1136b619683fbe801e00510c8f40587cbfed3275ac72b4ceb81bed7043574"
         },
         {
             "path": "server/app/Modules/Official/Oauth/module.json",
@@ -5671,14 +5671,14 @@
             "target": "server/app/Modules/Official/Payment/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
             ],
-            "source_sha256": "795cb263ab322a09ef203acdbe06f55695843b62455bf1b71ebd440d0df2a199"
+            "source_sha256": "f9dd52e52b5828d0471320979904053beb909e2ebca19e6821be497133f7743a"
         },
         {
             "path": "server/app/Modules/Official/Payment/module.json",
@@ -5839,14 +5839,14 @@
             "target": "server/app/Modules/Official/Task/composer.json",
             "classification": "app-owned",
             "owner": "application",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
             ],
-            "source_sha256": "3b2d16697434351c4edf9f987eec1aaea54918a82ad195f22620068e2a1e88a7"
+            "source_sha256": "6ee9c3c8cc4cb32127cb4da9de99bea4ffdd4239016547d40d27681b5405256b"
         },
         {
             "path": "server/app/Modules/Official/Task/module.json",
@@ -17252,7 +17252,7 @@
             "target": "web/src/modules/official-article/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -17280,7 +17280,7 @@
             "target": "web/src/modules/official-file/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -17308,7 +17308,7 @@
             "target": "web/src/modules/official-import-export/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -17336,7 +17336,7 @@
             "target": "web/src/modules/official-member/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -17364,7 +17364,7 @@
             "target": "web/src/modules/official-notification/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -17392,7 +17392,7 @@
             "target": "web/src/modules/official-oauth/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -17420,7 +17420,7 @@
             "target": "web/src/modules/official-payment/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -17448,7 +17448,7 @@
             "target": "web/src/modules/official-task/package.json",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "package",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",

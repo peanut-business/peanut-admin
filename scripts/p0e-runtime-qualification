@@ -1088,8 +1088,17 @@ class Runner:
         lock = self.generated / "plugins.lock"
         original_lock = lock.read_bytes()
         original_mode = lock.stat().st_mode & 0o777
-        if json.loads(original_lock) != {"schema_version": 1, "plugins": []}:
-            fail("generated application Plugin lock is not the released empty lock")
+        source_lock = read_json(ROOT / "plugins.lock")
+        expected_official_lock = {
+            "schema_version": 1,
+            "plugins": [
+                entry
+                for entry in source_lock.get("plugins", [])
+                if isinstance(entry, dict) and str(entry.get("key", "")).startswith("official.")
+            ],
+        }
+        if expected_official_lock["plugins"] == [] or json.loads(original_lock) != expected_official_lock:
+            fail("generated application Plugin lock is not the released official-only lock")
         fixture_paths = [
             (ROOT / "plugins/fixture.delivery-record", self.generated / "plugins/fixture.delivery-record"),
             (ROOT / "server/app/Modules/Fixture/DeliveryRecord", self.generated / "server/app/Modules/Fixture/DeliveryRecord"),
@@ -1106,7 +1115,6 @@ class Runner:
                 shutil.copytree(source, target, copy_function=shutil.copy2)
             runner_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(runner_source, runner_target)
-            source_lock = read_json(ROOT / "plugins.lock")
             fixture_lock = {
                 "schema_version": 1,
                 "plugins": [
@@ -1249,6 +1257,12 @@ class Runner:
         log = self.group_log(group)
         self.create_database(database)
         self.install_current(database, "standalone", log, project_root=project_root)
+        command(
+            ["php", "server/think", "plugin:reconcile", "--official-locked"],
+            cwd=project_root,
+            env=self.db_env(database, "standalone"),
+            log=log,
+        )
         self.inspect(database, "standalone", f"{group}-database", project_root=project_root)
         self.write_compose_env(database, "standalone")
         self.compose("up", "-d", "--build", "php", "nginx", "cron", log=log, project_root=project_root)
@@ -1285,6 +1299,12 @@ class Runner:
             if not self.database_exists(database):
                 self.create_database(database)
                 self.install_current(database, mode, self.group_log(group), project_root=project_root)
+                command(
+                    ["php", "server/think", "plugin:reconcile", "--official-locked"],
+                    cwd=project_root,
+                    env=self.db_env(database, mode),
+                    log=self.group_log(group),
+                )
             self.inspect(database, mode, f"{group}-database", project_root=project_root)
             self.seed_multi_tenant_browser_binding(database, self.group_log(group))
             self.write_compose_env(database, mode)
