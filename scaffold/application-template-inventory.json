@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.7",
+    "template_version": "3.0.8",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -3496,7 +3496,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d5dee122a52945ff35f68089292e31e5074bf4a33b83b16fdb96f136c2765eff"
+            "source_sha256": "872f591ca552350826947c067904a01df2f4497fc0b5a907595d57d0eadc73de"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -3550,7 +3550,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "386d8f9586b00561322c5e2cbae84f546360a517f60de089ae484c63c2ccab86"
+            "source_sha256": "a5d870d611be8f8b070dbb63926e1680e69c428291fd2be4fbcfbeebeb362dfb"
         },
         {
             "path": "plugins/official.file/plugin.json",
@@ -4643,6 +4643,20 @@
                 "full"
             ],
             "source_sha256": "41b1a727e4f0b48d909b4f0d2a9bb74e61a3def5bd31a79b67e9666eaf7cc2b3"
+        },
+        {
+            "path": "server/app/Modules/Official/Article/Database/Migrations/20260825-adopt-permission-ownership.sql",
+            "target": "server/app/Modules/Official/Article/Database/Migrations/20260825-adopt-permission-ownership.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "bea75b338c796723cde4ac544f13b81e874db52db31496c791be12d3b9597bc4"
         },
         {
             "path": "server/app/Modules/Official/Article/Http/ArticleModuleMiddleware.php",
