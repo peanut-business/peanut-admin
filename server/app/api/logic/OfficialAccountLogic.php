@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
-use app\adminapi\logic\setting\OfficialAccountReplyLogic;
+use app\Modules\Official\Oauth\Service\OfficialAccountReplyLogic;
 use app\common\service\wechat\OfficialAccountService;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

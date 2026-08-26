@@ -50,8 +50,8 @@ files=(
   server/app/adminapi/logic/decoration/DecorationPageLogic.php
   server/app/adminapi/logic/decoration/DecorationTabbarLogic.php
   server/app/Modules/Official/Member/Service/MemberLogic.php
-  server/app/adminapi/logic/setting/MiniProgramLogic.php
-  server/app/adminapi/logic/setting/OfficialAccountLogic.php
+  server/app/Modules/Official/Oauth/Service/MiniProgramLogic.php
+  server/app/Modules/Official/Oauth/Service/OfficialAccountLogic.php
   server/app/adminapi/service/NativeAdminPrincipalRepository.php
   server/app/common/service/DemoAccountPolicy.php
   server/app/api/logic/IndexLogic.php
