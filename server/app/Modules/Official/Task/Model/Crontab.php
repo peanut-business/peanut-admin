@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\model;
+namespace app\Modules\Official\Task\Model;
 
 use app\common\enum\CrontabEnum;
+use app\common\model\BaseModel;
 use think\model\concern\SoftDelete;
 
 /**

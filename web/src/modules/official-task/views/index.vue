@@ -59,7 +59,7 @@
       <el-row style="margin-bottom: 16px">
         <el-col :span="12">
           <el-button
-            v-permission="['crontab/add']"
+            v-permission="['official.task.add']"
             type="primary"
             @click="handleAdd"
           >
@@ -120,21 +120,21 @@
             ><el-space
               ><el-button
                 v-if="row.status !== 1"
-                v-permission="['crontab/operate']"
+                v-permission="['official.task.operate']"
                 link
                 size="small"
                 @click="handleOperate(row, 'start')"
                 >{{ $t('systemCrontab.operation.start') }}</el-button
               ><el-button
                 v-else
-                v-permission="['crontab/operate']"
+                v-permission="['official.task.operate']"
                 link
                 type="warning"
                 size="small"
                 @click="handleOperate(row, 'stop')"
                 >{{ $t('systemCrontab.operation.stop') }}</el-button
               ><el-button
-                v-permission="['crontab/edit']"
+                v-permission="['official.task.edit']"
                 link
                 size="small"
                 @click="handleEdit(row)"
@@ -144,7 +144,7 @@
                 @confirm="handleDelete(row)"
                 ><template #reference
                   ><el-button
-                    v-permission="['crontab/delete']"
+                    v-permission="['official.task.delete']"
                     link
                     type="danger"
                     size="small"
@@ -207,7 +207,7 @@
           >
             <template #append
               ><el-button
-                v-permission="['crontab/expression']"
+                v-permission="['official.task.expression']"
                 @click="previewExpression"
                 >{{ $t('systemCrontab.field.preview') }}</el-button
               ></template
@@ -273,7 +273,7 @@
     type CrontabListParams,
     type CrontabStatus,
     type ExpressionItem,
-  } from '@/api/system/crontab';
+  } from '@/modules/official-task/api';
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);

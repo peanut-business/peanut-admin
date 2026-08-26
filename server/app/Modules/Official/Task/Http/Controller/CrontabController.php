@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\crontab;
+namespace app\Modules\Official\Task\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\crontab\CrontabLogic;
-use app\adminapi\validate\crontab\CrontabValidate;
+use app\Modules\Official\Task\Service\CrontabLogic;
+use app\Modules\Official\Task\Validation\CrontabValidate;
 use app\common\service\crontab\CrontabTenantContext;
 
 /**

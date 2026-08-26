@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\crontab\CrontabLogic;
+use app\Modules\Official\Task\Service\CrontabLogic;
 use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
-use app\common\model\Crontab;
+use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\XlsxExportService;
 use app\common\service\async\TaskImportExportRuntime;
 use app\common\service\export\AppFileMediaGateway;
@@ -132,7 +132,7 @@ try {
 
     foreach ([
         'app/command/Crontab.php',
-        'app/adminapi/logic/crontab/CrontabLogic.php',
+        'app/Modules/Official/Task/Service/CrontabLogic.php',
         'app/adminapi/logic/generator/GeneratorLogic.php',
         'app/adminapi/service/generator/GeneratorArchiveService.php',
     ] as $relativePath) {
