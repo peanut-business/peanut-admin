@@ -47,7 +47,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "411c874ab403df99c562e59eb355410dce1556336681e9dee45daca4f6ed7c1a"
+                "sha256": "b10f02c20d40f824923284db4bdd5de846202b0f0026a89bb56ec703d88eb0cc"
             },
             "composer": [
                 {
@@ -69,7 +69,7 @@
                     "package": "@peanut-admin/official-article",
                     "version": "1.0.0",
                     "entry": "web/src/modules/official-article/contribution.ts",
-                    "sha256": "3b4f605ea7ef0b52e6474128977dca4882ed1b941b9979bd5d445b5c596ed9ef"
+                    "sha256": "b1ca6694d9146fcc6e31c130cf2a32e1fd3a2736f7260355b107a74e9eea004f"
                 }
             ],
             "modules": [
@@ -79,7 +79,7 @@
                 }
             ],
             "manifest": "plugins/official.article/plugin.json",
-            "manifest_sha256": "a5d870d611be8f8b070dbb63926e1680e69c428291fd2be4fbcfbeebeb362dfb"
+            "manifest_sha256": "b4791b322d5b5bf3694db26456513aa8f8be3eaabd8a766353fbcba9fecc1fb7"
         },
         {
             "key": "official.file",

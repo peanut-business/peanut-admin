@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\module;
 
+use app\platform\service\plugin\ModuleCatalogApplier;
 use PDO;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -71,6 +72,7 @@ SQL);
                 );
             }
             $this->assertSameIdentity($identity, $current);
+            (new ModuleCatalogApplier($this->pdo))->apply($registry->compiled(), [$moduleKey]);
             $this->pdo->commit();
             return $identity;
         } catch (\Throwable $exception) {

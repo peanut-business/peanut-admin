@@ -32,7 +32,7 @@ function lockedAdminContributions(): string[] {
     .sort();
 }
 
-function pluginContributionManifest(): Plugin {
+function pluginContributionManifest(entriesForBuild: () => string[]): Plugin {
   const virtualId = 'virtual:peanut-plugin-contributions';
   const resolvedId = `\0${virtualId}`;
   return {
@@ -42,7 +42,7 @@ function pluginContributionManifest(): Plugin {
     },
     load(id) {
       if (id !== resolvedId) return null;
-      const entries = lockedAdminContributions();
+      const entries = entriesForBuild();
       const imports = entries.map((entry, index) => {
         if (!entry.startsWith('web/src/')) {
           throw new Error(`Plugin contribution is outside web/src: ${entry}`);
@@ -88,13 +88,16 @@ function compileInstanceTools({ command, mode }: ConfigEnv): boolean {
   );
 }
 
-export function createBaseConfig(configEnv: ConfigEnv): UserConfig {
+export function createBaseConfig(
+  configEnv: ConfigEnv,
+  contributionEntries: () => string[] = lockedAdminContributions
+): UserConfig {
   const instanceToolsCompiled = compileInstanceTools(configEnv);
   return {
     // The admin SPA is published below server/public/admin in every environment.
     base: '/admin/',
     plugins: [
-      pluginContributionManifest(),
+      pluginContributionManifest(contributionEntries),
       instanceToolRouteManifest(instanceToolsCompiled),
       vue(),
       vueJsx(),

@@ -26,9 +26,9 @@ $app = new think\App();
 $app->initialize();
 
 $policy = new RegisteredAdminPermissionPolicy();
-$registered = ['article.article/lists', 'admin/status'];
-expectAdminApiBoundary($policy->canAccess(false, 'article.article/lists', $registered, ['article.article/lists']), 'registered grant must pass');
-expectAdminApiBoundary(!$policy->canAccess(false, 'article.article/lists', $registered, []), 'registered unowned route must fail');
+$registered = ['official.article.list', 'admin/status'];
+expectAdminApiBoundary($policy->canAccess(false, 'official.article.list', $registered, ['official.article.list']), 'registered grant must pass');
+expectAdminApiBoundary(!$policy->canAccess(false, 'official.article.list', $registered, []), 'registered unowned route must fail');
 expectAdminApiBoundary(!$policy->canAccess(false, 'unknown/detail', $registered, ['unknown/detail']), 'unregistered route must fail even if claimed as granted');
 expectAdminApiBoundary($policy->canAccess(true, 'admin/status', $registered, []), 'root must bypass role ownership for a registered route');
 expectAdminApiBoundary(!$policy->canAccess(true, 'admin/edit', $registered, []), 'root must not bypass route registration');

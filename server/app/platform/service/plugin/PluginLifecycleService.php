@@ -4,17 +4,8 @@ declare(strict_types=1);
 namespace app\platform\service\plugin;
 
 use app\common\contract\module\PluginLifecycleCommands;
-use DateTimeImmutable;
-use DateTimeZone;
 use PDO;
-use PeanutAdmin\Kernel\Authorization\ModuleAuthorizationCatalogSynchronizer;
-use PeanutAdmin\Kernel\Authorization\Persistence\PdoAuthorizationCatalogRepository;
-use PeanutAdmin\Kernel\Menu\MenuCatalogSynchronizer;
-use PeanutAdmin\Kernel\Menu\PdoMenuCatalogRepository;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
-use PeanutAdmin\Settings\Definition\SettingDefinitionLoader;
-use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
-use PeanutAdmin\Settings\Persistence\PdoSettingRepository;
 
 /** Deployment-scoped Plugin lifecycle. It deliberately never mutates pa_tenant_module. */
 final readonly class PluginLifecycleService implements PluginLifecycleCommands
@@ -148,6 +139,10 @@ SQL);
         $now = $this->now();
         $this->pdo->beginTransaction();
         try {
+            (new ModuleCatalogApplier($this->pdo))->retire(array_map(
+                static fn(array $row): string => (string)$row['module_key'],
+                $modules,
+            ));
             $module = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_module_installation
 SET status='maintenance',revision=revision+1,updated_at=:updated_at
@@ -378,30 +373,7 @@ SQL);
             $compiled = $this->registries
                 ->fromPluginLock($this->resolver, $this->moduleConfig)
                 ->compiled();
-            (new ModuleAuthorizationCatalogSynchronizer(
-                new PdoAuthorizationCatalogRepository($this->pdo)
-            ))->synchronize($compiled);
-            (new MenuCatalogSynchronizer(new PdoMenuCatalogRepository($this->pdo)))
-                ->synchronize($compiled);
-            $settings = new SettingDefinitionRegistry();
-            $settingLoader = new SettingDefinitionLoader();
-            foreach ($manifests as $moduleKey => $manifest) {
-                $backend = is_array($manifest->data['backend'] ?? null)
-                    ? $manifest->data['backend']
-                    : [];
-                $resource = $backend['setting_definitions'] ?? null;
-                $definitions = is_string($resource)
-                    ? $settingLoader->load(
-                        $moduleKey,
-                        $plugin->moduleRoots[$moduleKey] . '/' . ltrim($resource, '/')
-                    )
-                    : [];
-                $settings->registerModule($moduleKey, $definitions);
-            }
-            (new PdoSettingRepository($this->pdo))->synchronize(
-                $settings,
-                new DateTimeImmutable('now', new DateTimeZone('UTC'))
-            );
+            (new ModuleCatalogApplier($this->pdo))->apply($compiled, array_keys($manifests));
             $owner = $this->pdo->prepare('SELECT plugin_key FROM pa_plugin_module WHERE module_key=:module_key FOR UPDATE');
             $catalog = $this->pdo->prepare(<<<'SQL'
 INSERT INTO pa_plugin_module (plugin_key,module_key,module_version,manifest_digest,created_at,updated_at)

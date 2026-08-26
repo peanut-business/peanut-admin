@@ -23,7 +23,7 @@ final class PluginRuntimeGovernanceService
     /** @return array<string,mixed> */
     public function preview(string $moduleOrPackageKey, bool $purge): array
     {
-        $scope = $this->activeScope($moduleOrPackageKey);
+        $scope = $this->scope($moduleOrPackageKey);
         if ($scope === null) {
             return [
                 'operation' => 'preview',
@@ -87,7 +87,7 @@ final class PluginRuntimeGovernanceService
             $marker = $purge ? 'MODULE_PURGE_IN_PROGRESS' : 'MODULE_RETIRE_IN_PROGRESS';
             $resuming = is_array($state) && $state['status'] === 'maintenance' && $state['last_error_code'] === $marker;
             if (!$resuming) {
-                $scope = $this->activeScope($moduleOrPackageKey);
+                $scope = $this->scope($moduleOrPackageKey);
                 if ($scope === null) {
                     throw new PluginLifecycleException('PLUGIN_NOT_INSTALLED', 'Module package is not installed.');
                 }
@@ -104,7 +104,7 @@ final class PluginRuntimeGovernanceService
             $this->markMaintenance($packageKey, $moduleKeys, $marker);
             $this->inject('after-marker');
 
-            $catalog = new ModuleCatalogMutationRepository($this->pdo);
+            $catalog = new ModuleCatalogApplier($this->pdo);
             $currentCatalog = $catalog->plan($moduleKeys, $purge);
             if ($currentCatalog['blockers'] !== []) {
                 throw new PluginLifecycleException('MODULE_UNINSTALL_BLOCKED', 'New catalog references block Module uninstall.');
@@ -121,7 +121,7 @@ final class PluginRuntimeGovernanceService
                 try {
                     $statement = $this->pdo->prepare('DELETE FROM pa_module_migration WHERE module_key IN (' . $this->placeholders($moduleKeys) . ')');
                     $statement->execute($moduleKeys);
-                    if ((new ModuleCatalogMutationRepository($this->pdo))->plan($moduleKeys, true)['removed'] !== []) {
+                    if ((new ModuleCatalogApplier($this->pdo))->plan($moduleKeys, true)['removed'] !== []) {
                         throw new PluginLifecycleException('MODULE_PURGE_INCOMPLETE', 'Module catalog remains after purge.');
                     }
                     $this->pdo->commit();
@@ -132,7 +132,7 @@ final class PluginRuntimeGovernanceService
                 $this->inject('after-database-clean');
             }
 
-            $this->finalizeFilesystem($packageKey, $confirmPlan, $confirmPlanDigest);
+            $this->finalizeFilesystem($packageKey, $confirmPlan, $confirmPlanDigest, $purge);
             $this->finalizeInstallation($packageKey, $moduleKeys, $purge);
             return [
                 'operation' => $purge ? 'purged' : 'retired',
@@ -150,7 +150,7 @@ final class PluginRuntimeGovernanceService
     private function buildPlan(array $scope, bool $purge): array
     {
         $moduleKeys = array_column($scope['affected_modules'], 'module_key');
-        $catalog = (new ModuleCatalogMutationRepository($this->pdo))->plan($moduleKeys, $purge);
+        $catalog = (new ModuleCatalogApplier($this->pdo))->plan($moduleKeys, $purge);
         $removed = $catalog['removed'];
         $preserved = $catalog['preserved'];
         $blockers = [...$catalog['blockers'], ...$this->lifecycleBlockers($scope, $purge)];
@@ -181,8 +181,15 @@ final class PluginRuntimeGovernanceService
         ];
     }
 
+    /** @return array{package_key:string,package_manifest_digest:string,affected_modules:list<array<string,mixed>>}|null */
+    private function scope(string $moduleOrPackageKey): ?array
+    {
+        return $this->lockedScope($moduleOrPackageKey)
+            ?? $this->quarantinedScope($moduleOrPackageKey);
+    }
+
     /** @return array{package_key:string,package_manifest_digest:string,descriptor:PluginDescriptor,affected_modules:list<array<string,mixed>>}|null */
-    private function activeScope(string $moduleOrPackageKey): ?array
+    private function lockedScope(string $moduleOrPackageKey): ?array
     {
         $resolver = new PluginLockResolver($this->serverRoot, '../plugins.lock');
         $descriptor = null;
@@ -209,6 +216,95 @@ final class PluginRuntimeGovernanceService
         }
         usort($affected, static fn(array $a, array $b): int => strcmp($a['module_key'], $b['module_key']));
         return ['package_key' => $descriptor->key, 'package_manifest_digest' => $descriptor->manifestDigest, 'descriptor' => $descriptor, 'affected_modules' => $affected];
+    }
+
+    /** @return array{package_key:string,package_manifest_digest:string,affected_modules:list<array<string,mixed>>}|null */
+    private function quarantinedScope(string $moduleOrPackageKey): ?array
+    {
+        $statement = $this->pdo->prepare(<<<'SQL'
+SELECT DISTINCT pi.plugin_key,pi.installed_version,pi.artifact_sha256
+FROM pa_plugin_installation pi
+JOIN pa_plugin_module pm ON pm.plugin_key=pi.plugin_key
+WHERE (pi.plugin_key=:package_input OR pm.module_key=:module_input)
+  AND pi.status='uninstalled' AND pi.last_error_code IS NULL
+ORDER BY pi.plugin_key
+SQL);
+        $statement->execute([
+            'package_input' => $moduleOrPackageKey,
+            'module_input' => $moduleOrPackageKey,
+        ]);
+        $installation = $statement->fetchAll(PDO::FETCH_ASSOC);
+        if ($installation === []) return null;
+        if (count($installation) !== 1) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_CONFLICT', 'Retired Module package identity is ambiguous.');
+        }
+
+        $packageKey = (string)$installation[0]['plugin_key'];
+        $quarantines = $this->quarantineDirectories($packageKey);
+        if ($quarantines === []) return null;
+        if (count($quarantines) !== 1) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_CONFLICT', 'Retired Module package has multiple quarantine identities.');
+        }
+        $quarantine = $quarantines[0];
+        $pluginManifestPath = $quarantine . '/plugins/' . $packageKey . '/plugin.json';
+        try {
+            $plugin = json_decode((string)file_get_contents($pluginManifestPath), true, 128, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module package manifest is invalid.');
+        }
+        if (!is_array($plugin) || ($plugin['key'] ?? null) !== $packageKey
+            || ($plugin['version'] ?? null) !== $installation[0]['installed_version']
+            || ($plugin['source']['sha256'] ?? null) !== $installation[0]['artifact_sha256']
+            || !is_array($plugin['modules'] ?? null)) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module package identity changed.');
+        }
+
+        $ownership = $this->pdo->prepare(
+            'SELECT module_key,manifest_digest FROM pa_plugin_module WHERE plugin_key=? ORDER BY module_key'
+        );
+        $ownership->execute([$packageKey]);
+        $ownedManifests = $ownership->fetchAll(PDO::FETCH_KEY_PAIR);
+        $affected = [];
+        $seenTables = [];
+        $layout = new ModuleHostLayout('server/app/Modules', 'app\\Modules', 'web/src/modules');
+        foreach ($plugin['modules'] as $module) {
+            if (!is_array($module) || !is_string($module['key'] ?? null) || !is_string($module['root'] ?? null)) {
+                throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module package scope is invalid.');
+            }
+            $key = ModuleKey::fromString($module['key']);
+            $relativeRoot = rtrim($layout->backendRelativePath($key), '/');
+            if ($module['root'] !== $relativeRoot) {
+                throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module path is not derived from its key.');
+            }
+            $root = realpath($quarantine . '/' . $relativeRoot);
+            if ($root === false || !str_starts_with($root, $quarantine . DIRECTORY_SEPARATOR)) {
+                throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module source is unavailable.');
+            }
+            $manifest = (new ManifestLoader())->load($root);
+            if (!isset($ownedManifests[$key->value()])
+                || !hash_equals((string)$ownedManifests[$key->value()], $manifest->digest)) {
+                throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module manifest digest changed.');
+            }
+            $owned = array_values((array)($manifest->data['database']['owned_tables'] ?? []));
+            sort($owned, SORT_STRING);
+            foreach ($owned as $table) {
+                if (!is_string($table) || preg_match('/^pa_[a-z0-9_]+$/D', $table) !== 1 || isset($seenTables[$table])) {
+                    throw new PluginLifecycleException('MODULE_TABLE_OWNERSHIP_INVALID', 'Module owned table declaration is invalid.');
+                }
+                $seenTables[$table] = true;
+            }
+            $affected[] = ['module_key' => $key->value(), 'manifest_digest' => $manifest->digest, 'owned_tables' => $owned];
+            unset($ownedManifests[$key->value()]);
+        }
+        if ($ownedManifests !== []) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module ownership scope changed.');
+        }
+        usort($affected, static fn(array $a, array $b): int => strcmp($a['module_key'], $b['module_key']));
+        $manifestDigest = hash_file('sha256', $pluginManifestPath);
+        if (!is_string($manifestDigest)) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired package manifest cannot be digested.');
+        }
+        return ['package_key' => $packageKey, 'package_manifest_digest' => $manifestDigest, 'affected_modules' => $affected];
     }
 
     /** @param array<string,mixed> $scope @return list<array<string,mixed>> */
@@ -354,7 +450,7 @@ final class PluginRuntimeGovernanceService
     }
 
     /** @param array<string,mixed> $plan */
-    private function finalizeFilesystem(string $packageKey, array $plan, string $digest): void
+    private function finalizeFilesystem(string $packageKey, array $plan, string $digest, bool $purge): void
     {
         $projectRoot = realpath(dirname($this->serverRoot)) ?: dirname($this->serverRoot);
         $lockPath = $projectRoot . '/plugins.lock';
@@ -391,7 +487,37 @@ final class PluginRuntimeGovernanceService
                 if ($moved === 1) $this->inject('after-first-quarantine');
             }
         }
-        if (is_dir($quarantine)) $this->removeTree($quarantine);
+        if ($purge) {
+            foreach ($this->quarantineDirectories($packageKey) as $directory) {
+                $this->removeTree($directory);
+            }
+        }
+    }
+
+    /** @return list<string> */
+    private function quarantineDirectories(string $packageKey): array
+    {
+        if (preg_match('/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/D', $packageKey) !== 1) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Module package key is invalid.');
+        }
+        $projectRoot = realpath(dirname($this->serverRoot)) ?: dirname($this->serverRoot);
+        $root = $projectRoot . '/.local/module-quarantine';
+        if (!is_dir($root)) return [];
+        $resolvedRoot = realpath($root);
+        if (!is_string($resolvedRoot)) {
+            throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Module quarantine root is invalid.');
+        }
+        $directories = [];
+        foreach (glob($root . '/' . $packageKey . '-*', GLOB_ONLYDIR) ?: [] as $candidate) {
+            $resolved = realpath($candidate);
+            if (is_link($candidate) || !is_string($resolved)
+                || !str_starts_with($resolved, $resolvedRoot . DIRECTORY_SEPARATOR)) {
+                throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Module quarantine path is invalid.');
+            }
+            $directories[] = $resolved;
+        }
+        sort($directories, SORT_STRING);
+        return $directories;
     }
 
     /** @param array<string,mixed> $plan */

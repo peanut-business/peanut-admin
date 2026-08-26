@@ -19,7 +19,7 @@ SELECT
 FROM `pa_permission`
 WHERE `key` IN (
   'article.articleCate/lists',
-  'article.articleCate/all',
+  'article.articlecate/all',
   'article.articleCate/detail',
   'article.articleCate/add',
   'article.articleCate/edit',
@@ -38,7 +38,7 @@ SET `module_key` = 'official.article'
 WHERE `module_key` = 'peanut.admin'
   AND `key` IN (
     'article.articleCate/lists',
-    'article.articleCate/all',
+    'article.articlecate/all',
     'article.articleCate/detail',
     'article.articleCate/add',
     'article.articleCate/edit',
@@ -61,7 +61,7 @@ SELECT
 FROM `pa_permission`
 WHERE `key` IN (
   'article.articleCate/lists',
-  'article.articleCate/all',
+  'article.articlecate/all',
   'article.articleCate/detail',
   'article.articleCate/add',
   'article.articleCate/edit',

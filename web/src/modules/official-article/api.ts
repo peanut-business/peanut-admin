@@ -36,36 +36,36 @@ export interface ArticleCateListRes {
 
 export function getArticleCateList(params: ArticleCateListParams = {}) {
   return axios.get<ArticleCateListRes>(
-    '/api/admin/article.articleCate/lists',
+    '/api/admin/official.article.category.list',
     { params }
   );
 }
 
 export function getArticleCateAll() {
-  return axios.get<ArticleCateOption[]>('/api/admin/article.articleCate/all');
+  return axios.get<ArticleCateOption[]>('/api/admin/official.article.category.all');
 }
 
 export function getArticleCateDetail(id: number) {
   return axios.get<ArticleCateRecord>(
-    '/api/admin/article.articleCate/detail',
+    '/api/admin/official.article.category.detail',
     { params: { id } }
   );
 }
 
 export function addArticleCate(data: Partial<ArticleCateRecord>) {
-  return axios.post('/api/admin/article.articleCate/add', data);
+  return axios.post('/api/admin/official.article.category.add', data);
 }
 
 export function editArticleCate(data: Partial<ArticleCateRecord>) {
-  return axios.post('/api/admin/article.articleCate/edit', data);
+  return axios.post('/api/admin/official.article.category.edit', data);
 }
 
 export function deleteArticleCate(id: number) {
-  return axios.post('/api/admin/article.articleCate/delete', { id });
+  return axios.post('/api/admin/official.article.category.delete', { id });
 }
 
 export function updateArticleCateStatus(id: number, isShow: number) {
-  return axios.post('/api/admin/article.articleCate/updateStatus', {
+  return axios.post('/api/admin/official.article.category.update-status', {
     id,
     is_show: isShow,
   });
@@ -111,31 +111,31 @@ export interface ArticleListRes {
 }
 
 export function getArticleList(params: ArticleListParams = {}) {
-  return axios.get<ArticleListRes>('/api/admin/article.article/lists', {
+  return axios.get<ArticleListRes>('/api/admin/official.article.list', {
     params,
   });
 }
 
 export function getArticleDetail(id: number) {
-  return axios.get<ArticleRecord>('/api/admin/article.article/detail', {
+  return axios.get<ArticleRecord>('/api/admin/official.article.detail', {
     params: { id },
   });
 }
 
 export function addArticle(data: Partial<ArticleRecord>) {
-  return axios.post('/api/admin/article.article/add', data);
+  return axios.post('/api/admin/official.article.add', data);
 }
 
 export function editArticle(data: Partial<ArticleRecord>) {
-  return axios.post('/api/admin/article.article/edit', data);
+  return axios.post('/api/admin/official.article.edit', data);
 }
 
 export function deleteArticle(id: number) {
-  return axios.post('/api/admin/article.article/delete', { id });
+  return axios.post('/api/admin/official.article.delete', { id });
 }
 
 export function updateArticleStatus(id: number, isShow: number) {
-  return axios.post('/api/admin/article.article/updateStatus', {
+  return axios.post('/api/admin/official.article.update-status', {
     id,
     is_show: isShow,
   });

@@ -14,8 +14,10 @@
   "backend": {
     "provider": "app\\Modules\\Official\\Article\\ModuleProvider",
     "routes": "Http/routes.php",
+    "migrations": "Database/Migrations",
     "menus": "Resources/menus.json",
-    "permissions": "Resources/permissions.json"
+    "permissions": "Resources/permissions.json",
+    "setting_definitions": "Resources/setting-definitions.json"
   },
   "frontend": {
     "entry": "web/src/modules/official-article/contribution.ts"

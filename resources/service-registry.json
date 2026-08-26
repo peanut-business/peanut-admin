@@ -876,6 +876,8 @@
       ],
       "current_implementation": [
         "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "server/app/platform/service/plugin/ModuleCatalogApplier.php",
+        "server/app/platform/service/plugin/DevelopmentModuleDiscovery.php",
         "server/app/platform/service/module/PlatformTenantModuleService.php",
         "server/app/common/service/module/ModuleExecutionGuard.php",
         "server/app/common/service/module/OfficialModuleMiddleware.php"

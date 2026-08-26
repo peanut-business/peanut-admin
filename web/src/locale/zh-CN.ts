@@ -26,8 +26,8 @@ import localeAppHotSearch from '@/views/app-setting/hot-search/locale/zh-CN';
 import localeAppPay from '@/views/app-setting/pay/locale/zh-CN';
 import localeAppChannel from '@/views/app-setting/channel/locale/zh-CN';
 import localeAppTransaction from '@/views/app-setting/transaction/locale/zh-CN';
-import localeArticleCate from '@/views/article/cate/locale/zh-CN';
-import localeArticleList from '@/views/article/list/locale/zh-CN';
+import localeArticleCate from '@/modules/official-article/views/cate/locale/zh-CN';
+import localeArticleList from '@/modules/official-article/views/list/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
