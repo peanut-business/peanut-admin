@@ -327,8 +327,8 @@ $mustRemainCustom = [
     ],
     'Finance' => [
         'app\\Modules\\Official\\Member\\Http\\Controller\\AccountLogController',
-        'app\\adminapi\\controller\\finance\\RechargeController',
-        'app\\adminapi\\controller\\finance\\RefundController',
+        'app\\Modules\\Official\\Payment\\Http\\Controller\\RechargeController',
+        'app\\Modules\\Official\\Payment\\Http\\Controller\\RefundController',
     ],
     'Crontab' => [
         'app\\Modules\\Official\\Task\\Http\\Controller\\CrontabController',

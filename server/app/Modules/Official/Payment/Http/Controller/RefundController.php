@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\finance;
+namespace app\Modules\Official\Payment\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\finance\RefundLogic;
-use app\adminapi\validate\finance\RefundValidate;
+use app\Modules\Official\Payment\Service\RefundLogic;
+use app\Modules\Official\Payment\Validation\RefundValidate;
 use app\common\service\finance\FinanceTenantContext;
 
 /**

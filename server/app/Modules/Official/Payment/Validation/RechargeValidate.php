@@ -1,14 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\finance;
+namespace app\Modules\Official\Payment\Validation;
 
 use app\common\enum\RefundEnum;
-use app\common\model\finance\RechargeOrder;
-use app\Modules\Official\Member\Model\Member;
-use app\common\model\refund\RefundRecord;
+use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\common\service\finance\FinanceTenantRepository;
-use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
 

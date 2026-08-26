@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace app\common\service\finance;
 
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\model\finance\RechargeOrder;
-use app\common\model\refund\RefundLog;
-use app\common\model\refund\RefundRecord;
+use app\Modules\Official\Payment\Model\RechargeOrder;
+use app\Modules\Official\Payment\Model\RefundLog;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

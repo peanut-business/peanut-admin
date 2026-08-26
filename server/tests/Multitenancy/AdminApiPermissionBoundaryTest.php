@@ -84,7 +84,7 @@ expectAdminApiBoundary(str_contains($platformPermissionSource, "str_starts_with(
 expectAdminApiBoundary(!str_contains($platformLoginSource, 'AdminTokenService'), 'Platform login must not use Tenant Admin sessions');
 
 $schema = strtolower((string)file_get_contents(dirname(__DIR__, 2) . '/database/init.sql'));
-foreach (['admin/status', 'finance/recharge/refund', 'finance.refund/stat', 'log/export/status'] as $exactPermission) {
+foreach (['admin/status', 'official.payment.recharge.refund', 'official.payment.refund.stat', 'log/export/status'] as $exactPermission) {
     expectAdminApiBoundary(str_contains($schema, "'{$exactPermission}'"), 'exact status/compatibility permission is missing: ' . $exactPermission);
 }
 expectAdminApiBoundary(str_contains($schema, 'insert into `pa_permission`'), 'fresh schema must seed the Core permission catalog');

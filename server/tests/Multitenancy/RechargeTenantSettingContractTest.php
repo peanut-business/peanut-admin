@@ -13,7 +13,7 @@ $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 $settingService = (string)file_get_contents($serverRoot . '/app/common/service/tenant/TenantSettingService.php');
 $settingProvider = (string)file_get_contents($serverRoot . '/app/common/service/tenant/ThinkPhpTenantSettingsProvider.php');
 $rechargeService = (string)file_get_contents($serverRoot . '/app/common/service/finance/RechargeTenantSettingService.php');
-$adminLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/setting/RechargeSettingLogic.php');
+$adminLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Service/RechargeSettingLogic.php');
 $apiLogic = (string)file_get_contents($serverRoot . '/app/api/logic/RechargeLogic.php');
 
 foreach (['`tenant_id`', '`namespace`', '`config_json`', 'uk_tenant_setting_namespace',
@@ -35,7 +35,7 @@ foreach ([$adminLogic, $apiLogic] as $source) {
     );
 }
 foreach (['TenantSettingsRuntimeFactory::service()->get', 'TenantSettingsRuntimeFactory::service()->replace',
-    'ExternalChannelBindingService::config', 'defaultScene', 'enabledScenes'] as $marker) {
+    'PaymentChannelGrantService::channelConfigured', 'defaultScene', 'enabledScenes'] as $marker) {
     expectRechargeTenantSetting(str_contains($rechargeService, $marker), 'Tenant recharge invariant missing: ' . $marker);
 }
 

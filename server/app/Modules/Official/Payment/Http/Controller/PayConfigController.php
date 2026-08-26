@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\setting;
+namespace app\Modules\Official\Payment\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\setting\PayConfigLogic;
-use app\adminapi\validate\setting\PayConfigValidate;
+use app\Modules\Official\Payment\Service\PayConfigLogic;
+use app\Modules\Official\Payment\Validation\PayConfigValidate;
 use app\common\service\member\MemberTenantContext;
 
 class PayConfigController extends BaseAdminController

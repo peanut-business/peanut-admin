@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\finance;
 
-use app\common\model\finance\PaymentScene;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\payment\PaymentChannelGrantService;
 use app\common\service\tenant\TenantSettingsRuntimeFactory;

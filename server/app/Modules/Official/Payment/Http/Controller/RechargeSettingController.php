@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\setting;
+namespace app\Modules\Official\Payment\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\setting\RechargeSettingLogic;
-use app\adminapi\validate\setting\RechargeSettingValidate;
+use app\Modules\Official\Payment\Service\RechargeSettingLogic;
+use app\Modules\Official\Payment\Validation\RechargeSettingValidate;
 use app\common\service\finance\FinanceTenantContext;
 
 class RechargeSettingController extends BaseAdminController

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\setting;
+namespace app\Modules\Official\Payment\Service;
 
 use app\common\enum\UserTerminalEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\finance\PaymentScene;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use app\common\service\finance\RechargeTenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\setting;
+namespace app\Modules\Official\Payment\Validation;
 
 use app\common\enum\UserTerminalEnum;
-use app\common\model\finance\PaymentScene;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use think\Validate;
 
 class RechargeSettingValidate extends Validate

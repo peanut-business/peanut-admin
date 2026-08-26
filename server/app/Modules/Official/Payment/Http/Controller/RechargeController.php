@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\finance;
+namespace app\Modules\Official\Payment\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\finance\RechargeLogic;
-use app\adminapi\validate\finance\RechargeValidate;
+use app\Modules\Official\Payment\Service\RechargeLogic;
+use app\Modules\Official\Payment\Validation\RechargeValidate;
 use app\common\service\JsonService;
 use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;

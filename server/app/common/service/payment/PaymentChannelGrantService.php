@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\payment;
 
-use app\common\model\finance\PaymentScene;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use app\common\service\external\ExternalTenantContext;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\finance\FinanceTenantContext;

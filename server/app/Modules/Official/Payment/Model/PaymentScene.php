@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\model\finance;
+namespace app\Modules\Official\Payment\Model;
 
 use app\common\enum\UserTerminalEnum;
 use app\common\model\BaseModel;

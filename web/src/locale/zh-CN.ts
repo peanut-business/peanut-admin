@@ -20,10 +20,10 @@ import localeNoticeChannel from '@/modules/official-notification/views/channel/l
 import localeNoticeTemplate from '@/modules/official-notification/views/template/locale/zh-CN';
 import localeNoticeLog from '@/modules/official-notification/views/log/locale/zh-CN';
 import localeFinanceAccountLog from '@/modules/official-member/views/account-log/locale/zh-CN';
-import localeFinanceRecharge from '@/views/finance/recharge/locale/zh-CN';
-import localeFinanceRefund from '@/views/finance/refund/locale/zh-CN';
+import localeFinanceRecharge from '@/modules/official-payment/views/recharge/locale/zh-CN';
+import localeFinanceRefund from '@/modules/official-payment/views/refund/locale/zh-CN';
 import localeAppHotSearch from '@/views/app-setting/hot-search/locale/zh-CN';
-import localeAppPay from '@/views/app-setting/pay/locale/zh-CN';
+import localeAppPay from '@/modules/official-payment/views/settings/locale/zh-CN';
 import localeAppChannel from '@/views/app-setting/channel/locale/zh-CN';
 import localeAppTransaction from '@/views/app-setting/transaction/locale/zh-CN';
 import localeArticleCate from '@/modules/official-article/views/cate/locale/zh-CN';
