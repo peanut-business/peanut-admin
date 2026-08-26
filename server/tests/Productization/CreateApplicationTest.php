@@ -259,8 +259,21 @@ try {
     );
     $generatedProductionCompose = (string)file_get_contents($first . '/deploy/docker-compose.prod.yml');
     createApplicationExpect(
-        preg_match('/nginx:\\R(?:.*\\R)*?    environment:\\R      DEPLOYMENT_MODE: \\${DEPLOYMENT_MODE:\?set DEPLOYMENT_MODE to standalone or multi-tenant}/', $generatedProductionCompose) === 1,
+        preg_match('/nginx:\\R(?:.*\\R)*?    environment:\\R      DEPLOYMENT_MODE: \\${DEPLOYMENT_MODE:\?set DEPLOYMENT_MODE in server\/\.env to standalone or multi-tenant}/', $generatedProductionCompose) === 1,
         'production Nginx service must receive the explicit deployment mode'
+    );
+    createApplicationExpect(
+        is_file($first . '/server/.env.example')
+            && is_file($first . '/server/bootstrap/environment.php')
+            && !str_contains((string)file_get_contents($first . '/.env.example'), 'DB_HOST=')
+            && str_contains((string)file_get_contents($first . '/server/.env.example'), 'DB_HOST='),
+        'generated application must keep orchestration and backend environment samples separate'
+    );
+    createApplicationExpect(
+        str_contains($generatedProductionCompose, 'env_file:')
+            && str_contains($generatedProductionCompose, '/var/www/peanut-admin/server/.env.source:ro')
+            && str_contains($generatedProductionCompose, '["/usr/local/bin/peanut-php-entrypoint", "cron"]'),
+        'production PHP and cron services must consume the single backend environment source safely'
     );
     createApplicationExpect(
         str_contains($generatedProductionDockerfile, 'COPY resources/project-resources.json resources/project-resources.json'),

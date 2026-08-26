@@ -8,6 +8,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectDictTenant(bool $condition, string $message): void
 {
@@ -137,12 +138,11 @@ $host = dictTenantEnv('DB_HOST');
 $port = (int)dictTenantEnv('DB_PORT');
 $user = dictTenantEnv('DB_USER');
 $password = dictTenantEnv('DB_PASS');
-$adminPassword = dictTenantEnv('MYSQL_ROOT_PASSWORD');
 $database = dictTenantEnv('DB_NAME');
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
-    $adminPassword,
+    $user,
+    $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
 $database = dictTenantDatabase($admin, $database);
@@ -158,12 +158,7 @@ try {
         expectDictTenant($exception->getCode() === '23000', 'dictionary uniqueness failed with an unexpected shape');
     }
 
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=' . $user);
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App();
     $app->initialize();
 

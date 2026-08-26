@@ -1,26 +1,5 @@
 name: peanut-admin-production
 
-x-app-environment: &app-environment
-  APP_ENV: production
-  APP_DEBUG: "false"
-  PEANUT_DEPLOYMENT_TARGET: ${PEANUT_DEPLOYMENT_TARGET:?set local-production-preview, production, or a registered production candidate target}
-  PEANUT_DATABASE_RESOURCE_ID: ${PEANUT_DATABASE_RESOURCE_ID:?set the registered production database resource id}
-  DB_HOST: ${DB_HOST:?set DB_HOST in .env}
-  DB_PORT: ${DB_PORT:-3306}
-  DB_NAME: ${DB_NAME:-peanut_admin}
-  DB_USER: ${DB_USER:-peanut_admin}
-  DB_PASS: ${DB_PASS:?set DB_PASS in .env}
-  DB_PREFIX: pa_
-  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
-  JWT_EXPIRE: ${JWT_EXPIRE:-7200}
-  DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE to standalone or multi-tenant}
-  PUBLIC_DEFAULT_TENANT_FALLBACK: ${PUBLIC_DEFAULT_TENANT_FALLBACK:-true}
-  TENANT_IDENTIFIER_HMAC_KEY: ${TENANT_IDENTIFIER_HMAC_KEY:?set TENANT_IDENTIFIER_HMAC_KEY in .env}
-  PLATFORM_IDENTIFIER_HMAC_KEY: ${PLATFORM_IDENTIFIER_HMAC_KEY:?set PLATFORM_IDENTIFIER_HMAC_KEY in .env}
-  PLATFORM_HOSTS: ${PLATFORM_HOSTS:-}
-  TENANT_ADMIN_HOSTS: ${TENANT_ADMIN_HOSTS:-}
-  OWNER_INVITATION_DELIVERY_MODE: ${OWNER_INVITATION_DELIVERY_MODE:-auto}
-
 x-logging: &default-logging
   driver: json-file
   options:
@@ -51,24 +30,16 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     command: ["/usr/local/bin/peanut-php-entrypoint"]
+    env_file:
+      - ${PEANUT_SERVER_ENV_FILE:-../server/.env}
+    environment:
+      PEANUT_SERVER_ENV_FILE: /var/www/peanut-admin/server/.env.source
     depends_on:
       mysql:
         condition: service_healthy
         required: false
-    environment:
-      <<: *app-environment
-      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
-      ADMIN_INITIAL_EMAIL: ${ADMIN_INITIAL_EMAIL:-}
-      PLATFORM_INITIAL_EMAIL: ${PLATFORM_INITIAL_EMAIL:-}
-      PLATFORM_INITIAL_PASSWORD: ${PLATFORM_INITIAL_PASSWORD:-}
-      PEANUT_DEMO_MODE: ${PEANUT_DEMO_MODE:-disabled}
-      PEANUT_DEMO_TENANT_A_EMAIL: ${PEANUT_DEMO_TENANT_A_EMAIL:-}
-      PEANUT_DEMO_TENANT_B_EMAIL: ${PEANUT_DEMO_TENANT_B_EMAIL:-}
-      PEANUT_DEMO_SHARED_PASSWORD: ${PEANUT_DEMO_SHARED_PASSWORD:-}
-      PEANUT_DEMO_TENANT_A_HOST: ${PEANUT_DEMO_TENANT_A_HOST:-}
-      PEANUT_DEMO_TENANT_B_HOST: ${PEANUT_DEMO_TENANT_B_HOST:-}
-      PEANUT_DEMO_DOCS_URL: ${PEANUT_DEMO_DOCS_URL:-}
     volumes:
+      - ${PEANUT_SERVER_ENV_FILE:-../server/.env}:/var/www/peanut-admin/server/.env.source:ro
       - php-runtime:/var/www/peanut-admin/server/runtime
       - php-storage:/var/www/peanut-admin/server/public/storage
       - php-private-storage:/var/www/peanut-admin/server/private/storage
@@ -90,7 +61,7 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     environment:
-      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE to standalone or multi-tenant}
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE in server/.env to standalone or multi-tenant}
     ports:
       - "127.0.0.1:${HTTP_PORT:-18092}:80"
     volumes:
@@ -112,10 +83,10 @@ services:
     restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-peanut_admin}
-      MYSQL_USER: ${DB_USER:-peanut_admin}
-      MYSQL_PASSWORD: ${DB_PASS:?set DB_PASS in .env}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
+      MYSQL_DATABASE: ${DB_NAME:?set DB_NAME in server/.env}
+      MYSQL_USER: ${DB_USER:?set DB_USER in server/.env}
+      MYSQL_PASSWORD: ${DB_PASS:?set DB_PASS in server/.env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-}
       TZ: Asia/Shanghai
     volumes:
       - mysql-data:/var/lib/mysql
@@ -133,9 +104,13 @@ services:
     pull_policy: never
     restart: unless-stopped
     working_dir: /var/www/peanut-admin/server
-    command: ["sh", "-c", "while :; do php think crontab; sleep 60; done"]
-    environment: *app-environment
+    command: ["/usr/local/bin/peanut-php-entrypoint", "cron"]
+    env_file:
+      - ${PEANUT_SERVER_ENV_FILE:-../server/.env}
+    environment:
+      PEANUT_SERVER_ENV_FILE: /var/www/peanut-admin/server/.env.source
     volumes:
+      - ${PEANUT_SERVER_ENV_FILE:-../server/.env}:/var/www/peanut-admin/server/.env.source:ro
       - php-runtime:/var/www/peanut-admin/server/runtime
       - php-storage:/var/www/peanut-admin/server/public/storage
       - php-private-storage:/var/www/peanut-admin/server/private/storage

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
 use app\platform\service\plugin\ModuleUninstallPlanCodec;
 use app\platform\service\plugin\PluginArtifactWriter;
 use app\platform\service\plugin\PluginLifecycleException;

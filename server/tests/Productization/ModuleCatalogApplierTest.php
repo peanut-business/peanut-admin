@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
 use app\platform\service\plugin\ModuleCatalogApplier;
 use app\platform\service\plugin\PluginModuleRegistryFactory;
 

@@ -8,6 +8,7 @@ use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use app\common\service\tenant\ThinkPhpTenantCacheStore;
 use think\facade\Cache;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectThinkPhpTenantCache(bool $condition, string $message): void

@@ -66,8 +66,9 @@ Module 的不可变交付制品，不等于 Tenant 开通或成员授权。
 
 ## 资源与运行
 
-根 `.env.example` 是部署时唯一人工维护的环境样例；生产复制为根 `.env`，Compose 和本地
-启动器会自动派生 ThinkPHP 内部使用的 `PHP_*` 变量，不维护第二份 `server/.env`。
+根 `.env.example` 只描述 Docker 端口、镜像和构建代理；后台唯一配置样例是
+`server/.env.example`，复制为权限 `0600` 的 `server/.env` 后维护 `APP_*`、`DB_*`、JWT、
+部署模式和 Tenant/Platform 配置。PHP、CLI、安装器和测试不接受 `PHP_*` 别名绕过。
 
 Peanut Admin 源仓维护者必须先读 `resources/project-resources.json`，显式选择登记的资源
 ID、环境和地址，再连接数据库、启动服务或执行迁移。派生应用生成后必须把该文件替换为
@@ -76,12 +77,7 @@ ID、环境和地址，再连接数据库、启动服务或执行迁移。派生
 空库安装的最低输入：
 
 ```bash
-export DEPLOYMENT_MODE=standalone
-export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 12 位；演示模式固定为 peanut1234>'
-export TENANT_IDENTIFIER_HMAC_KEY='<至少 32 字节稳定随机值>'
-export PLATFORM_IDENTIFIER_HMAC_KEY='<另一项至少 32 字节稳定随机值>'
-
+# 先在 server/.env 中填写 DEPLOYMENT_MODE、ADMIN_INITIAL_* 和两项 HMAC key。
 php server/database/install.php
 php server/database/install.php --migrate --current
 ```

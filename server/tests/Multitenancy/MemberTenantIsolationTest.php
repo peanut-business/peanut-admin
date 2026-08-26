@@ -15,6 +15,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectMemberTenant(bool $condition, string $message): void
 {
@@ -136,8 +137,7 @@ INSERT INTO pa_member_balance_log
 VALUES
   (41, 101, 'FLOW-SAME', 11, 1, 100, 1, 10.00, 10.00, 0, 'SOURCE-SAME', 'alpha', 0, 1);
 SQL);
-    putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=' . $user); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App(); $app->initialize();
     set_error_handler(static function (int $severity, string $message, string $file, int $line): never {
         throw new ErrorException($message, 0, $severity, $file, $line);

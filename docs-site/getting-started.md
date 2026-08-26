@@ -68,12 +68,14 @@ preflight/apply/verify/recover 合同；执行器
 git clone <repo-url>
 cd peanut-admin
 cp .env.example .env
-# 编辑根 .env，填写 DB_*、随机 JWT_SECRET、ADMIN_INITIAL_EMAIL 和 ADMIN_INITIAL_PASSWORD
+cp server/.env.example server/.env
+chmod 600 .env server/.env
+# 根 .env 只填写端口、镜像和构建代理；后台配置全部填写在 server/.env
 cd server && composer install && cd ..
 ```
 
-根 `.env` 是生产 Compose 的唯一人工配置样例；`PHP_*` 只由启动器自动派生给 ThinkPHP，
-不要手工维护第二份 `server/.env`。空库安装必须使用应用 owner 登记并确认为空的目标；
+`server/.env` 是 PHP、CLI、安装器和 Compose 后台进程的唯一配置源；根 `.env` 只负责 Docker
+编排。禁止用 `PHP_*` 进程变量绕过后台文件。空库安装必须使用应用 owner 登记并确认为空的目标；
 Peanut Admin 维护仓的 `peanut-admin-mysql84-development` 是持久开发数据，不能假定为空。
 需要重建本地多租户体验时，使用隔离的
 `peanut-admin-mysql84-local-multi-tenant-demo`，并先取得对应 lease。资源选择器只写出非秘密
@@ -94,14 +96,13 @@ Peanut Admin 维护仓的 `peanut-admin-mysql84-development` 是持久开发数�
 | `ADMIN_INITIAL_EMAIL` | 是 | 无 | 首个 Tenant owner 的登录邮箱 |
 | `ADMIN_INITIAL_PASSWORD` | 是 | 无 | 普通应用至少 12 位；演示模式固定为 peanut1234 |
 | `DEPLOYMENT_MODE` | 是 | 无 | 只能是 `standalone` 或 `multi-tenant` |
-| `DB_*` | 是 | 无 | 来自已登记的空数据库资源 |
+| `server/.env` 中的 `DB_*` | 是 | 无 | 来自已登记的空数据库资源 |
 | `PLATFORM_INITIAL_*` | 仅多租户 | 无 | 独立 PlatformOperator；不能与 owner 邮箱相同 |
 
 安装基础结构、增量迁移和种子数据：
 
 ```bash
-export ADMIN_INITIAL_PASSWORD='<至少 12 位>'
-export ADMIN_INITIAL_EMAIL='owner@example.com'
+# 先在 server/.env 中填写 ADMIN_INITIAL_EMAIL / ADMIN_INITIAL_PASSWORD
 php server/database/install.php
 ```
 

@@ -7,6 +7,7 @@ use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectRbacTenant(bool $condition, string $message): void
 {
@@ -66,11 +67,11 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = trim((string)getenv('DB_HOST'));
-$port = (int)(getenv('DB_PORT') ?: 0);
-$user = trim((string)(getenv('DB_USER') ?: getenv('MYSQL_USER')));
-$password = (string)(getenv('DB_PASS') ?: getenv('MYSQL_PASSWORD'));
-$database = trim((string)getenv('DB_NAME'));
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
+$database = IsolatedBackendEnvironment::required('DB_NAME');
 if ($host === '' || $port < 1 || $user === '' || $password === '' || $database === '') {
     throw new RuntimeException('registered database environment is required');
 }
@@ -159,12 +160,7 @@ SQL);
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
     )->execute([101, 11, $permissionId, $now]);
 
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=' . $user);
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App($serverRoot);
     $app->initialize();
 

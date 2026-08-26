@@ -17,6 +17,7 @@ use app\common\model\dept\Dept;
 use app\common\model\dept\Jobs;
 use think\facade\Db;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectCrud(bool $condition, string $message): void

@@ -20,6 +20,10 @@ Peanut Admin 日常开发和本机生产模式预览只使用项目登记的远�
   `192.168.192.2:20183`
 - fallback：`none`
 
+工作站上的 PHP、CLI 与测试只从权限 `0600` 的 `server/.env` 读取应用数据库账号。
+`scripts/project-development-database.sh sync-credentials` 只同步 `DB_NAME`、`DB_USER`、
+`DB_PASS`；远端 MySQL 的 `DB_ROOT_PASS` 始终留在 `mac-14` 的容器/部署配置中，不同步到工作站。
+
 本机只运行 PHP、Nginx、管理端、PC、UniApp H5 和文档服务，不运行 Peanut Admin
 MySQL。历史 `192.168.192.2:3306/peanut_admin` 没有迁移账本，不是当前开发资源，禁止
 应用连接。该资源的权威登记位于本仓库 `resources/project-resources.json`。
@@ -98,5 +102,6 @@ Docker PHP 只用于此生产模式预览、生产构建和明确要求容器等
 `dev-up` 的后端 Runtime。
 
 `201xx` 是项目登记的本地监听默认值，不是不可覆盖常量。`.local/stack.env`（或
-`PEANUT_LOCAL_ENV_FILE`）是单次运行的端口事实源；已有覆盖不会被 `ensure_env` 重写。
+`PEANUT_LOCAL_ENV_FILE`）是单次运行的端口事实源；后台配置只在 `server/.env`（或显式选择的
+同目录 sibling 文件）中，已有端口覆盖不会被 `ensure_env` 重写。
 生产服务器的实际默认端口仍是 `18092`，本地 production preview 的登记默认才是 `20190`。

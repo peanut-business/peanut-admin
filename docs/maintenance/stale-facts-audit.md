@@ -63,7 +63,7 @@
 | 一部署、一实例、多 Tenant/客户端/Module | 只部分回答 | **文档结构已覆盖** | 当前部署合同支持 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
 | Platform 是否独立、是否存在“当前租户” | 尚未回答 | **已完整回答** | 独立 `/platform/` 前端、会话/RBAC/审计；只显式选择治理目标 Tenant | `docs-site/platform.md` |
 | 域名解析与租户切换是否冲突 | 尚未回答 | **已完整回答** | Host 绑定是持续边界；绑定入口禁切换，未绑定公共入口按 TenantMember 切换 | `docs-site/architecture/identity-and-tenancy.md`、`docs-site/platform.md` |
-| `.env` 与 `PHP_*` 配置关系 | 尚未回答 | **已完整回答** | 人工只维护根 `.env` 普通键；启动器/Compose 派生 ThinkPHP 内部 alias | `docs-site/getting-started.md`、`docs-site/guide/development.md` |
+| `.env` 与 `PHP_*` 配置关系 | 尚未回答 | **已完整回答** | 根 `.env` 仅编排；`server/.env` 是后台唯一配置源；`PHP_*` alias 已禁止 | `docs-site/getting-started.md`、`docs-site/guide/development.md` |
 | 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 与 create-app 2.0 release 已验证重封 | `docs-site/deployment.md` |
 | 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 开发候选实现与推荐层级已分栏；外部渠道生产验证另列 | `docs-site/capabilities.md` |
 | 文档与 Runtime/Schema 清理关系 | 只部分回答 | **已明确** | 本轮已由独立提交实施后再同步文档 | 本审计与 `docs/architecture/clean-native-multitenancy-baseline.md` |

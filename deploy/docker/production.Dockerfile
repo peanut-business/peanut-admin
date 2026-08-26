@@ -83,8 +83,20 @@ COPY deploy/docker/php-entrypoint.sh /usr/local/bin/peanut-php-entrypoint
 
 RUN mkdir -p server/runtime server/public/storage server/private/storage \
     && cd server \
-    && php think service:discover \
-    && php think vendor:publish \
+    && printf '%s\n' \
+        'APP_ENV=production' \
+        'APP_DEBUG=false' \
+        'DEPLOYMENT_MODE=standalone' \
+        'DB_HOST=build-only.invalid' \
+        'DB_PORT=3306' \
+        'DB_NAME=build_only' \
+        'DB_USER=build_only' \
+        'DB_PASS=build-only' \
+        'DB_PREFIX=pa_' > .env.image-build \
+    && chmod 600 .env.image-build \
+    && PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.image-build php think service:discover \
+    && PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.image-build php think vendor:publish \
+    && rm -f .env.image-build \
     && cd .. \
     && chmod +x server/think server/database/seed-demo-data.php /usr/local/bin/peanut-php-entrypoint \
     && chmod +x server/database/seed-multi-tenant-demo.php \

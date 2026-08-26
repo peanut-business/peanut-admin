@@ -21,14 +21,16 @@ JSON 报告写入标准输出，简洁摘要写入标准错误；任一检查失
 - 图片 10 MiB、文件 50 MiB、视频 200 MiB 业务上限与传输层上限的大小关系；
 - development 与 production-preview 的 `/storage/` 显式路由；
 - 日常开发使用登记的宿主 PHP/Composer，容器通过 `host.docker.internal:${PHP_PORT}` 绕过代理
-  访问 API；生产预览保留 Docker PHP。两套模式使用相同数据库资源；本地监听从所选 env
-  文件读取，`201xx` 仅为登记默认值。
+访问 API；生产预览保留 Docker PHP。两套模式使用相同数据库资源；本地监听从根编排 env
+读取，后台配置从 `server/.env` 读取，`201xx` 仅为登记默认值。
 
 若本地 env 文件不在默认的 `.local/stack.env`，可显式指定：
 
 ```bash
 ./scripts/local-environment-probe --env-file /absolute/path/to/stack.env
 ```
+
+后台配置文件不在默认位置时，同时传入 `--backend-env /absolute/path/to/server/.env.<run-id>`。
 
 只验证仓库配置、不访问端口、容器或数据库时使用：
 

@@ -5,6 +5,7 @@ use app\adminapi\logic\system\SystemLogic;
 use app\adminapi\service\OperationLogService;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectOpsHost(bool $condition, string $message): void
