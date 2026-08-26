@@ -6,8 +6,8 @@
 php think module:create <module.key>
 ```
 
-该命令的目标产物是与 `fixture.delivery-record` 对齐的前后端骨架。当前仓库尚未注册
-`module:create`；在该命令落地前，不要手工维护第二套模板或组件清单。
+该命令会生成与 `fixture.delivery-record` 对齐的前后端骨架，并在写入前校验 module key、
+key 派生路径和前端入口。不要手工维护第二套模板或组件清单。
 
 ## 开发期工作流
 
