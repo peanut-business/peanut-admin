@@ -41,7 +41,7 @@ function platformModuleHttpContext(int $operatorId, int $accountId, string $sess
         $accountId,
         'platform-web',
         new DateTimeImmutable('+1 hour'),
-    ));
+    ), "{$sessionKey}-request");
 }
 
 $serverRoot = dirname(__DIR__, 2);
