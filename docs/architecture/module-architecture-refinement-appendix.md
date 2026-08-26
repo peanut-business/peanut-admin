@@ -363,7 +363,7 @@ identifier，不依赖“上次执行到第几步”的另一张进度表：
 
 **接口平面采用方案 A：现有 Platform 实例通道。** 模块安装是实例/部署动作，不能再挂到
 `/api/admin/*`。现有 Platform 路由已明确声明它不共享 Admin session/RBAC
-（`server/route/app.php:57-68`），其登录中间件建立独立 `PlatformOperatorContext`
+（`server/route/app.php:104,147,150`），其登录中间件建立独立 `PlatformOperatorContext`
 （`server/app/platform/http/middleware/PlatformLoginMiddleware.php:12-36`）；这与 §8 三层解耦直接一致，
 也避免为 InstanceTool 再造第三套身份系统。`/dev-tools/modules` 仍是现有 Admin Web 下的开发工具页面，
 但它调用本节接口时必须携带**独立 Platform bearer token**，不得复用或转换 Tenant Admin token。现有
@@ -371,15 +371,15 @@ Platform client 已使用独立 `peanut-platform-token` 并写入 `Authorization
 （`platform/src/api/platform.ts:139-153`）。目标页面没有有效 Platform session 时，只在
 `/dev-tools/modules` 内显示 Platform 重认证区并调用现有 `POST /api/platform/session/login`，不得创建新
 登录端点、不得把 Tenant Admin token 换成 Platform token，也不得退回 `AdminPermissionService`；现有
-Platform session 路由登记见 `server/route/app.php:57-65`。
+Platform session 路由登记见 `server/route/app.php:104,147,150`。
 
 **租户开通层不搬进该页。** 现有 Platform Web 已有“模块目录”页面并调用现成 API
 （`platform/src/App.vue:19-24`、`platform/src/api/platform.ts:318-339`）；继续复用：
 
 - `GET /api/platform/tenants/modules?tenant_id=<id>&page=<n>&page_size=<n>`，权限
-  `platform.tenant.read`（`server/route/app.php:103-105`）；
+  `platform.tenant.read`（`server/route/app.php:104`）；
 - `POST /api/platform/tenants/modules/enable` 与 `/disable`，权限
-  `platform.tenant.module.manage`（`server/route/app.php:140-145`）。
+  `platform.tenant.module.manage`（`server/route/app.php:147,150`）。
 
 这三条只读/写 `pa_tenant_module` 及授权 revision，不安装代码、不执行 migration、不改变成员角色授权。
 后端服务在 enable 时先要求 Module 已安装（`server/app/platform/service/module/PlatformTenantModuleService.php:37-56`）。
@@ -442,7 +442,7 @@ identifier；出现任何计划外新引用则保留 marker 并返回恢复冲�
    `40300/MODULE_RUNTIME_MUTATION_DISABLED`，且上传体不得进入 staging。
 
 五个 `platform.module.*` key 的唯一代码登记点是 `CorePermissionCatalog::PLATFORM`（**新增成员契约**；
-现有列表位置为 `server/vendor/peanut-admin/core/kernel/src/Authorization/CorePermissionCatalog.php:37-63`）。
+现有列表位置为 `server/vendor/peanut-admin/core/kernel/src/Authorization/CorePermissionCatalog.php:38-63`）。
 现有 `CorePermissionCatalogSynchronizer` 会把 PLATFORM 成员以 `module_key='platform'` 同步到
 `pa_permission`（`server/vendor/peanut-admin/core/kernel/src/Authorization/CorePermissionCatalogSynchronizer.php:17-24`、
 `:45-59`），并由 `ModuleAuthorizationCatalogSynchronizer` 调用
@@ -524,7 +524,7 @@ disable 也会递增 revision。它们是状态收敛且每次留审计的写调
   与 Module/Plugin 生命周期直接相关的 console 登记是 `module:install` 以及
   `plugin:install/reconcile/make/lock/upgrade/rollback/uninstall`（`server/config/console.php:13-21`），故本文
   没有把目标命令写成现状事实。
-- 租户开通保持：`server/route/app.php:103-105`、`:140-145`，以及
+- 租户开通保持：`server/route/app.php:104,147,150`，以及
   `platform/src/api/platform.ts:318-339`。
 
 ### 【验收点】
