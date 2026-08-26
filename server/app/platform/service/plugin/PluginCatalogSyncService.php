@@ -19,9 +19,9 @@ final readonly class PluginCatalogSyncService
     /** @return array<string,mixed> */
     public function sync(?string $moduleKey = null): array
     {
-        $resolver = new PluginLockResolver($this->serverRoot, (string)($this->moduleConfig['plugin_lock'] ?? '../plugins.lock'));
+        $roots = array_values((new DevelopmentModuleDiscovery(dirname($this->serverRoot)))->moduleRoots());
         $compiled = (new PluginModuleRegistryFactory($this->pdo, $this->serverRoot))
-            ->fromPluginLock($resolver, $this->moduleConfig)
+            ->fromDeploymentConfig(array_replace($this->moduleConfig, ['roots' => $roots]))
             ->compiled();
         $registered = [];
         foreach ($compiled->modules as $manifest) {
