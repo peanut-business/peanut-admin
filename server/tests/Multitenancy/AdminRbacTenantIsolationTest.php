@@ -4,6 +4,7 @@ declare(strict_types=1);
 use app\common\service\authorization\AdminAuthorizationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -66,6 +67,21 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
+$manifestLoader = new ManifestLoader();
+$moduleIdentities = [];
+foreach (['File' => 'official.file', 'Task' => 'official.task', 'ImportExport' => 'official.import-export'] as $directory => $moduleKey) {
+    $manifest = $manifestLoader->load($serverRoot . '/app/Modules/Official/' . $directory);
+    $version = (string)($manifest->data['version'] ?? '');
+    if (preg_match('/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/D', $version) !== 1
+        || preg_match('/^[a-f0-9]{64}$/D', $manifest->digest) !== 1
+    ) {
+        throw new RuntimeException("invalid Module fixture identity: {$moduleKey}");
+    }
+    $moduleIdentities[$moduleKey] = ['version' => $version, 'digest' => $manifest->digest];
+}
+$fileIdentity = $moduleIdentities['official.file'];
+$taskIdentity = $moduleIdentities['official.task'];
+$importExportIdentity = $moduleIdentities['official.import-export'];
 $host = trim((string)getenv('DB_HOST'));
 $port = (int)(getenv('DB_PORT') ?: 0);
 $user = trim((string)(getenv('DB_USER') ?: getenv('MYSQL_USER')));
@@ -126,9 +142,9 @@ VALUES
 INSERT INTO pa_module_installation
   (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
 VALUES
-  ('official.file', '1.0.0', 1, 'bf73f0ebf4f6ae796e045fbc536a24c6e3545e2e5c4ce8c2d058c870a1d396c2', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.task', '1.0.0', 1, 'c0acd57abad366b0b4360a85500f295438abed063b3977be4454ec455faf1fd6', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.import-export', '1.0.0', 1, '42b79e202d3b7eb1df8ca51bd50ee937336fe1d966eb1132996ebff6a81f52d6', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+  ('official.file', '{$fileIdentity['version']}', 1, '{$fileIdentity['digest']}', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.task', '{$taskIdentity['version']}', 1, '{$taskIdentity['digest']}', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.import-export', '{$importExportIdentity['version']}', 1, '{$importExportIdentity['digest']}', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_tenant_module
   (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
 VALUES
