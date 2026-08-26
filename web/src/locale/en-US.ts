@@ -41,6 +41,7 @@ export default {
   'menu.decoration.pc': 'PC Decoration',
   'menu.devTools': 'Developer Tools',
   'menu.devTools.code': 'Code Generator',
+  'menu.devTools.modules': 'Module Governance',
   'navbar.action.locale': 'Switch to English',
   'navbar.userMenu': 'Open user menu',
   'navbar.userSettings': 'User Settings',

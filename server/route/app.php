@@ -42,10 +42,12 @@ use app\platform\controller\PlatformControlPlaneQueryController;
 use app\platform\controller\PlatformStorageController;
 use app\platform\controller\PlatformTenantInvitationController;
 use app\platform\controller\PlatformTenantEntryBindingController;
+use app\platform\controller\PlatformModuleLifecycleController;
 use app\platform\controller\TenantOwnerInvitationPublicController;
 use app\platform\http\middleware\PlatformLoginMiddleware;
 use app\platform\http\middleware\PlatformHostMiddleware;
 use app\platform\http\middleware\PlatformPermissionMiddleware;
+use app\platform\http\middleware\PlatformInstanceToolMiddleware;
 use app\tenant\controller\TenantSessionController;
 use think\facade\Route;
 
@@ -104,6 +106,26 @@ Route::get('api/platform/audit', [PlatformControlPlaneQueryController::class, 'a
 Route::get('api/platform/tenants/modules', [PlatformControlPlaneQueryController::class, 'moduleStates'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/instance-tools/modules', [PlatformModuleLifecycleController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.read')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/install', [PlatformModuleLifecycleController::class, 'install'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.install')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/uninstall', [PlatformModuleLifecycleController::class, 'uninstall'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.uninstall')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/disable', [PlatformModuleLifecycleController::class, 'disable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.disable')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/sync', [PlatformModuleLifecycleController::class, 'sync'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.sync')
+    ->middleware(PlatformInstanceToolMiddleware::class);
 Route::get('api/platform/tenant-entry-bindings', [PlatformTenantEntryBindingController::class, 'lists'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');

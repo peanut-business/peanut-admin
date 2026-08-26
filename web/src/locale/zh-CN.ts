@@ -41,6 +41,7 @@ export default {
   'menu.decoration.pc': 'PC 装修',
   'menu.devTools': '开发工具',
   'menu.devTools.code': '代码生成器',
+  'menu.devTools.modules': '模块治理',
   'navbar.action.locale': '切换为中文',
   'navbar.userMenu': '打开用户菜单',
   'navbar.userSettings': '用户设置',

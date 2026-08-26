@@ -153,6 +153,7 @@ final class PluginLockResolver
         if ($source['type'] !== 'canonical-contents') {
             return;
         }
+        $projectRoot = realpath(dirname($this->serverRoot)) ?: dirname($this->serverRoot);
         $files = [];
         foreach ($moduleRoots as $directory) {
             $iterator = new \RecursiveIteratorIterator(
@@ -160,10 +161,11 @@ final class PluginLockResolver
             );
             foreach ($iterator as $file) {
                 if ($file->isFile() && !$file->isLink()) {
+                    $path = $file->getRealPath() ?: $file->getPathname();
                     $relative = str_replace(
                         '\\',
                         '/',
-                        substr($file->getPathname(), strlen(dirname($this->serverRoot)) + 1)
+                        substr($path, strlen($projectRoot) + 1)
                     );
                     $digest = hash_file('sha256', $file->getPathname());
                     if (!is_string($digest) || isset($files[$relative])) {

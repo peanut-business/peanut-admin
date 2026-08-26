@@ -181,7 +181,6 @@ $catalogSnapshot = pluginLifecycleCatalogSnapshot($pdo);
 $config = [
     'plugin_lock' => '../plugins.lock',
     'kernel_version' => '1.0.0',
-    'frontend_components' => ['fixture.delivery-record.list'],
     'registered_client_keys' => ['admin-web', 'platform-web'],
 ];
 $artifact = null;

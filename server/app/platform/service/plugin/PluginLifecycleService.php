@@ -36,7 +36,16 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         $this->assertPreflightOwnership($plugin, $manifests, false);
         $current = $this->pluginInstallation($pluginKey, true);
         if (is_array($current) && $this->sameIdentity($plugin, $current) && $current['status'] === 'active') {
-            return $plugin->publicIdentity() + ['operation' => 'unchanged'];
+            if ($this->allPluginModulesActive($pluginKey)) {
+                return $plugin->publicIdentity() + ['operation' => 'unchanged'];
+            }
+            $result = $this->activate($plugin, $manifests, false);
+            $result['operation'] = 'reactivated';
+            return $result;
+        }
+        if (is_array($current) && $current['status'] === 'maintenance'
+            && in_array($current['last_error_code'] ?? null, ['MODULE_PURGE_IN_PROGRESS', 'MODULE_RETIRE_IN_PROGRESS'], true)) {
+            throw new PluginLifecycleException((string)$current['last_error_code'], 'Module uninstall recovery must finish before install.');
         }
         if (is_array($current) && !in_array($current['status'], ['failed', 'uninstalled'], true)) {
             throw new PluginLifecycleException('PLUGIN_ALREADY_INSTALLED', 'Use plugin:upgrade for an installed Plugin.');
@@ -598,6 +607,20 @@ SQL);
         $statement = $this->pdo->prepare('SELECT * FROM pa_plugin_module WHERE plugin_key=:plugin_key ORDER BY module_key');
         $statement->execute(['plugin_key' => $pluginKey]);
         return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function allPluginModulesActive(string $pluginKey): bool
+    {
+        $statement = $this->pdo->prepare(<<<'SQL'
+SELECT COUNT(*) total,
+       SUM(CASE WHEN mi.status='active' THEN 1 ELSE 0 END) active_count
+FROM pa_plugin_module pm
+LEFT JOIN pa_module_installation mi ON mi.module_key=pm.module_key
+WHERE pm.plugin_key=:plugin_key
+SQL);
+        $statement->execute(['plugin_key' => $pluginKey]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) && (int)$row['total'] > 0 && (int)$row['total'] === (int)$row['active_count'];
     }
 
     /** @param array<string,mixed> $current */

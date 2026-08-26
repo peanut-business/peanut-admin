@@ -12,8 +12,19 @@ interface ImportMetaEnv {
   readonly VITE_DEPLOYMENT_MODE?: 'standalone' | 'multi-tenant';
 }
 
+// eslint-disable-next-line no-underscore-dangle
+declare const __PEANUT_INSTANCE_TOOLS_COMPILED__: boolean;
+
 declare module 'virtual:peanut-plugin-contributions' {
   import type { PluginFrontendContribution } from '@peanut-admin/admin/core';
+
   const contributions: PluginFrontendContribution[];
   export default contributions;
+}
+
+declare module 'virtual:peanut-instance-tool-routes' {
+  import type { RouteRecordRaw } from 'vue-router';
+
+  const routes: RouteRecordRaw[];
+  export default routes;
 }

@@ -1,6 +1,6 @@
-import { mergeConfig } from 'vite';
+import { defineConfig, mergeConfig } from 'vite';
 import eslint from 'vite-plugin-eslint';
-import baseConfig from './vite.config.base';
+import { createBaseConfig } from './vite.config.base';
 
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1';
 const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '')
@@ -11,40 +11,42 @@ const tenantEntryHost = process.env.VITE_TENANT_ENTRY_HOST || '';
 
 const proxyHeaders = tenantEntryHost ? { host: tenantEntryHost } : undefined;
 
-export default mergeConfig(
-  {
-    mode: 'development',
-    server: {
-      open: process.env.VITE_OPEN_BROWSER !== 'false',
-      allowedHosts,
-      fs: {
-        strict: true,
+export default defineConfig((configEnv) =>
+  mergeConfig(
+    {
+      mode: 'development',
+      server: {
+        open: process.env.VITE_OPEN_BROWSER !== 'false',
+        allowedHosts,
+        fs: {
+          strict: true,
+        },
+        proxy: {
+          '/api': {
+            target: apiProxyTarget,
+            changeOrigin: false,
+            headers: proxyHeaders,
+          },
+          '/brand': {
+            target: apiProxyTarget,
+            changeOrigin: false,
+            headers: proxyHeaders,
+          },
+          '/storage': {
+            target: apiProxyTarget,
+            changeOrigin: false,
+            headers: proxyHeaders,
+          },
+        },
       },
-      proxy: {
-        '/api': {
-          target: apiProxyTarget,
-          changeOrigin: false,
-          headers: proxyHeaders,
-        },
-        '/brand': {
-          target: apiProxyTarget,
-          changeOrigin: false,
-          headers: proxyHeaders,
-        },
-        '/storage': {
-          target: apiProxyTarget,
-          changeOrigin: false,
-          headers: proxyHeaders,
-        },
-      },
+      plugins: [
+        eslint({
+          cache: false,
+          include: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.vue'],
+          exclude: ['node_modules'],
+        }),
+      ],
     },
-    plugins: [
-      eslint({
-        cache: false,
-        include: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.vue'],
-        exclude: ['node_modules'],
-      }),
-    ],
-  },
-  baseConfig
+    createBaseConfig(configEnv)
+  )
 );
