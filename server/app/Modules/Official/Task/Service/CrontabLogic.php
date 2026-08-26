@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\crontab;
+namespace app\Modules\Official\Task\Service;
 
 use app\common\enum\CrontabEnum;
 use app\common\logic\BaseLogic;

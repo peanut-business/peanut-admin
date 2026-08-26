@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\crontab;
+namespace app\Modules\Official\Task\Validation;
 
 use Cron\CronExpression;
 use think\Validate;
