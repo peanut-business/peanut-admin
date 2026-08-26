@@ -199,18 +199,31 @@ jobs:
         working-directory: web
         shell: bash
         run: |
-          test_output="$(mktemp -d)"
-          ./node_modules/.bin/tsc --target ES2020 --module commonjs --moduleResolution node --strict --skipLibCheck \
-            --outDir "${test_output}" \
-            src/core/permission-policy.ts \
-            src/core/plugin-contribution-policy.ts \
-            src/views/system/dept/parent-options.ts \
-            tests/Productization/permission-policy.test.ts \
-            tests/Productization/plugin-contribution.test.ts \
-            tests/Productization/department-parent-options.test.ts
-          node "${test_output}/tests/Productization/permission-policy.test.js"
-          node "${test_output}/tests/Productization/plugin-contribution.test.js"
-          node "${test_output}/tests/Productization/department-parent-options.test.js"
+          node --input-type=module <<'NODE'
+          import path from 'node:path'
+          import { createServer } from 'vite'
+
+          const server = await createServer({
+            root: process.cwd(),
+            configFile: false,
+            logLevel: 'error',
+            resolve: { alias: { '@': path.resolve(process.cwd(), 'src') } },
+            optimizeDeps: { disabled: true },
+            server: { middlewareMode: true },
+            appType: 'custom',
+          })
+          try {
+            for (const test of [
+              'permission-policy.test.ts',
+              'plugin-contribution.test.ts',
+              'department-parent-options.test.ts',
+            ]) {
+              await server.ssrLoadModule(`/tests/Productization/${test}`)
+            }
+          } finally {
+            await server.close()
+          }
+          NODE
           node tests/Productization/navbar-avatar-fallback.test.mjs
 
   platform:

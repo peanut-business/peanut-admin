@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import {
   collectPluginContributions,
   routesForTenantModules,
-} from '../../src/core/plugin-contribution-policy';
+} from '@peanut-admin/admin/core';
 import articleContribution from '../../src/modules/official-article/contribution';
 
 function expect(condition: boolean, message: string): void {
