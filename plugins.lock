@@ -39,7 +39,7 @@
                 }
             ],
             "manifest": "plugins/fixture.delivery-record/plugin.json",
-            "manifest_sha256": "f5c9d4e55671eac0942f93b3fba7f9562cd517b5857b16265fbc6cd84f1473c5"
+            "manifest_sha256": "a18b8e2d31b3b1bc96704478453f531ee2faf1965111c93707c0b2856b4659a9"
         },
         {
             "key": "official.article",
@@ -167,7 +167,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "fd1b3fbcc3b5ccea61320f0c65e5d09083f756f9afe1cab7d49877266258e4cd"
+                "sha256": "dd5bcd1acb037e1ce03cc900ad771b57c41dfc32ea2a40cfb807ad22d6b09db1"
             },
             "composer": [
                 {
@@ -199,7 +199,7 @@
                 }
             ],
             "manifest": "plugins/official.member/plugin.json",
-            "manifest_sha256": "51f4ae459923c9d9d6af1b8f42dbf1035f146be6e256a107d3d2e7d2a3f0f703"
+            "manifest_sha256": "8dbc895a537648173dc53c0423e2782b48fa7963d895741eec770db01765853c"
         },
         {
             "key": "official.notification",

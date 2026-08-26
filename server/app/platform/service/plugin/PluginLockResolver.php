@@ -180,10 +180,7 @@ final class PluginLockResolver
         foreach ($files as $relative => $digest) {
             $canonical .= $relative . "\0" . $digest . "\n";
         }
-        $computed = hash('sha256', $canonical);
-        if (!hash_equals($source['sha256'], $computed)) {
-            file_put_contents('/tmp/canonical-debug.txt', $canonical);
-            file_put_contents('/tmp/canonical-computed.txt', "Expected: {$source['sha256']}\nComputed: {$computed}\n");
+        if (!hash_equals($source['sha256'], hash('sha256', $canonical))) {
             throw new PluginLifecycleException('PLUGIN_ARTIFACT_MISMATCH', 'Canonical Plugin contents digest differs.');
         }
     }

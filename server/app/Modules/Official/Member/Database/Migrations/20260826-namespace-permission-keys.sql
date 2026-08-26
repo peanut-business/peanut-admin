@@ -216,5 +216,7 @@ DROP TEMPORARY TABLE `pa_official_member_role_binding_map`;
 DROP TEMPORARY TABLE `pa_official_member_menu_update_map`;
 DROP TEMPORARY TABLE `pa_official_member_permission_target`;
 DROP TEMPORARY TABLE `pa_official_member_permission_key_assertion`;
+DROP TEMPORARY TABLE `pa_official_member_assertion_bad_owner_count`;
+DROP TEMPORARY TABLE `pa_official_member_assertion_mapped_count`;
 DROP TEMPORARY TABLE `pa_official_member_new_key_list`;
 DROP TEMPORARY TABLE `pa_official_member_permission_key_map`;
