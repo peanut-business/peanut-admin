@@ -135,7 +135,7 @@ $temporary = sys_get_temp_dir() . '/pa-module-governance-' . bin2hex(random_byte
 mkdir($temporary, 0700, true);
 try {
     moduleGovernanceProject($sourceRoot, $temporary);
-    moduleGovernanceSeed($pdo, $temporary);
+    $purgeSeed = moduleGovernanceSeed($pdo, $temporary);
     $service = new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []);
     $retirePreview = $service->preview('fixture.delivery-record', false);
     moduleGovernanceExpect($retirePreview['blockers'] === [], 'retire preview unexpectedly blocked');
@@ -164,12 +164,11 @@ SQL);
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_role_permission rp JOIN pa_permission p ON p.id=rp.permission_id WHERE p.module_key='fixture.delivery-record'")->fetchColumn() === 1, 'retire deleted tenant role binding');
     moduleGovernanceExpect((string)$pdo->query("SELECT status FROM pa_permission WHERE module_key='fixture.delivery-record'")->fetchColumn() === 'retired', 'retire left permission active');
 
-    moduleGovernanceProject($sourceRoot, $temporary);
-    $purgeSeed = moduleGovernanceSeed($pdo, $temporary);
     $previewA = (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []))->preview('fixture.delivery-record', true);
     $previewB = (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []))->preview('fixture.delivery-record', true);
     moduleGovernanceExpect($previewA['plan_digest'] === $previewB['plan_digest'], 'purge preview digest is not deterministic');
     moduleGovernanceExpect($previewA['blockers'] === [], 'purge preview unexpectedly blocked');
+    moduleGovernanceExpect(count($previewA['affected_modules']) === 1, 'purge after retire lost the quarantined Module scope');
     moduleGovernanceExpect(count(array_filter($previewA['removed'], static fn(array $entry): bool => in_array($entry['table'], ['pa_role_permission', 'pa_platform_role_permission'], true))) === 2, 'purge preview omitted explicit role bindings');
     try {
         (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', [], static function (string $point): void {

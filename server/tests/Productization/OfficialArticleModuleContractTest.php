@@ -38,6 +38,25 @@ officialArticleExpect(
     'official Article setting definition catalog must be explicitly empty'
 );
 
+$baseline = (string)file_get_contents($serverRoot . '/database/init.sql');
+$ownershipMigration = (string)file_get_contents(
+    $moduleRoot . '/Database/Migrations/20260825-adopt-permission-ownership.sql'
+);
+$namespaceMigration = (string)file_get_contents(
+    $moduleRoot . '/Database/Migrations/20260826-namespace-permission-keys.sql'
+);
+officialArticleExpect(
+    str_contains($baseline, "'article.articlecate/all'")
+        && str_contains($ownershipMigration, "'article.articlecate/all'")
+        && str_contains($namespaceMigration, "('article.articlecate/all',"),
+    'official Article migration key does not exactly match the fresh baseline'
+);
+officialArticleExpect(
+    !str_contains($ownershipMigration, "'article.articleCate/all'")
+        && !str_contains($namespaceMigration, "('article.articleCate/all',"),
+    'official Article migrations retain the case-mismatched category key'
+);
+
 $permissions = json_decode(
     (string)file_get_contents($moduleRoot . '/Resources/permissions.json'),
     true,

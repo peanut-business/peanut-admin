@@ -11,7 +11,7 @@ CREATE TEMPORARY TABLE `pa_official_article_permission_key_map` (
 
 INSERT INTO `pa_official_article_permission_key_map` (`old_key`, `new_key`) VALUES
   ('article.articleCate/lists',       'official.article.category.list'),
-  ('article.articleCate/all',         'official.article.category.all'),
+  ('article.articlecate/all',         'official.article.category.all'),
   ('article.articleCate/detail',      'official.article.category.detail'),
   ('article.articleCate/add',         'official.article.category.add'),
   ('article.articleCate/edit',        'official.article.category.edit'),

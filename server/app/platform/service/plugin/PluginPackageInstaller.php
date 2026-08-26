@@ -89,6 +89,7 @@ final class PluginPackageInstaller
             );
             $lifecycleStarted = true;
             $result = $lifecycle->install($package->packageKey);
+            $this->clearQuarantine($package->packageKey);
             return $result + [
                 'archive_sha256' => $package->archiveSha256,
                 'package_key' => $package->packageKey,
@@ -207,6 +208,30 @@ final class PluginPackageInstaller
             $entry->isDir() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
         }
         rmdir($path);
+    }
+
+    private function clearQuarantine(string $packageKey): void
+    {
+        if (preg_match('/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/D', $packageKey) !== 1) {
+            throw new PluginPackageException('MODULE_QUARANTINE_INVALID', 'Module package key is invalid.');
+        }
+        $root = $this->projectRoot() . '/.local/module-quarantine';
+        if (!is_dir($root)) return;
+        $resolvedRoot = realpath($root);
+        if (!is_string($resolvedRoot)) {
+            throw new PluginPackageException('MODULE_QUARANTINE_INVALID', 'Module quarantine root is invalid.');
+        }
+        foreach (glob($root . '/' . $packageKey . '-*', GLOB_ONLYDIR) ?: [] as $candidate) {
+            $resolved = realpath($candidate);
+            if (is_link($candidate) || !is_string($resolved)
+                || !str_starts_with($resolved, $resolvedRoot . DIRECTORY_SEPARATOR)) {
+                throw new PluginPackageException('MODULE_QUARANTINE_INVALID', 'Module quarantine path is invalid.');
+            }
+            $this->removeTree($resolved);
+            if (file_exists($resolved)) {
+                throw new PluginPackageException('MODULE_QUARANTINE_FAILED', 'Module quarantine cannot be cleared after install.');
+            }
+        }
     }
 
     private function projectRoot(): string

@@ -47,7 +47,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "839a2781e007395d07a05413abc24f972c2e5ac70a7d8b5c62f461d59a7c7976"
+                "sha256": "b10f02c20d40f824923284db4bdd5de846202b0f0026a89bb56ec703d88eb0cc"
             },
             "composer": [
                 {
@@ -79,7 +79,7 @@
                 }
             ],
             "manifest": "plugins/official.article/plugin.json",
-            "manifest_sha256": "f780fe6f2969bd1aa2dfc4ce9398148e1a12c3d1e4d04c20d971125cc86c68c3"
+            "manifest_sha256": "b4791b322d5b5bf3694db26456513aa8f8be3eaabd8a766353fbcba9fecc1fb7"
         },
         {
             "key": "official.file",
