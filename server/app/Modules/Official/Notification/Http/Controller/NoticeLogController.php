@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\notice;
+namespace app\Modules\Official\Notification\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\notice\NoticeLogLogic;
+use app\Modules\Official\Notification\Service\NoticeLogLogic;
 use app\common\service\notice\NoticeTenantContext;
 
 class NoticeLogController extends BaseAdminController

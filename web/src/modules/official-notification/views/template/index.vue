@@ -44,7 +44,7 @@
         >
           <template #default="{ row }">
             <el-button
-              v-permission="['notice/scene/detail', 'notice/scene/save']"
+              v-permission="['official.notification.scene.detail', 'official.notification.scene.save']"
               link
               type="primary"
               size="small"
@@ -117,7 +117,7 @@
     getNoticeSceneList,
     saveNoticeScene,
     type NoticeSceneRecord,
-  } from '@/api/notice';
+  } from '@/modules/official-notification/api';
 
   const { t } = useI18n();
   const loading = ref(false);

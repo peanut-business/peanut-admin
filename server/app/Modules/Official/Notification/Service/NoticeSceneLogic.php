@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\notice;
+namespace app\Modules\Official\Notification\Service;
 
 use app\Modules\Official\Notification\ModuleProvider;
 use app\common\logic\BaseLogic;

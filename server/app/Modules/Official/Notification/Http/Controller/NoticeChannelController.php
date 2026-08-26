@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\notice;
+namespace app\Modules\Official\Notification\Http\Controller;
 
 use app\Modules\Official\Notification\ModuleProvider;
 use app\adminapi\controller\BaseAdminController;

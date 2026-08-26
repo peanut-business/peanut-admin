@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\notice;
+namespace app\Modules\Official\Notification\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\notice\NoticeSceneLogic;
-use app\adminapi\validate\notice\NoticeSceneValidate;
+use app\Modules\Official\Notification\Service\NoticeSceneLogic;
+use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
 use app\common\service\notice\NoticeTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

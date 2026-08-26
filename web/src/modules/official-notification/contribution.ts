@@ -7,9 +7,9 @@ const contribution: PluginFrontendContribution = {
     path: '/notice', name: 'officialNotificationRoot', component: DEFAULT_LAYOUT,
     meta: { requiresAuth: true, tenantModuleKey: 'official.notification' },
     children: [
-      { path: 'channel', name: 'NoticeChannel', component: () => import('@/views/notice/channel/index.vue'), meta: { locale: 'menu.notice.channel', requiresAuth: true, tenantModuleKey: 'official.notification', requiredPermissions: 'notice/channel/detail' } },
-      { path: 'template', name: 'NoticeTemplate', component: () => import('@/views/notice/template/index.vue'), meta: { locale: 'menu.notice.template', requiresAuth: true, tenantModuleKey: 'official.notification', requiredPermissions: 'notice/scene/lists' } },
-      { path: 'log', name: 'NoticeLog', component: () => import('@/views/notice/log/index.vue'), meta: { locale: 'menu.notice.log', requiresAuth: true, tenantModuleKey: 'official.notification', requiredPermissions: 'notice/log/lists' } },
+      { path: 'channel', name: 'NoticeChannel', component: () => import('@/modules/official-notification/views/channel/index.vue'), meta: { locale: 'menu.notice.channel', requiresAuth: true, tenantModuleKey: 'official.notification', requiredPermissions: 'official.notification.channel.detail' } },
+      { path: 'template', name: 'NoticeTemplate', component: () => import('@/modules/official-notification/views/template/index.vue'), meta: { locale: 'menu.notice.template', requiresAuth: true, tenantModuleKey: 'official.notification', requiredPermissions: 'official.notification.scene.list' } },
+      { path: 'log', name: 'NoticeLog', component: () => import('@/modules/official-notification/views/log/index.vue'), meta: { locale: 'menu.notice.log', requiresAuth: true, tenantModuleKey: 'official.notification', requiredPermissions: 'official.notification.log.list' } },
     ],
   }],
 };

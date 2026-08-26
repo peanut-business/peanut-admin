@@ -51,7 +51,7 @@
             </el-form-item>
             <el-form-item>
               <el-button
-                v-permission="['notice/channel/save']"
+                v-permission="['official.notification.channel.save']"
                 type="primary"
                 :loading="saving.aliyun"
                 @click="saveSection('sms_aliyun', aliyunForm)"
@@ -96,7 +96,7 @@
             </el-form-item>
             <el-form-item>
               <el-button
-                v-permission="['notice/channel/save']"
+                v-permission="['official.notification.channel.save']"
                 type="primary"
                 :loading="saving.tencent"
                 @click="saveSection('sms_tencent', tencentForm)"
@@ -122,7 +122,7 @@
     SmsAliyunConfig,
     SmsTencentConfig,
     ChannelSection,
-  } from '@/api/notice';
+  } from '@/modules/official-notification/api';
 
   const { t } = useI18n();
 
