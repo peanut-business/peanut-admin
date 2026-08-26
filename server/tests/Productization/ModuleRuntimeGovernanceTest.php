@@ -4,11 +4,10 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\plugin\ModuleUninstallPlanCodec;
-use app\platform\service\plugin\PluginArtifactWriter;
 use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginLockResolver;
+use app\platform\service\plugin\PluginPackageArchiveService;
+use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
-use PeanutAdmin\Kernel\Module\ManifestLoader;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/database/install.php';
@@ -48,67 +47,20 @@ function moduleGovernanceProject(string $sourceRoot, string $targetRoot): void
     $manifest = json_decode((string)file_get_contents($manifestPath), true, 64, JSON_THROW_ON_ERROR);
     $manifest['database']['owned_tables'] = ['pa_fixture_delivery_record', 'pa_fixture_delivery_aux'];
     file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
-    $writer = new PluginArtifactWriter($targetRoot . '/server');
-    $writer->make('fixture.delivery-record', '1.0.0', ['fixture.delivery-record=server/app/Modules/Fixture/DeliveryRecord']);
-    $writer->writeLock();
 }
 
-function moduleGovernanceSeed(PDO $pdo, string $projectRoot): array
+function moduleGovernanceSeed(PDO $pdo): array
 {
-    $descriptor = (new PluginLockResolver($projectRoot . '/server', '../plugins.lock'))->require('fixture.delivery-record');
-    $manifest = (new ManifestLoader())->load($descriptor->moduleRoots['fixture.delivery-record']);
     $now = gmdate('Y-m-d H:i:s.v');
-    $pdo->exec('CREATE TABLE IF NOT EXISTS pa_fixture_delivery_record (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, value VARCHAR(64) NOT NULL) ENGINE=InnoDB');
     $pdo->exec('CREATE TABLE IF NOT EXISTS pa_fixture_delivery_aux (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, record_id BIGINT UNSIGNED NOT NULL, CONSTRAINT fk_fixture_aux_record FOREIGN KEY (record_id) REFERENCES pa_fixture_delivery_record(id) ON DELETE RESTRICT) ENGINE=InnoDB');
-    $pdo->exec("INSERT INTO pa_fixture_delivery_record(value) VALUES ('preserved')");
+    $tenantId = (int)$pdo->query("SELECT id FROM pa_tenant WHERE status='active' ORDER BY id LIMIT 1")->fetchColumn();
+    $statement = $pdo->prepare('INSERT INTO pa_fixture_delivery_record (tenant_id,reference,status,created_at,updated_at) VALUES (?,?,?,?,?)');
+    $statement->execute([$tenantId, 'preserved', 'recorded', $now, $now]);
     $recordId = (int)$pdo->lastInsertId();
     $statement = $pdo->prepare('INSERT INTO pa_fixture_delivery_aux(record_id) VALUES (?)');
     $statement->execute([$recordId]);
 
-    $plugin = $pdo->prepare(<<<'SQL'
-INSERT INTO pa_plugin_installation (
- plugin_key,installed_version,source,artifact_sha256,lock_digest,composer_identity_json,npm_identity_json,
- frontend_identity_json,status,revision,installed_at,activated_at,created_at,updated_at
-) VALUES (?,?,?,?,?,?,?,?,'active',1,?,?,?,?)
-ON DUPLICATE KEY UPDATE status='active',last_error_code=NULL,uninstalled_at=NULL,lock_digest=VALUES(lock_digest),revision=revision+1,updated_at=VALUES(updated_at)
-SQL);
-    $plugin->execute([
-        $descriptor->key, $descriptor->version, $descriptor->source['type'] . ':' . $descriptor->source['reference'],
-        $descriptor->source['sha256'], $descriptor->lockDigest,
-        json_encode($descriptor->composer, JSON_THROW_ON_ERROR), json_encode($descriptor->npm, JSON_THROW_ON_ERROR),
-        json_encode($descriptor->frontend, JSON_THROW_ON_ERROR), $now, $now, $now, $now,
-    ]);
-    $module = $pdo->prepare(<<<'SQL'
-INSERT INTO pa_module_installation (module_key,installed_version,manifest_schema_version,manifest_digest,status,revision,installed_at,activated_at,created_at,updated_at)
-VALUES (?,?,1,?,'active',1,?,?,?,?)
-ON DUPLICATE KEY UPDATE status='active',last_error_code=NULL,manifest_digest=VALUES(manifest_digest),revision=revision+1,updated_at=VALUES(updated_at)
-SQL);
-    $module->execute(['fixture.delivery-record', '1.0.0', $manifest->digest, $now, $now, $now, $now]);
-    $ownership = $pdo->prepare(<<<'SQL'
-INSERT INTO pa_plugin_module (plugin_key,module_key,module_version,manifest_digest,created_at,updated_at)
-VALUES ('fixture.delivery-record','fixture.delivery-record','1.0.0',?,?,?)
-ON DUPLICATE KEY UPDATE manifest_digest=VALUES(manifest_digest),updated_at=VALUES(updated_at)
-SQL);
-    $ownership->execute([$manifest->digest, $now, $now]);
-    $migration = $pdo->prepare(<<<'SQL'
-INSERT INTO pa_module_migration (module_key,migration_key,module_version,checksum,batch_no,status,started_at,finished_at)
-VALUES ('fixture.delivery-record','20260814000000_create_delivery_record','1.0.0',?,1,'applied',?,?)
-ON DUPLICATE KEY UPDATE checksum=VALUES(checksum),status='applied',finished_at=VALUES(finished_at),error_code=NULL
-SQL);
-    $migration->execute([hash('sha256', 'fixture migration'), $now, $now]);
-    $permission = $pdo->prepare(<<<'SQL'
-INSERT INTO pa_permission (`key`,module_key,type,name,description,risk_level,status,manifest_version,created_at,updated_at,retired_at)
-VALUES ('fixture.delivery-record.create','fixture.delivery-record','action','Create delivery record','fixture','normal','active','1.0.0',?,?,NULL)
-ON DUPLICATE KEY UPDATE module_key=VALUES(module_key),status='active',retired_at=NULL,updated_at=VALUES(updated_at)
-SQL);
-    $permission->execute([$now, $now]);
     $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key`='fixture.delivery-record.create'")->fetchColumn();
-    $menu = $pdo->prepare(<<<'SQL'
-INSERT INTO pa_menu_definition (`key`,module_key,scope,parent_key,type,name,route_name,route_path,component_key,icon,sort_order,required_permission_id,client_keys_json,status,manifest_digest,created_at,updated_at)
-VALUES ('fixture.delivery-record.menu','fixture.delivery-record','tenant',NULL,'page','Fixture','fixture-delivery-record','/fixture-delivery-record','fixture.delivery-record.list',NULL,1,?,'["admin-web"]','active',?,?,?)
-ON DUPLICATE KEY UPDATE required_permission_id=VALUES(required_permission_id),status='active',manifest_digest=VALUES(manifest_digest),updated_at=VALUES(updated_at)
-SQL);
-    $menu->execute([$permissionId, $manifest->digest, $now, $now]);
     $role = $pdo->query("SELECT tenant_id,id FROM pa_role WHERE status='active' ORDER BY id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     moduleGovernanceExpect(is_array($role), 'active tenant role is unavailable');
     $binding = $pdo->prepare('INSERT IGNORE INTO pa_role_permission (tenant_id,role_id,permission_id,granted_at) VALUES (?,?,?,?)');
@@ -118,7 +70,7 @@ SQL);
         $binding = $pdo->prepare('INSERT IGNORE INTO pa_platform_role_permission (platform_role_id,permission_id,granted_at) VALUES (?,?,?)');
         $binding->execute([(int)$platformRole, $permissionId, $now]);
     }
-    return ['permission_id' => $permissionId, 'manifest_digest' => $manifest->digest];
+    return ['permission_id' => $permissionId];
 }
 
 $host = getenv('DB_HOST') ?: '';
@@ -136,9 +88,30 @@ $sourceRoot = dirname(__DIR__, 3);
 $temporary = sys_get_temp_dir() . '/pa-module-governance-' . bin2hex(random_bytes(8));
 mkdir($temporary, 0700, true);
 try {
-    moduleGovernanceProject($sourceRoot, $temporary);
-    $purgeSeed = moduleGovernanceSeed($pdo, $temporary);
-    $service = new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []);
+    $sourceProject = $temporary . '/source';
+    $targetProject = $temporary . '/target';
+    moduleGovernanceProject($sourceRoot, $sourceProject);
+    mkdir($targetProject . '/server/resources/schemas', 0777, true);
+    copy(
+        $sourceRoot . '/server/resources/schemas/plugin.schema.json',
+        $targetProject . '/server/resources/schemas/plugin.schema.json',
+    );
+    $archivePath = $temporary . '/fixture-delivery-record.tar';
+    $archive = new PluginPackageArchiveService($sourceProject . '/server');
+    $packed = $archive->packModule('fixture.delivery-record', $archivePath);
+    $moduleConfig = ['kernel_version' => '1.0.0', 'registered_client_keys' => ['admin-web', 'platform-web']];
+    $installer = new PluginPackageInstaller($pdo, $targetProject . '/server', $moduleConfig, []);
+    $installed = $installer->install($archivePath, $packed['sha256'], null);
+    moduleGovernanceExpect(($installed['operation'] ?? null) === 'installed', 'fixture package install failed');
+    $unchangedInstall = $installer->install($archivePath, $packed['sha256'], null);
+    moduleGovernanceExpect(($unchangedInstall['operation'] ?? null) === 'unchanged', 'repeated fixture package install was not idempotent');
+    moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_permission WHERE module_key='fixture.delivery-record' AND status='active'")->fetchColumn() === 2, 'fixture permissions were not activated');
+    moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_menu_definition WHERE module_key='fixture.delivery-record' AND status='active'")->fetchColumn() === 1, 'fixture menu was not activated');
+    moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_setting_definition WHERE module_key='fixture.delivery-record' AND status='active'")->fetchColumn() === 1, 'fixture setting definition was not activated');
+    moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchColumn() === 0, 'fixture package install changed TenantModule enablement');
+
+    $purgeSeed = moduleGovernanceSeed($pdo);
+    $service = new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig);
     $retirePreview = $service->preview('fixture.delivery-record', false);
     moduleGovernanceExpect($retirePreview['blockers'] === [], 'retire preview unexpectedly blocked');
     try {
@@ -166,14 +139,14 @@ SQL);
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_role_permission rp JOIN pa_permission p ON p.id=rp.permission_id WHERE p.module_key='fixture.delivery-record'")->fetchColumn() === 1, 'retire deleted tenant role binding');
     moduleGovernanceExpect((string)$pdo->query("SELECT status FROM pa_permission WHERE module_key='fixture.delivery-record'")->fetchColumn() === 'retired', 'retire left permission active');
 
-    $previewA = (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []))->preview('fixture.delivery-record', true);
-    $previewB = (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []))->preview('fixture.delivery-record', true);
+    $previewA = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->preview('fixture.delivery-record', true);
+    $previewB = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->preview('fixture.delivery-record', true);
     moduleGovernanceExpect($previewA['plan_digest'] === $previewB['plan_digest'], 'purge preview digest is not deterministic');
     moduleGovernanceExpect($previewA['blockers'] === [], 'purge preview unexpectedly blocked');
     moduleGovernanceExpect(count($previewA['affected_modules']) === 1, 'purge after retire lost the quarantined Module scope');
     moduleGovernanceExpect(count(array_filter($previewA['removed'], static fn(array $entry): bool => in_array($entry['table'], ['pa_role_permission', 'pa_platform_role_permission'], true))) === 2, 'purge preview omitted explicit role bindings');
     try {
-        (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', [], static function (string $point): void {
+        (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, static function (string $point): void {
             if ($point === 'after-first-drop-statement') throw new RuntimeException('injected interruption');
         }))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
         throw new RuntimeException('purge interruption was not injected');
@@ -186,7 +159,7 @@ SQL);
     $remainingTables = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('pa_fixture_delivery_record','pa_fixture_delivery_aux')")->fetchColumn();
     moduleGovernanceExpect($remainingTables === 1, 'interrupted purge did not leave a deterministic partial table set');
 
-    $purged = (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
+    $purged = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
     moduleGovernanceExpect($purged['operation'] === 'purged', 'purge recovery did not finish');
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('pa_fixture_delivery_record','pa_fixture_delivery_aux')")->fetchColumn() === 0, 'purge left owned tables');
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_module_migration WHERE module_key='fixture.delivery-record'")->fetchColumn() === 0, 'purge left migration ledger');
@@ -197,12 +170,12 @@ SQL);
     $bindingCount = $pdo->prepare('SELECT COUNT(*) FROM pa_platform_role_permission WHERE permission_id=?');
     $bindingCount->execute([$purgeSeed['permission_id']]);
     moduleGovernanceExpect((int)$bindingCount->fetchColumn() === 0, 'purge left platform role binding');
-    $unchanged = (new PluginRuntimeGovernanceService($pdo, $temporary . '/server', []))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
+    $unchanged = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
     moduleGovernanceExpect($unchanged['operation'] === 'unchanged', 'repeated clean purge was not idempotent');
 
     $codec = new ModuleUninstallPlanCodec();
     moduleGovernanceExpect($codec->digest(['b' => 2, 'a' => 1]) === $codec->digest(['a' => 1, 'b' => 2]), 'plan object key ordering changes digest');
-    echo "MODULE-RUNTIME-GOVERNANCE-D2-001 passed plan_digest={$previewA['plan_digest']}\n";
+    echo "MODULE-RUNTIME-GOVERNANCE-D2-001 passed sha256={$packed['sha256']} plan_digest={$previewA['plan_digest']}\n";
 } finally {
     moduleGovernanceRemoveTree($temporary);
 }
