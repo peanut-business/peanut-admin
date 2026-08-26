@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\middleware;
 
 use app\api\service\UserTokenService;
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\service\JsonService;
 use app\common\service\member\MemberApiTenantContextResolver;
 use app\common\service\member\MemberTenantContext;

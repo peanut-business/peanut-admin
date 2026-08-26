@@ -23,6 +23,7 @@ $autoload = $serverRoot . '/vendor/autoload.php';
 if (!is_file($autoload)) {
     throw new RuntimeException('application Composer autoload is unavailable');
 }
+require $serverRoot . '/bootstrap/environment.php';
 require $autoload;
 
 function expectCombinedDomain(bool $condition, string $message): void

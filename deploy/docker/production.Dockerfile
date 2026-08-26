@@ -65,6 +65,9 @@ COPY deploy/docker/php-upload.ini /usr/local/etc/php/conf.d/peanut-upload.ini
 
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json legal/
 COPY resources/project-resources.json resources/project-resources.json
+COPY plugins.lock plugins.lock
+COPY plugins plugins
+COPY web/src/modules web/src/modules
 COPY server/app server/app
 COPY server/bootstrap server/bootstrap
 COPY server/config server/config
@@ -78,16 +81,28 @@ COPY server/public server/public
 COPY --from=composer-deps /build/server/vendor server/vendor
 COPY deploy/docker/php-entrypoint.sh /usr/local/bin/peanut-php-entrypoint
 
-RUN mkdir -p server/runtime server/public/storage \
+RUN mkdir -p server/runtime server/public/storage server/private/storage \
     && cd server \
-    && php think service:discover \
-    && php think vendor:publish \
+    && printf '%s\n' \
+        'APP_ENV=production' \
+        'APP_DEBUG=false' \
+        'DEPLOYMENT_MODE=standalone' \
+        'DB_HOST=build-only.invalid' \
+        'DB_PORT=3306' \
+        'DB_NAME=build_only' \
+        'DB_USER=build_only' \
+        'DB_PASS=build-only' \
+        'DB_PREFIX=pa_' > .env.image-build \
+    && chmod 600 .env.image-build \
+    && PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.image-build php think service:discover \
+    && PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.image-build php think vendor:publish \
+    && rm -f .env.image-build \
     && cd .. \
     && chmod +x server/think server/database/seed-demo-data.php /usr/local/bin/peanut-php-entrypoint \
     && chmod +x server/database/seed-multi-tenant-demo.php \
     && ln -s /var/www/peanut-admin/server/database/seed-demo-data.php /usr/local/bin/peanut-seed-demo-data \
     && ln -s /var/www/peanut-admin/server/database/seed-multi-tenant-demo.php /usr/local/bin/peanut-seed-multi-tenant-demo \
-    && chown -R www-data:www-data server/runtime server/public/storage
+    && chown -R www-data:www-data server/runtime server/public/storage server/private/storage
 
 EXPOSE 9000
 

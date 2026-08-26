@@ -126,17 +126,13 @@ class IndexLogic extends BaseLogic
         return new WebsiteConfigService(
             new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
-            static fn(string $value): string => FileService::setFileUrl($value),
+            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
         );
     }
 
     private static function copyright(TenantContext|TenantSystemContext $context): array
     {
-        $document = \app\common\service\tenant\TenantSettingService::document(
-            $context,
-            'copyright',
-            ['config' => []],
-        );
+        $document = TenantApplicationSettingService::copyright($context);
         return is_array($document['config'] ?? null) ? $document['config'] : [];
     }
 

@@ -47,10 +47,15 @@ foreach ([
     'finance_repository' => 'app/common/service/finance/FinanceTenantRepository.php',
     'recharge_settings' => 'app/common/service/finance/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
+    'tenant_settings_provider' => 'app/common/service/tenant/ThinkPhpTenantSettingsProvider.php',
+    'tenant_settings_runtime' => 'app/common/service/tenant/TenantSettingsRuntimeFactory.php',
+    'tenant_settings_bootstrap_runtime' => 'app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php',
+    'application_tenant_bootstrap' => 'app/platform/service/ApplicationTenantBootstrapService.php',
     'tenant_application_settings' => 'app/common/service/config/TenantApplicationSettingService.php',
     'notice_channel' => 'app/common/service/notice/NoticeChannelService.php',
     'platform_storage' => 'vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php',
-    'admin_permissions' => 'app/adminapi/service/AdminPermissionService.php',
+    'platform_storage_controller' => 'app/platform/controller/PlatformStorageController.php',
+    'admin_permissions' => 'app/common/service/authorization/AdminAuthorizationService.php',
     'member_admin_context' => 'app/common/service/member/MemberTenantContext.php',
     'article_admin_context' => 'app/common/service/article/ArticleTenantContext.php',
     'file_admin_context' => 'app/common/service/file/FileTenantContext.php',
@@ -58,9 +63,12 @@ foreach ([
     'crontab_scheduler' => 'app/common/service/crontab/CrontabSchedulerService.php',
     'scheduled_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/ScheduledTenantContext.php',
     'tenant_scope_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantScope.php',
-    'async_authorization' => 'app/common/service/async/AdminAsyncAuthorization.php',
-    'async_runtime' => 'app/common/service/async/TaskImportExportRuntime.php',
-    'async_files' => 'app/common/service/export/AppFileMediaGateway.php',
+    'async_authorization' => 'app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php',
+    'async_runtime' => 'app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php',
+    'async_runtime_factory' => 'app/common/service/async/TaskImportExportRuntimeFactory.php',
+    'async_worker_definition' => 'app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php',
+    'async_files' => 'app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php',
+    'storage_path' => 'app/common/service/storage/StoragePath.php',
     'routes' => 'route/app.php',
     'official_file_routes' => 'app/Modules/Official/File/Http/routes.php',
     'official_notification_routes' => 'app/Modules/Official/Notification/Http/routes.php',
@@ -103,7 +111,12 @@ qualificationExpect(
         && str_contains($sources['file_namespace_core'], 'assertTenantId($tenantId)'),
     'file objects lost the Core-owned Tenant namespace'
 );
-qualificationExpect(str_contains($sources['async_files'], "'tenants/v1/%d/exports/'"), 'async exports lost private Tenant namespace');
+qualificationExpect(
+    str_contains($sources['async_files'], "'export.csv'")
+        && str_contains($sources['async_files'], '->storePath(')
+        && str_contains($sources['storage_path'], "'tenants/v1/%d/%s/%s%s'"),
+    'async exports lost private Tenant namespace'
+);
 qualificationExpect(
     str_contains($sources['default_context'], 'new CoreDefaultTenantContextResolver($pdo)')
         && str_contains($sources['default_context'], 'CoreDefaultTenantContextResolver::operationId($request)')
@@ -213,21 +226,32 @@ qualificationExpect(
     'scheduled work does not re-establish active Tenant ownership'
 );
 qualificationExpect(
-    str_contains($sources['async_authorization'], "t.status = 'active'")
-        && str_contains($sources['async_authorization'], 'authorization_revision'),
+    str_contains($sources['async_authorization'], 'AdminAuthorizationService')
+        && str_contains($sources['async_authorization'], '->principal($context)')
+        && str_contains($sources['async_authorization'], '->authorizedOperation(')
+        && str_contains($sources['async_authorization'], 'envelope->resourceKey')
+        && str_contains($sources['async_authorization'], 'envelope->operation')
+        && str_contains($sources['async_authorization'], 'envelope->requestedTargets'),
     'async work does not recheck Tenant availability and authorization'
 );
 qualificationExpect(
     str_contains($sources['notice_channel'], "private const BINDING_PROVIDER = 'notice.sms'")
-        && str_contains($sources['notice_channel'], "where('tenant_id', \$tenantId)")
+        && str_contains($sources['notice_channel'], 'ExternalChannelBindingService::mutate')
+        && str_contains($sources['notice_channel'], "'tenant:' . \$tenantId")
+        && str_contains($sources['notice_channel'], 'ExternalTenantResolver::production()')
         && !str_contains($sources['notice_channel'], 'ConfigService'),
     'notification Provider configuration is not Tenant-owned'
 );
 qualificationExpect(
-    str_contains($sources['tenant_settings'], "where('tenant_id', \$tenantId)")
-        && str_contains($sources['tenant_settings'], "where('namespace', \$namespace)")
-        && str_contains($sources['recharge_settings'], 'TenantSettingService::document')
-        && str_contains($sources['recharge_settings'], 'ExternalChannelBindingService::config'),
+    str_contains($sources['tenant_settings'], 'implements TenantSettingsQuery, TenantSettingsCommands')
+        && str_contains($sources['tenant_settings_runtime'], 'new TenantSettingService(new ThinkPhpTenantSettingsProvider())')
+        && str_contains($sources['tenant_settings_provider'], "where('tenant_id', \$tenantId)")
+        && str_contains($sources['tenant_settings_provider'], "where('namespace', \$namespace)")
+        && str_contains($sources['recharge_settings'], 'TenantSettingsRuntimeFactory::service()->get')
+        && str_contains($sources['tenant_settings_bootstrap_runtime'], 'new PdoTenantSettingsBootstrapProvider($pdo)')
+        && str_contains($sources['application_tenant_bootstrap'], 'TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->pdo)')
+        && !str_contains($sources['application_tenant_bootstrap'], 'PdoTenantSettingsBootstrapProvider')
+        && str_contains($sources['recharge_settings'], 'PaymentChannelGrantService::channelConfigured'),
     'recharge policy or payment channel configuration is not Tenant-owned'
 );
 foreach (['agreement', 'site-statistics', 'member-profile', 'login', 'web-page', 'hot-search'] as $namespace) {
@@ -255,7 +279,7 @@ qualificationExpect(
     'retired Tenant Admin storage controller remains available for accidental route registration'
 );
 qualificationExpect(
-    str_contains($sources['platform_storage'], "'storage/setup'")
+    str_contains($sources['platform_storage_controller'], 'StorageConfigurationService')
         && str_contains($sources['admin_permissions'], 'use PeanutAdmin\\Kernel\\Platform\\InstanceControlPlanePolicy;')
         && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::isTenantAdminRoute')
         && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::tenantAdminPermissions()')
@@ -336,17 +360,9 @@ qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")
         && str_contains($sources['module_availability'], 'assertDeployment(')
         && str_contains($sources['module_availability'], 'assertTenant(')
-        && (
-            str_contains($sources['fixture_module_access'], 'ModuleGuard')
-            || str_contains($sources['fixture_module_access'], 'ModuleExecutionGuard')
-        )
-        && (
-            str_contains($sources['fixture_module_access'], 'assertMemberAccess(')
-            || (
-                str_contains($sources['fixture_module_access'], 'ModuleExecutionGuard')
-                && str_contains($sources['fixture_module_access'], 'assertAdminPermission(')
-            )
-        )
+        && str_contains($sources['fixture_module_access'], 'PdoModuleGovernanceProvider::forExecution')
+        && str_contains($sources['fixture_module_access'], '->executionGuard(')
+        && str_contains($sources['fixture_module_access'], '->assertAdminPermission(')
         && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
     'optional Modules are not guarded by both module.json and Tenant enablement'
 );
@@ -394,9 +410,11 @@ qualificationExpect(
     'shared official Module middleware does not require a trusted Tenant context and TenantModule state'
 );
 qualificationExpect(
-    str_contains($sources['oauth_controller'], "new ModuleExecutionGuard(\$pdo, 'official.oauth')")
+    str_contains($sources['oauth_controller'], 'PdoModuleGovernanceProvider::forExecution')
         && str_contains($sources['external_resolver'], 'assertExternalCallback(')
-        && str_contains($sources['async_runtime'], "'official.import-export'")
+        && str_contains($sources['async_runtime'], 'ImportExportModuleProvider')
+        && str_contains($sources['async_runtime_factory'], 'TaskModuleProvider')
+        && str_contains($sources['async_worker_definition'], "return 'official.import-export'")
         && str_contains($sources['crontab_scheduler'], "ModuleExecutionContext::scheduled('official.task'")
         && str_contains($sources['console'], "'refund:reconcile' => 'official.payment'"),
     'external callback, worker or scheduler entry bypasses its official Module lifecycle'

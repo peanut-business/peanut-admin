@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
+use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\notice\driver\sms\AliyunSms;
@@ -10,7 +11,6 @@ use app\common\service\notice\driver\sms\SmsDriver;
 use app\common\service\notice\driver\sms\TencentSms;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use think\facade\Db;
 
 /** Tenant 短信凭据、默认 Provider、驱动选择与回执脱敏的唯一 Host。 */
 final class NoticeChannelService
@@ -50,44 +50,21 @@ final class NoticeChannelService
     public static function save(TenantContext $context, string $section, array $input): void
     {
         $tenantId = NoticeTenantContext::tenantId($context);
-        Db::transaction(function () use ($tenantId, $section, $input): void {
-            $binding = Db::name('external_channel_binding')
-                ->where('tenant_id', $tenantId)
-                ->where('provider', self::BINDING_PROVIDER)
-                ->lock(true)
-                ->find();
-            if (empty($binding)) {
-                $bindingId = Db::name('external_channel_binding')->insertGetId([
-                    'tenant_id' => $tenantId,
-                    'provider' => self::BINDING_PROVIDER,
-                    'callback_key' => bin2hex(random_bytes(32)),
-                    'identity_hash' => hash('sha256', 'tenant:' . $tenantId . ':' . self::BINDING_PROVIDER),
-                    'identity_hint' => self::BINDING_PROVIDER,
-                    'config_json' => '{}',
-                    'status' => 0,
-                    'create_time' => time(),
-                    'update_time' => time(),
-                ]);
-                $binding = ['id' => $bindingId, 'config_json' => '{}'];
-            }
-
-            $stored = self::decodeConfig($binding['config_json'] ?? '');
-            self::saveLocked($section, $input, $stored);
-            $default = strtolower(trim((string)($stored['sms_default'] ?? '')));
-            $active = in_array($default, self::PROVIDERS, true)
-                && self::complete($default, self::providerConfig($stored, $default));
-            Db::name('external_channel_binding')
-                ->where('id', (int)$binding['id'])
-                ->where('tenant_id', $tenantId)
-                ->update([
-                    'config_json' => json_encode(
-                        $stored,
-                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
-                    ),
-                    'status' => $active ? 1 : 0,
-                    'update_time' => time(),
-                ]);
-        });
+        ExternalChannelBindingService::mutate(
+            $context,
+            self::BINDING_PROVIDER,
+            'tenant:' . $tenantId . ':' . self::BINDING_PROVIDER,
+            static function (array $stored) use ($section, $input): array {
+                self::saveLocked($section, $input, $stored);
+                return $stored;
+            },
+            static function (array $stored): bool {
+                $default = strtolower(trim((string)($stored['sms_default'] ?? '')));
+                return in_array($default, self::PROVIDERS, true)
+                    && self::complete($default, self::providerConfig($stored, $default));
+            },
+            self::BINDING_PROVIDER,
+        );
     }
 
     private static function saveLocked(string $section, array $input, array &$stored): void

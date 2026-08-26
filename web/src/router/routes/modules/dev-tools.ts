@@ -23,6 +23,17 @@ const DEV_TOOLS: AppRouteRecordRaw = {
         roles: ['admin'],
       },
     },
+    {
+      path: 'modules',
+      name: 'DevToolsModules',
+      component: () => import('@/views/dev-tools/modules/index.vue'),
+      meta: {
+        locale: 'menu.devTools.modules',
+        requiresAuth: true,
+        roles: ['admin'],
+        instanceTool: true,
+      },
+    },
   ],
 };
 

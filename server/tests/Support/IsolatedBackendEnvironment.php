@@ -1,0 +1,134 @@
+<?php
+declare(strict_types=1);
+
+require_once dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
+/** Creates one temporary server/.env.<run-id> for an isolated PHP test process. */
+final class IsolatedBackendEnvironment
+{
+    /** @var list<string> */
+    private static array $paths = [];
+    private static bool $cleanupRegistered = false;
+
+    public static function activateDatabase(
+        string $host,
+        int|string $port,
+        string $database,
+        string $user,
+        string $password,
+        string $prefix = 'pa_',
+    ): string {
+        return self::activate([
+            'DB_HOST' => $host,
+            'DB_PORT' => $port,
+            'DB_NAME' => $database,
+            'DB_USER' => $user,
+            'DB_PASS' => $password,
+            'DB_PREFIX' => $prefix,
+        ]);
+    }
+
+    /** @param array<string,string|int|bool> $values */
+    public static function activate(array $values): string
+    {
+        $serverRoot = dirname(__DIR__, 2);
+        $basePath = peanutBackendEnvironmentPath();
+        $baseValues = parse_ini_file($basePath, false, INI_SCANNER_RAW);
+        if (!is_array($baseValues)) {
+            throw new RuntimeException('ISOLATED_BACKEND_ENVIRONMENT_BASE_INVALID');
+        }
+        $runId = 'test-' . bin2hex(random_bytes(8));
+        $path = $serverRoot . '/.env.' . $runId;
+        $values = array_replace($baseValues, [
+            'APP_ENV' => 'development',
+            'APP_DEBUG' => 'true',
+            'DEPLOYMENT_MODE' => 'standalone',
+            'DB_PREFIX' => 'pa_',
+        ], $values);
+
+        $lines = [];
+        foreach ($values as $key => $value) {
+            if (preg_match('/^[A-Z][A-Z0-9_]*$/D', $key) !== 1) {
+                throw new RuntimeException('ISOLATED_BACKEND_ENVIRONMENT_KEY_INVALID');
+            }
+            $value = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
+            if (str_contains($value, "\0") || str_contains($value, "\n") || str_contains($value, "\r")) {
+                throw new RuntimeException("ISOLATED_BACKEND_ENVIRONMENT_VALUE_INVALID:{$key}");
+            }
+            $lines[] = $key . '="' . str_replace(['\\', '"'], ['\\\\', '\\"'], $value) . '"';
+        }
+        $contents = implode("\n", $lines) . "\n";
+        $handle = fopen($path, 'x');
+        if ($handle === false) {
+            throw new RuntimeException('ISOLATED_BACKEND_ENVIRONMENT_CREATE_FAILED');
+        }
+        try {
+            if (!chmod($path, 0600) || fwrite($handle, $contents) !== strlen($contents)) {
+                throw new RuntimeException('ISOLATED_BACKEND_ENVIRONMENT_WRITE_FAILED');
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        self::$paths[] = $path;
+        self::registerCleanup();
+        putenv('PEANUT_SERVER_ENV_FILE=' . $path);
+        $_ENV['PEANUT_SERVER_ENV_FILE'] = $path;
+        $_SERVER['PEANUT_SERVER_ENV_FILE'] = $path;
+
+        $managedKeys = array_keys($values);
+        if (function_exists('peanutBackendEnvironmentKeys')) {
+            $managedKeys = array_values(array_unique([...$managedKeys, ...peanutBackendEnvironmentKeys()]));
+        }
+        foreach ($managedKeys as $key) {
+            putenv($key);
+            putenv('PHP_' . $key);
+            unset($_ENV[$key], $_ENV['PHP_' . $key], $_SERVER[$key], $_SERVER['PHP_' . $key]);
+        }
+
+        $environmentLoaded = function_exists('peanutLoadBackendEnvironment');
+        require_once $serverRoot . '/bootstrap/environment.php';
+        if ($environmentLoaded) {
+            peanutLoadBackendEnvironment();
+        }
+
+        return $path;
+    }
+
+    public static function required(string $key): string
+    {
+        if (preg_match('/^[A-Z][A-Z0-9_]*$/D', $key) !== 1) {
+            throw new RuntimeException('ISOLATED_BACKEND_ENVIRONMENT_KEY_INVALID');
+        }
+        $value = getenv($key);
+        if ($value === false || trim($value) === '') {
+            throw new RuntimeException("ISOLATED_BACKEND_ENVIRONMENT_REQUIRED:{$key}");
+        }
+        return $value;
+    }
+
+    public static function cleanup(): void
+    {
+        foreach (array_reverse(self::$paths) as $path) {
+            $serverRoot = dirname(__DIR__, 2);
+            if (dirname($path) === $serverRoot
+                && preg_match('/^\.env\.test-[a-f0-9]{16}$/D', basename($path)) === 1
+                && is_file($path)
+                && !is_link($path)) {
+                unlink($path);
+            }
+        }
+        self::$paths = [];
+        putenv('PEANUT_SERVER_ENV_FILE');
+        unset($_ENV['PEANUT_SERVER_ENV_FILE'], $_SERVER['PEANUT_SERVER_ENV_FILE']);
+    }
+
+    private static function registerCleanup(): void
+    {
+        if (self::$cleanupRegistered) {
+            return;
+        }
+        self::$cleanupRegistered = true;
+        register_shutdown_function([self::class, 'cleanup']);
+    }
+}

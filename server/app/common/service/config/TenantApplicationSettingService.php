@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\config;
 
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\tenant\TenantSettingService;
+use app\common\service\tenant\TenantSettingsRuntimeFactory;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -30,7 +30,7 @@ final class TenantApplicationSettingService
 
     public static function replaceAgreement(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        TenantSettingService::replace($context, self::AGREEMENT, $document);
+        self::settings()->replace($context, self::AGREEMENT, $document);
     }
 
     public static function statistics(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
@@ -40,7 +40,7 @@ final class TenantApplicationSettingService
 
     public static function replaceStatistics(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        TenantSettingService::replace($context, self::STATISTICS, $document);
+        self::settings()->replace($context, self::STATISTICS, $document);
     }
 
     public static function memberProfile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
@@ -50,7 +50,7 @@ final class TenantApplicationSettingService
 
     public static function replaceMemberProfile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        TenantSettingService::replace($context, self::MEMBER_PROFILE, $document);
+        self::settings()->replace($context, self::MEMBER_PROFILE, $document);
     }
 
     public static function login(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
@@ -71,7 +71,7 @@ final class TenantApplicationSettingService
 
     public static function replaceLogin(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        TenantSettingService::replace($context, self::LOGIN, $document);
+        self::settings()->replace($context, self::LOGIN, $document);
     }
 
     public static function webPage(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
@@ -85,7 +85,7 @@ final class TenantApplicationSettingService
 
     public static function replaceWebPage(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        TenantSettingService::replace($context, self::WEB_PAGE, $document);
+        self::settings()->replace($context, self::WEB_PAGE, $document);
     }
 
     public static function hotSearch(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
@@ -95,7 +95,7 @@ final class TenantApplicationSettingService
 
     public static function replaceHotSearch(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        TenantSettingService::replace($context, self::HOT_SEARCH, $document);
+        self::settings()->replace($context, self::HOT_SEARCH, $document);
     }
 
     private static function document(
@@ -105,8 +105,23 @@ final class TenantApplicationSettingService
     ): array {
         return array_replace(
             $defaults,
-            TenantSettingService::document($context, $namespace),
+            self::settings()->get($context, $namespace)->document,
         );
+    }
+
+    public static function copyright(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    {
+        return self::document($context, 'copyright', ['config' => []]);
+    }
+
+    public static function replaceCopyright(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    {
+        self::settings()->replace($context, 'copyright', $document);
+    }
+
+    private static function settings(): \app\common\service\tenant\TenantSettingService
+    {
+        return TenantSettingsRuntimeFactory::service();
     }
 
     private function __construct()

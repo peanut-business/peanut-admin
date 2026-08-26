@@ -4,7 +4,8 @@ set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 state_dir="$repo_dir/.local"
-env_file=${PEANUT_DEMO_ENV_FILE:-"$state_dir/mt-demo.env"}
+orchestration_env=${PEANUT_DEMO_ENV_FILE:-"$state_dir/mt-demo-stack.env"}
+backend_env=${PEANUT_SERVER_ENV_FILE:-"$repo_dir/server/.env.mt-demo"}
 lease_id=${PEANUT_DEMO_LEASE_ID:-local-multi-tenant-demo-mtlocal01}
 lease_owner=${PEANUT_DEMO_LEASE_OWNER:-codex-root}
 php_pid="$state_dir/mt-demo-php.pid"
@@ -22,59 +23,63 @@ die() {
 }
 
 set_env() {
-    name=$1
-    value=$2
-    temporary=$(mktemp "$state_dir/mt-demo.env.XXXXXX")
-    awk -F= -v name="$name" '$1 != name { print }' "$env_file" > "$temporary"
+    target=$1
+    name=$2
+    value=$3
+    temporary=$(mktemp "$(dirname "$target")/environment.XXXXXX")
+    awk -F= -v name="$name" '$1 != name { print }' "$target" > "$temporary"
     printf '%s=%s\n' "$name" "$value" >> "$temporary"
     chmod 600 "$temporary"
-    mv "$temporary" "$env_file"
+    mv "$temporary" "$target"
 }
 
 ensure_env_value() {
-    name=$1
-    value=$2
-    grep -q "^${name}=." "$env_file" || set_env "$name" "$value"
+    target=$1
+    name=$2
+    value=$3
+    grep -q "^${name}=." "$target" || set_env "$target" "$name" "$value"
 }
 
 prepare_env() {
     umask 077
     mkdir -p "$state_dir"
-    [ -f "$env_file" ] || : > "$env_file"
-    PEANUT_LOCAL_ENV_FILE="$env_file" "$repo_dir/scripts/project-development-database.sh" sync-credentials >/dev/null
+    [ -f "$orchestration_env" ] || : > "$orchestration_env"
+    [ -f "$backend_env" ] || : > "$backend_env"
+    chmod 600 "$orchestration_env" "$backend_env"
+    PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/project-development-database.sh" sync-credentials >/dev/null
     "$registry" database-env \
         --deployment-target local-multi-tenant-demo \
         --consumer host \
         --resource-id peanut-admin-mysql84-local-multi-tenant-demo |
-        while IFS='=' read -r name value; do set_env "$name" "$value"; done
+        while IFS='=' read -r name value; do set_env "$backend_env" "$name" "$value"; done
     "$registry" local-stack-env --deployment-target local-multi-tenant-demo |
-        while IFS='=' read -r name value; do set_env "$name" "$value"; done
-    set_env PHP_PORT 20178
-    set_env VITE_PORT 20179
-    set_env PLATFORM_PORT 20176
-    set_env APP_ENV development
-    set_env APP_DEBUG true
-    set_env PEANUT_DEMO_MODE enabled
-    set_env PEANUT_DEPLOYMENT_TARGET local-multi-tenant-demo
-    set_env DEPLOYMENT_MODE multi-tenant
-    set_env PLATFORM_HOSTS platform.peanut-admin.test
-    set_env TENANT_ADMIN_HOSTS admin.peanut-admin.test
-    set_env VITE_ALLOWED_HOSTS platform.peanut-admin.test,admin.peanut-admin.test,tenant-a.peanut-admin.test,tenant-b.peanut-admin.test
-    set_env OWNER_INVITATION_DELIVERY_MODE manual
-    set_env ADMIN_INITIAL_EMAIL owner@local.test
-    set_env ADMIN_INITIAL_PASSWORD 'peanut1234'
-    set_env PLATFORM_INITIAL_EMAIL platform@local.test
-    set_env PLATFORM_INITIAL_PASSWORD 'peanut1234'
-    set_env PEANUT_DEMO_TENANT_A_EMAIL tenant-a@local.test
-    set_env PEANUT_DEMO_TENANT_B_EMAIL tenant-b@local.test
-    set_env PEANUT_DEMO_SHARED_PASSWORD 'peanut1234'
-    set_env PEANUT_DEMO_TENANT_A_HOST tenant-a.peanut-admin.test
-    set_env PEANUT_DEMO_TENANT_B_HOST tenant-b.peanut-admin.test
-    set_env PEANUT_DEMO_DOCS_URL http://docs.peanut-admin.test
-    ensure_env_value JWT_SECRET "$(openssl rand -hex 32)"
-    ensure_env_value TENANT_IDENTIFIER_HMAC_KEY "$(openssl rand -hex 32)"
-    ensure_env_value PLATFORM_IDENTIFIER_HMAC_KEY "$(openssl rand -hex 32)"
-    printf 'Prepared private demo environment: %s\n' "$env_file"
+        while IFS='=' read -r name value; do set_env "$orchestration_env" "$name" "$value"; done
+    set_env "$orchestration_env" PHP_PORT 20178
+    set_env "$orchestration_env" VITE_PORT 20179
+    set_env "$orchestration_env" PLATFORM_PORT 20176
+    set_env "$orchestration_env" VITE_ALLOWED_HOSTS platform.peanut-admin.test,admin.peanut-admin.test,tenant-a.peanut-admin.test,tenant-b.peanut-admin.test
+    set_env "$backend_env" APP_ENV development
+    set_env "$backend_env" APP_DEBUG true
+    set_env "$backend_env" PEANUT_DEMO_MODE enabled
+    set_env "$backend_env" PEANUT_DEPLOYMENT_TARGET local-multi-tenant-demo
+    set_env "$backend_env" DEPLOYMENT_MODE multi-tenant
+    set_env "$backend_env" PLATFORM_HOSTS platform.peanut-admin.test
+    set_env "$backend_env" TENANT_ADMIN_HOSTS admin.peanut-admin.test
+    set_env "$backend_env" OWNER_INVITATION_DELIVERY_MODE manual
+    set_env "$backend_env" ADMIN_INITIAL_EMAIL owner@local.test
+    set_env "$backend_env" ADMIN_INITIAL_PASSWORD 'peanut1234'
+    set_env "$backend_env" PLATFORM_INITIAL_EMAIL platform@local.test
+    set_env "$backend_env" PLATFORM_INITIAL_PASSWORD 'peanut1234'
+    set_env "$backend_env" PEANUT_DEMO_TENANT_A_EMAIL tenant-a@local.test
+    set_env "$backend_env" PEANUT_DEMO_TENANT_B_EMAIL tenant-b@local.test
+    set_env "$backend_env" PEANUT_DEMO_SHARED_PASSWORD 'peanut1234'
+    set_env "$backend_env" PEANUT_DEMO_TENANT_A_HOST tenant-a.peanut-admin.test
+    set_env "$backend_env" PEANUT_DEMO_TENANT_B_HOST tenant-b.peanut-admin.test
+    set_env "$backend_env" PEANUT_DEMO_DOCS_URL http://docs.peanut-admin.test
+    ensure_env_value "$backend_env" JWT_SECRET "$(openssl rand -hex 32)"
+    ensure_env_value "$backend_env" TENANT_IDENTIFIER_HMAC_KEY "$(openssl rand -hex 32)"
+    ensure_env_value "$backend_env" PLATFORM_IDENTIFIER_HMAC_KEY "$(openssl rand -hex 32)"
+    printf 'Prepared private demo environments: %s and %s\n' "$orchestration_env" "$backend_env"
 }
 
 assert_lease() {
@@ -90,10 +95,10 @@ assert_lease() {
 }
 
 load_env() {
-    [ -f "$env_file" ] || die "run prepare first: $env_file"
+    [ -f "$orchestration_env" ] || die "run prepare first: $orchestration_env"
     set -a
-    # shellcheck disable=SC1090 -- private generated environment.
-    . "$env_file"
+    # shellcheck disable=SC1090 -- private generated orchestration environment.
+    . "$orchestration_env"
     set +a
 }
 
@@ -157,6 +162,7 @@ start_clients() {
             cd "$repo_dir/web"
             VITE_API_PROXY_TARGET=http://127.0.0.1:20178 VITE_OPEN_BROWSER=false \
                 VITE_DEPLOYMENT_MODE=multi-tenant \
+                VITE_TENANT_ENTRY_HOST=admin.peanut-admin.test \
                 exec node node_modules/vite/bin/vite.js --config ./config/vite.config.dev.ts \
                 --host 127.0.0.1 --port 20179
         ) >> "$admin_log" 2>&1 &
@@ -184,9 +190,13 @@ show_urls() {
 }
 
 show_credentials() {
-    load_env
-    printf 'Tenant owner: %s / %s\n' "$ADMIN_INITIAL_EMAIL" "$ADMIN_INITIAL_PASSWORD"
-    printf 'Platform:     %s / %s\n' "$PLATFORM_INITIAL_EMAIL" "$PLATFORM_INITIAL_PASSWORD"
+    [ -f "$backend_env" ] || die "run prepare first: $backend_env"
+    admin_email=$(awk -F= '$1 == "ADMIN_INITIAL_EMAIL" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
+    admin_password=$(awk -F= '$1 == "ADMIN_INITIAL_PASSWORD" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
+    platform_email=$(awk -F= '$1 == "PLATFORM_INITIAL_EMAIL" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
+    platform_password=$(awk -F= '$1 == "PLATFORM_INITIAL_PASSWORD" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
+    printf 'Tenant owner: %s / %s\n' "$admin_email" "$admin_password"
+    printf 'Platform:     %s / %s\n' "$platform_email" "$platform_password"
 }
 
 case "${1:-}" in
@@ -195,14 +205,12 @@ case "${1:-}" in
         ;;
     up)
         assert_lease
-        [ -f "$env_file" ] || prepare_env
+        [ -f "$orchestration_env" ] && [ -f "$backend_env" ] || prepare_env
         load_env
-        APP_ENV=development PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \
-            php "$repo_dir/server/database/install.php" --skip-if-installed
-        APP_ENV=development PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \
-            php "$repo_dir/server/database/environment-guard.php" --current
-        PEANUT_LOCAL_ENV_FILE="$env_file" PEANUT_PHP_PID_FILE="$php_pid" \
-            PEANUT_PHP_LOG_FILE="$php_log" PEANUT_DEPLOYMENT_TARGET=local-multi-tenant-demo \
+        PEANUT_SERVER_ENV_FILE="$backend_env" php "$repo_dir/server/database/install.php" --skip-if-installed
+        PEANUT_SERVER_ENV_FILE="$backend_env" php "$repo_dir/server/database/environment-guard.php" --current
+        PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_SERVER_ENV_FILE="$backend_env" PEANUT_PHP_PID_FILE="$php_pid" \
+            PEANUT_PHP_LOG_FILE="$php_log" \
             "$repo_dir/scripts/local-php-runtime" start
         start_clients
         wait_http http://127.0.0.1:20179/admin/ "$admin_log"
@@ -213,7 +221,7 @@ case "${1:-}" in
     down)
         stop_pid "$platform_pid" '--port 20176'
         stop_pid "$admin_pid" '--port 20179'
-        PEANUT_LOCAL_ENV_FILE="$env_file" PEANUT_PHP_PID_FILE="$php_pid" \
+        PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_SERVER_ENV_FILE="$backend_env" PEANUT_PHP_PID_FILE="$php_pid" \
             PEANUT_PHP_LOG_FILE="$php_log" "$repo_dir/scripts/local-php-runtime" stop
         ;;
     status)

@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\file\FileCateLogic;
-use app\adminapi\logic\file\FileLogic;
+use app\Modules\Official\File\Service\FileCateLogic;
+use app\Modules\Official\File\Service\FileLogic;
 use app\common\enum\FileEnum;
 use app\common\service\file\FileObjectNamespace;
 use app\common\service\file\FileTenantContext;
@@ -11,6 +11,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectFileTenant(bool $condition, string $message): void
 {
@@ -76,14 +77,15 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_file_' . $runId;
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
@@ -99,7 +101,7 @@ $betaObject = $betaDirectory . '/' . $objectName;
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
@@ -107,12 +109,7 @@ try {
     $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
     $pdo->exec("INSERT INTO pa_file_cate (id, tenant_id, pid, type, name) VALUES (11, 101, 0, 10, 'Alpha seed')");
     $pdo->exec("INSERT INTO pa_file (id, tenant_id, cid, source_id, source, type, name, uri, storage) VALUES (21, 101, 11, 1, 0, 10, 'alpha-seed.png', 'storage/tenants/v1/101/uploads/images/alpha-seed.png', 'local')");
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App();
     $app->initialize();
 

@@ -3,9 +3,10 @@ declare(strict_types=1);
 
 namespace app\common\service\external;
 
+use app\common\service\audit\AuditContractHost;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -31,7 +32,10 @@ final class ExternalTenantResolver
 
     public static function production(): self
     {
-        return new self(new ThinkPhpExternalTenantBindingRepository(), new ThinkPhpExternalTenantAudit());
+        return new self(
+            new ThinkPhpExternalTenantBindingRepository(),
+            new ThinkPhpExternalTenantAudit(AuditContractHost::production()),
+        );
     }
 
     public function verifiedCallback(string $provider, string $callbackKey, string $operation, string $operationId, callable $verifier): ExternalTenantResolution
@@ -46,7 +50,9 @@ final class ExternalTenantResolver
         if (!$pdo instanceof PDO) {
             throw new ExternalTenantResolutionException();
         }
-        (new ModuleExecutionGuard($pdo, $moduleKey))->assertExternalCallback(ModuleExecutionContext::system($moduleKey, $resolution->context));
+        PdoModuleGovernanceProvider::forExecution($pdo)
+            ->executionGuard($moduleKey)
+            ->assertExternalCallback(ModuleExecutionContext::system($moduleKey, $resolution->context));
         return $resolution;
     }
 

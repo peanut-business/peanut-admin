@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\common\service\oauth;
 
-use app\common\model\oauth\OAuthAttempt;
-use app\common\model\oauth\OAuthCompletionTicket;
-use app\common\model\oauth\OAuthIdentity;
-use app\common\model\oauth\OAuthPrincipal;
+use app\Modules\Official\Oauth\Model\OAuthAttempt;
+use app\Modules\Official\Oauth\Model\OAuthCompletionTicket;
+use app\Modules\Official\Oauth\Model\OAuthIdentity;
+use app\Modules\Official\Oauth\Model\OAuthPrincipal;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;

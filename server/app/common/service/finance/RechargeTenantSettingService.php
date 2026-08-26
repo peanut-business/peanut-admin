@@ -3,11 +3,10 @@ declare(strict_types=1);
 
 namespace app\common\service\finance;
 
-use app\common\model\finance\PaymentScene;
-use app\common\service\external\ExternalChannelBindingService;
-use app\common\service\external\ExternalTenantResolver;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\tenant\TenantSettingService;
+use app\common\service\payment\PaymentChannelGrantService;
+use app\common\service\tenant\TenantSettingsRuntimeFactory;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -18,14 +17,14 @@ final class RechargeTenantSettingService
     public static function config(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context
     ): array {
-        return TenantSettingService::document($context, self::NAMESPACE, self::defaults());
+        return TenantSettingsRuntimeFactory::service()->get($context, self::NAMESPACE, self::defaults())->document;
     }
 
     public static function replace(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         array $config
     ): void {
-        TenantSettingService::replace($context, self::NAMESPACE, $config);
+        TenantSettingsRuntimeFactory::service()->replace($context, self::NAMESPACE, $config);
     }
 
     public static function enabledScenes(
@@ -74,22 +73,7 @@ final class RechargeTenantSettingService
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         int $payWay
     ): bool {
-        $provider = match ($payWay) {
-            PaymentScene::PAY_WAY_WECHAT => ExternalTenantResolver::WECHAT_PAYMENT,
-            PaymentScene::PAY_WAY_ALIPAY => ExternalTenantResolver::ALIPAY_PAYMENT,
-            default => '',
-        };
-        if ($provider === '') {
-            return false;
-        }
-        try {
-            $config = ExternalChannelBindingService::config($context, $provider);
-        } catch (\Throwable) {
-            return false;
-        }
-        return $payWay === PaymentScene::PAY_WAY_WECHAT
-            ? (int)($config['wx_pay_status'] ?? 0) === 1
-            : (int)($config['ali_pay_status'] ?? 0) === 1;
+        return PaymentChannelGrantService::channelConfigured($context, $payWay);
     }
 
     private static function defaults(): array

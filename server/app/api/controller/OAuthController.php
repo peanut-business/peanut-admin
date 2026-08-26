@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\api\logic\OAuthLogic;
+use app\Modules\Official\Oauth\ModuleProvider as OAuthModuleProvider;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use think\facade\Db;
 
@@ -43,7 +43,8 @@ class OAuthController extends BaseApiController
                     $this->operationId(),
                 );
             $this->assertModule($resolution->context);
-            $result = OAuthLogic::begin(
+            $commands = (new OAuthModuleProvider())->commands();
+            $result = $commands->begin(
                 $resolution->context,
                 $scene,
                 (string)$params['return_path'],
@@ -53,7 +54,7 @@ class OAuthController extends BaseApiController
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
+        return $result === false ? $this->fail($commands->error()) : $this->data($result);
     }
 
     public function redirectPc()
@@ -83,7 +84,8 @@ class OAuthController extends BaseApiController
                 $this->operationId(),
             );
             $this->assertModule($resolution->context);
-            $result = OAuthLogic::callback(
+            $commands = (new OAuthModuleProvider())->commands();
+            $result = $commands->callback(
                 $resolution->context,
                 (string)$params['scene'],
                 (string)$params['code'],
@@ -93,7 +95,7 @@ class OAuthController extends BaseApiController
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
+        return $result === false ? $this->fail($commands->error()) : $this->data($result);
     }
 
     public function miniProgram()
@@ -116,7 +118,8 @@ class OAuthController extends BaseApiController
                     $this->operationId(),
                 );
             $this->assertModule($resolution->context);
-            $result = OAuthLogic::miniProgramLogin(
+            $commands = (new OAuthModuleProvider())->commands();
+            $result = $commands->miniProgramLogin(
                 $resolution->context,
                 (string)$params['code'],
                 $resolution->binding,
@@ -124,7 +127,7 @@ class OAuthController extends BaseApiController
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
+        return $result === false ? $this->fail($commands->error()) : $this->data($result);
     }
 
     public function complete()
@@ -138,24 +141,26 @@ class OAuthController extends BaseApiController
                 $this->operationId(),
             );
             $this->assertModule($resolution->context);
-            $result = OAuthLogic::complete($resolution->context, $params);
+            $commands = (new OAuthModuleProvider())->commands();
+            $result = $commands->complete($resolution->context, $params);
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail(OAuthLogic::getError()) : $this->data($result);
+        return $result === false ? $this->fail($commands->error()) : $this->data($result);
     }
 
     public function bind()
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.bind');
-        $result = OAuthLogic::bind(
+        $commands = (new OAuthModuleProvider())->commands();
+        $result = $commands->bind(
             MemberTenantContext::member($this->request),
             $this->memberId,
             (string)$params['scene'],
             (string)$params['code']
         );
-        return $result ? $this->success('绑定成功') : $this->fail(OAuthLogic::getError());
+        return $result ? $this->success('绑定成功') : $this->fail($commands->error());
     }
 
     private function operationId(): string
@@ -170,7 +175,9 @@ class OAuthController extends BaseApiController
         if (!$pdo instanceof PDO) {
             throw new \RuntimeException('OAUTH_MODULE_DATABASE_UNAVAILABLE');
         }
-        (new ModuleExecutionGuard($pdo, 'official.oauth'))->assertEnabled(
+        PdoModuleGovernanceProvider::forExecution($pdo)
+            ->executionGuard('official.oauth')
+            ->assertEnabled(
             ModuleExecutionContext::system('official.oauth', $context),
         );
     }

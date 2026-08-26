@@ -5,6 +5,7 @@ set -eu
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 state_dir="$repo_dir/.local"
 env_file=${PEANUT_LOCAL_ENV_FILE:-"$state_dir/stack.env"}
+backend_env=${PEANUT_SERVER_ENV_FILE:-"$repo_dir/server/.env"}
 pid_file=${PEANUT_PHP_PID_FILE:-"$state_dir/php-runtime.pid"}
 log_file=${PEANUT_PHP_LOG_FILE:-"$state_dir/php-runtime.log"}
 php_bin=/opt/homebrew/bin/php
@@ -62,6 +63,10 @@ start_runtime() {
     [ -x "$php_bin" ] || die "registered PHP is unavailable: $php_bin"
     [ -x "$composer_bin" ] || die "registered Composer is unavailable: $composer_bin"
     [ -f "$env_file" ] || die "local environment is missing: $env_file"
+    [ -f "$backend_env" ] || die "backend environment is missing: $backend_env"
+    if grep -Eq '^(PHP_(ENV_NAME|APP_|DB_|JWT_|DEPLOYMENT_MODE|PUBLIC_DEFAULT|PLATFORM_|TENANT_|ADMIN_|OWNER_|PEANUT_)|APP_|DB_|JWT_|DEPLOYMENT_MODE=|PUBLIC_DEFAULT_TENANT_FALLBACK=|PLATFORM_(HOSTS|IDENTIFIER_HMAC_KEY|INITIAL_EMAIL|INITIAL_PASSWORD)=|TENANT_|ADMIN_|OWNER_INVITATION_|PEANUT_(DEPLOYMENT_TARGET|DATABASE_|RESOURCE_LEASE_PROOF|STORAGE_|DEMO_|MODULE_))' "$env_file"; then
+        die "orchestration environment contains backend configuration: $env_file"
+    fi
     actual_php_version=$("$php_bin" -r 'echo PHP_VERSION;')
     [ "$actual_php_version" = "$expected_php_version" ] ||
         die "registered PHP version mismatch: expected $expected_php_version, got $actual_php_version"
@@ -73,13 +78,18 @@ start_runtime() {
     "$resource_registry" validate >/dev/null
 
     if is_running; then
-        is_owned_process || die "pid file points to an unowned process: $(runtime_pid)"
-        if health_check; then
-            printf 'PHP runtime already healthy (pid=%s, log=%s)\n' "$(runtime_pid)" "$log_file"
-            return 0
+        if is_owned_process; then
+            if health_check; then
+                printf 'PHP runtime already healthy (pid=%s, log=%s)\n' "$(runtime_pid)" "$log_file"
+                return 0
+            fi
+            show_failure
+            die "tracked process $(runtime_pid) is running but port health failed"
         fi
-        show_failure
-        die "tracked process $(runtime_pid) is running but port health failed"
+        health_check && die "pid file points to an unowned process while the registered port is occupied: $(runtime_pid)"
+        stale_pid=$(runtime_pid)
+        rm -f "$pid_file"
+        printf 'Removed reused stale PHP pid file (pid=%s). Previous log: %s\n' "$stale_pid" "$log_file" >&2
     fi
     if [ -f "$pid_file" ]; then
         stale_pid=$(cat "$pid_file" 2>/dev/null || printf unknown)
@@ -96,29 +106,22 @@ start_runtime() {
     [ -n "$port" ] || die 'PHP_PORT is missing from the local environment'
     : > "$log_file"
     (
-        trap '' HUP
-        set -a
-        # shellcheck disable=SC1090 -- generated local environment is gitignored.
-        . "$env_file"
-        set +a
-        : "${APP_ENV:=development}"
-        export APP_ENV
-        deployment_target=${PEANUT_DEPLOYMENT_TARGET:-local-development}
-        export PEANUT_DEPLOYMENT_TARGET="$deployment_target"
-        export HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= http_proxy= https_proxy= all_proxy=
-        export NO_PROXY="127.0.0.1,localhost,192.168.192.2"
-        export no_proxy="$NO_PROXY"
         cd "$repo_dir/server"
-        exec "$php_bin" \
+        PEANUT_SERVER_ENV_FILE="$backend_env" \
+        HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= http_proxy= https_proxy= all_proxy= \
+        NO_PROXY="127.0.0.1,localhost,192.168.192.2" \
+        no_proxy="127.0.0.1,localhost,192.168.192.2" \
+        nohup "$php_bin" \
             -d upload_max_filesize=200M \
             -d post_max_size=210M \
             -d max_file_uploads=20 \
             -S "0.0.0.0:$port" \
             -t "$repo_dir/server/public" \
-            "$repo_dir/server/public/router.php"
-    ) >> "$log_file" 2>&1 &
-    pid=$!
-    printf '%s\n' "$pid" > "$pid_file"
+            "$repo_dir/server/public/router.php" \
+            >> "$log_file" 2>&1 </dev/null &
+        printf '%s\n' "$!" > "$pid_file"
+    )
+    pid=$(runtime_pid) || die 'PHP runtime pid was not recorded'
 
     attempt=0
     while [ "$attempt" -lt 30 ]; do

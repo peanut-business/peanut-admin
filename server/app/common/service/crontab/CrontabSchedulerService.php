@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace app\common\service\crontab;
 
 use app\common\enum\CrontabEnum;
-use app\common\model\Crontab;
+use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\CrontabCommandService;
 use app\common\service\module\ModuleExecutionContext;
-use app\common\service\module\ModuleExecutionGuard;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Scheduling\ScheduleWindow;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
@@ -116,10 +116,11 @@ final class CrontabSchedulerService
             if (!$pdo instanceof PDO) {
                 throw new \RuntimeException('定时任务数据库不可用');
             }
-            (new ModuleExecutionGuard($pdo, 'official.task'))->assertScheduled(
+            $governance = PdoModuleGovernanceProvider::forExecution($pdo);
+            $governance->executionGuard('official.task')->assertScheduled(
                 ModuleExecutionContext::scheduled('official.task', $scope, 'scheduler.execute'),
             );
-            (new ModuleExecutionGuard($pdo, $moduleKey))->assertScheduled(
+            $governance->executionGuard($moduleKey)->assertScheduled(
                 ModuleExecutionContext::scheduled($moduleKey, $scope, 'scheduler.execute'),
             );
             $params = (($item['params'] ?? '') !== '') ? explode(' ', (string)$item['params']) : [];

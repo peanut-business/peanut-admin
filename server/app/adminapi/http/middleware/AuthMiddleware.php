@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace app\adminapi\http\middleware;
 
 use app\adminapi\service\AdminApiAccessRegistry;
-use app\adminapi\service\AdminPermissionService;
+use app\common\dto\authorization\AdminPrincipal;
+use app\common\dto\authorization\PermissionDecision;
+use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\DemoAccountPolicy;
 
@@ -32,7 +34,15 @@ class AuthMiddleware
         // 权限字符使用 api/admin/ 之后的精确路径，不做 URI alias 展开。
         $accessUri = preg_replace('#^api/admin/#', '', $path);
 
-        if (!AdminPermissionService::canAccess($request->tenantContext ?? null, $adminInfo, $accessUri)) {
+        $tenantContext = $request->tenantContext ?? null;
+        $decision = $tenantContext instanceof \PeanutAdmin\Kernel\Auth\TenantContext
+            ? (new AdminAuthorizationService())->decide(
+                $tenantContext,
+                AdminPrincipal::fromArray($adminInfo),
+                $accessUri,
+            )
+            : PermissionDecision::deny($accessUri, 'INVALID_TENANT_ADMIN_CONTEXT');
+        if (!$decision->allowed) {
             return JsonService::fail('暂无访问权限', null, 40300);
         }
 

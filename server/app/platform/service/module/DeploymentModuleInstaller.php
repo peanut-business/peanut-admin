@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\module;
 
-use app\platform\service\plugin\PluginModuleRegistryFactory;
-use app\platform\service\plugin\PluginLockResolver;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use PDO;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -73,6 +72,7 @@ SQL);
                 );
             }
             $this->assertSameIdentity($identity, $current);
+            (new ModuleCatalogApplier($this->pdo))->apply($registry->compiled(), [$moduleKey]);
             $this->pdo->commit();
             return $identity;
         } catch (\Throwable $exception) {
@@ -86,20 +86,11 @@ SQL);
     /** @param array<string,mixed> $deploymentConfig */
     private function registry(array $deploymentConfig): DeployedTenantModuleRegistry
     {
-        $factory = new PluginModuleRegistryFactory($this->pdo, $this->serverRoot);
-        $lockPath = trim((string)($deploymentConfig['plugin_lock'] ?? ''));
-        if ($lockPath !== '') {
-            $candidate = str_starts_with($lockPath, DIRECTORY_SEPARATOR)
-                ? $lockPath
-                : $this->serverRoot . '/' . ltrim($lockPath, '/');
-            if (is_file($candidate)) {
-                return $factory->fromPluginLock(
-                    new PluginLockResolver($this->serverRoot, $lockPath),
-                    $deploymentConfig
-                );
-            }
-        }
-        return $factory->fromDeploymentConfig($deploymentConfig);
+        return (new PdoModuleGovernanceProvider(
+            $this->pdo,
+            $this->serverRoot,
+            $deploymentConfig
+        ))->registry();
     }
 
     /** @return array{key:string,version:string,schema:int,digest:string,status:string} */

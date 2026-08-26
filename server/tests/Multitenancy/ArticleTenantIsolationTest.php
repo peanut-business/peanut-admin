@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\article\ArticleCateLogic as AdminArticleCateLogic;
-use app\adminapi\logic\article\ArticleLogic as AdminArticleLogic;
+use app\Modules\Official\Article\Service\ArticleCateLogic as AdminArticleCateLogic;
+use app\Modules\Official\Article\Service\ArticleLogic as AdminArticleLogic;
 use app\api\logic\ArticleLogic as ApiArticleLogic;
 use app\common\service\article\ArticleTenantContext;
 use app\common\service\article\ArticleTenantRepository;
@@ -14,6 +14,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectArticleTenant(bool $condition, string $message): void
 {
@@ -99,14 +100,15 @@ function expectArticleCollectConstraintFailure(PDO $pdo, string $sql, string $me
 
 function runArticleCollectMemberFkGate(): void
 {
-    $host = getenv('DB_HOST') ?: '127.0.0.1';
-    $port = (int)(getenv('DB_PORT') ?: 3306);
-    $password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+    $host = IsolatedBackendEnvironment::required('DB_HOST');
+    $port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+    $user = IsolatedBackendEnvironment::required('DB_USER');
+    $password = IsolatedBackendEnvironment::required('DB_PASS');
     $runId = strtolower(bin2hex(random_bytes(5)));
     $database = 'peanut_mt02_collect_member_' . $runId;
     $admin = new PDO(
         "mysql:host={$host};port={$port};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
@@ -114,7 +116,7 @@ function runArticleCollectMemberFkGate(): void
         $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         $pdo = new PDO(
             "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-            'root',
+            $user,
             $password,
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
         );
@@ -155,15 +157,15 @@ foreach ([
     'app/common/service/article/ArticleTenantContext.php',
     'app/common/service/article/ArticleTenantRepository.php',
     'app/common/service/capability/ArticleCapabilityAuthorization.php',
-    'app/common/model/article/Article.php',
-    'app/common/model/article/ArticleCate.php',
-    'app/common/model/article/ArticleCollect.php',
-    'app/adminapi/controller/article/ArticleController.php',
-    'app/adminapi/controller/article/ArticleCateController.php',
-    'app/adminapi/logic/article/ArticleLogic.php',
-    'app/adminapi/logic/article/ArticleCateLogic.php',
-    'app/adminapi/validate/article/ArticleValidate.php',
-    'app/adminapi/validate/article/ArticleCateValidate.php',
+    'app/Modules/Official/Article/Model/Article.php',
+    'app/Modules/Official/Article/Model/ArticleCate.php',
+    'app/Modules/Official/Article/Model/ArticleCollect.php',
+    'app/Modules/Official/Article/Http/Controller/ArticleController.php',
+    'app/Modules/Official/Article/Http/Controller/ArticleCateController.php',
+    'app/Modules/Official/Article/Service/ArticleLogic.php',
+    'app/Modules/Official/Article/Service/ArticleCateLogic.php',
+    'app/Modules/Official/Article/Validation/ArticleValidate.php',
+    'app/Modules/Official/Article/Validation/ArticleCateValidate.php',
     'app/adminapi/controller/decoration/DecorationPageController.php',
     'app/adminapi/controller/decoration/DecorationTabbarController.php',
     'app/adminapi/logic/decoration/DecorationPageLogic.php',
@@ -186,13 +188,14 @@ foreach ([
     $lintOutput = [];
 }
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $database = 'peanut_admin_mt02_article_' . strtolower(bin2hex(random_bytes(5)));
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
@@ -201,7 +204,7 @@ $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
@@ -262,12 +265,7 @@ INSERT INTO pa_article (id, tenant_id, cid, title, is_show, click_actual) VALUES
 INSERT INTO pa_article_collect (id, tenant_id, member_id, article_id, status) VALUES (31, 101, 501, 21, 1);
 SQL);
 
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App();
     $app->initialize();
 

@@ -10,7 +10,6 @@ use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class ConfigLogic extends BaseLogic
@@ -31,13 +30,13 @@ class ConfigLogic extends BaseLogic
         return new WebsiteConfigService(
             new TenantSettingWebsiteStore($context),
             static fn(string $value): string => FileService::getFileUrl($value),
-            static fn(string $value): string => FileService::setFileUrl($value),
+            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
         );
     }
 
     public static function getCopyright(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $value = TenantSettingService::document($context, 'copyright', ['config' => []])['config'] ?? [];
+        $value = TenantApplicationSettingService::copyright($context)['config'] ?? [];
         if (is_array($value)) {
             return $value;
         }
@@ -46,7 +45,7 @@ class ConfigLogic extends BaseLogic
 
     public static function saveCopyright(AuthenticatedMemberContext|TenantContext $context, array $params): bool
     {
-        TenantSettingService::replace($context, 'copyright', ['config' => $params['config'] ?? []]);
+        TenantApplicationSettingService::replaceCopyright($context, ['config' => $params['config'] ?? []]);
         return true;
     }
 
@@ -68,9 +67,15 @@ class ConfigLogic extends BaseLogic
     {
         TenantApplicationSettingService::replaceAgreement($context, [
             'service_title' => trim((string)$params['service_title']),
-            'service_content' => RichTextResourceService::forStorage((string)$params['service_content']),
+            'service_content' => RichTextResourceService::forStorage(
+                (string)$params['service_content'],
+                $context,
+            ),
             'privacy_title' => trim((string)$params['privacy_title']),
-            'privacy_content' => RichTextResourceService::forStorage((string)$params['privacy_content']),
+            'privacy_content' => RichTextResourceService::forStorage(
+                (string)$params['privacy_content'],
+                $context,
+            ),
         ]);
         return true;
     }
@@ -109,7 +114,7 @@ class ConfigLogic extends BaseLogic
     ): bool
     {
         TenantApplicationSettingService::replaceMemberProfile($context, [
-            'user_avatar' => FileService::setFileUrl((string)$params['default_avatar']),
+            'user_avatar' => FileService::setTenantFileUrl($context, (string)$params['default_avatar']),
         ]);
         return true;
     }

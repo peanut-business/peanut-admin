@@ -13,12 +13,12 @@ function expectChannelBindingTenant(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $read = static fn(string $path): string => (string)file_get_contents($serverRoot . '/' . $path);
 
-$noticeController = $read('app/adminapi/controller/notice/NoticeChannelController.php');
+$noticeController = $read('app/Modules/Official/Notification/Http/Controller/NoticeChannelController.php');
 $noticeService = $read('app/common/service/notice/NoticeChannelService.php');
 $sender = $read('app/common/service/notice/ApplicationNoticeSmsSender.php');
 $verification = $read('app/common/service/notice/VerificationCodeService.php');
-$menuController = $read('app/adminapi/controller/setting/OfficialAccountMenuController.php');
-$menuLogic = $read('app/adminapi/logic/setting/OfficialAccountMenuLogic.php');
+$menuController = $read('app/Modules/Official/Oauth/Http/Controller/OfficialAccountMenuController.php');
+$menuLogic = $read('app/Modules/Official/Oauth/Service/OfficialAccountMenuLogic.php');
 
 foreach ([$noticeController, $menuController] as $controller) {
     expectChannelBindingTenant(
@@ -29,14 +29,18 @@ foreach ([$noticeController, $menuController] as $controller) {
 
 foreach ([
     "private const BINDING_PROVIDER = 'notice.sms'",
-    "->where('tenant_id', \$tenantId)",
-    "'config_json' => json_encode(",
+    'ExternalChannelBindingService::mutate',
     "'sms_default'",
     "'sms_aliyun'",
     "'sms_tencent'",
 ] as $marker) {
     expectChannelBindingTenant(str_contains($noticeService, $marker), 'Tenant SMS binding invariant missing: ' . $marker);
 }
+expectChannelBindingTenant(
+    !str_contains($noticeService, 'external_channel_binding')
+        && !str_contains($noticeService, "Db::name('external_channel_binding')"),
+    'NoticeChannelService still accesses the shared external binding table directly'
+);
 expectChannelBindingTenant(
     !str_contains($noticeService, 'ConfigService'),
     'Tenant SMS configuration falls back to global pa_config'

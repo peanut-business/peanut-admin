@@ -452,7 +452,7 @@ final class ApplicationCreator
             'license' => $this->render($this->license(), $parameters),
             'modules-config' => $this->modulesConfig($content),
             'package' => $this->packageTransform($content, $parameters, (string)$entry['path']),
-            'plugins-lock' => $this->pluginsLock(),
+            'plugins-lock' => $this->pluginsLock($content),
             'sbom' => $this->sbom($content, $parameters),
             'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
             'version-contract' => $this->versionContractDocument($parameters),
@@ -683,8 +683,8 @@ PHP;
     {
         return match ($path) {
             'docs-site/index.md' => "---\nlayout: home\nhero:\n  name: \"{{PRODUCT_NAME}}\"\n  text: \"Application documentation\"\n---\n\nThis site belongs to the generated application.\n",
-            'docs-site/getting-started.md' => "# Getting started\n\nCopy the root `.env.example` to `.env`; do not maintain a second `server/.env`. Register this application's own database, ports, domains and external services in `resources/project-resources.json` before connecting anything.\n\nInstall 3.0 only into a confirmed empty database. Set `ADMIN_INITIAL_EMAIL` and a strong `ADMIN_INITIAL_PASSWORD`, then run `php server/database/install.php` followed by `php server/database/environment-guard.php --current`. Later patch/minor releases use the standard update path and apply append-only files in `server/database/migrations/`; a different major release requires a fresh rebuild.\n",
-            'docs-site/deployment.md', 'docs/peanut-admin-release-deployment.md' => "# Deployment\n\nOne deployment is one application instance with its own database, secrets, file storage and lifecycle. Use the checked-in Compose and Docker sources only after registering this application's resources; never inherit the scaffold source environment.\n\n`server/database/init.sql` together with Core `KernelSchema` is the complete canonical fresh baseline. {{PRODUCT_NAME}} 3.0 is fresh-only across the major-version boundary; normal patch/minor updates preserve data, install locked dependencies, and apply append-only `server/database/migrations/*.sql` through `php server/database/install.php --migrate --target-version=X.Y.Z`. A newer major release must use the explicit, backed-up `--fresh` path. Plugin Module migrations keep their independent lifecycle. Multi-tenant deployments require a separate PlatformOperator identity and the `/platform/` bundle.\n",
+            'docs-site/getting-started.md' => "# Getting started\n\nCopy root `.env.example` to `.env` for Docker ports, images and build proxies only. Copy `server/.env.example` to permission-0600 `server/.env`; it is the single source for PHP, database, identity and Tenant/Platform settings. `PHP_*` backend aliases are forbidden. Register this application's own database, ports, domains and external services in `resources/project-resources.json` before connecting anything.\n\nInstall 3.0 only into a confirmed empty database. Set `ADMIN_INITIAL_EMAIL` and a strong `ADMIN_INITIAL_PASSWORD` in `server/.env`, then run `php server/database/install.php` followed by `php server/database/environment-guard.php --current`. Later patch/minor releases use the standard update path and apply append-only files in `server/database/migrations/`; a different major release requires a fresh rebuild.\n",
+            'docs-site/deployment.md', 'docs/peanut-admin-release-deployment.md' => "# Deployment\n\nOne deployment is one application instance with its own database, secrets, file storage and lifecycle. Root `.env` is Docker orchestration only; `server/.env` is the only backend configuration source. Invoke Compose with `--env-file .env --env-file server/.env` after registering this application's resources; never inherit the scaffold source environment.\n\n`server/database/init.sql` together with Core `KernelSchema` is the complete canonical fresh baseline. {{PRODUCT_NAME}} 3.0 is fresh-only across the major-version boundary; normal patch/minor updates preserve data, install locked dependencies, and apply append-only `server/database/migrations/*.sql` through `php server/database/install.php --migrate --target-version=X.Y.Z`. A newer major release must use the explicit, backed-up `--fresh` path. Plugin Module migrations keep their independent lifecycle. Multi-tenant deployments require a separate PlatformOperator identity and the `/platform/` bundle.\n",
             'docs-site/api.md' => "# API and extensions\n\nApplication HTTP adapters and product modules are app-owned. Use `server/config/peanut.php` and `web/src/peanut.overrides.ts` as the stable Core Host extension entries.\n",
             'docs-site/architecture/identity-and-tenancy.md' => "# Identity and tenancy\n\nAccount/Credential is the login identity; TenantMember is that account's membership in one Tenant; Tenant Role/RBAC grants permissions only in that Tenant. Business customers, suppliers and contacts remain application business records rather than Account fields.\n\nA PlatformOperator governs this application instance but does not become a TenantMember or gain arbitrary Tenant business-data access. Host-bound Tenant entry points restrict the session to the bound Tenant; only an explicitly configured shared Admin Host can offer Tenant switching to an account that has active memberships.\n",
             'docs-site/architecture/official-module-qualification.md' => "# Official module qualification\n\nA module is usable only when its Plugin artifact is installed, the Tenant has the module enabled, and the current TenantMember has the required RBAC/data permission. Each module owns its schema and public contracts; it must not read or write another module's private tables.\n\nBefore declaring a module available, add its Tenant isolation, disabled-module and authorization checks. External providers such as payment, notifications and OAuth require their own production configuration and verification.\n",
@@ -843,24 +843,49 @@ PHP;
 
     private function modulesConfig(string $content): string
     {
-        $replacements = [
-            "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"
-                => "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '')",
-            "        'fixture.delivery-record.list',\n" => '',
-        ];
-        foreach ($replacements as $source => $target) {
-            if (substr_count($content, $source) !== 1) {
-                throw new RuntimeException('CREATE_APP_MODULES_CONFIG_SOURCE_INVALID');
-            }
-            $content = str_replace($source, $target, $content);
+        if (substr_count($content, "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')") !== 1
+            || substr_count($content, "        'fixture.delivery-record.list',\n") !== 1
+        ) {
+            throw new RuntimeException('CREATE_APP_MODULES_CONFIG_SOURCE_INVALID');
         }
-        return $content;
+        return str_replace("        'fixture.delivery-record.list',\n", '', $content);
     }
 
-    private function pluginsLock(): string
+    private function pluginsLock(string $content): string
     {
+        try {
+            $source = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID', 0, $exception);
+        }
+        if (!is_array($source)
+            || ($source['schema_version'] ?? null) !== 1
+            || !is_array($source['plugins'] ?? null)
+            || !array_is_list($source['plugins'])
+        ) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
+        }
+        $official = [];
+        $keys = [];
+        foreach ($source['plugins'] as $plugin) {
+            $key = is_array($plugin) ? ($plugin['key'] ?? null) : null;
+            if (!is_string($key) || $key === '') {
+                throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
+            }
+            if (!str_starts_with($key, 'official.')) {
+                continue;
+            }
+            if (isset($keys[$key])) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
+            }
+            $keys[$key] = true;
+            $official[] = $plugin;
+        }
+        if ($official === []) {
+            throw new RuntimeException('CREATE_APP_OFFICIAL_PLUGIN_SET_EMPTY');
+        }
         return json_encode(
-            ['schema_version' => 1, 'plugins' => []],
+            ['schema_version' => 1, 'plugins' => $official],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
         ) . "\n";
     }

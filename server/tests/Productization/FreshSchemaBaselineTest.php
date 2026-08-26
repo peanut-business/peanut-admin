@@ -40,7 +40,14 @@ freshSchemaExpect(str_contains($installer, 'BootstrapService'), 'installer does 
 freshSchemaExpect(str_contains($installer, "'default'"), 'installer does not create the formal default Tenant');
 freshSchemaExpect(str_contains($installer, "'core.tenant-owner'"), 'installer health contract does not verify the native owner role');
 freshSchemaExpect(str_contains($installer, "'--migrate'"), 'application migration runner is not available');
-freshSchemaExpect((glob($serverRoot . '/database/migrations/*.sql') ?: []) === [], 'post-baseline application migrations remain active');
+$migrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
+foreach ($migrations as $migration) {
+    $migrationSql = (string)file_get_contents($migration);
+    freshSchemaExpect(
+        preg_match('/^--\s+peanut-release:\s+\d+\.\d+\.\d+\s*$/m', $migrationSql) === 1,
+        'post-baseline migration is missing a release identity: ' . basename($migration)
+    );
+}
 
 foreach (['information_schema', 'ALTER TABLE', 'PREPARE ', 'EXECUTE ', 'DEALLOCATE PREPARE'] as $transitionSql) {
     freshSchemaExpect(!str_contains($schema, $transitionSql), "transition SQL remains in canonical schema: {$transitionSql}");

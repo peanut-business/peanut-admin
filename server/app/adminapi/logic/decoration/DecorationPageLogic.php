@@ -67,11 +67,11 @@ class DecorationPageLogic extends BaseLogic
                     throw new \RuntimeException('装修页面类型不可修改');
                 }
                 $page->data = json_encode(
-                    DecorationSchemaService::resourcesForStorage($data),
+                    DecorationSchemaService::resourcesForStorage($data, $context),
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 );
                 $page->meta = json_encode(
-                    DecorationSchemaService::resourcesForStorage($meta),
+                    DecorationSchemaService::resourcesForStorage($meta, $context),
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 );
                 $page->save();

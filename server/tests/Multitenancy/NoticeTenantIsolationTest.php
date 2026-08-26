@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\notice\NoticeLogLogic;
-use app\adminapi\logic\notice\NoticeSceneLogic;
-use app\adminapi\validate\notice\NoticeSceneValidate;
-use app\common\model\notice\NoticeLog;
+use app\Modules\Official\Notification\Service\NoticeLogLogic;
+use app\Modules\Official\Notification\Service\NoticeSceneLogic;
+use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
+use app\Modules\Official\Notification\Model\NoticeLog;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\NoticeTenantRepository;
 use app\common\service\notice\NoticeSmsSender;
@@ -16,6 +16,7 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectNoticeTenant(bool $condition, string $message): void
 {
@@ -45,11 +46,11 @@ function noticeDatabase(PDO $admin): string
     return $database;
 }
 
-function noticePdo(string $host, int $port, string $password, string $database): PDO
+function noticePdo(string $host, int $port, string $user, string $password, string $database): PDO
 {
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
@@ -92,19 +93,20 @@ final class SuccessfulNoticeSender implements NoticeSmsSender
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
 $database = noticeDatabase($admin);
 
 try {
-    $pdo = noticePdo($host, $port, $password, $database);
+    $pdo = noticePdo($host, $port, $user, $password, $database);
     noticeFreshSchema($pdo, $serverRoot);
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_notice_template
@@ -142,12 +144,7 @@ SQL);
         expectNoticeTenant($exception->getCode() === '23000', 'tenant-scoped template uniqueness failed with an unexpected shape');
     }
 
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App();
     $app->initialize();
 

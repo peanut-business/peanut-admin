@@ -9,25 +9,25 @@ import localeSystemAdmin from '@/views/system/admin/locale/zh-CN';
 import localeSystemDept from '@/views/system/dept/locale/zh-CN';
 import localeSystemJobs from '@/views/system/jobs/locale/zh-CN';
 import localeSystemDict from '@/views/system/dict/locale/zh-CN';
-import localeSystemFile from '@/views/system/file/locale/zh-CN';
-import localeSystemCrontab from '@/views/system/crontab/locale/zh-CN';
+import localeSystemFile from '@/modules/official-file/views/locale/zh-CN';
+import localeSystemCrontab from '@/modules/official-task/views/locale/zh-CN';
 import localeSystemMaintenance from '@/views/system/maintenance/locale/zh-CN';
 import localeSystemLog from '@/views/system/log/locale/zh-CN';
 import localeSystemConfig from '@/views/system/config/locale/zh-CN';
-import localeMemberList from '@/views/member/list/locale/zh-CN';
-import localeMemberTag from '@/views/member/tag/locale/zh-CN';
-import localeNoticeChannel from '@/views/notice/channel/locale/zh-CN';
-import localeNoticeTemplate from '@/views/notice/template/locale/zh-CN';
-import localeNoticeLog from '@/views/notice/log/locale/zh-CN';
-import localeFinanceAccountLog from '@/views/finance/account-log/locale/zh-CN';
-import localeFinanceRecharge from '@/views/finance/recharge/locale/zh-CN';
-import localeFinanceRefund from '@/views/finance/refund/locale/zh-CN';
+import localeMemberList from '@/modules/official-member/views/list/locale/zh-CN';
+import localeMemberTag from '@/modules/official-member/views/tag/locale/zh-CN';
+import localeNoticeChannel from '@/modules/official-notification/views/channel/locale/zh-CN';
+import localeNoticeTemplate from '@/modules/official-notification/views/template/locale/zh-CN';
+import localeNoticeLog from '@/modules/official-notification/views/log/locale/zh-CN';
+import localeFinanceAccountLog from '@/modules/official-member/views/account-log/locale/zh-CN';
+import localeFinanceRecharge from '@/modules/official-payment/views/recharge/locale/zh-CN';
+import localeFinanceRefund from '@/modules/official-payment/views/refund/locale/zh-CN';
 import localeAppHotSearch from '@/views/app-setting/hot-search/locale/zh-CN';
-import localeAppPay from '@/views/app-setting/pay/locale/zh-CN';
-import localeAppChannel from '@/views/app-setting/channel/locale/zh-CN';
+import localeAppPay from '@/modules/official-payment/views/settings/locale/zh-CN';
+import localeAppChannel from '@/modules/official-oauth/views/channel/locale/zh-CN';
 import localeAppTransaction from '@/views/app-setting/transaction/locale/zh-CN';
-import localeArticleCate from '@/views/article/cate/locale/zh-CN';
-import localeArticleList from '@/views/article/list/locale/zh-CN';
+import localeArticleCate from '@/modules/official-article/views/cate/locale/zh-CN';
+import localeArticleList from '@/modules/official-article/views/list/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
@@ -41,6 +41,7 @@ export default {
   'menu.decoration.pc': 'PC 装修',
   'menu.devTools': '开发工具',
   'menu.devTools.code': '代码生成器',
+  'menu.devTools.modules': '模块治理',
   'navbar.action.locale': '切换为中文',
   'navbar.userMenu': '打开用户菜单',
   'navbar.userSettings': '用户设置',

@@ -56,14 +56,14 @@ $registryFactory = (string)file_get_contents(
 );
 $routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
 $adminBridge = (string)file_get_contents(
-    dirname(__DIR__, 2) . '/app/adminapi/service/CoreTenantModuleAdminBridge.php'
+    dirname(__DIR__, 2) . '/app/common/service/authorization/CoreTenantModuleAdminBridge.php'
 );
 $serverMenuMapper = (string)file_get_contents(
     dirname(__DIR__, 3) . '/web/src/store/modules/app/server-menu.ts'
 );
 pm01ModuleHttpExpect(
     str_contains($runtime, "'MODULE_REGISTRY_UNAVAILABLE'")
-        && str_contains($runtime, 'PluginModuleRegistryFactory')
+        && str_contains($runtime, 'PdoModuleGovernanceProvider')
         && str_contains($registryFactory, 'DeployedTenantModuleRegistry::compile')
         && str_contains($registryFactory, 'ModuleBoundaryChecker')
         && str_contains($runtime, 'VerifiedTenantModuleRepository'),

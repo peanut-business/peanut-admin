@@ -4,16 +4,12 @@ set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 test_dir=$(mktemp -d "${TMPDIR:-/tmp}/peanut-runtime-contract.XXXXXX")
-env_file="$test_dir/stack.env"
-trap 'rm -rf "$test_dir"' EXIT INT TERM
+orchestration_env="$test_dir/stack.env"
+run_id=$(openssl rand -hex 6)
+backend_env="$repo_dir/server/.env.contract-$run_id"
+trap 'rm -rf "$test_dir"; rm -f "$backend_env"' EXIT INT TERM
 
-cat > "$env_file" <<'EOF'
-APP_DEBUG=true
-DEPLOYMENT_MODE=standalone
-DB_USER=peanut_admin_development
-DB_PASS=contract-only-placeholder
-ADMIN_INITIAL_EMAIL=admin@example.com
-ADMIN_INITIAL_PASSWORD=ContractOnly123
+cat > "$orchestration_env" <<'EOF'
 PHP_PORT=22180
 VITE_PORT=22181
 MOBILE_PORT=22182
@@ -22,9 +18,33 @@ PC_PORT=22185
 DOCS_PORT=22186
 DEV_HTTP_PORT=22187
 HTTP_PORT=22190
+PHP_IMAGE=peanut-admin-php:contract
+NGINX_IMAGE=peanut-admin-nginx:contract
 EOF
+cat > "$backend_env" <<'EOF'
+APP_ENV=development
+APP_DEBUG=true
+PEANUT_DEPLOYMENT_TARGET=local-development
+PEANUT_DATABASE_RESOURCE_ID=peanut-admin-mysql84-development
+PEANUT_DATABASE_ENDPOINT_ID=peanut-admin-mysql84-development-host-direct
+PEANUT_DATABASE_CONSUMER=host
+DEPLOYMENT_MODE=standalone
+DB_HOST=192.168.192.2
+DB_PORT=20183
+DB_NAME=peanut_admin_development
+DB_USER=peanut_admin_development
+DB_PASS=contract-only-placeholder
+DB_ROOT_PASS=contract-only-root-placeholder
+DB_PREFIX=pa_
+JWT_SECRET=contract-only-jwt-placeholder
+TENANT_IDENTIFIER_HMAC_KEY=contract-only-tenant-placeholder
+PLATFORM_IDENTIFIER_HMAC_KEY=contract-only-platform-placeholder
+ADMIN_INITIAL_EMAIL=admin@example.com
+ADMIN_INITIAL_PASSWORD=ContractOnly123
+EOF
+chmod 600 "$orchestration_env" "$backend_env"
 
-urls=$(PEANUT_LOCAL_ENV_FILE="$env_file" "$repo_dir/scripts/local-stack.sh" urls)
+urls=$(PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-stack.sh" urls)
 for expected in 22180 22181 22182 22185 22186 22187 22190; do
     printf '%s\n' "$urls" | grep -q ":$expected/" || {
         printf 'missing custom port in URL output: %s\n' "$expected" >&2
@@ -33,7 +53,7 @@ for expected in 22180 22181 22182 22185 22186 22187 22190; do
 done
 
 for pair in PHP_PORT=22180 VITE_PORT=22181 MOBILE_PORT=22182 REDIS_PORT=22184 PC_PORT=22185 DOCS_PORT=22186 DEV_HTTP_PORT=22187 HTTP_PORT=22190; do
-    grep -qx "$pair" "$env_file" || {
+    grep -qx "$pair" "$orchestration_env" || {
         printf 'ensure_env overwrote custom listener: %s\n' "$pair" >&2
         exit 1
     }
@@ -41,9 +61,9 @@ done
 
 set -a
 # shellcheck disable=SC1090 -- isolated contract environment.
-. "$env_file"
+. "$orchestration_env"
 set +a
-compose=$(docker compose --profile redis --env-file "$env_file" -f "$repo_dir/deploy/docker-compose.dev.yml" config)
+compose=$(docker compose --profile redis --env-file "$orchestration_env" -f "$repo_dir/deploy/docker-compose.dev.yml" config)
 for mapping in 'host_ip: 127.0.0.1' 'published: "22181"' 'published: "22182"' 'published: "22184"' 'published: "22185"' 'published: "22186"' 'published: "22187"' host.docker.internal:22180; do
     printf '%s\n' "$compose" | grep -q "$mapping" || {
         printf 'Compose config is missing custom mapping: %s\n' "$mapping" >&2
@@ -51,8 +71,8 @@ for mapping in 'host_ip: 127.0.0.1' 'published: "22181"' 'published: "22182"' 'p
     }
 done
 
-production_compose=$(PEANUT_DEPLOYMENT_TARGET=local-production-preview \
-    docker compose --env-file "$env_file" -f "$repo_dir/deploy/docker-compose.prod.yml" config)
+production_compose=$(PEANUT_SERVER_ENV_FILE="$backend_env" \
+    docker compose --env-file "$orchestration_env" --env-file "$backend_env" -f "$repo_dir/deploy/docker-compose.prod.yml" config)
 printf '%s\n' "$production_compose" | grep -q 'published: "22190"' || {
     printf 'production-preview Compose config lost custom HTTP_PORT\n' >&2
     exit 1
@@ -66,14 +86,14 @@ if printf '%s\n' "$production_compose" | grep -q 'PHP_APP_ENV:'; then
     exit 1
 fi
 for entrypoint in server/think server/public/index.php; do
-    grep -q 'bootstrap/environment-aliases.php' "$repo_dir/$entrypoint" || {
-        printf 'PHP entry point lost the conventional environment bridge: %s\n' "$entrypoint" >&2
+    grep -q 'bootstrap/environment.php' "$repo_dir/$entrypoint" || {
+        printf 'PHP entry point lost the backend environment loader: %s\n' "$entrypoint" >&2
         exit 1
     }
 done
-for conventional_key in PLATFORM_HOSTS TENANT_ADMIN_HOSTS OWNER_INVITATION_DELIVERY_MODE; do
-    grep -q "'$conventional_key'" "$repo_dir/server/bootstrap/environment-aliases.php" || {
-        printf 'PHP environment bridge lost multi-tenant deployment key: %s\n' "$conventional_key" >&2
+for conventional_key in PLATFORM_HOSTS TENANT_ADMIN_HOSTS OWNER_INVITATION_DELIVERY_MODE PEANUT_MODULE_TRUSTED_KEYS_JSON; do
+    grep -q "'$conventional_key'" "$repo_dir/server/bootstrap/environment.php" || {
+        printf 'backend environment loader lost key: %s\n' "$conventional_key" >&2
         exit 1
     }
 done
@@ -110,7 +130,7 @@ for expectation in "web 22181 22180" "pc 22185 22180" "mobile 22182 22180" "docs
     esac
     client_output=$(
         cd "$repo_dir/$component_dir"
-        PEANUT_LOCAL_ENV_FILE="$env_file" PEANUT_LOCAL_CLIENT_DRY_RUN=1 \
+        PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_LOCAL_CLIENT_DRY_RUN=1 \
             "$repo_dir/scripts/local-client-dev" "$component"
     )
     printf '%s\n' "$client_output" | grep -q "listen_port=$listen_port" || {

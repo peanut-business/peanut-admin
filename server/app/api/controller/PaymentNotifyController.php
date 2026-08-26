@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\RechargeLogic;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\CallbackRequest;
 use app\common\service\external\ExternalTenantResolver;
@@ -18,8 +19,7 @@ class PaymentNotifyController extends BaseApiController
                 (string)$this->request->getContent(),
                 (array)$this->request->header()
             );
-            $resolution = ExternalTenantResolver::production()->verifiedModuleCallback(
-                'official.payment',
+            $resolution = ExternalTenantResolver::production()->verifiedCallback(
                 ExternalTenantResolver::WECHAT_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',
@@ -27,7 +27,11 @@ class PaymentNotifyController extends BaseApiController
                 static fn(array $config) => (new PaymentServiceFactory($config))->callback('wechat')->parse($request),
             );
             $event = $resolution->verifiedValue;
-            if ($event->status() === 'success' && !RechargeLogic::settle($resolution->context, $event)) {
+            if ($event->status() === 'success' && !RechargeLogic::settleVerifiedCallback(
+                $resolution->binding->id,
+                $event,
+                PaymentScene::PAY_WAY_WECHAT
+            )) {
                 throw new \RuntimeException(RechargeLogic::getError());
             }
             return json(['code' => 'SUCCESS', 'message' => '成功']);
@@ -40,8 +44,7 @@ class PaymentNotifyController extends BaseApiController
     {
         try {
             $request = new CallbackRequest('', [], $this->request->post());
-            $resolution = ExternalTenantResolver::production()->verifiedModuleCallback(
-                'official.payment',
+            $resolution = ExternalTenantResolver::production()->verifiedCallback(
                 ExternalTenantResolver::ALIPAY_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',
@@ -49,7 +52,11 @@ class PaymentNotifyController extends BaseApiController
                 static fn(array $config) => (new PaymentServiceFactory($config))->callback('alipay')->parse($request),
             );
             $event = $resolution->verifiedValue;
-            if ($event->status() === 'success' && !RechargeLogic::settle($resolution->context, $event)) {
+            if ($event->status() === 'success' && !RechargeLogic::settleVerifiedCallback(
+                $resolution->binding->id,
+                $event,
+                PaymentScene::PAY_WAY_ALIPAY
+            )) {
                 throw new \RuntimeException(RechargeLogic::getError());
             }
             return response('success');

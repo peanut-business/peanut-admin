@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use app\api\logic\RechargeLogic as ApiRechargeLogic;
-use app\common\model\finance\RechargeOrder;
+use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\member\MemberTenantRepository;
@@ -10,6 +10,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 spl_autoload_register(static function (string $class): void {
     if (!str_starts_with($class, 'app\\')) return;
     $path = dirname(__DIR__, 2) . '/app/' . str_replace('\\', '/', substr($class, 4)) . '.php';
@@ -35,11 +36,11 @@ function financeTenantContext(int $tenantId, int $memberId, string $requestId): 
     ), $requestId);
 }
 
-function financePdo(string $host, int $port, string $password, string $database): PDO
+function financePdo(string $host, int $port, string $user, string $password, string $database): PDO
 {
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
@@ -156,18 +157,18 @@ VALUES (41,101,'RL-ALPHA',31,11,1,10.00,10.00,2,'');
 SQL);
 }
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
-$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
+$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 $database = financeDatabase($admin, 'peanut_admin_mt03_finance_');
 
 try {
-    $pdo = financePdo($host, $port, $password, $database);
+    $pdo = financePdo($host, $port, $user, $password, $database);
     createFinanceTenantSchema($pdo);
     seedFinanceTenantSchema($pdo);
-    putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App(); $app->initialize();
     $alpha = financeTenantContext(101, 501, 'mt03-finance-alpha');
     $beta = financeTenantContext(202, 502, 'mt03-finance-beta');

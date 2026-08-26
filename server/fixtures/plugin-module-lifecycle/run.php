@@ -10,6 +10,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ModuleException;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function pluginLifecycleExpect(bool $condition, string $message): void
@@ -88,6 +89,55 @@ function pluginLifecycleFailureArtifact(string $projectRoot): array
     file_put_contents(
         $lockPath,
         json_encode($lock, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+    );
+    return ['lock' => $lockPath, 'manifest' => $manifestPath, 'migration' => $migration];
+}
+
+/** @return array{lock:string,manifest:string,migration:string} */
+function pluginLifecycleRepairArtifact(string $projectRoot): array
+{
+    $migration = $projectRoot
+        . '/server/app/Modules/Fixture/DeliveryRecord/Database/Migrations/20260815000000_failure_repair.sql';
+    file_put_contents(
+        $migration,
+        "-- peanut-admin-repairs: fixture.delivery-record:20260814999999_failure_fixture\nSELECT 1;\n",
+    );
+    $manifest = json_decode(
+        (string)file_get_contents($projectRoot . '/plugins/fixture.delivery-record/plugin.json'),
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    $manifest['version'] = '1.0.1';
+    $manifest['source']['sha256'] = pluginLifecycleCanonicalDigest($projectRoot, [
+        $projectRoot . '/server/app/Modules/Fixture/DeliveryRecord',
+        $projectRoot . '/web/src/modules/fixture-delivery-record',
+    ]);
+    $manifestPath = tempnam(sys_get_temp_dir(), 'pa-plugin-repair-manifest-');
+    pluginLifecycleExpect(is_string($manifestPath), 'temporary repair Plugin manifest is unavailable');
+    file_put_contents(
+        $manifestPath,
+        json_encode($manifest, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
+    );
+    $lock = json_decode(
+        (string)file_get_contents($projectRoot . '/plugins.lock'),
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    foreach ($lock['plugins'] as &$plugin) {
+        if (($plugin['key'] ?? null) !== 'fixture.delivery-record') continue;
+        $plugin['version'] = '1.0.1';
+        $plugin['source']['sha256'] = $manifest['source']['sha256'];
+        $plugin['manifest'] = $manifestPath;
+        $plugin['manifest_sha256'] = hash_file('sha256', $manifestPath);
+    }
+    unset($plugin);
+    $lockPath = tempnam(sys_get_temp_dir(), 'pa-plugin-repair-lock-');
+    pluginLifecycleExpect(is_string($lockPath), 'temporary repair Plugin lock is unavailable');
+    file_put_contents(
+        $lockPath,
+        json_encode($lock, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
     );
     return ['lock' => $lockPath, 'manifest' => $manifestPath, 'migration' => $migration];
 }
@@ -181,10 +231,10 @@ $catalogSnapshot = pluginLifecycleCatalogSnapshot($pdo);
 $config = [
     'plugin_lock' => '../plugins.lock',
     'kernel_version' => '1.0.0',
-    'frontend_components' => ['fixture.delivery-record.list'],
     'registered_client_keys' => ['admin-web', 'platform-web'],
 ];
 $artifact = null;
+$repairArtifact = null;
 try {
     $resolver = new PluginLockResolver($serverRoot, '../plugins.lock');
     $service = new PluginLifecycleService(
@@ -200,6 +250,19 @@ try {
         'install enabled a TenantModule'
     );
     pluginLifecycleExpect(($service->install('fixture.delivery-record')['operation'] ?? null) === 'unchanged', 'repeat install was not idempotent');
+    $migrationCountBeforeResume = (int)$pdo->query("SELECT COUNT(*) FROM pa_module_migration WHERE module_key='fixture.delivery-record'")->fetchColumn();
+    $pdo->exec("UPDATE pa_plugin_installation SET status='installing' WHERE plugin_key='fixture.delivery-record'");
+    $pdo->exec("UPDATE pa_module_installation SET status='installing' WHERE module_key='fixture.delivery-record'");
+    $resumed = $service->install('fixture.delivery-record');
+    pluginLifecycleExpect(($resumed['operation'] ?? null) === 'resumed', 'interrupted installing state did not resume');
+    pluginLifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_module_migration WHERE module_key='fixture.delivery-record'")->fetchColumn() === $migrationCountBeforeResume,
+        'install resume duplicated an applied migration ledger row',
+    );
+    pluginLifecycleExpect(
+        (string)$pdo->query("SELECT status FROM pa_plugin_installation WHERE plugin_key='fixture.delivery-record'")->fetchColumn() === 'active',
+        'install resume did not finalize Plugin activation',
+    );
     pluginLifecycleExpect(($service->upgrade('fixture.delivery-record', true)['dry_run'] ?? null) === true, 'upgrade dry-run was not a plan');
     pluginLifecycleExpect(($service->rollbackPlan('fixture.delivery-record')['automatic'] ?? null) === false, 'rollback became automatic');
 
@@ -293,12 +356,48 @@ SQL);
         $moduleState = $pdo->query("SELECT status FROM pa_module_installation WHERE module_key='fixture.delivery-record'")->fetchColumn();
         pluginLifecycleExpect($moduleState === 'failed', 'failed migration left Module active');
     }
+    try {
+        $failureService->install('fixture.delivery-record');
+        throw new RuntimeException('uncertain failed migration was replayed');
+    } catch (PluginLifecycleException $exception) {
+        pluginLifecycleExpect(
+            $exception->errorCode === 'MODULE_MIGRATION_REPAIR_REQUIRED',
+            'failed migration retry did not require an append-only repair',
+        );
+    }
+    $repairArtifact = pluginLifecycleRepairArtifact($projectRoot);
+    $repairResolver = new PluginLockResolver($serverRoot, $repairArtifact['lock']);
+    $repairService = new PluginLifecycleService(
+        $pdo,
+        $repairResolver,
+        new PluginModuleRegistryFactory($pdo, $serverRoot),
+        $config + ['plugin_lock' => $repairArtifact['lock']],
+    );
+    $recovered = $repairService->install('fixture.delivery-record');
+    pluginLifecycleExpect(($recovered['operation'] ?? null) === 'recovered', 'higher repair package did not recover the install');
+    pluginLifecycleExpect(
+        (string)$pdo->query("SELECT status FROM pa_module_migration WHERE migration_key='fixture.delivery-record:20260814999999_failure_fixture'")->fetchColumn() === 'failed',
+        'repair rewrote the immutable failed migration ledger row',
+    );
+    pluginLifecycleExpect(
+        (string)$pdo->query("SELECT status FROM pa_module_migration WHERE migration_key='fixture.delivery-record:20260815000000_failure_repair'")->fetchColumn() === 'applied',
+        'append-only repair migration was not applied',
+    );
+    pluginLifecycleExpect(
+        (string)$pdo->query("SELECT status FROM pa_plugin_installation WHERE plugin_key='fixture.delivery-record'")->fetchColumn() === 'active',
+        'repair package did not finalize Plugin activation',
+    );
     echo "PLUGIN-MODULE-LIFECYCLE-DB-001 passed\n";
 } finally {
     if (is_array($artifact)) {
         @unlink($artifact['lock']);
         @unlink($artifact['manifest']);
         @unlink($artifact['migration']);
+    }
+    if (is_array($repairArtifact)) {
+        @unlink($repairArtifact['lock']);
+        @unlink($repairArtifact['manifest']);
+        @unlink($repairArtifact['migration']);
     }
     pluginLifecycleCleanup($pdo, $catalogSnapshot);
     echo json_encode([

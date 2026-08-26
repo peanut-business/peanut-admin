@@ -65,7 +65,7 @@ paths:
           schema: {type: integer, minimum: 1}
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
-  /upload/file:
+  /official.file.upload.file:
     post:
       tags: [File]
       operationId: uploadFile
@@ -82,7 +82,7 @@ paths:
                 cid: {type: integer, minimum: 0}
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
-  /file/lists:
+  /official.file.list:
     get:
       tags: [File]
       operationId: listFiles

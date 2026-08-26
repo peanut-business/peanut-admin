@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\common\service\member;
 
-use app\common\model\member\Member;
-use app\common\model\member\MemberBalanceLog;
-use app\common\model\member\MemberTag;
-use app\common\model\member\MemberTagRelation;
+use app\Modules\Official\Member\Model\Member;
+use app\Modules\Official\Member\Model\MemberBalanceLog;
+use app\Modules\Official\Member\Model\MemberTag;
+use app\Modules\Official\Member\Model\MemberTagRelation;
 use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -43,6 +43,20 @@ final class MemberTenantRepository
     {
         unset($data['tenant_id']);
         return MemberTag::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
+    }
+
+    /** @param list<int> $tagIds */
+    public static function createTagRelations(TenantContext $context, int $memberId, array $tagIds): void
+    {
+        $tenantId = MemberTenantContext::tenantId($context);
+        (new MemberTagRelation())->insertAll(array_map(
+            static fn(int $tagId): array => [
+                'tenant_id' => $tenantId,
+                'member_id' => $memberId,
+                'tag_id' => $tagId,
+            ],
+            $tagIds,
+        ));
     }
 
     public static function createBalanceLog(

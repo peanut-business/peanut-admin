@@ -14,7 +14,7 @@ final readonly class PluginArtifactWriter
     }
 
     /** @param list<string> $moduleSpecs @return array<string,mixed> */
-    public function make(string $key, string $version, array $moduleSpecs): array
+    public function build(string $key, string $version, array $moduleSpecs): array
     {
         $key = $this->key($key);
         $version = $this->version($version);
@@ -32,7 +32,15 @@ final readonly class PluginArtifactWriter
         }
         ksort($modules, SORT_STRING);
 
-        $manifest = $this->manifest($key, $version, $modules);
+        return $this->manifest($key, $version, $modules);
+    }
+
+    /** @param list<string> $moduleSpecs @return array<string,mixed> */
+    public function make(string $key, string $version, array $moduleSpecs): array
+    {
+        $manifest = $this->build($key, $version, $moduleSpecs);
+        $key = (string)$manifest['key'];
+
         $path = $this->projectRoot() . '/plugins/' . $key . '/plugin.json';
         $this->writeJson($path, $manifest);
         return ['path' => $this->relative($path), 'manifest' => $manifest];
@@ -286,8 +294,12 @@ final readonly class PluginArtifactWriter
         return $digest;
     }
 
-    private function projectRoot(): string { return dirname($this->serverRoot); }
-    private function relative(string $path): string { return ltrim(substr($path, strlen($this->projectRoot())), '/'); }
+    private function projectRoot(): string { return realpath(dirname($this->serverRoot)) ?: dirname($this->serverRoot); }
+    private function relative(string $path): string
+    {
+        $path = realpath($path) ?: $path;
+        return ltrim(substr($path, strlen($this->projectRoot())), '/');
+    }
     /** @param list<array<string,mixed>> $items */
     private function sortIdentities(array &$items, string $field): void { usort($items, static fn(array $a, array $b): int => strcmp((string)$a[$field], (string)$b[$field])); }
     /** @param array<string,mixed> $value */
@@ -298,6 +310,13 @@ final readonly class PluginArtifactWriter
     {
         $directory = dirname($path);
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) throw new PluginArtifactToolException("Cannot create Plugin directory: {$directory}");
-        if (file_put_contents($path, $contents, LOCK_EX) === false) throw new PluginArtifactToolException("Cannot write Plugin file: {$path}");
+        $temporary = $path . '.tmp-' . bin2hex(random_bytes(8));
+        if (file_put_contents($temporary, $contents, LOCK_EX) === false) {
+            throw new PluginArtifactToolException("Cannot write Plugin file: {$path}");
+        }
+        if (!rename($temporary, $path)) {
+            unlink($temporary);
+            throw new PluginArtifactToolException("Cannot promote Plugin file: {$path}");
+        }
     }
 }

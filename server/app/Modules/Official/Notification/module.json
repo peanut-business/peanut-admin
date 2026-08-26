@@ -1,8 +1,8 @@
 {
   "schema_version":1,"key":"official.notification","name":"Notification","description":"Tenant-owned notification channels, scenes, templates and delivery logs.","version":"1.0.0","kernel_constraint":"^1.0","license":"proprietary",
   "php_package":"peanut-business/official-notification","web_package":"@peanut-admin/official-notification","dependencies":[],
-  "backend":{"provider":"app\\Modules\\Official\\Notification\\ModuleProvider","routes":"Http/routes.php","menus":"Resources/menus.json","permissions":"Resources/permissions.json"},
+  "backend":{"provider":"app\\Modules\\Official\\Notification\\ModuleProvider","routes":"Http/routes.php","migrations":"Database/Migrations","menus":"Resources/menus.json","permissions":"Resources/permissions.json","setting_definitions":"Resources/setting-definitions.json"},
   "frontend":{"entry":"web/src/modules/official-notification/contribution.ts"},
-  "database":{"owned_tables":["pa_notice_log","pa_notice_scene","pa_notice_template"]},"contracts":{"exports":[],"events":[]},
+  "database":{"owned_tables":["pa_notice_log","pa_notice_scene","pa_notice_template"]},"contracts":{"exports":["app\\Modules\\Official\\Notification\\Contracts\\NotificationCommands","app\\Modules\\Official\\Notification\\Contracts\\NotificationQueries","app\\Modules\\Official\\Notification\\Contracts\\VerificationCodeCommands"],"events":[]},
   "tenant":{"enableable":true,"disable_behavior":"reject_new_operations","requires":[]}
 }

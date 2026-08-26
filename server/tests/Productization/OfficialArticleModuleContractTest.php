@@ -28,6 +28,34 @@ officialArticleExpect(
     ($manifest['database']['owned_tables'] ?? null) === ['pa_article_cate', 'pa_article', 'pa_article_collect'],
     'official Article table ownership changed'
 );
+officialArticleExpect(
+    ($manifest['backend']['migrations'] ?? null) === 'Database/Migrations'
+        && ($manifest['backend']['setting_definitions'] ?? null) === 'Resources/setting-definitions.json',
+    'official Article manifest does not declare its migrations and setting definitions'
+);
+officialArticleExpect(
+    json_decode((string)file_get_contents($moduleRoot . '/Resources/setting-definitions.json'), true, 8, JSON_THROW_ON_ERROR) === [],
+    'official Article setting definition catalog must be explicitly empty'
+);
+
+$baseline = (string)file_get_contents($serverRoot . '/database/init.sql');
+$ownershipMigration = (string)file_get_contents(
+    $moduleRoot . '/Database/Migrations/20260825-adopt-permission-ownership.sql'
+);
+$namespaceMigration = (string)file_get_contents(
+    $moduleRoot . '/Database/Migrations/20260826-namespace-permission-keys.sql'
+);
+officialArticleExpect(
+    str_contains($baseline, "'article.articlecate/all'")
+        && str_contains($ownershipMigration, "'article.articlecate/all'")
+        && str_contains($namespaceMigration, "('article.articlecate/all',"),
+    'official Article migration key does not exactly match the fresh baseline'
+);
+officialArticleExpect(
+    !str_contains($ownershipMigration, "'article.articleCate/all'")
+        && !str_contains($namespaceMigration, "('article.articleCate/all',"),
+    'official Article migrations retain the case-mismatched category key'
+);
 
 $permissions = json_decode(
     (string)file_get_contents($moduleRoot . '/Resources/permissions.json'),
@@ -37,14 +65,18 @@ $permissions = json_decode(
 );
 $permissionKeys = array_column($permissions, 'key');
 foreach ([
-    'article.articleCate/lists',
-    'article.articleCate/add',
-    'article.article/lists',
-    'article.article/add',
-    'article.article/delete',
+    'official.article.category.list',
+    'official.article.category.add',
+    'official.article.list',
+    'official.article.add',
+    'official.article.delete',
 ] as $permission) {
     officialArticleExpect(in_array($permission, $permissionKeys, true), 'missing Article permission: ' . $permission);
 }
+officialArticleExpect(
+    count(array_filter($permissionKeys, static fn(string $key): bool => str_starts_with($key, 'official.article.'))) === count($permissionKeys),
+    'official Article permission escaped its Module-key namespace'
+);
 
 $routes = (string)file_get_contents($moduleRoot . '/Http/routes.php');
 $hostRoutes = (string)file_get_contents($serverRoot . '/route/app.php');
@@ -52,12 +84,12 @@ $repository = (string)file_get_contents($serverRoot . '/app/common/service/artic
 $capability = (string)file_get_contents($serverRoot . '/app/common/service/capability/ArticleCapabilityAuthorization.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicArticleTenantMiddleware.php');
 $menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/auth/MenuLogic.php');
-$permissionService = (string)file_get_contents($serverRoot . '/app/adminapi/service/AdminPermissionService.php');
-officialArticleExpect(substr_count($routes, "Route::get('article.article") === 5, 'Article GET route count changed');
-officialArticleExpect(substr_count($routes, "Route::post('article.article") === 8, 'Article POST route count changed');
+$permissionService = (string)file_get_contents($serverRoot . '/app/common/service/authorization/AdminAuthorizationService.php');
+officialArticleExpect(substr_count($routes, "Route::get('official.article.") === 5, 'Article GET route count changed');
+officialArticleExpect(substr_count($routes, "Route::post('official.article.") === 8, 'Article POST route count changed');
 officialArticleExpect(str_contains($routes, 'ArticleModuleMiddleware::class'), 'Article routes lost ModuleGuard middleware');
-officialArticleExpect(!str_contains($hostRoutes, "Route::get('article.article"), 'Article Admin routes remain Host-owned');
-officialArticleExpect(!str_contains($hostRoutes, "Route::post('article.article"), 'Article Admin writes remain Host-owned');
+officialArticleExpect(!str_contains($hostRoutes, "Route::get('official.article."), 'Article Admin routes remain Host-owned');
+officialArticleExpect(!str_contains($hostRoutes, "Route::post('official.article."), 'Article Admin writes remain Host-owned');
 officialArticleExpect(
     str_contains($menuLogic, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths')
         && str_contains($permissionService, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths'),
@@ -116,7 +148,7 @@ officialArticleExpect(str_contains($capability, 'assertTenant('), 'Article typed
 officialArticleExpect(
     str_contains($publicMiddleware, 'TenantEntryBindingResolver::production()->system(')
         && str_contains($publicMiddleware, 'ModuleExecutionContext::system(')
-        && str_contains($publicMiddleware, 'ModuleExecutionGuard'),
+        && str_contains($publicMiddleware, 'PdoModuleGovernanceProvider::forExecution'),
     'public Article entry is not Host-bound and Module guarded'
 );
 
@@ -126,8 +158,41 @@ officialArticleExpect(
     'Article frontend contribution lost TenantModule route metadata'
 );
 officialArticleExpect(
-    !is_file($repoRoot . '/web/src/router/routes/modules/article.ts'),
-    'static Article frontend route still bypasses the Plugin lock'
+    !is_file($repoRoot . '/web/src/router/routes/modules/article.ts')
+        && str_contains($contribution, "@/modules/official-article/views/cate/index.vue")
+        && str_contains($contribution, "@/modules/official-article/views/list/index.vue"),
+    'Article frontend route escaped its Module subtree'
+);
+
+$moduleFiles = [
+    'Http/Controller/AbstractArticleCrudController.php',
+    'Http/Controller/ArticleCateController.php',
+    'Http/Controller/ArticleController.php',
+    'Service/ArticleCateLogic.php',
+    'Service/ArticleLogic.php',
+    'Validation/ArticleCateValidate.php',
+    'Validation/ArticleValidate.php',
+    'Model/Article.php',
+    'Model/ArticleCate.php',
+    'Model/ArticleCollect.php',
+];
+foreach ($moduleFiles as $relative) {
+    officialArticleExpect(is_file($moduleRoot . '/' . $relative), 'Article business file is outside Module subtree: ' . $relative);
+}
+foreach ([
+    '/app/adminapi/controller/article',
+    '/app/adminapi/logic/article',
+    '/app/adminapi/validate/article',
+    '/app/common/model/article',
+] as $legacyDirectory) {
+    officialArticleExpect(!is_dir($serverRoot . $legacyDirectory), 'legacy Article backend directory remains: ' . $legacyDirectory);
+}
+officialArticleExpect(
+    is_file($repoRoot . '/web/src/modules/official-article/api.ts')
+        && is_dir($repoRoot . '/web/src/modules/official-article/views')
+        && !is_file($repoRoot . '/web/src/api/article.ts')
+        && !is_dir($repoRoot . '/web/src/views/article'),
+    'Article frontend business code did not move atomically into its Module subtree'
 );
 
 echo "OFFICIAL-ARTICLE-MODULE-001 passed\n";

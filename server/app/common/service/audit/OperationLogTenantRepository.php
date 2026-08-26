@@ -15,10 +15,18 @@ final class OperationLogTenantRepository
 
     public static function create(TenantContext $context, array $data): OperationLog
     {
+        return self::createForTenant(OperationLogTenantContext::tenantId($context), $context->requestId, $data);
+    }
+
+    public static function createForTenant(int $tenantId, string $requestId, array $data): OperationLog
+    {
+        if ($tenantId < 1 || trim($requestId) === '') {
+            throw new \InvalidArgumentException('OPERATION_LOG_CONTEXT_INVALID');
+        }
         unset($data['tenant_id'], $data['request_id']);
         return OperationLog::create([
-            'tenant_id' => OperationLogTenantContext::tenantId($context),
-            'request_id' => $context->requestId,
+            'tenant_id' => $tenantId,
+            'request_id' => $requestId,
         ] + $data);
     }
 

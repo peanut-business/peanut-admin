@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\module;
 
+use app\common\contract\module\ModuleExecutionGuard as ModuleExecutionGuardContract;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -13,7 +14,7 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 
 /** Shared Module installation, Tenant enablement and admin permission checks. */
-final readonly class ModuleExecutionGuard
+final readonly class ModuleExecutionGuard implements ModuleExecutionGuardContract
 {
     private string $moduleKey;
     private ModuleGuard $guard;

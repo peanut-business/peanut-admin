@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import {
   collectPluginContributions,
   routesForTenantModules,
-} from '../../src/core/plugin-contribution-policy';
+} from '@peanut-admin/admin/core';
 import articleContribution from '../../src/modules/official-article/contribution';
 
 function expect(condition: boolean, message: string): void {
@@ -54,7 +54,7 @@ expect(
   routesForTenantModules(
     [articleContribution],
     ['official.article'],
-    ['article.article/lists', 'article.articleCate/lists'],
+    ['official.article.category.list', 'official.article.list'],
     exact
   ).length === 1,
   'enabled and authorized official Article Module was not visible'
@@ -75,7 +75,7 @@ expect(
   routesForTenantModules(
     [articleContribution],
     [],
-    ['article.article/lists', 'article.articleCate/lists'],
+    ['official.article.category.list', 'official.article.list'],
     exact
   ).flatMap((route) => route.children || []).length === 0,
   'disabled official Article Module exposed a deep-link child route'

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\finance\AccountLogLogic as AdminAccountLogLogic;
-use app\adminapi\logic\member\MemberLogic;
-use app\adminapi\logic\member\MemberTagLogic;
+use app\Modules\Official\Member\Service\AccountLogLogic as AdminAccountLogLogic;
+use app\Modules\Official\Member\Service\MemberLogic;
+use app\Modules\Official\Member\Service\MemberTagLogic;
 use app\api\logic\AccountLogLogic as ApiAccountLogLogic;
 use app\common\enum\AccountLogEnum;
 use app\common\logic\AccountLogLogic;
@@ -15,6 +15,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectMemberTenant(bool $condition, string $message): void
 {
@@ -104,16 +105,23 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = (string)getenv('DB_HOST');
+$port = (int)getenv('DB_PORT');
+$database = (string)getenv('DB_NAME');
+$user = (string)getenv('DB_USER');
+$password = (string)getenv('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
-$database = 'peanut_admin_mt03_member_' . $runId;
-$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
-$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+expectMemberTenant(
+    $host !== '' && $port > 0 && $database !== '' && $user !== '' && $password !== '',
+    'registered P0-E database credentials are required'
+);
+expectMemberTenant(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'Member Tenant Gate requires its exact registered P0-E plugin_lifecycle database'
+);
 
 try {
-    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
+    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
     createMemberTenantSchema($pdo);
     $pdo->exec("INSERT INTO pa_tenant (id,status) VALUES (101,'active'),(202,'active')");
     $pdo->exec(<<<'SQL'
@@ -129,8 +137,7 @@ INSERT INTO pa_member_balance_log
 VALUES
   (41, 101, 'FLOW-SAME', 11, 1, 100, 1, 10.00, 10.00, 0, 'SOURCE-SAME', 'alpha', 0, 1);
 SQL);
-    putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App(); $app->initialize();
     set_error_handler(static function (int $severity, string $message, string $file, int $line): never {
         throw new ErrorException($message, 0, $severity, $file, $line);
@@ -203,13 +210,12 @@ SQL);
         'duplicate same-Tenant source_sn row was inserted'
     );
 
-    foreach (['adminapi/logic/member/MemberLogic.php', 'adminapi/logic/member/MemberTagLogic.php', 'common/service/MemberBalanceService.php', 'common/logic/AccountLogLogic.php', 'common/service/member/MemberTenantContext.php', 'common/service/member/MemberTenantRepository.php'] as $relative) {
+    foreach (['Modules/Official/Member/Service/MemberLogic.php', 'Modules/Official/Member/Service/MemberTagLogic.php', 'common/service/MemberBalanceService.php', 'common/logic/AccountLogLogic.php', 'common/service/member/MemberTenantContext.php', 'common/service/member/MemberTenantRepository.php'] as $relative) {
         exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($serverRoot . '/app/' . $relative), $output, $exit);
         expectMemberTenant($exit === 0, 'PHP 8.3 lint failed: ' . $relative . ' ' . implode(' ', $output));
         $output = [];
     }
 } finally {
-    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "MT03-MEMBER-TENANT-001 passed\n";

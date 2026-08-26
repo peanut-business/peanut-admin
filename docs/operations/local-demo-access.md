@@ -1,19 +1,7 @@
 # Local demo access
 
-> Internal handoff for the disposable local multi-tenant demonstration. This file is the
-> local counterpart to `docs/operations/demo-access.md`; do not mix local and remote accounts.
-
-Verified: 2026-08-20 against the versioned `scripts/local-multi-tenant-demo` defaults.
-
-All local demo accounts use the shared demo password `peanut1234`. Password changes are locked
-when `PEANUT_DEMO_MODE=enabled`.
-
-| Environment | Login URL | Account | Password |
-| --- | --- | --- | --- |
-| Local Platform | http://platform.peanut-admin.test:20176/platform/ | `platform@local.test` | `peanut1234` |
-| Local shared Admin | http://admin.peanut-admin.test:20179/admin/ | `owner@local.test` | `peanut1234` |
-| Local Tenant A | http://tenant-a.peanut-admin.test:20179/admin/ | `tenant-a@local.test` | `peanut1234` |
-| Local Tenant B | http://tenant-b.peanut-admin.test:20179/admin/ | `tenant-b@local.test` | `peanut1234` |
+本地单租户和多租户的登录表统一维护在 [Demo 登录信息](../../docs-site/demo-access.md) 页面；本文件
+只记录多租户体验所需的资源、端口和启动方式，不再复制账号表。
 
 ## Runtime resources
 
@@ -29,10 +17,11 @@ Start with `./scripts/local-multi-tenant-demo prepare` and then
 `./scripts/local-multi-tenant-demo up`. The active project-resource lease is required before
 starting the local database-backed demo.
 
-The local runtime file `.local/mt-demo.env` is generated and ignored by Git. It may contain
-database credentials and signing keys; those values are not recorded in this document. The
-database credential reference remains the private resource entry in
+The local orchestration file `.local/mt-demo-stack.env` and isolated backend file
+`server/.env.mt-demo` are generated and ignored by Git. Only the backend file contains database
+credentials and signing keys; those values are not recorded in this document. The database
+credential reference remains the private resource entry in
 `resources/project-resources.json`.
 
-When a local demo account, password, hostname, port, or database changes, update this file and
-the corresponding defaults in `scripts/local-multi-tenant-demo` together.
+When a local demo account, password, hostname, port, or database changes, update the unified Demo
+page, this resource section and the corresponding defaults in `scripts/local-multi-tenant-demo` together.

@@ -5,6 +5,7 @@ namespace app\common\service\module;
 
 use app\common\service\JsonService;
 use app\common\service\member\AuthenticatedMemberContext;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -40,7 +41,9 @@ final class OfficialModuleMiddleware
                 ),
                 default => throw new \RuntimeException('MODULE_TENANT_CONTEXT_UNAVAILABLE'),
             };
-            (new ModuleExecutionGuard($pdo, $moduleKey))->assertEnabled($context);
+            PdoModuleGovernanceProvider::forExecution($pdo)
+                ->executionGuard($moduleKey)
+                ->assertEnabled($context);
         } catch (ModuleException $exception) {
             $status = in_array($exception->errorCode, ['MODULE_NOT_INSTALLED', 'MODULE_INSTALLATION_FAILED'], true)
                 ? 50300

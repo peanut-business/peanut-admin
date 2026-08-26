@@ -4,19 +4,21 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import re
 import socket
 import subprocess
 import sys
-import urllib.error
-import urllib.request
+import time
+import urllib.parse
 from pathlib import Path
 from typing import Any
 
 
 REPO = Path(__file__).resolve().parent.parent
 REGISTRY_PATH = REPO / "resources/project-resources.json"
+DAILY_DEVELOPMENT_DATABASE_ID = "peanut-admin-mysql84-development"
 
 
 def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str, str]]:
@@ -24,10 +26,13 @@ def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str,
     databases = [
         item
         for item in registry["resources"]["databases"]
-        if "development" in item["environments"]
+        if item.get("stable_resource_id") == DAILY_DEVELOPMENT_DATABASE_ID
     ]
     if len(databases) != 1:
-        raise ValueError("resource registry must select one development database")
+        raise ValueError(
+            "resource registry must contain exactly one daily development database: "
+            + DAILY_DEVELOPMENT_DATABASE_ID
+        )
     database = databases[0]
     endpoint = database["upstream_endpoint"]
     expected_database = {
@@ -47,9 +52,20 @@ def registered_expectations() -> tuple[dict[str, Any], dict[str, int], dict[str,
         "DOCS_PORT": "development_docs",
         "HTTP_PORT": "production_preview_gateway",
     }
-    expected_ports = {
-        port_names[item["port_env"]]: int(item["port"])
+    selected_listeners = {
+        item.get("port_env"): item
         for item in registry["resources"]["local_listeners"]
+        if item.get("port_env") in port_names
+    }
+    missing_listeners = sorted(set(port_names) - set(selected_listeners))
+    if missing_listeners:
+        raise ValueError(
+            "resource registry is missing probe listeners: "
+            + ", ".join(missing_listeners)
+        )
+    expected_ports = {
+        port_names[port_env]: int(selected_listeners[port_env]["port"])
+        for port_env in port_names
     }
     port_env_names = {value: key for key, value in port_names.items()}
     return expected_database, expected_ports, port_env_names
@@ -65,17 +81,20 @@ SAFE_ENV_NAMES = set(PORT_ENV_NAMES.values()) | {
     "DB_NAME",
     "DEPLOYMENT_MODE",
 }
+SAFE_BACKEND_NAMES = SAFE_ENV_NAMES - set(PORT_ENV_NAMES.values())
 
 
 class Probe:
-    def __init__(self, mode: str, env_file: Path) -> None:
+    def __init__(self, mode: str, orchestration_env: Path, backend_env: Path) -> None:
         self.mode = mode
-        self.env_file = env_file
+        self.orchestration_env = orchestration_env
+        self.backend_env = backend_env
         self.checks: list[dict[str, Any]] = []
-        self._environment = self._read_environment(env_file)
+        self._orchestration = self._read_environment(orchestration_env)
+        self._backend = self._read_environment(backend_env)
         self._secrets = [
             value
-            for name, value in self._environment.items()
+            for name, value in (self._orchestration | self._backend).items()
             if value
             and re.search(r"PASS|PASSWORD|SECRET|TOKEN|KEY|CREDENTIAL", name, re.I)
         ]
@@ -95,12 +114,12 @@ class Probe:
                 values[name] = value.strip().strip("'\"")
         return values
 
-    def _redact(self, value: str) -> str:
+    def _redact(self, value: str, limit: int = 500) -> str:
         result = value
         for secret in sorted(self._secrets, key=len, reverse=True):
             if len(secret) >= 4:
                 result = result.replace(secret, "[REDACTED]")
-        return result[:500]
+        return result[:limit]
 
     def add(
         self,
@@ -140,7 +159,12 @@ class Probe:
             raise ValueError(f"missing {name}")
         return match.group(1)
 
-    def run_command(self, command: list[str], timeout: int = 20) -> tuple[bool, str]:
+    def run_command(
+        self,
+        command: list[str],
+        timeout: int = 20,
+        output_limit: int = 500,
+    ) -> tuple[bool, str]:
         try:
             completed = subprocess.run(
                 command,
@@ -158,7 +182,7 @@ class Probe:
             if completed.returncode == 0
             else completed.stderr.strip()
         )
-        return completed.returncode == 0, self._redact(output)
+        return completed.returncode == 0, self._redact(output, output_limit)
 
     def static_checks(self) -> None:
         local_stack = self.text("scripts/local-stack.sh")
@@ -177,8 +201,11 @@ class Probe:
             and "php-runtime.log" in host_runtime
         )
         target_ok = (
-            "database-env --deployment-target local-development --consumer host" in local_stack
-            and "PEANUT_DEPLOYMENT_TARGET=local-production-preview" in local_stack
+            re.search(
+                r"database-env\s+--deployment-target\s+local-development\s+--consumer\s+host",
+                local_stack,
+            ) is not None
+            and "set_env_value \"$temporary\" PEANUT_DEPLOYMENT_TARGET local-production-preview" in local_stack
             and "host.docker.internal" in dev_compose
             and "NO_PROXY:" in dev_compose
             and re.search(r"(?m)^\s{2}php:\s*$", dev_compose) is None
@@ -329,13 +356,26 @@ class Probe:
         )
 
         safe_environment = {
-            name: self._environment[name]
+            name: self._backend[name]
             for name in sorted(SAFE_ENV_NAMES)
-            if name in self._environment
+            if name in self._backend
         }
-        if self.env_file.is_file():
+        safe_environment.update({
+            name: self._orchestration[name]
+            for name in sorted(PORT_ENV_NAMES.values())
+            if name in self._orchestration
+        })
+        forbidden_orchestration = sorted(
+            name for name in self._orchestration
+            if name in SAFE_BACKEND_NAMES or re.match(
+                r"^(?:PHP_(?:ENV_NAME|APP_|DB_|JWT_|DEPLOYMENT_MODE|PUBLIC_DEFAULT|PLATFORM_|TENANT_|ADMIN_|OWNER_|PEANUT_)|APP_|DB_|JWT_|DEPLOYMENT_MODE$|PUBLIC_DEFAULT_TENANT_FALLBACK$|PLATFORM_(?:HOSTS|IDENTIFIER_HMAC_KEY|INITIAL_EMAIL|INITIAL_PASSWORD)$|TENANT_|ADMIN_|OWNER_INVITATION_|PEANUT_(?:DEPLOYMENT_TARGET|DATABASE_|RESOURCE_LEASE_PROOF|STORAGE_|DEMO_|MODULE_))",
+                name,
+            )
+        )
+        if self.orchestration_env.is_file() and self.backend_env.is_file():
             env_ok = (
-                safe_environment.get("PEANUT_DATABASE_RESOURCE_ID") == EXPECTED_DATABASE["resource_id"]
+                forbidden_orchestration == []
+                and safe_environment.get("PEANUT_DATABASE_RESOURCE_ID") == EXPECTED_DATABASE["resource_id"]
                 and safe_environment.get("PEANUT_DATABASE_ENDPOINT_ID") == EXPECTED_DATABASE["endpoint_id"]
                 and safe_environment.get("PEANUT_DATABASE_CONSUMER") == EXPECTED_DATABASE["consumer"]
                 and safe_environment.get("DB_HOST") == EXPECTED_DATABASE["host"]
@@ -351,14 +391,23 @@ class Probe:
             self.add(
                 "config.local_environment",
                 env_ok,
-                "local environment selects the registered database and valid env-backed listener ports",
-                {"path": str(self.env_file), "safe_values": safe_environment},
+                "split local environments select the registered database and valid listener ports",
+                {
+                    "orchestration_path": str(self.orchestration_env),
+                    "backend_path": str(self.backend_env),
+                    "forbidden_orchestration_keys": forbidden_orchestration,
+                    "safe_values": safe_environment,
+                },
             )
         elif self.mode == "full":
             self.add(
                 "config.local_environment",
                 False,
-                f"local environment file is missing: {self.env_file}",
+                "local orchestration or backend environment file is missing",
+                {
+                    "orchestration_path": str(self.orchestration_env),
+                    "backend_path": str(self.backend_env),
+                },
             )
         else:
             self.skip(
@@ -376,7 +425,7 @@ class Probe:
     def resolved_ports(self) -> dict[str, int]:
         ports: dict[str, int] = {}
         for name, expected in EXPECTED_PORTS.items():
-            raw = self._environment.get(PORT_ENV_NAMES[name], str(expected))
+            raw = self._orchestration.get(PORT_ENV_NAMES[name], str(expected))
             try:
                 ports[name] = int(raw)
             except ValueError:
@@ -394,42 +443,55 @@ class Probe:
             return False
 
     @staticmethod
-    def http_status(url: str) -> int | None:
-        class NoRedirect(urllib.request.HTTPRedirectHandler):
-            def redirect_request(
-                self,
-                req: Any,
-                fp: Any,
-                code: int,
-                msg: str,
-                headers: Any,
-                newurl: str,
-            ) -> None:
-                return None
-
-        opener = urllib.request.build_opener(NoRedirect)
-        request = urllib.request.Request(url, headers={"User-Agent": "peanut-admin-local-probe/1"})
-        try:
-            with opener.open(request, timeout=4) as response:
-                response.read(1)
-                return response.status
-        except urllib.error.HTTPError as exception:
-            return exception.code
-        except (urllib.error.URLError, TimeoutError, OSError):
+    def http_status(url: str, attempts: int = 1) -> int | None:
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme != "http" or parsed.hostname is None:
             return None
+        path = parsed.path or "/"
+        if parsed.query:
+            path += f"?{parsed.query}"
+        status: int | None = None
+        for attempt in range(attempts):
+            connection = http.client.HTTPConnection(
+                parsed.hostname,
+                parsed.port or 80,
+                timeout=4,
+            )
+            try:
+                connection.request(
+                    "GET",
+                    path,
+                    headers={
+                        "Accept": "*/*",
+                        "User-Agent": "peanut-admin-local-probe/1",
+                    },
+                )
+                response = connection.getresponse()
+                response.read(1)
+                status = response.status
+            except (http.client.HTTPException, TimeoutError, OSError):
+                status = None
+            finally:
+                connection.close()
+            if status is not None and 200 <= status < 400:
+                return status
+            if attempt + 1 < attempts:
+                time.sleep(1)
+        return status
 
     def compose_command(self, compose_file: str, *arguments: str) -> list[str]:
         command = [
             "docker",
             "compose",
             "--env-file",
-            str(self.env_file),
+            str(self.orchestration_env),
             "-f",
             str(REPO / compose_file),
             *arguments,
         ]
         if compose_file == "deploy/docker-compose.prod.yml":
-            command = ["env", "PEANUT_DEPLOYMENT_TARGET=local-production-preview", *command]
+            command[4:4] = ["--env-file", str(self.backend_env)]
+            command = ["env", f"PEANUT_SERVER_ENV_FILE={self.backend_env}", *command]
         return command
 
     def runtime_checks(self) -> None:
@@ -451,12 +513,12 @@ class Probe:
         prod_port = ports["production_preview_gateway"]
         docs_port = ports["development_docs"]
         entries = {
-            "development_admin": self.http_status(f"http://127.0.0.1:{dev_port}/admin/"),
-            "development_pc": self.http_status(f"http://127.0.0.1:{dev_port}/pc/"),
-            "development_mobile": self.http_status(f"http://127.0.0.1:{dev_port}/mobile/"),
-            "development_docs": self.http_status(f"http://127.0.0.1:{docs_port}/"),
-            "production_preview_health": self.http_status(f"http://127.0.0.1:{prod_port}/healthz"),
-            "production_preview_admin": self.http_status(f"http://127.0.0.1:{prod_port}/admin/"),
+            "development_admin": self.http_status(f"http://127.0.0.1:{dev_port}/admin/", attempts=5),
+            "development_pc": self.http_status(f"http://127.0.0.1:{dev_port}/pc/", attempts=5),
+            "development_mobile": self.http_status(f"http://127.0.0.1:{dev_port}/mobile/", attempts=5),
+            "development_docs": self.http_status(f"http://127.0.0.1:{docs_port}/", attempts=5),
+            "production_preview_health": self.http_status(f"http://127.0.0.1:{prod_port}/healthz", attempts=5),
+            "production_preview_admin": self.http_status(f"http://127.0.0.1:{prod_port}/admin/", attempts=5),
         }
         entries_ok = all(status is not None and 200 <= status < 400 for status in entries.values())
         self.add(
@@ -526,7 +588,15 @@ class Probe:
         )
 
         baseline_ok, baseline_output = self.run_command(
-            [str(REPO / "scripts/local-stack.sh"), "database-host-status"], timeout=30
+            [
+                "env",
+                f"PEANUT_LOCAL_ENV_FILE={self.orchestration_env}",
+                f"PEANUT_SERVER_ENV_FILE={self.backend_env}",
+                str(REPO / "scripts/local-stack.sh"),
+                "database-host-status",
+            ],
+            timeout=30,
+            output_limit=20_000,
         )
         baseline_details: dict[str, Any] = {}
         if baseline_ok:
@@ -596,13 +666,19 @@ def parse_args() -> argparse.Namespace:
         default=REPO / ".local/stack.env",
         help="local stack env file (default: .local/stack.env)",
     )
+    parser.add_argument(
+        "--backend-env",
+        type=Path,
+        default=REPO / "server/.env",
+        help="backend env file (default: server/.env)",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     mode = "config-only" if args.config_only else "full"
-    probe = Probe(mode, args.env_file.resolve())
+    probe = Probe(mode, args.env_file.resolve(), args.backend_env.resolve())
     try:
         probe.static_checks()
         if args.config_only:

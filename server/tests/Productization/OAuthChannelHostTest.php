@@ -90,11 +90,11 @@ foreach ([
 }
 
 $officialAccountConfig = (string)file_get_contents(
-    $serverRoot . '/app/adminapi/logic/setting/OfficialAccountLogic.php'
+    $serverRoot . '/app/Modules/Official/Oauth/Service/OfficialAccountLogic.php'
 );
-$officialAccountApi = (string)file_get_contents($repositoryRoot . '/web/src/api/official-account.ts');
+$officialAccountApi = (string)file_get_contents($repositoryRoot . '/web/src/modules/official-oauth/api.ts');
 $officialAccountView = (string)file_get_contents(
-    $repositoryRoot . '/web/src/views/app-setting/channel/OfficialAccountConfig.vue'
+    $repositoryRoot . '/web/src/modules/official-oauth/views/channel/OfficialAccountConfig.vue'
 );
 $legacyWebApi = (string)file_get_contents($repositoryRoot . '/web/src/api/app.ts');
 foreach ([$officialAccountConfig, $officialAccountApi, $officialAccountView] as $source) {

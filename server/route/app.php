@@ -10,6 +10,7 @@ use app\api\controller\IndexController as ApiIndexController;
 use app\api\controller\LoginController as ApiLoginController;
 use app\api\controller\ArticleController as ApiArticleController;
 use app\api\controller\SearchController as ApiSearchController;
+use app\api\controller\StorageController as ApiStorageController;
 use app\api\controller\PcController as ApiPcController;
 use app\api\controller\DecorationController as ApiDecorationController;
 use app\api\middleware\CheckTokenMiddleware;
@@ -31,6 +32,7 @@ use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
+use app\Modules\Official\Article\Http\ArticleModuleMiddleware;
 use app\platform\controller\PlatformSessionController;
 use app\platform\controller\PlatformAccessController;
 use app\platform\controller\PlatformTenantBoundaryController;
@@ -40,10 +42,12 @@ use app\platform\controller\PlatformControlPlaneQueryController;
 use app\platform\controller\PlatformStorageController;
 use app\platform\controller\PlatformTenantInvitationController;
 use app\platform\controller\PlatformTenantEntryBindingController;
+use app\platform\controller\PlatformModuleLifecycleController;
 use app\platform\controller\TenantOwnerInvitationPublicController;
 use app\platform\http\middleware\PlatformLoginMiddleware;
 use app\platform\http\middleware\PlatformHostMiddleware;
 use app\platform\http\middleware\PlatformPermissionMiddleware;
+use app\platform\http\middleware\PlatformInstanceToolMiddleware;
 use app\tenant\controller\TenantSessionController;
 use think\facade\Route;
 
@@ -102,22 +106,52 @@ Route::get('api/platform/audit', [PlatformControlPlaneQueryController::class, 'a
 Route::get('api/platform/tenants/modules', [PlatformControlPlaneQueryController::class, 'moduleStates'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
+Route::get('api/platform/instance-tools/modules', [PlatformModuleLifecycleController::class, 'lists'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.read')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/create', [PlatformModuleLifecycleController::class, 'create'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.create')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/install', [PlatformModuleLifecycleController::class, 'install'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.install')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/uninstall', [PlatformModuleLifecycleController::class, 'uninstall'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.uninstall')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/disable', [PlatformModuleLifecycleController::class, 'disable'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.disable')
+    ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/sync', [PlatformModuleLifecycleController::class, 'sync'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.sync')
+    ->middleware(PlatformInstanceToolMiddleware::class);
 Route::get('api/platform/tenant-entry-bindings', [PlatformTenantEntryBindingController::class, 'lists'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.read');
 Route::post('api/platform/tenant-entry-bindings/enable', [PlatformTenantEntryBindingController::class, 'enable'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
-Route::get('api/platform/infrastructure/storage', [PlatformStorageController::class, 'lists'])
+Route::get('api/platform/infrastructure/storage', [PlatformStorageController::class, 'snapshot'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
-Route::get('api/platform/infrastructure/storage/detail', [PlatformStorageController::class, 'detail'])
-    ->middleware(PlatformLoginMiddleware::class)
-    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
-Route::post('api/platform/infrastructure/storage/setup', [PlatformStorageController::class, 'setup'])
+Route::post('api/platform/infrastructure/storage/account', [PlatformStorageController::class, 'createAccount'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
-Route::post('api/platform/infrastructure/storage/change', [PlatformStorageController::class, 'change'])
+Route::post('api/platform/infrastructure/storage/account/update', [PlatformStorageController::class, 'updateAccount'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/infrastructure/storage/space', [PlatformStorageController::class, 'createSpace'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/infrastructure/storage/space/update', [PlatformStorageController::class, 'updateSpace'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/infrastructure/storage/route', [PlatformStorageController::class, 'setRoute'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
 Route::post('api/platform/tenant-entry-bindings/disable', [PlatformTenantEntryBindingController::class, 'disable'])
@@ -309,7 +343,6 @@ Route::group('api/admin', function () {
     Route::get('decoration/mobile/page/lists', [DecorationPageController::class, 'mobileLists']);
     Route::get('decoration/mobile/page/detail', [DecorationPageController::class, 'mobileDetail']);
     Route::post('decoration/mobile/page/save', [DecorationPageController::class, 'mobileSave']);
-    Route::get('decoration/mobile/article', [DecorationPageController::class, 'article']);
     Route::get('decoration/tabbar/detail', [DecorationTabbarController::class, 'detail']);
     Route::post('decoration/tabbar/save', [DecorationTabbarController::class, 'save']);
     Route::get('decoration/pc/page/lists', [DecorationPageController::class, 'pcLists']);
@@ -317,6 +350,17 @@ Route::group('api/admin', function () {
     Route::post('decoration/pc/page/save', [DecorationPageController::class, 'pcSave']);
 
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
+
+// The decoration article picker needs its Module guard after the native session
+// is established but before RBAC and operation logging inspect the request.
+Route::group('api/admin', function (): void {
+    Route::get('decoration/mobile/article', [DecorationPageController::class, 'article']);
+})->middleware([
+    LoginMiddleware::class,
+    ArticleModuleMiddleware::class,
+    AuthMiddleware::class,
+    OperationLogMiddleware::class,
+]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 用户端 API（/api/user/ 和 /api/  命名空间）
@@ -332,6 +376,7 @@ Route::get('api/index/policy',  [ApiIndexController::class, 'policy'])
     ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
 
 Route::post('api/login/logout',   [ApiLoginController::class, 'logout']);
+Route::get('api/storage/private', [ApiStorageController::class, 'privateFile']);
 
 Route::get('api/article/cate',    [ApiArticleController::class, 'cate'])
     ->middleware(PublicArticleTenantMiddleware::class, 'article.cate');

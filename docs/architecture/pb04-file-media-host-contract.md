@@ -53,6 +53,9 @@ FileController → FileLogic / FileCateLogic
 4. 素材删除按记录 `storage` 选择原 Provider；对象删除失败时数据库回滚并返回失败。分类删除先完成子树素材/对象退出，再软删分类。
 5. `pa_file.storage` 是素材对象 Provider 的权威 provenance。素材列表和上传响应必须按该字段拼 URL，不能按当前默认 Provider 误拼旧云对象。
 6. local URI 继续使用 `storage/` 前缀与当前站点；显式云 Provider 缺少 domain 时返回空 URL，不能伪造站点 URL。没有 provenance 的旧通用 URI 保留当前默认 Provider 兼容语义。
+7. 租户拥有的头像、文章/装修资源、二维码和富文本中的素材引用，在写入前必须通过当前
+   TenantContext 校验 `tenants/v1/<tenant_id>/...` 对象命名空间；跨租户对象引用直接拒绝。
+   外部 CDN/微信等非应用对象 URL 仍可保留为外部引用。
 
 ## 4. Provider、Host、数据升级与边界
 

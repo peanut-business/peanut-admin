@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace app\api\logic;
 
+use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\api\service\UserTokenService;
 use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\service\FileService;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\member\MemberTenantRepository;
-use app\common\service\notice\VerificationCodeService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -24,22 +24,12 @@ class LoginLogic extends BaseLogic
     {
         try {
             self::assertLoginWayEnabled($context, 1);
-            if (MemberTenantRepository::members($context)->where('account', $params['account'])->count()) {
-                throw new \Exception('账号已被注册');
-            }
-
-            $salt     = substr(md5((string) time()), 0, 8);
-            $password = md5(md5($params['password']) . $salt);
-            $sn       = Member::generateSn($context);
-
-            MemberTenantRepository::createMember($context, [
-                'sn'       => $sn,
-                'account'  => $params['account'],
-                'password' => $password . ':' . $salt,  // 存 hash:salt
-                'nickname' => '用户' . substr($sn, -6),
-                'avatar'   => self::defaultAvatar($context),
-                'status'   => 1,
-            ]);
+            (new MemberModuleProvider())->identityCommands()->register(
+                $context,
+                (string)$params['account'],
+                (string)$params['password'],
+                self::defaultAvatar($context),
+            );
 
             return true;
         } catch (\Exception $e) {
@@ -56,29 +46,12 @@ class LoginLogic extends BaseLogic
     {
         try {
             self::assertLoginWayEnabled($context, 1);
-            /** @var Member|null $member */
-            $member = MemberTenantRepository::members($context)->where(function ($q) use ($params) {
-                $q->where('account', $params['account'])
-                  ->whereOr('mobile', $params['account']);
-            })->find();
-
-            if (!$member) {
-                throw new \Exception('账号不存在');
-            }
-            if (!$member->status) {
-                throw new \Exception('账号已被禁用');
-            }
-
-            // 验证密码
-            [$hash, $salt] = array_pad(explode(':', (string) $member->password, 2), 2, '');
-            if (md5(md5($params['password']) . $salt) !== $hash) {
-                throw new \Exception('密码错误');
-            }
-
-            // 更新登录信息
-            $member->login_time = time();
-            $member->login_ip   = request()->ip();
-            $member->save();
+            $member = (new MemberModuleProvider())->identityCommands()->login(
+                $context,
+                (string)$params['account'],
+                (string)$params['password'],
+                request()->ip(),
+            );
 
             $token  = UserTokenService::createToken($member->id);
             $avatar = FileService::getFileUrl((string) $member->avatar);
@@ -102,29 +75,23 @@ class LoginLogic extends BaseLogic
         try {
             self::assertLoginWayEnabled($context, 2);
             $mobile = (string) $params['mobile'];
-            $service = new VerificationCodeService();
-            if (!$service->verify($context, NoticeSceneEnum::LOGIN_CODE, $mobile, (string) $params['code'])) {
-                throw new \RuntimeException($service->getError());
+            $result = (new ModuleProvider())->verification()->verifyCode(
+                $context,
+                NoticeSceneEnum::LOGIN_CODE,
+                $mobile,
+                (string) $params['code'],
+            );
+            if (!$result->accepted) {
+                throw new \RuntimeException($result->error);
             }
 
-            $member = MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty();
-            if ($member->isEmpty()) {
-                $sn = Member::generateSn($context);
-                $member = MemberTenantRepository::createMember($context, [
-                    'sn'       => $sn,
-                    'account'  => $mobile,
-                    'password' => '',
-                    'mobile'   => $mobile,
-                    'nickname' => '用户' . substr($sn, -6),
-                    'avatar'   => self::defaultAvatar($context),
-                    'status'   => 1,
-                ]);
-            }
-            if (!(int) $member->status) {
-                throw new \RuntimeException('账号已被禁用');
-            }
-
-            return self::loginResult($member);
+            $member = (new MemberModuleProvider())->identityCommands()->loginByVerifiedMobile(
+                $context,
+                $mobile,
+                self::defaultAvatar($context),
+                request()->ip(),
+            );
+            return self::loginResult($member, false);
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
             return false;
@@ -134,24 +101,22 @@ class LoginLogic extends BaseLogic
     public static function resetPassword(TenantContext|TenantSystemContext $context, array $params): bool
     {
         try {
-            $member = MemberTenantRepository::members($context)->where('mobile', (string) $params['mobile'])->findOrEmpty();
-            if ($member->isEmpty()) {
-                throw new \RuntimeException('手机号未绑定账号');
-            }
-
-            $service = new VerificationCodeService();
-            if (!$service->verify(
+            (new MemberModuleProvider())->identityCommands()->assertMobileBound($context, (string)$params['mobile']);
+            $result = (new ModuleProvider())->verification()->verifyCode(
                 $context,
                 NoticeSceneEnum::RESET_PASSWORD,
                 (string) $params['mobile'],
                 (string) $params['code']
-            )) {
-                throw new \RuntimeException($service->getError());
+            );
+            if (!$result->accepted) {
+                throw new \RuntimeException($result->error);
             }
 
-            [$hash, $salt] = self::passwordHash((string) $params['password']);
-            $member->password = $hash . ':' . $salt;
-            $member->save();
+            (new MemberModuleProvider())->identityCommands()->resetPasswordByVerifiedMobile(
+                $context,
+                (string)$params['mobile'],
+                (string)$params['password'],
+            );
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -159,11 +124,11 @@ class LoginLogic extends BaseLogic
         }
     }
 
-    private static function loginResult(Member $member): array
+    private static function loginResult(Member $member, bool $recordLogin = true): array
     {
-        $member->login_time = time();
-        $member->login_ip = request()->ip();
-        $member->save();
+        if ($recordLogin) {
+            throw new \LogicException('Member login must be recorded by MemberIdentityCommands');
+        }
 
         return [
             'token'    => UserTokenService::createToken((int) $member->id),
@@ -173,13 +138,6 @@ class LoginLogic extends BaseLogic
             'avatar'   => FileService::getFileUrl((string) $member->avatar),
             'mobile'   => $member->mobile,
         ];
-    }
-
-    /** @return array{0:string,1:string} */
-    private static function passwordHash(string $password): array
-    {
-        $salt = substr(md5(uniqid((string) mt_rand(), true)), 0, 8);
-        return [md5(md5($password) . $salt), $salt];
     }
 
     private static function assertLoginWayEnabled(

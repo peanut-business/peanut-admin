@@ -8,6 +8,7 @@ use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use think\file\UploadedFile;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectMemberUpload(bool $condition, string $message): void
 {
@@ -31,29 +32,26 @@ function memberUploadContext(int $tenantId, int $memberId, string $requestId): T
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
-$uploadRoute = "Route::post('upload/image', [ApiUploadController::class, 'image']);";
-$protectedStart = strpos($routeSource, "Route::group('api', function () {");
-$protectedEnd = $protectedStart === false
-    ? false
-    : strpos($routeSource, '})->middleware([CheckTokenMiddleware::class]);', $protectedStart);
+$routeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/File/Http/routes.php');
+$uploadRoute = "Route::post('api/upload/image', [ApiUploadController::class, 'image'])";
 expectMemberUpload(substr_count($routeSource, $uploadRoute) === 1, 'member upload route is missing or duplicated');
 expectMemberUpload(
-    $protectedStart !== false
-        && $protectedEnd !== false
-        && ($uploadPosition = strpos($routeSource, $uploadRoute, $protectedStart)) !== false
-        && $uploadPosition < $protectedEnd,
-    'member upload route is not protected by CheckTokenMiddleware'
+    str_contains(
+        $routeSource,
+        $uploadRoute . "\n    ->middleware(CheckTokenMiddleware::class)\n    ->middleware(OfficialModuleMiddleware::class",
+    ),
+    'member upload route is not protected by identity and Module middleware'
 );
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_member_upload_' . $runId;
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
@@ -64,7 +62,7 @@ $temporaryUpload = tempnam(sys_get_temp_dir(), 'peanut-member-upload-');
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
@@ -107,12 +105,7 @@ CREATE TABLE pa_file (
 INSERT INTO pa_config (type, name, value) VALUES ('storage', 'default', 'local');
 SQL);
 
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
 
     $app = new think\App($serverRoot);
     $app->initialize();

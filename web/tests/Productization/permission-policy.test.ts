@@ -1,11 +1,11 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-import { evaluateRequiredPermissions } from '../../src/core/permission-policy';
+import { evaluateRequiredPermissions } from '@peanut-admin/admin/core';
 import {
   allowsInstanceTools,
   deploymentMode,
   routesForDeployment,
-} from '../../src/core/deployment-mode';
+} from '@peanut-admin/admin/shell';
 
 const exactEvaluator = (
   permissions: ReadonlySet<string>,
@@ -25,35 +25,35 @@ expect(
   'empty list must pass'
 );
 expect(
-  evaluateRequiredPermissions('article/lists', ['*'], exactEvaluator),
+  evaluateRequiredPermissions('official.article.list', ['*'], exactEvaluator),
   'root wildcard grant must pass'
 );
 expect(
   evaluateRequiredPermissions(
-    'article/lists',
-    ['article/lists'],
+    'official.article.list',
+    ['official.article.list'],
     exactEvaluator
   ),
   'exact single permission must pass'
 );
 expect(
   evaluateRequiredPermissions(
-    ['article/edit', 'article/lists'],
-    ['article/lists'],
+    ['official.article.edit', 'official.article.list'],
+    ['official.article.list'],
     exactEvaluator
   ),
   'multiple requirements must use any-of'
 );
 expect(
   !evaluateRequiredPermissions(
-    'article/edit',
-    ['article/lists'],
+    'official.article.edit',
+    ['official.article.list'],
     exactEvaluator
   ),
   'missing permission must fail'
 );
 expect(
-  !evaluateRequiredPermissions('*', ['article/lists'], exactEvaluator),
+  !evaluateRequiredPermissions('*', ['official.article.list'], exactEvaluator),
   'requesting wildcard must not bypass authorization'
 );
 

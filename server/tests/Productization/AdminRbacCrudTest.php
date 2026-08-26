@@ -6,7 +6,6 @@ use app\adminapi\logic\auth\MenuLogic;
 use app\adminapi\logic\auth\RoleLogic;
 use app\adminapi\logic\dept\DeptLogic;
 use app\adminapi\logic\dept\JobsLogic;
-use app\adminapi\service\AdminPermissionService;
 use app\common\model\auth\Admin;
 use app\common\model\auth\AdminDept;
 use app\common\model\auth\AdminJobs;
@@ -18,6 +17,7 @@ use app\common\model\dept\Dept;
 use app\common\model\dept\Jobs;
 use think\facade\Db;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectCrud(bool $condition, string $message): void

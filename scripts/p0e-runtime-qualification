@@ -32,7 +32,7 @@ INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
 BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
 BROWSER_TOOLING = ROOT / "scripts/p0e-browser-tooling"
 DEVELOPMENT_DATABASE_SYNC = ROOT / "scripts/project-development-database.sh"
-LOCAL_STACK_ENV = ROOT / ".local/stack.env"
+LOCAL_BACKEND_ENV = ROOT / "server/.env"
 PERSISTENT_DATABASE = "peanut_admin_development"
 RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
@@ -136,8 +136,11 @@ def read_private_environment(path: Path, required: set[str]) -> dict[str, str]:
 
 
 def prepare_database_credentials() -> None:
-    command([str(DEVELOPMENT_DATABASE_SYNC), "sync-credentials"])
-    values = read_private_environment(LOCAL_STACK_ENV, {"DB_USER", "DB_PASS"})
+    command(
+        [str(DEVELOPMENT_DATABASE_SYNC), "sync-credentials"],
+        env={"PEANUT_SERVER_ENV_FILE": str(LOCAL_BACKEND_ENV)},
+    )
+    values = read_private_environment(LOCAL_BACKEND_ENV, {"DB_USER", "DB_PASS"})
     os.environ["P0E_DB_USER"] = values["DB_USER"]
     os.environ["P0E_DB_PASSWORD"] = values["DB_PASS"]
 
@@ -539,6 +542,7 @@ class Runner:
         self.summary_path = self.output / "summary.json"
         self.generated = self.cache / "generated-application"
         self.compose_env = self.cache / "compose.env"
+        self.compose_backend_env: Path | None = None
         self.compose_overlay = self.cache / "compose.lease-proof.yml"
         self.runtime_credentials = self.cache / "runtime-credentials.env"
         self.docs_process: subprocess.Popen[str] | None = None
@@ -744,12 +748,12 @@ class Runner:
             if self.database_exists(database):
                 self.drop_database(database)
 
-    def db_env(self, database: str, mode: str, consumer: str = "host") -> dict[str, str]:
+    def backend_values(self, database: str, mode: str, consumer: str = "container") -> dict[str, str]:
         if consumer not in ("host", "container"):
             fail(f"invalid database consumer: {consumer}")
         selector = command([
             str(REGISTRY_TOOL), "database-env", "--deployment-target", "local-development",
-            "--consumer", "host", "--resource-id", RESOURCE_ID, "--database-name", database,
+            "--consumer", consumer, "--resource-id", RESOURCE_ID, "--database-name", database,
         ], capture=True).stdout
         values: dict[str, str] = {}
         for line in selector.splitlines():
@@ -763,12 +767,11 @@ class Runner:
             fail("database selector returned a forbidden database")
         values.update({
             "APP_ENV": "production",
+            "APP_DEBUG": "false",
             "PEANUT_DEPLOYMENT_TARGET": "local-production-preview",
-            "PEANUT_DATABASE_CONSUMER": "container",
-            "PEANUT_DATABASE_ENDPOINT_ID": "peanut-admin-p0e-mysql84-gate-docker-direct",
-            "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
             "DB_USER": required_environment("P0E_DB_USER"),
             "DB_PASS": required_environment("P0E_DB_PASSWORD"),
+            "DB_PREFIX": "pa_",
             "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
             "ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
             "PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
@@ -776,6 +779,49 @@ class Runner:
             "DEPLOYMENT_MODE": mode,
         })
         return values
+
+    def backend_env_path(self, project_root: Path) -> Path:
+        return project_root / "server" / f".env.p0e-{self.args.run_id}"
+
+    def write_backend_env(
+        self,
+        project_root: Path,
+        database: str,
+        mode: str,
+        *,
+        container_runtime: bool = False,
+    ) -> Path:
+        path = self.backend_env_path(project_root)
+        if path.is_symlink():
+            fail(f"P0-E backend environment must not be a symlink: {path}")
+        values = self.backend_values(database, mode)
+        if container_runtime:
+            values["PEANUT_RESOURCE_LEASE_PROOF"] = self.plan["lease_proof_container_path"]
+        temporary = path.with_suffix(path.suffix + ".tmp")
+        temporary.write_text(
+            "".join(f"{key}={value}\n" for key, value in sorted(values.items())),
+            encoding="utf-8",
+        )
+        temporary.chmod(0o600)
+        temporary.replace(path)
+        return path
+
+    @contextlib.contextmanager
+    def backend_process_environment(
+        self,
+        project_root: Path,
+        database: str,
+        mode: str,
+    ) -> Any:
+        path = self.write_backend_env(project_root, database, mode)
+        try:
+            yield {
+                "PEANUT_SERVER_ENV_FILE": str(path),
+                "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
+            }
+        finally:
+            with contextlib.suppress(FileNotFoundError):
+                path.unlink()
 
     def database_exists(self, database: str) -> bool:
         escaped = database.replace("'", "''")
@@ -814,8 +860,41 @@ class Runner:
             self.remote_mysql(f"REVOKE ALL PRIVILEGES ON `{database}`.* FROM '{escaped_user}'@'%'")
         self.remote_mysql(f"DROP DATABASE IF EXISTS `{database}`")
 
+    @contextlib.contextmanager
+    def generated_install_bridge(self, project_root: Path) -> Any:
+        if project_root == ROOT:
+            yield
+            return
+        bridged_files = [
+            "resources/project-resources.json",
+            "server/database/environment-guard.php",
+        ]
+        originals: list[tuple[Path, bytes, int]] = []
+        for relative in bridged_files:
+            target = project_root / relative
+            source = ROOT / relative
+            if not target.is_file() or target.is_symlink() or not source.is_file() or source.is_symlink():
+                fail(f"generated application qualification bridge identity changed: {relative}")
+            originals.append((target, target.read_bytes(), target.stat().st_mode & 0o777))
+        for relative in bridged_files:
+            target = project_root / relative
+            source = ROOT / relative
+            target.write_bytes(source.read_bytes())
+            target.chmod(source.stat().st_mode & 0o777)
+        try:
+            yield
+        finally:
+            for target, original, mode in originals:
+                target.write_bytes(original)
+                target.chmod(mode)
+        for target, original, mode in originals:
+            if target.read_bytes() != original or (target.stat().st_mode & 0o777) != mode:
+                fail(f"generated application qualification bridge was not restored: {target.relative_to(project_root)}")
+
     def install_current(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
-        command(["php", "server/database/install.php"], cwd=project_root, env=self.db_env(database, mode), log=log)
+        with self.generated_install_bridge(project_root):
+            with self.backend_process_environment(project_root, database, mode) as env:
+                command(["php", "server/database/install.php"], cwd=project_root, env=env, log=log)
         self.assert_up_to_date(database, mode, log, project_root=project_root)
 
     def assert_up_to_date(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
@@ -839,14 +918,15 @@ class Runner:
             "$result+=assertCurrentDatabase($pdo);"
             "echo json_encode($result,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT),PHP_EOL;"
         )
-        result = command(
-            ["php", "-r", guard_php],
-            # The generated application intentionally omits the qualification-only
-            # P0-E resource registration; the candidate root owns this Gate contract.
-            cwd=ROOT,
-            env=self.db_env(database, mode) | {"P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"]},
-            capture=True,
-        )
+        with self.backend_process_environment(ROOT, database, mode) as env:
+            result = command(
+                ["php", "-r", guard_php],
+                # The generated application intentionally omits the qualification-only
+                # P0-E resource registration; the candidate root owns this Gate contract.
+                cwd=ROOT,
+                env=env,
+                capture=True,
+            )
         with log.open("a", encoding="utf-8") as stream:
             stream.write(result.stdout)
         parsed = json.loads(result.stdout)
@@ -855,12 +935,6 @@ class Runner:
 
     def inspect(self, database: str, mode: str, label: str, project_root: Path = ROOT) -> None:
         inspector_mode = "multitenant-empty" if mode == "multi-tenant" else "standalone-empty"
-        env = self.db_env(database, mode) | {
-            "MT05_MODE": inspector_mode,
-            "MT05_DEPLOYMENT_MODE": mode,
-            "MT05_CANDIDATE": self.args.candidate,
-            "MT05_RUN_ID": self.args.run_id,
-        }
         inspector = INSPECTOR
         created_directories: list[Path] = []
         copied_inspector = False
@@ -879,7 +953,14 @@ class Runner:
                 shutil.copy2(INSPECTOR, inspector)
                 copied_inspector = True
         try:
-            result = command(["php", str(inspector)], env=env, capture=True)
+            with self.backend_process_environment(project_root, database, mode) as env:
+                env.update({
+                    "MT05_MODE": inspector_mode,
+                    "MT05_DEPLOYMENT_MODE": mode,
+                    "MT05_CANDIDATE": self.args.candidate,
+                    "MT05_RUN_ID": self.args.run_id,
+                })
+                result = command(["php", str(inspector)], env=env, capture=True)
         finally:
             if copied_inspector:
                 with contextlib.suppress(FileNotFoundError):
@@ -915,7 +996,14 @@ class Runner:
             "GIT_CONFIG_KEY_0": "core.excludesFile",
             "GIT_CONFIG_VALUE_0": str(create_app_excludes),
         }, log=log)
-        command(["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"], cwd=self.generated / "server", env=composer_env, log=log)
+        build_database = self.plan["databases"]["standalone_fresh"]
+        with self.backend_process_environment(self.generated, build_database, "standalone") as backend_env:
+            command(
+                ["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"],
+                cwd=self.generated / "server",
+                env=composer_env | backend_env,
+                log=log,
+            )
         command(["php", "-r", "require 'vendor/autoload.php'; echo 'autoload=ok\\n';"], cwd=self.generated / "server", log=log)
         command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=self.generated / "web", log=log)
         command(["pnpm", "run", "build"], cwd=self.generated / "web", log=log)
@@ -1043,12 +1131,13 @@ class Runner:
         log = self.group_log(group)
         self.create_database(database)
         self.install_current(database, "multi-tenant", log, project_root=project_root)
-        command(
-            ["php", "server/fixtures/plugin-module-lifecycle/run.php"],
-            cwd=project_root,
-            env=self.db_env(database, "multi-tenant"),
-            log=log,
-        )
+        with self.backend_process_environment(project_root, database, "multi-tenant") as env:
+            command(
+                ["php", "server/fixtures/plugin-module-lifecycle/run.php"],
+                cwd=project_root,
+                env=env,
+                log=log,
+            )
         self.inspect(database, "multi-tenant", group, project_root=project_root)
         self.drop_database(database)
 
@@ -1056,8 +1145,17 @@ class Runner:
         lock = self.generated / "plugins.lock"
         original_lock = lock.read_bytes()
         original_mode = lock.stat().st_mode & 0o777
-        if json.loads(original_lock) != {"schema_version": 1, "plugins": []}:
-            fail("generated application Plugin lock is not the released empty lock")
+        source_lock = read_json(ROOT / "plugins.lock")
+        expected_official_lock = {
+            "schema_version": 1,
+            "plugins": [
+                entry
+                for entry in source_lock.get("plugins", [])
+                if isinstance(entry, dict) and str(entry.get("key", "")).startswith("official.")
+            ],
+        }
+        if expected_official_lock["plugins"] == [] or json.loads(original_lock) != expected_official_lock:
+            fail("generated application Plugin lock is not the released official-only lock")
         fixture_paths = [
             (ROOT / "plugins/fixture.delivery-record", self.generated / "plugins/fixture.delivery-record"),
             (ROOT / "server/app/Modules/Fixture/DeliveryRecord", self.generated / "server/app/Modules/Fixture/DeliveryRecord"),
@@ -1074,7 +1172,6 @@ class Runner:
                 shutil.copytree(source, target, copy_function=shutil.copy2)
             runner_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(runner_source, runner_target)
-            source_lock = read_json(ROOT / "plugins.lock")
             fixture_lock = {
                 "schema_version": 1,
                 "plugins": [
@@ -1115,20 +1212,35 @@ class Runner:
             "app_owned_after_sha256": after["tree_sha256"],
         })
 
-    def write_compose_env(self, database: str, mode: str) -> None:
-        values = self.db_env(database, mode, consumer="container")
-        values.update({
-            "APP_ENV": "production",
-            "PEANUT_DEPLOYMENT_TARGET": "local-production-preview",
-            "HTTP_PORT": str(self.plan["ports"]["http"]),
+    def write_compose_env(self, project_root: Path, database: str, mode: str) -> None:
+        self.compose_backend_env = self.write_backend_env(
+            project_root,
+            database,
+            mode,
+            container_runtime=True,
+        )
+        backend_values = self.backend_values(database, mode)
+        backend_values.update({
             "PLATFORM_HOSTS": self.plan["browser_hosts"]["platform"],
             "TENANT_ADMIN_HOSTS": self.plan["browser_hosts"]["tenant_admin"],
             "JWT_SECRET": secrets.token_hex(32),
             "TENANT_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
             "PLATFORM_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
+            "PEANUT_RESOURCE_LEASE_PROOF": self.plan["lease_proof_container_path"],
+        })
+        temporary_backend = self.compose_backend_env.with_suffix(self.compose_backend_env.suffix + ".tmp")
+        temporary_backend.write_text(
+            "".join(f"{key}={value}\n" for key, value in sorted(backend_values.items())),
+            encoding="utf-8",
+        )
+        temporary_backend.chmod(0o600)
+        temporary_backend.replace(self.compose_backend_env)
+        values = {
+            "HTTP_PORT": str(self.plan["ports"]["http"]),
             "PHP_IMAGE": f"peanut-p0e-php:{self.args.run_id}",
             "NGINX_IMAGE": f"peanut-p0e-nginx:{self.args.run_id}",
-        })
+            "PEANUT_SERVER_ENV_FILE": str(self.compose_backend_env),
+        }
         temporary = self.compose_env.with_suffix(".tmp")
         temporary.write_text("".join(f"{key}={value}\n" for key, value in values.items()), encoding="utf-8")
         temporary.chmod(0o600)
@@ -1157,6 +1269,10 @@ class Runner:
             "  cron:\n"
             "    volumes:\n"
             "      - type: bind\n"
+            f"        source: {proof_dir}\n"
+            f"        target: {self.plan['lease_proof_container_path']}\n"
+            "        read_only: true\n"
+            "      - type: bind\n"
             f"        source: {ROOT / 'resources/project-resources.json'}\n"
             "        target: /var/www/peanut-admin/resources/project-resources.json\n"
             "        read_only: true\n"
@@ -1182,6 +1298,10 @@ class Runner:
             values[name] = value
         if not values:
             fail("Compose environment is empty")
+        backend = values.get("PEANUT_SERVER_ENV_FILE", "")
+        if not backend:
+            fail("Compose orchestration environment is missing PEANUT_SERVER_ENV_FILE")
+        self.compose_backend_env = Path(backend)
         return values
 
     def compose(
@@ -1191,12 +1311,16 @@ class Runner:
         check: bool = True,
         project_root: Path = ROOT,
     ) -> subprocess.CompletedProcess[str]:
+        environment = self.compose_environment()
+        if self.compose_backend_env is None or not self.compose_backend_env.is_file():
+            fail("P0-E backend Compose environment is unavailable")
         return command([
             "docker", "compose", "--project-name", self.plan["compose_project"],
-            "--env-file", str(self.compose_env), "-f", str(project_root / "deploy/docker-compose.prod.yml"),
+            "--env-file", str(self.compose_env), "--env-file", str(self.compose_backend_env),
+            "-f", str(project_root / "deploy/docker-compose.prod.yml"),
             "-f", str(self.compose_overlay),
             *arguments,
-        ], cwd=project_root, env=self.compose_environment(), log=log, capture=log is None, check=check)
+        ], cwd=project_root, env=environment, log=log, capture=log is None, check=check)
 
     def wait_http(self, url: str, seconds: int = 120) -> None:
         deadline = time.time() + seconds
@@ -1217,8 +1341,15 @@ class Runner:
         log = self.group_log(group)
         self.create_database(database)
         self.install_current(database, "standalone", log, project_root=project_root)
+        with self.backend_process_environment(project_root, database, "standalone") as env:
+            command(
+                ["php", "server/think", "plugin:reconcile", "--official-locked"],
+                cwd=project_root,
+                env=env,
+                log=log,
+            )
         self.inspect(database, "standalone", f"{group}-database", project_root=project_root)
-        self.write_compose_env(database, "standalone")
+        self.write_compose_env(project_root, database, "standalone")
         self.compose("up", "-d", "--build", "php", "nginx", "cron", log=log, project_root=project_root)
         self.active_compose_root = project_root
         self.wait_http(f"http://127.0.0.1:{self.plan['ports']['http']}/healthz")
@@ -1253,9 +1384,16 @@ class Runner:
             if not self.database_exists(database):
                 self.create_database(database)
                 self.install_current(database, mode, self.group_log(group), project_root=project_root)
+                with self.backend_process_environment(project_root, database, mode) as env:
+                    command(
+                        ["php", "server/think", "plugin:reconcile", "--official-locked"],
+                        cwd=project_root,
+                        env=env,
+                        log=self.group_log(group),
+                    )
             self.inspect(database, mode, f"{group}-database", project_root=project_root)
             self.seed_multi_tenant_browser_binding(database, self.group_log(group))
-            self.write_compose_env(database, mode)
+            self.write_compose_env(project_root, database, mode)
             self.compose(
                 "up", "-d", "--no-build", "--force-recreate", "php", "nginx", "cron",
                 log=self.group_log(group),
@@ -1331,6 +1469,9 @@ class Runner:
                     fail(f"listener cleanup residual remains on port {port}")
         with contextlib.suppress(FileNotFoundError):
             self.compose_env.unlink()
+        if self.compose_backend_env is not None:
+            with contextlib.suppress(FileNotFoundError):
+                self.compose_backend_env.unlink()
         shutil.rmtree(self.cache)
         if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
             shutil.rmtree(ROOT / "server/vendor")

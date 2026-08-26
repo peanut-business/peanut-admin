@@ -4,12 +4,13 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use app\common\service\ApplicationPasswordPolicy;
+use app\common\service\audit\AuditContractHost;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\module\VerifiedTenantModuleRepository;
-use app\platform\service\plugin\PluginLockResolver;
-use app\platform\service\plugin\PluginModuleRegistryFactory;
+use app\platform\service\plugin\PlatformModuleRuntimeService;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -22,7 +23,6 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
@@ -45,6 +45,7 @@ final class PlatformRuntimeFactory
     private static ?TenantGovernanceService $tenantGovernance = null;
     private static ?PlatformTenantModuleService $tenantModules = null;
     private static ?PlatformAccessAdminService $platformAccess = null;
+    private static ?PlatformModuleRuntimeService $moduleRuntime = null;
 
     public static function sessions(): PlatformOperatorSessionService
     {
@@ -115,6 +116,7 @@ final class PlatformRuntimeFactory
 
         $pdo = self::pdo();
         $transactions = new PdoTransactionManager($pdo);
+        $audit = AuditContractHost::fromPdo($pdo);
         $modules = new TenantModuleManager(
             new CompiledModuleRegistry([], [], [], [], 'platform-lifecycle-only'),
             new PdoModuleRuntimeRepository($pdo),
@@ -135,7 +137,7 @@ final class PlatformRuntimeFactory
                 new PdoTenantRepository($pdo),
                 new PdoMembershipRepository($pdo),
                 new PdoPlatformRepository($pdo),
-                new PdoAuditRepository($pdo),
+                $audit,
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $modules),
@@ -151,17 +153,11 @@ final class PlatformRuntimeFactory
 
         $pdo = self::pdo();
         $config = Config::get('modules', []);
-        $serverRoot = dirname(__DIR__, 3);
         if (!is_array($config)) {
             throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
         }
-        $factory = new PluginModuleRegistryFactory($pdo, $serverRoot);
-        $lockPath = trim((string)($config['plugin_lock'] ?? ''));
-        if ($lockPath !== '' && is_file($serverRoot . '/' . ltrim($lockPath, '/'))) {
-            $registry = $factory->fromPluginLock(new PluginLockResolver($serverRoot, $lockPath), $config);
-        } else {
-            $registry = $factory->fromDeploymentConfig($config);
-        }
+        $governance = new PdoModuleGovernanceProvider($pdo, dirname(__DIR__, 3), $config);
+        $registry = $governance->registry();
         $validator = new OpisTenantModuleConfigValidator();
         $repository = new VerifiedTenantModuleRepository(
             new PdoModuleRuntimeRepository($pdo, true),
@@ -169,6 +165,7 @@ final class PlatformRuntimeFactory
         );
         $manager = new TenantModuleManager($registry->compiled(), $repository, $validator);
         $transactions = new PdoTransactionManager($pdo);
+        $audit = AuditContractHost::fromPdo($pdo);
         $governance = new TenantGovernanceService(
             self::identities(),
             $transactions,
@@ -178,7 +175,7 @@ final class PlatformRuntimeFactory
                 new PdoTenantRepository($pdo),
                 new PdoMembershipRepository($pdo),
                 new PdoPlatformRepository($pdo),
-                new PdoAuditRepository($pdo),
+                $audit,
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $manager),
@@ -191,6 +188,19 @@ final class PlatformRuntimeFactory
             $registry,
             $validator
         );
+    }
+
+    public static function moduleRuntime(): PlatformModuleRuntimeService
+    {
+        if (self::$moduleRuntime !== null) return self::$moduleRuntime;
+        $config = Config::get('modules', []);
+        if (!is_array($config)) throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
+        $trusted = [];
+        foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
+            $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
+            if (is_string($keyId) && is_string($decoded) && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) $trusted[$keyId] = $decoded;
+        }
+        return self::$moduleRuntime = new PlatformModuleRuntimeService(self::pdo(), dirname(__DIR__, 3), $config, $trusted);
     }
 
     private static function pdo(): PDO

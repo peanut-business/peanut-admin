@@ -3,79 +3,45 @@ declare(strict_types=1);
 
 namespace app\common\service\tenant;
 
+use app\common\contract\tenant\TenantSettingSnapshot;
+use app\common\contract\tenant\TenantSettingsCommands;
+use app\common\contract\tenant\TenantSettingsProvider;
+use app\common\contract\tenant\TenantSettingsQuery;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\member\MemberTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\facade\Db;
 
-final class TenantSettingService
+final readonly class TenantSettingService implements TenantSettingsQuery, TenantSettingsCommands
 {
-    public static function document(
+    public function __construct(private TenantSettingsProvider $provider)
+    {
+    }
+
+    public function get(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $namespace,
         array $default = []
-    ): array {
+    ): TenantSettingSnapshot {
         $tenantId = MemberTenantContext::tenantId($context);
-        self::assertNamespace($namespace);
-        $raw = Db::name('tenant_setting')
-            ->where('tenant_id', $tenantId)
-            ->where('namespace', $namespace)
-            ->value('config_json');
-        if ($raw === null || $raw === '') {
-            return $default;
+        TenantSettingsNamespace::assertValid($namespace);
+        $snapshot = $this->provider->find($tenantId, $namespace);
+        if ($snapshot === null) {
+            return new TenantSettingSnapshot($tenantId, $namespace, $default, 0, 0, 0);
         }
-        $decoded = is_array($raw) ? $raw : json_decode((string)$raw, true);
-        if (!is_array($decoded)) {
-            throw new \RuntimeException('租户设置数据无效');
-        }
-        return array_replace_recursive($default, $decoded);
+        return new TenantSettingSnapshot($snapshot->tenantId, $snapshot->namespace, array_replace_recursive($default, $snapshot->document), $snapshot->revision, $snapshot->createTime, $snapshot->updateTime);
     }
 
-    public static function replace(
+    public function replace(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $namespace,
         array $document
-    ): void {
+    ): TenantSettingSnapshot {
         $tenantId = MemberTenantContext::tenantId($context);
-        self::assertNamespace($namespace);
-        $encoded = json_encode(
-            $document,
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        TenantSettingsNamespace::assertValid($namespace);
+        return Db::transaction(
+            fn(): TenantSettingSnapshot => $this->provider->replace($tenantId, $namespace, $document),
         );
-        Db::transaction(static function () use ($tenantId, $namespace, $encoded): void {
-            $row = Db::name('tenant_setting')
-                ->where('tenant_id', $tenantId)
-                ->where('namespace', $namespace)
-                ->lock(true)
-                ->find();
-            $now = time();
-            if (empty($row)) {
-                Db::name('tenant_setting')->insert([
-                    'tenant_id' => $tenantId,
-                    'namespace' => $namespace,
-                    'config_json' => $encoded,
-                    'revision' => 1,
-                    'create_time' => $now,
-                    'update_time' => $now,
-                ]);
-                return;
-            }
-            Db::name('tenant_setting')
-                ->where('id', (int)$row['id'])
-                ->where('tenant_id', $tenantId)
-                ->update([
-                    'config_json' => $encoded,
-                    'revision' => (int)$row['revision'] + 1,
-                    'update_time' => $now,
-                ]);
-        });
-    }
-
-    private static function assertNamespace(string $namespace): void
-    {
-        if (preg_match('/^[a-z][a-z0-9.-]{0,63}$/D', $namespace) !== 1) {
-            throw new \InvalidArgumentException('租户设置命名空间无效');
-        }
     }
 }

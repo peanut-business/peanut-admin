@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
 use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\PlatformTenantQueryService;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
@@ -28,6 +30,7 @@ use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function platformTenantReadExpect(bool $condition, string $message): void
 {
@@ -92,12 +95,13 @@ SQL);
     $pdo->exec("INSERT INTO pa_platform_operator (account_id,display_name,status,created_at,updated_at) VALUES ({$accountId},'No Access','active','{$now}','{$now}')");
 }
 
-$host = getenv('DB_HOST') ?: (getenv('MYSQL_HOST') ?: '127.0.0.1');
-$port = getenv('DB_PORT') ?: (getenv('MYSQL_PORT') ?: '33463');
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
 );
@@ -107,7 +111,7 @@ $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

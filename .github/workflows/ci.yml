@@ -97,10 +97,6 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
-    env:
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      MYSQL_ROOT_PASSWORD: mt02_root
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,6 +109,25 @@ jobs:
           php-version: '8.3'
           tools: composer:v2
           coverage: none
+
+      - name: Create isolated backend environment
+        shell: bash
+        run: |
+          backend_env="$GITHUB_WORKSPACE/server/.env.ci-${GITHUB_RUN_ID}"
+          umask 077
+          printf '%s\n' \
+            'APP_ENV=development' \
+            'APP_DEBUG=false' \
+            'PEANUT_DEPLOYMENT_TARGET=local-development' \
+            'DEPLOYMENT_MODE=standalone' \
+            'DB_HOST=127.0.0.1' \
+            'DB_PORT=3306' \
+            'DB_NAME=peanut_admin_ci' \
+            'DB_USER=root' \
+            'DB_PASS=mt02_root' \
+            'DB_ROOT_PASS=mt02_root' \
+            'DB_PREFIX=pa_' > "$backend_env"
+          printf 'PEANUT_SERVER_ENV_FILE=%s\n' "$backend_env" >> "$GITHUB_ENV"
 
       - name: Cache Composer downloads
         uses: actions/cache@v4
@@ -141,6 +156,15 @@ jobs:
       - name: Run stage server gates
         if: github.event_name == 'workflow_dispatch'
         run: ./scripts/ci-server-check.sh --full
+
+      - name: Remove isolated backend environment
+        if: always()
+        shell: bash
+        run: |
+          case "$PEANUT_SERVER_ENV_FILE" in
+            "$GITHUB_WORKSPACE"/server/.env.ci-*) rm -f -- "$PEANUT_SERVER_ENV_FILE" ;;
+            *) exit 1 ;;
+          esac
 
   web:
     name: Web
@@ -175,18 +199,31 @@ jobs:
         working-directory: web
         shell: bash
         run: |
-          test_output="$(mktemp -d)"
-          ./node_modules/.bin/tsc --target ES2020 --module commonjs --moduleResolution node --strict --skipLibCheck \
-            --outDir "${test_output}" \
-            src/core/permission-policy.ts \
-            src/core/plugin-contribution-policy.ts \
-            src/views/system/dept/parent-options.ts \
-            tests/Productization/permission-policy.test.ts \
-            tests/Productization/plugin-contribution.test.ts \
-            tests/Productization/department-parent-options.test.ts
-          node "${test_output}/tests/Productization/permission-policy.test.js"
-          node "${test_output}/tests/Productization/plugin-contribution.test.js"
-          node "${test_output}/tests/Productization/department-parent-options.test.js"
+          node --input-type=module <<'NODE'
+          import path from 'node:path'
+          import { createServer } from 'vite'
+
+          const server = await createServer({
+            root: process.cwd(),
+            configFile: false,
+            logLevel: 'error',
+            resolve: { alias: { '@': path.resolve(process.cwd(), 'src') } },
+            optimizeDeps: { disabled: true },
+            server: { middlewareMode: true },
+            appType: 'custom',
+          })
+          try {
+            for (const test of [
+              'permission-policy.test.ts',
+              'plugin-contribution.test.ts',
+              'department-parent-options.test.ts',
+            ]) {
+              await server.ssrLoadModule(`/tests/Productization/${test}`)
+            }
+          } finally {
+            await server.close()
+          }
+          NODE
           node tests/Productization/navbar-avatar-fallback.test.mjs
 
   platform:

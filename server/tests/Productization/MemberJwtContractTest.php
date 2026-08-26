@@ -133,10 +133,12 @@ foreach ([
     );
 }
 
-$envExample = (string)file_get_contents(dirname(__DIR__, 3) . '/.env.example');
+$rootEnvExample = (string)file_get_contents(dirname(__DIR__, 3) . '/.env.example');
+$envExample = (string)file_get_contents(dirname(__DIR__, 2) . '/.env.example');
 jwtExpect(
-    preg_match('/^JWT_SECRET=$/m', $envExample) === 1,
-    '.env.example exposes or supplies a JWT secret',
+    !str_contains($rootEnvExample, 'JWT_SECRET=')
+        && preg_match('/^JWT_SECRET=$/m', $envExample) === 1,
+    'backend environment samples expose, duplicate, or supply a JWT secret',
 );
 $jwtConfig = (string)file_get_contents(dirname(__DIR__, 2) . '/config/jwt.php');
 jwtExpect(

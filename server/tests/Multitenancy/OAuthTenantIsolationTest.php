@@ -1,16 +1,19 @@
 <?php
 declare(strict_types=1);
 
-use app\common\model\oauth\OAuthIdentity;
+use app\Modules\Official\Oauth\Model\OAuthIdentity;
+use app\common\service\external\ExternalTenantResolver;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\oauth\OAuthTenantContext;
 use app\common\service\oauth\OAuthTenantRepository;
+use app\Modules\Official\Oauth\Application\OAuthCallbackLocator;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 spl_autoload_register(static function (string $class): void {
     if (!str_starts_with($class, 'app\\')) return;
     $path = dirname(__DIR__, 2) . '/app/' . str_replace('\\', '/', substr($class, 4)) . '.php';
@@ -36,21 +39,14 @@ function oauthTenantContext(int $tenantId, int $memberId, string $requestId): Te
     ), $requestId);
 }
 
-function oauthPdo(string $host, int $port, string $password, string $database): PDO
+function oauthPdo(string $host, int $port, string $user, string $password, string $database): PDO
 {
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
-}
-
-function oauthDatabase(PDO $admin): string
-{
-    $name = 'peanut_admin_oauth_fresh_' . strtolower(bin2hex(random_bytes(5)));
-    $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
-    return $name;
 }
 
 function oauthFreshSchema(PDO $pdo, string $serverRoot): void
@@ -71,14 +67,22 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
-$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-$database = oauthDatabase($admin);
+$host = (string)getenv('DB_HOST');
+$port = (int)getenv('DB_PORT');
+$database = (string)getenv('DB_NAME');
+$user = (string)getenv('DB_USER');
+$password = (string)getenv('DB_PASS');
+expectOAuthTenant(
+    $host !== '' && $port > 0 && $database !== '' && $user !== '' && $password !== '',
+    'registered P0-E database credentials are required'
+);
+expectOAuthTenant(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'OAuth Tenant Gate requires its exact registered P0-E plugin_lifecycle database'
+);
 
 try {
-    $pdo = oauthPdo($host, $port, $password, $database);
+    $pdo = oauthPdo($host, $port, $user, $password, $database);
     oauthFreshSchema($pdo, $serverRoot);
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_tenant
@@ -104,8 +108,7 @@ SELECT 61, 101, id, REPEAT('b', 64), 11, 1, 0, 2147483647
 FROM pa_external_channel_binding
 WHERE tenant_id = 101 AND provider = 'oauth.wechat.oa';
 SQL);
-    putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root'); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App(); $app->initialize();
 
     $alpha = oauthTenantContext(101, 11, 'fresh-oauth-alpha');
@@ -142,6 +145,36 @@ SQL);
     ]);
     expectOAuthTenant((int)OAuthTenantRepository::completionTickets($alpha)->where('token_hash', str_repeat('d', 64))->count() === 0, 'Alpha read Beta completion ticket');
 
+    $officialProvider = ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH;
+    $openPlatformProvider = ExternalTenantResolver::WECHAT_OPEN_PLATFORM;
+    $validStateHash = str_repeat('a', 64);
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $validStateHash)) === 1, 'valid OAuth state was not located');
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($openPlatformProvider, $validStateHash)) === 0, 'wrong OAuth binding provider accepted state');
+    $expiredStateHash = str_repeat('e', 64);
+    OAuthTenantRepository::createAttempt(new TenantSystemContext(101, MemberTenantContext::PUBLIC_AUTH_ACTOR, 'member.oauth-begin', 'expired-state'), [
+        'state_hash' => $expiredStateHash, 'scene' => 'oa', 'return_path' => '/expired', 'expires_at' => time() - 1,
+    ]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $expiredStateHash)) === 0, 'expired OAuth state was accepted');
+    OAuthTenantRepository::attempts($alpha)->where('state_hash', $validStateHash)->update(['used_at' => time()]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $validStateHash)) === 0, 'replayed OAuth state was accepted');
+
+    $alphaBindingId = (int)$pdo->query("SELECT id FROM pa_external_channel_binding WHERE tenant_id = 101 AND provider = 'oauth.wechat.oa'")->fetchColumn();
+    expectOAuthTenant($alphaBindingId > 0, 'Alpha OAuth binding is missing');
+    $ticketHash = str_repeat('f', 64);
+    $expiredTicketHash = str_repeat('9', 64);
+    OAuthTenantRepository::createCompletionTicket($alpha, [
+        'token_hash' => $ticketHash, 'binding_id' => $alphaBindingId, 'member_id' => 11,
+        'need_profile' => 0, 'need_mobile' => 0, 'expires_at' => time() + 600,
+    ]);
+    OAuthTenantRepository::createCompletionTicket($alpha, [
+        'token_hash' => $expiredTicketHash, 'binding_id' => $alphaBindingId, 'member_id' => 11,
+        'need_profile' => 0, 'need_mobile' => 0, 'expires_at' => time() - 1,
+    ]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($ticketHash)) === 1, 'valid OAuth ticket was not located');
+    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($expiredTicketHash)) === 0, 'expired OAuth ticket was accepted');
+    OAuthTenantRepository::completionTickets($alpha)->where('token_hash', $ticketHash)->update(['used_at' => time()]);
+    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($ticketHash)) === 0, 'replayed OAuth ticket was accepted');
+
     try {
         OAuthTenantContext::tenantId(new TenantSystemContext(202, 'forged.actor', 'member.oauth-begin', 'forged'));
         throw new RuntimeException('forged OAuth system actor was accepted');
@@ -152,7 +185,6 @@ SQL);
     $controller = (string)file_get_contents($serverRoot . '/app/api/controller/OAuthController.php');
     expectOAuthTenant(str_contains($controller, 'ExternalTenantResolver::production()->onlyActiveBinding('), 'OAuth begin does not use the trusted external binding resolver');
 } finally {
-    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }
 
 echo "OAuth tenant isolation passed\n";

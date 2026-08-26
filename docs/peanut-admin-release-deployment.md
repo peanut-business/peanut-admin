@@ -74,7 +74,8 @@ scripts/deploy-release v3.0.0 --target production --fresh \
 
 三种模式都会先校验 tag、归档摘要、目标登记和候选 Compose，并在旧服务仍运行时解包和
 构建带不可变版本标签的 PHP/Nginx 镜像。`--install` 要求数据库和上传卷不存在，然后安装
-完整基线；`--update` 要求旧 PHP/Nginx/cron 正在运行，只执行 `up -d --no-deps php nginx cron`（Compose
+完整基线；首次安装和常规更新都会先执行应用 migration，再运行
+`php server/think plugin:reconcile --official-locked` 收敛锁定的 official Plugin。`--update` 要求旧 PHP/Nginx/cron 正在运行，只执行 `up -d --no-deps php nginx cron`（Compose
 仅重建配置或镜像有变化的应用容器），不会执行 `down --volumes`、删除数据库或上传卷；`--fresh`
 则必须显式 `--confirm-destroy=<target>`，并验证登记的数据库 dump 与 php-storage 配对备份
 后，才允许停止服务、删除登记卷并安装基线。候选解包、配置或镜像构建失败时，旧服务和
@@ -84,7 +85,16 @@ scripts/deploy-release v3.0.0 --target production --fresh \
 
 演示补丁不改正式 tag，也不进入普通生产默认行为。先从干净提交生成 overlay，再用 fresh
 重建可丢弃的 `production-candidate`；脚本会核对 base tag、overlay SHA-256、登记路径和
-数据库资源，随后创建 Tenant A/B、独立 TenantMember/Owner、域名绑定和合成数据。
+数据库资源。overlay 元数据同时绑定 base tag/commit、overlay commit 和从所含 application
+migration 自动推导的 `migration_target_version`；部署端会在构建镜像以及任何数据库/卷
+变更前复算并核对该上限。未发布 migration 因而可以在候选中按账本执行，但候选身份仍是
+base tag 加 overlay SHA/commit，不得写成该 migration 对应的正式 Release。fresh 安装会先
+reconcile `plugins.lock` 中全部 `official.*` Plugin（明确排除
+`fixture.*`）。Standalone 随后为 default Tenant 显式应用完整产品 profile；普通 Multi-tenant
+fresh 保持零 TenantModule，由 Platform 治理。只有落盘 `.env` 中的
+`PEANUT_DEMO_MODE=enabled` 才会应用 demo profile；demo overlay 创建 Tenant A/B、独立
+TenantMember/Owner 和域名绑定后，仅为 default、Tenant A、Tenant B 通过统一 TenantModule
+运行链开通 `official.file`、`official.article`、`official.member` 三项 demo profile，再写入合成数据。
 
 ```bash
 scripts/build-demo-site-patch v3.0.0 output/deployment/demo-site-v3.0.0.tar
@@ -111,10 +121,11 @@ scripts/deploy-release v3.0.0 --target production-candidate --install \
 正式应用不返回演示凭据，也不限制正常账号修改密码。
 
 fresh 部署必须显式提供管理员邮箱和密码；脚本不会生成或回显密码。它们只写入服务器
-root-owned `.env`。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
-补丁分别创建独立 owner，并使用同一组公开演示密码。Tenant A 的 Account 还会成为 Tenant B
-的 active owner，因此公共 Admin 使用 Tenant A 账号时可以选择 A/B；Tenant A/B 的绑定 Host
-仍只能进入各自 Tenant。未知 Host 不会返回任何演示凭据。
+root-owned `server/.env`。根 `.env` 只保存端口和镜像。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
+补丁分别创建独立 owner，并使用同一组公开演示密码。Tenant A 的 Account 还会在 Tenant B
+拥有独立的 active TenantMember，因此公共 Admin 使用 Tenant A 账号时可以选择 A/B；切换后
+管理员身份以当前 TenantMember 为准。Tenant A/B 的绑定 Host 仍只能进入各自 Tenant，未知
+Host 不会返回任何演示凭据。
 
 `--fresh` 不带 overlay 时会明确关闭并清空旧演示配置，避免同一部署目录从演示候选变成
 普通实例后继续暴露公开账号。overlay 只允许与 `--fresh` 一起使用。
@@ -157,9 +168,10 @@ Tenant 专属 Host 在 Platform 中动态绑定。未知 Host 会被应用拒绝
 
 ```bash
 cp .env.example .env
-chmod 600 .env
-# 编辑 .env 后：
-docker compose up -d --build
+cp server/.env.example server/.env
+chmod 600 .env server/.env
+# 后台字段只编辑 server/.env；根 .env 只编辑编排字段：
+docker compose --env-file .env --env-file server/.env up -d --build
 docker compose ps
 curl -fsS http://127.0.0.1:18092/healthz
 ```

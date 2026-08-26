@@ -50,12 +50,11 @@ description: 用任务导向、参数表和停止线阅读 Peanut Admin 文档�
 | --- | --- | --- | --- | --- |
 | `ADMIN_INITIAL_EMAIL` | 是 | 无 | 创建首个 Tenant owner 的邮箱 | 格式无效或与环境目标不符时停止 |
 | `ADMIN_INITIAL_PASSWORD` | 是 | 无 | 创建首个 owner 的初始密码 | 仅首次安装使用；不得写入 Git、日志或截图 |
-| `.env` 中的 `DB_*` | 是 | 无 | 指向已登记的空数据库 | 目标存在任何表时安装器必须拒绝，不要清库绕过 |
+| `server/.env` 中的 `DB_*` | 是 | 无 | 指向已登记的空数据库 | 目标存在任何表时安装器必须拒绝，不要清库绕过 |
 | `DEPLOYMENT_MODE` | 是 | 无 | `standalone` 或 `multi-tenant` | 拼写错误按 fail-closed 处理 |
 
 ```bash
-export ADMIN_INITIAL_EMAIL='owner@example.com'
-export ADMIN_INITIAL_PASSWORD='<至少 12 位；演示模式固定为 peanut1234>'
+# 先在 server/.env 中填写 ADMIN_INITIAL_EMAIL / ADMIN_INITIAL_PASSWORD
 php server/database/install.php
 ```
 

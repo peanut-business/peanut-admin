@@ -1,0 +1,19 @@
+<?php
+declare(strict_types=1);
+
+namespace app\Modules\Official\Article\Http\Controller;
+
+use app\Modules\Official\Article\Service\ArticleCateLogic;
+use app\Modules\Official\Article\Validation\ArticleCateValidate;
+use think\response\Json;
+
+class ArticleCateController extends AbstractArticleCrudController
+{
+    protected const CRUD_LOGIC = ArticleCateLogic::class;
+    protected const CRUD_VALIDATE = ArticleCateValidate::class;
+
+    public function all(): Json
+    {
+        return $this->data(ArticleCateLogic::all($this->resolveCrudContext()));
+    }
+}

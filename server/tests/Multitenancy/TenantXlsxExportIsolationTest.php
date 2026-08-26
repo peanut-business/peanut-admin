@@ -5,6 +5,7 @@ use app\common\service\XlsxExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectTenantXlsx(bool $condition, string $message): void
@@ -125,8 +126,8 @@ try {
     expectTenantXlsx(is_file($betaPath), 'Alpha cleanup deleted Beta export');
 
     foreach ([
-        'app/adminapi/logic/member/MemberLogic.php',
-        'app/adminapi/logic/finance/RechargeLogic.php',
+        'app/Modules/Official/Member/Service/MemberLogic.php',
+        'app/Modules/Official/Payment/Service/RechargeLogic.php',
         'app/adminapi/logic/log/OperationLogLogic.php',
     ] as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);

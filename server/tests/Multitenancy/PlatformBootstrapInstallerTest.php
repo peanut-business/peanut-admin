@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
 use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -14,6 +16,7 @@ use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require dirname(__DIR__, 2) . '/database/install.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function mt05BootstrapExpect(bool $condition, string $message): void
 {
@@ -24,12 +27,13 @@ function mt05BootstrapExpect(bool $condition, string $message): void
 
 function mt05BootstrapAdminConnection(): PDO
 {
-    $host = getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1');
-    $port = getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463');
-    $password = getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev');
+    $host = IsolatedBackendEnvironment::required('DB_HOST');
+    $port = IsolatedBackendEnvironment::required('DB_PORT');
+    $user = IsolatedBackendEnvironment::required('DB_USER');
+    $password = IsolatedBackendEnvironment::required('DB_PASS');
     return new PDO(
         "mysql:host={$host};port={$port};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
     );
@@ -38,12 +42,13 @@ function mt05BootstrapAdminConnection(): PDO
 function mt05BootstrapDatabase(PDO $admin, string $database): PDO
 {
     $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
-    $host = getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1');
-    $port = getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463');
-    $password = getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev');
+    $host = IsolatedBackendEnvironment::required('DB_HOST');
+    $port = IsolatedBackendEnvironment::required('DB_PORT');
+    $user = IsolatedBackendEnvironment::required('DB_USER');
+    $password = IsolatedBackendEnvironment::required('DB_PASS');
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -54,13 +59,16 @@ function mt05BootstrapDatabase(PDO $admin, string $database): PDO
     );
 }
 
-function mt05BootstrapUseDatabase(string $database): void
+/** @param array<string,string> $overrides */
+function mt05BootstrapUseDatabase(string $database, array $overrides = []): void
 {
-    putenv('DB_HOST=' . (getenv('MYSQL_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1')));
-    putenv('DB_PORT=' . (getenv('MYSQL_PORT') ?: (getenv('DB_PORT') ?: '33463')));
-    putenv('DB_NAME=' . $database);
-    putenv('DB_USER=root');
-    putenv('DB_PASS=' . (getenv('MYSQL_ROOT_PASSWORD') ?: (getenv('DB_PASS') ?: 'peanut_admin_root_dev')));
+    IsolatedBackendEnvironment::activate(array_replace([
+        'DB_HOST' => IsolatedBackendEnvironment::required('DB_HOST'),
+        'DB_PORT' => IsolatedBackendEnvironment::required('DB_PORT'),
+        'DB_NAME' => $database,
+        'DB_USER' => IsolatedBackendEnvironment::required('DB_USER'),
+        'DB_PASS' => IsolatedBackendEnvironment::required('DB_PASS'),
+    ], $overrides));
 }
 
 function mt05BootstrapPlatformSessions(PDO $pdo): PlatformOperatorSessionService
@@ -95,9 +103,11 @@ try {
         'weak_password' => [$platformEmail, 'weak-password'],
         'same_email' => [$adminEmail, $platformPassword],
     ] as $case => [$candidateEmail, $candidatePassword]) {
-        putenv('DEPLOYMENT_MODE=multi-tenant');
-        putenv('PLATFORM_INITIAL_EMAIL=' . $candidateEmail);
-        putenv('PLATFORM_INITIAL_PASSWORD=' . $candidatePassword);
+        IsolatedBackendEnvironment::activate([
+            'DEPLOYMENT_MODE' => 'multi-tenant',
+            'PLATFORM_INITIAL_EMAIL' => $candidateEmail,
+            'PLATFORM_INITIAL_PASSWORD' => $candidatePassword,
+        ]);
         $failed = false;
         try {
             initialPlatformCredentials($serverDir, $adminEmail);
@@ -114,12 +124,13 @@ try {
     $installName = 'pa_mt05_platform_install_' . $run;
     $databases[] = $installName;
     $install = mt05BootstrapDatabase($admin, $installName);
-    mt05BootstrapUseDatabase($installName);
-    putenv('ADMIN_INITIAL_EMAIL=' . $adminEmail);
-    putenv('ADMIN_INITIAL_PASSWORD=' . $adminPassword);
-    putenv('DEPLOYMENT_MODE=multi-tenant');
-    putenv('PLATFORM_INITIAL_EMAIL=' . $platformEmail);
-    putenv('PLATFORM_INITIAL_PASSWORD=' . $platformPassword);
+    mt05BootstrapUseDatabase($installName, [
+        'ADMIN_INITIAL_EMAIL' => $adminEmail,
+        'ADMIN_INITIAL_PASSWORD' => $adminPassword,
+        'DEPLOYMENT_MODE' => 'multi-tenant',
+        'PLATFORM_INITIAL_EMAIL' => $platformEmail,
+        'PLATFORM_INITIAL_PASSWORD' => $platformPassword,
+    ]);
     ob_start();
     $installCode = main();
     $installOutput = (string)ob_get_clean();

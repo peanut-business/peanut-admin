@@ -5,13 +5,13 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "85b2700843fe2e5c701d41728d1be33a8cc16c68cea5cf72960f2213511a0ee9"
+        "sha256": "5b1ddb2e7caacc59a64970812c8cd69be57b000fd8fa0edeb49564093614aa4d"
     },
     "composer": [
         {
             "name": "peanut-business/official-payment",
             "version": "1.0.0",
-            "sha256": "795cb263ab322a09ef203acdbe06f55695843b62455bf1b71ebd440d0df2a199"
+            "sha256": "f9dd52e52b5828d0471320979904053beb909e2ebca19e6821be497133f7743a"
         }
     ],
     "npm": [
@@ -27,7 +27,7 @@
             "package": "@peanut-admin/official-payment",
             "version": "1.0.0",
             "entry": "web/src/modules/official-payment/contribution.ts",
-            "sha256": "242654524ab2c3e7ea23e70b5d2de494f12c09a2f58b608107f821bb4777afdf"
+            "sha256": "7db36def1be7bbb92529b8e92584a674ed4f94a6121c1866117bb44386337683"
         }
     ],
     "modules": [

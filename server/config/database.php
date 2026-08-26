@@ -1,5 +1,17 @@
 <?php
 
+$requiredDatabaseValue = static function (string $name): string {
+    $value = env($name, null);
+    if (!is_string($value) && !is_int($value)) {
+        throw new RuntimeException("BACKEND_ENVIRONMENT_REQUIRED:{$name}");
+    }
+    $value = (string)$value;
+    if (trim($value) === '') {
+        throw new RuntimeException("BACKEND_ENVIRONMENT_REQUIRED:{$name}");
+    }
+    return $value;
+};
+
 return [
     // 默认使用的数据库连接配置
     'default'         => env('DB_DRIVER', 'mysql'),
@@ -24,21 +36,21 @@ return [
             // 数据库类型
             'type'            => env('DB_TYPE', 'mysql'),
             // 服务器地址
-            'hostname'        => env('DB_HOST', '127.0.0.1'),
+            'hostname'        => $requiredDatabaseValue('DB_HOST'),
             // 数据库名
-            'database'        => env('DB_NAME', ''),
+            'database'        => $requiredDatabaseValue('DB_NAME'),
             // 用户名
-            'username'        => env('DB_USER', 'root'),
+            'username'        => $requiredDatabaseValue('DB_USER'),
             // 密码
-            'password'        => env('DB_PASS', ''),
+            'password'        => $requiredDatabaseValue('DB_PASS'),
             // 端口
-            'hostport'        => env('DB_PORT', '3306'),
+            'hostport'        => $requiredDatabaseValue('DB_PORT'),
             // 数据库连接参数
             'params'          => [],
             // 数据库编码
             'charset'         => env('DB_CHARSET', 'utf8mb4'),
             // 数据库表前缀
-            'prefix'          => env('DB_PREFIX', 'pa_'),
+            'prefix'          => $requiredDatabaseValue('DB_PREFIX'),
 
             // 数据库部署方式:0 集中式(单一服务器),1 分布式(主从服务器)
             'deploy'          => 0,

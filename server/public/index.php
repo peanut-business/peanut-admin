@@ -13,7 +13,7 @@ use think\App;
 
 // [ 应用入口文件 ]
 
-require __DIR__ . '/../bootstrap/environment-aliases.php';
+require __DIR__ . '/../bootstrap/environment.php';
 require __DIR__ . '/../vendor/autoload.php';
 
 // 执行HTTP应用并响应

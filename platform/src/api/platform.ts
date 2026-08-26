@@ -120,21 +120,10 @@ export interface InvitationInspection {
   requires_password: boolean;
 }
 
-export interface StorageEngine {
-  name: string;
-  path: string;
-  engine: 'local' | 'qiniu' | 'aliyun' | 'qcloud';
-  status: number;
-}
-
-export interface StorageDetail {
-  bucket?: string;
-  region?: string;
-  access_key?: string;
-  secret_key?: string;
-  domain?: string;
-  status: number;
-}
+export interface StorageAccount { id:number; account_key:string; driver:'local'|'qiniu'|'aliyun'|'qcloud'; name:string; credentials:Record<string,string>; status:string }
+export interface StorageSpace { id:number; space_key:string; account_id:number; account_key:string; driver:string; name:string; access_type:'public'|'private'; bucket?:string; region?:string; endpoint?:string; access_domain?:string; local_path?:string; status:string }
+export interface StorageRoute { route_key:string; access_type:'public'|'private'; space_id:number; space_key:string; space_name:string; driver:string }
+export interface StorageSnapshot { accounts:StorageAccount[]; spaces:StorageSpace[]; routes:StorageRoute[]; purposes:string[] }
 
 const tokenKey = 'peanut-platform-token';
 const client = axios.create({
@@ -430,16 +419,12 @@ export const api = {
         change_reason: changeReason,
       })
     ),
-  storageEngines: () =>
-    unwrap<StorageEngine[]>(client.get('/api/platform/infrastructure/storage')),
-  storageDetail: (engine: StorageEngine['engine']) =>
-    unwrap<StorageDetail>(
-      client.get('/api/platform/infrastructure/storage/detail', { params: { engine } })
-    ),
-  setupStorage: (payload: Record<string, string | number>) =>
-    unwrap(client.post('/api/platform/infrastructure/storage/setup', payload)),
-  changeStorage: (engine: StorageEngine['engine']) =>
-    unwrap(client.post('/api/platform/infrastructure/storage/change', { engine })),
+  storageSnapshot: () => unwrap<StorageSnapshot>(client.get('/api/platform/infrastructure/storage')),
+  createStorageAccount: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/account',payload)),
+  updateStorageAccount: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/account/update',payload)),
+  createStorageSpace: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/space',payload)),
+  updateStorageSpace: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/space/update',payload)),
+  setStorageRoute: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/route',payload)),
   audit: () =>
     unwrap<Page<AuditEvent>>(
       client.get('/api/platform/audit', {

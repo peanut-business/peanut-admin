@@ -68,7 +68,8 @@ P0-E 不扫描其他 worktree 的临时 `pwcli-cache`，也不使用系统 Chrom
 ## Claim 与运行
 
 凭据引用为 `mac-14:/Users/xing/.config/peanut-admin/development-db.env`。runner 会先调用项目
-登记的凭据同步脚本，再从本机受限 `.local/stack.env` 读取数据库账户；每个 run 的 Tenant Owner
+登记的凭据同步脚本，再从本机受限 `server/.env` 读取数据库账户；每个 run 生成独立的
+`server/.env.p0e-<run-id>`，PDO、Think ORM 和 Compose 后台进程共同读取该文件。Tenant Owner
 与 PlatformOperator 测试账号会随机生成，并只写入该 run 的 0600 cache，以供失败后的同参数
 resume 使用。浏览器工具优先使用显式受控路径，否则使用本机已缓存的 Playwright CLI。以上秘密
 均不得写入命令、输出、租约或仓库。
