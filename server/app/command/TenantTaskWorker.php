@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\async\TaskImportExportRuntime;
+use app\common\service\async\TaskImportExportRuntimeFactory;
 use PDO;
 use think\console\Command;
 use think\console\Input;
@@ -33,7 +33,7 @@ final class TenantTaskWorker extends Command
             return 1;
         }
         try {
-            $processed = TaskImportExportRuntime::fromConfig($pdo)->runTenant(
+            $processed = TaskImportExportRuntimeFactory::fromConfig($pdo)->runTenant(
                 (int)$raw,
                 'tenant-worker-' . getmypid() . '-' . bin2hex(random_bytes(6)),
             );

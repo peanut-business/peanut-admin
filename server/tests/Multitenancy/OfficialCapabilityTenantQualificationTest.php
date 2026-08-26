@@ -63,10 +63,11 @@ foreach ([
     'crontab_scheduler' => 'app/common/service/crontab/CrontabSchedulerService.php',
     'scheduled_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/ScheduledTenantContext.php',
     'tenant_scope_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantScope.php',
-    'async_authorization' => 'app/common/service/async/AdminAsyncAuthorization.php',
-    'async_runtime' => 'app/common/service/async/TaskImportExportRuntime.php',
-    'async_worker_definition' => 'app/common/service/async/ImportExportTaskWorkerDefinition.php',
-    'async_files' => 'app/common/service/export/AppFileMediaGateway.php',
+    'async_authorization' => 'app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php',
+    'async_runtime' => 'app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php',
+    'async_runtime_factory' => 'app/common/service/async/TaskImportExportRuntimeFactory.php',
+    'async_worker_definition' => 'app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php',
+    'async_files' => 'app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php',
     'storage_path' => 'app/common/service/storage/StoragePath.php',
     'routes' => 'route/app.php',
     'official_file_routes' => 'app/Modules/Official/File/Http/routes.php',
@@ -412,6 +413,7 @@ qualificationExpect(
     str_contains($sources['oauth_controller'], 'PdoModuleGovernanceProvider::forExecution')
         && str_contains($sources['external_resolver'], 'assertExternalCallback(')
         && str_contains($sources['async_runtime'], 'ImportExportModuleProvider')
+        && str_contains($sources['async_runtime_factory'], 'TaskModuleProvider')
         && str_contains($sources['async_worker_definition'], "return 'official.import-export'")
         && str_contains($sources['crontab_scheduler'], "ModuleExecutionContext::scheduled('official.task'")
         && str_contains($sources['console'], "'refund:reconcile' => 'official.payment'"),

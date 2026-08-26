@@ -928,7 +928,7 @@
         "PeanutAdmin Kernel Idempotency primitives",
         "server/app/adminapi/logic/member/MemberLogic.php",
         "server/app/adminapi/logic/finance/RechargeLogic.php",
-        "server/app/common/service/async/TaskImportExportRuntime.php"
+        "server/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php"
       ],
       "actual_callers": [
         "会员余额调账",
@@ -1272,7 +1272,11 @@
       ],
       "current_implementation": [
         "server/app/Modules/Official/ImportExport/module.json",
-        "server/app/common/service/async/TaskImportExportRuntime.php",
+        "server/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php",
+        "server/app/common/service/async/TaskImportExportRuntimeFactory.php",
+        "server/app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php",
+        "server/app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php",
+        "server/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php",
         "server/app/common/service/export/OperationLogExportProvider.php",
         "server/app/common/service/XlsxExportService.php"
       ],

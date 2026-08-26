@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\async;
+namespace app\Modules\Official\ImportExport\Application;
 
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
+use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAuthorization;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
 use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
