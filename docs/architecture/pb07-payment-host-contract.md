@@ -1,12 +1,12 @@
 # PB07 支付 Host 合同
 
-> 状态：Accepted（支付切片；历史单次全额退款基线）；部分/多次退款扩展：实现中（数据库资格阻塞，暂后置）
+> 状态：Accepted（支付 Host、Tenant Channel Grant、部分/多次退款幂等）
 >
 > 应用前置提交：`4e67b9cff2bae5dc743394b9f97905ec66219e39`
 >
 > 核心只读基线：`7fbd445d8fa547830b7782a7ac147d9ed414e0fd`
 >
-> 应用测试 owner：`PB07-PAYMENT-HOST-001`
+> 应用测试 owner：`PB07-PAYMENT-HOST-001`、`PAYMENT-DYNAMIC-PAY240DYN-001`
 
 ## 1. 采用决策与所有权
 
@@ -22,28 +22,36 @@
 4. 微信回调校验时间窗口、平台证书序列号、RSA 签名、AES-GCM、商户号和 AppID；支付宝回调校验 RSA2、AppID 和 SellerID。只有标准化可信 `PaymentEvent` 能进入结算。
 5. 结算在订单行锁内校验 CNY、金额、渠道和第三方交易号；相同已支付订单/同流水精确重放幂等，不同流水冲突；唯一索引阻止交易号跨订单复用。余额和流水仍由 `MemberBalanceService` 在同一事务写入一次。
 
-## 3. 退款与外部结果合同
+## 3. Tenant 渠道复用合同
+
+1. 每个 Tenant 仍拥有自己的支付场景、订单、退款记录和结算归属；共享外部渠道账户不改变订单和账目的 Tenant 归属。
+2. `External Channel` 是渠道账户与凭据引用的唯一 owner，真实密钥只存在于 `credential_ref` 对应的密钥系统；支付场景和订单只保存被授权的渠道引用与授权快照。
+3. `Tenant Channel Grant` 是唯一复用入口，显式记录 Tenant、渠道账户、允许操作、有效期和撤销状态；没有有效 grant 时，预支付、回调和退款均 fail closed。
+4. 预支付按订单 Tenant 读取场景并校验 grant；回调按渠道账户和外部订单定位候选后，仍须核对订单 Tenant、场景、金额和签名，不能把结果写入其他 Tenant。
+5. 撤销 grant 只拒绝新的收款和退款动作，不删除或改写历史订单、退款记录和账目；多个 Tenant 共享渠道不能通过复制配置或全局默认值绕过显式授权。
+
+## 4. 退款与外部结果合同
 
 - 历史首次退款在本地事务内锁订单、单次扣余额并建立主 record/log，再调用外部渠道；明确失败进入 ERROR，可能已受理但结果未知时保持 ING，不能伪造成功。
-- 部分/多次退款由 Finance Host 独立拥有，但扩展资格尚未通过：2026-08-20 `audit20b` 的 `30+70` 第二笔失败，不能把该目标能力写成当前支付能力。
+- 部分/多次退款由 Finance Host 独立拥有；每次退款先生成独立 `RefundRecord.sn` 并作为余额流水 source，充值入账继续使用充值订单号。`PAYMENT-DYNAMIC-PAY240DYN-001` 已验证部分退款、重复请求与失败重试不会重复扣款，也不会与充值流水的唯一约束冲突。
 - 失败重试复用同一 record，只新增 attempt log，不再次扣余额；MySQL 命名锁覆盖外部请求周期。`refund:reconcile` 只收敛当前 ING record 的最近 ING log。
 - 退款 gateway 与预支付/回调共用 `PaymentServiceFactory`、`PaymentTransportInterface` 和 `PaymentCrypto`；旧静态 `RefundGatewayService` 退出，不保留第二条签名/HTTP 路径。
 - 微信预支付、退款请求和退款查询都必须用配置的平台证书验证响应时间戳、nonce、序列号和 RSA 签名。支付宝退款/查询必须验证响应节点原文的 RSA2 签名。
 - 数据库只保存 Provider 回执白名单和截断后的标量，不保存完整响应、证书、私钥、APIv3 密钥、请求 Authorization 或个人收款账户。
 
-## 4. Host/override 与停止线
+## 5. Host/override 与停止线
 
 生产默认由 `PaymentServiceFactory` 从 `pa_config` 装配 `CurlPaymentTransport`；聚焦验收可构造 Factory 并注入内存 transport，不允许 gateway 自建模拟成功分支。当前没有获批核心支付 override key，因此不得把应用支付包装为虚假的核心消费，也不得修改 `vendor/`、Composer/npm 锁或核心仓。
 
-本片不新增支付渠道、订单类型、分账、提现、自动重试、对账 UI 或真实商户配置；部分/多次退款由 Finance Host 独立拥有且仍处于资格阻塞。本片不修改 OAuth、公众号、通知、PB08A 品牌输入、`init.sql` 或 SaaS。真实预支付、真实回调、证书轮换、商户后台审核与资金到账只属于部署 smoke，不能由本地测试宣称完成。
+本片不新增支付渠道、订单类型、分账、提现、自动重试、对账 UI 或真实商户配置；不修改 OAuth、公众号、通知、PB08A 品牌输入、`init.sql` 或 SaaS。真实预支付、真实回调、证书轮换、商户后台审核与资金到账只属于部署 smoke，不能由本地测试宣称完成。
 
-## 5. 精确写集
+## 6. 精确写集
 
 Runtime 白名单为 `server/app/common/service/payment/**`、退款调用方 `server/app/Modules/Official/Payment/Service/RechargeLogic.php`、`server/app/command/RefundReconcile.php`，以及删除旧 `server/app/common/service/RefundGatewayService.php`。Web 只删除 `web/src/api/app.ts` 的未消费支付 facade。
 
 证据/状态白名单为 `server/tests/Productization/PaymentHostTest.php`、CI、本合同、产品化计划、能力图、应用发布契约、`AGENTS.md` 及支付相关用户/开发/部署文档。禁止修改订单/余额 schema、路由、页面、核心仓、依赖目录、封存 S01/F02 证据或其他领域。
 
-## 6. 测试 owner 与一次最低验收
+## 7. 测试 owner 与一次最低验收
 
 `PB07-PAYMENT-HOST-001` 不连接数据库、不访问网络、不写文件。一次运行证明：
 
@@ -51,7 +59,9 @@ Runtime 白名单为 `server/app/common/service/payment/**`、退款调用方 `s
 2. Factory 是预支付、回调和退款的唯一装配点；旧退款服务和重复 Web facade 已退出。
 3. 微信预支付/退款都强制响应验签；回调和结算源码保留身份、金额、币种、渠道、流水、行锁与唯一索引边界。
 4. 退款只保存安全回执，调用方不持久化原始 Provider 响应；应用支付 owner 不 deep import 核心。
-5. 只读绑定封存 S01 单次入账/重复回调和 F02 首次单退款/单扣款证据；部分/多次退款不在本次通过项内，并保留 `real_merchant_called=false` 的外部停止线。
+5. 只读绑定封存 S01 单次入账/重复回调和 F02 首次单退款/单扣款证据，并保留 `real_merchant_called=false` 的外部停止线。
+
+数据库动态 owner `PAYMENT-DYNAMIC-PAY240DYN-001` 另行固定两个 Tenant 共享同一渠道、跨 Tenant 回调拒绝、撤销 grant 后拒绝新请求，以及部分退款/重复请求幂等；该证据已随 PR #240 合入，不因本文收口重复运行。
 
 固定命令：
 
@@ -62,9 +72,10 @@ cd server
 
 另运行一次变更 PHP lint、一次 Web typecheck 与最终 `git diff --check`。不重跑 S01/F02、数据库/API、真实商户、浏览器、核心候选或已完成 PB05/PB07 通知测试。
 
-## 7. 实施证据
+## 8. 实施证据
 
 - 应用前置提交为 `4e67b9cff2bae5dc743394b9f97905ec66219e39`；核心只读基线保持 `7fbd445d8fa547830b7782a7ac147d9ed414e0fd`，核心及既有 `.playwright-cli/` 未触碰。
 - `PaymentServiceFactory` 已统一装配预支付、回调和退款；旧 `RefundGatewayService` 与重复 Web 支付 facade 已退出。微信商户响应补齐平台证书验签，退款回执改为字段白名单。
 - 2026-08-11 一次最低验收：变更 PHP 文件 lint 通过，`web` 的 `pnpm type:check` 通过；`PB07-PAYMENT-HOST-001` 首次因测试 marker 多余反斜杠失败，机械修正后唯一允许重跑输出 `passed`。PHP lint 与 Web typecheck 未重跑。
-- S01/F02、数据库/API、真实商户、浏览器、PB05 与 PB07 通知均未重跑；本合同只接受支付切片，PB07 OAuth/外部渠道仍未完成。
+- PR #240（merge `d1d9e474f7c80c1199c1c556c1f1f2baba525879`）落地 `pa_payment_tenant_channel_grant`、Tenant-owned 授权快照、跨 Tenant 回调拒绝和独立退款流水身份；`PAYMENT-DYNAMIC-PAY240DYN-001` 已通过，隔离验收库已按登记清理。
+- S01/F02、真实商户和浏览器没有因本文收口重复运行；真实 Provider 交易仍是后置部署 Gate。
