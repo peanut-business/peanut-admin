@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\validate;
 
 use app\common\enum\UserTerminalEnum;
-use app\common\model\finance\PaymentScene;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use think\Validate;
 
 /** 用户充值创建、查询和预支付参数验证。 */

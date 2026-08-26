@@ -1,16 +1,21 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\crontab\CrontabLogic;
+use app\Modules\Official\Task\Service\CrontabLogic;
 use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
-use app\common\model\Crontab;
+use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\XlsxExportService;
-use app\common\service\async\TaskImportExportRuntime;
-use app\common\service\export\AppFileMediaGateway;
+use app\common\service\storage\StorageService;
+use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
+use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 use app\command\TenantTaskWorker;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use think\facade\Db;
 
@@ -27,8 +32,22 @@ function expectTaskHost(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $app = new think\App();
 $app->initialize();
+$tenantId = (int)Db::name('tenant')->where('status', 'active')->order('id')->value('id');
+expectTaskHost($tenantId > 0, 'active Tenant fixture is unavailable');
+$context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
+    1,
+    'PB04-TASK-IMPORT-EXPORT-HOST',
+    $tenantId,
+    1,
+    1,
+    'admin-web',
+    new DateTimeImmutable('2031-01-01T00:00:00Z'),
+    1,
+), 'pb04-task-import-export-host');
+$scope = TenantScope::fromTrustedContext($tenantId, 'pb04-task-import-export-host');
 
 expectTaskHost(class_exists(TaskImportExportRuntime::class), 'application async Runtime is missing');
+expectTaskHost(class_exists(TaskImportExportRuntimeFactory::class), 'application async Runtime Host assembly is missing');
 expectTaskHost(class_exists(TenantTaskWorker::class), 'Tenant worker command is missing');
 expectTaskHost(is_subclass_of(OperationLogExportProvider::class, \PeanutAdmin\ImportExport\Contract\DataProvider::class), 'operation-log export provider does not implement the Core contract');
 expectTaskHost(is_subclass_of(AppFileMediaGateway::class, \PeanutAdmin\ImportExport\File\FileMediaGateway::class), 'private file gateway does not implement the Core contract');
@@ -40,23 +59,26 @@ expectTaskHost(str_contains($migrationSource, 'pa_import_export_operation'), 'Im
 expectTaskHost(str_contains($migrationSource, 'pa_file_object'), 'private file metadata schema is not owned by the application migration');
 expectTaskHost(!str_contains($migrationSource, 'public/storage'), 'async migration refers to public storage');
 
-$runtimeSource = (string)file_get_contents($serverRoot . '/app/common/service/async/TaskImportExportRuntime.php');
-expectTaskHost(str_contains($runtimeSource, 'TaskModuleProvider'), 'Import/Export does not use the official Task Runtime');
+$runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php');
+expectTaskHost(str_contains($runtimeSource, 'TaskJobRuntime'), 'Import/Export does not depend on the official Task Runtime contract');
 expectTaskHost(!str_contains($runtimeSource, 'PdoTaskJobRepository'), 'Import/Export bypasses the official Task Runtime repository boundary');
 expectTaskHost(!str_contains($runtimeSource, 'TrustedJobPublisher'), 'Import/Export bypasses the official Task Runtime publisher boundary');
+$runtimeFactorySource = (string)file_get_contents($serverRoot . '/app/common/service/async/TaskImportExportRuntimeFactory.php');
+expectTaskHost(str_contains($runtimeFactorySource, 'TaskModuleProvider'), 'Import/Export Host assembly does not use the official Task Module provider');
 $taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
 expectTaskHost(str_contains($taskRuntimeSource, 'TrustedJobPublisher'), 'official.task does not own trusted submission');
 expectTaskHost(str_contains($taskRuntimeSource, 'LocalWorker'), 'official.task does not own worker execution');
-$gatewaySource = (string)file_get_contents($serverRoot . '/app/common/service/export/AppFileMediaGateway.php');
+$gatewaySource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php');
 expectTaskHost(!str_contains($gatewaySource, "'/public/"), 'private gateway writes below public/');
 
 $suffix = strtolower(substr(bin2hex(random_bytes(8)), 0, 16));
 $taskName = 'PB04任务' . $suffix;
 $taskId = 0;
 $exportPath = '';
+$exportFileKey = '';
 
 try {
-    expectTaskHost(CrontabLogic::add([
+    expectTaskHost(CrontabLogic::add($context, [
         'name' => $taskName,
         'type' => 1,
         'command' => 'crontab:demo',
@@ -71,14 +93,14 @@ try {
 
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost(!$task->isEmpty(), 'temporary crontab is missing');
-    CrontabCommand::start($task->getData());
+    CrontabCommand::start($scope, $task->getData());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((string)$task->error === '', 'allowed task must succeed');
     expectTaskHost((int)$task->status === CrontabEnum::START, 'successful task must remain started');
 
     Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab']);
     $task = Crontab::findOrEmpty($taskId);
-    CrontabCommand::start($task->getData());
+    CrontabCommand::start($scope, $task->getData());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((int)$task->status === CrontabEnum::ERROR, 'disallowed task must enter error state');
     expectTaskHost(
@@ -87,21 +109,24 @@ try {
     );
 
     Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab:demo']);
-    expectTaskHost(CrontabLogic::operate($taskId, 'start'), CrontabLogic::getError());
+    expectTaskHost(CrontabLogic::operate($context, $taskId, 'start'), CrontabLogic::getError());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((int)$task->status === CrontabEnum::START, 'manual retry must restore started state');
     expectTaskHost((string)$task->error === '', 'manual retry must clear the previous error');
-    CrontabCommand::start($task->getData());
+    CrontabCommand::start($scope, $task->getData());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((int)$task->status === CrontabEnum::START, 'retried task must succeed');
     expectTaskHost((string)$task->error === '', 'retried task must finish without an error');
 
-    $uri = XlsxExportService::create(
+    $file = XlsxExportService::createForTenant(
+        $context,
         'PB04-task-export-' . $suffix,
         ['任务', '次数', '公式文本'],
         [['crontab:demo', 2, '=1+1']]
     );
-    $exportPath = $serverRoot . '/public/' . $uri;
+    $exportFileKey = (string)($file['file_key'] ?? '');
+    $exportPath = $serverRoot . '/private/storage/' . (string)($file['object_key'] ?? '');
+    expectTaskHost($exportFileKey !== '', 'XLSX export file key is missing');
     expectTaskHost(is_file($exportPath), 'XLSX export file was not created');
     $zip = new ZipArchive();
     expectTaskHost($zip->open($exportPath) === true, 'XLSX export is not a readable ZIP');
@@ -115,15 +140,19 @@ try {
     $exportCallers = [
         'app/adminapi/logic/auth/AdminLogic.php',
         'app/adminapi/logic/dept/JobsLogic.php',
-        'app/adminapi/logic/member/MemberLogic.php',
-        'app/adminapi/logic/finance/RechargeLogic.php',
+        'app/Modules/Official/Member/Service/MemberLogic.php',
+        'app/Modules/Official/Payment/Service/RechargeLogic.php',
         'app/adminapi/logic/log/OperationLogLogic.php',
     ];
     foreach ($exportCallers as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
         expectTaskHost(
-            str_contains($source, 'XlsxExportService::create'),
+            str_contains($source, 'XlsxExportService::createForTenant'),
             'export caller must use the application XLSX owner: ' . $relativePath
+        );
+        expectTaskHost(
+            preg_match('/XlsxExportService::create\s*\(/', $source) !== 1,
+            'export caller retained the instance-wide XLSX API: ' . $relativePath
         );
         expectTaskHost(!str_contains($source, 'new ZipArchive'), 'duplicate XLSX writer: ' . $relativePath);
         expectTaskHost(!str_contains($source, 'function createXlsx'), 'duplicate XLSX helper: ' . $relativePath);
@@ -133,7 +162,7 @@ try {
 
     foreach ([
         'app/command/Crontab.php',
-        'app/adminapi/logic/crontab/CrontabLogic.php',
+        'app/Modules/Official/Task/Service/CrontabLogic.php',
         'app/adminapi/logic/generator/GeneratorLogic.php',
         'app/adminapi/service/generator/GeneratorArchiveService.php',
     ] as $relativePath) {
@@ -142,8 +171,8 @@ try {
         expectTaskHost(!str_contains($source, 'PeanutAdmin\\ImportExport'), 'core ImportExport deep import: ' . $relativePath);
     }
 } finally {
-    if ($exportPath !== '' && is_file($exportPath)) {
-        @unlink($exportPath);
+    if ($exportFileKey !== '') {
+        StorageService::fromDefaultConnection()->delete($tenantId, $exportFileKey);
     }
     if ($taskId > 0) {
         Db::name('crontab')->where('id', $taskId)->delete();

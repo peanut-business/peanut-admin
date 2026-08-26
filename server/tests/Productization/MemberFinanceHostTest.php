@@ -68,9 +68,9 @@ expectMemberFinance(
 );
 
 $callers = [
-    'app/adminapi/logic/member/MemberLogic.php',
+    'app/Modules/Official/Member/Service/MemberLogic.php',
     'app/api/logic/RechargeLogic.php',
-    'app/adminapi/logic/finance/RechargeLogic.php',
+    'app/Modules/Official/Payment/Service/RechargeLogic.php',
 ];
 expectMemberFinance(
     $balanceCallers === [$balanceContractPath],
@@ -108,7 +108,7 @@ expectMemberFinance(
     'Payment must query Member through the public contract'
 );
 
-$refund = (string)file_get_contents($serverRoot . '/app/adminapi/logic/finance/RechargeLogic.php');
+$refund = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Service/RechargeLogic.php');
 $retryStart = strpos($refund, 'public static function refundAgain');
 $retryEnd = strpos($refund, 'private static function retryLockName', $retryStart ?: 0);
 expectMemberFinance($retryStart !== false && $retryEnd !== false, 'refund retry boundary is missing');

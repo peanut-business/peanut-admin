@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\crontab;
 
-use app\common\model\Crontab;
+use app\Modules\Official\Task\Model\Crontab;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

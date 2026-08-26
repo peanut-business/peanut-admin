@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
-use app\common\model\notice\NoticeLog;
-use app\common\model\notice\NoticeScene;
+use app\Modules\Official\Notification\Model\NoticeLog;
+use app\Modules\Official\Notification\Model\NoticeScene;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

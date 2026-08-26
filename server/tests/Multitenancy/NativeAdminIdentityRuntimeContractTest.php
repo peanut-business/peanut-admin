@@ -5,7 +5,7 @@ $serverDir = dirname(__DIR__, 2);
 $runtimeFiles = [
     'app/adminapi',
     'app/platform/service/PdoTenantOwnerAdminProvisioner.php',
-    'app/common/service/async/AdminAsyncAuthorization.php',
+    'app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php',
 ];
 $forbidden = [
     'pa_legacy_admin_tenant_map',

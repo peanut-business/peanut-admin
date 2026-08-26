@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\common\service\member;
 
-use app\common\model\member\Member;
-use app\common\model\member\MemberBalanceLog;
-use app\common\model\member\MemberTag;
-use app\common\model\member\MemberTagRelation;
+use app\Modules\Official\Member\Model\Member;
+use app\Modules\Official\Member\Model\MemberBalanceLog;
+use app\Modules\Official\Member\Model\MemberTag;
+use app\Modules\Official\Member\Model\MemberTagRelation;
 use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

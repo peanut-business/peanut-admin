@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\file\FileCateLogic;
-use app\adminapi\logic\file\FileLogic;
+use app\Modules\Official\File\Service\FileCateLogic;
+use app\Modules\Official\File\Service\FileLogic;
 use app\common\enum\FileEnum;
 use app\common\service\file\FileObjectNamespace;
 use app\common\service\file\FileTenantContext;

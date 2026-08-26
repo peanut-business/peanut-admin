@@ -405,7 +405,7 @@ query_refund
 - `server/app/adminapi/validate/recharge/RechargeRefundValidate.php`；
 - `server/app/adminapi/logic/recharge/RechargeLogic.php`；
 - `server/app/adminapi/lists/recharge/RechargeLists.php`；
-- `server/app/adminapi/controller/finance/RefundController.php`；
+- `server/app/Modules/Official/Payment/Http/Controller/RefundController.php`；
 - `server/app/adminapi/lists/finance/RefundRecordLists.php`；
 - `server/app/common/logic/RefundLogic.php`；
 - `server/app/common/command/QueryRefund.php`；

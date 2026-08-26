@@ -4,6 +4,7 @@ declare(strict_types=1);
 use app\common\service\authorization\AdminAuthorizationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -20,9 +21,9 @@ function expectRbacTenant(bool $condition, string $message): void
 function containsImportExportMenu(array $menus): bool
 {
     $forbiddenPermissions = [
-        'log/export',
-        'log/export/status',
-        'log/export/download',
+        'official.import-export.operation-log.export',
+        'official.import-export.operation.status',
+        'official.import-export.result.download',
     ];
     foreach ($menus as $menu) {
         if (($menu['module_key'] ?? null) === 'official.import-export'
@@ -64,9 +65,29 @@ SQL);
     $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
     expectRbacTenant($schema !== '', 'canonical application schema is missing');
     $pdo->exec($schema);
+    $moduleMigration = (string)file_get_contents(
+        $serverRoot . '/app/Modules/Official/ImportExport/Database/Migrations/20260826-namespace-permission-keys.sql'
+    );
+    expectRbacTenant($moduleMigration !== '', 'Import/Export permission migration is missing');
+    $pdo->exec($moduleMigration);
 }
 
 $serverRoot = dirname(__DIR__, 2);
+$manifestLoader = new ManifestLoader();
+$moduleIdentities = [];
+foreach (['File' => 'official.file', 'Task' => 'official.task', 'ImportExport' => 'official.import-export'] as $directory => $moduleKey) {
+    $manifest = $manifestLoader->load($serverRoot . '/app/Modules/Official/' . $directory);
+    $version = (string)($manifest->data['version'] ?? '');
+    if (preg_match('/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/D', $version) !== 1
+        || preg_match('/^[a-f0-9]{64}$/D', $manifest->digest) !== 1
+    ) {
+        throw new RuntimeException("invalid Module fixture identity: {$moduleKey}");
+    }
+    $moduleIdentities[$moduleKey] = ['version' => $version, 'digest' => $manifest->digest];
+}
+$fileIdentity = $moduleIdentities['official.file'];
+$taskIdentity = $moduleIdentities['official.task'];
+$importExportIdentity = $moduleIdentities['official.import-export'];
 $host = IsolatedBackendEnvironment::required('DB_HOST');
 $port = (int)IsolatedBackendEnvironment::required('DB_PORT');
 $user = IsolatedBackendEnvironment::required('DB_USER');
@@ -127,9 +148,9 @@ VALUES
 INSERT INTO pa_module_installation
   (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
 VALUES
-  ('official.file', '1.0.0', 1, 'bf73f0ebf4f6ae796e045fbc536a24c6e3545e2e5c4ce8c2d058c870a1d396c2', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.task', '1.0.0', 1, 'c0acd57abad366b0b4360a85500f295438abed063b3977be4454ec455faf1fd6', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
-  ('official.import-export', '1.0.0', 1, '42b79e202d3b7eb1df8ca51bd50ee937336fe1d966eb1132996ebff6a81f52d6', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+  ('official.file', '{$fileIdentity['version']}', 1, '{$fileIdentity['digest']}', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.task', '{$taskIdentity['version']}', 1, '{$taskIdentity['digest']}', 'active', '{$now}', '{$now}', '{$now}', '{$now}'),
+  ('official.import-export', '{$importExportIdentity['version']}', 1, '{$importExportIdentity['digest']}', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
 INSERT INTO pa_tenant_module
   (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
 VALUES
@@ -139,7 +160,7 @@ VALUES
 INSERT INTO pa_permission
   (`key`, module_key, type, name, description, risk_level, status, manifest_version, created_at, updated_at, retired_at)
 VALUES
-  ('log/export', 'official.import-export', 'api', 'Export operation logs', NULL, 'sensitive', 'active', 'fresh-schema-v1', '{$now}', '{$now}', NULL)
+  ('official.import-export.operation-log.export', 'official.import-export', 'api', 'Export operation logs', NULL, 'sensitive', 'active', 'fresh-schema-v1', '{$now}', '{$now}', NULL)
 ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at), retired_at = NULL;
 INSERT INTO pa_role
   (id, tenant_id, `key`, name, is_builtin, status, authorization_revision, created_at, updated_at)
@@ -154,7 +175,7 @@ INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at) V
   (101, 503, 33, '{$now}'),
   (202, 504, 44, '{$now}');
 SQL);
-    $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'log/export'")->fetchColumn();
+    $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'official.import-export.operation-log.export'")->fetchColumn();
     expectRbacTenant($permissionId > 0, 'canonical export permission is missing');
     $pdo->prepare(
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
@@ -175,19 +196,19 @@ SQL);
     $betaRoot = $authorization->principal($betaRootContext);
 
     expectRbacTenant(
-        $authorization->decide($alphaContext, $alpha, 'log/export')->allowed,
+        $authorization->decide($alphaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'same-Tenant RBAC permission was denied'
     );
     expectRbacTenant(
-        !$authorization->decide($betaContext, $alpha, 'log/export')->allowed,
+        !$authorization->decide($betaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'mismatched TenantContext accepted an Alpha principal'
     );
     expectRbacTenant(
-        !$authorization->decide(null, $alpha, 'log/export')->allowed,
+        !$authorization->decide(null, $alpha, 'official.import-export.operation-log.export')->allowed,
         'missing TenantContext did not fail closed'
     );
     expectRbacTenant(
-        $authorization->decide($alphaRootContext, $alphaRoot, 'log/export')->allowed,
+        $authorization->decide($alphaRootContext, $alphaRoot, 'official.import-export.operation-log.export')->allowed,
         'root did not bypass role grant for an active Module permission'
     );
     expectRbacTenant(
@@ -195,7 +216,7 @@ SQL);
         'root bypassed route registration'
     );
     expectRbacTenant(
-        !$authorization->decide($betaRootContext, $betaRoot, 'log/export')->allowed,
+        !$authorization->decide($betaRootContext, $betaRoot, 'official.import-export.operation-log.export')->allowed,
         'root bypassed disabled Tenant Module'
     );
 
@@ -208,7 +229,7 @@ SQL);
 
     $pdo->exec('DELETE FROM pa_role_permission WHERE tenant_id = 101 AND role_id = 11');
     expectRbacTenant(
-        !$authorization->decide($alphaContext, $alpha, 'log/export')->allowed,
+        !$authorization->decide($alphaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'revoked RBAC permission still authorized'
     );
     $pdo->prepare(
@@ -216,7 +237,7 @@ SQL);
     )->execute([101, 11, $permissionId, $now]);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101");
     expectRbacTenant(
-        !$authorization->decide($alphaRootContext, $alphaRoot, 'log/export')->allowed,
+        !$authorization->decide($alphaRootContext, $alphaRoot, 'official.import-export.operation-log.export')->allowed,
         'root bypassed Module revocation'
     );
 } finally {

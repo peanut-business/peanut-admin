@@ -84,12 +84,12 @@ foreach (['ConfigService::get', 'new AliyunSms', 'new TencentSms', "'verify_code
     expectNotificationHost(!str_contains($verificationService, $forbidden), 'verification service bypasses Host: ' . $forbidden);
 }
 
-$logModel = (string)file_get_contents($serverRoot . '/app/common/model/notice/NoticeLog.php');
+$logModel = (string)file_get_contents($serverRoot . '/app/Modules/Official/Notification/Model/NoticeLog.php');
 expectNotificationHost(
     str_contains($logModel, "protected \$hidden = ['verify_code_hash', 'extra']"),
     'secret hash or provider response can be serialized'
 );
-$logLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/notice/NoticeLogLogic.php');
+$logLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Notification/Service/NoticeLogLogic.php');
 expectNotificationHost(!str_contains($logLogic, "field('l.*"), 'notification API exposes unrestricted log columns');
 expectNotificationHost(!str_contains($logLogic, 'verify_code_hash'), 'notification API selects the verification hash');
 expectNotificationHost(!str_contains($logLogic, "'l.extra'"), 'notification API selects raw provider results');

@@ -359,7 +359,7 @@
   import { getToken } from '@/utils/auth';
   import sanitizeRichText from '@/utils/sanitize-rich-text';
   import FilePicker from '@/components/file-picker/index.vue';
-  import { uploadUrl } from '@/api/system/file';
+  import { uploadUrl } from '@/modules/official-file/api';
   import {
     getArticleList,
     getArticleCateAll,

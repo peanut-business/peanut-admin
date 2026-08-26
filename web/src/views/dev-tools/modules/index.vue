@@ -33,7 +33,11 @@
           <span>实例模块治理</span>
           <el-space>
             <el-button :loading="busy" @click="syncAll">同步开发树</el-button>
-            <el-button type="primary" @click="uploadVisible = true">
+            <el-button
+              type="primary"
+              :disabled="busy"
+              @click="uploadVisible = true"
+            >
               安装 .tar 包
             </el-button>
           </el-space>
@@ -48,6 +52,14 @@
         closable
         @close="error = ''"
       />
+      <el-alert
+        v-if="operationLabel"
+        class="operation-alert"
+        type="info"
+        :closable="false"
+        show-icon
+        :title="operationLabel"
+      />
       <el-table :data="rows" :loading="busy" row-key="module_key" border>
         <el-table-column prop="module_key" label="Module key" min-width="210" />
         <el-table-column prop="name" label="名称" min-width="150" />
@@ -57,16 +69,31 @@
             <small>{{ row.package_key }}@{{ row.package_version }}</small>
           </template>
         </el-table-column>
-        <el-table-column label="依赖" min-width="210">
+        <el-table-column label="依赖关系" min-width="280">
           <template #default="{ row }">
-            <el-tag
-              v-for="dependency in row.dependencies"
-              :key="dependency.module_key"
-              size="small"
-            >
-              {{ dependency.module_key }} {{ dependency.version }}
-            </el-tag>
-            <span v-if="row.dependencies.length === 0">—</span>
+            <div class="dependency-line">
+              <span class="dependency-label">依赖</span>
+              <el-tag
+                v-for="dependency in row.dependencies"
+                :key="dependency.module_key"
+                size="small"
+              >
+                {{ dependency.module_key }} {{ dependency.version }}
+              </el-tag>
+              <span v-if="row.dependencies.length === 0">—</span>
+            </div>
+            <div class="dependency-line">
+              <span class="dependency-label">被依赖</span>
+              <el-tag
+                v-for="dependent in row.dependents"
+                :key="dependent"
+                size="small"
+                type="success"
+              >
+                {{ dependent }}
+              </el-tag>
+              <span v-if="row.dependents.length === 0">—</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column
@@ -77,11 +104,16 @@
         <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <el-space wrap>
-              <el-button link @click="syncOne(row.module_key)">同步</el-button>
-              <el-button link @click="disable(row.module_key)">停用</el-button>
+              <el-button link :disabled="busy" @click="syncOne(row.module_key)"
+                >同步</el-button
+              >
+              <el-button link :disabled="busy" @click="disable(row.module_key)"
+                >停用</el-button
+              >
               <el-button
                 link
                 type="warning"
+                :disabled="busy"
                 @click="uninstall(row.module_key, false)"
               >
                 退役
@@ -89,6 +121,7 @@
               <el-button
                 link
                 type="danger"
+                :disabled="busy"
                 @click="uninstall(row.module_key, true)"
               >
                 Purge
@@ -143,6 +176,7 @@
     installPackage,
     listModules,
     loginPlatform,
+    moduleErrorMessage,
     previewUninstall,
     syncModules,
     type ModuleRuntimeRow,
@@ -150,6 +184,7 @@
 
   const authenticated = ref(hasPlatformSession());
   const busy = ref(false);
+  const operationLabel = ref('');
   const error = ref('');
   const rows = ref<ModuleRuntimeRow[]>([]);
   const page = ref(1);
@@ -167,27 +202,35 @@
     signatureKeyId: '',
   });
 
-  async function perform<T>(operation: () => Promise<T>, success?: string) {
+  async function perform<T>(
+    operation: () => Promise<T>,
+    success?: string,
+    pending = '正在处理模块治理请求…'
+  ) {
     busy.value = true;
+    operationLabel.value = pending;
     error.value = '';
     try {
       const result = await operation();
       if (success) ElMessage.success(success);
       return result;
     } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : '模块治理请求失败';
+      error.value = moduleErrorMessage(cause);
       if (!hasPlatformSession()) authenticated.value = false;
       throw cause;
     } finally {
       busy.value = false;
+      operationLabel.value = '';
     }
   }
 
   async function load(nextPage = page.value) {
     page.value = nextPage;
     try {
-      const result = await perform(() =>
-        listModules({ page: page.value, page_size: pageSize })
+      const result = await perform(
+        () => listModules({ page: page.value, page_size: pageSize }),
+        undefined,
+        '正在刷新模块、依赖与安装状态…'
       );
       if (!result) return;
       rows.value = result.lists;
@@ -199,8 +242,10 @@
 
   async function login() {
     try {
-      await perform(() =>
-        loginPlatform(credentials.email, credentials.password)
+      await perform(
+        () => loginPlatform(credentials.email, credentials.password),
+        undefined,
+        '正在验证 Platform 身份…'
       );
       credentials.password = '';
       authenticated.value = true;
@@ -225,7 +270,11 @@
     if (upload.signatureKeyId)
       form.append('signature_key_id', upload.signatureKeyId);
     try {
-      await perform(() => installPackage(form), '模块包安装完成');
+      await perform(
+        () => installPackage(form),
+        '模块包安装完成',
+        '正在校验摘要、解包并安装模块…'
+      );
       uploadVisible.value = false;
       await load(1);
     } catch {
@@ -235,7 +284,11 @@
 
   async function syncAll() {
     try {
-      await perform(() => syncModules(), '模块目录同步完成');
+      await perform(
+        () => syncModules(),
+        '模块目录同步完成',
+        '正在同步全部开发模块 catalog…'
+      );
       await load();
     } catch {
       // The visible error is set by perform.
@@ -244,7 +297,11 @@
 
   async function syncOne(moduleKey: string) {
     try {
-      await perform(() => syncModules(moduleKey), '模块目录同步完成');
+      await perform(
+        () => syncModules(moduleKey),
+        '模块目录同步完成',
+        `正在同步 ${moduleKey} catalog…`
+      );
       await load();
     } catch {
       // The visible error is set by perform.
@@ -257,10 +314,14 @@
         '请输入停用原因（至少 3 个字符）',
         '停用模块'
       );
-      await perform(() => disableModule(moduleKey, value), '模块已停用');
+      await perform(
+        () => disableModule(moduleKey, value),
+        '模块已停用',
+        `正在停用 ${moduleKey}…`
+      );
       await load();
     } catch (cause) {
-      if (cause instanceof Error) error.value = cause.message;
+      if (cause instanceof Error) error.value = moduleErrorMessage(cause);
     }
   }
 
@@ -269,7 +330,9 @@
       const preview = await perform(() => previewUninstall(moduleKey, purge));
       if (!preview) return;
       if (preview.blockers.length > 0) {
-        error.value = preview.blockers.map((item) => item.code).join(', ');
+        error.value = preview.blockers
+          .map((item) => moduleErrorMessage(new Error(item.code)))
+          .join('；');
         return;
       }
       const summary = preview.removed
@@ -286,11 +349,12 @@
       );
       await perform(
         () => executeUninstall(moduleKey, purge, preview, value),
-        purge ? '模块已清除' : '模块已退役'
+        purge ? '模块已清除' : '模块已退役',
+        purge ? `正在清除 ${moduleKey}…` : `正在退役 ${moduleKey}…`
       );
       await load(1);
     } catch (cause) {
-      if (cause instanceof Error) error.value = cause.message;
+      if (cause instanceof Error) error.value = moduleErrorMessage(cause);
     }
   }
 
@@ -314,6 +378,20 @@
   .pagination {
     justify-content: flex-end;
     margin-top: 16px;
+  }
+  .operation-alert {
+    margin: 12px 0;
+  }
+  .dependency-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+  }
+  .dependency-label {
+    width: 48px;
+    color: var(--el-text-color-secondary);
   }
   small {
     color: var(--el-text-color-secondary);

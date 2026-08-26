@@ -203,9 +203,9 @@ $directTenantCrud = [
         'context' => 'DictTenantContext::member($this->request)',
         'extraMethods' => ['byType'],
     ],
-    'app\\adminapi\\controller\\setting\\OfficialAccountReplyController' => [
-        'logic' => 'app\\adminapi\\logic\\setting\\OfficialAccountReplyLogic',
-        'validate' => 'app\\adminapi\\validate\\setting\\OfficialAccountReplyValidate',
+    'app\\Modules\\Official\\Oauth\\Http\\Controller\\OfficialAccountReplyController' => [
+        'logic' => 'app\\Modules\\Official\\Oauth\\Service\\OfficialAccountReplyLogic',
+        'validate' => 'app\\Modules\\Official\\Oauth\\Validation\\OfficialAccountReplyValidate',
         'notFound' => '自动回复不存在',
         'context' => 'MemberTenantContext::member($this->request)',
         'extraMethods' => [],
@@ -228,7 +228,7 @@ foreach ($directTenantCrud as $className => $contract) {
     }
 }
 
-$reply = reflectAdminTenantCrud('app\\adminapi\\controller\\setting\\OfficialAccountReplyController');
+$reply = reflectAdminTenantCrud('app\\Modules\\Official\\Oauth\\Http\\Controller\\OfficialAccountReplyController');
 expectAdminTenantCrudConstant($reply, 'CRUD_DELETE_SUCCESS_MESSAGE', '删除成功', $reply->getName());
 expectAdminTenantCrudConstant($reply, 'CRUD_VALIDATE_LISTS', true, $reply->getName());
 expectAdminTenantCrudConstant($reply, 'CRUD_STATUS_FIELD', 'status', $reply->getName());
@@ -315,23 +315,23 @@ $mustRemainCustom = [
         'app\\adminapi\\controller\\auth\\MenuController',
     ],
     'File' => [
-        'app\\adminapi\\controller\\file\\FileController',
-        'app\\adminapi\\controller\\file\\UploadController',
+        'app\\Modules\\Official\\File\\Http\\Controller\\FileController',
+        'app\\Modules\\Official\\File\\Http\\Controller\\UploadController',
     ],
     'Member' => [
-        'app\\adminapi\\controller\\member\\MemberController',
-        'app\\adminapi\\controller\\member\\MemberTagController',
+        'app\\Modules\\Official\\Member\\Http\\Controller\\MemberController',
+        'app\\Modules\\Official\\Member\\Http\\Controller\\MemberTagController',
     ],
     'Generator' => [
         'app\\adminapi\\controller\\generator\\GeneratorController',
     ],
     'Finance' => [
-        'app\\adminapi\\controller\\finance\\AccountLogController',
-        'app\\adminapi\\controller\\finance\\RechargeController',
-        'app\\adminapi\\controller\\finance\\RefundController',
+        'app\\Modules\\Official\\Member\\Http\\Controller\\AccountLogController',
+        'app\\Modules\\Official\\Payment\\Http\\Controller\\RechargeController',
+        'app\\Modules\\Official\\Payment\\Http\\Controller\\RefundController',
     ],
     'Crontab' => [
-        'app\\adminapi\\controller\\crontab\\CrontabController',
+        'app\\Modules\\Official\\Task\\Http\\Controller\\CrontabController',
     ],
 ];
 foreach ($mustRemainCustom as $domain => $classes) {

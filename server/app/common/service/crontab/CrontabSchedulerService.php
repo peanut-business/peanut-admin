@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\crontab;
 
 use app\common\enum\CrontabEnum;
-use app\common\model\Crontab;
+use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\CrontabCommandService;
 use app\common\service\module\ModuleExecutionContext;
 use app\platform\service\module\PdoModuleGovernanceProvider;

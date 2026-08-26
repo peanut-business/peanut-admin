@@ -1,8 +1,41 @@
 {
-  "schema_version":1,"key":"official.import-export","name":"Import and Export","description":"Tenant-private import and export operations, jobs and result files.","version":"1.0.0","kernel_constraint":"^1.0","license":"proprietary",
-  "php_package":"peanut-business/official-import-export","web_package":"@peanut-admin/official-import-export","dependencies":[{"module_key":"official.file","version":"^1.0"},{"module_key":"official.task","version":"^1.0"}],
-  "backend":{"provider":"app\\Modules\\Official\\ImportExport\\ModuleProvider","routes":"Http/routes.php","menus":"Resources/menus.json","permissions":"Resources/permissions.json"},
-  "frontend":{"entry":"web/src/modules/official-import-export/contribution.ts"},
-  "database":{"owned_tables":["pa_import_export_operation","pa_import_export_row_error"]},"contracts":{"exports":["app\\Modules\\Official\\ImportExport\\Contracts\\ImportExportCommands","app\\Modules\\Official\\ImportExport\\Contracts\\ImportExportQueries"],"events":[]},
-  "tenant":{"enableable":true,"disable_behavior":"reject_new_operations","requires":["official.file","official.task"]}
+  "schema_version": 1,
+  "key": "official.import-export",
+  "name": "Import and Export",
+  "description": "Tenant-private import and export operations, jobs and result files.",
+  "version": "1.0.0",
+  "kernel_constraint": "^1.0",
+  "license": "proprietary",
+  "php_package": "peanut-business/official-import-export",
+  "web_package": "@peanut-admin/official-import-export",
+  "dependencies": [
+    {"module_key": "official.file", "version": "^1.0"},
+    {"module_key": "official.task", "version": "^1.0"}
+  ],
+  "backend": {
+    "provider": "app\\Modules\\Official\\ImportExport\\ModuleProvider",
+    "routes": "Http/routes.php",
+    "migrations": "Database/Migrations",
+    "menus": "Resources/menus.json",
+    "permissions": "Resources/permissions.json",
+    "setting_definitions": "Resources/setting-definitions.json"
+  },
+  "frontend": {
+    "entry": "web/src/modules/official-import-export/contribution.ts"
+  },
+  "database": {
+    "owned_tables": ["pa_import_export_operation", "pa_import_export_row_error"]
+  },
+  "contracts": {
+    "exports": [
+      "app\\Modules\\Official\\ImportExport\\Contracts\\ImportExportCommands",
+      "app\\Modules\\Official\\ImportExport\\Contracts\\ImportExportQueries"
+    ],
+    "events": []
+  },
+  "tenant": {
+    "enableable": true,
+    "disable_behavior": "reject_new_operations",
+    "requires": ["official.file", "official.task"]
+  }
 }

@@ -71,9 +71,9 @@ namespace {
     $ownedFiles = [
         'app/common/service/FileService.php',
         'app/common/service/UploadService.php',
-        'app/common/model/file/File.php',
-        'app/adminapi/logic/file/FileLogic.php',
-        'app/adminapi/logic/file/FileCateLogic.php',
+        'app/Modules/Official/File/Model/File.php',
+        'app/Modules/Official/File/Service/FileLogic.php',
+        'app/Modules/Official/File/Service/FileCateLogic.php',
         'app/common/service/storage/StorageService.php',
         'app/common/service/storage/StorageRepository.php',
         'app/common/service/storage/StoragePurpose.php',
@@ -85,7 +85,7 @@ namespace {
         $sources[$relativePath] = (string)file_get_contents($absolutePath);
     }
     expectFileMedia(
-        str_contains($sources['app/common/model/file/File.php'], "['file_key']"),
+        str_contains($sources['app/Modules/Official/File/Model/File.php'], "['file_key']"),
         'File model must resolve the canonical file object'
     );
     expectFileMedia(
@@ -93,7 +93,7 @@ namespace {
         'upload must use the unified storage service'
     );
     expectFileMedia(
-        str_contains($sources['app/adminapi/logic/file/FileLogic.php'], 'StorageService::fromDefaultConnection()->delete'),
+        str_contains($sources['app/Modules/Official/File/Service/FileLogic.php'], 'StorageService::fromDefaultConnection()->delete'),
         'delete must use the unified storage service'
     );
     expectFileMedia(

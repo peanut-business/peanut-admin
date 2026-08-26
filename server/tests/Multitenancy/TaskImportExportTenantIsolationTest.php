@@ -2,8 +2,9 @@
 declare(strict_types=1);
 
 use app\common\service\authorization\AdminAuthorizationService;
-use app\common\service\async\AdminAsyncAuthorization;
-use app\common\service\async\TaskImportExportRuntime;
+use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
+use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAuthorization;
+use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
@@ -60,6 +61,11 @@ SQL);
     $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
     expectAsyncTenant($schema !== '', 'canonical application schema is missing');
     $pdo->exec($schema);
+    $storageMigration = (string)file_get_contents(
+        $serverRoot . '/database/migrations/20260823-unify-storage-service.sql'
+    );
+    expectAsyncTenant($storageMigration !== '', 'canonical storage migration is missing');
+    $pdo->exec($storageMigration);
 }
 
 $serverRoot = dirname(__DIR__, 2);
@@ -138,7 +144,7 @@ VALUES
 INSERT INTO pa_permission
   (`key`, module_key, type, name, description, risk_level, status, manifest_version, created_at, updated_at)
 VALUES
-  ('log/export', 'official.import-export', 'api', 'Export operation logs', NULL, 'normal', 'active', 'fresh-schema-v1', '{$now}', '{$now}')
+  ('official.import-export.operation-log.export', 'official.import-export', 'api', 'Export operation logs', NULL, 'normal', 'active', 'fresh-schema-v1', '{$now}', '{$now}')
 ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at), retired_at = NULL;
 INSERT INTO pa_role
   (id, tenant_id, `key`, name, is_builtin, status, authorization_revision, created_at, updated_at)
@@ -151,9 +157,9 @@ INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at) V
   (202, 502, 22, '{$now}'),
   (101, 503, 33, '{$now}');
 INSERT INTO pa_system_menu (type, name, perms, paths, is_disable)
-VALUES ('A', 'Export operation logs', 'log/export', '', 0);
+VALUES ('A', 'Export operation logs', 'official.import-export.operation-log.export', '', 0);
 SQL);
-    $exportPermission = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'log/export'")->fetchColumn();
+    $exportPermission = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'official.import-export.operation-log.export'")->fetchColumn();
     expectAsyncTenant($exportPermission > 0, 'fresh canonical async export Permission is missing');
     $insertPermission = $pdo->prepare(
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
@@ -211,7 +217,10 @@ SQL);
         }
     }
 
-    $runtime = new TaskImportExportRuntime($pdo, $signingKey);
+    $runtime = new TaskImportExportRuntime(
+        $pdo,
+        (new TaskModuleProvider())->jobs($pdo, $signingKey),
+    );
     $taskDisabled = submitOperationLogExport($runtime, $alpha, 'task-disabled-' . $runId);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");
     expectAsyncTenant($runtime->runTenant(101, 'fresh-task-disabled-' . $runId) === 1, 'disabled Task Module job was not examined');

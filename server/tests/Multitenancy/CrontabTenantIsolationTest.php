@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\crontab\CrontabLogic;
+use app\Modules\Official\Task\Service\CrontabLogic;
 use app\common\enum\CrontabEnum;
 use app\common\service\CrontabCommandService;
 use app\common\service\crontab\CrontabSchedulerService;

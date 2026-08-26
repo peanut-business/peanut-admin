@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\finance\AccountLogLogic as AdminAccountLogLogic;
-use app\adminapi\logic\member\MemberLogic;
-use app\adminapi\logic\member\MemberTagLogic;
+use app\Modules\Official\Member\Service\AccountLogLogic as AdminAccountLogLogic;
+use app\Modules\Official\Member\Service\MemberLogic;
+use app\Modules\Official\Member\Service\MemberTagLogic;
 use app\api\logic\AccountLogLogic as ApiAccountLogLogic;
 use app\common\enum\AccountLogEnum;
 use app\common\logic\AccountLogLogic;
@@ -210,7 +210,7 @@ SQL);
         'duplicate same-Tenant source_sn row was inserted'
     );
 
-    foreach (['adminapi/logic/member/MemberLogic.php', 'adminapi/logic/member/MemberTagLogic.php', 'common/service/MemberBalanceService.php', 'common/logic/AccountLogLogic.php', 'common/service/member/MemberTenantContext.php', 'common/service/member/MemberTenantRepository.php'] as $relative) {
+    foreach (['Modules/Official/Member/Service/MemberLogic.php', 'Modules/Official/Member/Service/MemberTagLogic.php', 'common/service/MemberBalanceService.php', 'common/logic/AccountLogLogic.php', 'common/service/member/MemberTenantContext.php', 'common/service/member/MemberTenantRepository.php'] as $relative) {
         exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($serverRoot . '/app/' . $relative), $output, $exit);
         expectMemberTenant($exit === 0, 'PHP 8.3 lint failed: ' . $relative . ' ' . implode(' ', $output));
         $output = [];

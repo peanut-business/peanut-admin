@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Contracts;
 
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
