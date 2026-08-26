@@ -61,6 +61,11 @@ SQL);
     $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
     expectAsyncTenant($schema !== '', 'canonical application schema is missing');
     $pdo->exec($schema);
+    $storageMigration = (string)file_get_contents(
+        $serverRoot . '/database/migrations/20260823-unify-storage-service.sql'
+    );
+    expectAsyncTenant($storageMigration !== '', 'canonical storage migration is missing');
+    $pdo->exec($storageMigration);
 }
 
 $serverRoot = dirname(__DIR__, 2);
