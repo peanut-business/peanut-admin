@@ -93,6 +93,10 @@ const MODULE_ERROR_MESSAGES: Record<string, string> = {
   MODULE_UNINSTALL_BLOCKED: '当前状态不允许卸载该模块',
   MODULE_DEPENDENT_INSTALLED: '仍有已安装模块依赖该模块',
   PLUGIN_TENANT_MODULE_ACTIVE: '请先关闭所有租户中的模块开通状态',
+  MODULE_OWNED_TABLE_EXTERNAL_REFERENCE:
+    '模块业务表仍被 Bundle 外部数据引用，不能执行 Purge',
+  MODULE_OWNED_TABLE_FK_CYCLE: '模块业务表存在无法安全拆除的外键环',
+  MODULE_LIFECYCLE_BUSY: '该模块包正在执行其他治理操作，请稍后重试',
   MODULE_STATE_INVALID: '模块当前状态不允许执行该操作',
   MODULE_CHANGE_REASON_INVALID: '变更原因需为 3 至 500 个字符',
 };

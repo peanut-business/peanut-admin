@@ -335,22 +335,36 @@
           .join('；');
         return;
       }
+      const packageKey = String(preview.confirm_plan.package_key || moduleKey);
+      const affectedModules = preview.affected_modules.map(
+        (module) => module.module_key
+      );
+      const bundleNotice =
+        affectedModules.length > 1
+          ? `${moduleKey} 属于 Bundle ${packageKey}，不能单独卸载；继续将处理整个 Bundle。`
+          : `将处理模块包 ${packageKey}。`;
       const summary = preview.removed
         .map((entry) => `${entry.table}: ${entry.action} ${entry.count}`)
         .join('\n');
       const { value } = await ElMessageBox.prompt(
-        `${
+        `${bundleNotice}\n受影响模块（${affectedModules.length}）：${affectedModules.join(
+          '、'
+        )}\n${
           purge
             ? 'Purge 将物理删除数据与显式 RBAC 绑定。'
             : '默认退役保留数据与绑定。'
         }\n${summary}\n请输入变更原因：`,
-        purge ? '确认 Purge' : '确认退役',
+        purge
+          ? `确认 Purge ${affectedModules.length > 1 ? 'Bundle' : '模块'}`
+          : `确认退役 ${affectedModules.length > 1 ? 'Bundle' : '模块'}`,
         { type: purge ? 'error' : 'warning' }
       );
       await perform(
         () => executeUninstall(moduleKey, purge, preview, value),
-        purge ? '模块已清除' : '模块已退役',
-        purge ? `正在清除 ${moduleKey}…` : `正在退役 ${moduleKey}…`
+        purge
+          ? `${affectedModules.length > 1 ? 'Bundle' : '模块'}已清除`
+          : `${affectedModules.length > 1 ? 'Bundle' : '模块'}已退役`,
+        purge ? `正在清除 ${packageKey}…` : `正在退役 ${packageKey}…`
       );
       await load(1);
     } catch (cause) {
