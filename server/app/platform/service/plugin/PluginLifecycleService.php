@@ -38,6 +38,10 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         if (is_array($current) && $this->sameIdentity($plugin, $current) && $current['status'] === 'active') {
             return $plugin->publicIdentity() + ['operation' => 'unchanged'];
         }
+        if (is_array($current) && $current['status'] === 'maintenance'
+            && in_array($current['last_error_code'] ?? null, ['MODULE_PURGE_IN_PROGRESS', 'MODULE_RETIRE_IN_PROGRESS'], true)) {
+            throw new PluginLifecycleException((string)$current['last_error_code'], 'Module uninstall recovery must finish before install.');
+        }
         if (is_array($current) && !in_array($current['status'], ['failed', 'uninstalled'], true)) {
             throw new PluginLifecycleException('PLUGIN_ALREADY_INSTALLED', 'Use plugin:upgrade for an installed Plugin.');
         }
