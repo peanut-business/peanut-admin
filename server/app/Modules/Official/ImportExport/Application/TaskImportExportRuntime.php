@@ -1,15 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\async;
+namespace app\Modules\Official\ImportExport\Application;
 
 use app\common\service\audit\AuditContractHost;
 use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
 use app\Modules\Official\ImportExport\Contracts\ImportExportQueries;
 use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
 use app\Modules\Official\ImportExport\ModuleProvider as ImportExportModuleProvider;
+use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAuthorization;
+use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
+use app\common\service\export\OperationLogExportProvider;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
-use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\ImportExport\Contract\DataProviderRegistry;
@@ -18,8 +20,6 @@ use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
 use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
-use app\common\service\export\AppFileMediaGateway;
-use app\common\service\export\OperationLogExportProvider;
 
 final readonly class TaskImportExportRuntime
 {
@@ -27,17 +27,9 @@ final readonly class TaskImportExportRuntime
 
     public function __construct(
         private PDO $pdo,
-        private string $signingKey,
+        TaskJobRuntime $tasks,
     ) {
-        $this->tasks = (new TaskModuleProvider())->jobs($this->pdo, $this->signingKey);
-    }
-
-    public static function fromConfig(PDO $pdo): self
-    {
-        return new self(
-            $pdo,
-            (string)config('async.signing_key', ''),
-        );
+        $this->tasks = $tasks;
     }
 
     public function commands(): ImportExportCommands

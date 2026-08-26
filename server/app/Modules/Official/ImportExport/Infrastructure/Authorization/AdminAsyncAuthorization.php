@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\async;
+namespace app\Modules\Official\ImportExport\Infrastructure\Authorization;
 
 use DateTimeImmutable;
 use DateTimeZone;

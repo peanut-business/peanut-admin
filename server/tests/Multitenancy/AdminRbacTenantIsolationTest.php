@@ -20,9 +20,9 @@ function expectRbacTenant(bool $condition, string $message): void
 function containsImportExportMenu(array $menus): bool
 {
     $forbiddenPermissions = [
-        'log/export',
-        'log/export/status',
-        'log/export/download',
+        'official.import-export.operation-log.export',
+        'official.import-export.operation.status',
+        'official.import-export.result.download',
     ];
     foreach ($menus as $menu) {
         if (($menu['module_key'] ?? null) === 'official.import-export'
@@ -139,7 +139,7 @@ VALUES
 INSERT INTO pa_permission
   (`key`, module_key, type, name, description, risk_level, status, manifest_version, created_at, updated_at, retired_at)
 VALUES
-  ('log/export', 'official.import-export', 'api', 'Export operation logs', NULL, 'sensitive', 'active', 'fresh-schema-v1', '{$now}', '{$now}', NULL)
+  ('official.import-export.operation-log.export', 'official.import-export', 'api', 'Export operation logs', NULL, 'sensitive', 'active', 'fresh-schema-v1', '{$now}', '{$now}', NULL)
 ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at), retired_at = NULL;
 INSERT INTO pa_role
   (id, tenant_id, `key`, name, is_builtin, status, authorization_revision, created_at, updated_at)
@@ -154,7 +154,7 @@ INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at) V
   (101, 503, 33, '{$now}'),
   (202, 504, 44, '{$now}');
 SQL);
-    $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'log/export'")->fetchColumn();
+    $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'official.import-export.operation-log.export'")->fetchColumn();
     expectRbacTenant($permissionId > 0, 'canonical export permission is missing');
     $pdo->prepare(
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
@@ -175,19 +175,19 @@ SQL);
     $betaRoot = $authorization->principal($betaRootContext);
 
     expectRbacTenant(
-        $authorization->decide($alphaContext, $alpha, 'log/export')->allowed,
+        $authorization->decide($alphaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'same-Tenant RBAC permission was denied'
     );
     expectRbacTenant(
-        !$authorization->decide($betaContext, $alpha, 'log/export')->allowed,
+        !$authorization->decide($betaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'mismatched TenantContext accepted an Alpha principal'
     );
     expectRbacTenant(
-        !$authorization->decide(null, $alpha, 'log/export')->allowed,
+        !$authorization->decide(null, $alpha, 'official.import-export.operation-log.export')->allowed,
         'missing TenantContext did not fail closed'
     );
     expectRbacTenant(
-        $authorization->decide($alphaRootContext, $alphaRoot, 'log/export')->allowed,
+        $authorization->decide($alphaRootContext, $alphaRoot, 'official.import-export.operation-log.export')->allowed,
         'root did not bypass role grant for an active Module permission'
     );
     expectRbacTenant(
@@ -195,7 +195,7 @@ SQL);
         'root bypassed route registration'
     );
     expectRbacTenant(
-        !$authorization->decide($betaRootContext, $betaRoot, 'log/export')->allowed,
+        !$authorization->decide($betaRootContext, $betaRoot, 'official.import-export.operation-log.export')->allowed,
         'root bypassed disabled Tenant Module'
     );
 
@@ -208,7 +208,7 @@ SQL);
 
     $pdo->exec('DELETE FROM pa_role_permission WHERE tenant_id = 101 AND role_id = 11');
     expectRbacTenant(
-        !$authorization->decide($alphaContext, $alpha, 'log/export')->allowed,
+        !$authorization->decide($alphaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'revoked RBAC permission still authorized'
     );
     $pdo->prepare(
@@ -216,7 +216,7 @@ SQL);
     )->execute([101, 11, $permissionId, $now]);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101");
     expectRbacTenant(
-        !$authorization->decide($alphaRootContext, $alphaRoot, 'log/export')->allowed,
+        !$authorization->decide($alphaRootContext, $alphaRoot, 'official.import-export.operation-log.export')->allowed,
         'root bypassed Module revocation'
     );
 } finally {

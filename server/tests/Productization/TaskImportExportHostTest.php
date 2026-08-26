@@ -6,8 +6,9 @@ use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
 use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\XlsxExportService;
-use app\common\service\async\TaskImportExportRuntime;
-use app\common\service\export\AppFileMediaGateway;
+use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
+use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 use app\command\TenantTaskWorker;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
@@ -45,6 +46,7 @@ $context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
 $scope = TenantScope::fromTrustedContext($tenantId, 'pb04-task-import-export-host');
 
 expectTaskHost(class_exists(TaskImportExportRuntime::class), 'application async Runtime is missing');
+expectTaskHost(class_exists(TaskImportExportRuntimeFactory::class), 'application async Runtime Host assembly is missing');
 expectTaskHost(class_exists(TenantTaskWorker::class), 'Tenant worker command is missing');
 expectTaskHost(is_subclass_of(OperationLogExportProvider::class, \PeanutAdmin\ImportExport\Contract\DataProvider::class), 'operation-log export provider does not implement the Core contract');
 expectTaskHost(is_subclass_of(AppFileMediaGateway::class, \PeanutAdmin\ImportExport\File\FileMediaGateway::class), 'private file gateway does not implement the Core contract');
@@ -56,14 +58,14 @@ expectTaskHost(str_contains($migrationSource, 'pa_import_export_operation'), 'Im
 expectTaskHost(str_contains($migrationSource, 'pa_file_object'), 'private file metadata schema is not owned by the application migration');
 expectTaskHost(!str_contains($migrationSource, 'public/storage'), 'async migration refers to public storage');
 
-$runtimeSource = (string)file_get_contents($serverRoot . '/app/common/service/async/TaskImportExportRuntime.php');
+$runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php');
 expectTaskHost(str_contains($runtimeSource, 'TaskModuleProvider'), 'Import/Export does not use the official Task Runtime');
 expectTaskHost(!str_contains($runtimeSource, 'PdoTaskJobRepository'), 'Import/Export bypasses the official Task Runtime repository boundary');
 expectTaskHost(!str_contains($runtimeSource, 'TrustedJobPublisher'), 'Import/Export bypasses the official Task Runtime publisher boundary');
 $taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
 expectTaskHost(str_contains($taskRuntimeSource, 'TrustedJobPublisher'), 'official.task does not own trusted submission');
 expectTaskHost(str_contains($taskRuntimeSource, 'LocalWorker'), 'official.task does not own worker execution');
-$gatewaySource = (string)file_get_contents($serverRoot . '/app/common/service/export/AppFileMediaGateway.php');
+$gatewaySource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php');
 expectTaskHost(!str_contains($gatewaySource, "'/public/"), 'private gateway writes below public/');
 
 $suffix = strtolower(substr(bin2hex(random_bytes(8)), 0, 16));
