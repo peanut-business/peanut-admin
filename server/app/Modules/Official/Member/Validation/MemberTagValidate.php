@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\member;
+namespace app\Modules\Official\Member\Validation;
 
 use think\Validate;
 

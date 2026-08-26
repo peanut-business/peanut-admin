@@ -148,7 +148,7 @@
     getUmChangeType,
     type AccountLogRecord,
     type AccountLogParams,
-  } from '@/api/finance';
+  } from '@/modules/official-member/api';
 
   const { loading, setLoading } = useLoading(true);
   const renderData = ref<AccountLogRecord[]>([]);

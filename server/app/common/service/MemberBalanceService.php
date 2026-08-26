@@ -5,7 +5,7 @@ namespace app\common\service;
 
 use app\common\enum\AccountLogEnum;
 use app\common\logic\AccountLogLogic;
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;

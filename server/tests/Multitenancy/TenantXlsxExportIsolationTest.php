@@ -125,7 +125,7 @@ try {
     expectTenantXlsx(is_file($betaPath), 'Alpha cleanup deleted Beta export');
 
     foreach ([
-        'app/adminapi/logic/member/MemberLogic.php',
+        'app/Modules/Official/Member/Service/MemberLogic.php',
         'app/adminapi/logic/finance/RechargeLogic.php',
         'app/adminapi/logic/log/OperationLogLogic.php',
     ] as $relativePath) {

@@ -68,7 +68,7 @@ expectMemberFinance(
 );
 
 $callers = [
-    'app/adminapi/logic/member/MemberLogic.php',
+    'app/Modules/Official/Member/Service/MemberLogic.php',
     'app/api/logic/RechargeLogic.php',
     'app/adminapi/logic/finance/RechargeLogic.php',
 ];

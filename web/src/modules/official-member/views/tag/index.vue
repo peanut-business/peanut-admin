@@ -96,7 +96,7 @@
     deleteMemberTag,
     type MemberTagRecord,
     type MemberTagForm,
-  } from '@/api/member';
+  } from '@/modules/official-member/api';
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);

@@ -60,7 +60,7 @@
       <template #header>{{ $t('menu.member.list') }}</template>
       <el-row style="margin-bottom: 16px">
         <el-button
-          v-permission="['member/add']"
+          v-permission="['official.member.add']"
           type="primary"
           @click="handleAdd"
         >
@@ -130,7 +130,7 @@
           <template #default="{ row }">
             <el-space>
               <el-button
-                v-permission="['user.user/detail']"
+                v-permission="['official.member.detail']"
                 link
                 size="small"
                 @click="openDetail(row)"
@@ -138,7 +138,7 @@
                 {{ $t('member.operation.detail') }}
               </el-button>
               <el-button
-                v-permission="['member/status']"
+                v-permission="['official.member.update-status']"
                 link
                 size="small"
                 :type="row.status === 1 ? 'danger' : 'primary'"
@@ -244,7 +244,7 @@
             <div>
               ¥{{ Number(detail.user_money || 0).toFixed(2) }}
               <el-button
-                v-permission="['user.user/adjustMoney']"
+                v-permission="['official.member.balance.adjust']"
                 link
                 size="small"
                 @click="openBalanceFromDetail"
@@ -262,7 +262,7 @@
           <el-descriptions-item :label="$t('member.detail.account')">
             {{ detail.account || '-' }}
             <el-button
-              v-permission="['user.user/edit']"
+              v-permission="['official.member.edit']"
               link
               size="small"
               @click="openFieldEdit('account')"
@@ -273,7 +273,7 @@
           <el-descriptions-item :label="$t('member.detail.realName')">
             {{ detail.real_name || '-' }}
             <el-button
-              v-permission="['user.user/edit']"
+              v-permission="['official.member.edit']"
               link
               size="small"
               @click="openFieldEdit('real_name')"
@@ -284,7 +284,7 @@
           <el-descriptions-item :label="$t('member.detail.sex')">
             {{ detailSexLabel }}
             <el-button
-              v-permission="['user.user/edit']"
+              v-permission="['official.member.edit']"
               link
               size="small"
               @click="openFieldEdit('sex')"
@@ -295,7 +295,7 @@
           <el-descriptions-item :label="$t('member.detail.mobile')">
             {{ detail.mobile || '-' }}
             <el-button
-              v-permission="['user.user/edit']"
+              v-permission="['official.member.edit']"
               link
               size="small"
               @click="openFieldEdit('mobile')"
@@ -500,7 +500,7 @@
     type MemberListParams,
     type MemberRecord,
     type MemberTagRecord,
-  } from '@/api/member';
+  } from '@/modules/official-member/api';
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);
@@ -807,7 +807,7 @@
   };
 
   onMounted(async () => {
-    const tagsPromise = hasPermission('member/tag/lists')
+    const tagsPromise = hasPermission('official.member.tag.list')
       ? getMemberTagList()
       : Promise.resolve(null);
     const [, tagsRes] = await Promise.all([fetchData(1), tagsPromise]);

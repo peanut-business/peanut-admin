@@ -8,7 +8,7 @@ use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\api\service\UserTokenService;
 use app\common\logic\BaseLogic;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\service\FileService;
 use app\common\service\config\TenantApplicationSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;

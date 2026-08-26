@@ -49,7 +49,7 @@ files=(
   server/app/adminapi/logic/config/ConfigLogic.php
   server/app/adminapi/logic/decoration/DecorationPageLogic.php
   server/app/adminapi/logic/decoration/DecorationTabbarLogic.php
-  server/app/adminapi/logic/member/MemberLogic.php
+  server/app/Modules/Official/Member/Service/MemberLogic.php
   server/app/adminapi/logic/setting/MiniProgramLogic.php
   server/app/adminapi/logic/setting/OfficialAccountLogic.php
   server/app/adminapi/service/NativeAdminPrincipalRepository.php

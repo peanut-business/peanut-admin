@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\member;
+namespace app\Modules\Official\Member\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\member\MemberLogic;
-use app\adminapi\validate\member\MemberValidate;
+use app\Modules\Official\Member\Service\MemberLogic;
+use app\Modules\Official\Member\Validation\MemberValidate;
 use app\common\service\member\MemberTenantContext;
 
 class MemberController extends BaseAdminController
@@ -39,37 +39,12 @@ class MemberController extends BaseAdminController
         return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
     }
 
-    /** Peanut 原有的整表单编辑兼容入口。 */
-    public function profileEdit()
-    {
-        $context = MemberTenantContext::member($this->request);
-        $this->validateForTenant($context, $this->request->post(), 'profileEdit');
-        $r = MemberLogic::editProfile($context, $this->request->post());
-        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
-    }
-
     public function updateStatus()
     {
         $params = $this->request->post();
         $context = MemberTenantContext::member($this->request);
         $this->validateForTenant($context, $params, 'status');
         $r = MemberLogic::updateStatus($context, (int)$params['id'], (int)$params['status']);
-        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
-    }
-
-    public function adjustBalance()
-    {
-        $context = MemberTenantContext::member($this->request);
-        $this->validateForTenant($context, $this->request->post(), 'balance');
-        $idempotencyKey = $this->idempotencyKey();
-        $r = MemberLogic::adjustBalance(
-            $context,
-            (int)$this->request->post('id'),
-            (float)$this->request->post('amount'),
-            (string)$this->request->post('remark', ''),
-            $this->adminId,
-            $idempotencyKey
-        );
         return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
     }
 

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\finance;
+namespace app\Modules\Official\Member\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\finance\AccountLogLogic;
-use app\adminapi\validate\finance\AccountLogValidate;
+use app\Modules\Official\Member\Service\AccountLogLogic;
+use app\Modules\Official\Member\Validation\AccountLogValidate;
 use app\common\enum\AccountLogEnum;
 use app\common\service\member\MemberTenantContext;
 

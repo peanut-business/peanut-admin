@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\finance;
+namespace app\Modules\Official\Member\Service;
 
 use app\common\enum\AccountLogEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\member\MemberBalanceLog;
+use app\Modules\Official\Member\Model\MemberBalanceLog;
 use app\common\service\FileService;
 use app\common\service\member\MemberTenantContext;
 use app\common\support\PaginationInput;
