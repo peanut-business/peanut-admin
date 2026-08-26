@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\notice\NoticeLogLogic;
-use app\adminapi\logic\notice\NoticeSceneLogic;
-use app\adminapi\validate\notice\NoticeSceneValidate;
-use app\common\model\notice\NoticeLog;
+use app\Modules\Official\Notification\Service\NoticeLogLogic;
+use app\Modules\Official\Notification\Service\NoticeSceneLogic;
+use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
+use app\Modules\Official\Notification\Model\NoticeLog;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\NoticeTenantRepository;
 use app\common\service\notice\NoticeSmsSender;

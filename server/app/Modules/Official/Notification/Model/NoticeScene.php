@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\model\notice;
+namespace app\Modules\Official\Notification\Model;
 
 use app\common\model\BaseModel;
 

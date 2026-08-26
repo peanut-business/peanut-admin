@@ -207,7 +207,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "b5baa1407633a5a00122c07d13f04b09897cda4ccd4cd4f834d710532da90215"
+                "sha256": "8522cc554f72b7b7c2c1695c60e489bc8540b2ea7a7f002fda0edaf6aac6bf1c"
             },
             "composer": [
                 {
@@ -229,7 +229,7 @@
                     "package": "@peanut-admin/official-notification",
                     "version": "1.0.0",
                     "entry": "web/src/modules/official-notification/contribution.ts",
-                    "sha256": "72ca5d2d5f8a67b69fa9cc5e04c93520cb8ce8ac3a647930d069bf5950d44f48"
+                    "sha256": "52e158e825221b241b0d76a3cdb0f60bad05fffe2e29513b9d8378f74c76e333"
                 }
             ],
             "modules": [
@@ -239,7 +239,7 @@
                 }
             ],
             "manifest": "plugins/official.notification/plugin.json",
-            "manifest_sha256": "e7bc9338c79c6b2bdbc6c28c34be935bf1711ac553585606b3bad3fdc2a1a4b9"
+            "manifest_sha256": "f6a9371a19d14be4930573c01c3266401849de151db2e897bc318546e8b44020"
         },
         {
             "key": "official.oauth",

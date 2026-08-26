@@ -315,8 +315,8 @@ $mustRemainCustom = [
         'app\\adminapi\\controller\\auth\\MenuController',
     ],
     'File' => [
-        'app\\adminapi\\controller\\file\\FileController',
-        'app\\adminapi\\controller\\file\\UploadController',
+        'app\\Modules\\Official\\File\\Http\\Controller\\FileController',
+        'app\\Modules\\Official\\File\\Http\\Controller\\UploadController',
     ],
     'Member' => [
         'app\\adminapi\\controller\\member\\MemberController',
@@ -331,7 +331,7 @@ $mustRemainCustom = [
         'app\\adminapi\\controller\\finance\\RefundController',
     ],
     'Crontab' => [
-        'app\\adminapi\\controller\\crontab\\CrontabController',
+        'app\\Modules\\Official\\Task\\Http\\Controller\\CrontabController',
     ],
 ];
 foreach ($mustRemainCustom as $domain => $classes) {

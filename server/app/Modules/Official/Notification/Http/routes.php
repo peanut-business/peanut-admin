@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 use app\Modules\Official\Notification\ModuleProvider;
-use app\adminapi\controller\notice\NoticeChannelController;
-use app\adminapi\controller\notice\NoticeLogController;
-use app\adminapi\controller\notice\NoticeSceneController;
+use app\Modules\Official\Notification\Http\Controller\NoticeChannelController;
+use app\Modules\Official\Notification\Http\Controller\NoticeLogController;
+use app\Modules\Official\Notification\Http\Controller\NoticeSceneController;
 use app\api\controller\SmsController as ApiSmsController;
 use app\api\middleware\PublicNoticeTenantMiddleware;
 use app\adminapi\http\middleware\AuthMiddleware;
@@ -14,13 +14,13 @@ use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
 Route::group('api/admin', function (): void {
-    Route::get('notice/channel/detail', [NoticeChannelController::class, 'detail']);
-    Route::post('notice/channel/save', [NoticeChannelController::class, 'save']);
-    Route::get('notice/log/lists', [NoticeLogController::class, 'lists']);
-    Route::get('notice/log/detail', [NoticeLogController::class, 'detail']);
-    Route::get('notice/scene/lists', [NoticeSceneController::class, 'lists']);
-    Route::get('notice/scene/detail', [NoticeSceneController::class, 'detail']);
-    Route::post('notice/scene/save', [NoticeSceneController::class, 'save']);
+    Route::get('official.notification.channel.detail', [NoticeChannelController::class, 'detail']);
+    Route::post('official.notification.channel.save', [NoticeChannelController::class, 'save']);
+    Route::get('official.notification.log.list', [NoticeLogController::class, 'lists']);
+    Route::get('official.notification.log.detail', [NoticeLogController::class, 'detail']);
+    Route::get('official.notification.scene.list', [NoticeSceneController::class, 'lists']);
+    Route::get('official.notification.scene.detail', [NoticeSceneController::class, 'detail']);
+    Route::post('official.notification.scene.save', [NoticeSceneController::class, 'save']);
 })->middleware(LoginMiddleware::class)
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
     ->middleware(AuthMiddleware::class)

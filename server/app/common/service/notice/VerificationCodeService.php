@@ -6,7 +6,7 @@ namespace app\common\service\notice;
 use app\Modules\Official\Notification\Contracts\DeliveryResult;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\model\notice\NoticeLog;
+use app\Modules\Official\Notification\Model\NoticeLog;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

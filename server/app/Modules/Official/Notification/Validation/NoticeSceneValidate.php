@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\notice;
+namespace app\Modules\Official\Notification\Validation;
 
 use app\Modules\Official\Notification\ModuleProvider;
 use PeanutAdmin\Kernel\Auth\TenantContext;

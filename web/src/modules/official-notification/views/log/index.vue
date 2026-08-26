@@ -122,7 +122,7 @@
         >
           <template #default="{ row }">
             <el-button
-              v-permission="['notice/log/detail']"
+              v-permission="['official.notification.log.detail']"
               link
               type="primary"
               size="small"
@@ -173,7 +173,7 @@
     getNoticeSceneList,
     type NoticeLogRecord,
     type NoticeSceneRecord,
-  } from '@/api/notice';
+  } from '@/modules/official-notification/api';
 
   const { t } = useI18n();
 

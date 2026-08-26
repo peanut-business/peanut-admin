@@ -8,7 +8,7 @@ use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
-use app\common\model\notice\NoticeLog;
+use app\Modules\Official\Notification\Model\NoticeLog;
 use app\common\service\notice\NoticeChannelService;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\NoticeTenantRepository;
