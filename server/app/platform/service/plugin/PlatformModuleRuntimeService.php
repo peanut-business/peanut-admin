@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
+use app\common\service\module\ModuleScaffoldGenerator;
 use PDO;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 
@@ -25,15 +26,18 @@ final readonly class PlatformModuleRuntimeService
         $details = [];
         $dependents = [];
         foreach ($descriptors as $descriptor) {
+            $packageDetails = [];
+            $packageProtected = false;
             foreach ($descriptor->moduleRoots as $key => $root) {
                 $manifest = (new ManifestLoader())->load($root);
+                $packageProtected = $packageProtected || ModuleLifecyclePolicy::isProtected($manifest);
                 $dependencies = [];
                 foreach ((array)($manifest->data['dependencies'] ?? []) as $dependency) {
                     if (!is_array($dependency) || !is_string($dependency['module_key'] ?? null)) continue;
                     $dependencies[] = ['module_key' => $dependency['module_key'], 'version' => (string)($dependency['version'] ?? '')];
                     $dependents[$dependency['module_key']][] = $key;
                 }
-                $details[$key] = [
+                $packageDetails[$key] = [
                     'module_key' => $key,
                     'name' => (string)($manifest->data['name'] ?? $key),
                     'version' => (string)($manifest->data['version'] ?? ''),
@@ -42,6 +46,13 @@ final readonly class PlatformModuleRuntimeService
                     'package_version' => $descriptor->version,
                     'dependencies' => $dependencies,
                 ];
+            }
+            $packageModules = array_keys($packageDetails);
+            sort($packageModules, SORT_STRING);
+            foreach ($packageDetails as $key => $detail) {
+                $detail['package_modules'] = $packageModules;
+                $detail['lifecycle_protected'] = $packageProtected;
+                $details[$key] = $detail;
             }
         }
         $rows = $this->pdo->query(<<<'SQL'
@@ -64,6 +75,8 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
                 'package_key' => (string)$row['plugin_key'],
                 'package_version' => (string)$row['package_version'],
                 'dependencies' => [],
+                'package_modules' => [$key],
+                'lifecycle_protected' => false,
             ];
             $details[$key]['status'] = $row['module_status'] ?? ($row['package_status'] === 'uninstalled' ? 'clean' : $row['package_status']);
             $details[$key]['tenant_enabled_count'] = (int)$row['tenant_enabled_count'];
@@ -100,6 +113,12 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /** @return array<string,mixed> */
+    public function create(string $moduleKey, ?string $vendor = null): array
+    {
+        return (new ModuleScaffoldGenerator(dirname($this->serverRoot)))->create($moduleKey, $vendor);
+    }
+
+    /** @return array<string,mixed> */
     public function uninstallPreview(string $key, bool $purge): array
     {
         return (new PluginRuntimeGovernanceService($this->pdo, $this->serverRoot, $this->moduleConfig))->preview($key, $purge);
@@ -118,33 +137,64 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
     /** @return array<string,mixed> */
     public function disable(string $moduleKey): array
     {
-        $statement = $this->pdo->prepare('SELECT status FROM pa_module_installation WHERE module_key=?');
-        $statement->execute([$moduleKey]);
-        $status = $statement->fetchColumn();
-        if ($status === 'maintenance') return ['operation' => 'unchanged', 'module_key' => $moduleKey, 'status' => 'maintenance', 'catalog_revision' => $this->catalog()->catalogRevision()];
-        if ($status !== 'active') throw new PluginLifecycleException('MODULE_STATE_INVALID', 'Only an active Module can be disabled.');
-        $projection = $this->modules(1, 10000, $moduleKey)['items'][0] ?? null;
-        foreach ((array)($projection['dependents'] ?? []) as $dependent) {
-            $active = $this->pdo->prepare("SELECT COUNT(*) FROM pa_module_installation WHERE module_key=? AND status='active'");
-            $active->execute([$dependent]);
-            if ((int)$active->fetchColumn() !== 0) throw new PluginLifecycleException('MODULE_DEPENDENT_INSTALLED', 'An active Module depends on the target Module.');
+        $scope = $this->disableScope($moduleKey);
+        $packageKey = $scope['package_key'];
+        $moduleKeys = array_keys($scope['manifests']);
+        $lockName = 'pa:module-runtime:' . substr(hash('sha256', $packageKey), 0, 40);
+        if (!$this->advisoryLock($lockName)) {
+            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
         }
-        $enabled = $this->pdo->prepare("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key=? AND status='enabled'");
-        $enabled->execute([$moduleKey]);
-        if ((int)$enabled->fetchColumn() !== 0) throw new PluginLifecycleException('PLUGIN_TENANT_MODULE_ACTIVE', 'Disable every TenantModule first.');
-        $this->pdo->beginTransaction();
         try {
-            (new ModuleCatalogApplier($this->pdo))->retire([$moduleKey]);
-            $update = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=NULL,revision=revision+1,updated_at=UTC_TIMESTAMP(3) WHERE module_key=? AND status='active'");
-            $update->execute([$moduleKey]);
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            throw $exception;
+            ModuleLifecyclePolicy::assertMutable($scope['manifests']);
+            $statuses = $this->moduleStatuses($moduleKeys);
+            if (count($statuses) !== count($moduleKeys)
+                || array_diff(array_values($statuses), ['active', 'maintenance']) !== []) {
+                throw new PluginLifecycleException('MODULE_STATE_INVALID', 'Every Bundle Module must be active or already disabled.');
+            }
+            if (count(array_filter($statuses, static fn(string $status): bool => $status === 'maintenance')) === count($moduleKeys)) {
+                return [
+                    'operation' => 'unchanged',
+                    'package_key' => $packageKey,
+                    'affected_modules' => $moduleKeys,
+                    'status' => 'maintenance',
+                    'catalog_revision' => $this->catalog()->catalogRevision(),
+                ];
+            }
+            ModuleLifecyclePolicy::assertNoActiveBusinessDependents(
+                $this->pdo,
+                new PluginLockResolver(
+                    $this->serverRoot,
+                    (string)($this->moduleConfig['plugin_lock'] ?? '../plugins.lock'),
+                ),
+                $moduleKeys,
+            );
+            $enabled = $this->pdo->prepare('SELECT COUNT(*) FROM pa_tenant_module WHERE module_key IN (' . $this->placeholders($moduleKeys) . ") AND status='enabled'");
+            $enabled->execute($moduleKeys);
+            if ((int)$enabled->fetchColumn() !== 0) {
+                throw new PluginLifecycleException('PLUGIN_TENANT_MODULE_ACTIVE', 'Disable every TenantModule in the Bundle first.');
+            }
+            $this->pdo->beginTransaction();
+            try {
+                (new ModuleCatalogApplier($this->pdo))->retire($moduleKeys);
+                $update = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=NULL,revision=revision+1,updated_at=UTC_TIMESTAMP(3) WHERE module_key IN (" . $this->placeholders($moduleKeys) . ") AND status='active'");
+                $update->execute($moduleKeys);
+                $this->pdo->commit();
+            } catch (\Throwable $exception) {
+                if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+                throw $exception;
+            }
+        } finally {
+            $this->releaseAdvisoryLock($lockName);
         }
         $catalog = $this->catalog();
-        $catalog->invalidateTenantAuthorization([$moduleKey]);
-        return ['operation' => 'disabled', 'module_key' => $moduleKey, 'status' => 'maintenance', 'catalog_revision' => $catalog->catalogRevision()];
+        $catalog->invalidateTenantAuthorization($moduleKeys);
+        return [
+            'operation' => 'disabled',
+            'package_key' => $packageKey,
+            'affected_modules' => $moduleKeys,
+            'status' => 'maintenance',
+            'catalog_revision' => $catalog->catalogRevision(),
+        ];
     }
 
     /** @return array<string,mixed> */
@@ -160,5 +210,56 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
     private function catalog(): PluginCatalogSyncService
     {
         return new PluginCatalogSyncService($this->pdo, $this->serverRoot, $this->moduleConfig);
+    }
+
+    /** @return array{package_key:string,manifests:array<string,\PeanutAdmin\Kernel\Module\ManifestDocument>} */
+    private function disableScope(string $moduleKey): array
+    {
+        $owner = $this->pdo->prepare('SELECT plugin_key FROM pa_plugin_module WHERE module_key=?');
+        $owner->execute([$moduleKey]);
+        $packageKey = $owner->fetchColumn();
+        if (!is_string($packageKey) || $packageKey === '') {
+            throw new PluginLifecycleException('PLUGIN_NOT_INSTALLED', 'Module package is not installed.');
+        }
+        $descriptor = (new PluginLockResolver(
+            $this->serverRoot,
+            (string)($this->moduleConfig['plugin_lock'] ?? '../plugins.lock'),
+        ))->require($packageKey);
+        $manifests = [];
+        foreach ($descriptor->moduleRoots as $key => $root) {
+            $manifests[$key] = (new ManifestLoader())->load($root);
+        }
+        ksort($manifests, SORT_STRING);
+        return ['package_key' => $packageKey, 'manifests' => $manifests];
+    }
+
+    /** @param list<string> $moduleKeys @return array<string,string> */
+    private function moduleStatuses(array $moduleKeys): array
+    {
+        $statement = $this->pdo->prepare('SELECT module_key,status FROM pa_module_installation WHERE module_key IN (' . $this->placeholders($moduleKeys) . ') ORDER BY module_key');
+        $statement->execute($moduleKeys);
+        return array_map('strval', $statement->fetchAll(PDO::FETCH_KEY_PAIR));
+    }
+
+    /** @param list<mixed> $values */
+    private function placeholders(array $values): string
+    {
+        return implode(',', array_fill(0, count($values), '?'));
+    }
+
+    private function advisoryLock(string $name): bool
+    {
+        $statement = $this->pdo->prepare('SELECT GET_LOCK(?,0)');
+        $statement->execute([$name]);
+        return (int)$statement->fetchColumn() === 1;
+    }
+
+    private function releaseAdvisoryLock(string $name): void
+    {
+        try {
+            $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(?)');
+            $statement->execute([$name]);
+        } catch (\Throwable) {
+        }
     }
 }

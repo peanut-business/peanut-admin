@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\service\module\ModuleScaffoldException;
 use app\common\service\JsonService;
 use app\platform\service\PlatformRuntimeFactory;
 use app\platform\service\plugin\DeterministicTarArchive;
@@ -45,6 +46,22 @@ final class PlatformModuleLifecycleController extends BasePlatformController
                 $keyId === '' ? null : $keyId,
             ));
         } catch (PluginPackageException|PluginLifecycleException|ModuleException $exception) {
+            return $this->domainFailure($exception);
+        } catch (\Throwable) {
+            return $this->unavailable();
+        }
+    }
+
+    public function create()
+    {
+        try {
+            $moduleKey = trim((string)$this->request->post('module_key', ''));
+            $vendor = trim((string)$this->request->post('vendor', ''));
+            return $this->data(PlatformRuntimeFactory::moduleRuntime()->create(
+                $moduleKey,
+                $vendor === '' ? null : $vendor,
+            ));
+        } catch (ModuleScaffoldException|PluginLifecycleException $exception) {
             return $this->domainFailure($exception);
         } catch (\Throwable) {
             return $this->unavailable();
@@ -131,14 +148,14 @@ final class PlatformModuleLifecycleController extends BasePlatformController
         return (int)$candidate;
     }
 
-    private function domainFailure(PluginLifecycleException|PluginPackageException|ModuleException $exception)
+    private function domainFailure(PluginLifecycleException|PluginPackageException|ModuleException|ModuleScaffoldException $exception)
     {
         $code = $exception->errorCode;
         $status = match (true) {
             in_array($code, ['MODULE_REGISTRY_UNAVAILABLE', 'PLUGIN_LOCK_INVALID', 'PLUGIN_ARTIFACT_MISMATCH'], true) => 50300,
             str_contains($code, 'PLAN_CHANGED'), str_contains($code, 'CONFLICT'), str_contains($code, 'DEPENDENT'),
                 str_contains($code, 'TENANT_MODULE_ACTIVE'), str_contains($code, 'STATE'), str_contains($code, 'IN_PROGRESS'),
-                $code === 'MODULE_UNINSTALL_BLOCKED' => 40900,
+                $code === 'MODULE_UNINSTALL_BLOCKED', $code === 'MODULE_CREATE_TARGET_EXISTS' => 40900,
             default => 42200,
         };
         return JsonService::fail('Module runtime request was rejected.', ['error_code' => $code], $status);

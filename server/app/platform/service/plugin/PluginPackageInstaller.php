@@ -36,9 +36,16 @@ final class PluginPackageInstaller
             $availableVersions,
         );
         $promoted = [];
+        $replaced = [];
+        $recoveryRoot = null;
         $lockPath = $this->projectRoot() . '/plugins.lock';
         $lockBefore = is_file($lockPath) ? file_get_contents($lockPath) : null;
         $lifecycleStarted = false;
+        $lockName = 'pa:module-runtime:' . substr(hash('sha256', $package->packageKey), 0, 40);
+        if (!$this->advisoryLock($lockName)) {
+            $archive->cleanup($package);
+            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
+        }
         try {
             foreach ($current as $pluginKey => $descriptor) {
                 foreach (array_keys($descriptor->moduleRoots) as $moduleKey) {
@@ -47,6 +54,7 @@ final class PluginPackageInstaller
                     }
                 }
             }
+            $recoverableReplacement = $this->recoverableReplacement($package, $current);
             $scopes = [$package->manifestRelative => dirname($package->manifestRelative)];
             foreach ($package->modules as $module) {
                 $scopes[$module['backend_relative']] = $module['backend_relative'];
@@ -64,10 +72,22 @@ final class PluginPackageInstaller
                 $target = $this->projectRoot() . '/' . $relative;
                 if (file_exists($target)) {
                     if (!$this->scopeMatches($relative, $target, $package->inventory)) {
-                        throw new PluginPackageException('MODULE_PACKAGE_TARGET_CONFLICT', 'Package target contains a different identity.');
+                        if (!$recoverableReplacement) {
+                            throw new PluginPackageException('MODULE_PACKAGE_TARGET_CONFLICT', 'Package target contains a different identity.');
+                        }
+                        $recoveryRoot ??= $this->recoveryRoot($package->packageKey);
+                        $backup = $recoveryRoot . '/' . $relative;
+                        if (!is_dir(dirname($backup)) && !mkdir(dirname($backup), 0700, true) && !is_dir(dirname($backup))) {
+                            throw new PluginPackageException('MODULE_PACKAGE_RECOVERY_FAILED', 'Package recovery backup cannot be created.');
+                        }
+                        if (!rename($target, $backup)) {
+                            throw new PluginPackageException('MODULE_PACKAGE_RECOVERY_FAILED', 'Package recovery backup cannot be promoted.');
+                        }
+                        $replaced[$target] = $backup;
+                    } else {
+                        $this->removeTree($source);
+                        continue;
                     }
-                    $this->removeTree($source);
-                    continue;
                 }
                 $parent = dirname($target);
                 if (!is_dir($parent) && !mkdir($parent, 0775, true) && !is_dir($parent)) {
@@ -88,8 +108,9 @@ final class PluginPackageInstaller
                 $this->moduleConfig,
             );
             $lifecycleStarted = true;
-            $result = $lifecycle->install($package->packageKey);
+            $result = $lifecycle->install($package->packageKey, false);
             $this->clearQuarantine($package->packageKey);
+            if (is_string($recoveryRoot)) $this->removeTree($recoveryRoot);
             return $result + [
                 'archive_sha256' => $package->archiveSha256,
                 'package_key' => $package->packageKey,
@@ -112,9 +133,16 @@ final class PluginPackageInstaller
                 foreach (array_reverse($promoted) as $target) {
                     $this->removeTree($target);
                 }
+                foreach (array_reverse($replaced, true) as $target => $backup) {
+                    if (file_exists($backup) && !rename($backup, $target)) {
+                        throw new PluginPackageException('MODULE_PACKAGE_RECOVERY_FAILED', 'Package recovery restore failed.', 0, $exception);
+                    }
+                }
             }
+            if (is_string($recoveryRoot) && is_dir($recoveryRoot)) $this->removeTree($recoveryRoot);
             throw $exception;
         } finally {
+            $this->releaseAdvisoryLock($lockName);
             $archive->cleanup($package);
         }
     }
@@ -192,6 +220,35 @@ final class PluginPackageInstaller
         }
     }
 
+    /** @param array<string,PluginDescriptor> $current */
+    private function recoverableReplacement(VerifiedPluginPackage $package, array $current): bool
+    {
+        $descriptor = $current[$package->packageKey] ?? null;
+        if (!$descriptor instanceof PluginDescriptor) return false;
+        $statement = $this->pdo->prepare('SELECT installed_version,status FROM pa_plugin_installation WHERE plugin_key=?');
+        $statement->execute([$package->packageKey]);
+        $installation = $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($installation)
+            || !in_array($installation['status'] ?? null, ['failed', 'installing'], true)
+            || version_compare($package->packageVersion, (string)$installation['installed_version'], '<=')) {
+            return false;
+        }
+        $currentModules = array_keys($descriptor->moduleRoots);
+        $replacementModules = array_keys($package->modules);
+        sort($currentModules, SORT_STRING);
+        sort($replacementModules, SORT_STRING);
+        return $currentModules === $replacementModules;
+    }
+
+    private function recoveryRoot(string $packageKey): string
+    {
+        $root = $this->projectRoot() . '/.local/module-install-recovery/' . $packageKey . '-' . bin2hex(random_bytes(12));
+        if (!mkdir($root, 0700, true) && !is_dir($root)) {
+            throw new PluginPackageException('MODULE_PACKAGE_RECOVERY_FAILED', 'Package recovery root cannot be created.');
+        }
+        return $root;
+    }
+
     private function removeTree(string $path): void
     {
         if (!is_dir($path)) {
@@ -231,6 +288,22 @@ final class PluginPackageInstaller
             if (file_exists($resolved)) {
                 throw new PluginPackageException('MODULE_QUARANTINE_FAILED', 'Module quarantine cannot be cleared after install.');
             }
+        }
+    }
+
+    private function advisoryLock(string $name): bool
+    {
+        $statement = $this->pdo->prepare('SELECT GET_LOCK(?,0)');
+        $statement->execute([$name]);
+        return (int)$statement->fetchColumn() === 1;
+    }
+
+    private function releaseAdvisoryLock(string $name): void
+    {
+        try {
+            $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(?)');
+            $statement->execute([$name]);
+        } catch (\Throwable) {
         }
     }
 

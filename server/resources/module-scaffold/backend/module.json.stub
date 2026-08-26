@@ -9,6 +9,9 @@
   "php_package": ${PHP_PACKAGE_JSON},
   "web_package": ${WEB_PACKAGE_JSON},
   "dependencies": [],
+  "lifecycle": {
+    "protected": false
+  },
   "backend": {
     "provider": ${BACKEND_PROVIDER_JSON},
     "routes": "Http/routes.php",

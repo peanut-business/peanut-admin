@@ -33,6 +33,9 @@
           <span>实例模块治理</span>
           <el-space>
             <el-button :loading="busy" @click="syncAll">同步开发树</el-button>
+            <el-button :disabled="busy" @click="createVisible = true">
+              创建模块
+            </el-button>
             <el-button
               type="primary"
               :disabled="busy"
@@ -65,7 +68,12 @@
         <el-table-column prop="name" label="名称" min-width="150" />
         <el-table-column label="版本 / Package" min-width="220">
           <template #default="{ row }">
-            <div>{{ row.version }} · {{ row.status }}</div>
+            <div>
+              {{ row.version }} · {{ row.status }}
+              <el-tag v-if="row.lifecycle_protected" size="small" type="danger">
+                实例核心模块
+              </el-tag>
+            </div>
             <small>{{ row.package_key }}@{{ row.package_version }}</small>
           </template>
         </el-table-column>
@@ -107,13 +115,13 @@
               <el-button link :disabled="busy" @click="syncOne(row.module_key)"
                 >同步</el-button
               >
-              <el-button link :disabled="busy" @click="disable(row.module_key)"
+              <el-button link :disabled="busy || row.lifecycle_protected" @click="disable(row)"
                 >停用</el-button
               >
               <el-button
                 link
                 type="warning"
-                :disabled="busy"
+                :disabled="busy || row.lifecycle_protected"
                 @click="uninstall(row.module_key, false)"
               >
                 退役
@@ -121,7 +129,7 @@
               <el-button
                 link
                 type="danger"
-                :disabled="busy"
+                :disabled="busy || row.lifecycle_protected"
                 @click="uninstall(row.module_key, true)"
               >
                 Purge
@@ -163,6 +171,29 @@
         >
       </template>
     </el-dialog>
+
+    <el-dialog v-model="createVisible" title="创建 Module 骨架" width="560px">
+      <el-alert
+        type="info"
+        :closable="false"
+        title="Web 与 php think module:create 共用同一个 ModuleScaffoldGenerator 和模板。"
+      />
+      <el-form label-position="top" class="create-form">
+        <el-form-item label="Module key">
+          <el-input
+            v-model="createInput.moduleKey"
+            placeholder="例如 acme.crm"
+            maxlength="96"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" :loading="busy" @click="createScaffold">
+          生成前后端骨架
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -171,6 +202,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus';
   import {
     disableModule,
+    createModule,
     executeUninstall,
     hasPlatformSession,
     installPackage,
@@ -191,6 +223,7 @@
   const pageSize = 20;
   const total = ref(0);
   const uploadVisible = ref(false);
+  const createVisible = ref(false);
   const credentials = reactive({ email: '', password: '' });
   const upload = reactive<{
     file: File | null;
@@ -201,6 +234,7 @@
     sha256: '',
     signatureKeyId: '',
   });
+  const createInput = reactive({ moduleKey: '' });
 
   async function perform<T>(
     operation: () => Promise<T>,
@@ -282,6 +316,29 @@
     }
   }
 
+  async function createScaffold() {
+    const moduleKey = createInput.moduleKey.trim();
+    if (!/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/.test(moduleKey)) {
+      error.value = '请输入有效的命名空间化 Module key';
+      return;
+    }
+    try {
+      const result = await perform(
+        () => createModule(moduleKey),
+        'Module 前后端骨架已生成',
+        `正在通过统一生成器创建 ${moduleKey}…`
+      );
+      if (!result) return;
+      createVisible.value = false;
+      createInput.moduleKey = '';
+      ElMessage.info(
+        `后端：${result.backend_path}；前端：${result.frontend_path}。编辑 module.json 后执行同步。`
+      );
+    } catch {
+      // The visible error is set by perform.
+    }
+  }
+
   async function syncAll() {
     try {
       await perform(
@@ -308,11 +365,17 @@
     }
   }
 
-  async function disable(moduleKey: string) {
+  async function disable(row: ModuleRuntimeRow) {
     try {
+      const moduleKey = row.module_key;
+      const packageModules = row.package_modules;
+      const scopeNotice =
+        packageModules.length > 1
+          ? `${moduleKey} 属于 Bundle ${row.package_key}；停用会同时处理整个 Bundle：${packageModules.join('、')}。\n`
+          : '';
       const { value } = await ElMessageBox.prompt(
-        '请输入停用原因（至少 3 个字符）',
-        '停用模块'
+        `${scopeNotice}请输入停用原因（至少 3 个字符）`,
+        packageModules.length > 1 ? '停用 Bundle' : '停用模块'
       );
       await perform(
         () => disableModule(moduleKey, value),
@@ -395,6 +458,9 @@
   }
   .operation-alert {
     margin: 12px 0;
+  }
+  .create-form {
+    margin-top: 16px;
   }
   .dependency-line {
     display: flex;

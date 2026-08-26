@@ -15,11 +15,13 @@ export interface ModuleRuntimeRow {
   manifest_digest: string;
   package_key: string;
   package_version: string;
+  package_modules: string[];
   status: string;
   dependencies: Array<{ module_key: string; version: string }>;
   dependents: string[];
   tenant_enabled_count: number;
   blockers: string[];
+  lifecycle_protected: boolean;
 }
 
 export interface UninstallPlanEntry {
@@ -37,7 +39,11 @@ export interface UninstallPreview {
   affected_modules: Array<{ module_key: string }>;
   preserved: UninstallPlanEntry[];
   removed: UninstallPlanEntry[];
-  blockers: Array<{ code: string; identifiers: string[] }>;
+  blockers: Array<{
+    code: string;
+    kind?: 'product_policy' | 'business_dependency' | 'tenant_enablement' | 'data_integrity';
+    identifiers: string[];
+  }>;
 }
 
 const client = axios.create({
@@ -99,6 +105,16 @@ const MODULE_ERROR_MESSAGES: Record<string, string> = {
   MODULE_LIFECYCLE_BUSY: '该模块包正在执行其他治理操作，请稍后重试',
   MODULE_STATE_INVALID: '模块当前状态不允许执行该操作',
   MODULE_CHANGE_REASON_INVALID: '变更原因需为 3 至 500 个字符',
+  MODULE_LIFECYCLE_PROTECTED: '该模块属于实例核心能力，不允许停用、退役或清除',
+  PLUGIN_INSTALL_RECOVERY_IDENTITY_MISMATCH: '安装恢复包身份不一致，必须重试原包或使用更高版本修复包',
+  MODULE_MIGRATION_REPAIR_REQUIRED: '数据库迁移处于不确定状态，需要追加幂等修复 migration 后前滚',
+  MODULE_MIGRATION_REPAIR_INVALID: '修复 migration 的前驱声明无效',
+  MODULE_CREATE_KEY_INVALID: 'Module key 格式无效',
+  MODULE_CREATE_VENDOR_INVALID: 'Module vendor 格式无效',
+  MODULE_CREATE_VENDOR_MISMATCH: 'Module vendor 必须由 Module key 的首段派生',
+  MODULE_CREATE_TARGET_EXISTS: '该 Module 的前端或后端目录已经存在',
+  MODULE_CREATE_TEMPLATE_INVALID: '统一 Module 脚手架模板不可用',
+  MODULE_CREATE_FAILED: 'Module 脚手架生成失败',
 };
 
 export function moduleErrorMessage(cause: unknown): string {
@@ -138,6 +154,19 @@ export function listModules(params: {
 export function installPackage(form: FormData) {
   return unwrap<Record<string, unknown>>(
     client.post('/api/platform/instance-tools/modules/install', form)
+  );
+}
+
+export function createModule(moduleKey: string) {
+  return unwrap<{
+    operation: 'created';
+    module_key: string;
+    backend_path: string;
+    frontend_path: string;
+  }>(
+    client.post('/api/platform/instance-tools/modules/create', {
+      module_key: moduleKey,
+    })
   );
 }
 

@@ -213,7 +213,12 @@ final class PluginRuntimeGovernanceService
                 }
                 $seenTables[$table] = true;
             }
-            $affected[] = ['module_key' => $moduleKey, 'manifest_digest' => $manifest->digest, 'owned_tables' => $owned];
+            $affected[] = [
+                'module_key' => $moduleKey,
+                'manifest_digest' => $manifest->digest,
+                'owned_tables' => $owned,
+                'lifecycle_protected' => ModuleLifecyclePolicy::isProtected($manifest),
+            ];
         }
         usort($affected, static fn(array $a, array $b): int => strcmp($a['module_key'], $b['module_key']));
         return ['package_key' => $descriptor->key, 'package_manifest_digest' => $descriptor->manifestDigest, 'descriptor' => $descriptor, 'affected_modules' => $affected];
@@ -294,7 +299,12 @@ SQL);
                 }
                 $seenTables[$table] = true;
             }
-            $affected[] = ['module_key' => $key->value(), 'manifest_digest' => $manifest->digest, 'owned_tables' => $owned];
+            $affected[] = [
+                'module_key' => $key->value(),
+                'manifest_digest' => $manifest->digest,
+                'owned_tables' => $owned,
+                'lifecycle_protected' => ModuleLifecyclePolicy::isProtected($manifest),
+            ];
             unset($ownedManifests[$key->value()]);
         }
         if ($ownedManifests !== []) {
@@ -313,32 +323,41 @@ SQL);
     {
         $moduleKeys = array_column($scope['affected_modules'], 'module_key');
         $blockers = [];
+        $protected = [];
+        foreach ($scope['affected_modules'] as $module) {
+            if (($module['lifecycle_protected'] ?? false) === true) {
+                $protected[] = (string)$module['module_key'];
+            }
+        }
+        sort($protected, SORT_STRING);
+        if ($protected !== []) {
+            $blockers[] = [
+                'code' => 'MODULE_LIFECYCLE_PROTECTED',
+                'kind' => 'product_policy',
+                'identifiers' => $protected,
+            ];
+        }
         $statement = $this->pdo->prepare('SELECT module_key FROM pa_tenant_module WHERE module_key IN (' . $this->placeholders($moduleKeys) . ") AND status='enabled' ORDER BY module_key");
         $statement->execute($moduleKeys);
         $enabled = array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
-        if ($enabled !== []) $blockers[] = ['code' => 'PLUGIN_TENANT_MODULE_ACTIVE', 'identifiers' => $enabled];
+        if ($enabled !== []) $blockers[] = ['code' => 'PLUGIN_TENANT_MODULE_ACTIVE', 'kind' => 'tenant_enablement', 'identifiers' => $enabled];
 
-        $dependents = [];
-        foreach ((new PluginLockResolver($this->serverRoot, '../plugins.lock'))->all() as $plugin) {
-            foreach ($plugin->moduleRoots as $moduleKey => $root) {
-                if (in_array($moduleKey, $moduleKeys, true)) continue;
-                $manifest = (new ManifestLoader())->load($root);
-                foreach ((array)($manifest->data['dependencies'] ?? []) as $dependency) {
-                    if (is_array($dependency) && in_array($dependency['module_key'] ?? null, $moduleKeys, true)) {
-                        $dependents[] = $moduleKey . '->' . $dependency['module_key'];
-                    }
-                }
-            }
-        }
-        sort($dependents, SORT_STRING);
-        if ($dependents !== []) $blockers[] = ['code' => 'MODULE_DEPENDENT_INSTALLED', 'identifiers' => array_values(array_unique($dependents))];
+        $dependents = ModuleLifecyclePolicy::activeBusinessDependents(
+            $this->pdo,
+            new PluginLockResolver(
+                $this->serverRoot,
+                (string)($this->moduleConfig['plugin_lock'] ?? '../plugins.lock'),
+            ),
+            $moduleKeys,
+        );
+        if ($dependents !== []) $blockers[] = ['code' => 'MODULE_DEPENDENT_INSTALLED', 'kind' => 'business_dependency', 'identifiers' => array_values(array_unique($dependents))];
 
         if ($purge) {
             $owned = [];
             foreach ($scope['affected_modules'] as $module) $owned = [...$owned, ...$module['owned_tables']];
             $external = $this->externalForeignKeys($owned);
-            if ($external !== []) $blockers[] = ['code' => 'MODULE_OWNED_TABLE_EXTERNAL_REFERENCE', 'identifiers' => $external];
-            if ($this->dropOrder($owned) === null) $blockers[] = ['code' => 'MODULE_OWNED_TABLE_FK_CYCLE', 'identifiers' => $owned];
+            if ($external !== []) $blockers[] = ['code' => 'MODULE_OWNED_TABLE_EXTERNAL_REFERENCE', 'kind' => 'data_integrity', 'identifiers' => $external];
+            if ($this->dropOrder($owned) === null) $blockers[] = ['code' => 'MODULE_OWNED_TABLE_FK_CYCLE', 'kind' => 'data_integrity', 'identifiers' => $owned];
         }
         return $blockers;
     }

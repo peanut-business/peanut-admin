@@ -59,6 +59,7 @@ $webApiSource = (string)file_get_contents(dirname($serverRoot) . '/web/src/api/d
 
 $routes = [
     ['get', 'api/platform/instance-tools/modules', 'lists', 'platform.module.read'],
+    ['post', 'api/platform/instance-tools/modules/create', 'create', 'platform.module.create'],
     ['post', 'api/platform/instance-tools/modules/install', 'install', 'platform.module.install'],
     ['post', 'api/platform/instance-tools/modules/uninstall', 'uninstall', 'platform.module.uninstall'],
     ['post', 'api/platform/instance-tools/modules/disable', 'disable', 'platform.module.disable'],
@@ -100,8 +101,10 @@ platformModuleHttpExpect(
     str_contains($webRouteSource, "path: 'modules'")
         && str_contains($webRouteSource, "instanceTool: true")
         && str_contains($webApiSource, "const PLATFORM_TOKEN_KEY = 'peanut-platform-token'")
+        && str_contains($webApiSource, "client.post('/api/platform/instance-tools/modules/create'")
+        && str_contains($serviceSource, 'new ModuleScaffoldGenerator(dirname($this->serverRoot))')
         && !str_contains($webApiSource, 'peanut-admin-token'),
-    'Admin Web module page lost its existing /dev-tools plane or independent Platform token',
+    'Admin Web module page lost its existing /dev-tools plane, shared generator, or independent Platform token',
 );
 platformModuleHttpExpect(
     str_contains($consoleSource, "'module:sync'")
