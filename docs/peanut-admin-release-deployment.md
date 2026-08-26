@@ -121,7 +121,7 @@ scripts/deploy-release v3.0.0 --target production-candidate --install \
 正式应用不返回演示凭据，也不限制正常账号修改密码。
 
 fresh 部署必须显式提供管理员邮箱和密码；脚本不会生成或回显密码。它们只写入服务器
-root-owned `.env`。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
+root-owned `server/.env`。根 `.env` 只保存端口和镜像。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
 补丁分别创建独立 owner，并使用同一组公开演示密码。Tenant A 的 Account 还会在 Tenant B
 拥有独立的 active TenantMember，因此公共 Admin 使用 Tenant A 账号时可以选择 A/B；切换后
 管理员身份以当前 TenantMember 为准。Tenant A/B 的绑定 Host 仍只能进入各自 Tenant，未知
@@ -168,9 +168,10 @@ Tenant 专属 Host 在 Platform 中动态绑定。未知 Host 会被应用拒绝
 
 ```bash
 cp .env.example .env
-chmod 600 .env
-# 编辑 .env 后：
-docker compose up -d --build
+cp server/.env.example server/.env
+chmod 600 .env server/.env
+# 后台字段只编辑 server/.env；根 .env 只编辑编排字段：
+docker compose --env-file .env --env-file server/.env up -d --build
 docker compose ps
 curl -fsS http://127.0.0.1:18092/healthz
 ```

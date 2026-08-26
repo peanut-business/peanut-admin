@@ -244,7 +244,7 @@ Module 必须为自己的 Store/Warehouse 等资源提供 target resolver，并�
 ## 4. 数据库与迁移
 
 - 数据库默认 MySQL，编码 utf8mb4，表前缀由 DB_PREFIX 控制，默认 pa_；配置来源是 server/config/database.php。
-- 新环境先创建空数据库并配置根 `.env`；生产由 Compose 注入环境，本地维护环境由资源登记和启动器注入。再执行 `php server/database/install.php`。安装器创建 Core 原生 Schema，执行 canonical `server/database/init.sql` 和基线之后的追加式 migration，并校验表、菜单、配置、默认 Tenant 与首 owner；目标库已有任何表时拒绝运行。
+- 新环境先创建空数据库，在根 `.env` 配置编排字段，并在唯一后台配置 `server/.env` 中填写登记资源和数据库连接。再执行 `php server/database/install.php`。安装器创建 Core 原生 Schema，执行 canonical `server/database/init.sql` 和基线之后的追加式 migration，并校验表、菜单、配置、默认 Tenant 与首 owner；目标库已有任何表时拒绝运行。
 - `server/database/init.sql` 是 2.0.0 的完整应用基线，`server/database/migrations/` 只接收该基线之后的追加变更。安装结果把 `init.sql` 和后续 migration 的名称、SHA-256、批次与状态写入 `pa_schema_migration`。
 - `pa_schema_migration` 属于 canonical `init.sql`。`php server/database/install.php --migrate --current` 校验基线身份和全部已登记文件；普通 `install.php --migrate` 只执行缺失的基线后追加 migration。
 - 2.0.0 不支持接管 1.x 历史安装。需要保留旧环境时继续运行旧版本实例，为 2.0.0 准备独立空库，并把业务数据迁移作为独立、显式、可验收的项目处理。
@@ -253,7 +253,8 @@ Module 必须为自己的 Store/Warehouse 等资源提供 target resolver，并�
 
 ## 5. 配置与密钥
 
-复制根 `.env.example` 为 `.env`，至少填写：
+复制根 `.env.example` 为 `.env`，并复制 `server/.env.example` 为权限 `0600` 的
+`server/.env`。下列后台字段只填写在 `server/.env`：
 
 ~~~dotenv
 APP_ENV=production
@@ -286,8 +287,8 @@ ADMIN_INITIAL_PASSWORD=仅空库首次安装使用的强密码
 | `ADMIN_INITIAL_*` | 空库首次安装 | 创建首个 Tenant owner | 安装后不作为日常凭据配置 |
 | `PLATFORM_INITIAL_*` | 多租户空库首次安装 | 创建独立 PlatformOperator | 不能与 Tenant owner 邮箱相同 |
 
-人工只维护这些普通键。生产 Compose 和本地启动器会派生 ThinkPHP 内部使用的 `PHP_*`
-进程变量；不要另建一份 `server/.env`。DB_TYPE、DB_DRIVER、DB_CHARSET 可按
+PHP、CLI、安装器、PDO 和 Think ORM 都从 `server/.env` 读取这些普通键。禁止用 `PHP_*`
+进程变量另建旁路；根 `.env` 只维护端口、镜像和构建代理。DB_TYPE、DB_DRIVER、DB_CHARSET 可按
 server/config/database.php 的默认值或环境需要设置。管理端锁定参数可通过 ADMIN_TOKEN_EXPIRE、ADMIN_TOKEN_RENEW_BEFORE、ADMIN_PASSWORD_ERROR_TIMES、ADMIN_LOGIN_LOCK_MINUTES 覆盖 server/config/admin_auth.php 的默认值。
 
 网站、支付、存储、渠道、充值和 OAuth 等业务配置主要保存在 pa_config，由管理端设置页面维护；不要把支付私钥、微信 AppSecret、短信密钥、对象存储 Secret、证书内容或 .env 提交到仓库。生产环境使用独立的密钥注入/文件权限方案，并限制 PHP-FPM 用户读取证书目录。配置修改后如遇旧值，使用管理端系统维护页面清理缓存或按发布流程重启 PHP-FPM。
@@ -303,9 +304,11 @@ server/config/database.php 的默认值或环境需要设置。管理端锁定�
 ~~~bash
 git clone <仓库地址> && cd peanut-admin
 
-# 根环境配置与后端依赖
+# 编排配置、后台唯一配置与后端依赖
 cp .env.example .env
-# 编辑根 .env；直接执行安装器时由受控 shell/资源选择器导出相同普通键
+cp server/.env.example server/.env
+chmod 600 .env server/.env
+# 根 .env 只编辑编排字段；数据库和应用字段只编辑 server/.env
 cd server && composer install && cd ..
 
 # 创建空数据库（数据库用户的创建和授权按环境配置）
@@ -382,9 +385,9 @@ uniapp/src/utils/request.ts 读取 `VITE_APP_BASE_URL`；H5 开发和同源生�
 
 ### 生产应用仓与多阶段 Compose
 
-生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose，复制根目录 `.env.example` 为受保护的 `.env` 并填写外部 MySQL 地址后，直接执行 `docker compose up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。日常开发的 `deploy/docker-compose.dev.yml` 不含 PHP 服务，API 由宿主 PHP 托管；不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
+生产服务器针对已经存在的应用仓执行发布，不在部署时创建新应用。服务器只安装 Git 和 Docker Compose；根 `.env` 维护编排字段，`server/.env` 维护后台字段。执行 `docker compose --env-file .env --env-file server/.env up -d --build`；根目录 `compose.yaml` 会引用生产配置，宿主机不需要 Node.js、pnpm、PHP 或 Composer。日常开发的 `deploy/docker-compose.dev.yml` 不含 PHP 服务，API 由宿主 PHP 托管；不要与生产 Compose 混用。完整命令见[部署清单](/deployment)。
 
-生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 PHP-FPM、Nginx 和后端 scheduler；生产连接 `.env` 指定且可从容器路由的 MySQL，单机部署可启用 `bundled-db`，Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
+生产镜像在 Docker 多阶段构建中同时处理三个客户端：web 管理端写入 `server/public/admin/`，uniapp H5 写入 `server/public/mobile/`，Nuxt PC 写入 `server/public/pc/`。Nginx 将 `/admin/`、`/mobile/`、`/pc/` 和 `/api/` 分别路由到对应目录或 PHP。默认服务包括 PHP-FPM、Nginx 和后端 scheduler；生产连接 `server/.env` 指定且可从容器路由的 MySQL，单机部署可启用 `bundled-db`，Redis 只通过 `redis` profile 显式启用。PHP 容器入口会自动执行可跳过已安装数据库的安装器。
 
 无论采用 Docker 还是原生发布包，都必须确保运行用户可写 `server/runtime/` 和 `server/public/storage/`。生产环境使用随机 `JWT_SECRET`、正确数据库凭据和 `APP_DEBUG=false`。
 
@@ -536,7 +539,7 @@ cd web && pnpm run type:check
 | --- | --- |
 | 40100 | 请求是否带 `Authorization: Bearer pa_tat_...`；Tenant access token 是否过期；Account、TenantMember 或 Tenant 是否已停用。业务会员令牌不能用于管理端。 |
 | 40300 或菜单为空 | 检查 `pa_system_menu.is_disable`、`pa_permission`、`pa_role_permission`、`pa_member_role` 和 perms 是否与实际 `/api/admin/...` 路径一致；当前未登记 URI 对 owner 和普通成员都默认拒绝。 |
-| 数据库连接失败/表不存在 | .env 的 DB_*、DB_PREFIX 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认目标迁移已执行。 |
+| 数据库连接失败/表不存在 | `server/.env` 的 `DB_*`、`DB_PREFIX` 与 MySQL 授权；全新库确认 `php server/database/install.php` 成功，已有库确认目标迁移已执行。 |
 | 前端请求 404/CORS | 开发代理是否指向当前 `PHP_PORT`；生产是否将 `/api/` 送到 ThinkPHP，并确认 `/admin/`、`/mobile/`、`/pc/` 分别命中对应客户端；检查各客户端 API base 配置。 |
 | 上传/导出失败或文件 404 | PHP-FPM 对 server/runtime/、server/public/storage/ 的写权限；Nginx /storage/ alias；ZipArchive 是否安装。 |
 | 支付/OAuth 失败 | 先确认 pa_config 中对应开关、AppID、证书/公钥、回调 HTTPS 和平台白名单；查看 server/runtime/log/，不要关闭验签。 |

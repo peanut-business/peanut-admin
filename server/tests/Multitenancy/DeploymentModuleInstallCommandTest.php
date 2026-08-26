@@ -4,6 +4,7 @@ declare(strict_types=1);
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function mt05ModuleInstallExpect(bool $condition, string $message): void
 {
@@ -15,16 +16,17 @@ function mt05ModuleInstallExpect(bool $condition, string $message): void
 /** @return array{exit:int,output:string,json:array<string,mixed>} */
 function mt05ModuleInstallRun(string $serverRoot, string $database, string $moduleRoots, string $moduleKey): array
 {
-    $environment = array_merge(getenv() ?: [], [
-        'PHP_DB_HOST' => getenv('DB_HOST') ?: getenv('MYSQL_HOST') ?: '127.0.0.1',
-        'PHP_DB_PORT' => getenv('DB_PORT') ?: getenv('MYSQL_PORT') ?: '3306',
-        'PHP_DB_NAME' => $database,
-        'PHP_DB_USER' => 'root',
-        'PHP_DB_PASS' => getenv('MYSQL_ROOT_PASSWORD') ?: getenv('DB_PASS') ?: 'peanut_admin_root_dev',
-        'PHP_DB_PREFIX' => 'pa_',
-        'PHP_PEANUT_MODULE_ROOTS' => $moduleRoots,
-        'PHP_PEANUT_MODULE_KERNEL_VERSION' => '1.0.0',
+    IsolatedBackendEnvironment::activate([
+        'DB_HOST' => IsolatedBackendEnvironment::required('DB_HOST'),
+        'DB_PORT' => IsolatedBackendEnvironment::required('DB_PORT'),
+        'DB_NAME' => $database,
+        'DB_USER' => IsolatedBackendEnvironment::required('DB_USER'),
+        'DB_PASS' => IsolatedBackendEnvironment::required('DB_PASS'),
+        'DB_PREFIX' => 'pa_',
+        'PEANUT_MODULE_ROOTS' => $moduleRoots,
+        'PEANUT_MODULE_KERNEL_VERSION' => '1.0.0',
     ]);
+    $environment = getenv() ?: [];
     $pipes = [];
     $process = proc_open(
         [PHP_BINARY, $serverRoot . '/think', 'module:install', $moduleKey],
@@ -65,12 +67,13 @@ function mt05ModuleInstallRemoveTree(string $path): void
 $serverRoot = dirname(__DIR__, 2);
 $fixtureRoot = $serverRoot . '/app/Modules/Mt05/DeploymentFixture';
 $fixtureParent = $serverRoot . '/app/Modules';
-$host = getenv('DB_HOST') ?: getenv('MYSQL_HOST') ?: '127.0.0.1';
-$port = getenv('DB_PORT') ?: getenv('MYSQL_PORT') ?: '3306';
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: getenv('DB_PASS') ?: 'peanut_admin_root_dev';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
 );
@@ -120,7 +123,7 @@ JSON);
 
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

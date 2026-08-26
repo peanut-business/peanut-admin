@@ -7,6 +7,8 @@ if (getenv('MT05_MODE') === false || getenv('MT05_MODE') === '') {
     return;
 }
 
+require_once dirname(__DIR__, 3) . '/bootstrap/environment.php';
+
 function requiredEnvironment(string $name): string
 {
     $value = getenv($name);

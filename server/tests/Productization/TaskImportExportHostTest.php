@@ -14,6 +14,7 @@ use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use think\facade\Db;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectTaskHost(bool $condition, string $message): void

@@ -3,6 +3,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+BACKEND_ENV="${PEANUT_SERVER_ENV_FILE:-$ROOT/server/.env}"
+[[ -f "$BACKEND_ENV" ]] || { echo "ERROR: backend environment is missing: $BACKEND_ENV" >&2; exit 2; }
+export PEANUT_SERVER_ENV_FILE="$BACKEND_ENV"
+
+run_php_test() {
+  php -r 'require $argv[1]; require $argv[2];' \
+    "$ROOT/server/bootstrap/environment.php" "$ROOT/$1"
+}
 
 mode="${1:-}"
 if [[ "$mode" != '--fast' && "$mode" != '--full' ]]; then
@@ -37,7 +45,7 @@ if [[ "$mode" == '--full' ]]; then
     server/tests/Productization/PluginLifecycleMigrationContractTest.php
   )
   for test_file in "${tests[@]}"; do
-    php "$test_file"
+    run_php_test "$test_file"
   done
   exit 0
 fi
@@ -146,12 +154,9 @@ test_count=0
 while IFS= read -r test_file; do
   [[ -z "$test_file" ]] && continue
   if [[ "$test_file" == 'server/tests/Multitenancy/TenantGovernanceTest.php' ]]; then
-    MYSQL_HOST="${MYSQL_HOST:-${DB_HOST:-127.0.0.1}}" \
-      MYSQL_PORT="${MYSQL_PORT:-${DB_PORT:-33463}}" \
-      MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-${DB_PASS:-peanut_admin_root_dev}}" \
-      php "$test_file"
-  else
     php "$test_file"
+  else
+    run_php_test "$test_file"
   fi
   test_count=$((test_count + 1))
 done < <(sort -u "$selected_file")

@@ -6,6 +6,7 @@ use app\adminapi\service\AdminApiAccessRegistry;
 use app\common\service\CoreServiceOverrides;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectPermission(bool $condition, string $message): void

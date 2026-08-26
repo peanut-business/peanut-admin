@@ -14,6 +14,7 @@ use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectAsyncTenant(bool $condition, string $message): void
 {
@@ -166,12 +167,7 @@ INSERT INTO pa_operation_log (tenant_id, admin_id, username, uri, method, params
   (202, 502, 'beta', 'same/write', 'POST', '{"marker":"beta-only"}', UNIX_TIMESTAMP());
 SQL);
 
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App($serverRoot);
     $app->initialize();
 

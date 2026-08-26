@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Authorization\AuthorizationException;
 use PeanutAdmin\Kernel\Authorization\CorePermissionCatalog;

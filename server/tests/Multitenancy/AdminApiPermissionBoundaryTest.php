@@ -4,6 +4,7 @@ declare(strict_types=1);
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectAdminApiBoundary(bool $condition, string $message): void

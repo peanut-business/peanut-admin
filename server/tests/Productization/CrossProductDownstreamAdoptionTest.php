@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
 use app\common\service\capability\ArticleCapabilityAuthorization;
 use app\common\service\capability\CrossProductAdoptionHost;
 use PeanutAdmin\ArtifactRevision\Application\ArtifactRevisionService;
@@ -41,6 +43,7 @@ use PeanutAdmin\Workflow\Database\Schema as WorkflowSchema;
 use PeanutAdmin\Workflow\Package as WorkflowPackage;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectCap06(bool $condition, string $message): void
 {
@@ -165,16 +168,17 @@ function cap06Graph(): array
     ];
 }
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int) (getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'cap06_root';
-$database = 'peanut_admin_cap06_adoption';
-$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
+$database = 'peanut_admin_cap06_adoption_' . strtolower(bin2hex(random_bytes(5)));
+$admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 try {
-    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", 'root', $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]);
+    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]);
     $pdo->exec('CREATE TABLE pa_tenant (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE=InnoDB');
     $pdo->exec("CREATE TABLE pa_tenant_member (id BIGINT UNSIGNED NOT NULL, tenant_id BIGINT UNSIGNED NOT NULL, account_id BIGINT UNSIGNED NOT NULL, status VARCHAR(16) NOT NULL, PRIMARY KEY (id), UNIQUE KEY uk_cap06_member (tenant_id, id)) ENGINE=InnoDB");
     $pdo->exec("CREATE TABLE pa_article (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, is_show TINYINT NOT NULL, delete_time BIGINT NULL, PRIMARY KEY (id)) ENGINE=InnoDB");

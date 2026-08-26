@@ -17,9 +17,10 @@ Start with `./scripts/local-multi-tenant-demo prepare` and then
 `./scripts/local-multi-tenant-demo up`. The active project-resource lease is required before
 starting the local database-backed demo.
 
-The local runtime file `.local/mt-demo.env` is generated and ignored by Git. It may contain
-database credentials and signing keys; those values are not recorded in this document. The
-database credential reference remains the private resource entry in
+The local orchestration file `.local/mt-demo-stack.env` and isolated backend file
+`server/.env.mt-demo` are generated and ignored by Git. Only the backend file contains database
+credentials and signing keys; those values are not recorded in this document. The database
+credential reference remains the private resource entry in
 `resources/project-resources.json`.
 
 When a local demo account, password, hostname, port, or database changes, update the unified Demo

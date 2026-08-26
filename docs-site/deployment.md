@@ -47,11 +47,11 @@ fail-closed 处理。两种模式都要为 `TENANT_IDENTIFIER_HMAC_KEY` 与
 提供与管理员邮箱不同的
 `PLATFORM_INITIAL_EMAIL` 和至少 12 位的
 `PLATFORM_INITIAL_PASSWORD`；它们只建立独立 PlatformOperator，不会把该身份加入默认
-Tenant。秘密值只保存在权限受控的部署环境文件/Secret 中，不写进 Git 或日志。
+Tenant。秘密值只保存在权限受控的 `server/.env`/Secret 中，不写进 Git 或日志。
 
 多租户部署还必须显式配置 `PLATFORM_HOSTS` 与 `TENANT_ADMIN_HOSTS`。前者只允许实例平台
 控制面，后者是可切换 Tenant 的公共管理入口；Tenant 专属域名由 Platform 绑定，不重复写入
-`.env`。未知 Host、在 Tenant 域调用 Platform API、在 Platform 域调用 Tenant Admin API
+`server/.env`。未知 Host、在 Tenant 域调用 Platform API、在 Platform 域调用 Tenant Admin API
 都会由应用层拒绝，不能只依赖外层 Nginx 默认站点。
 
 ## Docker 生产部署（推荐）
@@ -107,7 +107,7 @@ scripts/deploy-release v3.0.4 --target production --update \
   --from v3.0.3 --apply
 ```
 
-脚本不会回显密码。用于写入部署 `.env` 的值只接受字母、数字和有限的安全符号；含 `$`、
+脚本不会回显密码。用于写入部署 `server/.env` 的值只接受字母、数字和有限的安全符号；含 `$`、
 `#`、`&`、反斜杠或空白的值会在任何破坏性动作发生前被拒绝。
 
 升级顺序固定为：解包同一 tag、构建 Web/Platform/
@@ -115,7 +115,7 @@ PC/UniApp/PHP 镜像、只启动 MySQL、执行 `server/database/install.php --m
 `server/database/install.php --migrate --current` 校验、再启动应用并做 health/version smoke。这样数据库升级与前后端
 升级属于同一个候选，不会出现只换镜像而遗漏 Schema 的情况。
 
-脚本保留部署 `.env` 和备份目录，不复制旧目录中的 migration 或运行时代码；fresh 目标只
+脚本保留根 `.env`、`server/.env` 和备份目录，不复制旧目录中的 migration 或运行时代码；fresh 目标只
 使用 tag 内的 canonical Schema。2.0.x 不接管 1.x 数据库，旧系统数据若需迁移必须另立
 映射、校验和回滚方案。
 
@@ -129,7 +129,8 @@ PC/UniApp/PHP 镜像、只启动 MySQL、执行 `server/database/install.php --m
 
 | 参数/文件 | 必填 | 默认值 | 作用 | 风险与停止线 |
 | --- | --- | --- | --- | --- |
-| `.env`（由 `.env.example` 复制） | 是 | 无 | 生产运行时配置 | 只保存在服务器权限目录，不提交 Git |
+| 根 `.env`（由 `.env.example` 复制） | 是 | 无 | 端口、镜像和构建代理 | 不得放后台配置 |
+| `server/.env`（由 `server/.env.example` 复制） | 是 | 无 | PHP 后台唯一配置 | 权限 `0600`，不提交 Git |
 | `DEPLOYMENT_MODE` | 是 | 无 | 选择单租户或多租户模式 | 只能写精确枚举值 |
 | `DB_*` / `PEANUT_DATABASE_RESOURCE_ID` | 是 | 无 | 选择已登记数据库 | 不得指向开发库或未知主机 |
 | `JWT_SECRET` | 是 | 无 | 会话签名密钥 | 发布后不能随意更换 |
@@ -144,13 +145,14 @@ PC/UniApp/PHP 镜像、只启动 MySQL、执行 `server/database/install.php --m
 git clone git@github.com:peanut-business/peanut-admin.git /srv/peanut-admin
 cd /srv/peanut-admin
 cp .env.example .env
-chmod 600 .env
-# 编辑 .env，填写数据库、JWT_SECRET、部署模式、两项 HMAC；
+cp server/.env.example server/.env
+chmod 600 .env server/.env
+# 编辑 server/.env，填写数据库、JWT_SECRET、部署模式、两项 HMAC；
 # 空库还要填写 ADMIN_INITIAL_EMAIL / ADMIN_INITIAL_PASSWORD；
 # multi-tenant 另填 PLATFORM_INITIAL_EMAIL / PLATFORM_INITIAL_PASSWORD、
 # PLATFORM_HOSTS / TENANT_ADMIN_HOSTS 和 OWNER_INVITATION_DELIVERY_MODE
 
-docker compose up -d --build
+docker compose --env-file .env --env-file server/.env up -d --build
 ```
 
 预期结果：Compose 启动 PHP-FPM、Nginx 和 scheduler；空库创建默认 Tenant/owner，已有数据库只执行允许的前滚 migration。构建、数据库连接或 Host 校验失败时停止在该步，不重复运行安装器。
@@ -162,14 +164,17 @@ docker compose up -d --build
 
 外部 MySQL 地址必须能从 PHP 容器实际路由；不要把开发局域网地址写成生产默认值。单机部署可使用 `bundled-db`，多机部署则显式提供数据库主机并在 MySQL 侧限制来源。
 
-默认服务为 PHP-FPM、Nginx 和后端 scheduler。单机演示需要内置 MySQL 时，将 `DB_HOST=mysql` 并启用 `bundled-db` profile；需要 Redis 时显式启用可选 profile：
+默认服务为 PHP-FPM、Nginx 和后端 scheduler。单机演示需要内置 MySQL 时，在 `server/.env`
+中设置 `DB_HOST=mysql`、`DB_ROOT_PASS` 并启用 `bundled-db` profile；需要 Redis 时显式启用可选 profile：
 
 ```bash
-docker compose --profile bundled-db up -d --build
-docker compose --profile redis up -d
+docker compose --env-file .env --env-file server/.env --profile bundled-db up -d --build
+docker compose --env-file .env --env-file server/.env --profile redis up -d
 ```
 
-Redis 没有应用依赖边，只在明确接入时启用。外部数据库模式必须填写 `DB_HOST`、应用数据库账号密码和 `JWT_SECRET`；`MYSQL_ROOT_PASSWORD` 只在启用 `bundled-db` 时必填。
+Redis 没有应用依赖边，只在明确接入时启用。外部数据库模式必须在 `server/.env` 填写
+`DB_HOST`、应用数据库账号密码和 `JWT_SECRET`；`DB_ROOT_PASS` 只在启用 `bundled-db` 时必填，
+Compose 只在 MySQL 服务边界把它映射成容器内部的 `MYSQL_ROOT_PASSWORD`。
 
 Compose 默认把 Nginx 绑定到宿主机 `127.0.0.1:18092`。使用 Nginx、宝塔或等价入口反向代理到该地址，并为实际应用域名安装有效证书；使用 Cloudflare 时 SSL/TLS 模式采用 `Full (strict)`。不要直接暴露 PHP-FPM 或 MySQL。
 

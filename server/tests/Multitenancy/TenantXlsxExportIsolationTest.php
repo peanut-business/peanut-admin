@@ -5,6 +5,7 @@ use app\common\service\XlsxExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectTenantXlsx(bool $condition, string $message): void

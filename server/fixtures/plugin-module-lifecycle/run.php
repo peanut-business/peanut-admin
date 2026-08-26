@@ -10,6 +10,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ModuleException;
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function pluginLifecycleExpect(bool $condition, string $message): void

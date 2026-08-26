@@ -13,6 +13,7 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 spl_autoload_register(static function (string $class): void {
     if (!str_starts_with($class, 'app\\')) return;
     $path = dirname(__DIR__, 2) . '/app/' . str_replace('\\', '/', substr($class, 4)) . '.php';
@@ -107,8 +108,7 @@ SELECT 61, 101, id, REPEAT('b', 64), 11, 1, 0, 2147483647
 FROM pa_external_channel_binding
 WHERE tenant_id = 101 AND provider = 'oauth.wechat.oa';
 SQL);
-    putenv('PHP_DB_HOST=' . $host); putenv('PHP_DB_PORT=' . $port); putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=' . $user); putenv('PHP_DB_PASS=' . $password); putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App(); $app->initialize();
 
     $alpha = oauthTenantContext(101, 11, 'fresh-oauth-alpha');

@@ -413,7 +413,8 @@ version_greater_than() {
 [[ "$port" == 18092 || "$port" == 18093 ]] || fail 'unregistered origin port'
 [[ "$target" == production || "$target" == production-candidate ]] || fail 'unregistered deployment target'
 [[ "$mode" == install || "$mode" == update || "$mode" == fresh ]] || fail 'unregistered deployment mode'
-[[ -d "$root" && -f "$root/compose.yaml" && -f "$root/.env" ]] || fail "deployment files missing under $root"
+[[ -d "$root" && -f "$root/compose.yaml" && -f "$root/.env" && -f "$root/server/.env" ]] \
+  || fail "deployment files or split environments are missing under $root"
 [[ -f "$secrets" ]] || fail 'deployment credential payload is missing'
 chmod 600 "$secrets"
 set -a
@@ -423,12 +424,15 @@ set +a
 rm -f "$secrets"
 
 cd "$root"
-sudo -n grep -Fqx "PEANUT_DEPLOYMENT_TARGET=$target" .env || fail '.env deployment target mismatch'
-sudo -n grep -Fqx "PEANUT_DATABASE_RESOURCE_ID=$database_resource" .env || fail '.env database resource mismatch'
 sudo -n grep -Fqx "HTTP_PORT=$port" .env || fail '.env origin port mismatch'
-sudo -n grep -Fqx "DEPLOYMENT_MODE=$deployment_mode" .env || fail '.env deployment mode mismatch'
+if sudo -n grep -Eq '^(APP_|DB_|JWT_|DEPLOYMENT_MODE=|PUBLIC_DEFAULT_TENANT_FALLBACK=|PLATFORM_|TENANT_|ADMIN_|OWNER_INVITATION_|PEANUT_(DEPLOYMENT_TARGET|DATABASE_|STORAGE_|DEMO_|MODULE_))' .env; then
+  fail 'root .env contains backend configuration'
+fi
+sudo -n grep -Fqx "PEANUT_DEPLOYMENT_TARGET=$target" server/.env || fail 'server/.env deployment target mismatch'
+sudo -n grep -Fqx "PEANUT_DATABASE_RESOURCE_ID=$database_resource" server/.env || fail 'server/.env database resource mismatch'
+sudo -n grep -Fqx "DEPLOYMENT_MODE=$deployment_mode" server/.env || fail 'server/.env deployment mode mismatch'
 
-current_compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
+current_compose=(sudo -n env "PEANUT_SERVER_ENV_FILE=$root/server/.env" docker compose --env-file .env --env-file server/.env -p "$project" -f compose.yaml --profile bundled-db)
 "${current_compose[@]}" config >/dev/null || fail 'Compose configuration is invalid'
 if [[ "$mode" == update ]]; then
   current_tag="$(sudo -n sh -c 'cat .release-tag 2>/dev/null || true' | tr -d '\r\n')"
@@ -503,8 +507,8 @@ fi
 php_image="peanut-admin-php:${image_suffix}"
 nginx_image="peanut-admin-nginx:${image_suffix}"
 candidate_compose=(
-  sudo -n env "PHP_IMAGE=$php_image" "NGINX_IMAGE=$nginx_image"
-  docker compose --env-file "$root/.env" -p "$project"
+  sudo -n env "PHP_IMAGE=$php_image" "NGINX_IMAGE=$nginx_image" "PEANUT_SERVER_ENV_FILE=$root/server/.env"
+  docker compose --env-file "$root/.env" --env-file "$root/server/.env" -p "$project"
   -f "$staging/compose.yaml" --profile bundled-db
 )
 "${candidate_compose[@]}" config >/dev/null || fail 'candidate Compose configuration is invalid'
@@ -545,60 +549,73 @@ else
   printf 'install target: candidate is ready; no existing volumes will be removed\n'
 fi
 
+backend_environment_copy="$(mktemp /tmp/peanut-admin-backend-env.XXXXXX)"
+cleanup_backend_environment_copy() {
+  if [[ -n "${backend_environment_copy:-}" ]]; then
+    sudo -n rm -f -- "$backend_environment_copy"
+  fi
+}
+trap cleanup_backend_environment_copy EXIT
+sudo -n cp "$root/server/.env" "$backend_environment_copy"
+sudo -n chmod 600 "$backend_environment_copy"
 sudo -n find "$root" -mindepth 1 -maxdepth 1 \
   ! -name .env ! -name backups ! -name .release-tag ! -name .release-commit \
   ! -name .demo-overlay-sha256 \
   -exec rm -rf -- {} +
 sudo -n cp -a "$staging"/. "$root"/
+sudo -n install -m 600 "$backend_environment_copy" "$root/server/.env"
+sudo -n rm -f "$backend_environment_copy"
+backend_environment_copy=""
 sudo -n rm -rf "$staging"
 sudo -n rm -f "$archive"
 [[ -z "$overlay" ]] || sudo -n rm -f "$overlay"
 set_env_key() {
-  local key="$1" value="$2"
+  local target_file="$1" key="$2" value="$3"
   sudo -n bash -c '
     set -Eeuo pipefail
-    key="$1"
-    value="$2"
-    temporary="$(mktemp ./.env.deploy.XXXXXX)"
+    target_file="$1"
+    key="$2"
+    value="$3"
+    temporary="$(mktemp "${target_file}.deploy.XXXXXX")"
     trap "rm -f -- \"$temporary\"" EXIT
     awk -v key="$key" -v value="$value" '\''
       BEGIN { replaced = 0 }
       $0 ~ "^" key "=" { if (!replaced) print key "=" value; replaced = 1; next }
       { print }
       END { if (!replaced) print key "=" value }
-    '\'' .env >"$temporary"
+    '\'' "$target_file" >"$temporary"
     chmod 600 "$temporary"
-    mv -f -- "$temporary" .env
+    mv -f -- "$temporary" "$target_file"
     trap - EXIT
-  ' -- "$key" "$value"
+  ' -- "$target_file" "$key" "$value"
 }
-set_env_key PHP_IMAGE "$php_image"
-set_env_key NGINX_IMAGE "$nginx_image"
+set_env_key .env PHP_IMAGE "$php_image"
+set_env_key .env NGINX_IMAGE "$nginx_image"
 if [[ "$mode" != update ]]; then
   [[ -n "$ADMIN_INITIAL_EMAIL" && -n "$ADMIN_INITIAL_PASSWORD" ]] || fail 'fresh admin credentials are incomplete'
-  set_env_key ADMIN_INITIAL_EMAIL "$ADMIN_INITIAL_EMAIL"
-  set_env_key ADMIN_INITIAL_PASSWORD "$ADMIN_INITIAL_PASSWORD"
+  set_env_key server/.env ADMIN_INITIAL_EMAIL "$ADMIN_INITIAL_EMAIL"
+  set_env_key server/.env ADMIN_INITIAL_PASSWORD "$ADMIN_INITIAL_PASSWORD"
   if [[ "$deployment_mode" == multi-tenant ]]; then
     [[ -n "$PLATFORM_INITIAL_EMAIL" && -n "$PLATFORM_INITIAL_PASSWORD" ]] || fail 'fresh Platform credentials are incomplete'
-    set_env_key PLATFORM_INITIAL_EMAIL "$PLATFORM_INITIAL_EMAIL"
-    set_env_key PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
+    set_env_key server/.env PLATFORM_INITIAL_EMAIL "$PLATFORM_INITIAL_EMAIL"
+    set_env_key server/.env PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
   fi
 fi
 if [[ "$mode" != update ]]; then
   for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
     PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
-    set_env_key "$key" "${!key:-}"
+    set_env_key server/.env "$key" "${!key:-}"
   done
 elif [[ "$DEMO_MODE_SET" == 1 ]]; then
-  set_env_key PEANUT_DEMO_MODE "$DEMO_MODE"
+  set_env_key server/.env PEANUT_DEMO_MODE "$DEMO_MODE"
   for key in PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
     PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
-    [[ -n "${!key:-}" ]] && set_env_key "$key" "${!key}"
+    [[ -n "${!key:-}" ]] && set_env_key server/.env "$key" "${!key}"
   done
 fi
 actual_commit="$expected_commit"
 
-compose=(sudo -n docker compose --env-file .env -p "$project" -f compose.yaml --profile bundled-db)
+compose=(sudo -n env "PEANUT_SERVER_ENV_FILE=$root/server/.env" docker compose --env-file .env --env-file server/.env -p "$project" -f compose.yaml --profile bundled-db)
 "${compose[@]}" config >/dev/null || fail 'updated Compose configuration is invalid'
 if [[ "$mode" == update ]]; then
   # Runtime code is copied to the deployment root only; persistent volumes are
@@ -608,7 +625,7 @@ if [[ "$mode" == update ]]; then
   printf '%s\n' "$migration_result"
   "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
   demo_mode_enabled=0
-  if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' .env; then
+  if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
     demo_mode_enabled=1
   fi
   if [[ "$deployment_mode" == standalone ]]; then
@@ -634,7 +651,7 @@ fi
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/environment-guard.php --current </dev/null
 demo_mode_enabled=0
-if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' .env; then
+if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
   demo_mode_enabled=1
 fi
 if [[ "$deployment_mode" == standalone ]]; then
@@ -651,7 +668,7 @@ elif [[ "$deployment_mode" == multi-tenant && "$demo_mode_enabled" == 1 && -n "$
       -e PEANUT_DEMO_TENANT_ID="$tenant_id" php server/database/seed-demo-data.php --apply </dev/null
   done
 elif [[ -n "$expected_overlay_sha" ]]; then
-  fail 'demo overlay requires persistent PEANUT_DEMO_MODE=enabled in .env'
+  fail 'demo overlay requires persistent PEANUT_DEMO_MODE=enabled in server/.env'
 fi
 "${compose[@]}" up -d --wait
 "${compose[@]}" ps

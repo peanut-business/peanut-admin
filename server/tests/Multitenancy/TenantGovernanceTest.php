@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
 use PeanutAdmin\Kernel\Tenancy\TenantAvailabilityGuard;
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
@@ -29,6 +31,7 @@ use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function pm01Expect(bool $condition, string $message): void
 {
@@ -89,12 +92,13 @@ function pm01Bootstrap(PDO $pdo): BootstrapService
     );
 }
 
-$host = getenv('MYSQL_HOST') ?: '127.0.0.1';
-$port = getenv('MYSQL_PORT') ?: '33463';
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'peanut_admin_root_dev';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
 );
@@ -104,7 +108,7 @@ $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

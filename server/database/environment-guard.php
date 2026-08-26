@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
+require_once dirname(__DIR__) . '/bootstrap/environment.php';
+
 $autoload = dirname(__DIR__) . '/vendor/autoload.php';
 if (!is_file($autoload)) {
     throw new RuntimeException('缺少 Composer autoload，无法校验 Core Schema');

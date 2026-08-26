@@ -12,6 +12,7 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectDecorationTenant(bool $condition, string $message): void
 {
@@ -41,11 +42,11 @@ function decorationTenantDatabase(PDO $admin): string
     return $database;
 }
 
-function decorationTenantPdo(string $host, int $port, string $password, string $database): PDO
+function decorationTenantPdo(string $host, int $port, string $user, string $password, string $database): PDO
 {
     return new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -97,19 +98,20 @@ function decorationPcPage(string $name, int $articleId): array
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
 $database = decorationTenantDatabase($admin);
 
 try {
-    $pdo = decorationTenantPdo($host, $port, $password, $database);
+    $pdo = decorationTenantPdo($host, $port, $user, $password, $database);
     decorationFreshSchema($pdo, $serverRoot);
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_tenant
@@ -150,12 +152,7 @@ SQL);
         expectDecorationTenant($exception->getCode() === '23000', 'decoration Tenant foreign key failed unexpectedly');
     }
 
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App($serverRoot);
     $app->initialize();
 

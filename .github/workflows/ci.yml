@@ -97,10 +97,6 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
-    env:
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      MYSQL_ROOT_PASSWORD: mt02_root
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,6 +109,25 @@ jobs:
           php-version: '8.3'
           tools: composer:v2
           coverage: none
+
+      - name: Create isolated backend environment
+        shell: bash
+        run: |
+          backend_env="$GITHUB_WORKSPACE/server/.env.ci-${GITHUB_RUN_ID}"
+          umask 077
+          printf '%s\n' \
+            'APP_ENV=development' \
+            'APP_DEBUG=false' \
+            'PEANUT_DEPLOYMENT_TARGET=local-development' \
+            'DEPLOYMENT_MODE=standalone' \
+            'DB_HOST=127.0.0.1' \
+            'DB_PORT=3306' \
+            'DB_NAME=peanut_admin_ci' \
+            'DB_USER=root' \
+            'DB_PASS=mt02_root' \
+            'DB_ROOT_PASS=mt02_root' \
+            'DB_PREFIX=pa_' > "$backend_env"
+          printf 'PEANUT_SERVER_ENV_FILE=%s\n' "$backend_env" >> "$GITHUB_ENV"
 
       - name: Cache Composer downloads
         uses: actions/cache@v4
@@ -141,6 +156,15 @@ jobs:
       - name: Run stage server gates
         if: github.event_name == 'workflow_dispatch'
         run: ./scripts/ci-server-check.sh --full
+
+      - name: Remove isolated backend environment
+        if: always()
+        shell: bash
+        run: |
+          case "$PEANUT_SERVER_ENV_FILE" in
+            "$GITHUB_WORKSPACE"/server/.env.ci-*) rm -f -- "$PEANUT_SERVER_ENV_FILE" ;;
+            *) exit 1 ;;
+          esac
 
   web:
     name: Web

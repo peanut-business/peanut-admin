@@ -15,6 +15,7 @@ use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectCrontabTenant(bool $condition, string $message): void
 {
@@ -72,14 +73,15 @@ SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$password = getenv('MYSQL_ROOT_PASSWORD') ?: 'mt02_root';
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
 $database = 'peanut_admin_mt03_crontab_' . $runId;
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
-    'root',
+    $user,
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
 );
@@ -88,19 +90,14 @@ $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb
 try {
     $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
     createCrontabTenantSchema($pdo);
     $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
     $pdo->exec("INSERT INTO pa_crontab (id, tenant_id, name, command, status, expression) VALUES (11, 101, 'Alpha seed', 'crontab:demo', 1, '* * * * *')");
-    putenv('PHP_DB_HOST=' . $host);
-    putenv('PHP_DB_PORT=' . $port);
-    putenv('PHP_DB_NAME=' . $database);
-    putenv('PHP_DB_USER=root');
-    putenv('PHP_DB_PASS=' . $password);
-    putenv('PHP_DB_PREFIX=pa_');
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
     $app = new think\App();
     $app->initialize();
 
@@ -150,13 +147,13 @@ try {
     expectCrontabTenant(CrontabTenantLock::name($alphaScope, 77) !== CrontabTenantLock::name($betaScope, 77), 'same job ID shares a Tenant lock namespace');
     $lockAlpha = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
     );
     $lockBeta = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        'root',
+        $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
     );

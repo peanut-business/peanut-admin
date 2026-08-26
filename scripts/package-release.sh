@@ -78,7 +78,9 @@ rsync -a \
   --exclude='runtime/' \
   --exclude='vendor/' \
   --exclude='node_modules/' \
+  --include='.env.example' \
   --exclude='.env' \
+  --exclude='.env.*' \
   "$SERVER_DIR/" "$stage_dir/server/"
 
 # Start public/ from the backend tree, then place the SPA below /admin/.
@@ -94,13 +96,26 @@ rsync -a \
   "$WEB_DIR/dist/" "$stage_dir/server/public/admin/"
 
 printf '%s\n' 'Installing production Composer dependencies into the release...'
-composer install \
+build_env="$stage_dir/server/.env.package-build"
+umask 077
+printf '%s\n' \
+  'APP_ENV=production' \
+  'APP_DEBUG=false' \
+  'DEPLOYMENT_MODE=standalone' \
+  'DB_HOST=build-only.invalid' \
+  'DB_PORT=3306' \
+  'DB_NAME=build_only' \
+  'DB_USER=build_only' \
+  'DB_PASS=build-only' \
+  'DB_PREFIX=pa_' > "$build_env"
+PEANUT_SERVER_ENV_FILE="$build_env" composer install \
   --working-dir="$stage_dir/server" \
   --no-dev \
   --prefer-dist \
   --no-interaction \
   --no-progress \
   --optimize-autoloader
+rm -f -- "$build_env"
 
 [[ -f "$stage_dir/server/public/index.php" ]] || die 'server/public/index.php was not preserved'
 [[ -f "$stage_dir/server/public/router.php" ]] || die 'server/public/router.php was not preserved'
@@ -108,6 +123,10 @@ composer install \
 [[ -d "$stage_dir/server/public/storage" ]] || die 'server/public/storage was not preserved'
 [[ -f "$stage_dir/server/public/admin/index.html" ]] || die 'server/public/admin/index.html was not built'
 [[ -f "$stage_dir/server/vendor/autoload.php" ]] || die 'production Composer dependencies are missing'
+
+if [[ -n "$(find "$stage_dir" -type f -name '.env*' ! -name '.env.example' -print -quit)" ]]; then
+  die 'release contains a runtime or temporary environment file'
+fi
 
 if [[ -n "$(find "$stage_dir" -type d \( -name node_modules -o -name web \) -print -quit)" ]]; then
   die 'release contains node_modules or a web source directory'
