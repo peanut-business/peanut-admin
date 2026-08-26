@@ -11,6 +11,7 @@ return [
         'generator:cleanup' => \app\command\GeneratorCleanup::class,
         'tenant-task:work' => \app\command\TenantTaskWorker::class,
         'module:install'   => \app\command\ModuleInstall::class,
+        'module:create'    => \app\command\ModuleCreate::class,
         'module:pack'      => \app\command\ModulePack::class,
         'bundle:pack'      => \app\command\BundlePack::class,
         'module:install-package' => \app\command\ModuleInstallPackage::class,
