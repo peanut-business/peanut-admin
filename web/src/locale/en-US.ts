@@ -9,7 +9,7 @@ import localeSystemAdmin from '@/views/system/admin/locale/en-US';
 import localeSystemDept from '@/views/system/dept/locale/en-US';
 import localeSystemJobs from '@/views/system/jobs/locale/en-US';
 import localeSystemDict from '@/views/system/dict/locale/en-US';
-import localeSystemFile from '@/views/system/file/locale/en-US';
+import localeSystemFile from '@/modules/official-file/views/locale/en-US';
 import localeSystemCrontab from '@/views/system/crontab/locale/en-US';
 import localeSystemMaintenance from '@/views/system/maintenance/locale/en-US';
 import localeSystemLog from '@/views/system/log/locale/en-US';

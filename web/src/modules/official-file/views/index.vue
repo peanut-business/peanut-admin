@@ -16,7 +16,7 @@
             <div class="cate-head">
               <span>{{ $t('systemFile.cate.title') }}</span>
               <el-button
-                v-permission="['file/cate/add']"
+                v-permission="['official.file.category.add']"
                 link
                 size="small"
                 @click="handleCateAdd()"
@@ -41,14 +41,14 @@
                   {{ `${'  '.repeat(c.depth)}${c.name}` }}
                 </span>
                 <span class="cate-ops" @click.stop>
-                  <span v-permission="['file/cate/add']">
+                  <span v-permission="['official.file.category.add']">
                     <icon-plus @click="handleCateAdd(c.id)" />
                   </span>
-                  <span v-permission="['file/cate/edit']">
+                  <span v-permission="['official.file.category.edit']">
                     <icon-edit @click="handleCateEdit(c)" />
                   </span>
                   <el-popconfirm
-                    v-permission="['file/cate/delete']"
+                    v-permission="['official.file.category.delete']"
                     :title="$t('systemFile.cate.delete.confirm')"
                     @confirm="handleCateDelete(c)"
                   >
@@ -108,14 +108,14 @@
                 {{ $t('systemFile.op.selected', { n: checkedIds.length }) }}
               </span>
               <el-button
-                v-permission="['file/move']"
+                v-permission="['official.file.move']"
                 size="small"
                 @click="openMove"
               >
                 {{ $t('systemFile.op.move') }}
               </el-button>
               <el-popconfirm
-                v-permission="['file/delete']"
+                v-permission="['official.file.delete']"
                 :title="$t('systemFile.op.batchDelete.confirm')"
                 @confirm="handleBatchDelete"
               >
@@ -162,7 +162,7 @@
                     {{ $t('systemFile.op.copy') }}
                   </el-button>
                   <el-button
-                    v-permission="['file/rename']"
+                    v-permission="['official.file.rename']"
                     link
                     size="small"
                     @click="handleRename(item)"
@@ -170,7 +170,7 @@
                     {{ $t('systemFile.op.rename') }}
                   </el-button>
                   <el-popconfirm
-                    v-permission="['file/delete']"
+                    v-permission="['official.file.delete']"
                     :title="$t('systemFile.op.delete.confirm')"
                     @confirm="handleDelete(item)"
                   >
@@ -319,7 +319,7 @@
     type FileType,
     type FileCateRecord,
     type FileRecord,
-  } from '@/api/system/file';
+  } from '@/modules/official-file/api';
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(false);
@@ -337,9 +337,9 @@
     30: '',
   };
   const uploadPermissionMap: Record<FileType, string> = {
-    10: 'upload/image',
-    20: 'upload/video',
-    30: 'upload/file',
+    10: 'official.file.upload.image',
+    20: 'official.file.upload.video',
+    30: 'official.file.upload.file',
   };
   const uploadPermission = computed(
     () => uploadPermissionMap[activeType.value]

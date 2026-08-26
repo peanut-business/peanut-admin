@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\file;
 
-use app\common\model\file\File;
-use app\common\model\file\FileCate;
+use app\Modules\Official\File\Model\File;
+use app\Modules\Official\File\Model\FileCate;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

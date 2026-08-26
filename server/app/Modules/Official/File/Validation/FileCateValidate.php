@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\file;
+namespace app\Modules\Official\File\Validation;
 
 use think\Validate;
 

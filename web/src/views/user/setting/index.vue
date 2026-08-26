@@ -151,7 +151,7 @@
   const userStore = useUserStore();
   const { loading, setLoading } = useLoading(true);
 
-  const uploadAction = '/api/admin/upload/image';
+  const uploadAction = '/api/admin/official.file.upload.image';
   const uploadHeaders = computed(() => {
     const token = getToken();
     const headers: Record<string, string> = {};
