@@ -4,6 +4,7 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\plugin\DeterministicTarArchive;
+use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageArchiveService;
 use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
@@ -148,10 +149,11 @@ moduleBundleExpect(!file_exists($temporary), 'isolated bundle output path alread
 $source = $temporary . '/source';
 $target = $temporary . '/target';
 $archivePath = $temporary . '/official-content-bundle.tar';
+$recoverableArchivePath = $temporary . '/official-runtime-bundle.tar';
 $completed = false;
 
 try {
-    foreach (['Article', 'File'] as $module) {
+    foreach (['Article', 'File', 'Notification', 'Task'] as $module) {
         moduleBundleCopyTree(
             $projectRoot . "/server/app/Modules/Official/{$module}",
             $source . "/server/app/Modules/Official/{$module}",
@@ -244,7 +246,102 @@ try {
     $purgePreview = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))->preview('official.file', true);
     moduleBundleExpect(($purgePreview['confirm_plan']['package_key'] ?? null) === 'official-content-bundle', 'retired member key lost the bundle package');
     moduleBundleExpect(array_column($purgePreview['affected_modules'], 'module_key') === $moduleKeys, 'purge preview did not display the complete bundle scope');
-    moduleBundleExpect($purgePreview['blockers'] === [], 'bundle purge preview unexpectedly blocked');
+    $externalReferenceBlockers = array_values(array_filter(
+        $purgePreview['blockers'],
+        static fn(array $blocker): bool => ($blocker['code'] ?? null) === 'MODULE_OWNED_TABLE_EXTERNAL_REFERENCE',
+    ));
+    moduleBundleExpect(count($externalReferenceBlockers) === 1, 'content bundle purge did not expose its external file references');
+    moduleBundleExpect(
+        in_array(
+            'pa_customer_service_setting.fk_customer_service_setting_qr_file->pa_file',
+            (array)$externalReferenceBlockers[0]['identifiers'],
+            true,
+        ),
+        'content bundle purge lost the customer-service file reference blocker',
+    );
+    try {
+        (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))
+            ->uninstall('official.file', true, $purgePreview['confirm_plan'], $purgePreview['plan_digest']);
+        throw new RuntimeException('blocked content bundle purge unexpectedly executed');
+    } catch (PluginLifecycleException $exception) {
+        moduleBundleExpect($exception->errorCode === 'MODULE_UNINSTALL_BLOCKED', 'content bundle purge returned another blocker error');
+    }
+    moduleBundleExpect(moduleBundleExistingTableCount($pdo, $ownedTables) === count($ownedTables), 'blocked content bundle purge changed owned tables');
+    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_migration', $moduleKeys) === $migrationCount, 'blocked content bundle purge changed migration ledger');
+
+    $recoverablePacked = $archive->packBundle(
+        'official-runtime-bundle',
+        '1.0.0',
+        ['official.notification', 'official.task'],
+        $recoverableArchivePath,
+    );
+    $recoverableModuleKeys = ['official.notification', 'official.task'];
+    moduleBundleExpect($recoverablePacked['modules'] === $recoverableModuleKeys, 'recoverable bundle member order changed');
+    $recoverableInstalled = $installer->install($recoverableArchivePath, $recoverablePacked['sha256'], null);
+    moduleBundleExpect(($recoverableInstalled['operation'] ?? null) === 'installed', 'recoverable bundle was not installed');
+    moduleBundleExpect(
+        array_column((array)$recoverableInstalled['modules'], 'module_key') === $recoverableModuleKeys,
+        'recoverable bundle install returned another scope',
+    );
+    $recoverableUnchanged = $installer->install($recoverableArchivePath, $recoverablePacked['sha256'], null);
+    moduleBundleExpect(($recoverableUnchanged['operation'] ?? null) === 'unchanged', 'repeated recoverable bundle install was not idempotent');
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_installation WHERE plugin_key='official-runtime-bundle' AND status='active'")->fetchColumn() === 1, 'recoverable bundle installation row is invalid');
+    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_installation', $recoverableModuleKeys, 'active') === 2, 'recoverable bundle Module installation rows are invalid');
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_module WHERE plugin_key='official-runtime-bundle'")->fetchColumn() === 2, 'recoverable bundle ownership rows are invalid');
+    moduleBundleExpect(moduleBundleCount($pdo, 'pa_tenant_module', $recoverableModuleKeys) === 0, 'recoverable package install changed TenantModule enablement');
+
+    $recoverableCatalogExpected = array_fill_keys(array_keys($catalogTables), 0);
+    $recoverableDirectories = ['official.notification' => 'Notification', 'official.task' => 'Task'];
+    foreach ($recoverableModuleKeys as $moduleKey) {
+        $root = $target . '/server/app/Modules/Official/' . $recoverableDirectories[$moduleKey];
+        $manifest = (new ManifestLoader())->load($root);
+        $recoverableCatalogExpected['permissions'] += count((array)($manifest->data['catalog']['permissions'] ?? []));
+        $recoverableCatalogExpected['menus'] += count((array)($manifest->data['catalog']['menus'] ?? []));
+        $definitions = json_decode((string)file_get_contents($root . '/Resources/setting-definitions.json'), true, 64, JSON_THROW_ON_ERROR);
+        $recoverableCatalogExpected['settings'] += count((array)$definitions);
+    }
+    foreach ($catalogTables as $name => $table) {
+        moduleBundleExpect(
+            moduleBundleCount($pdo, $table, $recoverableModuleKeys, 'active') === $recoverableCatalogExpected[$name],
+            "recoverable bundle {$name} catalog is not active",
+        );
+    }
+
+    $recoverableGovernance = new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig);
+    $recoverableRetirePreview = $recoverableGovernance->preview('official.task', false);
+    moduleBundleExpect(($recoverableRetirePreview['confirm_plan']['package_key'] ?? null) === 'official-runtime-bundle', 'recoverable member key did not resolve its bundle');
+    moduleBundleExpect(array_column($recoverableRetirePreview['affected_modules'], 'module_key') === $recoverableModuleKeys, 'recoverable retire preview split its bundle scope');
+    moduleBundleExpect($recoverableRetirePreview['blockers'] === [], 'recoverable bundle retire preview unexpectedly blocked');
+    $recoverableOwnedTables = moduleBundleTables($recoverableRetirePreview['affected_modules']);
+    $recoverableMigrationCount = moduleBundleCount($pdo, 'pa_module_migration', $recoverableModuleKeys);
+    moduleBundleExpect($recoverableMigrationCount > 0, 'recoverable bundle did not apply Module migrations');
+    moduleBundleExpect(moduleBundleExistingTableCount($pdo, $recoverableOwnedTables) === count($recoverableOwnedTables), 'recoverable bundle owned table baseline is incomplete');
+
+    $recoverableRetired = $recoverableGovernance->uninstall(
+        'official.task',
+        false,
+        $recoverableRetirePreview['confirm_plan'],
+        $recoverableRetirePreview['plan_digest'],
+    );
+    moduleBundleExpect(($recoverableRetired['operation'] ?? null) === 'retired', 'recoverable bundle retire failed');
+    moduleBundleExpect(moduleBundleExistingTableCount($pdo, $recoverableOwnedTables) === count($recoverableOwnedTables), 'recoverable bundle retire deleted owned tables');
+    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_migration', $recoverableModuleKeys) === $recoverableMigrationCount, 'recoverable bundle retire deleted migration ledger');
+    foreach ($catalogTables as $table) {
+        moduleBundleExpect(moduleBundleCount($pdo, $table, $recoverableModuleKeys, 'active') === 0, 'recoverable bundle retire left active catalog rows');
+    }
+    $recoverableRepeatRetire = $recoverableGovernance->uninstall(
+        'official.task',
+        false,
+        $recoverableRetirePreview['confirm_plan'],
+        $recoverableRetirePreview['plan_digest'],
+    );
+    moduleBundleExpect(($recoverableRepeatRetire['operation'] ?? null) === 'unchanged', 'repeated recoverable bundle retire was not idempotent');
+
+    $recoverablePurgePreview = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))
+        ->preview('official.notification', true);
+    moduleBundleExpect(($recoverablePurgePreview['confirm_plan']['package_key'] ?? null) === 'official-runtime-bundle', 'retired recoverable member key lost its bundle');
+    moduleBundleExpect(array_column($recoverablePurgePreview['affected_modules'], 'module_key') === $recoverableModuleKeys, 'recoverable purge preview split its bundle scope');
+    moduleBundleExpect($recoverablePurgePreview['blockers'] === [], 'recoverable bundle purge preview unexpectedly blocked');
 
     try {
         (new PluginRuntimeGovernanceService(
@@ -254,41 +351,52 @@ try {
             static function (string $point): void {
                 if ($point === 'after-first-module-drop') throw new RuntimeException('injected bundle interruption');
             },
-        ))->uninstall('official.file', true, $purgePreview['confirm_plan'], $purgePreview['plan_digest']);
+        ))->uninstall(
+            'official.notification',
+            true,
+            $recoverablePurgePreview['confirm_plan'],
+            $recoverablePurgePreview['plan_digest'],
+        );
         throw new RuntimeException('bundle purge interruption was not injected');
     } catch (RuntimeException $exception) {
         moduleBundleExpect($exception->getMessage() === 'injected bundle interruption', 'unexpected bundle purge interruption');
     }
-    $state = $pdo->query("SELECT status,last_error_code FROM pa_plugin_installation WHERE plugin_key='official-content-bundle'")->fetch();
+    $state = $pdo->query("SELECT status,last_error_code FROM pa_plugin_installation WHERE plugin_key='official-runtime-bundle'")->fetch();
     moduleBundleExpect($state === ['status' => 'maintenance', 'last_error_code' => 'MODULE_PURGE_IN_PROGRESS'], 'interrupted bundle purge marker changed');
-    $articleTables = moduleBundleTables(array_values(array_filter(
-        $purgePreview['affected_modules'],
-        static fn(array $module): bool => $module['module_key'] === 'official.article',
-    )));
-    $fileTables = moduleBundleTables(array_values(array_filter(
-        $purgePreview['affected_modules'],
-        static fn(array $module): bool => $module['module_key'] === 'official.file',
-    )));
-    moduleBundleExpect(moduleBundleExistingTableCount($pdo, $articleTables) === 0, 'first bundle member did not reach the injected purge point');
-    moduleBundleExpect(moduleBundleExistingTableCount($pdo, $fileTables) > 0, 'bundle interruption did not leave a resumable second member');
-    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_migration', $moduleKeys) === $migrationCount, 'interrupted bundle purge deleted migration ledger early');
+    $interruptedModuleTableCounts = [];
+    foreach ($recoverablePurgePreview['affected_modules'] as $module) {
+        $interruptedModuleTableCounts[] = moduleBundleExistingTableCount($pdo, moduleBundleTables([$module]));
+    }
+    sort($interruptedModuleTableCounts, SORT_NUMERIC);
+    moduleBundleExpect($interruptedModuleTableCounts[0] === 0 && $interruptedModuleTableCounts[1] > 0, 'bundle interruption did not stop between member completion points');
+    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_migration', $recoverableModuleKeys) === $recoverableMigrationCount, 'interrupted bundle purge deleted migration ledger early');
 
     $purged = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))
-        ->uninstall('official.file', true, $purgePreview['confirm_plan'], $purgePreview['plan_digest']);
+        ->uninstall(
+            'official.notification',
+            true,
+            $recoverablePurgePreview['confirm_plan'],
+            $recoverablePurgePreview['plan_digest'],
+        );
     moduleBundleExpect(($purged['operation'] ?? null) === 'purged', 'bundle purge recovery did not finish');
-    moduleBundleExpect(moduleBundleExistingTableCount($pdo, $ownedTables) === 0, 'bundle purge left owned tables');
-    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_migration', $moduleKeys) === 0, 'bundle purge left migration ledger');
+    moduleBundleExpect(moduleBundleExistingTableCount($pdo, $recoverableOwnedTables) === 0, 'bundle purge left owned tables');
+    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_migration', $recoverableModuleKeys) === 0, 'bundle purge left migration ledger');
     foreach ($catalogTables as $table) {
-        moduleBundleExpect(moduleBundleCount($pdo, $table, $moduleKeys) === 0, 'bundle purge left catalog rows');
+        moduleBundleExpect(moduleBundleCount($pdo, $table, $recoverableModuleKeys) === 0, 'bundle purge left catalog rows');
     }
-    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_installation', $moduleKeys) === 0, 'bundle purge left Module installation rows');
-    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_module WHERE plugin_key='official-content-bundle'")->fetchColumn() === 2, 'bundle purge deleted ownership history');
+    moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_installation', $recoverableModuleKeys) === 0, 'bundle purge left Module installation rows');
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_module WHERE plugin_key='official-runtime-bundle'")->fetchColumn() === 2, 'bundle purge deleted ownership history');
     $repeatPurge = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))
-        ->uninstall('official.file', true, $purgePreview['confirm_plan'], $purgePreview['plan_digest']);
+        ->uninstall(
+            'official.notification',
+            true,
+            $recoverablePurgePreview['confirm_plan'],
+            $recoverablePurgePreview['plan_digest'],
+        );
     moduleBundleExpect(($repeatPurge['operation'] ?? null) === 'unchanged', 'repeated bundle purge was not idempotent');
 
     $completed = true;
-    echo "MODULE-BUNDLE-LIFECYCLE-001 passed database={$database} sha256={$packed['sha256']}\n";
+    echo "MODULE-BUNDLE-LIFECYCLE-001 passed database={$database} content_sha256={$packed['sha256']} recoverable_sha256={$recoverablePacked['sha256']}\n";
 } finally {
     moduleBundleRemoveTree($temporary);
     IsolatedBackendEnvironment::cleanup();

@@ -43,6 +43,9 @@ Purge 按整个 Bundle 处理，不能拆装单个成员。
 `affected_modules` 就是必须人工确认的完整 Bundle 范围。确认后把原样的 `confirm_plan` 写入文件，
 并同时传回预览给出的 `plan_digest`。不得删减 `affected_modules` 后执行。
 
+Purge 预览会按完整 Bundle 检查 owned table 的外部外键；任一成员仍被 Bundle 外表引用时，整个
+Purge 以 `MODULE_OWNED_TABLE_EXTERNAL_REFERENCE` 拒绝，但仍可先执行不删业务表和账本的 retire。
+
 ## 安装到目标环境
 
 运行时安装只允许 development、debug、Standalone 实例工具环境：

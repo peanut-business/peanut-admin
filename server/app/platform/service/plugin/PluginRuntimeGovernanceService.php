@@ -380,16 +380,25 @@ SQL);
         $order = $this->dropOrder($tables);
         if ($order === null) throw new PluginLifecycleException('MODULE_OWNED_TABLE_FK_CYCLE', 'Owned table foreign keys contain a cycle.');
         $first = true;
-        $firstModule = count($tablesByModule) > 1 ? array_key_first($tablesByModule) : null;
-        $firstModuleTables = is_string($firstModule) ? array_fill_keys($tablesByModule[$firstModule], true) : [];
+        $moduleBoundaryInjected = false;
+        $remainingByModule = [];
+        $moduleByTable = [];
+        foreach ($tablesByModule as $moduleKey => $moduleTables) {
+            $remainingByModule[$moduleKey] = array_fill_keys($moduleTables, true);
+            foreach ($moduleTables as $moduleTable) $moduleByTable[$moduleTable] = $moduleKey;
+        }
         foreach ($order as $table) {
             if (preg_match('/^pa_[a-z0-9_]+$/D', $table) !== 1) throw new PluginLifecycleException('MODULE_TABLE_OWNERSHIP_INVALID', 'Owned table name is invalid.');
             $this->pdo->exec("DROP TABLE IF EXISTS `{$table}`");
             if ($first) { $this->inject('after-first-drop-statement'); $first = false; }
-            unset($firstModuleTables[$table]);
-            if ($firstModuleTables === [] && $firstModule !== null) {
-                $this->inject('after-first-module-drop');
-                $firstModule = null;
+            $moduleKey = $moduleByTable[$table] ?? null;
+            if (is_string($moduleKey)) unset($remainingByModule[$moduleKey][$table]);
+            if (is_string($moduleKey) && $remainingByModule[$moduleKey] === []) {
+                if (!$moduleBoundaryInjected && count($remainingByModule) > 1) {
+                    $moduleBoundaryInjected = true;
+                    $this->inject('after-first-module-drop');
+                }
+                unset($remainingByModule[$moduleKey]);
             }
         }
     }
