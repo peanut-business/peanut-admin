@@ -55,7 +55,23 @@ client.interceptors.request.use((config) => {
 });
 
 async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
-  const response = await request;
+  let response: { data: Envelope<T> };
+  try {
+    response = await request;
+  } catch (cause) {
+    if (axios.isAxiosError(cause)) {
+      const envelope = cause.response?.data as Envelope<{
+        error_code?: string;
+      }> | null;
+      if (envelope?.code === 40100) localStorage.removeItem(PLATFORM_TOKEN_KEY);
+      throw new Error(
+        envelope?.data?.error_code ||
+          envelope?.msg ||
+          `Platform request failed (${cause.response?.status || 'network'})`
+      );
+    }
+    throw cause;
+  }
   if (response.data.code !== 20000) {
     if (response.data.code === 40100)
       localStorage.removeItem(PLATFORM_TOKEN_KEY);
@@ -65,6 +81,27 @@ async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
     );
   }
   return response.data.data;
+}
+
+const MODULE_ERROR_MESSAGES: Record<string, string> = {
+  MODULE_RUNTIME_MUTATION_DISABLED: '当前环境未开放实例模块治理',
+  MODULE_PACKAGE_REQUEST_INVALID: '模块包、SHA-256 或签名参数无效',
+  MODULE_REGISTRY_UNAVAILABLE: '模块注册表当前不可用',
+  PLUGIN_LOCK_INVALID: '生产模块锁无效，请先修复发布工程输入',
+  PLUGIN_ARTIFACT_MISMATCH: '模块包内容与已登记摘要不一致',
+  MODULE_UNINSTALL_PLAN_CHANGED: '卸载计划已变化，请重新预览后确认',
+  MODULE_UNINSTALL_BLOCKED: '当前状态不允许卸载该模块',
+  MODULE_DEPENDENT_INSTALLED: '仍有已安装模块依赖该模块',
+  PLUGIN_TENANT_MODULE_ACTIVE: '请先关闭所有租户中的模块开通状态',
+  MODULE_STATE_INVALID: '模块当前状态不允许执行该操作',
+  MODULE_CHANGE_REASON_INVALID: '变更原因需为 3 至 500 个字符',
+};
+
+export function moduleErrorMessage(cause: unknown): string {
+  const code = cause instanceof Error ? cause.message : '';
+  const message = MODULE_ERROR_MESSAGES[code];
+  if (message) return `${message}（${code}）`;
+  return code || '模块治理请求失败';
 }
 
 export function hasPlatformSession(): boolean {
