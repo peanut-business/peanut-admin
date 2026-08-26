@@ -47,7 +47,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "b10f02c20d40f824923284db4bdd5de846202b0f0026a89bb56ec703d88eb0cc"
+                "sha256": "aa1a1b1323525a5aaeab9395395556f8717b83b9d456e656011c557ef450b567"
             },
             "composer": [
                 {
@@ -79,7 +79,7 @@
                 }
             ],
             "manifest": "plugins/official.article/plugin.json",
-            "manifest_sha256": "b4791b322d5b5bf3694db26456513aa8f8be3eaabd8a766353fbcba9fecc1fb7"
+            "manifest_sha256": "293ef9fbbf0ad5d7509e99533867f9d4248dd5bc4ec60075c425df902d0476db"
         },
         {
             "key": "official.file",
@@ -87,7 +87,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "61ab4f1eb5c1a24a3b4186a05196854d42753dc53f06f99618c99291b3d17094"
+                "sha256": "240739fe6e23c7941d2fc7d287a98b1f3d3d2b48438a4e2b8831226543805f44"
             },
             "composer": [
                 {
@@ -109,7 +109,7 @@
                     "package": "@peanut-admin/official-file",
                     "version": "1.0.0",
                     "entry": "web/src/modules/official-file/contribution.ts",
-                    "sha256": "088e59645ed33ad61179694feb01fddea811c68cd349173d10b37c77eabfebe6"
+                    "sha256": "d1e6f282276cf5b0b22f2e92fbc1bd9333d5c4ad244f9aa75568431ec6830bc6"
                 }
             ],
             "modules": [
@@ -119,7 +119,7 @@
                 }
             ],
             "manifest": "plugins/official.file/plugin.json",
-            "manifest_sha256": "9d484990b0f73d1a63d1a6c8edb0eac3623ce429b4fd336c71fb0e5e89b56b09"
+            "manifest_sha256": "3c083b5d1f4f391b905a9e75f2c8318e18e94335089d6a40f01e96759f8fcefd"
         },
         {
             "key": "official.import-export",

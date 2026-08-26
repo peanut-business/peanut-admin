@@ -125,7 +125,7 @@
     type FileCateRecord,
     type FileRecord,
     type FileType,
-  } from '@/api/system/file';
+  } from '@/modules/official-file/api';
 
   const props = withDefaults(
     defineProps<{
@@ -155,12 +155,14 @@
     return 'default';
   });
   const canBrowse = computed(
-    () => hasPermission('file/lists') && hasPermission('file/cate/lists')
+    () =>
+      hasPermission('official.file.list') &&
+      hasPermission('official.file.category.list')
   );
   const uploadPermissionMap: Record<FileType, string> = {
-    10: 'upload/image',
-    20: 'upload/video',
-    30: 'upload/file',
+    10: 'official.file.upload.image',
+    20: 'official.file.upload.video',
+    30: 'official.file.upload.file',
   };
   const canUpload = computed(() =>
     hasPermission(uploadPermissionMap[props.type])

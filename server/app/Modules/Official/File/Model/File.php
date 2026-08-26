@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\model\file;
+namespace app\Modules\Official\File\Model;
 
 use app\common\model\BaseModel;
 use app\common\service\FileService;

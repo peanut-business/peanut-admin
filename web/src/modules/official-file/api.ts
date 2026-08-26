@@ -21,21 +21,21 @@ export interface FileCateRecord {
 }
 
 export function getFileCateList(type: FileType) {
-  return axios.get<FileCateRecord[]>('/api/admin/file/cate/lists', {
+  return axios.get<FileCateRecord[]>('/api/admin/official.file.category.list', {
     params: { type },
   });
 }
 
 export function addFileCate(data: { type: FileType; pid?: number; name: string }) {
-  return axios.post('/api/admin/file/cate/add', data);
+  return axios.post('/api/admin/official.file.category.add', data);
 }
 
 export function editFileCate(data: { id: number; name: string }) {
-  return axios.post('/api/admin/file/cate/edit', data);
+  return axios.post('/api/admin/official.file.category.edit', data);
 }
 
 export function deleteFileCate(id: number) {
-  return axios.post('/api/admin/file/cate/delete', { id });
+  return axios.post('/api/admin/official.file.category.delete', { id });
 }
 
 // ---- 文件 ----
@@ -59,24 +59,24 @@ export interface FileListParams {
 }
 
 export function getFileList(params: FileListParams) {
-  return axios.get<ListRes<FileRecord>>('/api/admin/file/lists', { params });
+  return axios.get<ListRes<FileRecord>>('/api/admin/official.file.list', { params });
 }
 
 export function moveFile(ids: number[], cid: number) {
-  return axios.post('/api/admin/file/move', { ids, cid });
+  return axios.post('/api/admin/official.file.move', { ids, cid });
 }
 
 export function renameFile(id: number, name: string) {
-  return axios.post('/api/admin/file/rename', { id, name });
+  return axios.post('/api/admin/official.file.rename', { id, name });
 }
 
 export function deleteFile(ids: number[]) {
-  return axios.post('/api/admin/file/delete', { ids });
+  return axios.post('/api/admin/official.file.delete', { ids });
 }
 
 // 上传地址（供上传组件直接使用）
 export const uploadUrl: Record<FileType, string> = {
-  10: '/api/admin/upload/image',
-  20: '/api/admin/upload/video',
-  30: '/api/admin/upload/file',
+  10: '/api/admin/official.file.upload.image',
+  20: '/api/admin/official.file.upload.video',
+  30: '/api/admin/official.file.upload.file',
 };

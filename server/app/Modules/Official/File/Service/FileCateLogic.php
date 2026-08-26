@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\file;
+namespace app\Modules\Official\File\Service;
 
 use app\common\enum\FileEnum;
 use app\common\logic\BaseLogic;

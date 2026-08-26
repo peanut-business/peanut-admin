@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\file;
+namespace app\Modules\Official\File\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\file\FileCateLogic;
-use app\adminapi\logic\file\FileLogic;
-use app\adminapi\validate\file\FileCateValidate;
+use app\Modules\Official\File\Service\FileCateLogic;
+use app\Modules\Official\File\Service\FileLogic;
+use app\Modules\Official\File\Validation\FileCateValidate;
 use app\common\service\file\FileTenantContext;
 
 class FileController extends BaseAdminController

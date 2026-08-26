@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\file;
+namespace app\Modules\Official\File\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
 use app\common\enum\FileEnum;

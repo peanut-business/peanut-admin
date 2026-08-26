@@ -31,19 +31,15 @@ function memberUploadContext(int $tenantId, int $memberId, string $requestId): T
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
-$uploadRoute = "Route::post('upload/image', [ApiUploadController::class, 'image']);";
-$protectedStart = strpos($routeSource, "Route::group('api', function () {");
-$protectedEnd = $protectedStart === false
-    ? false
-    : strpos($routeSource, '})->middleware([CheckTokenMiddleware::class]);', $protectedStart);
+$routeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/File/Http/routes.php');
+$uploadRoute = "Route::post('api/upload/image', [ApiUploadController::class, 'image'])";
 expectMemberUpload(substr_count($routeSource, $uploadRoute) === 1, 'member upload route is missing or duplicated');
 expectMemberUpload(
-    $protectedStart !== false
-        && $protectedEnd !== false
-        && ($uploadPosition = strpos($routeSource, $uploadRoute, $protectedStart)) !== false
-        && $uploadPosition < $protectedEnd,
-    'member upload route is not protected by CheckTokenMiddleware'
+    str_contains(
+        $routeSource,
+        $uploadRoute . "\n    ->middleware(CheckTokenMiddleware::class)\n    ->middleware(OfficialModuleMiddleware::class",
+    ),
+    'member upload route is not protected by identity and Module middleware'
 );
 
 $host = getenv('DB_HOST') ?: '127.0.0.1';

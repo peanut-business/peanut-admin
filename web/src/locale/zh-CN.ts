@@ -9,7 +9,7 @@ import localeSystemAdmin from '@/views/system/admin/locale/zh-CN';
 import localeSystemDept from '@/views/system/dept/locale/zh-CN';
 import localeSystemJobs from '@/views/system/jobs/locale/zh-CN';
 import localeSystemDict from '@/views/system/dict/locale/zh-CN';
-import localeSystemFile from '@/views/system/file/locale/zh-CN';
+import localeSystemFile from '@/modules/official-file/views/locale/zh-CN';
 import localeSystemCrontab from '@/views/system/crontab/locale/zh-CN';
 import localeSystemMaintenance from '@/views/system/maintenance/locale/zh-CN';
 import localeSystemLog from '@/views/system/log/locale/zh-CN';
