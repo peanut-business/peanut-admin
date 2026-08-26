@@ -33,7 +33,7 @@ $app->initialize();
 expectPermission(AdminApiAccessRegistry::version() === 1, 'admin exception metadata version must be fixed');
 expectPermission(AdminApiAccessRegistry::isAuthenticatedOnly('GET', 'api/admin/admin/self'), 'self endpoint must be authenticated-only');
 expectPermission(!AdminApiAccessRegistry::isAuthenticatedOnly('POST', 'api/admin/admin/self'), 'authenticated metadata must be method-specific');
-expectPermission(!AdminApiAccessRegistry::isAuthenticatedOnly('GET', 'api/admin/article.article/lists'), 'business endpoint must not bypass RBAC');
+expectPermission(!AdminApiAccessRegistry::isAuthenticatedOnly('GET', 'api/admin/official.article.list'), 'business endpoint must not bypass RBAC');
 expectPermission(AdminApiAccessRegistry::isPublic('POST', 'api/user/login'), 'public login endpoint must be explicit');
 expectPermission(!AdminApiAccessRegistry::isPublic('GET', 'api/user/login'), 'public metadata must be method-specific');
 expectPermission(AdminApiAccessRegistry::isPublic('POST', 'api/tenant/session/select'), 'Tenant selection endpoint must be explicit');

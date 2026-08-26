@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\article;
+namespace app\Modules\Official\Article\Http\Controller;
 
-use app\adminapi\logic\article\ArticleLogic;
-use app\adminapi\validate\article\ArticleValidate;
+use app\Modules\Official\Article\Service\ArticleLogic;
+use app\Modules\Official\Article\Validation\ArticleValidate;
 
 class ArticleController extends AbstractArticleCrudController
 {

@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\article\ArticleCateLogic as AdminArticleCateLogic;
-use app\adminapi\logic\article\ArticleLogic as AdminArticleLogic;
+use app\Modules\Official\Article\Service\ArticleCateLogic as AdminArticleCateLogic;
+use app\Modules\Official\Article\Service\ArticleLogic as AdminArticleLogic;
 use app\api\logic\ArticleLogic as ApiArticleLogic;
 use app\common\service\article\ArticleTenantContext;
 use app\common\service\article\ArticleTenantRepository;
@@ -155,15 +155,15 @@ foreach ([
     'app/common/service/article/ArticleTenantContext.php',
     'app/common/service/article/ArticleTenantRepository.php',
     'app/common/service/capability/ArticleCapabilityAuthorization.php',
-    'app/common/model/article/Article.php',
-    'app/common/model/article/ArticleCate.php',
-    'app/common/model/article/ArticleCollect.php',
-    'app/adminapi/controller/article/ArticleController.php',
-    'app/adminapi/controller/article/ArticleCateController.php',
-    'app/adminapi/logic/article/ArticleLogic.php',
-    'app/adminapi/logic/article/ArticleCateLogic.php',
-    'app/adminapi/validate/article/ArticleValidate.php',
-    'app/adminapi/validate/article/ArticleCateValidate.php',
+    'app/Modules/Official/Article/Model/Article.php',
+    'app/Modules/Official/Article/Model/ArticleCate.php',
+    'app/Modules/Official/Article/Model/ArticleCollect.php',
+    'app/Modules/Official/Article/Http/Controller/ArticleController.php',
+    'app/Modules/Official/Article/Http/Controller/ArticleCateController.php',
+    'app/Modules/Official/Article/Service/ArticleLogic.php',
+    'app/Modules/Official/Article/Service/ArticleCateLogic.php',
+    'app/Modules/Official/Article/Validation/ArticleValidate.php',
+    'app/Modules/Official/Article/Validation/ArticleCateValidate.php',
     'app/adminapi/controller/decoration/DecorationPageController.php',
     'app/adminapi/controller/decoration/DecorationTabbarController.php',
     'app/adminapi/logic/decoration/DecorationPageLogic.php',

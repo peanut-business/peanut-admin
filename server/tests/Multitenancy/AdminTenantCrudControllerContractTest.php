@@ -160,7 +160,7 @@ expectAdminTenantCrud(
     $baseName . '::resolveCrudContext() must return TenantContext',
 );
 
-$articleAbstractName = 'app\\adminapi\\controller\\article\\AbstractArticleCrudController';
+$articleAbstractName = 'app\\Modules\\Official\\Article\\Http\\Controller\\AbstractArticleCrudController';
 $articleAbstract = reflectAdminTenantCrud($articleAbstractName);
 expectAdminTenantCrud($articleAbstract->isAbstract(), $articleAbstractName . ' must remain abstract');
 expectAdminTenantCrud(
@@ -237,14 +237,14 @@ expectAdminTenantCrudMethod($reply, 'renderLists', $reply->getName(), false, tru
 // Article resources share the Article-specific template, not the generic
 // template directly; this preserves their is_show/list-validation contract.
 foreach ([
-    'app\\adminapi\\controller\\article\\ArticleController' => [
-        'logic' => 'app\\adminapi\\logic\\article\\ArticleLogic',
-        'validate' => 'app\\adminapi\\validate\\article\\ArticleValidate',
+    'app\\Modules\\Official\\Article\\Http\\Controller\\ArticleController' => [
+        'logic' => 'app\\Modules\\Official\\Article\\Service\\ArticleLogic',
+        'validate' => 'app\\Modules\\Official\\Article\\Validation\\ArticleValidate',
         'extraMethods' => [],
     ],
-    'app\\adminapi\\controller\\article\\ArticleCateController' => [
-        'logic' => 'app\\adminapi\\logic\\article\\ArticleCateLogic',
-        'validate' => 'app\\adminapi\\validate\\article\\ArticleCateValidate',
+    'app\\Modules\\Official\\Article\\Http\\Controller\\ArticleCateController' => [
+        'logic' => 'app\\Modules\\Official\\Article\\Service\\ArticleCateLogic',
+        'validate' => 'app\\Modules\\Official\\Article\\Validation\\ArticleCateValidate',
         'extraMethods' => ['all'],
     ],
 ] as $className => $contract) {

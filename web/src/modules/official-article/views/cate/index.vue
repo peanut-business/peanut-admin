@@ -7,7 +7,7 @@
         {{ $t('articleCate.alert') }}
       </el-alert>
       <el-button
-        v-permission="['article.articleCate/add']"
+        v-permission="['official.article.category.add']"
         type="primary"
         :icon="Plus"
         style="margin-bottom: 16px"
@@ -25,7 +25,7 @@
         <el-table-column :label="$t('articleCate.columns.isShow')" width="100">
           <template #default="{ row }">
             <el-switch
-              v-permission="['article.articleCate/updateStatus']"
+              v-permission="['official.article.category.update-status']"
               :model-value="row.is_show === 1"
               @change="(value: boolean) => onStatusChange(row, value)"
             />
@@ -44,7 +44,7 @@
           <template #default="{ row }">
             <el-space>
               <el-button
-                v-permission="['article.articleCate/edit']"
+                v-permission="['official.article.category.edit']"
                 link
                 type="primary"
                 size="small"
@@ -58,7 +58,7 @@
               >
                 <template #reference>
                   <el-button
-                    v-permission="['article.articleCate/delete']"
+                    v-permission="['official.article.category.delete']"
                     link
                     type="danger"
                     size="small"
@@ -141,7 +141,7 @@
     deleteArticleCate,
     updateArticleCateStatus,
     type ArticleCateRecord,
-  } from '@/api/article';
+  } from '@/modules/official-article/api';
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);

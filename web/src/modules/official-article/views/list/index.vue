@@ -58,7 +58,7 @@
       </el-form>
       <el-divider style="margin-top: 0" />
       <el-button
-        v-permission="['article.article/add']"
+        v-permission="['official.article.add']"
         type="primary"
         :icon="Plus"
         style="margin-bottom: 16px"
@@ -108,7 +108,7 @@
         <el-table-column :label="$t('article.columns.isShow')" width="90"
           ><template #default="{ row }"
             ><el-switch
-              v-permission="['article.article/updateStatus']"
+              v-permission="['official.article.update-status']"
               :model-value="row.is_show === 1"
               @change="(value: boolean) => onStatusChange(row, value)" /></template
         ></el-table-column>
@@ -124,7 +124,7 @@
           ><template #default="{ row }"
             ><el-space>
               <el-button
-                v-permission="['article.article/edit']"
+                v-permission="['official.article.edit']"
                 link
                 type="primary"
                 size="small"
@@ -133,7 +133,7 @@
                 {{ $t('article.button.edit') }}
               </el-button>
               <el-popconfirm
-                v-permission="['article.article/delete']"
+                v-permission="['official.article.delete']"
                 :title="$t('article.confirm.delete')"
                 @confirm="onDelete(row)"
               >
@@ -370,7 +370,7 @@
     updateArticleStatus,
     type ArticleRecord,
     type ArticleListParams,
-  } from '@/api/article';
+  } from '@/modules/official-article/api';
 
   interface ArticleForm {
     id: number;

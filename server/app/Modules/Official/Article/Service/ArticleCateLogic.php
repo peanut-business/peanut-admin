@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\article;
+namespace app\Modules\Official\Article\Service;
 
 use app\common\logic\BaseLogic;
 use app\common\service\article\ArticleTenantRepository;

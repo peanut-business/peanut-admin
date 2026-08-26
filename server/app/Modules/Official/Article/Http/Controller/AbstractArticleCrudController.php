@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\article;
+namespace app\Modules\Official\Article\Http\Controller;
 
 use app\adminapi\controller\AbstractTenantCrudController;
 use app\common\service\article\ArticleTenantContext;

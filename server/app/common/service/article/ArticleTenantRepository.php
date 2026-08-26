@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace app\common\service\article;
 
 use app\Modules\Official\Article\ModuleProvider;
-use app\common\model\article\Article;
-use app\common\model\article\ArticleCate;
-use app\common\model\article\ArticleCollect;
+use app\Modules\Official\Article\Model\Article;
+use app\Modules\Official\Article\Model\ArticleCate;
+use app\Modules\Official\Article\Model\ArticleCollect;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

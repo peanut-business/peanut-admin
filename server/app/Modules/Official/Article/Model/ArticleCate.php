@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\model\article;
+namespace app\Modules\Official\Article\Model;
 
 use app\common\model\BaseModel;
 use think\model\concern\SoftDelete;

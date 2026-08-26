@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\article;
+namespace app\Modules\Official\Article\Http\Controller;
 
-use app\adminapi\logic\article\ArticleCateLogic;
-use app\adminapi\validate\article\ArticleCateValidate;
+use app\Modules\Official\Article\Service\ArticleCateLogic;
+use app\Modules\Official\Article\Validation\ArticleCateValidate;
 use think\response\Json;
 
 class ArticleCateController extends AbstractArticleCrudController

@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\api\logic;
 
 use app\common\logic\BaseLogic;
-use app\common\model\article\Article;
-use app\common\model\article\ArticleCollect;
+use app\Modules\Official\Article\Model\Article;
+use app\Modules\Official\Article\Model\ArticleCollect;
 use app\common\service\article\ArticleTenantRepository;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;

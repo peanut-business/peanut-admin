@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\article;
+namespace app\Modules\Official\Article\Validation;
 
 use app\common\service\article\ArticleTenantRepository;
 use app\common\validate\TenantContextValidate;
 
-class ArticleCateValidate extends TenantContextValidate
+class ArticleValidate extends TenantContextValidate
 {
     protected $rule = [
-        'id'         => 'require|checkArticleCate',
-        'name'       => 'require|length:1,90',
+        'id'         => 'require|checkArticle',
+        'title'      => 'require|length:1,255',
+        'cid'        => 'require|integer|gt:0|checkCategory',
         'is_show'    => 'require|in:0,1',
-        'sort'       => 'egt:0',
         'page_no'    => 'integer|gt:0',
         'page_size'  => 'integer|gt:0|pageSizeMax',
         'page_start' => 'integer|gt:0',
@@ -27,12 +27,12 @@ class ArticleCateValidate extends TenantContextValidate
     ];
 
     protected $message = [
-        'id.require'     => '资讯分类id不能为空',
-        'name.require'   => '资讯分类不能为空',
-        'name.length'    => '资讯分类长度须在1-90位字符',
-        'sort.egt'       => '排序值不正确',
-        'page_end.egt'   => '导出范围设置不正确，请重新选择',
-        'end_time.gt'    => '搜索的时间范围不正确',
+        'id.require'    => '资讯id不能为空',
+        'title.require' => '标题不能为空',
+        'title.length'  => '标题长度须在1-255位字符',
+        'cid.require'   => '所属栏目必须存在',
+        'page_end.egt'  => '导出范围设置不正确，请重新选择',
+        'end_time.gt'   => '搜索的时间范围不正确',
     ];
 
     protected $scene = [
@@ -40,29 +40,23 @@ class ArticleCateValidate extends TenantContextValidate
             'page_no', 'page_size', 'page_start', 'page_end', 'page_type',
             'order_by', 'start_time', 'end_time', 'start', 'end', 'export',
         ],
-        'add'    => ['name', 'is_show', 'sort'],
-        'edit'   => ['id', 'name', 'is_show', 'sort'],
+        'add'    => ['title', 'cid', 'is_show'],
+        'edit'   => ['id', 'title', 'cid', 'is_show'],
         'delete' => ['id'],
         'detail' => ['id'],
         'status' => ['id', 'is_show'],
     ];
 
-    public function sceneDelete(): self
+    protected function checkArticle($value): bool|string
     {
-        return $this->only(['id'])->append('id', 'checkDeleteArticleCate');
+        return ArticleTenantRepository::articles($this->requireTenantContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
+            ? '资讯不存在' : true;
     }
 
-    protected function checkArticleCate($value): bool|string
+    protected function checkCategory($value): bool|string
     {
         return ArticleTenantRepository::categories($this->requireTenantContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
-            ? '资讯分类不存在' : true;
-    }
-
-    protected function checkDeleteArticleCate($value): bool|string
-    {
-        return ArticleTenantRepository::articles($this->requireTenantContext())->where('cid', (int) $value)->findOrEmpty()->isEmpty()
-            ? true
-            : '资讯分类已使用，请先删除绑定该资讯分类的资讯';
+            ? '所属栏目必须存在' : true;
     }
 
     protected function pageSizeMax($value): bool|string

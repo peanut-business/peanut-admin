@@ -54,7 +54,7 @@ expectContentDecoration(
     'HTTP scheme casing must not turn an absolute resource into a relative URI'
 );
 
-$articleModel = (string)file_get_contents($serverRoot . '/app/common/model/article/Article.php');
+$articleModel = (string)file_get_contents($serverRoot . '/app/Modules/Official/Article/Model/Article.php');
 $decorationSchema = (string)file_get_contents(
     $serverRoot . '/app/common/service/decoration/DecorationSchemaService.php'
 );
@@ -74,7 +74,7 @@ foreach ([$articleModel, $decorationSchema] as $source) {
 }
 
 $articleValidate = (string)file_get_contents(
-    $serverRoot . '/app/adminapi/validate/article/ArticleValidate.php'
+    $serverRoot . '/app/Modules/Official/Article/Validation/ArticleValidate.php'
 );
 expectContentDecoration(
     str_contains($articleValidate, "'cid'        => 'require|integer|gt:0|checkCategory'"),
@@ -86,13 +86,13 @@ expectContentDecoration(
 );
 
 $categoryLogic = (string)file_get_contents(
-    $serverRoot . '/app/adminapi/logic/article/ArticleCateLogic.php'
+    $serverRoot . '/app/Modules/Official/Article/Service/ArticleCateLogic.php'
 );
 expectContentDecoration(str_contains($categoryLogic, 'ArticleTenantRepository::categories'), 'category delete bypasses Tenant-first ownership');
 expectContentDecoration(str_contains($categoryLogic, 'ArticleTenantRepository::articles'), 'occupied category check bypasses Tenant-first ownership');
 expectContentDecoration(str_contains($categoryLogic, 'lock(true)'), 'category delete must lock tenant-owned rows');
 
-$articleLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/article/ArticleLogic.php');
+$articleLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Article/Service/ArticleLogic.php');
 expectContentDecoration(str_contains($articleLogic, 'ArticleTenantRepository::createArticle'), 'article create bypasses Tenant-first ownership');
 expectContentDecoration(str_contains($articleLogic, 'ArticleTenantRepository::articles'), 'article mutation bypasses Tenant-first ownership');
 
