@@ -127,6 +127,7 @@ try {
     moduleCreateExpect(($officialManifest['frontend']['entry'] ?? null) === 'web/src/modules/' . $officialModuleKey->slug() . '/contribution.ts', 'frontend.entry is not key-derived');
     moduleCreateExpect(($officialManifest['backend']['migrations'] ?? null) === 'Database/Migrations', 'generated migrations declaration is missing');
     moduleCreateExpect(($officialManifest['backend']['setting_definitions'] ?? null) === 'Resources/setting-definitions.json', 'generated setting definitions declaration is missing');
+    moduleCreateExpect(($officialManifest['lifecycle']['protected'] ?? null) === false, 'generated Module must be removable by default');
     $customComposer = json_decode((string)file_get_contents($customBackend . '/composer.json'), true, 32, JSON_THROW_ON_ERROR);
     moduleCreateExpect(isset($customComposer['autoload']['psr-4']['app\\Modules\\Acme\\Generated' . ucfirst($suffix) . '\\']), 'custom Composer namespace is not key-derived');
     moduleCreateExpect(!str_contains((string)file_get_contents($customBackend . '/ModuleProvider.php'), '${'), 'backend template placeholder remains');

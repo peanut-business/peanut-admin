@@ -187,9 +187,22 @@ php think plugin:rollback fixture.delivery-record
 php think plugin:uninstall fixture.delivery-record
 ```
 
-安装顺序为预检、`installing`、Module migration、登记资源、`active`。重复安装同一不可变
-身份返回 unchanged；已执行 migration 内容变化会被拒绝。`rollback` 只生成计划，卸载默认
-保留数据，并要求所有 TenantModule 已停用。
+安装顺序为预检、`installing`、Module migration、登记资源、`active`。同一 Package 使用数据库
+advisory lock 串行执行；重复安装同一不可变身份返回 unchanged，中断后重试会跳过 checksum 相同
+且已 applied 的 migration，并继续幂等 catalog 步骤。
+
+MySQL DDL 可能隐式提交。若进程中断后某条 migration 只剩 `applying` 或 `failed`，运行时无法证明
+SQL 是“完全没执行”还是“只执行了一部分”，因此绝不自动重放。修复方式是发布更高不可变 Package
+版本、保留原文件和 checksum，并追加幂等修复文件。修复文件第一条非空内容必须声明完整前驱 key：
+
+```sql
+-- peanut-admin-repairs: fixture.delivery-record:20260814999999_failure_fixture
+-- 以下 SQL 必须能从未执行、部分执行和已执行三种状态前滚到同一结果
+```
+
+安装器只在该显式后继存在时越过旧失败行；旧行仍保留为 failed，修复行单独记为 applied。已执行
+migration 内容变化仍会被拒绝。`rollback` 只生成计划，卸载默认保留数据，并要求所有 TenantModule
+已停用。
 
 生产应用不会自带 fixture。应用 owner 必须先提供真实 Plugin artifact 和 lock 身份，再由
 PlatformOperator 开通 TenantModule，最后给 TenantMember 分配权限。

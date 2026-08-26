@@ -110,6 +110,10 @@ Route::get('api/platform/instance-tools/modules', [PlatformModuleLifecycleContro
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.module.read')
     ->middleware(PlatformInstanceToolMiddleware::class);
+Route::post('api/platform/instance-tools/modules/create', [PlatformModuleLifecycleController::class, 'create'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.module.create')
+    ->middleware(PlatformInstanceToolMiddleware::class);
 Route::post('api/platform/instance-tools/modules/install', [PlatformModuleLifecycleController::class, 'install'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.module.install')

@@ -15,33 +15,56 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         private PDO $pdo,
         private PluginLockResolver $resolver,
         private PluginModuleRegistryFactory $registries,
-        private array $moduleConfig
+        private array $moduleConfig,
     ) {
     }
 
     /** @return array<string,mixed> */
-    public function install(string $pluginKey): array
+    public function install(string $pluginKey, bool $acquireLock = true): array
     {
         $plugin = $this->resolver->require($pluginKey);
-        $manifests = $this->pluginManifests($plugin);
-        $this->assertPreflightOwnership($plugin, $manifests, false);
-        $current = $this->pluginInstallation($pluginKey, true);
-        if (is_array($current) && $this->sameIdentity($plugin, $current) && $current['status'] === 'active') {
-            if ($this->allPluginModulesActive($pluginKey)) {
-                return $plugin->publicIdentity() + ['operation' => 'unchanged'];
+        $lockName = $this->lockName($pluginKey);
+        if ($acquireLock && !$this->advisoryLock($lockName)) {
+            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
+        }
+        try {
+            $manifests = $this->pluginManifests($plugin);
+            $this->assertPreflightOwnership($plugin, $manifests, false);
+            $current = $this->pluginInstallation($pluginKey, false);
+            if (is_array($current) && $this->sameIdentity($plugin, $current) && $current['status'] === 'active') {
+                if ($this->allPluginModulesActive($pluginKey)) {
+                    return $plugin->publicIdentity() + ['operation' => 'unchanged'];
+                }
+                $result = $this->activate($plugin, $manifests, false);
+                $result['operation'] = 'reactivated';
+                return $result;
             }
-            $result = $this->activate($plugin, $manifests, false);
-            $result['operation'] = 'reactivated';
-            return $result;
+            if (is_array($current) && $current['status'] === 'maintenance'
+                && in_array($current['last_error_code'] ?? null, ['MODULE_PURGE_IN_PROGRESS', 'MODULE_RETIRE_IN_PROGRESS'], true)) {
+                throw new PluginLifecycleException((string)$current['last_error_code'], 'Module uninstall recovery must finish before install.');
+            }
+            if (is_array($current) && in_array($current['status'], ['failed', 'installing'], true)) {
+                $sameIdentity = $this->sameIdentity($plugin, $current);
+                $forwardRepair = version_compare($plugin->version, (string)$current['installed_version'], '>');
+                if (!$sameIdentity && !$forwardRepair) {
+                    throw new PluginLifecycleException(
+                        'PLUGIN_INSTALL_RECOVERY_IDENTITY_MISMATCH',
+                        'Install recovery requires the same immutable package or a higher repair version.',
+                    );
+                }
+                $result = $this->activate($plugin, $manifests, false);
+                $result['operation'] = $forwardRepair ? 'recovered' : 'resumed';
+                return $result;
+            }
+            if (is_array($current) && !in_array($current['status'], ['uninstalled'], true)) {
+                throw new PluginLifecycleException('PLUGIN_ALREADY_INSTALLED', 'Use plugin:upgrade for an installed Plugin.');
+            }
+            return $this->activate($plugin, $manifests, false);
+        } finally {
+            if ($acquireLock) {
+                $this->releaseAdvisoryLock($lockName);
+            }
         }
-        if (is_array($current) && $current['status'] === 'maintenance'
-            && in_array($current['last_error_code'] ?? null, ['MODULE_PURGE_IN_PROGRESS', 'MODULE_RETIRE_IN_PROGRESS'], true)) {
-            throw new PluginLifecycleException((string)$current['last_error_code'], 'Module uninstall recovery must finish before install.');
-        }
-        if (is_array($current) && !in_array($current['status'], ['failed', 'uninstalled'], true)) {
-            throw new PluginLifecycleException('PLUGIN_ALREADY_INSTALLED', 'Use plugin:upgrade for an installed Plugin.');
-        }
-        return $this->activate($plugin, $manifests, false);
     }
 
     /** @return array<string,mixed> */
@@ -126,6 +149,14 @@ SQL);
         if (!is_array($current) || $current['status'] === 'uninstalled') {
             throw new PluginLifecycleException('PLUGIN_NOT_INSTALLED', 'Plugin is not installed.');
         }
+        $plugin = $this->resolver->require($pluginKey);
+        $manifests = $this->pluginManifests($plugin);
+        ModuleLifecyclePolicy::assertMutable($manifests);
+        ModuleLifecyclePolicy::assertNoActiveBusinessDependents(
+            $this->pdo,
+            $this->resolver,
+            array_keys($manifests),
+        );
         $enabled = $this->pdo->prepare(<<<'SQL'
 SELECT COUNT(*) FROM pa_tenant_module
 WHERE module_key IN (SELECT module_key FROM pa_plugin_module WHERE plugin_key=:plugin_key)
@@ -277,7 +308,9 @@ SQL);
     {
         $batch = (int)$this->pdo->query('SELECT COALESCE(MAX(batch_no),0)+1 FROM pa_module_migration')->fetchColumn();
         foreach ($manifests as $moduleKey => $manifest) {
-            foreach ($this->migrationFiles($plugin->moduleRoots[$moduleKey], $manifest) as $migrationKey => $path) {
+            $files = $this->migrationFiles($plugin->moduleRoots[$moduleKey], $manifest);
+            $repairs = $this->migrationRepairMap($moduleKey, $files);
+            foreach ($files as $migrationKey => $path) {
                 $checksum = hash_file('sha256', $path);
                 if (!is_string($checksum)) {
                     throw new PluginLifecycleException('MODULE_MIGRATION_INVALID', "Migration is unreadable: {$path}");
@@ -298,7 +331,13 @@ SQL);
                     if ($row['status'] === 'applied') {
                         continue;
                     }
-                    throw new PluginLifecycleException('MODULE_MIGRATION_FAILED', "Migration is not append-only: {$migrationKey}");
+                    if (!isset($repairs[$migrationKey])) {
+                        throw new PluginLifecycleException(
+                            'MODULE_MIGRATION_REPAIR_REQUIRED',
+                            "Migration has an uncertain partial state and requires an append-only repair: {$migrationKey}",
+                        );
+                    }
+                    continue;
                 }
                 $now = $this->now();
                 $insert = $this->pdo->prepare(<<<'SQL'
@@ -552,6 +591,30 @@ SQL);
         return $files;
     }
 
+    /** @param array<string,string> $files @return array<string,string> predecessor => repair */
+    private function migrationRepairMap(string $moduleKey, array $files): array
+    {
+        $repairs = [];
+        foreach ($files as $repairKey => $path) {
+            $contents = file_get_contents($path, false, null, 0, 4096);
+            if (!is_string($contents)) {
+                throw new PluginLifecycleException('MODULE_MIGRATION_INVALID', "Migration is unreadable: {$repairKey}");
+            }
+            if (preg_match('/\A(?:\xEF\xBB\xBF)?\s*--\s*peanut-admin-repairs\s*:\s*([^\r\n]+)(?:\r?\n|\z)/i', $contents, $match) !== 1) {
+                continue;
+            }
+            foreach (array_map('trim', explode(',', $match[1])) as $predecessor) {
+                if (preg_match('/^' . preg_quote($moduleKey, '/') . ':[a-zA-Z0-9][a-zA-Z0-9._-]*$/D', $predecessor) !== 1
+                    || strcmp($predecessor, $repairKey) >= 0
+                    || isset($repairs[$predecessor])) {
+                    throw new PluginLifecycleException('MODULE_MIGRATION_REPAIR_INVALID', "Migration repair declaration is invalid: {$repairKey}");
+                }
+                $repairs[$predecessor] = $repairKey;
+            }
+        }
+        return $repairs;
+    }
+
     private static function migrationDirectoryIdentity(string $directory): string
     {
         $stat = stat($directory);
@@ -660,4 +723,26 @@ SQL);
     {
         return gmdate('Y-m-d H:i:s.v');
     }
+
+    private function lockName(string $pluginKey): string
+    {
+        return 'pa:module-runtime:' . substr(hash('sha256', $pluginKey), 0, 40);
+    }
+
+    private function advisoryLock(string $name): bool
+    {
+        $statement = $this->pdo->prepare('SELECT GET_LOCK(?,0)');
+        $statement->execute([$name]);
+        return (int)$statement->fetchColumn() === 1;
+    }
+
+    private function releaseAdvisoryLock(string $name): void
+    {
+        try {
+            $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(?)');
+            $statement->execute([$name]);
+        } catch (\Throwable) {
+        }
+    }
+
 }

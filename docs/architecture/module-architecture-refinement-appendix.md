@@ -356,7 +356,7 @@ identifier，不依赖“上次执行到第几步”的另一张进度表：
 或 Module Federation 容器。
 
 页面只管理**实例安装层**：展示 package/module identity、依赖、installation 状态、manifest digest、
-阻塞原因；执行上传安装、实例停用、卸载/显式 purge、开发库 sync。表格数据是每次从
+阻塞原因；执行统一脚手架创建、上传安装、实例停用、卸载/显式 purge、开发库 sync。表格数据是每次从
 `module.json` + `plugins.lock` + `pa_plugin_installation`/`pa_plugin_module`/
 `pa_module_installation` 编译得到的 projection，不持久化页面状态，也不允许浏览器提交 owned tables、
 依赖、权限或前端组件清单。
@@ -387,16 +387,17 @@ Platform session 路由登记见 `server/route/app.php:104,147,150`。
 
 #### 2. 新增 HTTP 合同
 
-下表的五条路径、controller 和 `platform.module.*` 权限均为**新增契约**；注册位置是现有
+下表的六条路径、controller 和 `platform.module.*` 权限均为**新增契约**；注册位置是现有
 `server/route/app.php` 的 Platform route 区，不进入 Admin route group。所有响应沿用 `{code,msg,data}`，
 成功 `code=20000`（`server/app/common/service/JsonService.php:13-35`）。
 
 | 操作 | 方法 + 路径 | 入参 | 成功 `data` 最小字段 | 权限 key | 缓存时机 |
 | --- | --- | --- | --- | --- | --- |
-| 查看安装模块/依赖 | `GET /api/platform/instance-tools/modules` | 可选 `module_key`；分页 `page/page_size` | `lists[]:{module_key,name,version,manifest_digest,package_key,package_version,status,dependencies[],dependents[],tenant_enabled_count,blockers[]}`、`count/pageNo/pageSize` | `platform.module.read`（新增 Platform 权限） | 只读，不失效 |
+| 查看安装模块/依赖 | `GET /api/platform/instance-tools/modules` | 可选 `module_key`；分页 `page/page_size` | `lists[]:{module_key,name,version,manifest_digest,package_key,package_version,package_modules[],status,dependencies[],dependents[],tenant_enabled_count,blockers[],lifecycle_protected}`、`count/pageNo/pageSize` | `platform.module.read`（新增 Platform 权限） | 只读，不失效 |
+| 创建 Module 骨架 | `POST /api/platform/instance-tools/modules/create`，JSON | `module_key`；可选 `vendor` 必须与 key 首段派生值一致 | `operation=created`、`module_key`、`vendor`、`backend_path`、`frontend_path`、`frontend_entry` | `platform.module.create`（新增） | 只生成文件，不写 catalog；后续 `module:sync` 成功后再失效 |
 | 安装 package | `POST /api/platform/instance-tools/modules/install`，`multipart/form-data` | `package`（`.tar`）、`expected_sha256`（64 hex）、可选 `signature_key_id` | `operation=installed|reactivated|unchanged`、`package_key`、`archive_sha256`、`modules[]:{module_key,version,status}`、`catalog_revision` | `platform.module.install`（新增） | 文件/lock 落地且 applier 的 DB 事务提交后、返回前；失败不失效 |
 | 卸载 / purge | `POST /api/platform/instance-tools/modules/uninstall`，JSON | 预览：`module_key`、`purge`、`preview:true`；执行：再带 `preview:false`、`confirm_package_key`、`confirm_plan_digest`、`confirm_plan`（预览返回的规范计划对象）、`change_reason` | 预览：`operation=preview`、`plan_digest`、`affected_modules[]`、`preserved[]`、`removed[]`、`blockers[]`；执行：`operation=retired|purged|unchanged`、同一 scope 的实际 `removed[]`、`catalog_revision` | `platform.module.uninstall`（新增） | retire catalog 事务提交后立即失效；purge 最终事务再确认一次；失败保留恢复 marker |
-| 实例停用 | `POST /api/platform/instance-tools/modules/disable`，JSON | `module_key`、`change_reason` | `operation=disabled|unchanged`、`module_key`、`status=maintenance`、`catalog_revision` | `platform.module.disable`（新增） | maintenance + catalog 软退役提交后、返回前 |
+| 实例停用 | `POST /api/platform/instance-tools/modules/disable`，JSON | Bundle 任一 `module_key`、`change_reason` | `operation=disabled|unchanged`、`package_key`、`affected_modules[]`、`status=maintenance`、`catalog_revision` | `platform.module.disable`（新增） | 整个 Bundle 的 maintenance + catalog 软退役提交后、返回前 |
 | 触发 `module:sync` | `POST /api/platform/instance-tools/modules/sync`，JSON | 可选 `module_key`；空值表示同步当前开发树全部 Module | `operation=synced|unchanged`、`modules[]`、`catalog_revision`、`changes:{menus,permissions,settings}` | `platform.module.sync`（新增） | applier 提交后、返回前 |
 
 uninstall preview 的 `removed[]` 每项固定为
@@ -421,7 +422,7 @@ filesystem/lock/DB 重建计划并逐字节比较；任一差异均 fail-closed�
 `MODULE_PURGE_IN_PROGRESS` 后的重试仍携带同一 `confirm_plan`，只允许续删其中列明而当前仍存在的
 identifier；出现任何计划外新引用则保留 marker 并返回恢复冲突，不能静默扩大删除范围。
 
-五条 route 的鉴权/门控链固定为：
+六条 route 的鉴权/门控链固定为：
 
 1. `PlatformLoginMiddleware` 校验 Platform Host 与 bearer token，并建立 `PlatformOperatorContext`；当前
    实现见 `server/app/platform/http/middleware/PlatformLoginMiddleware.php:14-35`。
@@ -441,7 +442,7 @@ identifier；出现任何计划外新引用则保留 marker 并返回恢复冲�
    来自 `DEPLOYMENT_MODE`（`server/config/deployment.php:4-8`）。失败统一返回
    `40300/MODULE_RUNTIME_MUTATION_DISABLED`，且上传体不得进入 staging。
 
-五个 `platform.module.*` key 的唯一代码登记点是 `CorePermissionCatalog::PLATFORM`（**新增成员契约**；
+六个 `platform.module.*` key 的唯一代码登记点是 `CorePermissionCatalog::PLATFORM`（**新增成员契约**；
 现有列表位置为 `server/vendor/peanut-admin/core/kernel/src/Authorization/CorePermissionCatalog.php:38-63`）。
 现有 `CorePermissionCatalogSynchronizer` 会把 PLATFORM 成员以 `module_key='platform'` 同步到
 `pa_permission`（`server/vendor/peanut-admin/core/kernel/src/Authorization/CorePermissionCatalogSynchronizer.php:17-24`、
@@ -489,6 +490,7 @@ root 的 token 不是 Platform token，只会在第一层得到 401。HTTP adapt
 | 接口 | 首次成功 | 失败断言 | 完全相同的重复调用 |
 | --- | --- | --- | --- |
 | `platform.module.read` | 返回同一 revision 的只读 projection | registry 不可用为 `50300/MODULE_REGISTRY_UNAVAILABLE` | 数据未变化时响应逐字段相同（时间型诊断字段不得混入 identity） |
+| `platform.module.create` | CLI 与 HTTP 调用同一 `ModuleScaffoldGenerator` 和同一模板，生成 key 派生的前后端骨架 | 非法 key/vendor 为 `42200`；任一目标已存在为 `40900/MODULE_CREATE_TARGET_EXISTS`，且不覆盖已有文件 | 首次成功后相同请求返回 target-exists；既有目录字节不变，不生成第二份骨架 |
 | `platform.module.install` | 全包校验、文件/lock、migration、catalog 全部完成后才 `installed` | 任一 digest/签名/manifest/路径/依赖失败为 `42200` 或 `40900`，零部分安装 | active 且 archive/module identity 全同返回 `20000 operation=unchanged`；同 key 不同 identity 返回冲突，不隐式 upgrade |
 | `platform.module.uninstall` | 首次只读 preview 返回 plan；确认同一 `plan_digest` 后默认 `retired`，显式 purge 完成 D2 全状态机后 `purged` | enabled TenantModule、依赖者、package/plan 确认不符或外键阻塞均在 destructive 步骤前 `40900`；preview 零写入 | 同一状态重复 preview 得到同一 digest；已 retire 再执行 retire、已 clean 再执行 purge 返回 `20000 operation=unchanged`；purge in progress 只按已确认 plan 续跑 |
 | `platform.module.disable` | 无 enabled TenantModule 时进入 maintenance 并软退役 active catalog | enabled TenantModule/依赖阻塞返回 `40900` | 已 maintenance 返回 `20000 operation=unchanged` |
@@ -520,7 +522,10 @@ disable 也会递增 revision。它们是状态收敛且每次留审计的写调
   同步落库复用 `CorePermissionCatalogSynchronizer`，授权读取复用
   `PdoPlatformAuthorizationRepository`/`PlatformAuthorizationEvaluator`。这些 key 均为本附录新增契约，
   不是仓库当前已存在的权限。
-- 目标 CLI 与 HTTP 共用能力：`module:install-package`、`module:uninstall-package`、`module:sync`；现有
+- 目标 CLI 与 HTTP 共用能力：`module:create`、`module:install-package`、`module:uninstall-package`、
+  `module:sync`；`module:create` 与 HTTP create 必须直接复用
+  `server/app/common/service/module/ModuleScaffoldGenerator.php` 及 `server/resources/module-scaffold/`，禁止
+  Web 端维护第二套模板或启动 CLI 子进程。现有
   与 Module/Plugin 生命周期直接相关的 console 登记是 `module:install` 以及
   `plugin:install/reconcile/make/lock/upgrade/rollback/uninstall`（`server/config/console.php:13-21`），故本文
   没有把目标命令写成现状事实。
@@ -529,25 +534,27 @@ disable 也会递增 revision。它们是状态收敛且每次留审计的写调
 
 ### 【验收点】
 
-1. development + Standalone 时 `/dev-tools/modules` 注册且需现有 Admin 页面登录；其五条数据/写请求还
+1. development + Standalone 时 `/dev-tools/modules` 注册且需现有 Admin 页面登录；其六条数据/写请求还
    必须携带有效 Platform bearer token。缺 Platform token 返回 `40100`，Tenant Admin token（包括 Tenant
    root）不能被转换或接受为 Platform token；不存在第三个顶级控制面或 Module Federation 配置。
 2. 对每条新 route 做三态鉴权断言：普通 Platform operator 未获对应 `platform.module.*` key 时返回
    `40300`；非 demo operator 经 active `pa_platform_role_permission` 获得该精确 key 后通过；故意让 route 引用一个未加入
    `CorePermissionCatalog::PLATFORM` 且未同步到 active `pa_permission` 的 key 时，内建
    Platform root-equivalent `platform.bootstrap-owner` 也返回 `40300`。另断言只获
-   `platform.module.read` 的账户不能调用四条写
-   接口，五条 key 的 route 参数、Core catalog 成员和 active DB row 逐字符一致。
+   `platform.module.read` 的账户不能调用五条写
+   接口，六条 key 的 route 参数、Core catalog 成员和 active DB row 逐字符一致。
 3. 对 install 请求的调用链/探针断言只经过 `PlatformLoginMiddleware` →
    `PlatformPermissionMiddleware` → `PlatformInstanceToolMiddleware` → 共用 lifecycle service；
    `AdminPermissionService::canAccess`、`TenantAuthorizationEvaluator` 和任何 `TenantContext` 解析调用次数均
    为 0。这是“装包动作不经租户成员权限评估”的判定点。
 4. `APP_ENV` 非 development、应用 debug 关闭、`DEPLOYMENT_MODE` 缺失/非法/multi-tenant、以及 production
-   四类场景分别请求五条接口，均得到 route-not-found 或
+   四类场景分别请求六条接口，均得到 route-not-found 或
    `40300/MODULE_RUNTIME_MUTATION_DISABLED`；install 上传不得进入 staging。development + debug +
    Standalone 且权限满足时才通过门控。
 5. 对上表每条接口各执行一次成功、一次代表性失败、一次完全相同重复调用，响应必须符合上表
    operation/error_code；失败后检查文件、lock、installation、catalog 和 migration 无越权部分写入。
+   其中 HTTP create 与 CLI `module:create` 生成同一 key 时必须得到相同目录布局和文件摘要；重复 create
+   返回 `MODULE_CREATE_TARGET_EXISTS` 且原目录摘要不变，证明两种入口没有第二套生成机制。
 6. uninstall 第一次 `preview:true` 必须零写入并返回稳定 `plan_digest`；对同一状态连续预览两次，
    `confirm_plan` 规范 JSON 字节与 digest 均相同，交换 SQL 返回顺序也不得改变摘要，改动任一 count 或
    identifier 则摘要必须改变。默认 retire preview 的角色绑定只出现在 `preserved[]`；purge preview 和
