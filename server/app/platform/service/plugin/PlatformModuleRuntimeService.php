@@ -134,7 +134,7 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
         if ((int)$enabled->fetchColumn() !== 0) throw new PluginLifecycleException('PLUGIN_TENANT_MODULE_ACTIVE', 'Disable every TenantModule first.');
         $this->pdo->beginTransaction();
         try {
-            (new ModuleCatalogMutationRepository($this->pdo))->retire([$moduleKey]);
+            (new ModuleCatalogApplier($this->pdo))->retire([$moduleKey]);
             $update = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=NULL,revision=revision+1,updated_at=UTC_TIMESTAMP(3) WHERE module_key=? AND status='active'");
             $update->execute([$moduleKey]);
             $this->pdo->commit();

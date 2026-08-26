@@ -4,12 +4,94 @@ declare(strict_types=1);
 namespace app\platform\service\plugin;
 
 use PDO;
+use PeanutAdmin\Kernel\Module\ManifestDocument;
 
 /** Computes and applies the catalog/RBAC part of retire and purge from Module-owned catalog rows. */
 final readonly class ModuleCatalogMutationRepository
 {
     public function __construct(private PDO $pdo)
     {
+    }
+
+    /** @param array<string,ManifestDocument> $manifests */
+    public function retireMissing(array $manifests): void
+    {
+        $moduleKeys = array_keys($manifests);
+        if ($moduleKeys === []) return;
+        $declared = [
+            'pa_permission' => [],
+            'pa_protected_resource' => [],
+            'pa_target_type' => [],
+            'pa_data_condition_definition' => [],
+        ];
+        $operations = [];
+        foreach ($manifests as $moduleKey => $manifest) {
+            $catalog = is_array($manifest->data['catalog'] ?? null) ? $manifest->data['catalog'] : [];
+            foreach ([
+                'permissions' => 'pa_permission',
+                'protected_resources' => 'pa_protected_resource',
+                'target_types' => 'pa_target_type',
+                'data_conditions' => 'pa_data_condition_definition',
+            ] as $manifestKey => $table) {
+                foreach ((array)($catalog[$manifestKey] ?? []) as $entry) {
+                    if (is_array($entry) && is_string($entry['key'] ?? null)) {
+                        $declared[$table][$moduleKey][] = $entry['key'];
+                    }
+                }
+            }
+            foreach ((array)($catalog['protected_resources'] ?? []) as $resource) {
+                if (!is_array($resource) || !is_string($resource['key'] ?? null)) continue;
+                foreach ((array)($resource['operations'] ?? []) as $operation) {
+                    if (is_array($operation) && is_string($operation['key'] ?? null)) {
+                        $operations[$resource['key'] . "\0" . $operation['key']] = true;
+                    }
+                }
+            }
+        }
+
+        $now = gmdate('Y-m-d H:i:s.v');
+        foreach ($declared as $table => $byModule) {
+            foreach ($moduleKeys as $moduleKey) {
+                $keys = array_values(array_unique($byModule[$moduleKey] ?? []));
+                $this->retireMissingKeys($table, $moduleKey, $keys, $now);
+            }
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT o.id,r.`key` resource_key,o.operation FROM pa_resource_operation o'
+            . ' JOIN pa_protected_resource r ON r.id=o.protected_resource_id'
+            . ' WHERE r.module_key IN (' . $this->placeholders($moduleKeys) . ") AND o.status='active' ORDER BY o.id"
+        );
+        $statement->execute($moduleKeys);
+        $missingOperationIds = [];
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!isset($operations[(string)$row['resource_key'] . "\0" . (string)$row['operation']])) {
+                $missingOperationIds[] = (string)$row['id'];
+            }
+        }
+        if ($missingOperationIds !== []) {
+            $this->deleteByForeignIds('pa_resource_operation_permission', 'resource_operation_id', $missingOperationIds);
+            foreach (['pa_resource_operation_target_type', 'pa_resource_operation_condition'] as $table) {
+                $this->updateByIds($table, $this->operationRelationIds($table, $missingOperationIds), "status='retired'", []);
+            }
+            $this->updateByIds('pa_resource_operation', $missingOperationIds, "status='retired',updated_at=?", [$now]);
+        }
+    }
+
+    /** @return list<string> */
+    public function activeModuleKeys(): array
+    {
+        $keys = [];
+        foreach (['pa_permission', 'pa_protected_resource', 'pa_target_type', 'pa_data_condition_definition', 'pa_menu_definition', 'pa_setting_definition'] as $table) {
+            $rows = $this->pdo->query("SELECT DISTINCT module_key FROM `{$table}` WHERE status='active' ORDER BY module_key")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($rows as $key) {
+                $key = (string)$key;
+                if (!in_array($key, ['core', 'platform'], true)) $keys[$key] = true;
+            }
+        }
+        $result = array_keys($keys);
+        sort($result, SORT_STRING);
+        return $result;
     }
 
     /** @param list<string> $moduleKeys @return array{removed:list<array<string,mixed>>,preserved:list<array<string,mixed>>,blockers:list<array<string,mixed>>} */
@@ -277,6 +359,27 @@ final readonly class ModuleCatalogMutationRepository
         if ($ids === []) return;
         $statement = $this->pdo->prepare("DELETE FROM `{$table}` WHERE `{$column}` IN (" . $this->placeholders($ids) . ')');
         $statement->execute($ids);
+    }
+
+    /** @param list<string> $activeKeys */
+    private function retireMissingKeys(string $table, string $moduleKey, array $activeKeys, string $now): void
+    {
+        $sql = "UPDATE `{$table}` SET status='retired',updated_at=?";
+        $parameters = [$now];
+        if (in_array($table, ['pa_permission', 'pa_protected_resource'], true)) {
+            $sql = "UPDATE `{$table}` SET status='retired',retired_at=?,updated_at=?";
+            $parameters = [$now, $now];
+        } elseif ($table === 'pa_setting_definition') {
+            $sql = "UPDATE `{$table}` SET status='retired',revision=revision+1,updated_at=?";
+        }
+        $sql .= " WHERE module_key=? AND status='active'";
+        $parameters[] = $moduleKey;
+        if ($activeKeys !== []) {
+            $sql .= ' AND `key` NOT IN (' . $this->placeholders($activeKeys) . ')';
+            $parameters = [...$parameters, ...$activeKeys];
+        }
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute($parameters);
     }
 
     /** @param list<mixed> $values */
