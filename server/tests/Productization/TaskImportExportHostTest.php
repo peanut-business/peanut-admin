@@ -131,7 +131,7 @@ try {
         'app/adminapi/logic/auth/AdminLogic.php',
         'app/adminapi/logic/dept/JobsLogic.php',
         'app/Modules/Official/Member/Service/MemberLogic.php',
-        'app/adminapi/logic/finance/RechargeLogic.php',
+        'app/Modules/Official/Payment/Service/RechargeLogic.php',
         'app/adminapi/logic/log/OperationLogLogic.php',
     ];
     foreach ($exportCallers as $relativePath) {

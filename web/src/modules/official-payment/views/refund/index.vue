@@ -151,7 +151,7 @@
           <template #default="{ row }">
             <el-space>
               <el-button
-                v-permission="['finance.refund/log']"
+                v-permission="['official.payment.refund.log']"
                 link
                 type="primary"
                 size="small"
@@ -166,7 +166,7 @@
               >
                 <template #reference>
                   <el-button
-                    v-permission="['recharge.recharge/refundAgain']"
+                    v-permission="['official.payment.refund.retry']"
                     link
                     type="primary"
                     size="small"
@@ -249,7 +249,7 @@
     type RefundParams,
     type RefundRecord,
     type RefundStat,
-  } from '@/api/finance';
+  } from '@/modules/official-payment/api';
 
   const { t } = useI18n();
 

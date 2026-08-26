@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\enum\RefundEnum;
-use app\common\model\finance\RechargeOrder;
-use app\common\model\refund\RefundLog;
-use app\common\model\refund\RefundRecord;
+use app\Modules\Official\Payment\Model\RechargeOrder;
+use app\Modules\Official\Payment\Model\RefundLog;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\finance\FinanceTenantRepository;

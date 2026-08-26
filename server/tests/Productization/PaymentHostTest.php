@@ -142,7 +142,7 @@ expectPaymentHost(
     'settlement does not use the public Member balance contract'
 );
 $adminRefund = (string)file_get_contents(
-    $serverRoot . '/app/adminapi/logic/finance/RechargeLogic.php'
+    $serverRoot . '/app/Modules/Official/Payment/Service/RechargeLogic.php'
 );
 $reconcile = (string)file_get_contents($serverRoot . '/app/command/RefundReconcile.php');
 foreach ([$adminRefund, $reconcile] as $source) {
@@ -154,7 +154,7 @@ foreach ([$adminRefund, $reconcile] as $source) {
 }
 
 $payConfig = (string)file_get_contents(
-    $serverRoot . '/app/adminapi/logic/setting/PayConfigLogic.php'
+    $serverRoot . '/app/Modules/Official/Payment/Service/PayConfigLogic.php'
 );
 foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'Db::transaction'] as $marker) {
     expectPaymentHost(str_contains($payConfig, $marker), 'payment config boundary missing: ' . $marker);
@@ -162,7 +162,7 @@ foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'Db::transaction']
 $legacyWebApi = (string)file_get_contents($repositoryRoot . '/web/src/api/app.ts');
 expectPaymentHost(!str_contains($legacyWebApi, 'interface PayConfig'), 'duplicate Web payment facade remains');
 expectPaymentHost(
-    str_contains((string)file_get_contents($repositoryRoot . '/web/src/api/system-settings.ts'), 'interface PayConfig'),
+    str_contains((string)file_get_contents($repositoryRoot . '/web/src/modules/official-payment/api.ts'), 'interface PayConfig'),
     'canonical Web payment facade is missing'
 );
 

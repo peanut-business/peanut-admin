@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\setting;
+namespace app\Modules\Official\Payment\Service;
 
 use app\common\logic\BaseLogic;
 use app\common\service\external\ExternalChannelBindingService;

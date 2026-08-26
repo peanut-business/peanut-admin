@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use app\api\logic\RechargeLogic as ApiRechargeLogic;
-use app\common\model\finance\RechargeOrder;
+use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\member\MemberTenantRepository;

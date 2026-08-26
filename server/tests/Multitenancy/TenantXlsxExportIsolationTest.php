@@ -126,7 +126,7 @@ try {
 
     foreach ([
         'app/Modules/Official/Member/Service/MemberLogic.php',
-        'app/adminapi/logic/finance/RechargeLogic.php',
+        'app/Modules/Official/Payment/Service/RechargeLogic.php',
         'app/adminapi/logic/log/OperationLogLogic.php',
     ] as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);

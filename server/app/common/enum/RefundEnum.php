@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\enum;
 
-use app\common\model\finance\RechargeOrder;
+use app\Modules\Official\Payment\Model\RechargeOrder;
 
 class RefundEnum
 {

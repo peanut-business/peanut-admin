@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\api\logic\RechargeLogic;
-use app\common\model\finance\PaymentScene;
+use app\Modules\Official\Payment\Model\PaymentScene;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\CallbackRequest;
 use app\common\service\external\ExternalTenantResolver;

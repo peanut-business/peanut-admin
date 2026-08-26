@@ -148,7 +148,7 @@
           <template #default="{ row }">
             <el-button
               v-if="row.pay_status === 1"
-              v-permission="['recharge.recharge/refund']"
+              v-permission="['official.payment.recharge.refund']"
               link
               type="primary"
               size="small"
@@ -256,7 +256,7 @@
     type RechargeExportInfo,
     type RechargeParams,
     type RechargeRecord,
-  } from '@/api/finance';
+  } from '@/modules/official-payment/api';
 
   const { t } = useI18n();
   const { loading, setLoading } = useLoading(true);

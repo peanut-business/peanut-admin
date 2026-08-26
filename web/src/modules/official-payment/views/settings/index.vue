@@ -44,7 +44,7 @@
               <el-input v-model="pay.wx_pay_platform_cert_path" />
             </el-form-item>
             <el-button
-              v-permission="['setting/pay/save']"
+              v-permission="['official.payment.settings.save']"
               type="primary"
               :loading="savingPay"
               @click="savePay"
@@ -89,7 +89,7 @@
               />
             </el-form-item>
             <el-button
-              v-permission="['setting/pay/save']"
+              v-permission="['official.payment.settings.save']"
               type="primary"
               :loading="savingPay"
               @click="savePay"
@@ -160,7 +160,7 @@
           </el-table>
 
           <el-button
-            v-permission="['setting/recharge/save']"
+            v-permission="['official.payment.recharge-settings.save']"
             type="primary"
             :loading="savingRecharge"
             style="margin-top: 16px"
@@ -186,7 +186,7 @@
     type PayConfig,
     type RechargeScene,
     type RechargeSetting,
-  } from '@/api/system-settings';
+  } from '@/modules/official-payment/api';
 
   const { loading, setLoading } = useLoading(true);
   const activeTab = ref('wechat');

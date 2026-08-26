@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\finance;
+namespace app\Modules\Official\Payment\Service;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Member\Contracts\MemberContracts;
 use DateTimeImmutable;
 use PDO;
 use app\common\enum\AccountLogEnum;
@@ -14,9 +14,9 @@ use app\common\contract\idempotency\IdempotencyCommand;
 use app\common\contract\idempotency\IdempotencyReceipt;
 use app\common\contract\idempotency\IdempotencyResult;
 use app\common\logic\BaseLogic;
-use app\common\model\finance\RechargeOrder;
-use app\common\model\refund\RefundLog;
-use app\common\model\refund\RefundRecord;
+use app\Modules\Official\Payment\Model\RechargeOrder;
+use app\Modules\Official\Payment\Model\RefundLog;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
 use app\common\service\idempotency\IdempotencyRuntimeFactory;
@@ -126,7 +126,7 @@ class RechargeLogic extends BaseLogic
             $order->refund_status = RechargeOrder::REFUND_STATUS_STARTED;
             $order->save();
 
-            (new MemberModuleProvider())->balanceCommands()->applyInTransaction(
+            MemberContracts::balanceCommands()->applyInTransaction(
                 $context,
                 new MemberBalanceMutation(
                     (int)$order->user_id,

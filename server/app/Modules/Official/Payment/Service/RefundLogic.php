@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\finance;
+namespace app\Modules\Official\Payment\Service;
 
 use app\common\enum\RefundEnum;
 use app\common\logic\BaseLogic;
-use app\common\model\refund\RefundLog;
-use app\common\model\refund\RefundRecord;
+use app\Modules\Official\Payment\Model\RefundLog;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;

@@ -72,7 +72,7 @@ Runtime 白名单：
 - `server/app/adminapi/logic/auth/AdminLogic.php`；
 - `server/app/adminapi/logic/dept/JobsLogic.php`；
 - `server/app/Modules/Official/Member/Service/MemberLogic.php`；
-- `server/app/adminapi/logic/finance/RechargeLogic.php`。
+- `server/app/Modules/Official/Payment/Service/RechargeLogic.php`。
 
 证据与状态白名单：
 

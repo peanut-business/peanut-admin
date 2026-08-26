@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\setting;
+namespace app\Modules\Official\Payment\Validation;
 
 use think\Validate;
 
