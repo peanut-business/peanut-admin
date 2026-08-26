@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\validate\member;
+namespace app\Modules\Official\Member\Validation;
 
 use app\common\enum\AccountLogEnum;
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\Validate;
@@ -25,7 +25,6 @@ class MemberValidate extends Validate
         'email'    => 'email',
         'sex'      => 'in:0,1,2',
         'status'   => 'require|in:0,1',
-        'amount'   => 'require|float',
         'field'    => 'require|checkField',
         'value'    => 'require',
         'user_id'  => 'require|integer|gt:0|checkMember',
@@ -43,8 +42,6 @@ class MemberValidate extends Validate
         'sex.in'           => '性别值无效',
         'status.require'   => '状态不能为空',
         'status.in'        => '状态值无效',
-        'amount.require'   => '调整金额不能为空',
-        'amount.float'     => '金额格式不正确',
         'field.require'    => '请选择操作',
         'value.require'    => '请输入内容',
         'user_id.require'  => '请选择用户',
@@ -58,12 +55,10 @@ class MemberValidate extends Validate
 
     protected $scene = [
         'add'         => ['nickname', 'mobile', 'email', 'sex', 'status'],
-        'profileEdit' => ['id', 'nickname', 'mobile', 'email', 'sex'],
         'detail'      => ['id'],
         'setInfo'     => ['id', 'field', 'value'],
         'status'      => ['id', 'status'],
         'adjustMoney' => ['user_id', 'action', 'num', 'remark'],
-        'balance'     => ['id', 'amount'],
     ];
 
     protected function checkMember($value): bool|string

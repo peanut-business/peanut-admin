@@ -319,14 +319,14 @@ $mustRemainCustom = [
         'app\\Modules\\Official\\File\\Http\\Controller\\UploadController',
     ],
     'Member' => [
-        'app\\adminapi\\controller\\member\\MemberController',
-        'app\\adminapi\\controller\\member\\MemberTagController',
+        'app\\Modules\\Official\\Member\\Http\\Controller\\MemberController',
+        'app\\Modules\\Official\\Member\\Http\\Controller\\MemberTagController',
     ],
     'Generator' => [
         'app\\adminapi\\controller\\generator\\GeneratorController',
     ],
     'Finance' => [
-        'app\\adminapi\\controller\\finance\\AccountLogController',
+        'app\\Modules\\Official\\Member\\Http\\Controller\\AccountLogController',
         'app\\adminapi\\controller\\finance\\RechargeController',
         'app\\adminapi\\controller\\finance\\RefundController',
     ],

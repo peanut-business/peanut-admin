@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\member;
+namespace app\Modules\Official\Member\Service;
 
 use DateTimeImmutable;
 use PDO;
@@ -371,29 +371,6 @@ class MemberLogic extends BaseLogic
             self::setError($e->getMessage());
             return false;
         }
-    }
-
-    /** Peanut 旧版 signed amount API 的兼容入口。 */
-    public static function adjustBalance(
-        TenantContext $context,
-        int $id,
-        float $amount,
-        string $remark,
-        int $adminId,
-        string $idempotencyKey,
-    ): bool
-    {
-        if ($amount == 0.0) {
-            self::setError('调整金额不能为 0');
-            return false;
-        }
-
-        return self::adjustUserMoney($context, [
-            'user_id' => $id,
-            'action' => $amount > 0 ? AccountLogEnum::INC : AccountLogEnum::DEC,
-            'num' => abs($amount),
-            'remark' => $remark,
-        ], $adminId, $idempotencyKey);
     }
 
     private static function balanceAdjustmentIdempotency(): IdempotentCommandExecutor

@@ -11,6 +11,9 @@ use app\common\service\export\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 use app\command\TenantTaskWorker;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use think\facade\Db;
 
@@ -27,6 +30,19 @@ function expectTaskHost(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $app = new think\App();
 $app->initialize();
+$tenantId = (int)Db::name('tenant')->where('status', 'active')->order('id')->value('id');
+expectTaskHost($tenantId > 0, 'active Tenant fixture is unavailable');
+$context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
+    1,
+    'PB04-TASK-IMPORT-EXPORT-HOST',
+    $tenantId,
+    1,
+    1,
+    'admin-web',
+    new DateTimeImmutable('2031-01-01T00:00:00Z'),
+    1,
+), 'pb04-task-import-export-host');
+$scope = TenantScope::fromTrustedContext($tenantId, 'pb04-task-import-export-host');
 
 expectTaskHost(class_exists(TaskImportExportRuntime::class), 'application async Runtime is missing');
 expectTaskHost(class_exists(TenantTaskWorker::class), 'Tenant worker command is missing');
@@ -56,7 +72,7 @@ $taskId = 0;
 $exportPath = '';
 
 try {
-    expectTaskHost(CrontabLogic::add([
+    expectTaskHost(CrontabLogic::add($context, [
         'name' => $taskName,
         'type' => 1,
         'command' => 'crontab:demo',
@@ -71,14 +87,14 @@ try {
 
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost(!$task->isEmpty(), 'temporary crontab is missing');
-    CrontabCommand::start($task->getData());
+    CrontabCommand::start($scope, $task->getData());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((string)$task->error === '', 'allowed task must succeed');
     expectTaskHost((int)$task->status === CrontabEnum::START, 'successful task must remain started');
 
     Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab']);
     $task = Crontab::findOrEmpty($taskId);
-    CrontabCommand::start($task->getData());
+    CrontabCommand::start($scope, $task->getData());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((int)$task->status === CrontabEnum::ERROR, 'disallowed task must enter error state');
     expectTaskHost(
@@ -87,11 +103,11 @@ try {
     );
 
     Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab:demo']);
-    expectTaskHost(CrontabLogic::operate($taskId, 'start'), CrontabLogic::getError());
+    expectTaskHost(CrontabLogic::operate($context, $taskId, 'start'), CrontabLogic::getError());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((int)$task->status === CrontabEnum::START, 'manual retry must restore started state');
     expectTaskHost((string)$task->error === '', 'manual retry must clear the previous error');
-    CrontabCommand::start($task->getData());
+    CrontabCommand::start($scope, $task->getData());
     $task = Crontab::findOrEmpty($taskId);
     expectTaskHost((int)$task->status === CrontabEnum::START, 'retried task must succeed');
     expectTaskHost((string)$task->error === '', 'retried task must finish without an error');
@@ -115,7 +131,7 @@ try {
     $exportCallers = [
         'app/adminapi/logic/auth/AdminLogic.php',
         'app/adminapi/logic/dept/JobsLogic.php',
-        'app/adminapi/logic/member/MemberLogic.php',
+        'app/Modules/Official/Member/Service/MemberLogic.php',
         'app/adminapi/logic/finance/RechargeLogic.php',
         'app/adminapi/logic/log/OperationLogLogic.php',
     ];

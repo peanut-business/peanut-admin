@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\member;
+namespace app\Modules\Official\Member\Service;
 
 use app\common\logic\BaseLogic;
 use app\Modules\Official\Member\ModuleProvider;

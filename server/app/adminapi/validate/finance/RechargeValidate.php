@@ -5,7 +5,7 @@ namespace app\adminapi\validate\finance;
 
 use app\common\enum\RefundEnum;
 use app\common\model\finance\RechargeOrder;
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\model\refund\RefundRecord;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\member\MemberTenantRepository;

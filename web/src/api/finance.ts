@@ -1,50 +1,5 @@
 import axios from 'axios';
 
-export interface AccountLogRecord {
-  account: string;
-  nickname: string;
-  sn: string;
-  avatar: string;
-  mobile: string;
-  action: 1 | 2;
-  change_amount: string;
-  left_amount: string;
-  change_type: number;
-  change_type_desc: string;
-  source_sn: string;
-  create_time: string;
-}
-
-export interface AccountLogParams {
-  user_info?: string;
-  change_type?: string | number;
-  start_time?: string;
-  end_time?: string;
-  page_no?: number;
-  page_size?: number;
-}
-
-export interface AccountLogListRes {
-  lists: AccountLogRecord[];
-  count: number;
-  pageNo: number;
-  pageSize: number;
-}
-
-export function getAccountLogList(params: AccountLogParams) {
-  return axios.get<AccountLogListRes>('/api/admin/finance.account_log/lists', {
-    params,
-  });
-}
-
-export type AccountLogChangeTypeMap = Record<string, string>;
-
-export function getUmChangeType() {
-  return axios.get<AccountLogChangeTypeMap>(
-    '/api/admin/finance.account_log/getUmChangeType'
-  );
-}
-
 // ─── 充值订单 ────────────────────────────────────────────────────────────────
 export interface RechargeRecord {
   id: number;

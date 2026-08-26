@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Application;
 
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
-use app\common\model\member\Member;
+use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\controller\member;
+namespace app\Modules\Official\Member\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\member\MemberTagLogic;
-use app\adminapi\validate\member\MemberTagValidate;
+use app\Modules\Official\Member\Service\MemberTagLogic;
+use app\Modules\Official\Member\Validation\MemberTagValidate;
 use app\common\service\member\MemberTenantContext;
 
 class MemberTagController extends BaseAdminController

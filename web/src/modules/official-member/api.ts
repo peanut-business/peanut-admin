@@ -6,6 +6,39 @@ export interface MemberTagRecord {
   remark: string;
 }
 
+export interface AccountLogRecord {
+  account: string;
+  nickname: string;
+  sn: string;
+  avatar: string;
+  mobile: string;
+  action: 1 | 2;
+  change_amount: string;
+  left_amount: string;
+  change_type: number;
+  change_type_desc: string;
+  source_sn: string;
+  create_time: string;
+}
+
+export interface AccountLogParams {
+  user_info?: string;
+  change_type?: string | number;
+  start_time?: string;
+  end_time?: string;
+  page_no?: number;
+  page_size?: number;
+}
+
+export interface AccountLogListRes {
+  lists: AccountLogRecord[];
+  count: number;
+  pageNo: number;
+  pageSize: number;
+}
+
+export type AccountLogChangeTypeMap = Record<string, string>;
+
 export interface MemberRecord {
   id: number;
   sn: string;
@@ -104,33 +137,29 @@ export interface MemberExportResult {
 }
 
 export function getMemberList(params: MemberListParams = {}) {
-  return axios.get<MemberListResult>('/api/admin/member/lists', { params });
+  return axios.get<MemberListResult>('/api/admin/official.member.list', { params });
 }
 
 export function getMemberExportInfo(params: MemberListParams) {
-  return axios.get<MemberExportInfo>('/api/admin/member/lists', {
+  return axios.get<MemberExportInfo>('/api/admin/official.member.list', {
     params: { ...params, export: 1 },
   });
 }
 
 export function exportMembers(params: MemberListParams) {
-  return axios.get<MemberExportResult>('/api/admin/member/lists', {
+  return axios.get<MemberExportResult>('/api/admin/official.member.list', {
     params: { ...params, export: 2 },
   });
 }
 
 export function getMemberDetail(id: number) {
-  return axios.get<MemberDetail>('/api/admin/user.user/detail', {
+  return axios.get<MemberDetail>('/api/admin/official.member.detail', {
     params: { id },
   });
 }
 
 export function addMember(data: MemberForm) {
-  return axios.post('/api/admin/member/add', data);
-}
-
-export function editMemberProfile(data: MemberForm) {
-  return axios.post('/api/admin/member/profile/edit', data);
+  return axios.post('/api/admin/official.member.add', data);
 }
 
 export function updateMemberField(data: {
@@ -138,24 +167,11 @@ export function updateMemberField(data: {
   field: MemberEditableField;
   value: string | number;
 }) {
-  return axios.post('/api/admin/user.user/edit', data);
+  return axios.post('/api/admin/official.member.edit', data);
 }
 
 export function updateMemberStatus(id: number, status: number) {
-  return axios.post('/api/admin/member/status', { id, status });
-}
-
-export function adjustMemberBalance(
-  id: number,
-  amount: number,
-  remark: string,
-  idempotencyKey = crypto.randomUUID(),
-) {
-  return axios.post(
-    '/api/admin/member/adjustBalance',
-    { id, amount, remark },
-    { headers: { 'Idempotency-Key': idempotencyKey } },
-  );
+  return axios.post('/api/admin/official.member.update-status', { id, status });
 }
 
 export function adjustMemberMoney(data: {
@@ -164,24 +180,36 @@ export function adjustMemberMoney(data: {
   num: number;
   remark?: string;
 }, idempotencyKey = crypto.randomUUID()) {
-  return axios.post('/api/admin/user.user/adjustMoney', data, {
+  return axios.post('/api/admin/official.member.balance.adjust', data, {
     headers: { 'Idempotency-Key': idempotencyKey },
   });
 }
 
 // 标签
 export function getMemberTagList() {
-  return axios.get<MemberTagRecord[]>('/api/admin/member/tag/lists');
+  return axios.get<MemberTagRecord[]>('/api/admin/official.member.tag.list');
 }
 
 export function addMemberTag(data: MemberTagForm) {
-  return axios.post('/api/admin/member/tag/add', data);
+  return axios.post('/api/admin/official.member.tag.add', data);
 }
 
 export function editMemberTag(data: MemberTagForm) {
-  return axios.post('/api/admin/member/tag/edit', data);
+  return axios.post('/api/admin/official.member.tag.edit', data);
 }
 
 export function deleteMemberTag(id: number) {
-  return axios.post('/api/admin/member/tag/delete', { id });
+  return axios.post('/api/admin/official.member.tag.delete', { id });
+}
+
+export function getAccountLogList(params: AccountLogParams) {
+  return axios.get<AccountLogListRes>('/api/admin/official.member.account-log.list', {
+    params,
+  });
+}
+
+export function getUmChangeType() {
+  return axios.get<AccountLogChangeTypeMap>(
+    '/api/admin/official.member.account-log.change-types'
+  );
 }

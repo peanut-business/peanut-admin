@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\common\logic;
 
 use app\common\enum\AccountLogEnum;
-use app\common\model\member\Member;
-use app\common\model\member\MemberBalanceLog;
+use app\Modules\Official\Member\Model\Member;
+use app\Modules\Official\Member\Model\MemberBalanceLog;
 use app\common\service\member\MemberTenantRepository;
 use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
