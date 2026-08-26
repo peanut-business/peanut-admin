@@ -2,8 +2,8 @@
 -- namespace while preserving Tenant and Platform role grants.
 
 CREATE TEMPORARY TABLE `pa_official_payment_permission_key_map` (
-  `old_key` VARCHAR(160) NOT NULL,
-  `new_key` VARCHAR(160) NOT NULL,
+  `old_key` VARCHAR(160) COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `new_key` VARCHAR(160) COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`old_key`),
   KEY `idx_official_payment_permission_new_key` (`new_key`)
 );
@@ -26,6 +26,14 @@ INSERT INTO `pa_official_payment_permission_key_map` (`old_key`, `new_key`) VALU
   ('finance/refund/log',               'official.payment.refund.log'),
   ('finance.refund/log',               'official.payment.refund.log');
 
+CREATE TEMPORARY TABLE `pa_official_payment_new_key_list` (
+  `new_key` VARCHAR(160) COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`new_key`)
+);
+
+INSERT INTO `pa_official_payment_new_key_list` (`new_key`)
+SELECT DISTINCT `new_key` FROM `pa_official_payment_permission_key_map`;
+
 CREATE TEMPORARY TABLE `pa_official_payment_permission_key_assertion` (
   `phase` VARCHAR(16) NOT NULL,
   `mapped_count` INT NOT NULL,
@@ -34,36 +42,49 @@ CREATE TEMPORARY TABLE `pa_official_payment_permission_key_assertion` (
     CHECK (`mapped_count` = 10 AND `bad_owner_count` = 0)
 );
 
+CREATE TEMPORARY TABLE `pa_official_payment_assertion_mapped_count` (
+  `count` INT NOT NULL
+);
+
+INSERT INTO `pa_official_payment_assertion_mapped_count` (`count`)
+SELECT COUNT(*)
+FROM `pa_official_payment_new_key_list` nkl
+WHERE EXISTS(
+  SELECT 1
+  FROM `pa_permission` permission
+  WHERE BINARY permission.`key` = BINARY nkl.`new_key`
+) OR EXISTS(
+  SELECT 1
+  FROM `pa_permission` permission
+  JOIN `pa_official_payment_permission_key_map` map_exists
+    ON LOWER(permission.`key`) = map_exists.`old_key`
+  WHERE BINARY map_exists.`new_key` = BINARY nkl.`new_key`
+);
+
+CREATE TEMPORARY TABLE `pa_official_payment_assertion_bad_owner_count` (
+  `count` INT NOT NULL
+);
+
+INSERT INTO `pa_official_payment_assertion_bad_owner_count` (`count`)
+SELECT COUNT(*)
+FROM `pa_permission` permission
+LEFT JOIN `pa_official_payment_permission_key_map` map_left
+  ON LOWER(permission.`key`) = map_left.`old_key`
+WHERE (map_left.`old_key` IS NOT NULL
+    OR permission.`key` IN (
+      SELECT `new_key` FROM `pa_official_payment_new_key_list`
+    ))
+  AND permission.`module_key` NOT IN ('peanut.admin', 'official.payment');
+
 INSERT INTO `pa_official_payment_permission_key_assertion`
   (`phase`, `mapped_count`, `bad_owner_count`)
 SELECT
   'before',
-  SUM(EXISTS(
-    SELECT 1
-    FROM `pa_permission` permission
-    LEFT JOIN `pa_official_payment_permission_key_map` mapping
-      ON LOWER(permission.`key`) = mapping.`old_key`
-    WHERE BINARY permission.`key` = BINARY canonical.`new_key`
-       OR BINARY mapping.`new_key` = BINARY canonical.`new_key`
-  )),
-  (
-    SELECT COUNT(*)
-    FROM `pa_permission` permission
-    LEFT JOIN `pa_official_payment_permission_key_map` mapping
-      ON LOWER(permission.`key`) = mapping.`old_key`
-    WHERE (mapping.`old_key` IS NOT NULL
-        OR permission.`key` IN (
-          SELECT `new_key` FROM `pa_official_payment_permission_key_map`
-        ))
-      AND permission.`module_key` NOT IN ('peanut.admin', 'official.payment')
-  )
-FROM (
-  SELECT DISTINCT `new_key`
-  FROM `pa_official_payment_permission_key_map`
-) canonical;
+  (SELECT `count` FROM `pa_official_payment_assertion_mapped_count`),
+  (SELECT `count` FROM `pa_official_payment_assertion_bad_owner_count`);
 
 CREATE TEMPORARY TABLE `pa_official_payment_permission_target` (
-  `new_key` VARCHAR(160) NOT NULL,
+  `new_key` VARCHAR(160) COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `permission_id` BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (`new_key`),
   UNIQUE KEY `uk_official_payment_permission_target_id` (`permission_id`)
@@ -71,25 +92,24 @@ CREATE TEMPORARY TABLE `pa_official_payment_permission_target` (
 
 INSERT INTO `pa_official_payment_permission_target` (`new_key`, `permission_id`)
 SELECT
-  canonical.`new_key`,
+  nkl.`new_key`,
   COALESCE(
     (
       SELECT MIN(permission.`id`)
       FROM `pa_permission` permission
-      WHERE BINARY permission.`key` = BINARY canonical.`new_key`
+      WHERE BINARY permission.`key` = BINARY nkl.`new_key`
     ),
     (
-      SELECT MIN(permission.`id`)
-      FROM `pa_permission` permission
-      JOIN `pa_official_payment_permission_key_map` mapping
-        ON LOWER(permission.`key`) = mapping.`old_key`
-      WHERE BINARY mapping.`new_key` = BINARY canonical.`new_key`
+      SELECT MIN(p2.`id`)
+      FROM `pa_permission` p2
+      WHERE EXISTS(
+        SELECT 1 FROM `pa_official_payment_permission_key_map` m
+        WHERE LOWER(p2.`key`) = m.`old_key`
+          AND BINARY m.`new_key` = BINARY nkl.`new_key`
+      )
     )
   )
-FROM (
-  SELECT DISTINCT `new_key`
-  FROM `pa_official_payment_permission_key_map`
-) canonical;
+FROM `pa_official_payment_new_key_list` nkl;
 
 UPDATE `pa_system_menu` menu
 JOIN `pa_official_payment_permission_key_map` mapping
@@ -167,4 +187,7 @@ JOIN `pa_official_payment_permission_target` target
 
 DROP TEMPORARY TABLE `pa_official_payment_permission_target`;
 DROP TEMPORARY TABLE `pa_official_payment_permission_key_assertion`;
+DROP TEMPORARY TABLE `pa_official_payment_assertion_bad_owner_count`;
+DROP TEMPORARY TABLE `pa_official_payment_assertion_mapped_count`;
+DROP TEMPORARY TABLE `pa_official_payment_new_key_list`;
 DROP TEMPORARY TABLE `pa_official_payment_permission_key_map`;

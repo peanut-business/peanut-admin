@@ -41,8 +41,16 @@ trait PluginCommandSupport
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES
             ));
             return 1;
-        } catch (\Throwable) {
-            $output->writeln('{"error":"PLUGIN_LIFECYCLE_FAILED"}');
+        } catch (\Throwable $exception) {
+            $output->writeln((string)json_encode(
+                [
+                    'error' => 'PLUGIN_LIFECYCLE_FAILED',
+                    'exception' => get_class($exception),
+                    'message' => $exception->getMessage(),
+                    'file' => $exception->getFile() . ':' . $exception->getLine(),
+                ],
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES
+            ));
             return 1;
         }
     }

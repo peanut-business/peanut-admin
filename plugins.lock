@@ -39,7 +39,7 @@
                 }
             ],
             "manifest": "plugins/fixture.delivery-record/plugin.json",
-            "manifest_sha256": "a18b8e2d31b3b1bc96704478453f531ee2faf1965111c93707c0b2856b4659a9"
+            "manifest_sha256": "f5c9d4e55671eac0942f93b3fba7f9562cd517b5857b16265fbc6cd84f1473c5"
         },
         {
             "key": "official.article",
@@ -167,7 +167,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "1c7fb3c209c9153f8965d7e61b2ab35020d84554f9dce1aceb16e19b30c64cde"
+                "sha256": "fd1b3fbcc3b5ccea61320f0c65e5d09083f756f9afe1cab7d49877266258e4cd"
             },
             "composer": [
                 {
@@ -199,7 +199,7 @@
                 }
             ],
             "manifest": "plugins/official.member/plugin.json",
-            "manifest_sha256": "3b56aea32fd4f8496b23daf3fb6179f23890dd2997f6d9752993d2fb9159d5d3"
+            "manifest_sha256": "51f4ae459923c9d9d6af1b8f42dbf1035f146be6e256a107d3d2e7d2a3f0f703"
         },
         {
             "key": "official.notification",
@@ -287,7 +287,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "9ff216791abbc0abfaa1f6da0283bac3ac3b02d174aede31629217ee6694f352"
+                "sha256": "5b1ddb2e7caacc59a64970812c8cd69be57b000fd8fa0edeb49564093614aa4d"
             },
             "composer": [
                 {
@@ -319,7 +319,7 @@
                 }
             ],
             "manifest": "plugins/official.payment/plugin.json",
-            "manifest_sha256": "8a35bddd96c4fcbaace84f78f925d0d4f3073b66052752a6ac2cc639a7b25a93"
+            "manifest_sha256": "a1c888981c1a5c740cf1a5dbac392fe4746e89cb37bd8ee62443f7c7308d195d"
         },
         {
             "key": "official.task",

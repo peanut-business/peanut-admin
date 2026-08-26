@@ -59,9 +59,11 @@ expectTaskHost(str_contains($migrationSource, 'pa_file_object'), 'private file m
 expectTaskHost(!str_contains($migrationSource, 'public/storage'), 'async migration refers to public storage');
 
 $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php');
-expectTaskHost(str_contains($runtimeSource, 'TaskModuleProvider'), 'Import/Export does not use the official Task Runtime');
+expectTaskHost(str_contains($runtimeSource, 'TaskJobRuntime'), 'Import/Export does not depend on the official Task Runtime contract');
 expectTaskHost(!str_contains($runtimeSource, 'PdoTaskJobRepository'), 'Import/Export bypasses the official Task Runtime repository boundary');
 expectTaskHost(!str_contains($runtimeSource, 'TrustedJobPublisher'), 'Import/Export bypasses the official Task Runtime publisher boundary');
+$runtimeFactorySource = (string)file_get_contents($serverRoot . '/app/common/service/async/TaskImportExportRuntimeFactory.php');
+expectTaskHost(str_contains($runtimeFactorySource, 'TaskModuleProvider'), 'Import/Export Host assembly does not use the official Task Module provider');
 $taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
 expectTaskHost(str_contains($taskRuntimeSource, 'TrustedJobPublisher'), 'official.task does not own trusted submission');
 expectTaskHost(str_contains($taskRuntimeSource, 'LocalWorker'), 'official.task does not own worker execution');

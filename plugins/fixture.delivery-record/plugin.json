@@ -1,39 +1,39 @@
 {
-  "schema_version": 1,
-  "key": "fixture.delivery-record",
-  "version": "1.0.0",
-  "source": {
-    "type": "canonical-contents",
-    "reference": "canonical-plugin-contents-v1",
+    "schema_version": 1,
+    "key": "fixture.delivery-record",
+    "version": "1.0.0",
+    "source": {
+        "type": "canonical-contents",
+        "reference": "canonical-plugin-contents-v1",
         "sha256": "459c02a102b5eb89bcf1f8ddb1ff0342c2674dee2167ed323dc4771f4e99e40d"
-  },
-  "composer": [
-    {
-      "name": "peanut-business/fixture-delivery-record",
-      "version": "1.0.0",
-      "sha256": "a5862bdd2a37b5dade659e3b1a25ed8e56dea9a0d007901988602e2f68f6c551"
-    }
-  ],
-  "npm": [
-    {
-      "name": "@peanut-admin/fixture-delivery-record",
-      "version": "1.0.0",
-      "integrity": "sha256-ZVeub731LcGgH1dsSLVy0OfmRUD5NjUgSVT9hHRFqHs="
-    }
-  ],
-  "frontend": [
-    {
-      "client_key": "admin-web",
-      "package": "@peanut-admin/fixture-delivery-record",
-      "version": "1.0.0",
-      "entry": "web/src/modules/fixture-delivery-record/contribution.ts",
-      "sha256": "ddb64b2c302b8e9dd6c31b6c0df61c311dcca21b1f6c4a29128e761ea5901a3c"
-    }
-  ],
-  "modules": [
-    {
-      "key": "fixture.delivery-record",
-      "root": "server/app/Modules/Fixture/DeliveryRecord"
-    }
-  ]
+    },
+    "composer": [
+        {
+            "name": "peanut-business/fixture-delivery-record",
+            "version": "1.0.0",
+            "sha256": "a5862bdd2a37b5dade659e3b1a25ed8e56dea9a0d007901988602e2f68f6c551"
+        }
+    ],
+    "npm": [
+        {
+            "name": "@peanut-admin/fixture-delivery-record",
+            "version": "1.0.0",
+            "integrity": "sha256-ZVeub731LcGgH1dsSLVy0OfmRUD5NjUgSVT9hHRFqHs="
+        }
+    ],
+    "frontend": [
+        {
+            "client_key": "admin-web",
+            "package": "@peanut-admin/fixture-delivery-record",
+            "version": "1.0.0",
+            "entry": "web/src/modules/fixture-delivery-record/contribution.ts",
+            "sha256": "ddb64b2c302b8e9dd6c31b6c0df61c311dcca21b1f6c4a29128e761ea5901a3c"
+        }
+    ],
+    "modules": [
+        {
+            "key": "fixture.delivery-record",
+            "root": "server/app/Modules/Fixture/DeliveryRecord"
+        }
+    ]
 }
