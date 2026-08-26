@@ -6,6 +6,7 @@ use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
 use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\XlsxExportService;
+use app\common\service\storage\StorageService;
 use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
 use app\common\service\async\TaskImportExportRuntimeFactory;
 use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
@@ -74,6 +75,7 @@ $suffix = strtolower(substr(bin2hex(random_bytes(8)), 0, 16));
 $taskName = 'PB04任务' . $suffix;
 $taskId = 0;
 $exportPath = '';
+$exportFileKey = '';
 
 try {
     expectTaskHost(CrontabLogic::add($context, [
@@ -116,12 +118,15 @@ try {
     expectTaskHost((int)$task->status === CrontabEnum::START, 'retried task must succeed');
     expectTaskHost((string)$task->error === '', 'retried task must finish without an error');
 
-    $uri = XlsxExportService::create(
+    $file = XlsxExportService::createForTenant(
+        $context,
         'PB04-task-export-' . $suffix,
         ['任务', '次数', '公式文本'],
         [['crontab:demo', 2, '=1+1']]
     );
-    $exportPath = $serverRoot . '/public/' . $uri;
+    $exportFileKey = (string)($file['file_key'] ?? '');
+    $exportPath = $serverRoot . '/private/storage/' . (string)($file['object_key'] ?? '');
+    expectTaskHost($exportFileKey !== '', 'XLSX export file key is missing');
     expectTaskHost(is_file($exportPath), 'XLSX export file was not created');
     $zip = new ZipArchive();
     expectTaskHost($zip->open($exportPath) === true, 'XLSX export is not a readable ZIP');
@@ -142,8 +147,12 @@ try {
     foreach ($exportCallers as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
         expectTaskHost(
-            str_contains($source, 'XlsxExportService::create'),
+            str_contains($source, 'XlsxExportService::createForTenant'),
             'export caller must use the application XLSX owner: ' . $relativePath
+        );
+        expectTaskHost(
+            preg_match('/XlsxExportService::create\s*\(/', $source) !== 1,
+            'export caller retained the instance-wide XLSX API: ' . $relativePath
         );
         expectTaskHost(!str_contains($source, 'new ZipArchive'), 'duplicate XLSX writer: ' . $relativePath);
         expectTaskHost(!str_contains($source, 'function createXlsx'), 'duplicate XLSX helper: ' . $relativePath);
@@ -162,8 +171,8 @@ try {
         expectTaskHost(!str_contains($source, 'PeanutAdmin\\ImportExport'), 'core ImportExport deep import: ' . $relativePath);
     }
 } finally {
-    if ($exportPath !== '' && is_file($exportPath)) {
-        @unlink($exportPath);
+    if ($exportFileKey !== '') {
+        StorageService::fromDefaultConnection()->delete($tenantId, $exportFileKey);
     }
     if ($taskId > 0) {
         Db::name('crontab')->where('id', $taskId)->delete();
