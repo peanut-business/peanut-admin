@@ -100,7 +100,8 @@ final class PluginRuntimeGovernanceService
             }
 
             $moduleKeys = $this->confirmedModuleKeys($confirmPlan);
-            $ownedTables = $this->confirmedOwnedTables($confirmPlan);
+            $ownedTablesByModule = $this->confirmedOwnedTablesByModule($confirmPlan);
+            $ownedTables = $this->confirmedOwnedTables($ownedTablesByModule);
             $this->markMaintenance($packageKey, $moduleKeys, $marker);
             $this->inject('after-marker');
 
@@ -114,7 +115,7 @@ final class PluginRuntimeGovernanceService
             $this->inject('after-catalog');
 
             if ($purge) {
-                $this->dropOwnedTables($ownedTables);
+                $this->dropOwnedTables($ownedTables, $ownedTablesByModule);
                 $this->inject('after-first-drop');
                 $this->assertOwnedTablesAbsent($ownedTables);
                 $this->pdo->beginTransaction();
@@ -373,16 +374,23 @@ SQL);
         return $ordered;
     }
 
-    /** @param list<string> $tables */
-    private function dropOwnedTables(array $tables): void
+    /** @param list<string> $tables @param array<string,list<string>> $tablesByModule */
+    private function dropOwnedTables(array $tables, array $tablesByModule): void
     {
         $order = $this->dropOrder($tables);
         if ($order === null) throw new PluginLifecycleException('MODULE_OWNED_TABLE_FK_CYCLE', 'Owned table foreign keys contain a cycle.');
         $first = true;
+        $firstModule = count($tablesByModule) > 1 ? array_key_first($tablesByModule) : null;
+        $firstModuleTables = is_string($firstModule) ? array_fill_keys($tablesByModule[$firstModule], true) : [];
         foreach ($order as $table) {
             if (preg_match('/^pa_[a-z0-9_]+$/D', $table) !== 1) throw new PluginLifecycleException('MODULE_TABLE_OWNERSHIP_INVALID', 'Owned table name is invalid.');
             $this->pdo->exec("DROP TABLE IF EXISTS `{$table}`");
             if ($first) { $this->inject('after-first-drop-statement'); $first = false; }
+            unset($firstModuleTables[$table]);
+            if ($firstModuleTables === [] && $firstModule !== null) {
+                $this->inject('after-first-module-drop');
+                $firstModule = null;
+            }
         }
     }
 
@@ -591,19 +599,39 @@ SQL);
         return $result;
     }
 
-    /** @param array<string,mixed> $plan @return list<string> */
-    private function confirmedOwnedTables(array $plan): array
+    /** @param array<string,mixed> $plan @return array<string,list<string>> */
+    private function confirmedOwnedTablesByModule(array $plan): array
+    {
+        $modules = [];
+        $seen = [];
+        foreach ((array)($plan['affected_modules'] ?? []) as $module) {
+            $moduleKey = is_array($module) ? ($module['module_key'] ?? null) : null;
+            if (!is_string($moduleKey) || isset($modules[$moduleKey])) {
+                throw new PluginLifecycleException('MODULE_UNINSTALL_PLAN_CHANGED', 'Confirmed owned table scope is invalid.');
+            }
+            $tables = [];
+            foreach ((array)($module['owned_tables'] ?? []) as $table) {
+                if (!is_string($table) || preg_match('/^pa_[a-z0-9_]+$/D', $table) !== 1
+                    || isset($tables[$table]) || isset($seen[$table])) {
+                    throw new PluginLifecycleException('MODULE_UNINSTALL_PLAN_CHANGED', 'Confirmed owned table scope is invalid.');
+                }
+                $tables[$table] = true;
+                $seen[$table] = true;
+            }
+            $modules[$moduleKey] = array_keys($tables);
+            sort($modules[$moduleKey], SORT_STRING);
+        }
+        ksort($modules, SORT_STRING);
+        return $modules;
+    }
+
+    /** @param array<string,list<string>> $tablesByModule @return list<string> */
+    private function confirmedOwnedTables(array $tablesByModule): array
     {
         $tables = [];
-        foreach ((array)($plan['affected_modules'] ?? []) as $module) {
-            foreach ((array)($module['owned_tables'] ?? []) as $table) {
-                if (!is_string($table) || preg_match('/^pa_[a-z0-9_]+$/D', $table) !== 1 || isset($tables[$table])) throw new PluginLifecycleException('MODULE_UNINSTALL_PLAN_CHANGED', 'Confirmed owned table scope is invalid.');
-                $tables[$table] = true;
-            }
-        }
-        $result = array_keys($tables);
-        sort($result, SORT_STRING);
-        return $result;
+        foreach ($tablesByModule as $moduleTables) $tables = [...$tables, ...$moduleTables];
+        sort($tables, SORT_STRING);
+        return $tables;
     }
 
     /** @return array<string,mixed> */
