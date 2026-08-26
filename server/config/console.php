@@ -15,6 +15,7 @@ return [
         'bundle:pack'      => \app\command\BundlePack::class,
         'module:install-package' => \app\command\ModuleInstallPackage::class,
         'module:uninstall-package' => \app\command\ModuleUninstallPackage::class,
+        'module:sync' => \app\command\ModuleSync::class,
         'plugin:install'   => \app\command\PluginInstall::class,
         'plugin:reconcile' => \app\command\PluginReconcile::class,
         'plugin:make'      => \app\command\PluginMake::class,

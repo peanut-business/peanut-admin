@@ -15,6 +15,7 @@ use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Module\ModuleBoundaryChecker;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\ModuleHostLayout;
+use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Module\ModuleProvider;
 use PeanutAdmin\Kernel\Module\ModuleRegistryCompiler;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
@@ -80,13 +81,10 @@ final readonly class PluginModuleRegistryFactory
     private function compile(array $roots, array $deploymentConfig): DeployedTenantModuleRegistry
     {
         $kernelVersion = trim((string)($deploymentConfig['kernel_version'] ?? ''));
-        $frontend = is_array($deploymentConfig['frontend_components'] ?? null)
-            ? array_values($deploymentConfig['frontend_components'])
-            : [];
         $clients = is_array($deploymentConfig['registered_client_keys'] ?? null)
             ? array_values($deploymentConfig['registered_client_keys'])
             : [];
-        if ($kernelVersion === '' || $clients === [] || !array_is_list($frontend) || !array_is_list($clients)) {
+        if ($kernelVersion === '' || $clients === [] || !array_is_list($clients)) {
             throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
         }
         $kernelRoot = dirname((new \ReflectionClass(ModuleProvider::class))->getFileName(), 3);
@@ -96,7 +94,7 @@ final readonly class PluginModuleRegistryFactory
             new StrictVersionConstraintMatcher(),
             new ReflectionContractInspector(),
             $kernelVersion,
-            $frontend,
+            $this->frontendComponents($roots),
             $layout,
             [
                 ...KernelSchema::tableNames(),
@@ -110,5 +108,24 @@ final readonly class PluginModuleRegistryFactory
         $registry = DeployedTenantModuleRegistry::compile($this->pdo, $roots, $compiler);
         (new ModuleBoundaryChecker($registry->compiled(), $layout, ['pa_']))->check();
         return $registry;
+    }
+
+    /** @param non-empty-list<string> $roots @return list<string> */
+    private function frontendComponents(array $roots): array
+    {
+        $components = [];
+        $loader = new ManifestLoader();
+        foreach ($roots as $root) {
+            $manifest = $loader->load($root);
+            $catalog = is_array($manifest->data['catalog'] ?? null) ? $manifest->data['catalog'] : [];
+            foreach ((array)($catalog['menus'] ?? []) as $menu) {
+                if (!is_array($menu) || ($menu['type'] ?? null) !== 'page') continue;
+                $component = $menu['component_key'] ?? null;
+                if (is_string($component) && $component !== '') $components[] = $component;
+            }
+        }
+        $components = array_values(array_unique($components));
+        sort($components, SORT_STRING);
+        return $components;
     }
 }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2ae2d291cd417c30266f4a473f5e2dee",
+    "content-hash": "ac017a382c089a3dcb2cbf240bfb8c45",
     "packages": [
         {
             "name": "aliyuncs/oss-sdk-php",
@@ -1478,16 +1478,16 @@
         },
         {
             "name": "peanut-admin/core",
-            "version": "0.1.0-alpha.7",
+            "version": "0.1.0-alpha.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
-                "reference": "7a813acf29923fbc5dbf2bac186ba5f65324bafa"
+                "reference": "62099365850b60d97466a8c2e09ae7c538f53959"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/7a813acf29923fbc5dbf2bac186ba5f65324bafa",
-                "reference": "7a813acf29923fbc5dbf2bac186ba5f65324bafa",
+                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/62099365850b60d97466a8c2e09ae7c538f53959",
+                "reference": "62099365850b60d97466a8c2e09ae7c538f53959",
                 "shasum": ""
             },
             "require": {
@@ -1539,10 +1539,10 @@
             ],
             "description": "Peanut Admin reusable administration runtime packages",
             "support": {
-                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v0.1.0-alpha.7",
+                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v0.1.0-alpha.8",
                 "issues": "https://github.com/peanut-opensource/peanut-admin-core-php/issues"
             },
-            "time": "2026-08-21T17:50:24+00:00"
+            "time": "2026-08-26T03:48:19+00:00"
         },
         {
             "name": "psr/container",

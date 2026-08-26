@@ -92,7 +92,8 @@ final readonly class ModuleCatalogMutationRepository
         $permissions = $this->ids('pa_permission', $moduleKeys);
         $resources = $this->ids('pa_protected_resource', $moduleKeys);
         $operations = $this->operationIds($resources);
-        $this->pdo->beginTransaction();
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) $this->pdo->beginTransaction();
         try {
             $this->updateByIds('pa_permission', $permissions, "status='retired',retired_at=?,updated_at=?", [$now, $now]);
             $this->updateByIds('pa_protected_resource', $resources, "status='retired',retired_at=?,updated_at=?", [$now, $now]);
@@ -104,9 +105,9 @@ final readonly class ModuleCatalogMutationRepository
             foreach (['pa_resource_operation_target_type', 'pa_resource_operation_condition'] as $table) {
                 $this->updateByIds($table, $this->operationRelationIds($table, $operations), "status='retired'", []);
             }
-            $this->pdo->commit();
+            if ($ownsTransaction) $this->pdo->commit();
         } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $exception;
@@ -122,7 +123,8 @@ final readonly class ModuleCatalogMutationRepository
         $conditions = $this->ids('pa_data_condition_definition', $moduleKeys);
         $operations = $this->operationIds($resources);
         $settings = $this->ids('pa_setting_definition', $moduleKeys);
-        $this->pdo->beginTransaction();
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) $this->pdo->beginTransaction();
         try {
             foreach (['pa_setting_target_value', 'pa_setting_tenant_value', 'pa_setting_deployment_value'] as $table) {
                 $this->deleteByForeignIds($table, 'definition_id', $settings);
@@ -139,9 +141,9 @@ final readonly class ModuleCatalogMutationRepository
             $this->deleteByIds('pa_data_condition_definition', $conditions);
             $this->deleteByIds('pa_setting_definition', $settings);
             $this->deleteByIds('pa_permission', $permissions);
-            $this->pdo->commit();
+            if ($ownsTransaction) $this->pdo->commit();
         } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $exception;

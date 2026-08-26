@@ -10,6 +10,7 @@ use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\module\VerifiedTenantModuleRepository;
+use app\platform\service\plugin\PlatformModuleRuntimeService;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -44,6 +45,7 @@ final class PlatformRuntimeFactory
     private static ?TenantGovernanceService $tenantGovernance = null;
     private static ?PlatformTenantModuleService $tenantModules = null;
     private static ?PlatformAccessAdminService $platformAccess = null;
+    private static ?PlatformModuleRuntimeService $moduleRuntime = null;
 
     public static function sessions(): PlatformOperatorSessionService
     {
@@ -186,6 +188,19 @@ final class PlatformRuntimeFactory
             $registry,
             $validator
         );
+    }
+
+    public static function moduleRuntime(): PlatformModuleRuntimeService
+    {
+        if (self::$moduleRuntime !== null) return self::$moduleRuntime;
+        $config = Config::get('modules', []);
+        if (!is_array($config)) throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
+        $trusted = [];
+        foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
+            $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
+            if (is_string($keyId) && is_string($decoded) && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) $trusted[$keyId] = $decoded;
+        }
+        return self::$moduleRuntime = new PlatformModuleRuntimeService(self::pdo(), dirname(__DIR__, 3), $config, $trusted);
     }
 
     private static function pdo(): PDO
