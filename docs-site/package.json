@@ -18,6 +18,7 @@
     "dev": "../scripts/local-client-dev docs",
     "prebuild": "pnpm sync:legal",
     "build": "vitepress build .",
+    "check": "../scripts/docs-governance check && vitepress build .",
     "preview": "vitepress preview ."
   },
   "devDependencies": {

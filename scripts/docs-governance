@@ -1,0 +1,362 @@
+#!/usr/bin/env python3
+"""Check and project Peanut Admin documentation governance without dependencies."""
+
+from __future__ import annotations
+
+import argparse
+import fnmatch
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+
+ROOT = Path(__file__).resolve().parent.parent
+REGISTRY_PATH = ROOT / "docs/document-registry.json"
+IMPACT_PATH = ROOT / "docs/document-impact-map.json"
+GENERATED_NOTICE = "<!-- GENERATED: source=docs/document-registry.json; command=./scripts/docs-governance generate -->"
+
+
+def load_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"ERROR: cannot read {path.relative_to(ROOT)}: {exc}") from exc
+
+
+def tracked_markdown() -> list[str]:
+    result = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "docs", "docs-site"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return sorted(path for path in result.stdout.splitlines() if path.endswith(".md"))
+
+
+def render_catalog(registry: dict) -> str:
+    lines = [
+        GENERATED_NOTICE,
+        "# Document catalog",
+        "",
+        "This catalog is a view of `docs/document-registry.json`; edit the registry and regenerate it.",
+        "",
+        "## Individually governed documents",
+        "",
+        "| Stable ID | Path | Status | Type | Owner |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for doc in sorted(registry["documents"], key=lambda item: item["id"]):
+        lines.append(
+            f"| `{doc['id']}` | `{doc['path']}` | `{doc['status']}` | "
+            f"`{doc['content_type']}` | `{doc['owner']}` |"
+        )
+    lines.extend([
+        "",
+        "## Registered collections",
+        "",
+        "Collections classify homogeneous legacy material. A substantive edit promotes a file to an individual entry.",
+        "",
+        "| Stable ID | Includes | Status | Type | Visibility |",
+        "| --- | --- | --- | --- | --- |",
+    ])
+    for collection in sorted(registry["collections"], key=lambda item: item["id"]):
+        includes = "<br>".join(f"`{pattern}`" for pattern in collection["include"])
+        lines.append(
+            f"| `{collection['id']}` | {includes} | `{collection['status']}` | "
+            f"`{collection['content_type']}` | `{collection['visibility']}` |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_public_source_map(registry: dict) -> str:
+    rows = []
+    for doc in sorted(registry["documents"], key=lambda item: item["id"]):
+        if "docs-site" not in doc["scope"]:
+            continue
+        sources = "<br>".join(f"`{source}`" for source in doc["canonical_sources"])
+        rows.append(f"| `{doc['id']}` | `{doc['path']}` | {sources} | `{doc['validation']}` |")
+    return "\n".join([
+        GENERATED_NOTICE,
+        "# Documentation source map",
+        "",
+        "This public-safe index shows where developer pages get their facts. It intentionally excludes internal resource addresses, credentials, candidate evidence and the internal capability ledger.",
+        "",
+        "| Document ID | Public page | Upstream | Validation |",
+        "| --- | --- | --- | --- |",
+        *rows,
+        "",
+        "For maintainer-only facts, use the repository technical documentation and its authoritative source map.",
+        "",
+    ])
+
+
+def generated_outputs(registry: dict) -> dict[Path, str]:
+    return {
+        ROOT / "docs/reference/document-catalog.generated.md": render_catalog(registry),
+        ROOT / "docs-site/reference/source-map.generated.md": render_public_source_map(registry),
+    }
+
+
+def generate(check_only: bool) -> list[str]:
+    registry = load_json(REGISTRY_PATH)
+    errors: list[str] = []
+    for path, expected in generated_outputs(registry).items():
+        actual = path.read_text(encoding="utf-8") if path.exists() else None
+        if actual == expected:
+            continue
+        if check_only:
+            errors.append(f"generated content drift: {path.relative_to(ROOT)}")
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(expected, encoding="utf-8")
+            print(f"generated {path.relative_to(ROOT)}")
+    return errors
+
+
+def resolve_markdown_target(source: Path, raw_target: str) -> bool:
+    target = raw_target.split("#", 1)[0].split("?", 1)[0]
+    if not target or target.startswith(("http://", "https://", "mailto:", "tel:", "repo://")):
+        return True
+    if target.startswith("/"):
+        relative = target.lstrip("/")
+        candidate = ROOT / "docs-site" / relative
+    else:
+        candidate = source.parent / target
+    candidates = [candidate]
+    if not str(candidate).endswith(".md"):
+        candidates.append(Path(f"{candidate}.md"))
+    if candidate.suffix == "":
+        candidates.append(candidate / "index.md")
+    if target.startswith("/legal/"):
+        generated_legal_sources = {
+            "LICENSE.txt": "LICENSE",
+            "NOTICE.txt": "NOTICE",
+            "THIRD_PARTY_NOTICES.txt": "THIRD_PARTY_NOTICES.md",
+            "RELEASE_SBOM.spdx.json": "RELEASE_SBOM.spdx.json",
+            "CHANGELOG.txt": "CHANGELOG.md",
+            "RELEASE_METADATA.json": "RELEASE_METADATA.json",
+        }
+        source = generated_legal_sources.get(Path(target).name)
+        if source:
+            candidates.append(ROOT / source)
+    return any(path.exists() for path in candidates)
+
+
+def markdown_links(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    return [match.group(1).strip() for match in re.finditer(r"(?<!!)\[[^\]]+\]\(([^)]+)\)", text)]
+
+
+def validate_registry(registry: dict) -> list[str]:
+    errors: list[str] = []
+    required = {
+        "id", "path", "title", "audience", "content_type", "authority",
+        "canonical_sources", "owner", "status", "scope", "related",
+        "site_projections", "replaced_by", "validation",
+    }
+    allowed = registry.get("enums", {})
+    documents = registry.get("documents", [])
+    collections = registry.get("collections", [])
+    ids: set[str] = set()
+    paths: set[str] = set()
+    canonical_keys: set[str] = set()
+    by_id: dict[str, dict] = {}
+    for doc in documents:
+        missing = required - doc.keys()
+        if missing:
+            errors.append(f"{doc.get('path', '<unknown>')}: missing fields {sorted(missing)}")
+            continue
+        if doc["id"] in ids:
+            errors.append(f"duplicate document id: {doc['id']}")
+        ids.add(doc["id"])
+        by_id[doc["id"]] = doc
+        if doc["path"] in paths:
+            errors.append(f"duplicate document path: {doc['path']}")
+        paths.add(doc["path"])
+        key = doc.get("canonical_key")
+        if key and key in canonical_keys:
+            errors.append(f"duplicate canonical source key: {key}")
+        if key:
+            canonical_keys.add(key)
+        file_path = ROOT / doc["path"]
+        if not file_path.is_file():
+            errors.append(f"registered document missing: {doc['path']}")
+        for enum_name, field in (("audience", "audience"), ("scope", "scope")):
+            invalid = set(doc[field]) - set(allowed.get(enum_name, []))
+            if invalid:
+                errors.append(f"{doc['id']}: invalid {field}: {sorted(invalid)}")
+        for enum_name, field in (("content_type", "content_type"), ("status", "status")):
+            if doc[field] not in allowed.get(enum_name, []):
+                errors.append(f"{doc['id']}: invalid {field}: {doc[field]}")
+        for source in doc["canonical_sources"]:
+            if source.startswith("repo://"):
+                continue
+            if "/" in source and not (ROOT / source).exists():
+                errors.append(f"{doc['id']}: authoritative source missing: {source}")
+        for projection_id in doc["site_projections"]:
+            if projection_id not in {item.get("id") for item in documents}:
+                errors.append(f"{doc['id']}: projection id missing: {projection_id}")
+        if doc["replaced_by"] and doc["replaced_by"] not in {item.get("id") for item in documents}:
+            errors.append(f"{doc['id']}: replacement id missing: {doc['replaced_by']}")
+
+    collection_ids: set[str] = set()
+    for collection in collections:
+        collection_id = collection.get("id")
+        if not collection_id or collection_id in ids or collection_id in collection_ids:
+            errors.append(f"duplicate or missing collection id: {collection_id}")
+        collection_ids.add(collection_id)
+        if not collection.get("include"):
+            errors.append(f"{collection_id}: collection has no include patterns")
+
+    for path in tracked_markdown():
+        if path in paths:
+            continue
+        matches = [item["id"] for item in collections if any(fnmatch.fnmatch(path, pattern) for pattern in item["include"])]
+        if not matches:
+            errors.append(f"orphan markdown is not registered: {path}")
+
+    for collection in collections:
+        matched = [path for path in tracked_markdown() if any(fnmatch.fnmatch(path, pattern) for pattern in collection["include"])]
+        if not matched:
+            errors.append(f"empty document collection: {collection['id']}")
+
+    current_paths = {
+        doc["path"] for doc in documents
+        if doc["status"] in {"authoritative", "current", "generated"}
+    }
+    current_paths.update(path for path in tracked_markdown() if path.startswith("docs-site/"))
+    for relative in sorted(current_paths):
+        path = ROOT / relative
+        if not path.is_file():
+            continue
+        for target in markdown_links(path):
+            if not resolve_markdown_target(path, target):
+                errors.append(f"broken link: {relative} -> {target}")
+
+    config = (ROOT / "docs-site/.vitepress/config.ts").read_text(encoding="utf-8")
+    for target in re.findall(r"link:\s*['\"](/[^'\"]*)['\"]", config):
+        if not resolve_markdown_target(ROOT / "docs-site/index.md", target):
+            errors.append(f"invalid docs-site navigation target: {target}")
+
+    forbidden = {
+        "docs/product-status/": "internal product-status path",
+        "resources/p0e-runtime-qualification.json": "internal qualification registry",
+        "credential reference": "credential reference detail",
+        "/Users/": "personal absolute path",
+        "192.168.": "private network address",
+        "output/playwright": "internal browser evidence",
+    }
+    for relative in tracked_markdown():
+        if not relative.startswith("docs-site/"):
+            continue
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        for needle, label in forbidden.items():
+            if needle.lower() in text.lower():
+                errors.append(f"forbidden public content ({label}): {relative}")
+    return errors
+
+
+def match_rules(path: str, impact: dict) -> list[dict]:
+    return [rule for rule in impact["rules"] if any(fnmatch.fnmatch(path, pattern) for pattern in rule["paths"])]
+
+
+def impact_for_paths(paths: list[str], impact: dict) -> dict:
+    matched: dict[str, dict] = {}
+    for path in paths:
+        for rule in match_rules(path, impact):
+            matched[rule["id"]] = rule
+    classifications = sorted({item for rule in matched.values() for item in rule["classifications"]})
+    if any(item != "none" for item in classifications):
+        classifications = [item for item in classifications if item != "none"]
+    return {
+        "paths": paths,
+        "classifications": classifications or ["none"],
+        "rules": sorted(matched),
+        "technical_docs": sorted({item for rule in matched.values() for item in rule["technical_docs"]}),
+        "site_docs": sorted({item for rule in matched.values() for item in rule["site_docs"]}),
+        "generated": sorted({item for rule in matched.values() for item in rule["generated"]}),
+    }
+
+
+def changed_paths(base: str) -> list[str]:
+    result = subprocess.run(
+        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [path for path in result.stdout.splitlines() if path]
+
+
+def run_scenarios(impact: dict) -> list[str]:
+    errors: list[str] = []
+    for scenario in impact["scenarios"]:
+        result = impact_for_paths([scenario["path"]], impact)
+        classes = set(result["classifications"])
+        missing = set(scenario["must_include"]) - classes
+        forbidden = set(scenario["must_not_include"]) & classes
+        if missing or forbidden:
+            errors.append(
+                f"scenario {scenario['id']} failed: classes={sorted(classes)}, "
+                f"missing={sorted(missing)}, forbidden={sorted(forbidden)}"
+            )
+    return errors
+
+
+def report(errors: list[str], success: str) -> int:
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    print(success)
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers.add_parser("check")
+    generate_parser = subparsers.add_parser("generate")
+    generate_parser.add_argument("--check", action="store_true", dest="check_only")
+    impact_parser = subparsers.add_parser("impact")
+    impact_parser.add_argument("--base")
+    impact_parser.add_argument("--paths", nargs="*")
+    impact_parser.add_argument("--classification", choices=["none", "technical", "developer-site", "generated", "architecture-decision"])
+    impact_parser.add_argument("--reason")
+    subparsers.add_parser("scenarios")
+    args = parser.parse_args()
+
+    if args.command == "generate":
+        return report(generate(args.check_only), "Generated documentation is current." if args.check_only else "Documentation projections generated.")
+    impact = load_json(IMPACT_PATH)
+    if args.command == "scenarios":
+        return report(run_scenarios(impact), f"Documentation impact scenarios passed: {len(impact['scenarios'])}/8.")
+    if args.command == "impact":
+        paths = args.paths or (changed_paths(args.base) if args.base else [])
+        if not paths:
+            print("ERROR: use --paths or --base", file=sys.stderr)
+            return 2
+        result = impact_for_paths(paths, impact)
+        if args.classification:
+            result["declared_classification"] = args.classification
+            result["reason"] = args.reason
+            if args.classification == "none" and not args.reason:
+                print("ERROR: classification none requires --reason", file=sys.stderr)
+                return 2
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    registry = load_json(REGISTRY_PATH)
+    errors = validate_registry(registry)
+    errors.extend(generate(True))
+    errors.extend(run_scenarios(impact))
+    return report(errors, "Documentation governance check passed.")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,10 +1,10 @@
 ---
-title: 产品状态
-description: Peanut Admin 当前已验证、推进中、计划、受阻与暂缓的产品能力状态。
-aside: false
-outline: false
-sidebar: false
-pageClass: product-status-page
+title: 产品状态边界
+description: 说明公开文档与内部交付状态的边界。
 ---
 
-<ProductStatus />
+# 产品状态边界
+
+内部能力账本、候选身份、资格证据和部署记录不在开发者文档站发布。公开读者请从[版本与发布](/releases)了解状态术语，并从 GitHub Releases 获取不可变源码身份。
+
+维护者从仓库技术文档入口查询内部事实，不在此页复制状态矩阵。
