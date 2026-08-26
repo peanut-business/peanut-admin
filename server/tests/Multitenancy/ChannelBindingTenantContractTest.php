@@ -17,8 +17,8 @@ $noticeController = $read('app/Modules/Official/Notification/Http/Controller/Not
 $noticeService = $read('app/common/service/notice/NoticeChannelService.php');
 $sender = $read('app/common/service/notice/ApplicationNoticeSmsSender.php');
 $verification = $read('app/common/service/notice/VerificationCodeService.php');
-$menuController = $read('app/adminapi/controller/setting/OfficialAccountMenuController.php');
-$menuLogic = $read('app/adminapi/logic/setting/OfficialAccountMenuLogic.php');
+$menuController = $read('app/Modules/Official/Oauth/Http/Controller/OfficialAccountMenuController.php');
+$menuLogic = $read('app/Modules/Official/Oauth/Service/OfficialAccountMenuLogic.php');
 
 foreach ([$noticeController, $menuController] as $controller) {
     expectChannelBindingTenant(

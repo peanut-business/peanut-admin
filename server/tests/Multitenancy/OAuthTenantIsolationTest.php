@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\common\model\oauth\OAuthIdentity;
+use app\Modules\Official\Oauth\Model\OAuthIdentity;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\oauth\OAuthTenantContext;

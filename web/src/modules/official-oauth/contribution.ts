@@ -7,8 +7,8 @@ const contribution: PluginFrontendContribution = {
     path: '/app-setting', name: 'officialOAuthRoot', component: DEFAULT_LAYOUT,
     meta: { requiresAuth: true, tenantModuleKey: 'official.oauth' },
     children: [{
-      path: 'channel', name: 'AppSettingChannel', component: () => import('@/views/app-setting/channel/index.vue'),
-      meta: { locale: 'menu.appSetting.channel', requiresAuth: true, tenantModuleKey: 'official.oauth', requiredPermissions: 'setting/web-page/config' },
+      path: 'channel', name: 'AppSettingChannel', component: () => import('@/modules/official-oauth/views/channel/index.vue'),
+      meta: { locale: 'menu.appSetting.channel', requiresAuth: true, tenantModuleKey: 'official.oauth', requiredPermissions: 'official.oauth.web-page.config' },
     }],
   }],
 };
