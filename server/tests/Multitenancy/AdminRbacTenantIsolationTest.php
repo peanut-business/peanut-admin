@@ -64,6 +64,11 @@ SQL);
     $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
     expectRbacTenant($schema !== '', 'canonical application schema is missing');
     $pdo->exec($schema);
+    $moduleMigration = (string)file_get_contents(
+        $serverRoot . '/app/Modules/Official/ImportExport/Database/Migrations/20260826-namespace-permission-keys.sql'
+    );
+    expectRbacTenant($moduleMigration !== '', 'Import/Export permission migration is missing');
+    $pdo->exec($moduleMigration);
 }
 
 $serverRoot = dirname(__DIR__, 2);
