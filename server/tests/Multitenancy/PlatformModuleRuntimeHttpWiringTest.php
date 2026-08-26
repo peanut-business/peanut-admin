@@ -15,6 +15,7 @@ use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/database/install.php';
+require_once dirname(__DIR__) . '/Support/IsolatedBackendEnvironment.php';
 
 function platformModuleHttpExpect(bool $condition, string $message): void
 {
@@ -114,60 +115,101 @@ platformModuleHttpExpect(
     'module:sync command contract or module.json-derived frontend catalog regressed',
 );
 
-$host = getenv('DB_HOST') ?: '';
-$port = getenv('DB_PORT') ?: '';
-$database = getenv('DB_NAME') ?: '';
-$user = getenv('DB_USER') ?: '';
-$password = getenv('DB_PASS') ?: '';
-platformModuleHttpExpect($host !== '' && $port !== '' && $database !== '' && $user !== '', 'registered database environment is required');
-$pdo = new PDO(
-    "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+$database = $argv[1] ?? '';
+platformModuleHttpExpect(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'registered isolated plugin-lifecycle database name is required',
+);
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
+$admin = new PDO(
+    "mysql:host={$host};port={$port};charset=utf8mb4",
     $user,
     $password,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false],
 );
-platformModuleHttpExpect((int)$pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()')->fetchColumn() === 0, 'Platform Module HTTP test database must start empty');
-$identity = initializeCoreIdentity($pdo, 'module-http-owner@example.test', 'ModuleHttpOwnerPassword2026', null);
-executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
-(new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
+$exists = $admin->prepare('SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name=?');
+$exists->execute([$database]);
+platformModuleHttpExpect((int)$exists->fetchColumn() === 0, 'isolated Platform Module HTTP database already exists');
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
 
-$catalogKeys = CorePermissionCatalog::PLATFORM;
-sort($catalogKeys, SORT_STRING);
-platformModuleHttpExpect(
-    array_values(array_intersect($catalogKeys, $permissionKeys)) === $permissionKeys,
-    'CorePermissionCatalog::PLATFORM is missing a Platform Module route key',
-);
-$placeholders = implode(',', array_fill(0, count($permissionKeys), '?'));
-$registered = $pdo->prepare("SELECT `key` FROM pa_permission WHERE module_key='platform' AND status='active' AND `key` IN ({$placeholders}) ORDER BY `key`");
-$registered->execute($permissionKeys);
-platformModuleHttpExpect($registered->fetchAll(PDO::FETCH_COLUMN) === $permissionKeys, 'Platform Module route keys did not synchronize as active platform permissions');
+$completed = false;
+$pdo = null;
+try {
+    IsolatedBackendEnvironment::activate([
+        'APP_ENV' => 'development',
+        'APP_DEBUG' => 'true',
+        'DEPLOYMENT_MODE' => 'standalone',
+        'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-p0e-mysql84-gate',
+        'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-p0e-mysql84-gate-host-direct',
+        'PEANUT_DATABASE_CONSUMER' => 'host',
+        'DB_HOST' => $host,
+        'DB_PORT' => $port,
+        'DB_NAME' => $database,
+        'DB_USER' => $user,
+        'DB_PASS' => $password,
+        'DB_PREFIX' => 'pa_',
+    ]);
+    $pdo = new PDO(
+        "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+        $user,
+        $password,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
+    );
+    platformModuleHttpExpect((int)$pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()')->fetchColumn() === 0, 'Platform Module HTTP test database must start empty');
+    $identity = initializeCoreIdentity($pdo, 'module-http-owner@example.test', 'ModuleHttpOwnerPassword2026', null);
+    executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
+    (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
 
-$now = '2026-08-26 00:00:00.000';
-$pdo->exec("INSERT INTO pa_account (display_name,status,created_at,updated_at) VALUES ('Module HTTP Scoped','active','{$now}','{$now}')");
-$scopedAccountId = (int)$pdo->lastInsertId();
-$pdo->exec("INSERT INTO pa_platform_operator (account_id,display_name,status,created_at,updated_at) VALUES ({$scopedAccountId},'Module HTTP Scoped','active','{$now}','{$now}')");
-$scopedOperatorId = (int)$pdo->lastInsertId();
-$scopedContext = platformModuleHttpContext($scopedOperatorId, $scopedAccountId, 'module-http-scoped');
-$repository = new PdoPlatformAuthorizationRepository($pdo);
-$evaluator = new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache());
-foreach ($permissionKeys as $permission) platformModuleHttpDenied($evaluator, $scopedContext, $permission);
+    $catalogKeys = CorePermissionCatalog::PLATFORM;
+    sort($catalogKeys, SORT_STRING);
+    platformModuleHttpExpect(
+        array_values(array_intersect($catalogKeys, $permissionKeys)) === $permissionKeys,
+        'CorePermissionCatalog::PLATFORM is missing a Platform Module route key',
+    );
+    $placeholders = implode(',', array_fill(0, count($permissionKeys), '?'));
+    $registered = $pdo->prepare("SELECT `key` FROM pa_permission WHERE module_key='platform' AND status='active' AND `key` IN ({$placeholders}) ORDER BY `key`");
+    $registered->execute($permissionKeys);
+    platformModuleHttpExpect($registered->fetchAll(PDO::FETCH_COLUMN) === $permissionKeys, 'Platform Module route keys did not synchronize as active platform permissions');
 
-$pdo->exec("INSERT INTO pa_platform_role (`key`,name,is_builtin,status,created_at,updated_at) VALUES ('platform.module-runtime-operator','Module Runtime Operator',0,'active','{$now}','{$now}')");
-$roleId = (int)$pdo->lastInsertId();
-$pdo->exec("INSERT INTO pa_platform_operator_role (platform_operator_id,platform_role_id,assigned_at) VALUES ({$scopedOperatorId},{$roleId},'{$now}')");
-$permissionIds = $pdo->prepare("SELECT id FROM pa_permission WHERE `key` IN ({$placeholders}) ORDER BY `key`");
-$permissionIds->execute($permissionKeys);
-$bind = $pdo->prepare('INSERT INTO pa_platform_role_permission (platform_role_id,permission_id,granted_at) VALUES (?,?,?)');
-foreach ($permissionIds->fetchAll(PDO::FETCH_COLUMN) as $permissionId) $bind->execute([$roleId, (int)$permissionId, $now]);
-$evaluator = new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache());
-foreach ($permissionKeys as $permission) $evaluator->assertAllowed($scopedContext, $permission);
+    $now = '2026-08-26 00:00:00.000';
+    $pdo->exec("INSERT INTO pa_account (display_name,status,created_at,updated_at) VALUES ('Module HTTP Scoped','active','{$now}','{$now}')");
+    $scopedAccountId = (int)$pdo->lastInsertId();
+    $pdo->exec("INSERT INTO pa_platform_operator (account_id,display_name,status,created_at,updated_at) VALUES ({$scopedAccountId},'Module HTTP Scoped','active','{$now}','{$now}')");
+    $scopedOperatorId = (int)$pdo->lastInsertId();
+    $scopedContext = platformModuleHttpContext($scopedOperatorId, $scopedAccountId, 'module-http-scoped');
+    $repository = new PdoPlatformAuthorizationRepository($pdo);
+    $evaluator = new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache());
+    foreach ($permissionKeys as $permission) platformModuleHttpDenied($evaluator, $scopedContext, $permission);
 
-$ownerAccountId = (int)$pdo->query('SELECT account_id FROM pa_platform_operator WHERE id=' . (int)$identity['operator_id'])->fetchColumn();
-$ownerContext = platformModuleHttpContext((int)$identity['operator_id'], $ownerAccountId, 'module-http-owner');
-platformModuleHttpDenied(
-    new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache()),
-    $ownerContext,
-    'platform.module.unregistered-probe',
-);
+    $pdo->exec("INSERT INTO pa_platform_role (`key`,name,is_builtin,status,created_at,updated_at) VALUES ('platform.module-runtime-operator','Module Runtime Operator',0,'active','{$now}','{$now}')");
+    $roleId = (int)$pdo->lastInsertId();
+    $pdo->exec("INSERT INTO pa_platform_operator_role (platform_operator_id,platform_role_id,assigned_at) VALUES ({$scopedOperatorId},{$roleId},'{$now}')");
+    $permissionIds = $pdo->prepare("SELECT id FROM pa_permission WHERE `key` IN ({$placeholders}) ORDER BY `key`");
+    $permissionIds->execute($permissionKeys);
+    $bind = $pdo->prepare('INSERT INTO pa_platform_role_permission (platform_role_id,permission_id,granted_at) VALUES (?,?,?)');
+    foreach ($permissionIds->fetchAll(PDO::FETCH_COLUMN) as $permissionId) $bind->execute([$roleId, (int)$permissionId, $now]);
+    $evaluator = new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache());
+    foreach ($permissionKeys as $permission) $evaluator->assertAllowed($scopedContext, $permission);
 
-echo "PLATFORM-MODULE-RUNTIME-HTTP-D3-001 passed\n";
+    $ownerAccountId = (int)$pdo->query('SELECT account_id FROM pa_platform_operator WHERE id=' . (int)$identity['operator_id'])->fetchColumn();
+    $ownerContext = platformModuleHttpContext((int)$identity['operator_id'], $ownerAccountId, 'module-http-owner');
+    platformModuleHttpDenied(
+        new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache()),
+        $ownerContext,
+        'platform.module.unregistered-probe',
+    );
+
+    $completed = true;
+    echo "PLATFORM-MODULE-RUNTIME-HTTP-D3-001 passed database={$database}\n";
+} finally {
+    IsolatedBackendEnvironment::cleanup();
+    $pdo = null;
+    if ($completed) {
+        $admin->exec("DROP DATABASE `{$database}`");
+    } else {
+        fwrite(STDERR, "PLATFORM_MODULE_HTTP_TEST_DATABASE_RETAINED={$database}\n");
+    }
+}
