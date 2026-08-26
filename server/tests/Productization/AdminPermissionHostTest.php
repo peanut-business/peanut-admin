@@ -17,14 +17,14 @@ function expectPermission(bool $condition, string $message): void
 }
 
 $policy = new RegisteredAdminPermissionPolicy();
-$registered = ['article/lists', 'admin/edit'];
+$registered = ['official.article.list', 'admin/edit'];
 
-expectPermission($policy->canAccess(true, 'article/lists', $registered, []) === true, 'root must pass registered permission');
+expectPermission($policy->canAccess(true, 'official.article.list', $registered, []) === true, 'root must pass registered permission');
 expectPermission($policy->canAccess(true, 'health/read', $registered, []) === false, 'root must not bypass registration');
 expectPermission($policy->canAccess(false, 'health/read', $registered, []) === false, 'unregistered URI must fail');
-expectPermission($policy->canAccess(false, 'article/lists', $registered, []) === false, 'registered unowned URI must fail');
+expectPermission($policy->canAccess(false, 'official.article.list', $registered, []) === false, 'registered unowned URI must fail');
 expectPermission(
-    $policy->canAccess(false, '/ARTICLE/LISTS/', $registered, ['ARTICLE/LISTS']) === true,
+    $policy->canAccess(false, '/OFFICIAL.ARTICLE.LIST/', $registered, ['OFFICIAL.ARTICLE.LIST']) === true,
     'registered owned URI must normalize and pass'
 );
 expectPermission($policy->canAccess(false, 'admin/status', ['admin/edit'], ['admin/edit']) === false, 'URI aliases must not enlarge authorization');
