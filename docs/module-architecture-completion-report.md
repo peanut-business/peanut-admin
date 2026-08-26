@@ -2,12 +2,13 @@
 
 ## 执行摘要
 
-- 事实基线：`origin/dev@106855b0e1be24fa0529b9499b05095157b7d393`
+- 事实基线：`origin/dev@7c117404b9a37c54d39ca1ea771f9dd5406dff68` =
+  `origin/main@7c117404b9a37c54d39ca1ea771f9dd5406dff68`
 - 开始时间：`2026-08-26T08:45:30Z`（任务 0 最早功能提交）
-- 实现与验收合入时间：`2026-08-26T19:28:36Z`（PR #265 合入）
-- 实现 PR：6 个（PR #261—#266，不含本报告 PR）
-- 功能提交：20 个（不计 PR merge commit 和同步 `origin/dev` 的 merge commit）
-- 范围：架构方案 A—E、任务 0—5，以及本报告任务 6
+- 实现与验收合入时间：`2026-08-26T21:18:57Z`（审查后治理 PR #268 合入）
+- 实现 PR：7 个（PR #261—#266、#268，不含本报告 PR #267）
+- 功能提交：22 个（不计 PR merge commit、报告提交和同步 `dev/main` 的 merge commit）
+- 范围：架构方案 A—E、任务 0—5、完成报告任务 6，以及审查后生命周期治理收口
 
 本报告只把已经合入上述 `dev` 基线的代码和已经记录的本地验证写成完成事实。GitHub Actions
 不作为日常合并门禁，也不在此冒充通过证据。
@@ -27,6 +28,8 @@
 - [x] 任务 5：Fixture 真实 package lifecycle 对齐
   （[PR #266](https://github.com/peanut-business/peanut-admin/pull/266)，1 个功能提交）
 - [x] 任务 6：基于全部实现 PR 合入后的 `origin/dev` 生成本报告
+- [x] 审查后治理：Bundle 整体停用、核心 Module 生命周期保护、安装中断前滚，以及 Web/CLI
+  共用 Module 脚手架（[PR #268](https://github.com/peanut-business/peanut-admin/pull/268)，2 个功能提交）
 
 ## A—E 架构闭环
 
@@ -35,8 +38,8 @@
 | A | `official.article` pilot 与其余 7 个官方模块完成 manifest、后端、前端和权限归位 | 完成 |
 | B | install、sync、retire、purge 统一复用 `ModuleCatalogApplier` | 完成 |
 | C | Vite development 直接发现 `module.json`；`module:sync` 不依赖开发期 lock；无 `frontend_components` | 完成 |
-| D | 单模块/Bundle 自包含包、完整性校验、安装、可恢复 retire/purge、Platform 实例通道和生产 tree-shake | 完成 |
-| E | `/dev-tools/modules`、依赖/被依赖展示、安装、同步、停用、整体卸载确认和开发/发布文档 | 完成 |
+| D | 单模块/Bundle 自包含包、完整性校验、可恢复安装/retire/purge、Platform 实例通道和生产 tree-shake | 完成 |
+| E | `/dev-tools/modules`、统一脚手架创建、依赖/被依赖展示、安装、同步、整体停用/卸载确认和开发/发布文档 | 完成 |
 
 ## Module 清单
 
@@ -75,20 +78,25 @@
 - 单模块包的 package key 与唯一成员 module key 相同，安装、retire 和 purge 只处理该模块。
 - Bundle 的 package key 独立于成员 key；安装一次登记一条 package installation，并登记全部
   `pa_plugin_module` 成员归属。
+- 使用任一成员 module key 发起停用时，会解析并停用同一个 package 的全部成员，不保留部分 active
+  的 Bundle 状态。
 - 使用 package key 或任一成员 module key 发起卸载，都会解析到同一个 package，预览中的
   `affected_modules` 必须包含全部成员。确认计划不能删减成员，否则 digest/计划复核 fail-closed。
 - 默认 retire 会移出 live 源码路径、软退役全部成员 catalog，同时保留 owned tables、业务数据、
   migration 账本和 RBAC 绑定。
 - purge 才会物理清除全部成员的 owned tables、migration 账本、catalog 和预览确认的 RBAC 绑定；
   package/module 归属历史仍作为审计证据保留。
-- 任一成员有 enabled TenantModule、外部依赖、外部 FK 或 owned-table FK 环时，整个操作在破坏性
-  步骤前被拒绝，不允许只卸载其中一个成员。
+- 任一成员声明 `lifecycle.protected=true` 时，整个 package 禁止停用、retire 和 purge；当前
+  `official.file` 是受保护的实例基础能力。
+- enabled TenantModule 或仍处于 active 的显式 `module.json.dependencies` 业务依赖会阻止整个
+  package 停用/卸载；普通业务记录引用不属于业务依赖。purge 另外检查外部 FK 和 owned-table FK 环，
+  这些是物理删除的数据完整性停止线，不会阻止只保留数据的 retire。
 
 ## 实例工具能力
 
 `/dev-tools/modules` 当前提供：独立 Platform 登录、模块与 package 状态、依赖/被依赖关系、已开通
-Tenant 数量、`.tar` 安装、单模块或全量 catalog sync、停用、retire/purge preview、完整 Bundle
-范围确认、处理中反馈和常见错误的人类可读说明。
+Tenant 数量、与 CLI 共用生成器的 Module 创建、`.tar` 安装、单模块或全量 catalog sync、整体停用、
+retire/purge preview、完整 Bundle 范围确认、处理中反馈和常见错误的人类可读说明。
 
 运行时变更只允许 development + debug + Standalone，并经过 Platform 登录、精确
 `platform.module.*` 权限和 InstanceTool 环境门控。TenantModule 开通继续由既有 Platform Tenant
@@ -101,6 +109,9 @@ Tenant 数量、`.tar` 安装、单模块或全量 catalog sync、停用、retir
 - Web 生产构建 exit 0；56 个产物文件中，dev-tools 文件名命中 0，8 个实例工具符号哨兵均命中 0。
 - Bundle 合同验证：安装、重复安装 unchanged、完整成员预览、整体 retire、Purge 外部 FK 阻塞、
   跨成员中断、同计划 roll-forward 和重复 purge unchanged。
+- 审查后治理合同验证：Bundle 整体停用及重复调用 unchanged、受保护 Module fail-closed、只把显式
+  manifest dependency 视为业务依赖；安装失败后同一不可变包续跑，以及追加 repair migration 的
+  更高版本前滚。
 - Fixture 合同验证：真实 package install、重复安装、TenantModule 不被隐式开通、retire 数据保留、
   RBAC 删除预览、中断恢复和 purge 全清。
 - 权限回归使用仓库真实后端检查入口和 Vite SSR Web 合同入口；没有继续使用不存在的
@@ -108,18 +119,16 @@ Tenant 数量、`.tar` 安装、单模块或全量 catalog sync、停用、retir
 - 所有生命周期验收使用登记的隔离数据库，PR 证据记录测试数据库清理为 0；本报告没有重新运行
   已通过且输入未变化的数据库 Gate。
 
-## 已知边界与后续评估
+## 现行边界与已解决事项
 
-1. `official.article + official.file` Bundle 的 purge 被
-   `pa_customer_service_setting.fk_customer_service_setting_qr_file -> pa_file` 安全阻塞。默认 retire
-   可用；如果产品必须支持该 Bundle 物理清除，需要另行决定客服二维码引用的数据归属和显式清理策略。
-2. Bundle 的 install、retire 和 purge 是 package 级操作；`disable` 当前仍是 module 级操作。停用会
-   检查 active dependents 和 enabled TenantModule，并保留源码及数据。如果产品要求 Bundle 成员只能
-   整包停用，需要单独冻结该产品语义，当前实现没有擅自扩大。
-3. 页面提供请求级处理状态，但没有后端逐迁移/逐表事件流或百分比进度。这不影响正确性；只有在大型
-   Bundle 的操作时长需要可观测时，才需要增加独立的异步作业与进度合同。
-4. Bundle 正常安装和重复安装已经验证；“第二个成员 migration 执行失败”的故障恢复没有专门的
-   Bundle fault-injection 合同。当前实现会 fail-closed 并保留 migration checksum/失败状态，不会把
-   package 标为 active；若未来需要无人值守自动修复，应先设计安装侧恢复协议，不能复用 purge 语义臆断。
+1. `official.file` 已声明为受保护的实例基础能力；因此包含它的 package/Bundle 不允许停用、retire 或
+   purge。客服二维码对 `pa_file` 的引用仍由 purge 外键检查保护，但它只是数据完整性关系，不会被误判为
+   `module.json.dependencies` 业务依赖。
+2. Bundle 的 install、disable、retire 和 purge 均已收敛为 package 级操作；不存在只停用或只卸载一个
+   成员后留下残缺 Bundle 的受支持路径。
+3. 安装中断已采用 durable 状态前滚：同一不可变包可以续跑幂等步骤；DDL 结果不确定时不猜测重放，必须
+   通过更高不可变版本追加带前驱声明的 repair migration 后继续，旧失败账本保留为证据。
+4. 页面仍只提供请求级处理状态，没有后端逐迁移/逐表事件流或百分比进度。这是已接受的体验边界，不影响
+   生命周期正确性；只有大型 Bundle 出现实际可观测性需求时才评估异步作业与进度事件合同。
 
-除以上明确边界外，本轮计划内 A—E 与任务 0—5 已完成并合入 `dev`。
+本轮计划内 A—E、任务 0—6 和审查后治理均已完成，并已拉平到 `dev/main`。
