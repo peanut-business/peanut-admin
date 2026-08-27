@@ -9,10 +9,10 @@ use app\Modules\Official\ImportExport\Infrastructure\Configuration\Configuration
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferAdapter;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferValue;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\CoreSettingsConfigurationAdapter;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\ExternalBindingConfigurationAdapter;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\SecretReferenceCodec;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\TenantModuleConfigurationAdapter;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\TenantSettingsConfigurationAdapter;
+use app\common\service\configuration_transfer\ExternalBindingConfigurationAdapter;
+use app\common\service\configuration_transfer\TenantModuleConfigurationAdapter;
+use app\common\service\configuration_transfer\TenantSettingsConfigurationAdapter;
 use app\common\service\audit\AuditContractHost;
 use PeanutAdmin\Kernel\Audit\AuditRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
