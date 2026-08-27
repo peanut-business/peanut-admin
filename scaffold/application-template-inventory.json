@@ -10659,6 +10659,20 @@
             "source_sha256": "45393acde6f31f215db39e4960237ccd71a8b818fb610c12a84528f585fc9851"
         },
         {
+            "path": "server/app/common/service/installation/InstallationPreflightHost.php",
+            "target": "server/app/common/service/installation/InstallationPreflightHost.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "5c20827e5433302ed71243345297ba267326aa011e60d2a0a3c839e7776319dc"
+        },
+        {
             "path": "server/app/common/service/instance/DeploymentMode.php",
             "target": "server/app/common/service/instance/DeploymentMode.php",
             "classification": "app-owned",
@@ -13487,7 +13501,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "386d0700934f57695b1df4921ed7c6cb5bce81e7908f15903cf2a0f8f411386a"
+            "source_sha256": "eb760a87507d49a9aba3f7c4e49243d5a61bbca6fb34e9f16e1d3d7de52fed87"
         },
         {
             "path": "server/database/migrations/20260822-classify-official-article-permissions.sql",

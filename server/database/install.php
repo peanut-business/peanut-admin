@@ -10,6 +10,15 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
+$installerArguments = $_SERVER['argv'] ?? [];
+$installerIsDirect = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
+if ($installerIsDirect && in_array('--preflight', $installerArguments, true)) {
+    require_once dirname(__DIR__) . '/app/common/service/installation/InstallationPreflightHost.php';
+    $preflight = (new \app\common\service\installation\InstallationPreflightHost(dirname(__DIR__)))->inspect();
+    echo json_encode($preflight, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
+    exit($preflight['status'] === 'ready' ? 0 : 1);
+}
+
 /**
  * Peanut Admin fresh-database installer.
  *
@@ -608,7 +617,7 @@ function main(): int
     return 0;
 }
 
-if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+if ($installerIsDirect) {
     try {
         $migration = migrationArguments($_SERVER['argv'] ?? []);
         if ($migration !== null) {
