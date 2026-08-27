@@ -31,7 +31,7 @@ sudo -n grep -Fqx 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-m
 
 compose=(sudo -n docker compose -f compose.yaml --profile bundled-db)
 if [[ -n "$qualification_image" ]]; then
-  think=(sudo -n docker run --rm --network peanut-admin_default
+  think=(sudo -n docker run --rm --interactive --network peanut-admin_default
     --volume "$backend_env:/run/secrets/peanut-backend.env:ro"
     --env 'PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.qualification'
     --entrypoint sh "$qualification_image" -c
