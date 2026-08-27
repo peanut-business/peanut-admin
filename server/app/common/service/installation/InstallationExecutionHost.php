@@ -325,7 +325,10 @@ final class InstallationExecutionHost
 
     private function pdo(): PDO
     {
-        $config = \guardedDatabaseConfig();
+        $hostLeaseProof = getenv('P0E_HOST_LEASE_PROOF');
+        $config = \guardedDatabaseConfig(
+            $hostLeaseProof === false || trim($hostLeaseProof) === '' ? null : $hostLeaseProof
+        );
         return \guardedConnection($config);
     }
 
