@@ -26,10 +26,10 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@af7b1c961bca314d9eba5c506aa6eca19fc1cf9b` | PC00—PC32 的既定顺序切片与真实隔离恢复资格已合入；PC40/PC50 候选尚未合入 |
+| Application | `origin/dev@468dc3b0ae09d351deaac264b34e110fe4a893d4` | PC00—PC40 的既定关键路径切片已合入；PC50 候选尚未合入 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
 | 安装 | CLI 空库安装、一次性 Web 向导、首次运行准备清单、3.x migration 链、只读健康和脱敏诊断入口存在 | 阶段 B 的安装与诊断切片已齐备；组合资格归 PC70 |
-| 运维 | Platform 已采用 Core Ops 状态/任务合同，提供有界诊断包、备份中心和固定隔离恢复入口 | 维护写入仍待 PC40 候选合入 |
+| 运维 | Platform 已采用 Core Ops 状态/任务与维护合同，提供诊断、备份、固定隔离恢复、维护计划/关闭和全局写门禁 | PC41 仍需形成升级就绪投影 |
 | 备份 | 生产登记有 DB + `php-storage` 配对门禁；应用已有单一受信 Provider、schema 1 manifest、任务/证据账本、受信 worker 和 Platform 备份中心 | `backup_010108…` 已通过真实新目标恢复，不再把合同 smoke 冒充可恢复证据 |
 | 恢复 | PC32 已把真实配对制品恢复到无监听隔离目标，验证 Schema、代表身份/Tenant 数据、文件卷、受保护 Runtime 不变与成功零残留 | 正式生产覆盖恢复仍需独立明确授权；PC70 负责 released-scaffold 组合资格 |
 | 升级 | scaffold、migration、deploy-release 分别存在 | 缺统一就绪和执行工作台 |
@@ -41,12 +41,12 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 指标 | 当前值 | 说明 |
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
-| 已完成 | 11 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21、PC30、PC31、PC32 |
-| 进行中 | 2 | PC40、PC50；实现候选 PR #297/#296 尚未合入 |
+| 已完成 | 12 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21、PC30、PC31、PC32、PC40 |
+| 进行中 | 1 | PC50；实现候选 PR #296 尚未合入 |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
 | 未开始 | 6 | PC41、PC42、PC51、PC52、PC60、PC70 |
-| 当前关键路径 | PC40 | 审查并合入维护窗口与写门禁候选 PR #297 |
+| 当前关键路径 | PC41 | 基于 PC02/PC30/PC40 形成升级就绪与 Module 兼容检查 |
 | 可并行工作线 | 1 | PC50 信任矩阵候选 PR #296；共享状态文档仍由一个集成 owner 收口 |
 
 ## 4. 阶段观察
@@ -56,7 +56,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | A 边界与可见性 | 已完成 | PC00/PC01 由 PR #275 合入；PC02 由 PR #276 合入 | 无 | 保持唯一 owner 与锁版本，不为编号整齐盲升依赖 |
 | B 可安装、可诊断 | 已完成 | PC10—PC21 已合入；CLI、guided/automatic installer、Web 向导、首次运行清单、只读 Ops Console 和脱敏诊断包存在 | 正式数据库/浏览器/released-scaffold 组合资格归 PC70 | 保持 schema 与权限边界 |
 | C 可备份、可恢复 | 已完成 | PC30 Provider/manifest；PC31 任务、备份中心与 evidence；PC32 真实配对制品隔离恢复与零残留 | released-scaffold 组合资格归 PC70 | 保持生产覆盖恢复为独立授权动作 |
-| D 可升级 | 进行中 | scaffold upgrade、migration、deploy-release；PC40 实现候选 PR #297 | PC40 合入、PC41 就绪检查、PC42 纵向闭环 | 审查并合入 PC40 |
+| D 可升级 | 进行中 | scaffold upgrade、migration、deploy-release；PC40 维护窗口、计划/关闭和全写入口门禁已完成 | PC41 就绪检查、PC42 纵向闭环 | PC41 只读升级就绪切片 |
 | E 可扩展、可运营 | 进行中 | 8 Module、Bundle、任务和 Provider Runtime；PC50 实现候选 PR #296 | PC50 合入、PC51/PC52/PC60 | 审查并合入 PC50 |
 | F 固定资格与发布 | 未开始 | 现有 P0-E/Release 机制 | 同一最终 tree 的最小组合资格和文档同步 | PC70 固定候选 |
 
@@ -75,7 +75,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC30 | 已完成 | Runtime `2380593b51680de48962eb360514530bdb356fe5`；`dev@dd6a877d1d31a583d0221c0a7b6a3ca325da8e77` / PR #287 | 单一受信 DB/文件 Provider、逻辑新目标、一次尝试和 schema 1 manifest 已形成；合同固定容量、停写窗口、资源/镜像身份、配对 artifact、SHA-256、保留与清理责任，拒绝路径/命令/凭据输入 | 正式组合资格归 PC70；不阻塞 PC30 合同完成 | 保持 Provider/manifest 唯一合同 |
 | PC31 | 已完成 | Runtime `994f8e7961af9be8834bc9c362f268546eeff6f4`；`dev@9f33eb9fac44858d5d0575e1a760eec0d3af0694` / PR #289 | Core 任务、权限、幂等、并发拒绝和原子审计已由 Application 采用；受信 worker 具 60 秒心跳/revision fencing，Platform 展示最近任务、失败码和最新已验证 evidence，Web 不接收或返回 handler/path/command/credential | 浏览器/released-scaffold 资格归 PC70；不阻塞 PC31 实现完成 | 保持任务与 evidence 合同稳定 |
 | PC32 | 已完成 | Runtime/资格 `af7b1c961bca314d9eba5c506aa6eca19fc1cf9b`；PR #291、#292—#302 | `job_e5f0…` 成功恢复 `backup_010108…`：97 表、6 migration、6 关键表、Account/Tenant/TenantMember 各 1、文件卷 0/4096 bytes、零端口、保护身份一致、evidence `61fd2027…`、成功零残留 | released-scaffold 组合资格归 PC70；生产覆盖恢复需独立授权 | PC42 可在 PC41 完成后消费固定恢复指针 |
-| PC40 | 进行中 | PR #297 / head `b57b2584afa21a0be467195b8ff9638ede65c4e3` | 维护计划/关闭、全写入口门禁与审计候选已形成并通过聚焦检查 | 尚未合入 `dev` | 审查、必要 rebase 后合入 |
+| PC40 | 已完成 | Runtime `675de48cce762bf4b268e4d31e07de9de2520b5d`；`dev@468dc3b0ae09d351deaac264b34e110fe4a893d4` / PR #297 | Platform 可计划/关闭维护窗口；全局写门禁的真实 POST 返回 `50300 / MAINTENANCE_WRITE_BLOCKED`，唯一 denied 审计内容正确，DB fixture、端口和租约零残留 | Platform 浏览器/released-scaffold 组合资格归 PC70 | PC41 消费维护状态形成升级就绪检查 |
 | PC41 | 未开始 | — | — | PC02、PC30、PC40 | 升级就绪检查 |
 | PC42 | 未开始 | — | — | PC32、PC41 | 应用升级纵向闭环 |
 | PC50 | 进行中 | PR #296 / head `d46b5d2e2c88d784c2e209f70c7c60015ed8ce48` | lock/manifest 信任字段、安装/升级资格解释与 Marketplace blocker 候选已形成并通过聚焦检查 | 尚未合入 `dev` | 审查、必要 rebase 后合入 |

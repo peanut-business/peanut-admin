@@ -1547,6 +1547,40 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-product-closure-maintenance-gate",
+      "path": "docs/architecture/product-closure-maintenance-gate.md",
+      "title": "产品闭环维护窗口与写入门禁",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/common/http/middleware/MaintenanceWriteGateMiddleware.php",
+        "server/app/platform/service/ops/PdoMaintenanceWindowStore.php",
+        "server/app/platform/controller/PlatformOpsController.php",
+        "server/route/app.php",
+        "server/composer.lock",
+        "repo://peanut-admin-core/packages/php/ops-console"
+      ],
+      "owner": "product-operations",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure",
+        "maintenance",
+        "operations"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-product-closure-core-application-compatibility",
       "path": "docs/architecture/product-closure-core-application-compatibility.md",
       "title": "产品闭环 Core / Application 兼容基线",

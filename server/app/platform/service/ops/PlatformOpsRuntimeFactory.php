@@ -29,7 +29,7 @@ final class PlatformOpsRuntimeFactory
                 'database-maintenance',
                 'security-maintenance',
             ]),
-            new ReadOnlyMaintenanceWindowStore($pdo)
+            new PdoMaintenanceWindowStore($pdo)
         );
     }
 

@@ -25,6 +25,10 @@ description: Peanut Admin Application、Core、Module 与各客户端的开发�
 
 Application 只消费公开的 Core 包边界。不要修改 `vendor/` 或 `node_modules/`；需要 Core 变更时，在 Core 仓独立提交并让 Application 固定采用已接受身份。
 
+Platform 运行维护采用同一原则：Core 提供维护窗口合同，Application Host 提供持久化、
+HTTP transport 和全局写入门禁。窗口生效时，不能以页面隐藏替代后端拒绝；只有明确受
+Platform 维护权限保护的计划和关闭接口能够写入。
+
 ## 开发闭环
 
 1. 找到 manifest、Schema、route、配置或其他权威上游。

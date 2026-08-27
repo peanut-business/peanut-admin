@@ -639,6 +639,71 @@ async function opsSubmitRestore(
   };
 }
 
+async function opsScheduleMaintenance(
+  input: MaintenanceScheduleInput,
+  expectedRevision: number,
+  idempotencyKey: string,
+  signal: AbortSignal
+): Promise<OpsTransportResult> {
+  const result = await client.put<Envelope<unknown>>(
+    '/api/platform/v1/ops/maintenance',
+    {
+      reason_key: input.reasonKey,
+      starts_at: input.startsAt,
+      ends_at: input.endsAt,
+    },
+    {
+      headers: {
+        'If-Match': `"rev-${expectedRevision}"`,
+        'Idempotency-Key': idempotencyKey,
+      },
+      signal,
+    }
+  );
+  return opsMutationResult(result);
+}
+
+async function opsCloseMaintenance(
+  maintenanceKey: string,
+  expectedRevision: number,
+  idempotencyKey: string,
+  signal: AbortSignal
+): Promise<OpsTransportResult> {
+  const result = await client.post<Envelope<unknown>>(
+    `/api/platform/v1/ops/maintenance/${encodeURIComponent(maintenanceKey)}/close`,
+    {},
+    {
+      headers: {
+        'If-Match': `"rev-${expectedRevision}"`,
+        'Idempotency-Key': idempotencyKey,
+      },
+      signal,
+    }
+  );
+  return opsMutationResult(result);
+}
+
+function opsMutationResult(result: { status: number; data: Envelope<unknown>; headers: Record<string, unknown> }): OpsTransportResult {
+  const requestId = opsRequestId(result.headers);
+  if (result.data.code === 20000) {
+    return {
+      status: result.status,
+      headers: new Headers({ 'X-Request-Id': requestId }),
+      body: { data: result.data.data, meta: { request_id: requestId } },
+    };
+  }
+
+  const details = result.data.data as { error_code?: string } | null;
+  return {
+    status: opsStatus(result.data.code),
+    headers: new Headers({ 'X-Request-Id': requestId }),
+    body: {
+      code: details?.error_code || 'OPS_INTERNAL_ERROR',
+      request_id: requestId,
+    },
+  };
+}
+
 function unavailable(code: string): Promise<OpsTransportResult> {
   return Promise.resolve({
     status: 503,
@@ -647,7 +712,7 @@ function unavailable(code: string): Promise<OpsTransportResult> {
   });
 }
 
-/** Platform Ops transport: status/maintenance reads and backup/restore task operations are connected. */
+/** Platform Ops transport: maintenance state and its control writes share one Host. */
 export function createPlatformOpsTransport(): OpsConsoleTransport {
   return {
     overview: (signal) => opsRead('/api/platform/v1/ops/status', signal),
@@ -671,13 +736,8 @@ export function createPlatformOpsTransport(): OpsConsoleTransport {
       ),
     task: (taskKey, signal) =>
       opsRead(`/api/platform/v1/ops/tasks/${encodeURIComponent(taskKey)}`, signal),
-    scheduleMaintenance: (
-      _input: MaintenanceScheduleInput,
-      _expectedRevision: number,
-      _idempotencyKey: string,
-      _signal: AbortSignal
-    ) => unavailable('OPS_MAINTENANCE_INVALID'),
-    closeMaintenance: () => unavailable('OPS_MAINTENANCE_INVALID'),
+    scheduleMaintenance: opsScheduleMaintenance,
+    closeMaintenance: opsCloseMaintenance,
     logs: () => unavailable('OPS_LOGS_UNAVAILABLE'),
   };
 }

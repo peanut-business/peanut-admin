@@ -150,6 +150,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/maintenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns the current scheduled or active maintenance window. */
+        get: operations["getPlatformMaintenanceWindow"];
+        /** @description Schedules the sole maintenance window. Once its time range is active, all HTTP mutation routes except the two maintenance-control routes are rejected and audited. */
+        put: operations["schedulePlatformMaintenanceWindow"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/ops/maintenance/{maintenance_key}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Closes the current maintenance window and restores normal HTTP mutation handling. */
+        post: operations["closePlatformMaintenanceWindow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/tasks/backup": {
         parameters: {
             query?: never;
@@ -212,6 +247,14 @@ export interface components {
         };
         TenantSelectRequest: {
             tenant_id: number;
+        };
+        PlatformMaintenanceScheduleRequest: {
+            /** @enum {string} */
+            reason_key: "planned-upgrade" | "database-maintenance" | "security-maintenance";
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
         };
         PlatformBackupRequest: {
             /** @enum {string} */
@@ -438,6 +481,64 @@ export interface operations {
             200: components["responses"]["ApiResponse"];
             401: components["responses"]["ApiResponse"];
             403: components["responses"]["ApiResponse"];
+        };
+    };
+    getPlatformMaintenanceWindow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
+    schedulePlatformMaintenanceWindow: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformMaintenanceScheduleRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            409: components["responses"]["ApiResponse"];
+        };
+    };
+    closePlatformMaintenanceWindow: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+                "Idempotency-Key": string;
+            };
+            path: {
+                maintenance_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            409: components["responses"]["ApiResponse"];
         };
     };
     submitPlatformBackup: {
