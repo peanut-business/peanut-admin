@@ -7,6 +7,7 @@ use PDO;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
 use PeanutAdmin\OpsConsole\Status\OpsStatusService;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 
 final class PlatformOpsRuntimeFactory
 {
@@ -29,6 +30,11 @@ final class PlatformOpsRuntimeFactory
             ]),
             new ReadOnlyMaintenanceWindowStore($pdo)
         );
+    }
+
+    public static function backupProviders(): BackupRestoreProviderRegistry
+    {
+        return new BackupRestoreProviderRegistry([new PairedBackupProvider()]);
     }
 
     private function __construct()

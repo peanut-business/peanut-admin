@@ -1177,6 +1177,17 @@
         "data_source": "logical dump of peanut_admin plus archive of Docker volume peanut-admin_php-storage",
         "allocation_state": "registered target; the backups directory was absent on 2026-08-15 and is created with mode 0700 only by an authorized backup gate",
         "execution_context": "all backup_method and integrity_check commands execute on oracle3 under /www/docker/peanut-admin; no artifact is streamed to or retained on the operator workstation",
+        "product_contract": {
+          "adoption_state": "PC30 provider and manifest contract implemented; Platform task submission and deployment execution remain disabled until PC31",
+          "provider_key": "peanut.paired-db-files",
+          "backup_handler_key": "peanut.backup.create",
+          "restore_handler_key": "peanut.restore.verify",
+          "restore_target_key": "isolated-new-target",
+          "maximum_attempts": 1,
+          "manifest_schema_version": 1,
+          "manifest_contract": "server/app/platform/service/ops/PairedBackupManifest.php",
+          "security_boundary": "client input is limited to the registered provider key, opaque backup reference and registered logical restore target; host, database, path, command, credential and retry count remain deployment-owned"
+        },
         "backup_id_format": "YYYYmmddTHHMMSSZ-<source_commit_12>",
         "artifact_layout": {
           "directory": "/www/docker/peanut-admin/backups/<backup_id>",
