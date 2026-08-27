@@ -139,6 +139,20 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/upgrade-readiness:
+    get:
+      tags: [PlatformOps]
+      operationId: getPlatformUpgradeReadiness
+      description: >-
+        Returns the read-only source/target, migration, Module, scaffold,
+        backup, restore-evidence and maintenance-window projection. The target
+        is accepted only from the fixed deployment-staged bundle; the request
+        cannot supply a path, URL, command, release key, or credential.
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
   /api/platform/v1/ops/maintenance:
     get:
       tags: [PlatformOps]

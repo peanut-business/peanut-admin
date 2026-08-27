@@ -16,8 +16,13 @@ final class PlatformOpsRuntimeFactory
     {
         return new OpsStatusService(
             new PlatformOpsPermissionChecker($pdo),
-            new ApplicationRuntimeStatusProvider($pdo, dirname(__DIR__, 5))
+            self::runtimeStatusProvider($pdo)
         );
+    }
+
+    public static function runtimeStatusProvider(PDO $pdo): ApplicationRuntimeStatusProvider
+    {
+        return new ApplicationRuntimeStatusProvider($pdo, dirname(__DIR__, 5));
     }
 
     public static function maintenance(PDO $pdo): MaintenanceService

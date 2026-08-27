@@ -22,6 +22,57 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
 
     public function snapshot(PlatformContext $context): OpsStatusSnapshot
     {
+        $runtime = $this->runtimeEvidence();
+        $readiness = (new PlatformUpgradeReadinessService($this->pdo, $this->projectRoot))
+            ->snapshot($context, $runtime);
+        $backup = is_array($readiness['backup']['latest_verified'] ?? null)
+            ? $readiness['backup']['latest_verified']
+            : null;
+
+        return new OpsStatusSnapshot(
+            $runtime['health'],
+            $runtime['checks'],
+            $runtime['identity']['commit'],
+            $runtime['identity']['tree'],
+            $runtime['identity']['release_key'],
+            $runtime['identity']['built_at'],
+            $runtime['migrations']['applied'],
+            $runtime['migrations']['target'],
+            $runtime['migrations']['pending'],
+            $runtime['migrations']['digest'],
+            $runtime['migrations']['drift'],
+            $readiness['state'],
+            $readiness['code'],
+            $runtime['identity']['commit'],
+            is_array($readiness['target'] ?? null) ? (string)$readiness['target']['commit'] : null,
+            $runtime['identity']['repository_clean'],
+            $backup !== null,
+            ($backup['source_matches_runtime'] ?? false) === true,
+        );
+    }
+
+    /** @return array<string,mixed> */
+    public function upgradeReadiness(PlatformContext $context): array
+    {
+        return (new PlatformUpgradeReadinessService($this->pdo, $this->projectRoot))
+            ->snapshot($context, $this->runtimeEvidence());
+    }
+
+    public function runtimeCommit(): string
+    {
+        return $this->runtimeIdentity()['commit'];
+    }
+
+    /**
+     * @return array{
+     *   health:string,
+     *   checks:list<array{key:string,status:string,critical:bool,latency_ms:float}>,
+     *   identity:array{commit:string,tree:string,release_key:?string,built_at:string,repository_clean:bool},
+     *   migrations:array{applied:int,target:int,pending:int,digest:string,drift:bool,files:array<string,string>}
+     * }
+     */
+    private function runtimeEvidence(): array
+    {
         $identity = $this->runtimeIdentity();
         $checks = [];
 
@@ -79,26 +130,12 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         }
         $health = $criticalDown ? 'unhealthy' : ($anyDown ? 'degraded' : 'healthy');
 
-        return new OpsStatusSnapshot(
-            $health,
-            $checks,
-            $identity['commit'],
-            $identity['tree'],
-            $identity['release_key'],
-            $identity['built_at'],
-            $migrations['applied'],
-            $migrations['target'],
-            $migrations['pending'],
-            $migrations['digest'],
-            $migrations['drift'],
-            'configuration_required',
-            'UPGRADE_NOT_CONFIGURED',
-            $identity['commit'],
-            null,
-            $identity['repository_clean'],
-            false,
-            false,
-        );
+        return [
+            'health' => $health,
+            'checks' => $checks,
+            'identity' => $identity,
+            'migrations' => $migrations,
+        ];
     }
 
     /** @return array{commit:string,tree:string,release_key:?string,built_at:string,repository_clean:bool} */
@@ -108,7 +145,14 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         if (file_exists($this->projectRoot . '/.git')) {
             $commit = $this->git(['rev-parse', 'HEAD']);
             $tree = $this->git(['rev-parse', 'HEAD^{tree}']);
-            $clean = $this->git(['status', '--porcelain', '--untracked-files=all']) === '';
+            // The fixed deployment-staged target is operational evidence, not
+            // application source. Every other tracked/untracked change remains
+            // part of the repository-clean upgrade gate.
+            $clean = $this->git([
+                'status', '--porcelain', '--untracked-files=all', '--', '.',
+                ':(exclude).peanut/upgrade-target',
+                ':(exclude).peanut/upgrade-target/**',
+            ]) === '';
             $qualified = is_array($metadata['technical_qualification'] ?? null)
                 ? $metadata['technical_qualification']
                 : [];
@@ -206,7 +250,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         return gmdate('Y-m-d\TH:i:s', $timestamp) . '.000Z';
     }
 
-    /** @return array{applied:int,target:int,pending:int,digest:string,drift:bool} */
+    /** @return array{applied:int,target:int,pending:int,digest:string,drift:bool,files:array<string,string>} */
     private function migrationState(): array
     {
         $expected = $this->expectedMigrations();
@@ -247,6 +291,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
             'pending' => $target - $applied,
             'digest' => hash('sha256', json_encode($expected, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES)),
             'drift' => $drift,
+            'files' => $expected,
         ];
     }
 
@@ -273,7 +318,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         return $expected;
     }
 
-    /** @return array{applied:int,target:int,pending:int,digest:string,drift:bool} */
+    /** @return array{applied:int,target:int,pending:int,digest:string,drift:bool,files:array<string,string>} */
     private function unavailableMigrationState(): array
     {
         $expected = $this->expectedMigrations();
@@ -283,6 +328,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
             'pending' => count($expected),
             'digest' => hash('sha256', json_encode($expected, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES)),
             'drift' => true,
+            'files' => $expected,
         ];
     }
 

@@ -88,6 +88,19 @@ api/admin/menu/lists -> menu/lists
 `provider_key=peanut.paired-db-files` 与 `Idempotency-Key`；任务状态通过
 `GET /api/platform/v1/ops/tasks/{task_key}` 读取。三者均要求 Platform 会话及对应 Ops 权限。
 
+### Platform 升级就绪
+
+`GET /api/platform/v1/ops/upgrade-readiness` 返回只读的 source/target Release、migration、
+Module、scaffold ownership/conflict、备份、恢复 evidence 和维护窗口检查。接口没有请求参数；
+目标只能来自 Deployment 放入固定 `.peanut/upgrade-target/` 的已验证 bundle，不能由浏览器
+提供路径、URL、命令、Release key、镜像或凭据。
+
+`preflight.state=ready` 说明静态兼容检查通过；顶层 `state=ready` 还要求匹配当前 Runtime 的
+已验证备份、引用同一 backup reference 的恢复能力 evidence 和 active `planned-upgrade`
+维护窗口。跨大版本固定返回
+`UPGRADE_FRESH_REBUILD_REQUIRED`，不会尝试原地升级。App-owned 文件只投影数量和摘要并保持
+不变，冲突原因不返回绝对路径或文件内容。
+
 ### Platform 维护窗口
 
 `GET /api/platform/v1/ops/maintenance` 读取当前维护窗口；具有
