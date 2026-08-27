@@ -374,7 +374,7 @@ SQL);
                         throw new PluginLifecycleException('MODULE_MIGRATION_INVALID', "Migration is empty: {$migrationKey}");
                     }
                     // MySQL DDL commits implicitly. Keep the durable migration ledger outside the DDL boundary.
-                    $this->pdo->exec($sql);
+                    $this->executeMigrationSql($sql);
                     $this->pdo->beginTransaction();
                     $finish = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_module_migration SET status='applied',finished_at=:finished_at,error_code=NULL
@@ -406,6 +406,21 @@ SQL);
                     throw $exception;
                 }
             }
+        }
+    }
+
+    private function executeMigrationSql(string $sql): void
+    {
+        $statement = $this->pdo->prepare($sql);
+        try {
+            $statement->execute();
+            do {
+                if ($statement->columnCount() > 0) {
+                    $statement->fetchAll(PDO::FETCH_ASSOC);
+                }
+            } while ($statement->nextRowset());
+        } finally {
+            $statement->closeCursor();
         }
     }
 
