@@ -11521,7 +11521,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8de60730614e8e66c7cb88a547219c68214151c2401eb063c8ce5548173e018e"
+            "source_sha256": "ceb6b5d862f762049a5628652c9e05418f3b31d868d423ec9193a4f5efad1356"
         },
         {
             "path": "server/app/common/service/module/OfficialModuleMiddleware.php",
@@ -14784,6 +14784,34 @@
             "source_sha256": "5c89a8a9c5af258d02d0bfd3582c75963bea53baa1f5f5132662b80020a63452"
         },
         {
+            "path": "server/resources/module-scaffold/backend/Contracts/ModuleCommands.php.stub",
+            "target": "server/resources/module-scaffold/backend/Contracts/ModuleCommands.php.stub",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "8b7cdc7a883c714b3294afa8b62c1471421a6da7b50e055b8dc270c1e6aa8b6d"
+        },
+        {
+            "path": "server/resources/module-scaffold/backend/Database/Migrations/README.md.stub",
+            "target": "server/resources/module-scaffold/backend/Database/Migrations/README.md.stub",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "d7c2ab17b636f23322e2e0dc7179949f0e533db0dd8a8ee199476ac9879f4d68"
+        },
+        {
             "path": "server/resources/module-scaffold/backend/Http/routes.php.stub",
             "target": "server/resources/module-scaffold/backend/Http/routes.php.stub",
             "classification": "managed",
@@ -14851,7 +14879,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5ee0b650cd25b081a704cb8fa2b9963c633465d14d090109551ecca23c92173f"
+            "source_sha256": "0e0e6958ba9f2d023605e94946c006345f6e06d8e7dae0ab8f6beaa3a6b43356"
         },
         {
             "path": "server/resources/module-scaffold/frontend/api.ts.stub",
@@ -14894,6 +14922,34 @@
                 "full"
             ],
             "source_sha256": "3346d0ee6ee485f813a28fd3a3c2494327aa3a6595ec1bf97c4dac696caafb09"
+        },
+        {
+            "path": "server/resources/module-scaffold/tests/TenantSecurityDriver.php.stub",
+            "target": "server/resources/module-scaffold/tests/TenantSecurityDriver.php.stub",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "08c6afc4c7055a2aeeb5ac3b3195e9f6615a75fbcdb3d5c6daab6d3294adefc4"
+        },
+        {
+            "path": "server/resources/module-scaffold/tests/TenantSecurityTest.php.stub",
+            "target": "server/resources/module-scaffold/tests/TenantSecurityTest.php.stub",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "f847f4b564d8fb1f7b13fd5658c0de6659c6c2dfa203a3aa54708094fad72e5f"
         },
         {
             "path": "server/resources/schemas/plugin.schema.json",

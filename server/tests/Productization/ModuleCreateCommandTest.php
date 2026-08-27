@@ -92,6 +92,8 @@ $officialBackend = $projectRoot . '/' . rtrim($layout->backendRelativePath($offi
 $officialFrontend = $projectRoot . '/' . rtrim($layout->frontendRelativePath($officialModuleKey), '/');
 $customBackend = $projectRoot . '/' . rtrim($layout->backendRelativePath($customModuleKey), '/');
 $customFrontend = $projectRoot . '/' . rtrim($layout->frontendRelativePath($customModuleKey), '/');
+$officialTests = $projectRoot . '/server/tests/Modules/' . implode('/', $officialModuleKey->pascalSegments());
+$customTests = $projectRoot . '/server/tests/Modules/' . implode('/', $customModuleKey->pascalSegments());
 $customVendorRoot = $projectRoot . '/server/app/Modules/Acme';
 $customVendorRootExisted = is_dir($customVendorRoot);
 
@@ -107,11 +109,13 @@ try {
     moduleCreateExpect(($custom['json']['vendor'] ?? null) === 'Acme', 'custom vendor changed');
 
     $expectedBackendFiles = [
-        'module.json', 'ModuleProvider.php', 'Http/routes.php', 'Http/Controller/.gitkeep',
+        'module.json', 'ModuleProvider.php', 'Contracts/Generated' . ucfirst($suffix) . 'Commands.php',
+        'Http/routes.php', 'Http/Controller/.gitkeep',
         'Service/.gitkeep', 'Model/.gitkeep', 'Resources/permissions.json', 'Resources/menus.json',
-        'Resources/setting-definitions.json', 'Database/Migrations/.gitkeep', 'composer.json',
+        'Resources/setting-definitions.json', 'Database/Migrations/README.md', 'composer.json',
     ];
     $expectedFrontendFiles = ['contribution.ts', 'views/.gitkeep', 'api.ts', 'package.json'];
+    $expectedTestFiles = ['TenantSecurityDriver.php', 'TenantSecurityTest.php'];
     foreach ([$officialBackend, $customBackend] as $root) {
         foreach ($expectedBackendFiles as $relative) {
             moduleCreateExpect(is_file($root . '/' . $relative), "generated backend file is missing: {$relative}");
@@ -122,16 +126,29 @@ try {
             moduleCreateExpect(is_file($root . '/' . $relative), "generated frontend file is missing: {$relative}");
         }
     }
+    foreach ([$officialTests, $customTests] as $root) {
+        foreach ($expectedTestFiles as $relative) {
+            moduleCreateExpect(is_file($root . '/' . $relative), "generated test file is missing: {$relative}");
+        }
+        $securityTest = (string)file_get_contents($root . '/TenantSecurityTest.php');
+        foreach (['tenant-a', 'tenant-b', 'forged Tenant ID', 'AUTHORIZATION_PERMISSION_DENIED',
+            'MODULE_TENANT_DISABLED', 'failed migration', 'replayed'] as $scenario) {
+            moduleCreateExpect(str_contains($securityTest, $scenario), "Tenant security scenario is missing: {$scenario}");
+        }
+    }
 
     $officialManifest = json_decode((string)file_get_contents($officialBackend . '/module.json'), true, 64, JSON_THROW_ON_ERROR);
     moduleCreateExpect(($officialManifest['frontend']['entry'] ?? null) === 'web/src/modules/' . $officialModuleKey->slug() . '/contribution.ts', 'frontend.entry is not key-derived');
     moduleCreateExpect(($officialManifest['backend']['migrations'] ?? null) === 'Database/Migrations', 'generated migrations declaration is missing');
     moduleCreateExpect(($officialManifest['backend']['setting_definitions'] ?? null) === 'Resources/setting-definitions.json', 'generated setting definitions declaration is missing');
+    moduleCreateExpect(($officialManifest['contracts']['exports'][0] ?? null) === 'app\\Modules\\Official\\Generated' . ucfirst($suffix) . '\\Contracts\\Generated' . ucfirst($suffix) . 'Commands', 'generated command contract export is missing');
     moduleCreateExpect(($officialManifest['lifecycle']['protected'] ?? null) === false, 'generated Module must be removable by default');
     $customComposer = json_decode((string)file_get_contents($customBackend . '/composer.json'), true, 32, JSON_THROW_ON_ERROR);
     moduleCreateExpect(isset($customComposer['autoload']['psr-4']['app\\Modules\\Acme\\Generated' . ucfirst($suffix) . '\\']), 'custom Composer namespace is not key-derived');
     moduleCreateExpect(!str_contains((string)file_get_contents($customBackend . '/ModuleProvider.php'), '${'), 'backend template placeholder remains');
     moduleCreateExpect(!str_contains((string)file_get_contents($customFrontend . '/contribution.ts'), '${'), 'frontend template placeholder remains');
+    moduleCreateExpect(!str_contains((string)file_get_contents($customTests . '/TenantSecurityTest.php'), '${'), 'test template placeholder remains');
+    moduleCreateExpect(($custom['json']['test_path'] ?? null) === 'server/tests/Modules/Acme/Generated' . ucfirst($suffix), 'test path is not key-derived');
 
     $roots = (new DevelopmentModuleDiscovery($projectRoot))->moduleRoots();
     moduleCreateExpect(($roots[$officialKey] ?? null) === realpath($officialBackend), 'generated Official Module was not discovered');
@@ -157,6 +174,8 @@ try {
     moduleCreateRemoveTree($officialFrontend);
     moduleCreateRemoveTree($customBackend);
     moduleCreateRemoveTree($customFrontend);
+    moduleCreateRemoveTree($officialTests);
+    moduleCreateRemoveTree($customTests);
     if (!$customVendorRootExisted && is_dir($customVendorRoot) && (scandir($customVendorRoot) ?: []) === ['.', '..']) {
         rmdir($customVendorRoot);
     }

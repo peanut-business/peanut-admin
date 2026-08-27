@@ -13,6 +13,7 @@ final class ModuleScaffoldGenerator
     private const BACKEND_FILES = [
         'module.json' => 'backend/module.json.stub',
         'ModuleProvider.php' => 'backend/ModuleProvider.php.stub',
+        'Contracts/${MODULE}Commands.php' => 'backend/Contracts/ModuleCommands.php.stub',
         'Http/routes.php' => 'backend/Http/routes.php.stub',
         'Http/Controller/.gitkeep' => null,
         'Service/.gitkeep' => null,
@@ -20,7 +21,7 @@ final class ModuleScaffoldGenerator
         'Resources/permissions.json' => 'backend/empty-array.json.stub',
         'Resources/menus.json' => 'backend/empty-array.json.stub',
         'Resources/setting-definitions.json' => 'backend/empty-array.json.stub',
-        'Database/Migrations/.gitkeep' => null,
+        'Database/Migrations/README.md' => 'backend/Database/Migrations/README.md.stub',
         'composer.json' => 'backend/composer.json.stub',
     ];
 
@@ -29,6 +30,11 @@ final class ModuleScaffoldGenerator
         'views/.gitkeep' => null,
         'api.ts' => 'frontend/api.ts.stub',
         'package.json' => 'frontend/package.json.stub',
+    ];
+
+    private const TEST_FILES = [
+        'TenantSecurityDriver.php' => 'tests/TenantSecurityDriver.php.stub',
+        'TenantSecurityTest.php' => 'tests/TenantSecurityTest.php.stub',
     ];
 
     private ModuleHostLayout $layout;
@@ -56,7 +62,7 @@ final class ModuleScaffoldGenerator
     /**
      * @return array{
      *   operation:string,module_key:string,vendor:string,backend_path:string,
-     *   frontend_path:string,frontend_entry:string,php_package:string,web_package:string
+     *   frontend_path:string,test_path:string,frontend_entry:string,php_package:string,web_package:string
      * }
      */
     public function create(string $moduleKey, ?string $vendor = null): array
@@ -87,10 +93,14 @@ final class ModuleScaffoldGenerator
         $frontendEntry = $frontendRelative . '/contribution.ts';
         $backendRoot = $this->projectRoot . '/' . $backendRelative;
         $frontendRoot = $this->projectRoot . '/' . $frontendRelative;
+        $testRelative = 'server/tests/Modules/' . implode('/', $pascalSegments);
+        $testRoot = $this->projectRoot . '/' . $testRelative;
         $backendBase = $this->projectRoot . '/server/app/Modules';
         $frontendBase = $this->projectRoot . '/web/src/modules';
+        $testBase = $this->projectRoot . '/server/tests';
         $this->assertAvailableTarget($backendBase, $backendRoot);
         $this->assertAvailableTarget($frontendBase, $frontendRoot);
+        $this->assertAvailableTarget($testBase, $testRoot);
 
         $rawSegments = explode('.', $key->value());
         $vendorKey = $rawSegments[0];
@@ -106,6 +116,7 @@ final class ModuleScaffoldGenerator
         $npmScope = $vendorKey === 'official' ? 'peanut-admin' : $vendorKey;
         $phpPackage = $composerVendor . '/' . $slug;
         $webPackage = '@' . $npmScope . '/' . $slug;
+        $tableName = 'pa_' . str_replace('-', '_', $slug) . '_record';
         $replacements = [
             '${MODULE_KEY}' => $moduleKey,
             '${VENDOR}' => $vendor,
@@ -120,12 +131,15 @@ final class ModuleScaffoldGenerator
             '${PHP_PACKAGE_JSON}' => $this->jsonString($phpPackage),
             '${WEB_PACKAGE_JSON}' => $this->jsonString($webPackage),
             '${BACKEND_PROVIDER_JSON}' => $this->jsonString($namespace . '\\ModuleProvider'),
+            '${COMMANDS_CONTRACT_JSON}' => $this->jsonString($namespace . '\\Contracts\\' . $pascalSegments[array_key_last($pascalSegments)] . 'Commands'),
             '${FRONTEND_ENTRY_JSON}' => $this->jsonString($frontendEntry),
             '${AUTOLOAD_NAMESPACE_JSON}' => $this->jsonString($namespace . '\\'),
+            '${TABLE_NAME}' => $tableName,
         ];
 
         $backendCreated = false;
         $frontendCreated = false;
+        $testCreated = false;
         try {
             if (!mkdir($backendRoot, 0755, true)) {
                 throw new ModuleScaffoldException('MODULE_CREATE_WRITE_FAILED', 'Module backend root cannot be created.');
@@ -135,14 +149,21 @@ final class ModuleScaffoldGenerator
                 throw new ModuleScaffoldException('MODULE_CREATE_WRITE_FAILED', 'Module frontend root cannot be created.');
             }
             $frontendCreated = true;
+            if (!mkdir($testRoot, 0755, true)) {
+                throw new ModuleScaffoldException('MODULE_CREATE_WRITE_FAILED', 'Module test root cannot be created.');
+            }
+            $testCreated = true;
             $this->writeFiles($backendRoot, self::BACKEND_FILES, $replacements);
             $this->writeFiles($frontendRoot, self::FRONTEND_FILES, $replacements);
+            $this->writeFiles($testRoot, self::TEST_FILES, $replacements);
             $this->postflight($moduleKey, $backendRoot);
         } catch (ModuleScaffoldException $exception) {
+            if ($testCreated) $this->removeCreatedTree($testRoot, $testBase);
             if ($frontendCreated) $this->removeCreatedTree($frontendRoot, $frontendBase);
             if ($backendCreated) $this->removeCreatedTree($backendRoot, $backendBase);
             throw $exception;
         } catch (\Throwable $exception) {
+            if ($testCreated) $this->removeCreatedTree($testRoot, $testBase);
             if ($frontendCreated) $this->removeCreatedTree($frontendRoot, $frontendBase);
             if ($backendCreated) $this->removeCreatedTree($backendRoot, $backendBase);
             throw new ModuleScaffoldException('MODULE_CREATE_FAILED', 'Module scaffold generation failed.', 0, $exception);
@@ -154,6 +175,7 @@ final class ModuleScaffoldGenerator
             'vendor' => $vendor,
             'backend_path' => $backendRelative,
             'frontend_path' => $frontendRelative,
+            'test_path' => $testRelative,
             'frontend_entry' => $frontendEntry,
             'php_package' => $phpPackage,
             'web_package' => $webPackage,
@@ -183,6 +205,11 @@ final class ModuleScaffoldGenerator
     private function writeFiles(string $targetRoot, array $files, array $replacements): void
     {
         foreach ($files as $relative => $template) {
+            $relative = strtr($relative, $replacements);
+            if ($relative === '' || str_starts_with($relative, '/') || str_contains($relative, '..')
+                || preg_match('/\$\{[A-Z][A-Z0-9_]*\}/', $relative) === 1) {
+                throw new ModuleScaffoldException('MODULE_CREATE_TEMPLATE_INVALID', 'Module scaffold target path is invalid.');
+            }
             $path = $targetRoot . '/' . $relative;
             $directory = dirname($path);
             if (!is_dir($directory) && !mkdir($directory, 0755, true)) {
@@ -212,8 +239,8 @@ final class ModuleScaffoldGenerator
 
     private function postflight(string $moduleKey, string $backendRoot): void
     {
-        foreach (['module.json', 'composer.json', 'Http/routes.php', 'Resources/permissions.json',
-            'Resources/menus.json', 'Resources/setting-definitions.json', 'Database/Migrations'] as $relative) {
+        foreach (['module.json', 'composer.json', 'Contracts', 'Http/routes.php', 'Resources/permissions.json',
+            'Resources/menus.json', 'Resources/setting-definitions.json', 'Database/Migrations/README.md'] as $relative) {
             if (!file_exists($backendRoot . '/' . $relative)) {
                 throw new ModuleScaffoldException('MODULE_CREATE_POSTCHECK_FAILED', 'Generated Module backend is incomplete.');
             }
