@@ -5,12 +5,12 @@ use app\common\service\scaffold\ApplicationCreator;
 use app\platform\service\plugin\PluginLockResolver;
 
 $root = dirname(__DIR__, 3);
-require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
-require $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
-require $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
-require $root . '/server/app/platform/service/plugin/PluginLifecycleException.php';
-require $root . '/server/app/platform/service/plugin/PluginDescriptor.php';
-require $root . '/server/app/platform/service/plugin/PluginLockResolver.php';
+require_once $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
+require_once $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
+require_once $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
+require_once $root . '/server/app/platform/service/plugin/PluginLifecycleException.php';
+require_once $root . '/server/app/platform/service/plugin/PluginDescriptor.php';
+require_once $root . '/server/app/platform/service/plugin/PluginLockResolver.php';
 
 function createApplicationExpect(bool $condition, string $message): void
 {
