@@ -34,6 +34,10 @@ services:
       - ${PEANUT_SERVER_ENV_FILE:-../server/.env}
     environment:
       PEANUT_SERVER_ENV_FILE: /var/www/peanut-admin/server/.env.source
+      ADMIN_INITIAL_EMAIL: ${ADMIN_INITIAL_EMAIL:-}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+      PLATFORM_INITIAL_EMAIL: ${PLATFORM_INITIAL_EMAIL:-}
+      PLATFORM_INITIAL_PASSWORD: ${PLATFORM_INITIAL_PASSWORD:-}
     depends_on:
       mysql:
         condition: service_healthy

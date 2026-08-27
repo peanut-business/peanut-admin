@@ -23,6 +23,16 @@ const router = createRouter({
         requiresAuth: false,
       },
     },
+    {
+      path: '/installation',
+      name: 'installation',
+      component: () => import('@/views/installation/index.vue'),
+      meta: {
+        requiresAuth: false,
+        hideInMenu: true,
+        ignoreCache: true,
+      },
+    },
     ...appRoutes,
     REDIRECT_MAIN,
     NOT_FOUND_ROUTE,

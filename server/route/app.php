@@ -33,6 +33,7 @@ use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\Modules\Official\Article\Http\ArticleModuleMiddleware;
+use app\installation\controller\InstallationController;
 use app\platform\controller\PlatformSessionController;
 use app\platform\controller\PlatformAccessController;
 use app\platform\controller\PlatformTenantBoundaryController;
@@ -52,6 +53,8 @@ use app\tenant\controller\TenantSessionController;
 use think\facade\Route;
 
 // ─── 免登录路由（不挂任何鉴权中间件） ──────────────────────────────────────
+Route::get('api/installation/status', [InstallationController::class, 'status']);
+Route::post('api/installation/execute', [InstallationController::class, 'execute']);
 Route::post('api/user/login',  [LoginController::class, 'login']);
 Route::post('api/user/logout', [LoginController::class, 'logout']);
 Route::post('admin/login/login',  [LoginController::class, 'login']);

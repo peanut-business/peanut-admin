@@ -6,8 +6,8 @@ declare(strict_types=1);
  *
  * Normal runtime uses server/.env. Isolated tests and qualification runs may
  * select a sibling server/.env.<run-id> through PEANUT_SERVER_ENV_FILE. The
- * selected file must exist; process variables may confirm its values but can
- * never replace or extend it.
+ * selected file must exist. Normal settings are file-owned; fresh-install
+ * identities are the only process-only inputs and may never be persisted.
  */
 
 if (!function_exists('peanutBackendEnvironmentKeys')) {
@@ -65,6 +65,20 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             'PEANUT_PLUGIN_LOCK',
             'PEANUT_MODULE_KERNEL_VERSION',
             'PEANUT_MODULE_TRUSTED_KEYS_JSON',
+            'PEANUT_INSTALLATION_MODE',
+            'PEANUT_INSTALLATION_SETUP_TOKEN',
+            'PEANUT_INSTALLATION_OFFICIAL_MODULES',
+        ];
+    }
+
+    /** @return list<string> */
+    function peanutTransientInstallationKeys(): array
+    {
+        return [
+            'ADMIN_INITIAL_EMAIL',
+            'ADMIN_INITIAL_PASSWORD',
+            'PLATFORM_INITIAL_EMAIL',
+            'PLATFORM_INITIAL_PASSWORD',
         ];
     }
 
@@ -106,6 +120,7 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             }
         }
         $managed = array_fill_keys(peanutBackendEnvironmentKeys(), true);
+        $transient = array_fill_keys(peanutTransientInstallationKeys(), true);
         foreach ($managed as $key => $_) {
             $legacy = getenv('PHP_' . $key);
             if ($legacy !== false) {
@@ -113,6 +128,13 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             }
             $existing = getenv($key);
             if ($existing === false) {
+                continue;
+            }
+            if (isset($transient[$key])) {
+                $declared = $values[$key] ?? '';
+                if ((string)$declared !== '') {
+                    throw new RuntimeException("BACKEND_ENVIRONMENT_TRANSIENT_IDENTITY_PERSISTED:{$key}");
+                }
                 continue;
             }
             if (!array_key_exists($key, $values)) {
@@ -136,6 +158,12 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
                 throw new RuntimeException("BACKEND_ENVIRONMENT_VALUE_INVALID:{$key}");
             }
             $value = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
+            if (isset($transient[$key])) {
+                if ($value !== '') {
+                    throw new RuntimeException("BACKEND_ENVIRONMENT_TRANSIENT_IDENTITY_PERSISTED:{$key}");
+                }
+                continue;
+            }
             putenv($key . '=' . $value);
             $_ENV[$key] = $value;
             $_SERVER[$key] = $value;

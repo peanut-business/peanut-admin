@@ -772,10 +772,6 @@ class Runner:
             "DB_USER": required_environment("P0E_DB_USER"),
             "DB_PASS": required_environment("P0E_DB_PASSWORD"),
             "DB_PREFIX": "pa_",
-            "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
-            "ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
-            "PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
-            "PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
             "DEPLOYMENT_MODE": mode,
         })
         return values
@@ -818,6 +814,10 @@ class Runner:
             yield {
                 "PEANUT_SERVER_ENV_FILE": str(path),
                 "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
+                "ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
+                "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
+                "PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
+                "PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
             }
         finally:
             with contextlib.suppress(FileNotFoundError):

@@ -1,4 +1,5 @@
 import localeLogin from '@/views/login/locale/en-US';
+import localeInstallation from '@/views/installation/locale/en-US';
 
 import localeWorkplace from '@/views/dashboard/workplace/locale/en-US';
 import localeUserSetting from '@/views/user/setting/locale/en-US';
@@ -52,6 +53,7 @@ export default {
   'navbar.confirm': 'Confirm',
   ...localeSettings,
   ...localeLogin,
+  ...localeInstallation,
   ...localeWorkplace,
   ...localeUserSetting,
   ...localeSystemMenu,

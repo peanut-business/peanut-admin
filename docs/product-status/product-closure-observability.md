@@ -26,7 +26,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@f289c69a620f1eaffb0ba5a8cc39d089759259ab` | PC00—PC10 已合入；PC11 安装流程决定已确认 |
+| Application | `origin/dev@43cc193c0594718e0f5b9dc7f57a5af634ff2cde` | PC00—PC10 及 PC10 状态文档已合入；PC11 固定源码候选已通过资格，尚待合入 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
 | 安装 | CLI 空库安装和 3.x migration 链存在 | 缺一次性向导和首次运行清单 |
 | 运维 | 维护页只有环境/目录/清缓存；Core Ops 合同存在 | 缺应用 Host 和产品入口 |
@@ -68,7 +68,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC01 | 已完成 | `dev@6967f270dadcd1cb69c4606ad42c198c78db5b5b` / PR #275 | 唯一 owner、Core 采用规则和下游切片已冻结 | 无 | 由 PC02 固定可消费身份 |
 | PC02 | 已完成 | `dev@9af96499e22e2080e8e4e3aa7562f9cea3f9b402` / PR #276 | 四端 lock/导出/来源矩阵已固定；历史 Collaboration 例外已登记 | 无 | 按真实公共导出推进 PC10/PC20/PC30 |
 | PC10 | 已完成 | `dev@f289c69a620f1eaffb0ba5a8cc39d089759259ab` / PR #277 | 唯一只读 Host、CLI 入口、秘密裁剪、聚焦合同测试和 app-owned scaffold 投影已合入 | 正式 Release 组合资格归 PC70 | 作为 PC11 唯一预检输入 |
-| PC11 | 进行中 | `feat/product-closure-install-wizard` | guided/automatic 两个入口、唯一执行 Host、不写 `.env` 和安装态 fail-closed 决定已冻结 | Runtime、部署 transport、Web、双模式与失败资格 | 实现一次性安装纵向闭环 |
+| PC11 | 进行中 | `source@7684a5fcb4bd23cdd966ab760d16a8130ba41ced` / `feat/product-closure-install-wizard` | 唯一 Host、guided/automatic transport、安装态门禁和 Web 向导已实现；`pc11e1` 的 Standalone/Multi-tenant 均为 91 表、8 个官方 Module，invalid token、重复执行、零残留和 Web 生产构建通过 | PR 合入 `dev`；合入前不得标记已完成 | 推送一次功能分支并通过一个 PR 合入，然后同步终态文档 |
 | PC12 | 未开始 | — | — | PC11 | 首次运行清单 |
 | PC20 | 未开始 | — | — | PC01、PC02 | 采用只读 Ops Console |
 | PC21 | 未开始 | — | — | PC20 | 脱敏诊断包 |

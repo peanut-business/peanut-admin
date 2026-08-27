@@ -123,6 +123,45 @@
       ]
     },
     {
+      "id": "PA-INSTALL-002",
+      "name": "一次性引导安装",
+      "area": "productization",
+      "status": "in_progress",
+      "summary": "PC11 固定源码候选已形成 guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导；Standalone/Multi-tenant 登记空库资格与 Web 生产构建已通过，当前只剩 PR 合入 dev 和终态文档同步。正式 Release 的派生应用组合资格仍归 PC70。",
+      "acceptance": [
+        "guided 模式只接受同源请求、Bearer setup token 和固定白名单输入",
+        "安装身份只在安装进程或请求内存中使用，不写入 server/.env 或资格证据",
+        "Standalone 与 Multi-tenant 空库均形成 91 张表、8 个已安装且启用的官方 Module",
+        "安装后状态锁死，重复执行返回 INSTALL_ALREADY_COMPLETED",
+        "Admin Web 安装路由和生产构建通过"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "7684a5fcb4bd23cdd966ab760d16a8130ba41ced"
+        },
+        {
+          "kind": "report",
+          "ref": "output/p0e-pc11e1/pc11-summary.json"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-INSTALL-001",
+        "PA-PLUGIN-001"
+      ],
+      "paths": [
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/common/http/middleware/InstallationStateMiddleware.php",
+        "server/app/installation/controller/InstallationController.php",
+        "web/src/views/installation/index.vue",
+        "deploy/docker/php-entrypoint.sh"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",

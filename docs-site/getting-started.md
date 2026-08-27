@@ -28,17 +28,18 @@ composer install --working-dir=server
 
 根 `.env` 只控制编排；PHP、数据库、身份和 Module 配置只写在 `server/.env`。不要提交这两个文件。
 
-## 2. 配置安装身份与数据库
+## 2. 配置安装模式与数据库
 
 至少填写：
 
 ```dotenv
 DEPLOYMENT_MODE=standalone
-ADMIN_INITIAL_EMAIL=you@example.com
-ADMIN_INITIAL_PASSWORD=<your-strong-password>
+PEANUT_INSTALLATION_MODE=automatic
 ```
 
-同时填写 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER` 和 `DB_PASS`。多租户部署还需要独立的 Platform 身份与 Host 配置。完整字段以 `server/.env.example` 为准。
+同时填写 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER` 和 `DB_PASS`。初始身份不得写入
+`server/.env`；多租户部署还需要独立的 Platform 身份与 Host 配置。完整字段以
+`server/.env.example` 为准。
 
 仓库维护者在使用数据库、端口或服务前，先执行：
 
@@ -51,10 +52,15 @@ ADMIN_INITIAL_PASSWORD=<your-strong-password>
 ## 3. 安装空库
 
 ```bash
+ADMIN_INITIAL_EMAIL=you@example.com \
+ADMIN_INITIAL_PASSWORD='<your-strong-password>' \
 php server/database/install.php
 ```
 
-成功结果是 canonical Schema、当前增量 migration 和首次身份均完成，且命令不回显密码。若目标非空或 checksum 不一致，停止并选择正确资源；不要清空未知数据库。
+成功结果是 canonical Schema、当前增量 migration、官方 Module 选择和首次身份均由唯一
+安装 Host 完成，且命令不回显密码。若目标非空或 checksum 不一致，停止并选择正确资源；
+不要清空未知数据库。人工部署也可在 `server/.env` 选择 `guided` 并配置高熵 setup token，
+启动后访问 `/admin/installation`；页面不接收数据库连接信息，也不保存 token 或密码。
 
 ## 4. 启动开发栈
 

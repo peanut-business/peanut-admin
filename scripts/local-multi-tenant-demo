@@ -33,6 +33,15 @@ set_env() {
     mv "$temporary" "$target"
 }
 
+clear_env() {
+    target=$1
+    name=$2
+    temporary=$(mktemp "$(dirname "$target")/environment.XXXXXX")
+    awk -F= -v name="$name" '$1 != name { print }' "$target" > "$temporary"
+    chmod 600 "$temporary"
+    mv "$temporary" "$target"
+}
+
 ensure_env_value() {
     target=$1
     name=$2
@@ -66,10 +75,10 @@ prepare_env() {
     set_env "$backend_env" PLATFORM_HOSTS platform.peanut-admin.test
     set_env "$backend_env" TENANT_ADMIN_HOSTS admin.peanut-admin.test
     set_env "$backend_env" OWNER_INVITATION_DELIVERY_MODE manual
-    set_env "$backend_env" ADMIN_INITIAL_EMAIL owner@local.test
-    set_env "$backend_env" ADMIN_INITIAL_PASSWORD 'peanut1234'
-    set_env "$backend_env" PLATFORM_INITIAL_EMAIL platform@local.test
-    set_env "$backend_env" PLATFORM_INITIAL_PASSWORD 'peanut1234'
+    clear_env "$backend_env" ADMIN_INITIAL_EMAIL
+    clear_env "$backend_env" ADMIN_INITIAL_PASSWORD
+    clear_env "$backend_env" PLATFORM_INITIAL_EMAIL
+    clear_env "$backend_env" PLATFORM_INITIAL_PASSWORD
     set_env "$backend_env" PEANUT_DEMO_TENANT_A_EMAIL tenant-a@local.test
     set_env "$backend_env" PEANUT_DEMO_TENANT_B_EMAIL tenant-b@local.test
     set_env "$backend_env" PEANUT_DEMO_SHARED_PASSWORD 'peanut1234'
@@ -190,13 +199,9 @@ show_urls() {
 }
 
 show_credentials() {
-    [ -f "$backend_env" ] || die "run prepare first: $backend_env"
-    admin_email=$(awk -F= '$1 == "ADMIN_INITIAL_EMAIL" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
-    admin_password=$(awk -F= '$1 == "ADMIN_INITIAL_PASSWORD" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
-    platform_email=$(awk -F= '$1 == "PLATFORM_INITIAL_EMAIL" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
-    platform_password=$(awk -F= '$1 == "PLATFORM_INITIAL_PASSWORD" { sub(/^[^=]*=/, ""); print; exit }' "$backend_env")
-    printf 'Tenant owner: %s / %s\n' "$admin_email" "$admin_password"
-    printf 'Platform:     %s / %s\n' "$platform_email" "$platform_password"
+    printf '%s\n' \
+        'Tenant owner: owner@local.test / peanut1234' \
+        'Platform:     platform@local.test / peanut1234'
 }
 
 case "${1:-}" in
@@ -207,7 +212,10 @@ case "${1:-}" in
         assert_lease
         [ -f "$orchestration_env" ] && [ -f "$backend_env" ] || prepare_env
         load_env
-        PEANUT_SERVER_ENV_FILE="$backend_env" php "$repo_dir/server/database/install.php" --skip-if-installed
+        ADMIN_INITIAL_EMAIL=owner@local.test ADMIN_INITIAL_PASSWORD=peanut1234 \
+            PLATFORM_INITIAL_EMAIL=platform@local.test PLATFORM_INITIAL_PASSWORD=peanut1234 \
+            PEANUT_SERVER_ENV_FILE="$backend_env" \
+            php "$repo_dir/server/database/install.php" --skip-if-installed
         PEANUT_SERVER_ENV_FILE="$backend_env" php "$repo_dir/server/database/environment-guard.php" --current
         PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_SERVER_ENV_FILE="$backend_env" PEANUT_PHP_PID_FILE="$php_pid" \
             PEANUT_PHP_LOG_FILE="$php_log" \
