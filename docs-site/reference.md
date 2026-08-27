@@ -21,6 +21,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | Schema / migration | Core KernelSchema、`server/database/init.sql`、当前增量 migration |
 | 资源与端口（仓库维护） | 项目资源登记；不从公开页面猜实际地址 |
 | 能力与发布状态（仓库维护） | 内部机器账本与不可变快照；不从营销页推断 |
+| 应用升级执行 | Platform Ops API、`scripts/ops-upgrade-worker --once` 与部署方自己的资源登记 |
 
 ## 公开参考
 

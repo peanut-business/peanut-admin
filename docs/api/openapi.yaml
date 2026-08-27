@@ -153,6 +153,18 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/upgrades:
+    get:
+      tags: [PlatformOps]
+      operationId: getPlatformUpgradeExecutions
+      description: >-
+        Returns at most ten application upgrade tasks with immutable source and
+        target identities, ordered step status, stop code and recovery pointer.
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
   /api/platform/v1/ops/maintenance:
     get:
       tags: [PlatformOps]
@@ -259,6 +271,35 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/PlatformRestoreVerificationRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '400': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
+        '409': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/tasks/upgrade:
+    post:
+      tags: [PlatformOps]
+      operationId: submitPlatformUpgradeExecution
+      description: >-
+        Submits the sole fixed application-upgrade workflow. Source and target
+        identities come from current Runtime plus the deployment-staged PC41
+        descriptor. The request cannot provide a path, URL, command, Release,
+        image, credential, retry count or deployment target.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, minLength: 8, maxLength: 200}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              maxProperties: 0
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '400': {$ref: '#/components/responses/ApiResponse'}

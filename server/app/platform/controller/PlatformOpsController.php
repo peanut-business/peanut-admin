@@ -184,6 +184,23 @@ final class PlatformOpsController extends BasePlatformController
         });
     }
 
+    public function upgrade(): Json
+    {
+        return $this->run(function (PDO $pdo): array {
+            if ($this->request->post() !== []) {
+                throw OpsConsoleException::invalid();
+            }
+            return PlatformOpsRuntimeFactory::upgrades($pdo)
+                ->submit($this->context(), $this->idempotencyKey());
+        });
+    }
+
+    public function upgrades(): Json
+    {
+        return $this->run(fn(PDO $pdo): array => PlatformOpsRuntimeFactory::upgrades($pdo)
+            ->snapshot($this->context()));
+    }
+
     public function backups(): Json
     {
         return $this->run(fn(PDO $pdo): array => (new PlatformBackupCenterService($pdo))
@@ -192,9 +209,13 @@ final class PlatformOpsController extends BasePlatformController
 
     public function task(string $task_key): Json
     {
-        return $this->run(fn(PDO $pdo): array => PlatformOpsRuntimeFactory::tasks($pdo)
-            ->task($this->context(), $task_key)
-            ->toPublicArray());
+        return $this->run(function (PDO $pdo) use ($task_key): array {
+            $upgrade = PlatformOpsRuntimeFactory::upgrades($pdo)
+                ->taskIfUpgrade($this->context(), $task_key);
+            return $upgrade ?? PlatformOpsRuntimeFactory::tasks($pdo)
+                ->task($this->context(), $task_key)
+                ->toPublicArray();
+        });
     }
 
     private function run(callable $operation): Json

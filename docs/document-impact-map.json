@@ -80,6 +80,31 @@
       "reason": "Internal status and candidate evidence are not published to the developer site."
     },
     {
+      "id": "product-closure-upgrade-execution",
+      "paths": [
+        "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
+        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/command/OpsUpgradeTask.php",
+        "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
+        "scripts/ops-upgrade-worker",
+        "docs/architecture/product-closure-upgrade-execution.md"
+      ],
+      "classifications": ["architecture-decision", "technical", "developer-site"],
+      "upstream": ["fixed upgrade state machine, worker and schema"],
+      "technical_docs": [
+        "docs/architecture/product-closure-upgrade-execution.md",
+        "docs/peanut-admin-development-guide.md",
+        "docs/release-engineering.md"
+      ],
+      "site_docs": [
+        "docs-site/api.md",
+        "docs-site/guide/deployment-upgrade.md",
+        "docs-site/reference.md"
+      ],
+      "generated": [],
+      "reason": "The fixed application-upgrade workflow, safe Platform projection and deployment-owner procedure move together."
+    },
+    {
       "id": "architecture-boundary",
       "paths": ["resources/service-registry.json", "docs/architecture/*.md", "docs/design/**/*.md", "server/app/Modules/**/module.json", "server/vendor/peanut-admin/core/**/*", "web/node_modules/@peanut-admin/admin/**/*"],
       "classifications": ["architecture-decision", "technical", "developer-site"],

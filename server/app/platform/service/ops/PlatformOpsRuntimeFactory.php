@@ -52,6 +52,11 @@ final class PlatformOpsRuntimeFactory
         );
     }
 
+    public static function upgrades(PDO $pdo): PlatformUpgradeExecutionService
+    {
+        return new PlatformUpgradeExecutionService($pdo, dirname(__DIR__, 5));
+    }
+
     private function __construct()
     {
     }

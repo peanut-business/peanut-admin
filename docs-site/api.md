@@ -101,6 +101,13 @@ Module、scaffold ownership/conflict、备份、恢复 evidence 和维护窗口�
 `UPGRADE_FRESH_REBUILD_REQUIRED`，不会尝试原地升级。App-owned 文件只投影数量和摘要并保持
 不变，冲突原因不返回绝对路径或文件内容。
 
+具有 `platform.ops.upgrade.manage` 的 PlatformOperator 可以向
+`POST /api/platform/v1/ops/tasks/upgrade` 提交空 JSON 对象和 `Idempotency-Key`。服务器只消费
+当前 Runtime 与 Deployment 已固定的目标 descriptor，按静态预检、新备份、同一备份的隔离
+恢复验证、维护、部署、smoke 和恢复指针顺序执行；请求不能提供路径、URL、命令、Release、
+镜像、凭据或部署目标。`GET /api/platform/v1/ops/upgrades` 返回最近十个任务的安全步骤投影和
+稳定停止码，不返回命令输出或环境细节。
+
 ### Platform 维护窗口
 
 `GET /api/platform/v1/ops/maintenance` 读取当前维护窗口；具有

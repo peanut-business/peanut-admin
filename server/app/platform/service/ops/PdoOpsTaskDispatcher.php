@@ -21,6 +21,82 @@ final readonly class PdoOpsTaskDispatcher implements OpsTaskDispatcher
 
     public function dispatch(PlatformContext $context, OpsTaskSubmission $submission): OpsTask
     {
+        return $this->map($this->dispatchRow(
+            $context,
+            $submission->taskType,
+            $submission->handlerKey,
+            $submission->payload,
+            $submission->idempotencyDigest,
+            $submission->requestDigest,
+            $submission->concurrencyKey,
+            $submission->maximumAttempts,
+            $submission->audit->eventType,
+            $submission->audit->action,
+            $submission->audit->metadata,
+        ));
+    }
+
+    /**
+     * Application-owned PC42 extension over the same canonical task ledger.
+     *
+     * @param array<string,string> $payload
+     * @return array<string,mixed>
+     */
+    public function dispatchUpgrade(
+        PlatformContext $context,
+        array $payload,
+        string $idempotencyKey,
+    ): array {
+        if (strlen($idempotencyKey) < 8 || strlen($idempotencyKey) > 200
+            || preg_match('/^[\x21-\x7e]+$/D', $idempotencyKey) !== 1
+        ) {
+            throw OpsConsoleException::invalid();
+        }
+        $idempotencyDigest = hash('sha256', $idempotencyKey);
+        $requestDigest = hash('sha256', json_encode(
+            ['task_type' => PlatformUpgradeExecutionService::TASK_TYPE, 'payload' => $payload],
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES,
+        ));
+
+        return $this->dispatchRow(
+            $context,
+            PlatformUpgradeExecutionService::TASK_TYPE,
+            PlatformUpgradeExecutionService::HANDLER_KEY,
+            $payload,
+            $idempotencyDigest,
+            $requestDigest,
+            PlatformUpgradeExecutionService::CONCURRENCY_KEY,
+            1,
+            'platform.ops.upgrade.submitted',
+            'upgrade.submit',
+            [
+                'target_release_key' => $payload['target_release_key'],
+                'target_commit' => $payload['target_commit'],
+                'target_descriptor_sha256' => $payload['target_descriptor_sha256'],
+                'idempotency_digest' => $idempotencyDigest,
+                'request_digest' => $requestDigest,
+            ],
+        );
+    }
+
+    /**
+     * @param array<string,string> $payload
+     * @param array<string,bool|int|string|null> $auditMetadata
+     * @return array<string,mixed>
+     */
+    private function dispatchRow(
+        PlatformContext $context,
+        string $taskType,
+        string $handlerKey,
+        array $payload,
+        string $idempotencyDigest,
+        string $requestDigest,
+        string $concurrencyKey,
+        int $maximumAttempts,
+        string $eventType,
+        string $action,
+        array $auditMetadata,
+    ): array {
         $ownsTransaction = !$this->pdo->inTransaction();
         if ($ownsTransaction) {
             $this->pdo->beginTransaction();
@@ -29,21 +105,21 @@ final readonly class PdoOpsTaskDispatcher implements OpsTaskDispatcher
         try {
             $existing = $this->one(
                 'SELECT * FROM pa_ops_task WHERE submitted_by_operator_id = :operator_id AND idempotency_digest = :digest FOR UPDATE',
-                ['operator_id' => $context->operatorId, 'digest' => $submission->idempotencyDigest]
+                ['operator_id' => $context->operatorId, 'digest' => $idempotencyDigest]
             );
             if ($existing !== null) {
-                if (!hash_equals((string)$existing['request_digest'], $submission->requestDigest)) {
+                if (!hash_equals((string)$existing['request_digest'], $requestDigest)) {
                     throw OpsConsoleException::idempotencyConflict();
                 }
                 if ($ownsTransaction) {
                     $this->pdo->commit();
                 }
-                return $this->map($existing);
+                return $existing;
             }
 
             $active = $this->one(
                 "SELECT id FROM pa_ops_task WHERE concurrency_key = :concurrency_key AND status IN ('queued', 'running') LIMIT 1 FOR UPDATE",
-                ['concurrency_key' => $submission->concurrencyKey]
+                ['concurrency_key' => $concurrencyKey]
             );
             if ($active !== null) {
                 throw OpsConsoleException::operationInProgress();
@@ -65,26 +141,26 @@ INSERT INTO pa_ops_task (
 SQL);
             $statement->execute([
                 'task_key' => $taskKey,
-                'task_type' => $submission->taskType,
-                'handler_key' => $submission->handlerKey,
+                'task_type' => $taskType,
+                'handler_key' => $handlerKey,
                 'payload_json' => json_encode(
-                    $submission->payload,
+                    $payload,
                     JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES
                 ),
-                'max_attempts' => $submission->maximumAttempts,
-                'idempotency_digest' => $submission->idempotencyDigest,
-                'request_digest' => $submission->requestDigest,
-                'concurrency_key' => $submission->concurrencyKey,
+                'max_attempts' => $maximumAttempts,
+                'idempotency_digest' => $idempotencyDigest,
+                'request_digest' => $requestDigest,
+                'concurrency_key' => $concurrencyKey,
                 'operator_id' => $context->operatorId,
             ]);
 
             AuditContractHost::fromPdo($this->pdo)->appendPlatform(
-                $submission->audit->eventType,
-                $submission->audit->action,
+                $eventType,
+                $action,
                 $context->requestId,
                 $context->operatorId,
                 $context->accountId,
-                [...$submission->audit->metadata, 'task_key' => $taskKey]
+                [...$auditMetadata, 'task_key' => $taskKey]
             );
 
             $row = $this->one('SELECT * FROM pa_ops_task WHERE task_key = :task_key', ['task_key' => $taskKey]);
@@ -94,7 +170,7 @@ SQL);
             if ($ownsTransaction) {
                 $this->pdo->commit();
             }
-            return $this->map($row);
+            return $row;
         } catch (Throwable $exception) {
             if ($ownsTransaction && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();

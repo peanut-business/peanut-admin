@@ -167,6 +167,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/upgrades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns at most ten application upgrade tasks with immutable source and target identities, ordered step status, stop code and recovery pointer. */
+        get: operations["getPlatformUpgradeExecutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/maintenance": {
         parameters: {
             query?: never;
@@ -230,6 +247,23 @@ export interface paths {
         put?: never;
         /** @description Restores one verified paired backup to the registered isolated target, verifies data and files, then removes only that target. Host, database, path, command, credential and retry fields are not accepted. */
         post: operations["submitPlatformRestoreVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/ops/tasks/upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Submits the sole fixed application-upgrade workflow. Source and target identities come from current Runtime plus the deployment-staged PC41 descriptor. The request cannot provide a path, URL, command, Release, image, credential, retry count or deployment target. */
+        post: operations["submitPlatformUpgradeExecution"];
         delete?: never;
         options?: never;
         head?: never;
@@ -514,6 +548,20 @@ export interface operations {
             403: components["responses"]["ApiResponse"];
         };
     };
+    getPlatformUpgradeExecutions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
     getPlatformMaintenanceWindow: {
         parameters: {
             query?: never;
@@ -606,6 +654,28 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PlatformRestoreVerificationRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            409: components["responses"]["ApiResponse"];
+        };
+    };
+    submitPlatformUpgradeExecution: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
             };
         };
         responses: {
