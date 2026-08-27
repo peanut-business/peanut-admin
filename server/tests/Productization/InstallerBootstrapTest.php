@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__, 2) . '/database/install.php';
+use app\common\service\installation\InstallationPreflightHost;
+
+require dirname(__DIR__, 2) . '/app/common/service/installation/InstallationPreflightHost.php';
 
 function installerExpect(bool $condition, string $message): void
 {
@@ -9,6 +11,113 @@ function installerExpect(bool $condition, string $message): void
         throw new RuntimeException($message);
     }
 }
+
+function installerRemoveTemporaryDirectory(string $path): void
+{
+    if (!is_dir($path)) {
+        return;
+    }
+    foreach (scandir($path) ?: [] as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+        $target = $path . '/' . $entry;
+        if (is_dir($target)) {
+            installerRemoveTemporaryDirectory($target);
+        } else {
+            unlink($target);
+        }
+    }
+    rmdir($path);
+}
+
+$temporary = sys_get_temp_dir() . '/peanut-install-preflight-' . bin2hex(random_bytes(6));
+foreach (['vendor', 'database', 'config', 'runtime', 'public/storage', 'private/storage'] as $directory) {
+    installerExpect(mkdir($temporary . '/' . $directory, 0775, true), 'unable to create preflight fixture directory');
+}
+foreach (['vendor/autoload.php', 'database/init.sql', 'config/brand.json'] as $file) {
+    installerExpect(file_put_contents($temporary . '/' . $file, "fixture\n") !== false, 'unable to create preflight fixture file');
+}
+
+$resourceIdentity = [
+    'environment' => 'production',
+    'deployment_target' => 'production',
+    'resource_id' => 'registered-production-database',
+    'endpoint_id' => 'registered-container-endpoint',
+    'consumer' => 'container',
+    'host' => 'must-not-appear.example',
+    'database' => 'must_not_appear',
+    'user' => 'must-not-appear-user',
+    'password' => 'must-not-appear-secret',
+];
+
+try {
+    $host = new InstallationPreflightHost(
+        $temporary,
+        static fn(string $extension): bool => true,
+        static fn(): array => $resourceIdentity,
+        '8.3.0'
+    );
+    $ready = $host->inspect();
+    installerExpect($ready['status'] === 'ready', 'valid preflight fixture must be ready');
+    installerExpect($ready['code'] === 'INSTALL_PREFLIGHT_READY', 'ready preflight code changed');
+    installerExpect(count($ready['checks']) === 7, 'preflight check set changed');
+    installerExpect($ready['resource'] === array_intersect_key(
+        $resourceIdentity,
+        array_flip(['environment', 'deployment_target', 'resource_id', 'endpoint_id', 'consumer'])
+    ), 'preflight must expose only stable resource identity fields');
+    $encoded = json_encode($ready, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    foreach (['must-not-appear.example', 'must_not_appear', 'must-not-appear-user', 'must-not-appear-secret'] as $secret) {
+        installerExpect(!str_contains($encoded, $secret), 'preflight leaked a resource detail');
+    }
+
+    $missingExtension = (new InstallationPreflightHost(
+        $temporary,
+        static fn(string $extension): bool => $extension !== 'zip',
+        static fn(): array => $resourceIdentity,
+        '8.3.0'
+    ))->inspect();
+    installerExpect($missingExtension['status'] === 'blocked', 'missing extension must block preflight');
+    installerExpect($missingExtension['code'] === 'INSTALL_PREFLIGHT_BLOCKED', 'blocked preflight code changed');
+    $extensionCheck = array_values(array_filter(
+        $missingExtension['checks'],
+        static fn(array $check): bool => $check['id'] === 'php-extensions'
+    ))[0] ?? null;
+    installerExpect(
+        ($extensionCheck['code'] ?? null) === 'INSTALL_PHP_EXTENSIONS_MISSING',
+        'missing extension reason code changed'
+    );
+
+    $resourceFailure = (new InstallationPreflightHost(
+        $temporary,
+        static fn(string $extension): bool => true,
+        static fn(): array => throw new RuntimeException('must-not-appear-resource-error'),
+        '8.3.0'
+    ))->inspect();
+    installerExpect($resourceFailure['status'] === 'blocked', 'invalid resource identity must block preflight');
+    installerExpect($resourceFailure['resource'] === null, 'invalid resource identity must not be exposed');
+    installerExpect(
+        !str_contains(json_encode($resourceFailure, JSON_THROW_ON_ERROR), 'must-not-appear-resource-error'),
+        'resource validation exception leaked through preflight'
+    );
+
+    $hostSource = (string)file_get_contents(
+        dirname(__DIR__, 2) . '/app/common/service/installation/InstallationPreflightHost.php'
+    );
+    foreach (['new PDO', 'guardedConnection(', 'waitForDatabase(', 'file_put_contents(', 'touch(', 'mkdir(', 'unlink('] as $mutation) {
+        installerExpect(!str_contains($hostSource, $mutation), 'preflight host must stay read-only: ' . $mutation);
+    }
+} finally {
+    installerRemoveTemporaryDirectory($temporary);
+}
+
+echo "PC10-INSTALL-PREFLIGHT-001 passed\n";
+
+if (in_array('--preflight-only', $_SERVER['argv'] ?? [], true)) {
+    exit(0);
+}
+
+require dirname(__DIR__, 2) . '/database/install.php';
 
 foreach (['', '12345678901'] as $weakPassword) {
     try {
