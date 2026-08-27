@@ -111,7 +111,8 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 ## 失败恢复与完成
 
 每个 group 通过后立即 checkpoint。失败时 runner 保留数据库、cache、output 和 Compose 取证
-资源，写入 `recovery.json` 并 renew lease。完成一次只读归因及最小修复后，用完全相同参数运行：
+资源，写入 `recovery.json` 并 renew lease。先完成一次只读归因；只有候选内容与资格可信性均
+未变化、且资格合同明确允许续跑时，才用完全相同参数运行：
 
 ```bash
 scripts/p0e-runtime-qualification resume "${common[@]}"
@@ -120,3 +121,9 @@ scripts/p0e-runtime-qualification resume "${common[@]}"
 resume 跳过已通过 group，只重跑失败或未完成组。七组全部通过后，runner 停止 Docs listener，
 删除本 run_id 的五个数据库、Compose containers/volumes/local images 和 cache，核验所有残留为
 零，保留脱敏 output evidence，最后 release lease。失败终态不会自动 release 或清理取证资源。
+
+如果修复需要修改产品 Runtime、Schema、依赖、生成物、fixture、资格脚本、lock 或其他会改变
+资格可信性的内容，旧候选和旧 run 只能作为诊断证据，不得 `resume`。执行者必须先按
+`AGENT_EXECUTION_RULES.md` 回到 Development mode，在实际失败路径上完成聚焦验证；清理旧 run
+的精确资源后，再以新 candidate 和新 run_id 进入资格。同一 group 第二次失败时，必须先完成
+边界矩阵和边界级修复，不得继续用完整 P0-E 逐项发现相邻问题。
