@@ -26,27 +26,27 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@b58bf9681a705d19363038635722041033c05a9d` | PC00—PC11 及终态文档已合入；PC12 已领取 |
+| Application | `origin/dev@c8347692133921114d9ae535f7a893bb8699744c` | PC00—PC12 已合入；PC20 是下一关键路径 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
-| 安装 | CLI 空库安装、一次性 Web 向导和 3.x migration 链存在 | PC12 首次运行清单正在实施 |
+| 安装 | CLI 空库安装、一次性 Web 向导、首次运行准备清单和 3.x migration 链存在 | PC20/PC21 仍需补齐统一健康与诊断入口 |
 | 运维 | 维护页只有环境/目录/清缓存；Core Ops 合同存在 | 缺应用 Host 和产品入口 |
 | 备份 | 生产登记有 DB + `php-storage` 配对备份门禁 | 属发布工程能力，不是应用内产品 |
 | 恢复 | 登记策略与 Core restore-to-new-target 合同存在 | 应用尚未采用和验证 |
 | 升级 | scaffold、migration、deploy-release 分别存在 | 缺统一就绪和执行工作台 |
 | 文档 | 新 registry、impact map 和治理检查已合入 | 本队列必须登记并通过生成/公开边界检查 |
-| 能力账本 | 基线早于当前 Module/文档提交 | PC00 只建立对照机制，不提前改写 verified 状态 |
+| 能力账本 | PC10—PC12 以 implemented 状态记录并引用精确 dev 身份 | 正式 verified 快照仍只在 PC70/Release 固定候选形成 |
 
 ## 3. 总体进度
 
 | 指标 | 当前值 | 说明 |
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
-| 已完成 | 5 | PC00、PC01、PC02、PC10、PC11 |
-| 进行中 | 1 | PC12 |
+| 已完成 | 6 | PC00、PC01、PC02、PC10、PC11、PC12 |
+| 进行中 | 0 | — |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
 | 未开始 | 13 | PC20—PC70 |
-| 当前关键路径 | PC12 | 首次运行配置清单；只读 Host、权限、页面和文档同一候选收口 |
+| 当前关键路径 | PC20 | Core Ops Console 最小采用；尚未领取 |
 | 可并行工作线 | 0 | 当前共享文档候选由一个集成 owner 收口 |
 
 ## 4. 阶段观察
@@ -54,7 +54,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 阶段 | 状态 | 已有输入 | 尚缺验收 | 下一交付物 |
 |---|---|---|---|---|
 | A 边界与可见性 | 已完成 | PC00/PC01 由 PR #275 合入；PC02 由 PR #276 合入 | 无 | 保持唯一 owner 与锁版本，不为编号整齐盲升依赖 |
-| B 可安装、可诊断 | 进行中 | PC10/PC11 已合入；CLI、guided/automatic installer 和 Web 向导存在 | PC12、PC20/PC21 仍未实施 | PC12 首次运行配置清单 |
+| B 可安装、可诊断 | 进行中 | PC10—PC12 已合入；CLI、guided/automatic installer、Web 向导和首次运行清单存在 | PC20/PC21 仍未实施 | PC20 Core Ops Console 最小采用 |
 | C 可备份、可恢复 | 未开始 | 生产配对备份登记、Core Ops 任务合同 | Provider、任务 UI、隔离恢复和代表验证 | PC30 Provider 合同 |
 | D 可升级 | 未开始 | scaffold upgrade、migration、deploy-release | 维护门禁、兼容检查、统一状态和恢复指针 | PC40 维护窗口切片 |
 | E 可扩展、可运营 | 未开始 | 8 Module、Bundle、任务和 Provider Runtime | 信任、兼容、配置转移、模板和资格视图 | PC50 信任矩阵 |
@@ -69,7 +69,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC02 | 已完成 | `dev@9af96499e22e2080e8e4e3aa7562f9cea3f9b402` / PR #276 | 四端 lock/导出/来源矩阵已固定；历史 Collaboration 例外已登记 | 无 | 按真实公共导出推进 PC10/PC20/PC30 |
 | PC10 | 已完成 | `dev@f289c69a620f1eaffb0ba5a8cc39d089759259ab` / PR #277 | 唯一只读 Host、CLI 入口、秘密裁剪、聚焦合同测试和 app-owned scaffold 投影已合入 | 正式 Release 组合资格归 PC70 | 作为 PC11 唯一预检输入 |
 | PC11 | 已完成 | `dev@d80337b6d7b800558131968e65f8039cb8781912` / PR #279；资格源码 `7684a5fcb4bd23cdd966ab760d16a8130ba41ced` | 唯一 Host、guided/automatic transport、安装态门禁和 Web 向导已合入；`pc11e1` 的 Standalone/Multi-tenant 均为 91 表、8 个官方 Module，invalid token、重复执行、零残留和 Web 生产构建通过 | 正式 released-scaffold 组合资格归 PC70，不阻塞 PC11 完成 | 作为 PC12 首次运行清单的安装完成输入 |
-| PC12 | 进行中 | `feat/product-closure-readiness-checklist` / 基线 `b58bf9681a705d19363038635722041033c05a9d` | 已冻结 Tenant/Instance 展示边界：品牌、短信、存储、备份、Worker、当前域名/TLS 与账户安全；备份中心、Worker 心跳、邮件 Provider 和全部域名资格保持真实缺口 | 只读 Host、精确权限 migration、Admin 页面、Web build 与文档 Gate 尚未形成固定合入身份 | 完成同一候选的实现和最低验证 |
+| PC12 | 已完成 | `dev@c8347692133921114d9ae535f7a893bb8699744c` / PR #281 | Tenant 安全只读 Host 与双语 Admin 页面展示 7 类准备项；本地配置、当前请求观察、未验证与尚未实施严格区分，备份中心、Worker 心跳、邮件 Provider 和全部域名资格保持真实缺口 | 正式数据库/浏览器/released-scaffold 组合资格归 PC70，不阻塞 PC12 实现完成 | 作为 PC20 健康与 PC60 Provider 资格的现状入口 |
 | PC20 | 未开始 | — | — | PC01、PC02 | 采用只读 Ops Console |
 | PC21 | 未开始 | — | — | PC20 | 脱敏诊断包 |
 | PC30 | 未开始 | — | — | PC01、PC02 | 备份 Provider/制品合同 |

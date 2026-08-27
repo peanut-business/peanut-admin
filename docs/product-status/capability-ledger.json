@@ -170,6 +170,46 @@
       ]
     },
     {
+      "id": "PA-READINESS-001",
+      "name": "首次运行生产准备清单",
+      "area": "productization",
+      "status": "implemented",
+      "summary": "PC12 已由 PR #281 合入 dev：Tenant 安全的只读 Host 与 Admin 页面统一展示品牌、通知、存储、备份、Worker、当前域名/TLS 和账户安全的状态、影响、入口与生产阻塞性；状态严格区分本地配置、当前请求观察、未验证和尚未实施。完整 released-scaffold 组合资格仍归 PC70。",
+      "acceptance": [
+        "每项都返回稳定状态、影响、下一动作、配置入口或责任方，以及是否阻塞生产",
+        "Tenant 管理员只看到可行动的租户信息和实例结论，不看到主机、数据库地址或凭据",
+        "短信已配置不冒充真实送达，当前 HTTPS 不冒充全部域名资格",
+        "备份中心、Worker 心跳和邮件 Provider 的真实缺口可见且不会被静态配置掩盖",
+        "精确 readiness/checklist 权限、OpenAPI 投影、双语 Admin 页面和首次运行文档已形成"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "c8347692133921114d9ae535f7a893bb8699744c"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/281"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-INSTALL-002",
+        "PA-BRAND-001",
+        "PA-MODULE-002"
+      ],
+      "paths": [
+        "server/app/common/service/readiness/FirstRunReadinessHost.php",
+        "server/app/adminapi/controller/config/ReadinessController.php",
+        "server/database/migrations/20260827-first-run-readiness.sql",
+        "web/src/views/app-setting/readiness/index.vue",
+        "docs/peanut-admin-user-manual.md"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
