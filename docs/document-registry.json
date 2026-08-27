@@ -1514,6 +1514,39 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-product-closure-backup-provider-contract",
+      "path": "docs/architecture/product-closure-backup-provider-contract.md",
+      "title": "产品闭环配对备份 Provider 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/platform/service/ops/PairedBackupProvider.php",
+        "server/app/platform/service/ops/PairedBackupManifest.php",
+        "resources/project-resources.json",
+        "server/composer.lock",
+        "repo://peanut-admin-core/packages/php/ops-console"
+      ],
+      "owner": "product-operations",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure",
+        "backup",
+        "recovery"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-product-closure-core-application-compatibility",
       "path": "docs/architecture/product-closure-core-application-compatibility.md",
       "title": "产品闭环 Core / Application 兼容基线",
