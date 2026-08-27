@@ -184,6 +184,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns a secret-free, read-only aggregation of configured, connectivity, callback, credential-rotation, production qualification and recent failure states. Reading this endpoint never runs a probe, sends a message, or performs a financial operation. */
+        get: operations["getPlatformProviderQualifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/maintenance": {
         parameters: {
             query?: never;
@@ -317,6 +334,43 @@ export interface components {
             backup_reference_key: string;
             /** @enum {string} */
             target_key: "isolated-new-target";
+        };
+        PlatformProviderQualificationResponse: components["schemas"]["ApiResponse"] & {
+            data?: components["schemas"]["PlatformProviderQualificationSnapshot"];
+        };
+        PlatformProviderQualificationSnapshot: {
+            /** @enum {integer} */
+            schema_version: 1;
+            /** Format: date-time */
+            generated_at: string;
+            providers: components["schemas"]["PlatformProviderQualification"][];
+        };
+        PlatformProviderQualification: {
+            provider_key: string;
+            /** @enum {string} */
+            category: "payment" | "notification" | "oauth" | "storage";
+            scope: {
+                /** @enum {string} */
+                type: "tenant" | "instance";
+                key: string;
+            };
+            configured: boolean;
+            connected: boolean;
+            callback_verified: boolean;
+            /** Format: date-time */
+            credential_rotated_at: string | null;
+            /** Format: date-time */
+            observed_at: string | null;
+            /** Format: date-time */
+            expires_at: string | null;
+            qualified: boolean;
+            status_code: string;
+            recent_failure: {
+                code: string;
+                /** Format: date-time */
+                observed_at: string;
+            } | null;
+            evidence_digest: string;
         };
         ReadinessChecklistResponse: components["schemas"]["ApiResponse"] & {
             data?: components["schemas"]["ReadinessChecklist"];
@@ -558,6 +612,28 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
+    getPlatformProviderQualifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider qualification snapshot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformProviderQualificationResponse"];
+                };
+            };
             401: components["responses"]["ApiResponse"];
             403: components["responses"]["ApiResponse"];
         };
