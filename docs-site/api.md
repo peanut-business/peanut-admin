@@ -79,7 +79,14 @@ api/admin/menu/lists -> menu/lists
 
 其中 `configured` 只说明本地配置结构完整，`observed` 只说明当前请求看到了对应现象；
 两者都不能替代短信真实送达、云存储连通、备份恢复、Worker 心跳或全部域名证书资格。
-备份中心尚未实施时，接口会如实返回 `not_implemented`，不会把部署脚本当成应用内能力。
+备份项现在读取应用内 `pa_ops_backup_evidence` 的安全投影：没有已验证 pair 时返回待处理，
+存在 pair 但尚未完成新目标恢复验证时仍返回未验证。它不会返回主机、路径、命令或凭据，也
+不会把备份文件存在冒充恢复成功。
+
+实例平台的 `GET /api/platform/v1/ops/backups` 返回唯一 Provider、最近 20 个备份任务和最新
+已验证 manifest 的安全摘要。`POST /api/platform/v1/ops/tasks/backup` 只接受固定
+`provider_key=peanut.paired-db-files` 与 `Idempotency-Key`；任务状态通过
+`GET /api/platform/v1/ops/tasks/{task_key}` 读取。三者均要求 Platform 会话及对应 Ops 权限。
 
 ### 新接口完成清单
 

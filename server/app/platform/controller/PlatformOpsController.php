@@ -7,6 +7,7 @@ use app\common\service\audit\AuditContractHost;
 use app\common\service\JsonService;
 use app\platform\http\PlatformRequest;
 use app\platform\service\ops\PlatformDiagnosticBundleService;
+use app\platform\service\ops\PlatformBackupCenterService;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use PDO;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -90,6 +91,36 @@ final class PlatformOpsController extends BasePlatformController
         }
     }
 
+    public function backup(): Json
+    {
+        return $this->run(function (PDO $pdo): array {
+            $params = $this->request->post();
+            if (array_keys($params) !== ['provider_key'] || !is_string($params['provider_key'])) {
+                throw OpsConsoleException::invalid();
+            }
+            return PlatformOpsRuntimeFactory::tasks($pdo)
+                ->submitBackup(
+                    $this->context(),
+                    $params['provider_key'],
+                    $this->idempotencyKey()
+                )
+                ->toPublicArray();
+        });
+    }
+
+    public function backups(): Json
+    {
+        return $this->run(fn(PDO $pdo): array => (new PlatformBackupCenterService($pdo))
+            ->snapshot($this->context()));
+    }
+
+    public function task(string $task_key): Json
+    {
+        return $this->run(fn(PDO $pdo): array => PlatformOpsRuntimeFactory::tasks($pdo)
+            ->task($this->context(), $task_key)
+            ->toPublicArray());
+    }
+
     private function run(callable $operation): Json
     {
         try {
@@ -133,5 +164,14 @@ final class PlatformOpsController extends BasePlatformController
             throw new \InvalidArgumentException('OPS_DIAGNOSTIC_WINDOW_INVALID');
         }
         return (int)$candidate;
+    }
+
+    private function idempotencyKey(): string
+    {
+        $value = trim((string)$this->request->header('Idempotency-Key', ''));
+        if ($value === '') {
+            throw OpsConsoleException::invalid();
+        }
+        return $value;
     }
 }

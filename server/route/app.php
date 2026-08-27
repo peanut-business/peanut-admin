@@ -154,6 +154,15 @@ Route::get('api/platform/v1/ops/diagnostics', [PlatformOpsController::class, 'di
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read')
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.logs.read');
+Route::post('api/platform/v1/ops/tasks/backup', [PlatformOpsController::class, 'backup'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.backup.manage');
+Route::get('api/platform/v1/ops/backups', [PlatformOpsController::class, 'backups'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::get('api/platform/v1/ops/tasks/:task_key', [PlatformOpsController::class, 'task'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
 Route::post('api/platform/infrastructure/storage/account', [PlatformStorageController::class, 'createAccount'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');

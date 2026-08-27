@@ -265,7 +265,8 @@
 - “已配置”只代表本地配置结构完整，不代表短信真实送达、云存储连通或外部平台生产资格。
 - “当前入口已观察”只证明当前管理请求使用公开域名和 HTTPS，不证明 PC、H5、Tenant 或回调域名。
 - 实例级项目由 Platform Operator 或部署运维负责人处理；Tenant 管理员不会看到主机、数据库地址或凭据。
-- 备份中心尚未实施时会显示“尚未实施”；当前部署侧备份门禁不能冒充应用内备份记录或恢复验证。
+- 备份项会读取应用内备份账本；没有已验证配对备份时显示待处理，存在备份但尚未完成新目标
+  恢复验证时仍显示“尚未验证”，不会把文件存在或任务成功冒充可恢复结论。
 - Worker 没有权威心跳时会显示“尚未验证”；静态 Compose 配置不能替代最近消费和失败证据。
 
 ### 9.2 网站设置
@@ -457,9 +458,16 @@ Tenant owner/管理员登录后选择自己有权访问的 Tenant。切换 Tenan
 `unhealthy`；非权威缓存读取失败时显示为 `degraded`。状态 Provider 无法形成完整、合法证据时
 页面按不可用处理，不回退到静态 PHP 环境信息。
 
-PC20 是只读阶段：备份、恢复、维护窗口写入和运行日志按钮保持不可用，不能把页面中出现的
-后续能力区域理解为已经实施。Tenant 管理员无权读取该入口；需要排错时由 Platform Operator
-记录检查项、状态、版本身份和 Request ID，再交给部署运维负责人。
+具备 `platform.ops.backup.manage` 的 Platform Operator 可以在同一页面提交唯一登记的
+DB + `php-storage` 配对备份。页面只发送 Provider 和幂等键，显示排队、执行、成功或失败状态，
+并在备份中心列出最近任务与最新已验证备份的完成时间、年龄、manifest SHA-256 和是否匹配
+当前 Runtime source。主机、数据库名、路径、命令和凭据不会进入浏览器请求。
+
+受信 Deployment worker 必须从部署根目录显式运行 `scripts/ops-backup-worker --once`，并先
+核对生产资源选择、容量、停写窗口、DB/files 制品和摘要。失败任务只返回稳定错误码；不完整
+目录不会进入已验证备份列表。恢复、维护窗口写入和在线运行日志仍未开放。Tenant 管理员无权
+读取该入口；需要排错时由 Platform Operator 记录检查项、状态、版本身份和 Request ID，再交给
+部署运维负责人。
 
 具备 `platform.ops.read` 与 `platform.ops.logs.read` 的 Platform Operator 还可以下载最近一小时
 的脱敏诊断包。文件采用固定 JSON schema，包含运行状态、非秘密配置摘要、Module 清单、失败

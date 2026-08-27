@@ -8,6 +8,7 @@ use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
 use PeanutAdmin\OpsConsole\Status\OpsStatusService;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
+use PeanutAdmin\OpsConsole\Task\OpsTaskService;
 
 final class PlatformOpsRuntimeFactory
 {
@@ -35,6 +36,15 @@ final class PlatformOpsRuntimeFactory
     public static function backupProviders(): BackupRestoreProviderRegistry
     {
         return new BackupRestoreProviderRegistry([new PairedBackupProvider()]);
+    }
+
+    public static function tasks(PDO $pdo): OpsTaskService
+    {
+        return new OpsTaskService(
+            new PlatformOpsPermissionChecker($pdo),
+            self::backupProviders(),
+            new PdoOpsTaskDispatcher($pdo)
+        );
     }
 
     private function __construct()
