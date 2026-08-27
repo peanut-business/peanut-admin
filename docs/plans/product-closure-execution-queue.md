@@ -49,9 +49,9 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 
 | 顺序 | ID | 任务 | 当前状态 | 直接前置 | 作用 | 主要归属 |
 |---:|---|---|---|---|---|---|
-| 0 | `PC00` | 文档能力目录与事实源对照 | 进行中 | 无 | 让能力、边界和状态可发现 | Docs/Application |
-| 1 | `PC01` | 产品闭环所有权与采用决定 | 进行中 | 当前事实盘点 | 避免重复 Runtime 和事后抽 Core | Architecture |
-| 2 | `PC02` | Core/Application 兼容与版本基线 | 未开始 | PC01 | 固定可采用导出和不可变来源 | Core + Application |
+| 0 | `PC00` | 文档能力目录与事实源对照 | 已完成 | 无 | 让能力、边界和状态可发现 | Docs/Application |
+| 1 | `PC01` | 产品闭环所有权与采用决定 | 已完成 | 当前事实盘点 | 避免重复 Runtime 和事后抽 Core | Architecture |
+| 2 | `PC02` | Core/Application 兼容与版本基线 | 进行中 | PC01 | 固定可采用导出和不可变来源 | Core + Application |
 | 3 | `PC10` | 统一安装预检 Host | 未开始 | PC01、PC02 | 为 CLI、Web 和自动化提供同一检查 | Application Host |
 | 4 | `PC11` | 一次性安装向导 | 未开始 | PC10 | 完成首次安装产品流程 | Application |
 | 5 | `PC12` | 首次运行配置清单 | 未开始 | PC11 | 展示生产准备度和下一动作 | Application |
@@ -106,9 +106,9 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 
 ## 6. 当前执行点
 
-- PC00：本计划、可观测面板和所有权决定正在纳入新文档登记体系。
-- PC01：所有权与 Core 采用决定已形成，等待同一文档候选验证与合入。
-- PC02：尚未开始；PC00/PC01 合入后立即领取。
+- PC00/PC01：已由 PR #275 合入 `dev@6967f270dadcd1cb69c4606ad42c198c78db5b5b`。
+- PC02：当前分支正在固定四端 lock、公共入口、不可变来源、例外和验证 owner；不改依赖。
+- PC10/PC20/PC30：PC02 候选确认版本前置后可按各自文件 owner 领取；不得提前声称 Runtime 已实现。
 - 当前没有数据库、服务、容器、浏览器或生产资源 owner。
 
 ## 7. 验证

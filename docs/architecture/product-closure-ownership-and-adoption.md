@@ -49,7 +49,9 @@ Core 变更；不得先复制参考 Host，再事后收敛，也不得建立双�
 
 应用当前锁定 `peanut-admin/core@0.1.0-alpha.9`；Admin Web、PC、UniApp 分别锁定
 `@peanut-admin/admin@0.1.0-alpha.7`、`alpha.5`、`alpha.5`。版本不同本身不构成失败，
-但任何新采用必须先由 `PC02` 固定对应导出、不可变来源和兼容证据。
+`PC02` 的当前导出、不可变来源、例外和下游领取条件见
+[`Core / Application 兼容基线`](product-closure-core-application-compatibility.md)。该基线允许
+PC20/PC30 采用已有 Ops 公共合同，不授权统一升级四端版本。
 
 ## 4. 唯一所有权矩阵
 

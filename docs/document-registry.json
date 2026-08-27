@@ -1514,6 +1514,43 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-product-closure-core-application-compatibility",
+      "path": "docs/architecture/product-closure-core-application-compatibility.md",
+      "title": "产品闭环 Core / Application 兼容基线",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/composer.lock",
+        "web/package.json",
+        "web/pnpm-lock.yaml",
+        "pc/package.json",
+        "pc/package-lock.json",
+        "uniapp/package.json",
+        "uniapp/package-lock.json",
+        "repo://peanut-admin-core/packages/php/composer.json",
+        "repo://peanut-admin-core/packages/web/package.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure",
+        "compatibility"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-product-closure-ownership-adoption",
       "path": "docs/architecture/product-closure-ownership-and-adoption.md",
       "title": "产品闭环所有权与 Core 采用决定",
