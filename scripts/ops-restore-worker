@@ -16,11 +16,6 @@ if [[ "$registry" != "$project_root/resources/project-resources.json" \
 fi
 [[ -f "$project_root/compose.yaml" && -f "$project_root/server/think" && -f "$registry" ]] \
   || die 'run from a registered Peanut Admin deployment root'
-[[ -f "$project_root/server/.env" ]] || die 'server/.env is required'
-sudo -n grep -Fqx 'PEANUT_DEPLOYMENT_TARGET=production' "$project_root/server/.env" \
-  || die 'registered production target is not selected'
-sudo -n grep -Fqx 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-mysql84' "$project_root/server/.env" \
-  || die 'registered production database is not selected'
 
 for resource_id in \
   peanut-admin-production-backups \
@@ -35,7 +30,9 @@ done
 
 qualification_image="${PEANUT_OPS_WORKER_IMAGE:-}"
 qualification_run_options=()
+backend_env="$project_root/server/.env"
 if [[ -n "$qualification_image" ]]; then
+  backend_env="$project_root/.env"
   qualification_candidate="${PEANUT_OPS_WORKER_CANDIDATE:-}"
   [[ "$qualification_image" =~ ^peanut-admin-restore-verify-worker:[a-f0-9]{12}$ \
     && "$qualification_candidate" =~ ^[a-f0-9]{40}$ \
@@ -47,10 +44,15 @@ if [[ -n "$qualification_image" ]]; then
     || die 'qualification worker image does not match the fixed candidate'
   export PHP_IMAGE="$qualification_image"
   qualification_run_options=(
-    --volume "$project_root/server/.env:/var/www/peanut-admin/server/.env.source:ro"
+    --volume "$backend_env:/var/www/peanut-admin/server/.env.source:ro"
     --env 'PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.source'
   )
 fi
+[[ -f "$backend_env" ]] || die 'registered backend environment file is required'
+sudo -n grep -Fqx 'PEANUT_DEPLOYMENT_TARGET=production' "$backend_env" \
+  || die 'registered production target is not selected'
+sudo -n grep -Fqx 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-mysql84' "$backend_env" \
+  || die 'registered production database is not selected'
 
 compose=(sudo -n docker compose -f compose.yaml --profile bundled-db)
 think=("${compose[@]}" run -T --rm --no-deps "${qualification_run_options[@]}" --entrypoint php php server/think ops-restore:task)
