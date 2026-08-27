@@ -250,7 +250,8 @@ final class ApplicationCreator
                 throw new RuntimeException('CREATE_APP_ADOPTION_ARTIFACT_DIGEST_MISMATCH: ' . $path);
             }
             $rendered = $this->replaceReleaseTokens($artifactContent, $tokens, $renderParameters);
-            if (!hash_equals($generatedDigest, hash('sha256', $rendered))) {
+            if (!$this->isDerivedPluginArtifact($path)
+                && !hash_equals($generatedDigest, hash('sha256', $rendered))) {
                 throw new RuntimeException('CREATE_APP_ADOPTION_RENDER_MISMATCH: ' . $path);
             }
             $releaseTree[] = [
@@ -264,6 +265,12 @@ final class ApplicationCreator
             || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
             throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
         }
+    }
+
+    private function isDerivedPluginArtifact(string $path): bool
+    {
+        return $path === 'plugins.lock'
+            || preg_match('#^plugins/official\.[a-z0-9.-]+/plugin\.json$#D', $path) === 1;
     }
 
     /** @param array<string,string> $tokens @param array<string,string> $values */
