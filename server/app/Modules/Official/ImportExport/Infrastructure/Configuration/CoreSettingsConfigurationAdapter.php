@@ -58,26 +58,13 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             return [];
         }
 
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT d.module_key, d.setting_key, d.secret_flag, d.definition_digest,
-       v.value_state, v.value_json, v.revision
-FROM pa_setting_definition d
-JOIN pa_setting_deployment_value v ON v.definition_id = d.id
-WHERE d.status = 'active' AND d.deployment_scope_flag = 1
-ORDER BY d.module_key ASC, d.setting_key ASC
-SQL);
-        $statement->execute();
-
+        $repository = new PdoSettingRepository($this->pdo);
         $entries = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $definition = $this->definition(
-                $definitions,
-                (string)($row['module_key'] ?? ''),
-                (string)($row['setting_key'] ?? ''),
-            );
-            if (!hash_equals($definition->digest, (string)($row['definition_digest'] ?? ''))
-                || !$definition->allows('deployment')) {
-                throw new \RuntimeException('TRANSFER_CORE_SETTINGS_UNAVAILABLE');
+        foreach ($definitions as $definition) {
+            $snapshot = $repository->deploymentSnapshot($definition);
+            $row = $snapshot['deployment'];
+            if (!is_array($row)) {
+                continue;
             }
             $qualifiedKey = $definition->qualifiedKey();
             $state = (string)($row['value_state'] ?? '');
@@ -104,17 +91,9 @@ SQL);
             throw new \RuntimeException('TRANSFER_CORE_SETTING_SCOPE_INVALID');
         }
 
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT d.secret_flag, v.value_state, v.value_json, v.revision
-FROM pa_setting_definition d
-LEFT JOIN pa_setting_deployment_value v ON v.definition_id = d.id
-WHERE d.module_key = :module_key AND d.setting_key = :setting_key AND d.status = 'active'
-  AND d.deployment_scope_flag = 1
-LIMIT 1
-SQL);
-        $statement->execute(['module_key' => $moduleKey, 'setting_key' => $settingKey]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row) || !array_key_exists('value_state', $row) || $row['value_state'] === null) {
+        $snapshot = (new PdoSettingRepository($this->pdo))->deploymentSnapshot($definition);
+        $row = $snapshot['deployment'];
+        if (!is_array($row)) {
             return ['exists' => false, 'value' => null, 'revision' => null];
         }
         $state = (string)$row['value_state'];

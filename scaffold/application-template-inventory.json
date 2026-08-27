@@ -5651,7 +5651,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d12c8bd7ae8dbca378a8802ce936edfe457cb75c8d2b44eda5fd46effe0da958"
+            "source_sha256": "b4cf303050ae1840dd69f0dc299ca324d02f6302ad432420f7c2971c65fe6639"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Application/ImportExportApplicationService.php",
@@ -5903,21 +5903,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "70ff41b0d7920fb3572aac667adbba310e722d9ea2b73c3615d9729ea08b1192"
-        },
-        {
-            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ExternalBindingConfigurationAdapter.php",
-            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ExternalBindingConfigurationAdapter.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "4f777aba130e936cafd6a06737f1a9f454767e51d58ceb5d00788d978d87c722"
+            "source_sha256": "39ead55fbd0b0532748e03857539ad9757e0894244c37c4dce5def773e4f8fcd"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
@@ -5932,34 +5918,6 @@
                 "full"
             ],
             "source_sha256": "2866d630616554efeac3ad0f5d42f810ed8c6219bea64fcbf0adfc796ef2c013"
-        },
-        {
-            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantModuleConfigurationAdapter.php",
-            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantModuleConfigurationAdapter.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "20023d1ee316b133fb13d9d9ec621c6c183a9aea69b55e85037019132c520cc2"
-        },
-        {
-            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantSettingsConfigurationAdapter.php",
-            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantSettingsConfigurationAdapter.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "54ae192e0c1ad77ff2bd3045f29a18ba17ff89fa08a24c48e38f011044aaddec"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/UnavailableSecretProtector.php",
@@ -11019,6 +10977,48 @@
             ],
             "source_sha256": "e503a5b0c7a21cf461cffb507fccfcad5d2d627ec0c5d46596b8475020cda5a1",
             "adapter_kind": "deprecated-bridge"
+        },
+        {
+            "path": "server/app/common/service/configuration_transfer/ExternalBindingConfigurationAdapter.php",
+            "target": "server/app/common/service/configuration_transfer/ExternalBindingConfigurationAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "8fbfc973030406985b9eba1270ab666e016d2ca134fd5fd205a22c778325cdae"
+        },
+        {
+            "path": "server/app/common/service/configuration_transfer/TenantModuleConfigurationAdapter.php",
+            "target": "server/app/common/service/configuration_transfer/TenantModuleConfigurationAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "f04f21306b3c9d78d8af115b316c6e56e27778e99274336757b53751d4b6d8c3"
+        },
+        {
+            "path": "server/app/common/service/configuration_transfer/TenantSettingsConfigurationAdapter.php",
+            "target": "server/app/common/service/configuration_transfer/TenantSettingsConfigurationAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "b6bc4da386dda29339fa19eb5a85841e497548ebfeb4ac361e005616b2a14a2c"
         },
         {
             "path": "server/app/common/service/crontab/CrontabSchedulerService.php",

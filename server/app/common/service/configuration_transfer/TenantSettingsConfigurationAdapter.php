@@ -1,8 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
+namespace app\common\service\configuration_transfer;
 
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationPackageCodec;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferAdapter;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferValue;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
