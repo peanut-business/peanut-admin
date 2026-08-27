@@ -91,6 +91,6 @@ scaffold 原地升级。
 - 架构、身份、Tenant 与部署：[开发与目录](https://peanut-admin-doc.007345.xyz/guide/development)
 - Module 纵向教程：[Module 开发教程](https://peanut-admin-doc.007345.xyz/guide/module-development)
 - API 与扩展参考：[API 与扩展](https://peanut-admin-doc.007345.xyz/api)
-- 开箱即用能力目录：[能力目录](https://peanut-admin-doc.007345.xyz/capabilities)
-- 部署与故障停止线：[部署](https://peanut-admin-doc.007345.xyz/deployment)
+- 核心能力边界：[核心概念](https://peanut-admin-doc.007345.xyz/guide/concepts)
+- 部署与故障停止线：[部署与升级](https://peanut-admin-doc.007345.xyz/guide/deployment-upgrade)
 - 管理员操作：`docs/peanut-admin-user-manual.md`

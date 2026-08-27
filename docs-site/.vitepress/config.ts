@@ -32,6 +32,21 @@ const reference = [
 ]
 
 export default defineConfig({
+  srcExclude: [
+    'architecture/identity-and-tenancy.md',
+    'architecture/module-execution-context.md',
+    'architecture/official-module-qualification.md',
+    'capabilities.md',
+    'demo-access.md',
+    'deployment.md',
+    'guide/reading-guide.md',
+    'guide/release-and-application-lifecycle.md',
+    'guide/scaffold-upgrade.md',
+    'guide/user-manual.md',
+    'platform.md',
+    'product-status.md',
+    'troubleshooting.md',
+  ],
   lang: 'zh-CN',
   title: `${website.name} 开发者文档`,
   description: 'Peanut Admin 面向应用开发者、Module 作者与运维人员的任务型文档。',

@@ -7,7 +7,8 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Need | Entry | Lifecycle |
 | --- | --- | --- |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
-| Understand the system boundary | [Architecture](architecture/core-application-capability-graph.md) | current technical explanation |
+| Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
+| Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
 | Understand Module development | [Module development guide](module-development-guide.md) | current guide |
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |
@@ -15,11 +16,11 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Operate or release | `docs/operations/` and [release engineering](release-engineering.md) | current procedures |
 | Change documentation safely | [Document lifecycle](governance/document-lifecycle.md) and [docs-impact](governance/docs-impact.md) | authoritative governance |
 
-The generated [document catalog](reference/document-catalog.generated.md) lists the registered entries and collections.
+The generated [document catalog](reference/document-catalog.generated.md) lists every individually registered entry.
 
 ## Stable directory boundaries
 
-- `architecture/`: current boundaries and accepted contracts.
+- `architecture/`: boundaries and accepted contracts; each document's lifecycle is determined by the registry, not by this directory name.
 - `development/`, `operations/`, `testing/`: task procedures for maintainers.
 - `design/`, `plans/`: proposals and sequencing; not completed-state evidence.
 - `product-status/`: internal capability, release and deployment facts; not a public site source.
@@ -39,3 +40,5 @@ Existing root-level contracts remain discoverable during the bounded migration. 
 6. Run `./scripts/docs-governance check` and the affected documentation build once.
 
 Search by stable document ID first (`rg '<document-id>' docs/document-registry.json`), then by exact module, service, capability or resource ID. A path match is not proof that a document is current; confirm its registry status.
+
+`impact` is a closure check, not only a routing report: every required target must be changed in the same diff or named with an exact `--waive-target` and one non-empty reason. Record the classifications, closure and any waiver in the task or PR checklist.

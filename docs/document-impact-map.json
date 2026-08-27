@@ -25,12 +25,13 @@
       "upstream": ["server routes/controllers", "docs/api/openapi.yaml"],
       "technical_docs": ["docs/api/openapi.yaml", "docs/peanut-admin-development-guide.md"],
       "site_docs": ["docs-site/api.md"],
-      "generated": ["generated OpenAPI or route projections when present"],
+      "generated": ["web/src/generated/openapi-client.ts", "web/src/generated/openapi.d.ts"],
       "reason": "Public HTTP shape and examples must follow the route/OpenAPI authority."
     },
     {
       "id": "cli-command",
       "paths": ["scripts/*", "server/think", "server/app/**/command/**/*.php"],
+      "exclude_paths": ["scripts/docs-governance"],
       "classifications": ["technical", "developer-site"],
       "upstream": ["executable command and --help output"],
       "technical_docs": ["docs/peanut-admin-development-guide.md", "docs/release-engineering.md"],
@@ -43,7 +44,7 @@
       "paths": ["server/database/**/*.sql", "server/database/**/*.php", "server/app/**/model/**/*.php", "server/app/**/module.json"],
       "classifications": ["technical", "developer-site", "architecture-decision"],
       "upstream": ["KernelSchema", "server/database/init.sql", "migration files", "module.json"],
-      "technical_docs": ["docs/architecture/core-application-capability-graph.md", "docs/architecture/service-layer-registry.md"],
+      "technical_docs": ["docs/architecture/clean-native-multitenancy-baseline.md", "docs/architecture/service-layer-registry.md"],
       "site_docs": ["docs-site/guide/data-permissions-tenancy.md", "docs-site/guide/deployment-upgrade.md"],
       "generated": [],
       "reason": "Data owner or upgrade behavior changes require an explicit boundary decision."
@@ -61,21 +62,21 @@
     {
       "id": "resource-environment",
       "paths": ["resources/project-resources.json", "resources/p0e-runtime-qualification.json", "scripts/local-stack.sh", ".local/stack.env.example"],
-      "classifications": ["technical", "developer-site", "generated"],
+      "classifications": ["technical", "developer-site"],
       "upstream": ["resources/project-resources.json"],
       "technical_docs": ["docs/development-database-resource.md", "AGENTS.md"],
-      "site_docs": ["docs-site/getting-started.md", "docs-site/troubleshooting.md"],
-      "generated": ["public-safe source map only; never project credential references or internal addresses"],
+      "site_docs": ["docs-site/getting-started.md", "docs-site/guide/testing.md"],
+      "generated": [],
       "reason": "Resource facts stay internal; only safe local-development instructions are projected."
     },
     {
       "id": "capability-status",
       "paths": ["docs/product-status/capability-ledger.json", "docs/product-status/releases/*.json", "docs/product-status/deployments/*.json"],
-      "classifications": ["technical", "generated"],
+      "classifications": ["technical"],
       "upstream": ["docs/product-status/capability-ledger.json", "release/deployment snapshots"],
       "technical_docs": ["docs/product-status/README.md"],
       "site_docs": [],
-      "generated": ["public documentation source map when its source relationship changes"],
+      "generated": [],
       "reason": "Internal status and candidate evidence are not published to the developer site."
     },
     {
@@ -83,7 +84,7 @@
       "paths": ["resources/service-registry.json", "docs/architecture/*.md", "docs/design/**/*.md", "server/app/Modules/**/module.json", "server/vendor/peanut-admin/core/**/*", "web/node_modules/@peanut-admin/admin/**/*"],
       "classifications": ["architecture-decision", "technical", "developer-site"],
       "upstream": ["accepted ADR or architecture contract", "service registry", "module manifests", "fixed Core dependency identity"],
-      "technical_docs": ["docs/architecture/core-application-capability-graph.md", "docs/architecture/pb03-ownership-and-migration-gates.md"],
+      "technical_docs": ["docs/architecture/clean-native-multitenancy-baseline.md", "docs/architecture/module-execution-context-contract.md"],
       "site_docs": ["docs-site/guide/development.md", "docs-site/guide/module-development.md"],
       "generated": [],
       "reason": "Application/Core ownership changes are decisions, not incidental documentation edits."
@@ -105,8 +106,8 @@
     {"id": "cli-command", "path": "scripts/example-command", "must_include": ["technical", "developer-site"], "must_not_include": ["architecture-decision"]},
     {"id": "schema-owner", "path": "server/database/migrations/20260827-example.sql", "must_include": ["technical", "developer-site", "architecture-decision"], "must_not_include": ["none"]},
     {"id": "module-manifest", "path": "server/app/Modules/Official/Article/module.json", "must_include": ["technical", "developer-site"], "must_not_include": ["none"]},
-    {"id": "resource-change", "path": "resources/project-resources.json", "must_include": ["technical", "developer-site", "generated"], "must_not_include": ["none"]},
-    {"id": "capability-status", "path": "docs/product-status/capability-ledger.json", "must_include": ["technical", "generated"], "must_not_include": ["developer-site"]},
+    {"id": "resource-change", "path": "resources/project-resources.json", "must_include": ["technical", "developer-site"], "must_not_include": ["none", "generated"]},
+    {"id": "capability-status", "path": "docs/product-status/capability-ledger.json", "must_include": ["technical"], "must_not_include": ["developer-site", "generated"]},
     {"id": "architecture-boundary", "path": "resources/service-registry.json", "must_include": ["architecture-decision", "technical", "developer-site"], "must_not_include": ["none"]}
   ]
 }

@@ -23,19 +23,23 @@ Multiple classifications can apply. `none` is valid only when no more-specific r
 3. Record the selected docs-impact classification and reason.
 4. Update only the technical documents named by the matching rule.
 5. Update or regenerate only the named public projections.
-6. Run `./scripts/docs-governance check`, then the affected site build.
-7. Review the exact diff and merge the fact and its minimum documentation closure together.
+6. Treat every reported `required_targets` entry as part of the same diff. If a named page is semantically unaffected, waive that exact existing path with one written reason; a waiver is not a wildcard.
+7. Run `./scripts/docs-governance check`, then the affected site build.
+8. Review the exact diff and merge the fact and its minimum documentation closure together.
 
 The tool reports candidates; the author remains responsible for semantic judgment. A generic controller match does not require public documentation if the implementation is demonstrably internal and no specific public-contract rule matches.
 
 ## Commands
 
 ```bash
-./scripts/docs-governance impact --base origin/dev
+./scripts/docs-governance impact --base origin/dev \
+  --classification technical --classification developer-site
 ./scripts/docs-governance impact --classification none --reason "private rename; behavior and contracts unchanged" --paths server/app/example.php
+./scripts/docs-governance impact --base origin/dev --waive-target docs-site/reference.md \
+  --reason "the changed command is not named by this reference page"
 ./scripts/docs-governance generate
 ./scripts/docs-governance check
 ./scripts/docs-governance scenarios
 ```
 
-Generated content contains its source and regeneration command. `check` rejects drift, duplicate IDs/canonical keys, missing registered files or sources, uncovered Markdown, missing projections, broken links in current governed pages, invalid public navigation and forbidden internal material in public pages.
+Generated content contains its source and regeneration command. `impact` fails until required targets are changed or explicitly waived. `check` rejects drift, duplicate IDs/canonical keys, missing registered files or sources, uncovered Markdown, missing or archived impact targets, public pages excluded from navigation/build, non-public pages exposed by the build, broken links, invalid navigation and forbidden internal material.

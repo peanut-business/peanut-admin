@@ -7,10 +7,7 @@ on:
       - main
     paths:
       - 'docs-site/**'
-      - 'docs/document-registry.json'
-      - 'docs/document-impact-map.json'
-      - 'docs/governance/**'
-      - 'docs/reference/document-catalog.generated.md'
+      - 'docs/**'
       - 'scripts/docs-governance'
   workflow_dispatch:
 

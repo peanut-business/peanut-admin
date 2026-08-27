@@ -20,3 +20,13 @@ php scripts/check-product-capability-ledger
 ## 验证
 
 <!-- 只列实际运行的一次最低充分验证，以及明确未运行的相关 Gate。 -->
+
+## 文档影响
+
+- 分类：`none | technical | developer-site | generated | architecture-decision`（可多选）
+- 理由：
+- 权威事实源是否先更新：
+- 已更新的技术文档 / 公开投影 / 生成内容：
+- 精确豁免的 required target 及理由：
+- `docs-governance impact`、静态检查与受影响文档构建结果：
+- 代码注释：除非任务明确拥有 Core 收敛后的注释阶段，否则保持不变。

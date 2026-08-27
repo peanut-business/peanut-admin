@@ -2,7 +2,7 @@
 
 > 本文件是 Peanut Admin 源仓的人类可读版本。create-app 会在派生应用的同一路径生成一份
 > 应用专属简版，不会复制完整 `docs-site/`。详细说明见公开的
-> [部署文档](https://peanut-admin-doc.007345.xyz/deployment)。
+> [部署与升级](https://peanut-admin-doc.007345.xyz/guide/deployment-upgrade)。
 
 ## 5 分钟速读
 
@@ -222,4 +222,4 @@ PHP-FPM 不对公网开放。
 未绑定公共 Admin 才允许账号在自己的 active TenantMember 列表中切换。
 
 完整 Compose profile、原生发布备选、Nginx location、定时任务、品牌同步、发布后检查和
-故障停止线见公开的 [部署文档](https://peanut-admin-doc.007345.xyz/deployment)。
+故障停止线见公开的 [部署与升级](https://peanut-admin-doc.007345.xyz/guide/deployment-upgrade)。

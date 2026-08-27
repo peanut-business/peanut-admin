@@ -25,6 +25,7 @@ Explain boundaries, inputs, outputs, owner, failure behavior and code locations.
 ## Verification
 
 Name the minimum command or observable result that validates this document.
+Complete [`docs-impact-checklist.md`](./docs-impact-checklist.md) and record the `impact` closure or exact waiver reason.
 
 ## Next step
 

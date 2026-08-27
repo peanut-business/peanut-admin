@@ -17,7 +17,7 @@ Content type and status are separate: an evidence document is normally archived 
 
 ## Minimum metadata
 
-Every individually governed document records a stable ID, title, audience, content type, upstream sources, owner, status, scope, related domains, site projections, replacement and validation. A homogeneous legacy group may be covered by one registry collection until it is touched. The first substantive edit promotes that file to an explicit registry entry.
+Every Markdown file records its own stable ID, title, audience, content type, upstream sources, owner, status, scope, related domains, site projections, replacement and validation. The registry has no collection fallback: a new file is registered before it is linked or committed, and moves retain the file's stable ID.
 
 Use [the technical document template](templates/document-template.md). Public task pages additionally state prerequisites, goal, steps, verification and next step when those sections apply.
 
@@ -26,7 +26,7 @@ Use [the technical document template](templates/document-template.md). Public ta
 - Put machine facts in their existing ledger, manifest, schema or configuration source—not in a new README table.
 - Put present boundaries in `architecture/`, procedures in the task directory, decisions and proposals in `design/` or `plans/`, evidence in the existing status/evidence location, and public projections in `docs-site/`.
 - Preserve Git history with a direct move when content remains valid. When it does not, add the replacement, update inbound links, set `replaced_by`, and archive or remove the old file in the same bounded change.
-- A document is orphaned when it is neither explicitly registered nor covered by one collection. A current document is navigation-orphaned when no stable index reaches it; the generated catalog is the minimum technical index.
+- A document is orphaned when it is not explicitly registered. A current document is navigation-orphaned when no stable index reaches it; the generated catalog is the minimum technical index.
 - Broken links block the affected documentation change. Historical raw text may name removed paths, but must not link to a nonexistent current target.
 
 ## Application, Core and comments
