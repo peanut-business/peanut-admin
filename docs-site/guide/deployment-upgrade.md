@@ -26,6 +26,11 @@ description: 从不可变版本到备份、迁移、验证和恢复的交付闭�
 
 脚手架文件升级使用 `scripts/scaffold-upgrade` 的 `preflight/apply/verify/recover` 合同。它只管理 manifest 声明的文件，不替代业务 migration 或依赖升级。
 
+实例内 Platform 的应用升级中心只提交固定目标：浏览器不能选择路径、命令、Release、镜像、
+凭据或部署目标。登记的单次控制 worker 会先创建新备份并用同一备份完成隔离恢复验证，再进入
+维护、调用唯一部署更新入口、执行 Runtime smoke 并形成恢复指针。任一步失败都会保留已完成
+步骤和稳定停止点；生产执行仍须由部署 owner 取得具体授权并核验自己的资源登记。
+
 初始 Admin/Platform 身份不得写入 `server/.env`。automatic 只把它们注入安装命令进程；
 guided 使用高熵一次性 setup token，并且只开放 `/admin/installation` 和固定安装 API。数据库
 连接与部署模式始终来自登记配置，页面不接受任意地址、端口、路径或命令。安装失败若留下

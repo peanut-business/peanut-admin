@@ -236,6 +236,45 @@ export interface OpsUpgradeReadinessSnapshot {
   recovery_pointer: null | { provider_key: string; backup_reference_key: string; manifest_sha256: string; restore_target_key: string; restore_verification_sha256: string; restore_verified_at: string };
 }
 
+export type OpsUpgradeStepKey = 'preflight' | 'backup' | 'restore_verification' | 'maintenance' | 'deployment' | 'smoke' | 'recovery_pointer';
+
+export interface OpsUpgradeStep {
+  step_key: OpsUpgradeStepKey;
+  step_order: number;
+  status: 'pending' | 'running' | 'succeeded' | 'failed';
+  input_sha256: string;
+  output_sha256: string | null;
+  last_error_code: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface OpsUpgradeTask {
+  task_key: string;
+  task_type: 'ops.upgrade.execute';
+  status: 'queued' | 'running' | 'succeeded' | 'dead' | 'cancelled';
+  attempt_count: number;
+  max_attempts: number;
+  revision: number;
+  last_error_code: string | null;
+  current_step: OpsUpgradeStepKey | 'completed';
+  source: { commit: string; tree: string; release_key: string | null; application_manifest_sha256: string };
+  target: { release_key: string; commit: string; tree: string; descriptor_sha256: string };
+  backup_reference_key: string | null;
+  restore_evidence_sha256: string | null;
+  maintenance_key: string | null;
+  recovery_pointer: Record<string, string> | null;
+  recovery_pointer_sha256: string | null;
+  steps: OpsUpgradeStep[];
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface OpsUpgradeCenterSnapshot {
+  tasks: OpsUpgradeTask[];
+}
+
 const tokenKey = 'peanut-platform-token';
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
@@ -550,6 +589,16 @@ export const api = {
   upgradeReadiness: () =>
     unwrap<OpsUpgradeReadinessSnapshot>(
       client.get('/api/platform/v1/ops/upgrade-readiness')
+    ),
+  upgradeCenter: () =>
+    unwrap<OpsUpgradeCenterSnapshot>(
+      client.get('/api/platform/v1/ops/upgrades')
+    ),
+  submitUpgrade: () =>
+    unwrap<OpsUpgradeTask>(
+      client.post('/api/platform/v1/ops/tasks/upgrade', {}, {
+        headers: { 'Idempotency-Key': `platform-upgrade-${crypto.randomUUID()}` },
+      })
     ),
   async downloadDiagnostics(windowMinutes: 60 | 360 | 1440 = 60): Promise<DiagnosticDownload> {
     const result = await client.get<ArrayBuffer>('/api/platform/v1/ops/diagnostics', {

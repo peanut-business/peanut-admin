@@ -1581,6 +1581,48 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-product-closure-upgrade-execution",
+      "path": "docs/architecture/product-closure-upgrade-execution.md",
+      "title": "产品闭环应用升级执行合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "operator",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
+        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/command/OpsUpgradeTask.php",
+        "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
+        "scripts/ops-upgrade-worker",
+        "scripts/deploy-release",
+        "resources/project-resources.json"
+      ],
+      "owner": "product-operations",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure",
+        "operations",
+        "upgrade",
+        "backup",
+        "recovery"
+      ],
+      "site_projections": [
+        "pa-docs-site-api",
+        "pa-docs-site-guide-deployment-upgrade",
+        "pa-docs-site-reference"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-product-closure-core-application-compatibility",
       "path": "docs/architecture/product-closure-core-application-compatibility.md",
       "title": "产品闭环 Core / Application 兼容基线",

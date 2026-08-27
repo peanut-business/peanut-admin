@@ -1560,6 +1560,19 @@
             ]
         },
         {
+            "path": "docs/architecture/product-closure-upgrade-execution.md",
+            "target": "docs/architecture/product-closure-upgrade-execution.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/architecture/scaffold_core_extraction_analysis.md",
             "target": "docs/architecture/scaffold_core_extraction_analysis.md",
             "classification": "excluded",
@@ -3792,7 +3805,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "77aeb200f791e9671a021fe4b9853ba616750be27d7dec2fc2cf0da2006fd1b3"
+            "source_sha256": "33ddf999432f310a9ebcae539af2fa7e6f0b830c6e7e3df7cb972bcea6a4673c"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3804,7 +3817,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "6388e73a6b1c6050a9548c058d6916bda0cff86adbce374a6eb6670f820b892b"
+            "source_sha256": "45e63fe4fed4f0b18eafc11150b700a77ecb86bff8c648dcb2437425259e1719"
         },
         {
             "path": "platform/src/main.ts",
@@ -3828,7 +3841,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "0b68b0739a13871618ef5b894ab0a490649407a79c68bbe8268722057fdfd912"
+            "source_sha256": "5d0547a3d7346835a48331bf159b11785e2e2ba092fd9b43bbd84d791daaa166"
         },
         {
             "path": "platform/tsconfig.json",
@@ -4072,7 +4085,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f52b89793852560122e294954943ba20b7d357da3ef567388444598244bf8d93"
+            "source_sha256": "b5242913c92bb3f2e7f7b4a87c928a4302ccd45e559f22f9e835961bf0e5cebf"
         },
         {
             "path": "resources/service-registry.json",
@@ -4439,6 +4452,20 @@
                 "full"
             ],
             "source_sha256": "da4549a069cf9da8fa688658df88c0a5770b9eb9a1527515d3806edddf163fc8"
+        },
+        {
+            "path": "scripts/ops-upgrade-worker",
+            "target": "scripts/ops-upgrade-worker",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "ed9b85d7ad20864937fba1f33b9e4fad165219f2f8e4ac26c71a407681f080d1"
         },
         {
             "path": "scripts/p0e-browser-smoke",
@@ -9327,6 +9354,20 @@
             "source_sha256": "37c3014ba4cfc9200aeb95b0a9267f965f4c86189d084e854a49dbb7aa14ad3e"
         },
         {
+            "path": "server/app/command/OpsUpgradeTask.php",
+            "target": "server/app/command/OpsUpgradeTask.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "3a9c665810040d698d2f221fe0ab8d8fc82a18f4d70c695f1ca3011ac47f3350"
+        },
+        {
             "path": "server/app/command/PluginCommandSupport.php",
             "target": "server/app/command/PluginCommandSupport.php",
             "classification": "app-owned",
@@ -12899,7 +12940,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5cf8f186f900d4db4820e636726acc30159676a2c25784f70153063adb6be32c"
+            "source_sha256": "d458a7cf896156bfc811a4c4af6a8d059031d1b8325e46f3a68194333ba86c82"
         },
         {
             "path": "server/app/platform/controller/PlatformSessionController.php",
@@ -13535,7 +13576,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5eb4cb851b4591bfd8a43de407458c7be6317f7a43d286be67b35d89d3795a00"
+            "source_sha256": "23e8fcb46d6fc1e0dfa4b52b82546c327c35ebd87bb93e2147a3a21325d3916c"
         },
         {
             "path": "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
@@ -13548,6 +13589,18 @@
                 "full"
             ],
             "source_sha256": "6cfa6ccc8d19d6a6352b0e5bf257d0f388da8965f18307af775d300036b6d45a"
+        },
+        {
+            "path": "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+            "target": "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "1676e47c03a320df85989dba9ddcd361714eba2943000b21d1dd2aa09d1bb7a8"
         },
         {
             "path": "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
@@ -13607,7 +13660,19 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "6546532feaaadbab4d57621f2142f762512c553a38f646344e65aed8cc24d312"
+            "source_sha256": "44a92e9fdc56dab8d8b07143ae5fcda8ddd32e907f1671cb92893a9463c5e8d8"
+        },
+        {
+            "path": "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
+            "target": "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "8f2ba72e88a23a739b21b539c2be11219a167bc284fe0308c170525d3ab3b877"
         },
         {
             "path": "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
@@ -14175,7 +14240,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2ae8025770bf430f6096a445236d4e5f43cd4760756c0838a5e2210d33cff3ef"
+            "source_sha256": "159671c969cac9d1aca39c32e9886e9e22f1685d0187035621c7c80e5b2ccea0"
         },
         {
             "path": "server/config/cookie.php",
@@ -14582,6 +14647,20 @@
                 "full"
             ],
             "source_sha256": "83b410aa0715b313ad52179f92c60619472ef61ed989d9753104285b3aee09d7"
+        },
+        {
+            "path": "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
+            "target": "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "6638785f6cf087efed9fa2622bc98db4bd4e0bec24edaae4d37f3a3b3a724e58"
         },
         {
             "path": "server/database/seed-demo-data.php",
@@ -15028,7 +15107,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a7b8d18ef07b005bf1f01193fc9634a9917536a93da40860adb733621d02d84e"
+            "source_sha256": "d1d3788eec9bd89f170d70126676af99f906ed98a4cb4cff2ec64e9c96a61ac4"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
@@ -18633,7 +18712,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3e2cb0c9c1dcecf48b51f2576dbecb2a7f24ac8dbc632621323f46fba5fa9d5c"
+            "source_sha256": "9e4ab354777ed11d2079a95064cc70d3bc09c495989aba27c36009e64e1009b4"
         },
         {
             "path": "web/src/hooks/chart-option.ts",

@@ -23,3 +23,12 @@ scripts/package-release.sh
 
 `plugins.lock` 和 `plugin.json` 是发布、部署身份的机器可读证据；模块业务声明仍只来自
 `module.json` 及其引用的 Resources 文件。
+
+## 固定应用升级执行
+
+Platform 应用升级中心只创建服务器固定 source/target 身份的 `ops.upgrade.execute` 任务。
+生产部署 owner 在取得具体动作授权、资源 lease 并完成登记健康检查后，才可从登记 checkout
+运行 `scripts/ops-upgrade-worker --once`。该 worker 复用现有备份/隔离恢复 worker、维护 store
+和唯一 `scripts/deploy-release <tag> --target production --update --apply` 入口；浏览器和任务
+payload 均不能覆盖路径、命令、目标、主机或凭据。详细状态机与失败停止语义见
+[`应用升级执行合同`](architecture/product-closure-upgrade-execution.md)。

@@ -12,6 +12,7 @@ return [
         'tenant-task:work' => \app\command\TenantTaskWorker::class,
         'ops-backup:task' => \app\command\OpsBackupTask::class,
         'ops-restore:task' => \app\command\OpsRestoreTask::class,
+        'ops-upgrade:task' => \app\command\OpsUpgradeTask::class,
         'module:install'   => \app\command\ModuleInstall::class,
         'module:create'    => \app\command\ModuleCreate::class,
         'module:pack'      => \app\command\ModulePack::class,

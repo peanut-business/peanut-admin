@@ -113,6 +113,18 @@ pointer。它不得重新解释 Web 输入、从移动分支推导目标，或�
 smoke → 关闭维护或停在已记录恢复指针。跨实例升级仍属于独立运营平台；生产覆盖恢复仍需独立
 授权。
 
+PC42 的提交接口只接受空 JSON 对象和幂等键。服务器把当前 Runtime 与 PC41 固定目标身份写入
+`ops.upgrade.execute`，登记的 `peanut-admin-production-upgrade-control-worker` 再按静态预检 →
+新备份 → 同一备份的隔离恢复验证 → planned-upgrade 维护 → `deploy-release` update → Runtime
+smoke → recovery pointer 的顺序执行。各步状态和摘要可在 Platform“运行与维护”页面观察，
+失败停在当前步骤；页面不能传入路径、命令或部署目标。
+
+实际生产执行前必须读取并核验 `resources/project-resources.json` 中的上述 worker、
+`peanut-admin-production-deployment`、`peanut-admin-production-backups` 和
+`peanut-admin-production-restore-verification-deployment`，取得具体生产动作授权及资源 lease 后，
+仅从登记的固定 checkout 运行 `scripts/ops-upgrade-worker --once`。完整边界与恢复语义见
+[`应用升级执行合同`](architecture/product-closure-upgrade-execution.md)。
+
 ## 开发最小路径
 
 1. 在 `server/app/Modules/<Vendor>/<Module>/` 定义 `Domain`、`Application`、`Contracts`、
