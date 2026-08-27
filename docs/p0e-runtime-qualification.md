@@ -38,8 +38,10 @@ resource、endpoint 和 expiry；应用制品字节不因 Gate 改写。
 ## 候选与租约
 
 候选必须是当前干净 worktree 的完整 40 位 `HEAD`。run_id 只接受 1-11 位小写字母或数字。
-无资源 plan 验证候选、3 条 2.0 基线后 migration、`v2.0.0` scaffold identity、数据库名、路径、
-端口和完整租约集合；不创建目录、不连接数据库，也不启动端口、容器或浏览器。
+无资源 plan 验证候选、资格矩阵声明的当前 application migration identities、`target_release`
+scaffold identity、数据库名、路径、端口和完整租约集合；不创建目录、不连接数据库，也不启动
+端口、容器或浏览器。具体版本和身份只以
+`server/tests/fixtures/p0e-runtime-qualification/matrix.json` 为准，本说明不复制易漂移的值。
 
 ```bash
 candidate="$(git rev-parse HEAD)"
@@ -90,8 +92,9 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 
 ## Gate 场景
 
-1. `generated-application`：真实 `scripts/create-app` 生成 2.0.0 应用；Server、Web、PC、UniApp
-   H5 和 Docs 使用锁文件安装并完成最低构建，随后核对 application/scaffold identity。
+1. `generated-application`：真实 `scripts/create-app` 从资格矩阵固定的 `target_release` 生成应用；
+   Server、Web、PC、UniApp H5 和 Docs 使用锁文件安装并完成最低构建，随后核对
+   application/scaffold identity。
 2. `standalone-fresh`：在空库执行 Standalone install、幂等 migrate、3-current ledger 与
    fresh-only invariants。
 3. `multi-tenant-fresh`：在空库执行 Multi-tenant install、幂等 migrate、3-current ledger 与
