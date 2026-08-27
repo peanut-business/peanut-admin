@@ -9,7 +9,11 @@ for command_name in jq gzip sha256sum tar openssl; do
 done
 
 project_root="$(pwd -P)"
-registry="$project_root/resources/project-resources.json"
+registry="${PEANUT_OPS_RESOURCE_REGISTRY:-$project_root/resources/project-resources.json}"
+if [[ "$registry" != "$project_root/resources/project-resources.json" \
+  && "$registry" != "$project_root/restore-verification-registry.json" ]]; then
+  die 'qualification registry path is not registered'
+fi
 [[ -f "$project_root/compose.yaml" && -f "$project_root/server/think" && -f "$registry" ]] \
   || die 'run from a registered Peanut Admin deployment root'
 [[ -f "$project_root/server/.env" ]] || die 'server/.env is required'
@@ -22,11 +26,26 @@ for resource_id in \
   peanut-admin-production-backups \
   peanut-admin-production-restore-verification-deployment \
   peanut-admin-production-restore-verification-mysql84 \
-  peanut-admin-production-restore-verification-containers; do
+  peanut-admin-production-restore-verification-containers \
+  peanut-admin-production-restore-verification-worker-image; do
   jq -e --arg resource_id "$resource_id" \
     '.. | objects | select(.stable_resource_id? == $resource_id)' "$registry" >/dev/null \
     || die "registered resource is missing: $resource_id"
 done
+
+qualification_image="${PEANUT_OPS_WORKER_IMAGE:-}"
+if [[ -n "$qualification_image" ]]; then
+  qualification_candidate="${PEANUT_OPS_WORKER_CANDIDATE:-}"
+  [[ "$qualification_image" =~ ^peanut-admin-restore-verify-worker:[a-f0-9]{12}$ \
+    && "$qualification_candidate" =~ ^[a-f0-9]{40}$ \
+    && "${qualification_candidate:0:12}" == "${qualification_image##*:}" ]] \
+    || die 'qualification worker identity is invalid'
+  image_candidate="$(sudo -n docker image inspect "$qualification_image" \
+    --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+  [[ "$image_candidate" == "$qualification_candidate" ]] \
+    || die 'qualification worker image does not match the fixed candidate'
+  export PHP_IMAGE="$qualification_image"
+fi
 
 compose=(sudo -n docker compose -f compose.yaml --profile bundled-db)
 think=("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think ops-restore:task)

@@ -4059,7 +4059,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ab04b8cac7a82d4aef79e28dceca21f191d75c1385e06fcafc7c635833c5716c"
+            "source_sha256": "6c15a5e29cbb2aa511308293853218949c928aed0aee721b3b36f41abd6ef4ad"
         },
         {
             "path": "resources/service-registry.json",
@@ -4411,7 +4411,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bb5d3653660e2394873037d536ce542fbe665959aeeef346373f4170bb956ca4"
+            "source_sha256": "fe02d3077bcee9bc8375d9dc3ffd8e45eecc0a15232b9ea6690dbecf15c14713"
         },
         {
             "path": "scripts/ops-restore-worker",
@@ -4425,7 +4425,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5bce1c7b853c9e03b042521ab748f5ac540a73549252dab72613b1c811b956d1"
+            "source_sha256": "c97b81059b75e94dc9ff4b37c2e43f1f6b1f3ab9bb14e9e9d4d4d2103c57f699"
         },
         {
             "path": "scripts/p0e-browser-smoke",

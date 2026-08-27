@@ -476,6 +476,11 @@ DB + `php-storage` 配对备份。页面只发送 Provider 和幂等键，显示
 fallback。维护窗口写入和在线运行日志仍未开放。Tenant 管理员无权读取该入口；需要排错时由
 Platform Operator 记录检查项、状态、版本身份和 Request ID，再交给部署运维负责人。
 
+尚未部署的新版本只能由发布/恢复负责人使用登记的固定候选 CLI image 做资格验证；这不会把
+`dev` 写入在线 Release 目录，也不会替换运行容器。镜像 tag、完整 commit 与 OCI revision label
+必须一致，且成功后只删除该精确临时镜像。普通 Platform Operator 不需要也不能提供该镜像、
+registry 路径或任何 Docker 参数。
+
 具备 `platform.ops.read` 与 `platform.ops.logs.read` 的 Platform Operator 还可以下载最近一小时
 的脱敏诊断包。文件采用固定 JSON schema，包含运行状态、非秘密配置摘要、Module 清单、失败
 任务聚合与 Platform 审计事件聚合；不读取原始日志文件，也不包含请求头、Cookie、凭据、绝对

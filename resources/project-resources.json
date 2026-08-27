@@ -725,6 +725,31 @@
         "lifecycle": "single Gate; remove on successful verification, retain on failure",
         "cleanup_responsibility": "scripts/ops-restore-worker removes only peanut-admin-restore-verify-mysql-1, the two registered volumes, the registered internal network and the fixed target root after success",
         "backup_responsibility": "not applicable; disposable verification resources"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-restore-verification-worker-image",
+        "purpose": "fixed-candidate PHP CLI image for qualifying backup/restore workers before that candidate is deployed",
+        "environment": "production-restore-verification",
+        "owner": "Peanut Admin production recovery owner",
+        "host_resource_id": "peanut-admin-production-restore-verification-deployment",
+        "host": "oracle3",
+        "port": null,
+        "image_tag_format": "peanut-admin-restore-verify-worker:<candidate_commit_12>",
+        "required_label": "org.opencontainers.image.revision=<candidate_commit_40>",
+        "runtime_container": null,
+        "database_resource_id": "peanut-admin-production-bundled-mysql84",
+        "database": "peanut_admin",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production-restore-verification-worker",
+        "service_type": "temporary immutable Docker PHP CLI image",
+        "credential_ref": "inherits the production Compose service env_file at run time; no credential is copied into the image",
+        "data_source": "exact Git archive of the lease candidate built with deploy/docker/production.Dockerfile target php",
+        "freshness_requirement": "the image tag must be absent before build; its OCI revision label must equal the full lease candidate and its tag suffix must equal the first 12 commit characters",
+        "health_check": "docker image inspect the fixed tag and compare org.opencontainers.image.revision; run only no-deps one-off ops task CLI containers on the existing production Compose network",
+        "fallback": "none",
+        "lifecycle": "single qualification Gate; remove after complete evidence and status capture, retain the exact image on failure",
+        "cleanup_responsibility": "PC32 lease owner removes only the exact candidate-tagged image after successful qualification",
+        "backup_responsibility": "not applicable; image contains code and dependencies only"
       }
     ],
     "optional_services": [
@@ -1049,7 +1074,8 @@
         "compose_profile": null,
         "candidate_identity_source": "claimed backup task, pa_ops_backup_evidence manifest identity and exact running application commit/tree",
         "runtime_resource_ids": [
-          "peanut-admin-production-restore-verification-containers"
+          "peanut-admin-production-restore-verification-containers",
+          "peanut-admin-production-restore-verification-worker-image"
         ],
         "database_resource_id": "peanut-admin-production-restore-verification-mysql84",
         "domain_resource_id": null,
@@ -1059,10 +1085,12 @@
         "service_type": "SSH-managed isolated Docker recovery Gate",
         "credential_ref": "operator-local SSH configuration for alias oracle3; the one-Gate MySQL password is generated at oracle3:/www/docker/peanut-admin/restore-verification/mysql-root-password mode 0600",
         "data_source": "one immutable paired artifact under /www/docker/peanut-admin/backups resolved by backup_reference_key",
-        "freshness_requirement": "immediately before each Gate, prove the fixed root, container, two volumes and internal network are absent and the production plus production-candidate protected identities are healthy and uniquely leased",
+        "qualification_registry_path": "/www/docker/peanut-admin/restore-verification-registry.json",
+        "freshness_requirement": "immediately before each Gate, prove the fixed root, container, two volumes, internal network, qualification registry file and candidate-tagged worker image are absent; capture the observed production and production-candidate protected identities and require the same identities after the Gate",
         "preflight_checks": {
           "isolation": "the target root, container, volumes and network must be absent; Docker network is internal and the container has zero published ports",
           "source": "manifest, SHA256SUMS, gzip and tar checks pass and the canonical manifest SHA-256 matches pa_ops_backup_evidence",
+          "worker_image": "build the exact lease candidate with target php and an OCI revision label; PEANUT_OPS_WORKER_IMAGE and PEANUT_OPS_WORKER_CANDIDATE must match before a task CLI starts",
           "protected_targets": "production and production-candidate container IDs, images, running states and volume mount identities are hashed before and after the Gate and must be identical",
           "failure_policy": "do not clean or reuse failed target resources; stop and retain the exact path, container, volumes and network for explicit diagnosis"
         },
@@ -1073,7 +1101,7 @@
         },
         "fallback": "none",
         "lifecycle": "single Gate; success cleanup is automatic and narrowly fixed, failure retention is mandatory",
-        "cleanup_responsibility": "scripts/ops-restore-worker removes only the registered restore-verification resources after all checks pass; failed resources require explicit approval before disposition",
+        "cleanup_responsibility": "scripts/ops-restore-worker removes only the registered restore-verification resources after all checks pass; the PC32 lease owner then removes the fixed registry file and exact candidate-tagged worker image; failed resources require explicit approval before disposition",
         "backup_responsibility": "not applicable; consumes peanut-admin-production-backups"
       },
       {
