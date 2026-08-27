@@ -13,6 +13,11 @@ final class ApplicationCreator
     private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices', 'version-contract'];
     private const VARIABLES = ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
     private const PROFILES = ['minimal', 'standard', 'full'];
+    private const WRITABLE_DIRECTORIES = [
+        'server/runtime',
+        'server/public/storage',
+        'server/private/storage',
+    ];
 
     /** @param array{commit:string,tree:string}|null $sourceIdentity */
     public function __construct(
@@ -83,6 +88,7 @@ final class ApplicationCreator
                     'source' => $entry['path'],
                 ];
             }
+            $this->prepareWritableDirectories($stage);
             usort($files, static fn(array $a, array $b): int => strcmp((string)$a['path'], (string)$b['path']));
             $this->assertNoUnresolvedVariables($stage);
             if ($adoption !== null) {
@@ -896,6 +902,16 @@ PHP;
         }
         if (file_put_contents($path, $content) === false || !chmod($path, $mode)) {
             throw new RuntimeException('CREATE_APP_WRITE_FAILED: ' . $path);
+        }
+    }
+
+    private function prepareWritableDirectories(string $stage): void
+    {
+        foreach (self::WRITABLE_DIRECTORIES as $relativePath) {
+            $directory = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            if ((!is_dir($directory) && !mkdir($directory, 0775, true)) || !chmod($directory, 0775)) {
+                throw new RuntimeException('CREATE_APP_WRITABLE_DIRECTORY_FAILED: ' . $relativePath);
+            }
         }
     }
 
