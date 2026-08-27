@@ -86,6 +86,7 @@ web/src/modules/fixture-delivery-record/
 | `Database/Migrations/` | 只创建或修改本 Module 声明拥有的表 |
 | `Resources/` | 权限、菜单和设置定义；不是业务真值表 |
 | `contribution.ts` | 前端路由和页面入口，声明 Module key 与所需权限 |
+| Tenant 安全测试骨架 | 由唯一生成器放在 Plugin 制品之外，并通过真实 Runtime adapter 接入 |
 | `plugins.lock` | 当前部署唯一允许加载的 Plugin 版本和内容摘要 |
 
 派生应用可以在同一结构中增加自己的 vendor/module 命名空间，例如
@@ -137,6 +138,17 @@ contents 摘要，并使用 `resources/schemas/plugin.schema.json` 与已安装�
 ### 开始前
 
 确认 Module key、数据 owner、依赖 Module、目标客户端和停用行为已经写清楚。若无法回答“谁拥有表、谁能调用、停用后哪些入口必须拒绝”，先停在设计阶段，不要创建 migration。
+
+先用唯一生成入口创建骨架：
+
+```bash
+cd server
+php think module:create acme.inventory --vendor=Acme
+```
+
+返回值中的 `backend_path`、`frontend_path` 和 `test_path` 均由 Module key 唯一派生。生成结果包含
+`Contracts/InventoryCommands.php`、不直接执行的 migration SQL 模板说明，以及独立测试目录。
+生成器不会安装 Plugin、开通 TenantModule 或授予权限；任何目标已存在时整次操作拒绝且不覆盖。
 
 ### 1. 定义数据 owner
 
@@ -283,6 +295,13 @@ Peanut 文档可以说明“如何写一个库存 Module”，但不能宣称 Pe
 5. 有权限、无权限和伪造 Tenant ID 的 API 测试；
 6. 前端 contribution、路由和按钮权限测试；
 7. 公开合同兼容测试；使用事件时再增加重复投递和重试测试。
+
+`module:create` 会为第 2—5 项生成独立于 Plugin 制品的通用安全停止线和 Runtime adapter 骨架。
+先把 adapter 接入真实 Application Service、ModuleGuard、权限 Repository 与隔离 migration fixture，
+再运行生成的 Tenant 安全测试。模板固定断言：伪造 payload Tenant ID 不改变 owner、Tenant B
+不能用列表或资源 ID 读取 Tenant A、撤权返回 `AUTHORIZATION_PERMISSION_DENIED`、停用返回
+`MODULE_TENANT_DISABLED`，以及失败 migration 不得激活或在没有显式 repair 时重放。不得删除断言来
+适配实现。
 
 只修改一个 Module 时运行该 Module 的聚焦测试、受影响客户端类型检查和 `git diff --check`；
 不要为局部业务切片默认运行所有客户端和完整浏览器矩阵。

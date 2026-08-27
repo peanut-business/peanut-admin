@@ -27,7 +27,7 @@
     "owned_tables": []
   },
   "contracts": {
-    "exports": [],
+    "exports": [${COMMANDS_CONTRACT_JSON}],
     "events": []
   },
   "tenant": {

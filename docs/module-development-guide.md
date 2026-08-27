@@ -6,12 +6,18 @@
 php think module:create <module.key>
 ```
 
-该命令会生成与 `fixture.delivery-record` 对齐的前后端骨架，并在写入前校验 module key、
-key 派生路径和前端入口。不要手工维护第二套模板或组件清单。
+该命令会生成与 `fixture.delivery-record` 对齐的前后端骨架、公开 Commands 合同、append-only
+migration 说明，以及位于 `server/tests/Modules/<Vendor>/<Module>/` 的 Tenant 安全测试骨架；写入前
+会校验 module key、key 派生路径和前端入口。不要手工维护第二套模板或组件清单。
 
 Standalone 开发环境也可以在 `/dev-tools/modules` 点击“创建模块”。Web 和 CLI 都调用同一个
 `ModuleScaffoldGenerator` 与同一组模板；两者只负责生成必要目录和文件，不会自动安装、开通
 TenantModule 或授予成员权限。
+
+测试骨架不会伪造已通过结果。先实现同目录的 `TenantSecurityDriver.php`，把它接到真实
+Application Service、ModuleGuard、权限 Repository 与隔离 migration fixture，然后运行
+`php server/tests/Modules/<Vendor>/<Module>/TenantSecurityTest.php`。固定场景包括 A/B Tenant、
+payload/resource 伪造 ID、TenantModule 停用、成员撤权，以及 migration 失败后不得 active 或无修复重放。
 
 ## 开发期工作流
 
