@@ -53,7 +53,7 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 | 1 | `PC01` | 产品闭环所有权与采用决定 | 已完成 | 当前事实盘点 | 避免重复 Runtime 和事后抽 Core | Architecture |
 | 2 | `PC02` | Core/Application 兼容与版本基线 | 已完成 | PC01 | 固定可采用导出和不可变来源 | Core + Application |
 | 3 | `PC10` | 统一安装预检 Host | 已完成 | PC01、PC02 | 为 CLI、Web 和自动化提供同一检查 | Application Host |
-| 4 | `PC11` | 一次性安装向导 | 进行中 | PC10 | 完成首次安装产品流程 | Application |
+| 4 | `PC11` | 一次性安装向导 | 已完成 | PC10 | 完成首次安装产品流程 | Application |
 | 5 | `PC12` | 首次运行配置清单 | 未开始 | PC11 | 展示生产准备度和下一动作 | Application |
 | 6 | `PC20` | Core Ops Console 最小采用 | 未开始 | PC01、PC02 | 展示健康、版本、迁移和维护状态 | Core + Application |
 | 7 | `PC21` | 可下载脱敏诊断包 | 未开始 | PC20 | 降低反馈和远程排错成本 | Application |
@@ -109,8 +109,9 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 - PC00/PC01：已由 PR #275 合入 `dev@6967f270dadcd1cb69c4606ad42c198c78db5b5b`。
 - PC02：已由 PR #276 合入 `dev@9af96499e22e2080e8e4e3aa7562f9cea3f9b402`；四端锁版本、公共入口、不可变来源、例外和验证 owner 已固定，未盲升依赖。
 - PC10：已由 PR #277 合入 `dev@f289c69a620f1eaffb0ba5a8cc39d089759259ab`；唯一只读 Host、`install.php --preflight`、聚焦合同测试和 app-owned scaffold 投影已完成。
-- PC11：固定源码候选 `7684a5fcb4bd23cdd966ab760d16a8130ba41ced` 已完成唯一执行 Host、安装态门禁、部署 transport 和 Web 向导；`pc11e1` 在登记资源上通过 Standalone/Multi-tenant 空库、8 个官方 Module、无效 token、重复执行与零残留资格，Web 生产构建通过。当前只剩 PR 合入 `dev` 和终态文档同步，完整 released-scaffold P0-E 仍归 PC70。
-- PC20/PC30：前置已满足，可在不与 PC11 共享文件 owner 时领取；当前主线按队列先完成 PC11。
+- PC11：PR #279 已合入 `dev@d80337b6d7b800558131968e65f8039cb8781912`；固定源码候选 `7684a5fcb4bd23cdd966ab760d16a8130ba41ced` 完成唯一执行 Host、安装态门禁、部署 transport 和 Web 向导，`pc11e1` 在登记资源上通过 Standalone/Multi-tenant 空库、8 个官方 Module、无效 token、重复执行与零残留资格，Web 生产构建通过。完整 released-scaffold P0-E 仍归 PC70。
+- PC12：成为当前下一关键路径；领取后先冻结生产准备项、状态来源和入口，不把模拟 Provider 标为生产可用。
+- PC20/PC30：前置已满足，可在不与 PC12 共享文件 owner 时领取；当前主线按队列先推进 PC12。
 - 当前没有数据库、服务、容器、浏览器或生产资源 owner。
 
 ## 7. 验证
