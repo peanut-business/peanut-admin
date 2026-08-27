@@ -42,6 +42,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-architecture-pb09-license-provenance-gate` | `docs/architecture/pb09-license-provenance-gate.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-product-closure-backup-provider-contract` | `docs/architecture/product-closure-backup-provider-contract.md` | `current` | `architecture` | `product-operations` |
 | `pa-docs-architecture-product-closure-core-application-compatibility` | `docs/architecture/product-closure-core-application-compatibility.md` | `current` | `reference` | `product-architecture` |
+| `pa-docs-architecture-product-closure-maintenance-gate` | `docs/architecture/product-closure-maintenance-gate.md` | `current` | `architecture` | `product-operations` |
 | `pa-docs-architecture-product-closure-ownership-adoption` | `docs/architecture/product-closure-ownership-and-adoption.md` | `current` | `decision` | `product-architecture` |
 | `pa-docs-architecture-scaffold-core-extraction-analysis` | `docs/architecture/scaffold_core_extraction_analysis.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-service-execution-status` | `docs/architecture/service-execution-status.md` | `current` | `architecture` | `architecture` |

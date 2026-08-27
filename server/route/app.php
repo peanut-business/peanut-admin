@@ -150,6 +150,12 @@ Route::get('api/platform/v1/ops/status', [PlatformOpsController::class, 'status'
 Route::get('api/platform/v1/ops/maintenance', [PlatformOpsController::class, 'maintenance'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::put('api/platform/v1/ops/maintenance', [PlatformOpsController::class, 'scheduleMaintenance'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
+Route::post('api/platform/v1/ops/maintenance/:maintenance_key/close', [PlatformOpsController::class, 'closeMaintenance'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
 Route::get('api/platform/v1/ops/diagnostics', [PlatformOpsController::class, 'diagnostics'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read')

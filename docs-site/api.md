@@ -88,6 +88,17 @@ api/admin/menu/lists -> menu/lists
 `provider_key=peanut.paired-db-files` 与 `Idempotency-Key`；任务状态通过
 `GET /api/platform/v1/ops/tasks/{task_key}` 读取。三者均要求 Platform 会话及对应 Ops 权限。
 
+### Platform 维护窗口
+
+`GET /api/platform/v1/ops/maintenance` 读取当前维护窗口；具有
+`platform.ops.maintenance.manage` 的 PlatformOperator 通过 `PUT` 计划窗口，并以
+`POST /api/platform/v1/ops/maintenance/{maintenance_key}/close` 关闭窗口。两个写接口均要求
+`If-Match: "rev-<revision>"` 和 `Idempotency-Key`。
+
+窗口处于生效时间范围时，后端会拒绝其他 HTTP 写请求并返回
+`MAINTENANCE_WRITE_BLOCKED`；只有这两个受 Platform 权限保护的维护控制接口可继续写入。
+客户端隐藏按钮不能绕过此规则。
+
 ### 新接口完成清单
 
 | 项目 | 完成条件 |
