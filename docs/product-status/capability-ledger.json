@@ -439,6 +439,56 @@
       ]
     },
     {
+      "id": "PA-PROVIDER-001",
+      "name": "外部 Provider 生产资格可见性",
+      "area": "operations",
+      "status": "implemented",
+      "summary": "PC60 已由 PR #313 合入 dev：通知、支付、OAuth 和 Storage contributor 以 Platform-only 只读安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness；通用面板不外呼、不发送消息、不扣款，真实平台资格仍由各 Provider owner 按授权目标独立执行。正式 released-scaffold 组合资格归 PC70。",
+      "acceptance": [
+        "每个 Provider subject 独立展示配置、连通、回调、凭据轮换、最近失败和 evidence 新鲜度，不把 configured 冒充 production ready",
+        "append-only evidence 只保存稳定状态、时间、来源和安全摘要，不保存凭据、token、回调 payload 或个人数据",
+        "Tenant-scoped contributor 从受信绑定派生 Tenant，Platform 聚合不接受请求方 tenant_id 或任意 Provider 标识",
+        "通用读取和 fake 合同零外呼、零消息、零资金动作；真实资格由 Provider owner 在明确授权目标上逐项执行",
+        "evidence 缺失、过期、绑定不一致或读取异常时保持 unavailable/degraded，而不是推断可用"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "9aa20dcb395e563aa73a1cbfd248880696e55395"
+        },
+        {
+          "kind": "git",
+          "ref": "4dbda351d590c35f4c2ffe4735057db54c240956"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/313"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/architecture/product-closure-provider-qualification.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002",
+        "PA-READINESS-001",
+        "PA-TENANCY-001"
+      ],
+      "paths": [
+        "server/app/platform/service/provider/PlatformProviderQualificationService.php",
+        "server/app/platform/service/provider/ProviderQualificationContributor.php",
+        "server/app/platform/service/provider/ProviderQualificationRecorder.php",
+        "server/app/platform/service/provider/PdoProviderQualificationEvidenceRepository.php",
+        "server/app/platform/service/provider/NotificationQualificationContributor.php",
+        "server/app/platform/service/provider/PaymentQualificationContributor.php",
+        "server/app/platform/service/provider/OauthQualificationContributor.php",
+        "server/app/platform/service/provider/StorageQualificationContributor.php",
+        "server/database/migrations/20260828-provider-qualification-evidence.sql",
+        "platform/src/components/ProviderQualificationCard.vue",
+        "docs/architecture/product-closure-provider-qualification.md"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
