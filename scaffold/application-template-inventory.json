@@ -3742,7 +3742,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "fe648978e88f716133595b6a8b4360e88b78fb606ed26ceb81225c0db3e2bf91"
+            "source_sha256": "5a412afcab0cda554996fd346f738b18e3386dbffb936343ee99faa7c31ba9d9"
         },
         {
             "path": "platform/package.json",
@@ -3754,7 +3754,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "cd8a83614d7edf65801a5be73e17758231a4c855f798084453aa6bf934d97618"
+            "source_sha256": "88de26cba80aea8625a62e0caa15564e6e786fd5155162560c61842cce5ecd31"
         },
         {
             "path": "platform/src/App.vue",
@@ -3766,7 +3766,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5838d4a175c1863bf5740ae93baaf85dc2570cafdc6b38e9ca192e559cf1b14d"
+            "source_sha256": "1deded28d912c637f3215403d4ba0664eda5e08aa9b9aa9fbf0c3e15cc278c72"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3778,7 +3778,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "0e5103086fd7f62a2d2ec5ae9f4c78b5a93f1ca23f0c99146f5c505c1f29ae61"
+            "source_sha256": "3a4b2bf10e1dd68894d6798b42cee8e6818742a34c4d4b10a543f19e97e50ff1"
         },
         {
             "path": "platform/src/main.ts",
@@ -3814,7 +3814,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "dee6105a3c5d5a3e55252bfd12ad8027c391925d2fcf64c1be21f8ce5511d7e4"
+            "source_sha256": "8ae069e49405ec6d6da90c0d7cee993b664e3b6f9b3192827d664a2acf36bae7"
         },
         {
             "path": "platform/vite.config.ts",
@@ -12794,6 +12794,18 @@
             "source_sha256": "4b0ca4f0eecb80042437e7075aea3af18d53b2c9e50f04cec7f4160df56cfb35"
         },
         {
+            "path": "server/app/platform/controller/PlatformOpsController.php",
+            "target": "server/app/platform/controller/PlatformOpsController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "e552c053b63732f135d36eaa84f83339d19fc11063ba69f8357a741992334e5e"
+        },
+        {
             "path": "server/app/platform/controller/PlatformSessionController.php",
             "target": "server/app/platform/controller/PlatformSessionController.php",
             "classification": "app-owned",
@@ -12803,7 +12815,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "4efaf980bf67383944bd6641771c33bb5c4fdb4459f21cc45e3e3122d2d55508"
+            "source_sha256": "170a2c4cd938dda73285828f91f911162addfd7ce4f2b8c8b660312205fbcb0e"
         },
         {
             "path": "server/app/platform/controller/PlatformStorageController.php",
@@ -13356,6 +13368,54 @@
                 "full"
             ],
             "source_sha256": "cae7c130b4493f267f671456826c016edfd3a324d0120b78209509e08693a31e"
+        },
+        {
+            "path": "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php",
+            "target": "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "44b7b1d57016d1b256aeab5f117e25c799c93170fe23961017e386d61e4e7903"
+        },
+        {
+            "path": "server/app/platform/service/ops/PlatformOpsPermissionChecker.php",
+            "target": "server/app/platform/service/ops/PlatformOpsPermissionChecker.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "5662f5b21a1b92c30227bcd70e5edbc2a99fb512a3608627677cc89f44630213"
+        },
+        {
+            "path": "server/app/platform/service/ops/PlatformOpsRuntimeFactory.php",
+            "target": "server/app/platform/service/ops/PlatformOpsRuntimeFactory.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "4e2382907d653f79c164ebb02cac738660621f998b92ca06bf6cf1a1c9fd5a74"
+        },
+        {
+            "path": "server/app/platform/service/ops/ReadOnlyMaintenanceWindowStore.php",
+            "target": "server/app/platform/service/ops/ReadOnlyMaintenanceWindowStore.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "934e3214badfb5c0033002fc9cd378ed8b7a18277807564a380b51f8b17e8676"
         },
         {
             "path": "server/app/platform/service/plugin/DeterministicTarArchive.php",
@@ -14656,7 +14716,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "20baeb7b410e90dfdde7ea331804f5ee2d1d1da43366da6a65095e45043a43e7"
+            "source_sha256": "56c17486c84377ceff95f6c077093e723b1feca58313e44e4df95ccd0e75eb91"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
