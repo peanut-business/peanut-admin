@@ -133,6 +133,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/official.import-export.configuration.export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Exports the authenticated Tenant's logical configuration as a schema-validated package. Tenant IDs and secret material are never included; configured secrets are represented by references that must be rebound at the destination. */
+        get: operations["exportTenantConfiguration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/official.import-export.configuration.dry-run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Validates a configuration package, checks its checksum and Tenant scope, reports conflicts and missing secret bindings, and performs no configuration write. */
+        post: operations["previewTenantConfigurationImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/official.import-export.configuration.apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Applies a validated Tenant configuration package atomically after conflict and secret-rebinding checks, then records a Tenant audit event. The request cannot select a Tenant or carry callback keys, passwords, tokens or keys. */
+        post: operations["applyTenantConfigurationImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/backups": {
         parameters: {
             query?: never;
@@ -334,6 +385,97 @@ export interface components {
             backup_reference_key: string;
             /** @enum {string} */
             target_key: "isolated-new-target";
+        };
+        ConfigurationTransferRequest: {
+            package: components["schemas"]["ConfigurationTransferPackage"] | string;
+            secret_bindings: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            conflict_policy: "abort" | "overwrite" | "skip";
+        };
+        ConfigurationTransferPackageResponse: components["schemas"]["ApiResponse"] & {
+            data?: components["schemas"]["ConfigurationTransferPackage"];
+        };
+        ConfigurationTransferPlanResponse: components["schemas"]["ApiResponse"] & {
+            data?: components["schemas"]["ConfigurationTransferPlan"];
+        };
+        ConfigurationTransferPackage: {
+            /** @enum {integer} */
+            schema_version: 1;
+            /** @enum {string} */
+            protocol: "peanut.configuration-transfer";
+            manifest: {
+                /** @enum {string} */
+                identity: "peanut.admin";
+                version: string;
+            };
+            /** @enum {string} */
+            scope: "tenant";
+            created_at: string;
+            assets: {
+                /** @enum {string} */
+                strategy: "logical-reference-only";
+            };
+            entries: components["schemas"]["ConfigurationTransferEntry"][];
+            checksum: string;
+        };
+        ConfigurationTransferEntry: {
+            adapter: string;
+            key: string;
+            value: unknown;
+            secrets: components["schemas"]["ConfigurationTransferSecret"][];
+        };
+        ConfigurationTransferSecret: {
+            reference: string;
+            /** @enum {string} */
+            state: "configured" | "unconfigured";
+        };
+        ConfigurationTransferPlan: {
+            /** @enum {string} */
+            protocol: "peanut.configuration-transfer";
+            /** @enum {integer} */
+            schema_version: 1;
+            /** @enum {string} */
+            scope: "tenant";
+            checksum: string;
+            dry_run: boolean;
+            /** @enum {string} */
+            status: "ready" | "blocked" | "applied";
+            can_apply: boolean;
+            /** @enum {string} */
+            conflict_policy: "abort" | "overwrite" | "skip";
+            counts: {
+                total: number;
+                create: number;
+                replace: number;
+                unchanged: number;
+                skip: number;
+                conflict: number;
+            };
+            entries: components["schemas"]["ConfigurationTransferPlanEntry"][];
+            conflicts: components["schemas"]["ConfigurationTransferConflict"][];
+            missing_secret_references: string[];
+            applied?: components["schemas"]["ConfigurationTransferPlanEntry"][];
+            skipped?: components["schemas"]["ConfigurationTransferPlanEntry"][];
+            applied_count?: number;
+            skipped_count?: number;
+        };
+        ConfigurationTransferPlanEntry: {
+            adapter: string;
+            key: string;
+            /** @enum {string} */
+            action: "create" | "replace" | "replace-secret" | "unchanged" | "skip" | "conflict";
+            exists: boolean;
+            current_revision: number | null;
+            secrets: components["schemas"]["ConfigurationTransferSecret"][];
+        };
+        ConfigurationTransferConflict: {
+            adapter: string;
+            key: string;
+            current_revision: number | null;
+            /** @enum {string} */
+            action: "replace" | "skip" | "conflict";
         };
         PlatformProviderQualificationResponse: components["schemas"]["ApiResponse"] & {
             data?: components["schemas"]["PlatformProviderQualificationSnapshot"];
@@ -572,6 +714,83 @@ export interface operations {
             };
             401: components["responses"]["ApiResponse"];
             403: components["responses"]["ApiResponse"];
+        };
+    };
+    exportTenantConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configuration package */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationTransferPackageResponse"];
+                };
+            };
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
+    previewTenantConfigurationImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description Configuration import plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationTransferPlanResponse"];
+                };
+            };
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
+    applyTenantConfigurationImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description Applied configuration import plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationTransferPlanResponse"];
+                };
+            };
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            409: components["responses"]["ApiResponse"];
         };
     };
     getPlatformBackupCenter: {

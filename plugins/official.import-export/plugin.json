@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "32af4a0964d7a4fe15fbc03d08d82fa8509b41d181c80ee10d739d7dcc875c60"
+        "sha256": "9fbc5b4d52b4c23df5593ee6b74625043f47cf24aa6d624462e1c86e36fb2093"
     },
     "trust": {
         "channel": "bundled",
@@ -53,7 +53,7 @@
                     ],
                     "permissions": {
                         "path": "Resources/permissions.json",
-                        "sha256": "035446909f2fa2e675c3ee4c97d1d43aa4ebee300a02935296dcfeb18305811f"
+                        "sha256": "56a3a9e239f6d924540f4900197a272ea5368237d98c64f1882865277daf864e"
                     },
                     "migrations": {
                         "reversibility": "verified-backup-required",
@@ -88,7 +88,7 @@
             "package": "@peanut-admin/official-import-export",
             "version": "1.0.0",
             "entry": "web/src/modules/official-import-export/contribution.ts",
-            "sha256": "993ec2cc0f80309284a1b6e5d1c498383c9e9e5e3a132bb137a9deb25e673a68"
+            "sha256": "b6c0eae98ed1e4c086f520cd9603d2afad64e2dcbf246a5a3ebe79e431a61694"
         }
     ],
     "modules": [

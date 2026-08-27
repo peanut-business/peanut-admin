@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\external;
 
+use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\facade\Db;
 
@@ -34,6 +35,95 @@ final class ExternalChannelBindingService
             self::assertValidInput($provider, $identity, $enabled);
             self::persistLocked($tenantId, $provider, $config, $identity, $enabled, $binding);
         });
+    }
+
+    /**
+     * Persist a configuration-transfer binding without accepting a callback key.
+     *
+     * The callback key is an installation-local routing credential. Existing
+     * rows retain it, while a newly-created row always receives a fresh
+     * server-generated key. The transfer package only carries the public
+     * identity hash, so this method deliberately does not try to reconstruct a
+     * provider identity from the imported configuration.
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function importConfiguration(
+        PDO $pdo,
+        TenantContext $context,
+        string $provider,
+        array $config,
+        ?string $identityHash,
+        string $identityHint,
+        bool $enabled,
+        ?int $expectedRevision = null,
+    ): void {
+        $tenantId = ExternalTenantContext::tenantId($context);
+        $provider = trim($provider);
+        $identityHint = trim($identityHint);
+        if (preg_match('/^[a-z][a-z0-9.-]{0,63}$/D', $provider) !== 1
+            || strlen($identityHint) > 32
+            || ($identityHash !== null && preg_match('/^[a-f0-9]{64}$/D', $identityHash) !== 1)
+            || ($enabled && $identityHash === null)) {
+            throw new \RuntimeException('TRANSFER_EXTERNAL_BINDING_INVALID');
+        }
+
+        self::assertActiveTenantOnPdo($pdo, $tenantId, true);
+        $statement = $pdo->prepare(<<<'SQL'
+SELECT id, identity_hash, identity_hint, config_json, status, update_time
+FROM pa_external_channel_binding
+WHERE tenant_id = :tenant_id AND provider = :provider
+LIMIT 1
+FOR UPDATE
+SQL);
+        $statement->execute([
+            'tenant_id' => $tenantId,
+            'provider' => $provider,
+        ]);
+        $binding = $statement->fetch(PDO::FETCH_ASSOC);
+        $binding = is_array($binding) ? $binding : null;
+        $currentRevision = $binding === null ? null : self::configurationRevision($binding);
+        if (($expectedRevision === null && $binding !== null)
+            || ($expectedRevision !== null && $currentRevision !== $expectedRevision)) {
+            throw new \RuntimeException('TRANSFER_CONFLICT');
+        }
+        self::persistImportedLocked(
+            $pdo,
+            $tenantId,
+            $provider,
+            $config,
+            $identityHash,
+            $identityHint,
+            $enabled,
+            $binding,
+        );
+    }
+
+    /**
+     * Produce a positive, deterministic optimistic-concurrency token without
+     * exposing binding configuration or requiring a legacy table migration.
+     *
+     * @param array<string, mixed> $binding
+     */
+    public static function configurationRevision(array $binding): int
+    {
+        $state = [];
+        foreach (['identity_hash', 'identity_hint', 'config_json', 'status', 'update_time'] as $key) {
+            $state[$key] = $binding[$key] ?? null;
+        }
+        try {
+            $encoded = json_encode(
+                $state,
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+            );
+        } catch (\JsonException) {
+            throw new \RuntimeException('TRANSFER_EXTERNAL_BINDING_INVALID');
+        }
+        $revision = hexdec(substr(hash('sha256', $encoded), 0, 15));
+        if (!is_int($revision) || $revision < 1) {
+            throw new \RuntimeException('TRANSFER_EXTERNAL_BINDING_INVALID');
+        }
+        return $revision;
     }
 
     /**
@@ -152,6 +242,74 @@ final class ExternalChannelBindingService
             ->where('id', (int)$binding['id'])
             ->where('tenant_id', $tenantId)
             ->update($update);
+    }
+
+    /** @param array<string, mixed>|null $binding @param array<string, mixed> $config */
+    private static function persistImportedLocked(
+        PDO $pdo,
+        int $tenantId,
+        string $provider,
+        array $config,
+        ?string $identityHash,
+        string $identityHint,
+        bool $enabled,
+        ?array $binding,
+    ): void {
+        $encoded = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $now = time();
+        if ($binding === null) {
+            $statement = $pdo->prepare(<<<'SQL'
+INSERT INTO pa_external_channel_binding
+    (tenant_id, provider, callback_key, identity_hash, identity_hint, config_json, status, create_time, update_time)
+VALUES
+    (:tenant_id, :provider, :callback_key, :identity_hash, :identity_hint, :config_json, :status, :create_time, :update_time)
+SQL);
+            $statement->execute([
+                'tenant_id' => $tenantId,
+                'provider' => $provider,
+                'callback_key' => bin2hex(random_bytes(32)),
+                'identity_hash' => $identityHash
+                    ?? hash('sha256', 'unconfigured:' . $provider . ':' . $tenantId),
+                'identity_hint' => $identityHint,
+                'config_json' => $encoded,
+                'status' => $enabled ? 1 : 0,
+                'create_time' => $now,
+                'update_time' => $now,
+            ]);
+            return;
+        }
+
+        $columns = 'config_json = :config_json, status = :status, update_time = :update_time';
+        $parameters = [
+            'config_json' => $encoded,
+            'status' => $enabled ? 1 : 0,
+            'update_time' => $now,
+            'id' => (int)$binding['id'],
+            'tenant_id' => $tenantId,
+            'provider' => $provider,
+        ];
+        if ($identityHash !== null) {
+            $columns .= ', identity_hash = :identity_hash, identity_hint = :identity_hint';
+            $parameters['identity_hash'] = $identityHash;
+            $parameters['identity_hint'] = $identityHint;
+        }
+        $statement = $pdo->prepare(<<<SQL
+UPDATE pa_external_channel_binding
+SET {$columns}
+WHERE id = :id AND tenant_id = :tenant_id AND provider = :provider
+SQL);
+        $statement->execute($parameters);
+    }
+
+    private static function assertActiveTenantOnPdo(PDO $pdo, int $tenantId, bool $lock = false): void
+    {
+        $statement = $pdo->prepare(
+            'SELECT status FROM pa_tenant WHERE id = :tenant_id' . ($lock ? ' FOR UPDATE' : ''),
+        );
+        $statement->execute(['tenant_id' => $tenantId]);
+        if ((string)$statement->fetchColumn() !== 'active') {
+            throw new ExternalTenantResolutionException();
+        }
     }
 
     private static function callbackKeyForUpdate(string $provider, string $current, bool $enabled): string

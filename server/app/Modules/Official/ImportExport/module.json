@@ -29,7 +29,9 @@
   "contracts": {
     "exports": [
       "app\\Modules\\Official\\ImportExport\\Contracts\\ImportExportCommands",
-      "app\\Modules\\Official\\ImportExport\\Contracts\\ImportExportQueries"
+      "app\\Modules\\Official\\ImportExport\\Contracts\\ImportExportQueries",
+      "app\\Modules\\Official\\ImportExport\\Contracts\\ConfigurationTransferCommands",
+      "app\\Modules\\Official\\ImportExport\\Contracts\\ConfigurationTransferQueries"
     ],
     "events": []
   },
