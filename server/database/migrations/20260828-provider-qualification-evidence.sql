@@ -1,3 +1,4 @@
+-- peanut-release: 3.0.9
 -- Append-only, secret-free evidence recorded by trusted Application adapters.
 CREATE TABLE `pa_provider_qualification_evidence` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
