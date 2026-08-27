@@ -197,6 +197,7 @@ final readonly class PairedBackupManifest
             self::invalid();
         }
         $expectedRoles = ['php', 'nginx', 'mysql'];
+        $normalized = [];
         foreach ($value as $index => $image) {
             $image = self::map($image);
             self::exactKeys($image, ['role', 'reference', 'digest']);
@@ -210,8 +211,13 @@ final readonly class PairedBackupManifest
             ) {
                 self::invalid();
             }
+            $normalized[] = [
+                'role' => $image['role'],
+                'reference' => $image['reference'],
+                'digest' => $image['digest'],
+            ];
         }
-        return $value;
+        return $normalized;
     }
 
     /** @return list<array{kind:string,filename:string,bytes:int,sha256:string}> */
@@ -224,6 +230,7 @@ final readonly class PairedBackupManifest
             ['kind' => 'database', 'filename' => self::DATABASE_ARTIFACT],
             ['kind' => 'files', 'filename' => self::FILES_ARTIFACT],
         ];
+        $normalized = [];
         foreach ($value as $index => $artifact) {
             $artifact = self::map($artifact);
             self::exactKeys($artifact, ['kind', 'filename', 'bytes', 'sha256']);
@@ -235,8 +242,14 @@ final readonly class PairedBackupManifest
                 self::invalid();
             }
             self::positiveInteger($artifact['bytes'] ?? null);
+            $normalized[] = [
+                'kind' => $artifact['kind'],
+                'filename' => $artifact['filename'],
+                'bytes' => $artifact['bytes'],
+                'sha256' => $artifact['sha256'],
+            ];
         }
-        return $value;
+        return $normalized;
     }
 
     /** @return array<string, mixed> */

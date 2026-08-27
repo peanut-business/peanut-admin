@@ -1508,6 +1508,19 @@
             ]
         },
         {
+            "path": "docs/architecture/product-closure-backup-provider-contract.md",
+            "target": "docs/architecture/product-closure-backup-provider-contract.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/architecture/product-closure-core-application-compatibility.md",
             "target": "docs/architecture/product-closure-core-application-compatibility.md",
             "classification": "excluded",
@@ -3766,7 +3779,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "2b1fc79fc30d7d35cf456fef4421a58a8bc58a0fcccd1c9f25e82ec26cd74f85"
+            "source_sha256": "647ceec74792537af76723761dae1f5402babb72d6a4d76476d7965ced911c2b"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3778,7 +3791,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "4f8d45007ebc57cff5469af18a41795767864d1cfda24059a0766ba9e7c77c5a"
+            "source_sha256": "396cc2a0d591f4e82d3ee7e7802ead43593bc610735135e22cd11a75f78d4676"
         },
         {
             "path": "platform/src/main.ts",
@@ -4046,7 +4059,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ae70478f3dec2ec0725c37fa9add4351c1d4a6f6695b212704fd38527b3dba46"
+            "source_sha256": "2d61de90a3561dd81b18892d302aed53824c10a8f0822e78d557e0cff4119507"
         },
         {
             "path": "resources/service-registry.json",
@@ -4385,6 +4398,20 @@
                 "standard",
                 "full"
             ]
+        },
+        {
+            "path": "scripts/ops-backup-worker",
+            "target": "scripts/ops-backup-worker",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "74e912d0ad6c95a3252bb53c3a0f2a57989da60dbf213b3a7aab6c951d3a2aca"
         },
         {
             "path": "scripts/p0e-browser-smoke",
@@ -9245,6 +9272,20 @@
             "source_sha256": "7d5eae1bc8a516dee0e86f85da1081d82a2a79b4739d30be53ba9958dae6dd46"
         },
         {
+            "path": "server/app/command/OpsBackupTask.php",
+            "target": "server/app/command/OpsBackupTask.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "2dc75f9dc900149fcbd96825efceeace95610ce92617b523ed10e4361f928254"
+        },
+        {
             "path": "server/app/command/PluginCommandSupport.php",
             "target": "server/app/command/PluginCommandSupport.php",
             "classification": "app-owned",
@@ -12073,7 +12114,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "62590b7cb145a28774c5bf5e58744b0617bb393e2061fd56a1c712d1cb2023fb"
+            "source_sha256": "e57c7d65ff986a1ba1bdadba3a8ee2da5c740dcc96f550ecda0a5348096d392b"
         },
         {
             "path": "server/app/common/service/scaffold/ApplicationCreator.php",
@@ -12803,7 +12844,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "2ad6a9a8bd47a552afdfa4471c8f85d32636fb2af3a5c7fd1b6e1042492dcba3"
+            "source_sha256": "bc86b4eeeb1a65c4142dbafeef3e9ac042d02efb6450dca2bf7b5b5cb40348f2"
         },
         {
             "path": "server/app/platform/controller/PlatformSessionController.php",
@@ -13382,6 +13423,54 @@
             "source_sha256": "44b7b1d57016d1b256aeab5f117e25c799c93170fe23961017e386d61e4e7903"
         },
         {
+            "path": "server/app/platform/service/ops/PairedBackupManifest.php",
+            "target": "server/app/platform/service/ops/PairedBackupManifest.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "a36f1701c8d72088501310ac03a569ecd8c55ddf06f372866666eeb5e5fdc60a"
+        },
+        {
+            "path": "server/app/platform/service/ops/PairedBackupProvider.php",
+            "target": "server/app/platform/service/ops/PairedBackupProvider.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "a1d0ed870e0bb9336fc49c8e51cb15d95ea4431b0b66b696b02925550cc1e006"
+        },
+        {
+            "path": "server/app/platform/service/ops/PdoBackupTaskExecutionService.php",
+            "target": "server/app/platform/service/ops/PdoBackupTaskExecutionService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "966db92363eb2fc85e7e69342c69262bd4266a452689b5e5f271ee055e29c823"
+        },
+        {
+            "path": "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
+            "target": "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "5eb4cb851b4591bfd8a43de407458c7be6317f7a43d286be67b35d89d3795a00"
+        },
+        {
             "path": "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
             "target": "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
             "classification": "app-owned",
@@ -13392,6 +13481,18 @@
                 "full"
             ],
             "source_sha256": "960f35456a5cec609c6a66eecac5f18bf5bac605151b77e43b7f4d7031db4246"
+        },
+        {
+            "path": "server/app/platform/service/ops/PlatformBackupCenterService.php",
+            "target": "server/app/platform/service/ops/PlatformBackupCenterService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "5b96262a1d33be9aa230298848602e62389e8df5432ad4a4f0803513b0d9990e"
         },
         {
             "path": "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
@@ -13427,7 +13528,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "4e2382907d653f79c164ebb02cac738660621f998b92ca06bf6cf1a1c9fd5a74"
+            "source_sha256": "2979ba1a77d6c953aa29f7bc3ab55c31bb576fa5055f5daca548b78d32edb6e1"
         },
         {
             "path": "server/app/platform/service/ops/ReadOnlyMaintenanceWindowStore.php",
@@ -13971,7 +14072,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "60a933098443abe30e2726fb6c1a9d9c299862fd59aee23fba995204aa54ba2b"
+            "source_sha256": "f4a26758a1663b0399ad0073ce0d2bdf7ce3a025ede5bade119dabe8ffe53a56"
         },
         {
             "path": "server/config/cookie.php",
@@ -14336,6 +14437,20 @@
                 "full"
             ],
             "source_sha256": "db250ea743b68ecfe7db16b1644259c2f7813ecec39472dbc8b28ad1771089f0"
+        },
+        {
+            "path": "server/database/migrations/20260827-create-ops-backup-evidence.sql",
+            "target": "server/database/migrations/20260827-create-ops-backup-evidence.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "33058d141518a42a481e10ee386804c37b98efc3a34ea6e60df977eda8221be2"
         },
         {
             "path": "server/database/migrations/20260827-first-run-readiness.sql",
@@ -14740,7 +14855,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "10f9351f7ca85cd607ce68ffc8f71f3382d56cef4b9aa2972bca8fb1cf8e746a"
+            "source_sha256": "7860e37d5824e3b380f2df812800b153ca7d85cc1d510bb8b3343c5d88e63ebd"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
@@ -18332,7 +18447,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3cb2e3aff0fb2fd9ad59a40e574fc6733e0ed3af66b227b2080d3122a9dce424"
+            "source_sha256": "8f17f80d3e6d31fbd4b82e3f31a492b1ed7c93288c4e66ca3eab851911cbb164"
         },
         {
             "path": "web/src/hooks/chart-option.ts",

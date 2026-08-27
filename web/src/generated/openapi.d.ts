@@ -133,6 +133,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns the fixed backup Provider, the latest verified path-free manifest projection, and at most 20 recent backup tasks. */
+        get: operations["getPlatformBackupCenter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/ops/tasks/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Submits the single registered paired DB/files backup. Host, database, path, command, credential and retry fields are not accepted. */
+        post: operations["submitPlatformBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/ops/tasks/{task_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPlatformOpsTask"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -145,6 +195,10 @@ export interface components {
         };
         TenantSelectRequest: {
             tenant_id: number;
+        };
+        PlatformBackupRequest: {
+            /** @enum {string} */
+            provider_key: "peanut.paired-db-files";
         };
         ReadinessChecklistResponse: components["schemas"]["ApiResponse"] & {
             data?: components["schemas"]["ReadinessChecklist"];
@@ -346,6 +400,59 @@ export interface operations {
             };
             401: components["responses"]["ApiResponse"];
             403: components["responses"]["ApiResponse"];
+        };
+    };
+    getPlatformBackupCenter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
+    submitPlatformBackup: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformBackupRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            409: components["responses"]["ApiResponse"];
+        };
+    };
+    getPlatformOpsTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            404: components["responses"]["ApiResponse"];
         };
     };
 }

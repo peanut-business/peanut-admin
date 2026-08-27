@@ -18,8 +18,9 @@ PC30 直接采用 Core 的 `BackupRestoreProvider` 与 Registry，不修改 Core
 参考 Host。Application 只登记一个 `peanut.paired-db-files` Provider；数据库和
 `php-storage` 的实际动作仍由受信 Deployment Adapter 拥有。
 
-PC30 固定 Provider 与配对制品合同，不开放 Platform 提交入口、不运行生产备份或恢复。
-PC31 才能接入幂等任务提交、账本和备份中心；PC32 才能把逻辑目标
+PC30 固定 Provider 与配对制品合同。PC31 在 Application 内直接采用 Core
+`OpsTaskService`，并提供 Platform 备份提交、任务状态、最近任务和最新已验证配对备份视图；
+受信 Deployment worker 只消费固定 handler，Web 不能提交命令或路径。PC32 才能把逻辑目标
 `isolated-new-target` 绑定到已登记的隔离资源并执行恢复验证。
 
 ## 2. 固定 Provider
@@ -30,7 +31,7 @@ PC31 才能接入幂等任务提交、账本和备份中心；PC32 才能把逻�
 | backup handler | `peanut.backup.create` | 只供服务器注册的任务执行器解析 |
 | restore handler | `peanut.restore.verify` | 只允许恢复到新目标并验证 |
 | restore target | `isolated-new-target` | 逻辑目标；客户端不能提交主机、库名或路径 |
-| maximum attempts | `1` | PC31/PC32 完成副作用幂等收据前不自动重试 |
+| maximum attempts | `1` | 备份 reference 由 task key 确定；失败或进程中断不自动重复副作用 |
 | manifest schema | `1` | 固定制品字段和校验语义 |
 
 Provider 代码只描述受信能力，不执行命令。Core Registry 继续负责 provider/handler/target
@@ -72,8 +73,8 @@ Deployment Adapter 必须按以下顺序执行，不能由 Web 调整：
 
 | 阶段 | 权限/审计 | 当前状态 |
 |---|---|---|
-| PC30 描述与 manifest | 无 HTTP 写入口 | 已实现合同，不能提交任务 |
-| PC31 创建备份 | `platform.ops.backup.manage`；`platform.ops.backup.submitted` | 尚未实施 |
+| PC30 描述与 manifest | 无 HTTP 写入口 | 已实现 Provider 和 manifest 合同 |
+| PC31 创建备份 | `platform.ops.backup.manage`；`platform.ops.backup.submitted/succeeded/failed` | Application Host、账本、受信 worker 与备份中心已形成 |
 | PC32 恢复验证 | `platform.ops.restore.manage`；`platform.ops.restore.submitted` | 尚未实施 |
 
 Core 任务服务只接受 Provider key、opaque backup reference、registered target 和
@@ -82,14 +83,21 @@ idempotency key；handler、命令、参数、路径、重试次数和凭据永�
 
 ## 6. 下游停止线
 
-- PC31 必须复用 Core `OpsTaskService`、`OpsTaskDispatcher`、权限与原子审计，不另建任务表；
-- PC31 在 Deployment Adapter 和副作用幂等收据形成前不得把按钮标成可用；
+- PC31 复用 Core `OpsTaskService`、`OpsTaskDispatcher`、权限与原子审计；任务只写
+  Core-owned `pa_ops_task`，Application-owned `pa_ops_backup_evidence` 只保存验证后的安全 manifest 投影；
+- Platform 只提交固定 Provider 和 Core 生成的幂等 key。Deployment worker 从登记的
+  production 资源执行固定 DB/files 步骤，使用 task key 派生的 opaque backup reference，
+  不接受客户端 host、数据库、路径、命令、凭据或重试次数；
+- worker claim 返回只属于本次执行的 task revision；运行期间按固定间隔续写心跳，成功和失败
+  只能用同一 revision 收口。两小时无心跳的任务会被标记失败并递增 revision，旧 worker 随即
+  被 fencing，不能再写 evidence 或覆盖新执行；
+- `running` 任务、隔离的不完整目录和 `dead` 任务都不能成为已验证备份证据；
 - PC32 必须先登记真实隔离恢复资源，活动、现有、生产或摘要损坏目标一律拒绝；
 - “备份文件存在”不等于“恢复已验证”；readiness 与升级状态只能引用真实新目标恢复证据；
 - 生产恢复、覆盖活动数据和自动清理旧备份继续需要独立明确授权。
 
 ## 7. 验证 owner
 
-PC30 只运行 PHP 语法、Provider/manifest 一次聚焦合同 smoke、资源 JSON、文档治理、能力账本
-和 `git diff --check`。真实数据库、文件、容器、生产备份、恢复和浏览器不属于本任务；它们
-分别由 PC31、PC32 和 PC70 的固定候选 Gate 拥有。
+PC31 运行 PHP/shell 语法、Platform typecheck、任务/幂等/并发/原子审计与 evidence 数据库
+合同。受信 worker 的真实配对制品和新目标恢复必须在同一登记资源链上由 PC32 验证；最终浏览器
+与 released-scaffold 组合资格归 PC70。

@@ -139,6 +139,45 @@ export interface StorageRoute { route_key:string; access_type:'public'|'private'
 export interface StorageSnapshot { accounts:StorageAccount[]; spaces:StorageSpace[]; routes:StorageRoute[]; purposes:string[] }
 export interface DiagnosticDownload { bytes:ArrayBuffer; filename:string; sha256:string }
 
+export interface OpsBackupProvider {
+  key: 'peanut.paired-db-files';
+}
+
+export interface OpsBackupTask {
+  task_key: string;
+  task_type: 'ops.backup.create';
+  status: 'queued' | 'running' | 'succeeded' | 'dead' | 'cancelled';
+  attempt_count: number;
+  max_attempts: number;
+  revision: number;
+  last_error_code: string | null;
+  available_at: string;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface OpsLatestVerifiedBackup {
+  backup_reference_key: string;
+  task_key: string;
+  provider_key: 'peanut.paired-db-files';
+  manifest_sha256: string;
+  source_commit: string;
+  source_tree: string;
+  source_release_key: string | null;
+  consistency_started_at: string;
+  consistency_completed_at: string;
+  verified_at: string;
+  age_seconds: number;
+  source_matches_runtime: boolean;
+}
+
+export interface OpsBackupCenterSnapshot {
+  provider: OpsBackupProvider;
+  latest_verified: OpsLatestVerifiedBackup | null;
+  tasks: OpsBackupTask[];
+}
+
 const tokenKey = 'peanut-platform-token';
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
@@ -446,6 +485,10 @@ export const api = {
         params: { page: 1, page_size: 100 },
       })
     ),
+  backupCenter: () =>
+    unwrap<OpsBackupCenterSnapshot>(
+      client.get('/api/platform/v1/ops/backups')
+    ),
   async downloadDiagnostics(windowMinutes: 60 | 360 | 1440 = 60): Promise<DiagnosticDownload> {
     const result = await client.get<ArrayBuffer>('/api/platform/v1/ops/diagnostics', {
       params: { window_minutes: windowMinutes },
@@ -516,6 +559,36 @@ async function opsRead(
   };
 }
 
+async function opsSubmitBackup(
+  providerKey: string,
+  idempotencyKey: string,
+  signal: AbortSignal
+): Promise<OpsTransportResult> {
+  const result = await client.post<Envelope<unknown>>(
+    '/api/platform/v1/ops/tasks/backup',
+    { provider_key: providerKey },
+    { headers: { 'Idempotency-Key': idempotencyKey }, signal }
+  );
+  const requestId = opsRequestId(result.headers as Record<string, unknown>);
+  if (result.data.code === 20000) {
+    return {
+      status: result.status,
+      headers: new Headers({ 'X-Request-Id': requestId }),
+      body: { data: result.data.data, meta: { request_id: requestId } },
+    };
+  }
+
+  const details = result.data.data as { error_code?: string } | null;
+  return {
+    status: opsStatus(result.data.code),
+    headers: new Headers({ 'X-Request-Id': requestId }),
+    body: {
+      code: details?.error_code || 'OPS_INTERNAL_ERROR',
+      request_id: requestId,
+    },
+  };
+}
+
 function unavailable(code: string): Promise<OpsTransportResult> {
   return Promise.resolve({
     status: 503,
@@ -524,15 +597,17 @@ function unavailable(code: string): Promise<OpsTransportResult> {
   });
 }
 
-/** PC20 transport: only status and maintenance reads are connected. */
+/** Platform Ops transport: status/maintenance reads and backup task operations are connected. */
 export function createPlatformOpsTransport(): OpsConsoleTransport {
   return {
     overview: (signal) => opsRead('/api/platform/v1/ops/status', signal),
     maintenance: (signal) =>
       opsRead('/api/platform/v1/ops/maintenance', signal),
-    submitBackup: () => unavailable('OPS_PROVIDER_UNAVAILABLE'),
+    submitBackup: (providerKey, idempotencyKey, signal) =>
+      opsSubmitBackup(providerKey, idempotencyKey, signal),
     submitRestore: () => unavailable('OPS_PROVIDER_UNAVAILABLE'),
-    task: () => unavailable('OPS_TASK_UNAVAILABLE'),
+    task: (taskKey, signal) =>
+      opsRead(`/api/platform/v1/ops/tasks/${encodeURIComponent(taskKey)}`, signal),
     scheduleMaintenance: (
       _input: MaintenanceScheduleInput,
       _expectedRevision: number,

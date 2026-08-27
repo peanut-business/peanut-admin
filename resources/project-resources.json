@@ -1178,7 +1178,7 @@
         "allocation_state": "registered target; the backups directory was absent on 2026-08-15 and is created with mode 0700 only by an authorized backup gate",
         "execution_context": "all backup_method and integrity_check commands execute on oracle3 under /www/docker/peanut-admin; no artifact is streamed to or retained on the operator workstation",
         "product_contract": {
-          "adoption_state": "PC30 provider and manifest contract implemented; Platform task submission and deployment execution remain disabled until PC31",
+          "adoption_state": "PC31 application backup center adopts Core task submission and exposes recent task/latest verified evidence; deployment execution uses scripts/ops-backup-worker with this registered production target; restore verification remains disabled until PC32",
           "provider_key": "peanut.paired-db-files",
           "backup_handler_key": "peanut.backup.create",
           "restore_handler_key": "peanut.restore.verify",

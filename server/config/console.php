@@ -10,6 +10,7 @@ return [
         'refund:reconcile' => \app\command\RefundReconcile::class,
         'generator:cleanup' => \app\command\GeneratorCleanup::class,
         'tenant-task:work' => \app\command\TenantTaskWorker::class,
+        'ops-backup:task' => \app\command\OpsBackupTask::class,
         'module:install'   => \app\command\ModuleInstall::class,
         'module:create'    => \app\command\ModuleCreate::class,
         'module:pack'      => \app\command\ModulePack::class,

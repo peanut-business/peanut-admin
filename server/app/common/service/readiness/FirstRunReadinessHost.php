@@ -12,6 +12,8 @@ use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PDO;
+use think\facade\Db;
 
 /**
  * Read-only first-run readiness projection.
@@ -150,15 +152,37 @@ final class FirstRunReadinessHost
 
     private function backup(string $deploymentMode): array
     {
+        $ledgerAvailable = false;
+        $verifiedAt = null;
+        try {
+            $pdo = Db::connect()->connect();
+            if ($pdo instanceof PDO) {
+                $statement = $pdo->query(
+                    'SELECT verified_at FROM pa_ops_backup_evidence ORDER BY verified_at DESC, id DESC LIMIT 1'
+                );
+                $ledgerAvailable = $statement !== false;
+                $value = $statement === false ? false : $statement->fetchColumn();
+                $verifiedAt = is_string($value) && $value !== ''
+                    ? (new \DateTimeImmutable($value, new \DateTimeZone('UTC')))
+                        ->format('Y-m-d\TH:i:s.v\Z')
+                    : null;
+            }
+        } catch (\Throwable) {
+            $ledgerAvailable = false;
+            $verifiedAt = null;
+        }
+
         return $this->item(
             'backup',
             'instance',
-            'not_implemented',
-            'no_application_evidence',
+            $verifiedAt !== null ? 'unverified' : 'action_required',
+            $verifiedAt !== null ? 'restore_verification_required' : 'no_verified_backup',
             true,
             $this->ownerEntry($this->instanceOwner($deploymentMode)),
             [
-                'application_ledger_available' => false,
+                'application_ledger_available' => $ledgerAvailable,
+                'backup_verified' => $verifiedAt !== null,
+                'last_verified_at' => $verifiedAt,
                 'restore_verified' => false,
             ],
         );
