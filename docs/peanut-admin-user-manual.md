@@ -461,6 +461,12 @@ Tenant owner/管理员登录后选择自己有权访问的 Tenant。切换 Tenan
 匹配当前 Runtime 的已验证备份、引用同一 backup reference 的恢复能力 evidence 和 active
 `planned-upgrade` 维护窗口。
 
+同页的“外部 Provider 生产资格”卡片聚合 Payment、Notification、OAuth 和 Storage 状态，分别
+显示本地配置、外部连通、回调验证、凭据轮换、证据有效期、生产资格与最近安全失败码。页面刷新
+只读取已记录 evidence，不会连接外部平台、发送短信/邮件或发起支付。配置变更或证据过期会使
+旧资格自动失效；邮件当前明确显示 `NOT_IMPLEMENTED`。opaque scope key 只用于区分范围，页面
+不会显示 Tenant ID、配置摘要、秘密、收件人、订单/交易号或原始错误。
+
 数据库、migration、Module 目录或 Runtime 存储等关键检查失败时，实例显示为
 `unhealthy`；非权威缓存读取失败时显示为 `degraded`。状态 Provider 无法形成完整、合法证据时
 页面按不可用处理，不回退到静态 PHP 环境信息。

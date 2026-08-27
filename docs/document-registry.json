@@ -1547,6 +1547,42 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-product-closure-provider-qualification",
+      "path": "docs/architecture/product-closure-provider-qualification.md",
+      "title": "外部 Provider 生产资格合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/platform/service/provider/",
+        "server/database/migrations/20260828-provider-qualification-evidence.sql",
+        "server/app/Modules/Official/Payment/module.json",
+        "server/app/Modules/Official/Notification/module.json",
+        "server/app/Modules/Official/Oauth/module.json",
+        "server/app/common/service/storage/"
+      ],
+      "owner": "product-operations",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure",
+        "provider-qualification",
+        "operations"
+      ],
+      "site_projections": [
+        "pa-docs-site-api"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-product-closure-maintenance-gate",
       "path": "docs/architecture/product-closure-maintenance-gate.md",
       "title": "产品闭环维护窗口与写入门禁",

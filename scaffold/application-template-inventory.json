@@ -1560,6 +1560,19 @@
             ]
         },
         {
+            "path": "docs/architecture/product-closure-provider-qualification.md",
+            "target": "docs/architecture/product-closure-provider-qualification.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/architecture/product-closure-upgrade-execution.md",
             "target": "docs/architecture/product-closure-upgrade-execution.md",
             "classification": "excluded",
@@ -3805,7 +3818,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "33ddf999432f310a9ebcae539af2fa7e6f0b830c6e7e3df7cb972bcea6a4673c"
+            "source_sha256": "a5d9e833bf70b5d5c7e24a70fda42ee4230b2aceff615629e48fd4985a856a48"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3817,7 +3830,19 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "45e63fe4fed4f0b18eafc11150b700a77ecb86bff8c648dcb2437425259e1719"
+            "source_sha256": "f6f16884fe4dbd416b3da321dc27c181f1f2aa671da0ebf6fd92d233e8b724c6"
+        },
+        {
+            "path": "platform/src/components/ProviderQualificationCard.vue",
+            "target": "platform/src/components/ProviderQualificationCard.vue",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "2b84a7c5ce89f480dbb2d2c663d4d4eeecae7d38e5cdded8225529a4c4279f2b"
         },
         {
             "path": "platform/src/main.ts",
@@ -12940,7 +12965,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "d458a7cf896156bfc811a4c4af6a8d059031d1b8325e46f3a68194333ba86c82"
+            "source_sha256": "11c6d61a4b798482e87f1264347937f93a0ce8158a8b0b5fa51a63a05b9a4d14"
         },
         {
             "path": "server/app/platform/controller/PlatformSessionController.php",
@@ -13660,7 +13685,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "44a92e9fdc56dab8d8b07143ae5fcda8ddd32e907f1671cb92893a9463c5e8d8"
+            "source_sha256": "d6189f0691689920265e97dc6d1d60ef5bf76f0b4e5e045d53cb24d7677701ed"
         },
         {
             "path": "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
@@ -13973,6 +13998,138 @@
                 "full"
             ],
             "source_sha256": "7f43815f06e4158e18c45ed40d391e0365348359468776e372d573497965f9a7"
+        },
+        {
+            "path": "server/app/platform/service/provider/AbstractTenantBindingQualificationContributor.php",
+            "target": "server/app/platform/service/provider/AbstractTenantBindingQualificationContributor.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "56f5b0799c9fb81ba5dd1193be652285570667246bc3f55b89adc6228fae3065"
+        },
+        {
+            "path": "server/app/platform/service/provider/NotificationQualificationContributor.php",
+            "target": "server/app/platform/service/provider/NotificationQualificationContributor.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "ae663fa69c18d2801bec738cc34ee88cf3db3513047295b2da204fd004303afa"
+        },
+        {
+            "path": "server/app/platform/service/provider/OauthQualificationContributor.php",
+            "target": "server/app/platform/service/provider/OauthQualificationContributor.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "50762c6fc2be8965996d8a713abefaa592fb5906f9f03fb3d5484d137441a4ee"
+        },
+        {
+            "path": "server/app/platform/service/provider/PaymentQualificationContributor.php",
+            "target": "server/app/platform/service/provider/PaymentQualificationContributor.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "77a19da3a7c4d3df997ec204e00762ac2152693f8d43ccc2f1a28c7fcd114136"
+        },
+        {
+            "path": "server/app/platform/service/provider/PdoProviderQualificationEvidenceRepository.php",
+            "target": "server/app/platform/service/provider/PdoProviderQualificationEvidenceRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "0255228d04fc19d1ace075ce06d1e7b92c26f4efc734fd8ce9628a99abeb4605"
+        },
+        {
+            "path": "server/app/platform/service/provider/PlatformProviderQualificationService.php",
+            "target": "server/app/platform/service/provider/PlatformProviderQualificationService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "e8a80bc2e60220be4e01a1ddc7d6d30d6ded6de1ae35a6332a11b33e785419f4"
+        },
+        {
+            "path": "server/app/platform/service/provider/ProviderQualificationContributor.php",
+            "target": "server/app/platform/service/provider/ProviderQualificationContributor.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "b6e4982f3eea5b3a0cc3cfc4385160aff85c42a3595761f9a6bb10c26da270da"
+        },
+        {
+            "path": "server/app/platform/service/provider/ProviderQualificationEvidenceRepository.php",
+            "target": "server/app/platform/service/provider/ProviderQualificationEvidenceRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "0b9d652488ddaa395f389150229e85bda6e3c5fcedbc8b58d39b65dffd4ed574"
+        },
+        {
+            "path": "server/app/platform/service/provider/ProviderQualificationRecorder.php",
+            "target": "server/app/platform/service/provider/ProviderQualificationRecorder.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "d046d07e9435de2f39ab3a6de3f47c60e16145497a97a54110510c592fb09f41"
+        },
+        {
+            "path": "server/app/platform/service/provider/ProviderQualificationSubject.php",
+            "target": "server/app/platform/service/provider/ProviderQualificationSubject.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "4687b4980d7cccc151062ca41ce263fd1a2ff0e2e5a4a3f5d72db5cabbb92747"
+        },
+        {
+            "path": "server/app/platform/service/provider/StorageQualificationContributor.php",
+            "target": "server/app/platform/service/provider/StorageQualificationContributor.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "624ddb9ee9620b63fae24474476ca7f73002529a89a3a06e85c3c0fa346120c6"
         },
         {
             "path": "server/app/platform/validate/PlatformAccessValidate.php",
@@ -14663,6 +14820,20 @@
             "source_sha256": "6638785f6cf087efed9fa2622bc98db4bd4e0bec24edaae4d37f3a3b3a724e58"
         },
         {
+            "path": "server/database/migrations/20260828-provider-qualification-evidence.sql",
+            "target": "server/database/migrations/20260828-provider-qualification-evidence.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "6f0e9955feba612c2a871b643ebd37d42c796b4e02623bf4f55447877af89055"
+        },
+        {
             "path": "server/database/seed-demo-data.php",
             "target": "server/database/seed-demo-data.php",
             "classification": "managed",
@@ -15107,7 +15278,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d1d3788eec9bd89f170d70126676af99f906ed98a4cb4cff2ec64e9c96a61ac4"
+            "source_sha256": "8c9770447ff098ddda657a36b71f970e741984a1b6a83a31e5e364b1fd12d654"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
@@ -16293,6 +16464,19 @@
         {
             "path": "server/tests/Productization/PluginModuleContractTest.php",
             "target": "server/tests/Productization/PluginModuleContractTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/Productization/ProviderQualificationContractTest.php",
+            "target": "server/tests/Productization/ProviderQualificationContractTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -18712,7 +18896,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9e4ab354777ed11d2079a95064cc70d3bc09c495989aba27c36009e64e1009b4"
+            "source_sha256": "b82cc93a34948019e378e9a562b984a79d4e25a2a7174b6d17c4ad447d4a2429"
         },
         {
             "path": "web/src/hooks/chart-option.ts",

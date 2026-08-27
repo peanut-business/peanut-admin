@@ -192,6 +192,28 @@ export interface OpsBackupCenterSnapshot {
   tasks: OpsBackupTask[];
 }
 
+export interface ProviderQualificationItem {
+  provider_key: string;
+  category: 'payment' | 'notification' | 'oauth' | 'storage';
+  scope: { type: 'tenant' | 'instance'; key: string };
+  configured: boolean;
+  connected: boolean;
+  callback_verified: boolean;
+  credential_rotated_at: string | null;
+  observed_at: string | null;
+  expires_at: string | null;
+  qualified: boolean;
+  status_code: string;
+  recent_failure: { code: string; observed_at: string } | null;
+  evidence_digest: string;
+}
+
+export interface ProviderQualificationSnapshot {
+  schema_version: 1;
+  generated_at: string;
+  providers: ProviderQualificationItem[];
+}
+
 export type OpsUpgradeReadinessState = 'configuration_required' | 'blocked' | 'ready';
 
 export interface OpsUpgradeReadinessCheck {
@@ -599,6 +621,10 @@ export const api = {
       client.post('/api/platform/v1/ops/tasks/upgrade', {}, {
         headers: { 'Idempotency-Key': `platform-upgrade-${crypto.randomUUID()}` },
       })
+    ),
+  providerQualifications: () =>
+    unwrap<ProviderQualificationSnapshot>(
+      client.get('/api/platform/v1/ops/providers')
     ),
   async downloadDiagnostics(windowMinutes: 60 | 360 | 1440 = 60): Promise<DiagnosticDownload> {
     const result = await client.get<ArrayBuffer>('/api/platform/v1/ops/diagnostics', {

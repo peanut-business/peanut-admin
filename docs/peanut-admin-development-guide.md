@@ -52,6 +52,19 @@ Platform 维护窗口使用 Core 的公开 Ops Console 合同，由应用的 PDO
 middleware 装配。窗口生效时，除受 `platform.ops.maintenance.manage` 权限保护的计划与关闭
 接口外，所有 HTTP 写方法都拒绝并写入 Platform 审计；不能通过菜单、前端或 Host 别名绕过。
 
+### Provider 生产资格合同
+
+`GET /api/platform/v1/ops/providers` 是 Application 拥有的 Platform-only 只读聚合，复用
+`platform.ops.read`。Payment、Notification、OAuth 与 Storage contributor 只读取各自权威
+配置；GET 和 Platform 页面刷新不得运行外部 probe、发送消息或发生资金动作。
+
+受信业务成功、回调验签或受控资格适配器通过 Application 内部
+`ProviderQualificationRecorder` 追加 evidence。证据必须绑定当前配置 HMAC digest 和 TTL；配置
+变化或过期后旧证据不参与资格。公开 DTO 只能暴露 opaque scope key、布尔状态、时间、稳定原因
+码、最近安全失败和 evidence digest，不得暴露 Tenant ID、内部 config digest、秘密、PII、交易
+号或原始错误。完整边界见
+[`外部 Provider 生产资格合同`](architecture/product-closure-provider-qualification.md)。
+
 ### 应用升级就绪合同
 
 `GET /api/platform/v1/ops/upgrade-readiness` 是应用拥有的只读投影。它不会下载 Release、执行

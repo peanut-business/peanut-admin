@@ -108,6 +108,17 @@ Module、scaffold ownership/conflict、备份、恢复 evidence 和维护窗口�
 镜像、凭据或部署目标。`GET /api/platform/v1/ops/upgrades` 返回最近十个任务的安全步骤投影和
 稳定停止码，不返回命令输出或环境细节。
 
+### Platform Provider 生产资格
+
+`GET /api/platform/v1/ops/providers` 要求独立 Platform 会话和 `platform.ops.read`，返回 Payment、
+Notification、OAuth 与 Storage 的只读生产资格投影。`configured` 只表示本地配置完整，
+`connected`、`callback_verified` 和 `qualified` 必须来自尚未过期且仍匹配当前配置的 evidence。
+
+该 GET 不运行测试连接，不发送消息，也不发起资金动作；真实平台资格必须逐 Provider 独立完成。
+配置变化或 evidence 到期会撤销资格。响应仅含 opaque scope key、稳定状态码和安全失败摘要，不含
+Tenant ID、配置摘要、秘密、收件人、订单/交易号或原始平台错误。邮件 Provider 尚未实现，固定
+返回 `NOT_IMPLEMENTED`。
+
 ### Platform 维护窗口
 
 `GET /api/platform/v1/ops/maintenance` 读取当前维护窗口；具有

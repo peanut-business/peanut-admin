@@ -3,12 +3,19 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
+use app\platform\service\provider\NotificationQualificationContributor;
+use app\platform\service\provider\OauthQualificationContributor;
+use app\platform\service\provider\PaymentQualificationContributor;
+use app\platform\service\provider\PdoProviderQualificationEvidenceRepository;
+use app\platform\service\provider\PlatformProviderQualificationService;
+use app\platform\service\provider\StorageQualificationContributor;
 use PDO;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
 use PeanutAdmin\OpsConsole\Status\OpsStatusService;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use PeanutAdmin\OpsConsole\Task\OpsTaskService;
+use think\facade\Config;
 
 final class PlatformOpsRuntimeFactory
 {
@@ -55,6 +62,22 @@ final class PlatformOpsRuntimeFactory
     public static function upgrades(PDO $pdo): PlatformUpgradeExecutionService
     {
         return new PlatformUpgradeExecutionService($pdo, dirname(__DIR__, 5));
+    }
+
+    public static function providerQualifications(PDO $pdo): PlatformProviderQualificationService
+    {
+        $digestKey = trim((string)Config::get('platform_auth.identifier_hmac_key', ''));
+        return new PlatformProviderQualificationService(
+            new PlatformOpsPermissionChecker($pdo),
+            new PdoProviderQualificationEvidenceRepository($pdo),
+            [
+                new PaymentQualificationContributor($pdo, $digestKey),
+                new NotificationQualificationContributor($pdo, $digestKey),
+                new OauthQualificationContributor($pdo, $digestKey),
+                new StorageQualificationContributor($pdo, $digestKey),
+            ],
+            $digestKey,
+        );
     }
 
     private function __construct()

@@ -150,6 +150,9 @@ Route::get('api/platform/v1/ops/status', [PlatformOpsController::class, 'status'
 Route::get('api/platform/v1/ops/upgrade-readiness', [PlatformOpsController::class, 'upgradeReadiness'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::get('api/platform/v1/ops/providers', [PlatformOpsController::class, 'providers'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
 Route::get('api/platform/v1/ops/maintenance', [PlatformOpsController::class, 'maintenance'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
