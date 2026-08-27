@@ -235,7 +235,10 @@ final class InstallationPreflightHost
         if (!function_exists('guardedDatabaseConfig')) {
             throw new RuntimeException('database environment guard is unavailable');
         }
-        return guardedDatabaseConfig();
+        $hostLeaseProof = getenv('P0E_HOST_LEASE_PROOF');
+        return guardedDatabaseConfig(
+            $hostLeaseProof === false || trim($hostLeaseProof) === '' ? null : $hostLeaseProof
+        );
     }
 
     /** @return array{id:string,status:string,code:string,reason:string,remediation:string} */
