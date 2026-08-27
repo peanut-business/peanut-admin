@@ -216,7 +216,7 @@ sudo -n docker run -d \
 ready=0
 for _ in {1..60}; do
   if sudo -n docker exec "$target_container" sh -c \
-      'MYSQL_PWD="$(cat /run/secrets/mysql-root-password)" mysqladmin ping -uroot --silent' >/dev/null 2>&1; then
+      'MYSQL_PWD="$(cat /run/secrets/mysql-root-password)" mysqladmin ping -h127.0.0.1 --protocol=TCP -uroot --silent' >/dev/null 2>&1; then
     ready=1
     break
   fi
