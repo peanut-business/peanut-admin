@@ -76,6 +76,7 @@ final readonly class ProductTenantModuleProfileService
     private function applyDefinition(string $profile, array $definition): array
     {
         $registry = $this->registry();
+        $moduleKeys = $this->dependencyOrder($registry, $definition['modules']);
         $repository = new VerifiedTenantModuleRepository(
             new PdoModuleRuntimeRepository($this->pdo, true),
             $registry
@@ -94,11 +95,12 @@ final readonly class ProductTenantModuleProfileService
             $repository,
             $manager,
             $audit,
-            $now
+            $now,
+            $moduleKeys
         ): array {
             $tenants = $this->tenants($definition['tenant_codes']);
             foreach ($tenants as $tenant) {
-                foreach ($definition['modules'] as $moduleKey) {
+                foreach ($moduleKeys as $moduleKey) {
                     $before = $repository->tenantModule((int)$tenant['id'], $moduleKey);
                     $manager->enable(
                         (int)$tenant['id'],
@@ -122,10 +124,68 @@ final readonly class ProductTenantModuleProfileService
             return [
                 'profile' => $profile,
                 'tenant_count' => count($tenants),
-                'module_count' => count($definition['modules']),
-                'binding_count' => count($tenants) * count($definition['modules']),
+                'module_count' => count($moduleKeys),
+                'binding_count' => count($tenants) * count($moduleKeys),
             ];
         });
+    }
+
+    /**
+     * @param list<string> $moduleKeys
+     * @return list<string>
+     */
+    private function dependencyOrder(DeployedTenantModuleRegistry $registry, array $moduleKeys): array
+    {
+        $manifests = [];
+        foreach ($registry->compiled()->modules as $manifest) {
+            $key = $manifest->data['key'] ?? null;
+            if (is_string($key) && $key !== '') {
+                $manifests[$key] = $manifest;
+            }
+        }
+        $selected = array_fill_keys($moduleKeys, true);
+        $visiting = [];
+        $visited = [];
+        $ordered = [];
+        $visit = function (string $moduleKey) use (
+            &$visit,
+            &$visiting,
+            &$visited,
+            &$ordered,
+            $manifests,
+            $selected
+        ): void {
+            if (isset($visited[$moduleKey])) {
+                return;
+            }
+            if (isset($visiting[$moduleKey])) {
+                throw new ModuleException('PRODUCT_PROFILE_DEPENDENCY_CYCLE', 'Product profile dependency cycle detected.');
+            }
+            $manifest = $manifests[$moduleKey]
+                ?? throw new ModuleException('PRODUCT_PROFILE_MODULE_INVALID', "Unknown product profile Module: {$moduleKey}");
+            $visiting[$moduleKey] = true;
+            $tenant = $manifest->data['tenant'] ?? [];
+            $dependencies = is_array($tenant) ? ($tenant['requires'] ?? []) : [];
+            if (!is_array($dependencies) || !array_is_list($dependencies)) {
+                throw new ModuleException('PRODUCT_PROFILE_DEPENDENCY_INVALID', 'Product profile dependency metadata is invalid.');
+            }
+            foreach ($dependencies as $dependency) {
+                if (!is_string($dependency) || !isset($selected[$dependency])) {
+                    throw new ModuleException(
+                        'PRODUCT_PROFILE_DEPENDENCY_MISSING',
+                        "Product profile Module {$moduleKey} requires selected Module {$dependency}."
+                    );
+                }
+                $visit($dependency);
+            }
+            unset($visiting[$moduleKey]);
+            $visited[$moduleKey] = true;
+            $ordered[] = $moduleKey;
+        };
+        foreach ($moduleKeys as $moduleKey) {
+            $visit($moduleKey);
+        }
+        return $ordered;
     }
 
     private function registry(): DeployedTenantModuleRegistry
