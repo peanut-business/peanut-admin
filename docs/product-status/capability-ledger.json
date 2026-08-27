@@ -287,16 +287,18 @@
     },
     {
       "id": "PA-BACKUP-001",
-      "name": "受信配对备份 Provider 与制品合同",
+      "name": "受信配对备份与应用备份中心",
       "area": "operations",
       "status": "implemented",
-      "summary": "PC30 已由 PR #287 合入 dev：应用直接采用 Core Ops Provider Registry，固定单一 DB/文件 Provider、逻辑新目标、一次尝试和 schema 1 manifest；容量、停写窗口、稳定资源/镜像身份、固定配对 artifact、SHA-256 及责任边界已形成。任务提交、真实备份/恢复和正式组合资格分别归 PC31、PC32、PC70。",
+      "summary": "PC30/PC31 已由 PR #287/#289 合入 dev：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 worker、Application evidence 和 Platform 备份中心已形成；权限、幂等、并发拒绝、60 秒心跳、revision fencing、失败码、SHA-256 与脱敏边界通过聚焦验证。真实配对制品、隔离恢复和正式组合资格分别归 PC32、PC70。",
       "acceptance": [
         "Provider、backup/restore handler、逻辑 restore target 和最大尝试次数全部由服务器固定注册",
         "manifest schema 1 只接受 opaque backup reference、固定 Provider、源码与稳定资源身份、容量、停写窗口、镜像、固定 DB/文件 artifact 和责任 key",
         "容量要求固定为 source bytes 的两倍加 1 GiB，available bytes 必须严格更大且 inode 为正",
         "database.sql.gz 与 php-storage.tar.gz 必须成对出现并带非空字节数和 SHA-256；路径、命令、DSN、凭据、环境变量和任意 payload 不进入 manifest",
-        "副作用幂等收据完成前最大尝试次数固定为 1；Platform 提交、Deployment 执行和恢复到新目标仍保持禁用"
+        "Platform 只提交固定 Provider 与幂等键，任务和提交审计在同一事务内落账；最近任务、失败码、证据时间、年龄、manifest 摘要和 Runtime source 匹配可见",
+        "受信 worker 使用 task revision fencing 与 60 秒心跳；停写失败也必须恢复写入者，既有 backup ID 目录不得复用",
+        "Web 不接收或返回 handler、restore target、主机、数据库、路径、命令或凭据；恢复到新目标在 PC32 完成前保持禁用"
       ],
       "evidence": [
         {
@@ -306,6 +308,14 @@
         {
           "kind": "pull_request",
           "ref": "https://github.com/peanut-business/peanut-admin/pull/287"
+        },
+        {
+          "kind": "git",
+          "ref": "9f33eb9fac44858d5d0575e1a760eec0d3af0694"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/289"
         },
         {
           "kind": "document",
@@ -322,7 +332,13 @@
       "paths": [
         "server/app/platform/service/ops/PairedBackupProvider.php",
         "server/app/platform/service/ops/PairedBackupManifest.php",
+        "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
+        "server/app/platform/service/ops/PdoBackupTaskExecutionService.php",
+        "server/app/platform/service/ops/PlatformBackupCenterService.php",
         "server/app/platform/service/ops/PlatformOpsRuntimeFactory.php",
+        "server/database/migrations/20260827-create-ops-backup-evidence.sql",
+        "scripts/ops-backup-worker",
+        "platform/src/App.vue",
         "resources/project-resources.json",
         "docs/architecture/product-closure-backup-provider-contract.md"
       ]
