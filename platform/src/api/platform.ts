@@ -137,6 +137,7 @@ export interface StorageAccount { id:number; account_key:string; driver:'local'|
 export interface StorageSpace { id:number; space_key:string; account_id:number; account_key:string; driver:string; name:string; access_type:'public'|'private'; bucket?:string; region?:string; endpoint?:string; access_domain?:string; local_path?:string; status:string }
 export interface StorageRoute { route_key:string; access_type:'public'|'private'; space_id:number; space_key:string; space_name:string; driver:string }
 export interface StorageSnapshot { accounts:StorageAccount[]; spaces:StorageSpace[]; routes:StorageRoute[]; purposes:string[] }
+export interface DiagnosticDownload { bytes:ArrayBuffer; filename:string; sha256:string }
 
 const tokenKey = 'peanut-platform-token';
 const client = axios.create({
@@ -445,6 +446,34 @@ export const api = {
         params: { page: 1, page_size: 100 },
       })
     ),
+  async downloadDiagnostics(windowMinutes: 60 | 360 | 1440 = 60): Promise<DiagnosticDownload> {
+    const result = await client.get<ArrayBuffer>('/api/platform/v1/ops/diagnostics', {
+      params: { window_minutes: windowMinutes },
+      responseType: 'arraybuffer',
+    });
+    const sha256 = String(result.headers['x-diagnostic-sha256'] || '');
+    if (!/^[0-9a-f]{64}$/.test(sha256)) {
+      let message = '诊断包生成失败';
+      try {
+        const envelope = JSON.parse(new TextDecoder().decode(result.data)) as Envelope<unknown>;
+        message = envelope.msg || message;
+      } catch {
+        // A response without the checksum header is never accepted as an artifact.
+      }
+      throw new Error(message);
+    }
+    const actual = Array.from(
+      new Uint8Array(await crypto.subtle.digest('SHA-256', result.data)),
+      (byte) => byte.toString(16).padStart(2, '0')
+    ).join('');
+    if (actual !== sha256) throw new Error('诊断包完整性校验失败');
+    const disposition = String(result.headers['content-disposition'] || '');
+    const candidate = disposition.match(/filename="([A-Za-z0-9._-]+)"/)?.[1] || '';
+    const filename = /^peanut-admin-diagnostics-[0-9]{8}-[0-9]{6}-[0-9a-f]{12}\.json$/.test(candidate)
+      ? candidate
+      : `peanut-admin-diagnostics-${sha256.slice(0, 12)}.json`;
+    return { bytes: result.data, filename, sha256 };
+  },
 };
 
 function opsStatus(code: number): number {

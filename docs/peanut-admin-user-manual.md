@@ -461,6 +461,12 @@ PC20 是只读阶段：备份、恢复、维护窗口写入和运行日志按钮
 后续能力区域理解为已经实施。Tenant 管理员无权读取该入口；需要排错时由 Platform Operator
 记录检查项、状态、版本身份和 Request ID，再交给部署运维负责人。
 
+具备 `platform.ops.read` 与 `platform.ops.logs.read` 的 Platform Operator 还可以下载最近一小时
+的脱敏诊断包。文件采用固定 JSON schema，包含运行状态、非秘密配置摘要、Module 清单、失败
+任务聚合与 Platform 审计事件聚合；不读取原始日志文件，也不包含请求头、Cookie、凭据、绝对
+路径、个人记录或 Tenant 业务记录。服务端将制品限制在 1 MiB，并在响应头提供 SHA-256；平台
+页面会在保存前重新计算摘要，摘要不一致时拒绝下载。每次成功下载都会写入 Platform 审计。
+
 ## 14. 安全操作清单
 
 ### 日常操作

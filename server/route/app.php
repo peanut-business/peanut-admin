@@ -150,6 +150,10 @@ Route::get('api/platform/v1/ops/status', [PlatformOpsController::class, 'status'
 Route::get('api/platform/v1/ops/maintenance', [PlatformOpsController::class, 'maintenance'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::get('api/platform/v1/ops/diagnostics', [PlatformOpsController::class, 'diagnostics'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read')
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.logs.read');
 Route::post('api/platform/infrastructure/storage/account', [PlatformStorageController::class, 'createAccount'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.maintenance.manage');
