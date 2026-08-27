@@ -33,6 +33,51 @@ final class PlatformOpsController extends BasePlatformController
             ?->toPublicArray());
     }
 
+    public function scheduleMaintenance(): Json
+    {
+        return $this->run(function (PDO $pdo): array {
+            $params = $this->request->put();
+            $keys = array_keys($params);
+            sort($keys, SORT_STRING);
+            if ($keys !== ['ends_at', 'reason_key', 'starts_at']
+                || !is_string($params['reason_key'])
+                || !is_string($params['starts_at'])
+                || !is_string($params['ends_at'])
+            ) {
+                throw OpsConsoleException::invalid();
+            }
+
+            return PlatformOpsRuntimeFactory::maintenance($pdo)
+                ->schedule(
+                    $this->context(),
+                    $params['reason_key'],
+                    $params['starts_at'],
+                    $params['ends_at'],
+                    $this->ifMatchRevision(true),
+                    $this->idempotencyKey(),
+                )
+                ->toPublicArray();
+        });
+    }
+
+    public function closeMaintenance(string $maintenance_key): Json
+    {
+        return $this->run(function (PDO $pdo) use ($maintenance_key): array {
+            if ($this->request->post() !== []) {
+                throw OpsConsoleException::invalid();
+            }
+
+            return PlatformOpsRuntimeFactory::maintenance($pdo)
+                ->close(
+                    $this->context(),
+                    $maintenance_key,
+                    $this->ifMatchRevision(false),
+                    $this->idempotencyKey(),
+                )
+                ->toPublicArray();
+        });
+    }
+
     public function diagnostics(): Response
     {
         $requestId = PlatformRequest::requestId($this->request);
@@ -198,5 +243,18 @@ final class PlatformOpsController extends BasePlatformController
             throw OpsConsoleException::invalid();
         }
         return $value;
+    }
+
+    private function ifMatchRevision(bool $allowZero): int
+    {
+        $value = trim((string)$this->request->header('If-Match', ''));
+        if (preg_match('/^"rev-([0-9]+)"$/D', $value, $matches) !== 1) {
+            throw OpsConsoleException::invalid();
+        }
+        $revision = (int)$matches[1];
+        if (($allowZero && $revision < 0) || (!$allowZero && $revision < 1)) {
+            throw OpsConsoleException::revisionConflict();
+        }
+        return $revision;
     }
 }

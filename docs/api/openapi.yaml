@@ -139,6 +139,69 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/maintenance:
+    get:
+      tags: [PlatformOps]
+      operationId: getPlatformMaintenanceWindow
+      description: Returns the current scheduled or active maintenance window.
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
+    put:
+      tags: [PlatformOps]
+      operationId: schedulePlatformMaintenanceWindow
+      description: >-
+        Schedules the sole maintenance window. Once its time range is active,
+        all HTTP mutation routes except the two maintenance-control routes are
+        rejected and audited.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: header
+          name: If-Match
+          required: true
+          schema: {type: string, pattern: '^"rev-[0-9]+"$'}
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, minLength: 8, maxLength: 200}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PlatformMaintenanceScheduleRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '400': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
+        '409': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/maintenance/{maintenance_key}/close:
+    post:
+      tags: [PlatformOps]
+      operationId: closePlatformMaintenanceWindow
+      description: Closes the current maintenance window and restores normal HTTP mutation handling.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: maintenance_key
+          required: true
+          schema: {type: string, pattern: '^maintenance_[a-f0-9]{32}$'}
+        - in: header
+          name: If-Match
+          required: true
+          schema: {type: string, pattern: '^"rev-[0-9]+"$'}
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, minLength: 8, maxLength: 200}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '400': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
+        '409': {$ref: '#/components/responses/ApiResponse'}
   /api/platform/v1/ops/tasks/backup:
     post:
       tags: [PlatformOps]
@@ -231,6 +294,16 @@ components:
       required: [tenant_id]
       properties:
         tenant_id: {type: integer, minimum: 1}
+    PlatformMaintenanceScheduleRequest:
+      type: object
+      additionalProperties: false
+      required: [reason_key, starts_at, ends_at]
+      properties:
+        reason_key:
+          type: string
+          enum: [planned-upgrade, database-maintenance, security-maintenance]
+        starts_at: {type: string, format: date-time}
+        ends_at: {type: string, format: date-time}
     PlatformBackupRequest:
       type: object
       additionalProperties: false
