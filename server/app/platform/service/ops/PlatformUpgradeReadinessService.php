@@ -12,7 +12,6 @@ use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Package;
 use RuntimeException;
-use think\facade\Config;
 use Throwable;
 
 /** Read-only PC41 projection over fixed deployment, backup, Module and scaffold evidence. */
@@ -352,7 +351,7 @@ final readonly class PlatformUpgradeReadinessService
     {
         try {
             $resolver = new PluginLockResolver(
-                $this->projectRoot . '/server',
+                $target->releaseServerRoot,
                 $target->targetLockPath,
             );
             $targetModules = [];
@@ -381,7 +380,7 @@ final readonly class PlatformUpgradeReadinessService
             }
             ksort($installedVersions, SORT_STRING);
             $matcher = new StrictVersionConstraintMatcher();
-            $kernel = (string)Config::get('modules.kernel_version', '');
+            $kernel = $target->modules['kernel_version'];
             $compatible = 0;
             $blockers = [];
             foreach ($installedVersions as $key => $version) {
@@ -425,6 +424,7 @@ final readonly class PlatformUpgradeReadinessService
                 'compatible_count' => $compatible,
                 'target_count' => count($targetModules),
                 'lock_sha256' => $target->modules['lock_sha256'],
+                'target_kernel_version' => $kernel,
                 'blockers' => $blockers,
             ];
         } catch (PluginLifecycleException $exception) {
@@ -440,6 +440,7 @@ final readonly class PlatformUpgradeReadinessService
             'compatible_count' => 0,
             'target_count' => 0,
             'lock_sha256' => $target->modules['lock_sha256'],
+            'target_kernel_version' => $target->modules['kernel_version'],
             'blockers' => [$code],
         ];
     }
@@ -666,6 +667,7 @@ final readonly class PlatformUpgradeReadinessService
             'compatible_count' => 0,
             'target_count' => 0,
             'lock_sha256' => $target?->modules['lock_sha256'] ?? null,
+            'target_kernel_version' => $target?->modules['kernel_version'] ?? null,
             'blockers' => ['UPGRADE_MODULE_ANALYSIS_PENDING'],
         ];
     }

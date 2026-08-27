@@ -229,7 +229,7 @@ export interface OpsUpgradeReadinessSnapshot {
     release: null | { from_count: number; to_count: number; pending_count: number | null };
     blockers: string[];
   };
-  modules: { status: OpsUpgradeReadinessState; installed_count: number; compatible_count: number; target_count: number; lock_sha256: string | null; blockers: string[] };
+  modules: { status: OpsUpgradeReadinessState; installed_count: number; compatible_count: number; target_count: number; lock_sha256: string | null; target_kernel_version: string | null; blockers: string[] };
   scaffold: { status: OpsUpgradeReadinessState; code: string; candidate: string | null; automatic: number; preserved: number; conflicts: number; app_owned_count: number; conflict_reasons: Record<string, number> };
   backup: { latest_verified: OpsLatestVerifiedBackup | null; latest_restore_verified: OpsLatestRestoreVerified | null };
   maintenance: null | { maintenance_key: string; state: string; reason_key: string; starts_at: string; ends_at: string; revision: number };

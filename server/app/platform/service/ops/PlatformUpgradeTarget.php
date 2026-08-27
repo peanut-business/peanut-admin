@@ -16,6 +16,7 @@ final readonly class PlatformUpgradeTarget
     private const TARGET_DIRECTORY = '.peanut/upgrade-target';
     private const VERSION = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D';
     private const RELEASE_KEY = '/^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D';
+    private const KERNEL_VERSION = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
     private const COMMIT = '/^[a-f0-9]{40}$/D';
     private const SHA256 = '/^[a-f0-9]{64}$/D';
     private const MIGRATION = '/^[0-9]{8}-[a-z0-9][a-z0-9_-]*$/D';
@@ -24,7 +25,7 @@ final readonly class PlatformUpgradeTarget
      * @param array{key:string,commit:string,tree:string,qualification:array<string,mixed>} $release
      * @param array{from_version:string,from_manifest_sha256:string,to_version:string,to_manifest_sha256:string} $scaffold
      * @param array{from:array{inventory_sha256:string,files:list<array{migration_id:string,sha256:string}>},to:array{inventory_sha256:string,files:list<array{migration_id:string,sha256:string}>}} $migrations
-     * @param array{lock_sha256:string} $modules
+     * @param array{lock_sha256:string,kernel_version:string} $modules
      */
     private function __construct(
         public array $release,
@@ -34,6 +35,8 @@ final readonly class PlatformUpgradeTarget
         public string $descriptorSha256,
         public string $fromManifestPath,
         public string $toManifestPath,
+        public string $releaseRoot,
+        public string $releaseServerRoot,
         public string $targetLockPath,
     ) {
     }
@@ -71,7 +74,10 @@ final readonly class PlatformUpgradeTarget
             throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
         }
 
-        $targetLockPath = self::fixedFile($root, 'modules/plugins.lock');
+        $releaseRoot = self::fixedDirectory($root, 'release');
+        self::assertRegularTree($releaseRoot);
+        $releaseServerRoot = self::fixedDirectory($releaseRoot, 'server');
+        $targetLockPath = self::fixedFile($releaseRoot, 'plugins.lock');
         self::assertDigest($targetLockPath, $modules['lock_sha256']);
 
         $descriptorDigest = hash_file('sha256', $descriptorPath);
@@ -87,6 +93,8 @@ final readonly class PlatformUpgradeTarget
             $descriptorDigest,
             $fromManifestPath,
             $toManifestPath,
+            $releaseRoot,
+            $releaseServerRoot,
             $targetLockPath,
         );
     }
@@ -133,6 +141,37 @@ final readonly class PlatformUpgradeTarget
             throw new RuntimeException('UPGRADE_TARGET_DESCRIPTOR_INVALID');
         }
         return $resolved;
+    }
+
+    private static function fixedDirectory(string $root, string $relative): string
+    {
+        $candidate = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+        if (!is_dir($candidate) || is_link($candidate)) {
+            throw new RuntimeException('UPGRADE_TARGET_DESCRIPTOR_INVALID');
+        }
+        $resolved = realpath($candidate);
+        if ($resolved === false || !str_starts_with($resolved, $root . DIRECTORY_SEPARATOR)) {
+            throw new RuntimeException('UPGRADE_TARGET_DESCRIPTOR_INVALID');
+        }
+        return $resolved;
+    }
+
+    private static function assertRegularTree(string $root): void
+    {
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST,
+        );
+        foreach ($iterator as $entry) {
+            if ($entry->isLink() || (!$entry->isDir() && !$entry->isFile())) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            $resolved = $entry->getRealPath();
+            if ($resolved === false
+                || ($resolved !== $root && !str_starts_with($resolved, $root . DIRECTORY_SEPARATOR))) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+        }
     }
 
     /** @return array<string,mixed> */
@@ -250,14 +289,17 @@ final readonly class PlatformUpgradeTarget
         return $value;
     }
 
-    /** @return array{lock_sha256:string} */
+    /** @return array{lock_sha256:string,kernel_version:string} */
     private static function modules(mixed $value): array
     {
         if (!is_array($value) || array_is_list($value)) {
             throw new RuntimeException('UPGRADE_TARGET_MODULE_LOCK_INVALID');
         }
-        self::exact($value, ['lock_sha256']);
-        if (!is_string($value['lock_sha256'] ?? null) || preg_match(self::SHA256, $value['lock_sha256']) !== 1) {
+        self::exact($value, ['lock_sha256', 'kernel_version']);
+        if (!is_string($value['lock_sha256'] ?? null)
+            || preg_match(self::SHA256, $value['lock_sha256']) !== 1
+            || !is_string($value['kernel_version'] ?? null)
+            || preg_match(self::KERNEL_VERSION, $value['kernel_version']) !== 1) {
             throw new RuntimeException('UPGRADE_TARGET_MODULE_LOCK_INVALID');
         }
         return $value;

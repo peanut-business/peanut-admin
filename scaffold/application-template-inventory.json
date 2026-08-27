@@ -3804,7 +3804,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "988013bfced0cf19621de8fe910f0160d261b10a53650426edc615f61621d65b"
+            "source_sha256": "6388e73a6b1c6050a9548c058d6916bda0cff86adbce374a6eb6670f820b892b"
         },
         {
             "path": "platform/src/main.ts",
@@ -13619,7 +13619,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "e21ebcc316a52b5628e9d4045716cd6405f03d85d8dbfd3cc48525c661d48aa2"
+            "source_sha256": "221a814a7742f27964147e457e6a532f779f5ea4f01cee78eefc5764394628f1"
         },
         {
             "path": "server/app/platform/service/ops/PlatformUpgradeTarget.php",
@@ -13631,7 +13631,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "a7b9f585f58686c85b1e73211572bfc72a68519362d150036c994b11bfe74d26"
+            "source_sha256": "e2fa871af37974fe3a50d73103b51e45d33950cb41d7321696cbd16249d7255b"
         },
         {
             "path": "server/app/platform/service/ops/RestoreVerificationEvidence.php",
@@ -16136,6 +16136,19 @@
         {
             "path": "server/tests/Productization/PaymentHostTest.php",
             "target": "server/tests/Productization/PaymentHostTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/Productization/PlatformUpgradeTargetModuleTest.php",
+            "target": "server/tests/Productization/PlatformUpgradeTargetModuleTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",

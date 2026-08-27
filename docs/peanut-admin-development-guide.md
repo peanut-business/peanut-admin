@@ -68,14 +68,18 @@ URL、Release key、命令、镜像或凭据。Deployment owner 只可以把已�
 ├── to/
 │   ├── scaffold-manifest.json
 │   └── files/...
-└── modules/
+└── release/
     ├── plugins.lock
-    └── plugins/...
+    ├── plugins/...
+    ├── server/app/Modules/...
+    └── web/src/modules/...
 ```
 
 Host 不扫描磁盘、网络或历史 Release 猜测目标。`target.json` 必须把正式 Release commit/tree、
 P0-E 资格、两份 scaffold manifest SHA-256、from/to migration 清单和目标应用组合解析后的
-`modules/plugins.lock` SHA-256 固定在同一描述符中。目标 scaffold manifest 的
+`release/plugins.lock` SHA-256 与目标 Kernel 精确 SemVer 固定在同一描述符中。整个
+`release/` 是只读目标源码根，任何 symlink、特殊文件或越界解析均拒绝；Module lock、manifest、
+后端 Module、前端 contribution 和包身份只能相互解析到这棵目标树。目标 scaffold manifest 的
 `release.source_commit/source_tree` 必须分别等于描述符中的 `release.commit/tree`，不能用
 一个已资格候选的身份包装另一份目标模板。
 
@@ -88,11 +92,11 @@ P0-E 资格、两份 scaffold manifest SHA-256、from/to migration 清单和目�
 | `release` | `key`、`commit`、`tree`、`qualification`；资格 candidate 必须等于 Release commit/tree |
 | `scaffold` | `from_version`、`from_manifest_sha256`、`to_version`、`to_manifest_sha256` |
 | `migrations.from/to` | `inventory_sha256`、按 `migration_id` 严格升序的 `{migration_id, sha256}` 列表 |
-| `modules` | `lock_sha256`；摘要必须匹配固定 `modules/plugins.lock` |
+| `modules` | `lock_sha256`、`kernel_version`；摘要必须匹配固定 `release/plugins.lock`，Kernel 必须是精确 SemVer |
 
 检查顺序固定为：目标 Release 描述符/资格/摘要；`.peanut/application-manifest.json` 来源身份；
 同大版本且目标版本更高；Runtime 健康、仓库干净和当前 migration；from/to migration 不删除、
-不改写、不倒序、不冲突；目标 Module lock 的内容、Kernel/依赖和已安装 Module；与 CLI 相同的
+不改写、不倒序、不冲突；目标 `release/` 内 Module lock/源码、目标 Kernel/依赖和已安装 Module；与 CLI 相同的
 scaffold ownership/conflict；匹配当前 Runtime 的已验证配对备份、引用同一
 `backup_reference_key` 的恢复 evidence，以及 active `planned-upgrade` 维护窗口。跨大版本固定
 返回 `UPGRADE_FRESH_REBUILD_REQUIRED`。
