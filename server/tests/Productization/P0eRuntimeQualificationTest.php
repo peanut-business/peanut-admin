@@ -45,11 +45,11 @@ $expectedGroups = [
 ];
 $expectedTarget = [
     'version' => '3.0.9',
-    'source_commit' => '7e8f3e5f04a140dadfb8ceefdcf25de73fa30484',
-    'source_tree' => 'c6385d066239eac42a524f401a1189c39a9f5323',
-    'manifest_sha256' => '995ec8429c4b3b0cc0c196478c15b2dafc6fd52083baeceb01c2cd8dc0988d5d',
-    'inventory_sha256' => '88c61c7dcb7c2b895b32e870da796ad5e5ded5e2620ee54cccf3907103b1c1b4',
-    'managed_tree_sha256' => '743cff05918c5f937de579488f7899a8cb942390d1db15eadc797723a9c7f5ef',
+    'source_commit' => 'a2de20dd5964d729534d77a2ac704369049de38e',
+    'source_tree' => '4b74f31c8539d5e026b4f125461f1983064b103a',
+    'manifest_sha256' => '94c69748066633594e676418ee52520d4dc6262da56d1addfd3a50ec0d017f35',
+    'inventory_sha256' => 'f06d1ea7623e77786844e4990da45c709126da8040bda23fcff7304721b465a7',
+    'managed_tree_sha256' => '09835dfd03b65131d5b9c73a02142ee122788668dbfda77593b1af195c9bbcf8',
     'file_count' => 389,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
