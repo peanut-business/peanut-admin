@@ -465,9 +465,16 @@ DB + `php-storage` 配对备份。页面只发送 Provider 和幂等键，显示
 
 受信 Deployment worker 必须从部署根目录显式运行 `scripts/ops-backup-worker --once`，并先
 核对生产资源选择、容量、停写窗口、DB/files 制品和摘要。失败任务只返回稳定错误码；不完整
-目录不会进入已验证备份列表。恢复、维护窗口写入和在线运行日志仍未开放。Tenant 管理员无权
-读取该入口；需要排错时由 Platform Operator 记录检查项、状态、版本身份和 Request ID，再交给
-部署运维负责人。
+目录不会进入已验证备份列表。
+
+具备 `platform.ops.restore.manage` 的 Platform Operator 还可以把最新已验证配对备份提交到固定
+逻辑目标 `isolated-new-target`。浏览器只发送 Provider、opaque backup reference、固定 target 和
+幂等键；主机、数据库、目录、命令、凭据和重试次数仍由服务器拥有。部署负责人随后从生产部署根
+运行 `scripts/ops-restore-worker --once`：worker 只创建登记的无监听 MySQL、内部网络和 DB/文件
+双卷，验证摘要、Schema、迁移、代表身份/Tenant 数据及文件统计，并确认生产和体验候选资源未
+变化。成功后只移除该隔离目标并写入恢复证据；失败时停止并保留精确资源，不能自动复用或切换
+fallback。维护窗口写入和在线运行日志仍未开放。Tenant 管理员无权读取该入口；需要排错时由
+Platform Operator 记录检查项、状态、版本身份和 Request ID，再交给部署运维负责人。
 
 具备 `platform.ops.read` 与 `platform.ops.logs.read` 的 Platform Operator 还可以下载最近一小时
 的脱敏诊断包。文件采用固定 JSON schema，包含运行状态、非秘密配置摘要、Module 清单、失败

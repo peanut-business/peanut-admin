@@ -157,6 +157,9 @@ Route::get('api/platform/v1/ops/diagnostics', [PlatformOpsController::class, 'di
 Route::post('api/platform/v1/ops/tasks/backup', [PlatformOpsController::class, 'backup'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.backup.manage');
+Route::post('api/platform/v1/ops/tasks/restore', [PlatformOpsController::class, 'restore'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.restore.manage');
 Route::get('api/platform/v1/ops/backups', [PlatformOpsController::class, 'backups'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');

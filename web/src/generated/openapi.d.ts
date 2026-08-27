@@ -167,6 +167,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/tasks/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Restores one verified paired backup to the registered isolated target, verifies data and files, then removes only that target. Host, database, path, command, credential and retry fields are not accepted. */
+        post: operations["submitPlatformRestoreVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/tasks/{task_key}": {
         parameters: {
             query?: never;
@@ -199,6 +216,13 @@ export interface components {
         PlatformBackupRequest: {
             /** @enum {string} */
             provider_key: "peanut.paired-db-files";
+        };
+        PlatformRestoreVerificationRequest: {
+            /** @enum {string} */
+            provider_key: "peanut.paired-db-files";
+            backup_reference_key: string;
+            /** @enum {string} */
+            target_key: "isolated-new-target";
         };
         ReadinessChecklistResponse: components["schemas"]["ApiResponse"] & {
             data?: components["schemas"]["ReadinessChecklist"];
@@ -428,6 +452,28 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PlatformBackupRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            409: components["responses"]["ApiResponse"];
+        };
+    };
+    submitPlatformRestoreVerification: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformRestoreVerificationRequest"];
             };
         };
         responses: {

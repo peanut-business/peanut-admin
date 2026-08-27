@@ -20,7 +20,7 @@ final readonly class PlatformBackupCenterService
     {
     }
 
-    /** @return array{provider:array<string,mixed>,latest_verified:?array<string,mixed>,tasks:list<array<string,mixed>>} */
+    /** @return array{provider:array<string,mixed>,latest_verified:?array<string,mixed>,latest_restore_verified:?array<string,mixed>,tasks:list<array<string,mixed>>} */
     public function snapshot(PlatformContext $context): array
     {
         if (!(new PlatformOpsPermissionChecker($this->pdo))->allows($context, Package::READ_PERMISSION)) {
@@ -40,6 +40,7 @@ final readonly class PlatformBackupCenterService
         return [
             'provider' => $provider,
             'latest_verified' => $this->latestVerified($runtimeCommit),
+            'latest_restore_verified' => $this->latestRestoreVerified(),
             'tasks' => $this->recentTasks($context),
         ];
     }
@@ -50,11 +51,14 @@ final readonly class PlatformBackupCenterService
         $statement = $this->pdo->prepare(<<<'SQL'
 SELECT task_key
 FROM pa_ops_task
-WHERE task_type = :task_type
+WHERE task_type IN (:backup_task_type, :restore_task_type)
 ORDER BY id DESC
 LIMIT 20
 SQL);
-        $statement->execute(['task_type' => Package::BACKUP_TASK_TYPE]);
+        $statement->execute([
+            'backup_task_type' => Package::BACKUP_TASK_TYPE,
+            'restore_task_type' => Package::RESTORE_TASK_TYPE,
+        ]);
 
         $tasks = [];
         foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $taskKey) {
@@ -111,6 +115,40 @@ SQL);
         } catch (Throwable) {
             throw OpsConsoleException::taskUnavailable();
         }
+    }
+
+    /** @return array<string,mixed>|null */
+    private function latestRestoreVerified(): ?array
+    {
+        $statement = $this->pdo->query(<<<'SQL'
+SELECT backup_reference_key, target_key, evidence_sha256, table_count,
+       schema_migration_count, account_count, tenant_count, tenant_member_count,
+       storage_file_count, verified_at
+FROM pa_ops_restore_evidence
+ORDER BY verified_at DESC, id DESC
+LIMIT 1
+SQL);
+        $row = $statement === false ? false : $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return null;
+        }
+        if ((string)$row['target_key'] !== PairedBackupProvider::RESTORE_TARGET_KEY
+            || preg_match('/^[a-f0-9]{64}$/D', (string)$row['evidence_sha256']) !== 1
+        ) {
+            throw OpsConsoleException::taskUnavailable();
+        }
+        return [
+            'backup_reference_key' => (string)$row['backup_reference_key'],
+            'target_key' => (string)$row['target_key'],
+            'verified_at' => $this->instant((string)$row['verified_at']),
+            'verification_sha256' => (string)$row['evidence_sha256'],
+            'table_count' => (int)$row['table_count'],
+            'migration_count' => (int)$row['schema_migration_count'],
+            'tenant_count' => (int)$row['tenant_count'],
+            'account_count' => (int)$row['account_count'],
+            'tenant_member_count' => (int)$row['tenant_member_count'],
+            'file_count' => (int)$row['storage_file_count'],
+        ];
     }
 
     private function instant(string $value): string

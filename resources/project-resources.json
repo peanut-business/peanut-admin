@@ -289,6 +289,43 @@
         "failure_retention_policy": "on failed installation, stop application writers and retain the exact candidate containers, volume and logs for diagnosis; do not reuse the database for another candidate",
         "cleanup_responsibility": "Peanut Admin production candidate deployment owner; destructive cleanup requires explicit approval for this exact disposable demo",
         "backup_responsibility": "not required before the first empty installation; once non-synthetic data is accepted, register and verify a paired database and php-storage backup before updates"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-restore-verification-mysql84",
+        "purpose": "single-use isolated database target for verified paired-backup restoration",
+        "environments": [
+          "production-restore-verification"
+        ],
+        "owner": "Peanut Admin production recovery owner",
+        "deployment_resource_id": "peanut-admin-production-restore-verification-deployment",
+        "service_type": "mysql",
+        "version": "8.4",
+        "compose_project": "peanut-admin-restore-verify",
+        "compose_file": null,
+        "container_name": "peanut-admin-restore-verify-mysql-1",
+        "database": "peanut_admin_restore_verify",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_restore_verify",
+        "upstream_endpoint": null,
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-production-restore-verification-mysql84-internal",
+          "host": "mysql",
+          "port": 3306,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "internal Docker network peanut-admin-restore-verify_default; no published host port"
+        },
+        "credential_ref": "oracle3:/www/docker/peanut-admin/restore-verification/mysql-root-password (generated mode 0600 for one Gate; never stored in Git)",
+        "data_source": "one verified database.sql.gz selected by opaque backup_reference_key from peanut-admin-production-backups",
+        "freshness_requirement": "path, container, volumes and network must all be absent before allocation; the worker must bind one current verified backup evidence row and never connect this target to production or production-candidate networks",
+        "health_check": "inside peanut-admin-restore-verify-mysql-1, mysqladmin ping plus table, migration, Account, Tenant and TenantMember counts; Docker port bindings must be empty",
+        "fallback": "none",
+        "lifecycle": "single Gate; remove after successful evidence commit, retain exact resources on failure",
+        "creation_policy": "only scripts/ops-restore-worker may create the fixed container, network and volumes after a claimed restore task and active project resource lease",
+        "failure_retention_policy": "stop further actions and retain the exact target resources for diagnosis; do not reuse them for another task or candidate",
+        "cleanup_responsibility": "scripts/ops-restore-worker removes only this fixed target after successful verification; failed resources require explicit disposition",
+        "backup_responsibility": "not applicable; this is a disposable restore target sourced from a verified immutable pair"
       }
     ],
     "local_listeners": [
@@ -654,6 +691,40 @@
         "fallback": "none",
         "cleanup_responsibility": "Peanut Admin production candidate deployment owner; destructive cleanup requires explicit approval",
         "backup_responsibility": "not required before the first empty synthetic demo installation"
+      },
+      {
+        "stable_resource_id": "peanut-admin-production-restore-verification-containers",
+        "purpose": "single-use isolated MySQL runtime and paired DB/file volumes for restore verification",
+        "environment": "production-restore-verification",
+        "owner": "Peanut Admin production recovery owner; scripts/ops-restore-worker",
+        "host_resource_id": "peanut-admin-production-restore-verification-deployment",
+        "host": "oracle3",
+        "port": null,
+        "compose_project": "peanut-admin-restore-verify",
+        "compose_file": null,
+        "services": {
+          "mysql": "peanut-admin-restore-verify-mysql-1"
+        },
+        "published_endpoint": null,
+        "network": "peanut-admin-restore-verify_default",
+        "network_internal": true,
+        "database_resource_id": "peanut-admin-production-restore-verification-mysql84",
+        "database": "peanut_admin_restore_verify",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut-admin-production-restore-verification",
+        "service_type": "isolated Docker MySQL plus paired restore volumes",
+        "credential_ref": "oracle3:/www/docker/peanut-admin/restore-verification/mysql-root-password (generated mode 0600 for one Gate)",
+        "data_source": "verified production backup pair selected by the claimed restore task",
+        "persistent_volumes": [
+          "peanut-admin-restore-verify_mysql-data",
+          "peanut-admin-restore-verify_php-storage"
+        ],
+        "freshness_requirement": "all fixed names and the deployment root must be absent before allocation; image IDs come from the verified manifest; no host port or production/candidate network attachment is permitted",
+        "health_check": "docker inspect fixed container/volumes/network, assert zero published ports, query restored representative data, inspect restored file counts, then prove protected production/candidate resource identity is unchanged",
+        "fallback": "none",
+        "lifecycle": "single Gate; remove on successful verification, retain on failure",
+        "cleanup_responsibility": "scripts/ops-restore-worker removes only peanut-admin-restore-verify-mysql-1, the two registered volumes, the registered internal network and the fixed target root after success",
+        "backup_responsibility": "not applicable; disposable verification resources"
       }
     ],
     "optional_services": [
@@ -961,6 +1032,51 @@
         "backup_responsibility": "not required before the first empty synthetic installation; this fresh-only target must be rebuilt rather than upgraded"
       },
       {
+        "stable_resource_id": "peanut-admin-production-restore-verification-deployment",
+        "purpose": "single-use no-listener recovery target that proves a paired production backup can be restored without touching active deployments",
+        "environments": [
+          "production-restore-verification"
+        ],
+        "owner": "Peanut Admin production recovery owner",
+        "source": "PC32 fixed restore-to-new-target contract",
+        "host": "oracle3",
+        "port": null,
+        "transport": "ssh",
+        "ssh_alias": "oracle3",
+        "deployment_root": "/www/docker/peanut-admin/restore-verification",
+        "compose_project": "peanut-admin-restore-verify",
+        "compose_file": null,
+        "compose_profile": null,
+        "candidate_identity_source": "claimed backup task, pa_ops_backup_evidence manifest identity and exact running application commit/tree",
+        "runtime_resource_ids": [
+          "peanut-admin-production-restore-verification-containers"
+        ],
+        "database_resource_id": "peanut-admin-production-restore-verification-mysql84",
+        "domain_resource_id": null,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-production-restore-verification",
+        "service_type": "SSH-managed isolated Docker recovery Gate",
+        "credential_ref": "operator-local SSH configuration for alias oracle3; the one-Gate MySQL password is generated at oracle3:/www/docker/peanut-admin/restore-verification/mysql-root-password mode 0600",
+        "data_source": "one immutable paired artifact under /www/docker/peanut-admin/backups resolved by backup_reference_key",
+        "freshness_requirement": "immediately before each Gate, prove the fixed root, container, two volumes and internal network are absent and the production plus production-candidate protected identities are healthy and uniquely leased",
+        "preflight_checks": {
+          "isolation": "the target root, container, volumes and network must be absent; Docker network is internal and the container has zero published ports",
+          "source": "manifest, SHA256SUMS, gzip and tar checks pass and the canonical manifest SHA-256 matches pa_ops_backup_evidence",
+          "protected_targets": "production and production-candidate container IDs, images, running states and volume mount identities are hashed before and after the Gate and must be identical",
+          "failure_policy": "do not clean or reuse failed target resources; stop and retain the exact path, container, volumes and network for explicit diagnosis"
+        },
+        "health_check": {
+          "ssh": "ssh -o BatchMode=yes oracle3 'test -d /www/docker/peanut-admin && sudo -n docker info >/dev/null'",
+          "absence": "ssh -o BatchMode=yes oracle3 'sudo -n test ! -e /www/docker/peanut-admin/restore-verification && ! sudo -n docker inspect peanut-admin-restore-verify-mysql-1 >/dev/null 2>&1 && ! sudo -n docker volume inspect peanut-admin-restore-verify_mysql-data peanut-admin-restore-verify_php-storage >/dev/null 2>&1 && ! sudo -n docker network inspect peanut-admin-restore-verify_default >/dev/null 2>&1'",
+          "success": "pa_ops_restore_evidence row plus absence of the fixed target and unchanged protected-runtime SHA-256"
+        },
+        "fallback": "none",
+        "lifecycle": "single Gate; success cleanup is automatic and narrowly fixed, failure retention is mandatory",
+        "cleanup_responsibility": "scripts/ops-restore-worker removes only the registered restore-verification resources after all checks pass; failed resources require explicit approval before disposition",
+        "backup_responsibility": "not applicable; consumes peanut-admin-production-backups"
+      },
+      {
         "stable_resource_id": "peanut-admin-cloudflare-dns-control-plane",
         "purpose": "Cloudflare DNS and proxy control plane for Peanut Admin production hostnames in zone 007345.xyz",
         "environments": [
@@ -1178,7 +1294,7 @@
         "allocation_state": "registered target; the backups directory was absent on 2026-08-15 and is created with mode 0700 only by an authorized backup gate",
         "execution_context": "all backup_method and integrity_check commands execute on oracle3 under /www/docker/peanut-admin; no artifact is streamed to or retained on the operator workstation",
         "product_contract": {
-          "adoption_state": "PC31 application backup center adopts Core task submission and exposes recent task/latest verified evidence; deployment execution uses scripts/ops-backup-worker with this registered production target; restore verification remains disabled until PC32",
+          "adoption_state": "PC31/PC32 application backup center adopts Core backup and restore task submission, exposes path-free backup/restore evidence, and binds trusted deployment workers to the registered production source and isolated restore target",
           "provider_key": "peanut.paired-db-files",
           "backup_handler_key": "peanut.backup.create",
           "restore_handler_key": "peanut.restore.verify",
@@ -1223,7 +1339,7 @@
         "restore_check": {
           "artifact_precondition": "the exact paired directory must pass all checksum, gzip and tar checks and its manifest resource IDs must match this production deployment",
           "policy": "production restore is never part of a routine release and requires an explicit recovery gate; database.sql.gz and php-storage.tar.gz must be restored as one pair",
-          "post_restore": "run php server/database/environment-guard.php --current, start php/cron/nginx with --wait, then pass origin /healthz and public HTTPS /healthz and /admin/ smoke checks"
+          "post_restore": "PC32 verification runs only against peanut-admin-production-restore-verification-deployment: validate schema migration and representative Account/Tenant/TenantMember rows, restore the paired file volume, assert zero listeners and unchanged active targets, then remove only the successful isolated target; production recovery remains a separate explicitly authorized action"
         },
         "freshness_requirement": "each production update uses a new backup ID from the exact pre-update source commit; all four artifacts and checks must complete before the application write-quiescence window ends",
         "health_check": {

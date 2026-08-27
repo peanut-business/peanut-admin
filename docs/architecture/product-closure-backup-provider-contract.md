@@ -20,8 +20,9 @@ PC30 直接采用 Core 的 `BackupRestoreProvider` 与 Registry，不修改 Core
 
 PC30 固定 Provider 与配对制品合同。PC31 在 Application 内直接采用 Core
 `OpsTaskService`，并提供 Platform 备份提交、任务状态、最近任务和最新已验证配对备份视图；
-受信 Deployment worker 只消费固定 handler，Web 不能提交命令或路径。PC32 才能把逻辑目标
-`isolated-new-target` 绑定到已登记的隔离资源并执行恢复验证。
+受信 Deployment worker 只消费固定 handler，Web 不能提交命令或路径。PC32 把逻辑目标
+`isolated-new-target` 绑定到登记的 `production-restore-verification` 隔离资源：成功后只清理
+该新目标，失败时保留精确资源并停止。
 
 ## 2. 固定 Provider
 
@@ -75,7 +76,7 @@ Deployment Adapter 必须按以下顺序执行，不能由 Web 调整：
 |---|---|---|
 | PC30 描述与 manifest | 无 HTTP 写入口 | 已实现 Provider 和 manifest 合同 |
 | PC31 创建备份 | `platform.ops.backup.manage`；`platform.ops.backup.submitted/succeeded/failed` | Application Host、账本、受信 worker 与备份中心已形成 |
-| PC32 恢复验证 | `platform.ops.restore.manage`；`platform.ops.restore.submitted` | 尚未实施 |
+| PC32 恢复验证 | `platform.ops.restore.manage`；`platform.ops.restore.submitted/succeeded/failed` | 已形成提交 Host、恢复 evidence、受信 worker 和固定隔离资源合同 |
 
 Core 任务服务只接受 Provider key、opaque backup reference、registered target 和
 idempotency key；handler、命令、参数、路径、重试次数和凭据永远不来自客户端。审计只记录
@@ -92,12 +93,16 @@ idempotency key；handler、命令、参数、路径、重试次数和凭据永�
   只能用同一 revision 收口。两小时无心跳的任务会被标记失败并递增 revision，旧 worker 随即
   被 fencing，不能再写 evidence 或覆盖新执行；
 - `running` 任务、隔离的不完整目录和 `dead` 任务都不能成为已验证备份证据；
-- PC32 必须先登记真实隔离恢复资源，活动、现有、生产或摘要损坏目标一律拒绝；
+- PC32 固定使用 `peanut-admin-production-restore-verification-*` 三项资源；活动、现有、生产、
+  candidate 或摘要损坏目标一律拒绝，目标不得发布端口或加入活动网络；
+- worker 恢复同一对 DB/files 制品，验证 migration、六张关键表、Account、Tenant、
+  TenantMember 和文件统计；成功前还必须证明 production 与 production-candidate 的容器、
+  镜像、运行状态和卷身份未变化；
 - “备份文件存在”不等于“恢复已验证”；readiness 与升级状态只能引用真实新目标恢复证据；
 - 生产恢复、覆盖活动数据和自动清理旧备份继续需要独立明确授权。
 
 ## 7. 验证 owner
 
-PC31 运行 PHP/shell 语法、Platform typecheck、任务/幂等/并发/原子审计与 evidence 数据库
-合同。受信 worker 的真实配对制品和新目标恢复必须在同一登记资源链上由 PC32 验证；最终浏览器
-与 released-scaffold 组合资格归 PC70。
+PC31 运行 PHP/shell 语法、Platform typecheck、任务/幂等/并发/原子审计与 backup evidence
+数据库合同。PC32 在同一登记资源链上验证真实配对制品、新目标恢复、restore evidence、零监听、
+活动目标不变和成功清理；最终浏览器与 released-scaffold 组合资格归 PC70。
