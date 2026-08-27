@@ -26,13 +26,14 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@4294fca1b1afcc6e8f1f0c0b76e4e628721d4f7b` | PC42 升级执行闭环已合入；PC51 是当前关键路径，PC60 是独立并行线 |
+| Application | `origin/dev@4dbda351d590c35f4c2ffe4735057db54c240956` | PC42 升级执行和 PC60 Provider 资格面板已合入；PC51 是当前唯一关键路径 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
 | 安装 | CLI 空库安装、一次性 Web 向导、首次运行准备清单、3.x migration 链、只读健康和脱敏诊断入口存在 | 阶段 B 的安装与诊断切片已齐备；组合资格归 PC70 |
 | 运维 | Platform 已采用 Core Ops 状态/任务与维护合同，提供诊断、备份、固定隔离恢复、维护计划/关闭、全局写门禁、升级就绪与持久化升级执行中心 | PC42 已把固定输入、停止点和 recovery pointer 串联为单实例升级纵向闭环 |
 | 备份 | 生产登记有 DB + `php-storage` 配对门禁；应用已有单一受信 Provider、schema 1 manifest、任务/证据账本、受信 worker 和 Platform 备份中心 | `backup_010108…` 已通过真实新目标恢复，不再把合同 smoke 冒充可恢复证据 |
 | 恢复 | PC32 已把真实配对制品恢复到无监听隔离目标，验证 Schema、代表身份/Tenant 数据、文件卷、受保护 Runtime 不变与成功零残留 | 正式生产覆盖恢复仍需独立明确授权；PC70 负责 released-scaffold 组合资格 |
 | 升级 | scaffold、migration、唯一 deploy-release、固定 target/source/Module/备份/恢复/维护检查，以及登记 worker 驱动的升级任务状态机均已形成 | 正式 released-scaffold 组合资格归 PC70；跨实例升级仍归独立运营平台 |
+| Provider | 通知、支付、OAuth 与 Storage contributor 由 Platform 只读聚合，分别展示配置、连通、回调、凭据轮换、最近失败和 evidence 新鲜度 | 通用面板零外呼；真实平台资格按 Provider owner 和授权目标逐项执行 |
 | 文档 | 新 registry、impact map 和治理检查已合入 | 本队列必须登记并通过生成/公开边界检查 |
 | 能力账本 | PC10—PC32 的新增稳定切片以 implemented 状态记录并引用精确 dev 身份 | 正式 verified 快照仍只在 PC70/Release 固定候选形成 |
 
@@ -41,13 +42,13 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 指标 | 当前值 | 说明 |
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
-| 已完成 | 16 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21、PC30、PC31、PC32、PC40、PC41、PC42、PC50、PC52 |
-| 进行中 | 2 | PC51、PC60 |
+| 已完成 | 17 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21、PC30、PC31、PC32、PC40、PC41、PC42、PC50、PC52、PC60 |
+| 进行中 | 1 | PC51 |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
 | 未开始 | 1 | PC70 |
 | 当前关键路径 | PC51 | 完成配置包 checksum、dry-run、冲突、秘密重绑定、Tenant 作用域和审计闭环 |
-| 可并行工作线 | 1 | PC60 正在独立形成 Provider 资格候选；共享状态文档仍由一个集成 owner 收口 |
+| 可并行工作线 | 0 | PC51 合入前不启动 PC70 固定候选；共享状态文档仍由一个集成 owner 收口 |
 
 ## 4. 阶段观察
 
@@ -57,7 +58,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | B 可安装、可诊断 | 已完成 | PC10—PC21 已合入；CLI、guided/automatic installer、Web 向导、首次运行清单、只读 Ops Console 和脱敏诊断包存在 | 正式数据库/浏览器/released-scaffold 组合资格归 PC70 | 保持 schema 与权限边界 |
 | C 可备份、可恢复 | 已完成 | PC30 Provider/manifest；PC31 任务、备份中心与 evidence；PC32 真实配对制品隔离恢复与零残留 | released-scaffold 组合资格归 PC70 | 保持生产覆盖恢复为独立授权动作 |
 | D 可升级 | 已完成 | scaffold upgrade、migration、deploy-release；PC40 维护门禁、PC41 只读升级就绪与 PC42 持久化升级执行中心已完成 | released-scaffold 组合资格归 PC70 | 保持跨实例升级为独立运营平台职责 |
-| E 可扩展、可运营 | 进行中 | 8 Module、Bundle、任务和 Provider Runtime；PC50 locked trust/compatibility matrix 与 PC52 Module/Tenant 安全模板已完成 | PC51 配置转移、PC60 Provider 资格 | PC51 配置包切片 |
+| E 可扩展、可运营 | 进行中 | 8 Module、Bundle、任务和 Provider Runtime；PC50 locked trust/compatibility matrix、PC52 Module/Tenant 安全模板与 PC60 Provider 资格面板已完成 | PC51 配置转移 | PC51 配置包切片 |
 | F 固定资格与发布 | 未开始 | 现有 P0-E/Release 机制 | 同一最终 tree 的最小组合资格和文档同步 | PC70 固定候选 |
 
 ## 5. 任务观察表
@@ -81,7 +82,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC50 | 已完成 | Runtime `d46b5d2e2c88d784c2e209f70c7c60015ed8ce48`；`dev@ed5ee1952dd01b8448adf1fb6e7c9ad4bc21be48` / PR #296 | lock/manifest 固定依赖、权限/migration 摘要、来源和未签发 trust 字段；install/reconcile/upgrade 解释同一 blocker，仅 bundled-locked 可执行 | Marketplace 的签名/SBOM/许可证/漏洞响应 authority 未签发，按设计稳定 blocked，不阻塞 PC50 合同完成 | PC51/PC52 消费稳定 manifest 与 lock 身份 |
 | PC51 | 进行中 | 独立功能分支，尚无开放 PR | schema 化配置包实现正在收口；开放 PR/固定提交形成前不记完成 | checksum、dry-run、冲突、秘密重绑定、作用域与审计最低验证 | 完成候选并合入 dev |
 | PC52 | 已完成 | Runtime `3b96cc0b1b58c64fd451fb04aca5d41907cb3126`；`dev@eaa1c754b1c214f342a0b4ca94e620a16370d3a3` / PR #306 | 唯一生成器已输出 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全骨架；A/B Tenant、伪造 payload/resource ID、撤权、停用、migration 失败和禁止无修复重放场景固定，未新增第二 Runtime | released-scaffold 组合资格归 PC70；不阻塞 PC52 实现完成 | 保持模板、文档与 inventory 同步 |
-| PC60 | 进行中 | 独立功能分支，尚无开放 PR | Official Module contributor、Platform 安全聚合和只读 API 已形成候选，Platform UI 与收口验证正在完成；未合入前不记完成 | Platform UI、专属文档、固定提交、最低验证和 PR 合入 | 完成候选并合入 dev |
+| PC60 | 已完成 | Runtime `9aa20dcb395e563aa73a1cbfd248880696e55395`（tree `09987594fe7aa44d38b4cb00a660935c9fea489b`）；`dev@4dbda351d590c35f4c2ffe4735057db54c240956` / PR #313 | 通知、支付、OAuth、Storage contributor 和 append-only 安全 evidence 由 Platform 只读聚合，区分 configured、connectivity、callback、credential rotation、recent failure 与 freshness；FreshSchema、fake 合同、OpenAPI、Platform build 等聚焦检查通过 | 未执行真实 Provider probe、消息发送或资金动作；正式 released-scaffold 组合资格归 PC70 | PC51 合入后由 PC70 固定最终候选 |
 | PC70 | 未开始 | — | — | 关键路径任务 | 冻结候选并执行一次组合资格 |
 
 ## 6. 状态更新必填字段
