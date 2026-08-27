@@ -443,6 +443,24 @@ Tenant owner/管理员登录后选择自己有权访问的 Tenant。切换 Tenan
 `standalone` 部署不显示 Tenant 选择器或平台入口，原有管理员流程保持单实例体验。部署
 模式由服务端环境配置决定，不能在浏览器中切换。
 
+### 13.1 运行与维护
+
+具备 `platform.ops.read` 权限的 Platform Operator 可在独立平台控制面的“运行与维护”查看
+本实例的只读运行证据。该页面直接消费 Core Ops Console 合同，当前包括：
+
+- 数据库、应用迁移、Module 目录、缓存读取和 Runtime 存储的实际检查结果；
+- 当前源码 commit、tree、Release 身份和构建时间；
+- 应用追加 migration 的目标数、已应用数、待应用数、清单摘要与 drift 状态；
+- 当前已计划或生效的维护窗口。
+
+数据库、migration、Module 目录或 Runtime 存储等关键检查失败时，实例显示为
+`unhealthy`；非权威缓存读取失败时显示为 `degraded`。状态 Provider 无法形成完整、合法证据时
+页面按不可用处理，不回退到静态 PHP 环境信息。
+
+PC20 是只读阶段：备份、恢复、维护窗口写入和运行日志按钮保持不可用，不能把页面中出现的
+后续能力区域理解为已经实施。Tenant 管理员无权读取该入口；需要排错时由 Platform Operator
+记录检查项、状态、版本身份和 Request ID，再交给部署运维负责人。
+
 ## 14. 安全操作清单
 
 ### 日常操作

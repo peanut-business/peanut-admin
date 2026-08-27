@@ -42,6 +42,7 @@ use app\platform\controller\PlatformTenantController;
 use app\platform\controller\PlatformTenantModuleController;
 use app\platform\controller\PlatformControlPlaneQueryController;
 use app\platform\controller\PlatformStorageController;
+use app\platform\controller\PlatformOpsController;
 use app\platform\controller\PlatformTenantInvitationController;
 use app\platform\controller\PlatformTenantEntryBindingController;
 use app\platform\controller\PlatformModuleLifecycleController;
@@ -141,6 +142,12 @@ Route::post('api/platform/tenant-entry-bindings/enable', [PlatformTenantEntryBin
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.tenant.update');
 Route::get('api/platform/infrastructure/storage', [PlatformStorageController::class, 'snapshot'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::get('api/platform/v1/ops/status', [PlatformOpsController::class, 'status'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::get('api/platform/v1/ops/maintenance', [PlatformOpsController::class, 'maintenance'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
 Route::post('api/platform/infrastructure/storage/account', [PlatformStorageController::class, 'createAccount'])

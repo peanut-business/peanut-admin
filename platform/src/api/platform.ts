@@ -1,4 +1,9 @@
 import axios from 'axios';
+import type {
+  MaintenanceScheduleInput,
+  OpsConsoleTransport,
+  OpsTransportResult,
+} from '@peanut-admin/admin/ops-console';
 
 interface Envelope<T> {
   code: number;
@@ -14,6 +19,14 @@ export interface Page<T> {
 export interface Session {
   access_token: string;
   expires_in: number;
+}
+
+export interface SessionInfo {
+  audience: 'platform';
+  account_id: string;
+  platform_operator_id: string;
+  permissions: string[];
+  navigation: string[];
 }
 
 export interface Tenant {
@@ -227,6 +240,7 @@ export const api = {
       localStorage.removeItem(tokenKey);
     }
   },
+  sessionInfo: () => unwrap<SessionInfo>(client.get('/api/platform/session/info')),
   tenants: (page = 1, pageSize = 100) =>
     unwrap<Page<Tenant>>(
       client.get('/api/platform/tenants', {
@@ -432,3 +446,71 @@ export const api = {
       })
     ),
 };
+
+function opsStatus(code: number): number {
+  if (code === 20000) return 200;
+  if (code === 40100) return 401;
+  if (code === 40300) return 403;
+  if (code >= 40000 && code < 60000) return Math.floor(code / 100);
+  return 500;
+}
+
+function opsRequestId(headers: Record<string, unknown>): string {
+  const value = headers['x-request-id'];
+  return typeof value === 'string' && value.length > 0
+    ? value
+    : `platform-${crypto.randomUUID()}`;
+}
+
+async function opsRead(
+  path: string,
+  signal: AbortSignal
+): Promise<OpsTransportResult> {
+  const result = await client.get<Envelope<unknown>>(path, { signal });
+  const requestId = opsRequestId(result.headers as Record<string, unknown>);
+  if (result.data.code === 20000) {
+    return {
+      status: 200,
+      headers: new Headers({ 'X-Request-Id': requestId }),
+      body: { data: result.data.data, meta: { request_id: requestId } },
+    };
+  }
+
+  const details = result.data.data as { error_code?: string } | null;
+  return {
+    status: opsStatus(result.data.code),
+    headers: new Headers({ 'X-Request-Id': requestId }),
+    body: {
+      code: details?.error_code || 'OPS_INTERNAL_ERROR',
+      request_id: requestId,
+    },
+  };
+}
+
+function unavailable(code: string): Promise<OpsTransportResult> {
+  return Promise.resolve({
+    status: 503,
+    headers: new Headers(),
+    body: { code },
+  });
+}
+
+/** PC20 transport: only status and maintenance reads are connected. */
+export function createPlatformOpsTransport(): OpsConsoleTransport {
+  return {
+    overview: (signal) => opsRead('/api/platform/v1/ops/status', signal),
+    maintenance: (signal) =>
+      opsRead('/api/platform/v1/ops/maintenance', signal),
+    submitBackup: () => unavailable('OPS_PROVIDER_UNAVAILABLE'),
+    submitRestore: () => unavailable('OPS_PROVIDER_UNAVAILABLE'),
+    task: () => unavailable('OPS_TASK_UNAVAILABLE'),
+    scheduleMaintenance: (
+      _input: MaintenanceScheduleInput,
+      _expectedRevision: number,
+      _idempotencyKey: string,
+      _signal: AbortSignal
+    ) => unavailable('OPS_MAINTENANCE_INVALID'),
+    closeMaintenance: () => unavailable('OPS_MAINTENANCE_INVALID'),
+    logs: () => unavailable('OPS_LOGS_UNAVAILABLE'),
+  };
+}

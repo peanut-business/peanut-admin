@@ -18,12 +18,12 @@ Upstream: Application manifest/lock、实际公共入口 import、Core 已标记
 
 ## 1. 结论
 
-当前版本不需要为了统一编号而升级：Server、Admin Web、PC 和 UniApp 是四个独立消费面，
+当前版本不需要为了统一编号而升级：Server、Admin Web、Platform Web、PC 和 UniApp 是五个独立消费面，
 只要各自锁定的制品、实际使用的公共入口和聚焦验证形成闭包，版本不同不是缺陷。
 
 | 决定 | 作用 | 结果 |
 |---|---|---|
-| 保持当前四端 lock | 避免无产品收益的依赖升级和组合回归 | PC02 不改 manifest 或 lock |
+| 各消费面独立锁定 | 避免无产品收益的依赖升级和组合回归 | PC02 不移动既有 lock；PC20 只为 Platform Web 增加已批准的 Alpha.7 消费 |
 | PC20 直接采用现有 Ops 合同 | 让诊断主线不等待新的 Core 发布 | PHP Alpha.9 有 `PeanutAdmin\OpsConsole\`；Web Alpha.7 有 `./ops-console` |
 | PC30 直接采用现有任务/Provider 合同 | 让备份适配只实现 Application/Deployment owner | PHP Alpha.9 已包含 Ops task、Provider、permission 和 audit 合同 |
 | PC/UniApp 暂不承载产品闭环 UI | 避免把管理员运维能力错误扩散到消费端 | 继续只消费 Alpha.5 的 UI-neutral client 子路径 |
@@ -38,6 +38,7 @@ Host、权限、Tenant 和失败语义测试负责。
 |---|---|---|---|---|---|
 | Server | `server/composer.json`、`server/composer.lock` | `peanut-admin/core@0.1.0-alpha.9` | source 与 dist reference 都是 `e42aa7fb4758002ad4ca235c3f1230fafa9b7ed4`；dist 指向固定 GitHub zipball；`shasum` 为空 | lock 声明 13 个 PSR-4 root；应用 import 其中 12 个，另有一条例外见第 5 节；闭环直接需要 `PeanutAdmin\OpsConsole\` | 可供 PC20/PC30 采用；强制只走 Composer autoload |
 | Admin Web | `web/package.json`、`web/pnpm-lock.yaml` | `@peanut-admin/admin@0.1.0-alpha.7` | lock integrity `sha512-fSnisYiQ/NbECK4ZOpFml5RyWyuxXU2XwWyAeEkcChHIQW3hX1tLxP9JfZIIAW6/LHMwYQne8JpBhU6kgW8hVA==` | 当前只 import `./core`、`./shell`；标记 package 另有 `./ops-console` | PC20 可增加 `./ops-console` 公共 import，不需要 lock move |
+| Platform Web | `platform/package.json`、`platform/package-lock.json` | `@peanut-admin/admin@0.1.0-alpha.7` | Registry URL 与 integrity 和 Admin Web 相同；Pinia peer 固定为 `2.0.23` | PC20 只 import `./ops-console`，并通过公共 Runtime/InjectionKey 装配只读 Platform transport | 不复制 Core 页面；Platform 生产构建是该消费面的日常验证 owner |
 | PC | `pc/package.json`、`pc/package-lock.json` | `@peanut-admin/admin@0.1.0-alpha.5` | npm tarball URL 固定到 Alpha.5；lock integrity `sha512-brHwkDH1Ym1EHFEBJDu+L956Wq3rwtxTaeaIvwPL7mMk8KKur82nqRnp/yk7RSnmScl/XeXMaj2HrTeQqTiOIQ==` | `./client`、`./client/nuxt` | 当前闭环无 PC 管理入口；保持不变 |
 | UniApp | `uniapp/package.json`、`uniapp/package-lock.json` | `@peanut-admin/admin@0.1.0-alpha.5` | npm tarball URL 和 integrity 与 PC 相同 | `./client`、`./client/uniapp` | 当前闭环无移动端管理入口；保持不变 |
 
@@ -67,7 +68,7 @@ Alpha.5 的 npm package 有 15 个 export，Alpha.7/Alpha.9 有 14 个；后者�
 
 | 检查 | 已确认事实 | 边界 |
 |---|---|---|
-| Admin Web peer | frozen lock 实际解析 Vue 3.5、Vue Router 4、Pinia 2 和 Element Plus 2.14，满足 Alpha.7 peer 范围 | `web/package.json` 的 Vue 声明下限早于 Core peer 下限；兼容承诺只绑定 frozen lock，不覆盖任意重新解 lock |
+| Admin/Platform Web peer | 两个 frozen lock 实际解析 Vue 3.5、Vue Router 4、Pinia 2 和 Element Plus 2.14，满足 Alpha.7 peer 范围；Platform 编译目标为 ES2022 | `web/package.json` 的 Vue 声明下限早于 Core peer 下限；兼容承诺只绑定 frozen lock，不覆盖任意重新解 lock |
 | PC/UniApp peer | 两端声明的 Vue 范围满足 Alpha.5 的 Vue peer；Element Plus/Pinia 为可选 peer | 不把 Admin UI peer 注入无 UI client |
 | 公共入口 | 四端当前 import 都能在各自标记 package manifest 中找到 | 新入口或版本移动必须重新做消费面检查 |
 | Deep import | 当前前端使用包 subpath；PHP 使用 Composer namespace | Core 参考 Host、monorepo 路径和内部 `src` 不可作为生产依赖 |
@@ -93,7 +94,7 @@ Alpha.5 的 npm package 有 15 个 export，Alpha.7/Alpha.9 有 14 个；后者�
 | 版本与制品身份 | 四端 manifest/lock；Core 标记 package manifest | 静态核对 | 任一 manifest/lock/version/integrity/reference 变化 |
 | create-app 固定版本 | `server/tests/Productization/CreateApplicationTest.php` | 否；PC02 纯文档 | scaffold 或客户端版本变化 |
 | 公共入口和 deep import scanner | `scripts/test-core-upgrade-public-entry-gate`；固定版本矩阵由 `scripts/core-upgrade-compatibility` / `scripts/combined-upgrade-qualification` 拥有 | 否；历史矩阵只覆盖其固定版本，不能冒充当前 Alpha.7/Alpha.9 资格 | package 公共表面或升级策略变化 |
-| PC20 Ops Host | PC20 的 PHP Provider/HTTP/permission 聚焦测试与 Admin Web typecheck | 尚未开始 | PC20 Runtime diff 形成后一次执行 |
+| PC20 Ops Host | PC20 的 PHP Provider/HTTP/permission 聚焦检查与 Platform Web 生产构建 | Platform Web build 已在 PC20 候选通过；固定实现身份由合入后状态文档记录 | Ops 公共入口、Platform transport、Provider 或权限路由变化 |
 | PC30 备份 Provider | PC30 的 Provider、任务、幂等、失败清理和安全输入聚焦测试 | 尚未开始 | PC30 Runtime diff 形成后一次执行 |
 | 最终组合 | PC70 固定候选 | 尚未开始 | 关键路径完成并冻结后一次执行 |
 
