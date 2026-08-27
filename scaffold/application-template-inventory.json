@@ -16028,7 +16028,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "869af5afed3e063fe3f614297c9121d7d082a1d7716897ba8beba10bb1fa987c"
+            "source_sha256": "5e4bba06f6959d0c840e26ddce02aaf239641ff9a35d709c1b7d1b025cd1fb01"
         },
         {
             "path": "server/tests/Productization/InstallerBootstrapTest.php",
