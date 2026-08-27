@@ -50,11 +50,11 @@ sudo -n grep -Fqx 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-m
 
 compose=(sudo -n docker compose -f compose.yaml --profile bundled-db)
 if [[ -n "$qualification_image" ]]; then
-  think=(sudo -n docker run --rm --network peanut-admin_default
+  think=(sudo -n docker run --rm --interactive --network peanut-admin_default
     --volume "$backend_env:/run/secrets/peanut-backend.env:ro"
     --env 'PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.qualification'
     --entrypoint sh "$qualification_image" -c
-    'umask 077; sed -E "/^(ADMIN_INITIAL_EMAIL|ADMIN_INITIAL_PASSWORD|PLATFORM_INITIAL_EMAIL|PLATFORM_INITIAL_PASSWORD)=/d" /run/secrets/peanut-backend.env > "$PEANUT_SERVER_ENV_FILE"; exec php "$@"'
+    'umask 077; sed -E "/^(ADMIN_INITIAL_EMAIL|ADMIN_INITIAL_PASSWORD|PLATFORM_INITIAL_EMAIL|PLATFORM_INITIAL_PASSWORD|DB_PREFIX)=/d" /run/secrets/peanut-backend.env > "$PEANUT_SERVER_ENV_FILE"; printf "DB_PREFIX=pa_\n" >> "$PEANUT_SERVER_ENV_FILE"; exec php "$@"'
     sh server/think ops-restore:task)
 else
   think=("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think ops-restore:task)
@@ -216,7 +216,7 @@ sudo -n docker run -d \
 ready=0
 for _ in {1..60}; do
   if sudo -n docker exec "$target_container" sh -c \
-      'MYSQL_PWD="$(cat /run/secrets/mysql-root-password)" mysqladmin ping -uroot --silent' >/dev/null 2>&1; then
+      'MYSQL_PWD="$(cat /run/secrets/mysql-root-password)" mysqladmin ping -h127.0.0.1 --protocol=TCP -uroot --silent' >/dev/null 2>&1; then
     ready=1
     break
   fi
@@ -243,7 +243,7 @@ mysql_scalar() {
 failure_code='OPS_RESTORE_SCHEMA_INVALID'
 table_count="$(mysql_scalar "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()")"
 schema_migration_count="$(mysql_scalar 'SELECT COUNT(*) FROM pa_schema_migration')"
-critical_table_count="$(mysql_scalar "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('pa_account','pa_tenant','pa_tenant_member','pa_role','pa_menu','pa_config')")"
+critical_table_count="$(mysql_scalar "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('pa_account','pa_tenant','pa_tenant_member','pa_role','pa_permission','pa_config')")"
 [[ "$table_count" =~ ^[1-9][0-9]*$ && "$schema_migration_count" =~ ^[1-9][0-9]*$ && "$critical_table_count" == 6 ]] \
   || false
 
@@ -254,10 +254,11 @@ tenant_member_count="$(mysql_scalar 'SELECT COUNT(*) FROM pa_tenant_member')"
 [[ "$account_count" =~ ^[1-9][0-9]*$ && "$tenant_count" =~ ^[1-9][0-9]*$ && "$tenant_member_count" =~ ^[1-9][0-9]*$ ]] \
   || false
 
+failure_code='OPS_RESTORE_FILES_FAILED'
 storage_metrics="$(sudo -n docker run --rm --network none \
   --mount "source=$target_storage_volume,target=/restore,readonly" \
   --entrypoint sh "$php_image" -c \
-  "find /restore -type f | wc -l; du -sb /restore | awk '{print \\$1}'")"
+  'find /restore -type f | wc -l; du -sb /restore | cut -f1')"
 storage_file_count="$(sed -n '1p' <<<"$storage_metrics" | tr -d '[:space:]')"
 storage_bytes="$(sed -n '2p' <<<"$storage_metrics" | tr -d '[:space:]')"
 [[ "$storage_file_count" =~ ^[0-9]+$ && "$storage_bytes" =~ ^[0-9]+$ ]] || false

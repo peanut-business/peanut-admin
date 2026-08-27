@@ -287,10 +287,10 @@
     },
     {
       "id": "PA-BACKUP-001",
-      "name": "受信配对备份与应用备份中心",
+      "name": "受信配对备份、恢复验证与应用备份中心",
       "area": "operations",
       "status": "implemented",
-      "summary": "PC30/PC31 已由 PR #287/#289 合入 dev：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 worker、Application evidence 和 Platform 备份中心已形成；权限、幂等、并发拒绝、60 秒心跳、revision fencing、失败码、SHA-256 与脱敏边界通过聚焦验证。真实配对制品、隔离恢复和正式组合资格分别归 PC32、PC70。",
+      "summary": "PC30—PC32 已完成：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 backup/restore worker、Application evidence 和 Platform 备份中心已形成。最终 dev@af7b1c9 的真实 Gate 将已验证配对制品恢复到登记新目标，得到 97 表、6 migration、Account/Tenant/TenantMember 各 1、零发布端口、受保护 Runtime 不变和成功零残留；正式 released-scaffold 组合资格归 PC70。",
       "acceptance": [
         "Provider、backup/restore handler、逻辑 restore target 和最大尝试次数全部由服务器固定注册",
         "manifest schema 1 只接受 opaque backup reference、固定 Provider、源码与稳定资源身份、容量、停写窗口、镜像、固定 DB/文件 artifact 和责任 key",
@@ -298,7 +298,9 @@
         "database.sql.gz 与 php-storage.tar.gz 必须成对出现并带非空字节数和 SHA-256；路径、命令、DSN、凭据、环境变量和任意 payload 不进入 manifest",
         "Platform 只提交固定 Provider 与幂等键，任务和提交审计在同一事务内落账；最近任务、失败码、证据时间、年龄、manifest 摘要和 Runtime source 匹配可见",
         "受信 worker 使用 task revision fencing 与 60 秒心跳；停写失败也必须恢复写入者，既有 backup ID 目录不得复用",
-        "Web 不接收或返回 handler、restore target、主机、数据库、路径、命令或凭据；恢复到新目标在 PC32 完成前保持禁用"
+        "Web 不接收或返回 handler、主机、数据库、路径、命令或凭据；只提交 opaque backup reference 与服务器固定 isolated-new-target",
+        "真实配对备份必须恢复到登记的新隔离目标，验证 manifest、Schema、代表 Account/Tenant/TenantMember、文件卷和零发布端口；活动生产与 production-candidate 身份必须前后一致",
+        "成功恢复必须原子写入 path-free evidence，并删除一次性容器、卷、内部网络、密码目录、临时 worker 镜像和租约；生产覆盖恢复仍需独立明确授权"
       ],
       "evidence": [
         {
@@ -318,6 +320,14 @@
           "ref": "https://github.com/peanut-business/peanut-admin/pull/289"
         },
         {
+          "kind": "git",
+          "ref": "af7b1c961bca314d9eba5c506aa6eca19fc1cf9b"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/291"
+        },
+        {
           "kind": "document",
           "ref": "docs/architecture/product-closure-backup-provider-contract.md"
         },
@@ -334,10 +344,14 @@
         "server/app/platform/service/ops/PairedBackupManifest.php",
         "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
         "server/app/platform/service/ops/PdoBackupTaskExecutionService.php",
+        "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
+        "server/app/platform/service/ops/RestoreVerificationEvidence.php",
         "server/app/platform/service/ops/PlatformBackupCenterService.php",
         "server/app/platform/service/ops/PlatformOpsRuntimeFactory.php",
         "server/database/migrations/20260827-create-ops-backup-evidence.sql",
+        "server/database/migrations/20260827-create-ops-restore-evidence.sql",
         "scripts/ops-backup-worker",
+        "scripts/ops-restore-worker",
         "platform/src/App.vue",
         "resources/project-resources.json",
         "docs/architecture/product-closure-backup-provider-contract.md"
