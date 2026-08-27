@@ -30,6 +30,7 @@ import localeAppTransaction from '@/views/app-setting/transaction/locale/zh-CN';
 import localeAppReadiness from '@/views/app-setting/readiness/locale/zh-CN';
 import localeArticleCate from '@/modules/official-article/views/cate/locale/zh-CN';
 import localeArticleList from '@/modules/official-article/views/list/locale/zh-CN';
+import localeConfigurationTransfer from '@/modules/official-import-export/views/locale/zh-CN';
 import localeSettings from './zh-CN/settings';
 
 export default {
@@ -83,4 +84,5 @@ export default {
   ...localeAppReadiness,
   ...localeArticleCate,
   ...localeArticleList,
+  ...localeConfigurationTransfer,
 };

@@ -1,0 +1,555 @@
+<?php
+declare(strict_types=1);
+
+namespace app\Modules\Official\ImportExport\Application;
+
+use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferCommands;
+use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferQueries;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationPackageCodec;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferAdapter;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferValue;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\CoreSettingsConfigurationAdapter;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\ExternalBindingConfigurationAdapter;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\SecretReferenceCodec;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\TenantModuleConfigurationAdapter;
+use app\Modules\Official\ImportExport\Infrastructure\Configuration\TenantSettingsConfigurationAdapter;
+use app\common\service\audit\AuditContractHost;
+use PeanutAdmin\Kernel\Audit\AuditRepository;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\PlatformContext;
+use PeanutAdmin\Settings\Secret\SecretProtector;
+use PeanutAdmin\Settings\Secret\SodiumSecretProtector;
+use PDO;
+use Throwable;
+
+/**
+ * Application-owned configuration transfer facade.
+ *
+ * Configuration packages contain only logical, scoped values. They are
+ * deliberately separate from backup artifacts and never carry Tenant IDs or
+ * secret material. The application service performs all package validation
+ * and conflict planning before delegating writes to the owning adapters.
+ */
+final class ConfigurationTransferApplicationService implements ConfigurationTransferCommands, ConfigurationTransferQueries
+{
+    private const TENANT_SCOPE = 'tenant';
+    private const DEPLOYMENT_SCOPE = 'deployment';
+
+    /** @var list<string> */
+    private const CONFLICT_POLICIES = ['abort', 'overwrite', 'skip'];
+
+    /** @var array<string, ConfigurationTransferAdapter> */
+    private array $adapters = [];
+
+    private ConfigurationPackageCodec $codec;
+
+    private AuditRepository $audit;
+
+    /**
+     * @param list<ConfigurationTransferAdapter>|null $adapters
+     */
+    public function __construct(
+        private readonly PDO $pdo,
+        ?array $adapters = null,
+        ?ConfigurationPackageCodec $codec = null,
+        ?AuditRepository $audit = null,
+    ) {
+        $this->codec = $codec ?? new ConfigurationPackageCodec();
+        $this->audit = $audit ?? AuditContractHost::fromPdo($pdo);
+        $adapters ??= $this->defaultAdapters($pdo);
+        foreach ($adapters as $adapter) {
+            if (!$adapter instanceof ConfigurationTransferAdapter) {
+                throw new \InvalidArgumentException('TRANSFER_ADAPTER_INVALID');
+            }
+            $key = $adapter->key();
+            if (!in_array($key, ConfigurationPackageCodec::ADAPTERS, true) || isset($this->adapters[$key])) {
+                throw new \InvalidArgumentException('TRANSFER_ADAPTER_INVALID');
+            }
+            $this->adapters[$key] = $adapter;
+        }
+    }
+
+    /** @return array<string, mixed> */
+    public function export(TenantContext|PlatformContext $context, string $scope): array
+    {
+        $scope = $this->assertContext($context, $scope);
+        $entries = [];
+        foreach ($this->adaptersForScope($scope) as $adapter) {
+            foreach ($adapter->export($context) as $entry) {
+                if (!is_array($entry)) {
+                    throw new \RuntimeException('TRANSFER_ENTRY_INVALID');
+                }
+                $entries[] = $entry;
+            }
+        }
+
+        $package = $this->codec->create($scope, $entries);
+        $this->audit($context, $scope, 'export', (string)$package['checksum'], count($entries), 0, 0);
+
+        return $package;
+    }
+
+    /** @return array<string, mixed> */
+    public function dryRun(
+        TenantContext|PlatformContext $context,
+        string $scope,
+        array|string $package,
+        array $secretBindings = [],
+        string $conflictPolicy = 'abort',
+    ): array {
+        $scope = $this->assertContext($context, $scope);
+        $plan = $this->plan($context, $scope, $package, $secretBindings, $conflictPolicy);
+        $result = $this->publicPlan($plan, true);
+        $this->audit(
+            $context,
+            $scope,
+            'dry-run',
+            $plan['checksum'],
+            $plan['entry_count'],
+            count($plan['conflicts']),
+            count($plan['missing_secret_references']),
+        );
+
+        return $result;
+    }
+
+    /** @return array<string, mixed> */
+    public function apply(
+        TenantContext|PlatformContext $context,
+        string $scope,
+        array|string $package,
+        array $secretBindings = [],
+        string $conflictPolicy = 'abort',
+    ): array {
+        $scope = $this->assertContext($context, $scope);
+        $plan = $this->plan($context, $scope, $package, $secretBindings, $conflictPolicy);
+        if ($plan['missing_secret_references'] !== []) {
+            throw new \RuntimeException('TRANSFER_SECRET_REBIND_REQUIRED');
+        }
+        if ($plan['blocking_conflicts'] !== []) {
+            throw new \RuntimeException('TRANSFER_CONFLICT');
+        }
+
+        // The package is a single logical change. Keep every adapter write and
+        // the success audit in one PDO unit of work so a later adapter or the
+        // audit projection cannot leave a partially-applied package behind.
+        return $this->transaction(function () use (
+            $context,
+            $scope,
+            $secretBindings,
+            $plan,
+        ): array {
+            $applied = [];
+            $skipped = [];
+            foreach ($plan['items'] as $item) {
+                $action = $item['action'];
+                if ($action === 'unchanged' || $action === 'skip') {
+                    $skipped[] = $this->publicItem($item);
+                    continue;
+                }
+
+                $seen = [];
+                $value = SecretReferenceCodec::restore($item['entry']['value'], $secretBindings, $seen);
+                $item['adapter']->apply(
+                    $context,
+                    $item['entry']['key'],
+                    $value,
+                    $item['entry'],
+                    $item['current_revision'],
+                );
+                $applied[] = $this->publicItem($item);
+            }
+
+            // Audit before commit: an audit failure must abort the same unit
+            // of work as the configuration writes.
+            $this->audit(
+                $context,
+                $scope,
+                'apply',
+                $plan['checksum'],
+                count($plan['items']),
+                0,
+                0,
+                count($applied),
+            );
+
+            return [
+                ...$this->publicPlan($plan, false),
+                'status' => 'applied',
+                'can_apply' => false,
+                'applied' => $applied,
+                'skipped' => $skipped,
+                'applied_count' => count($applied),
+                'skipped_count' => count($skipped),
+            ];
+        });
+    }
+
+    /** @return list<ConfigurationTransferAdapter> */
+    private function adaptersForScope(string $scope): array
+    {
+        $keys = $scope === self::TENANT_SCOPE
+            ? [
+                ConfigurationPackageCodec::ADAPTER_TENANT_SETTINGS,
+                ConfigurationPackageCodec::ADAPTER_TENANT_MODULES,
+                ConfigurationPackageCodec::ADAPTER_EXTERNAL_BINDINGS,
+            ]
+            : [ConfigurationPackageCodec::ADAPTER_CORE_SETTINGS];
+        $result = [];
+        foreach ($keys as $key) {
+            $adapter = $this->adapters[$key] ?? null;
+            if ($adapter instanceof ConfigurationTransferAdapter) {
+                $result[] = $adapter;
+            }
+        }
+        return $result;
+    }
+
+    /** @return array<string, mixed> */
+    private function plan(
+        TenantContext|PlatformContext $context,
+        string $scope,
+        array|string $package,
+        array $secretBindings,
+        string $conflictPolicy,
+    ): array {
+        if (!in_array($conflictPolicy, self::CONFLICT_POLICIES, true)) {
+            throw new \RuntimeException('TRANSFER_CONFLICT_POLICY_INVALID');
+        }
+
+        $document = $this->codec->decode($package, $scope);
+        $entries = $document['entries'] ?? null;
+        if (!is_array($entries) || !array_is_list($entries)) {
+            throw new \RuntimeException('TRANSFER_ENTRY_INVALID');
+        }
+
+        $scopeAdapters = [];
+        foreach ($this->adaptersForScope($scope) as $adapter) {
+            $scopeAdapters[$adapter->key()] = $adapter;
+        }
+        $references = [];
+        foreach ($entries as $entry) {
+            if (!is_array($entry)) {
+                throw new \RuntimeException('TRANSFER_ENTRY_INVALID');
+            }
+            $adapterKey = $entry['adapter'] ?? null;
+            if (!is_string($adapterKey) || !isset($scopeAdapters[$adapterKey])) {
+                throw new \RuntimeException('TRANSFER_ADAPTER_SCOPE_INVALID');
+            }
+            foreach (SecretReferenceCodec::references($entry['value'] ?? null) as $reference) {
+                $references[$reference['reference']] = $reference;
+            }
+        }
+        $references = array_values($references);
+        usort($references, static fn(array $left, array $right): int => strcmp($left['reference'], $right['reference']));
+        $missing = SecretReferenceCodec::assertBindings($secretBindings, $references);
+
+        $items = [];
+        $conflicts = [];
+        $blockingConflicts = [];
+        foreach ($entries as $entry) {
+            $adapter = $scopeAdapters[(string)$entry['adapter']];
+            $key = (string)$entry['key'];
+            $current = $adapter->current($context, $key);
+            if (!is_array($current) || !is_bool($current['exists'] ?? null)) {
+                throw new \RuntimeException('TRANSFER_ADAPTER_STATE_INVALID');
+            }
+            $currentRevision = $this->revision($current['revision'] ?? null);
+            $same = $current['exists'] && $this->equivalent(
+                $entry['value'] ?? null,
+                $current['value'] ?? null,
+            );
+            $hasBoundSecret = false;
+            foreach (SecretReferenceCodec::references($entry['value'] ?? null) as $reference) {
+                if ($reference['state'] === 'configured' && array_key_exists($reference['reference'], $secretBindings)) {
+                    $hasBoundSecret = true;
+                }
+            }
+
+            if (!$current['exists'] && !$adapter->supportsCreate()) {
+                $action = 'conflict';
+                $conflict = [
+                    'adapter' => $adapter->key(),
+                    'key' => $key,
+                    'current_revision' => $currentRevision,
+                    'action' => $action,
+                ];
+                $conflicts[] = $conflict;
+                $blockingConflicts[] = $conflict;
+            } elseif (!$current['exists']) {
+                $action = 'create';
+            } elseif ($same && $hasBoundSecret) {
+                $action = 'replace-secret';
+            } elseif ($same) {
+                $action = 'unchanged';
+            } else {
+                $action = match ($conflictPolicy) {
+                    'overwrite' => 'replace',
+                    'skip' => 'skip',
+                    default => 'conflict',
+                };
+                $conflict = [
+                    'adapter' => $adapter->key(),
+                    'key' => $key,
+                    'current_revision' => $currentRevision,
+                    'action' => $action,
+                ];
+                $conflicts[] = $conflict;
+                if ($action === 'conflict') {
+                    $blockingConflicts[] = $conflict;
+                }
+            }
+
+            $items[] = [
+                'adapter' => $adapter,
+                'entry' => $entry,
+                'action' => $action,
+                'current_exists' => $current['exists'],
+                'current_revision' => $currentRevision,
+            ];
+        }
+
+        return [
+            'scope' => $scope,
+            'checksum' => (string)$document['checksum'],
+            'conflict_policy' => $conflictPolicy,
+            'items' => $items,
+            'entry_count' => count($items),
+            'conflicts' => $conflicts,
+            'blocking_conflicts' => $blockingConflicts,
+            'missing_secret_references' => $missing,
+        ];
+    }
+
+    /** @param array<string, mixed> $plan @return array<string, mixed> */
+    private function publicPlan(array $plan, bool $dryRun): array
+    {
+        $items = array_map(fn(array $item): array => $this->publicItem($item), $plan['items']);
+        $counts = [
+            'total' => count($items),
+            'create' => 0,
+            'replace' => 0,
+            'unchanged' => 0,
+            'skip' => 0,
+            'conflict' => 0,
+        ];
+        foreach ($items as $item) {
+            $action = (string)$item['action'];
+            if ($action === 'replace-secret') {
+                ++$counts['replace'];
+            } elseif (isset($counts[$action])) {
+                ++$counts[$action];
+            }
+        }
+        return [
+            'protocol' => ConfigurationPackageCodec::PROTOCOL,
+            'schema_version' => ConfigurationPackageCodec::SCHEMA_VERSION,
+            'scope' => $plan['scope'],
+            'checksum' => $plan['checksum'],
+            'dry_run' => $dryRun,
+            'status' => $plan['blocking_conflicts'] !== [] || $plan['missing_secret_references'] !== []
+                ? 'blocked'
+                : 'ready',
+            'can_apply' => $plan['blocking_conflicts'] === [] && $plan['missing_secret_references'] === [],
+            'conflict_policy' => $plan['conflict_policy'],
+            'counts' => $counts,
+            'entries' => $items,
+            'conflicts' => $plan['conflicts'],
+            'missing_secret_references' => $plan['missing_secret_references'],
+        ];
+    }
+
+    /** @param array<string, mixed> $item @return array<string, mixed> */
+    private function publicItem(array $item): array
+    {
+        $entry = $item['entry'];
+        $secrets = [];
+        foreach (SecretReferenceCodec::references($entry['value'] ?? null) as $reference) {
+            $secrets[] = [
+                'reference' => $reference['reference'],
+                'state' => $reference['state'],
+            ];
+        }
+        return [
+            'adapter' => $entry['adapter'],
+            'key' => $entry['key'],
+            'action' => $item['action'],
+            'exists' => $item['current_exists'],
+            'current_revision' => $item['current_revision'],
+            'secrets' => $secrets,
+        ];
+    }
+
+    private function equivalent(mixed $left, mixed $right): bool
+    {
+        try {
+            return json_encode(
+                ConfigurationTransferValue::comparable($left),
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+            ) === json_encode(
+                ConfigurationTransferValue::comparable($right),
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+            );
+        } catch (\JsonException) {
+            throw new \RuntimeException('TRANSFER_ENTRY_INVALID');
+        }
+    }
+
+    private function revision(mixed $revision): ?int
+    {
+        if ($revision === null) {
+            return null;
+        }
+        if (is_int($revision)) {
+            return $revision >= 0 ? $revision : throw new \RuntimeException('TRANSFER_ADAPTER_STATE_INVALID');
+        }
+        if (is_string($revision) && preg_match('/^[0-9]+$/D', $revision) === 1) {
+            return (int)$revision;
+        }
+        throw new \RuntimeException('TRANSFER_ADAPTER_STATE_INVALID');
+    }
+
+    private function assertContext(TenantContext|PlatformContext $context, string $scope): string
+    {
+        if (!in_array($scope, [self::TENANT_SCOPE, self::DEPLOYMENT_SCOPE], true)) {
+            throw new \RuntimeException('TRANSFER_SCOPE_INVALID');
+        }
+        if ($scope === self::TENANT_SCOPE) {
+            if (!$context instanceof TenantContext
+                || $context->tenantId < 1
+                || $context->accountId < 1
+                || $context->memberId < 1
+                || $context->authorizationRevision < 1
+                || $context->sessionKey === ''
+                || $context->clientKey === ''
+                || $context->requestId === '') {
+                throw new \RuntimeException('TRANSFER_TENANT_CONTEXT_INVALID');
+            }
+            return self::TENANT_SCOPE;
+        }
+        if (!$context instanceof PlatformContext
+            || $context->accountId < 1
+            || $context->operatorId < 1
+            || $context->sessionKey === ''
+            || $context->clientKey !== 'platform-web'
+            || $context->requestId === '') {
+            throw new \RuntimeException('TRANSFER_DEPLOYMENT_CONTEXT_INVALID');
+        }
+        return self::DEPLOYMENT_SCOPE;
+    }
+
+    private function audit(
+        TenantContext|PlatformContext $context,
+        string $scope,
+        string $operation,
+        string $checksum,
+        int $entryCount,
+        int $conflictCount,
+        int $missingSecretCount,
+        int $appliedCount = 0,
+    ): void {
+        $metadata = [
+            'scope' => $scope,
+            'checksum' => $checksum,
+            'entry_count' => $entryCount,
+            'conflict_count' => $conflictCount,
+            'missing_secret_count' => $missingSecretCount,
+            'applied_count' => $appliedCount,
+        ];
+        if ($context instanceof TenantContext) {
+            $this->audit->appendTenantMember(
+                $context,
+                'tenant.configuration.transfer.' . $operation,
+                'configuration.transfer.' . $operation,
+                'configuration-package',
+                $checksum,
+                null,
+                null,
+                $entryCount,
+                hash('sha256', $checksum),
+                $metadata,
+            );
+            return;
+        }
+        $this->audit->appendPlatform(
+            'platform.configuration.transfer.' . $operation,
+            'configuration.transfer.' . $operation,
+            $context->requestId,
+            $context->operatorId,
+            $context->accountId,
+            $metadata,
+        );
+    }
+
+    /**
+     * Run a package mutation in an atomic PDO unit of work.
+     *
+     * A caller may already own a transaction (for example, an HTTP command
+     * that composes several application services). PDO has no nested
+     * transaction API, so use a savepoint in that case and leave ownership of
+     * the outer transaction untouched.
+     *
+     * @template T
+     * @param callable(): T $operation
+     * @return T
+     */
+    private function transaction(callable $operation): mixed
+    {
+        $ownsTransaction = !$this->pdo->inTransaction();
+        $savepoint = null;
+
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        } else {
+            $savepoint = 'configuration_transfer_' . bin2hex(random_bytes(8));
+            $this->pdo->exec('SAVEPOINT ' . $savepoint);
+        }
+
+        try {
+            $result = $operation();
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            } elseif ($savepoint !== null) {
+                $this->pdo->exec('RELEASE SAVEPOINT ' . $savepoint);
+            }
+            return $result;
+        } catch (Throwable $exception) {
+            if ($ownsTransaction) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+            } elseif ($savepoint !== null && $this->pdo->inTransaction()) {
+                // Keep the outer transaction usable after an inner transfer
+                // fails, while discarding every write made by this transfer.
+                $this->pdo->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
+                $this->pdo->exec('RELEASE SAVEPOINT ' . $savepoint);
+            }
+            throw $exception;
+        }
+    }
+
+    /** @return list<ConfigurationTransferAdapter> */
+    private function defaultAdapters(PDO $pdo): array
+    {
+        return [
+            new TenantSettingsConfigurationAdapter($pdo),
+            new TenantModuleConfigurationAdapter($pdo),
+            new ExternalBindingConfigurationAdapter($pdo),
+            new CoreSettingsConfigurationAdapter($pdo, null, $this->secretProtector()),
+        ];
+    }
+
+    private function secretProtector(): SecretProtector
+    {
+        $encoded = getenv('PEANUT_SETTINGS_SECRET_KEYS');
+        $activeKeyId = getenv('PEANUT_SETTINGS_ACTIVE_SECRET_KEY_ID');
+        if (!is_string($encoded) || !is_string($activeKeyId) || $encoded === '' || $activeKeyId === '') {
+            return new \app\Modules\Official\ImportExport\Infrastructure\Configuration\UnavailableSecretProtector();
+        }
+        try {
+            return SodiumSecretProtector::fromJson($encoded, $activeKeyId);
+        } catch (Throwable) {
+            return new \app\Modules\Official\ImportExport\Infrastructure\Configuration\UnavailableSecretProtector();
+        }
+    }
+}

@@ -3904,7 +3904,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "da7a9e4b741abb706ee11c6d4d1725d984e230e38b75826d1616d7ce7af94dcb"
+            "source_sha256": "9821f9c517aa5a8a68670e5473eea43ebf35a767eacb9344a4e87fe701ea6dec"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -3986,7 +3986,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7fde906e4238f364d30df59dd6e868717a3526d40da3920bb0c8a1c25c2f6b0e"
+            "source_sha256": "c03b6525613a025ed49c3f597b24b9e83e8249dfcf0861092503e37d340a0a0a"
         },
         {
             "path": "plugins/official.member/plugin.json",
@@ -5627,6 +5627,20 @@
             "source_sha256": "d8709bad40496cc4e47e2fd5928d9f0564dda60f0bfe27e8b51a8732ea7b92e2"
         },
         {
+            "path": "server/app/Modules/Official/ImportExport/Application/ConfigurationTransferApplicationService.php",
+            "target": "server/app/Modules/Official/ImportExport/Application/ConfigurationTransferApplicationService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "d12c8bd7ae8dbca378a8802ce936edfe457cb75c8d2b44eda5fd46effe0da958"
+        },
+        {
             "path": "server/app/Modules/Official/ImportExport/Application/ImportExportApplicationService.php",
             "target": "server/app/Modules/Official/ImportExport/Application/ImportExportApplicationService.php",
             "classification": "app-owned",
@@ -5667,6 +5681,34 @@
                 "full"
             ],
             "source_sha256": "b84101466642853d98c3b7312a57755900364c9b5fa595c5aab3ba20556057fb"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Contracts/ConfigurationTransferCommands.php",
+            "target": "server/app/Modules/Official/ImportExport/Contracts/ConfigurationTransferCommands.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "cb9214d71579ef7c261961a0880f9139f5fe13f0203045fd9ab94336205838e3"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Contracts/ConfigurationTransferQueries.php",
+            "target": "server/app/Modules/Official/ImportExport/Contracts/ConfigurationTransferQueries.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "3607fb65feae7802fb35042ff5589342c79924896fc2b9e0379b35c1047e3399"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Contracts/Dto/AsyncExportOperation.php",
@@ -5739,6 +5781,20 @@
             "source_sha256": "0b7981ec9cf94453697c6cc7f6cc3f0abae9e88769c3a8370b1b57034efa596e"
         },
         {
+            "path": "server/app/Modules/Official/ImportExport/Http/Controller/ConfigurationTransferController.php",
+            "target": "server/app/Modules/Official/ImportExport/Http/Controller/ConfigurationTransferController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "3473fa29454b6a7d1457d5cd42337eeb4f235eb051fbdeb2f2789f7cbb78f6c8"
+        },
+        {
             "path": "server/app/Modules/Official/ImportExport/Http/Controller/OperationLogExportController.php",
             "target": "server/app/Modules/Official/ImportExport/Http/Controller/OperationLogExportController.php",
             "classification": "app-owned",
@@ -5764,7 +5820,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "65c697d670ef102a7f8d697ff628012959bc806ab9db2d0b5b9530111c8f42fa"
+            "source_sha256": "7e9d5ba7bd988d1e755e89bdb5769126c873d4558b1fe296008e9f3daed9fb29"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php",
@@ -5779,6 +5835,132 @@
                 "full"
             ],
             "source_sha256": "c4b2ae71e59b6bcfb733dd793e433dc7d27c7ce3120e805606cf740a7cbc5990"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationPackageCodec.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationPackageCodec.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "8a09bf78201d092d534af605cde701533b252d7de8e4f0af43fa594d640bf78a"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationTransferAdapter.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationTransferAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "776c8f4656fbd9c0de1463ac6cecc33457707ed06ac49c2eb751d5a81cce863d"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationTransferValue.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationTransferValue.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "6262b842d57e21955063c8815b3b8321cea515c6de08ece8c04d646c88b621b4"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/CoreSettingsConfigurationAdapter.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/CoreSettingsConfigurationAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "70ff41b0d7920fb3572aac667adbba310e722d9ea2b73c3615d9729ea08b1192"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ExternalBindingConfigurationAdapter.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ExternalBindingConfigurationAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "4f777aba130e936cafd6a06737f1a9f454767e51d58ceb5d00788d978d87c722"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "2866d630616554efeac3ad0f5d42f810ed8c6219bea64fcbf0adfc796ef2c013"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantModuleConfigurationAdapter.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantModuleConfigurationAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "20023d1ee316b133fb13d9d9ec621c6c183a9aea69b55e85037019132c520cc2"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantSettingsConfigurationAdapter.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/TenantSettingsConfigurationAdapter.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "54ae192e0c1ad77ff2bd3045f29a18ba17ff89fa08a24c48e38f011044aaddec"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/UnavailableSecretProtector.php",
+            "target": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/UnavailableSecretProtector.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "af250463d77414aeb62c85d89eb3b4d252cd7406d4d790de332722b67b35f480"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php",
@@ -5806,7 +5988,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c84529c00a9812528c04325af55edcf06ef03235af918ee4e977d9fbec42e139"
+            "source_sha256": "a8c194033b0fba6e7fefb60768b9a6f11725d9d0a7a68799cc4656f7ea7bcfff"
+        },
+        {
+            "path": "server/app/Modules/Official/ImportExport/Resources/configuration-package.schema.json",
+            "target": "server/app/Modules/Official/ImportExport/Resources/configuration-package.schema.json",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "3fa9dd53ef362092946df355fe031e208ba44d3d9deef635f509489f8b841ba1"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Resources/menus.json",
@@ -5820,7 +6016,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+            "source_sha256": "b57f7e505318df36c514c3acbe708b3ddecea37efee0b49428c25512c8b19de5"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Resources/permissions.json",
@@ -5834,7 +6030,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "035446909f2fa2e675c3ee4c97d1d43aa4ebee300a02935296dcfeb18305811f"
+            "source_sha256": "56a3a9e239f6d924540f4900197a272ea5368237d98c64f1882865277daf864e"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Resources/setting-definitions.json",
@@ -5876,7 +6072,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b1a47022bb770e4edf5ce0b4948cc6cc2439d133191f17cb397b32a8926359b9"
+            "source_sha256": "5ccd46068db759fce7a85ad07c0ca8c55dd90806c75e8e0db1f5343d0e0c2501"
         },
         {
             "path": "server/app/Modules/Official/Member/Application/MemberBalanceContractService.php",
@@ -11155,7 +11351,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ace56d95448b2e8eaa001636e5bfd6fd3ebc4a4ccf628e5b1b0210d8503c5fbf"
+            "source_sha256": "bf74fadbd43d01b8464820ccb83efed5be3f9ad598be41376e01cf058bf35b40"
         },
         {
             "path": "server/app/common/service/external/ExternalTenantAudit.php",
@@ -18896,7 +19092,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b82cc93a34948019e378e9a562b984a79d4e25a2a7174b6d17c4ad447d4a2429"
+            "source_sha256": "1e2bed5a550e515bc8bd4af28291c9a68543b0cf8b318e03147672e3986f5a40"
         },
         {
             "path": "web/src/hooks/chart-option.ts",
@@ -19064,7 +19260,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8658abf14f54589594ac9897a4353dbbfc34a3bcfb6a0c8f1767be603ce2fb79"
+            "source_sha256": "a9d3531995fac01846dd95058d21578c48fe9074a66b541eae8a7e200ede9cd1"
         },
         {
             "path": "web/src/locale/en-US/settings.ts",
@@ -19106,7 +19302,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5962bcc1f39fb8823907361c69d0d1bdc1342eef4be018da1ee245937f9d26db"
+            "source_sha256": "43fa58fd0303fb55b1d9a3d28dcf5b69c135c2381311902b33e14ff80bdf0201"
         },
         {
             "path": "web/src/locale/zh-CN/settings.ts",
@@ -19386,6 +19582,20 @@
             "source_sha256": "39e09d36930dc77af8a2cb16eb24477ed7cd0b49489f43a7ce53720c152d5b89"
         },
         {
+            "path": "web/src/modules/official-import-export/api.ts",
+            "target": "web/src/modules/official-import-export/api.ts",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "e285dda75d12482710fb8f9988a811fdce0e22c4e483ddcaa82356fa8b4303b9"
+        },
+        {
             "path": "web/src/modules/official-import-export/contribution.ts",
             "target": "web/src/modules/official-import-export/contribution.ts",
             "classification": "managed",
@@ -19397,7 +19607,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "993ec2cc0f80309284a1b6e5d1c498383c9e9e5e3a132bb137a9deb25e673a68"
+            "source_sha256": "b6c0eae98ed1e4c086f520cd9603d2afad64e2dcbf246a5a3ebe79e431a61694"
         },
         {
             "path": "web/src/modules/official-import-export/package.json",
@@ -19412,6 +19622,48 @@
                 "full"
             ],
             "source_sha256": "47d4d2ddddb9a2cacd39cd9b9713195e57b2e45d702bea531b190c931807b194"
+        },
+        {
+            "path": "web/src/modules/official-import-export/views/index.vue",
+            "target": "web/src/modules/official-import-export/views/index.vue",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "97859b456332d99a4b806dade2a2fe420903ea6c3c945d3b24086cba3456b8ba"
+        },
+        {
+            "path": "web/src/modules/official-import-export/views/locale/en-US.ts",
+            "target": "web/src/modules/official-import-export/views/locale/en-US.ts",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "e3b1a92895fa71da356cc6e9e18d0436586d9122536a36c03fd014a8760c57e0"
+        },
+        {
+            "path": "web/src/modules/official-import-export/views/locale/zh-CN.ts",
+            "target": "web/src/modules/official-import-export/views/locale/zh-CN.ts",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "4c7b08b55c4ed873f13232588b2bc7c9e246e4a813b7346f6e49dc896fcedafb"
         },
         {
             "path": "web/src/modules/official-member/api.ts",
