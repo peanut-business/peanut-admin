@@ -13,7 +13,7 @@ Upstream: 产品能力账本、Module manifest、服务登记、当前应用/Cor
 
 > - 队列执行状态：**执行中**
 > - 建立日期：2026-08-27
-> - Application 输入基线：`9af96499e22e2080e8e4e3aa7562f9cea3f9b402`
+> - Application 输入基线：`f289c69a620f1eaffb0ba5a8cc39d089759259ab`
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
 > - 进度入口：[`../product-status/product-closure-observability.md`](../product-status/product-closure-observability.md)
 > - 产品能力唯一事实源：[`../product-status/capability-ledger.json`](../product-status/capability-ledger.json)
@@ -52,8 +52,8 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 | 0 | `PC00` | 文档能力目录与事实源对照 | 已完成 | 无 | 让能力、边界和状态可发现 | Docs/Application |
 | 1 | `PC01` | 产品闭环所有权与采用决定 | 已完成 | 当前事实盘点 | 避免重复 Runtime 和事后抽 Core | Architecture |
 | 2 | `PC02` | Core/Application 兼容与版本基线 | 已完成 | PC01 | 固定可采用导出和不可变来源 | Core + Application |
-| 3 | `PC10` | 统一安装预检 Host | 进行中 | PC01、PC02 | 为 CLI、Web 和自动化提供同一检查 | Application Host |
-| 4 | `PC11` | 一次性安装向导 | 未开始 | PC10 | 完成首次安装产品流程 | Application |
+| 3 | `PC10` | 统一安装预检 Host | 已完成 | PC01、PC02 | 为 CLI、Web 和自动化提供同一检查 | Application Host |
+| 4 | `PC11` | 一次性安装向导 | 进行中 | PC10 | 完成首次安装产品流程 | Application |
 | 5 | `PC12` | 首次运行配置清单 | 未开始 | PC11 | 展示生产准备度和下一动作 | Application |
 | 6 | `PC20` | Core Ops Console 最小采用 | 未开始 | PC01、PC02 | 展示健康、版本、迁移和维护状态 | Core + Application |
 | 7 | `PC21` | 可下载脱敏诊断包 | 未开始 | PC20 | 降低反馈和远程排错成本 | Application |
@@ -77,7 +77,7 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 | PC01 | 唯一所有权矩阵、Core 可采用清单、首个下游切片 | 每项只有一个 Runtime owner，无双写/deep import | Core 合同不足时只登记真实最小缺口 |
 | PC02 | PHP/Web/PC/UniApp 版本兼容矩阵 | 导出、dist/reference/integrity 和测试 owner 可追溯 | 不为版本整齐盲升依赖 |
 | PC10 | 结构化安装检查和唯一 Host | 状态、code、原因、修复建议稳定且不泄密 | 不猜 localhost、默认端口或默认凭据 |
-| PC11 | 环境→数据库→模式→管理员→Module→安装→健康向导 | 安装锁、重复访问、失败重试、双模式通过 | 不支持未知旧库自动 adopt |
+| PC11 | guided/automatic 共用唯一 Host；环境→数据库→模式→管理员→Module→安装→健康 | 一次性 setup token、安装锁、重复访问、失败重试、双模式通过 | 不写 `.env`，不支持未知旧库自动 adopt |
 | PC12 | 品牌、渠道、存储、备份、worker、域名/TLS、安全清单 | 每项说明影响、入口和生产阻塞性 | 模拟 Provider 不显示为生产可用 |
 | PC20 | 只读健康/版本/迁移/维护 Host 与页面 | 关键失败 unhealthy，非权威缓存可 degraded，状态异常 fail closed | 静态环境信息不冒充 Runtime 健康 |
 | PC21 | 固定 schema 的脱敏诊断包 | 大小/时间上限、SHA-256、秘密和个人数据拒绝/脱敏 | 不读取任意文件或私有路径 |
@@ -108,8 +108,9 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 
 - PC00/PC01：已由 PR #275 合入 `dev@6967f270dadcd1cb69c4606ad42c198c78db5b5b`。
 - PC02：已由 PR #276 合入 `dev@9af96499e22e2080e8e4e3aa7562f9cea3f9b402`；四端锁版本、公共入口、不可变来源、例外和验证 owner 已固定，未盲升依赖。
-- PC10：`feat/product-closure-install-preflight` 正在形成唯一只读 Host 和 `install.php --preflight`；扩展、安装文件、目录和已登记资源身份返回稳定的 `status/code/reason/remediation`，数据库连通、空库和安装锁仍归 PC11。
-- PC20/PC30：前置已满足，可在不与 PC10 共享文件 owner 时领取；当前主线仍按队列先收口 PC10。
+- PC10：已由 PR #277 合入 `dev@f289c69a620f1eaffb0ba5a8cc39d089759259ab`；唯一只读 Host、`install.php --preflight`、聚焦合同测试和 app-owned scaffold 投影已完成。
+- PC11：guided/automatic 共用唯一 `InstallationExecutionHost` 的产品决定已冻结；当前领取执行 Host、安装态门禁、部署 transport、Web 向导及双模式资格。
+- PC20/PC30：前置已满足，可在不与 PC11 共享文件 owner 时领取；当前主线按队列先完成 PC11。
 - 当前没有数据库、服务、容器、浏览器或生产资源 owner。
 
 ## 7. 验证

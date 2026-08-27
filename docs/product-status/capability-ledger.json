@@ -91,6 +91,38 @@
       ]
     },
     {
+      "id": "PA-INSTALL-001",
+      "name": "统一只读安装预检",
+      "area": "productization",
+      "status": "implemented",
+      "summary": "PC10 已在 dev 形成 CLI、未来 Web 与自动化共用的唯一只读安装预检 Host；稳定返回状态、代码、原因和修复建议，不连接数据库、不猜测地址或凭据，并裁剪资源秘密。正式 Release 组合资格归 PC70。",
+      "acceptance": [
+        "PHP、扩展、安装文件、目录和登记资源身份使用同一结构化检查",
+        "CLI 返回稳定 status、code、reason、remediation 和退出码",
+        "预检不实例化 PDO、不探测网络、不创建目录且不泄露数据库秘密",
+        "派生应用 app-owned inventory 包含预检 Host 和 CLI 入口"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "f289c69a620f1eaffb0ba5a8cc39d089759259ab"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-NATIVE-001"
+      ],
+      "paths": [
+        "server/app/common/service/installation/InstallationPreflightHost.php",
+        "server/database/install.php",
+        "server/tests/Productization/InstallerBootstrapTest.php",
+        "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
