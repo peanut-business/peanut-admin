@@ -411,9 +411,8 @@ SQL);
 
     private function executeMigrationSql(string $sql): void
     {
-        $statement = $this->pdo->prepare($sql);
+        $statement = $this->pdo->query($sql);
         try {
-            $statement->execute();
             do {
                 if ($statement->columnCount() > 0) {
                     $statement->fetchAll(PDO::FETCH_ASSOC);

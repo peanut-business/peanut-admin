@@ -45,10 +45,10 @@ $expectedGroups = [
 ];
 $expectedTarget = [
     'version' => '3.0.9',
-    'source_commit' => '664274db7fafb712293e2ad41ba5c0eba6cd23ce',
-    'source_tree' => '72913a46b00d6a815a7cdca36f8eb044ccd585b6',
-    'manifest_sha256' => 'c3ebcf723d798b1fe235d75af6e7b4e4b08116dbf4a29934d39b74a80cfee819',
-    'inventory_sha256' => 'ff8157d06bff03231d1f4ff5e03c353af92c141b1f04b274dede40ec4c43897f',
+    'source_commit' => 'fdcc426880606a5ce89503615e23a06b265ef285',
+    'source_tree' => '990d59ef34ad4eb62d17fee1c92d8c67863c3e77',
+    'manifest_sha256' => 'd5abce54bec7cbc23c2d8e3e489e0f074fa4770ff129ab42761f85ef27004276',
+    'inventory_sha256' => '2714110a2752bd7ce03b141c43580e8397463b2121b43e0187e86693034a0eb3',
     'managed_tree_sha256' => '09835dfd03b65131d5b9c73a02142ee122788668dbfda77593b1af195c9bbcf8',
     'file_count' => 389,
     'application_manifest_schema' => 2,
