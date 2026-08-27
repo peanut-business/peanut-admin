@@ -26,6 +26,12 @@
 不同 worktree 的索引禁止复制或共享；其他项目是否需要 CodeGraph 由其自身事实源决定，不由本条
 扩展为全局要求。
 
+本项目技术文档的稳定 ID、受众、类型、生命周期、owner、上游事实源与公开投影统一登记在
+`docs/document-registry.json`；代码/事实路径到最小文档更新范围的映射统一登记在
+`docs/document-impact-map.json`。两者只登记文档关系，不替代资源、能力、Module、服务、
+Schema、API 或发布事实源。文档变更入口为 `docs/README.md`，最低静态检查为
+`./scripts/docs-governance check`。
+
 ---
 
 ## 1. 项目身份

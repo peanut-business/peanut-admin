@@ -59,7 +59,7 @@ jobs:
           matches '^platform/' && echo 'platform=true' >> "$GITHUB_OUTPUT" || echo 'platform=false' >> "$GITHUB_OUTPUT"
           matches '^pc/' && echo 'pc=true' >> "$GITHUB_OUTPUT" || echo 'pc=false' >> "$GITHUB_OUTPUT"
           matches '^uniapp/' && echo 'uniapp=true' >> "$GITHUB_OUTPUT" || echo 'uniapp=false' >> "$GITHUB_OUTPUT"
-          matches '^docs-site/' && echo 'docs_site=true' >> "$GITHUB_OUTPUT" || echo 'docs_site=false' >> "$GITHUB_OUTPUT"
+          matches '^(docs-site/|docs/|scripts/docs-governance$)' && echo 'docs_site=true' >> "$GITHUB_OUTPUT" || echo 'docs_site=false' >> "$GITHUB_OUTPUT"
           matches '^(scaffold/application-template-inventory\.json|scaffold/releases/v2\.0\.0/|scripts/create-app|scripts/build-application-template-inventory|scripts/build-scaffold-release|server/app/common/service/scaffold/ApplicationCreator\.php|server/tests/Productization/CreateApplicationTest\.php|docs/create-application\.md)$' && echo 'create_app=true' >> "$GITHUB_OUTPUT" || echo 'create_app=false' >> "$GITHUB_OUTPUT"
 
   create-app:
@@ -321,5 +321,6 @@ jobs:
         working-directory: docs-site
         run: pnpm install --frozen-lockfile
       - name: Build
-        working-directory: docs-site
-        run: pnpm run build
+        run: |
+          ./scripts/docs-governance check
+          pnpm --dir docs-site run build

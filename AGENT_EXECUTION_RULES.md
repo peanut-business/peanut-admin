@@ -143,6 +143,12 @@
 
 ## 8. 文档随交付同步
 
+- 文档事实源、生命周期和影响范围先按 `docs/README.md`、`docs/document-registry.json` 与
+  `docs/document-impact-map.json` 判定；公共 `docs-site/` 只是安全投影，不得直接导入内部
+  资源、能力账本、候选证据或凭据引用。事实先改权威上游，再做最小解释/投影或生成更新。
+- 变更任务记录 docs-impact 分类；`none` 必须说明公开行为、合同、owner、命令、配置和架构均
+  未变化。生成页只通过 `./scripts/docs-governance generate` 更新。
+
 - `AGENTS.md`、当前权威计划和架构摘要是代码事实的索引，不是事后可选报告。任何合入
   会改变阶段状态、恢复入口、公共身份、已实现边界或下一关键路径的 PR，必须在同一 PR
   更新对应文档，或在该 PR 合入后立即由唯一文档 owner 提交一个紧随的纯文档 PR；在

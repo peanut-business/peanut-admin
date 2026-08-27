@@ -1,0 +1,4851 @@
+{
+  "schema_version": 1,
+  "repository": "peanut-admin",
+  "authority": "This registry classifies documentation; it does not replace product, resource, module, service, schema, API, or release fact sources.",
+  "enums": {
+    "audience": [
+      "maintainer",
+      "architect",
+      "ai",
+      "developer",
+      "operator",
+      "user"
+    ],
+    "content_type": [
+      "index",
+      "source-map",
+      "architecture",
+      "guide",
+      "reference",
+      "plan",
+      "decision",
+      "evidence",
+      "archive",
+      "generated",
+      "public-projection"
+    ],
+    "status": [
+      "authoritative",
+      "current",
+      "planned",
+      "deprecated",
+      "archived",
+      "generated"
+    ],
+    "scope": [
+      "application",
+      "core",
+      "docs-site"
+    ]
+  },
+  "documents": [
+    {
+      "id": "pa-docs-site-404",
+      "path": "docs-site/404.md",
+      "title": "页面未找到",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs-site/index.md",
+        "docs-site/.vitepress/config.ts"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-api",
+      "path": "docs-site/api.md",
+      "title": "API 与扩展",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs/api/openapi.yaml",
+        "server/route/app.php",
+        "server/app/common/service/JsonService.php",
+        "docs/plugin-module-development.md",
+        "server/composer.lock",
+        "web/package.json"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-site-getting-started",
+      "path": "docs-site/getting-started.md",
+      "title": "Quick start",
+      "audience": [
+        "developer"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "scripts/create-app",
+        "scripts/local-stack.sh",
+        "server/.env.example"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "local-development",
+        "installation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "cd docs-site && pnpm build"
+    },
+    {
+      "id": "pa-docs-site-guide-backend",
+      "path": "docs-site/guide/backend.md",
+      "title": "后端开发",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "server/route",
+        "server/app",
+        "docs/api/openapi.yaml",
+        "scripts/check-openapi"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-concepts",
+      "path": "docs-site/guide/concepts.md",
+      "title": "核心概念",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs/architecture/clean-native-multitenancy-baseline.md",
+        "docs/architecture/core-application-capability-graph.md",
+        "resources/service-registry.json",
+        "server/app/Modules"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-data-permissions-tenancy",
+      "path": "docs-site/guide/data-permissions-tenancy.md",
+      "title": "数据、权限与多租户",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "repo://peanut-admin-core/packages/php/kernel/src/Persistence/Schema/KernelSchema.php",
+        "server/database/init.sql",
+        "server/database/migrations",
+        "server/app/Modules",
+        "docs/architecture/clean-native-multitenancy-baseline.md"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-deployment-upgrade",
+      "path": "docs-site/guide/deployment-upgrade.md",
+      "title": "部署与升级",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "release-versions.json",
+        "scripts/deploy-release",
+        "scripts/scaffold-upgrade",
+        "server/database/migrations",
+        "docs/release-engineering.md"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-development",
+      "path": "docs-site/guide/development.md",
+      "title": "开发总览",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "resources/service-registry.json",
+        "server/app/Modules",
+        "server/composer.json",
+        "web/package.json",
+        "AGENT_EXECUTION_RULES.md"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-frontend",
+      "path": "docs-site/guide/frontend.md",
+      "title": "前端开发",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "web/package.json",
+        "platform/package.json",
+        "pc/package.json",
+        "uniapp/package.json"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-index",
+      "path": "docs-site/guide/index.md",
+      "title": "文档入口",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs-site/.vitepress/config.ts",
+        "docs-site/getting-started.md",
+        "docs-site/guide/development.md",
+        "docs-site/reference.md"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-module-development",
+      "path": "docs-site/guide/module-development.md",
+      "title": "Module 开发教程",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs/plugin-module-development.md",
+        "server/app/Modules/Fixture/DeliveryRecord/module.json",
+        "plugins/fixture.delivery-record/plugin.json",
+        "repo://peanut-admin-core/packages/php/kernel/resources/schemas/module-manifest.schema.json"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-testing",
+      "path": "docs-site/guide/testing.md",
+      "title": "测试与排错",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "AGENT_EXECUTION_RULES.md",
+        "scripts/docs-governance",
+        "scripts/check-openapi",
+        "web/package.json",
+        "platform/package.json",
+        "pc/package.json",
+        "uniapp/package.json"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-site-index",
+      "path": "docs-site/index.md",
+      "title": "Developer documentation home",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs/README.md",
+        "docs/governance/authoritative-source-map.md",
+        "docs-site/.vitepress/config.ts"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "cd docs-site && pnpm build"
+    },
+    {
+      "id": "pa-docs-site-legal",
+      "path": "docs-site/legal.md",
+      "title": "许可证与第三方告知",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "LICENSE",
+        "NOTICE",
+        "THIRD_PARTY_NOTICES.md",
+        "RELEASE_SBOM.spdx.json",
+        "CHANGELOG.md",
+        "RELEASE_METADATA.json"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-reference",
+      "path": "docs-site/reference.md",
+      "title": "参考入口",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs/governance/authoritative-source-map.md",
+        "server/route",
+        "server/.env.example",
+        "server/database/init.sql",
+        "server/app/Modules",
+        "scripts/local-stack.sh"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-site-source-map",
+      "path": "docs-site/reference/source-map.generated.md",
+      "title": "Public documentation source map",
+      "audience": [
+        "developer",
+        "ai"
+      ],
+      "content_type": "generated",
+      "authority": "generated",
+      "canonical_sources": [
+        "docs/document-registry.json"
+      ],
+      "owner": "developer-experience",
+      "status": "generated",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance generate --check"
+    },
+    {
+      "id": "pa-docs-site-releases",
+      "path": "docs-site/releases.md",
+      "title": "版本与发布",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "release-versions.json",
+        "RELEASE_METADATA.json",
+        "docs/release-engineering.md",
+        "scripts/deploy-release",
+        "scripts/scaffold-upgrade"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-2026-08-05-core-packages-production-claude-review-result",
+      "path": "docs/2026-08-05-core-packages-production-claude-review-RESULT.md",
+      "title": "Claude 审核结果 — 核心包 / 发布保护 / 生产候选架构",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-2026-08-05-core-packages-production-claude-review-prompt",
+      "path": "docs/2026-08-05-core-packages-production-claude-review-prompt.md",
+      "title": "Peanut Admin 核心包、发布保护与生产候选架构 Claude 审核包",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-index",
+      "path": "docs/README.md",
+      "title": "Peanut Admin technical documentation",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "index",
+      "authority": "canonical-index",
+      "canonical_key": "documentation-root-index",
+      "canonical_sources": [
+        "docs/document-registry.json"
+      ],
+      "owner": "documentation-architecture",
+      "status": "authoritative",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-site-index"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-application-package-and-release-contract",
+      "path": "docs/architecture/application-package-and-release-contract.md",
+      "title": "Peanut Admin 应用、核心包与发布契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "release-versions.json",
+        "RELEASE_METADATA.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "scaffold/application-template-inventory.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-cap06-private-downstream-adoption-contract",
+      "path": "docs/architecture/cap06-private-downstream-adoption-contract.md",
+      "title": "CAP06 私有下游采用合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/composer.lock",
+        "web/package.json",
+        "web/pnpm-lock.yaml",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/packages/web/"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-clean-native-multitenancy-baseline",
+      "path": "docs/architecture/clean-native-multitenancy-baseline.md",
+      "title": "Peanut Admin 原生多租户干净基线",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "repo://peanut-admin-core/packages/php/kernel/src/Persistence/Schema/KernelSchema.php",
+        "server/database/init.sql",
+        "server/database/install.php",
+        "server/database/migrations/",
+        "release-versions.json"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-concepts",
+        "pa-docs-site-guide-data-permissions-tenancy"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-codegraph-worktree-policy",
+      "path": "docs/architecture/codegraph-worktree-policy.md",
+      "title": "CodeGraph 工作树策略",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/codegraph-registry.json",
+        "scripts/project-codegraph"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-concepts",
+        "pa-docs-site-guide-development"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-core-application-capability-graph",
+      "path": "docs/architecture/core-application-capability-graph.md",
+      "title": "核心包与应用能力图",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/service-registry.json",
+        "server/app/Modules/",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-core-extraction-guide",
+      "path": "docs/architecture/core_extraction_guide.md",
+      "title": "核心代码下沉操作指南",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scaffold/application-template-inventory.json",
+        "server/composer.json",
+        "web/package.json",
+        "repo://peanut-admin-core/"
+      ],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-releases",
+        "pa-docs-site-guide-deployment-upgrade"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-external-callback-tenant-routing-contract",
+      "path": "docs/architecture/external-callback-tenant-routing-contract.md",
+      "title": "外部回调可信 Tenant 路由合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/route/app.php",
+        "server/database/migrations/",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-backend",
+        "pa-docs-site-reference"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-module-architecture-refinement-appendix",
+      "path": "docs/architecture/module-architecture-refinement-appendix.md",
+      "title": "Peanut Admin 模块架构细化设计增补",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "plugins.lock",
+        "scripts/package-release.sh"
+      ],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-module-development"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-module-development-release-separation-plan",
+      "path": "docs/architecture/module-development-release-separation-plan.md",
+      "title": "Module 独立开发与能力包发布分离方案（评审稿）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-releases",
+        "pa-docs-site-guide-deployment-upgrade"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-module-execution-context-contract",
+      "path": "docs/architecture/module-execution-context-contract.md",
+      "title": "Module 执行上下文合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "resources/service-registry.json",
+        "repo://peanut-admin-core/packages/php/"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-module-development",
+        "pa-docs-site-guide-data-permissions-tenancy"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-mt02-article-tenant-ownership-contract",
+      "path": "docs/architecture/mt02-article-tenant-ownership-contract.md",
+      "title": "MT02 Article Tenant 所有权与 Tenant-first Runtime 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/Article/module.json",
+        "server/database/migrations/20260822-classify-official-article-permissions.sql",
+        "server/database/install.php"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-mt02-default-tenant-bootstrap-contract",
+      "path": "docs/architecture/mt02-default-tenant-bootstrap-contract.md",
+      "title": "MT02 默认 Tenant bootstrap 与既有管理员/RBAC 映射合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "repo://peanut-admin-core/packages/php/kernel/src/Persistence/Schema/KernelSchema.php",
+        "server/database/install.php",
+        "server/database/migrations/"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-mt03-nonsql-tenant-isolation-contract",
+      "path": "docs/architecture/mt03-nonsql-tenant-isolation-contract.md",
+      "title": "MT03 非 SQL-Article Tenant 隔离合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/database/init.sql",
+        "server/database/install.php",
+        "server/database/migrations/",
+        "resources/project-resources.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-optimized-module-architecture-plan",
+      "path": "docs/architecture/optimized-module-architecture-plan.md",
+      "title": "Peanut Admin 模块架构优化方案（完整版 v2）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb03-ownership-and-migration-gates",
+      "path": "docs/architecture/pb03-ownership-and-migration-gates.md",
+      "title": "PB03 核心/应用所有权与迁移门禁",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/service-registry.json",
+        "server/app/Modules/",
+        "server/database/migrations/",
+        "server/route/app.php"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb04-admin-rbac-crud-contract",
+      "path": "docs/architecture/pb04-admin-rbac-crud-contract.md",
+      "title": "PB04-01 管理员与 RBAC CRUD 收口合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/route/app.php",
+        "server/database/migrations/",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb04-file-media-host-contract",
+      "path": "docs/architecture/pb04-file-media-host-contract.md",
+      "title": "PB04-04 文件与素材 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/File/module.json",
+        "resources/service-registry.json",
+        "server/route/official_file.php"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb04-ops-host-contract",
+      "path": "docs/architecture/pb04-ops-host-contract.md",
+      "title": "PB04-06 日志与维护 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/route/app.php",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb04-permission-host-contract",
+      "path": "docs/architecture/pb04-permission-host-contract.md",
+      "title": "PB04-01 管理端权限 Host 收口合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/route/app.php",
+        "resources/service-registry.json",
+        "server/app/Modules/"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb04-reference-codes-host-contract",
+      "path": "docs/architecture/pb04-reference-codes-host-contract.md",
+      "title": "PB04-03 字典 / Reference Codes Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/database/init.sql",
+        "server/route/app.php",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb04-task-import-export-host-contract",
+      "path": "docs/architecture/pb04-task-import-export-host-contract.md",
+      "title": "PB04-05 任务与导入导出 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/Task/module.json",
+        "server/app/Modules/Official/ImportExport/module.json",
+        "server/route/official_import_export.php"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb04-website-settings-contract",
+      "path": "docs/architecture/pb04-website-settings-contract.md",
+      "title": "PB04-02 网站设置唯一实现合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/route/app.php",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb05-member-finance-host-contract",
+      "path": "docs/architecture/pb05-member-finance-host-contract.md",
+      "title": "PB05 会员与财务 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/Member/module.json",
+        "server/database/init.sql",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb06-content-decoration-host-contract",
+      "path": "docs/architecture/pb06-content-decoration-host-contract.md",
+      "title": "PB06 内容与装修 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/Article/module.json",
+        "server/database/init.sql",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb07-notification-host-contract",
+      "path": "docs/architecture/pb07-notification-host-contract.md",
+      "title": "PB07 通知 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/Notification/module.json",
+        "server/route/official_notification.php",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb07-oauth-channel-host-contract",
+      "path": "docs/architecture/pb07-oauth-channel-host-contract.md",
+      "title": "PB07 OAuth 与外部渠道 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/Oauth/module.json",
+        "server/route/official_oauth.php",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb07-payment-host-contract",
+      "path": "docs/architecture/pb07-payment-host-contract.md",
+      "title": "PB07 支付 Host 合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/Official/Payment/module.json",
+        "server/route/official_payment.php",
+        "server/database/migrations/20260824-payment-channel-grants.sql"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb08a-brand-scaffold-official-site-contract",
+      "path": "docs/architecture/pb08a-brand-scaffold-official-site-contract.md",
+      "title": "PB08A 脚手架品牌与官方网站合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/config/brand.json",
+        "release-versions.json",
+        "scaffold/application-template-inventory.json",
+        "scripts/sync-brand-assets.mjs"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb08b-release-candidate-acceptance-contract",
+      "path": "docs/architecture/pb08b-release-candidate-acceptance-contract.md",
+      "title": "PB08B 正式候选集成验收合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb09-formal-release-contract",
+      "path": "docs/architecture/pb09-formal-release-contract.md",
+      "title": "PB09 正式基线发布合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "release-versions.json",
+        "RELEASE_METADATA.json",
+        "scripts/package-release.sh",
+        "scripts/publish-github-release"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-pb09-license-provenance-gate",
+      "path": "docs/architecture/pb09-license-provenance-gate.md",
+      "title": "PB09 许可证与来源门禁",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/composer.lock",
+        "web/package.json",
+        "pc/package.json",
+        "uniapp/package.json",
+        "RELEASE_METADATA.json"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-scaffold-core-extraction-analysis",
+      "path": "docs/architecture/scaffold_core_extraction_analysis.md",
+      "title": "脚手架代码 vs 核心库：提取分析报告",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scaffold/application-template-inventory.json",
+        "scaffold/releases/",
+        "repo://peanut-admin-core/"
+      ],
+      "owner": "architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-service-execution-status",
+      "path": "docs/architecture/service-execution-status.md",
+      "title": "Peanut Admin 服务执行状态与业务回报",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-service-layer-registry",
+      "path": "docs/architecture/service-layer-registry.md",
+      "title": "Peanut Admin 服务层登记",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-core-packages-release-status",
+      "path": "docs/core-packages-release-status.md",
+      "title": "Peanut Admin 核心包发布状态",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/composer.lock",
+        "web/package.json",
+        "web/pnpm-lock.yaml",
+        "repo://peanut-admin-core/packages/"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-core-upgrade-compatibility",
+      "path": "docs/core-upgrade-compatibility.md",
+      "title": "核心包升级兼容矩阵",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/core-upgrade-compatibility",
+        "scripts/combined-upgrade-qualification",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-create-application",
+      "path": "docs/create-application.md",
+      "title": "创建独立应用",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/create-app",
+        "release-versions.json",
+        "scaffold/releases/"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-enhancement-blueprint",
+      "path": "docs/design/saas-enhancement-blueprint.md",
+      "title": "Peanut Admin SaaS 增强蓝图",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-readme",
+      "path": "docs/design/saas-roadmap/README.md",
+      "title": "SaaS Roadmap — 设计资料归档",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-dcs-integration-19-dcs-architecture-backflow-calibration",
+      "path": "docs/design/saas-roadmap/dcs-integration/19-dcs-architecture-backflow-calibration.md",
+      "title": "DCS 架构回流校准迁移入口",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-dcs-integration-i01-dcs-integration-mapping",
+      "path": "docs/design/saas-roadmap/dcs-integration/I01-dcs-integration-mapping.md",
+      "title": "I01 DCS And Peanut Admin Integration Mapping",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-kernel-contracts-architecture-index",
+      "path": "docs/design/saas-roadmap/kernel-contracts/architecture-index.md",
+      "title": "Architecture",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-kernel-contracts-core-concepts-index",
+      "path": "docs/design/saas-roadmap/kernel-contracts/core-concepts-index.md",
+      "title": "Core Concepts",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-kernel-contracts-niucloud-reference-new-backend-plan",
+      "path": "docs/design/saas-roadmap/kernel-contracts/niucloud-reference-new-backend-plan.md",
+      "title": "Peanut Admin 新后端实施规划",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-kernel-contracts-reference-kernel-schema",
+      "path": "docs/design/saas-roadmap/kernel-contracts/reference-kernel-schema.md",
+      "title": "Kernel Schema And States",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-kernel-contracts-reference-shared-master",
+      "path": "docs/design/saas-roadmap/kernel-contracts/reference-shared-master.md",
+      "title": "Shared Master Scope",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-kernel-contracts-reference-typed-targets",
+      "path": "docs/design/saas-roadmap/kernel-contracts/reference-typed-targets.md",
+      "title": "Typed Targets And Operation Cardinality",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-architecture-v2-3",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-architecture-v2.3.md",
+      "title": "Peanut Admin 应用生命周期架构 v2.3",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-architecture-v3-0",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-architecture-v3.0.md",
+      "title": "Peanut Admin 应用生命周期架构 v3.0",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-architecture-v3-1",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-architecture-v3.1.md",
+      "title": "Peanut Admin 应用生命周期架构 v3.1",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-architecture-v3-2",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-architecture-v3.2.md",
+      "title": "Peanut Admin 应用生命周期架构 v3.2",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-architecture-v3-3",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-architecture-v3.3.md",
+      "title": "Peanut Admin 应用生命周期架构 v3.3",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-v2-3-claude-review-prompt",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v2.3-claude-review-prompt.md",
+      "title": "Claude 深度审核任务：Peanut Admin 生命周期架构 v2.3",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-v3-0-review-prompt",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.0-review-prompt.md",
+      "title": "ChatGPT 审核任务：Peanut Admin 生命周期架构 v3.0",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-v3-0-scaffold-upgrade-claude-review-prompt",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.0-scaffold-upgrade-claude-review-prompt.md",
+      "title": "Claude 深度审核任务：Peanut Admin 脚手架中间层与长期升级机制",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-v3-1-review-prompt",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.1-review-prompt.md",
+      "title": "ChatGPT 审核任务：Peanut Admin 生命周期架构 v3.1",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-v3-1-to-v3-2-claude-revision-prompt",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.1-to-v3.2-claude-revision-prompt.md",
+      "title": "Claude 修订任务：将 Peanut Admin 生命周期架构 v3.1 收敛为可实施的 v3.2",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-v3-2-review-prompt",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.2-review-prompt.md",
+      "title": "Codex 审核任务：Peanut Admin 生命周期架构 v3.2",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-2026-07-25-lifecycle-v3-2-to-v3-3-claude-revision-prompt",
+      "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.2-to-v3.3-claude-revision-prompt.md",
+      "title": "Claude 修订任务：将生命周期架构 v3.2 收敛为可实施的 v3.3",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-24-peanut-application-lifecycle-and-upgrade-design",
+      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-24-peanut-application-lifecycle-and-upgrade-design.md",
+      "title": "Peanut Admin 应用创建、扩展与升级设计",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2-review",
+      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2-review.md",
+      "title": "Peanut Admin 应用生命周期架构 v2 外部评审",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2-1",
+      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.1.md",
+      "title": "Peanut Admin 应用生命周期架构 v2.1",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2-2",
+      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.2.md",
+      "title": "Peanut Admin 应用生命周期架构 v2.2",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2",
+      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.md",
+      "title": "Peanut Admin 应用生命周期架构 v2",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-28-peanut-admin-candidate-baseline",
+      "path": "docs/design/saas-roadmap/rebuild-design/28-peanut-admin-candidate-baseline.md",
+      "title": "Peanut Admin 候选基线",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-29-market-framework-comparison",
+      "path": "docs/design/saas-roadmap/rebuild-design/29-market-framework-comparison.md",
+      "title": "市场框架对照与取舍",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-30-function-requirement-matrix",
+      "path": "docs/design/saas-roadmap/rebuild-design/30-function-requirement-matrix.md",
+      "title": "Peanut Admin 功能需求矩阵",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-31-repository-and-package-boundaries",
+      "path": "docs/design/saas-roadmap/rebuild-design/31-repository-and-package-boundaries.md",
+      "title": "仓库、应用与代码包边界",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-32-decision-confirmation-list",
+      "path": "docs/design/saas-roadmap/rebuild-design/32-decision-confirmation-list.md",
+      "title": "Peanut Admin 决策确认清单",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-33-pre-code-design-gates",
+      "path": "docs/design/saas-roadmap/rebuild-design/33-pre-code-design-gates.md",
+      "title": "真实代码前的详细设计闸门",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-34-objective-coverage-and-open-items",
+      "path": "docs/design/saas-roadmap/rebuild-design/34-objective-coverage-and-open-items.md",
+      "title": "原始目标覆盖审计与剩余确认",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-35-plain-language-confirmation-preview",
+      "path": "docs/design/saas-roadmap/rebuild-design/35-plain-language-confirmation-preview.md",
+      "title": "Peanut Admin 自然语言确认预览",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-36-market-feature-comparison-matrix",
+      "path": "docs/design/saas-roadmap/rebuild-design/36-market-feature-comparison-matrix.md",
+      "title": "主流框架功能横向对照",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-37-g01-kernel-data-model",
+      "path": "docs/design/saas-roadmap/rebuild-design/37-g01-kernel-data-model.md",
+      "title": "G-01 Kernel 字段级数据模型",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-38-g02-auth-session-context",
+      "path": "docs/design/saas-roadmap/rebuild-design/38-g02-auth-session-context.md",
+      "title": "G-02 登录、会话和可信上下文协议",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-39-g03-authorization-data-permission",
+      "path": "docs/design/saas-roadmap/rebuild-design/39-g03-authorization-data-permission.md",
+      "title": "G-03 RBAC 与数据权限契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-40-g04-module-runtime-contract",
+      "path": "docs/design/saas-roadmap/rebuild-design/40-g04-module-runtime-contract.md",
+      "title": "G-04 Kernel、Module 与 TenantModule 契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-41-g05-api-error-contract",
+      "path": "docs/design/saas-roadmap/rebuild-design/41-g05-api-error-contract.md",
+      "title": "G-05 API 与错误契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-42-g06-admin-shell-contract",
+      "path": "docs/design/saas-roadmap/rebuild-design/42-g06-admin-shell-contract.md",
+      "title": "G-06 前端 Admin Shell 契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-43-g07-security-isolation-test-matrix",
+      "path": "docs/design/saas-roadmap/rebuild-design/43-g07-security-isolation-test-matrix.md",
+      "title": "G-07 安全与租户隔离测试矩阵",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-44-g08-legacy-assets-license-disposition",
+      "path": "docs/design/saas-roadmap/rebuild-design/44-g08-legacy-assets-license-disposition.md",
+      "title": "G-08 旧资产处置与许可证清单",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-45-g09-p0-execution-and-acceptance-plan",
+      "path": "docs/design/saas-roadmap/rebuild-design/45-g09-p0-execution-and-acceptance-plan.md",
+      "title": "G-09 P0 低上下文执行计划与验收包",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-46-g09-nine-role-adversarial-review",
+      "path": "docs/design/saas-roadmap/rebuild-design/46-g09-nine-role-adversarial-review.md",
+      "title": "G-09 九角色综合反向复审",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-47-post-review-unified-calibration",
+      "path": "docs/design/saas-roadmap/rebuild-design/47-post-review-unified-calibration.md",
+      "title": "Peanut Admin 复审后统一校准稿",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-48-post-calibration-nine-role-review",
+      "path": "docs/design/saas-roadmap/rebuild-design/48-post-calibration-nine-role-review.md",
+      "title": "Peanut Admin 校准后九角色反向复审",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-49-post-calibration-coding-approval-preview",
+      "path": "docs/design/saas-roadmap/rebuild-design/49-post-calibration-coding-approval-preview.md",
+      "title": "Peanut Admin 校准后编码放行预览",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-50-p0-a01-execution-record",
+      "path": "docs/design/saas-roadmap/rebuild-design/50-p0-a01-execution-record.md",
+      "title": "Peanut Admin P0-A01 执行记录",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-design-saas-roadmap-rebuild-design-51-second-wave-recovery-and-runtime-remediation-decision",
+      "path": "docs/design/saas-roadmap/rebuild-design/51-second-wave-recovery-and-runtime-remediation-decision.md",
+      "title": "第二波回收与 P0 Runtime 修复裁决",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-development-database-resource",
+      "path": "docs/development-database-resource.md",
+      "title": "Peanut Admin 数据库资源",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/project-resources.json",
+        "scripts/project-development-database.sh",
+        "server/database/environment-guard.php"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-development-local-core-composer",
+      "path": "docs/development/local-core-composer.md",
+      "title": "本地核心库即时开发",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/local-core-composer",
+        "server/composer.json",
+        "server/composer.lock",
+        "repo://peanut-admin-core/packages/php/composer.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-development-local-environment-probe",
+      "path": "docs/development/local-environment-probe.md",
+      "title": "本地环境探针",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/local-environment-probe",
+        "resources/project-resources.json",
+        ".env.example"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-source-map",
+      "path": "docs/governance/authoritative-source-map.md",
+      "title": "Authoritative source map",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "source-map",
+      "authority": "canonical-index",
+      "canonical_key": "documentation-authoritative-source-map",
+      "canonical_sources": [
+        "docs/document-registry.json",
+        "docs/document-impact-map.json"
+      ],
+      "owner": "documentation-architecture",
+      "status": "authoritative",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "resources",
+        "capabilities",
+        "modules",
+        "services",
+        "schema",
+        "api",
+        "release"
+      ],
+      "site_projections": [
+        "pa-site-source-map"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-change-scenarios",
+      "path": "docs/governance/change-scenarios.md",
+      "title": "Documentation change scenarios",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "generated-contract",
+      "canonical_sources": [
+        "docs/document-impact-map.json"
+      ],
+      "owner": "documentation-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "acceptance"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance scenarios"
+    },
+    {
+      "id": "pa-docs-impact-policy",
+      "path": "docs/governance/docs-impact.md",
+      "title": "Documentation impact policy",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai",
+        "developer"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/document-impact-map.json"
+      ],
+      "owner": "documentation-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "change-management"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance scenarios"
+    },
+    {
+      "id": "pa-docs-lifecycle",
+      "path": "docs/governance/document-lifecycle.md",
+      "title": "Document lifecycle and authoring rules",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/document-registry.json"
+      ],
+      "owner": "documentation-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-pr-checklist",
+      "path": "docs/governance/templates/docs-impact-checklist.md",
+      "title": "Documentation impact checklist",
+      "audience": [
+        "maintainer",
+        "developer",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "template",
+      "canonical_sources": [
+        "docs/governance/docs-impact.md"
+      ],
+      "owner": "documentation-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "pull-request"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "manual: include in task or PR description"
+    },
+    {
+      "id": "pa-docs-template",
+      "path": "docs/governance/templates/document-template.md",
+      "title": "Technical document template",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "template",
+      "canonical_sources": [
+        "docs/governance/document-lifecycle.md"
+      ],
+      "owner": "documentation-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "manual: copy only for a new governed document"
+    },
+    {
+      "id": "pa-docs-likeadmin-admin-contract",
+      "path": "docs/likeadmin-admin-contract.md",
+      "title": "LikeAdmin 1.9.4 管理员业务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-article-category-contract",
+      "path": "docs/likeadmin-article-category-contract.md",
+      "title": "LikeAdmin 1.9.4 文章分类契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-article-contract",
+      "path": "docs/likeadmin-article-contract.md",
+      "title": "C02 文章业务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-channel-decoration-contract",
+      "path": "docs/likeadmin-channel-decoration-contract.md",
+      "title": "LikeAdmin 渠道与装修业务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-foundation-contract-matrix",
+      "path": "docs/likeadmin-foundation-contract-matrix.md",
+      "title": "LikeAdmin 基础权限域契约矩阵",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-jobs-contract",
+      "path": "docs/likeadmin-jobs-contract.md",
+      "title": "LikeAdmin 1.9.4 岗位管理复刻契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-material-contract",
+      "path": "docs/likeadmin-material-contract.md",
+      "title": "M02 素材管理业务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-module-contract-index",
+      "path": "docs/likeadmin-module-contract-index.md",
+      "title": "LikeAdmin 1.9.4 模块契约索引",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-notice-contract",
+      "path": "docs/likeadmin-notice-contract.md",
+      "title": "M01 通知业务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-parity-plan",
+      "path": "docs/likeadmin-parity-plan.md",
+      "title": "LikeAdmin 1.9.4 业务复刻实施计划",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-parity-report",
+      "path": "docs/likeadmin-parity-report.md",
+      "title": "LikeAdmin 1.9.4 业务复刻差异报告",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-recharge-refund-contract",
+      "path": "docs/likeadmin-recharge-refund-contract.md",
+      "title": "LikeAdmin 1.9.4 充值与退款契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-system-settings-contract",
+      "path": "docs/likeadmin-system-settings-contract.md",
+      "title": "S01 系统设置、充值支付与微信登录业务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-system-tools-contract",
+      "path": "docs/likeadmin-system-tools-contract.md",
+      "title": "LikeAdmin 系统设置与开发工具业务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-user-finance-contract",
+      "path": "docs/likeadmin-user-finance-contract.md",
+      "title": "LikeAdmin 1.9.4 用户与财务契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-likeadmin-workbench-contract",
+      "path": "docs/likeadmin-workbench-contract.md",
+      "title": "LikeAdmin 1.9.4 工作台契约",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "historical-reference",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-luna-handoff-20260802",
+      "path": "docs/luna-handoff-20260802.md",
+      "title": "Luna 执行交接：CH03、DE01、DE02、S01、T01",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-maintenance-stale-facts-audit",
+      "path": "docs/maintenance/stale-facts-audit.md",
+      "title": "Peanut Admin 过期事实收敛登记",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-module-architecture-completion-report",
+      "path": "docs/module-architecture-completion-report.md",
+      "title": "模块架构改造完成报告",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-module-development-guide",
+      "path": "docs/module-development-guide.md",
+      "title": "模块开发指南",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "plugins.lock",
+        "server/route/app.php"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-operations-business-flow-audit-2026-08-21",
+      "path": "docs/operations/business-flow-audit-2026-08-21.md",
+      "title": "业务全流程体验审计（2026-08-21）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-operations-demo-access",
+      "path": "docs/operations/demo-access.md",
+      "title": "Demo access handoff",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/project-resources.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-operations-local-demo-access",
+      "path": "docs/operations/local-demo-access.md",
+      "title": "Local demo access",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/project-resources.json",
+        "scripts/local-multi-tenant-demo",
+        "scripts/project-resource-lease"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-operations-release-and-application-lifecycle",
+      "path": "docs/operations/release-and-application-lifecycle.md",
+      "title": "发布、脚手架与独立应用生命周期",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/publish-github-release",
+        "scripts/create-app",
+        "release-versions.json",
+        "RELEASE_METADATA.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-releases",
+        "pa-docs-site-guide-deployment-upgrade"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-operations-release-candidate-control",
+      "path": "docs/operations/release-candidate-control.md",
+      "title": "发布候选控制：给人和智能体看的简单说明",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-p0e-runtime-qualification",
+      "path": "docs/p0e-runtime-qualification.md",
+      "title": "P0-E Runtime 资格 Gate",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-packaging-validation-report",
+      "path": "docs/packaging-validation-report.md",
+      "title": "Module 打包验收报告",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-peanut-admin-development-guide",
+      "path": "docs/peanut-admin-development-guide.md",
+      "title": "Peanut Admin 3.0 开发指南",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/database/init.sql",
+        "server/database/install.php",
+        "server/database/migrations/",
+        "server/route/app.php",
+        "resources/project-resources.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-backend",
+        "pa-docs-site-reference"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-peanut-admin-release-deployment",
+      "path": "docs/peanut-admin-release-deployment.md",
+      "title": "Peanut Admin 发布与部署",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/deploy-release",
+        "scripts/check-release-consistency",
+        "scripts/publish-github-release",
+        "RELEASE_METADATA.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-peanut-admin-user-manual",
+      "path": "docs/peanut-admin-user-manual.md",
+      "title": "Peanut Admin 管理员使用手册",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/route/app.php",
+        "web/src/",
+        "resources/service-registry.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-multi-tenancy-platform-management-plan",
+      "path": "docs/plans/multi-tenancy-platform-management-plan.md",
+      "title": "Peanut Admin 多租户与平台管理计划",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-product-release-operations-saas-roadmap",
+      "path": "docs/plans/product-release-operations-saas-roadmap.md",
+      "title": "Peanut Admin 产品发布、运营平台与 SaaS 路线",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-saas-enhancement-development-plan",
+      "path": "docs/plans/saas-enhancement-development-plan.md",
+      "title": "Peanut Admin 完整 SaaS 增强开发计划（暂缓）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plugin-module-development",
+      "path": "docs/plugin-module-development.md",
+      "title": "用 Module 开发独立业务",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "plugins.lock",
+        "server/route/app.php",
+        "web/src/modules/"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-module-development"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-readme",
+      "path": "docs/product-status/README.md",
+      "title": "产品能力与交付状态",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "index",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-acceptance-gates",
+      "path": "docs/product-status/acceptance-gates.md",
+      "title": "能力状态与验收 Gate",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-current-task-list",
+      "path": "docs/product-status/current-task-list.md",
+      "title": "当前任务清单",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-deferred-scope",
+      "path": "docs/product-status/deferred-scope.md",
+      "title": "暂缓与范围外管理",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-evidence-guide",
+      "path": "docs/product-status/evidence-guide.md",
+      "title": "能力证据规则",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-releases-readme",
+      "path": "docs/product-status/releases/README.md",
+      "title": "发布能力快照",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "index",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "release-qualification",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-productization-baseline-plan",
+      "path": "docs/productization-baseline-plan.md",
+      "title": "Peanut Admin 产品化正式基线计划",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-catalog",
+      "path": "docs/reference/document-catalog.generated.md",
+      "title": "Generated document catalog",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "generated",
+      "authority": "generated",
+      "canonical_sources": [
+        "docs/document-registry.json"
+      ],
+      "owner": "documentation-architecture",
+      "status": "generated",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance generate --check"
+    },
+    {
+      "id": "pa-docs-release-engineering",
+      "path": "docs/release-engineering.md",
+      "title": "发布工程",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/package-release.sh",
+        "scripts/publish-github-release",
+        "release-versions.json",
+        "RELEASE_METADATA.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-releases",
+        "pa-docs-site-guide-deployment-upgrade"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-scaffold-upgrade",
+      "path": "docs/scaffold-upgrade.md",
+      "title": "脚手架升级执行器",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "scripts/scaffold-upgrade",
+        "scaffold/releases/",
+        "scaffold/application-template-inventory.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-deployment-upgrade"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-testing-local-functional-test-register",
+      "path": "docs/testing/local-functional-test-register.md",
+      "title": "Peanut Admin 本地功能测试登记",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "AGENTS.md"
+      ],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-architecture-identity-and-tenancy",
+      "path": "docs-site/architecture/identity-and-tenancy.md",
+      "title": "身份与租户边界",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "server/route/app.php",
+        "server/database/migrations/",
+        "resources/service-registry.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-architecture-module-execution-context",
+      "path": "docs-site/architecture/module-execution-context.md",
+      "title": "Module 执行上下文合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "resources/service-registry.json",
+        "repo://peanut-admin-core/packages/php/"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-architecture-official-module-qualification",
+      "path": "docs-site/architecture/official-module-qualification.md",
+      "title": "官方模块多租户资格",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "plugins.lock",
+        "server/route/app.php"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-capabilities",
+      "path": "docs-site/capabilities.md",
+      "title": "能力边界",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "resources/service-registry.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-demo-access",
+      "path": "docs-site/demo-access.md",
+      "title": "演示与本地访问",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "resources/project-resources.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-deployment",
+      "path": "docs-site/deployment.md",
+      "title": "部署入口已迁移",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "scripts/deploy-release",
+        "server/database/install.php",
+        "release-versions.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-reading-guide",
+      "path": "docs-site/guide/reading-guide.md",
+      "title": "文档阅读与命令参考",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "scripts/local-stack.sh",
+        "server/database/install.php",
+        "resources/project-resources.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-release-and-application-lifecycle",
+      "path": "docs-site/guide/release-and-application-lifecycle.md",
+      "title": "发布与独立应用生命周期",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "scripts/publish-github-release",
+        "scripts/create-app",
+        "release-versions.json",
+        "RELEASE_METADATA.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-scaffold-upgrade",
+      "path": "docs-site/guide/scaffold-upgrade.md",
+      "title": "派生应用升级",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "scripts/scaffold-upgrade",
+        "scaffold/releases/"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-guide-user-manual",
+      "path": "docs-site/guide/user-manual.md",
+      "title": "管理员使用手册",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "server/route/app.php",
+        "web/src/"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-platform",
+      "path": "docs-site/platform.md",
+      "title": "实例平台管理",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "server/route/app.php",
+        "server/app/Modules/",
+        "resources/service-registry.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-product-status",
+      "path": "docs-site/product-status.md",
+      "title": "产品状态边界",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-troubleshooting",
+      "path": "docs-site/troubleshooting.md",
+      "title": "排错入口已迁移",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "archive",
+      "authority": "scaffold-source",
+      "canonical_sources": [
+        "resources/project-resources.json",
+        "scripts/local-stack.sh"
+      ],
+      "owner": "application-maintainers",
+      "status": "archived",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    }
+  ],
+  "collections": [],
+  "external_repositories": {
+    "peanut-admin-core": "repo://peanut-admin-core/"
+  }
+}

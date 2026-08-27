@@ -53,19 +53,19 @@
 | --- | --- | --- | --- | --- |
 | 现有文档审计和双层阅读结构 | 只部分回答 | **文档结构已覆盖** | 当前文档入口与语义检查已覆盖；2.0.0 源码已正式发布 | `docs-site/guide/index.md`；managed 指南同步纳入 inventory |
 | Peanut Admin 架构、真实目录与所有权 | 只部分回答 | **文档结构已覆盖** | 当前目录已核验 | `docs-site/guide/development.md` |
-| Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 安装、治理、菜单/RBAC、HTTP/公开入口和现有 Core 任务/回调 Guard 已支持；当前随仓 Module 没有业务 worker、业务回调或专属文件入口；双 Module 示例仍待新增 | `docs-site/guide/module-development.md`、`docs-site/architecture/official-module-qualification.md` |
+| Module、Plugin、Host 和最小纵向切片 | 只部分回答 | **文档结构已覆盖** | 安装、治理、菜单/RBAC、HTTP/公开入口和现有 Core 任务/回调 Guard 已支持；当前随仓 Module 没有业务 worker、业务回调或专属文件入口；双 Module 示例仍待新增 | `docs-site/guide/module-development.md` |
 | 前后端、路由、菜单、权限和测试路径 | 部分且有冲突 | **文档结构已覆盖** | 原生身份、官方能力 Tenant 资格和真实浏览器验证已通过 | `docs-site/guide/development.md`、`docs-site/api.md` |
 | DCS 与 Peanut Admin 的边界 | 只部分回答 | **Peanut 采用边界已覆盖** | DCS Runtime 不在本仓 | `docs-site/guide/development.md`；详细领域文档归 DCS |
 | DCS owner 与商品、采购、库存数据流 | 只部分回答 | **推荐合同已覆盖** | 本仓不实现 | `docs-site/guide/module-development.md`；DCS 冻结表/API/事件/状态机 |
 | 平台、Tenant 管理成员与业务客户身份 | 尚未回答 | **文档结构已覆盖** | 原生管理身份与独立 `pa_member` 已通过开发候选资格 | `docs-site/guide/development.md`；客户/供应商关联仍待产品决策 |
-| 三类租户映射 | 只部分回答 | **文档结构已覆盖** | legacy 映射已退出；同应用关联和跨应用联邦未实现 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
+| 三类租户映射 | 只部分回答 | **文档结构已覆盖** | legacy 映射已退出；同应用关联和跨应用联邦未实现 | `docs-site/guide/development.md`、`docs-site/guide/deployment-upgrade.md` |
 | 门店与供应商同应用协作和越权边界 | 只部分回答 | **推荐模型已覆盖** | DCS participant policy 未实现 | `docs-site/guide/development.md` |
-| 一部署、一实例、多 Tenant/客户端/Module | 只部分回答 | **文档结构已覆盖** | 当前部署合同支持 | `docs-site/guide/development.md`、`docs-site/deployment.md` |
-| Platform 是否独立、是否存在“当前租户” | 尚未回答 | **已完整回答** | 独立 `/platform/` 前端、会话/RBAC/审计；只显式选择治理目标 Tenant | `docs-site/platform.md` |
-| 域名解析与租户切换是否冲突 | 尚未回答 | **已完整回答** | Host 绑定是持续边界；绑定入口禁切换，未绑定公共入口按 TenantMember 切换 | `docs-site/architecture/identity-and-tenancy.md`、`docs-site/platform.md` |
+| 一部署、一实例、多 Tenant/客户端/Module | 只部分回答 | **文档结构已覆盖** | 当前部署合同支持 | `docs-site/guide/development.md`、`docs-site/guide/deployment-upgrade.md` |
+| Platform 是否独立、是否存在“当前租户” | 尚未回答 | **已完整回答** | 独立 `/platform/` 前端、会话/RBAC/审计；只显式选择治理目标 Tenant | `docs-site/guide/concepts.md` |
+| 域名解析与租户切换是否冲突 | 尚未回答 | **已完整回答** | Host 绑定是持续边界；绑定入口禁切换，未绑定公共入口按 TenantMember 切换 | `docs-site/guide/data-permissions-tenancy.md`、`docs-site/guide/concepts.md` |
 | `.env` 与 `PHP_*` 配置关系 | 尚未回答 | **已完整回答** | 根 `.env` 仅编排；`server/.env` 是后台唯一配置源；`PHP_*` alias 已禁止 | `docs-site/getting-started.md`、`docs-site/guide/development.md` |
-| 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 与 create-app 2.0 release 已验证重封 | `docs-site/deployment.md` |
-| 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 开发候选实现与推荐层级已分栏；外部渠道生产验证另列 | `docs-site/capabilities.md` |
+| 兼容历史与干净脚手架 | 只部分回答 | **当前边界已覆盖** | fresh Schema 与 create-app 2.0 release 已验证重封 | `docs-site/guide/deployment-upgrade.md` |
+| 开箱即用能力逐项建议 | 尚未回答 | **逐项目录已覆盖** | 开发候选实现与推荐层级已分栏；外部渠道生产验证另列 | `docs-site/guide/concepts.md` |
 | 文档与 Runtime/Schema 清理关系 | 只部分回答 | **已明确** | 本轮已由独立提交实施后再同步文档 | 本审计与 `docs/architecture/clean-native-multitenancy-baseline.md` |
 
 ### 现有文档判定
@@ -75,8 +75,8 @@
 | `README.md`、`docs-site/getting-started.md` | 1.x 快速入口已过时 | 改为 2.0 空库安装和候选状态 |
 | `docs-site/guide/development.md` | 信息存在但难读，身份与兼容描述冲突 | 增加五分钟层、真实目录、三类身份/映射和部署边界 |
 | `docs/plugin-module-development.md` | 信息存在但难读且站点不可达 | 扩为纵向教程，并通过 `docs-site/guide/module-development.md` 进入导航 |
-| `docs-site/capabilities.md` | 完全缺失逐项产品建议 | 新增核心、官方可选、DCS、示例四层目录和维护成本 |
-| `docs-site/deployment.md` | 1.x upgrade 与当前安装混写 | 改为 2.0 fresh-only；1.x 只作历史事实 |
+| `docs-site/guide/concepts.md` | 完全缺失逐项产品建议 | 新增核心、官方可选、DCS、示例四层目录和维护成本 |
+| `docs-site/guide/deployment-upgrade.md` | 1.x upgrade 与当前安装混写 | 改为 2.0 fresh-only；1.x 只作历史事实 |
 | `docs/peanut-admin-development-guide.md` | 生成应用携带的旧身份/升级说明 | 收敛为 2.0 当前入口，避免传播旧 Runtime |
 | `docs/peanut-admin-release-deployment.md` | 生成应用携带的 1.x 生产升级手册 | 收敛为 fresh deploy；历史生产记录不作命令入口 |
 | `docs/architecture/*.md`、`docs/design/saas-roadmap/` | 仅内部合同或路线输入 | 不作为新手入口；固定历史内容不冒充当前 Runtime |
