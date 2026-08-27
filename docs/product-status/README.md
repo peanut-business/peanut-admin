@@ -34,7 +34,7 @@ php scripts/check-product-capability-ledger
 <!-- CAPABILITY_STATUS_GENERATED_START -->
 > 总体状态：**进行中**。v3.0.5 已完成固定 main 候选的 L2 P0-E 7/7、annotated tag、GitHub Release，并更新登记的 Standalone 与 Multi-tenant Demo；公开演示账号已恢复为 peanut1234，Platform 登录不再出现 null state。后续 T15/T16 仍按范围暂缓。
 >
-> 事实基线：`main@df6e018ffecabba37b0bbdf44b79067da7341552`，复核日期：`2026-08-22`。
+> 事实基线：`dev@869fea3fc9966d499e7712dd4967cd42e18ef823`，复核日期：`2026-08-28`。
 
 ### 已验证可用
 
@@ -71,6 +71,7 @@ php scripts/check-product-capability-ledger
 | `PA-BACKUP-001` | 受信配对备份、恢复验证与应用备份中心 | 已实现，待验收 | PC30—PC32 已完成：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 backup/restore worker、Application evidence 和 Platform 备份中心已形成。最终 dev@af7b1c9 的真实 Gate 将已验证配对制品恢复到登记新目标，得到 97 表、6 migration、Account/Tenant/TenantMember 各 1、零发布端口、受保护 Runtime 不变和成功零残留；正式 released-scaffold 组合资格归 PC70。 |
 | `PA-UPGRADE-002` | 应用升级就绪、执行与恢复停止点 | 已实现，待验收 | PC41/PC42 已由 PR #307/#310 合入 dev：Platform 先以固定 source/target、Release、migration、Module、scaffold、备份/恢复 evidence、维护窗口和 recovery pointer 判定就绪，再由持久化任务状态机与独立登记 worker 串联 preflight、配对备份、维护、唯一 deploy-release、迁移、smoke 和恢复指引。HTTP 不接受路径、URL、命令、Release、镜像或凭据；正式 released-scaffold 组合资格归 PC70。 |
 | `PA-PROVIDER-001` | 外部 Provider 生产资格可见性 | 已实现，待验收 | PC60 已由 PR #313 合入 dev：通知、支付、OAuth 和 Storage contributor 以 Platform-only 只读安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness；通用面板不外呼、不发送消息、不扣款，真实平台资格仍由各 Provider owner 按授权目标独立执行。正式 released-scaffold 组合资格归 PC70。 |
+| `PA-CONFIG-001` | Tenant 配置包与环境转移 | 已实现，待验收 | PC51 已由 PR #315 合入 dev：ImportExport Module 以 Tenant-only schema 1 包导出逻辑配置，使用 canonical checksum、dry-run、abort/overwrite/skip 冲突策略、秘密引用重绑定、原子写入与同事务审计；包、响应和审计均不包含密码、token、Cookie、callback key 或密钥。正式 released-scaffold 组合资格归 PC70。 |
 | `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已实现，待验收 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架，固定 A/B Tenant、伪造 payload/resource ID、撤权、TenantModule 停用及 migration 失败/禁止无修复重放场景，未引入第二 Plugin Runtime。正式 released-scaffold 组合资格归 PC70。 |
 
 ### 暂缓或范围外

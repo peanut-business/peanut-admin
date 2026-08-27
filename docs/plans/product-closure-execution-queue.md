@@ -13,7 +13,7 @@ Upstream: 产品能力账本、Module manifest、服务登记、当前应用/Cor
 
 > - 队列执行状态：**执行中**
 > - 建立日期：2026-08-27
-> - Application 当前基线：`4dbda351d590c35f4c2ffe4735057db54c240956`
+> - Application 当前基线：`869fea3fc9966d499e7712dd4967cd42e18ef823`
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
 > - 进度入口：[`../product-status/product-closure-observability.md`](../product-status/product-closure-observability.md)
 > - 产品能力唯一事实源：[`../product-status/capability-ledger.json`](../product-status/capability-ledger.json)
@@ -64,10 +64,10 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 | 12 | `PC41` | 升级就绪与 Module 兼容检查 | 已完成 | PC02、PC30、PC40 | 提前发现版本、迁移和备份风险 | Core + Application |
 | 13 | `PC42` | 应用升级中心纵向闭环 | 已完成 | PC32、PC41 | 串联备份、维护、迁移和恢复指针 | Application |
 | 14 | `PC50` | Module 制品信任与兼容矩阵 | 已完成 | PC02 | 建立官方目录/市场的安全前提 | Core + Module Host |
-| 15 | `PC51` | 配置导入、导出与环境转移 | 进行中 | PC20 | 将配置迁移与数据备份分离 | Application Module |
+| 15 | `PC51` | 配置导入、导出与环境转移 | 已完成 | PC20 | 将配置迁移与数据备份分离 | Application Module |
 | 16 | `PC52` | Module 开发与 Tenant 测试模板 | 已完成 | PC02 | 降低二次开发和越权风险 | Scaffold |
 | 17 | `PC60` | 外部 Provider 生产资格面板 | 已完成 | PC20 | 区分已配置、已连通和生产可用 | Official Modules |
-| 18 | `PC70` | 固定候选组合资格与公开文档 | 未开始 | 关键路径任务 | 形成可发布、可恢复、可理解的闭环 | Integration owner |
+| 18 | `PC70` | 固定候选组合资格与公开文档 | 进行中 | 关键路径任务 | 形成可发布、可恢复、可理解的闭环 | Integration owner |
 
 ## 4. 任务合同
 
@@ -122,7 +122,8 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 - PC41：PR #307 已合入 `dev@f1e6393a3f1c88fe620cc04e8147fb9c66199a6c`，固定 Runtime 为 `f77f48cbc1feb36c35597f263ff21fd17185809e`（tree `716a39d47ac9ead0efa44bf82e94a9024c0abca2`）；Platform 只读升级就绪固定 source/target、Release 资格、migration、目标 Module/source/kernel、zero-write scaffold preview、配对备份/恢复 evidence、维护窗口与 recovery pointer。目标只能来自 `.peanut/upgrade-target/release/`，HTTP 不能选择路径、URL、命令、Release、镜像或凭据；跨大版本稳定要求 fresh/rebuild。PHP lint、目标/current Module 差异和 target kernel fixture、preview/target fail-closed、Platform 构建、OpenAPI、文档与 inventory 检查通过；PC42 现在可以消费固定 descriptor 和恢复指针。
 - PC42：PR #310 已合入 `dev@4294fca1b1afcc6e8f1f0c0b76e4e628721d4f7b`，固定 Runtime 为 `991d48712f75435e0016baca85d376effd575a91`（tree `0e1882a142e7a74ec9f32e924a78c1c7f92eb704`）；应用升级中心以持久化状态机串联固定 preflight、配对备份、维护窗口、唯一 `deploy-release`、迁移、smoke 与 recovery pointer，并由独立登记 worker 执行。PHP lint、shell syntax、状态机停止点、target fixture、Platform build、OpenAPI、inventory、资源登记和文档检查通过；未连接数据库、生产或浏览器，正式 released-scaffold 组合资格归 PC70。
 - PC60：PR #313 已合入 `dev@4dbda351d590c35f4c2ffe4735057db54c240956`，固定 Runtime 为 `9aa20dcb395e563aa73a1cbfd248880696e55395`（tree `09987594fe7aa44d38b4cb00a660935c9fea489b`）；通知、支付、OAuth 和 Storage contributor 以只读、秘密裁剪的安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness。Fresh Schema、fake Provider 合同、PHP lint、OpenAPI、文档治理、inventory、Platform build 和差异检查通过；未执行真实外呼、消息发送或资金动作，逐 Provider 真实资格仍由其 owner 独立授权。
-- PC51 正在独立功能分支形成候选；开放 PR 或固定提交形成前不得写成完成。当前唯一关键路径是 PC51；其合入并同步状态后进入 PC70。
+- PC51：PR #315 已合入 `dev@869fea3fc9966d499e7712dd4967cd42e18ef823`，固定 Runtime 为 `eb6241d002a15f42614086a3d294f29a75e79530`（tree `033e59a0dcf7fcad158b90ed1a7c65ea7c81ee7f`）；Tenant-only 配置包、checksum、dry-run、冲突策略、秘密重绑定、事务与审计、独立权限及 Admin UI 已形成。聚焦合同、PHP、Plugin lock、Tenant 官方能力、OpenAPI、Web lint/type 和差异检查通过；旧 `v3.0.8` scaffold managed-set 不能代表新页面，正式 create-app/P0-E 组合资格归 PC70。
+- PC70 已开始：公开能力目录与官方来源参考矩阵进入收口，随后冻结 `v3.0.9` scaffold 并只对同一固定候选运行一次 P0-E 七组资格。
 - 当前没有数据库、服务、容器、浏览器或生产资源 owner。
 
 ## 7. 验证

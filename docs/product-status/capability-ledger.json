@@ -3,9 +3,9 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "main",
-    "commit": "df6e018ffecabba37b0bbdf44b79067da7341552",
-    "reviewed_at": "2026-08-22"
+    "branch": "dev",
+    "commit": "869fea3fc9966d499e7712dd4967cd42e18ef823",
+    "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
@@ -486,6 +486,52 @@
         "server/database/migrations/20260828-provider-qualification-evidence.sql",
         "platform/src/components/ProviderQualificationCard.vue",
         "docs/architecture/product-closure-provider-qualification.md"
+      ]
+    },
+    {
+      "id": "PA-CONFIG-001",
+      "name": "Tenant 配置包与环境转移",
+      "area": "operations",
+      "status": "implemented",
+      "summary": "PC51 已由 PR #315 合入 dev：ImportExport Module 以 Tenant-only schema 1 包导出逻辑配置，使用 canonical checksum、dry-run、abort/overwrite/skip 冲突策略、秘密引用重绑定、原子写入与同事务审计；包、响应和审计均不包含密码、token、Cookie、callback key 或密钥。正式 released-scaffold 组合资格归 PC70。",
+      "acceptance": [
+        "导出包固定 schema、protocol、Tenant scope、logical-reference-only asset 策略和 canonical SHA-256，且禁止 tenant_id 与明文秘密",
+        "dry-run 在零写入前验证 checksum、作用域、目标状态、冲突策略和全部 configured secret 引用",
+        "apply 只使用受信 Tenant Admin Context 和独立 RBAC 权限，所有 adapter 写入与成功审计处于同一 PDO 事务",
+        "缺失或停用的 Tenant Module 在 dry-run 阶段稳定阻塞，外部渠道用完整持久状态摘要进行乐观并发检查",
+        "Admin UI 在成功应用后清空秘密输入且禁止重复应用；配置转移与数据库/文件备份保持独立"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "eb6241d002a15f42614086a3d294f29a75e79530"
+        },
+        {
+          "kind": "git",
+          "ref": "869fea3fc9966d499e7712dd4967cd42e18ef823"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/315"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/api/openapi.yaml"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002",
+        "PA-PLUGIN-001",
+        "PA-TENANCY-001"
+      ],
+      "paths": [
+        "server/app/Modules/Official/ImportExport/Application/ConfigurationTransferApplicationService.php",
+        "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationPackageCodec.php",
+        "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
+        "server/app/Modules/Official/ImportExport/Http/Controller/ConfigurationTransferController.php",
+        "server/app/Modules/Official/ImportExport/Resources/configuration-package.schema.json",
+        "web/src/modules/official-import-export/views/index.vue",
+        "docs/api/openapi.yaml"
       ]
     },
     {
