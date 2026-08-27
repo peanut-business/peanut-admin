@@ -210,6 +210,44 @@
       ]
     },
     {
+      "id": "PA-OPS-002",
+      "name": "单实例只读运行与维护控制台",
+      "area": "operations",
+      "status": "implemented",
+      "summary": "PC20 已由 PR #283 合入 dev：Platform 控制面采用 Core Ops PHP/Web 公共合同，展示数据库、应用迁移、Module 目录、缓存、Runtime 存储、版本身份和维护窗口；关键检查、降级语义与 fail-closed 边界已固定。正式数据库、浏览器和 released-scaffold 组合资格归 PC70。",
+      "acceptance": [
+        "只有具备 platform.ops.read 权限的 Platform Operator 可以访问实例级状态",
+        "数据库、应用迁移、Module 目录和 Runtime 存储关键检查失败时整体状态为 unhealthy",
+        "非权威缓存读取失败时整体状态为 degraded，状态证据无法构造时接口 fail closed",
+        "版本提交、tree、Release 身份、构建时间和应用 migration 摘要使用固定 Core schema",
+        "备份、恢复、维护写入和日志在各自后续任务完成前保持不可用"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "187bf95f65a98c5d373c96e4e341a96d65c99b33"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/283"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OWNERSHIP-001"
+      ],
+      "paths": [
+        "server/app/platform/controller/PlatformOpsController.php",
+        "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php",
+        "server/app/platform/service/ops/ReadOnlyMaintenanceWindowStore.php",
+        "platform/src/App.vue",
+        "platform/src/api/platform.ts"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
