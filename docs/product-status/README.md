@@ -68,7 +68,7 @@ php scripts/check-product-capability-ledger
 | `PA-READINESS-001` | 首次运行生产准备清单 | 已实现，待验收 | PC12 已由 PR #281 合入 dev：Tenant 安全的只读 Host 与 Admin 页面统一展示品牌、通知、存储、备份、Worker、当前域名/TLS 和账户安全的状态、影响、入口与生产阻塞性；状态严格区分本地配置、当前请求观察、未验证和尚未实施。完整 released-scaffold 组合资格仍归 PC70。 |
 | `PA-OPS-002` | 单实例只读运行与维护控制台 | 已实现，待验收 | PC20 已由 PR #283 合入 dev：Platform 控制面采用 Core Ops PHP/Web 公共合同，展示数据库、应用迁移、Module 目录、缓存、Runtime 存储、版本身份和维护窗口；关键检查、降级语义与 fail-closed 边界已固定。正式数据库、浏览器和 released-scaffold 组合资格归 PC70。 |
 | `PA-DIAGNOSTICS-001` | 可下载脱敏诊断包 | 已实现，待验收 | PC21 已由 PR #285 合入 dev：Platform Operator 可下载固定 schema 的有界 JSON 诊断制品；运行状态、非秘密配置、Module、失败任务和 Platform 审计事件均为聚合或安全投影，服务端与浏览器共同验证 SHA-256。正式数据库、浏览器和 released-scaffold 组合资格归 PC70。 |
-| `PA-BACKUP-001` | 受信配对备份与应用备份中心 | 已实现，待验收 | PC30/PC31 已由 PR #287/#289 合入 dev：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 worker、Application evidence 和 Platform 备份中心已形成；权限、幂等、并发拒绝、60 秒心跳、revision fencing、失败码、SHA-256 与脱敏边界通过聚焦验证。真实配对制品、隔离恢复和正式组合资格分别归 PC32、PC70。 |
+| `PA-BACKUP-001` | 受信配对备份、恢复验证与应用备份中心 | 已实现，待验收 | PC30—PC32 已完成：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 backup/restore worker、Application evidence 和 Platform 备份中心已形成。最终 dev@af7b1c9 的真实 Gate 将已验证配对制品恢复到登记新目标，得到 97 表、6 migration、Account/Tenant/TenantMember 各 1、零发布端口、受保护 Runtime 不变和成功零残留；正式 released-scaffold 组合资格归 PC70。 |
 
 ### 暂缓或范围外
 
