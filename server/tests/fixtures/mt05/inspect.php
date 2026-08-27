@@ -77,10 +77,18 @@ try {
     );
 
     expectInvariant(tableExists($pdo, 'pa_schema_migration'), 'MT05_APPLICATION_MIGRATION_LEDGER_MISSING');
-    $applicationMigrationCount = (int)$pdo->query(
-        "SELECT COUNT(*) FROM pa_schema_migration WHERE status = 'applied'"
-    )->fetchColumn();
-    expectInvariant($applicationMigrationCount === 0, 'MT05_APPLICATION_MIGRATION_LEDGER_NON_EMPTY');
+    $applicationMigrationIds = $pdo->query(
+        "SELECT migration_id FROM pa_schema_migration WHERE status = 'applied' ORDER BY migration_id"
+    )->fetchAll(PDO::FETCH_COLUMN);
+    expectInvariant(
+        $applicationMigrationIds === [
+            '20260827-create-ops-backup-evidence',
+            '20260827-create-ops-restore-evidence',
+            '20260827-first-run-readiness',
+        ],
+        'MT05_APPLICATION_MIGRATION_LEDGER_INVALID'
+    );
+    $applicationMigrationCount = count($applicationMigrationIds);
 
     foreach ([
         'pa_account',
