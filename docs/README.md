@@ -13,6 +13,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |
 | Follow the product-closure work | [Execution queue](plans/product-closure-execution-queue.md), [compatibility baseline](architecture/product-closure-core-application-compatibility.md) and [observability panel](product-status/product-closure-observability.md) | internal decisions and execution evidence; not capability completion proof |
+| Compare product capabilities | [Product capability reference matrix](reference/product-capability-reference-matrix.md) | researched reference and Core/Application adoption decisions; not completion proof |
 | Plan future work | `docs/plans/` and `docs/design/` | planned, never implementation proof |
 | Operate or release | `docs/operations/` and [release engineering](release-engineering.md) | current procedures |
 | Change documentation safely | [Document lifecycle](governance/document-lifecycle.md) and [docs-impact](governance/docs-impact.md) | authoritative governance |

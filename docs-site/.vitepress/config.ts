@@ -7,6 +7,7 @@ const { website } = brandManifest
 const guide = [
   { text: '文档首页', link: '/guide/' },
   { text: '快速开始', link: '/getting-started' },
+  { text: '能力目录', link: '/capabilities' },
   { text: '核心概念', link: '/guide/concepts' },
 ]
 
@@ -36,7 +37,6 @@ export default defineConfig({
     'architecture/identity-and-tenancy.md',
     'architecture/module-execution-context.md',
     'architecture/official-module-qualification.md',
-    'capabilities.md',
     'demo-access.md',
     'deployment.md',
     'guide/reading-guide.md',
