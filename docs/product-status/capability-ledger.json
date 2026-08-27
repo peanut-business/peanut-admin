@@ -248,6 +248,44 @@
       ]
     },
     {
+      "id": "PA-DIAGNOSTICS-001",
+      "name": "可下载脱敏诊断包",
+      "area": "operations",
+      "status": "implemented",
+      "summary": "PC21 已由 PR #285 合入 dev：Platform Operator 可下载固定 schema 的有界 JSON 诊断制品；运行状态、非秘密配置、Module、失败任务和 Platform 审计事件均为聚合或安全投影，服务端与浏览器共同验证 SHA-256。正式数据库、浏览器和 released-scaffold 组合资格归 PC70。",
+      "acceptance": [
+        "下载同时要求 platform.ops.read 与 platform.ops.logs.read，成功下载写入 Platform 审计",
+        "时间窗口只接受 60、360 或 1440 分钟，当前 UI 固定使用最近 60 分钟",
+        "制品不超过 1 MiB，包含 schema_version、payload_sha256 和响应制品 SHA-256",
+        "Platform Web 在保存前重新计算 SHA-256，摘要不一致时拒绝下载",
+        "原始日志、任意文件、绝对路径、请求头、Cookie、凭据、个人和 Tenant 业务记录均不进入制品"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "8873a92b1628dc8e12b5f7c2d1e1dae90a2387e9"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/285"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002"
+      ],
+      "paths": [
+        "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
+        "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
+        "server/app/platform/controller/PlatformOpsController.php",
+        "platform/src/api/platform.ts",
+        "docs/peanut-admin-user-manual.md"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
