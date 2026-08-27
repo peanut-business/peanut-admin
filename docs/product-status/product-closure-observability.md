@@ -26,27 +26,27 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@8873a92b1628dc8e12b5f7c2d1e1dae90a2387e9` | PC00—PC21 的既定顺序切片已合入；PC30 是下一关键路径 |
+| Application | `origin/dev@dd6a877d1d31a583d0221c0a7b6a3ca325da8e77` | PC00—PC30 的既定顺序切片已合入；PC31 是下一关键路径 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
 | 安装 | CLI 空库安装、一次性 Web 向导、首次运行准备清单、3.x migration 链、只读健康和脱敏诊断入口存在 | 阶段 B 的安装与诊断切片已齐备；组合资格归 PC70 |
 | 运维 | Platform 已采用 Core Ops 状态合同并提供有界、校验后的脱敏诊断包 | 备份/恢复和维护写入仍未开放 |
-| 备份 | 生产登记有 DB + `php-storage` 配对备份门禁 | 属发布工程能力，不是应用内产品 |
+| 备份 | 生产登记有 DB + `php-storage` 配对门禁；应用已登记单一受信 Provider 和 schema 1 manifest | 合同已产品化，任务提交、执行与备份中心仍由 PC31 完成 |
 | 恢复 | 登记策略与 Core restore-to-new-target 合同存在 | 应用尚未采用和验证 |
 | 升级 | scaffold、migration、deploy-release 分别存在 | 缺统一就绪和执行工作台 |
 | 文档 | 新 registry、impact map 和治理检查已合入 | 本队列必须登记并通过生成/公开边界检查 |
-| 能力账本 | PC10—PC12 以 implemented 状态记录并引用精确 dev 身份 | 正式 verified 快照仍只在 PC70/Release 固定候选形成 |
+| 能力账本 | PC10—PC30 的新增稳定切片以 implemented 状态记录并引用精确 dev 身份 | 正式 verified 快照仍只在 PC70/Release 固定候选形成 |
 
 ## 3. 总体进度
 
 | 指标 | 当前值 | 说明 |
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
-| 已完成 | 8 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21 |
+| 已完成 | 9 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21、PC30 |
 | 进行中 | 0 | — |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
-| 未开始 | 11 | PC30—PC70 |
-| 当前关键路径 | PC30 | 备份 Provider 与配对制品合同；尚未领取 |
+| 未开始 | 10 | PC31—PC70 |
+| 当前关键路径 | PC31 | 应用内备份中心；尚未领取 |
 | 可并行工作线 | 0 | 当前共享文档候选由一个集成 owner 收口 |
 
 ## 4. 阶段观察
@@ -54,8 +54,8 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 阶段 | 状态 | 已有输入 | 尚缺验收 | 下一交付物 |
 |---|---|---|---|---|
 | A 边界与可见性 | 已完成 | PC00/PC01 由 PR #275 合入；PC02 由 PR #276 合入 | 无 | 保持唯一 owner 与锁版本，不为编号整齐盲升依赖 |
-| B 可安装、可诊断 | 已完成 | PC10—PC21 已合入；CLI、guided/automatic installer、Web 向导、首次运行清单、只读 Ops Console 和脱敏诊断包存在 | 正式数据库/浏览器/released-scaffold 组合资格归 PC70 | 保持 schema 与权限边界，进入 PC30 |
-| C 可备份、可恢复 | 未开始 | 生产配对备份登记、Core Ops 任务合同 | Provider、任务 UI、隔离恢复和代表验证 | PC30 Provider 合同 |
+| B 可安装、可诊断 | 已完成 | PC10—PC21 已合入；CLI、guided/automatic installer、Web 向导、首次运行清单、只读 Ops Console 和脱敏诊断包存在 | 正式数据库/浏览器/released-scaffold 组合资格归 PC70 | 保持 schema 与权限边界，继续 PC31 |
+| C 可备份、可恢复 | 部分完成 | PC30 受信 Provider、schema 1 manifest、生产配对备份登记和 Core Ops 任务合同 | 任务提交/结果 UI、真实 Deployment 执行、隔离恢复和代表验证 | PC31 应用内备份中心 |
 | D 可升级 | 未开始 | scaffold upgrade、migration、deploy-release | 维护门禁、兼容检查、统一状态和恢复指针 | PC40 维护窗口切片 |
 | E 可扩展、可运营 | 未开始 | 8 Module、Bundle、任务和 Provider Runtime | 信任、兼容、配置转移、模板和资格视图 | PC50 信任矩阵 |
 | F 固定资格与发布 | 未开始 | 现有 P0-E/Release 机制 | 同一最终 tree 的最小组合资格和文档同步 | PC70 固定候选 |
@@ -72,8 +72,8 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC12 | 已完成 | `dev@c8347692133921114d9ae535f7a893bb8699744c` / PR #281 | Tenant 安全只读 Host 与双语 Admin 页面展示 7 类准备项；本地配置、当前请求观察、未验证与尚未实施严格区分，备份中心、Worker 心跳、邮件 Provider 和全部域名资格保持真实缺口 | 正式数据库/浏览器/released-scaffold 组合资格归 PC70，不阻塞 PC12 实现完成 | 作为 PC20 健康与 PC60 Provider 资格的现状入口 |
 | PC20 | 已完成 | Runtime `50751666b2cb3e41bfd54a7bfed5f99a2176f8ca`；`dev@187bf95f65a98c5d373c96e4e341a96d65c99b33` / PR #283 | Platform-only Host 采用 Core Ops PHP/Web 公共合同，展示数据库、应用迁移、Module、缓存、Runtime 存储、版本身份和维护窗口；关键失败 unhealthy、缓存失败 degraded、异常 fail closed | 数据库/浏览器/released-scaffold 组合资格归 PC70；不阻塞 PC20 实现完成 | PC21 复用固定状态 schema 生成脱敏诊断包；PC30/PC40 分别拥有备份和维护写入 |
 | PC21 | 已完成 | Runtime `39815105aba103b16ca1b98243659fd6df8e599d`；`dev@8873a92b1628dc8e12b5f7c2d1e1dae90a2387e9` / PR #285 | 固定 schema JSON 包含状态、非秘密配置、Module、失败任务聚合和 Platform 审计事件聚合；双权限、固定窗口、1 MiB、SHA-256、浏览器复验和审计已形成，未读取原始日志或任意文件 | 数据库/浏览器/released-scaffold 组合资格归 PC70；不阻塞 PC21 实现完成 | PC30 建立受信备份 Provider 与配对制品合同 |
-| PC30 | 未开始 | — | — | PC01、PC02 | 备份 Provider/制品合同 |
-| PC31 | 未开始 | — | — | PC20、PC30 | 应用内备份中心 |
+| PC30 | 已完成 | Runtime `2380593b51680de48962eb360514530bdb356fe5`；`dev@dd6a877d1d31a583d0221c0a7b6a3ca325da8e77` / PR #287 | 单一受信 DB/文件 Provider、逻辑新目标、一次尝试和 schema 1 manifest 已形成；合同固定容量、停写窗口、资源/镜像身份、配对 artifact、SHA-256、保留与清理责任，拒绝路径/命令/凭据输入 | 真实任务提交/Deployment 执行、数据库/文件/浏览器/released-scaffold 资格归 PC31/PC32/PC70；不阻塞 PC30 合同完成 | PC31 复用 Core 任务、幂等、权限和原子审计形成备份中心 |
+| PC31 | 未开始 | — | — | 无；PC20、PC30 已满足 | 应用内备份中心 |
 | PC32 | 未开始 | — | — | PC31 | 恢复到新目标并验证 |
 | PC40 | 未开始 | — | — | PC20 | 维护窗口和写门禁 |
 | PC41 | 未开始 | — | — | PC02、PC30、PC40 | 升级就绪检查 |

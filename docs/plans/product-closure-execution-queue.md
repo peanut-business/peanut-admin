@@ -13,7 +13,7 @@ Upstream: 产品能力账本、Module manifest、服务登记、当前应用/Cor
 
 > - 队列执行状态：**执行中**
 > - 建立日期：2026-08-27
-> - Application 输入基线：`f289c69a620f1eaffb0ba5a8cc39d089759259ab`
+> - Application 当前基线：`dd6a877d1d31a583d0221c0a7b6a3ca325da8e77`
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
 > - 进度入口：[`../product-status/product-closure-observability.md`](../product-status/product-closure-observability.md)
 > - 产品能力唯一事实源：[`../product-status/capability-ledger.json`](../product-status/capability-ledger.json)
@@ -57,7 +57,7 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 | 5 | `PC12` | 首次运行配置清单 | 已完成 | PC11 | 展示生产准备度和下一动作 | Application |
 | 6 | `PC20` | Core Ops Console 最小采用 | 已完成 | PC01、PC02 | 展示健康、版本、迁移和维护状态 | Core + Application |
 | 7 | `PC21` | 可下载脱敏诊断包 | 已完成 | PC20 | 降低反馈和远程排错成本 | Application |
-| 8 | `PC30` | 备份 Provider 与配对制品合同 | 未开始 | PC01、PC02 | 固定 DB、文件、manifest、checksum 和审计 | Core + Deployment |
+| 8 | `PC30` | 备份 Provider 与配对制品合同 | 已完成 | PC01、PC02 | 固定 DB、文件、manifest、checksum 和审计 | Core + Deployment |
 | 9 | `PC31` | 应用内备份中心 | 未开始 | PC20、PC30 | 提交和观察备份任务 | Application |
 | 10 | `PC32` | 恢复到新目标并验证 | 未开始 | PC31 | 证明备份可恢复且不覆盖活动库 | Core + Deployment |
 | 11 | `PC40` | 维护窗口与写入门禁 | 未开始 | PC20 | 为升级和恢复提供统一停写边界 | Core + Application |
@@ -113,7 +113,8 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 - PC12：PR #281 已合入 `dev@c8347692133921114d9ae535f7a893bb8699744c`；只读 readiness Host、精确权限 migration、双语 Admin 页面、OpenAPI、用户手册和 scaffold inventory 已形成。PHP 语法、OpenAPI、Web 生产构建、inventory、能力账本和文档治理检查通过；数据库/浏览器/released-scaffold 组合资格保留到 PC70，不阻塞 PC12 实现完成。
 - PC20：PR #283 已合入 `dev@187bf95f65a98c5d373c96e4e341a96d65c99b33`，固定 Runtime 提交为 `50751666b2cb3e41bfd54a7bfed5f99a2176f8ca`；Platform-only Host 与 Core Ops Web 公共入口已展示数据库、应用迁移、Module 目录、缓存、Runtime 存储、版本身份和维护窗口。关键检查失败为 `unhealthy`，非权威缓存失败为 `degraded`，证据异常 fail closed；备份、恢复、维护写入和日志仍保持禁用。
 - PC21：PR #285 已合入 `dev@8873a92b1628dc8e12b5f7c2d1e1dae90a2387e9`，固定 Runtime 提交为 `39815105aba103b16ca1b98243659fd6df8e599d`；Platform 可下载固定 schema JSON 诊断包，数据源限定为 PC20 状态、非秘密配置、Module、失败任务聚合和 Platform 审计事件聚合。双权限、1 MiB 上限、固定时间窗口、服务端/浏览器 SHA-256 校验和下载审计已形成；原始日志、任意文件、私有路径、请求头、Cookie、凭据、个人及 Tenant 业务记录被排除。
-- PC30：成为当前下一关键路径；接入受信 Provider 与 DB/文件配对制品合同，不让 Web 或 Core 接收任意 shell/path。
+- PC30：PR #287 已合入 `dev@dd6a877d1d31a583d0221c0a7b6a3ca325da8e77`，固定 Runtime 提交为 `2380593b51680de48962eb360514530bdb356fe5`；应用直接采用 Core Ops Provider Registry，固定单一配对 Provider、逻辑新目标、一次尝试和 schema 1 manifest。容量、停写窗口、资源/镜像身份、固定 DB/文件制品与 SHA-256 已形成 path-free 合同；Platform 提交和实际 Deployment 执行仍保持禁用。
+- PC31：成为当前下一关键路径；复用 Core 任务、权限、幂等和原子审计，形成备份提交、进度、结果、验证状态和新鲜度视图，不开放任意命令或文件浏览。
 - 当前没有数据库、服务、容器、浏览器或生产资源 owner。
 
 ## 7. 验证

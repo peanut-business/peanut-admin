@@ -286,6 +286,48 @@
       ]
     },
     {
+      "id": "PA-BACKUP-001",
+      "name": "受信配对备份 Provider 与制品合同",
+      "area": "operations",
+      "status": "implemented",
+      "summary": "PC30 已由 PR #287 合入 dev：应用直接采用 Core Ops Provider Registry，固定单一 DB/文件 Provider、逻辑新目标、一次尝试和 schema 1 manifest；容量、停写窗口、稳定资源/镜像身份、固定配对 artifact、SHA-256 及责任边界已形成。任务提交、真实备份/恢复和正式组合资格分别归 PC31、PC32、PC70。",
+      "acceptance": [
+        "Provider、backup/restore handler、逻辑 restore target 和最大尝试次数全部由服务器固定注册",
+        "manifest schema 1 只接受 opaque backup reference、固定 Provider、源码与稳定资源身份、容量、停写窗口、镜像、固定 DB/文件 artifact 和责任 key",
+        "容量要求固定为 source bytes 的两倍加 1 GiB，available bytes 必须严格更大且 inode 为正",
+        "database.sql.gz 与 php-storage.tar.gz 必须成对出现并带非空字节数和 SHA-256；路径、命令、DSN、凭据、环境变量和任意 payload 不进入 manifest",
+        "副作用幂等收据完成前最大尝试次数固定为 1；Platform 提交、Deployment 执行和恢复到新目标仍保持禁用"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "dd6a877d1d31a583d0221c0a7b6a3ca325da8e77"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/287"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/architecture/product-closure-backup-provider-contract.md"
+        },
+        {
+          "kind": "resource",
+          "ref": "resources/project-resources.json"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002"
+      ],
+      "paths": [
+        "server/app/platform/service/ops/PairedBackupProvider.php",
+        "server/app/platform/service/ops/PairedBackupManifest.php",
+        "server/app/platform/service/ops/PlatformOpsRuntimeFactory.php",
+        "resources/project-resources.json",
+        "docs/architecture/product-closure-backup-provider-contract.md"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
