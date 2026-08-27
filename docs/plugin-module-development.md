@@ -113,6 +113,27 @@ contents 摘要，并使用 `resources/schemas/plugin.schema.json` 与已安装�
 校验后写入 `plugins/<plugin-key>/plugin.json`。`plugin:lock --write` 对全部 manifest 重新校验
 并确定性写入 `plugins.lock`；`--check` 不写文件，适合提交前检查。
 
+### 制品信任与兼容结果
+
+`plugin.json` 与 `plugins.lock` 同时固定下列可消费矩阵；Host 只接受两者完全一致、且内容摘要
+可重算的记录。安装、reconcile 和 upgrade 在执行 migration 前都读取同一结果，资格无效时以
+`PLUGIN_TRUST_QUALIFICATION_INVALID` 停止，而不是尝试备用 Plugin Runtime。
+
+| 维度 | 当前 bundled 资格 | 安装/升级解释 |
+| --- | --- | --- |
+| 版本、Kernel、依赖 | 每个 Module 的版本、`kernel_constraint` 和精确依赖约束 | 仍由单一 Module Registry 编译和依赖检查；不兼容即停止 |
+| 权限 | `backend.permissions` 的相对路径和 SHA-256 | 路径或定义内容漂移会改变 canonical contents/lock 身份 |
+| migration | 每条 SQL 的 key/SHA-256；统一标记 `verified-backup-required` | 没有自动回滚；有 pending migration 的 upgrade 必须先有已验证备份 |
+| 来源与内容 | `repository-contents` 与 canonical contents SHA-256 | 仅可从锁定 bundled source 安装，摘要不符 fail closed |
+| archive、签名、SBOM | bundled source 当前都明确为 `not-issued`，不是伪造的 SHA、签名或 SBOM | 这不阻塞已锁定的源码仓 bundled 安装；开发态手工 archive 必须提供 `--sha256`，或通过既有受信签名校验 |
+| 许可证 | Module 声明的共享 license | 同一 Plugin 内 license 不一致时无法生成 manifest |
+| 审核、漏洞响应与 Marketplace | `review=not-reviewed`、`vulnerability_response=not-configured`、`marketplace=blocked` | Marketplace 始终返回 review 与漏洞响应两个稳定 blocker；它不是当前可用的安装来源 |
+
+因此，`bundled-locked` 只表示“当前仓库锁定身份可由唯一 Host 处理”，不表示已经通过第三方
+安全审计，也不表示存在可下载的 Marketplace 制品。要开放 Marketplace，必须先在独立决策中
+增加可验证 archive SHA-256、受信签名、SBOM、许可证审查和漏洞响应 authority；不得仅把状态
+字段改成已通过，也不得复制或增加第二个 Plugin Runtime。
+
 ### 开始前
 
 确认 Module key、数据 owner、依赖 Module、目标客户端和停用行为已经写清楚。若无法回答“谁拥有表、谁能调用、停用后哪些入口必须拒绝”，先停在设计阶段，不要创建 migration。

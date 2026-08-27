@@ -23,6 +23,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
     public function install(string $pluginKey, bool $acquireLock = true): array
     {
         $plugin = $this->resolver->require($pluginKey);
+        $this->assertTrustEligible($plugin);
         $lockName = $this->lockName($pluginKey);
         if ($acquireLock && !$this->advisoryLock($lockName)) {
             throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
@@ -83,6 +84,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         }
 
         $plugin = $this->resolver->require($pluginKey);
+        $this->assertTrustEligible($plugin);
         if ($this->sameIdentity($plugin, $current)) {
             return $plugin->publicIdentity() + ['operation' => 'unchanged'];
         }
@@ -94,6 +96,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
     public function upgrade(string $pluginKey, bool $dryRun): array
     {
         $plugin = $this->resolver->require($pluginKey);
+        $this->assertTrustEligible($plugin);
         $manifests = $this->pluginManifests($plugin);
         $this->assertPreflightOwnership($plugin, $manifests, true);
         $current = $this->pluginInstallation($pluginKey, false);
@@ -522,6 +525,16 @@ SQL);
         return $manifests;
     }
 
+    private function assertTrustEligible(PluginDescriptor $plugin): void
+    {
+        if (($plugin->trustResult()['status'] ?? null) !== 'eligible') {
+            throw new PluginLifecycleException(
+                'PLUGIN_TRUST_QUALIFICATION_INVALID',
+                'Plugin is not eligible for installation from the locked bundled channel.',
+            );
+        }
+    }
+
     /** @param array<string,ManifestDocument> $manifests @param array<string,mixed> $current */
     private function plan(PluginDescriptor $plugin, array $manifests, array $current): array
     {
@@ -549,6 +562,7 @@ SQL);
             'identity_changed' => !$this->sameIdentity($plugin, $current),
             'pending_migrations' => $pending,
             'rollback' => ['automatic' => false, 'requires_verified_backup' => $pending !== []],
+            'trust' => $plugin->trustResult(),
         ];
     }
 

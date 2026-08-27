@@ -7,6 +7,71 @@
         "reference": "canonical-plugin-contents-v1",
         "sha256": "eeaff34f164ef5848f8a7a853a6d6407010ee89345449c948f9413a269d38c97"
     },
+    "trust": {
+        "channel": "bundled",
+        "origin": {
+            "type": "repository-contents",
+            "reference": "canonical-plugin-contents-v1"
+        },
+        "archive": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "signature": {
+            "status": "not-issued",
+            "key_id": null
+        },
+        "sbom": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "license": {
+            "identifier": "proprietary",
+            "status": "declared"
+        },
+        "qualification": {
+            "status": "bundled-locked",
+            "review": "not-reviewed",
+            "vulnerability_response": "not-configured",
+            "marketplace": "blocked"
+        },
+        "compatibility": {
+            "modules": [
+                {
+                    "key": "official.oauth",
+                    "version": "1.0.0",
+                    "kernel_constraint": "^1.0",
+                    "dependencies": [
+                        {
+                            "module_key": "official.file",
+                            "version": "^1.0"
+                        },
+                        {
+                            "module_key": "official.member",
+                            "version": "^1.0"
+                        },
+                        {
+                            "module_key": "official.notification",
+                            "version": "^1.0"
+                        }
+                    ],
+                    "permissions": {
+                        "path": "Resources/permissions.json",
+                        "sha256": "54ef06840401f4353b9def63fdb32aebd5bc5ee3e50a81b0a69186bcb0cf554e"
+                    },
+                    "migrations": {
+                        "reversibility": "verified-backup-required",
+                        "files": [
+                            {
+                                "key": "official.oauth:20260826-namespace-permission-keys",
+                                "sha256": "80545720118dbe1b40a97825293bf4d400bbb2a389efb3f8395d5d6dd3d8df49"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
     "composer": [
         {
             "name": "peanut-business/official-oauth",
