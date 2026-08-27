@@ -4637,6 +4637,38 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-reference-product-capability-reference-matrix",
+      "path": "docs/reference/product-capability-reference-matrix.md",
+      "title": "Peanut Admin 产品能力与同类产品参考矩阵",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json",
+        "docs/plans/product-closure-execution-queue.md",
+        "docs/architecture/product-closure-ownership-and-adoption.md",
+        "official vendor documentation linked in the document"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure"
+      ],
+      "site_projections": [
+        "pa-docs-site-capabilities"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-catalog",
       "path": "docs/reference/document-catalog.generated.md",
       "title": "Generated document catalog",
@@ -4840,26 +4872,28 @@
     {
       "id": "pa-docs-site-capabilities",
       "path": "docs-site/capabilities.md",
-      "title": "能力边界",
+      "title": "产品能力目录",
       "audience": [
         "maintainer",
         "architect",
         "ai"
       ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
+      "content_type": "reference",
+      "authority": "interpretation",
       "canonical_sources": [
         "server/app/Modules/",
-        "resources/service-registry.json"
+        "resources/service-registry.json",
+        "docs/reference/product-capability-reference-matrix.md"
       ],
       "owner": "application-maintainers",
-      "status": "archived",
+      "status": "current",
       "scope": [
         "application"
       ],
       "related": [
         "documentation",
-        "scaffold"
+        "scaffold",
+        "product-closure"
       ],
       "site_projections": [],
       "replaced_by": null,

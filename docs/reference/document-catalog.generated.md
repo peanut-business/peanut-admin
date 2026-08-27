@@ -155,6 +155,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-product-status-readme` | `docs/product-status/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-product-status-releases-readme` | `docs/product-status/releases/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-productization-baseline-plan` | `docs/productization-baseline-plan.md` | `planned` | `plan` | `product-architecture` |
+| `pa-docs-reference-product-capability-reference-matrix` | `docs/reference/product-capability-reference-matrix.md` | `current` | `reference` | `product-architecture` |
 | `pa-docs-release-engineering` | `docs/release-engineering.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-scaffold-upgrade` | `docs/scaffold-upgrade.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-site-404` | `docs-site/404.md` | `current` | `public-projection` | `developer-experience` |
@@ -162,7 +163,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-site-architecture-identity-and-tenancy` | `docs-site/architecture/identity-and-tenancy.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-architecture-module-execution-context` | `docs-site/architecture/module-execution-context.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-architecture-official-module-qualification` | `docs-site/architecture/official-module-qualification.md` | `archived` | `archive` | `application-maintainers` |
-| `pa-docs-site-capabilities` | `docs-site/capabilities.md` | `archived` | `archive` | `application-maintainers` |
+| `pa-docs-site-capabilities` | `docs-site/capabilities.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-site-demo-access` | `docs-site/demo-access.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-deployment` | `docs-site/deployment.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-guide-backend` | `docs-site/guide/backend.md` | `current` | `public-projection` | `developer-experience` |
