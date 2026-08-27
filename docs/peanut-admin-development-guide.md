@@ -52,6 +52,67 @@ Platform 维护窗口使用 Core 的公开 Ops Console 合同，由应用的 PDO
 middleware 装配。窗口生效时，除受 `platform.ops.maintenance.manage` 权限保护的计划与关闭
 接口外，所有 HTTP 写方法都拒绝并写入 Platform 审计；不能通过菜单、前端或 Host 别名绕过。
 
+### 应用升级就绪合同
+
+`GET /api/platform/v1/ops/upgrade-readiness` 是应用拥有的只读投影。它不会下载 Release、执行
+命令、创建备份、计划维护、修改数据库、替换文件或触发升级；请求没有参数，不能提供路径、
+URL、Release key、命令、镜像或凭据。Deployment owner 只可以把已在发布流程中验证过的目标
+放入固定目录：
+
+```text
+.peanut/upgrade-target/
+├── target.json
+├── from/
+│   ├── scaffold-manifest.json
+│   └── files/...
+├── to/
+│   ├── scaffold-manifest.json
+│   └── files/...
+└── release/
+    ├── plugins.lock
+    ├── plugins/...
+    ├── server/app/Modules/...
+    └── web/src/modules/...
+```
+
+Host 不扫描磁盘、网络或历史 Release 猜测目标。`target.json` 必须把正式 Release commit/tree、
+P0-E 资格、两份 scaffold manifest SHA-256、from/to migration 清单和目标应用组合解析后的
+`release/plugins.lock` SHA-256 与目标 Kernel 精确 SemVer 固定在同一描述符中。整个
+`release/` 是只读目标源码根，任何 symlink、特殊文件或越界解析均拒绝；Module lock、manifest、
+后端 Module、前端 contribution 和包身份只能相互解析到这棵目标树。目标 scaffold manifest 的
+`release.source_commit/source_tree` 必须分别等于描述符中的 `release.commit/tree`，不能用
+一个已资格候选的身份包装另一份目标模板。
+
+`target.json` 只接受以下精确字段集合；未知字段、缺项、未排序 migration、摘要不匹配、资格
+不足 7 组、存在清理残留或租约未释放均 fail closed：
+
+| 对象 | 精确字段 |
+|---|---|
+| 顶层 | `schema_version=1`、`protocol=peanut.application-upgrade-target.v1`、`release`、`scaffold`、`migrations`、`modules` |
+| `release` | `key`、`commit`、`tree`、`qualification`；资格 candidate 必须等于 Release commit/tree |
+| `scaffold` | `from_version`、`from_manifest_sha256`、`to_version`、`to_manifest_sha256` |
+| `migrations.from/to` | `inventory_sha256`、按 `migration_id` 严格升序的 `{migration_id, sha256}` 列表 |
+| `modules` | `lock_sha256`、`kernel_version`；摘要必须匹配固定 `release/plugins.lock`，Kernel 必须是精确 SemVer |
+
+检查顺序固定为：目标 Release 描述符/资格/摘要；`.peanut/application-manifest.json` 来源身份；
+同大版本且目标版本更高；Runtime 健康、仓库干净和当前 migration；from/to migration 不删除、
+不改写、不倒序、不冲突；目标 `release/` 内 Module lock/源码、目标 Kernel/依赖和已安装 Module；与 CLI 相同的
+scaffold ownership/conflict；匹配当前 Runtime 的已验证配对备份、引用同一
+`backup_reference_key` 的恢复 evidence，以及 active `planned-upgrade` 维护窗口。跨大版本固定
+返回 `UPGRADE_FRESH_REBUILD_REQUIRED`。
+
+`preflight.state` 只覆盖前七类静态检查，使 PC42 可以在静态预检通过后创建新备份并进入维护
+窗口；顶层 `state` 只有动态保护条件也满足时才为 `ready`。恢复 evidence 与最新备份不配对时
+固定返回 `UPGRADE_RESTORE_BACKUP_MISMATCH`，且不生成 recovery pointer。Scaffold 投影只返回
+动作数量、稳定原因、managed/app-owned 摘要和 app-owned 数量，不返回绝对路径或文件内容；
+`ScaffoldUpgradeRunner::preview()` 与 CLI preflight 共享分类规则，但不写 plan 或 ledger。
+
+PC42 只能消费完整 `target.json`、descriptor SHA-256、readiness check 列表和 opaque recovery
+pointer。它不得重新解释 Web 输入、从移动分支推导目标，或在 blocker 存在时跳到部署/迁移。
+顺序固定为：静态预检 → 已验证配对备份 → `planned-upgrade` 维护 → 完整 readiness → 部署/迁移/
+smoke → 关闭维护或停在已记录恢复指针。跨实例升级仍属于独立运营平台；生产覆盖恢复仍需独立
+授权。
+
 ## 开发最小路径
 
 1. 在 `server/app/Modules/<Vendor>/<Module>/` 定义 `Domain`、`Application`、`Contracts`、

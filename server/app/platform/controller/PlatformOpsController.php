@@ -26,6 +26,12 @@ final class PlatformOpsController extends BasePlatformController
             ->toPublicArray());
     }
 
+    public function upgradeReadiness(): Json
+    {
+        return $this->run(fn(PDO $pdo): array => PlatformOpsRuntimeFactory::runtimeStatusProvider($pdo)
+            ->upgradeReadiness($this->context()));
+    }
+
     public function maintenance(): Json
     {
         return $this->run(fn(PDO $pdo): ?array => PlatformOpsRuntimeFactory::maintenance($pdo)

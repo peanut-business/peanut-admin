@@ -192,6 +192,50 @@ export interface OpsBackupCenterSnapshot {
   tasks: OpsBackupTask[];
 }
 
+export type OpsUpgradeReadinessState = 'configuration_required' | 'blocked' | 'ready';
+
+export interface OpsUpgradeReadinessCheck {
+  key: string;
+  status: OpsUpgradeReadinessState;
+  code: string;
+}
+
+export interface OpsUpgradeReadinessSnapshot {
+  schema_version: 1;
+  state: OpsUpgradeReadinessState;
+  code: string;
+  preflight: { state: OpsUpgradeReadinessState; code: string };
+  checks: OpsUpgradeReadinessCheck[];
+  source: {
+    runtime: { commit: string; tree: string; release_key: string | null; repository_clean: boolean };
+    application: null | {
+      application_version: string;
+      template_version: string;
+      template_source_commit: string;
+      template_source_tree: string;
+      template_inventory_sha256: string;
+      application_manifest_sha256: string;
+    };
+  };
+  target: null | {
+    release_key: string;
+    commit: string;
+    tree: string;
+    descriptor_sha256: string;
+    scaffold: { from_version: string; to_version: string; source_commit: string; source_tree: string; inventory_sha256: string; manifest_sha256: string };
+  };
+  migrations: {
+    current: { applied: number; target: number; pending: number; inventory_sha256: string; drift: boolean };
+    release: null | { from_count: number; to_count: number; pending_count: number | null };
+    blockers: string[];
+  };
+  modules: { status: OpsUpgradeReadinessState; installed_count: number; compatible_count: number; target_count: number; lock_sha256: string | null; target_kernel_version: string | null; blockers: string[] };
+  scaffold: { status: OpsUpgradeReadinessState; code: string; candidate: string | null; automatic: number; preserved: number; conflicts: number; app_owned_count: number; conflict_reasons: Record<string, number> };
+  backup: { latest_verified: OpsLatestVerifiedBackup | null; latest_restore_verified: OpsLatestRestoreVerified | null };
+  maintenance: null | { maintenance_key: string; state: string; reason_key: string; starts_at: string; ends_at: string; revision: number };
+  recovery_pointer: null | { provider_key: string; backup_reference_key: string; manifest_sha256: string; restore_target_key: string; restore_verification_sha256: string; restore_verified_at: string };
+}
+
 const tokenKey = 'peanut-platform-token';
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
@@ -502,6 +546,10 @@ export const api = {
   backupCenter: () =>
     unwrap<OpsBackupCenterSnapshot>(
       client.get('/api/platform/v1/ops/backups')
+    ),
+  upgradeReadiness: () =>
+    unwrap<OpsUpgradeReadinessSnapshot>(
+      client.get('/api/platform/v1/ops/upgrade-readiness')
     ),
   async downloadDiagnostics(windowMinutes: 60 | 360 | 1440 = 60): Promise<DiagnosticDownload> {
     const result = await client.get<ArrayBuffer>('/api/platform/v1/ops/diagnostics', {

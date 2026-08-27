@@ -147,6 +147,9 @@ Route::get('api/platform/infrastructure/storage', [PlatformStorageController::cl
 Route::get('api/platform/v1/ops/status', [PlatformOpsController::class, 'status'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
+Route::get('api/platform/v1/ops/upgrade-readiness', [PlatformOpsController::class, 'upgradeReadiness'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
 Route::get('api/platform/v1/ops/maintenance', [PlatformOpsController::class, 'maintenance'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');

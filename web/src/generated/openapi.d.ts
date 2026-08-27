@@ -150,6 +150,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/upgrade-readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns the read-only source/target, migration, Module, scaffold, backup, restore-evidence and maintenance-window projection. The target is accepted only from the fixed deployment-staged bundle; the request cannot supply a path, URL, command, release key, or credential. */
+        get: operations["getPlatformUpgradeReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/maintenance": {
         parameters: {
             query?: never;
@@ -470,6 +487,20 @@ export interface operations {
         };
     };
     getPlatformBackupCenter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
+    getPlatformUpgradeReadiness: {
         parameters: {
             query?: never;
             header?: never;

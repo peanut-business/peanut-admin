@@ -21,7 +21,7 @@ final readonly class PlatformBackupCenterService
     }
 
     /** @return array{provider:array<string,mixed>,latest_verified:?array<string,mixed>,latest_restore_verified:?array<string,mixed>,tasks:list<array<string,mixed>>} */
-    public function snapshot(PlatformContext $context): array
+    public function snapshot(PlatformContext $context, ?string $runtimeCommit = null): array
     {
         if (!(new PlatformOpsPermissionChecker($this->pdo))->allows($context, Package::READ_PERMISSION)) {
             throw OpsConsoleException::denied();
@@ -32,10 +32,13 @@ final readonly class PlatformBackupCenterService
         $provider = [
             'key' => $descriptor->key,
         ];
-        $runtime = PlatformOpsRuntimeFactory::status($this->pdo)
-            ->read($context)
-            ->toPublicArray();
-        $runtimeCommit = (string)($runtime['version']['commit'] ?? '');
+        if ($runtimeCommit === null) {
+            $runtimeCommit = PlatformOpsRuntimeFactory::runtimeStatusProvider($this->pdo)
+                ->runtimeCommit();
+        }
+        if (preg_match('/^[a-f0-9]{40}$/D', $runtimeCommit) !== 1) {
+            throw OpsConsoleException::statusUnavailable();
+        }
 
         return [
             'provider' => $provider,

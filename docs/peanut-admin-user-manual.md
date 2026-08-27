@@ -454,6 +454,13 @@ Tenant owner/管理员登录后选择自己有权访问的 Tenant。切换 Tenan
 - 应用追加 migration 的目标数、已应用数、待应用数、清单摘要与 drift 状态；
 - 当前已计划或生效的维护窗口。
 
+同页的“升级就绪”卡片按固定顺序展示静态预检、当前/目标 Release、目标 migration、Module
+兼容数量、scaffold 冲突、只读保持的 app-owned 文件、备份和恢复指针，以及每个 blocker 的
+稳定原因码。目标只能由 Deployment 放入固定受信目录；浏览器不能选择路径、URL、命令、镜像
+或 Release。`preflight` 已就绪只代表版本、迁移、Module 和文件冲突检查通过；顶层状态还要求
+匹配当前 Runtime 的已验证备份、引用同一 backup reference 的恢复能力 evidence 和 active
+`planned-upgrade` 维护窗口。
+
 数据库、migration、Module 目录或 Runtime 存储等关键检查失败时，实例显示为
 `unhealthy`；非权威缓存读取失败时显示为 `degraded`。状态 Provider 无法形成完整、合法证据时
 页面按不可用处理，不回退到静态 PHP 环境信息。
@@ -473,7 +480,7 @@ DB + `php-storage` 配对备份。页面只发送 Provider 和幂等键，显示
 运行 `scripts/ops-restore-worker --once`：worker 只创建登记的无监听 MySQL、内部网络和 DB/文件
 双卷，验证摘要、Schema、迁移、代表身份/Tenant 数据及文件统计，并确认生产和体验候选资源未
 变化。成功后只移除该隔离目标并写入恢复证据；失败时停止并保留精确资源，不能自动复用或切换
-fallback。维护窗口写入和在线运行日志仍未开放。Tenant 管理员无权读取该入口；需要排错时由
+fallback。在线运行日志查询仍未开放。Tenant 管理员无权读取该入口；需要排错时由
 Platform Operator 记录检查项、状态、版本身份和 Request ID，再交给部署运维负责人。
 
 尚未部署的新版本只能由发布/恢复负责人使用登记的固定候选 CLI image 做资格验证；这不会把
