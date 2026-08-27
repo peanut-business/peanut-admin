@@ -3766,7 +3766,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "1deded28d912c637f3215403d4ba0664eda5e08aa9b9aa9fbf0c3e15cc278c72"
+            "source_sha256": "2b1fc79fc30d7d35cf456fef4421a58a8bc58a0fcccd1c9f25e82ec26cd74f85"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3778,7 +3778,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "3a4b2bf10e1dd68894d6798b42cee8e6818742a34c4d4b10a543f19e97e50ff1"
+            "source_sha256": "4f8d45007ebc57cff5469af18a41795767864d1cfda24059a0766ba9e7c77c5a"
         },
         {
             "path": "platform/src/main.ts",
@@ -12803,7 +12803,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "e552c053b63732f135d36eaa84f83339d19fc11063ba69f8357a741992334e5e"
+            "source_sha256": "2ad6a9a8bd47a552afdfa4471c8f85d32636fb2af3a5c7fd1b6e1042492dcba3"
         },
         {
             "path": "server/app/platform/controller/PlatformSessionController.php",
@@ -13380,6 +13380,30 @@
                 "full"
             ],
             "source_sha256": "44b7b1d57016d1b256aeab5f117e25c799c93170fe23961017e386d61e4e7903"
+        },
+        {
+            "path": "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
+            "target": "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "960f35456a5cec609c6a66eecac5f18bf5bac605151b77e43b7f4d7031db4246"
+        },
+        {
+            "path": "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
+            "target": "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "87a97df92f8ac0d30497c97e303374e63193b58665dd10260bcb6b95c7207db9"
         },
         {
             "path": "server/app/platform/service/ops/PlatformOpsPermissionChecker.php",
@@ -14716,7 +14740,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "56c17486c84377ceff95f6c077093e723b1feca58313e44e4df95ccd0e75eb91"
+            "source_sha256": "10f9351f7ca85cd607ce68ffc8f71f3382d56cef4b9aa2972bca8fb1cf8e746a"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
