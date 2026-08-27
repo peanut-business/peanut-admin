@@ -896,10 +896,24 @@ class Runner:
                 fail(f"generated application qualification bridge was not restored: {target.relative_to(project_root)}")
 
     def install_current(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
+        self.reset_generated_installation_state(project_root)
         with self.generated_install_bridge(project_root):
             with self.backend_process_environment(project_root, database, mode) as env:
                 command(["php", "server/database/install.php"], cwd=project_root, env=env, log=log)
         self.assert_up_to_date(database, mode, log, project_root=project_root)
+
+    def reset_generated_installation_state(self, project_root: Path) -> None:
+        if project_root == ROOT:
+            return
+        if project_root != self.generated:
+            fail("refusing to reset installation state outside the generated application")
+        state_root = project_root / "server/runtime/installation"
+        for name in ("executing.json", "installed.json", "execution.lock"):
+            state = state_root / name
+            if state.is_symlink() or (state.exists() and not state.is_file()):
+                fail(f"generated installation state identity changed: {state}")
+            with contextlib.suppress(FileNotFoundError):
+                state.unlink()
 
     def assert_up_to_date(self, database: str, mode: str, log: Path, project_root: Path = ROOT) -> None:
         # The container entrypoint keeps the released command contract:
