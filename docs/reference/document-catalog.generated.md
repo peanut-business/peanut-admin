@@ -40,6 +40,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-architecture-pb08b-release-candidate-acceptance-contract` | `docs/architecture/pb08b-release-candidate-acceptance-contract.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-architecture-pb09-formal-release-contract` | `docs/architecture/pb09-formal-release-contract.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-pb09-license-provenance-gate` | `docs/architecture/pb09-license-provenance-gate.md` | `archived` | `architecture` | `architecture` |
+| `pa-docs-architecture-product-closure-ownership-adoption` | `docs/architecture/product-closure-ownership-and-adoption.md` | `current` | `decision` | `product-architecture` |
 | `pa-docs-architecture-scaffold-core-extraction-analysis` | `docs/architecture/scaffold_core_extraction_analysis.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-service-execution-status` | `docs/architecture/service-execution-status.md` | `current` | `architecture` | `architecture` |
 | `pa-docs-architecture-service-layer-registry` | `docs/architecture/service-layer-registry.md` | `current` | `architecture` | `architecture` |
@@ -136,6 +137,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-peanut-admin-release-deployment` | `docs/peanut-admin-release-deployment.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-peanut-admin-user-manual` | `docs/peanut-admin-user-manual.md` | `archived` | `reference` | `application-maintainers` |
 | `pa-docs-plans-multi-tenancy-platform-management-plan` | `docs/plans/multi-tenancy-platform-management-plan.md` | `planned` | `plan` | `product-architecture` |
+| `pa-docs-plans-product-closure-execution-queue` | `docs/plans/product-closure-execution-queue.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-release-operations-saas-roadmap` | `docs/plans/product-release-operations-saas-roadmap.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-saas-enhancement-development-plan` | `docs/plans/saas-enhancement-development-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plugin-module-development` | `docs/plugin-module-development.md` | `current` | `reference` | `application-maintainers` |
@@ -144,6 +146,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-product-status-current-task-list` | `docs/product-status/current-task-list.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-product-status-deferred-scope` | `docs/product-status/deferred-scope.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-product-status-evidence-guide` | `docs/product-status/evidence-guide.md` | `archived` | `evidence` | `release-qualification` |
+| `pa-docs-product-status-product-closure-observability` | `docs/product-status/product-closure-observability.md` | `current` | `evidence` | `product-architecture` |
 | `pa-docs-product-status-readme` | `docs/product-status/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-product-status-releases-readme` | `docs/product-status/releases/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-productization-baseline-plan` | `docs/productization-baseline-plan.md` | `planned` | `plan` | `product-architecture` |

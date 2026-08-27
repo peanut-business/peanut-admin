@@ -6,6 +6,12 @@
 本目录默认不进入 `docs-site` 首页、导航或公开构建。将来是否公开，应由独立的信息披露
 决定授权；公开站点不得通过复制本页形成第二份状态事实源。
 
+当前产品闭环的执行顺序见
+[`../plans/product-closure-execution-queue.md`](../plans/product-closure-execution-queue.md)，
+人工进度、固定候选、验证和剩余 Gate 见
+[`product-closure-observability.md`](product-closure-observability.md)。两者不替代本目录的
+能力账本；稳定能力状态仍只在 `capability-ledger.json` 中维护。
+
 ## 使用规则
 
 - `capability-ledger.json` 是唯一状态事实源；本页状态区由脚本生成，不手工编辑。
@@ -74,4 +80,5 @@ php scripts/check-product-capability-ledger
 | `acceptance-gates.md` | 状态含义和完成判定 |
 | `evidence-guide.md` | 有效证据、身份和新鲜度规则 |
 | `deferred-scope.md` | 暂缓、范围外和恢复规则 |
+| `product-closure-observability.md` | 产品闭环任务的人工进度、候选、验证、阻塞和下一交付物 |
 | `releases/` | 正式产品发布时冻结的不可变能力快照 |
