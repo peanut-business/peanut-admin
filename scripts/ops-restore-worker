@@ -254,10 +254,11 @@ tenant_member_count="$(mysql_scalar 'SELECT COUNT(*) FROM pa_tenant_member')"
 [[ "$account_count" =~ ^[1-9][0-9]*$ && "$tenant_count" =~ ^[1-9][0-9]*$ && "$tenant_member_count" =~ ^[1-9][0-9]*$ ]] \
   || false
 
+failure_code='OPS_RESTORE_FILES_FAILED'
 storage_metrics="$(sudo -n docker run --rm --network none \
   --mount "source=$target_storage_volume,target=/restore,readonly" \
   --entrypoint sh "$php_image" -c \
-  "find /restore -type f | wc -l; du -sb /restore | awk '{print \\$1}'")"
+  'find /restore -type f | wc -l; du -sb /restore | cut -f1')"
 storage_file_count="$(sed -n '1p' <<<"$storage_metrics" | tr -d '[:space:]')"
 storage_bytes="$(sed -n '2p' <<<"$storage_metrics" | tr -d '[:space:]')"
 [[ "$storage_file_count" =~ ^[0-9]+$ && "$storage_bytes" =~ ^[0-9]+$ ]] || false
