@@ -7,6 +7,63 @@
         "reference": "canonical-plugin-contents-v1",
         "sha256": "dd5bcd1acb037e1ce03cc900ad771b57c41dfc32ea2a40cfb807ad22d6b09db1"
     },
+    "trust": {
+        "channel": "bundled",
+        "origin": {
+            "type": "repository-contents",
+            "reference": "canonical-plugin-contents-v1"
+        },
+        "archive": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "signature": {
+            "status": "not-issued",
+            "key_id": null
+        },
+        "sbom": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "license": {
+            "identifier": "proprietary",
+            "status": "declared"
+        },
+        "qualification": {
+            "status": "bundled-locked",
+            "review": "not-reviewed",
+            "vulnerability_response": "not-configured",
+            "marketplace": "blocked"
+        },
+        "compatibility": {
+            "modules": [
+                {
+                    "key": "official.member",
+                    "version": "1.0.0",
+                    "kernel_constraint": "^1.0",
+                    "dependencies": [
+                        {
+                            "module_key": "official.file",
+                            "version": "^1.0"
+                        }
+                    ],
+                    "permissions": {
+                        "path": "Resources/permissions.json",
+                        "sha256": "e62cfbdd9e82165875b38fdcdf57f236fd532737aed2f80921cdd1584e933dc9"
+                    },
+                    "migrations": {
+                        "reversibility": "verified-backup-required",
+                        "files": [
+                            {
+                                "key": "official.member:20260826-namespace-permission-keys",
+                                "sha256": "c391d790995786d3ef05002f25a4156b67e42f2f7e4227da39ba15190a1328b0"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
     "composer": [
         {
             "name": "peanut-business/official-member",

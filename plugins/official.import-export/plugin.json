@@ -7,6 +7,67 @@
         "reference": "canonical-plugin-contents-v1",
         "sha256": "32af4a0964d7a4fe15fbc03d08d82fa8509b41d181c80ee10d739d7dcc875c60"
     },
+    "trust": {
+        "channel": "bundled",
+        "origin": {
+            "type": "repository-contents",
+            "reference": "canonical-plugin-contents-v1"
+        },
+        "archive": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "signature": {
+            "status": "not-issued",
+            "key_id": null
+        },
+        "sbom": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "license": {
+            "identifier": "proprietary",
+            "status": "declared"
+        },
+        "qualification": {
+            "status": "bundled-locked",
+            "review": "not-reviewed",
+            "vulnerability_response": "not-configured",
+            "marketplace": "blocked"
+        },
+        "compatibility": {
+            "modules": [
+                {
+                    "key": "official.import-export",
+                    "version": "1.0.0",
+                    "kernel_constraint": "^1.0",
+                    "dependencies": [
+                        {
+                            "module_key": "official.file",
+                            "version": "^1.0"
+                        },
+                        {
+                            "module_key": "official.task",
+                            "version": "^1.0"
+                        }
+                    ],
+                    "permissions": {
+                        "path": "Resources/permissions.json",
+                        "sha256": "035446909f2fa2e675c3ee4c97d1d43aa4ebee300a02935296dcfeb18305811f"
+                    },
+                    "migrations": {
+                        "reversibility": "verified-backup-required",
+                        "files": [
+                            {
+                                "key": "official.import-export:20260826-namespace-permission-keys",
+                                "sha256": "0b7981ec9cf94453697c6cc7f6cc3f0abae9e88769c3a8370b1b57034efa596e"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
     "composer": [
         {
             "name": "peanut-business/official-import-export",

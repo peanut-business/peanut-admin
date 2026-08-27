@@ -40,7 +40,7 @@ final class PluginLockResolver
             }
             $this->assertExactKeys(
                 $entry,
-                ['key', 'version', 'source', 'manifest', 'manifest_sha256', 'composer', 'npm', 'frontend', 'modules'],
+                ['key', 'version', 'source', 'trust', 'manifest', 'manifest_sha256', 'composer', 'npm', 'frontend', 'modules'],
                 'PLUGIN_LOCK_INVALID'
             );
             $key = $this->key($entry['key'] ?? null, 'PLUGIN_LOCK_INVALID');
@@ -49,6 +49,7 @@ final class PluginLockResolver
                 throw new PluginLifecycleException('PLUGIN_LOCK_INVALID', "Duplicate Plugin key: {$key}");
             }
             $source = $this->source($entry['source'] ?? null);
+            $trust = $this->trust($entry['trust'] ?? null);
             $manifestPath = $this->absolutePath($this->text($entry['manifest'] ?? null), $base);
             $expectedManifestDigest = $this->sha256($entry['manifest_sha256'] ?? null, 'PLUGIN_LOCK_INVALID');
             $manifestDigest = hash_file('sha256', $manifestPath);
@@ -58,13 +59,14 @@ final class PluginLockResolver
             $manifest = $this->readJson($manifestPath, 'PLUGIN_MANIFEST_INVALID');
             $this->assertExactKeys(
                 $manifest,
-                ['schema_version', 'key', 'version', 'source', 'composer', 'npm', 'frontend', 'modules'],
+                ['schema_version', 'key', 'version', 'source', 'trust', 'composer', 'npm', 'frontend', 'modules'],
                 'PLUGIN_MANIFEST_INVALID'
             );
             if (($manifest['schema_version'] ?? null) !== 1
                 || $manifest['key'] !== $key
                 || $manifest['version'] !== $version
                 || !$this->sameJson($manifest['source'] ?? null, $source)
+                || !$this->sameJson($manifest['trust'] ?? null, $trust)
                 || !$this->sameJson($manifest['composer'] ?? null, $entry['composer'] ?? null)
                 || !$this->sameJson($manifest['npm'] ?? null, $entry['npm'] ?? null)
                 || !$this->sameJson($manifest['frontend'] ?? null, $entry['frontend'] ?? null)
@@ -102,7 +104,8 @@ final class PluginLockResolver
                 $composer,
                 $npm,
                 $frontend,
-                $moduleRoots
+                $moduleRoots,
+                $trust
             );
         }
         return $this->resolved = $plugins;
@@ -145,6 +148,61 @@ final class PluginLockResolver
             'reference' => $this->text($source['reference'] ?? null),
             'sha256' => $this->sha256($source['sha256'] ?? null, 'PLUGIN_SOURCE_INVALID'),
         ];
+    }
+
+    /** @return array<string,mixed> */
+    private function trust(mixed $trust): array
+    {
+        if (!is_array($trust)) {
+            throw new PluginLifecycleException('PLUGIN_TRUST_INVALID', 'Plugin trust record is invalid.');
+        }
+        $this->assertExactKeys(
+            $trust,
+            ['channel', 'origin', 'archive', 'signature', 'sbom', 'license', 'qualification', 'compatibility'],
+            'PLUGIN_TRUST_INVALID'
+        );
+        if (($trust['channel'] ?? null) !== 'bundled'
+            || !is_array($trust['qualification'] ?? null)
+            || ($trust['qualification']['status'] ?? null) !== 'bundled-locked'
+            || ($trust['qualification']['marketplace'] ?? null) !== 'blocked') {
+            throw new PluginLifecycleException('PLUGIN_TRUST_INVALID', 'Plugin trust qualification is unsupported.');
+        }
+        foreach ([
+            'origin' => ['type', 'reference'],
+            'archive' => ['status', 'sha256'],
+            'signature' => ['status', 'key_id'],
+            'sbom' => ['status', 'sha256'],
+            'license' => ['identifier', 'status'],
+            'qualification' => ['status', 'review', 'vulnerability_response', 'marketplace'],
+            'compatibility' => ['modules'],
+        ] as $field => $keys) {
+            if (!is_array($trust[$field] ?? null)) {
+                throw new PluginLifecycleException('PLUGIN_TRUST_INVALID', 'Plugin trust record is invalid.');
+            }
+            $this->assertExactKeys($trust[$field], $keys, 'PLUGIN_TRUST_INVALID');
+        }
+        if (($trust['origin']['type'] ?? null) !== 'repository-contents'
+            || ($trust['origin']['reference'] ?? null) !== 'canonical-plugin-contents-v1'
+            || ($trust['archive']['status'] ?? null) !== 'not-issued'
+            || !array_key_exists('sha256', $trust['archive'])
+            || $trust['archive']['sha256'] !== null
+            || ($trust['signature']['status'] ?? null) !== 'not-issued'
+            || !array_key_exists('key_id', $trust['signature'])
+            || $trust['signature']['key_id'] !== null
+            || ($trust['sbom']['status'] ?? null) !== 'not-issued'
+            || !array_key_exists('sha256', $trust['sbom'])
+            || $trust['sbom']['sha256'] !== null
+            || ($trust['license']['status'] ?? null) !== 'declared'
+            || !is_string($trust['license']['identifier'] ?? null)
+            || trim($trust['license']['identifier']) === ''
+            || ($trust['qualification']['review'] ?? null) !== 'not-reviewed'
+            || ($trust['qualification']['vulnerability_response'] ?? null) !== 'not-configured'
+            || !is_array($trust['compatibility']['modules'] ?? null)
+            || !array_is_list($trust['compatibility']['modules'])
+            || $trust['compatibility']['modules'] === []) {
+            throw new PluginLifecycleException('PLUGIN_TRUST_INVALID', 'Plugin trust record is invalid.');
+        }
+        return $trust;
     }
 
     /** @param array{type:string,reference:string,sha256:string} $source */
