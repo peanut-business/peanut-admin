@@ -14110,7 +14110,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "3b7405f27d18d09166ed0679582c91a5ef1a267dd6ce21a51aac21edec8b1174"
+            "source_sha256": "305bd16c7514ed851c9167bde1fac424303761d09b6fe24a7399f2d2779d5e98"
         },
         {
             "path": "server/app/platform/service/plugin/PluginLockResolver.php",

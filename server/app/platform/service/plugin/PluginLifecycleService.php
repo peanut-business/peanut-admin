@@ -309,7 +309,9 @@ SQL);
     /** @param array<string,ManifestDocument> $manifests */
     private function applyMigrations(PluginDescriptor $plugin, array $manifests): void
     {
-        $batch = (int)$this->pdo->query('SELECT COALESCE(MAX(batch_no),0)+1 FROM pa_module_migration')->fetchColumn();
+        $batchQuery = $this->pdo->query('SELECT COALESCE(MAX(batch_no),0)+1 FROM pa_module_migration');
+        $batch = (int)$batchQuery->fetchColumn();
+        $batchQuery->closeCursor();
         foreach ($manifests as $moduleKey => $manifest) {
             $files = $this->migrationFiles($plugin->moduleRoots[$moduleKey], $manifest);
             $repairs = $this->migrationRepairMap($moduleKey, $files);
@@ -324,6 +326,7 @@ WHERE module_key=:module_key AND migration_key=:migration_key
 SQL);
                 $existing->execute(['module_key' => $moduleKey, 'migration_key' => $migrationKey]);
                 $row = $existing->fetch(PDO::FETCH_ASSOC);
+                $existing->closeCursor();
                 if (is_array($row)) {
                     if (!hash_equals((string)$row['checksum'], $checksum)) {
                         throw new PluginLifecycleException(
