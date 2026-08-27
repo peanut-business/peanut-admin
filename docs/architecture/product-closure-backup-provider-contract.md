@@ -115,6 +115,6 @@ one-off task CLI 的 image；运行中的 PHP/Nginx/cron/MySQL 不重建。主�
 部署实际使用且登记的根 `.env` 只读挂载到 one-off CLI；容器启动时移除四个禁止持久化的安装
 身份键并显式写入登记 schema 的 `DB_PREFIX=pa_`，生成 mode 0600 的容器内临时加载文件，再通过 direct `docker run` 只加入登记的
 `peanut-admin_default` 网络，避免旧 Compose 把未在文件中声明的默认值注入候选进程。临时文件随
-`--rm` 消失，配置不复制进 image 或主机新文件，也不改变运行容器。成功后删除精确 worker image 和资格 registry 文件；失败时
+`--rm` 消失；one-off 保持 stdin 以让 manifest/evidence 进入受信 CLI，配置不复制进 image 或主机新文件，也不改变运行容器。成功后删除精确 worker image 和资格 registry 文件；失败时
 保留其身份与隔离恢复资源。Release 展开目录没有 `.git` 时，备份 source commit/tree 来自同一
 部署的 `RELEASE_METADATA.json.technical_qualification`，不能猜测分支或工作树身份。
