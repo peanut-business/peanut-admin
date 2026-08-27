@@ -7817,6 +7817,20 @@
             "source_sha256": "1ad9f22c97dae44ded121d4d6d832e54148662c9a49eb5e6fdcb223d692a1796"
         },
         {
+            "path": "server/app/adminapi/controller/config/ReadinessController.php",
+            "target": "server/app/adminapi/controller/config/ReadinessController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "0b7dd88df02f392ea145ad621b91bb4903f5323e3aa144eba4cc41306d80f77d"
+        },
+        {
             "path": "server/app/adminapi/controller/decoration/DecorationPageController.php",
             "target": "server/app/adminapi/controller/decoration/DecorationPageController.php",
             "classification": "app-owned",
@@ -11282,7 +11296,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cb64e88f74ad304a85588f047e86bb63ef973e38b4af5f19aaced3dfa94d20e8"
+            "source_sha256": "35ddc55ada37ade944e73aa0ffc5dc67d9a872d51b58be428e21bd28dbff5a3a"
         },
         {
             "path": "server/app/common/service/installation/InstallationPreflightHost.php",
@@ -11296,7 +11310,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5c20827e5433302ed71243345297ba267326aa011e60d2a0a3c839e7776319dc"
+            "source_sha256": "3c62b4cb06c4bd55ac42122b805fa5f05ae4aa9f520e625123a0b234cc3fbb10"
         },
         {
             "path": "server/app/common/service/instance/DeploymentMode.php",
@@ -12046,6 +12060,20 @@
             ],
             "source_sha256": "9355461e45011cc578bb00c8cb70fc4d42c5c04dea61f9528f5282638742f197",
             "adapter_kind": "framework-adapter"
+        },
+        {
+            "path": "server/app/common/service/readiness/FirstRunReadinessHost.php",
+            "target": "server/app/common/service/readiness/FirstRunReadinessHost.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "62590b7cb145a28774c5bf5e58744b0617bb393e2061fd56a1c712d1cb2023fb"
         },
         {
             "path": "server/app/common/service/scaffold/ApplicationCreator.php",
@@ -13291,7 +13319,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "b75690d445a2156a2f44a0832caad8a2506c02c57033a3098a62f8c2ba6d3212"
+            "source_sha256": "5f04ea350fafe19f489aab711ff2483142fc5965a8bd526e2e6c384526e56e0a"
         },
         {
             "path": "server/app/platform/service/module/ReflectionContractInspector.php",
@@ -14226,6 +14254,20 @@
             "source_sha256": "db250ea743b68ecfe7db16b1644259c2f7813ecec39472dbc8b28ad1771089f0"
         },
         {
+            "path": "server/database/migrations/20260827-first-run-readiness.sql",
+            "target": "server/database/migrations/20260827-first-run-readiness.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "83b410aa0715b313ad52179f92c60619472ef61ed989d9753104285b3aee09d7"
+        },
+        {
             "path": "server/database/seed-demo-data.php",
             "target": "server/database/seed-demo-data.php",
             "classification": "managed",
@@ -14614,7 +14656,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "09b6d631ce11438cd43d4df8633cf5a8c93df02db7e637d2c0b8a7477d1fa1da"
+            "source_sha256": "20baeb7b410e90dfdde7ea331804f5ee2d1d1da43366da6a65095e45043a43e7"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
@@ -17619,6 +17661,20 @@
             "source_sha256": "b66e620b142010b11b31265b5ce51aad3d5c7add61eec6e1b8752a3e6c23e591"
         },
         {
+            "path": "web/src/api/readiness.ts",
+            "target": "web/src/api/readiness.ts",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "bce134a625c54bed51f82ff9733b778e383b60efdd94f63456770d07645f923a"
+        },
+        {
             "path": "web/src/api/system-settings.ts",
             "target": "web/src/api/system-settings.ts",
             "classification": "managed",
@@ -18192,7 +18248,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "af60028e8d3c339410bff8bec11b63e88e71f20f4a6e45ab61f8d02e5ce28939"
+            "source_sha256": "3cb2e3aff0fb2fd9ad59a40e574fc6733e0ed3af66b227b2080d3122a9dce424"
         },
         {
             "path": "web/src/hooks/chart-option.ts",
@@ -18360,7 +18416,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3c35e942e666df6b0645ca9736fca7633a742152a2c48c39ad9c854269a41b75"
+            "source_sha256": "8658abf14f54589594ac9897a4353dbbfc34a3bcfb6a0c8f1767be603ce2fb79"
         },
         {
             "path": "web/src/locale/en-US/settings.ts",
@@ -18402,7 +18458,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e4ef505b973c9464d490a61543591a530b5f06bdb4ae51611d69ad37114b5b7c"
+            "source_sha256": "5962bcc1f39fb8823907361c69d0d1bdc1342eef4be018da1ee245937f9d26db"
         },
         {
             "path": "web/src/locale/zh-CN/settings.ts",
@@ -19603,7 +19659,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5ee947fd2e02771f0d74d400068dfff89ed5cd459fcd6d256c44db7fbc45a59d"
+            "source_sha256": "ba3d6c90ddbff859adcf04cb5bf8bca3149f69c8e439d95b859419e8f85ed785"
         },
         {
             "path": "web/src/router/routes/modules/dashboard.ts",
@@ -20095,6 +20151,48 @@
                 "full"
             ],
             "source_sha256": "3082fda98435bf3093e47fba87c8b1f3118163b060faa26bef4d5a032920ab7f"
+        },
+        {
+            "path": "web/src/views/app-setting/readiness/index.vue",
+            "target": "web/src/views/app-setting/readiness/index.vue",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "5c4956f5627fa819d46b4632ce80029cdcf28083009b5494d899834cc63b6049"
+        },
+        {
+            "path": "web/src/views/app-setting/readiness/locale/en-US.ts",
+            "target": "web/src/views/app-setting/readiness/locale/en-US.ts",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "9d8eda8ddc282e259bbf8886791422547a4e367bcd5c3a58a945f4cbf92da604"
+        },
+        {
+            "path": "web/src/views/app-setting/readiness/locale/zh-CN.ts",
+            "target": "web/src/views/app-setting/readiness/locale/zh-CN.ts",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "d8d1120b8dc0c3491e266542e31809a3c035ba0baf515456039ea81a35e1f0ea"
         },
         {
             "path": "web/src/views/app-setting/transaction/index.vue",

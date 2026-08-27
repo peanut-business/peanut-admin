@@ -27,6 +27,7 @@ import localeAppHotSearch from '@/views/app-setting/hot-search/locale/en-US';
 import localeAppPay from '@/modules/official-payment/views/settings/locale/en-US';
 import localeAppChannel from '@/modules/official-oauth/views/channel/locale/en-US';
 import localeAppTransaction from '@/views/app-setting/transaction/locale/en-US';
+import localeAppReadiness from '@/views/app-setting/readiness/locale/en-US';
 import localeArticleCate from '@/modules/official-article/views/cate/locale/en-US';
 import localeArticleList from '@/modules/official-article/views/list/locale/en-US';
 import localeSettings from './en-US/settings';
@@ -79,6 +80,7 @@ export default {
   ...localeAppPay,
   ...localeAppChannel,
   ...localeAppTransaction,
+  ...localeAppReadiness,
   ...localeArticleCate,
   ...localeArticleList,
 };
