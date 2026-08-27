@@ -13,7 +13,7 @@ Upstream: 产品能力账本、Module manifest、服务登记、当前应用/Cor
 
 > - 队列执行状态：**执行中**
 > - 建立日期：2026-08-27
-> - Application 当前基线：`af7b1c961bca314d9eba5c506aa6eca19fc1cf9b`
+> - Application 当前基线：`468dc3b0ae09d351deaac264b34e110fe4a893d4`
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
 > - 进度入口：[`../product-status/product-closure-observability.md`](../product-status/product-closure-observability.md)
 > - 产品能力唯一事实源：[`../product-status/capability-ledger.json`](../product-status/capability-ledger.json)
@@ -60,7 +60,7 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 | 8 | `PC30` | 备份 Provider 与配对制品合同 | 已完成 | PC01、PC02 | 固定 DB、文件、manifest、checksum 和审计 | Core + Deployment |
 | 9 | `PC31` | 应用内备份中心 | 已完成 | PC20、PC30 | 提交和观察备份任务 | Application |
 | 10 | `PC32` | 恢复到新目标并验证 | 已完成 | PC31 | 证明备份可恢复且不覆盖活动库 | Core + Deployment |
-| 11 | `PC40` | 维护窗口与写入门禁 | 进行中 | PC20 | 为升级和恢复提供统一停写边界 | Core + Application |
+| 11 | `PC40` | 维护窗口与写入门禁 | 已完成 | PC20 | 为升级和恢复提供统一停写边界 | Core + Application |
 | 12 | `PC41` | 升级就绪与 Module 兼容检查 | 未开始 | PC02、PC30、PC40 | 提前发现版本、迁移和备份风险 | Core + Application |
 | 13 | `PC42` | 应用升级中心纵向闭环 | 未开始 | PC32、PC41 | 串联备份、维护、迁移和恢复指针 | Application |
 | 14 | `PC50` | Module 制品信任与兼容矩阵 | 进行中 | PC02 | 建立官方目录/市场的安全前提 | Core + Module Host |
@@ -116,7 +116,7 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 - PC30：PR #287 已合入 `dev@dd6a877d1d31a583d0221c0a7b6a3ca325da8e77`，固定 Runtime 提交为 `2380593b51680de48962eb360514530bdb356fe5`；应用直接采用 Core Ops Provider Registry，固定单一配对 Provider、逻辑新目标、一次尝试和 schema 1 manifest。容量、停写窗口、资源/镜像身份、固定 DB/文件制品与 SHA-256 已形成 path-free 合同；Platform 提交和实际 Deployment 执行仍保持禁用。
 - PC31：PR #289 已合入 `dev@9f33eb9fac44858d5d0575e1a760eec0d3af0694`，固定 Runtime 提交为 `994f8e7961af9be8834bc9c362f268546eeff6f4`；Platform 已采用 Core 任务提交/查询，形成备份中心、Application-owned evidence、受信 worker、60 秒心跳和 revision fencing。登记 development 数据库上的权限、幂等、并发拒绝、claim/succeed、最小公开投影、evidence、审计与零残留合同通过；真实配对制品和新目标恢复归 PC32。
 - PC32：PR #291 形成恢复任务、受信 worker、隔离资源与 evidence；PR #292—#302 收敛固定候选资格适配和实际 Gate 缺陷，最终 `dev@af7b1c961bca314d9eba5c506aa6eca19fc1cf9b` 成功把已验证配对备份 `backup_01010866ca8254b52ff5b127ed4e402d` 恢复到登记新目标。任务 `job_e5f0b76aea9fb68e96776f67c9a2ca77` 与 evidence `61fd2027fb4b8f950bfaf270dd5aa4bb6ca7d3a5f1e6c4af643831892d73e800` 记录 97 张表、6 条应用迁移、6 张 canonical 关键表、Account/Tenant/TenantMember 各 1、文件卷 0 文件/4096 bytes、零发布端口、受保护 Runtime 身份前后一致和成功零残留；PC32 已完成。
-- PC40：实现候选 PR #297 已开放并通过聚焦本地检查；合入前保持进行中，不能写成完成。
+- PC40：PR #297 已合入 `dev@468dc3b0ae09d351deaac264b34e110fe4a893d4`，固定 Runtime 为 `675de48cce762bf4b268e4d31e07de9de2520b5d`；应用已采用 Core `MaintenanceService`/`MaintenanceWindowStore`，Platform 可按 reason/revision/时间范围计划和关闭窗口，全局写门禁对真实 `POST /api/login/logout` 返回 `50300 / MAINTENANCE_WRITE_BLOCKED` 并记录唯一 denied Platform 审计。登记 development 数据库的窗口与审计 fixture 清理为 0，端口和租约零残留；PC40 已完成。
 - PC50：实现候选 PR #296 已开放并通过聚焦本地检查；合入前保持进行中，不能写成完成。
 - 当前没有数据库、服务、容器、浏览器或生产资源 owner。
 

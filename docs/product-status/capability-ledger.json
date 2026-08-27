@@ -211,16 +211,18 @@
     },
     {
       "id": "PA-OPS-002",
-      "name": "单实例只读运行与维护控制台",
+      "name": "单实例运行与维护控制台",
       "area": "operations",
       "status": "implemented",
-      "summary": "PC20 已由 PR #283 合入 dev：Platform 控制面采用 Core Ops PHP/Web 公共合同，展示数据库、应用迁移、Module 目录、缓存、Runtime 存储、版本身份和维护窗口；关键检查、降级语义与 fail-closed 边界已固定。正式数据库、浏览器和 released-scaffold 组合资格归 PC70。",
+      "summary": "PC20/PC40 已完成：Platform 控制面采用 Core Ops PHP/Web 状态与维护公共合同，展示数据库、迁移、Module、缓存、存储和版本，并可按 reason/revision/时间范围计划或关闭维护窗口。全局后端写门禁已在登记 development 数据库上真实返回 MAINTENANCE_WRITE_BLOCKED 并记录 denied 审计；正式浏览器和 released-scaffold 组合资格归 PC70。",
       "acceptance": [
         "只有具备 platform.ops.read 权限的 Platform Operator 可以访问实例级状态",
         "数据库、应用迁移、Module 目录和 Runtime 存储关键检查失败时整体状态为 unhealthy",
         "非权威缓存读取失败时整体状态为 degraded，状态证据无法构造时接口 fail closed",
         "版本提交、tree、Release 身份、构建时间和应用 migration 摘要使用固定 Core schema",
-        "备份、恢复、维护写入和日志在各自后续任务完成前保持不可用"
+        "Platform 维护写入同时要求 platform.ops.maintenance.manage 权限、revision 和幂等键；计划与关闭审计和状态变更处于同一事务",
+        "活动窗口期间所有 POST/PUT/PATCH/DELETE 在全局中间件真实拒绝并记录 denied Platform 审计；只有精确维护控制路由可穿透且仍受 Platform 权限保护",
+        "维护状态读取或审计写入异常时写请求 fail closed；页面隐藏不作为门禁"
       ],
       "evidence": [
         {
@@ -230,6 +232,14 @@
         {
           "kind": "pull_request",
           "ref": "https://github.com/peanut-business/peanut-admin/pull/283"
+        },
+        {
+          "kind": "git",
+          "ref": "468dc3b0ae09d351deaac264b34e110fe4a893d4"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/297"
         },
         {
           "kind": "document",
@@ -242,7 +252,8 @@
       "paths": [
         "server/app/platform/controller/PlatformOpsController.php",
         "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php",
-        "server/app/platform/service/ops/ReadOnlyMaintenanceWindowStore.php",
+        "server/app/platform/service/ops/PdoMaintenanceWindowStore.php",
+        "server/app/common/http/middleware/MaintenanceWriteGateMiddleware.php",
         "platform/src/App.vue",
         "platform/src/api/platform.ts"
       ]
