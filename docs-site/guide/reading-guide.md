@@ -48,17 +48,22 @@ description: 用任务导向、参数表和停止线阅读 Peanut Admin 文档�
 
 | 参数/环境变量 | 必填 | 默认值 | 作用 | 风险/停止线 |
 | --- | --- | --- | --- | --- |
-| `ADMIN_INITIAL_EMAIL` | 是 | 无 | 创建首个 Tenant owner 的邮箱 | 格式无效或与环境目标不符时停止 |
-| `ADMIN_INITIAL_PASSWORD` | 是 | 无 | 创建首个 owner 的初始密码 | 仅首次安装使用；不得写入 Git、日志或截图 |
+| `ADMIN_INITIAL_EMAIL` | automatic 是 | 无 | 进程内创建首个 Tenant owner 的邮箱 | 不写 `server/.env`、Git、日志或截图 |
+| `ADMIN_INITIAL_PASSWORD` | automatic 是 | 无 | 进程内创建首个 owner 的初始密码 | 至少 12 位；命令结束后不保留 |
+| `PEANUT_INSTALLATION_MODE` | 是 | `automatic` | 选择 `automatic` 或 `guided` 正式入口 | 两者只允许调用唯一安装 Host |
+| `PEANUT_INSTALLATION_SETUP_TOKEN` | guided 是 | 无 | 授权一次性 Web 安装请求 | 使用高熵随机值；成功后重复执行拒绝 |
 | `server/.env` 中的 `DB_*` | 是 | 无 | 指向已登记的空数据库 | 目标存在任何表时安装器必须拒绝，不要清库绕过 |
 | `DEPLOYMENT_MODE` | 是 | 无 | `standalone` 或 `multi-tenant` | 拼写错误按 fail-closed 处理 |
 
 ```bash
-# 先在 server/.env 中填写 ADMIN_INITIAL_EMAIL / ADMIN_INITIAL_PASSWORD
+ADMIN_INITIAL_EMAIL=owner@example.com \
+ADMIN_INITIAL_PASSWORD='<at-least-12-characters>' \
 php server/database/install.php
 ```
 
-预期结果：安装器创建 canonical Schema、默认 Tenant、Account/Credential/TenantMember 和首 owner；不会回显密码。然后执行 `php server/database/install.php --migrate --current`，只核对 checksum，不修改账本。
+预期结果：唯一安装 Host 创建 canonical Schema、当前 migration、默认 Tenant、
+Account/Credential/TenantMember、首 owner 和所选官方 Module；不会回显密码。guided 模式改为
+启动服务后访问 `/admin/installation`，成功前业务 API 与 cron 均不可用。
 
 ### 多租户本地体验：`scripts/local-multi-tenant-demo`
 

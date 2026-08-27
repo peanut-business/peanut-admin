@@ -48,6 +48,33 @@ final readonly class ProductTenantModuleProfileService
     {
         $definition = self::PROFILES[$profile]
             ?? throw new ModuleException('PRODUCT_PROFILE_INVALID', 'Unknown product profile.');
+        return $this->applyDefinition($profile, $definition);
+    }
+
+    /**
+     * @param list<string> $moduleKeys
+     * @return array{profile:string,tenant_count:int,module_count:int,binding_count:int}
+     */
+    public function applyInstallationSelection(array $moduleKeys): array
+    {
+        if (!array_is_list($moduleKeys)
+            || array_filter($moduleKeys, static fn(mixed $key): bool => !is_string($key)) !== []) {
+            throw new ModuleException('PRODUCT_PROFILE_INVALID', 'Installation Module selection is invalid.');
+        }
+        $moduleKeys = array_values(array_unique($moduleKeys));
+        sort($moduleKeys, SORT_STRING);
+        return $this->applyDefinition('installation', [
+            'tenant_codes' => ['default'],
+            'modules' => $moduleKeys,
+        ]);
+    }
+
+    /**
+     * @param array{tenant_codes:list<string>,modules:list<string>} $definition
+     * @return array{profile:string,tenant_count:int,module_count:int,binding_count:int}
+     */
+    private function applyDefinition(string $profile, array $definition): array
+    {
         $registry = $this->registry();
         $repository = new VerifiedTenantModuleRepository(
             new PdoModuleRuntimeRepository($this->pdo, true),

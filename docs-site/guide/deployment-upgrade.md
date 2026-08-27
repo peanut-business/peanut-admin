@@ -20,11 +20,16 @@ description: 从不可变版本到备份、迁移、验证和恢复的交付闭�
 1. 核对 `release-versions.json`、Release 元数据、锁文件和部署目标。
 2. 备份数据库与用户持久文件，并记录它们对应的应用版本。
 3. 使用 `scripts/deploy-release --help` 确认当前参数；不要从历史文档复制已删除选项。
-4. 运行部署脚本的 preflight，再执行适合目标的 fresh 或 upgrade 流程。
+4. fresh 部署选择 automatic（CI/托管）或 guided（人工页面）入口；两者共用同一安装 Host。
 5. 运行 migration/账本校验、服务健康检查和受影响入口 smoke。
 6. 失败时停止流量变更，按配对备份和已验证恢复流程处理；不要跳过 checksum 或手改账本。
 
 脚手架文件升级使用 `scripts/scaffold-upgrade` 的 `preflight/apply/verify/recover` 合同。它只管理 manifest 声明的文件，不替代业务 migration 或依赖升级。
+
+初始 Admin/Platform 身份不得写入 `server/.env`。automatic 只把它们注入安装命令进程；
+guided 使用高熵一次性 setup token，并且只开放 `/admin/installation` 和固定安装 API。数据库
+连接与部署模式始终来自登记配置，页面不接受任意地址、端口、路径或命令。安装失败若留下
+非空数据库，停止并由资源 owner 重建目标，不自动 adopt 或覆盖。
 
 ## 验证
 
