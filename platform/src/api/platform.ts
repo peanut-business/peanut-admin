@@ -145,7 +145,7 @@ export interface OpsBackupProvider {
 
 export interface OpsBackupTask {
   task_key: string;
-  task_type: 'ops.backup.create';
+  task_type: 'ops.backup.create' | 'ops.restore.verify';
   status: 'queued' | 'running' | 'succeeded' | 'dead' | 'cancelled';
   attempt_count: number;
   max_attempts: number;
@@ -172,9 +172,23 @@ export interface OpsLatestVerifiedBackup {
   source_matches_runtime: boolean;
 }
 
+export interface OpsLatestRestoreVerified {
+  backup_reference_key: string;
+  target_key: 'isolated-new-target';
+  verified_at: string;
+  verification_sha256: string;
+  table_count: number;
+  migration_count: number;
+  tenant_count: number;
+  account_count: number;
+  tenant_member_count: number;
+  file_count: number;
+}
+
 export interface OpsBackupCenterSnapshot {
   provider: OpsBackupProvider;
   latest_verified: OpsLatestVerifiedBackup | null;
+  latest_restore_verified: OpsLatestRestoreVerified | null;
   tasks: OpsBackupTask[];
 }
 
@@ -589,6 +603,42 @@ async function opsSubmitBackup(
   };
 }
 
+async function opsSubmitRestore(
+  providerKey: string,
+  backupReferenceKey: string,
+  targetKey: string,
+  idempotencyKey: string,
+  signal: AbortSignal
+): Promise<OpsTransportResult> {
+  const result = await client.post<Envelope<unknown>>(
+    '/api/platform/v1/ops/tasks/restore',
+    {
+      provider_key: providerKey,
+      backup_reference_key: backupReferenceKey,
+      target_key: targetKey,
+    },
+    { headers: { 'Idempotency-Key': idempotencyKey }, signal }
+  );
+  const requestId = opsRequestId(result.headers as Record<string, unknown>);
+  if (result.data.code === 20000) {
+    return {
+      status: result.status,
+      headers: new Headers({ 'X-Request-Id': requestId }),
+      body: { data: result.data.data, meta: { request_id: requestId } },
+    };
+  }
+
+  const details = result.data.data as { error_code?: string } | null;
+  return {
+    status: opsStatus(result.data.code),
+    headers: new Headers({ 'X-Request-Id': requestId }),
+    body: {
+      code: details?.error_code || 'OPS_INTERNAL_ERROR',
+      request_id: requestId,
+    },
+  };
+}
+
 function unavailable(code: string): Promise<OpsTransportResult> {
   return Promise.resolve({
     status: 503,
@@ -597,7 +647,7 @@ function unavailable(code: string): Promise<OpsTransportResult> {
   });
 }
 
-/** Platform Ops transport: status/maintenance reads and backup task operations are connected. */
+/** Platform Ops transport: status/maintenance reads and backup/restore task operations are connected. */
 export function createPlatformOpsTransport(): OpsConsoleTransport {
   return {
     overview: (signal) => opsRead('/api/platform/v1/ops/status', signal),
@@ -605,7 +655,20 @@ export function createPlatformOpsTransport(): OpsConsoleTransport {
       opsRead('/api/platform/v1/ops/maintenance', signal),
     submitBackup: (providerKey, idempotencyKey, signal) =>
       opsSubmitBackup(providerKey, idempotencyKey, signal),
-    submitRestore: () => unavailable('OPS_PROVIDER_UNAVAILABLE'),
+    submitRestore: (
+      providerKey,
+      backupReferenceKey,
+      targetKey,
+      idempotencyKey,
+      signal
+    ) =>
+      opsSubmitRestore(
+        providerKey,
+        backupReferenceKey,
+        targetKey,
+        idempotencyKey,
+        signal
+      ),
     task: (taskKey, signal) =>
       opsRead(`/api/platform/v1/ops/tasks/${encodeURIComponent(taskKey)}`, signal),
     scheduleMaintenance: (

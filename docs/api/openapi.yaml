@@ -163,6 +163,31 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/tasks/restore:
+    post:
+      tags: [PlatformOps]
+      operationId: submitPlatformRestoreVerification
+      description: >-
+        Restores one verified paired backup to the registered isolated target,
+        verifies data and files, then removes only that target. Host, database,
+        path, command, credential and retry fields are not accepted.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, minLength: 8, maxLength: 200}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PlatformRestoreVerificationRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '400': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
+        '409': {$ref: '#/components/responses/ApiResponse'}
   /api/platform/v1/ops/tasks/{task_key}:
     get:
       tags: [PlatformOps]
@@ -214,6 +239,20 @@ components:
         provider_key:
           type: string
           enum: [peanut.paired-db-files]
+    PlatformRestoreVerificationRequest:
+      type: object
+      additionalProperties: false
+      required: [provider_key, backup_reference_key, target_key]
+      properties:
+        provider_key:
+          type: string
+          enum: [peanut.paired-db-files]
+        backup_reference_key:
+          type: string
+          pattern: '^backup_[a-f0-9]{32}$'
+        target_key:
+          type: string
+          enum: [isolated-new-target]
     ReadinessChecklistResponse:
       allOf:
         - {$ref: '#/components/schemas/ApiResponse'}

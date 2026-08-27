@@ -108,6 +108,31 @@ final class PlatformOpsController extends BasePlatformController
         });
     }
 
+    public function restore(): Json
+    {
+        return $this->run(function (PDO $pdo): array {
+            $params = $this->request->post();
+            $paramKeys = array_keys($params);
+            sort($paramKeys, SORT_STRING);
+            if ($paramKeys !== ['backup_reference_key', 'provider_key', 'target_key']
+                || !is_string($params['provider_key'])
+                || !is_string($params['backup_reference_key'])
+                || !is_string($params['target_key'])
+            ) {
+                throw OpsConsoleException::invalid();
+            }
+            return PlatformOpsRuntimeFactory::tasks($pdo)
+                ->submitRestore(
+                    $this->context(),
+                    $params['provider_key'],
+                    $params['backup_reference_key'],
+                    $params['target_key'],
+                    $this->idempotencyKey()
+                )
+                ->toPublicArray();
+        });
+    }
+
     public function backups(): Json
     {
         return $this->run(fn(PDO $pdo): array => (new PlatformBackupCenterService($pdo))

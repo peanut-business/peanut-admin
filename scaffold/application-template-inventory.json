@@ -3779,7 +3779,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "647ceec74792537af76723761dae1f5402babb72d6a4d76476d7965ced911c2b"
+            "source_sha256": "e911e886fd525794532a8c2392922fc98cbd3486d0139666e2ddcfd7141ed8b2"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -3791,7 +3791,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "396cc2a0d591f4e82d3ee7e7802ead43593bc610735135e22cd11a75f78d4676"
+            "source_sha256": "59cb728163e53259b8d01baea947f03ba9bb9987e2ff4513442e2c0695e2a5c0"
         },
         {
             "path": "platform/src/main.ts",
@@ -4059,7 +4059,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2d61de90a3561dd81b18892d302aed53824c10a8f0822e78d557e0cff4119507"
+            "source_sha256": "ab04b8cac7a82d4aef79e28dceca21f191d75c1385e06fcafc7c635833c5716c"
         },
         {
             "path": "resources/service-registry.json",
@@ -4411,7 +4411,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "74e912d0ad6c95a3252bb53c3a0f2a57989da60dbf213b3a7aab6c951d3a2aca"
+            "source_sha256": "bb5d3653660e2394873037d536ce542fbe665959aeeef346373f4170bb956ca4"
+        },
+        {
+            "path": "scripts/ops-restore-worker",
+            "target": "scripts/ops-restore-worker",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "5bce1c7b853c9e03b042521ab748f5ac540a73549252dab72613b1c811b956d1"
         },
         {
             "path": "scripts/p0e-browser-smoke",
@@ -4519,7 +4533,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5d5025807b2a504b6bf9e2940bb89d0ac965882d83272dd302887fb68ef0893c"
+            "source_sha256": "e878ffb63a9ac3f0ca6579bdc412ecc059629dca6bf8f96ec6a2b41bf4b77500"
         },
         {
             "path": "scripts/publish-github-release",
@@ -9283,7 +9297,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2dc75f9dc900149fcbd96825efceeace95610ce92617b523ed10e4361f928254"
+            "source_sha256": "c97b5ca7bc5cedc286d8695cde26d3a87d59dfa2d81e4dfbe82ff37dab9e8b13"
+        },
+        {
+            "path": "server/app/command/OpsRestoreTask.php",
+            "target": "server/app/command/OpsRestoreTask.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "37c3014ba4cfc9200aeb95b0a9267f965f4c86189d084e854a49dbb7aa14ad3e"
         },
         {
             "path": "server/app/command/PluginCommandSupport.php",
@@ -12844,7 +12872,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "bc86b4eeeb1a65c4142dbafeef3e9ac042d02efb6450dca2bf7b5b5cb40348f2"
+            "source_sha256": "b525f174d7b690ddd9a26bcdf7e9e1048ed0338b64b2d121ea2309c849ba7ce8"
         },
         {
             "path": "server/app/platform/controller/PlatformSessionController.php",
@@ -13432,7 +13460,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "a36f1701c8d72088501310ac03a569ecd8c55ddf06f372866666eeb5e5fdc60a"
+            "source_sha256": "7a9e4c12f8ddc584547c3383eebd01a410081de8b22b31ab131c2da93b09686d"
         },
         {
             "path": "server/app/platform/service/ops/PairedBackupProvider.php",
@@ -13456,7 +13484,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "966db92363eb2fc85e7e69342c69262bd4266a452689b5e5f271ee055e29c823"
+            "source_sha256": "b2cd23185f61c212f1a9dfac85fd3142e49df6e4236f68da8e9ed79dd9df1047"
         },
         {
             "path": "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
@@ -13469,6 +13497,18 @@
                 "full"
             ],
             "source_sha256": "5eb4cb851b4591bfd8a43de407458c7be6317f7a43d286be67b35d89d3795a00"
+        },
+        {
+            "path": "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
+            "target": "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "6cfa6ccc8d19d6a6352b0e5bf257d0f388da8965f18307af775d300036b6d45a"
         },
         {
             "path": "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
@@ -13492,7 +13532,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5b96262a1d33be9aa230298848602e62389e8df5432ad4a4f0803513b0d9990e"
+            "source_sha256": "4e729dae0f12f8bc66916dddad217fa2ae8621f21689e8ea9f6439cd5f085dc4"
         },
         {
             "path": "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
@@ -13541,6 +13581,18 @@
                 "full"
             ],
             "source_sha256": "934e3214badfb5c0033002fc9cd378ed8b7a18277807564a380b51f8b17e8676"
+        },
+        {
+            "path": "server/app/platform/service/ops/RestoreVerificationEvidence.php",
+            "target": "server/app/platform/service/ops/RestoreVerificationEvidence.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "0d25386025ff22a3edfc65fd67fc79204fc859425279acca38832e9b1bc47a11"
         },
         {
             "path": "server/app/platform/service/plugin/DeterministicTarArchive.php",
@@ -14072,7 +14124,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f4a26758a1663b0399ad0073ce0d2bdf7ce3a025ede5bade119dabe8ffe53a56"
+            "source_sha256": "2ae8025770bf430f6096a445236d4e5f43cd4760756c0838a5e2210d33cff3ef"
         },
         {
             "path": "server/config/cookie.php",
@@ -14451,6 +14503,20 @@
                 "full"
             ],
             "source_sha256": "33058d141518a42a481e10ee386804c37b98efc3a34ea6e60df977eda8221be2"
+        },
+        {
+            "path": "server/database/migrations/20260827-create-ops-restore-evidence.sql",
+            "target": "server/database/migrations/20260827-create-ops-restore-evidence.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "22be5e7932f82d23ba43d90f437da97095a9407cc17faf94f9832e7f3f4efdca"
         },
         {
             "path": "server/database/migrations/20260827-first-run-readiness.sql",
@@ -14855,7 +14921,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7860e37d5824e3b380f2df812800b153ca7d85cc1d510bb8b3343c5d88e63ebd"
+            "source_sha256": "a696155756034063fbb826a31624c618fb5ff722016b8e15553d36b9e5a41ece"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
@@ -18447,7 +18513,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8f17f80d3e6d31fbd4b82e3f31a492b1ed7c93288c4e66ca3eab851911cbb164"
+            "source_sha256": "891e91b4fc1dc9319ca45a0835bd4dcadf1b41d48a6dcf53953bab11fac2cc12"
         },
         {
             "path": "web/src/hooks/chart-option.ts",
