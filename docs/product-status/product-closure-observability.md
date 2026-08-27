@@ -26,7 +26,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@468dc3b0ae09d351deaac264b34e110fe4a893d4` | PC00—PC40 的既定关键路径切片已合入；PC50 候选尚未合入 |
+| Application | `origin/dev@ed5ee1952dd01b8448adf1fb6e7c9ad4bc21be48` | PC00—PC50 的已完成切片均已合入；PC41 是当前关键路径 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
 | 安装 | CLI 空库安装、一次性 Web 向导、首次运行准备清单、3.x migration 链、只读健康和脱敏诊断入口存在 | 阶段 B 的安装与诊断切片已齐备；组合资格归 PC70 |
 | 运维 | Platform 已采用 Core Ops 状态/任务与维护合同，提供诊断、备份、固定隔离恢复、维护计划/关闭和全局写门禁 | PC41 仍需形成升级就绪投影 |
@@ -41,13 +41,13 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 指标 | 当前值 | 说明 |
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
-| 已完成 | 12 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21、PC30、PC31、PC32、PC40 |
-| 进行中 | 1 | PC50；实现候选 PR #296 尚未合入 |
+| 已完成 | 13 | PC00、PC01、PC02、PC10、PC11、PC12、PC20、PC21、PC30、PC31、PC32、PC40、PC50 |
+| 进行中 | 0 | — |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
 | 未开始 | 6 | PC41、PC42、PC51、PC52、PC60、PC70 |
 | 当前关键路径 | PC41 | 基于 PC02/PC30/PC40 形成升级就绪与 Module 兼容检查 |
-| 可并行工作线 | 1 | PC50 信任矩阵候选 PR #296；共享状态文档仍由一个集成 owner 收口 |
+| 可并行工作线 | 0 | PC51 尚未形成可审查候选；共享状态文档仍由一个集成 owner 收口 |
 
 ## 4. 阶段观察
 
@@ -57,7 +57,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | B 可安装、可诊断 | 已完成 | PC10—PC21 已合入；CLI、guided/automatic installer、Web 向导、首次运行清单、只读 Ops Console 和脱敏诊断包存在 | 正式数据库/浏览器/released-scaffold 组合资格归 PC70 | 保持 schema 与权限边界 |
 | C 可备份、可恢复 | 已完成 | PC30 Provider/manifest；PC31 任务、备份中心与 evidence；PC32 真实配对制品隔离恢复与零残留 | released-scaffold 组合资格归 PC70 | 保持生产覆盖恢复为独立授权动作 |
 | D 可升级 | 进行中 | scaffold upgrade、migration、deploy-release；PC40 维护窗口、计划/关闭和全写入口门禁已完成 | PC41 就绪检查、PC42 纵向闭环 | PC41 只读升级就绪切片 |
-| E 可扩展、可运营 | 进行中 | 8 Module、Bundle、任务和 Provider Runtime；PC50 实现候选 PR #296 | PC50 合入、PC51/PC52/PC60 | 审查并合入 PC50 |
+| E 可扩展、可运营 | 进行中 | 8 Module、Bundle、任务和 Provider Runtime；PC50 locked trust/compatibility matrix 已完成 | PC51 配置转移、PC52 模板、PC60 Provider 资格 | PC51 配置包切片 |
 | F 固定资格与发布 | 未开始 | 现有 P0-E/Release 机制 | 同一最终 tree 的最小组合资格和文档同步 | PC70 固定候选 |
 
 ## 5. 任务观察表
@@ -78,7 +78,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC40 | 已完成 | Runtime `675de48cce762bf4b268e4d31e07de9de2520b5d`；`dev@468dc3b0ae09d351deaac264b34e110fe4a893d4` / PR #297 | Platform 可计划/关闭维护窗口；全局写门禁的真实 POST 返回 `50300 / MAINTENANCE_WRITE_BLOCKED`，唯一 denied 审计内容正确，DB fixture、端口和租约零残留 | Platform 浏览器/released-scaffold 组合资格归 PC70 | PC41 消费维护状态形成升级就绪检查 |
 | PC41 | 未开始 | — | — | PC02、PC30、PC40 | 升级就绪检查 |
 | PC42 | 未开始 | — | — | PC32、PC41 | 应用升级纵向闭环 |
-| PC50 | 进行中 | PR #296 / head `d46b5d2e2c88d784c2e209f70c7c60015ed8ce48` | lock/manifest 信任字段、安装/升级资格解释与 Marketplace blocker 候选已形成并通过聚焦检查 | 尚未合入 `dev` | 审查、必要 rebase 后合入 |
+| PC50 | 已完成 | Runtime `d46b5d2e2c88d784c2e209f70c7c60015ed8ce48`；`dev@ed5ee1952dd01b8448adf1fb6e7c9ad4bc21be48` / PR #296 | lock/manifest 固定依赖、权限/migration 摘要、来源和未签发 trust 字段；install/reconcile/upgrade 解释同一 blocker，仅 bundled-locked 可执行 | Marketplace 的签名/SBOM/许可证/漏洞响应 authority 未签发，按设计稳定 blocked，不阻塞 PC50 合同完成 | PC51/PC52 消费稳定 manifest 与 lock 身份 |
 | PC51 | 未开始 | — | — | PC20 | 配置转移包 |
 | PC52 | 未开始 | — | — | PC02 | Module/Tenant 测试模板 |
 | PC60 | 未开始 | — | — | PC20 | Provider 资格面板 |

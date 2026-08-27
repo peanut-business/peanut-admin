@@ -480,14 +480,17 @@
     },
     {
       "id": "PA-PLUGIN-001",
-      "name": "Plugin 与 Module 生命周期",
+      "name": "Plugin/Module 生命周期与锁定信任矩阵",
       "area": "plugins",
       "status": "verified",
-      "summary": "安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture。",
+      "summary": "既有安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture；PC50 进一步在 dev@ed5ee19 固定 lock/manifest 的版本、依赖、权限摘要、migration 指纹、来源与信任状态，并让 install/reconcile/upgrade 共用同一资格解释。唯一 Runtime 只接受 bundled-locked，Marketplace 在签名、SBOM、许可证和漏洞响应 authority 完成前保持 blocked。",
       "acceptance": [
         "相同制品重复安装返回 unchanged",
         "失败迁移不得使 Plugin 进入 active",
-        "禁用和卸载保留业务数据且 finally 清理无残留"
+        "禁用和卸载保留业务数据且 finally 清理无残留",
+        "plugins.lock 与 manifest 必须固定版本、依赖、权限摘要、migration 指纹、来源、archive/签名/SBOM/许可证、资格和 verified-backup 要求",
+        "install、reconcile 和 upgrade 使用同一个资格判定并返回稳定 blocker；现行唯一 Runtime 只处理 bundled-locked，不引入第二插件 Runtime",
+        "没有 archive SHA-256、受信签名、SBOM、许可证审核和漏洞响应 authority 时 Marketplace 必须稳定 blocked，不能以 bundled 来源冒充已审核市场制品"
       ],
       "evidence": [
         {
@@ -497,10 +500,24 @@
         {
           "kind": "git",
           "ref": "a686d0fc7201f6f3ea76148898e9d33388421192"
+        },
+        {
+          "kind": "git",
+          "ref": "ed5ee1952dd01b8448adf1fb6e7c9ad4bc21be48"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/296"
         }
       ],
       "paths": [
-        "server/app/platform/service/plugin/PluginLifecycleService.php"
+        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "server/app/platform/service/plugin/PluginLockResolver.php",
+        "server/app/platform/service/plugin/PluginArtifactWriter.php",
+        "server/app/platform/service/plugin/PluginPackageArchiveService.php",
+        "server/resources/schemas/plugin.schema.json",
+        "plugins.lock",
+        "docs/plugin-module-development.md"
       ]
     },
     {
