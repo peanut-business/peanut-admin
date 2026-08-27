@@ -37,7 +37,7 @@ Core 变更；不得先复制参考 Host，再事后收敛，也不得建立双�
 
 | 领域 | 应用当前事实 | Core 当前事实 | 当前缺口 |
 |---|---|---|---|
-| 安装 | `server/database/install.php`、环境门禁、部署脚本和 CLI 文档已形成 | Core 参考 Host 有安装检查/流程，但公共包没有安装向导合同 | 没有一次性安装向导和首次运行清单 |
+| 安装 | PC10 已形成唯一只读预检 Host、CLI 入口和 app-owned scaffold 投影 | Core 参考 Host 有安装检查/流程，但公共包没有安装向导合同 | 没有一次性安装执行向导和首次运行清单 |
 | 诊断 | 系统维护页只展示环境/目录并清缓存；应用已复用 Core Tenant 诊断属性 | 公共 `ops-console` 有健康、版本、迁移和日志合同 | Ops Console 主链尚未采用 |
 | 备份 | 生产资源登记和 `deploy-release` 有 DB + 文件配对备份门禁 | 公共 `BackupRestoreProvider`、Registry、任务和权限合同已存在 | 没有应用内 Provider Adapter、任务视图和备份制品账本 |
 | 恢复 | 发布/资源登记定义恢复责任，常规应用无恢复入口 | 公共合同只允许受信 Provider 和登记目标；参考 Host 证明恢复到新目标 | 应用尚未采用和验证隔离恢复 |
@@ -57,8 +57,8 @@ PC20/PC30 采用已有 Ops 公共合同，不授权统一升级四端版本。
 
 | 能力 | Core owner | Application Host owner | Module / Deployment owner | 首次实施决定 |
 |---|---|---|---|---|
-| 安装预检 | 暂不新增公共 Runtime；只复用既有身份、密码和 Module 原语 | 结构化检查、CLI/Web 复用、安装锁 | Deployment 提供环境/资源探针 | `PC10` 先在应用形成唯一 Host；出现第二个真实消费者再评估抽 Core |
-| 安装向导 | 无 | 一次性 token、步骤、品牌、部署模式、管理员、Module 组合 | Deployment 执行空库安装 | `PC11` 只实现 Application UI/API，不开放任意命令或路径 |
+| 安装预检 | 暂不新增公共 Runtime；只复用既有身份、密码和 Module 原语 | 结构化检查、CLI/Web 复用、安装锁 | Deployment 提供环境/资源探针 | `PC10` 已由 PR #277 合入；出现第二个真实跨应用消费者再评估抽 Core |
+| 安装向导 | 无 | 一次性 token、步骤、品牌、部署模式、管理员、Module 组合 | Deployment 执行空库安装 | `PC11` 采用 guided/automatic 两个入口和唯一执行 Host，不开放任意命令或路径 |
 | 运行状态 | `OpsStatusService`、`OpsStatusSnapshot`、权限和错误合同 | ThinkPHP Provider、HTTP 路由、Platform 装配和页面入口 | Deployment 提供版本/迁移/健康数据 | `PC20` 直接采用公共合同，不重建第二套状态 DTO |
 | 结构化日志 | 日志 DTO、Registry、脱敏消息目录和查询合同 | 日志来源 Adapter、权限、分页和诊断包 | Module 只提供安全 source/attribute | `PC20/PC21` 采用；不公开原始秘密或任意文件日志 |
 | 备份任务 | Provider descriptor、任务提交、权限、幂等和审计 | Provider 注册、任务投影、备份制品账本和 UI | Deployment 执行 DB/文件/对象存储动作 | `PC30/PC31` 采用公共任务合同；Web 不接收 shell/path |
@@ -69,6 +69,27 @@ PC20/PC30 采用已有 Ops 公共合同，不授权统一升级四端版本。
 | Module 信任 | manifest、版本约束、TenantModule 和通用安全字段 | 包来源、lock、签名/SBOM/许可证/资格视图 | Module 发布者提供制品和声明 | `PC50` 先扩应用治理；只有公共 manifest 必需字段才进入 Core |
 | 配置转移 | 可复用设置、文件和任务原语 | 定义配置集合、schema、dry-run、冲突和审计 | Module 导出自己的可公开配置，秘密只留引用 | `PC51` 保持应用 Module；不把它伪装成数据库备份 |
 | Provider 资格 | 通用安全、任务、通知和审计合同 | 聚合状态和 Platform 可见性 | 各 Official Module 拥有真实 Provider probe 与证据 | `PC60` 不在通用 Gate 中发送外部消息或发生真实资金动作 |
+
+### 4.1 PC11 安装流程决定
+
+当前生产 Compose 在 PHP-FPM 启动前自动完成环境门禁、空库安装和 Schema current 检查，
+因此现有拓扑没有可承载浏览器向导的“未安装 HTTP 窗口”。PC11 不复制第二套安装器，采用
+以下最终设计：
+
+- `guided` 面向人工部署：启动后只开放安装页面和固定安装 API，cron 与全部业务 API
+  fail closed；高熵一次性 setup token 由部署配置提供，成功后立即失效；
+- `automatic` 面向 CI、托管和无人值守部署：继续由部署入口驱动，但改为调用与 guided
+  相同的 `InstallationExecutionHost`；
+- 两个入口只负责传输和交互，资源选择、预检、连接、空库复核、安装锁、管理员、官方
+  Module 组合、执行和 current 健康验证只有一个 Application Runtime；
+- 向导不得接收任意数据库地址、端口、用户名、密码、路径或命令，不写 `.env`；数据库和
+ 部署模式只能取项目资源登记及已加载环境；管理员和 Platform 初始密码只在请求内存使用，
+  不写日志、响应或持久配置；
+- 重复访问在已安装时固定拒绝执行；失败前零写可以重试，DDL 后留下非空残留时必须停止并
+  由资源 owner 重建目标，不把未知旧库或部分安装自动 adopt。
+
+该决定不是兼容层：guided 与 automatic 是同一执行 Host 的两个正式客户端，不存在双写、
+镜像安装器或备用 Runtime。
 
 ## 5. 允许采用的 Core 合同
 
@@ -120,12 +141,12 @@ Web `OpsConsolePage` 和 transport 只有在 `PC02` 证明应用当前或目标 
 |---|---|---|---|
 | `PC02` 版本兼容基线 | Application integration owner | 兼容矩阵、锁文件只读证据、Core 导出核验；默认不改 lock | 不依赖数据库或服务 |
 | `PC10` 安装预检 Host | Application installer owner | 安装预检合同、Host 和聚焦静态/单元验证 | 不依赖 Ops Console UI |
+| `PC11` 一次性安装向导 | Application installer owner | 唯一执行 Host、guided/automatic transport、安装态门禁和 Web 页面 | 不依赖 Ops Console UI |
 | `PC20` Ops 最小采用 | Application ops owner | PHP Provider/Host、只读路由和最小 Web 入口 | 不依赖备份 Provider |
 | `PC30` 备份 Provider | Deployment/recovery owner | Provider/manifest 合同和登记适配；不执行生产备份 | 不依赖升级 UI |
 
-`PC02` 是 `PC20` 采用 Core 的直接前置；`PC10` 可在 owner 不重叠时准备，但最终组合声明仍需
-兼容基线。后续任务的状态、候选和剩余 Gate 只写入产品闭环可观测面板，稳定能力完成后再
-更新产品能力账本。
+`PC02` 是 `PC20` 采用 Core 的直接前置；`PC10` 已完成并成为 `PC11` 的固定输入。后续任务的
+状态、候选和剩余 Gate 写入产品闭环可观测面板，稳定能力完成后同步更新产品能力账本。
 
 ## 9. 验证
 

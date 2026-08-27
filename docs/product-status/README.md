@@ -59,6 +59,12 @@ php scripts/check-product-capability-ledger
 | `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。 |
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
 
+### 已实现或正在验收
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-INSTALL-001` | 统一只读安装预检 | 已实现，待验收 | PC10 已在 dev 形成 CLI、未来 Web 与自动化共用的唯一只读安装预检 Host；稳定返回状态、代码、原因和修复建议，不连接数据库、不猜测地址或凭据，并裁剪资源秘密。正式 Release 组合资格归 PC70。 |
+
 ### 暂缓或范围外
 
 | ID | 能力 | 状态 | 当前事实 |
