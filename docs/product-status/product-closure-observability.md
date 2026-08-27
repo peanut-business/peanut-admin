@@ -26,7 +26,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@43cc193c0594718e0f5b9dc7f57a5af634ff2cde` | PC00—PC10 及 PC10 状态文档已合入；PC11 固定源码候选已通过资格，尚待合入 |
+| Application | `origin/dev@d80337b6d7b800558131968e65f8039cb8781912` | PC00—PC11 已合入；PC12 是下一关键路径 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
 | 安装 | CLI 空库安装和 3.x migration 链存在 | 缺一次性向导和首次运行清单 |
 | 运维 | 维护页只有环境/目录/清缓存；Core Ops 合同存在 | 缺应用 Host 和产品入口 |
@@ -41,12 +41,12 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 指标 | 当前值 | 说明 |
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
-| 已完成 | 4 | PC00、PC01、PC02、PC10 |
-| 进行中 | 1 | PC11 |
+| 已完成 | 5 | PC00、PC01、PC02、PC10、PC11 |
+| 进行中 | 0 | — |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
 | 未开始 | 14 | PC12、PC20—PC70 |
-| 当前关键路径 | PC11 | 一次性安装向导 |
+| 当前关键路径 | PC12 | 首次运行配置清单；尚未领取 |
 | 可并行工作线 | 0 | 当前共享文档候选由一个集成 owner 收口 |
 
 ## 4. 阶段观察
@@ -54,7 +54,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 阶段 | 状态 | 已有输入 | 尚缺验收 | 下一交付物 |
 |---|---|---|---|---|
 | A 边界与可见性 | 已完成 | PC00/PC01 由 PR #275 合入；PC02 由 PR #276 合入 | 无 | 保持唯一 owner 与锁版本，不为编号整齐盲升依赖 |
-| B 可安装、可诊断 | 进行中 | PC10 已合入；CLI installer、Core Ops 和维护页存在 | PC11/PC12、PC20/PC21 仍未实施 | PC11 guided/automatic 安装向导 |
+| B 可安装、可诊断 | 进行中 | PC10/PC11 已合入；CLI、guided/automatic installer 和 Web 向导存在 | PC12、PC20/PC21 仍未实施 | PC12 首次运行配置清单 |
 | C 可备份、可恢复 | 未开始 | 生产配对备份登记、Core Ops 任务合同 | Provider、任务 UI、隔离恢复和代表验证 | PC30 Provider 合同 |
 | D 可升级 | 未开始 | scaffold upgrade、migration、deploy-release | 维护门禁、兼容检查、统一状态和恢复指针 | PC40 维护窗口切片 |
 | E 可扩展、可运营 | 未开始 | 8 Module、Bundle、任务和 Provider Runtime | 信任、兼容、配置转移、模板和资格视图 | PC50 信任矩阵 |
@@ -68,7 +68,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC01 | 已完成 | `dev@6967f270dadcd1cb69c4606ad42c198c78db5b5b` / PR #275 | 唯一 owner、Core 采用规则和下游切片已冻结 | 无 | 由 PC02 固定可消费身份 |
 | PC02 | 已完成 | `dev@9af96499e22e2080e8e4e3aa7562f9cea3f9b402` / PR #276 | 四端 lock/导出/来源矩阵已固定；历史 Collaboration 例外已登记 | 无 | 按真实公共导出推进 PC10/PC20/PC30 |
 | PC10 | 已完成 | `dev@f289c69a620f1eaffb0ba5a8cc39d089759259ab` / PR #277 | 唯一只读 Host、CLI 入口、秘密裁剪、聚焦合同测试和 app-owned scaffold 投影已合入 | 正式 Release 组合资格归 PC70 | 作为 PC11 唯一预检输入 |
-| PC11 | 进行中 | `source@7684a5fcb4bd23cdd966ab760d16a8130ba41ced` / `feat/product-closure-install-wizard` | 唯一 Host、guided/automatic transport、安装态门禁和 Web 向导已实现；`pc11e1` 的 Standalone/Multi-tenant 均为 91 表、8 个官方 Module，invalid token、重复执行、零残留和 Web 生产构建通过 | PR 合入 `dev`；合入前不得标记已完成 | 推送一次功能分支并通过一个 PR 合入，然后同步终态文档 |
+| PC11 | 已完成 | `dev@d80337b6d7b800558131968e65f8039cb8781912` / PR #279；资格源码 `7684a5fcb4bd23cdd966ab760d16a8130ba41ced` | 唯一 Host、guided/automatic transport、安装态门禁和 Web 向导已合入；`pc11e1` 的 Standalone/Multi-tenant 均为 91 表、8 个官方 Module，invalid token、重复执行、零残留和 Web 生产构建通过 | 正式 released-scaffold 组合资格归 PC70，不阻塞 PC11 完成 | 作为 PC12 首次运行清单的安装完成输入 |
 | PC12 | 未开始 | — | — | PC11 | 首次运行清单 |
 | PC20 | 未开始 | — | — | PC01、PC02 | 采用只读 Ops Console |
 | PC21 | 未开始 | — | — | PC20 | 脱敏诊断包 |

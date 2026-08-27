@@ -126,8 +126,8 @@
       "id": "PA-INSTALL-002",
       "name": "一次性引导安装",
       "area": "productization",
-      "status": "in_progress",
-      "summary": "PC11 固定源码候选已形成 guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导；Standalone/Multi-tenant 登记空库资格与 Web 生产构建已通过，当前只剩 PR 合入 dev 和终态文档同步。正式 Release 的派生应用组合资格仍归 PC70。",
+      "status": "implemented",
+      "summary": "PC11 已由 PR #279 合入 dev：guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导已形成；Standalone/Multi-tenant 登记空库资格与 Web 生产构建通过。正式 Release 的派生应用组合资格仍归 PC70。",
       "acceptance": [
         "guided 模式只接受同源请求、Bearer setup token 和固定白名单输入",
         "安装身份只在安装进程或请求内存中使用，不写入 server/.env 或资格证据",
@@ -138,7 +138,15 @@
       "evidence": [
         {
           "kind": "git",
+          "ref": "d80337b6d7b800558131968e65f8039cb8781912"
+        },
+        {
+          "kind": "git",
           "ref": "7684a5fcb4bd23cdd966ab760d16a8130ba41ced"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/279"
         },
         {
           "kind": "report",

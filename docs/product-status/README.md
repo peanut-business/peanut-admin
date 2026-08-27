@@ -64,7 +64,7 @@ php scripts/check-product-capability-ledger
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-INSTALL-001` | 统一只读安装预检 | 已实现，待验收 | PC10 已在 dev 形成 CLI、未来 Web 与自动化共用的唯一只读安装预检 Host；稳定返回状态、代码、原因和修复建议，不连接数据库、不猜测地址或凭据，并裁剪资源秘密。正式 Release 组合资格归 PC70。 |
-| `PA-INSTALL-002` | 一次性引导安装 | 进行中 | PC11 固定源码候选已形成 guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导；Standalone/Multi-tenant 登记空库资格与 Web 生产构建已通过，当前只剩 PR 合入 dev 和终态文档同步。正式 Release 的派生应用组合资格仍归 PC70。 |
+| `PA-INSTALL-002` | 一次性引导安装 | 已实现，待验收 | PC11 已由 PR #279 合入 dev：guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导已形成；Standalone/Multi-tenant 登记空库资格与 Web 生产构建通过。正式 Release 的派生应用组合资格仍归 PC70。 |
 
 ### 暂缓或范围外
 
