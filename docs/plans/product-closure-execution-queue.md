@@ -13,7 +13,7 @@ Upstream: 产品能力账本、Module manifest、服务登记、当前应用/Cor
 
 > - 队列执行状态：**执行中**
 > - 建立日期：2026-08-27
-> - Application 当前基线：`eaa1c754b1c214f342a0b4ca94e620a16370d3a3`
+> - Application 当前基线：`f1e6393a3f1c88fe620cc04e8147fb9c66199a6c`
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
 > - 进度入口：[`../product-status/product-closure-observability.md`](../product-status/product-closure-observability.md)
 > - 产品能力唯一事实源：[`../product-status/capability-ledger.json`](../product-status/capability-ledger.json)
@@ -61,7 +61,7 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 | 9 | `PC31` | 应用内备份中心 | 已完成 | PC20、PC30 | 提交和观察备份任务 | Application |
 | 10 | `PC32` | 恢复到新目标并验证 | 已完成 | PC31 | 证明备份可恢复且不覆盖活动库 | Core + Deployment |
 | 11 | `PC40` | 维护窗口与写入门禁 | 已完成 | PC20 | 为升级和恢复提供统一停写边界 | Core + Application |
-| 12 | `PC41` | 升级就绪与 Module 兼容检查 | 进行中 | PC02、PC30、PC40 | 提前发现版本、迁移和备份风险 | Core + Application |
+| 12 | `PC41` | 升级就绪与 Module 兼容检查 | 已完成 | PC02、PC30、PC40 | 提前发现版本、迁移和备份风险 | Core + Application |
 | 13 | `PC42` | 应用升级中心纵向闭环 | 未开始 | PC32、PC41 | 串联备份、维护、迁移和恢复指针 | Application |
 | 14 | `PC50` | Module 制品信任与兼容矩阵 | 已完成 | PC02 | 建立官方目录/市场的安全前提 | Core + Module Host |
 | 15 | `PC51` | 配置导入、导出与环境转移 | 进行中 | PC20 | 将配置迁移与数据备份分离 | Application Module |
@@ -119,7 +119,8 @@ Module 迁入 Core，也不自动改写派生应用的 app-owned 业务源码。
 - PC40：PR #297 已合入 `dev@468dc3b0ae09d351deaac264b34e110fe4a893d4`，固定 Runtime 为 `675de48cce762bf4b268e4d31e07de9de2520b5d`；应用已采用 Core `MaintenanceService`/`MaintenanceWindowStore`，Platform 可按 reason/revision/时间范围计划和关闭窗口，全局写门禁对真实 `POST /api/login/logout` 返回 `50300 / MAINTENANCE_WRITE_BLOCKED` 并记录唯一 denied Platform 审计。登记 development 数据库的窗口与审计 fixture 清理为 0，端口和租约零残留；PC40 已完成。
 - PC50：PR #296 已合入 `dev@ed5ee1952dd01b8448adf1fb6e7c9ad4bc21be48`，固定 Runtime 为 `d46b5d2e2c88d784c2e209f70c7c60015ed8ce48`；`plugins.lock` 与九个 manifest 已固定版本、依赖、权限摘要、migration 指纹、来源、archive/签名/SBOM/许可证/资格状态和 verified-backup 要求，install/reconcile/upgrade 共用同一资格解释。现有唯一 Runtime 只接受 `bundled-locked`；Marketplace 在 archive SHA-256、受信签名、SBOM、许可证审核和漏洞响应 authority 签发前保持稳定 blocked，PC50 已完成。
 - PC52：PR #306 已合入 `dev@eaa1c754b1c214f342a0b4ca94e620a16370d3a3`，固定 Runtime 为 `3b96cc0b1b58c64fd451fb04aca5d41907cb3126`；`module:create` 现在生成唯一公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架，固定 A/B Tenant、伪造 payload/resource ID、撤权、TenantModule 停用及 migration 失败/禁止无修复重放场景，未引入第二 Plugin Runtime。聚焦生成器、文档治理、6 项 inventory SHA-256 和差异检查通过；正式 released-scaffold 组合资格归 PC70。
-- PC41 与 PC51 正在独立功能分支形成候选；开放 PR 或固定提交形成前不得写成完成。
+- PC41：PR #307 已合入 `dev@f1e6393a3f1c88fe620cc04e8147fb9c66199a6c`，固定 Runtime 为 `f77f48cbc1feb36c35597f263ff21fd17185809e`（tree `716a39d47ac9ead0efa44bf82e94a9024c0abca2`）；Platform 只读升级就绪固定 source/target、Release 资格、migration、目标 Module/source/kernel、zero-write scaffold preview、配对备份/恢复 evidence、维护窗口与 recovery pointer。目标只能来自 `.peanut/upgrade-target/release/`，HTTP 不能选择路径、URL、命令、Release、镜像或凭据；跨大版本稳定要求 fresh/rebuild。PHP lint、目标/current Module 差异和 target kernel fixture、preview/target fail-closed、Platform 构建、OpenAPI、文档与 inventory 检查通过；PC42 现在可以消费固定 descriptor 和恢复指针。
+- PC51 正在独立功能分支形成候选；开放 PR 或固定提交形成前不得写成完成。当前关键路径转为 PC42。
 - 当前没有数据库、服务、容器、浏览器或生产资源 owner。
 
 ## 7. 验证

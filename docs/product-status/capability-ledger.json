@@ -369,6 +369,56 @@
       ]
     },
     {
+      "id": "PA-UPGRADE-002",
+      "name": "应用升级就绪与目标兼容检查",
+      "area": "operations",
+      "status": "implemented",
+      "summary": "PC41 已由 PR #307 合入 dev：Platform 只读升级就绪固定 source/target Release、资格身份、migration、目标 Module 源码与 Kernel、zero-write scaffold ownership/conflict、配对备份/恢复 evidence、planned-upgrade 维护窗口和 recovery pointer；目标只来自固定受信目录，HTTP 不能选择路径、URL、命令、Release、镜像或凭据。实际升级执行归 PC42，正式 released-scaffold 组合资格归 PC70。",
+      "acceptance": [
+        "固定 target descriptor 将 qualified Release commit/tree、scaffold manifests、migration inventories、target plugins.lock 和 target Kernel 身份绑定为不可变输入",
+        "目标 Release 源码根拒绝 symlink、特殊文件和越界解析；Plugin、Module 与 Web 内容只从目标树校验，不误用当前应用源码",
+        "当前 migration 不得 drift/pending，目标不得删除、改写、倒序或碰撞既有 migration",
+        "已安装 Module 不得被移除或降级，目标 Kernel constraint 和 Module 依赖必须满足",
+        "scaffold preview 与 CLI 使用同一 ownership/conflict 分类且不写 plan 或 ledger；app-owned 只返回数量和摘要",
+        "静态 preflight 与顶层 readiness 分离；顶层 ready 还要求匹配 Runtime 的已验证备份、同一 backup reference 的恢复 evidence 和 active planned-upgrade 维护窗口",
+        "跨大版本稳定返回 fresh/rebuild required；PC41 不执行下载、备份、维护、迁移、部署或恢复"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "f77f48cbc1feb36c35597f263ff21fd17185809e"
+        },
+        {
+          "kind": "git",
+          "ref": "f1e6393a3f1c88fe620cc04e8147fb9c66199a6c"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/307"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/peanut-admin-development-guide.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002",
+        "PA-BACKUP-001",
+        "PA-PLUGIN-001",
+        "PA-SCAFFOLD-004"
+      ],
+      "paths": [
+        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+        "server/app/platform/controller/PlatformOpsController.php",
+        "platform/src/App.vue",
+        "docs/peanut-admin-development-guide.md",
+        "docs/peanut-admin-user-manual.md",
+        "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
       "id": "PA-TENANCY-001",
       "name": "1.x 多租户隔离与平台租户治理（历史）",
       "area": "tenancy",
