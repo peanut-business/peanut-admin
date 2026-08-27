@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.8",
+    "template_version": "3.0.9",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -499,7 +499,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "e31977b636dcf133972f3778a087a4b793ebf5b9c63569c0c5428a14a916b2b0"
+            "source_sha256": "8f74943737b1904fe694f4a5ef2f8172465718ccf0e8fd7b164263b0068c3e13"
         },
         {
             "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
@@ -3204,6 +3204,19 @@
         {
             "path": "docs/reference/document-catalog.generated.md",
             "target": "docs/reference/document-catalog.generated.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/reference/product-capability-reference-matrix.md",
+            "target": "docs/reference/product-capability-reference-matrix.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
