@@ -411,15 +411,25 @@ SQL);
 
     private function executeMigrationSql(string $sql): void
     {
-        $statement = $this->pdo->query($sql);
+        $emulatedPrepares = (bool)$this->pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES);
+        if (!$emulatedPrepares) {
+            $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+        }
         try {
-            do {
-                if ($statement->columnCount() > 0) {
-                    $statement->fetchAll(PDO::FETCH_ASSOC);
-                }
-            } while ($statement->nextRowset());
+            $statement = $this->pdo->query($sql);
+            try {
+                do {
+                    if ($statement->columnCount() > 0) {
+                        $statement->fetchAll(PDO::FETCH_ASSOC);
+                    }
+                } while ($statement->nextRowset());
+            } finally {
+                $statement->closeCursor();
+            }
         } finally {
-            $statement->closeCursor();
+            if (!$emulatedPrepares) {
+                $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            }
         }
     }
 
