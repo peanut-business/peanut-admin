@@ -35,7 +35,7 @@ if [[ -n "$qualification_image" ]]; then
     --volume "$backend_env:/run/secrets/peanut-backend.env:ro"
     --env 'PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.qualification'
     --entrypoint sh "$qualification_image" -c
-    'umask 077; sed -E "/^(ADMIN_INITIAL_EMAIL|ADMIN_INITIAL_PASSWORD|PLATFORM_INITIAL_EMAIL|PLATFORM_INITIAL_PASSWORD)=/d" /run/secrets/peanut-backend.env > "$PEANUT_SERVER_ENV_FILE"; exec php "$@"'
+    'umask 077; sed -E "/^(ADMIN_INITIAL_EMAIL|ADMIN_INITIAL_PASSWORD|PLATFORM_INITIAL_EMAIL|PLATFORM_INITIAL_PASSWORD|DB_PREFIX)=/d" /run/secrets/peanut-backend.env > "$PEANUT_SERVER_ENV_FILE"; printf "DB_PREFIX=pa_\n" >> "$PEANUT_SERVER_ENV_FILE"; exec php "$@"'
     sh server/think ops-backup:task)
 else
   think=("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think ops-backup:task)
