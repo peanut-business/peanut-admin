@@ -29,7 +29,6 @@ for resource_id in \
 done
 
 qualification_image="${PEANUT_OPS_WORKER_IMAGE:-}"
-qualification_run_options=()
 backend_env="$project_root/server/.env"
 if [[ -n "$qualification_image" ]]; then
   backend_env="$project_root/.env"
@@ -42,11 +41,6 @@ if [[ -n "$qualification_image" ]]; then
     --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
   [[ "$image_candidate" == "$qualification_candidate" ]] \
     || die 'qualification worker image does not match the fixed candidate'
-  export PHP_IMAGE="$qualification_image"
-  qualification_run_options=(
-    --volume "$backend_env:/var/www/peanut-admin/server/.env.source:ro"
-    --env 'PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.source'
-  )
 fi
 [[ -f "$backend_env" ]] || die 'registered backend environment file is required'
 sudo -n grep -Fqx 'PEANUT_DEPLOYMENT_TARGET=production' "$backend_env" \
@@ -55,7 +49,16 @@ sudo -n grep -Fqx 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-production-bundled-m
   || die 'registered production database is not selected'
 
 compose=(sudo -n docker compose -f compose.yaml --profile bundled-db)
-think=("${compose[@]}" run -T --rm --no-deps "${qualification_run_options[@]}" --entrypoint php php server/think ops-restore:task)
+if [[ -n "$qualification_image" ]]; then
+  think=(sudo -n docker run --rm --network peanut-admin_default
+    --volume "$backend_env:/run/secrets/peanut-backend.env:ro"
+    --env 'PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.qualification'
+    --entrypoint sh "$qualification_image" -c
+    'umask 077; sed -E "/^(ADMIN_INITIAL_EMAIL|ADMIN_INITIAL_PASSWORD|PLATFORM_INITIAL_EMAIL|PLATFORM_INITIAL_PASSWORD)=/d" /run/secrets/peanut-backend.env > "$PEANUT_SERVER_ENV_FILE"; exec php "$@"'
+    sh server/think ops-restore:task)
+else
+  think=("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think ops-restore:task)
+fi
 claim_json="$("${think[@]}" claim </dev/null)" || die 'task claim failed'
 jq -e '.ok == true' <<<"$claim_json" >/dev/null || die 'task claim was rejected'
 if [[ "$(jq -r '.result == null' <<<"$claim_json")" == true ]]; then

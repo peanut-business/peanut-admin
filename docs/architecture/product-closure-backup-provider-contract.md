@@ -112,7 +112,9 @@ PC31 运行 PHP/shell 语法、Platform typecheck、任务/幂等/并发/原子�
 `org.opencontainers.image.revision`、完整 candidate 和 12 位 tag 三方核对后，仅替代 Compose
 one-off task CLI 的 image；运行中的 PHP/Nginx/cron/MySQL 不重建。主机 worker 和 source backup
 仍来自登记的 production deployment。若在线 Compose 早于 `.env.source` 合同，资格路径只把该
-部署实际使用且登记的根 `.env` 只读挂载到 one-off CLI 的固定 `.env.source` 位置，不复制进 image，也不改变运行
-容器。成功后删除精确 worker image 和资格 registry 文件；失败时
+部署实际使用且登记的根 `.env` 只读挂载到 one-off CLI；容器启动时只移除四个禁止持久化的安装
+身份键，生成 mode 0600 的容器内临时加载文件，并通过 direct `docker run` 只加入登记的
+`peanut-admin_default` 网络，避免旧 Compose 把未在文件中声明的默认值注入候选进程。临时文件随
+`--rm` 消失，配置不复制进 image 或主机新文件，也不改变运行容器。成功后删除精确 worker image 和资格 registry 文件；失败时
 保留其身份与隔离恢复资源。Release 展开目录没有 `.git` 时，备份 source commit/tree 来自同一
 部署的 `RELEASE_METADATA.json.technical_qualification`，不能猜测分支或工作树身份。
