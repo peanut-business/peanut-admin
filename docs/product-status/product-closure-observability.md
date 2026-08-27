@@ -41,19 +41,19 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | 指标 | 当前值 | 说明 |
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
-| 已完成 | 0 | 既有工程能力是输入，不等于队列任务完成 |
-| 进行中 | 2 | PC00、PC01 |
+| 已完成 | 2 | PC00、PC01 |
+| 进行中 | 1 | PC02 |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
-| 未开始 | 17 | PC02 起 |
-| 当前关键路径 | PC00/PC01 | 文档登记与所有权冻结 |
+| 未开始 | 16 | PC10 起 |
+| 当前关键路径 | PC02 | 四端 Core/Application 兼容与版本基线 |
 | 可并行工作线 | 0 | 当前共享文档候选由一个集成 owner 收口 |
 
 ## 4. 阶段观察
 
 | 阶段 | 状态 | 已有输入 | 尚缺验收 | 下一交付物 |
 |---|---|---|---|---|
-| A 边界与可见性 | 进行中 | 新文档治理、当前代码、Core/App 锁和所有权决定 | 登记、生成、治理检查、PR 合入；PC02 兼容矩阵 | PC00/PC01 纯文档候选 |
+| A 边界与可见性 | 进行中 | PC00/PC01 已合入；当前代码、Core/App lock 和所有权决定 | PC02 登记、静态身份对照、治理检查和合入 | PC02 兼容基线候选 |
 | B 可安装、可诊断 | 未开始 | CLI installer、Core Ops、维护页 | 预检 Host、安装锁、向导、诊断包 | PC10 或 PC20 最小纵向切片 |
 | C 可备份、可恢复 | 未开始 | 生产配对备份登记、Core Ops 任务合同 | Provider、任务 UI、隔离恢复和代表验证 | PC30 Provider 合同 |
 | D 可升级 | 未开始 | scaffold upgrade、migration、deploy-release | 维护门禁、兼容检查、统一状态和恢复指针 | PC40 维护窗口切片 |
@@ -64,9 +64,9 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | ID | 状态 | 固定候选/PR | 当前结果 | 尚缺 Gate | 下一动作 |
 |---|---|---|---|---|---|
-| PC00 | 进行中 | `feat/product-closure-foundation` | 队列和面板正在登记 | generate/check、提交、PR、合入 | 完成文档治理闭包 |
-| PC01 | 进行中 | `feat/product-closure-foundation` | 唯一 owner 与 Core 采用决定已形成 | 同上 | 与 PC00 一次验证和交付 |
-| PC02 | 未开始 | — | — | PC01 合入 | 核验 PHP/Web/PC/UniApp 导出和不可变来源 |
+| PC00 | 已完成 | `dev@6967f270dadcd1cb69c4606ad42c198c78db5b5b` / PR #275 | 内部文档登记、导航和公开边界已形成 | 无 | 保持能力账本为唯一完成事实源 |
+| PC01 | 已完成 | `dev@6967f270dadcd1cb69c4606ad42c198c78db5b5b` / PR #275 | 唯一 owner、Core 采用规则和下游切片已冻结 | 无 | 由 PC02 固定可消费身份 |
+| PC02 | 进行中 | `feat/product-closure-compatibility` | 四端 lock/导出/来源矩阵已形成；发现历史 Collaboration 例外 | 登记、治理检查、提交、PR、合入 | 冻结兼容基线后领取 PC10/PC20 |
 | PC10 | 未开始 | — | — | PC01、PC02 | 统一安装预检 Host |
 | PC11 | 未开始 | — | — | PC10 | 一次性安装向导 |
 | PC12 | 未开始 | — | — | PC11 | 首次运行清单 |
