@@ -243,7 +243,7 @@ mysql_scalar() {
 failure_code='OPS_RESTORE_SCHEMA_INVALID'
 table_count="$(mysql_scalar "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()")"
 schema_migration_count="$(mysql_scalar 'SELECT COUNT(*) FROM pa_schema_migration')"
-critical_table_count="$(mysql_scalar "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('pa_account','pa_tenant','pa_tenant_member','pa_role','pa_menu','pa_config')")"
+critical_table_count="$(mysql_scalar "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('pa_account','pa_tenant','pa_tenant_member','pa_role','pa_permission','pa_config')")"
 [[ "$table_count" =~ ^[1-9][0-9]*$ && "$schema_migration_count" =~ ^[1-9][0-9]*$ && "$critical_table_count" == 6 ]] \
   || false
 
