@@ -41,13 +41,35 @@ freshSchemaExpect(str_contains($installer, "'default'"), 'installer does not cre
 freshSchemaExpect(str_contains($installer, "'core.tenant-owner'"), 'installer health contract does not verify the native owner role');
 freshSchemaExpect(str_contains($installer, "'--migrate'"), 'application migration runner is not available');
 $migrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
+// These migrations reached the shared ledger before the release marker became mandatory.
+// Their raw bytes are immutable because the application ledger hashes the complete SQL file.
+$immutableMissingReleaseIdentity = [
+    '20260827-create-ops-backup-evidence.sql' => '33058d141518a42a481e10ee386804c37b98efc3a34ea6e60df977eda8221be2',
+    '20260827-create-ops-restore-evidence.sql' => '22be5e7932f82d23ba43d90f437da97095a9407cc17faf94f9832e7f3f4efdca',
+    '20260827-first-run-readiness.sql' => '83b410aa0715b313ad52179f92c60619472ef61ed989d9753104285b3aee09d7',
+];
+$observedImmutableMissingReleaseIdentity = [];
 foreach ($migrations as $migration) {
     $migrationSql = (string)file_get_contents($migration);
+    $migrationName = basename($migration);
+    $hasReleaseIdentity = preg_match('/^--\s+peanut-release:\s+\d+\.\d+\.\d+\s*$/m', $migrationSql) === 1;
+    if (!$hasReleaseIdentity && isset($immutableMissingReleaseIdentity[$migrationName])) {
+        freshSchemaExpect(
+            hash_equals($immutableMissingReleaseIdentity[$migrationName], hash('sha256', $migrationSql)),
+            'immutable migration without release identity changed: ' . $migrationName
+        );
+        $observedImmutableMissingReleaseIdentity[$migrationName] = true;
+        continue;
+    }
     freshSchemaExpect(
-        preg_match('/^--\s+peanut-release:\s+\d+\.\d+\.\d+\s*$/m', $migrationSql) === 1,
-        'post-baseline migration is missing a release identity: ' . basename($migration)
+        $hasReleaseIdentity,
+        'post-baseline migration is missing a release identity: ' . $migrationName
     );
 }
+freshSchemaExpect(
+    array_keys($observedImmutableMissingReleaseIdentity) === array_keys($immutableMissingReleaseIdentity),
+    'immutable migration release identity exceptions are stale'
+);
 
 foreach (['information_schema', 'ALTER TABLE', 'PREPARE ', 'EXECUTE ', 'DEALLOCATE PREPARE'] as $transitionSql) {
     freshSchemaExpect(!str_contains($schema, $transitionSql), "transition SQL remains in canonical schema: {$transitionSql}");
