@@ -14,6 +14,7 @@ tags:
   - name: Article
   - name: File
   - name: Notice
+  - name: Readiness
 paths:
   /api/user/login:
     post:
@@ -108,6 +109,23 @@ paths:
                 mobile: {type: string}
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
+  /api/admin/readiness/checklist:
+    get:
+      tags: [Readiness]
+      operationId: getFirstRunReadinessChecklist
+      description: >-
+        Returns a Tenant-safe, read-only projection of first-run readiness.
+        Configured values are not promoted to external connectivity or
+        production qualification, and infrastructure details are omitted.
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Readiness checklist
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReadinessChecklistResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
 components:
   securitySchemes:
     bearerAuth:
@@ -136,6 +154,59 @@ components:
       required: [tenant_id]
       properties:
         tenant_id: {type: integer, minimum: 1}
+    ReadinessChecklistResponse:
+      allOf:
+        - {$ref: '#/components/schemas/ApiResponse'}
+        - type: object
+          properties:
+            data: {$ref: '#/components/schemas/ReadinessChecklist'}
+    ReadinessChecklist:
+      type: object
+      required: [production_ready, summary, items]
+      properties:
+        production_ready: {type: boolean}
+        summary:
+          type: object
+          additionalProperties: {type: integer, minimum: 0}
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ReadinessItem'}
+    ReadinessItem:
+      type: object
+      required:
+        - key
+        - scope
+        - status
+        - verification_level
+        - impact_key
+        - action_key
+        - entry
+        - production_blocking
+        - facts
+      properties:
+        key:
+          type: string
+          enum: [brand, notification, storage, backup, worker, domain_tls, account_security]
+        scope: {type: string, enum: [tenant, instance]}
+        status:
+          type: string
+          enum: [configured, observed, action_required, unverified, not_implemented]
+        verification_level: {type: string}
+        impact_key: {type: string}
+        action_key: {type: string}
+        entry:
+          type: object
+          required: [kind, route, audience]
+          properties:
+            kind: {type: string, enum: [route, owner]}
+            route: {type: string, nullable: true}
+            audience:
+              type: string
+              enum: [tenant_admin, platform_operator, deployment_owner]
+        production_blocking: {type: boolean}
+        facts:
+          type: object
+          additionalProperties: true
     ApiResponse:
       type: object
       additionalProperties: true

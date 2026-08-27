@@ -116,6 +116,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/readiness/checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns a Tenant-safe, read-only projection of first-run readiness. Configured values are not promoted to external connectivity or production qualification, and infrastructure details are omitted. */
+        get: operations["getFirstRunReadinessChecklist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -128,6 +145,38 @@ export interface components {
         };
         TenantSelectRequest: {
             tenant_id: number;
+        };
+        ReadinessChecklistResponse: components["schemas"]["ApiResponse"] & {
+            data?: components["schemas"]["ReadinessChecklist"];
+        };
+        ReadinessChecklist: {
+            production_ready: boolean;
+            summary: {
+                [key: string]: number;
+            };
+            items: components["schemas"]["ReadinessItem"][];
+        };
+        ReadinessItem: {
+            /** @enum {string} */
+            key: "brand" | "notification" | "storage" | "backup" | "worker" | "domain_tls" | "account_security";
+            /** @enum {string} */
+            scope: "tenant" | "instance";
+            /** @enum {string} */
+            status: "configured" | "observed" | "action_required" | "unverified" | "not_implemented";
+            verification_level: string;
+            impact_key: string;
+            action_key: string;
+            entry: {
+                /** @enum {string} */
+                kind: "route" | "owner";
+                route: string | null;
+                /** @enum {string} */
+                audience: "tenant_admin" | "platform_operator" | "deployment_owner";
+            };
+            production_blocking: boolean;
+            facts: {
+                [key: string]: unknown;
+            };
         };
         ApiResponse: {
             code?: number;
@@ -275,6 +324,28 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["ApiResponse"];
+        };
+    };
+    getFirstRunReadinessChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Readiness checklist */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessChecklistResponse"];
+                };
+            };
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
         };
     };
 }

@@ -62,6 +62,10 @@ php server/database/install.php
 不要清空未知数据库。人工部署也可在 `server/.env` 选择 `guided` 并配置高熵 setup token，
 启动后访问 `/admin/installation`；页面不接收数据库连接信息，也不保存 token 或密码。
 
+安装并登录后，先打开 `/app-setting/readiness`。该清单会逐项说明品牌、通知、存储、备份、
+Worker、当前域名/TLS 和账户安全的作用、配置入口、责任方与生产阻塞性。“已配置”不代表
+外部服务已经连通；备份、Worker 和全部域名仍以各自的运行或恢复证据为准。
+
 ## 4. 启动开发栈
 
 ```bash

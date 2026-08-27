@@ -13,6 +13,17 @@ const APP_SETTING: AppRouteRecordRaw = {
   },
   children: [
     {
+      path: 'readiness',
+      name: 'AppSettingReadiness',
+      component: () => import('@/views/app-setting/readiness/index.vue'),
+      meta: {
+        locale: 'menu.appSetting.readiness',
+        requiresAuth: true,
+        requiredPermissions: ['readiness/checklist'],
+        roles: ['admin'],
+      },
+    },
+    {
       path: 'website',
       name: 'AppSettingWebsite',
       component: () => import('@/views/system/config/index.vue'),

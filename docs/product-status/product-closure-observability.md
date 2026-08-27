@@ -26,9 +26,9 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 
 | 项目 | 当前事实 | 对闭环的含义 |
 |---|---|---|
-| Application | `origin/dev@d80337b6d7b800558131968e65f8039cb8781912` | PC00—PC11 已合入；PC12 是下一关键路径 |
+| Application | `origin/dev@b58bf9681a705d19363038635722041033c05a9d` | PC00—PC11 及终态文档已合入；PC12 已领取 |
 | Core | `origin/dev@8608dafe30467c442000ce408b106d8750ffd766` | 文档治理已合入；Runtime 最近发布身份仍由 PC02 核验 |
-| 安装 | CLI 空库安装和 3.x migration 链存在 | 缺一次性向导和首次运行清单 |
+| 安装 | CLI 空库安装、一次性 Web 向导和 3.x migration 链存在 | PC12 首次运行清单正在实施 |
 | 运维 | 维护页只有环境/目录/清缓存；Core Ops 合同存在 | 缺应用 Host 和产品入口 |
 | 备份 | 生产登记有 DB + `php-storage` 配对备份门禁 | 属发布工程能力，不是应用内产品 |
 | 恢复 | 登记策略与 Core restore-to-new-target 合同存在 | 应用尚未采用和验证 |
@@ -42,11 +42,11 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 |---|---:|---|
 | 队列任务 | 19 | PC00—PC70 |
 | 已完成 | 5 | PC00、PC01、PC02、PC10、PC11 |
-| 进行中 | 0 | — |
+| 进行中 | 1 | PC12 |
 | 部分完成 | 0 | — |
 | 外部阻塞 | 0 | — |
-| 未开始 | 14 | PC12、PC20—PC70 |
-| 当前关键路径 | PC12 | 首次运行配置清单；尚未领取 |
+| 未开始 | 13 | PC20—PC70 |
+| 当前关键路径 | PC12 | 首次运行配置清单；只读 Host、权限、页面和文档同一候选收口 |
 | 可并行工作线 | 0 | 当前共享文档候选由一个集成 owner 收口 |
 
 ## 4. 阶段观察
@@ -69,7 +69,7 @@ Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-
 | PC02 | 已完成 | `dev@9af96499e22e2080e8e4e3aa7562f9cea3f9b402` / PR #276 | 四端 lock/导出/来源矩阵已固定；历史 Collaboration 例外已登记 | 无 | 按真实公共导出推进 PC10/PC20/PC30 |
 | PC10 | 已完成 | `dev@f289c69a620f1eaffb0ba5a8cc39d089759259ab` / PR #277 | 唯一只读 Host、CLI 入口、秘密裁剪、聚焦合同测试和 app-owned scaffold 投影已合入 | 正式 Release 组合资格归 PC70 | 作为 PC11 唯一预检输入 |
 | PC11 | 已完成 | `dev@d80337b6d7b800558131968e65f8039cb8781912` / PR #279；资格源码 `7684a5fcb4bd23cdd966ab760d16a8130ba41ced` | 唯一 Host、guided/automatic transport、安装态门禁和 Web 向导已合入；`pc11e1` 的 Standalone/Multi-tenant 均为 91 表、8 个官方 Module，invalid token、重复执行、零残留和 Web 生产构建通过 | 正式 released-scaffold 组合资格归 PC70，不阻塞 PC11 完成 | 作为 PC12 首次运行清单的安装完成输入 |
-| PC12 | 未开始 | — | — | PC11 | 首次运行清单 |
+| PC12 | 进行中 | `feat/product-closure-readiness-checklist` / 基线 `b58bf9681a705d19363038635722041033c05a9d` | 已冻结 Tenant/Instance 展示边界：品牌、短信、存储、备份、Worker、当前域名/TLS 与账户安全；备份中心、Worker 心跳、邮件 Provider 和全部域名资格保持真实缺口 | 只读 Host、精确权限 migration、Admin 页面、Web build 与文档 Gate 尚未形成固定合入身份 | 完成同一候选的实现和最低验证 |
 | PC20 | 未开始 | — | — | PC01、PC02 | 采用只读 Ops Console |
 | PC21 | 未开始 | — | — | PC20 | 脱敏诊断包 |
 | PC30 | 未开始 | — | — | PC01、PC02 | 备份 Provider/制品合同 |

@@ -18,6 +18,7 @@ use app\api\middleware\PublicArticleTenantMiddleware;
 use app\api\middleware\PublicDecorationTenantMiddleware;
 use app\api\middleware\PublicHotSearchTenantMiddleware;
 use app\adminapi\controller\config\ConfigController;
+use app\adminapi\controller\config\ReadinessController;
 use app\adminapi\controller\dept\DeptController;
 use app\adminapi\controller\dept\JobsController;
 use app\adminapi\controller\dict\DictTypeController;
@@ -333,6 +334,9 @@ Route::group('api/admin', function () {
     Route::post('config/user/save', [ConfigController::class, 'saveUser']);
     Route::get('config/login', [ConfigController::class, 'getLogin']);
     Route::post('config/login/save', [ConfigController::class, 'saveLogin']);
+
+    // 应用设置 - 首次运行生产准备清单（只读，不执行外部探测）
+    Route::get('readiness/checklist', [ReadinessController::class, 'checklist']);
 
     // 应用设置 - 热门搜索
     Route::get('setting/hot-search/config',  [HotSearchController::class, 'getConfig']);
