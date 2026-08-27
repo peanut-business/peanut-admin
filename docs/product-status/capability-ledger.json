@@ -946,6 +946,52 @@
       ]
     },
     {
+      "id": "PA-MODULE-003",
+      "name": "Module 开发与 Tenant 安全脚手架",
+      "area": "scaffold",
+      "status": "implemented",
+      "summary": "PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架，固定 A/B Tenant、伪造 payload/resource ID、撤权、TenantModule 停用及 migration 失败/禁止无修复重放场景，未引入第二 Plugin Runtime。正式 released-scaffold 组合资格归 PC70。",
+      "acceptance": [
+        "Module key 唯一派生后端、前端和测试目录，任一目标已存在时整次拒绝且不覆盖",
+        "manifest 导出 key 派生的公开 Commands 合同，合同显式接收 TenantContext 且不暴露 PDO、ORM 或私有表",
+        "migration 指南固定 append-only、Tenant 外键与失败后显式 repair 语义，不生成可误执行的默认业务迁移",
+        "Tenant 安全骨架覆盖 A/B 隔离、伪造 ID、撤权、TenantModule 停用和失败 migration 不激活/不重放",
+        "生成器、模板、开发文档和派生应用 inventory 使用同一实现"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "3b96cc0b1b58c64fd451fb04aca5d41907cb3126"
+        },
+        {
+          "kind": "git",
+          "ref": "eaa1c754b1c214f342a0b4ca94e620a16370d3a3"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/306"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/module-development-guide.md"
+        }
+      ],
+      "dependencies": [
+        "PA-PLUGIN-001",
+        "PA-MODULE-002"
+      ],
+      "paths": [
+        "server/app/common/service/module/ModuleScaffoldGenerator.php",
+        "server/resources/module-scaffold/backend/Contracts/ModuleCommands.php.stub",
+        "server/resources/module-scaffold/backend/Database/Migrations/README.md.stub",
+        "server/resources/module-scaffold/tests/TenantSecurityDriver.php.stub",
+        "server/resources/module-scaffold/tests/TenantSecurityTest.php.stub",
+        "docs/module-development-guide.md",
+        "docs/plugin-module-development.md",
+        "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
       "id": "PA-GOVERNANCE-001",
       "name": "外部 CompanyOS 治理流程",
       "area": "governance",
