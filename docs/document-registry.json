@@ -1514,6 +1514,39 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-product-closure-ownership-adoption",
+      "path": "docs/architecture/product-closure-ownership-and-adoption.md",
+      "title": "产品闭环所有权与 Core 采用决定",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "decision",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "pc/package.json",
+        "uniapp/package.json",
+        "resources/service-registry.json",
+        "repo://peanut-admin-core/packages/php/ops-console",
+        "repo://peanut-admin-core/packages/php/kernel"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-scaffold-core-extraction-analysis",
       "path": "docs/architecture/scaffold_core_extraction_analysis.md",
       "title": "脚手架代码 vs 核心库：提取分析报告",
@@ -4095,6 +4128,39 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-plans-product-closure-execution-queue",
+      "path": "docs/plans/product-closure-execution-queue.md",
+      "title": "Peanut Admin 产品闭环执行任务队列",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "docs/architecture/product-closure-ownership-and-adoption.md",
+        "docs/product-status/capability-ledger.json",
+        "resources/service-registry.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "pc/package.json",
+        "uniapp/package.json"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-plans-product-release-operations-saas-roadmap",
       "path": "docs/plans/product-release-operations-saas-roadmap.md",
       "title": "Peanut Admin 产品发布、运营平台与 SaaS 路线",
@@ -4198,6 +4264,35 @@
       ],
       "related": [
         "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-product-closure-observability",
+      "path": "docs/product-status/product-closure-observability.md",
+      "title": "产品闭环执行可观测面板",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/plans/product-closure-execution-queue.md",
+        "docs/architecture/product-closure-ownership-and-adoption.md",
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure"
       ],
       "site_projections": [],
       "replaced_by": null,

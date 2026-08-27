@@ -12,6 +12,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Understand Module development | [Module development guide](module-development-guide.md) | current guide |
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |
+| Follow the product-closure work | [Execution queue](plans/product-closure-execution-queue.md) and [observability panel](product-status/product-closure-observability.md) | internal plan and execution evidence; not capability completion proof |
 | Plan future work | `docs/plans/` and `docs/design/` | planned, never implementation proof |
 | Operate or release | `docs/operations/` and [release engineering](release-engineering.md) | current procedures |
 | Change documentation safely | [Document lifecycle](governance/document-lifecycle.md) and [docs-impact](governance/docs-impact.md) | authoritative governance |
