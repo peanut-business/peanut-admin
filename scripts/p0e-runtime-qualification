@@ -810,15 +810,19 @@ class Runner:
         mode: str,
     ) -> Any:
         path = self.write_backend_env(project_root, database, mode)
-        try:
-            yield {
-                "PEANUT_SERVER_ENV_FILE": str(path),
-                "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
-                "ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
-                "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
+        environment = {
+            "PEANUT_SERVER_ENV_FILE": str(path),
+            "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
+            "ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
+            "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
+        }
+        if mode == "multi-tenant":
+            environment.update({
                 "PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
                 "PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
-            }
+            })
+        try:
+            yield environment
         finally:
             with contextlib.suppress(FileNotFoundError):
                 path.unlink()
