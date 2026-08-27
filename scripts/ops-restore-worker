@@ -34,6 +34,7 @@ for resource_id in \
 done
 
 qualification_image="${PEANUT_OPS_WORKER_IMAGE:-}"
+qualification_run_options=()
 if [[ -n "$qualification_image" ]]; then
   qualification_candidate="${PEANUT_OPS_WORKER_CANDIDATE:-}"
   [[ "$qualification_image" =~ ^peanut-admin-restore-verify-worker:[a-f0-9]{12}$ \
@@ -45,10 +46,14 @@ if [[ -n "$qualification_image" ]]; then
   [[ "$image_candidate" == "$qualification_candidate" ]] \
     || die 'qualification worker image does not match the fixed candidate'
   export PHP_IMAGE="$qualification_image"
+  qualification_run_options=(
+    --volume "$project_root/server/.env:/var/www/peanut-admin/server/.env.source:ro"
+    --env 'PEANUT_SERVER_ENV_FILE=/var/www/peanut-admin/server/.env.source'
+  )
 fi
 
 compose=(sudo -n docker compose -f compose.yaml --profile bundled-db)
-think=("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think ops-restore:task)
+think=("${compose[@]}" run -T --rm --no-deps "${qualification_run_options[@]}" --entrypoint php php server/think ops-restore:task)
 claim_json="$("${think[@]}" claim </dev/null)" || die 'task claim failed'
 jq -e '.ok == true' <<<"$claim_json" >/dev/null || die 'task claim was rejected'
 if [[ "$(jq -r '.result == null' <<<"$claim_json")" == true ]]; then
