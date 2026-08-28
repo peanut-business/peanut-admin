@@ -32,9 +32,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**已验证**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成；最终 main@a55e2e4470a1e8dd140bdb7612d63c397f49f862（tree 6fb951b36e895936a2e3c2f1716ae11524a5eadd）通过 cr31q7 八组组合资格并以 annotated v3.0.11 / GitHub Release 正式发布，候选锁、scaffold、源码附件、能力快照和零残留身份一致。生产部署、真实 Provider 资格、Marketplace、T16 与完整 SaaS 仍按各自范围后置。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已在 v3.0.11 全部完成；发布后 demo 安装暴露的候选镜像预检、Plugin lock/schema、official reconcile 与 overlay 打包闭包已由 PR #371 合入 dev，v3.0.12 hotfix 的 scaffold 已封存，尚待 main 固定候选八组资格、annotated tag、GitHub Release、同源 demo 和文档站发布。真实 Provider 资格、Marketplace、T16 与完整 SaaS 仍按各自范围后置。
 >
-> 事实基线：`main@a55e2e4470a1e8dd140bdb7612d63c397f49f862`，复核日期：`2026-08-28`。
+> 事实基线：`dev@eeb204445dd37d3273959b46b4c3df100122e795`，复核日期：`2026-08-28`。
 
 ### 已验证可用
 
@@ -71,6 +71,12 @@ php scripts/check-product-capability-ledger
 | `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 已验证 | CR10 已冻结显式 Package 生命周期合同；CR11/CR12 已合入 development update 与 deployment-owned 安全编排。CR21 已由 PR #346 在两个独立生成应用间直接完成签名 Module v1→v2 的 create/check/pack/install/update/disable/reactivate/retire/Purge，TenantModule、Package、ModuleInstallation 与成员 RBAC 四层保持分离，app-owned 摘要不变。正式 Release adoption 仍由 CR31 验收。 |
 | `PA-TENANCY-002` | Tenant 停用全局 Fail-Closed | 已验证 | CR13 已由 PR #344 合入 dev：管理/API/PC/H5 与公开内容继续通过 active Tenant/Host context；全部 Tenant 文件 URL 统一为短期签名应用交付，读取时重新查询 active Tenant 与 ready 对象，生产和开发 Nginx 的历史 `/storage/` 直出固定 404。登记 MySQL 聚焦验证证明已签发 URL 在 suspend 后拒绝、reactivate 后只恢复 ready 对象，archived 对象与 suspended 异步任务不复活。 |
 | `PA-DELIVERY-005` | 正式可消费源码交付 | 已验证 | CR01—CR40 已完成；main@a55e2e4470a1e8dd140bdb7612d63c397f49f862（tree 6fb951b36e895936a2e3c2f1716ae11524a5eadd）以 cr31q7 通过正式 create-app、双模式 fresh、Module v1→v2 全生命周期、Compose/浏览器和零残留八组资格，并已发布 annotated v3.0.11 与同名 GitHub Release。 |
+
+### 已实现或正在验收
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-DELIVERY-006` | 3.0.12 部署闭包 Hotfix | 已实现，待验收 | PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；v3.0.11 加 demo overlay 的四 Host 已通过浏览器验证，但正式 v3.0.12 仍待同一 main 候选完整资格、发布和 demo/docs 采用。 |
 
 ### 暂缓或范围外
 

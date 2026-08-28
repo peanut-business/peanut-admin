@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.11",
+    "template_version": "3.0.12",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -449,7 +449,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1c03cf656be869c9b13e67e71776da8fa19f07f1338d4c5ca501c8b43b30f07c"
+            "source_sha256": "3ac7d90d6ed95bbdb24c7ec474be84b2e3c6ed4394a45be18612f00a7bd4880c"
         },
         {
             "path": "deploy/local-stack.env.example",
@@ -3028,6 +3028,19 @@
             ]
         },
         {
+            "path": "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json",
+            "target": "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/product-status/deployments/v3.0.5-online-experience.json",
             "target": "docs/product-status/deployments/v3.0.5-online-experience.json",
             "classification": "excluded",
@@ -3147,6 +3160,19 @@
         {
             "path": "docs/product-status/releases/v2.1.5.json",
             "target": "docs/product-status/releases/v2.1.5.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/releases/v3.0.11.json",
+            "target": "docs/product-status/releases/v3.0.11.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -4171,7 +4197,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f3d2c67f85a26d6c7b798e3c2337e3acc4123be56ae4d1f2d63619199aeda7b5"
+            "source_sha256": "86b6088d8c5c10e12061fe26074209d8203639d835d413e427d93d0ca54534aa"
         },
         {
             "path": "scripts/build-scaffold-release",
@@ -4266,7 +4292,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "04833ea818cd6e4ad696505ca1598576d9d2b85d94869c2b407e948a71f4c954"
+            "source_sha256": "47716c6ae3f1dd8237d9b61bdd707615aa70c887db95a76b8c64ca44a5919b03"
         },
         {
             "path": "scripts/ci-server-check.sh",
@@ -4373,7 +4399,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7ee967580466d97bd4a37bf57424971c480d259ab052eb97008aa71e8c197536"
+            "source_sha256": "80af53868109eb3c5f8e25b3b3ec2d0db4b37c78c24b0c60bed9b5b509f74a98"
         },
         {
             "path": "scripts/docs-governance",
@@ -11799,7 +11825,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3c62b4cb06c4bd55ac42122b805fa5f05ae4aa9f520e625123a0b234cc3fbb10"
+            "source_sha256": "1f50dc6cbf263c4d11fe156bffc7dbb2f664511f2b3601b7e179acc104d93158"
         },
         {
             "path": "server/app/common/service/instance/DeploymentMode.php",
