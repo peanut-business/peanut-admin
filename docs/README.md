@@ -8,7 +8,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | --- | --- | --- |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
-| Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
+| Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md), [consumer lifecycle contract](architecture/consumer-module-lifecycle-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
 | Understand Module development | [Module development guide](module-development-guide.md) | current guide |
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |

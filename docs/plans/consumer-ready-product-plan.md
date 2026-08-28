@@ -90,7 +90,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 |---:|---|---|---|---|---|---|
 | 1 | CR01 | 历史资料与证据保留清单 | 已完成 | 无 | PR #336 合入路径级登记；保留、归档、删除和 unknown 决定均有 owner、引用、体积、风险与恢复方式 | Terra 只读扫描；主代理决策 |
 | 2 | CR02 | 安全清理第一批 | 已完成 | CR01 | PR #336 删除 23 个零引用过期文件；不可变 Release、当前资格、scaffold 和 archived docs 保持 | Luna 机械执行；主代理复核 |
-| 3 | CR10 | 可消费 Module 生命周期合同 | 未开始 | 无 | install/update/disable/reactivate/retire/purge 状态机、权限、维护、备份、审计、恢复与 HTTP 禁区 | Sol xhigh；公共 API/破坏性边界 |
+| 3 | CR10 | 可消费 Module 生命周期合同 | 进行中 | 无 | 合同候选位于 `docs/architecture/consumer-module-lifecycle-contract.md`；待 PR 合入后记为完成并立即进入 CR11 | Sol xhigh；公共 API/破坏性边界 |
 | 4 | CR11 | Module package 更新实现 | 未开始 | CR10 | active v1→v2 的显式 update、dry-run、依赖/签名/version/migration preflight、原子文件+lock+DB 与恢复 | Sol high；聚焦实现 |
 | 5 | CR12 | 交付环境 Module 操作入口 | 未开始 | CR10、CR11 | deployment-owned CLI/worker 串联维护、配对备份、update/retire/Purge、smoke、审计和 recovery pointer | Sol xhigh；部署与数据安全 |
 | 6 | CR13 | Tenant 停用全局 Fail-Closed | 未开始 | 无 | 公共 API、文件和静态交付统一拒绝停用 Tenant；缓存/代理边界与恢复语义明确 | Sol xhigh；Tenant 安全停止线 |
