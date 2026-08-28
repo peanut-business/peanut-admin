@@ -67,7 +67,7 @@ php scripts/check-product-capability-ledger
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
 | `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。 |
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
-| `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已验证 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架，固定 A/B Tenant、伪造 payload/resource ID、撤权、TenantModule 停用及 migration 失败/禁止无修复重放场景，未引入第二 Plugin Runtime。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
+| `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已验证 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架。CR20 已由 PR #342 合入唯一只读 module:check Host/CLI，复用现有 manifest schema、版本约束、package preflight 与 archive validator，稳定报告八项检查且不访问数据库。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
 
 ### 已实现或正在验收
 

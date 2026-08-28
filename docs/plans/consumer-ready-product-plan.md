@@ -18,7 +18,7 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**执行中；CR01/CR02/CR10—CR12 已完成，CR20 候选已形成并待聚焦验证；CR13 独立推进**
+> - 计划状态：**执行中；CR01/CR02/CR10—CR12/CR20 已完成，下一关键路径为 CR13 与 CR21**
 > - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
@@ -94,7 +94,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 4 | CR11 | Module package 更新实现 | 已完成 | CR10 | PR #339 合入 `module:update-package` 与共享 update service；登记 MySQL 8.4.10 聚焦生命周期验证通过且零数据库残留 | Sol high；聚焦实现 |
 | 5 | CR12 | 交付环境 Module 操作入口 | 已完成 | CR10、CR11 | PR #340 合入 `dev=4844ef3…`（tree `c4b6971…`）；opaque request→备份→隔离恢复→维护→update→smoke→recovery pointer 全链通过且一次性数据库已清理 | Sol xhigh；部署与数据安全 |
 | 6 | CR13 | Tenant 停用全局 Fail-Closed | 未开始 | 无 | 公共 API、文件和静态交付统一拒绝停用 Tenant；缓存/代理边界与恢复语义明确 | Sol xhigh；Tenant 安全停止线 |
-| 7 | CR20 | Module 作者只读检查与版本规则 | 进行中 | CR10 | 单一 `module:check`/Host 候选已形成；待真实 CLI 正/负输出、零数据库访问与文档治理聚焦验证后合入 | Terra 定位 + Sol/Worker 实现 |
+| 7 | CR20 | Module 作者只读检查与版本规则 | 已完成 | CR10 | PR #342 合入 `dev=5797e28…`（tree `953ff07…`）；真实 CLI 正/负输出、八项稳定检查和零数据库访问验证通过 | Terra 定位 + Sol/Worker 实现 |
 | 8 | CR21 | 双独立应用二开参考链 | 未开始 | CR11、CR12、CR20 | 从 Release 生成应用 A/B；第三方 Module v1→v2 完成 create/check/pack/install/update/disable/reactivate/retire/Purge 与 Tenant A/B | Sol high；真实纵向 fixture |
 | 9 | CR22 | 消费者文档与支持入口 | 未开始 | CR11、CR12、CR20 | 任务导航、唯一命令索引、错误修复、版本兼容、诊断包/Issue 提交规范；不公开内部资源和证据 | Luna 文档；主代理事实复核 |
 | 10 | CR23 | 历史文档与证据最终收敛 | 未开始 | CR02、CR22 | 处理被新指南替代的 planned/archived 文件，重建登记与导航，输出保留证据清单和删除报告 | Luna 机械执行；主代理批准删除 |
