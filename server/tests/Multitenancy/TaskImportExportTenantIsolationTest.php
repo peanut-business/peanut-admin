@@ -6,6 +6,7 @@ use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
 use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAuthorization;
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
+use app\common\service\storage\StorageService;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
 use PeanutAdmin\Kernel\Context\RequestedTargetSet;
@@ -299,6 +300,53 @@ SQL);
     $download = $runtime->download($alpha, $completed->resultFileKey);
     expectAsyncTenant(isset($download['url']) && is_string($download['url']) && str_contains($download['url'], '/api/storage/delivery?'), 'Tenant-gated CSV URL is missing');
     expectAsyncTenant(!str_contains((string)$download['url'], '/public/'), 'CSV was exposed below public/');
+    parse_str((string)parse_url((string)$download['url'], PHP_URL_QUERY), $deliveryQuery);
+    $storage = StorageService::fromDefaultConnection();
+    $activeDelivery = $storage->authorizedDownload(
+        (int)($deliveryQuery['tenant_id'] ?? 0),
+        (string)($deliveryQuery['file_key'] ?? ''),
+        (int)($deliveryQuery['expires'] ?? 0),
+        (string)($deliveryQuery['signature'] ?? ''),
+    );
+    expectAsyncTenant(
+        is_file($activeDelivery['path']) && str_contains((string)file_get_contents($activeDelivery['path']), 'alpha-only'),
+        'active Tenant file delivery did not return its ready object',
+    );
+    $pdo->exec("UPDATE pa_tenant SET status = 'suspended', suspended_at = UTC_TIMESTAMP(3) WHERE id = 101");
+    try {
+        $storage->authorizedDownload(
+            (int)$deliveryQuery['tenant_id'],
+            (string)$deliveryQuery['file_key'],
+            (int)$deliveryQuery['expires'],
+            (string)$deliveryQuery['signature'],
+        );
+        throw new RuntimeException('an already-issued file URL survived Tenant suspension');
+    } catch (RuntimeException $exception) {
+        expectAsyncTenant($exception->getMessage() === '文件不存在或不可用', 'suspended file denial changed');
+    }
+    $pdo->exec("UPDATE pa_tenant SET status = 'active', suspended_at = NULL WHERE id = 101");
+    expectAsyncTenant(
+        is_file($storage->authorizedDownload(
+            (int)$deliveryQuery['tenant_id'],
+            (string)$deliveryQuery['file_key'],
+            (int)$deliveryQuery['expires'],
+            (string)$deliveryQuery['signature'],
+        )['path']),
+        'reactivation did not restore the still-ready signed file',
+    );
+    $pdo->prepare("UPDATE pa_file_object SET status='archived' WHERE tenant_id=101 AND file_key=?")
+        ->execute([(string)$deliveryQuery['file_key']]);
+    try {
+        $storage->authorizedDownload(
+            (int)$deliveryQuery['tenant_id'],
+            (string)$deliveryQuery['file_key'],
+            (int)$deliveryQuery['expires'],
+            (string)$deliveryQuery['signature'],
+        );
+        throw new RuntimeException('reactivation restored an archived object');
+    } catch (RuntimeException $exception) {
+        expectAsyncTenant($exception->getMessage() === '文件不存在或不可用', 'archived file denial changed');
+    }
     try {
         $runtime->download($beta, $completed->resultFileKey);
         throw new RuntimeException('cross-Tenant result download succeeded');
