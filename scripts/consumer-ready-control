@@ -120,6 +120,35 @@ def validate_output_path(report: Report, label: str, path: Path, run_id: str) ->
                      f"choose an absent {label}; do not reuse another candidate output")
 
 
+def qualification_output_exclusion(
+    phase: str,
+    qualification_path: Path | None,
+    candidate: str,
+    candidate_tree: str,
+) -> Path | None:
+    if phase != "release" or qualification_path is None or not qualification_path.is_absolute():
+        return None
+    try:
+        resolved = qualification_path.resolve(strict=True)
+        payload = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if resolved != qualification_path or not isinstance(payload, dict):
+        return None
+    run_id = payload.get("run_id")
+    if not isinstance(run_id, str) or re.fullmatch(r"[a-z0-9]{1,11}", run_id) is None:
+        return None
+    expected = ROOT / "output" / f"p0e-{run_id}" / "summary.json"
+    if (
+        resolved != expected
+        or payload.get("status") != "passed"
+        or payload.get("candidate") != candidate
+        or payload.get("candidate_tree") != candidate_tree
+    ):
+        return None
+    return expected.parent.relative_to(ROOT)
+
+
 def remote_version_check(report: Report, policy: dict[str, Any], tag: str) -> None:
     remote = policy.get("remote", {}).get("name")
     repository = policy.get("remote", {}).get("repository")
@@ -168,7 +197,16 @@ def preflight(args: argparse.Namespace) -> int:
                  "resolve the candidate through Git instead of typing or abbreviating a SHA")
     report.check("CANDIDATE_IS_HEAD", candidate == head, f"candidate={candidate} head={head}",
                  "check out the exact candidate before preflight")
-    worktree_status = git("status", "--porcelain")
+    status_arguments = ["status", "--porcelain=v1", "--untracked-files=all"]
+    evidence_output = qualification_output_exclusion(
+        args.phase,
+        args.qualification,
+        candidate,
+        candidate_tree,
+    )
+    if evidence_output is not None:
+        status_arguments.extend(["--", ".", f":(exclude){evidence_output.as_posix()}/**"])
+    worktree_status = git(*status_arguments)
     report.check("WORKTREE_CLEAN", worktree_status == "", worktree_status or "clean",
                  "commit or remove candidate changes before freeze or qualification")
 
