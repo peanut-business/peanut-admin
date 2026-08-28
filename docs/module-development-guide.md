@@ -97,8 +97,15 @@ managed 文件、lock、migration 与 catalog 使用同一个 Package lock；mig
 状态时返回 `PACKAGE_UPDATE_RECOVERY_REQUIRED` 和 opaque recovery pointer，禁止自动降级或猜测
 回放旧 DDL。
 
-这不是生产操作入口。交付环境的维护、配对备份、隔离恢复验证、审计、smoke 和恢复指针由后续
-deployment-owned CLI/worker 编排；生产 HTTP 不接受 archive、路径、URL、命令或目标资源。
+这不是生产操作入口。交付环境先由 deployment owner 把受信 archive 放入项目登记的受限 inbox，
+再用 `ops-module:request preview/prepare` 固定环境、target、Package、签名和 confirm plan；Platform
+只提交返回的 `modreq_*` opaque key，`scripts/ops-module-worker --once` 从登记资源领取任务并依次执行
+配对备份、隔离恢复验证、维护、Package 操作、smoke、recovery pointer 和安全退出维护。生产 HTTP
+不接受 archive、路径、URL、命令、host、数据库、凭据、plan 或目标资源。
+
+失败时 worker 不自动关闭维护窗口；应用 owner 必须使用任务投影中的 recovery pointer 恢复或明确
+确认安全退出。`update`、`retire` 和 `purge` 都要求新配对备份及隔离恢复证据，Purge 仍必须使用预览
+返回的原始 plan/digest 双确认。
 
 ## 卸载
 

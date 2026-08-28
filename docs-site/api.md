@@ -108,6 +108,21 @@ Module、scaffold ownership/conflict、备份、恢复 evidence 和维护窗口�
 镜像、凭据或部署目标。`GET /api/platform/v1/ops/upgrades` 返回最近十个任务的安全步骤投影和
 稳定停止码，不返回命令输出或环境细节。
 
+### Platform Module 交付操作
+
+Deployment owner 先在服务器侧受限 inbox 中准备受信 Module archive，并用
+`ops-module:request preview/prepare` 固定登记 target、Package 身份和 retire/Purge 确认计划。
+具有 `platform.ops.module.manage` 的 PlatformOperator 只能向
+`POST /api/platform/v1/ops/tasks/module` 提交返回的 `modreq_*` opaque key 和
+`Idempotency-Key`；HTTP 不接受 archive、路径、URL、命令、host、数据库、凭据、确认计划或
+目标地址。
+
+登记 worker 通过 `scripts/ops-module-worker --once` 串联新配对备份、隔离恢复验证、维护、
+update/retire/Purge、smoke、审计和 recovery pointer。`GET /api/platform/v1/ops/modules`
+返回最近十个任务的安全投影，单项继续从 `GET /api/platform/v1/ops/tasks/{task_key}` 读取。
+任务失败时维护保持 active，应用 owner 必须先按 recovery pointer 恢复或确认安全退出；浏览器
+不能直接执行包、路径或远程命令。
+
 ### Platform Provider 生产资格
 
 `GET /api/platform/v1/ops/providers` 要求独立 Platform 会话和 `platform.ops.read`，返回 Payment、
