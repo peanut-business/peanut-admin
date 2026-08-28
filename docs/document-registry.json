@@ -742,6 +742,41 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-consumer-module-lifecycle-contract",
+      "path": "docs/architecture/consumer-module-lifecycle-contract.md",
+      "title": "可消费 Module Package 生命周期合同",
+      "audience": [
+        "maintainer",
+        "architect",
+        "operator",
+        "ai"
+      ],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/module-development-guide.md",
+        "docs/architecture/product-closure-maintenance-gate.md",
+        "docs/architecture/product-closure-backup-provider-contract.md",
+        "server/app/common/contract/module/PluginLifecycleCommands.php",
+        "server/app/platform/service/plugin/PluginPackageInstaller.php",
+        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "server/app/platform/service/plugin/PluginRuntimeGovernanceService.php"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "module-lifecycle",
+        "consumer-ready",
+        "product-operations"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-core-application-capability-graph",
       "path": "docs/architecture/core-application-capability-graph.md",
       "title": "核心包与应用能力图",

@@ -13,6 +13,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-architecture-cap06-private-downstream-adoption-contract` | `docs/architecture/cap06-private-downstream-adoption-contract.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-clean-native-multitenancy-baseline` | `docs/architecture/clean-native-multitenancy-baseline.md` | `current` | `architecture` | `architecture` |
 | `pa-docs-architecture-codegraph-worktree-policy` | `docs/architecture/codegraph-worktree-policy.md` | `current` | `architecture` | `architecture` |
+| `pa-docs-architecture-consumer-module-lifecycle-contract` | `docs/architecture/consumer-module-lifecycle-contract.md` | `current` | `architecture` | `product-architecture` |
 | `pa-docs-architecture-core-application-capability-graph` | `docs/architecture/core-application-capability-graph.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-core-extraction-guide` | `docs/architecture/core_extraction_guide.md` | `planned` | `architecture` | `architecture` |
 | `pa-docs-architecture-external-callback-tenant-routing-contract` | `docs/architecture/external-callback-tenant-routing-contract.md` | `planned` | `architecture` | `architecture` |
