@@ -31,12 +31,17 @@ function installerRemoveTemporaryDirectory(string $path): void
     rmdir($path);
 }
 
-$temporary = sys_get_temp_dir() . '/peanut-install-preflight-' . bin2hex(random_bytes(6));
+$fixture = sys_get_temp_dir() . '/peanut-install-preflight-' . bin2hex(random_bytes(6));
+$temporary = $fixture . '/server';
 foreach (['vendor', 'database', 'config', 'runtime', 'public/storage', 'private/storage'] as $directory) {
     installerExpect(mkdir($temporary . '/' . $directory, 0775, true), 'unable to create preflight fixture directory');
 }
-foreach (['vendor/autoload.php', 'database/init.sql', 'config/brand.json'] as $file) {
+installerExpect(mkdir($temporary . '/resources/schemas', 0775, true), 'unable to create Plugin schema fixture directory');
+foreach (['vendor/autoload.php', 'database/init.sql', 'config/brand.json', 'resources/schemas/plugin.schema.json'] as $file) {
     installerExpect(file_put_contents($temporary . '/' . $file, "fixture\n") !== false, 'unable to create preflight fixture file');
+}
+foreach (['RELEASE_METADATA.json', 'plugins.lock'] as $file) {
+    installerExpect(file_put_contents($fixture . '/' . $file, "fixture\n") !== false, 'unable to create release fixture file');
 }
 
 $resourceIdentity = [
@@ -108,7 +113,7 @@ try {
         installerExpect(!str_contains($hostSource, $mutation), 'preflight host must stay read-only: ' . $mutation);
     }
 } finally {
-    installerRemoveTemporaryDirectory($temporary);
+    installerRemoveTemporaryDirectory($fixture);
 }
 
 echo "PC10-INSTALL-PREFLIGHT-001 passed\n";

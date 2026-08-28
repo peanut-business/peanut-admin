@@ -99,6 +99,7 @@ $expect(
         && str_contains($overlayBuilder, 'server/app/platform/service/module/ProductTenantModuleProfileService.php')
         && str_contains($overlayBuilder, 'server/app/common/service/ProductAssetReferenceService.php')
         && str_contains($overlayBuilder, 'server/app/common/service/RichTextResourceService.php')
+        && str_contains($overlayBuilder, 'server/app/common/service/installation/InstallationPreflightHost.php')
         && str_contains($overlayBuilder, 'server/app/common/service/decoration/DecorationSchemaService.php')
         && str_contains($overlayBuilder, 'server/app/common/service/file/FileObjectNamespace.php')
         && str_contains($overlayBuilder, 'web/src/components/menu/index.vue')
@@ -112,6 +113,10 @@ $expect(
         && str_contains($overlayBuilder, 'peanut-release:')
         && str_contains($overlayBuilder, 'version_greater_than'),
     'demo overlay does not bind its application migration target to metadata'
+);
+$expect(
+    str_contains($overlayBuilder, 'COPYFILE_DISABLE=1 tar --no-xattrs'),
+    'demo overlay archive does not suppress macOS xattrs and AppleDouble files'
 );
 $expect(
     preg_match('/files=\(\n(?<files>.*?)\n\)/s', $overlayBuilder, $fileMatch) === 1,
@@ -213,8 +218,8 @@ foreach ([
     'down --volumes',
     '--fresh requires --confirm-destroy $TARGET',
     'major release change ${current_tag} -> ${tag} requires --fresh',
-    'mktemp ./.env.deploy.',
-    'mv -f -- "$temporary" .env',
+    'mktemp "${target_file}.deploy.',
+    'mv -f -- "$temporary" "$target_file"',
     'server/database/install.php',
     'server/database/install.php --migrate --target-version="$version"',
     'plugin:reconcile --official-locked',
@@ -234,14 +239,20 @@ $expect(
 );
 $metadataValidationPosition = strpos($deploy, "jq -e --arg tag \"\$tag\" --arg commit \"\$expected_commit\"");
 $buildPosition = strpos($deploy, '"${candidate_compose[@]}" build');
+$candidatePreflightPosition = strpos($deploy, 'server/database/install.php --preflight', (int)$buildPosition);
+$candidatePluginLockPosition = strpos($deploy, 'server/think plugin:lock --check', (int)$candidatePreflightPosition);
 $destroyPosition = strpos($deploy, '"${current_compose[@]}" down --volumes');
 $expect(
     $metadataValidationPosition !== false
         && $buildPosition !== false
+        && $candidatePreflightPosition !== false
+        && $candidatePluginLockPosition !== false
         && $destroyPosition !== false
         && $metadataValidationPosition < $buildPosition
-        && $buildPosition < $destroyPosition,
-    'fresh deployment does not validate overlay migration identity before build and destructive work'
+        && $buildPosition < $candidatePreflightPosition
+        && $candidatePreflightPosition < $candidatePluginLockPosition
+        && $candidatePluginLockPosition < $destroyPosition,
+    'fresh deployment does not validate the exact candidate image before destructive work'
 );
 $freshMigration = 'server/database/install.php --migrate --target-version="$migration_target_version"';
 $updateMigration = 'server/database/install.php --migrate --target-version="$version"';
@@ -262,11 +273,11 @@ $expect(
     'deployment does not recompute the overlay migration maximum from its declared migration files'
 );
 $expect(
-    substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 12,
+    substr_count($deploy, 'run -T --rm --no-deps --entrypoint php') === 13,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );
 $expect(
-    substr_count($deploy, '</dev/null') === 12,
+    substr_count($deploy, '</dev/null') === 13,
     'remote one-shot Compose commands must close inherited standard input'
 );
 
