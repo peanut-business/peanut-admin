@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "dev",
-    "commit": "2d704557bfde17a0333d0be9b9007a81c4e12f5f",
+    "commit": "eeb204445dd37d3273959b46b4c3df100122e795",
     "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@f34f6d297d791124779e601ebd1d0cf02b17b9cc 已完成 CR01/CR02/CR10—CR13/CR20—CR23/CR30。CR31 正在冻结产品/scaffold 同名的 3.0.11 唯一候选；CR31/CR40 的组合资格和正式 main/Tag/Release 尚未完成，当前 dev 仍不能冒充 consumer-ready Release。"
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已在 v3.0.11 全部完成；发布后 demo 安装暴露的候选镜像预检、Plugin lock/schema、official reconcile 与 overlay 打包闭包已由 PR #371 合入 dev，v3.0.12 hotfix 的 scaffold 已封存，尚待 main 固定候选八组资格、annotated tag、GitHub Release、同源 demo 和文档站发布。真实 Provider 资格、Marketplace、T16 与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1269,8 +1269,8 @@
       "id": "PA-DELIVERY-005",
       "name": "正式可消费源码交付",
       "area": "delivery",
-      "status": "planned",
-      "summary": "PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 已建立公开消费者支持并完成历史证据收敛。CR30 已以正式 adoption 双应用 Module v1→v2 通过第 8 资格组的 Development 聚焦链；CR31 正在冻结产品/scaffold 同名的 3.0.11 候选，随后 CR31/CR40 仍须完成唯一组合资格和正式 main/Tag/GitHub Release。",
+      "status": "verified",
+      "summary": "CR01—CR40 已完成；main@a55e2e4470a1e8dd140bdb7612d63c397f49f862（tree 6fb951b36e895936a2e3c2f1716ae11524a5eadd）以 cr31q7 通过正式 create-app、双模式 fresh、Module v1→v2 全生命周期、Compose/浏览器和零残留八组资格，并已发布 annotated v3.0.11 与同名 GitHub Release。",
       "acceptance": [
         "同一固定 commit/tree 通过 create-app、双模式 fresh、Module v1 到 v2 全生命周期、应用升级、生产 Compose/浏览器和零残留组合资格",
         "dev、main、annotated tag、GitHub Release、scaffold manifest、源码附件和能力快照引用同一不可变身份",
@@ -1289,6 +1289,18 @@
         {
           "kind": "pull_request",
           "ref": "https://github.com/peanut-business/peanut-admin/pull/352"
+        },
+        {
+          "kind": "tag",
+          "ref": "v3.0.11"
+        },
+        {
+          "kind": "release",
+          "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.11"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/releases/v3.0.11.json"
         }
       ],
       "dependencies": [
@@ -1305,7 +1317,51 @@
         "SECURITY.md",
         "scripts/p0e-runtime-qualification",
         "scripts/create-app",
-        "scaffold/releases"
+        "scaffold/releases",
+        "docs/product-status/releases/v3.0.11.json"
+      ]
+    },
+    {
+      "id": "PA-DELIVERY-006",
+      "name": "3.0.12 部署闭包 Hotfix",
+      "area": "delivery",
+      "status": "implemented",
+      "summary": "PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；v3.0.11 加 demo overlay 的四 Host 已通过浏览器验证，但正式 v3.0.12 仍待同一 main 候选完整资格、发布和 demo/docs 采用。",
+      "acceptance": [
+        "生产 PHP 镜像包含安装预检和 Plugin lock 所需的发布身份与 schema",
+        "deploy-release 在替换目标或删除登记卷前验证精确候选镜像和 canonical Plugin lock",
+        "migration 后只通过唯一部署入口幂等 reconcile 锁定的 official Plugin",
+        "同一固定 main commit/tree 通过八组 P0-E 并发布 annotated v3.0.12 与 GitHub Release",
+        "production-candidate demo 和公开文档站采用可追溯的 v3.0.12 身份并通过公开入口验证"
+      ],
+      "evidence": [
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/371"
+        },
+        {
+          "kind": "git",
+          "ref": "eeb204445dd37d3273959b46b4c3df100122e795"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json"
+        }
+      ],
+      "dependencies": [
+        "PA-DELIVERY-005",
+        "PA-INSTALL-001",
+        "PA-PLUGIN-001"
+      ],
+      "paths": [
+        "deploy/docker/production.Dockerfile",
+        "scripts/build-demo-site-patch",
+        "scripts/deploy-release",
+        "server/app/common/service/installation/InstallationPreflightHost.php",
+        "server/tests/Productization/DemoSitePatchContractTest.php",
+        "server/tests/Productization/InstallerBootstrapTest.php",
+        "scaffold/releases/v3.0.12",
+        "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json"
       ]
     },
     {

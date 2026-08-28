@@ -134,13 +134,15 @@ final class InstallationPreflightHost
     private function installationFilesCheck(): array
     {
         $required = [
-            'Composer autoload' => 'vendor/autoload.php',
-            '数据库基线' => 'database/init.sql',
-            '品牌配置' => 'config/brand.json',
+            'Composer autoload' => $this->serverRoot . '/vendor/autoload.php',
+            '数据库基线' => $this->serverRoot . '/database/init.sql',
+            '品牌配置' => $this->serverRoot . '/config/brand.json',
+            '发布身份' => dirname($this->serverRoot) . '/RELEASE_METADATA.json',
+            'Plugin lock' => dirname($this->serverRoot) . '/plugins.lock',
+            'Plugin schema' => $this->serverRoot . '/resources/schemas/plugin.schema.json',
         ];
         $missing = [];
-        foreach ($required as $label => $relativePath) {
-            $path = $this->serverRoot . '/' . $relativePath;
+        foreach ($required as $label => $path) {
             if (!is_file($path) || !is_readable($path)) {
                 $missing[] = $label;
             }

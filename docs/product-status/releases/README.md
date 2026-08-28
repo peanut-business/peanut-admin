@@ -1,7 +1,7 @@
 # 发布能力快照
 
 本目录只在**正式产品发布**时新增不可变快照，不按脚手架 release、普通 PR 或开发分支生成。
-当前最新快照为 [`v3.0.5.json`](v3.0.5.json)，状态是 `production-demonstrated`，并包含固定候选的 P0-E 与双部署证明。
+当前最新快照为 [`v3.0.11.json`](v3.0.11.json)，状态是 `consumer-ready-source-released`，并包含最终固定候选的八组 P0-E、annotated tag、GitHub Release 与源码制品证明。生产部署不在该快照范围内。
 
 快照应由发布流程从当时的 `capability-ledger.json` 生成，并记录：
 

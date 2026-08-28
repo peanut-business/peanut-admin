@@ -20,9 +20,10 @@ description: 从不可变版本到备份、迁移、验证和恢复的交付闭�
 1. 核对 `release-versions.json`、Release 元数据、锁文件和部署目标。
 2. 备份数据库与用户持久文件，并记录它们对应的应用版本。
 3. 使用 `scripts/deploy-release --help` 确认当前参数；不要从历史文档复制已删除选项。
-4. fresh 部署选择 automatic（CI/托管）或 guided（人工页面）入口；两者共用同一安装 Host。
-5. 运行 migration/账本校验、服务健康检查和受影响入口 smoke。
-6. 失败时停止流量变更，按配对备份和已验证恢复流程处理；不要跳过 checksum 或手改账本。
+4. 让部署入口在刚构建的候选 PHP 镜像内完成只读安装预检和 Plugin lock 校验；未通过时不得替换旧服务或删除卷。
+5. fresh 部署选择 automatic（CI/托管）或 guided（人工页面）入口；两者共用同一安装 Host。
+6. 运行 migration、official Plugin reconcile、账本校验、服务健康检查和受影响入口 smoke。
+7. 失败时停止流量变更，按配对备份和已验证恢复流程处理；不要跳过 checksum 或手改账本。
 
 脚手架文件升级使用 `scripts/scaffold-upgrade` 的 `preflight/apply/verify/recover` 合同。它只管理 manifest 声明的文件，不替代业务 migration 或依赖升级。
 

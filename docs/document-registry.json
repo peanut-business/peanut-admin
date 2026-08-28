@@ -4537,7 +4537,7 @@
         "resources/service-registry.json"
       ],
       "owner": "product-architecture",
-      "status": "planned",
+      "status": "current",
       "scope": [
         "application"
       ],
