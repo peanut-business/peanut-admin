@@ -73,7 +73,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 进行中 | CR10 已冻结显式 Package 生命周期合同；CR11 候选新增 development/debug/Standalone 的 module:update-package、同一 preflight dry-run、active v1 到 v2 update、降级/同版本冲突拒绝和失败 recovery pointer。交付环境的统一维护、配对备份、审计和恢复入口仍由 CR12 实现，当前不能冒充生产操作面。 |
+| `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 进行中 | CR10 已冻结显式 Package 生命周期合同；CR11 已由 PR #339 合入 development/debug/Standalone 的 module:update-package、同一 preflight dry-run、active v1 到 v2 update、降级/同版本冲突拒绝和失败 recovery pointer。CR12 候选新增 deployment-owned opaque request/worker，串联登记 target、配对备份、隔离恢复、维护、update/retire/Purge、审计、smoke 和 recovery pointer；待合入后才成为 dev 事实。 |
 
 ### 计划中或受阻
 

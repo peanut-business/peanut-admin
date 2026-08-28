@@ -242,9 +242,11 @@ migration 内容变化仍会被拒绝。`rollback` 只生成计划，卸载默�
 生产应用不会自带 fixture。应用 owner 必须先提供真实 Plugin artifact 和 lock 身份，再由
 PlatformOperator 开通 TenantModule，最后给 TenantMember 分配权限。
 
-`module:update-package` 目前仍只允许 development、debug、Standalone 实例工具环境，不是生产
-HTTP 上传面。交付环境必须由 deployment-owned CLI/worker 串联维护、配对备份、隔离恢复验证、
-审计、smoke 和 recovery pointer；HTTP 不接受 archive、路径、URL、命令或目标资源。
+`module:update-package` 仍只允许 development、debug、Standalone 实例工具环境，不是生产 HTTP
+上传面。交付环境使用 `ops-module:request preview/prepare` 固定登记 target 与受信包，Platform HTTP
+只接收 `modreq_*` opaque key，再由 `scripts/ops-module-worker --once` 串联配对备份、隔离恢复验证、
+维护、update/retire/Purge、审计、smoke 和 recovery pointer。HTTP 不接受 archive、路径、URL、命令、
+host、数据库、凭据、plan 或目标资源；失败时维护保持 active，等待按 recovery pointer 处理。
 
 安装完成不等于功能可用。最终应看到：Plugin active、目标 TenantModule enabled、成员已获权限，
 并且前后端入口都能在 Module 停用后立即拒绝新操作。

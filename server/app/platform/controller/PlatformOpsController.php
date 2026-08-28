@@ -201,6 +201,27 @@ final class PlatformOpsController extends BasePlatformController
         });
     }
 
+    public function moduleOperation(): Json
+    {
+        return $this->run(function (PDO $pdo): array {
+            $params = $this->request->post();
+            if (array_keys($params) !== ['request_key'] || !is_string($params['request_key'])) {
+                throw OpsConsoleException::invalid();
+            }
+            return PlatformOpsRuntimeFactory::moduleOperations($pdo)->submit(
+                $this->context(),
+                $params['request_key'],
+                $this->idempotencyKey(),
+            );
+        });
+    }
+
+    public function moduleOperations(): Json
+    {
+        return $this->run(fn(PDO $pdo): array => PlatformOpsRuntimeFactory::moduleOperations($pdo)
+            ->snapshot($this->context()));
+    }
+
     public function upgrades(): Json
     {
         return $this->run(fn(PDO $pdo): array => PlatformOpsRuntimeFactory::upgrades($pdo)
@@ -216,9 +237,11 @@ final class PlatformOpsController extends BasePlatformController
     public function task(string $task_key): Json
     {
         return $this->run(function (PDO $pdo) use ($task_key): array {
+            $module = PlatformOpsRuntimeFactory::moduleOperations($pdo)
+                ->taskIfModuleOperation($this->context(), $task_key);
             $upgrade = PlatformOpsRuntimeFactory::upgrades($pdo)
                 ->taskIfUpgrade($this->context(), $task_key);
-            return $upgrade ?? PlatformOpsRuntimeFactory::tasks($pdo)
+            return $module ?? $upgrade ?? PlatformOpsRuntimeFactory::tasks($pdo)
                 ->task($this->context(), $task_key)
                 ->toPublicArray();
         });

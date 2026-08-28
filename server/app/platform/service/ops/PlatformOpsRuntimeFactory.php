@@ -40,6 +40,7 @@ final class PlatformOpsRuntimeFactory
                 'planned-upgrade',
                 'database-maintenance',
                 'security-maintenance',
+                'module-lifecycle',
             ]),
             new PdoMaintenanceWindowStore($pdo)
         );
@@ -62,6 +63,26 @@ final class PlatformOpsRuntimeFactory
     public static function upgrades(PDO $pdo): PlatformUpgradeExecutionService
     {
         return new PlatformUpgradeExecutionService($pdo, dirname(__DIR__, 5));
+    }
+
+    public static function moduleOperations(PDO $pdo): PlatformModuleOperationExecutionService
+    {
+        $trusted = [];
+        foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
+            $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
+            if (is_string($keyId) && is_string($decoded)
+                && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES
+            ) {
+                $trusted[$keyId] = $decoded;
+            }
+        }
+        $config = Config::get('modules', []);
+        return new PlatformModuleOperationExecutionService(
+            $pdo,
+            dirname(__DIR__, 5),
+            is_array($config) ? $config : [],
+            $trusted,
+        );
     }
 
     public static function providerQualifications(PDO $pdo): PlatformProviderQualificationService

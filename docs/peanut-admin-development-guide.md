@@ -52,6 +52,13 @@ Platform 维护窗口使用 Core 的公开 Ops Console 合同，由应用的 PDO
 middleware 装配。窗口生效时，除受 `platform.ops.maintenance.manage` 权限保护的计划与关闭
 接口外，所有 HTTP 写方法都拒绝并写入 Platform 审计；不能通过菜单、前端或 Host 别名绕过。
 
+交付环境的 Module 更新、退役和 Purge 由 deployment owner 在服务器侧受限 inbox 中准备受信
+archive，并用 `ops-module:request preview/prepare` 固定登记 target 与确认计划。Platform HTTP
+只接受 `modreq_*` opaque key；`scripts/ops-module-worker --once` 才能串联新配对备份、隔离恢复、
+维护、Module 操作、smoke、审计和 recovery pointer。任何 HTTP 请求都不能提供 archive、路径、
+URL、命令、host、数据库、凭据、确认计划或目标地址；失败时维护保持 active，等待应用 owner
+按 recovery pointer 恢复或确认安全退出。
+
 ### Provider 生产资格合同
 
 `GET /api/platform/v1/ops/providers` 是 Application 拥有的 Platform-only 只读聚合，复用

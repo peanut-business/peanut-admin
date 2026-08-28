@@ -229,6 +229,19 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/modules:
+    get:
+      tags: [PlatformOps]
+      operationId: getPlatformModuleOperations
+      description: >-
+        Returns at most ten deployment-owned Module operation tasks with their
+        immutable Package identity, ordered step status, stable stop code and
+        path-free recovery pointer.
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
   /api/platform/v1/ops/providers:
     get:
       tags: [PlatformOps]
@@ -388,6 +401,31 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
+  /api/platform/v1/ops/tasks/module:
+    post:
+      tags: [PlatformOps]
+      operationId: submitPlatformModuleOperation
+      description: >-
+        Submits one deployment-prepared Module update, retire or Purge request
+        by opaque request key. The request cannot provide an archive, path,
+        URL, command, host, database, credential, confirmation plan or target.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, minLength: 8, maxLength: 200}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PlatformModuleOperationRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ApiResponse'}
+        '400': {$ref: '#/components/responses/ApiResponse'}
+        '401': {$ref: '#/components/responses/ApiResponse'}
+        '403': {$ref: '#/components/responses/ApiResponse'}
+        '409': {$ref: '#/components/responses/ApiResponse'}
   /api/platform/v1/ops/tasks/{task_key}:
     get:
       tags: [PlatformOps]
@@ -449,6 +487,14 @@ components:
         provider_key:
           type: string
           enum: [peanut.paired-db-files]
+    PlatformModuleOperationRequest:
+      type: object
+      additionalProperties: false
+      required: [request_key]
+      properties:
+        request_key:
+          type: string
+          pattern: '^modreq_[a-f0-9]{32}$'
     PlatformRestoreVerificationRequest:
       type: object
       additionalProperties: false

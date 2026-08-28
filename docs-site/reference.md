@@ -36,6 +36,8 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | --- | --- |
 | `php think module:update-package <path> --sha256=<hash> --dry-run` | development/debug/Standalone 中验证并计划同一 Package 的显式更新，产品状态零写入 |
 | `php think module:update-package <path> --sha256=<hash>` | development/debug/Standalone 中应用更高不可变版本；不是生产 HTTP 上传入口 |
+| `php think ops-module:request preview/prepare ...` | deployment owner 在登记的受限 inbox 中固定受信包、target 与 retire/Purge 确认计划；不接收 URL 或远程命令 |
+| `scripts/ops-module-worker --once` | 从 opaque task 领取一次交付操作，串联配对备份、隔离恢复、维护、操作、smoke 和 recovery pointer；失败保持维护 |
 
 ## 验证
 

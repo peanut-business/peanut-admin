@@ -235,6 +235,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns at most ten deployment-owned Module operation tasks with their immutable Package identity, ordered step status, stable stop code and path-free recovery pointer. */
+        get: operations["getPlatformModuleOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/providers": {
         parameters: {
             query?: never;
@@ -338,6 +355,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/ops/tasks/module": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Submits one deployment-prepared Module update, retire or Purge request by opaque request key. The request cannot provide an archive, path, URL, command, host, database, credential, confirmation plan or target. */
+        post: operations["submitPlatformModuleOperation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/ops/tasks/{task_key}": {
         parameters: {
             query?: never;
@@ -378,6 +412,9 @@ export interface components {
         PlatformBackupRequest: {
             /** @enum {string} */
             provider_key: "peanut.paired-db-files";
+        };
+        PlatformModuleOperationRequest: {
+            request_key: string;
         };
         PlatformRestoreVerificationRequest: {
             /** @enum {string} */
@@ -835,6 +872,20 @@ export interface operations {
             403: components["responses"]["ApiResponse"];
         };
     };
+    getPlatformModuleOperations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+        };
+    };
     getPlatformProviderQualifications: {
         parameters: {
             query?: never;
@@ -971,6 +1022,28 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            200: components["responses"]["ApiResponse"];
+            400: components["responses"]["ApiResponse"];
+            401: components["responses"]["ApiResponse"];
+            403: components["responses"]["ApiResponse"];
+            409: components["responses"]["ApiResponse"];
+        };
+    };
+    submitPlatformModuleOperation: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformModuleOperationRequest"];
             };
         };
         responses: {
