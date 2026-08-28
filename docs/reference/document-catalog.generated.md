@@ -168,7 +168,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-site-architecture-module-execution-context` | `docs-site/architecture/module-execution-context.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-architecture-official-module-qualification` | `docs-site/architecture/official-module-qualification.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-capabilities` | `docs-site/capabilities.md` | `current` | `reference` | `application-maintainers` |
-| `pa-docs-site-demo-access` | `docs-site/demo-access.md` | `archived` | `archive` | `application-maintainers` |
+| `pa-docs-site-demo-access` | `docs-site/demo-access.md` | `current` | `public-projection` | `application-maintainers` |
 | `pa-docs-site-guide-application-module-lifecycle` | `docs-site/guide/application-module-lifecycle.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-backend` | `docs-site/guide/backend.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-concepts` | `docs-site/guide/concepts.md` | `current` | `public-projection` | `developer-experience` |

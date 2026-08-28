@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-17
+> Last updated: 2026-08-28
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -86,6 +86,20 @@ Schema、API 或发布事实源。文档变更入口为 `docs/README.md`，最�
   `3a777f72928681c3d4e62adf86473cec506f4612`），P0-E `p0e201r3` 七组通过且零资源残留；
   `v2.0.0 -> v2.0.1` 派生应用已通过 `preflight/apply/verify/recover`。线上
   Standalone/Multi-tenant 双部署仍未完成，不得写成已部署。
+
+### 2.0.2 当前 consumer-ready 正式源码与演示 — ✅ v3.0.12 完成
+
+- 当前正式源码身份为 `main/tag@fe328a320b7c68b3c2f47512f2aa4afcad43c630`（tree
+  `b5be33c5bd180e6b89f00d49002cd4fa96aeb523`）、annotated tag object
+  `231b0f5f62b6b637f816bca0a5775ae604f194e8` 与
+  [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.12)。固定候选
+  `p0e3012a` 八组通过，全部登记资格资源零残留且租约已释放。
+- `production-candidate` 多租户 Demo 已 fresh 重建到同一提交，Platform、共享 Admin、Tenant A/B
+  四入口和 Tenant Host 绑定已验证；文档站 `peanut-admin-doc.007345.xyz` 已发布 v3.0.12 演示入口。
+  无秘密快照见 `docs/product-status/releases/v3.0.12.json` 与
+  `docs/product-status/deployments/v3.0.12-online-experience.json`。
+- CR01—CR40 与正式 consumer-ready 源码交付已完成。Marketplace、T16 部分/多次退款、真实 Provider
+  资格、跨实例运营平台、完整 SaaS 商业化、预构建生产镜像和第三方业务生产部署仍不在本轮范围。
 
 ### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
 

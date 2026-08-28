@@ -1,10 +1,24 @@
 ---
-title: 演示与本地访问
-description: 不共享凭据的 Peanut Admin 本地体验说明。
+title: 在线演示
+description: Peanut Admin v3.0.12 的 Platform、共享管理端与 Tenant 绑定入口。
 ---
 
-# 演示与本地访问
+# 在线演示
 
-Peanut Admin 仓库不提供可复用的共享默认账号或密码。请按[快速开始](/getting-started)在自己的隔离环境创建身份；仓库维护者只能使用项目登记且获授权的演示资源。
+以下入口运行在可丢弃的 `production-candidate` 体验实例，源码身份与正式
+[`v3.0.12`](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.12) 提交一致。
+它用于体验产品，不承载真实业务数据，也不代表你的生产环境已经完成部署或 Provider 资格。
 
-不要在文档、Issue、截图或 URL 中粘贴登录凭据。需要公开演示站时，由部署 owner 单独发布入口和一次性访问政策。
+| 入口 | 地址 | 账号 |
+| --- | --- | --- |
+| 实例 Platform | [pa-platform.007345.xyz/platform/](https://pa-platform.007345.xyz/platform/) | `platform@pa-demo.example` |
+| 共享管理端（可选择 Tenant A / B） | [pa-admin.007345.xyz/admin/](https://pa-admin.007345.xyz/admin/) | `tenant-a@pa-demo.example` |
+| Tenant A 管理端 | [pa-tenant-a.007345.xyz/admin/](https://pa-tenant-a.007345.xyz/admin/) | `tenant-a@pa-demo.example` |
+| Tenant B 管理端 | [pa-tenant-b.007345.xyz/admin/](https://pa-tenant-b.007345.xyz/admin/) | `tenant-b@pa-demo.example` |
+| 默认 Tenant 管理端 | [pa-admin.007345.xyz/admin/](https://pa-admin.007345.xyz/admin/) | `admin@pa-demo.example` |
+
+本次预发布的访问密码由部署 owner 在交付回复中提供，不写入公开文档。演示策略会拒绝受保护的
+破坏性写操作；请勿输入真实个人信息、支付凭据、OAuth 密钥或其他敏感数据。
+
+要创建自己的隔离实例，请从[快速开始](/getting-started)进入。完整源码身份与适用边界见
+[版本与发布](/releases)。

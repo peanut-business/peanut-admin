@@ -13,12 +13,13 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Follow the public consumer path | [Create applications and deliver Modules](../docs-site/guide/application-module-lifecycle.md), [command reference](../docs-site/reference.md) and [support guide](../docs-site/support.md) | public task projection; runtime and release facts remain upstream |
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |
+| Inspect the current formal release and registered demo | [v3.0.12 release snapshot](product-status/releases/v3.0.12.json), [online-experience snapshot](product-status/deployments/v3.0.12-online-experience.json) and [demo handoff](operations/demo-access.md) | immutable release identity plus current no-secret deployment evidence |
 | Follow the product-closure work | [Execution queue](plans/product-closure-execution-queue.md), [compatibility baseline](architecture/product-closure-core-application-compatibility.md) and [observability panel](product-status/product-closure-observability.md) | internal decisions and execution evidence; not capability completion proof |
 | Follow consumer-ready delivery | [Consumer-ready product plan](plans/consumer-ready-product-plan.md) and [evidence retention register](maintenance/consumer-ready-evidence-retention.md) | current post-closure queue plus path-level keep/archive/delete decisions and recovery pointers |
 | Prevent avoidable delivery retries | [Consumer-ready minimal controller](operations/consumer-ready-control.md) | current read-only preflight contract and upgrade boundary |
 | Compare product capabilities | [Product capability reference matrix](reference/product-capability-reference-matrix.md) | researched reference and Core/Application adoption decisions; not completion proof |
 | Plan future work | `docs/plans/` and `docs/design/` | planned, never implementation proof |
-| Operate or release | `docs/operations/` and [release engineering](release-engineering.md) | current procedures |
+| Operate or release | `docs/operations/`, [release engineering](release-engineering.md) and [public demo projection](../docs-site/demo-access.md) | current procedures; public projection contains only owner-authorized entry URLs and account names |
 | Change documentation safely | [Document lifecycle](governance/document-lifecycle.md) and [docs-impact](governance/docs-impact.md) | authoritative governance |
 
 The generated [document catalog](reference/document-catalog.generated.md) lists every individually registered entry.
