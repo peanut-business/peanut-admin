@@ -10,6 +10,7 @@ final class PluginPackageException extends \RuntimeException
         string $message,
         int $code = 0,
         ?\Throwable $previous = null,
+        public readonly array $details = [],
     ) {
         parent::__construct($message, $code, $previous);
     }

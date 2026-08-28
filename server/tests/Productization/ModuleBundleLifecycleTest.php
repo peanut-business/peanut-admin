@@ -55,6 +55,23 @@ function moduleBundleRemoveTree(string $path): void
     rmdir($path);
 }
 
+function moduleBundleSetVersion(string $root, string $module, string $version): void
+{
+    $backend = $root . '/server/app/Modules/Official/' . $module;
+    foreach ([$backend . '/module.json', $backend . '/composer.json'] as $path) {
+        $document = json_decode((string)file_get_contents($path), true, 64, JSON_THROW_ON_ERROR);
+        $document['version'] = $version;
+        if ($module === 'Article' && str_ends_with($path, '/module.json')) {
+            $document['dependencies'][0]['version'] = '^' . explode('.', $version)[0] . '.0';
+        }
+        file_put_contents($path, json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    }
+    $frontend = $root . '/web/src/modules/official-' . strtolower($module) . '/package.json';
+    $document = json_decode((string)file_get_contents($frontend), true, 64, JSON_THROW_ON_ERROR);
+    $document['version'] = $version;
+    file_put_contents($frontend, json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+}
+
 /** @return list<string> */
 function moduleBundleTables(array $affectedModules): array
 {
@@ -150,6 +167,8 @@ moduleBundleExpect(!file_exists($temporary), 'isolated bundle output path alread
 $source = $temporary . '/source';
 $target = $temporary . '/target';
 $archivePath = $temporary . '/official-content-bundle.tar';
+$updateArchivePath = $temporary . '/official-content-bundle-v2.tar';
+$conflictArchivePath = $temporary . '/official-content-bundle-v2-conflict.tar';
 $recoverableArchivePath = $temporary . '/official-runtime-bundle.tar';
 $completed = false;
 
@@ -198,6 +217,58 @@ try {
     moduleBundleExpect(array_column((array)$installed['modules'], 'module_key') === ['official.article', 'official.file'], 'bundle install returned another scope');
     $unchangedInstall = $installer->install($archivePath, $packed['sha256'], null);
     moduleBundleExpect(($unchangedInstall['operation'] ?? null) === 'unchanged', 'repeated bundle install was not idempotent');
+
+    $lockBeforeDryRun = (string)file_get_contents($target . '/plugins.lock');
+    $databaseBeforeDryRun = (string)json_encode([
+        'plugin' => $pdo->query("SELECT * FROM pa_plugin_installation WHERE plugin_key='official-content-bundle'")->fetchAll(),
+        'modules' => $pdo->query("SELECT * FROM pa_module_installation WHERE module_key IN ('official.article','official.file') ORDER BY module_key")->fetchAll(),
+        'migrations' => $pdo->query("SELECT * FROM pa_module_migration WHERE module_key IN ('official.article','official.file') ORDER BY id")->fetchAll(),
+        'tenant_modules' => $pdo->query("SELECT * FROM pa_tenant_module WHERE module_key IN ('official.article','official.file') ORDER BY tenant_id,module_key")->fetchAll(),
+    ], JSON_THROW_ON_ERROR);
+    moduleBundleSetVersion($source, 'Article', '2.0.0');
+    moduleBundleSetVersion($source, 'File', '2.0.0');
+    $updatedPacked = $archive->packBundle(
+        'official-content-bundle',
+        '2.0.0',
+        ['official.article', 'official.file'],
+        $updateArchivePath,
+    );
+    $dryRun = $installer->update($updateArchivePath, $updatedPacked['sha256'], null, true);
+    moduleBundleExpect(($dryRun['operation'] ?? null) === 'update' && ($dryRun['dry_run'] ?? null) === true, 'bundle update dry-run did not return its plan');
+    moduleBundleExpect(($dryRun['source']['version'] ?? null) === '1.0.0', 'bundle update dry-run source identity changed');
+    moduleBundleExpect(($dryRun['target']['version'] ?? null) === '2.0.0', 'bundle update dry-run target identity changed');
+    moduleBundleExpect((string)file_get_contents($target . '/plugins.lock') === $lockBeforeDryRun, 'bundle update dry-run changed plugins.lock');
+    moduleBundleExpect((string)json_encode([
+        'plugin' => $pdo->query("SELECT * FROM pa_plugin_installation WHERE plugin_key='official-content-bundle'")->fetchAll(),
+        'modules' => $pdo->query("SELECT * FROM pa_module_installation WHERE module_key IN ('official.article','official.file') ORDER BY module_key")->fetchAll(),
+        'migrations' => $pdo->query("SELECT * FROM pa_module_migration WHERE module_key IN ('official.article','official.file') ORDER BY id")->fetchAll(),
+        'tenant_modules' => $pdo->query("SELECT * FROM pa_tenant_module WHERE module_key IN ('official.article','official.file') ORDER BY tenant_id,module_key")->fetchAll(),
+    ], JSON_THROW_ON_ERROR) === $databaseBeforeDryRun, 'bundle update dry-run changed database state');
+    $updated = $installer->update($updateArchivePath, $updatedPacked['sha256'], null, false);
+    moduleBundleExpect(($updated['operation'] ?? null) === 'upgraded', 'bundle package update did not execute');
+    moduleBundleExpect(($updated['dry_run'] ?? null) === false, 'bundle package update reported dry-run');
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_installation WHERE plugin_key='official-content-bundle' AND installed_version='2.0.0' AND status='active'")->fetchColumn() === 1, 'bundle Package identity did not update');
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_module_installation WHERE module_key IN ('official.article','official.file') AND installed_version='2.0.0' AND status='active'")->fetchColumn() === 2, 'bundle Module identities did not update');
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key IN ('official.article','official.file')")->fetchColumn() === 0, 'bundle update changed TenantModule enablement');
+    try {
+        $installer->update($archivePath, $packed['sha256'], null, false);
+        throw new RuntimeException('bundle downgrade unexpectedly executed');
+    } catch (\app\platform\service\plugin\PluginPackageException $exception) {
+        moduleBundleExpect($exception->errorCode === 'PLUGIN_DOWNGRADE_REJECTED', 'bundle downgrade returned another error');
+    }
+    file_put_contents($source . '/server/app/Modules/Official/Article/Module.php', "\n", FILE_APPEND);
+    $conflictPacked = $archive->packBundle(
+        'official-content-bundle',
+        '2.0.0',
+        ['official.article', 'official.file'],
+        $conflictArchivePath,
+    );
+    try {
+        $installer->update($conflictArchivePath, $conflictPacked['sha256'], null, false);
+        throw new RuntimeException('same-version conflicting bundle update unexpectedly executed');
+    } catch (\app\platform\service\plugin\PluginPackageException $exception) {
+        moduleBundleExpect($exception->errorCode === 'PACKAGE_VERSION_IDENTITY_CONFLICT', 'same-version conflict returned another error');
+    }
 
     $moduleKeys = ['official.article', 'official.file'];
     moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_installation WHERE plugin_key='official-content-bundle' AND status='active'")->fetchColumn() === 1, 'bundle installation row is invalid');
@@ -282,7 +353,7 @@ try {
     $taskManifest = json_decode((string)file_get_contents($taskManifestPath), true, 64, JSON_THROW_ON_ERROR);
     $taskManifest['dependencies'] = [[
         'module_key' => 'official.file',
-        'version' => '^1.0',
+        'version' => '^2.0',
     ]];
     $taskManifest['tenant']['requires'] = ['official.article'];
     file_put_contents($taskManifestPath, json_encode($taskManifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
@@ -329,7 +400,7 @@ try {
     $runtimeTask = $runtimeProjection['items'][0] ?? null;
     moduleBundleExpect(is_array($runtimeTask), 'runtime Module projection lost the Task member');
     moduleBundleExpect(
-        ($runtimeTask['dependencies'] ?? null) === [['module_key' => 'official.file', 'version' => '^1.0']],
+        ($runtimeTask['dependencies'] ?? null) === [['module_key' => 'official.file', 'version' => '^2.0']],
         'runtime dependency projection did not distinguish explicit business dependencies from tenant requires',
     );
     $dependentPreview = $governance->preview('official.file', false);

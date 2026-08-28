@@ -75,6 +75,31 @@ php think module:install-package <path-to-tar> --sha256=<expected-hash>
 `-- peanut-admin-repairs: <完整旧 migration key>` 头的幂等修复 migration，安装器会从该修复点
 继续并保留旧失败账本作为证据。
 
+## 显式更新已安装 Package
+
+更新不会复用 install 猜测意图。先用同一个受信 archive 做 dry-run，再显式执行：
+
+```bash
+php think module:update-package <path-to-v2.tar> \
+  --sha256=<expected-hash> --dry-run
+
+php think module:update-package <path-to-v2.tar> \
+  --sha256=<expected-hash>
+```
+
+该入口与安装一样，只允许 development、debug、Standalone 实例工具环境。dry-run 会验证 archive、
+签名、manifest、依赖、版本、Bundle 成员和目标身份，返回 source/target plan；它不会改写 managed
+文件、`plugins.lock`、Plugin/Module installation、migration ledger、TenantModule 或 RBAC。
+
+更新只接受同一 Package key 和同一 Bundle 成员集合。同版本不同内容以
+`PACKAGE_VERSION_IDENTITY_CONFLICT` 拒绝，低版本以 `PLUGIN_DOWNGRADE_REJECTED` 拒绝。执行期间
+managed 文件、lock、migration 与 catalog 使用同一个 Package lock；migration 已进入不可逆失败
+状态时返回 `PACKAGE_UPDATE_RECOVERY_REQUIRED` 和 opaque recovery pointer，禁止自动降级或猜测
+回放旧 DDL。
+
+这不是生产操作入口。交付环境的维护、配对备份、隔离恢复验证、审计、smoke 和恢复指针由后续
+deployment-owned CLI/worker 编排；生产 HTTP 不接受 archive、路径、URL、命令或目标资源。
+
 ## 卸载
 
 ```bash

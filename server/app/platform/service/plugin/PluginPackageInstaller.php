@@ -25,6 +25,27 @@ final class PluginPackageInstaller
         ?string $expectedSha256,
         ?string $signatureKeyId,
     ): array {
+        return $this->promote('install', $archivePath, $expectedSha256, $signatureKeyId, false);
+    }
+
+    /** @return array<string,mixed> */
+    public function update(
+        string $archivePath,
+        ?string $expectedSha256,
+        ?string $signatureKeyId,
+        bool $dryRun,
+    ): array {
+        return $this->promote('update', $archivePath, $expectedSha256, $signatureKeyId, $dryRun);
+    }
+
+    /** @return array<string,mixed> */
+    private function promote(
+        string $operation,
+        string $archivePath,
+        ?string $expectedSha256,
+        ?string $signatureKeyId,
+        bool $dryRun,
+    ): array {
         $archive = new PluginPackageArchiveService($this->serverRoot);
         $current = $this->currentDescriptors();
         $availableVersions = $this->moduleVersions($current);
@@ -35,6 +56,13 @@ final class PluginPackageInstaller
             $signatureKeyId,
             $availableVersions,
         );
+        if ($operation === 'update') {
+            $plan = $this->updatePlan($package, $current);
+            if ($dryRun) {
+                $archive->cleanup($package);
+                return $plan + ['operation' => 'update', 'dry_run' => true];
+            }
+        }
         $promoted = [];
         $replaced = [];
         $recoveryRoot = null;
@@ -47,6 +75,8 @@ final class PluginPackageInstaller
             throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
         }
         try {
+            $current = $this->currentDescriptors();
+            $plan = $operation === 'update' ? $this->updatePlan($package, $current) : null;
             foreach ($current as $pluginKey => $descriptor) {
                 foreach (array_keys($descriptor->moduleRoots) as $moduleKey) {
                     if (isset($package->modules[$moduleKey]) && $pluginKey !== $package->packageKey) {
@@ -54,7 +84,8 @@ final class PluginPackageInstaller
                     }
                 }
             }
-            $recoverableReplacement = $this->recoverableReplacement($package, $current);
+            $recoverableReplacement = $operation === 'update'
+                || $this->recoverableReplacement($package, $current);
             $scopes = [$package->manifestRelative => dirname($package->manifestRelative)];
             foreach ($package->modules as $module) {
                 $scopes[$module['backend_relative']] = $module['backend_relative'];
@@ -108,8 +139,10 @@ final class PluginPackageInstaller
                 $this->moduleConfig,
             );
             $lifecycleStarted = true;
-            $result = $lifecycle->install($package->packageKey, false);
-            $this->clearQuarantine($package->packageKey);
+            $result = $operation === 'update'
+                ? $lifecycle->upgrade($package->packageKey, false)
+                : $lifecycle->install($package->packageKey, false);
+            if ($operation === 'install') $this->clearQuarantine($package->packageKey);
             if (is_string($recoveryRoot)) $this->removeTree($recoveryRoot);
             return $result + [
                 'archive_sha256' => $package->archiveSha256,
@@ -122,6 +155,8 @@ final class PluginPackageInstaller
                     ],
                     array_values($package->modules),
                 ),
+                'dry_run' => false,
+                'plan' => $plan,
             ];
         } catch (\Throwable $exception) {
             if (!$lifecycleStarted) {
@@ -139,12 +174,123 @@ final class PluginPackageInstaller
                     }
                 }
             }
+            if ($operation === 'update' && $lifecycleStarted) {
+                $recoveryRoot ??= $this->recoveryRoot($package->packageKey);
+                $pointer = $this->writeUpdateRecoveryPointer(
+                    $recoveryRoot,
+                    $package,
+                    $plan ?? [],
+                    $exception,
+                );
+                throw new PluginPackageException(
+                    'PACKAGE_UPDATE_RECOVERY_REQUIRED',
+                    'Package update stopped in a recoverable failed state.',
+                    0,
+                    $exception,
+                    ['recovery_pointer' => $pointer],
+                );
+            }
             if (is_string($recoveryRoot) && is_dir($recoveryRoot)) $this->removeTree($recoveryRoot);
             throw $exception;
         } finally {
             $this->releaseAdvisoryLock($lockName);
             $archive->cleanup($package);
         }
+    }
+
+    /** @param array<string,PluginDescriptor> $current @return array<string,mixed> */
+    private function updatePlan(VerifiedPluginPackage $package, array $current): array
+    {
+        $descriptor = $current[$package->packageKey] ?? null;
+        if (!$descriptor instanceof PluginDescriptor) {
+            throw new PluginPackageException('PLUGIN_NOT_INSTALLED', 'Package must be installed before update.');
+        }
+        $statement = $this->pdo->prepare(
+            'SELECT installed_version,status,artifact_sha256,lock_digest FROM pa_plugin_installation WHERE plugin_key=?'
+        );
+        $statement->execute([$package->packageKey]);
+        $installation = $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($installation)) {
+            throw new PluginPackageException('PLUGIN_NOT_INSTALLED', 'Package must be installed before update.');
+        }
+        if (!in_array($installation['status'] ?? null, ['active', 'failed'], true)) {
+            throw new PluginPackageException('PLUGIN_STATE_INVALID', 'Package cannot be updated from its current state.');
+        }
+        $comparison = version_compare($package->packageVersion, (string)$installation['installed_version']);
+        if ($comparison < 0) {
+            throw new PluginPackageException('PLUGIN_DOWNGRADE_REJECTED', 'Package update cannot install an older version.');
+        }
+        $sameContents = hash_equals(
+            (string)$descriptor->source['sha256'],
+            (string)$package->descriptor->source['sha256'],
+        );
+        if ($comparison === 0 && !$sameContents) {
+            throw new PluginPackageException(
+                'PACKAGE_VERSION_IDENTITY_CONFLICT',
+                'Package version already exists with another immutable identity.',
+            );
+        }
+        $currentModules = array_keys($descriptor->moduleRoots);
+        $targetModules = array_keys($package->modules);
+        sort($currentModules, SORT_STRING);
+        sort($targetModules, SORT_STRING);
+        if ($currentModules !== $targetModules) {
+            throw new PluginPackageException(
+                'PLUGIN_UPDATE_SCOPE_CHANGED',
+                'Package update cannot add or remove Bundle members.',
+            );
+        }
+        return [
+            'schema_version' => 1,
+            'package_key' => $package->packageKey,
+            'source' => [
+                'version' => (string)$installation['installed_version'],
+                'artifact_sha256' => (string)$installation['artifact_sha256'],
+                'lock_digest' => (string)$installation['lock_digest'],
+                'status' => (string)$installation['status'],
+            ],
+            'target' => [
+                'version' => $package->packageVersion,
+                'archive_sha256' => $package->archiveSha256,
+                'artifact_sha256' => (string)$package->descriptor->source['sha256'],
+                'modules' => $targetModules,
+            ],
+            'unchanged' => $comparison === 0 && $sameContents && $installation['status'] === 'active',
+        ];
+    }
+
+    /** @param array<string,mixed> $plan @return array<string,mixed> */
+    private function writeUpdateRecoveryPointer(
+        string $recoveryRoot,
+        VerifiedPluginPackage $package,
+        array $plan,
+        \Throwable $exception,
+    ): array {
+        $key = basename($recoveryRoot);
+        $errorCode = $exception instanceof PluginPackageException || $exception instanceof PluginLifecycleException
+            ? $exception->errorCode
+            : 'PLUGIN_LIFECYCLE_FAILED';
+        $document = [
+            'schema_version' => 1,
+            'recovery_key' => $key,
+            'package_key' => $package->packageKey,
+            'archive_sha256' => $package->archiveSha256,
+            'plan' => $plan,
+            'error_code' => $errorCode,
+            'automatic_rollback' => false,
+            'requires_verified_backup_for_irreversible_migration' => true,
+        ];
+        $this->writeAtomic(
+            $recoveryRoot . '/recovery.json',
+            json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n",
+        );
+        return [
+            'schema_version' => 1,
+            'recovery_key' => $key,
+            'package_key' => $package->packageKey,
+            'error_code' => $errorCode,
+            'automatic_rollback' => false,
+        ];
     }
 
     /** @return array<string,PluginDescriptor> */

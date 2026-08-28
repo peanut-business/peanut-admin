@@ -211,6 +211,8 @@ interface DeliveryRecordCommands
 | `plugin:upgrade --dry-run` | Plugin key | 只生成升级计划 | 不修改数据库和 Plugin 状态 | 计划出现越权表或降级动作时停止 |
 | `plugin:rollback` | Plugin key | 生成回滚计划 | 不默认删除业务数据 | 不把计划当作已回滚证明 |
 | `plugin:uninstall` | Plugin key | 卸载 Plugin Runtime | 所有 TenantModule 停用后执行，默认保留数据 | 任一 Tenant 仍启用时拒绝 |
+| `module:update-package --dry-run` | 受信 archive + SHA-256 | 使用公共 package preflight 生成显式更新计划 | managed 文件、lock、数据库、TenantModule 与 RBAC 零写入 | 降级、同版本异身份、依赖或签名错误时停止 |
+| `module:update-package` | 同一已验证 archive + SHA-256 | 把 active Package 从 v1 显式更新到更高 v2 | 文件、lock、Plugin/Module installation 和 migration 采用同一目标身份 | 失败进入显式 recovery pointer；不自动降级或重放未知 DDL |
 
 ```bash
 cd server
@@ -239,6 +241,10 @@ migration 内容变化仍会被拒绝。`rollback` 只生成计划，卸载默�
 
 生产应用不会自带 fixture。应用 owner 必须先提供真实 Plugin artifact 和 lock 身份，再由
 PlatformOperator 开通 TenantModule，最后给 TenantMember 分配权限。
+
+`module:update-package` 目前仍只允许 development、debug、Standalone 实例工具环境，不是生产
+HTTP 上传面。交付环境必须由 deployment-owned CLI/worker 串联维护、配对备份、隔离恢复验证、
+审计、smoke 和 recovery pointer；HTTP 不接受 archive、路径、URL、命令或目标资源。
 
 安装完成不等于功能可用。最终应看到：Plugin active、目标 TenantModule enabled、成员已获权限，
 并且前后端入口都能在 Module 停用后立即拒绝新操作。
