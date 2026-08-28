@@ -19,7 +19,7 @@ This page answers “where must this fact be changed first?”. Explanations and
 | Consumer Package lifecycle and delivery operation boundary | Package/Module manifests and locks, lifecycle services, maintenance/backup contracts and accepted consumer lifecycle decision | `docs/architecture/consumer-module-lifecycle-contract.md`; implementation status remains in `docs/plans/consumer-ready-product-plan.md` |
 | Schema and data shape | Core `KernelSchema`, `server/database/init.sql`, and additive migrations permitted by the current baseline | data and upgrade guides |
 | HTTP contract | route definitions and `docs/api/openapi.yaml` where covered | API reference and examples |
-| Commands and configuration | executable `--help`, checked scripts, `.env.example` files and configuration loaders | task guides that invoke them |
+| Commands, compatibility and configuration | executable `--help`, checked scripts, lifecycle services, `.env.example` files and configuration loaders | public consumer task, command index and support guides that invoke them |
 | Package and scaffold identity | package manifests, lock files, application/scaffold manifests and immutable release snapshots | release and upgrade guides |
 | Application/Core boundary | fixed Core dependency identity, module manifests, service registry and accepted architecture contracts | capability graph and developer projections |
 | Documentation identity and lifecycle | `docs/document-registry.json` | this page and the generated catalog |
@@ -34,3 +34,6 @@ When a boundary changes, update the owning repository first, fix the consuming r
 ## Public projection boundary
 
 The developer site may publish product-neutral concepts, commands, localhost examples, stable public APIs and released package identities. It must not publish credential references, private hosts, internal candidate IDs, raw qualification evidence or the internal capability ledger. Generated public pages declare their upstream and regeneration command.
+
+Consumer support projects only the fixed diagnostic schema and redaction boundary. Ordinary reports point to
+public Issues; security reports follow the repository `SECURITY.md` and never publish vulnerability details.

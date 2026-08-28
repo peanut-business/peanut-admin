@@ -90,3 +90,5 @@ Worker、当前域名/TLS 和账户安全的作用、配置入口、责任方与
 ## 下一步
 
 先读[核心概念](/guide/concepts)，再从[开发总览](/guide/development)选择后端、前端或 Module 路径。
+要创建派生应用并交付第三方 Module，沿着[创建应用与交付 Module](/guide/application-module-lifecycle)
+完成从生成、校验、打包到安装、Tenant 开通、更新、卸载和应用升级的闭环。

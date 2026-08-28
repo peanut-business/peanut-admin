@@ -23,6 +23,14 @@ description: 按开发任务选择 Peanut Admin 文档路径。
 
 先完成[测试与排错](/guide/testing)的受影响检查，再按[部署与升级](/guide/deployment-upgrade)固定版本、备份、迁移、验证和恢复。
 
+派生应用 owner 和 Module 作者使用[创建应用与交付 Module](/guide/application-module-lifecycle)，从
+唯一应用生成入口一直完成 Module 校验、打包、安装/更新、Tenant 开通、卸载/恢复和 scaffold 升级。
+
+## 我想报告问题
+
+按[支持与问题提交](/support)收集版本身份、最小复现和脱敏诊断包。普通缺陷走公开 Issue；
+安全问题只走私密报告或不含漏洞细节的联系请求。
+
 ## 我想查精确合同
 
 从[参考入口](/reference)查 API、命令、配置、manifest 和上游事实位置。产品内部状态与候选证据不属于公开文档站。
