@@ -244,11 +244,16 @@ echo json_encode([
     )
 
 
-def install_dependencies(project: Path, cache: Path, log: Path) -> None:
+def install_dependencies(
+    project: Path,
+    cache: Path,
+    backend_env: dict[str, str],
+    log: Path,
+) -> None:
     command(
         [str(COMPOSER), "install", "--no-interaction", "--no-progress", "--prefer-dist"],
         cwd=project / "server",
-        env={"COMPOSER_CACHE_DIR": str(cache)},
+        env=backend_env | {"COMPOSER_CACHE_DIR": str(cache)},
         log=log,
     )
 
@@ -504,8 +509,6 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
                    and manifest.get("generation_source", {}).get("tree") == candidate_tree,
                    "generated application did not use the fixed candidate")
         owned_before = {"application_a": app_owned_proof(author), "application_b": app_owned_proof(consumer)}
-        install_dependencies(author, cache, logs / "composer-a.log")
-        install_dependencies(consumer, cache, logs / "composer-b.log")
 
         keys = json_output(command([
             str(PHP), "-r",
@@ -518,6 +521,8 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         expect(public_key != "" and secret_key.stat().st_size > 1, "ephemeral signing key generation failed")
         author_env = backend_environment(author / "server/.env.cr21", args.database, public_key)
         consumer_env = backend_environment(consumer / "server/.env.cr21", args.database, public_key)
+        install_dependencies(author, cache, author_env, logs / "composer-a.log")
+        install_dependencies(consumer, cache, consumer_env, logs / "composer-b.log")
 
         created = run_think(author, author_env, ["module:create", MODULE_KEY, "--vendor=Acme"], logs / "author.log")
         expect(created.get("module_key") == MODULE_KEY, "module:create returned another identity")
