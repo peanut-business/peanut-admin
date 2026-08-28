@@ -1,8 +1,9 @@
 # P0-E Runtime 资格 Gate
 
 `scripts/p0e-runtime-qualification` 是 2.0 fresh-only 固定候选的全量发布资格入口。它把
-create-app、冻结依赖安装、Standalone/Multi-tenant 空库安装、Plugin lifecycle、生产 Compose
-和两种部署模式的最小 Chromium smoke 绑定到同一个 commit/tree、worktree、run_id 与项目资源租约。
+create-app、冻结依赖安装、Standalone/Multi-tenant 空库安装、Plugin lifecycle、消费者 Module
+v1→v2 生命周期、生产 Compose 和两种部署模式的最小 Chromium smoke 绑定到同一个
+commit/tree、worktree、run_id 与项目资源租约。
 1.x 数据采用、原地前滚、migration fault recovery 和 scaffold upgrade 不属于 2.0.0 支持面，
 也不进入本 Gate。
 
@@ -102,10 +103,13 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 4. `plugin-lifecycle`：向生成应用临时铺设 source-only fixture，覆盖 install、重复安装、upgrade
    dry-run、rollback plan、TenantModule/权限、preserve-data uninstall 和失败 migration；结束后
    恢复空 `plugins.lock`、移除 fixture，并核对 app-owned 字节不变。
-5. `production-compose`：从生成应用构建一次生产镜像，使用 Standalone fresh 数据库通过
+5. `consumer-module-lifecycle`：从同一正式 scaffold 生成作者与消费者两个独立应用，完成签名
+   Module v1→v2 create/check/pack/install/update、Tenant/Package/RBAC 分层、disable/reactivate、
+   retire/Purge 与 app-owned 摘要；使用独立数据库，失败时随本 run 保留恢复坐标。
+6. `production-compose`：从生成应用构建一次生产镜像，使用 Standalone fresh 数据库通过
    Compose 和 `/healthz`。
-6. `standalone-browser`：复用 Standalone Compose，最小 Chromium smoke 覆盖管理端、PC、H5、Docs。
-7. `multi-tenant-browser`：复用同一镜像切换到 Multi-tenant fresh 数据库，最小 Chromium smoke
+7. `standalone-browser`：复用 Standalone Compose，最小 Chromium smoke 覆盖管理端、PC、H5、Docs。
+8. `multi-tenant-browser`：复用同一镜像切换到 Multi-tenant fresh 数据库，最小 Chromium smoke
    另覆盖 Tenant 管理员选择和 Instance Platform 登录。该组使用两个不同的 RFC 6761
    `.localhost` Host：`admin.p0e.localhost:20190` 是共享 Tenant Admin 入口，
    `platform.p0e.localhost:20190` 是独立 PlatformOperator 入口；不得把同一个 Host 同时
@@ -121,8 +125,8 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 scripts/p0e-runtime-qualification resume "${common[@]}"
 ```
 
-resume 跳过已通过 group，只重跑失败或未完成组。七组全部通过后，runner 停止 Docs listener，
-删除本 run_id 的五个数据库、Compose containers/volumes/local images 和 cache，核验所有残留为
+resume 跳过已通过 group，只重跑失败或未完成组。八组全部通过后，runner 停止 Docs listener，
+删除本 run_id 的六个数据库、Compose containers/volumes/local images 和 cache，核验所有残留为
 零，保留脱敏 output evidence，最后 release lease。失败终态不会自动 release 或清理取证资源。
 
 如果修复需要修改产品 Runtime、Schema、依赖、生成物、fixture、资格脚本、lock 或其他会改变

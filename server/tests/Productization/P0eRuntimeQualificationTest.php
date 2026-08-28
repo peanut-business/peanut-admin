@@ -31,6 +31,7 @@ $expectedScenarios = [
     'standalone_fresh',
     'multi_tenant_fresh',
     'plugin_lifecycle',
+    'consumer_module_cycle',
     'standalone_browser',
     'multi_tenant_browser',
 ];
@@ -39,6 +40,7 @@ $expectedGroups = [
     'standalone-fresh',
     'multi-tenant-fresh',
     'plugin-lifecycle',
+    'consumer-module-lifecycle',
     'production-compose',
     'standalone-browser',
     'multi-tenant-browser',
@@ -134,8 +136,8 @@ foreach ($plan['lease_resources'] ?? [] as $resource) {
     $type = (string)($resource['type'] ?? '');
     $resourceCounts[$type] = ($resourceCounts[$type] ?? 0) + 1;
 }
-$expect(count($plan['lease_resources'] ?? []) === 26, 'manual lease resources must have 26 exact rows');
-$expect(($resourceCounts['mysql-db'] ?? null) === 5, 'claim must bind five exact fresh-only databases');
+$expect(count($plan['lease_resources'] ?? []) === 27, 'manual lease resources must have 27 exact rows');
+$expect(($resourceCounts['mysql-db'] ?? null) === 6, 'claim must bind six exact fresh-only databases');
 $expect(($resourceCounts['deployment-mode'] ?? null) === 2, 'claim must bind both deployment modes');
 $expect(($resourceCounts['port'] ?? null) === 2, 'claim must bind both generic port conflicts');
 $expect(($resourceCounts['browser-host'] ?? null) === 2, 'claim must bind the separate browser Host boundaries');
@@ -169,6 +171,9 @@ foreach ($expectedGroups as $group) {
 }
 $expect(!str_contains($runClosure, 'forward') && !str_contains($runClosure, 'legacy') && !str_contains($runClosure, 'recovery'), 'runner closure retained a legacy qualification group');
 $expect(str_contains($runnerSource, 'self.generated,') && str_contains($runnerSource, 'plugin_lock_restored_sha256'), 'Plugin lifecycle is not exercised in the generated application');
+$expect(str_contains($runnerSource, 'consumer-module-reference-chain'), 'consumer Module lifecycle does not use the independent application driver');
+$expect(str_contains($runnerSource, '--formal-release-adoption'), 'consumer Module lifecycle does not require the sealed scaffold adoption path');
+$expect(str_contains($runnerSource, 'consumer_module_cycle'), 'consumer Module lifecycle does not own a length-safe isolated database scenario');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
 $expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
 $expect(str_contains($runnerSource, 'preflight_browser_tooling'), 'browser tooling does not fail before resource claim');

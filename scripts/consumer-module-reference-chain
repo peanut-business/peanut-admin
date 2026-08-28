@@ -294,8 +294,19 @@ def create_application(
     package: str,
     candidate: str,
     candidate_tree: str,
+    formal_release_adoption: bool,
     log: Path,
 ) -> None:
+    if formal_release_adoption:
+        command(
+            [
+                str(PHP), str(ROOT / "scripts/create-app"),
+                f"--name={name}", f"--slug={slug}", f"--package={package}",
+                f"--target={target}", "--profile=full",
+            ],
+            log=log,
+        )
+        return
     source_builder = r'''
 $root=$argv[1];
 require $root.'/server/app/common/service/scaffold/ScaffoldPathGuard.php';
@@ -545,22 +556,37 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         fail("candidate tree identity is invalid")
     if command(["git", "status", "--porcelain", "--untracked-files=no"]).strip() != "":
         fail("candidate worktree must be clean")
-    if not re.fullmatch(r"peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle", args.database):
-        fail("database is not an allowed registered P0-E plugin_lifecycle target")
+    if not re.fullmatch(
+        r"peanut_admin_development_p0e_[a-z0-9]{1,11}_(?:plugin_lifecycle|consumer_module_cycle)",
+        args.database,
+    ):
+        fail("database is not an allowed registered P0-E Module lifecycle target")
     output = Path(args.output)
     if not output.is_absolute() or output == Path("/") or output.exists() or output.is_symlink():
         fail("output must be an absent absolute path")
     metadata, resources = lease_fields(args.lease)
-    expected_resources = {
-        ("database-resource", "peanut-admin-p0e-mysql84-gate"),
-        ("endpoint", "peanut-admin-p0e-mysql84-gate-host-direct"),
-        ("database", args.database),
-        ("output-root", str(output)),
-        ("cache-root", str(output / "cache")),
-    }
+    resource_set = set(resources)
+    if metadata.get("gate") == "p0e-runtime-qualification":
+        cache_roots = [Path(value) for kind, value in resources if kind == "cache-dir"]
+        expect(len(cache_roots) == 1 and output == cache_roots[0] / "consumer-module-lifecycle",
+               "P0-E consumer output is outside the lease-owned cache")
+        expected_resources = {
+            ("resource-id", "peanut-admin-p0e-mysql84-gate"),
+            ("endpoint", "192.168.192.2:20183"),
+            ("mysql-db", args.database),
+        }
+    else:
+        expected_resources = {
+            ("database-resource", "peanut-admin-p0e-mysql84-gate"),
+            ("endpoint", "peanut-admin-p0e-mysql84-gate-host-direct"),
+            ("database", args.database),
+            ("output-root", str(output)),
+            ("cache-root", str(output / "cache")),
+        }
     expect(metadata.get("candidate") == args.candidate and metadata.get("status") == "ACTIVE",
            "active lease candidate does not match")
-    expect(expected_resources.issubset(set(resources)), "lease is missing a CR21 resource")
+    expect(metadata.get("worktree") == str(ROOT), "active lease worktree does not match")
+    expect(expected_resources.issubset(resource_set), "lease is missing a consumer Module resource")
 
     output.mkdir(mode=0o700, parents=True)
     logs = output / "logs"
@@ -577,6 +603,7 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
             "consumer/author",
             args.candidate,
             candidate_tree,
+            args.formal_release_adoption,
             logs / "create-app-a.log",
         )
         create_application(
@@ -586,12 +613,22 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
             "consumer/runtime",
             args.candidate,
             candidate_tree,
+            args.formal_release_adoption,
             logs / "create-app-b.log",
         )
+        inventory = read_json(ROOT / "scaffold/application-template-inventory.json")
+        template_version = str(inventory.get("template_version", ""))
+        release_identity: dict[str, Any] = {}
+        if args.formal_release_adoption:
+            release = read_json(ROOT / "scaffold/releases" / f"v{template_version}" / "scaffold-manifest.json")
+            release_identity = release.get("release", {})
         for project in [author, consumer]:
             manifest = read_json(project / ".peanut/application-manifest.json")
-            expect(manifest.get("template", {}).get("source_commit") == args.candidate
-                   and manifest.get("template", {}).get("source_tree") == candidate_tree
+            expected_template_commit = str(release_identity.get("source_commit", "")) if args.formal_release_adoption else args.candidate
+            expected_template_tree = str(release_identity.get("source_tree", "")) if args.formal_release_adoption else candidate_tree
+            expect(manifest.get("template", {}).get("source_commit") == expected_template_commit
+                   and manifest.get("template", {}).get("source_tree") == expected_template_tree
+                   and manifest.get("template", {}).get("version") == template_version
                    and manifest.get("generation_source", {}).get("commit") == args.candidate
                    and manifest.get("generation_source", {}).get("tree") == candidate_tree,
                    "generated application did not use the fixed candidate")
@@ -794,8 +831,8 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
                 "retire_purge": "passed",
                 "app_owned_preservation": "passed",
                 "source_private_fixture_copy": "not_used",
-                "generation_mode": "development_source_candidate",
-                "formal_release_adoption": "deferred_to_cr31",
+                "generation_mode": "formal_release_adoption" if args.formal_release_adoption else "development_source_candidate",
+                "formal_release_adoption": "passed" if args.formal_release_adoption else "deferred_to_cr31",
             },
             "snapshots": {
                 "after_update": after_update,
@@ -821,6 +858,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--lease", required=True)
     parser.add_argument("--database", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--formal-release-adoption", action="store_true")
     parser.add_argument("--keep", action="store_true", help="Keep the lease-owned output after success")
     return parser.parse_args()
 
