@@ -31,6 +31,7 @@ $expectedScenarios = [
     'standalone_fresh',
     'multi_tenant_fresh',
     'plugin_lifecycle',
+    'consumer_module_cycle',
     'standalone_browser',
     'multi_tenant_browser',
 ];
@@ -39,18 +40,19 @@ $expectedGroups = [
     'standalone-fresh',
     'multi-tenant-fresh',
     'plugin-lifecycle',
+    'consumer-module-lifecycle',
     'production-compose',
     'standalone-browser',
     'multi-tenant-browser',
 ];
 $expectedTarget = [
-    'version' => '3.0.8',
-    'source_commit' => 'd2e9e1240dbc7dede71f8cceb9685bb15b2c76b8',
-    'source_tree' => '0a76e6ccd631a9ac0aa90a33644f1e3eda828dbc',
-    'manifest_sha256' => '8d6695c9ea7299c708dc29c01ca3bf175d2a9d411aa23aa8a9dfee0ca03e9185',
-    'inventory_sha256' => 'c85533b9522291230783fa9c04002e4089f68f866dace2d339b02dca04627f70',
-    'managed_tree_sha256' => '2746990799115302bd9769a45e298155d2d5410b744c3b0f00457d7cb9a54ead',
-    'file_count' => 316,
+    'version' => '3.0.11',
+    'source_commit' => 'f85af061d2e7aadf778217e11914dd0a5992b96f',
+    'source_tree' => 'e87e93b154cb298e40984a41c2d3207ea9905097',
+    'manifest_sha256' => '06657d2e6c8d56e24d61e61c66e90f1d8b2b04ebdadcd19ba9c46c411d767f73',
+    'inventory_sha256' => '3ff9a718c22e6a0c0626773afd4317d2dffafbaecb719b89d0f81cd7bbf7c902',
+    'managed_tree_sha256' => '02a222293597cdf759addbe868f3992fb60548fdf1325f6a808375800f310b81',
+    'file_count' => 390,
     'application_manifest_schema' => 2,
     'default_application_version' => '0.1.0',
     'default_uniapp_version_code' => '10',
@@ -134,8 +136,8 @@ foreach ($plan['lease_resources'] ?? [] as $resource) {
     $type = (string)($resource['type'] ?? '');
     $resourceCounts[$type] = ($resourceCounts[$type] ?? 0) + 1;
 }
-$expect(count($plan['lease_resources'] ?? []) === 26, 'manual lease resources must have 26 exact rows');
-$expect(($resourceCounts['mysql-db'] ?? null) === 5, 'claim must bind five exact fresh-only databases');
+$expect(count($plan['lease_resources'] ?? []) === 27, 'manual lease resources must have 27 exact rows');
+$expect(($resourceCounts['mysql-db'] ?? null) === 6, 'claim must bind six exact fresh-only databases');
 $expect(($resourceCounts['deployment-mode'] ?? null) === 2, 'claim must bind both deployment modes');
 $expect(($resourceCounts['port'] ?? null) === 2, 'claim must bind both generic port conflicts');
 $expect(($resourceCounts['browser-host'] ?? null) === 2, 'claim must bind the separate browser Host boundaries');
@@ -169,6 +171,9 @@ foreach ($expectedGroups as $group) {
 }
 $expect(!str_contains($runClosure, 'forward') && !str_contains($runClosure, 'legacy') && !str_contains($runClosure, 'recovery'), 'runner closure retained a legacy qualification group');
 $expect(str_contains($runnerSource, 'self.generated,') && str_contains($runnerSource, 'plugin_lock_restored_sha256'), 'Plugin lifecycle is not exercised in the generated application');
+$expect(str_contains($runnerSource, 'consumer-module-reference-chain'), 'consumer Module lifecycle does not use the independent application driver');
+$expect(str_contains($runnerSource, '--formal-release-adoption'), 'consumer Module lifecycle does not require the sealed scaffold adoption path');
+$expect(str_contains($runnerSource, 'consumer_module_cycle'), 'consumer Module lifecycle does not own a length-safe isolated database scenario');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
 $expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
 $expect(str_contains($runnerSource, 'preflight_browser_tooling'), 'browser tooling does not fail before resource claim');

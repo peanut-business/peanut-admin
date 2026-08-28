@@ -2,7 +2,7 @@
 
 > 本文件是 Peanut Admin 源仓的人类可读版本。create-app 会在派生应用的同一路径生成一份
 > 应用专属简版，不会复制完整 `docs-site/`。详细说明见公开的
-> [部署文档](https://peanut-admin-doc.007345.xyz/deployment)。
+> [部署与升级](https://peanut-admin-doc.007345.xyz/guide/deployment-upgrade)。
 
 ## 5 分钟速读
 
@@ -120,8 +120,9 @@ scripts/deploy-release v3.0.0 --target production-candidate --install \
 演示候选的 bootstrap、Platform 和 Tenant A/B 初始密码统一为 `peanut1234`。关闭该变量后，
 正式应用不返回演示凭据，也不限制正常账号修改密码。
 
-fresh 部署必须显式提供管理员邮箱和密码；脚本不会生成或回显密码。它们只写入服务器
-root-owned `server/.env`。根 `.env` 只保存端口和镜像。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
+fresh 部署必须显式提供管理员邮箱和密码；脚本不会生成或回显密码。初始 Admin/Platform
+身份只注入同一次 automatic 安装进程，不写入 `server/.env`，长期 PHP/cron 容器也不会保留。
+根 `.env` 只保存端口和镜像。演示候选中的 bootstrap 管理员只拥有系统默认 Tenant；Tenant A/B 由演示
 补丁分别创建独立 owner，并使用同一组公开演示密码。Tenant A 的 Account 还会在 Tenant B
 拥有独立的 active TenantMember，因此公共 Admin 使用 Tenant A 账号时可以选择 A/B；切换后
 管理员身份以当前 TenantMember 为准。Tenant A/B 的绑定 Host 仍只能进入各自 Tenant，未知
@@ -144,8 +145,7 @@ JWT_SECRET=<openssl rand -hex 32 生成的稳定密钥>
 JWT_EXPIRE=7200
 TENANT_IDENTIFIER_HMAC_KEY=<at-least-32-bytes>
 PLATFORM_IDENTIFIER_HMAC_KEY=<different-at-least-32-bytes>
-ADMIN_INITIAL_EMAIL=owner@example.com
-ADMIN_INITIAL_PASSWORD=<at-least-12-letters-and-digits>
+PEANUT_INSTALLATION_MODE=automatic
 ```
 
 `JWT_SECRET` 没有默认值，必须是至少 32 字节的部署专用随机值，不得复用示例文本。
@@ -153,8 +153,8 @@ ADMIN_INITIAL_PASSWORD=<at-least-12-letters-and-digits>
 固定使用 HS256，并严格校验 `iss`/`aud`/`sub`/`iat`/`nbf`/`exp`；此合同不保留
 旧 JWT 的兼容入口，升级后旧 Token 全部失效，会员需重新登录。
 
-多租户模式将 `DEPLOYMENT_MODE` 改为 `multi-tenant`，并增加与管理员不同的
-`PLATFORM_INITIAL_EMAIL` 和 `PLATFORM_INITIAL_PASSWORD`，同时配置：
+多租户模式将 `DEPLOYMENT_MODE` 改为 `multi-tenant`。Platform 初始身份与 Admin 初始身份
+必须不同，但二者都只通过 automatic 命令的进程环境或 guided 页面请求提供。同时配置：
 
 ```dotenv
 PLATFORM_HOSTS=platform.example.com
@@ -164,7 +164,27 @@ OWNER_INVITATION_DELIVERY_MODE=auto
 
 Tenant 专属 Host 在 Platform 中动态绑定。未知 Host 会被应用拒绝；`auto` 在生产要求真实
 邀请投递 Provider，私有部署可显式改为 `manual` 并由平台操作员人工交付一次性链接。
-安装完成后使用 `ADMIN_INITIAL_EMAIL` 对应的邮箱登录；2.0 不提供共享用户名或默认凭据。
+安装完成后使用安装请求中的 Admin 邮箱登录；2.0 不提供共享用户名或默认凭据。
+
+automatic 是默认入口，适合 CI、托管和无人值守部署。数据库、部署模式和 Module 来源仍取
+登记配置，只有初始身份通过进程内存提供：
+
+```bash
+ADMIN_INITIAL_EMAIL=owner@example.com \
+ADMIN_INITIAL_PASSWORD='<at-least-12-characters>' \
+php server/database/install.php
+```
+
+多租户 automatic 命令再传入 `PLATFORM_INITIAL_EMAIL` 和
+`PLATFORM_INITIAL_PASSWORD`。安装器会在同一个 Host 中完成预检、空库复核、安装锁、当前
+migration、官方 Module 选择和健康检查；响应不包含密码。
+
+guided 适合人工首次部署。在 `server/.env` 设置
+`PEANUT_INSTALLATION_MODE=guided`，并用 `openssl rand -hex 32` 生成
+`PEANUT_INSTALLATION_SETUP_TOKEN`。启动 Compose 后只开放 `/admin/installation` 和固定安装
+API；业务 API 与 cron 在成功前 fail closed。页面不接受数据库地址、端口、账号、路径或命令，
+token/密码不进入浏览器存储。成功后重复安装固定拒绝；失败若已留下任何 DDL，必须由资源
+owner 重建目标，不能自动 adopt。
 
 ```bash
 cp .env.example .env
@@ -222,4 +242,4 @@ PHP-FPM 不对公网开放。
 未绑定公共 Admin 才允许账号在自己的 active TenantMember 列表中切换。
 
 完整 Compose profile、原生发布备选、Nginx location、定时任务、品牌同步、发布后检查和
-故障停止线见公开的 [部署文档](https://peanut-admin-doc.007345.xyz/deployment)。
+故障停止线见公开的 [部署与升级](https://peanut-admin-doc.007345.xyz/guide/deployment-upgrade)。

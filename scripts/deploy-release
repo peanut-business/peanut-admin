@@ -589,18 +589,28 @@ set_env_key() {
     trap - EXIT
   ' -- "$target_file" "$key" "$value"
 }
+remove_env_keys() {
+  local target_file="$1"
+  shift
+  sudo -n bash -c '
+    set -Eeuo pipefail
+    target_file="$1"
+    shift
+    temporary="$(mktemp "${target_file}.deploy.XXXXXX")"
+    trap "rm -f -- \"$temporary\"" EXIT
+    awk -v blocked="$(printf "%s|" "$@")" '\''
+      BEGIN { split(blocked, keys, "|"); for (i in keys) if (keys[i] != "") deny[keys[i]] = 1 }
+      { key = $0; sub(/=.*/, "", key); if (!(key in deny)) print }
+    '\'' "$target_file" >"$temporary"
+    chmod 600 "$temporary"
+    mv -f -- "$temporary" "$target_file"
+    trap - EXIT
+  ' -- "$target_file" "$@"
+}
 set_env_key .env PHP_IMAGE "$php_image"
 set_env_key .env NGINX_IMAGE "$nginx_image"
-if [[ "$mode" != update ]]; then
-  [[ -n "$ADMIN_INITIAL_EMAIL" && -n "$ADMIN_INITIAL_PASSWORD" ]] || fail 'fresh admin credentials are incomplete'
-  set_env_key server/.env ADMIN_INITIAL_EMAIL "$ADMIN_INITIAL_EMAIL"
-  set_env_key server/.env ADMIN_INITIAL_PASSWORD "$ADMIN_INITIAL_PASSWORD"
-  if [[ "$deployment_mode" == multi-tenant ]]; then
-    [[ -n "$PLATFORM_INITIAL_EMAIL" && -n "$PLATFORM_INITIAL_PASSWORD" ]] || fail 'fresh Platform credentials are incomplete'
-    set_env_key server/.env PLATFORM_INITIAL_EMAIL "$PLATFORM_INITIAL_EMAIL"
-    set_env_key server/.env PLATFORM_INITIAL_PASSWORD "$PLATFORM_INITIAL_PASSWORD"
-  fi
-fi
+remove_env_keys server/.env \
+  ADMIN_INITIAL_EMAIL ADMIN_INITIAL_PASSWORD PLATFORM_INITIAL_EMAIL PLATFORM_INITIAL_PASSWORD
 if [[ "$mode" != update ]]; then
   for key in PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
     PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
@@ -643,20 +653,24 @@ if [[ "$mode" == update ]]; then
   printf 'updated_tag=%s\ncommit=%s\nruntime_version=%s\ntarget=%s\n' "$tag" "$expected_commit" "$runtime_version" "$target"
   exit 0
 fi
-# Run the fresh installer with the PHP entrypoint bypassed. The normal
-# entrypoint intentionally refuses an incomplete v3.0 baseline.
+# Initial identities are injected into the one automatic installation client
+# for this process only. They are never written to server/.env or retained by
+# the long-running PHP/cron containers.
 "${compose[@]}" up -d --wait mysql
-"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php </dev/null
+"${compose[@]}" run -T --rm --no-deps --entrypoint php \
+  -e "ADMIN_INITIAL_EMAIL=$ADMIN_INITIAL_EMAIL" \
+  -e "ADMIN_INITIAL_PASSWORD=$ADMIN_INITIAL_PASSWORD" \
+  -e "PLATFORM_INITIAL_EMAIL=$PLATFORM_INITIAL_EMAIL" \
+  -e "PLATFORM_INITIAL_PASSWORD=$PLATFORM_INITIAL_PASSWORD" \
+  php server/database/install.php </dev/null
+unset ADMIN_INITIAL_EMAIL ADMIN_INITIAL_PASSWORD PLATFORM_INITIAL_EMAIL PLATFORM_INITIAL_PASSWORD
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$migration_target_version" </dev/null
-"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/environment-guard.php --current </dev/null
 demo_mode_enabled=0
 if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
   demo_mode_enabled=1
 fi
-if [[ "$deployment_mode" == standalone ]]; then
-  "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think tenant-module:apply-profile standalone </dev/null
-elif [[ "$deployment_mode" == multi-tenant && "$demo_mode_enabled" == 1 && -n "$expected_overlay_sha" ]]; then
+if [[ "$deployment_mode" == multi-tenant && "$demo_mode_enabled" == 1 && -n "$expected_overlay_sha" ]]; then
   demo_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/seed-multi-tenant-demo.php --apply </dev/null)"
   printf '%s\n' "$demo_result"
   tenant_a_id="$(printf '%s' "$demo_result" | jq -r '.tenant_a_id // empty')"

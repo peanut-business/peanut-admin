@@ -39,8 +39,6 @@ DB_PREFIX=pa_
 JWT_SECRET=contract-only-jwt-placeholder
 TENANT_IDENTIFIER_HMAC_KEY=contract-only-tenant-placeholder
 PLATFORM_IDENTIFIER_HMAC_KEY=contract-only-platform-placeholder
-ADMIN_INITIAL_EMAIL=admin@example.com
-ADMIN_INITIAL_PASSWORD=ContractOnly123
 EOF
 chmod 600 "$orchestration_env" "$backend_env"
 

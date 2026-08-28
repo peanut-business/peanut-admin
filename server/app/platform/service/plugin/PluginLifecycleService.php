@@ -23,6 +23,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
     public function install(string $pluginKey, bool $acquireLock = true): array
     {
         $plugin = $this->resolver->require($pluginKey);
+        $this->assertTrustEligible($plugin);
         $lockName = $this->lockName($pluginKey);
         if ($acquireLock && !$this->advisoryLock($lockName)) {
             throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
@@ -83,6 +84,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         }
 
         $plugin = $this->resolver->require($pluginKey);
+        $this->assertTrustEligible($plugin);
         if ($this->sameIdentity($plugin, $current)) {
             return $plugin->publicIdentity() + ['operation' => 'unchanged'];
         }
@@ -94,6 +96,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
     public function upgrade(string $pluginKey, bool $dryRun): array
     {
         $plugin = $this->resolver->require($pluginKey);
+        $this->assertTrustEligible($plugin);
         $manifests = $this->pluginManifests($plugin);
         $this->assertPreflightOwnership($plugin, $manifests, true);
         $current = $this->pluginInstallation($pluginKey, false);
@@ -306,7 +309,9 @@ SQL);
     /** @param array<string,ManifestDocument> $manifests */
     private function applyMigrations(PluginDescriptor $plugin, array $manifests): void
     {
-        $batch = (int)$this->pdo->query('SELECT COALESCE(MAX(batch_no),0)+1 FROM pa_module_migration')->fetchColumn();
+        $batchQuery = $this->pdo->query('SELECT COALESCE(MAX(batch_no),0)+1 FROM pa_module_migration');
+        $batch = (int)$batchQuery->fetchColumn();
+        $batchQuery->closeCursor();
         foreach ($manifests as $moduleKey => $manifest) {
             $files = $this->migrationFiles($plugin->moduleRoots[$moduleKey], $manifest);
             $repairs = $this->migrationRepairMap($moduleKey, $files);
@@ -321,6 +326,7 @@ WHERE module_key=:module_key AND migration_key=:migration_key
 SQL);
                 $existing->execute(['module_key' => $moduleKey, 'migration_key' => $migrationKey]);
                 $row = $existing->fetch(PDO::FETCH_ASSOC);
+                $existing->closeCursor();
                 if (is_array($row)) {
                     if (!hash_equals((string)$row['checksum'], $checksum)) {
                         throw new PluginLifecycleException(
@@ -368,7 +374,7 @@ SQL);
                         throw new PluginLifecycleException('MODULE_MIGRATION_INVALID', "Migration is empty: {$migrationKey}");
                     }
                     // MySQL DDL commits implicitly. Keep the durable migration ledger outside the DDL boundary.
-                    $this->pdo->exec($sql);
+                    $this->executeMigrationSql($sql);
                     $this->pdo->beginTransaction();
                     $finish = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_module_migration SET status='applied',finished_at=:finished_at,error_code=NULL
@@ -399,6 +405,30 @@ SQL);
                     ]);
                     throw $exception;
                 }
+            }
+        }
+    }
+
+    private function executeMigrationSql(string $sql): void
+    {
+        $emulatedPrepares = (bool)$this->pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES);
+        if (!$emulatedPrepares) {
+            $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+        }
+        try {
+            $statement = $this->pdo->query($sql);
+            try {
+                do {
+                    if ($statement->columnCount() > 0) {
+                        $statement->fetchAll(PDO::FETCH_ASSOC);
+                    }
+                } while ($statement->nextRowset());
+            } finally {
+                $statement->closeCursor();
+            }
+        } finally {
+            if (!$emulatedPrepares) {
+                $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             }
         }
     }
@@ -522,6 +552,16 @@ SQL);
         return $manifests;
     }
 
+    private function assertTrustEligible(PluginDescriptor $plugin): void
+    {
+        if (($plugin->trustResult()['status'] ?? null) !== 'eligible') {
+            throw new PluginLifecycleException(
+                'PLUGIN_TRUST_QUALIFICATION_INVALID',
+                'Plugin is not eligible for installation from the locked bundled channel.',
+            );
+        }
+    }
+
     /** @param array<string,ManifestDocument> $manifests @param array<string,mixed> $current */
     private function plan(PluginDescriptor $plugin, array $manifests, array $current): array
     {
@@ -549,6 +589,7 @@ SQL);
             'identity_changed' => !$this->sameIdentity($plugin, $current),
             'pending_migrations' => $pending,
             'rollback' => ['automatic' => false, 'requires_verified_backup' => $pending !== []],
+            'trust' => $plugin->trustResult(),
         ];
     }
 

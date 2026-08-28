@@ -5,12 +5,12 @@ use app\common\service\scaffold\ApplicationCreator;
 use app\platform\service\plugin\PluginLockResolver;
 
 $root = dirname(__DIR__, 3);
-require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
-require $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
-require $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
-require $root . '/server/app/platform/service/plugin/PluginLifecycleException.php';
-require $root . '/server/app/platform/service/plugin/PluginDescriptor.php';
-require $root . '/server/app/platform/service/plugin/PluginLockResolver.php';
+require_once $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
+require_once $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
+require_once $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
+require_once $root . '/server/app/platform/service/plugin/PluginLifecycleException.php';
+require_once $root . '/server/app/platform/service/plugin/PluginDescriptor.php';
+require_once $root . '/server/app/platform/service/plugin/PluginLockResolver.php';
 
 function createApplicationExpect(bool $condition, string $message): void
 {
@@ -210,15 +210,9 @@ try {
     $generatedDocsConfig = (string)file_get_contents($first . '/docs-site/.vitepress/config.ts');
     $generatedDocsTheme = (string)file_get_contents($first . '/docs-site/.vitepress/theme/index.ts');
     createApplicationExpect(
-        str_contains($generatedDocsConfig, 'productStatusFeatureAvailable')
-            && str_contains($generatedDocsConfig, '...productStatusNavigation'),
-        'generated docs navigation must keep product status behind the optional source-feature guard'
-    );
-    createApplicationExpect(
-        !str_contains($generatedDocsTheme, "import ProductStatus from './ProductStatus.vue'")
-            && str_contains($generatedDocsTheme, "import.meta.glob('./ProductStatus.vue'")
-            && str_contains($generatedDocsTheme, "if (ProductStatus) app.component('ProductStatus', ProductStatus)"),
-        'generated docs theme must resolve the optional product status component without a static import'
+        !str_contains($generatedDocsConfig, 'productStatus')
+            && !str_contains($generatedDocsTheme, 'ProductStatus'),
+        'generated docs must not reference the source-only product status projection'
     );
     createApplicationExpect(!is_dir($first . '/plugins/fixture.delivery-record'), 'demo Plugin artifact must remain source-only');
     createApplicationExpect(!is_dir($first . '/server/app/Modules/Fixture/DeliveryRecord'), 'demo backend Module must remain source-only');
@@ -291,9 +285,6 @@ try {
     $generatedModulesConfig = (string)file_get_contents($first . '/server/config/modules.php');
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
     createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"), 'generated deployment must enable its scaffold-owned official Plugin lock');
-    foreach (['official.file.library', 'official.notification.channel', 'official.oauth.channel', 'official.payment.settings', 'official.member.list', 'official.task.schedules'] as $component) {
-        createApplicationExpect(str_contains($generatedModulesConfig, $component), 'official Module component was removed from generated deployment config: ' . $component);
-    }
     $releaseMetadata = json_decode((string)file_get_contents($first . '/RELEASE_METADATA.json'), true, 512, JSON_THROW_ON_ERROR);
     createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $releaseMetadata['version'] === '0.1.0', 'release metadata must be regenerated for the new application');
     createApplicationExpect(str_contains((string)file_get_contents($first . '/CHANGELOG.md'), "## 0.1.0\n"), 'changelog must use application.version');

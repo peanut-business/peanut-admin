@@ -77,6 +77,7 @@ final class PlatformSessionController extends BasePlatformController
             'permissions' => $permissions,
             'navigation' => array_values(array_filter([
                 in_array('platform.tenant.read', $permissions, true) ? '/platform/tenants' : null,
+                in_array('platform.ops.read', $permissions, true) ? '/platform/ops' : null,
                 in_array('platform.operator.read', $permissions, true) ? '/platform/operators' : null,
                 in_array('platform.role.read', $permissions, true) ? '/platform/roles' : null,
             ])),

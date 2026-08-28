@@ -117,12 +117,12 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动前必须
 由当前运行任务的项目 lease 同时持有这些资源。资源和启动步骤见
 [`docs/operations/local-demo-access.md`](docs/operations/local-demo-access.md)；账号、密码和本地入口见
-下方的[统一 Demo 登录信息](docs-site/demo-access.md)。
+内部 [Demo access handoff](docs/operations/demo-access.md)。
 
-## Demo 登录
+## Demo 访问边界
 
-本地单租户、本地多租户和线上 Demo 的登录地址、账号、密码统一见[Demo 登录信息](docs-site/demo-access.md)。
-该页面是唯一用户可见的登录表；README、部署文档和运维交接文档不再维护重复表格。
+仓库不发布或汇总本地与线上 Demo 的登录地址、账号或密码。获授权的运行资源 owner 维护这些
+访问事实；交接边界见 [Demo access handoff](docs/operations/demo-access.md)。
 
 正式生产环境使用根 `compose.yaml`，从不可变 release tag 构建 PHP/Nginx 镜像。上表多租户
 入口是独立空库、独立 Compose project 和独立 origin 的候选体验环境；Standalone 是独立的
@@ -131,7 +131,7 @@ API `20178` 和登记的 `peanut_admin_development_mtlocal01` 数据库；启动
 登录会被拒绝。当前体验实例使用登记的人工 Owner 邀请交付模式，不依赖生产邮件 Provider。
 首次部署、
 `standalone`/`multi-tenant` 配置、空库安装、数据库备份和回滚停止线见
-[部署与安装](https://peanut-admin-doc.007345.xyz/deployment)。
+[部署与升级](https://peanut-admin-doc.007345.xyz/guide/deployment-upgrade)。
 
 ## 目录结构
 
@@ -160,11 +160,11 @@ peanut-admin/
 ## 文档
 
 - [开始使用](https://peanut-admin-doc.007345.xyz/getting-started)
-- [管理员手册](https://peanut-admin-doc.007345.xyz/guide/user-manual)
+- [文档入口](https://peanut-admin-doc.007345.xyz/guide/)
 - [开发指南](https://peanut-admin-doc.007345.xyz/guide/development)
-- [部署与安装](https://peanut-admin-doc.007345.xyz/deployment)
-- [实例平台管理](https://peanut-admin-doc.007345.xyz/platform)
-- [身份与租户边界](https://peanut-admin-doc.007345.xyz/architecture/identity-and-tenancy)
+- [部署与升级](https://peanut-admin-doc.007345.xyz/guide/deployment-upgrade)
+- [核心概念](https://peanut-admin-doc.007345.xyz/guide/concepts)
+- [数据、权限与多租户](https://peanut-admin-doc.007345.xyz/guide/data-permissions-tenancy)
 - [版本与发布](https://peanut-admin-doc.007345.xyz/releases)
 
 文档源码位于 `docs-site/`，由 Cloudflare Pages 项目 `peanut-admin-docs` 发布到

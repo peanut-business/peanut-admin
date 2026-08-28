@@ -9,7 +9,10 @@ use Opis\JsonSchema\Validator;
 /** Builds deterministic Plugin manifests and the repository Plugin lock without runtime services. */
 final readonly class PluginArtifactWriter
 {
-    public function __construct(private string $serverRoot)
+    public function __construct(
+        private string $serverRoot,
+        private bool $validateJsonSchema = true,
+    )
     {
     }
 
@@ -58,7 +61,9 @@ final readonly class PluginArtifactWriter
         $plugins = [];
         foreach ($manifests as $manifestPath) {
             $manifest = $this->readJson($manifestPath);
-            $this->assertSchema($manifest);
+            if ($this->validateJsonSchema) {
+                $this->assertSchema($manifest);
+            }
             $key = $this->key($manifest['key'] ?? '');
             $moduleRoots = [];
             foreach ((array)($manifest['modules'] ?? []) as $module) {
@@ -83,6 +88,7 @@ final readonly class PluginArtifactWriter
                 'key' => $key,
                 'version' => $this->version($manifest['version'] ?? ''),
                 'source' => $manifest['source'],
+                'trust' => $manifest['trust'],
                 'composer' => $manifest['composer'],
                 'npm' => $manifest['npm'],
                 'frontend' => $manifest['frontend'],
@@ -177,13 +183,121 @@ final readonly class PluginArtifactWriter
                 'reference' => 'canonical-plugin-contents-v1',
                 'sha256' => $this->canonicalContentsDigest($contentRoots),
             ],
+            'trust' => $this->trust($moduleRoots),
             'composer' => $composer,
             'npm' => $npm,
             'frontend' => $frontend,
             'modules' => $modules,
         ];
-        $this->assertSchema($manifest);
+        if ($this->validateJsonSchema) {
+            $this->assertSchema($manifest);
+        }
         return $manifest;
+    }
+
+    /** @param array<string,string> $moduleRoots @return array<string,mixed> */
+    private function trust(array $moduleRoots): array
+    {
+        $modules = [];
+        $licenses = [];
+        foreach ($moduleRoots as $moduleKey => $root) {
+            $absoluteRoot = $this->withinProject($root);
+            $module = $this->readJson($absoluteRoot . '/module.json');
+            $backend = is_array($module['backend'] ?? null) ? $module['backend'] : [];
+            $dependencies = [];
+            foreach ((array)($module['dependencies'] ?? []) as $dependency) {
+                if (!is_array($dependency)) {
+                    throw new PluginArtifactToolException("Module dependency is invalid: {$moduleKey}");
+                }
+                $dependencies[] = [
+                    'module_key' => $this->key($dependency['module_key'] ?? ''),
+                    'version' => $this->versionConstraint($dependency['version'] ?? ''),
+                ];
+            }
+            $this->sortIdentities($dependencies, 'module_key');
+            $permissionPath = is_string($backend['permissions'] ?? null) ? $backend['permissions'] : null;
+            $permissions = ['path' => $permissionPath, 'sha256' => null];
+            if ($permissionPath !== null) {
+                $permissions = [
+                    'path' => $permissionPath,
+                    'sha256' => $this->digest($this->withinModule($absoluteRoot, $permissionPath, $moduleKey)),
+                ];
+            }
+            $modules[] = [
+                'key' => $moduleKey,
+                'version' => $this->version($module['version'] ?? ''),
+                'kernel_constraint' => $this->versionConstraint($module['kernel_constraint'] ?? ''),
+                'dependencies' => $dependencies,
+                'permissions' => $permissions,
+                'migrations' => [
+                    'reversibility' => 'verified-backup-required',
+                    'files' => $this->migrationFingerprints($absoluteRoot, $moduleKey, $backend),
+                ],
+            ];
+            $licenses[] = trim((string)($module['license'] ?? ''));
+        }
+        $this->sortIdentities($modules, 'key');
+        $licenses = array_values(array_unique($licenses));
+        sort($licenses, SORT_STRING);
+        if (count($licenses) !== 1 || $licenses[0] === '') {
+            throw new PluginArtifactToolException('Plugin Modules must declare one shared license.');
+        }
+        return [
+            'channel' => 'bundled',
+            'origin' => ['type' => 'repository-contents', 'reference' => 'canonical-plugin-contents-v1'],
+            'archive' => ['status' => 'not-issued', 'sha256' => null],
+            'signature' => ['status' => 'not-issued', 'key_id' => null],
+            'sbom' => ['status' => 'not-issued', 'sha256' => null],
+            'license' => ['identifier' => $licenses[0], 'status' => 'declared'],
+            'qualification' => [
+                'status' => 'bundled-locked',
+                'review' => 'not-reviewed',
+                'vulnerability_response' => 'not-configured',
+                'marketplace' => 'blocked',
+            ],
+            'compatibility' => ['modules' => $modules],
+        ];
+    }
+
+    /** @param array<string,mixed> $backend @return list<array{key:string,sha256:string}> */
+    private function migrationFingerprints(string $root, string $moduleKey, array $backend): array
+    {
+        $directories = [];
+        if (is_string($backend['migrations'] ?? null)) $directories[] = $backend['migrations'];
+        $directories[] = 'Database/Migrations';
+        $directories[] = 'database/migrations';
+        $files = [];
+        $resolvedDirectories = [];
+        foreach (array_values(array_unique($directories)) as $directory) {
+            $resolved = realpath($root . '/' . ltrim($directory, '/'));
+            if ($resolved === false || !is_dir($resolved)) continue;
+            $stat = stat($resolved);
+            if (!is_array($stat) || !isset($stat['dev'], $stat['ino'])) {
+                throw new PluginArtifactToolException("Module migration directory is unavailable: {$moduleKey}");
+            }
+            $resolvedDirectories[$stat['dev'] . ':' . $stat['ino']] = $resolved;
+        }
+        foreach (array_values($resolvedDirectories) as $resolved) {
+            foreach (glob($resolved . '/*.sql') ?: [] as $path) {
+                $key = $moduleKey . ':' . basename($path, '.sql');
+                if (isset($files[$key])) throw new PluginArtifactToolException("Duplicate Module migration: {$key}");
+                $files[$key] = ['key' => $key, 'sha256' => $this->digest($path)];
+            }
+        }
+        ksort($files, SORT_STRING);
+        return array_values($files);
+    }
+
+    private function withinModule(string $root, string $relative, string $moduleKey): string
+    {
+        if ($relative === '' || str_starts_with($relative, '/') || str_contains($relative, '..')) {
+            throw new PluginArtifactToolException("Module permission path is invalid: {$moduleKey}");
+        }
+        $path = realpath($root . '/' . $relative);
+        if ($path === false || !str_starts_with($path, $root . DIRECTORY_SEPARATOR) || !is_file($path)) {
+            throw new PluginArtifactToolException("Module permission file is unavailable: {$moduleKey}");
+        }
+        return $path;
     }
 
     /** @param list<string> $roots */
@@ -276,6 +390,15 @@ final readonly class PluginArtifactWriter
         $value = trim((string)$value);
         if (preg_match('/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/D', $value) !== 1 || strlen($value) > 32) {
             throw new PluginArtifactToolException('Plugin version is invalid.');
+        }
+        return $value;
+    }
+
+    private function versionConstraint(mixed $value): string
+    {
+        $value = trim((string)$value);
+        if ($value === '' || strlen($value) > 64) {
+            throw new PluginArtifactToolException('Module version constraint is invalid.');
         }
         return $value;
     }

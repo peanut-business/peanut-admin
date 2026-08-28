@@ -46,6 +46,7 @@ $compiler = new ModuleRegistryCompiler(
         'fixture.delivery-record.list',
         'official.article.cate', 'official.article.list',
         'official.file.library',
+        'official.import-export.configuration',
         'official.notification.channel', 'official.notification.template', 'official.notification.log',
         'official.oauth.channel',
         'official.payment.settings', 'official.payment.recharge', 'official.payment.refund',

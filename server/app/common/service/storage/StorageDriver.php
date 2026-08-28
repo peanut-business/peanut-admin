@@ -9,9 +9,7 @@ interface StorageDriver
 
     public function delete(string $objectKey): void;
 
-    public function publicUrl(string $objectKey): string;
-
-    public function temporaryUrl(string $objectKey, int $expiresIn, string $filename, string $disposition): string;
+    public function downloadTo(string $objectKey, string $targetPath): void;
 
     public function localPath(string $objectKey): ?string;
 }

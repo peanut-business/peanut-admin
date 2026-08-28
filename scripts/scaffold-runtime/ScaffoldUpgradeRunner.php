@@ -8,7 +8,13 @@ use Throwable;
 
 final class ScaffoldUpgradeRunner
 {
-    public function preflight(string $projectRoot, string $fromManifestPath, string $toManifestPath): array
+    /**
+     * Build the immutable scaffold plan without writing a plan file or ledger event.
+     *
+     * The Platform upgrade-readiness projection uses this method so a read request
+     * can evaluate exactly the same ownership/conflict rules as the CLI preflight.
+     */
+    public function preview(string $projectRoot, string $fromManifestPath, string $toManifestPath): array
     {
         $root = ScaffoldPathGuard::projectRoot($projectRoot);
         [$application, $applicationDigest] = $this->applicationManifest($root);
@@ -30,7 +36,7 @@ final class ScaffoldUpgradeRunner
         ];
         $candidate = 'scaffold-' . substr(hash('sha256', self::canonicalJson([$identity, $actions])), 0, 24);
         $status = $summary['conflicts'] === 0 ? 'ready' : 'blocked';
-        $plan = [
+        return [
             'schema_version' => 2,
             'protocol' => 'peanut.scaffold-upgrade-plan.v2',
             'candidate' => $candidate,
@@ -42,12 +48,24 @@ final class ScaffoldUpgradeRunner
             'app_owned_pre_state' => $appOwnedState['files'],
             'actions' => $actions,
         ];
+    }
+
+    public function preflight(string $projectRoot, string $fromManifestPath, string $toManifestPath): array
+    {
+        $root = ScaffoldPathGuard::projectRoot($projectRoot);
+        $plan = $this->preview($root, $fromManifestPath, $toManifestPath);
         $stateRoot = ScaffoldPathGuard::projectPath($root, '.peanut/upgrades');
-        $path = $stateRoot . '/plans/' . $candidate . '.json';
+        $path = $stateRoot . '/plans/' . $plan['candidate'] . '.json';
         $this->writeJsonAtomic($path, $plan, 0600);
         $ledger = new ScaffoldUpgradeLedger($stateRoot . '/ledger.ndjson');
-        if (!$this->hasEvent($ledger, $candidate, 'preflight', $status)) {
-            $ledger->append($this->event($plan, 'preflight', $status, $identity['managed_pre_sha256'], null));
+        if (!$this->hasEvent($ledger, $plan['candidate'], 'preflight', $plan['status'])) {
+            $ledger->append($this->event(
+                $plan,
+                'preflight',
+                $plan['status'],
+                $plan['identity']['managed_pre_sha256'],
+                null
+            ));
         }
         return $plan + ['plan_path' => $this->relative($root, $path)];
     }

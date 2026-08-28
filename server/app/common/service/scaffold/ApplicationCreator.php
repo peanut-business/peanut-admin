@@ -3,9 +3,16 @@ declare(strict_types=1);
 
 namespace app\common\service\scaffold;
 
+use app\platform\service\plugin\PluginArtifactWriter;
+use app\platform\service\plugin\PluginLockResolver;
 use RuntimeException;
 
 require_once __DIR__ . '/VersionContract.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginArtifactToolException.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginArtifactWriter.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginLifecycleException.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginDescriptor.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginLockResolver.php';
 
 final class ApplicationCreator
 {
@@ -13,6 +20,11 @@ final class ApplicationCreator
     private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices', 'version-contract'];
     private const VARIABLES = ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
     private const PROFILES = ['minimal', 'standard', 'full'];
+    private const WRITABLE_DIRECTORIES = [
+        'server/runtime',
+        'server/public/storage',
+        'server/private/storage',
+    ];
 
     /** @param array{commit:string,tree:string}|null $sourceIdentity */
     public function __construct(
@@ -83,11 +95,13 @@ final class ApplicationCreator
                     'source' => $entry['path'],
                 ];
             }
+            $this->prepareWritableDirectories($stage);
             usort($files, static fn(array $a, array $b): int => strcmp((string)$a['path'], (string)$b['path']));
             $this->assertNoUnresolvedVariables($stage);
             if ($adoption !== null) {
                 $this->assertAdoptionEquivalent($stage, $adoption, $parameters, $files);
             }
+            $files = $this->rebuildOfficialPluginArtifacts($stage, $files);
             $templateIdentity = $adoption === null
                 ? [
                     'version' => $inventory['template_version'],
@@ -236,7 +250,8 @@ final class ApplicationCreator
                 throw new RuntimeException('CREATE_APP_ADOPTION_ARTIFACT_DIGEST_MISMATCH: ' . $path);
             }
             $rendered = $this->replaceReleaseTokens($artifactContent, $tokens, $renderParameters);
-            if (!hash_equals($generatedDigest, hash('sha256', $rendered))) {
+            if (!$this->isDerivedPluginArtifact($path)
+                && !hash_equals($generatedDigest, hash('sha256', $rendered))) {
                 throw new RuntimeException('CREATE_APP_ADOPTION_RENDER_MISMATCH: ' . $path);
             }
             $releaseTree[] = [
@@ -250,6 +265,12 @@ final class ApplicationCreator
             || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
             throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
         }
+    }
+
+    private function isDerivedPluginArtifact(string $path): bool
+    {
+        return $path === 'plugins.lock'
+            || preg_match('#^plugins/official\.[a-z0-9.-]+/plugin\.json$#D', $path) === 1;
     }
 
     /** @param array<string,string> $tokens @param array<string,string> $values */
@@ -485,6 +506,32 @@ final class ApplicationCreator
                 $content
             );
         }
+        if ($path === 'scripts/check-local-runtime-contract') {
+            $contractIdentity = $parameters['SLUG'] . '-contract';
+            $content = str_replace(
+                [
+                    'peanut-admin-php:contract',
+                    'peanut-admin-nginx:contract',
+                    'peanut-admin-mysql84-development-host-direct',
+                    'peanut-admin-mysql84-development',
+                    'DB_HOST=192.168.192.2',
+                    'DB_PORT=20183',
+                    'DB_NAME=peanut_admin_development',
+                    'DB_USER=peanut_admin_development',
+                ],
+                [
+                    $parameters['SLUG'] . '-php:contract',
+                    $parameters['SLUG'] . '-nginx:contract',
+                    $parameters['SLUG'] . '-mysql84-contract-host',
+                    $parameters['SLUG'] . '-mysql84-contract',
+                    'DB_HOST=127.0.0.1',
+                    'DB_PORT=3306',
+                    'DB_NAME=' . $contractIdentity,
+                    'DB_USER=' . $contractIdentity,
+                ],
+                $content
+            );
+        }
         if ($path === 'server/app/adminapi/logic/WorkbenchLogic.php') {
             $content = preg_replace("/'(today_sales|total_sales|today_visitor|total_visitor|today_new_user|total_new_user|order_num|order_sum)' => [0-9]+,/", "'$1' => 0,", $content) ?? $content;
         }
@@ -617,6 +664,8 @@ function guardedDatabaseConfig(): array
     $environment = requiredEnvironment('APP_ENV');
     $deploymentTarget = requiredEnvironment('PEANUT_DEPLOYMENT_TARGET');
     $resourceId = requiredEnvironment('PEANUT_DATABASE_RESOURCE_ID');
+    $endpointId = requiredEnvironment('PEANUT_DATABASE_ENDPOINT_ID');
+    $consumer = requiredEnvironment('PEANUT_DATABASE_CONSUMER');
     $registryPath = dirname(__DIR__, 2) . '/resources/project-resources.json';
     $raw = file_get_contents($registryPath);
     $registry = is_string($raw) ? json_decode($raw, true) : null;
@@ -643,23 +692,11 @@ function guardedDatabaseConfig(): array
         'port' => requiredEnvironment('DB_PORT'),
         'database' => requiredEnvironment('DB_NAME'),
     ];
-    $endpoints = [];
-    foreach (['upstream_endpoint', 'container_endpoint'] as $key) {
-        if (is_array($registered[$key] ?? null)) {
-            $endpoints[] = $registered[$key];
-        }
-    }
-    if (isset($registered['host'], $registered['port'])) {
-        $endpoints[] = ['host' => $registered['host'], 'port' => $registered['port']];
-    }
-    $endpointMatch = false;
-    foreach ($endpoints as $endpoint) {
-        if ((string)($endpoint['host'] ?? '') === $actual['host'] && (string)($endpoint['port'] ?? '') === $actual['port']) {
-            $endpointMatch = true;
-            break;
-        }
-    }
-    if (!$endpointMatch || !hash_equals((string)($registered['database'] ?? ''), $actual['database'])) {
+    $endpoint = registeredDatabaseEndpoint($registered, $consumer);
+    if (!hash_equals((string)$endpoint['endpoint_id'], $endpointId)
+        || !hash_equals((string)$endpoint['host'], $actual['host'])
+        || !hash_equals((string)$endpoint['port'], $actual['port'])
+        || !hash_equals((string)($registered['database'] ?? ''), $actual['database'])) {
         throw new RuntimeException("数据库资源 {$resourceId} 的地址或 database 不匹配登记值");
     }
     if (!in_array(requiredEnvironment('DEPLOYMENT_MODE'), ['standalone', 'multi-tenant'], true)) {
@@ -669,6 +706,8 @@ function guardedDatabaseConfig(): array
         'environment' => $environment,
         'deployment_target' => $deploymentTarget,
         'resource_id' => $resourceId,
+        'endpoint_id' => $endpointId,
+        'consumer' => $consumer,
         ...$actual,
         'user' => requiredEnvironment('DB_USER'),
         'password' => requiredEnvironment('DB_PASS'),
@@ -684,16 +723,18 @@ PHP;
         return match ($path) {
             'docs-site/index.md' => "---\nlayout: home\nhero:\n  name: \"{{PRODUCT_NAME}}\"\n  text: \"Application documentation\"\n---\n\nThis site belongs to the generated application.\n",
             'docs-site/getting-started.md' => "# Getting started\n\nCopy root `.env.example` to `.env` for Docker ports, images and build proxies only. Copy `server/.env.example` to permission-0600 `server/.env`; it is the single source for PHP, database, identity and Tenant/Platform settings. `PHP_*` backend aliases are forbidden. Register this application's own database, ports, domains and external services in `resources/project-resources.json` before connecting anything.\n\nInstall 3.0 only into a confirmed empty database. Set `ADMIN_INITIAL_EMAIL` and a strong `ADMIN_INITIAL_PASSWORD` in `server/.env`, then run `php server/database/install.php` followed by `php server/database/environment-guard.php --current`. Later patch/minor releases use the standard update path and apply append-only files in `server/database/migrations/`; a different major release requires a fresh rebuild.\n",
-            'docs-site/deployment.md', 'docs/peanut-admin-release-deployment.md' => "# Deployment\n\nOne deployment is one application instance with its own database, secrets, file storage and lifecycle. Root `.env` is Docker orchestration only; `server/.env` is the only backend configuration source. Invoke Compose with `--env-file .env --env-file server/.env` after registering this application's resources; never inherit the scaffold source environment.\n\n`server/database/init.sql` together with Core `KernelSchema` is the complete canonical fresh baseline. {{PRODUCT_NAME}} 3.0 is fresh-only across the major-version boundary; normal patch/minor updates preserve data, install locked dependencies, and apply append-only `server/database/migrations/*.sql` through `php server/database/install.php --migrate --target-version=X.Y.Z`. A newer major release must use the explicit, backed-up `--fresh` path. Plugin Module migrations keep their independent lifecycle. Multi-tenant deployments require a separate PlatformOperator identity and the `/platform/` bundle.\n",
+            'docs/peanut-admin-release-deployment.md' => "# Deployment\n\nOne deployment is one application instance with its own database, secrets, file storage and lifecycle. Root `.env` is Docker orchestration only; `server/.env` is the only backend configuration source. Invoke Compose with `--env-file .env --env-file server/.env` after registering this application's resources; never inherit the scaffold source environment.\n\n`server/database/init.sql` together with Core `KernelSchema` is the complete canonical fresh baseline. {{PRODUCT_NAME}} 3.0 is fresh-only across the major-version boundary; normal patch/minor updates preserve data, install locked dependencies, and apply append-only `server/database/migrations/*.sql` through `php server/database/install.php --migrate --target-version=X.Y.Z`. A newer major release must use the explicit, backed-up `--fresh` path. Plugin Module migrations keep their independent lifecycle. Multi-tenant deployments require a separate PlatformOperator identity and the `/platform/` bundle.\n",
             'docs-site/api.md' => "# API and extensions\n\nApplication HTTP adapters and product modules are app-owned. Use `server/config/peanut.php` and `web/src/peanut.overrides.ts` as the stable Core Host extension entries.\n",
+            'docs-site/guide/application-module-lifecycle.md' => "# Create an application and deliver a Module\n\nThis guide is for an application owner and Module author. Start from one immutable scaffold release, keep the generated application in its own repository, and use the [reference index](/reference) and [support guide](/support) when a command or failure needs clarification.\n\n## 1. Create an application\n\nRun `create-app` from the selected release and use a new absolute target path:\n\n~~~bash\nphp scripts/create-app --name=<name> --slug=<slug> --package=<vendor/name> --target=<absolute-path> --profile=standard\n~~~\n\nRecord the template version, application version, source commit/tree, and managed/app-owned summaries from the generated manifest. Register the new application's database, ports, domains, and external services separately; do not inherit the source repository environment.\n\n## 2. Create and check a Module\n\nIn the generated application's `server/` directory, run `module:create` and then the read-only `module:check`:\n\n~~~bash\nphp think module:create <module.key> --vendor=<Vendor>\nphp think module:check <module.key>\n~~~\n\nComplete the backend, frontend, manifest, permissions, menus, migrations, and Tenant isolation skeleton. Repeat `module:check` until `status=ready` and every check passes.\n\n## 3. Pack the Module\n\n~~~bash\nphp think module:pack <module.key> --output=<absolute-path>/<module>-<version>.tar --signing-key-id=<key-id> --signing-secret-key-file=<secure-file>\n~~~\n\nDistribute the archive SHA-256, signature key ID, and public-key configuration through a trusted channel. Never commit the signing secret.\n\n## 4. Install the Package\n\nDevelopment or debug Standalone tooling can validate and install a trusted archive:\n\n~~~bash\nphp think module:install-package <archive> --sha256=<64-hex> --signature-key-id=<key-id>\n~~~\n\nPackage installation changes Package and ModuleInstallation state only. It does not enable a TenantModule or grant Tenant/RBAC permissions. The production worker accepts only deployment-owned opaque tasks for `update`, `retire`, and `Purge`; it has no production entry for initial `install`, `disable`, or `reactivate`. Production HTTP must not receive an archive path, URL, command, credential, or arbitrary target.\n\n## 5. Enable the Tenant and grant RBAC\n\nA PlatformOperator explicitly enables the Module for the target Tenant. A Tenant administrator then grants the Module permission and data scope to the appropriate role and member through Tenant/RBAC governance. Verify at least one enabled and one denied Tenant, plus a member without permission. Package installation must never grant Tenant access automatically.\n\n## 6. Update the Package\n\nFix the new immutable archive identity first, then run a zero-write dry-run:\n\n~~~bash\nphp think module:update-package <archive> --sha256=<64-hex> --signature-key-id=<key-id> --dry-run\nphp think module:update-package <archive> --sha256=<64-hex> --signature-key-id=<key-id>\n~~~\n\nOnly a strictly higher version with the same Package key and member scope may proceed. The update must have a paired verified backup, and it must stop before destructive work for a checksum/signature mismatch, dependency conflict, unknown or irreversible migration, or downgrade.\n\n## 7. Disable, reactivate, retire, and Purge\n\nDisable TenantModules and dependants before disabling the Package:\n\n~~~bash\nphp think module:disable-package <module-or-package-key>\n~~~\n\nReactivate by installing the exact same immutable archive again in the authorized development or instance-tool boundary; do not create a second reactivation path. Retire first produces a preview. Execute it only with the unchanged full `confirm_plan` file and digest. Add `--purge` only when the paired backup and double confirmation authorize deletion of Module-owned tables, migration ledger, catalog, and explicit RBAC bindings. Active TenantModules, dependants, protected Modules, or an occupied lifecycle task must stop the plan.\n\n## 8. Upgrade the application scaffold\n\nUse the Release's `scripts/scaffold-upgrade` contract:\n\n~~~bash\nphp scripts/scaffold-upgrade preflight --project-root=<application> --from-manifest=<from> --to-manifest=<to>\nphp scripts/scaffold-upgrade apply --project-root=<application> --plan=<plan>\nphp scripts/scaffold-upgrade verify --project-root=<application> --plan=<plan>\nphp scripts/scaffold-upgrade recover --project-root=<application> --plan=<plan>\n~~~\n\nOnly manifest-declared `managed` and `generated-managed` files are replaced. Module and business `app-owned` files remain under their owners. `recover` uses the same plan after a failed apply; it does not replace database migrations, Package updates, or production authorization.\n\nFor stable error fields and recovery handling, use the [reference error index](/reference#errors-and-recovery). For a versioned, redacted report, use [support](/support).\n",
+            'docs-site/reference.md' => "# Reference\n\nThis is the generated application's command, version, configuration, and recovery index. Start with [Create an application and deliver a Module](/guide/application-module-lifecycle), then use [Support and issue reporting](/support) for a redacted diagnostic bundle or a problem report.\n\n## Where to look\n\n| Need | Start here |\n| --- | --- |\n| Application and Module commands | `scripts/`, `server/think`, and each Module's public contract |\n| Version identity | annotated tag or Release, application manifest, source commit/tree, and lock files |\n| HTTP and configuration | `server/route/`, controllers, `server/.env.example`, and the configuration loader |\n| Tenant and RBAC rules | trusted Tenant context, TenantModule governance, roles, permissions, and data scopes |\n| Scaffold upgrade | `scripts/scaffold-upgrade` and the source/target scaffold manifests |\n| Diagnostics and support | [support guide](/support) and the root `SECURITY.md` |\n\n## Command index\n\n| Command | Boundary |\n| --- | --- |\n| `php scripts/create-app --name=<name> --slug=<slug> --package=<vendor/name> --target=<absolute-path> [--application-version=<semver>] [--profile=minimal|standard|full]` | Create a fresh application from one immutable scaffold release. |\n| `php think module:create <module.key> [--vendor=<Vendor>]` | Generate a Module skeleton without overwriting an existing target. |\n| `php think module:check <module.key> [--kernel-version=<semver>] [--package=<tar>] [--sha256=<hash>]` | Run the eight read-only author checks; it does not connect to a database. |\n| `php think module:pack <module.key> [--output=<tar>] [--signing-key-id=<id> --signing-secret-key-file=<file>]` | Produce a deterministic archive and optional Ed25519 signature. |\n| `php think module:install-package <tar> [--sha256=<hash>] [--signature-key-id=<id>]` | Development/debug/Standalone install or same-archive reactivation; it does not enable a Tenant or grant RBAC. |\n| `php think module:update-package <tar> [--sha256=<hash>] [--signature-key-id=<id>] [--dry-run]` | Plan or apply a strictly higher immutable Package update. |\n| `php think module:disable-package <module-or-package-key>` | Disable a Package after its TenantModules and dependants are stopped. |\n| `php think module:uninstall-package <key> [--purge] [--confirm-plan-file=<json> --confirm-plan-digest=<hash>]` | Preview or double-confirm retire/Purge; never edit the plan to bypass a stop. |\n| `php think ops-module:request preview|prepare --operation=update|retire|purge ...` | Deployment owner queues only an opaque update, retire, or Purge task from registered targets. |\n| `scripts/ops-module-worker --once` | Production worker for update, retire, and Purge only; it has no initial install, disable, or reactivate entry. |\n| `php scripts/scaffold-upgrade preflight|apply|verify|recover ...` | Apply or recover managed scaffold files without replacing app-owned Module or business code. |\n\nProduction HTTP cannot upload a Package, choose a local path or URL, issue a command, select a target, or supply credentials.\n\n## Errors and recovery\n\nCommands return structured output with a stable error code or JSON error. Preserve Package state, maintenance state, backup, and recovery pointer after a failure. Fix the indicated precondition, then repeat the corresponding check, dry-run, or preview. Never delete files, tables, locks, or migration ledgers as an ad hoc recovery.\n\n## Validation\n\nUse each command's `--help` where available, verify the exact version identity before an upgrade, and run the affected smoke checks after a successful operation.\n",
+            'docs-site/support.md' => "# Support and issue reporting\n\nUse this page to provide a reproducible, privacy-preserving report. The [reference index](/reference) defines command boundaries; the root [security policy](../SECURITY.md) defines private security contact.\n\n## Choose the channel\n\n- An ordinary defect, documentation error, compatibility question, or feature request belongs in the project's public Issue tracker.\n- Unauthorized access, Tenant boundary bypass, identity or RBAC bypass, sensitive-data exposure, arbitrary file or command execution, and signature/checksum bypass are security issues. Do not publish their details.\n- Real provider credentials, messages, payments, OAuth, or storage operations remain the responsibility of the relevant provider owner; support cannot safely run them against your production account.\n\n## Include version and a minimum reproduction\n\nFor an ordinary issue, include the exact annotated tag or Release, application version, source commit/tree from `.peanut/application-manifest.json`, deployment mode, operating system, PHP/Node versions, affected client or Module key/version, shortest reproduction, expected and actual result, stable error code, and command exit code. State whether it reproduces in a fresh independent application; if not, describe only the minimum app-owned change.\n\nDo not upload a database dump, private source, credentials, Tenant records, cookies, tokens, raw request headers, or absolute paths. Remove them from terminal excerpts.\n\n## Redacted diagnostic bundle\n\nAn authorized operator may attach a bounded diagnostic bundle when the deployment provides that capability. Check its checksum and inspect it before sharing. It may contain version identity, deployment mode, debug state, runtime status, installed Module summary, bounded failed-task codes, and structured audit messages. It must exclude raw logs, secrets, tokens, cookies, absolute paths, personal information, Tenant business records, resource registries, deployment tasks, recovery pointers, database dumps, environment files, and signing keys.\n\n## Private security contact\n\nUse the repository's **Security → Report a vulnerability** private form when available. If it is unavailable, create a public issue titled `Security contact request` containing only the affected release/tag and a private way to contact the maintainers. Do not include the component, attack steps, impact, proof of concept, credentials, diagnostic bundle, or screenshots. Wait for a private channel before sending sensitive details.\n\nOnly test systems, data, accounts, and providers that you own or are explicitly authorized to use.\n",
+            'SECURITY.md' => "# {{PRODUCT_NAME}} Security Policy\n\n## Supported versions\n\nSecurity fixes target the latest published release of this application. Before reporting, confirm the affected annotated tag or Release and whether the behavior still reproduces there. Older releases may require an application upgrade before a fix can be applied.\n\n## Reporting a vulnerability\n\nDo not disclose vulnerability details, credentials, personal data, Tenant data, exploit code, or raw logs in a public Issue, Discussion, pull request, or screenshot.\n\nUse the repository's **Security → Report a vulnerability** private form when available. If it is unavailable, open a public Issue containing only the title `Security contact request`, the affected release or tag, and a private way for maintainers to contact you. Do not include the vulnerable component, attack steps, impact details, proof of concept, secrets, or diagnostic bundle in that contact-only Issue. Wait until a maintainer establishes a private channel before sending sensitive material.\n\n## What to include privately\n\nSend the affected release/tag, complete source commit when known, deployment mode, vulnerable component and prerequisites, minimal reproduction, observed impact, whether the issue crosses Account, Tenant, permission, Module, file, or deployment boundaries, and a redacted diagnostic bundle only when necessary.\n\nFor an ordinary issue, follow the [support guide](docs-site/support.md). Only test systems, data, accounts, and providers that you own or have explicit permission to use.\n",
             'docs-site/architecture/identity-and-tenancy.md' => "# Identity and tenancy\n\nAccount/Credential is the login identity; TenantMember is that account's membership in one Tenant; Tenant Role/RBAC grants permissions only in that Tenant. Business customers, suppliers and contacts remain application business records rather than Account fields.\n\nA PlatformOperator governs this application instance but does not become a TenantMember or gain arbitrary Tenant business-data access. Host-bound Tenant entry points restrict the session to the bound Tenant; only an explicitly configured shared Admin Host can offer Tenant switching to an account that has active memberships.\n",
             'docs-site/architecture/official-module-qualification.md' => "# Official module qualification\n\nA module is usable only when its Plugin artifact is installed, the Tenant has the module enabled, and the current TenantMember has the required RBAC/data permission. Each module owns its schema and public contracts; it must not read or write another module's private tables.\n\nBefore declaring a module available, add its Tenant isolation, disabled-module and authorization checks. External providers such as payment, notifications and OAuth require their own production configuration and verification.\n",
             'docs-site/capabilities.md' => "# Capability catalogue\n\nCore defaults are identity, Tenant membership, RBAC, audit, fresh installation, Module lifecycle and the Admin Shell. Files, notifications, OAuth, payment, member CRM, tasks, import/export and content are optional application capabilities, not an excuse to bypass Tenant isolation.\n\nProduct-specific domains such as Party, Store, Warehouse, Supplier relationship, Product, Pricing, Inventory, Procurement and Trade belong in this application's Modules. Add only the domains this product owns, with their data owner, public contract and acceptance tests.\n",
             'docs-site/guide/development.md', 'docs/peanut-admin-development-guide.md' => "# Development guide\n\nCore owns generic identity, tenancy and authorization contracts. This application owns routes, product settings, pages and business Runtime. A Module owns its tables, use cases, permissions, menu contributions and public DTO/command contracts.\n\nDevelop a vertical slice through route, controller, application service and Module contract. Supply TenantContext from trusted middleware; never accept a client-supplied Tenant ID as authorization. Add a normal Tenant A case and a denied Tenant B case before enabling the Module.\n",
             'docs-site/guide/module-development.md', 'docs/plugin-module-development.md' => "# Module development\n\nPlace an application Module under `server/app/Modules/<Vendor>/<Module>/` with Domain, Application, Contracts, Infrastructure, Database, Resources and Tests. Put the matching management contribution in `web/src/modules/<module>/`.\n\nExpose commands and read-only DTOs from `Contracts`; callers must not join or mutate another Module's private tables. Plugin install, TenantModule enablement and member RBAC are separate gates. Document the Module's owner Tenant, migrations, menu/permission keys and cross-Tenant denial cases.\n",
-            'docs-site/platform.md' => "# Instance platform\n\nThe PlatformOperator control plane manages this one application's Tenant lifecycle, Owner invitations, entry bindings, TenantModule enablement, platform roles and audit. It is a separate `/platform/` frontend and session, not a Tenant business module or a cross-application operations system.\n\nA Tenant owner is an in-Tenant RBAC role. Platform identity does not imply Tenant business-data access.\n",
-            'docs-site/guide/user-manual.md', 'docs/peanut-admin-user-manual.md' => "# Administrator manual\n\nThis page is the product owner’s operating manual. Document the application's enabled Modules, its roles, approval and data-scope rules, and the support path for tenant owners. Do not document product-only fields as Peanut Core behavior.\n",
-            'docs-site/troubleshooting.md' => "# Troubleshooting\n\nConfirm the selected resource ID, environment, endpoint and database before retrying a connection or fresh installation. Unknown Host names, disabled Tenant modules, suspended Tenants and missing member permissions fail closed by design.\n\nFor multi-tenant entry issues, first check the original Host is preserved by the proxy and whether the account has an active TenantMember relation. Do not bypass a failed boundary by adding a default Tenant ID.\n",
+            'docs/peanut-admin-user-manual.md' => "# Administrator manual\n\nThis page is the product owner’s operating manual. Document the application's enabled Modules, its roles, approval and data-scope rules, and the support path for tenant owners. Do not document product-only fields as Peanut Core behavior.\n",
             'docs-site/releases.md' => "# Releases\n\nCreate application releases from immutable application commits. Regenerate legal metadata and dependency inventory for each release.\n",
             'docs-site/legal.md' => "# Legal\n\nReview the generated root legal files before redistribution. Dependency changes require a refreshed SBOM and third-party notices.\n",
             'docs-site/404.md' => "# Page not found\n\nReturn to the [documentation home](/).\n",
@@ -843,12 +884,10 @@ PHP;
 
     private function modulesConfig(string $content): string
     {
-        if (substr_count($content, "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')") !== 1
-            || substr_count($content, "        'fixture.delivery-record.list',\n") !== 1
-        ) {
+        if (substr_count($content, "'plugin_lock' => (string)env('PEANUT_PLUGIN_LOCK', '../plugins.lock')") !== 1) {
             throw new RuntimeException('CREATE_APP_MODULES_CONFIG_SOURCE_INVALID');
         }
-        return str_replace("        'fixture.delivery-record.list',\n", '', $content);
+        return $content;
     }
 
     private function pluginsLock(string $content): string
@@ -890,6 +929,86 @@ PHP;
         ) . "\n";
     }
 
+    /** @param list<array<string,mixed>> $files @return list<array<string,mixed>> */
+    private function rebuildOfficialPluginArtifacts(string $stage, array $files): array
+    {
+        $manifestPaths = [];
+        foreach ($files as $file) {
+            $path = (string)($file['path'] ?? '');
+            if (preg_match('#^plugins/(official\.[a-z0-9.-]+)/plugin\.json$#D', $path, $matches) !== 1) {
+                continue;
+            }
+            $manifestPaths[$matches[1]] = $path;
+        }
+        ksort($manifestPaths, SORT_STRING);
+        if ($manifestPaths === []) {
+            throw new RuntimeException('CREATE_APP_OFFICIAL_PLUGIN_SET_EMPTY');
+        }
+
+        // create-app is intentionally PHP/Git-only. The Writer still owns the
+        // canonical bytes, while the dependency-free Resolver verifies the
+        // completed derived artifacts without requiring Composer installation.
+        $writer = new PluginArtifactWriter($stage . '/server', false);
+        $rewritten = [];
+        foreach ($manifestPaths as $directoryKey => $path) {
+            $absolute = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            try {
+                $manifest = json_decode((string)file_get_contents($absolute), true, 128, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $exception) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_INVALID: ' . $path, 0, $exception);
+            }
+            if (!is_array($manifest) || array_is_list($manifest)
+                || ($manifest['key'] ?? null) !== $directoryKey
+                || !is_string($manifest['version'] ?? null)
+                || !is_array($manifest['modules'] ?? null)
+                || !array_is_list($manifest['modules'])
+                || $manifest['modules'] === []) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_INVALID: ' . $path);
+            }
+            $moduleSpecs = [];
+            foreach ($manifest['modules'] as $module) {
+                if (!is_array($module) || array_is_list($module)
+                    || !is_string($module['key'] ?? null) || !is_string($module['root'] ?? null)) {
+                    throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_INVALID: ' . $path);
+                }
+                $moduleSpecs[] = $module['key'] . '=' . $module['root'];
+            }
+            $result = $writer->make($directoryKey, $manifest['version'], $moduleSpecs);
+            if (($result['path'] ?? null) !== $path) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_PATH_MISMATCH: ' . $path);
+            }
+            $rewritten[$path] = true;
+        }
+        $lock = $writer->writeLock();
+        if (($lock['path'] ?? null) !== 'plugins.lock') {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_PATH_MISMATCH');
+        }
+        $rewritten['plugins.lock'] = true;
+        $resolved = (new PluginLockResolver($stage . '/server', '../plugins.lock'))->all();
+        if (array_keys($resolved) !== array_keys($manifestPaths)) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SET_MISMATCH');
+        }
+
+        foreach ($files as &$file) {
+            $path = (string)($file['path'] ?? '');
+            if (!isset($rewritten[$path])) {
+                continue;
+            }
+            $absolute = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            $content = file_get_contents($absolute);
+            if (!is_string($content) || (fileperms($absolute) & 0777) !== ($file['mode'] ?? null)) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_ARTIFACT_WRITE_MISMATCH: ' . $path);
+            }
+            $file['sha256'] = hash('sha256', $content);
+            unset($rewritten[$path]);
+        }
+        unset($file);
+        if ($rewritten !== []) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_ARTIFACT_UNDECLARED: ' . implode(',', array_keys($rewritten)));
+        }
+        return $files;
+    }
+
     private function writeFile(string $path, string $content, int $mode): void
     {
         $directory = dirname($path);
@@ -898,6 +1017,16 @@ PHP;
         }
         if (file_put_contents($path, $content) === false || !chmod($path, $mode)) {
             throw new RuntimeException('CREATE_APP_WRITE_FAILED: ' . $path);
+        }
+    }
+
+    private function prepareWritableDirectories(string $stage): void
+    {
+        foreach (self::WRITABLE_DIRECTORIES as $relativePath) {
+            $directory = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            if ((!is_dir($directory) && !mkdir($directory, 0775, true)) || !chmod($directory, 0775)) {
+                throw new RuntimeException('CREATE_APP_WRITABLE_DIRECTORY_FAILED: ' . $relativePath);
+            }
         }
     }
 

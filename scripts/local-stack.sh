@@ -67,7 +67,6 @@ ensure_env() {
             printf '%s\n' 'APP_ENV=development'
             printf '%s\n' 'APP_DEBUG=true'
             printf '%s\n' 'DEPLOYMENT_MODE=standalone'
-            printf '%s\n' 'ADMIN_INITIAL_EMAIL=admin@example.com'
         } > "$backend_env"
         chmod 600 "$backend_env"
         printf 'Created backend environment in %s\n' "$backend_env"
@@ -83,8 +82,10 @@ ensure_env() {
     grep -q '^JWT_SECRET=..' "$backend_env" || set_env_value "$backend_env" JWT_SECRET "$(make_secret 32)"
     grep -q '^TENANT_IDENTIFIER_HMAC_KEY=..' "$backend_env" || set_env_value "$backend_env" TENANT_IDENTIFIER_HMAC_KEY "$(make_secret 32)"
     grep -q '^PLATFORM_IDENTIFIER_HMAC_KEY=..' "$backend_env" || set_env_value "$backend_env" PLATFORM_IDENTIFIER_HMAC_KEY "$(make_secret 32)"
-    grep -q '^ADMIN_INITIAL_EMAIL=..' "$backend_env" || set_env_value "$backend_env" ADMIN_INITIAL_EMAIL admin@example.com
-    grep -q '^ADMIN_INITIAL_PASSWORD=..' "$backend_env" || set_env_value "$backend_env" ADMIN_INITIAL_PASSWORD "Local$(make_secret 8)9"
+    clear_env_value "$backend_env" ADMIN_INITIAL_EMAIL
+    clear_env_value "$backend_env" ADMIN_INITIAL_PASSWORD
+    clear_env_value "$backend_env" PLATFORM_INITIAL_EMAIL
+    clear_env_value "$backend_env" PLATFORM_INITIAL_PASSWORD
     set_env_default "$backend_env" PEANUT_PLUGIN_LOCK ../plugins.lock
     set_env_default "$backend_env" PEANUT_MODULE_KERNEL_VERSION 1.0.0
     set_env_default "$backend_env" PEANUT_MODULE_TRUSTED_KEYS_JSON '{}'
@@ -211,7 +212,7 @@ case "${1:-}" in
         ;;
     credentials)
         ensure_env
-        awk -F= '/^(ADMIN_INITIAL_EMAIL|ADMIN_INITIAL_PASSWORD)=/ {print $1 "=" $2}' "$backend_env"
+        printf '%s\n' 'Fresh-install identities are process-only; use the guided installer or inject them into the automatic installer command.'
         ;;
     database-status)
         ensure_env

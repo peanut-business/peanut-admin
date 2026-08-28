@@ -1,136 +1,71 @@
 ---
-title: 开箱即用能力与后续路线
-description: 区分 Peanut Admin 当前能力、核心默认、可选官方模块、后续产品路线、派生应用业务模块和示例模板。
+title: 产品能力目录
+description: Peanut Admin 面向安装、运维和二次开发的稳定能力、作用与边界。
 ---
 
-# 开箱即用能力与后续路线
+# 产品能力目录
 
-“仓库里已经实现”不等于“所有新应用都应该默认启用”。本页同时回答两个问题：当前
-Peanut Admin 已经验证了什么，以及长期产品形态应把这项能力放在哪一层。
+Peanut Admin 的目标是让新应用可安装、可诊断、可备份、可恢复、可升级、可扩展，并让
+二次开发者能快速找到能力 owner。此页只解释稳定能力和使用边界，不公开内部候选、资源地址
+或执行状态；具体版本身份以[版本与发布](/releases)为准。
 
-每一行都要分两次读：先看“当前仓库事实”，再看“推荐默认”。例如文件素材当前已在 Host
-中完成 Tenant 适配，不等于它已经是可安装、可停用的官方 Module。只有完成 Plugin 身份、
-TenantModule 生命周期和全部入口 Guard 后，产品形态才算兑现。
+## 产品闭环
 
-## 5 分钟结论
+| 能力 | 作用 | 使用入口 | 关键边界 |
+|---|---|---|---|
+| 安装预检 | 在写数据库前检查 PHP、扩展、目录、配置和部署模式，并给出修复建议 | CLI preflight、安装向导 | 不猜主机、端口或默认凭据；预检不写数据库 |
+| 一次性安装向导 | 以同一安装 Host 完成模式、管理员和官方 Module 选择 | `/admin/installation`、automatic CLI | 页面不接收数据库连接、路径或命令；setup token 一次性使用 |
+| 首次运行清单 | 说明品牌、通知、存储、备份、Worker、域名/TLS 和账户安全是否具备生产条件 | `/app-setting/readiness` | “已配置”不等于“已连通”或“生产可用” |
+| 运行与维护控制台 | 汇总版本、Schema/migration、Module、缓存、存储、任务和维护状态 | Platform `/platform/ops` | Platform-only；关键检查异常时 fail closed |
+| 脱敏诊断包 | 导出固定 schema、checksum 和有界时间窗口的安全诊断信息 | Platform 运行与维护 | 不读取任意文件、原始日志、Cookie、凭据、个人或 Tenant 业务记录 |
+| 配对备份中心 | 将数据库、持久文件、Runtime 身份、manifest 和 SHA-256 绑定为一个恢复点 | Platform 备份中心、受信 worker | HTTP 不接收 shell/path；备份完成不等于恢复已验证 |
+| 隔离恢复验证 | 把配对制品恢复到登记的新目标并验证 Schema、代表数据、文件和零流量 | 受信 restore worker | 默认不覆盖活动目标；生产覆盖恢复需单独授权 |
+| 维护窗口 | 按 reason、revision 和时间范围统一阻止后端写入并记录审计 | Platform 运行与维护 | 隐藏页面不能替代后端写门禁 |
+| 升级就绪与执行 | 固定 source/target、Module、migration、scaffold 冲突、备份、维护和恢复指针，再按步骤执行 | Platform 升级中心、deployment-control worker | HTTP 不选择路径、命令、Release 或部署目标；跨大版本仍采用 fresh/rebuild |
+| Provider 资格 | 区分配置、连通、回调、凭据轮换、失败和证据新鲜度 | Platform Provider 资格视图 | 通用页面只读且不发送短信、不扣款；每个 Provider 独立资格 |
 
-| 层级 | 默认原则 | 典型能力 |
-| --- | --- | --- |
-| 核心默认 | 所有后台应用都需要，或缺失会破坏安全和生命周期 | 身份、Tenant、RBAC、审计、安装迁移、Module 生命周期、Admin Shell |
-| 可选官方模块 | 常见但依赖外部服务、行业语义或较高运维成本 | 文件、通知、OAuth、支付、会员 CRM、任务、导入导出、文章 |
-| 派生应用业务模块 | 只属于具体产品，不进入通用脚手架 | DCS Party、Store、Product、Inventory、Procurement 等 |
-| 示例模板 | 帮助开发和验证，生产默认不启用 | CRUD、跨模块合同、Tenant 隔离测试、演示数据 |
+## 身份、权限与多租户
 
-## 后续产品能力路线图
+| 能力 | 作用 | 关键边界 |
+|---|---|---|
+| Account / TenantMember / RBAC | 将管理身份、租户成员关系、角色与权限分开 | 业务会员不是后台账号；TenantContext 只能来自受信会话/Host |
+| PlatformOperator | 治理当前实例的 Tenant、入口、Module、存储和运维 | 不复用 Tenant 会话；不成为跨实例超级管理员 |
+| Standalone / Multi-tenant | 两种部署形态共用 Tenant-first 数据和授权模型 | Standalone 仍有默认 Tenant；生产配置必须显式选择环境 |
+| TenantModule Guard | 在 HTTP、任务、回调和消费者入口检查 Module 资格 | 菜单隐藏不是授权；Module 停用后真实入口必须拒绝 |
+| 审计与幂等 | 记录关键状态变化、拒绝、任务和 Provider 证据 | 审计只存安全摘要；领域 payload 留在自己的 Module |
 
-`v2.1.5` 在既有 2.x 基线上完成官方能力 Module 化、canonical baseline 修复和登记部署收口。下面只列发布之后仍需推进的产品能力，不把 DCS 领域功能、
-完整 SaaS 或跨应用运营平台混进 Peanut Admin 的当前交付范围。
+## 官方业务能力
 
-| 优先级 | 能力 | 当前真实状态 | 下一步产品形态 | 完成条件 |
-| --- | --- | --- | --- | --- |
-| P0 | 无人值守发布 | **已由 `v2.1.5` 正式交付**：脚本绑定固定 tag、登记目标、`fresh`/`upgrade`、数据库迁移、备份和非交互远程执行；`v2.1.5` 已完成一次升级和一次 fresh 部署 | 继续用同一脚本完成后续版本的登记生产目标升级 | 参数和凭据写入可靠；fresh/upgrade 资格通过；失败不会留下半发布状态 |
-| P0 | Standalone 与多租户线上交付 | **`v2.1.5` 已按登记资源完成一套 Standalone 与一套 Multi-tenant candidate 部署**：两个 origin、Compose 健康状态、TLS/Host 和线上入口已验证；平台、共享 Admin、Tenant A、Tenant B 浏览器截图已人工检查。无秘密部署快照见内部 `docs/product-status/deployments/v2.1.5-online-experience.json` | 继续用同一脚本完成后续版本的登记目标升级 | 固定 tag、资源、数据库和域名；每次升级完成迁移、健康检查和受影响浏览器 smoke |
-| P0 | 演示站叠加层 | **v2.0.x 基础 seeder 和线上 production-candidate 演示叠加均已执行**：Tenant A/B、绑定 Host、标题、演示账号策略和合成数据已验证；普通生产目标不加载 overlay | 正常安装后显式叠加可丢弃的 Tenant A/B 数据、账号预填、演示账号保护和 Tenant 标题 | 只能用于登记的演示目标；身份/Host/密码一致；可重复执行或安全失败；不会改变普通生产升级配置 |
-| P0 | 文档事实自动收敛 | **长期入口已修正，自动防滞后未完成**：发布页、能力账本、首页、开发指南和能力目录已统一到正式 Release | 发布状态只由能力账本和不可变 Release 快照生成，公共入口不再手工复制旧状态 | 文档构建和状态检查能发现过期版本、候选措辞和能力表冲突 |
-| P1 | 2.x 派生应用受控升级 | **已验证一条 2.x 路径**：`v2.0.0 -> v2.0.1` 真实派生应用完成 preflight/apply/verify/recover，app-owned 修改保持；后续 Release 仍需重复同一资格 | 从旧 Release、当前应用和目标 Release 生成三方计划，只更新受管文件与 Peanut 依赖，冲突时停止 | 每个目标 Release 都有不可变 manifest；app-owned 字节保持；依赖、数据库 migration 和恢复步骤显式列出 |
-| P1 | 官方可选 Module 产品化 | **已随 `v2.1.4` 正式交付**：文件、通知、OAuth、支付、会员、任务、导入导出均有 manifest、Plugin 身份、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard | 每项能力拥有稳定 Plugin/Module manifest，可安装、逐 Tenant 开通和停用 | Plugin 安装、TenantModule、成员 RBAC、数据权限和所有入口 Guard 同时通过；固定候选资格与发布快照可追溯 |
-| P1 | Module 全入口 Guard | **当前交付入口已覆盖**：`ModuleExecutionContext/Guard` 已接入 Fixture 和 Article 的管理/公开入口，定时任务、Core worker、支付/公众号回调也有对应 Host Guard；Article/Fixture 当前没有业务 worker、回调或模块文件入口。未来 Module 新增这些入口时必须在自己的装配处接入 | HTTP、内部命令、入队、worker、外部回调和模块文件入口使用同一授权链 | 每类实际存在的入口都有启用正向测试和停用负向测试；前端隐藏不能作为安全证据 |
-| P1 | 跨 Module 可运行示例 | **未完成**：当前只有单 Module 的 `fixture.delivery-record` | 两个最小 Module 演示公开命令、只读查询 DTO，以及必要时的版本化事件 | 示例可独立运行；调用方不依赖对方私有表或 Repository；失败场景没有部分写入 |
-| P1 | Tenant 隔离测试模板 | **已有大量产品测试，尚未整理成模板** | 新 Module 可复制的 Tenant A/B、伪造 ID、停用 Tenant/Module 和权限撤销测试骨架 | create-app 或开发文档提供模板；示例 Module 使用同一模板通过 |
-| P1 | Owner 邀请自动投递 | **人工模式可用；自动 Provider 未形成产品能力** | 邮件 Provider 发送一次性邀请，保留重试、送达状态和安全审计 | 真实 Provider 配置与 smoke 通过；不记录明文 Token；失败不伪装为已发送 |
-| P1 | 外部渠道生产资格 | **本地 adapter/合同存在，生产未验证**：短信、OAuth、支付、对象存储均需部署方凭据 | 按 Provider 分别形成配置、回调、轮换、监控和故障处理合同 | 每个渠道使用真实平台完成独立 smoke 后，才在目标部署声明可用 |
-| P2 | Standalone/多租户模式转换 | **当前没有转换脚本**；无数据时推荐按目标模式重新安装 | 仅为确需保留数据的实例提供受控转换工具 | 检查 Tenant、成员、PlatformOperator、Host 绑定和业务数据；有备份、预检、终态断言和回滚方案 |
-| P2 | 通用 Outbox/Event Bus | **暂未形成通用 Runtime**；当前优先使用同步应用服务和公开合同 | 有两个以上真实异步消费者后，再引入事务 Outbox、重试、死信和观测 | 消费者、失败语义和运维 owner 明确；不能只为示例引入基础设施 |
+| 领域 | 现有能力 | 主要 owner |
+|---|---|---|
+| 管理基础 | 管理员、角色、菜单、部门、岗位、字典、系统设置、日志与代码生成 | Application Host |
+| 内容与装修 | 文章、分类、收藏/计数、移动端/PC/Tabbar 装修 | Article 与 Application 装修 Host |
+| 会员与财务 | 会员、标签、余额、流水、充值入账和退款 | Member / Payment Module |
+| 文件与素材 | 素材分类、文件对象、Local/对象存储 Provider provenance | File Module；实例存储由 Platform 配置 |
+| 通知 | 通知场景、模板/日志、阿里云和腾讯云短信 | Notification Module |
+| OAuth 与公众号 | 小程序、公众号、开放平台配置、OAuth exchange 和回调 Tenant 路由 | OAuth Module |
+| 支付 | 微信/支付宝配置、预付、验签、回调、退款和幂等 | Payment Module |
+| 任务与导入导出 | Crontab、后台任务、XLSX 数据导入导出、schema 化配置包 | Task / ImportExport Module |
+| 多端客户端 | Admin、Platform、PC、H5/UniApp 共用品牌、身份和公开 API | 各客户端 Host；业务权限仍由后端强制 |
 
-状态标签：
+## 扩展与二次开发
 
-- **当前已支持**：当前代码和能力账本有证据，括号内会限制真实范围；候选实现与正式验收
-  会分开标注。
-- **推荐新增**：目标产品形态合理，但当前未形成完整能力。
-- **仅迁移需要**：只服务旧应用升级，不应成为新业务抽象。
-- **暂不建议**：没有真实消费者前不实现或不放入 Peanut。
-- **待核验**：当前证据不足，不能宣称支持。
+| 能力 | 作用 | 推荐入口 | 关键边界 |
+|---|---|---|---|
+| Module manifest 与 Plugin lock | 声明版本、依赖、权限、migration、来源和信任状态 | `module.json`、`plugins.lock` | 当前 Runtime 只执行 bundled/locked 单元；Marketplace 需完整供应链 authority |
+| Module 生命周期 | 安装、重复安装、升级计划、回滚计划、停用、retire/purge | Module 命令与 Platform 治理 | 数据处置必须显式，不默认删除 |
+| Tenant 安全生成器 | 生成 Commands、append-only migration 指南和 A/B Tenant 安全骨架 | `module:create` | 不新增第二 Plugin Runtime；伪造 ID、撤权、停用和失败 migration 都要测试 |
+| 配置转移 | 导出 schema 化配置包，先 dry-run，再按冲突策略和秘密重绑定导入 | ImportExport Module | 与数据库备份分离；不导出密码、token、Cookie 或密钥 |
+| Core 公共合同 | 提供身份、Context、RBAC、Module、Audit、Settings 和 Ops 原语 | 公开 PHP/Web 包 | Application 只消费公开导出，不复制包源码或 deep import |
+| Host / contribution | 装配页面、路由、Provider、任务和外部渠道 | Application/Module contribution | 数据和 Runtime 仍只有一个 owner；扩展不能直接写其他 Module 的表 |
 
-## 核心默认能力
+## 阅读路径
 
-| 能力 | 当前仓库事实 | 推荐默认与理由 | 依赖 | 维护成本 |
-| --- | --- | --- | --- | --- |
-| 身份与账号 | **v2.0.0 已验证并正式源码发布**：管理端直接使用 Core Account/Credential/TenantMember；业务会员仍使用独立 `pa_member` 登录 | **核心默认，是**。所有应用需要稳定登录身份；业务档案不得塞进 Account | 密码散列、HMAC、会话、凭据恢复、安全审计 | 中高，安全更新和账号恢复长期存在 |
-| Tenant 与 TenantMember | **v2.0.0 已验证并正式源码发布**：默认 Tenant、首 owner、生命周期、三 Tenant 选择/切换和隔离通过原生身份测试与真实浏览器验证；没有通用供应商/客户成员产品 | **核心默认，多租户模式必须，Standalone 内部仍保留默认 Tenant** | Account、TenantContext、成员状态、部署模式 | 高，隔离回归和成员生命周期不可停 |
-| RBAC 与数据权限 | **v2.0.0 已验证并正式源码发布**：Admin URI/菜单 RBAC、Core Tenant 权限集合和 Module 数据权限原语通过原生资格检查；每个业务域仍需自己的 target resolver/query 约束 | **核心默认，是**。功能权限和数据权限必须分开；业务模块负责声明受保护对象 | TenantMember、Role、Permission、TenantModule、领域 target provider | 高，新增接口和资源类型都要维护 |
-| 审计与操作日志 | **v2.0.0 已验证并正式源码发布**：管理写操作、平台操作和 Tenant 归属已有 owner 与聚焦合同 | **核心默认，是**。安全、排错和合规都依赖可追溯记录 | 可信 actor、request ID、TenantContext、保留策略 | 中高，数据量、脱敏和归档需持续治理 |
-| 安装与基线后迁移 | **v2.0.0 已验证并正式源码发布**：fresh 安装得到 87 表、197 菜单和 43 配置；后续只接收 canonical baseline 之后的追加 migration，不提供 1.x 数据库或脚手架原地升级 | **核心默认，是**。没有确定性安装和变更账本就不能稳定交付应用 | 版本身份、数据库锁、checksum、空库重建 | 中高；不维护 1.x 兼容矩阵，但每个新变更仍需安装验证 |
-| Module/Plugin 生命周期 | **核心生命周期已验证并正式源码发布；Article/Fixture 的当前入口已完成 Module Guard**：安装、重复安装、dry-run、失败 migration、治理、菜单/RBAC 和 fixture 同步命令停用 Guard 已有证据；当前没有业务 worker、回调或专属文件入口，未来新增时按模块逐项采用 | **核心默认，是；生产默认空 lock**。扩展机制应随脚手架存在，但不自动安装业务 Plugin；实际存在的入口必须全部命中 Guard | 不可变 artifact、lock、Module manifest、migration ledger、统一 ModuleGuard | 高，制品安全、入口装配和兼容矩阵长期维护 |
-| Admin Shell | **v2.0.0 已验证并正式源码发布**：Vue 管理端布局、动态菜单、原生权限会话和平台入口已通过 Platform 登录、三 Tenant 选择并进入 Store Demo 的真实浏览器验证 | **核心默认，是**。后台应用需要统一导航、会话和错误处理，但业务页面不进入 Shell | Web 公共包、路由、菜单、权限、品牌入口 | 中，浏览器兼容和前端依赖升级持续发生 |
+- 首次部署：[快速开始](/getting-started) → [部署与升级](/guide/deployment-upgrade)。
+- 二次开发：[核心概念](/guide/concepts) → [开发总览](/guide/development) →
+  [Module 开发](/guide/module-development)。
+- 权限与隔离：[数据、权限与多租户](/guide/data-permissions-tenancy)。
+- 公共包和接口：[参考资料](/reference)与[API 与扩展](/api)。
 
-## 可选官方模块
-
-这里的“官方模块”是当前正在落地的产品形态。7 项能力已经按独立 Plugin/Module 边界拆出，
-但本次只完成源码和静态合同收口；在真实数据库、Tenant A/B 和停用负向资格完成前，仍标为
-“待资格验证”，不等于已随正式 Release 对外承诺。
-
-“可选”只表示可安装、可停用，绝不允许单租户实现。进入官方目录前必须同时满足
-[官方模块多租户资格](/architecture/official-module-qualification)：可信 TenantContext、
-TenantModule 启停、成员权限、SQL/文件/缓存/任务/回调隔离、审计和停用后拒绝新操作。
-缺少任何一项就不能标为官方模块。
-
-| 能力 | 当前仓库事实 | 推荐默认与理由 | 依赖 | 维护成本 |
-| --- | --- | --- | --- | --- |
-| 文件与素材 | **官方 Module 实现已形成，待真实资格验证**：manifest、上传/素材路由、前端 contribution 和对象 Tenant namespace 已接入 | **可选官方模块，基础后台配置可默认安装**。多数内容型应用需要，但存储、可见性和归档策略不同 | 存储 Provider、URL/删除语义、配额、病毒扫描策略 | 中高，存储费用和生命周期治理持续存在 |
-| 通知 | **官方 Module 实现已形成，待真实资格验证**：验证码、场景、模板、日志和 Provider 配置仍按 Tenant 归属 | **可选官方模块，默认不启用渠道**。只有配置真实 Provider 和模板后才可用 | Provider 凭据、模板审核、频控、验证码安全 | 高，外部平台、费用、重试和送达率都需运维 |
-| OAuth | **官方 Module 实现已形成，待真实资格验证**：OAuth 身份、state、回跳、公众号回调和配置入口统一使用 `official.oauth` 生命周期 | **可选官方模块，否**。外部登录不是所有应用需要，错误配置扩大身份攻击面 | 平台应用、域名白名单、密钥、回调 HTTPS | 高，平台政策、密钥轮换和账号合并复杂 |
-| 支付 | **官方 Module 实现已形成，待真实资格验证**：充值、退款、支付配置和验签回调统一使用 `official.payment`，不代表真实资金已可用 | **可选官方模块，否**。资金、证书、对账和合规不应进入最小脚手架 | 商户资质、证书、签名、幂等、对账和退款 | 很高，需要生产值守和财务流程 |
-| 会员 CRM | **官方 Module 实现已形成，待真实资格验证**：`pa_member`、标签、余额和会员登录入口由 `official.member` 管理；业务会员仍与 Account/TenantMember 分离 | **可选官方模块，否**。客户档案应与 Account/TenantMember 分离；行业字段差异大 | 客户身份关联、隐私、标签、等级/积分、数据留存 | 高，个人信息和营销规则变化频繁 |
-| 任务与定时任务 | **官方 Module 实现已形成，待真实资格验证**：Cron 管理、调度上下文和 `module_key` 执行复核由 `official.task` 接管 | **可选官方模块或基础设施 adapter，按需**。无后台任务的应用不应承担调度器成本 | scheduler、幂等、锁、重试、监控、ModuleGuard | 中高，重复执行和失败恢复必须可观测 |
-| 导入导出 | **官方 Module 实现已形成，待真实资格验证**：操作日志导出、异步任务、私有 Tenant 文件和权限目录由 `official.import-export` 接管 | **可选官方模块，通常建议安装但默认最小权限**。常见且风险高，不应成为任意表导入器 | 文件、异步任务、字段映射、权限、数据校验 | 高，大数据量、隐私和部分失败难处理 |
-| 文章内容 | **Article 已作为可选官方模块随 `v2.0.1` 源码 Release 交付基础合同，当前候选专项资格已通过**：既有文章、分类、收藏和多端读取已通过 Tenant-first 资格；manifest、权限/菜单目录、管理端 contribution、部署安装与 TenantModule Guard、PC/UniApp 静态停用合同、真实数据库、Tenant A/B 隔离、停用负向和页面浏览器证据均已完成。当前 Article 没有业务 worker、外部回调或模块专属文件入口；若未来增加，必须单独补对应合同 | **可选官方模块，否**。不是每个业务应用都需要 CMS | 文件素材、富文本安全、发布状态、客户端展示 | 中，内容安全、跨端能力发现和编辑器升级需要维护 |
-
-## DCS 业务模块
-
-以下能力均不属于 Peanut Admin。当前仓库只保存 DCS 采用边界和 Product-only 条件采用
-记录，不能据此宣称 DCS Runtime 已完成。
-
-| 能力 | Peanut 当前事实 | DCS 推荐形态 | 主要依赖 | 维护成本 |
-| --- | --- | --- | --- | --- |
-| Party | **暂不建议进入 Peanut** | DCS 基础业务模块，通常应有 | Tenant/业务主体显式关联、联系人、状态 | 中高，主体合并和法律身份复杂 |
-| Store | **暂不建议进入 Peanut** | DCS 业务模块，零售场景建议 | Party、数据权限 target、客户端入口 | 中，门店生命周期和授权范围 |
-| Warehouse | **暂不建议进入 Peanut** | 有库存地点时需要 | Party/Store、地址、库存 target | 中，地点状态会影响全部库存命令 |
-| Supplier/Relationship | **推荐新增到 DCS，不进入 Peanut** | 有跨组织采购时必须 | Party、Tenant 关联、合同、参与方授权 | 高，越权、合同有效期和主体变更复杂 |
-| Product | **推荐新增到 DCS，不进入 Peanut**；仅有 Product-only 条件采用记录 | DCS 商品主数据模块，通常应有 | 分类、属性、SKU、授权范围 | 高，主数据兼容和批量变更频繁 |
-| Pricing | **暂不建议进入 Peanut** | 存在报价/客户价时单独启用 | Product、Relationship、币种、有效期 | 高，优先级和历史价格审计复杂 |
-| Inventory | **暂不建议进入 Peanut** | 有实物库存时启用 | Product SKU、Warehouse、幂等、库存流水 | 很高，并发、预占和对账要求严格 |
-| Procurement | **暂不建议进入 Peanut** | 有采购流程时启用 | Supplier、Product、Pricing、Inventory 收货合同 | 高，状态机和跨 Tenant 参与方授权复杂 |
-| Trade | **暂不建议进入 Peanut** | 有销售交易时启用 | Customer/Party、Product、Pricing、Inventory | 很高，订单、履约和售后边界广 |
-
-DCS 的模块表、事件、状态机和页面必须在 DCS 仓记录。Peanut 只说明 Module、Tenant、
-RBAC 和 Host 的通用扩展方法。
-
-## 示例与模板
-
-| 示例 | 当前仓库事实 | 推荐默认与理由 | 依赖 | 维护成本 |
-| --- | --- | --- | --- | --- |
-| CRUD 纵向示例 | **当前已支持（source-only fixture）**：`fixture.delivery-record` 证明表、合同、权限、菜单和页面 contribution | **示例模板，是，但不进入生产 lock**。用于理解完整路径 | Module/Plugin Host、TenantContext | 低，需随公共合同更新 |
-| 跨模块命令/查询示例 | **推荐新增**：现有 fixture 只有单 Module 合同 | **示例模板，是**。防止直接访问其他模块私有表 | 两个最小 Module、公开 DTO、合同测试 | 中，需要保持调用边界真实可运行 |
-| 跨模块事件/Outbox 示例 | **推荐新增**：当前没有通用已验证事件 Runtime | **示例模板，采用事件基础设施后再提供** | Outbox、重试、幂等、死信、观测 | 中高，示例必须覆盖失败而非只演示发布 |
-| Tenant 隔离测试模板 | **当前已支持（大量产品测试），可复用模板待整理** | **示例模板，是**。所有 Tenant-owned Module 都应复制并替换业务断言 | 两 Tenant fixture、伪造 ID、停用测试 | 低，随测试 API 演进 |
-| 演示数据 | **v2.0.x 已发布基础 seeder；production-candidate 已执行 Tenant A/B 叠加验证**；普通生产目标不加载 overlay | **示例模板，开发/演示环境可选，生产默认关闭** | 环境门禁、幂等、清理责任 | 中，必须避免污染真实数据 |
-
-## 如何选择
-
-1. 缺失会破坏身份、安全、隔离或应用生命周期的能力，放入核心默认。
-2. 依赖外部 Provider、行业字段或较高运维成本的能力，做可选官方模块。
-3. 只服务一个具体产品的领域能力，留在派生应用。
-4. 只为教学或 Gate 存在的能力，保持示例身份，不进入正式 Plugin lock。
-
-## 当前产品边界
-
-| 不进入当前 Peanut Admin 的能力 | 原因 | 应放在哪里 |
-| --- | --- | --- |
-| DCS Party、Store、Warehouse、Supplier、Product、Pricing、Inventory、Procurement、Trade | 它们是具体业务领域，不是通用后台基础设施 | DCS 仓库及其独立 Module |
-| legacy Admin/Role/Dept 映射、双写、余额镜像和旧 bootstrap | 只服务旧版本升级，会污染 fresh-only Runtime | 旧 tag/Release 历史证据或独立迁移项目 |
-| 跨应用身份联邦、全局组织目录和跨实例 Tenant 映射 | 需要多个真实应用、独立安全边界和稳定协议，复杂度远高于实例内多租户 | 独立联邦/运营平台项目，需求成立后立项 |
-| 套餐、订阅、计费、试用、发票和应用市场 | 属于完整 SaaS 商业控制面，当前明确暂缓 | 后续 SaaS 产品，不进入核心脚手架默认能力 |
-| 自动改写派生应用业务源码 | 会破坏 app-owned 所有权和升级可控性 | 只升级框架受管文件；业务迁移由应用自己实现 |
-
-继续阅读：[开发与目录](/guide/development)、[Module 开发教程](/guide/module-development)、
-[API 与扩展](/api)、[fresh 部署与安装](/deployment)。
+如果某项能力在当前 Release 中没有对应入口，不要根据此页推断它已经发布；先核对 Release
+说明、锁文件和实际部署身份。

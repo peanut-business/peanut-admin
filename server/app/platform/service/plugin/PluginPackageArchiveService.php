@@ -154,6 +154,7 @@ final class PluginPackageArchiveService
                 'key' => $entry['key'],
                 'version' => $entry['version'],
                 'source' => $entry['source'],
+                'trust' => $entry['trust'],
                 'composer' => $entry['composer'],
                 'npm' => $entry['npm'],
                 'frontend' => $entry['frontend'],

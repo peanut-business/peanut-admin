@@ -1,0 +1,278 @@
+<?php
+declare(strict_types=1);
+
+require dirname(__DIR__, 2) . '/bootstrap/environment.php';
+
+use app\platform\service\ops\DeploymentModuleRequestService;
+use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\PlatformModuleOperationExecutionService;
+use app\platform\service\plugin\PluginPackageArchiveService;
+use app\platform\service\plugin\PluginPackageInstaller;
+use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
+use PeanutAdmin\Kernel\Context\PlatformContext;
+
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require_once dirname(__DIR__, 2) . '/database/install.php';
+require_once dirname(__DIR__) . '/Support/IsolatedBackendEnvironment.php';
+
+function moduleDeliveryExpect(bool $condition, string $message): void
+{
+    if (!$condition) throw new RuntimeException($message);
+}
+
+function moduleDeliveryCopyTree(string $source, string $target): void
+{
+    if (!is_dir($target)) mkdir($target, 0777, true);
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($source, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST,
+    );
+    foreach ($iterator as $entry) {
+        $relative = substr($entry->getPathname(), strlen($source) + 1);
+        $destination = $target . '/' . $relative;
+        if ($entry->isDir()) {
+            if (!is_dir($destination)) mkdir($destination, 0777, true);
+        } else {
+            copy($entry->getPathname(), $destination);
+        }
+    }
+}
+
+function moduleDeliveryRemoveTree(string $path): void
+{
+    if (!is_dir($path)) return;
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST,
+    );
+    foreach ($iterator as $entry) {
+        $entry->isDir() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
+    }
+    rmdir($path);
+}
+
+function moduleDeliverySetVersion(string $root, string $module, string $version): void
+{
+    $backend = $root . '/server/app/Modules/Official/' . $module;
+    foreach ([$backend . '/module.json', $backend . '/composer.json'] as $path) {
+        $document = json_decode((string)file_get_contents($path), true, 64, JSON_THROW_ON_ERROR);
+        $document['version'] = $version;
+        if ($module === 'Article' && str_ends_with($path, '/module.json')) {
+            $document['dependencies'][0]['version'] = '^' . explode('.', $version)[0] . '.0';
+        }
+        file_put_contents($path, json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    }
+    $frontend = $root . '/web/src/modules/official-' . strtolower($module) . '/package.json';
+    $document = json_decode((string)file_get_contents($frontend), true, 64, JSON_THROW_ON_ERROR);
+    $document['version'] = $version;
+    file_put_contents($frontend, json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+}
+
+$database = $argv[1] ?? '';
+moduleDeliveryExpect(
+    preg_match('/^peanut_admin_development_p0e_([a-z0-9]{1,11})_plugin_lifecycle$/D', $database, $match) === 1,
+    'registered isolated plugin_lifecycle database is required',
+);
+$host = IsolatedBackendEnvironment::required('DB_HOST');
+$port = IsolatedBackendEnvironment::required('DB_PORT');
+$user = IsolatedBackendEnvironment::required('DB_USER');
+$password = IsolatedBackendEnvironment::required('DB_PASS');
+$admin = new PDO(
+    "mysql:host={$host};port={$port};charset=utf8mb4",
+    $user,
+    $password,
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC],
+);
+$exists = $admin->prepare('SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name=?');
+$exists->execute([$database]);
+moduleDeliveryExpect((int)$exists->fetchColumn() === 0, 'isolated database already exists');
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
+
+IsolatedBackendEnvironment::activate([
+    'APP_ENV' => 'development',
+    'APP_DEBUG' => 'true',
+    'DEPLOYMENT_MODE' => 'standalone',
+    'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-p0e-mysql84-gate',
+    'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-p0e-mysql84-gate-host-direct',
+    'PEANUT_DATABASE_CONSUMER' => 'host',
+    'DB_HOST' => $host,
+    'DB_PORT' => $port,
+    'DB_NAME' => $database,
+    'DB_USER' => $user,
+    'DB_PASS' => $password,
+    'DB_PREFIX' => 'pa_',
+]);
+$pdo = new PDO(
+    "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+    $user,
+    $password,
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
+);
+$identity = initializeCoreIdentity($pdo, 'module-delivery@example.test', 'module-delivery-password', null);
+$serverRoot = dirname(__DIR__, 2);
+executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
+$migrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
+sort($migrations, SORT_STRING);
+executeSqlFiles($pdo, $migrations);
+
+$projectRoot = dirname($serverRoot);
+$temporary = sys_get_temp_dir() . '/pa-module-delivery-' . $match[1];
+moduleDeliveryExpect(!file_exists($temporary), 'isolated output already exists');
+$source = $temporary . '/source';
+$target = $temporary . '/target';
+$packageDirectory = $target . '/.ops/module-packages';
+$requestDirectory = $target . '/.ops/module-requests';
+$registryPath = $target . '/resources/project-resources.json';
+$completed = false;
+
+try {
+    foreach (['Article', 'File'] as $module) {
+        moduleDeliveryCopyTree(
+            $projectRoot . '/server/app/Modules/Official/' . $module,
+            $source . '/server/app/Modules/Official/' . $module,
+        );
+        moduleDeliveryCopyTree(
+            $projectRoot . '/web/src/modules/official-' . strtolower($module),
+            $source . '/web/src/modules/official-' . strtolower($module),
+        );
+    }
+    foreach ([$source, $target] as $root) {
+        mkdir($root . '/server/resources/schemas', 0777, true);
+        copy($serverRoot . '/resources/schemas/plugin.schema.json', $root . '/server/resources/schemas/plugin.schema.json');
+    }
+    mkdir($packageDirectory, 0700, true);
+    mkdir($requestDirectory, 0700, true);
+    mkdir(dirname($registryPath), 0777, true);
+    $registry = [
+        'resources' => [
+            'tooling' => [[
+                'stable_resource_id' => 'fixture-module-delivery',
+                'environments' => ['development'],
+                'service_type' => 'operator-triggered repository CLI worker over registered SSH deployment transport',
+                'deployment_resource_id' => 'fixture-target',
+                'deployment_root' => $target,
+                'request_directory' => $requestDirectory,
+                'package_directory' => $packageDirectory,
+                'fallback' => 'none',
+            ]],
+            'deployments' => [[
+                'stable_resource_id' => 'fixture-target',
+                'environments' => ['development'],
+                'deployment_root' => $target,
+            ]],
+        ],
+    ];
+    file_put_contents($registryPath, json_encode($registry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+
+    $config = ['kernel_version' => '1.0.0', 'registered_client_keys' => ['admin-web', 'platform-web']];
+    $archive = new PluginPackageArchiveService($source . '/server');
+    $v1Path = $temporary . '/v1.tar';
+    $v1 = $archive->packBundle('official-content-bundle', '1.0.0', ['official.article', 'official.file'], $v1Path);
+    $installed = (new PluginPackageInstaller($pdo, $target . '/server', $config, []))
+        ->install($v1Path, $v1['sha256'], null);
+    moduleDeliveryExpect(($installed['operation'] ?? null) === 'installed', 'fixture v1 install failed');
+
+    moduleDeliverySetVersion($source, 'Article', '2.0.0');
+    moduleDeliverySetVersion($source, 'File', '2.0.0');
+    $v2Temporary = $temporary . '/v2.tar';
+    $v2 = $archive->packBundle('official-content-bundle', '2.0.0', ['official.article', 'official.file'], $v2Temporary);
+    $v2Path = $packageDirectory . '/' . $v2['sha256'] . '.tar';
+    rename($v2Temporary, $v2Path);
+
+    $requests = new DeploymentModuleRequestService($pdo, $target, $config, [], $registryPath);
+    $preview = $requests->preview(
+        'fixture-module-delivery', 'fixture-target', 'update', 'official-content-bundle', $v2['sha256'], null,
+    );
+    moduleDeliveryExpect(($preview['plan']['dry_run'] ?? null) === true, 'request preview was not dry-run');
+    $prepared = $requests->prepare(
+        'fixture-module-delivery', 'fixture-target', 'update', 'official-content-bundle', $v2['sha256'], null, null,
+    );
+    moduleDeliveryExpect(preg_match('/^modreq_[a-f0-9]{32}$/D', (string)$prepared['request_key']) === 1, 'opaque request key changed');
+
+    $operator = $pdo->prepare('SELECT account_id FROM pa_platform_operator WHERE id=?');
+    $operator->execute([$identity['operator_id']]);
+    $operatorAccountId = (int)$operator->fetchColumn();
+    $context = PlatformContext::fromValidatedSession(new ValidatedPlatformSession(
+        $identity['operator_id'],
+        'module-delivery-session',
+        $operatorAccountId,
+        $identity['operator_id'],
+        'platform-web',
+        new DateTimeImmutable('+1 hour'),
+    ), 'module-delivery-request');
+    $runtime = static fn(): array => [
+        'commit' => str_repeat('a', 40),
+        'tree' => str_repeat('b', 40),
+        'health' => 'healthy',
+        'repository_clean' => true,
+    ];
+    $platform = new PlatformModuleOperationExecutionService($pdo, $target, $config, [], $registryPath, $runtime);
+    $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
+    moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');
+
+    $executor = new PdoModuleOperationTaskExecutionService($pdo, $target, $config, [], $registryPath, $runtime);
+    $claimed = $executor->claim();
+    moduleDeliveryExpect(is_array($claimed) && ($claimed['current_step'] ?? null) === 'preflight', 'Module operation was not claimed');
+    $taskKey = (string)$claimed['task_key'];
+    $revision = (int)$claimed['execution_revision'];
+    $backupAction = $executor->advance($taskKey, $revision);
+    moduleDeliveryExpect(($backupAction['action'] ?? null) === 'run_backup', 'preflight did not dispatch backup');
+    $backupTask = (string)$backupAction['child_task_key'];
+    $pdo->prepare("UPDATE pa_ops_task SET status='succeeded',completed_at=UTC_TIMESTAMP(3) WHERE task_key=?")
+        ->execute([$backupTask]);
+    $backupReference = 'backup_' . str_repeat('c', 32);
+    $pdo->prepare(<<<'SQL'
+INSERT INTO pa_ops_backup_evidence (
+ backup_reference_key,task_key,provider_key,manifest_sha256,source_commit,source_tree,
+ consistency_started_at,consistency_completed_at,verified_at,manifest_json
+) VALUES (?,?,'peanut.paired-db-files',?,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),'{}')
+SQL)->execute([$backupReference, $backupTask, str_repeat('d', 64), str_repeat('a', 40), str_repeat('b', 40)]);
+
+    $restoreAction = $executor->advance($taskKey, $revision);
+    moduleDeliveryExpect(($restoreAction['action'] ?? null) === 'run_restore', 'backup did not dispatch restore verification');
+    $restoreTask = (string)$restoreAction['child_task_key'];
+    $pdo->prepare("UPDATE pa_ops_task SET status='succeeded',completed_at=UTC_TIMESTAMP(3) WHERE task_key=?")
+        ->execute([$restoreTask]);
+    $pdo->prepare(<<<'SQL'
+INSERT INTO pa_ops_restore_evidence (
+ task_key,backup_reference_key,provider_key,target_key,manifest_sha256,evidence_sha256,
+ source_commit,source_tree,target_deployment_resource_id,target_database_resource_id,
+ target_runtime_resource_id,table_count,schema_migration_count,critical_table_count,
+ account_count,tenant_count,tenant_member_count,storage_file_count,storage_bytes,
+ protected_runtime_sha256,verified_at,evidence_json
+) VALUES (?,?,'peanut.paired-db-files','isolated-new-target',?,?,?,?,?,'fixture-db','fixture-runtime',
+ 1,0,6,1,1,1,0,0,?,UTC_TIMESTAMP(3),'{}')
+SQL)->execute([
+        $restoreTask, $backupReference, str_repeat('d', 64), str_repeat('e', 64),
+        str_repeat('a', 40), str_repeat('b', 40), 'fixture-restore', str_repeat('f', 64),
+    ]);
+
+    $executeAction = $executor->advance($taskKey, $revision);
+    moduleDeliveryExpect(($executeAction['action'] ?? null) === 'execute', 'restore did not establish maintenance');
+    moduleDeliveryExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_ops_maintenance_window WHERE state='active' AND reason_key='module-lifecycle'")->fetchColumn() === 1, 'maintenance window is not active');
+    $operation = $executor->execute($taskKey, $revision);
+    moduleDeliveryExpect(($operation['action'] ?? null) === 'run_smoke', 'Package update did not enter smoke');
+    $succeeded = $executor->succeed($taskKey, $revision);
+    moduleDeliveryExpect(($succeeded['status'] ?? null) === 'succeeded', 'Module operation did not complete');
+    moduleDeliveryExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_installation WHERE plugin_key='official-content-bundle' AND installed_version='2.0.0' AND status='active'")->fetchColumn() === 1, 'Package identity did not reach v2');
+    moduleDeliveryExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key IN ('official.article','official.file')")->fetchColumn() === 0, 'Module operation changed TenantModule state');
+    moduleDeliveryExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_ops_maintenance_window WHERE state='closed'")->fetchColumn() === 1, 'successful smoke did not close maintenance');
+    moduleDeliveryExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_ops_module_execution WHERE current_step='completed' AND recovery_pointer_sha256 IS NOT NULL")->fetchColumn() === 1, 'recovery pointer was not persisted');
+
+    $route = (string)file_get_contents($serverRoot . '/route/app.php');
+    $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformOpsController.php');
+    moduleDeliveryExpect(str_contains($route, "api/platform/v1/ops/tasks/module"), 'opaque Module task route is missing');
+    moduleDeliveryExpect(!str_contains($controller, "archive_sha256'") && !str_contains($controller, "package_key'"), 'production HTTP accepts Module package details');
+
+    $completed = true;
+    echo "MODULE-DELIVERY-OPERATION-001 passed database={$database} request={$prepared['request_key']} task={$taskKey}\n";
+} finally {
+    moduleDeliveryRemoveTree($temporary);
+    IsolatedBackendEnvironment::cleanup();
+    $pdo = null;
+    if ($completed) {
+        $admin->exec("DROP DATABASE `{$database}`");
+    } else {
+        fwrite(STDERR, "MODULE_DELIVERY_TEST_DATABASE_RETAINED={$database}\n");
+    }
+}

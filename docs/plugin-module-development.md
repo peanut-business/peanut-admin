@@ -86,6 +86,7 @@ web/src/modules/fixture-delivery-record/
 | `Database/Migrations/` | 只创建或修改本 Module 声明拥有的表 |
 | `Resources/` | 权限、菜单和设置定义；不是业务真值表 |
 | `contribution.ts` | 前端路由和页面入口，声明 Module key 与所需权限 |
+| Tenant 安全测试骨架 | 由唯一生成器放在 Plugin 制品之外，并通过真实 Runtime adapter 接入 |
 | `plugins.lock` | 当前部署唯一允许加载的 Plugin 版本和内容摘要 |
 
 派生应用可以在同一结构中增加自己的 vendor/module 命名空间，例如
@@ -113,9 +114,51 @@ contents 摘要，并使用 `resources/schemas/plugin.schema.json` 与已安装�
 校验后写入 `plugins/<plugin-key>/plugin.json`。`plugin:lock --write` 对全部 manifest 重新校验
 并确定性写入 `plugins.lock`；`--check` 不写文件，适合提交前检查。
 
+### 制品信任与兼容结果
+
+`plugin.json` 与 `plugins.lock` 同时固定下列可消费矩阵；Host 只接受两者完全一致、且内容摘要
+可重算的记录。安装、reconcile 和 upgrade 在执行 migration 前都读取同一结果，资格无效时以
+`PLUGIN_TRUST_QUALIFICATION_INVALID` 停止，而不是尝试备用 Plugin Runtime。
+
+| 维度 | 当前 bundled 资格 | 安装/升级解释 |
+| --- | --- | --- |
+| 版本、Kernel、依赖 | 每个 Module 的版本、`kernel_constraint` 和精确依赖约束 | 仍由单一 Module Registry 编译和依赖检查；不兼容即停止 |
+| 权限 | `backend.permissions` 的相对路径和 SHA-256 | 路径或定义内容漂移会改变 canonical contents/lock 身份 |
+| migration | 每条 SQL 的 key/SHA-256；统一标记 `verified-backup-required` | 没有自动回滚；有 pending migration 的 upgrade 必须先有已验证备份 |
+| 来源与内容 | `repository-contents` 与 canonical contents SHA-256 | 仅可从锁定 bundled source 安装，摘要不符 fail closed |
+| archive、签名、SBOM | bundled source 当前都明确为 `not-issued`，不是伪造的 SHA、签名或 SBOM | 这不阻塞已锁定的源码仓 bundled 安装；开发态手工 archive 必须提供 `--sha256`，或通过既有受信签名校验 |
+| 许可证 | Module 声明的共享 license | 同一 Plugin 内 license 不一致时无法生成 manifest |
+| 审核、漏洞响应与 Marketplace | `review=not-reviewed`、`vulnerability_response=not-configured`、`marketplace=blocked` | Marketplace 始终返回 review 与漏洞响应两个稳定 blocker；它不是当前可用的安装来源 |
+
+因此，`bundled-locked` 只表示“当前仓库锁定身份可由唯一 Host 处理”，不表示已经通过第三方
+安全审计，也不表示存在可下载的 Marketplace 制品。要开放 Marketplace，必须先在独立决策中
+增加可验证 archive SHA-256、受信签名、SBOM、许可证审查和漏洞响应 authority；不得仅把状态
+字段改成已通过，也不得复制或增加第二个 Plugin Runtime。
+
 ### 开始前
 
 确认 Module key、数据 owner、依赖 Module、目标客户端和停用行为已经写清楚。若无法回答“谁拥有表、谁能调用、停用后哪些入口必须拒绝”，先停在设计阶段，不要创建 migration。
+
+先用唯一生成入口创建骨架：
+
+```bash
+cd server
+php think module:create acme.inventory --vendor=Acme
+```
+
+生成后先运行统一、只读的作者检查：
+
+```bash
+php think module:check acme.inventory
+```
+
+该命令和自动化复用同一个 Host，按固定顺序检查 manifest、SemVer/Kernel 约束、依赖、权限、
+菜单、migration、frontend 和 package，并输出稳定的 `code/reason/remediation`。它不连接或写入
+数据库；默认只在临时目录生成并校验 package，也可通过 `--package` 与 `--sha256` 检查已有包。
+
+返回值中的 `backend_path`、`frontend_path` 和 `test_path` 均由 Module key 唯一派生。生成结果包含
+`Contracts/InventoryCommands.php`、不直接执行的 migration SQL 模板说明，以及独立测试目录。
+生成器不会安装 Plugin、开通 TenantModule 或授予权限；任何目标已存在时整次操作拒绝且不覆盖。
 
 ### 1. 定义数据 owner
 
@@ -178,6 +221,8 @@ interface DeliveryRecordCommands
 | `plugin:upgrade --dry-run` | Plugin key | 只生成升级计划 | 不修改数据库和 Plugin 状态 | 计划出现越权表或降级动作时停止 |
 | `plugin:rollback` | Plugin key | 生成回滚计划 | 不默认删除业务数据 | 不把计划当作已回滚证明 |
 | `plugin:uninstall` | Plugin key | 卸载 Plugin Runtime | 所有 TenantModule 停用后执行，默认保留数据 | 任一 Tenant 仍启用时拒绝 |
+| `module:update-package --dry-run` | 受信 archive + SHA-256 | 使用公共 package preflight 生成显式更新计划 | managed 文件、lock、数据库、TenantModule 与 RBAC 零写入 | 降级、同版本异身份、依赖或签名错误时停止 |
+| `module:update-package` | 同一已验证 archive + SHA-256 | 把 active Package 从 v1 显式更新到更高 v2 | 文件、lock、Plugin/Module installation 和 migration 采用同一目标身份 | 失败进入显式 recovery pointer；不自动降级或重放未知 DDL |
 
 ```bash
 cd server
@@ -206,6 +251,12 @@ migration 内容变化仍会被拒绝。`rollback` 只生成计划，卸载默�
 
 生产应用不会自带 fixture。应用 owner 必须先提供真实 Plugin artifact 和 lock 身份，再由
 PlatformOperator 开通 TenantModule，最后给 TenantMember 分配权限。
+
+`module:update-package` 仍只允许 development、debug、Standalone 实例工具环境，不是生产 HTTP
+上传面。交付环境使用 `ops-module:request preview/prepare` 固定登记 target 与受信包，Platform HTTP
+只接收 `modreq_*` opaque key，再由 `scripts/ops-module-worker --once` 串联配对备份、隔离恢复验证、
+维护、update/retire/Purge、审计、smoke 和 recovery pointer。HTTP 不接受 archive、路径、URL、命令、
+host、数据库、凭据、plan 或目标资源；失败时维护保持 active，等待按 recovery pointer 处理。
 
 安装完成不等于功能可用。最终应看到：Plugin active、目标 TenantModule enabled、成员已获权限，
 并且前后端入口都能在 Module 停用后立即拒绝新操作。
@@ -262,6 +313,13 @@ Peanut 文档可以说明“如何写一个库存 Module”，但不能宣称 Pe
 5. 有权限、无权限和伪造 Tenant ID 的 API 测试；
 6. 前端 contribution、路由和按钮权限测试；
 7. 公开合同兼容测试；使用事件时再增加重复投递和重试测试。
+
+`module:create` 会为第 2—5 项生成独立于 Plugin 制品的通用安全停止线和 Runtime adapter 骨架。
+先把 adapter 接入真实 Application Service、ModuleGuard、权限 Repository 与隔离 migration fixture，
+再运行生成的 Tenant 安全测试。模板固定断言：伪造 payload Tenant ID 不改变 owner、Tenant B
+不能用列表或资源 ID 读取 Tenant A、撤权返回 `AUTHORIZATION_PERMISSION_DENIED`、停用返回
+`MODULE_TENANT_DISABLED`，以及失败 migration 不得激活或在没有显式 repair 时重放。不得删除断言来
+适配实现。
 
 只修改一个 Module 时运行该 Module 的聚焦测试、受影响客户端类型检查和 `git diff --check`；
 不要为局部业务切片默认运行所有客户端和完整浏览器矩阵。

@@ -9,6 +9,58 @@
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "459c02a102b5eb89bcf1f8ddb1ff0342c2674dee2167ed323dc4771f4e99e40d"
             },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "fixture.delivery-record",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "b182a0e7a16b5afd72afb1700551818252f26e1cdb7ae4f6f0fe93231025adfe"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "fixture.delivery-record:20260814050101_create_fixture_delivery_records",
+                                        "sha256": "88852ab29baeaaaafd08de4377452b99d6d8bd40222583a1746ef449af6a13a7"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
             "composer": [
                 {
                     "name": "peanut-business/fixture-delivery-record",
@@ -39,7 +91,7 @@
                 }
             ],
             "manifest": "plugins/fixture.delivery-record/plugin.json",
-            "manifest_sha256": "a18b8e2d31b3b1bc96704478453f531ee2faf1965111c93707c0b2856b4659a9"
+            "manifest_sha256": "91c89738e7228af96c1d9716723da3d5d42d97367d07f5c8fc7c879db8c2fc89"
         },
         {
             "key": "official.article",
@@ -48,6 +100,67 @@
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "aa1a1b1323525a5aaeab9395395556f8717b83b9d456e656011c557ef450b567"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.article",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [
+                                {
+                                    "module_key": "official.file",
+                                    "version": "^1.0"
+                                }
+                            ],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "acfaad21285fbd1de4fa6120f309e1c85eeb5e77dcb1fa60f1aa9cf88a6158d1"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.article:20260825-adopt-permission-ownership",
+                                        "sha256": "4cbbb07345314eeda296e8b8d0a44e2b48b048cd295ab81225fe40b2643bd005"
+                                    },
+                                    {
+                                        "key": "official.article:20260826-namespace-permission-keys",
+                                        "sha256": "06c410f96b2833695aea944d207a4b939c3bf7a18c4f2fab6f8e24aaa608af3d"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -79,7 +192,7 @@
                 }
             ],
             "manifest": "plugins/official.article/plugin.json",
-            "manifest_sha256": "293ef9fbbf0ad5d7509e99533867f9d4248dd5bc4ec60075c425df902d0476db"
+            "manifest_sha256": "51606cc2d8890a217376ca1b6a710960e7e4ba84d29bd30e9e965513584791ad"
         },
         {
             "key": "official.file",
@@ -88,6 +201,58 @@
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "7bd0bc9d9a42bef1198e28826a54f03fa7d26337835d40ff764cae4ee3d956e1"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.file",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "c0154d7b00960587b6c0f4a006ec476f2b2ea158dee76a4e581a2e960bb0dc16"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.file:20260826-namespace-permission-keys",
+                                        "sha256": "fd7801e514efdde57945b9756e4303ea8685d02f07dfd86e7131b92ca28003f7"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -119,7 +284,7 @@
                 }
             ],
             "manifest": "plugins/official.file/plugin.json",
-            "manifest_sha256": "12c98b455d5a6a4338a3658da0176a8ac9bac172643c215bd7ad3777ab386377"
+            "manifest_sha256": "77e8762873aead721db47f0f6a6ef13f189fbf896c3cee1962a34226ecd2d602"
         },
         {
             "key": "official.import-export",
@@ -127,7 +292,68 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "32af4a0964d7a4fe15fbc03d08d82fa8509b41d181c80ee10d739d7dcc875c60"
+                "sha256": "44109f4d1549f110e00cb1d0c0bf5fd46be8d2831eae396a2ce09c32730c6cdd"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.import-export",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [
+                                {
+                                    "module_key": "official.file",
+                                    "version": "^1.0"
+                                },
+                                {
+                                    "module_key": "official.task",
+                                    "version": "^1.0"
+                                }
+                            ],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "56a3a9e239f6d924540f4900197a272ea5368237d98c64f1882865277daf864e"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.import-export:20260826-namespace-permission-keys",
+                                        "sha256": "0b7981ec9cf94453697c6cc7f6cc3f0abae9e88769c3a8370b1b57034efa596e"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -149,7 +375,7 @@
                     "package": "@peanut-admin/official-import-export",
                     "version": "1.0.0",
                     "entry": "web/src/modules/official-import-export/contribution.ts",
-                    "sha256": "993ec2cc0f80309284a1b6e5d1c498383c9e9e5e3a132bb137a9deb25e673a68"
+                    "sha256": "b6c0eae98ed1e4c086f520cd9603d2afad64e2dcbf246a5a3ebe79e431a61694"
                 }
             ],
             "modules": [
@@ -159,7 +385,7 @@
                 }
             ],
             "manifest": "plugins/official.import-export/plugin.json",
-            "manifest_sha256": "059ee197b6c5370c61f7a7a7120ac17747d6ef01fcef533e3389fae172fa4385"
+            "manifest_sha256": "555cd782ccbfac44f02004bf62aa96bdb83567f2ff3a84356b0d4afa0da86e20"
         },
         {
             "key": "official.member",
@@ -168,6 +394,63 @@
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "dd5bcd1acb037e1ce03cc900ad771b57c41dfc32ea2a40cfb807ad22d6b09db1"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.member",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [
+                                {
+                                    "module_key": "official.file",
+                                    "version": "^1.0"
+                                }
+                            ],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "e62cfbdd9e82165875b38fdcdf57f236fd532737aed2f80921cdd1584e933dc9"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.member:20260826-namespace-permission-keys",
+                                        "sha256": "c391d790995786d3ef05002f25a4156b67e42f2f7e4227da39ba15190a1328b0"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -199,7 +482,7 @@
                 }
             ],
             "manifest": "plugins/official.member/plugin.json",
-            "manifest_sha256": "8dbc895a537648173dc53c0423e2782b48fa7963d895741eec770db01765853c"
+            "manifest_sha256": "6d4535338fcc277299e53c3ae2a5a9b1511d6b24ce0afd709d67a31e1be9f328"
         },
         {
             "key": "official.notification",
@@ -208,6 +491,58 @@
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "8522cc554f72b7b7c2c1695c60e489bc8540b2ea7a7f002fda0edaf6aac6bf1c"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.notification",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "efe0fb68acdf0a8efee4520f6a91ed0ce111c1a0aa1a6f8b4dd8a0fb5bb285d7"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.notification:20260826-namespace-permission-keys",
+                                        "sha256": "8be087e7adacb8d34f2fa61111e683a7b15af4b62d93910d3a9655f1a605f606"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -239,7 +574,7 @@
                 }
             ],
             "manifest": "plugins/official.notification/plugin.json",
-            "manifest_sha256": "f6a9371a19d14be4930573c01c3266401849de151db2e897bc318546e8b44020"
+            "manifest_sha256": "db4fe5054021c7fd9e626c0156d045b1f0f2e12cd5604a3d7d88e9afb6523d06"
         },
         {
             "key": "official.oauth",
@@ -248,6 +583,71 @@
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "eeaff34f164ef5848f8a7a853a6d6407010ee89345449c948f9413a269d38c97"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.oauth",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [
+                                {
+                                    "module_key": "official.file",
+                                    "version": "^1.0"
+                                },
+                                {
+                                    "module_key": "official.member",
+                                    "version": "^1.0"
+                                },
+                                {
+                                    "module_key": "official.notification",
+                                    "version": "^1.0"
+                                }
+                            ],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "54ef06840401f4353b9def63fdb32aebd5bc5ee3e50a81b0a69186bcb0cf554e"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.oauth:20260826-namespace-permission-keys",
+                                        "sha256": "80545720118dbe1b40a97825293bf4d400bbb2a389efb3f8395d5d6dd3d8df49"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -279,7 +679,7 @@
                 }
             ],
             "manifest": "plugins/official.oauth/plugin.json",
-            "manifest_sha256": "a60fa63b326f75bb3bfbc9c96785fb6d77acb3a58b70a519c9b1a13e6c933d59"
+            "manifest_sha256": "20a522f17b12859c6110dedce1fb291e0fd20ecafef69dc62bf6f10a871b2137"
         },
         {
             "key": "official.payment",
@@ -288,6 +688,63 @@
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "5b1ddb2e7caacc59a64970812c8cd69be57b000fd8fa0edeb49564093614aa4d"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.payment",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [
+                                {
+                                    "module_key": "official.member",
+                                    "version": "^1.0"
+                                }
+                            ],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "aa6abbc566274b212710800ce6175e3da2d4837574c4d3b45247eed7dee67c3a"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.payment:20260826-namespace-permission-keys",
+                                        "sha256": "c216a6dc4934549fb1388fa864b64e4e4222f40a9ae00f90484133452dc36f84"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -319,7 +776,7 @@
                 }
             ],
             "manifest": "plugins/official.payment/plugin.json",
-            "manifest_sha256": "a1c888981c1a5c740cf1a5dbac392fe4746e89cb37bd8ee62443f7c7308d195d"
+            "manifest_sha256": "775f81d8c10066400f075714c81bbbff3a33f1f8c4c4efa8e87c0053c25a6f56"
         },
         {
             "key": "official.task",
@@ -328,6 +785,58 @@
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
                 "sha256": "5da68a8dee70f4bd9390c5c1fea0c8faae7e0791445c5aa9d3184a2c2060dc0a"
+            },
+            "trust": {
+                "channel": "bundled",
+                "origin": {
+                    "type": "repository-contents",
+                    "reference": "canonical-plugin-contents-v1"
+                },
+                "archive": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "signature": {
+                    "status": "not-issued",
+                    "key_id": null
+                },
+                "sbom": {
+                    "status": "not-issued",
+                    "sha256": null
+                },
+                "license": {
+                    "identifier": "proprietary",
+                    "status": "declared"
+                },
+                "qualification": {
+                    "status": "bundled-locked",
+                    "review": "not-reviewed",
+                    "vulnerability_response": "not-configured",
+                    "marketplace": "blocked"
+                },
+                "compatibility": {
+                    "modules": [
+                        {
+                            "key": "official.task",
+                            "version": "1.0.0",
+                            "kernel_constraint": "^1.0",
+                            "dependencies": [],
+                            "permissions": {
+                                "path": "Resources/permissions.json",
+                                "sha256": "6ce89a45c118e3e1bf1d58021c6990f975c61728537d6998baf5af99f21b0b64"
+                            },
+                            "migrations": {
+                                "reversibility": "verified-backup-required",
+                                "files": [
+                                    {
+                                        "key": "official.task:20260826-namespace-permission-keys",
+                                        "sha256": "81bff457523333ad56c1d30fb84094fbf3941902c37a56f27fe291c09145d131"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
             },
             "composer": [
                 {
@@ -359,7 +868,7 @@
                 }
             ],
             "manifest": "plugins/official.task/plugin.json",
-            "manifest_sha256": "6cb8b63e9b3bfb7be617cb0950599779e4e3a9b6669ec409fb1e11ff4d21068b"
+            "manifest_sha256": "50cad8e3af1585ca43b0cdcc72fc078fac03345ace249c917f6092bb056c9807"
         }
     ]
 }

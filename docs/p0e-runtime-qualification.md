@@ -1,8 +1,9 @@
 # P0-E Runtime 资格 Gate
 
 `scripts/p0e-runtime-qualification` 是 2.0 fresh-only 固定候选的全量发布资格入口。它把
-create-app、冻结依赖安装、Standalone/Multi-tenant 空库安装、Plugin lifecycle、生产 Compose
-和两种部署模式的最小 Chromium smoke 绑定到同一个 commit/tree、worktree、run_id 与项目资源租约。
+create-app、冻结依赖安装、Standalone/Multi-tenant 空库安装、Plugin lifecycle、消费者 Module
+v1→v2 生命周期、生产 Compose 和两种部署模式的最小 Chromium smoke 绑定到同一个
+commit/tree、worktree、run_id 与项目资源租约。
 1.x 数据采用、原地前滚、migration fault recovery 和 scaffold upgrade 不属于 2.0.0 支持面，
 也不进入本 Gate。
 
@@ -38,8 +39,10 @@ resource、endpoint 和 expiry；应用制品字节不因 Gate 改写。
 ## 候选与租约
 
 候选必须是当前干净 worktree 的完整 40 位 `HEAD`。run_id 只接受 1-11 位小写字母或数字。
-无资源 plan 验证候选、3 条 2.0 基线后 migration、`v2.0.0` scaffold identity、数据库名、路径、
-端口和完整租约集合；不创建目录、不连接数据库，也不启动端口、容器或浏览器。
+无资源 plan 验证候选、资格矩阵声明的当前 application migration identities、`target_release`
+scaffold identity、数据库名、路径、端口和完整租约集合；不创建目录、不连接数据库，也不启动
+端口、容器或浏览器。具体版本和身份只以
+`server/tests/fixtures/p0e-runtime-qualification/matrix.json` 为准，本说明不复制易漂移的值。
 
 ```bash
 candidate="$(git rev-parse HEAD)"
@@ -90,8 +93,9 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 
 ## Gate 场景
 
-1. `generated-application`：真实 `scripts/create-app` 生成 2.0.0 应用；Server、Web、PC、UniApp
-   H5 和 Docs 使用锁文件安装并完成最低构建，随后核对 application/scaffold identity。
+1. `generated-application`：真实 `scripts/create-app` 从资格矩阵固定的 `target_release` 生成应用；
+   Server、Web、PC、UniApp H5 和 Docs 使用锁文件安装并完成最低构建，随后核对
+   application/scaffold identity。
 2. `standalone-fresh`：在空库执行 Standalone install、幂等 migrate、3-current ledger 与
    fresh-only invariants。
 3. `multi-tenant-fresh`：在空库执行 Multi-tenant install、幂等 migrate、3-current ledger 与
@@ -99,10 +103,13 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 4. `plugin-lifecycle`：向生成应用临时铺设 source-only fixture，覆盖 install、重复安装、upgrade
    dry-run、rollback plan、TenantModule/权限、preserve-data uninstall 和失败 migration；结束后
    恢复空 `plugins.lock`、移除 fixture，并核对 app-owned 字节不变。
-5. `production-compose`：从生成应用构建一次生产镜像，使用 Standalone fresh 数据库通过
+5. `consumer-module-lifecycle`：从同一正式 scaffold 生成作者与消费者两个独立应用，完成签名
+   Module v1→v2 create/check/pack/install/update、Tenant/Package/RBAC 分层、disable/reactivate、
+   retire/Purge 与 app-owned 摘要；使用独立数据库，失败时随本 run 保留恢复坐标。
+6. `production-compose`：从生成应用构建一次生产镜像，使用 Standalone fresh 数据库通过
    Compose 和 `/healthz`。
-6. `standalone-browser`：复用 Standalone Compose，最小 Chromium smoke 覆盖管理端、PC、H5、Docs。
-7. `multi-tenant-browser`：复用同一镜像切换到 Multi-tenant fresh 数据库，最小 Chromium smoke
+7. `standalone-browser`：复用 Standalone Compose，最小 Chromium smoke 覆盖管理端、PC、H5、Docs。
+8. `multi-tenant-browser`：复用同一镜像切换到 Multi-tenant fresh 数据库，最小 Chromium smoke
    另覆盖 Tenant 管理员选择和 Instance Platform 登录。该组使用两个不同的 RFC 6761
    `.localhost` Host：`admin.p0e.localhost:20190` 是共享 Tenant Admin 入口，
    `platform.p0e.localhost:20190` 是独立 PlatformOperator 入口；不得把同一个 Host 同时
@@ -111,12 +118,19 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 ## 失败恢复与完成
 
 每个 group 通过后立即 checkpoint。失败时 runner 保留数据库、cache、output 和 Compose 取证
-资源，写入 `recovery.json` 并 renew lease。完成一次只读归因及最小修复后，用完全相同参数运行：
+资源，写入 `recovery.json` 并 renew lease。先完成一次只读归因；只有候选内容与资格可信性均
+未变化、且资格合同明确允许续跑时，才用完全相同参数运行：
 
 ```bash
 scripts/p0e-runtime-qualification resume "${common[@]}"
 ```
 
-resume 跳过已通过 group，只重跑失败或未完成组。七组全部通过后，runner 停止 Docs listener，
-删除本 run_id 的五个数据库、Compose containers/volumes/local images 和 cache，核验所有残留为
+resume 跳过已通过 group，只重跑失败或未完成组。八组全部通过后，runner 停止 Docs listener，
+删除本 run_id 的六个数据库、Compose containers/volumes/local images 和 cache，核验所有残留为
 零，保留脱敏 output evidence，最后 release lease。失败终态不会自动 release 或清理取证资源。
+
+如果修复需要修改产品 Runtime、Schema、依赖、生成物、fixture、资格脚本、lock 或其他会改变
+资格可信性的内容，旧候选和旧 run 只能作为诊断证据，不得 `resume`。执行者必须先按
+`AGENT_EXECUTION_RULES.md` 回到 Development mode，在实际失败路径上完成聚焦验证；清理旧 run
+的精确资源后，再以新 candidate 和新 run_id 进入资格。同一 group 第二次失败时，必须先完成
+边界矩阵和边界级修复，不得继续用完整 P0-E 逐项发现相邻问题。

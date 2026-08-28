@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "main",
-    "commit": "df6e018ffecabba37b0bbdf44b79067da7341552",
-    "reviewed_at": "2026-08-22"
+    "branch": "dev",
+    "commit": "2d704557bfde17a0333d0be9b9007a81c4e12f5f",
+    "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "v3.0.5 已完成固定 main 候选的 L2 P0-E 7/7、annotated tag、GitHub Release，并更新登记的 Standalone 与 Multi-tenant Demo；公开演示账号已恢复为 peanut1234，Platform 登录不再出现 null state。后续 T15/T16 仍按范围暂缓。"
+    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@f34f6d297d791124779e601ebd1d0cf02b17b9cc 已完成 CR01/CR02/CR10—CR13/CR20—CR23/CR30。CR31 正在冻结产品/scaffold 同名的 3.0.11 唯一候选；CR31/CR40 的组合资格和正式 main/Tag/Release 尚未完成，当前 dev 仍不能冒充 consumer-ready Release。"
   },
   "capabilities": [
     {
@@ -88,6 +88,450 @@
       ],
       "paths": [
         "server/database/install.php"
+      ]
+    },
+    {
+      "id": "PA-INSTALL-001",
+      "name": "统一只读安装预检",
+      "area": "productization",
+      "status": "verified",
+      "summary": "PC10 已在 dev 形成 CLI、未来 Web 与自动化共用的唯一只读安装预检 Host；稳定返回状态、代码、原因和修复建议，不连接数据库、不猜测地址或凭据，并裁剪资源秘密。PC70 pc70q14 已在固定派生应用候选完成 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "PHP、扩展、安装文件、目录和登记资源身份使用同一结构化检查",
+        "CLI 返回稳定 status、code、reason、remediation 和退出码",
+        "预检不实例化 PDO、不探测网络、不创建目录且不泄露数据库秘密",
+        "派生应用 app-owned inventory 包含预检 Host 和 CLI 入口"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "f289c69a620f1eaffb0ba5a8cc39d089759259ab"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-NATIVE-001"
+      ],
+      "paths": [
+        "server/app/common/service/installation/InstallationPreflightHost.php",
+        "server/database/install.php",
+        "server/tests/Productization/InstallerBootstrapTest.php",
+        "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
+      "id": "PA-INSTALL-002",
+      "name": "一次性引导安装",
+      "area": "productization",
+      "status": "verified",
+      "summary": "PC11 已由 PR #279 合入 dev：guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导已形成；Standalone/Multi-tenant 登记空库资格与 Web 生产构建通过。PC70 pc70q14 已在固定派生应用候选完成 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "guided 模式只接受同源请求、Bearer setup token 和固定白名单输入",
+        "安装身份只在安装进程或请求内存中使用，不写入 server/.env 或资格证据",
+        "Standalone 与 Multi-tenant 空库均形成 91 张表、8 个已安装且启用的官方 Module",
+        "安装后状态锁死，重复执行返回 INSTALL_ALREADY_COMPLETED",
+        "Admin Web 安装路由和生产构建通过"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "d80337b6d7b800558131968e65f8039cb8781912"
+        },
+        {
+          "kind": "git",
+          "ref": "7684a5fcb4bd23cdd966ab760d16a8130ba41ced"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/279"
+        },
+        {
+          "kind": "report",
+          "ref": "output/p0e-pc11e1/pc11-summary.json"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-INSTALL-001",
+        "PA-PLUGIN-001"
+      ],
+      "paths": [
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/common/http/middleware/InstallationStateMiddleware.php",
+        "server/app/installation/controller/InstallationController.php",
+        "web/src/views/installation/index.vue",
+        "deploy/docker/php-entrypoint.sh"
+      ]
+    },
+    {
+      "id": "PA-READINESS-001",
+      "name": "首次运行生产准备清单",
+      "area": "productization",
+      "status": "verified",
+      "summary": "PC12 已由 PR #281 合入 dev：Tenant 安全的只读 Host 与 Admin 页面统一展示品牌、通知、存储、备份、Worker、当前域名/TLS 和账户安全的状态、影响、入口与生产阻塞性；状态严格区分本地配置、当前请求观察、未验证和尚未实施。PC70 pc70q14 已在固定派生应用候选完成 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "每项都返回稳定状态、影响、下一动作、配置入口或责任方，以及是否阻塞生产",
+        "Tenant 管理员只看到可行动的租户信息和实例结论，不看到主机、数据库地址或凭据",
+        "短信已配置不冒充真实送达，当前 HTTPS 不冒充全部域名资格",
+        "备份中心、Worker 心跳和邮件 Provider 的真实缺口可见且不会被静态配置掩盖",
+        "精确 readiness/checklist 权限、OpenAPI 投影、双语 Admin 页面和首次运行文档已形成"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "c8347692133921114d9ae535f7a893bb8699744c"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/281"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-INSTALL-002",
+        "PA-BRAND-001",
+        "PA-MODULE-002"
+      ],
+      "paths": [
+        "server/app/common/service/readiness/FirstRunReadinessHost.php",
+        "server/app/adminapi/controller/config/ReadinessController.php",
+        "server/database/migrations/20260827-first-run-readiness.sql",
+        "web/src/views/app-setting/readiness/index.vue",
+        "docs/peanut-admin-user-manual.md"
+      ]
+    },
+    {
+      "id": "PA-OPS-002",
+      "name": "单实例运行与维护控制台",
+      "area": "operations",
+      "status": "verified",
+      "summary": "PC20/PC40 已完成：Platform 控制面采用 Core Ops PHP/Web 状态与维护公共合同，展示数据库、迁移、Module、缓存、存储和版本，并可按 reason/revision/时间范围计划或关闭维护窗口。全局后端写门禁已在登记 development 数据库上真实返回 MAINTENANCE_WRITE_BLOCKED 并记录 denied 审计；PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "只有具备 platform.ops.read 权限的 Platform Operator 可以访问实例级状态",
+        "数据库、应用迁移、Module 目录和 Runtime 存储关键检查失败时整体状态为 unhealthy",
+        "非权威缓存读取失败时整体状态为 degraded，状态证据无法构造时接口 fail closed",
+        "版本提交、tree、Release 身份、构建时间和应用 migration 摘要使用固定 Core schema",
+        "Platform 维护写入同时要求 platform.ops.maintenance.manage 权限、revision 和幂等键；计划与关闭审计和状态变更处于同一事务",
+        "活动窗口期间所有 POST/PUT/PATCH/DELETE 在全局中间件真实拒绝并记录 denied Platform 审计；只有精确维护控制路由可穿透且仍受 Platform 权限保护",
+        "维护状态读取或审计写入异常时写请求 fail closed；页面隐藏不作为门禁"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "187bf95f65a98c5d373c96e4e341a96d65c99b33"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/283"
+        },
+        {
+          "kind": "git",
+          "ref": "468dc3b0ae09d351deaac264b34e110fe4a893d4"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/297"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OWNERSHIP-001"
+      ],
+      "paths": [
+        "server/app/platform/controller/PlatformOpsController.php",
+        "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php",
+        "server/app/platform/service/ops/PdoMaintenanceWindowStore.php",
+        "server/app/common/http/middleware/MaintenanceWriteGateMiddleware.php",
+        "platform/src/App.vue",
+        "platform/src/api/platform.ts"
+      ]
+    },
+    {
+      "id": "PA-DIAGNOSTICS-001",
+      "name": "可下载脱敏诊断包",
+      "area": "operations",
+      "status": "verified",
+      "summary": "PC21 已由 PR #285 合入 dev：Platform Operator 可下载固定 schema 的有界 JSON 诊断制品；运行状态、非秘密配置、Module、失败任务和 Platform 审计事件均为聚合或安全投影，服务端与浏览器共同验证 SHA-256。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "下载同时要求 platform.ops.read 与 platform.ops.logs.read，成功下载写入 Platform 审计",
+        "时间窗口只接受 60、360 或 1440 分钟，当前 UI 固定使用最近 60 分钟",
+        "制品不超过 1 MiB，包含 schema_version、payload_sha256 和响应制品 SHA-256",
+        "Platform Web 在保存前重新计算 SHA-256，摘要不一致时拒绝下载",
+        "原始日志、任意文件、绝对路径、请求头、Cookie、凭据、个人和 Tenant 业务记录均不进入制品"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "8873a92b1628dc8e12b5f7c2d1e1dae90a2387e9"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/285"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/product-closure-observability.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002"
+      ],
+      "paths": [
+        "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
+        "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
+        "server/app/platform/controller/PlatformOpsController.php",
+        "platform/src/api/platform.ts",
+        "docs/peanut-admin-user-manual.md"
+      ]
+    },
+    {
+      "id": "PA-BACKUP-001",
+      "name": "受信配对备份、恢复验证与应用备份中心",
+      "area": "operations",
+      "status": "verified",
+      "summary": "PC30—PC32 已完成：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 backup/restore worker、Application evidence 和 Platform 备份中心已形成。最终 dev@af7b1c9 的真实 Gate 将已验证配对制品恢复到登记新目标，得到 97 表、6 migration、Account/Tenant/TenantMember 各 1、零发布端口、受保护 Runtime 不变和成功零残留；PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "Provider、backup/restore handler、逻辑 restore target 和最大尝试次数全部由服务器固定注册",
+        "manifest schema 1 只接受 opaque backup reference、固定 Provider、源码与稳定资源身份、容量、停写窗口、镜像、固定 DB/文件 artifact 和责任 key",
+        "容量要求固定为 source bytes 的两倍加 1 GiB，available bytes 必须严格更大且 inode 为正",
+        "database.sql.gz 与 php-storage.tar.gz 必须成对出现并带非空字节数和 SHA-256；路径、命令、DSN、凭据、环境变量和任意 payload 不进入 manifest",
+        "Platform 只提交固定 Provider 与幂等键，任务和提交审计在同一事务内落账；最近任务、失败码、证据时间、年龄、manifest 摘要和 Runtime source 匹配可见",
+        "受信 worker 使用 task revision fencing 与 60 秒心跳；停写失败也必须恢复写入者，既有 backup ID 目录不得复用",
+        "Web 不接收或返回 handler、主机、数据库、路径、命令或凭据；只提交 opaque backup reference 与服务器固定 isolated-new-target",
+        "真实配对备份必须恢复到登记的新隔离目标，验证 manifest、Schema、代表 Account/Tenant/TenantMember、文件卷和零发布端口；活动生产与 production-candidate 身份必须前后一致",
+        "成功恢复必须原子写入 path-free evidence，并删除一次性容器、卷、内部网络、密码目录、临时 worker 镜像和租约；生产覆盖恢复仍需独立明确授权"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "dd6a877d1d31a583d0221c0a7b6a3ca325da8e77"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/287"
+        },
+        {
+          "kind": "git",
+          "ref": "9f33eb9fac44858d5d0575e1a760eec0d3af0694"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/289"
+        },
+        {
+          "kind": "git",
+          "ref": "af7b1c961bca314d9eba5c506aa6eca19fc1cf9b"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/291"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/architecture/product-closure-backup-provider-contract.md"
+        },
+        {
+          "kind": "resource",
+          "ref": "resources/project-resources.json"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002"
+      ],
+      "paths": [
+        "server/app/platform/service/ops/PairedBackupProvider.php",
+        "server/app/platform/service/ops/PairedBackupManifest.php",
+        "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
+        "server/app/platform/service/ops/PdoBackupTaskExecutionService.php",
+        "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
+        "server/app/platform/service/ops/RestoreVerificationEvidence.php",
+        "server/app/platform/service/ops/PlatformBackupCenterService.php",
+        "server/app/platform/service/ops/PlatformOpsRuntimeFactory.php",
+        "server/database/migrations/20260827-create-ops-backup-evidence.sql",
+        "server/database/migrations/20260827-create-ops-restore-evidence.sql",
+        "scripts/ops-backup-worker",
+        "scripts/ops-restore-worker",
+        "platform/src/App.vue",
+        "resources/project-resources.json",
+        "docs/architecture/product-closure-backup-provider-contract.md"
+      ]
+    },
+    {
+      "id": "PA-UPGRADE-002",
+      "name": "应用升级就绪、执行与恢复停止点",
+      "area": "operations",
+      "status": "verified",
+      "summary": "PC41/PC42 已由 PR #307/#310 合入 dev：Platform 先以固定 source/target、Release、migration、Module、scaffold、备份/恢复 evidence、维护窗口和 recovery pointer 判定就绪，再由持久化任务状态机与独立登记 worker 串联 preflight、配对备份、维护、唯一 deploy-release、迁移、smoke 和恢复指引。HTTP 不接受路径、URL、命令、Release、镜像或凭据；PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "固定 target descriptor 将 qualified Release commit/tree、scaffold manifests、migration inventories、target plugins.lock 和 target Kernel 身份绑定为不可变输入",
+        "目标 Release 源码根拒绝 symlink、特殊文件和越界解析；Plugin、Module 与 Web 内容只从目标树校验，不误用当前应用源码",
+        "当前 migration 不得 drift/pending，目标不得删除、改写、倒序或碰撞既有 migration",
+        "已安装 Module 不得被移除或降级，目标 Kernel constraint 和 Module 依赖必须满足",
+        "scaffold preview 与 CLI 使用同一 ownership/conflict 分类且不写 plan 或 ledger；app-owned 只返回数量和摘要",
+        "静态 preflight 与顶层 readiness 分离；顶层 ready 还要求匹配 Runtime 的已验证备份、同一 backup reference 的恢复 evidence 和 active planned-upgrade 维护窗口",
+        "跨大版本稳定返回 fresh/rebuild required；PC41 不执行下载、备份、维护、迁移、部署或恢复",
+        "PC42 只消费 PC41 固定 descriptor/checks 与匹配的恢复指针，并以 revision fencing 的持久化状态机逐步执行",
+        "升级执行按 preflight、backup、maintenance、deploy/migrate、smoke 和 recovery pointer 停止点记录稳定状态、失败码与下一恢复动作",
+        "Deployment worker 复用唯一 scripts/deploy-release；跨实例执行仍归独立运营平台"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "f77f48cbc1feb36c35597f263ff21fd17185809e"
+        },
+        {
+          "kind": "git",
+          "ref": "f1e6393a3f1c88fe620cc04e8147fb9c66199a6c"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/307"
+        },
+        {
+          "kind": "git",
+          "ref": "991d48712f75435e0016baca85d376effd575a91"
+        },
+        {
+          "kind": "git",
+          "ref": "4294fca1b1afcc6e8f1f0c0b76e4e628721d4f7b"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/310"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/architecture/product-closure-upgrade-execution.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002",
+        "PA-BACKUP-001",
+        "PA-PLUGIN-001",
+        "PA-SCAFFOLD-004"
+      ],
+      "paths": [
+        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
+        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+        "scripts/ops-upgrade-worker",
+        "server/app/platform/controller/PlatformOpsController.php",
+        "platform/src/App.vue",
+        "resources/project-resources.json",
+        "docs/architecture/product-closure-upgrade-execution.md",
+        "docs/peanut-admin-development-guide.md",
+        "docs/peanut-admin-user-manual.md",
+        "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
+      "id": "PA-PROVIDER-001",
+      "name": "外部 Provider 生产资格可见性",
+      "area": "operations",
+      "status": "verified",
+      "summary": "PC60 已由 PR #313 合入 dev：通知、支付、OAuth 和 Storage contributor 以 Platform-only 只读安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness；通用面板不外呼、不发送消息、不扣款，真实平台资格仍由各 Provider owner 按授权目标独立执行。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "每个 Provider subject 独立展示配置、连通、回调、凭据轮换、最近失败和 evidence 新鲜度，不把 configured 冒充 production ready",
+        "append-only evidence 只保存稳定状态、时间、来源和安全摘要，不保存凭据、token、回调 payload 或个人数据",
+        "Tenant-scoped contributor 从受信绑定派生 Tenant，Platform 聚合不接受请求方 tenant_id 或任意 Provider 标识",
+        "通用读取和 fake 合同零外呼、零消息、零资金动作；真实资格由 Provider owner 在明确授权目标上逐项执行",
+        "evidence 缺失、过期、绑定不一致或读取异常时保持 unavailable/degraded，而不是推断可用"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "9aa20dcb395e563aa73a1cbfd248880696e55395"
+        },
+        {
+          "kind": "git",
+          "ref": "4dbda351d590c35f4c2ffe4735057db54c240956"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/313"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/architecture/product-closure-provider-qualification.md"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002",
+        "PA-READINESS-001",
+        "PA-TENANCY-001"
+      ],
+      "paths": [
+        "server/app/platform/service/provider/PlatformProviderQualificationService.php",
+        "server/app/platform/service/provider/ProviderQualificationContributor.php",
+        "server/app/platform/service/provider/ProviderQualificationRecorder.php",
+        "server/app/platform/service/provider/PdoProviderQualificationEvidenceRepository.php",
+        "server/app/platform/service/provider/NotificationQualificationContributor.php",
+        "server/app/platform/service/provider/PaymentQualificationContributor.php",
+        "server/app/platform/service/provider/OauthQualificationContributor.php",
+        "server/app/platform/service/provider/StorageQualificationContributor.php",
+        "server/database/migrations/20260828-provider-qualification-evidence.sql",
+        "platform/src/components/ProviderQualificationCard.vue",
+        "docs/architecture/product-closure-provider-qualification.md"
+      ]
+    },
+    {
+      "id": "PA-CONFIG-001",
+      "name": "Tenant 配置包与环境转移",
+      "area": "operations",
+      "status": "verified",
+      "summary": "PC51 已由 PR #315 合入 dev：ImportExport Module 以 Tenant-only schema 1 包导出逻辑配置，使用 canonical checksum、dry-run、abort/overwrite/skip 冲突策略、秘密引用重绑定、原子写入与同事务审计；包、响应和审计均不包含密码、token、Cookie、callback key 或密钥。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "导出包固定 schema、protocol、Tenant scope、logical-reference-only asset 策略和 canonical SHA-256，且禁止 tenant_id 与明文秘密",
+        "dry-run 在零写入前验证 checksum、作用域、目标状态、冲突策略和全部 configured secret 引用",
+        "apply 只使用受信 Tenant Admin Context 和独立 RBAC 权限，所有 adapter 写入与成功审计处于同一 PDO 事务",
+        "缺失或停用的 Tenant Module 在 dry-run 阶段稳定阻塞，外部渠道用完整持久状态摘要进行乐观并发检查",
+        "Admin UI 在成功应用后清空秘密输入且禁止重复应用；配置转移与数据库/文件备份保持独立"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "eb6241d002a15f42614086a3d294f29a75e79530"
+        },
+        {
+          "kind": "git",
+          "ref": "869fea3fc9966d499e7712dd4967cd42e18ef823"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/315"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/api/openapi.yaml"
+        }
+      ],
+      "dependencies": [
+        "PA-OPS-002",
+        "PA-PLUGIN-001",
+        "PA-TENANCY-001"
+      ],
+      "paths": [
+        "server/app/Modules/Official/ImportExport/Application/ConfigurationTransferApplicationService.php",
+        "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationPackageCodec.php",
+        "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
+        "server/app/Modules/Official/ImportExport/Http/Controller/ConfigurationTransferController.php",
+        "server/app/Modules/Official/ImportExport/Resources/configuration-package.schema.json",
+        "web/src/modules/official-import-export/views/index.vue",
+        "docs/api/openapi.yaml"
       ]
     },
     {
@@ -202,14 +646,17 @@
     },
     {
       "id": "PA-PLUGIN-001",
-      "name": "Plugin 与 Module 生命周期",
+      "name": "Plugin/Module 生命周期与锁定信任矩阵",
       "area": "plugins",
       "status": "verified",
-      "summary": "安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture。",
+      "summary": "既有安装、重复安装、升级计划、回滚、TenantModule 授权、失败迁移、禁用和卸载已通过真实数据库 fixture；PC50 进一步在 dev@ed5ee19 固定 lock/manifest 的版本、依赖、权限摘要、migration 指纹、来源与信任状态，并让 install/reconcile/upgrade 共用同一资格解释。唯一 Runtime 只接受 bundled-locked，Marketplace 在签名、SBOM、许可证和漏洞响应 authority 完成前保持 blocked。",
       "acceptance": [
         "相同制品重复安装返回 unchanged",
         "失败迁移不得使 Plugin 进入 active",
-        "禁用和卸载保留业务数据且 finally 清理无残留"
+        "禁用和卸载保留业务数据且 finally 清理无残留",
+        "plugins.lock 与 manifest 必须固定版本、依赖、权限摘要、migration 指纹、来源、archive/签名/SBOM/许可证、资格和 verified-backup 要求",
+        "install、reconcile 和 upgrade 使用同一个资格判定并返回稳定 blocker；现行唯一 Runtime 只处理 bundled-locked，不引入第二插件 Runtime",
+        "没有 archive SHA-256、受信签名、SBOM、许可证审核和漏洞响应 authority 时 Marketplace 必须稳定 blocked，不能以 bundled 来源冒充已审核市场制品"
       ],
       "evidence": [
         {
@@ -219,10 +666,24 @@
         {
           "kind": "git",
           "ref": "a686d0fc7201f6f3ea76148898e9d33388421192"
+        },
+        {
+          "kind": "git",
+          "ref": "ed5ee1952dd01b8448adf1fb6e7c9ad4bc21be48"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/296"
         }
       ],
       "paths": [
-        "server/app/platform/service/plugin/PluginLifecycleService.php"
+        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "server/app/platform/service/plugin/PluginLockResolver.php",
+        "server/app/platform/service/plugin/PluginArtifactWriter.php",
+        "server/app/platform/service/plugin/PluginPackageArchiveService.php",
+        "server/resources/schemas/plugin.schema.json",
+        "plugins.lock",
+        "docs/plugin-module-development.md"
       ]
     },
     {
@@ -388,7 +849,7 @@
       "name": "P0-E 隔离资源登记",
       "area": "qualification",
       "status": "verified",
-      "summary": "项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。",
+      "summary": "项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过；PC70 pc70q14 固定候选 f6378f255241cbde25f374a8a0218fda4616c1ce 完成七组资格，数据库、Compose、容器、卷、网络、镜像、监听、cache 和 lease 均零残留或已释放。",
       "acceptance": [
         "数据库、服务、端口、cache 与 output 使用稳定资源 ID",
         "凭据只记录引用且不进入仓库",
@@ -407,6 +868,14 @@
         {
           "kind": "pull_request",
           "ref": "https://github.com/peanut-business/peanut-admin/pull/125"
+        },
+        {
+          "kind": "git",
+          "ref": "f6378f255241cbde25f374a8a0218fda4616c1ce"
+        },
+        {
+          "kind": "report",
+          "ref": "output/p0e-pc70q14/summary.json"
         }
       ],
       "paths": [
@@ -595,7 +1064,7 @@
       ],
       "paths": [
         "docs-site/capabilities.md",
-        "docs-site/deployment.md",
+        "docs-site/guide/deployment-upgrade.md",
         "resources/project-resources.json",
         "docs/product-status/releases/v2.1.5.json",
         "docs/product-status/deployments/v2.1.5-online-experience.json",
@@ -622,7 +1091,7 @@
         },
         {
           "kind": "document",
-          "ref": "docs-site/architecture/official-module-qualification.md"
+          "ref": "docs-site/guide/module-development.md"
         },
         {
           "kind": "document",
@@ -645,9 +1114,198 @@
         "server/app/common/service/module/ModuleExecutionContext.php",
         "server/app/common/service/module/ModuleExecutionGuard.php",
         "docs/architecture/module-execution-context-contract.md",
-        "docs-site/architecture/official-module-qualification.md",
-        "docs-site/architecture/module-execution-context.md",
+        "docs-site/guide/module-development.md",
+        "docs-site/guide/data-permissions-tenancy.md",
         "docs-site/capabilities.md"
+      ]
+    },
+    {
+      "id": "PA-MODULE-003",
+      "name": "Module 开发与 Tenant 安全脚手架",
+      "area": "scaffold",
+      "status": "verified",
+      "summary": "PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架。CR20 已由 PR #342 合入唯一只读 module:check Host/CLI，复用现有 manifest schema、版本约束、package preflight 与 archive validator，稳定报告八项检查且不访问数据库。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "acceptance": [
+        "Module key 唯一派生后端、前端和测试目录，任一目标已存在时整次拒绝且不覆盖",
+        "manifest 导出 key 派生的公开 Commands 合同，合同显式接收 TenantContext 且不暴露 PDO、ORM 或私有表",
+        "migration 指南固定 append-only、Tenant 外键与失败后显式 repair 语义，不生成可误执行的默认业务迁移",
+        "Tenant 安全骨架覆盖 A/B 隔离、伪造 ID、撤权、TenantModule 停用和失败 migration 不激活/不重放",
+        "Module 作者与自动化共用唯一只读检查 Host，稳定报告 manifest、版本、依赖、权限、菜单、migration、frontend 和 package 结果且不访问数据库",
+        "生成器、模板、开发文档和派生应用 inventory 使用同一实现"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "3b96cc0b1b58c64fd451fb04aca5d41907cb3126"
+        },
+        {
+          "kind": "git",
+          "ref": "eaa1c754b1c214f342a0b4ca94e620a16370d3a3"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/306"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/342"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/module-development-guide.md"
+        }
+      ],
+      "dependencies": [
+        "PA-PLUGIN-001",
+        "PA-MODULE-002"
+      ],
+      "paths": [
+        "server/app/common/service/module/ModuleScaffoldGenerator.php",
+        "server/app/command/ModuleCheck.php",
+        "server/app/platform/service/plugin/ModuleAuthorCheckHost.php",
+        "server/resources/module-scaffold/backend/Contracts/ModuleCommands.php.stub",
+        "server/resources/module-scaffold/backend/Database/Migrations/README.md.stub",
+        "server/resources/module-scaffold/tests/TenantSecurityDriver.php.stub",
+        "server/resources/module-scaffold/tests/TenantSecurityTest.php.stub",
+        "docs/module-development-guide.md",
+        "docs/plugin-module-development.md",
+        "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
+      "id": "PA-MODULE-004",
+      "name": "可消费 Module Package 全生命周期",
+      "area": "plugins",
+      "status": "verified",
+      "summary": "CR10 已冻结显式 Package 生命周期合同；CR11/CR12 已合入 development update 与 deployment-owned 安全编排。CR21 已由 PR #346 在两个独立生成应用间直接完成签名 Module v1→v2 的 create/check/pack/install/update/disable/reactivate/retire/Purge，TenantModule、Package、ModuleInstallation 与成员 RBAC 四层保持分离，app-owned 摘要不变。正式 Release adoption 仍由 CR31 验收。",
+      "acceptance": [
+        "应用 owner 使用受信 archive 完成 install、显式 v1 到 v2 update、disable、reactivate、retire 和双确认 Purge",
+        "update dry-run 零写入，并在版本、依赖、签名、checksum、migration、备份或维护不满足时于破坏性步骤前拒绝",
+        "成功更新时 package 文件、plugins.lock、Plugin/Module installation 和 migration ledger 采用同一不可变身份，失败时没有越权部分状态且有恢复指针",
+        "生产 HTTP 不接受任意包、路径或命令；交付变更只由 deployment-owned CLI/worker 消费登记资源",
+        "Package 安装、TenantModule 开通和成员 RBAC 保持三类独立写入，不自动互相授权"
+      ],
+      "evidence": [
+        {
+          "kind": "document",
+          "ref": "docs/architecture/consumer-module-lifecycle-contract.md"
+        },
+        {
+          "kind": "git",
+          "ref": "50c8577af25da078e8e35ee30a0311141d21b99f"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/346"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/plans/consumer-ready-product-plan.md"
+        }
+      ],
+      "dependencies": [
+        "PA-PLUGIN-001",
+        "PA-BACKUP-001",
+        "PA-UPGRADE-002"
+      ],
+      "paths": [
+        "server/app/command/ModuleInstallPackage.php",
+        "server/app/command/ModuleUpdatePackage.php",
+        "server/app/command/ModuleDisablePackage.php",
+        "server/app/command/ModuleUninstallPackage.php",
+        "server/app/platform/service/plugin/PluginPackageInstaller.php",
+        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "server/app/platform/service/ops/DeploymentModuleRequestService.php",
+        "server/app/platform/service/ops/PdoModuleOperationTaskExecutionService.php",
+        "scripts/ops-module-worker",
+        "scripts/consumer-module-reference-chain",
+        "server/tests/Productization/ModuleBundleLifecycleTest.php",
+        "server/tests/Productization/ModuleDeliveryOperationTest.php",
+        "docs/architecture/consumer-module-lifecycle-contract.md",
+        "docs/plans/consumer-ready-product-plan.md"
+      ]
+    },
+    {
+      "id": "PA-TENANCY-002",
+      "name": "Tenant 停用全局 Fail-Closed",
+      "area": "tenancy",
+      "status": "verified",
+      "summary": "CR13 已由 PR #344 合入 dev：管理/API/PC/H5 与公开内容继续通过 active Tenant/Host context；全部 Tenant 文件 URL 统一为短期签名应用交付，读取时重新查询 active Tenant 与 ready 对象，生产和开发 Nginx 的历史 `/storage/` 直出固定 404。登记 MySQL 聚焦验证证明已签发 URL 在 suspend 后拒绝、reactivate 后只恢复 ready 对象，archived 对象与 suspended 异步任务不复活。",
+      "acceptance": [
+        "Tenant 停用后管理、公开 API、PC/H5、公共内容和 Tenant 文件均拒绝访问",
+        "缓存、反向代理和对象存储路径不能绕过权威 Tenant 状态",
+        "Tenant 恢复后只恢复通过正常身份、Host、TenantModule 和 RBAC 判定的访问",
+        "任一绕过均作为安全阻塞，不得进入可消费固定候选"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "fbdfafcc1bfdaa4334eee2498e9c235e142c076b"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/344"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/plans/consumer-ready-product-plan.md"
+        }
+      ],
+      "dependencies": [
+        "PA-NATIVE-001"
+      ],
+      "paths": [
+        "server/app/common/service/tenant",
+        "server/app/common/service/storage",
+        "server/app/api/controller/StorageController.php",
+        "server/route",
+        "deploy/nginx/peanut-admin.conf",
+        "server/tests/Multitenancy/TenantEntryBindingResolverTest.php",
+        "server/tests/Multitenancy/TaskImportExportTenantIsolationTest.php",
+        "docs/plans/consumer-ready-product-plan.md"
+      ]
+    },
+    {
+      "id": "PA-DELIVERY-005",
+      "name": "正式可消费源码交付",
+      "area": "delivery",
+      "status": "planned",
+      "summary": "PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 已建立公开消费者支持并完成历史证据收敛。CR30 已以正式 adoption 双应用 Module v1→v2 通过第 8 资格组的 Development 聚焦链；CR31 正在冻结产品/scaffold 同名的 3.0.11 候选，随后 CR31/CR40 仍须完成唯一组合资格和正式 main/Tag/GitHub Release。",
+      "acceptance": [
+        "同一固定 commit/tree 通过 create-app、双模式 fresh、Module v1 到 v2 全生命周期、应用升级、生产 Compose/浏览器和零残留组合资格",
+        "dev、main、annotated tag、GitHub Release、scaffold manifest、源码附件和能力快照引用同一不可变身份",
+        "从正式 Release 创建的两个独立应用能复现 Module 作者与应用 owner 的完整二次开发和交付流程",
+        "公开文档、兼容矩阵、诊断包与支持入口不再把旧版本示例写成当前正式指引"
+      ],
+      "evidence": [
+        {
+          "kind": "document",
+          "ref": "docs/plans/consumer-ready-product-plan.md"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/348"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/352"
+        }
+      ],
+      "dependencies": [
+        "PA-MODULE-004",
+        "PA-TENANCY-002",
+        "PA-SCAFFOLD-001",
+        "PA-MODULE-003"
+      ],
+      "paths": [
+        "docs/plans/consumer-ready-product-plan.md",
+        "docs-site/guide/application-module-lifecycle.md",
+        "docs-site/reference.md",
+        "docs-site/support.md",
+        "SECURITY.md",
+        "scripts/p0e-runtime-qualification",
+        "scripts/create-app",
+        "scaffold/releases"
       ]
     },
     {

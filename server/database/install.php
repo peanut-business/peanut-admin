@@ -10,6 +10,15 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
+$installerArguments = $_SERVER['argv'] ?? [];
+$installerIsDirect = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
+if ($installerIsDirect && in_array('--preflight', $installerArguments, true)) {
+    require_once dirname(__DIR__) . '/app/common/service/installation/InstallationPreflightHost.php';
+    $preflight = (new \app\common\service\installation\InstallationPreflightHost(dirname(__DIR__)))->inspect();
+    echo json_encode($preflight, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
+    exit($preflight['status'] === 'ready' ? 0 : 1);
+}
+
 /**
  * Peanut Admin fresh-database installer.
  *
@@ -98,6 +107,89 @@ function initialPlatformCredentials(string $serverDir, string $adminEmail): ?arr
     }
 
     return ['email' => $email, 'password' => (string)$password];
+}
+
+/**
+ * @param array<string,mixed> $input
+ * @return array{admin_email:string,admin_password:string,platform_credentials:array{email:string,password:string}|null}
+ */
+function normalizeInstallationCredentials(array $input): array
+{
+    $allowed = ['admin_email', 'admin_password', 'platform_email', 'platform_password'];
+    $unknown = array_values(array_diff(array_keys($input), $allowed));
+    if ($unknown !== []) {
+        throw new RuntimeException('安装身份包含不支持的字段');
+    }
+
+    $adminEmail = strtolower(trim((string)($input['admin_email'] ?? '')));
+    if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('ADMIN_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    $adminPassword = (string)($input['admin_password'] ?? '');
+    validateInitialAdminPassword($adminPassword);
+
+    $mode = getenv('DEPLOYMENT_MODE');
+    if ($mode !== 'standalone' && $mode !== 'multi-tenant') {
+        throw new RuntimeException('DEPLOYMENT_MODE 必须是 standalone 或 multi-tenant');
+    }
+    if ($mode === 'standalone') {
+        if (trim((string)($input['platform_email'] ?? '')) !== ''
+            || (string)($input['platform_password'] ?? '') !== '') {
+            throw new RuntimeException('standalone 安装不得提供 Platform 初始身份');
+        }
+        return [
+            'admin_email' => $adminEmail,
+            'admin_password' => $adminPassword,
+            'platform_credentials' => null,
+        ];
+    }
+
+    $platformEmail = strtolower(trim((string)($input['platform_email'] ?? '')));
+    if (filter_var($platformEmail, FILTER_VALIDATE_EMAIL) === false) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须是有效邮箱');
+    }
+    if (hash_equals($adminEmail, $platformEmail)) {
+        throw new RuntimeException('PLATFORM_INITIAL_EMAIL 必须与 ADMIN_INITIAL_EMAIL 不同');
+    }
+    $platformPassword = (string)($input['platform_password'] ?? '');
+    if (getenv('PEANUT_DEMO_MODE') === 'enabled') {
+        if ($platformPassword !== 'peanut1234') {
+            throw new RuntimeException('演示模式的 Platform 初始密码必须统一为 peanut1234');
+        }
+    } elseif (strlen($platformPassword) < 12) {
+        throw new RuntimeException('PLATFORM_INITIAL_PASSWORD 至少 12 位');
+    }
+
+    return [
+        'admin_email' => $adminEmail,
+        'admin_password' => $adminPassword,
+        'platform_credentials' => ['email' => $platformEmail, 'password' => $platformPassword],
+    ];
+}
+
+/** @return array{admin_email:string,admin_password:string,platform_email:string,platform_password:string} */
+function installationCredentialsFromEnvironment(): array
+{
+    return [
+        'admin_email' => (string)(getenv('ADMIN_INITIAL_EMAIL') ?: ''),
+        'admin_password' => (string)(getenv('ADMIN_INITIAL_PASSWORD') ?: ''),
+        'platform_email' => (string)(getenv('PLATFORM_INITIAL_EMAIL') ?: ''),
+        'platform_password' => (string)(getenv('PLATFORM_INITIAL_PASSWORD') ?: ''),
+    ];
+}
+
+/** @return array<string,mixed> */
+function automaticInstallationInput(): array
+{
+    $input = installationCredentialsFromEnvironment();
+    $configuredModules = getenv('PEANUT_INSTALLATION_OFFICIAL_MODULES');
+    if ($configuredModules !== false && trim($configuredModules) !== '') {
+        $input['official_modules'] = array_values(array_filter(array_map(
+            'trim',
+            explode(',', $configuredModules),
+        )));
+    }
+    return $input;
 }
 
 /** @return array<string, string> */
@@ -459,15 +551,55 @@ function migrationArguments(array $arguments): ?array
     return [$target, $dryRun];
 }
 
-function main(): int
+/**
+ * @return array{state:string,code:string,health:array<string,int>|null}
+ */
+function installationDatabaseState(string $serverDir): array
 {
-    $databaseDir = __DIR__;
-    $serverDir = dirname($databaseDir);
     loadCoreRuntime($serverDir);
     $config = loadConfig($serverDir);
-    $database = $config['DB_NAME'];
+    $pdo = new PDO(
+        sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            $config['DB_HOST'],
+            $config['DB_PORT'],
+            $config['DB_NAME']
+        ),
+        $config['DB_USER'],
+        $config['DB_PASS'],
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]
+    );
+    $tableCount = (int)$pdo->query(
+        'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()'
+    )->fetchColumn();
+    if ($tableCount === 0) {
+        return ['state' => 'uninstalled', 'code' => 'INSTALL_DATABASE_EMPTY', 'health' => null];
+    }
 
-    if (!preg_match('/^[A-Za-z0-9_]+$/', $database)) {
+    try {
+        $health = assertCurrentDatabase($pdo);
+        return ['state' => 'installed', 'code' => 'INSTALL_DATABASE_CURRENT', 'health' => $health];
+    } catch (Throwable) {
+        return ['state' => 'blocked', 'code' => 'INSTALL_DATABASE_PARTIAL', 'health' => null];
+    }
+}
+
+/**
+ * @param array<string,mixed> $input
+ * @return array<string,mixed>
+ */
+function installFreshDatabase(string $serverDir, array $input): array
+{
+    $databaseDir = $serverDir . '/database';
+    loadCoreRuntime($serverDir);
+    $credentials = normalizeInstallationCredentials($input);
+    $config = loadConfig($serverDir);
+    $database = $config['DB_NAME'];
+    if (!preg_match('/^[A-Za-z0-9_]+$/D', $database)) {
         throw new RuntimeException('DB_NAME 只能包含字母、数字和下划线');
     }
 
@@ -483,6 +615,7 @@ function main(): int
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
             PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
         ]
     );
@@ -497,57 +630,16 @@ function main(): int
     try {
         $files = sqlFiles($databaseDir);
         $expected = expectedTables($files);
-        $tableCountStatement = $pdo->prepare(
-            'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?'
-        );
-        $tableCountStatement->execute([$database]);
-        if ((int)$tableCountStatement->fetchColumn() !== 0) {
-            if (!in_array('--skip-if-installed', $_SERVER['argv'] ?? [], true)) {
-                throw new RuntimeException('目标数据库不是空库，已拒绝执行首次安装');
-            }
-
-            $actualStatement = $pdo->prepare(
-                'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME'
-            );
-            $actualStatement->execute([$database]);
-            $actual = $actualStatement->fetchAll(PDO::FETCH_COLUMN);
-            $missing = array_values(array_diff($expected, $actual));
-            $activeMenus = in_array('pa_system_menu', $actual, true)
-                ? (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn()
-                : 0;
-            $configCount = in_array('pa_config', $actual, true)
-                ? (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn()
-                : 0;
-            $coreIdentity = $missing === []
-                ? coreIdentityCounts($pdo)
-                : ['tenant_count' => 0, 'owner_count' => 0, 'operator_count' => 0];
-            if ($missing !== []
-                || $activeMenus === 0
-                || $configCount === 0
-                || $coreIdentity !== ['tenant_count' => 1, 'owner_count' => 1, 'operator_count' => 1]) {
-                throw new RuntimeException('已有数据库结构不完整，拒绝跳过安装：' . json_encode(
-                    [
-                        'missing_tables' => $missing,
-                        'active_menus' => $activeMenus,
-                        'configs' => $configCount,
-                        'core_identity' => $coreIdentity,
-                    ],
-                    JSON_UNESCAPED_UNICODE
-                ));
-            }
-
-            echo json_encode([
-                'database' => $database,
-                'status' => 'already_installed',
-                'tables' => count($actual),
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
-            return 0;
+        $tableCount = (int)$pdo->query(
+            'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()'
+        )->fetchColumn();
+        if ($tableCount !== 0) {
+            throw new RuntimeException('目标数据库不是空库，已拒绝执行首次安装');
         }
 
-        $adminPassword = initialAdminPassword($serverDir);
-        $adminEmail = initialAdminEmail($serverDir);
-        $platformCredentials = initialPlatformCredentials($serverDir, $adminEmail);
-        $brandDefaults = brandWebsiteDefaults($serverDir);
+        $adminEmail = $credentials['admin_email'];
+        $adminPassword = $credentials['admin_password'];
+        $platformCredentials = $credentials['platform_credentials'];
         $coreIdentity = initializeCoreIdentity(
             $pdo,
             $adminEmail,
@@ -564,32 +656,23 @@ function main(): int
             );
         }
         executeSqlFiles($pdo, $files);
-        seedBrandDefaults($pdo, $brandDefaults);
+        seedBrandDefaults($pdo, brandWebsiteDefaults($serverDir));
 
-        $actualStatement = $pdo->prepare(
-            'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME'
-        );
-        $actualStatement->execute([$database]);
-        $actual = $actualStatement->fetchAll(PDO::FETCH_COLUMN);
+        $actual = array_map('strval', $pdo->query(
+            'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME'
+        )->fetchAll(PDO::FETCH_COLUMN));
         $missing = array_values(array_diff($expected, $actual));
-
         $activeMenus = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
         $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
-        $coreIdentityCounts = coreIdentityCounts($pdo);
-
+        $identityCounts = coreIdentityCounts($pdo);
         if ($missing !== []
             || $activeMenus === 0
             || $configCount === 0
-            || $coreIdentityCounts !== ['tenant_count' => 1, 'owner_count' => 1, 'operator_count' => 1]) {
-            throw new RuntimeException('安装结果不完整：' . json_encode([
-                'missing_tables' => $missing,
-                'active_menus' => $activeMenus,
-                'configs' => $configCount,
-                'core_identity' => $coreIdentityCounts,
-            ], JSON_UNESCAPED_UNICODE));
+            || $identityCounts !== ['tenant_count' => 1, 'owner_count' => 1, 'operator_count' => 1]) {
+            throw new RuntimeException('安装结果不完整');
         }
 
-        echo json_encode([
+        return [
             'database' => $database,
             'baseline' => 'init.sql',
             'tables' => count($actual),
@@ -599,25 +682,47 @@ function main(): int
             'default_tenant_id' => $coreIdentity['tenant_id'],
             'owner_account_id' => $coreIdentity['account_id'],
             'owner_member_id' => $coreIdentity['member_id'],
-        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
+        ];
     } finally {
         $releaseStatement = $pdo->prepare('SELECT RELEASE_LOCK(?)');
         $releaseStatement->execute([$lockName]);
     }
+}
 
+function main(): int
+{
+    $result = installFreshDatabase(dirname(__DIR__), installationCredentialsFromEnvironment());
+    echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
     return 0;
 }
 
-if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+if ($installerIsDirect) {
     try {
         $migration = migrationArguments($_SERVER['argv'] ?? []);
         if ($migration !== null) {
             echo json_encode(migrateDatabase(dirname(__DIR__), $migration[0], $migration[1]), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
             exit(0);
         }
-        exit(main());
+        $host = new \app\common\service\installation\InstallationExecutionHost(dirname(__DIR__));
+        if (in_array('--status', $_SERVER['argv'] ?? [], true)) {
+            $status = $host->status();
+            echo json_encode($status, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
+            exit($status['state'] === 'installed' ? 0 : 1);
+        }
+        $status = $host->status();
+        if ($status['state'] === 'installed'
+            && in_array('--skip-if-installed', $_SERVER['argv'] ?? [], true)) {
+            echo json_encode($status, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
+            exit(0);
+        }
+        $result = $host->executeAutomatic(automaticInstallationInput());
+        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
+        exit(0);
+    } catch (\app\common\service\installation\InstallationExecutionException $exception) {
+        fwrite(STDERR, '安装失败：' . $exception->errorCode . PHP_EOL);
+        exit(1);
     } catch (Throwable $exception) {
-        fwrite(STDERR, '安装失败：' . $exception->getMessage() . PHP_EOL);
+        fwrite(STDERR, '安装失败：INSTALL_EXECUTION_FAILED' . PHP_EOL);
         exit(1);
     }
 }

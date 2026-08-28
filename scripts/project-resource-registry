@@ -127,7 +127,7 @@ def main() -> int:
     registry = load_registry()
 
     if args.command == "validate":
-        for target in ("local-development", "local-production-preview", "local-multi-tenant-demo", "production", "production-candidate"):
+        for target in ("local-development", "local-production-preview", "local-multi-tenant-demo", "production", "production-candidate", "production-restore-verification"):
             database = database_for_target(registry, target)
             endpoint_for_consumer(database, "container")
         database = database_for_target(registry, "local-development")

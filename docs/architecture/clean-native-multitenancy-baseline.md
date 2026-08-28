@@ -1,14 +1,14 @@
 # Peanut Admin 原生多租户干净基线
 
-> 状态：实施中
+> 状态：current（3.0 fresh-only 基线）
 >
 > 授权日期：2026-08-16
 >
-> 适用范围：下一主版本的源码、fresh install、create-app、当前 Runtime 与公开文档。
+> 适用范围：当前 3.0 fresh-only 源码、fresh install、create-app、Runtime 与公开文档。
 
 ## 1. 决策
 
-下一主版本以当前多租户产品能力为基础重建干净安装基线，不提供 `v1.1.x` 数据库或
+当前 3.0 fresh-only 基线以多租户产品能力为基础建立干净安装路径，不提供旧大版本数据库或
 脚手架的原地升级路径。旧 tag、Release 和 Git 历史只用于追溯，不进入当前 Runtime、
 Schema、安装包、create-app inventory 或日常文档。
 
@@ -24,7 +24,7 @@ Schema、安装包、create-app inventory 或日常文档。
 - `pa_member` 是客户侧业务会员和登录模型，不与管理 Account 合并。
 - 管理请求的 Tenant 只来自已验证会话；请求参数、Host 默认值或 legacy map 不能改变它。
 
-完成后，当前 Runtime 不得引用：
+在当前基线中，Runtime 不得引用：
 
 - `pa_legacy_admin_tenant_map`；
 - `pa_legacy_role_tenant_map`；
@@ -41,7 +41,7 @@ Schema、安装包、create-app inventory 或日常文档。
 - create-app 生成物与源仓 fresh install 使用相同 Schema、Runtime 和测试合同。
 - 明确的余额、流水和状态兼容镜像只能保留一个权威字段；删除前逐域确认读写消费者。
 
-开发数据库不原地升级。采用下一主版本时重新创建空数据库并重新安装。
+开发数据库不原地升级。采用当前 fresh-only 基线时重新创建空数据库并重新安装。
 
 ## 4. 官方能力的强制 Tenant Gate
 
@@ -55,7 +55,17 @@ Schema、安装包、create-app inventory 或日常文档。
 6. 至少有两个 Tenant 的读取、写入和拒绝断言；外部能力使用本地可信 transport fixture。
 
 不满足 Gate 的非核心能力必须在修复后交付，或从版本 Runtime、菜单和文档中退出。不能
-标记为“可选支持多租户”。本轮不把现有 app-owned 能力重构为 Plugin。
+标记为“可选支持多租户”。当前基线不把现有 app-owned 能力重构为 Plugin。
+
+Tenant 状态是连续请求边界，不只在登录或签发 URL 时检查。`suspended/closed` Tenant 的管理会话、
+公开 API、PC/H5 内容、异步任务和文件交付都必须在新请求中 fail closed；恢复为 `active` 只恢复仍
+满足 Host、身份、TenantModule、RBAC、对象 `ready` 状态和签名时效的访问，不重放 dead task 或恢复
+archived 对象。
+
+Tenant 文件统一通过短期签名的 `/api/storage/delivery` 读取，并在对象查询中同时要求 Tenant
+`active`。应用服务器代理 local 与私有 Provider 内容，响应固定 `no-store`；Nginx 对历史
+`/storage/` 直出返回 404。云 Provider bucket 必须保持私有，公开/私有仅是业务用途和 disposition，
+不允许成为绕过 Tenant 状态的物理公开 ACL。
 
 ## 5. 文档边界
 

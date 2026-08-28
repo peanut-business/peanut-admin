@@ -1,7 +1,7 @@
 # Local demo access
 
-本地单租户和多租户的登录表统一维护在 [Demo 登录信息](../../docs-site/demo-access.md) 页面；本文件
-只记录多租户体验所需的资源、端口和启动方式，不再复制账号表。
+本地单租户和多租户的登录账号只存在于获授权的隔离运行资源；本文件只记录多租户体验所需的
+资源、端口和启动方式，不复制账号表。
 
 ## Runtime resources
 
@@ -23,5 +23,5 @@ credentials and signing keys; those values are not recorded in this document. Th
 credential reference remains the private resource entry in
 `resources/project-resources.json`.
 
-When a local demo account, password, hostname, port, or database changes, update the unified Demo
-page, this resource section and the corresponding defaults in `scripts/local-multi-tenant-demo` together.
+When a local demo account, password, hostname, port, or database changes, update this resource
+section, the corresponding resource registry entry and the defaults in `scripts/local-multi-tenant-demo` together.

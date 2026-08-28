@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
+use app\common\service\storage\StorageRepository;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -42,10 +43,34 @@ CREATE TABLE pa_tenant_entry_binding (
   status TEXT NOT NULL,
   UNIQUE (host, client_key)
 );
+CREATE TABLE pa_storage_account (
+  id INTEGER PRIMARY KEY, account_key TEXT, driver TEXT, name TEXT,
+  credential_ciphertext TEXT, credential_key_version INTEGER, status TEXT
+);
+CREATE TABLE pa_storage_space (
+  id INTEGER PRIMARY KEY, account_id INTEGER, space_key TEXT, name TEXT,
+  access_type TEXT, bucket TEXT, region TEXT, endpoint TEXT,
+  access_domain TEXT, local_path TEXT, status TEXT
+);
+CREATE TABLE pa_file_object (
+  id INTEGER PRIMARY KEY, file_key TEXT, tenant_id INTEGER, purpose TEXT,
+  access_type TEXT, storage_space_id INTEGER, object_key TEXT, disposition TEXT,
+  original_name TEXT, media_type TEXT, size_bytes INTEGER, sha256 TEXT,
+  status TEXT, created_by_member_id INTEGER, revision INTEGER,
+  created_at TEXT, updated_at TEXT, archived_at TEXT
+);
 INSERT INTO pa_tenant (id,code,status) VALUES
   (101,'alpha','active'),
   (202,'beta','active'),
   (303,'paused','suspended');
+INSERT INTO pa_storage_account VALUES (1,'local','local','Local',NULL,1,'active');
+INSERT INTO pa_storage_space VALUES (1,1,'local-public','Local public','public',NULL,NULL,NULL,NULL,'public/storage','active');
+INSERT INTO pa_file_object VALUES (
+  1,'file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',101,'material.image','public',1,
+  'tenants/v1/101/material/image/file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png',
+  'inline','alpha.png','image/png',5,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  'ready',NULL,1,'2030-01-01','2030-01-01',NULL
+);
 SQL);
 
 $fallbackCalls = 0;
@@ -55,6 +80,11 @@ $resolver = new TenantEntryBindingResolver(
         $fallbackCalls++;
         return new TenantSystemContext(999, $actor, $operation, $operationId);
     },
+);
+$storage = new StorageRepository($pdo);
+entryBindingExpect(
+    $storage->deliverableObjectForTenant(101, 'file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') !== null,
+    'an active Tenant file was not deliverable',
 );
 $boundRequest = new class {
     public function host(): string { return 'ALPHA.Example.test:443'; }
@@ -223,6 +253,26 @@ entryBindingRejects(
     'a suspended bound Tenant silently used the default Tenant',
 );
 entryBindingExpect($fallbackCalls === 1, 'a configured failure reached the compatibility fallback');
+entryBindingExpect(
+    $storage->deliverableObjectForTenant(101, 'file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') === null,
+    'a suspended Tenant file remained deliverable',
+);
+$pdo->exec("UPDATE pa_tenant SET status='active' WHERE id=101");
+entryBindingExpect(
+    $storage->deliverableObjectForTenant(101, 'file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') !== null,
+    'reactivation did not restore a still-ready Tenant file',
+);
+$reactivated = $resolver->system(
+    $boundRequest,
+    TenantEntryBindingResolver::MEMBER_CLIENT,
+    'member-public-auth',
+    'member.login',
+    'entry-reactivated',
+);
+entryBindingExpect(
+    $reactivated->tenantId === 101,
+    'reactivation did not restore the legitimate bound Tenant entry',
+);
 
 $sessionController = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/tenant/controller/TenantSessionController.php'
@@ -230,6 +280,15 @@ $sessionController = (string)file_get_contents(
 $loginMiddleware = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/adminapi/http/middleware/LoginMiddleware.php'
 );
+$storageService = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/app/common/service/storage/StorageService.php'
+);
+$storageController = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/app/api/controller/StorageController.php'
+);
+$routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+$productionNginx = (string)file_get_contents(dirname(__DIR__, 3) . '/deploy/nginx/peanut-admin.conf');
+$developmentNginx = (string)file_get_contents(dirname(__DIR__, 3) . '/deploy/nginx/development.conf');
 entryBindingExpect(
     str_contains($sessionController, 'TENANT_SWITCH_BOUND_ENTRY')
         && str_contains($sessionController, 'assertTenantAccess('),
@@ -240,6 +299,19 @@ entryBindingExpect(
         && str_contains($loginMiddleware, 'tenantEntryBound'),
     'Admin session requests lost the continuous Host boundary',
 );
+entryBindingExpect(
+    str_contains($routes, "api/storage/delivery")
+        && !str_contains($routes, "api/storage/private")
+        && str_contains($storageService, 'deliverableObjectForTenant')
+        && str_contains($storageController, "'Cache-Control' => 'no-store, private'"),
+    'Tenant file delivery did not converge on the active-Tenant service boundary',
+);
+foreach ([$productionNginx, $developmentNginx] as $nginx) {
+    entryBindingExpect(
+        preg_match('#location \^~ /storage/ \{\s*return 404;\s*\}#s', $nginx) === 1,
+        'a direct /storage/ proxy or static path bypasses Tenant state',
+    );
+}
 
 $schema = (string)file_get_contents(
     dirname(__DIR__, 2) . '/database/init.sql'
