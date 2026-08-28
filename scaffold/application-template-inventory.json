@@ -161,7 +161,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "01def8e29e24ebb613031c5fc40f7bfee27bc439c4a28ddd36563a164450cfd5"
+            "source_sha256": "77dbc16853c09ea4e10401b19a4b706cac7fa52ec382ab6efa33ed21474a4d9d"
         },
         {
             "path": "AGENTS.md",
@@ -15013,7 +15013,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2234930f72380a2da8dd63fe0bdb5ac3bd21a53a9f1212a2ecb708f6046a0745"
+            "source_sha256": "56b06d63ff8536bf13a1957e06e3888098f42e8e8f2396ec9810a569166b96d8"
         },
         {
             "path": "server/database/init.sql",
@@ -15225,6 +15225,20 @@
             ]
         },
         {
+            "path": "server/private/storage/.gitkeep",
+            "target": "server/private/storage/.gitkeep",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        {
             "path": "server/public/.htaccess",
             "target": "server/public/.htaccess",
             "classification": "managed",
@@ -15419,6 +15433,20 @@
                 "full"
             ],
             "source_sha256": "5c89a8a9c5af258d02d0bfd3582c75963bea53baa1f5f5132662b80020a63452"
+        },
+        {
+            "path": "server/public/storage/.gitkeep",
+            "target": "server/public/storage/.gitkeep",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
         },
         {
             "path": "server/resources/module-scaffold/backend/Contracts/ModuleCommands.php.stub",
@@ -15740,6 +15768,20 @@
                 "full"
             ],
             "source_sha256": "a8ed3c2e10e43428794824f0f7436f08c7e7f79eedaea4baa0da8cd761ee7f05"
+        },
+        {
+            "path": "server/runtime/.gitkeep",
+            "target": "server/runtime/.gitkeep",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
         },
         {
             "path": "server/tests/Multitenancy/AdminApiPermissionBoundaryTest.php",
