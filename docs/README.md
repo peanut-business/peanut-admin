@@ -15,6 +15,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |
 | Follow the product-closure work | [Execution queue](plans/product-closure-execution-queue.md), [compatibility baseline](architecture/product-closure-core-application-compatibility.md) and [observability panel](product-status/product-closure-observability.md) | internal decisions and execution evidence; not capability completion proof |
 | Follow consumer-ready delivery | [Consumer-ready product plan](plans/consumer-ready-product-plan.md) and [evidence retention register](maintenance/consumer-ready-evidence-retention.md) | current post-closure queue plus path-level keep/archive/delete decisions and recovery pointers |
+| Prevent avoidable delivery retries | [Consumer-ready minimal controller](operations/consumer-ready-control.md) | current read-only preflight contract and upgrade boundary |
 | Compare product capabilities | [Product capability reference matrix](reference/product-capability-reference-matrix.md) | researched reference and Core/Application adoption decisions; not completion proof |
 | Plan future work | `docs/plans/` and `docs/design/` | planned, never implementation proof |
 | Operate or release | `docs/operations/` and [release engineering](release-engineering.md) | current procedures |

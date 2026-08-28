@@ -2712,6 +2712,19 @@
             ]
         },
         {
+            "path": "docs/operations/consumer-ready-control.md",
+            "target": "docs/operations/consumer-ready-control.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/operations/demo-access.md",
             "target": "docs/operations/demo-access.md",
             "classification": "excluded",
@@ -4081,6 +4094,19 @@
             ]
         },
         {
+            "path": "resources/consumer-ready-control.json",
+            "target": "resources/consumer-ready-control.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "resources/p0e-runtime-qualification.json",
             "target": "resources/p0e-runtime-qualification.json",
             "classification": "excluded",
@@ -4272,6 +4298,19 @@
         {
             "path": "scripts/consumer-module-reference-chain",
             "target": "scripts/consumer-module-reference-chain",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "scripts/consumer-ready-control",
+            "target": "scripts/consumer-ready-control",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",

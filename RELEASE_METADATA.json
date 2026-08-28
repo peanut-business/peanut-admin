@@ -54,7 +54,7 @@
     "summary_sha256": null,
     "cleanup_residual_count": null,
     "lease_released": false,
-    "migrations": 8,
+    "migrations": 9,
     "scaffold_version": "3.0.11",
     "application_initial_version": "0.1.0",
     "evidence": "CR31 qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",

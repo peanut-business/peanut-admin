@@ -4260,6 +4260,36 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-operations-consumer-ready-control",
+      "path": "docs/operations/consumer-ready-control.md",
+      "title": "Consumer-ready 最小交付控制器",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "guide",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "resources/consumer-ready-control.json",
+        "scripts/consumer-ready-control",
+        "scripts/check-release-consistency",
+        "resources/project-resources.json",
+        "resources/p0e-runtime-qualification.json"
+      ],
+      "owner": "release-qualification",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-operations-release-candidate-control",
       "path": "docs/operations/release-candidate-control.md",
       "title": "发布候选控制：给人和智能体看的简单说明",

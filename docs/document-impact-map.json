@@ -31,13 +31,23 @@
     {
       "id": "cli-command",
       "paths": ["scripts/*", "server/think", "server/app/command/*.php", "server/app/**/command/**/*.php"],
-      "exclude_paths": ["scripts/docs-governance"],
+      "exclude_paths": ["scripts/docs-governance", "scripts/consumer-ready-control"],
       "classifications": ["technical", "developer-site"],
       "upstream": ["executable command and --help output"],
       "technical_docs": ["docs/peanut-admin-development-guide.md", "docs/release-engineering.md"],
       "site_docs": ["docs-site/getting-started.md", "docs-site/reference.md"],
       "generated": [],
       "reason": "Only pages that name the changed command are in scope."
+    },
+    {
+      "id": "consumer-ready-control",
+      "paths": ["scripts/consumer-ready-control", "resources/consumer-ready-control.json", "docs/operations/consumer-ready-control.md", "AGENT_EXECUTION_RULES.md"],
+      "classifications": ["technical"],
+      "upstream": ["read-only consumer-ready preflight policy and executable"],
+      "technical_docs": ["docs/operations/consumer-ready-control.md", "docs/release-engineering.md", "docs/README.md"],
+      "site_docs": [],
+      "generated": [],
+      "reason": "The controller is an internal release-preparation guard and has no public developer-site projection."
     },
     {
       "id": "schema-migration-owner",
