@@ -1064,7 +1064,7 @@
       ],
       "paths": [
         "docs-site/capabilities.md",
-        "docs-site/deployment.md",
+        "docs-site/guide/deployment-upgrade.md",
         "resources/project-resources.json",
         "docs/product-status/releases/v2.1.5.json",
         "docs/product-status/deployments/v2.1.5-online-experience.json",
@@ -1091,7 +1091,7 @@
         },
         {
           "kind": "document",
-          "ref": "docs-site/architecture/official-module-qualification.md"
+          "ref": "docs-site/guide/module-development.md"
         },
         {
           "kind": "document",
@@ -1114,8 +1114,8 @@
         "server/app/common/service/module/ModuleExecutionContext.php",
         "server/app/common/service/module/ModuleExecutionGuard.php",
         "docs/architecture/module-execution-context-contract.md",
-        "docs-site/architecture/official-module-qualification.md",
-        "docs-site/architecture/module-execution-context.md",
+        "docs-site/guide/module-development.md",
+        "docs-site/guide/data-permissions-tenancy.md",
         "docs-site/capabilities.md"
       ]
     },

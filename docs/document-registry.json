@@ -3844,7 +3844,7 @@
         "AGENTS.md"
       ],
       "owner": "product-architecture",
-      "status": "planned",
+      "status": "archived",
       "scope": [
         "application"
       ],
@@ -4474,7 +4474,7 @@
         "uniapp/package.json"
       ],
       "owner": "product-architecture",
-      "status": "planned",
+      "status": "archived",
       "scope": [
         "application"
       ],
@@ -4804,7 +4804,7 @@
         "AGENTS.md"
       ],
       "owner": "product-architecture",
-      "status": "planned",
+      "status": "archived",
       "scope": [
         "application"
       ],
@@ -5091,234 +5091,6 @@
       "authority": "scaffold-source",
       "canonical_sources": [
         "resources/project-resources.json"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-deployment",
-      "path": "docs-site/deployment.md",
-      "title": "部署入口已迁移",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "scripts/deploy-release",
-        "server/database/install.php",
-        "release-versions.json"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-guide-reading-guide",
-      "path": "docs-site/guide/reading-guide.md",
-      "title": "文档阅读与命令参考",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "scripts/local-stack.sh",
-        "server/database/install.php",
-        "resources/project-resources.json"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-guide-release-and-application-lifecycle",
-      "path": "docs-site/guide/release-and-application-lifecycle.md",
-      "title": "发布与独立应用生命周期",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "scripts/publish-github-release",
-        "scripts/create-app",
-        "release-versions.json",
-        "RELEASE_METADATA.json"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-guide-scaffold-upgrade",
-      "path": "docs-site/guide/scaffold-upgrade.md",
-      "title": "派生应用升级",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "scripts/scaffold-upgrade",
-        "scaffold/releases/"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-guide-user-manual",
-      "path": "docs-site/guide/user-manual.md",
-      "title": "管理员使用手册",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "server/route/app.php",
-        "web/src/"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-platform",
-      "path": "docs-site/platform.md",
-      "title": "实例平台管理",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "server/route/app.php",
-        "server/app/Modules/",
-        "resources/service-registry.json"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-product-status",
-      "path": "docs-site/product-status.md",
-      "title": "产品状态边界",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-troubleshooting",
-      "path": "docs-site/troubleshooting.md",
-      "title": "排错入口已迁移",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "resources/project-resources.json",
-        "scripts/local-stack.sh"
       ],
       "owner": "application-maintainers",
       "status": "archived",

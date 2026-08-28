@@ -88,7 +88,7 @@ report_matches \
 report_matches \
   'current public docs still identify the retired v2/v3.0.0 baseline' \
   '当前[^[:cntrl:]]*v3\.0\.0|当前源码[^[:cntrl:]]*2\.0\.0|当前正式源码版本[^[:cntrl:]]*v2\.0\.0' \
-  README.md docs-site/getting-started.md docs-site/deployment.md docs-site/releases.md docs/create-application.md docs/peanut-admin-development-guide.md
+  README.md docs-site/getting-started.md docs-site/guide/deployment-upgrade.md docs-site/releases.md docs/create-application.md docs/peanut-admin-development-guide.md
 
 if [[ "$failed" -ne 0 ]]; then
   exit 1
