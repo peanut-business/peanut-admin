@@ -134,6 +134,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-module-architecture-completion-report` | `docs/module-architecture-completion-report.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-module-development-guide` | `docs/module-development-guide.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-operations-business-flow-audit-2026-08-21` | `docs/operations/business-flow-audit-2026-08-21.md` | `archived` | `evidence` | `release-qualification` |
+| `pa-docs-operations-consumer-ready-control` | `docs/operations/consumer-ready-control.md` | `current` | `guide` | `release-qualification` |
 | `pa-docs-operations-demo-access` | `docs/operations/demo-access.md` | `current` | `guide` | `application-maintainers` |
 | `pa-docs-operations-local-demo-access` | `docs/operations/local-demo-access.md` | `current` | `guide` | `application-maintainers` |
 | `pa-docs-operations-release-and-application-lifecycle` | `docs/operations/release-and-application-lifecycle.md` | `current` | `guide` | `application-maintainers` |

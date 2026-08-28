@@ -129,7 +129,10 @@
 
 ### 7.2 固定候选冻结与封存顺序
 
-- 面向人类和主会话的业务解释见 `docs/operations/release-candidate-control.md`；执行时先读该说明，再按本节硬门禁操作。
+- 面向人类和主会话的现行入口见 `docs/operations/consumer-ready-control.md`；执行时先读该说明，
+  并在 prepare、seal、qualify、release 各阶段运行对应的
+  `scripts/consumer-ready-control preflight`。该最小控制器只读且不能替代资源 claim、聚焦验证、
+  P0-E 或发布脚本；preflight 未返回 `status=ready` 时不得进入对应阶段。
 - 功能实现、阻塞缺陷修复和局部验证必须在最终封存前完成；仍有已知阻塞缺陷时，禁止
   生成最终 inventory、scaffold、release identity 或运行最终 P0-E。
 - 多阶段资格或生成应用资格在最终封存前必须完成一次 Development mode 资格就绪检查，
