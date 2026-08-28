@@ -48,7 +48,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | `php think module:update-package <tar> [--sha256=<hash>] [--signature-key-id=<id>] --dry-run` | development/debug/Standalone 中验证并计划同一 Package 的显式更新，产品状态零写入 |
 | `php think module:update-package <tar> [--sha256=<hash>] [--signature-key-id=<id>]` | 应用严格更高的不可变版本；不是生产 HTTP 上传入口 |
 | `php think module:disable-package <module-or-package-key>` | 保留制品和数据地停用 Package；必须先停用 TenantModule 和依赖者 |
-| `php think module:uninstall-package <key> [--purge] [--confirm-plan-file=<json> --confirm-plan-digest=<hash>]` | 无确认参数时只预览；retire/Purge 执行必须提交同一完整 plan 和摘要 |
+| `php think module:uninstall-package MODULE_OR_PACKAGE_KEY [--purge] [--confirm-plan-file=PLAN_JSON --confirm-plan-digest=PLAN_SHA256]` | 无确认参数时只预览；retire/Purge 执行必须提交同一完整 plan 和摘要 |
 | `php think ops-module:request preview\|prepare --delivery-resource-id=<id> --target-resource-id=<id> --operation=update\|retire\|purge --package-key=<key> ...` | deployment owner 在登记受限 inbox 中固定受信包、target 与 retire/Purge 计划；不接收 URL、任意路径或远程命令 |
 | `scripts/ops-module-worker --once` | 只接受 `--once`；从 opaque task 领取一次生产交付，串联配对备份、隔离恢复、维护、操作、smoke 和 recovery pointer |
 | `php scripts/scaffold-upgrade preflight --project-root=<path> --from-manifest=<path> --to-manifest=<path>` | 生成 managed/generated-managed 升级计划，不覆盖 app-owned 源码 |
