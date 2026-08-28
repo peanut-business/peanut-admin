@@ -121,7 +121,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-likeadmin-material-contract` | `docs/likeadmin-material-contract.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-likeadmin-module-contract-index` | `docs/likeadmin-module-contract-index.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-likeadmin-notice-contract` | `docs/likeadmin-notice-contract.md` | `archived` | `archive` | `application-maintainers` |
-| `pa-docs-likeadmin-parity-plan` | `docs/likeadmin-parity-plan.md` | `planned` | `plan` | `product-architecture` |
+| `pa-docs-likeadmin-parity-plan` | `docs/likeadmin-parity-plan.md` | `archived` | `plan` | `product-architecture` |
 | `pa-docs-likeadmin-parity-report` | `docs/likeadmin-parity-report.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-likeadmin-recharge-refund-contract` | `docs/likeadmin-recharge-refund-contract.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-likeadmin-system-settings-contract` | `docs/likeadmin-system-settings-contract.md` | `archived` | `archive` | `application-maintainers` |
@@ -145,7 +145,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-peanut-admin-user-manual` | `docs/peanut-admin-user-manual.md` | `archived` | `reference` | `application-maintainers` |
 | `pa-docs-plans-consumer-ready-product-plan` | `docs/plans/consumer-ready-product-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-multi-tenancy-platform-management-plan` | `docs/plans/multi-tenancy-platform-management-plan.md` | `planned` | `plan` | `product-architecture` |
-| `pa-docs-plans-product-closure-execution-queue` | `docs/plans/product-closure-execution-queue.md` | `planned` | `plan` | `product-architecture` |
+| `pa-docs-plans-product-closure-execution-queue` | `docs/plans/product-closure-execution-queue.md` | `archived` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-release-operations-saas-roadmap` | `docs/plans/product-release-operations-saas-roadmap.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-saas-enhancement-development-plan` | `docs/plans/saas-enhancement-development-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plugin-module-development` | `docs/plugin-module-development.md` | `current` | `reference` | `application-maintainers` |
@@ -157,7 +157,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-product-status-product-closure-observability` | `docs/product-status/product-closure-observability.md` | `current` | `evidence` | `product-architecture` |
 | `pa-docs-product-status-readme` | `docs/product-status/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-product-status-releases-readme` | `docs/product-status/releases/README.md` | `current` | `index` | `release-qualification` |
-| `pa-docs-productization-baseline-plan` | `docs/productization-baseline-plan.md` | `planned` | `plan` | `product-architecture` |
+| `pa-docs-productization-baseline-plan` | `docs/productization-baseline-plan.md` | `archived` | `plan` | `product-architecture` |
 | `pa-docs-reference-product-capability-reference-matrix` | `docs/reference/product-capability-reference-matrix.md` | `current` | `reference` | `product-architecture` |
 | `pa-docs-release-engineering` | `docs/release-engineering.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-scaffold-upgrade` | `docs/scaffold-upgrade.md` | `current` | `reference` | `application-maintainers` |
@@ -168,7 +168,6 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-site-architecture-official-module-qualification` | `docs-site/architecture/official-module-qualification.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-capabilities` | `docs-site/capabilities.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-site-demo-access` | `docs-site/demo-access.md` | `archived` | `archive` | `application-maintainers` |
-| `pa-docs-site-deployment` | `docs-site/deployment.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-guide-application-module-lifecycle` | `docs-site/guide/application-module-lifecycle.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-backend` | `docs-site/guide/backend.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-concepts` | `docs-site/guide/concepts.md` | `current` | `public-projection` | `developer-experience` |
@@ -178,18 +177,11 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-site-guide-frontend` | `docs-site/guide/frontend.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-index` | `docs-site/guide/index.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-module-development` | `docs-site/guide/module-development.md` | `current` | `public-projection` | `developer-experience` |
-| `pa-docs-site-guide-reading-guide` | `docs-site/guide/reading-guide.md` | `archived` | `archive` | `application-maintainers` |
-| `pa-docs-site-guide-release-and-application-lifecycle` | `docs-site/guide/release-and-application-lifecycle.md` | `archived` | `archive` | `application-maintainers` |
-| `pa-docs-site-guide-scaffold-upgrade` | `docs-site/guide/scaffold-upgrade.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-guide-testing` | `docs-site/guide/testing.md` | `current` | `public-projection` | `developer-experience` |
-| `pa-docs-site-guide-user-manual` | `docs-site/guide/user-manual.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-legal` | `docs-site/legal.md` | `current` | `public-projection` | `developer-experience` |
-| `pa-docs-site-platform` | `docs-site/platform.md` | `archived` | `archive` | `application-maintainers` |
-| `pa-docs-site-product-status` | `docs-site/product-status.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-reference` | `docs-site/reference.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-releases` | `docs-site/releases.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-support` | `docs-site/support.md` | `current` | `public-projection` | `developer-experience` |
-| `pa-docs-site-troubleshooting` | `docs-site/troubleshooting.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-source-map` | `docs/governance/authoritative-source-map.md` | `authoritative` | `source-map` | `documentation-architecture` |
 | `pa-docs-template` | `docs/governance/templates/document-template.md` | `current` | `reference` | `documentation-architecture` |
 | `pa-docs-testing-local-functional-test-register` | `docs/testing/local-functional-test-register.md` | `current` | `guide` | `application-maintainers` |

@@ -274,6 +274,20 @@
             "source_sha256": "a784e1c2fb937e166909643d314882411d95ce43168aa6be5586c8b3750b6630"
         },
         {
+            "path": "SECURITY.md",
+            "target": "SECURITY.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "447183afd9b33a54a2ef2383c25667b5728d738eb1720a2bb1e16704aa6e3eb9"
+        },
+        {
             "path": "THIRD_PARTY_NOTICES.md",
             "target": "THIRD_PARTY_NOTICES.md",
             "classification": "generated-managed",
@@ -499,7 +513,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "8f74943737b1904fe694f4a5ef2f8172465718ccf0e8fd7b164263b0068c3e13"
+            "source_sha256": "6b1bb3d8d6b98f9f87cc1bbaca3fa01a41a58e041fb571cfada3ee2dddc20e8d"
         },
         {
             "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
@@ -634,18 +648,6 @@
             "source_sha256": "d867927dfe0484a467bb561a80873477bd0bb0a99842e72497c77d3a5e3491fe"
         },
         {
-            "path": "docs-site/deployment.md",
-            "target": "docs-site/deployment.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "fb82dcc8c0a4e8c49c3faafe4eb70bfa7afbaf922eff26dff66eb60a2fbd44aa"
-        },
-        {
             "path": "docs-site/generated/brand.json",
             "target": "docs-site/generated/brand.json",
             "classification": "generated-managed",
@@ -668,6 +670,18 @@
                 "full"
             ],
             "source_sha256": "2cbaaf15fd434ca23d1cd6f64d6c889b3b474616e582a713c9744469b484dad3"
+        },
+        {
+            "path": "docs-site/guide/application-module-lifecycle.md",
+            "target": "docs-site/guide/application-module-lifecycle.md",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "docs-page",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "1b04dfc58cb4562fab6f23368550757554c23b9e1c5e080167fa5cd39ab1350e"
         },
         {
             "path": "docs-site/guide/backend.md",
@@ -766,42 +780,6 @@
             "source_sha256": "3453f13d71912cf2301dc7c30a625aeba884ce8d41cd456194e0e721766ebd04"
         },
         {
-            "path": "docs-site/guide/reading-guide.md",
-            "target": "docs-site/guide/reading-guide.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "b83b77005d3ba6852a2338a94facad7836ca1a3229e2e74cc64485636ce9a398"
-        },
-        {
-            "path": "docs-site/guide/release-and-application-lifecycle.md",
-            "target": "docs-site/guide/release-and-application-lifecycle.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "fd47b0372eea9a5febed82cda7eed7ff365f626d0a7cc5e655fc5f4bf5106240"
-        },
-        {
-            "path": "docs-site/guide/scaffold-upgrade.md",
-            "target": "docs-site/guide/scaffold-upgrade.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "0f3482608b9dcebcfee373c6fc8022b399ff8a13aae3d5261dd430530b2e698b"
-        },
-        {
             "path": "docs-site/guide/testing.md",
             "target": "docs-site/guide/testing.md",
             "classification": "app-owned",
@@ -812,18 +790,6 @@
                 "full"
             ],
             "source_sha256": "9dc322bad6af19bde71ea74059017d43b2e33c3320d1e4323f05f19d8fa7cb15"
-        },
-        {
-            "path": "docs-site/guide/user-manual.md",
-            "target": "docs-site/guide/user-manual.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "1c8b35b3e999028bd04d9e951987cfbe905cc701ab1d76e27a592cc87506bea5"
         },
         {
             "path": "docs-site/index.md",
@@ -862,18 +828,6 @@
             "source_sha256": "187bcd675d7dfa0b36de9f15fcd1baf59b829683bc794b11f7a2f7bcb19651c3"
         },
         {
-            "path": "docs-site/platform.md",
-            "target": "docs-site/platform.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "acd7ad882b58ec621980ba4811f37d9c7dea68654667afcaf7602ac8847dd43c"
-        },
-        {
             "path": "docs-site/pnpm-lock.yaml",
             "target": "docs-site/pnpm-lock.yaml",
             "classification": "app-owned",
@@ -884,17 +838,6 @@
                 "full"
             ],
             "source_sha256": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
-        },
-        {
-            "path": "docs-site/product-status.md",
-            "target": "docs-site/product-status.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ]
         },
         {
             "path": "docs-site/public/brand/avatar-admin.svg",
@@ -1041,8 +984,8 @@
             "source_sha256": "c6cbc28b521c3f5fda1df0d4fb8020434c486775f4445ee3791f34e29cc0fc6c"
         },
         {
-            "path": "docs-site/troubleshooting.md",
-            "target": "docs-site/troubleshooting.md",
+            "path": "docs-site/support.md",
+            "target": "docs-site/support.md",
             "classification": "app-owned",
             "owner": "application",
             "transform": "docs-page",
@@ -1050,7 +993,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "29d6c3596bd19ce45a49119f354d51b117086fd7b4fe3bd32f4fc78a2fb73ac4"
+            "source_sha256": "5e2d14fcab6e56ad428d6bda09c0e3d4c470ad49073ee366ee0f85006ac1c78a"
         },
         {
             "path": "docs/2026-08-05-core-packages-production-claude-review-RESULT.md",
@@ -4297,7 +4240,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dc168c6a0475b44eeb363a35b75b6ebdb0b823f013f7bc1b314a1861d577538b"
+            "source_sha256": "04833ea818cd6e4ad696505ca1598576d9d2b85d94869c2b407e948a71f4c954"
         },
         {
             "path": "scripts/ci-server-check.sh",
@@ -15071,20 +15014,6 @@
                 "full"
             ],
             "source_sha256": "2234930f72380a2da8dd63fe0bdb5ac3bd21a53a9f1212a2ecb708f6046a0745"
-        },
-        {
-            "path": "server/database/import.php",
-            "target": "server/database/import.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "281444e6789541fdf808045e93d08ea8cdfb785043eefea8c421ec0ea4872ecc"
         },
         {
             "path": "server/database/init.sql",
