@@ -22,6 +22,25 @@ PHP = Path("/opt/homebrew/bin/php")
 COMPOSER = Path("/usr/local/bin/composer")
 MODULE_KEY = "acme.reference-chain"
 PACKAGE_KEY_ID = "cr21-author"
+BACKEND_ENVIRONMENT_KEYS = {
+    "APP_ENV",
+    "APP_DEBUG",
+    "PEANUT_DEPLOYMENT_TARGET",
+    "PEANUT_DATABASE_RESOURCE_ID",
+    "PEANUT_DATABASE_ENDPOINT_ID",
+    "PEANUT_DATABASE_CONSUMER",
+    "DEPLOYMENT_MODE",
+    "DB_HOST",
+    "DB_PORT",
+    "DB_NAME",
+    "DB_USER",
+    "DB_PASS",
+    "DB_ROOT_PASS",
+    "DB_PREFIX",
+    "JWT_SECRET",
+    "PEANUT_MODULE_KERNEL_VERSION",
+    "PEANUT_MODULE_TRUSTED_KEYS_JSON",
+}
 
 
 class ChainError(RuntimeError):
@@ -40,6 +59,9 @@ def command(
     log: Path | None = None,
 ) -> str:
     merged = os.environ.copy()
+    if env and "PEANUT_SERVER_ENV_FILE" in env:
+        for name in BACKEND_ENVIRONMENT_KEYS:
+            merged.pop(name, None)
     if env:
         merged.update(env)
     result = subprocess.run(
@@ -251,7 +273,7 @@ def backend_environment(
     }
     path.write_text("".join(f"{key}={ini_quote(value)}\n" for key, value in values.items()), encoding="utf-8")
     path.chmod(0o600)
-    return values | {"PEANUT_SERVER_ENV_FILE": str(path)}
+    return {"PEANUT_SERVER_ENV_FILE": str(path)}
 
 
 def create_application(
