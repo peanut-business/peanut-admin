@@ -96,9 +96,9 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 1. `generated-application`：真实 `scripts/create-app` 从资格矩阵固定的 `target_release` 生成应用；
    Server、Web、PC、UniApp H5 和 Docs 使用锁文件安装并完成最低构建，随后核对
    application/scaffold identity。
-2. `standalone-fresh`：在空库执行 Standalone install、幂等 migrate、候选完整 migration ledger 与
+2. `standalone-fresh`：在空库执行 Standalone install、幂等 migrate、目标版本适用的完整 migration ledger 与
    fresh-only invariants。
-3. `multi-tenant-fresh`：在空库执行 Multi-tenant install、幂等 migrate、候选完整 migration ledger 与
+3. `multi-tenant-fresh`：在空库执行 Multi-tenant install、幂等 migrate、目标版本适用的完整 migration ledger 与
    Tenant bootstrap invariants。
 4. `plugin-lifecycle`：向生成应用临时铺设 source-only fixture，覆盖 install、重复安装、upgrade
    dry-run、rollback plan、TenantModule/权限、preserve-data uninstall 和失败 migration；结束后

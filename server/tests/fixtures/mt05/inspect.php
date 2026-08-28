@@ -44,6 +44,40 @@ function indexExists(PDO $pdo, string $table, string $index): bool
     return (int)$statement->fetchColumn() > 0;
 }
 
+/** @return list<string> */
+function expectedApplicationMigrationIds(string $serverRoot): array
+{
+    $metadataRaw = file_get_contents(dirname($serverRoot) . '/RELEASE_METADATA.json');
+    $metadata = is_string($metadataRaw) ? json_decode($metadataRaw, true) : null;
+    $targetVersion = is_array($metadata) ? ($metadata['version'] ?? null) : null;
+    expectInvariant(
+        is_string($targetVersion)
+            && preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $targetVersion) === 1,
+        'MT05_APPLICATION_VERSION_INVALID'
+    );
+
+    $migrationFiles = glob($serverRoot . '/database/migrations/*.sql');
+    expectInvariant(
+        is_array($migrationFiles) && $migrationFiles !== [],
+        'MT05_APPLICATION_MIGRATION_SOURCE_INVALID'
+    );
+    $expected = [];
+    foreach ($migrationFiles as $migrationFile) {
+        $sql = file_get_contents($migrationFile);
+        expectInvariant(is_string($sql) && trim($sql) !== '', 'MT05_APPLICATION_MIGRATION_SOURCE_INVALID');
+        $releaseVersion = $targetVersion;
+        if (preg_match('/^\s*--\s*peanut-release:\s*(\d+\.\d+\.\d+)\s*$/mi', $sql, $matches) === 1) {
+            $releaseVersion = $matches[1];
+        }
+        if (version_compare($releaseVersion, $targetVersion, '<=')) {
+            $expected[] = basename($migrationFile, '.sql');
+        }
+    }
+    sort($expected, SORT_STRING);
+    expectInvariant($expected !== [], 'MT05_APPLICATION_MIGRATION_SOURCE_INVALID');
+    return $expected;
+}
+
 try {
     $mode = requiredEnvironment('MT05_MODE');
     $deploymentMode = requiredEnvironment('MT05_DEPLOYMENT_MODE');
@@ -80,16 +114,7 @@ try {
     $applicationMigrationIds = $pdo->query(
         "SELECT migration_id FROM pa_schema_migration WHERE status = 'applied' ORDER BY migration_id"
     )->fetchAll(PDO::FETCH_COLUMN);
-    $migrationFiles = glob(dirname(__DIR__, 3) . '/database/migrations/*.sql');
-    expectInvariant(
-        is_array($migrationFiles) && $migrationFiles !== [],
-        'MT05_APPLICATION_MIGRATION_SOURCE_INVALID'
-    );
-    $expectedApplicationMigrationIds = array_map(
-        static fn(string $path): string => basename($path, '.sql'),
-        $migrationFiles
-    );
-    sort($expectedApplicationMigrationIds, SORT_STRING);
+    $expectedApplicationMigrationIds = expectedApplicationMigrationIds(dirname(__DIR__, 3));
     expectInvariant(
         $applicationMigrationIds === $expectedApplicationMigrationIds,
         'MT05_APPLICATION_MIGRATION_LEDGER_INVALID'
