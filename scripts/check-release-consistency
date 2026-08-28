@@ -7,16 +7,15 @@ import { readFileSync, writeFileSync } from 'node:fs'
 
 const options = { tag: '', candidate: '', qualification: '', remote: '', writeLock: '', requireMain: false }
 const args = process.argv.slice(2)
-for (let index = 0; index < args.length; index += 1) {
+for (let index = 0; index < args.length;) {
   const argument = args[index]
   const value = args[index + 1]
-  if (argument === '--tag' && value) options.tag = value
-  else if (argument === '--candidate' && value) options.candidate = value
-  else if (argument === '--qualification' && value) options.qualification = value
-  else if (argument === '--remote' && value) options.remote = value
-  else if (argument === '--write-lock' && value) options.writeLock = value
-  else if (argument === '--require-main') options.requireMain = true
-  else if (argument === '--help' || argument === '-h') {
+  if (argument === '--require-main') {
+    options.requireMain = true
+    index += 1
+    continue
+  }
+  if (argument === '--help' || argument === '-h') {
     console.log(`Usage:
   scripts/check-release-consistency --candidate <full-commit> --qualification <summary.json> [--require-main]
   scripts/check-release-consistency --tag vX.Y.Z [--qualification <summary.json>] [--remote origin]
@@ -28,11 +27,17 @@ requires the candidate to be the current origin/main commit. --write-lock
 requires qualification evidence and creates an external, non-self-referential
 candidate lock.`)
     process.exit(0)
-  } else {
+  }
+  if (argument === '--tag' && value) options.tag = value
+  else if (argument === '--candidate' && value) options.candidate = value
+  else if (argument === '--qualification' && value) options.qualification = value
+  else if (argument === '--remote' && value) options.remote = value
+  else if (argument === '--write-lock' && value) options.writeLock = value
+  else {
     console.error(`check-release-consistency: unknown or incomplete argument: ${argument}`)
     process.exit(64)
   }
-  index += 1
+  index += 2
 }
 
 if ((options.tag === '') === (options.candidate === '')) {
