@@ -17,6 +17,7 @@ return [
         'ops-module:task' => \app\command\OpsModuleTask::class,
         'module:install'   => \app\command\ModuleInstall::class,
         'module:create'    => \app\command\ModuleCreate::class,
+        'module:check'     => \app\command\ModuleCheck::class,
         'module:pack'      => \app\command\ModulePack::class,
         'bundle:pack'      => \app\command\BundlePack::class,
         'module:install-package' => \app\command\ModuleInstallPackage::class,

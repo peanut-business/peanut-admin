@@ -146,6 +146,16 @@ cd server
 php think module:create acme.inventory --vendor=Acme
 ```
 
+生成后先运行统一、只读的作者检查：
+
+```bash
+php think module:check acme.inventory
+```
+
+该命令和自动化复用同一个 Host，按固定顺序检查 manifest、SemVer/Kernel 约束、依赖、权限、
+菜单、migration、frontend 和 package，并输出稳定的 `code/reason/remediation`。它不连接或写入
+数据库；默认只在临时目录生成并校验 package，也可通过 `--package` 与 `--sha256` 检查已有包。
+
 返回值中的 `backend_path`、`frontend_path` 和 `test_path` 均由 Module key 唯一派生。生成结果包含
 `Contracts/InventoryCommands.php`、不直接执行的 migration SQL 模板说明，以及独立测试目录。
 生成器不会安装 Plugin、开通 TenantModule 或授予权限；任何目标已存在时整次操作拒绝且不覆盖。
