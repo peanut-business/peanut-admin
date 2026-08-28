@@ -63,6 +63,7 @@ WORKDIR /var/www/peanut-admin
 
 COPY deploy/docker/php-upload.ini /usr/local/etc/php/conf.d/peanut-upload.ini
 
+COPY RELEASE_METADATA.json RELEASE_METADATA.json
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json legal/
 COPY resources/project-resources.json resources/project-resources.json
 COPY plugins.lock plugins.lock

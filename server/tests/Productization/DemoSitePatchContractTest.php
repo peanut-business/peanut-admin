@@ -238,14 +238,20 @@ $expect(
 );
 $metadataValidationPosition = strpos($deploy, "jq -e --arg tag \"\$tag\" --arg commit \"\$expected_commit\"");
 $buildPosition = strpos($deploy, '"${candidate_compose[@]}" build');
+$candidatePreflightPosition = strpos($deploy, 'server/database/install.php --preflight', (int)$buildPosition);
+$candidatePluginLockPosition = strpos($deploy, 'server/think plugin:lock --check', (int)$candidatePreflightPosition);
 $destroyPosition = strpos($deploy, '"${current_compose[@]}" down --volumes');
 $expect(
     $metadataValidationPosition !== false
         && $buildPosition !== false
+        && $candidatePreflightPosition !== false
+        && $candidatePluginLockPosition !== false
         && $destroyPosition !== false
         && $metadataValidationPosition < $buildPosition
-        && $buildPosition < $destroyPosition,
-    'fresh deployment does not validate overlay migration identity before build and destructive work'
+        && $buildPosition < $candidatePreflightPosition
+        && $candidatePreflightPosition < $candidatePluginLockPosition
+        && $candidatePluginLockPosition < $destroyPosition,
+    'fresh deployment does not validate the exact candidate image before destructive work'
 );
 $freshMigration = 'server/database/install.php --migrate --target-version="$migration_target_version"';
 $updateMigration = 'server/database/install.php --migrate --target-version="$version"';
@@ -266,11 +272,11 @@ $expect(
     'deployment does not recompute the overlay migration maximum from its declared migration files'
 );
 $expect(
-    substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 11,
+    substr_count($deploy, 'run -T --rm --no-deps --entrypoint php') === 13,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );
 $expect(
-    substr_count($deploy, '</dev/null') === 11,
+    substr_count($deploy, '</dev/null') === 13,
     'remote one-shot Compose commands must close inherited standard input'
 );
 

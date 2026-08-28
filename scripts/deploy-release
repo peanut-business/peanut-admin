@@ -516,6 +516,13 @@ printf 'candidate: building images while the current stack remains available\n'
 "${candidate_compose[@]}" build
 sudo -n docker image inspect "$php_image" "$nginx_image" >/dev/null \
   || fail 'candidate image identity is unavailable after build'
+candidate_install_preflight="$("${candidate_compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --preflight </dev/null)" \
+  || fail 'candidate installation preflight failed before target replacement'
+jq -e '.status == "ready" and .code == "INSTALL_PREFLIGHT_READY"' <<<"$candidate_install_preflight" >/dev/null \
+  || fail 'candidate installation preflight is not ready before target replacement'
+"${candidate_compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:lock --check </dev/null \
+  || fail 'candidate Plugin lock is not canonical before target replacement'
+printf 'candidate_installation_preflight=ready\ncandidate_plugin_lock=valid\n'
 
 verify_paired_backup() {
   local backup_root="$root/backups" backup_dir
