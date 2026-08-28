@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "dev",
-    "commit": "8ce916792829f08a1a17aa935667c06d55928a10",
+    "commit": "fbdfafcc1bfdaa4334eee2498e9c235e142c076b",
     "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；在 dev@8ce916792829f08a1a17aa935667c06d55928a10 复核后，下一阶段转入可消费交付：补齐 active Module package 更新、交付环境安全入口、Tenant 停用全局门禁、双独立应用二开链、历史资料清理及正式 main/Tag/Release。产品闭环资格仍有效，但尚不能把该 dev 结果冒充新的正式可消费 Release。"
+    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@fbdfafcc1bfdaa4334eee2498e9c235e142c076b 已完成 CR01/CR02/CR10—CR13/CR20，active Module package 更新、交付环境安全入口与 Tenant 停用全局门禁已落地。CR21—CR40 的双应用参考链、消费者文档、固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 结果仍不能冒充 consumer-ready Release。"
   },
   "capabilities": [
     {
@@ -1215,8 +1215,8 @@
       "id": "PA-TENANCY-002",
       "name": "Tenant 停用全局 Fail-Closed",
       "area": "tenancy",
-      "status": "planned",
-      "summary": "管理/API 身份链已有 Tenant 状态门禁，但 Tenant 文件直出和未统一挂载状态检查的公共内容入口仍可能在停用后可读。CR13 将统一公共 API、PC/H5、文件与静态交付边界。",
+      "status": "verified",
+      "summary": "CR13 已由 PR #344 合入 dev：管理/API/PC/H5 与公开内容继续通过 active Tenant/Host context；全部 Tenant 文件 URL 统一为短期签名应用交付，读取时重新查询 active Tenant 与 ready 对象，生产和开发 Nginx 的历史 `/storage/` 直出固定 404。登记 MySQL 聚焦验证证明已签发 URL 在 suspend 后拒绝、reactivate 后只恢复 ready 对象，archived 对象与 suspended 异步任务不复活。",
       "acceptance": [
         "Tenant 停用后管理、公开 API、PC/H5、公共内容和 Tenant 文件均拒绝访问",
         "缓存、反向代理和对象存储路径不能绕过权威 Tenant 状态",
@@ -1224,6 +1224,14 @@
         "任一绕过均作为安全阻塞，不得进入可消费固定候选"
       ],
       "evidence": [
+        {
+          "kind": "git",
+          "ref": "fbdfafcc1bfdaa4334eee2498e9c235e142c076b"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/344"
+        },
         {
           "kind": "document",
           "ref": "docs/plans/consumer-ready-product-plan.md"
@@ -1234,7 +1242,12 @@
       ],
       "paths": [
         "server/app/common/service/tenant",
+        "server/app/common/service/storage",
+        "server/app/api/controller/StorageController.php",
         "server/route",
+        "deploy/nginx/peanut-admin.conf",
+        "server/tests/Multitenancy/TenantEntryBindingResolverTest.php",
+        "server/tests/Multitenancy/TaskImportExportTenantIsolationTest.php",
         "docs/plans/consumer-ready-product-plan.md"
       ]
     },
