@@ -1160,6 +1160,7 @@ class Runner:
         self.drop_database(database)
 
     def plugin_lifecycle(self) -> None:
+        log = self.group_log("plugin-lifecycle")
         lock = self.generated / "plugins.lock"
         original_lock = lock.read_bytes()
         original_mode = lock.stat().st_mode & 0o777
