@@ -13,7 +13,12 @@ final readonly class AliyunStorageDriver implements StorageDriver
 
     public function put(string $objectKey, string $sourcePath): void
     {
-        $this->client()->uploadFile((string)$this->space['bucket'], StoragePath::assertObjectKey($objectKey), $sourcePath);
+        $this->client()->uploadFile(
+            (string)$this->space['bucket'],
+            StoragePath::assertObjectKey($objectKey),
+            $sourcePath,
+            [OssClient::OSS_HEADERS => [OssClient::OSS_OBJECT_ACL => OssClient::OSS_ACL_TYPE_PRIVATE]],
+        );
     }
 
     public function delete(string $objectKey): void
@@ -21,23 +26,12 @@ final readonly class AliyunStorageDriver implements StorageDriver
         $this->client()->deleteObject((string)$this->space['bucket'], StoragePath::assertObjectKey($objectKey));
     }
 
-    public function publicUrl(string $objectKey): string
+    public function downloadTo(string $objectKey, string $targetPath): void
     {
-        $domain = rtrim((string)($this->space['access_domain'] ?? ''), '/');
-        if ($domain === '') {
-            throw new \RuntimeException('阿里云访问域名未配置');
-        }
-        return $domain . '/' . StoragePath::assertObjectKey($objectKey);
-    }
-
-    public function temporaryUrl(string $objectKey, int $expiresIn, string $filename, string $disposition): string
-    {
-        return $this->client()->signUrl(
+        $this->client()->getObject(
             (string)$this->space['bucket'],
             StoragePath::assertObjectKey($objectKey),
-            $expiresIn,
-            OssClient::OSS_HTTP_GET,
-            [OssClient::OSS_CONTENT_DISPOSITION => sprintf('%s; filename="%s"', $disposition, addslashes($filename))],
+            [OssClient::OSS_FILE_DOWNLOAD => $targetPath],
         );
     }
 

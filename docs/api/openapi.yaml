@@ -85,6 +85,43 @@ paths:
                 cid: {type: integer, minimum: 0}
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
+  /api/storage/delivery:
+    get:
+      tags: [File]
+      operationId: deliverTenantFile
+      description: >-
+        Delivers a ready Tenant-owned public or private file only while its
+        Tenant is active. The signed application URL is short-lived, every
+        request rechecks Tenant state, responses are no-store, and direct
+        local or Provider object URLs are not part of the delivery contract.
+      parameters:
+        - in: query
+          name: tenant_id
+          required: true
+          schema: {type: integer, minimum: 1}
+        - in: query
+          name: file_key
+          required: true
+          schema: {type: string, pattern: '^file_[a-f0-9]{32}$'}
+        - in: query
+          name: expires
+          required: true
+          schema: {type: integer, minimum: 1}
+        - in: query
+          name: signature
+          required: true
+          schema: {type: string, pattern: '^[a-f0-9]{64}$'}
+      responses:
+        '200':
+          description: Tenant-gated file contents
+          headers:
+            Cache-Control:
+              schema: {type: string, enum: ['no-store, private']}
+          content:
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        '404':
+          description: Signature, object state or Tenant state rejected
   /official.file.list:
     get:
       tags: [File]

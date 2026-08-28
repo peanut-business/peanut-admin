@@ -22,6 +22,7 @@ final readonly class QcloudStorageDriver implements StorageDriver
                 'Bucket' => (string)$this->space['bucket'],
                 'Key' => StoragePath::assertObjectKey($objectKey),
                 'Body' => $stream,
+                'ACL' => 'private',
             ]);
         } finally {
             if (is_resource($stream)) {
@@ -38,18 +39,12 @@ final readonly class QcloudStorageDriver implements StorageDriver
         ]);
     }
 
-    public function publicUrl(string $objectKey): string
+    public function downloadTo(string $objectKey, string $targetPath): void
     {
-        $domain=rtrim((string)($this->space['access_domain']??''),'/');
-        return $domain!==''?$domain.'/'.StoragePath::assertObjectKey($objectKey):(string)$this->client()->getObjectUrl((string)$this->space['bucket'],StoragePath::assertObjectKey($objectKey));
-    }
-
-    public function temporaryUrl(string $objectKey, int $expiresIn, string $filename, string $disposition): string
-    {
-        return (string)$this->client()->getObjectUrl(
+        $this->client()->download(
             (string)$this->space['bucket'],
             StoragePath::assertObjectKey($objectKey),
-            '+' . $expiresIn . ' seconds',
+            $targetPath,
         );
     }
 

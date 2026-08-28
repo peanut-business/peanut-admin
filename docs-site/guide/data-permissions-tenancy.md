@@ -15,6 +15,12 @@ description: 数据 owner、TenantContext、RBAC 与安全边界。
 - TenantContext 来自受信任装配；请求中的 Tenant 标识只能作为待验证输入。
 - Module 拥有自己的表和写路径；跨 Module 使用服务合同或公开 DTO。
 - PlatformOperator、Tenant 管理身份与业务会员属于不同身份域。
+- Tenant 状态是每次请求的连续边界；停用后管理/API/PC/H5、公开内容和文件交付都必须拒绝，
+  不能等待 token、签名 URL 或缓存自然过期。
+
+Tenant 文件只使用短期签名的 `/api/storage/delivery`。应用在每次读取时同时检查对象仍为 `ready`
+且 Tenant 仍为 `active`，并返回 `no-store` 内容；`/storage/`、云公开 bucket/CDN URL 和客户端缓存
+不能作为旁路。恢复 Tenant 只重新允许仍通过 Host、身份、Module、RBAC 和对象状态检查的访问。
 
 ## Schema 和 migration
 
