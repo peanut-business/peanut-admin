@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "3.0.11",
-        "source_commit": "7de15ef73922b352b4cf52965eb109ff7a50af1d",
-        "source_tree": "2a253fea7337ddd501319674e3293016255e6987",
-        "inventory_sha256": "3ff9a718c22e6a0c0626773afd4317d2dffafbaecb719b89d0f81cd7bbf7c902",
+        "source_commit": "e09a20dcc42ad67e41645363a589a09ceed570c9",
+        "source_tree": "a62b940330879ac6dd18d2f30e7fad3f763014d7",
+        "inventory_sha256": "2e4b24cc890783638bd1d33ea80436d426bf380ec71e325c93437e94416b8715",
         "inventory_template_version": "3.0.11",
-        "managed_tree_sha256": "02a222293597cdf759addbe868f3992fb60548fdf1325f6a808375800f310b81",
+        "managed_tree_sha256": "b33a421c9098f3397054e604ec2bc789c98e281c0cfa2f6a1acd81f9e42ba171",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -62,7 +62,7 @@
         {
             "path": ".gitignore",
             "source": "files/.gitignore",
-            "template_sha256": "0f548a97b01f6b2cabfffe504d1fa2362a7cf9e98f687466a21ba42a94e080b7",
+            "template_sha256": "0184f0a6e9e3687258afb9cc9e8da65a3c88430eacdb28117f2fbeaeb61155ab",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1290,6 +1290,16 @@
             "owner": "backend"
         },
         {
+            "path": "server/private/storage/.gitkeep",
+            "source": "files/server/private/storage/.gitkeep",
+            "template_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "backend"
+        },
+        {
             "path": "server/public/.htaccess",
             "source": "files/server/public/.htaccess",
             "template_sha256": "b3f66530bab5b794b9e4719e9fa2ee9ab176502128cdf57b6b776aebb77d3b93",
@@ -1423,6 +1433,16 @@
             "path": "server/public/static/.gitignore",
             "source": "files/server/public/static/.gitignore",
             "template_sha256": "5c89a8a9c5af258d02d0bfd3582c75963bea53baa1f5f5132662b80020a63452",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "backend"
+        },
+        {
+            "path": "server/public/storage/.gitkeep",
+            "source": "files/server/public/storage/.gitkeep",
+            "template_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1643,6 +1663,16 @@
             "path": "server/route/official_task.php",
             "source": "files/server/route/official_task.php",
             "template_sha256": "a8ed3c2e10e43428794824f0f7436f08c7e7f79eedaea4baa0da8cd761ee7f05",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "backend"
+        },
+        {
+            "path": "server/runtime/.gitkeep",
+            "source": "files/server/runtime/.gitkeep",
+            "template_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

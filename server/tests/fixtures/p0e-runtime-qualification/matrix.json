@@ -10,12 +10,12 @@
   },
   "target_release": {
     "version": "3.0.11",
-    "source_commit": "7de15ef73922b352b4cf52965eb109ff7a50af1d",
-    "source_tree": "2a253fea7337ddd501319674e3293016255e6987",
-    "manifest_sha256": "89a2f0bc643309e9dcbcf1a87ccdd4178e2b28fc4a659c19799d5d4adad5e574",
-    "inventory_sha256": "3ff9a718c22e6a0c0626773afd4317d2dffafbaecb719b89d0f81cd7bbf7c902",
-    "managed_tree_sha256": "02a222293597cdf759addbe868f3992fb60548fdf1325f6a808375800f310b81",
-    "file_count": 390,
+    "source_commit": "e09a20dcc42ad67e41645363a589a09ceed570c9",
+    "source_tree": "a62b940330879ac6dd18d2f30e7fad3f763014d7",
+    "manifest_sha256": "1b9ce9e6c9c0e19ef07ce912173df9d4331665fd287b9a1fe8cfbc0e56bd8eef",
+    "inventory_sha256": "2e4b24cc890783638bd1d33ea80436d426bf380ec71e325c93437e94416b8715",
+    "managed_tree_sha256": "b33a421c9098f3397054e604ec2bc789c98e281c0cfa2f6a1acd81f9e42ba171",
+    "file_count": 393,
     "application_manifest_schema": 2,
     "default_application_version": "0.1.0",
     "default_uniapp_version_code": "10"
