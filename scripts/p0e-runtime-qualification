@@ -1179,7 +1179,12 @@ class Runner:
         if expected_official_keys == [] or generated_official_keys != expected_official_keys:
             fail("generated application Plugin lock does not contain the released official Plugin set")
         command(
-            ["php", "server/think", "plugin:lock", "--check"],
+            [
+                "php", "-r",
+                r"require 'server/vendor/autoload.php'; "
+                r"$result=(new \app\platform\service\plugin\PluginArtifactWriter(getcwd().'/server'))->checkLock(); "
+                r"echo json_encode($result, JSON_UNESCAPED_SLASHES), PHP_EOL;",
+            ],
             cwd=self.generated,
             log=log,
         )
