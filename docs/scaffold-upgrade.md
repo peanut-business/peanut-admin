@@ -10,7 +10,7 @@ scaffold Release 之间升级。`v3.0.4` 是当前脚手架基线，后续 3.x p
 php scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
   --from-manifest=/absolute/path/to/scaffold/releases/v3.0.4/scaffold-manifest.json \
-  --to-manifest=/absolute/path/to/scaffold/releases/v3.0.5/scaffold-manifest.json
+  --to-manifest=/absolute/path/to/scaffold/releases/v3.0.11/scaffold-manifest.json
 
 php scripts/scaffold-upgrade apply --project-root=/absolute/path/to/application \
   --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
