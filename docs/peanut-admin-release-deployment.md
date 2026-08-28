@@ -73,7 +73,9 @@ scripts/deploy-release v3.0.0 --target production --fresh \
 | `--overlay <file.tar>` | 否 | 仅用于登记的演示候选，把有摘要的 demo patch 叠加到正式 tag |
 
 三种模式都会先校验 tag、归档摘要、目标登记和候选 Compose，并在旧服务仍运行时解包和
-构建带不可变版本标签的 PHP/Nginx 镜像。`--install` 要求数据库和上传卷不存在，然后安装
+构建带不可变版本标签的 PHP/Nginx 镜像。构建完成后，脚本会直接在该候选 PHP 镜像中运行
+只读安装预检与 `plugin:lock --check`；两项未同时返回 ready/valid 时不会替换目标服务，
+`--fresh` 也不会停止旧服务或删除登记卷。`--install` 要求数据库和上传卷不存在，然后安装
 完整基线；首次安装和常规更新都会先执行应用 migration，再运行
 `php server/think plugin:reconcile --official-locked` 收敛锁定的 official Plugin。`--update` 要求旧 PHP/Nginx/cron 正在运行，只执行 `up -d --no-deps php nginx cron`（Compose
 仅重建配置或镜像有变化的应用容器），不会执行 `down --volumes`、删除数据库或上传卷；`--fresh`

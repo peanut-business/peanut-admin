@@ -25,11 +25,16 @@ scripts/package-release.sh
 - `plugin:lock`：生成或核验生产部署的 `plugins.lock`；开发期无需执行。
 - `plugin:install`、`plugin:upgrade`、`plugin:rollback`、`plugin:uninstall`：安装平面的内部命令；普通
   开发者使用 `module:install-package` / `module:uninstall-package`。
-- `plugin:reconcile`：当前仍有历史注册入口，但目标架构已将其幂等对齐能力并入统一 applier；不要在新
-  自动化中依赖该命令，也不提供长期兼容承诺。
+- `plugin:reconcile`：由仓库唯一 `scripts/deploy-release` 在 migration 后以
+  `--official-locked` 调用，用于让部署数据库与已校验的 official lock 幂等对齐。普通 Module
+  自动化不得直接依赖该内部命令，也不提供长期兼容承诺。
 
 `plugins.lock` 和 `plugin.json` 是发布、部署身份的机器可读证据；模块业务声明仍只来自
 `module.json` 及其引用的 Resources 文件。
+
+部署脚本在替换现有目标或执行破坏性 fresh 之前，必须先从刚构建的候选 PHP 镜像运行只读
+安装预检和 `plugin:lock --check`。源码静态检查、宿主 vendor 或旧容器都不能替代这一步；
+候选镜像若缺少发布元数据、Plugin lock/schema 或安装基线，部署在目标变更前停止。
 
 ## 固定应用升级执行
 

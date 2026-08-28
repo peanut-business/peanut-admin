@@ -36,12 +36,6 @@ report_matches \
   '192\.168\.192\.2:3306/peanut_admin' \
   "${tracked[@]}"
 
-application_migrations="$(find server/database/migrations -maxdepth 1 -type f -name '*.sql' -print 2>/dev/null || true)"
-if [[ -n "$application_migrations" ]]; then
-  printf 'ERROR: v3.0 fresh-only baseline still contains application migration files:\n%s\n' \
-    "$application_migrations" >&2
-  failed=1
-fi
 if [[ -e server/database/migrate.php ]]; then
   printf 'ERROR: v3.0 fresh-only baseline still contains server/database/migrate.php\n' >&2
   failed=1
