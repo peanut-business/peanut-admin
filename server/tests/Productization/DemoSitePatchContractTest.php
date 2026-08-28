@@ -114,6 +114,10 @@ $expect(
     'demo overlay does not bind its application migration target to metadata'
 );
 $expect(
+    str_contains($overlayBuilder, 'COPYFILE_DISABLE=1 tar --no-xattrs'),
+    'demo overlay archive does not suppress macOS xattrs and AppleDouble files'
+);
+$expect(
     preg_match('/files=\(\n(?<files>.*?)\n\)/s', $overlayBuilder, $fileMatch) === 1,
     'demo overlay file closure is unavailable to the executable contract'
 );

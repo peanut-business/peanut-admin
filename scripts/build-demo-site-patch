@@ -129,7 +129,7 @@ jq -n \
   >"$staging/DEMO_PATCH_METADATA.json"
 
 mkdir -p "$(dirname "$OUTPUT")"
-tar -cf "$OUTPUT" -C "$staging" .
+COPYFILE_DISABLE=1 tar --no-xattrs -cf "$OUTPUT" -C "$staging" .
 printf 'patch=%s\nsha256=%s\nbase_tag=%s\noverlay_commit=%s\nmigration_target_version=%s\nfiles=%d\n' \
   "$OUTPUT" "$(shasum -a 256 "$OUTPUT" | awk '{print $1}')" "$BASE_TAG" \
   "$(git rev-parse HEAD)" "$migration_target_version" "${#files[@]}"
