@@ -42,8 +42,8 @@ app-owned 文件不会被框架升级静默覆盖。
 | 停用、恢复、卸载 | dev-tools/CLI 已有 disable、同制品 reactivation、retire 与双确认 Purge；PR #340 把 update/retire/Purge 接入登记 target、配对备份、隔离恢复、维护、审计、smoke 和 recovery pointer | CR21 已证明 disable/reactivate/retire/Purge，并保持 TenantModule 与 Package/RBAC 分层 | CR10—CR12、CR21 |
 | Tenant 开通与成员授权 | TenantModule enable/disable 与 RBAC 已验证 | 保持与 Package 安装分离；安装不得自动给 Tenant 或成员授权 | 全程不改变 |
 | Tenant 停用安全边界 | PR #344 已统一 active-Tenant 查询、签名应用交付和 Nginx `/storage/` 404；suspend/reactivate 聚焦安全验证通过 | CR13 已完成；最终 consumer-ready 候选仍须在 CR30/CR31 消费组合资格中复核 | CR13、CR30、CR31 |
-| 文档与资料可发现性 | 文档治理与公开站已建立 | 建立本计划前登记有 72 项 archived、57 项 planned；`output/` 有 318 个受控文件，历史材料仍混在现行树 | CR01、CR02、CR22、CR23 |
-| 正式消费者支持 | 有脱敏诊断包、版本和 Release 证据 | 缺统一问题提交物、兼容矩阵、失败恢复路径和消费者入口 | CR22、CR40 |
+| 文档与资料可发现性 | 文档治理、公开站与 CR22 消费者任务导航已建立 | CR22 已补齐当前入口；planned/archived 与历史证据的最终收敛仍由 CR23 完成 | CR01、CR02、CR22、CR23 |
+| 正式消费者支持 | 脱敏诊断包、唯一命令/兼容索引、普通 Issue 与安全问题规范已公开 | PR #348 已形成公开支持面；最终 Release 身份与发布后入口仍由 CR40 固定 | CR22、CR40 |
 
 ## 2. 可消费完成定义
 
@@ -96,7 +96,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 6 | CR13 | Tenant 停用全局 Fail-Closed | 已完成 | 无 | PR #344 合入 `dev=fbdfafc…`（tree `42d1d01…`）；active-Tenant 查询、签名应用交付与 Nginx `/storage/` 404 已形成，登记 MySQL 上 suspend/reactivate、ready/archived 和异步拒绝通过且零资源残留 | Sol xhigh；Tenant 安全停止线 |
 | 7 | CR20 | Module 作者只读检查与版本规则 | 已完成 | CR10 | PR #342 合入 `dev=5797e28…`（tree `953ff07…`）；真实 CLI 正/负输出、八项稳定检查和零数据库访问验证通过 | Terra 定位 + Sol/Worker 实现 |
 | 8 | CR21 | 双独立应用二开参考链 | 已完成 | CR11、CR12、CR20 | PR #346 合入 `dev=50c8577…`（tree `69f0ac1…`）；双独立生成应用完成签名 Module v1→v2 全生命周期、Tenant A/B 四层断言和 app-owned 摘要 | Sol high；真实纵向 fixture |
-| 9 | CR22 | 消费者文档与支持入口 | 未开始 | CR11、CR12、CR20 | 任务导航、唯一命令索引、错误修复、版本兼容、诊断包/Issue 提交规范；不公开内部资源和证据 | Luna 文档；主代理事实复核 |
+| 9 | CR22 | 消费者文档与支持入口 | 已完成 | CR11、CR12、CR20 | PR #348 合入从创建应用到 Module/应用升级的公开任务导航、唯一命令/错误/兼容索引、脱敏诊断包、普通 Issue 与安全问题规范 | Luna 文档；主代理事实复核 |
 | 10 | CR23 | 历史文档与证据最终收敛 | 未开始 | CR02、CR22 | 处理被新指南替代的 planned/archived 文件，重建登记与导航，输出保留证据清单和删除报告 | Luna 机械执行；主代理批准删除 |
 | 11 | CR30 | 封存前消费资格就绪 | 未开始 | CR11—CR13、CR20—CR23 | 用实际生成应用和第三方包形态验证所有入口、身份、目录、driver、阶段隔离与失败恢复；不产生 qualified | Sol high；Development mode |
 | 12 | CR31 | 固定候选消费组合资格 | 未开始 | CR30 | 同一候选一次完成 create-app、双模式 fresh、Module v1→v2 全生命周期、应用升级、生产 Compose/浏览器与零残留 | Sol xhigh；唯一资格 owner |
@@ -195,6 +195,20 @@ Git 可恢复性、当前 owner 和不可变证据价值；CR02 只处理复核�
   Composer cache、临时签名密钥和租约均已清零。脱敏 summary SHA-256 为
   `99e6544aee5bd58aa58f0f76f91d6517dec6aee79efc06a0015f81c188bd3a9b`；Development source candidate
   不冒充正式 Release adoption，后者仍由 CR31 验收。
+
+### 7.4 CR22 完成记录
+
+- PR #348 已合入 `dev=2d704557bfde17a0333d0be9b9007a81c4e12f5f`（tree
+  `dab4284399508fd72a2cb45886cb9aaad1f9fb6f`）；公开导航从 `scripts/create-app` 串到
+  Module create/check/pack、install/update、Tenant 开通、disable/reactivate、retire/Purge 与
+  `scripts/scaffold-upgrade`，没有引用内部资源地址、候选身份或资格证据。
+- `docs-site/reference.md` 是唯一消费者命令、错误与兼容索引；它明确 development CLI 与
+  deployment-owned update/retire/Purge worker 的边界，未把初始 install、disable/reactivate、
+  Marketplace、在线上传或远程命令写成生产能力。
+- `docs-site/support.md` 与根级 `SECURITY.md` 固定脱敏诊断包、普通 Issue 和安全问题分流；GitHub
+  私密漏洞表单未被写成已启用，表单不可用时公开 Issue 只允许无漏洞细节的联系请求。
+- 最新候选通过 `docs-governance`、精确 docs-impact 闭包、VitePress 1.6.4 全站构建和差异检查；
+  本切片未连接数据库、端口、服务、容器、浏览器或 P0-E 资源。
 
 ## 8. 状态同步与最终报告
 
