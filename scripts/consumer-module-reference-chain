@@ -200,16 +200,45 @@ def backend_environment(path: Path, database: str, public_key: str) -> dict[str,
     return {"PEANUT_SERVER_ENV_FILE": str(path)}
 
 
-def create_application(target: Path, name: str, slug: str, package: str, log: Path) -> None:
+def create_application(
+    target: Path,
+    name: str,
+    slug: str,
+    package: str,
+    candidate: str,
+    candidate_tree: str,
+    log: Path,
+) -> None:
+    source_builder = r'''
+$root=$argv[1];
+require $root.'/server/app/common/service/scaffold/ScaffoldPathGuard.php';
+require $root.'/server/app/common/service/scaffold/ScaffoldManifest.php';
+require $root.'/server/app/common/service/scaffold/VersionContract.php';
+require $root.'/server/app/common/service/scaffold/ApplicationCreator.php';
+$manifest=(new app\common\service\scaffold\ApplicationCreator(
+    $root,
+    $root.'/scaffold/application-template-inventory.json',
+    ['commit'=>$argv[2],'tree'=>$argv[3]],
+))->create($argv[4],$argv[5],$argv[6],$argv[7],null,'full');
+echo json_encode([
+    'status'=>'created',
+    'target'=>$argv[7],
+    'template'=>$manifest['template'],
+    'generation_source'=>$manifest['generation_source'],
+],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES),PHP_EOL;
+'''
     command(
         [
             str(PHP),
-            "scripts/create-app",
-            f"--name={name}",
-            f"--slug={slug}",
-            f"--package={package}",
-            "--profile=full",
-            f"--target={target}",
+            "-r",
+            source_builder,
+            str(ROOT),
+            candidate,
+            candidate_tree,
+            name,
+            slug,
+            package,
+            str(target),
         ],
         log=log,
     )
@@ -419,6 +448,9 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         fail("candidate must be an exact lowercase 40-hex commit")
     if command(["git", "rev-parse", "HEAD"]).strip() != args.candidate:
         fail("candidate does not match current HEAD")
+    candidate_tree = command(["git", "rev-parse", "HEAD^{tree}"]).strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", candidate_tree):
+        fail("candidate tree identity is invalid")
     if command(["git", "status", "--porcelain", "--untracked-files=no"]).strip() != "":
         fail("candidate worktree must be clean")
     if not re.fullmatch(r"peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle", args.database):
@@ -446,11 +478,30 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
     cache.mkdir(parents=True)
     completed = False
     try:
-        create_application(author, "CR21 Author", "cr21-author", "consumer/author", logs / "create-app-a.log")
-        create_application(consumer, "CR21 Consumer", "cr21-consumer", "consumer/runtime", logs / "create-app-b.log")
+        create_application(
+            author,
+            "CR21 Author",
+            "cr21-author",
+            "consumer/author",
+            args.candidate,
+            candidate_tree,
+            logs / "create-app-a.log",
+        )
+        create_application(
+            consumer,
+            "CR21 Consumer",
+            "cr21-consumer",
+            "consumer/runtime",
+            args.candidate,
+            candidate_tree,
+            logs / "create-app-b.log",
+        )
         for project in [author, consumer]:
             manifest = read_json(project / ".peanut/application-manifest.json")
-            expect(manifest.get("generation_source", {}).get("commit") == args.candidate,
+            expect(manifest.get("template", {}).get("source_commit") == args.candidate
+                   and manifest.get("template", {}).get("source_tree") == candidate_tree
+                   and manifest.get("generation_source", {}).get("commit") == args.candidate
+                   and manifest.get("generation_source", {}).get("tree") == candidate_tree,
                    "generated application did not use the fixed candidate")
         owned_before = {"application_a": app_owned_proof(author), "application_b": app_owned_proof(consumer)}
         install_dependencies(author, cache, logs / "composer-a.log")
@@ -591,6 +642,7 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
             "schema_version": 1,
             "status": "passed",
             "candidate": args.candidate,
+            "candidate_tree": candidate_tree,
             "lease": args.lease,
             "database_resource_id": "peanut-admin-p0e-mysql84-gate",
             "database": args.database,
@@ -617,6 +669,8 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
                 "retire_purge": "passed",
                 "app_owned_preservation": "passed",
                 "source_private_fixture_copy": "not_used",
+                "generation_mode": "development_source_candidate",
+                "formal_release_adoption": "deferred_to_cr31",
             },
             "snapshots": {
                 "after_update": after_update,
