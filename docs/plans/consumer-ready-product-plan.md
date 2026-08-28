@@ -18,7 +18,7 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20—CR23 已完成，CR30 正在准备唯一消费组合候选**
+> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20—CR23/CR30 已完成，下一关键路径为 CR31 唯一消费组合资格**
 > - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
@@ -98,7 +98,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 8 | CR21 | 双独立应用二开参考链 | 已完成 | CR11、CR12、CR20 | PR #346 合入 `dev=50c8577…`（tree `69f0ac1…`）；双独立生成应用完成签名 Module v1→v2 全生命周期、Tenant A/B 四层断言和 app-owned 摘要 | Sol high；真实纵向 fixture |
 | 9 | CR22 | 消费者文档与支持入口 | 已完成 | CR11、CR12、CR20 | PR #348 合入从创建应用到 Module/应用升级的公开任务导航、唯一命令/错误/兼容索引、脱敏诊断包、普通 Issue 与安全问题规范 | Luna 文档；主代理事实复核 |
 | 10 | CR23 | 历史文档与证据最终收敛 | 已完成 | CR02、CR22 | PR #350 合入 8 个旧页和一次性 import 的退出、3 个已完成计划归档及当前消费者指南/安全支持面的生成应用投影；恢复清单已固定 | Luna 机械执行；主代理批准删除 |
-| 11 | CR30 | 封存前消费资格就绪 | 进行中 | CR11—CR13、CR20—CR23 | 正在把正式 scaffold adoption 的双应用 Module v1→v2 链接入独立第 8 资格组，并以第 6 个隔离数据库验证阶段与恢复边界；本阶段不产生 qualified | Sol high；Development mode |
+| 11 | CR30 | 封存前消费资格就绪 | 已完成 | CR11—CR13、CR20—CR23 | PR #352 合入独立第 8 资格组、第 6 个隔离数据库与正式 scaffold adoption 双应用 Module v1→v2 链；Development 聚焦验证通过，本阶段不产生 qualified | Sol high；Development mode |
 | 12 | CR31 | 固定候选消费组合资格 | 未开始 | CR30 | 同一候选一次完成 create-app、双模式 fresh、Module v1→v2 全生命周期、应用升级、生产 Compose/浏览器与零残留 | Sol xhigh；唯一资格 owner |
 | 13 | CR40 | 正式可消费源码发布 | 未开始 | CR31 | `dev→main`、annotated tag、GitHub Release、scaffold/manifest/能力快照和一次最低发布后核验 | Sol high；发布 owner |
 
@@ -224,6 +224,22 @@ Git 可恢复性、当前 owner 和不可变证据价值；CR02 只处理复核�
 - 已发布 v3.0.9 scaffold 的 managed 集合为 389 项，当前 inventory 因 CR12 的
   `scripts/ops-module-worker` 为 390 项；正式 adoption 等价必须由 CR30 封存新 scaffold 后验证，
   CR23 未删除该生产 worker、未改写旧 Release，也未把这一预封存差异冒充通过。
+
+### 7.6 CR30 完成记录
+
+- PR #352 已合入 `dev=f34f6d297d791124779e601ebd1d0cf02b17b9cc`（tree
+  `ed15f76cd6b7bad0e8d9002e5569c9c25003bfe9`）；独立第 8 组
+  `consumer-module-lifecycle` 与长度安全的第 6 个数据库场景已经进入唯一 P0-E 入口。
+- `scaffold/releases/v3.0.10` 只从功能冻结提交
+  `a07f7cc7ee34b284d636bd9ad06a9bd57e27030e`（tree
+  `3aa60f0abee9aeb17e48a602c4973d7e594aa9e5`）封存一次，包含 390 个 managed 文件；manifest
+  的 inventory SHA-256 为 `eebf4504a23edf9d94987c8d0a47ac094d7a5f3e8d6ced5a0183b3a51af5c137`。
+- Development 聚焦候选 `6fdc2529487f75682ae615fc7c2f7cd48669d280`（与合入后的文件树一致）
+  直接从正式 scaffold 生成作者与消费者应用，Module v1→v2、Tenant/Package/RBAC、
+  disable/reactivate、retire/Purge 和两应用各 884 个 app-owned 文件前后摘要全部通过；脱敏
+  summary SHA-256 为 `9a435d28cb96970f2fbf3732fae09163da27ddae7c07507a445aac7da8e1c0a8`。
+- 验证使用登记的 development 资源 `peanut-admin-p0e-mysql84-gate`；精确数据库、临时凭据和租约
+  已清理。CR30 只证明资格就绪，不产生 `qualified`；CR31 仍须只对一个冻结候选运行一次完整组合资格。
 
 ## 8. 状态同步与最终报告
 
