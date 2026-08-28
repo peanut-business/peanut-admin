@@ -46,13 +46,14 @@ Demo 写保护和入口投影，不是另一套生产源码。
 
 | ID | 站点/操作面 | 可见现象与证据 | 当前判定 | 影响 |
 | --- | --- | --- | --- | --- |
-| DA01 | 共享 Admin 的 Tenant A persona、Tenant A、Tenant B 的可见菜单与按钮 | 共享入口的用户设置/操作日志/装修、Tenant A 多个业务入口及 Tenant B 网站设置出现“暂无访问权限”；三站 console 均有对应错误 | 高置信；需要按 persona 对齐菜单、按钮和 API permission key | Demo 看起来可用但主要操作失败，直接影响体验可信度 |
+| DA01 | 共享 Admin 的 Tenant A persona、Tenant A、Tenant B 的可见菜单与按钮 | 共享入口的用户设置、操作日志查询/重置和移动端/Tabbar 装修；Tenant A 的操作日志查询/重置/导出、网站设置、字典、装修与用户设置；Tenant B 的网站设置出现“暂无访问权限” | 高置信；需要按 persona 对齐菜单、按钮和 API permission key | Demo 看起来可用但主要操作失败，直接影响体验可信度 |
 | DA02 | Platform → 存储基础设施/路由 | `/api/platform/infrastructure/storage/route` 两次返回 HTTP 500 | 高置信、稳定复现 | Platform 运维页不能可靠表达未配置或错误状态 |
 | DA03 | Admin/Tenant → 生产准备清单 | `readiness.items.undefined.title` 在 zh/en-US/en 均缺失 | 高置信、跨共享/Tenant A/Tenant B | 页面出现不完整文案并污染 console |
 | DA04 | Admin/Tenant → 装修管理 | `装修管理`、`移动端装修`、`Tabbar 装修`、`PC 装修` 缺少 locale key | 高置信；在共享 Admin/Tenant A 可见 | 导航国际化回退，英文或严格 locale 下体验不完整 |
 | DA05 | Platform → 角色/权限复选框 | Element Plus 持续报告 checkbox `label` 作为 value 即将废弃 | 高置信；同一页面重复出现 | 后续 Element Plus 3 升级风险，当前 console 噪声较大 |
 | DA06 | Tenant A 长会话中的装修/业务入口 | 后段出现“租户会话不可用”，与前段“暂无访问权限”并存 | 待区分；可能是审计中的会话切换/退出残留，也可能是 Host 会话恢复缺陷 | 未核实前不得作为 Tenant 隔离缺陷或已知 Runtime 故障发布 |
-| DA07 | Tenant 审计中的两个无地址快照 | 页面只显示 `404`，现有快照没有 URL/Host，无法归属到 Tenant A/B 或判断是否由刻意访问未知路由产生 | unknown；不作为已确认产品缺陷 | 后续修复验证应记录 URL 与导航来源，无法复现则关闭而不是猜测 |
+| DA07 | Tenant 审计中的三个无地址快照 | 页面只显示 `404`，现有快照没有 URL/Host，无法归属到 Tenant A/B 或判断是否由刻意访问未知路由产生 | unknown；不作为已确认产品缺陷 | 后续修复验证应记录 URL 与导航来源，无法复现则关闭而不是猜测 |
+| DA08 | Platform → 租户与生命周期 → default/Tenant A/Tenant B 详情 | 三个详情动作都伴随“请求失败，请稍后重试”，同时详情对话框仍能展示数据 | 高置信、三 Tenant 一致；具体失败请求 unknown | 成功数据与失败 toast 同时出现，误导 operator 判断操作结果 |
 
 本轮未执行 Tenant 暂停/关闭、清空日志、密码修改、真实 Provider、真实资金、删除和其他不可逆
 动作。按钮可见性已纳入检查，但这些动作的成功路径必须在专用可丢弃资源和独立授权下验证。
@@ -64,7 +65,7 @@ Tenant B 的登录、文章/分类和文件页面已确认基本可读；共享 
 | 顺序 | ID | 任务 | 状态 | 主要交付 | 最低验收 |
 | ---: | --- | --- | --- | --- | --- |
 | 1 | PE01 | Demo persona 权限与 UI 投影对齐 | 未开始 | 固定 Platform、bootstrap Admin、共享 Admin、Tenant A/B persona 的 menu/button/API permission 矩阵；修正 Demo seed、菜单投影或按钮状态 | 预期可用操作不再出现 DA01；无权限能力隐藏或禁用并解释；Demo 写保护继续由 Demo policy 拒绝破坏性操作，不能靠错误 RBAC 代替 |
-| 2 | PE02 | Platform 存储路由错误语义 | 未开始 | 让未配置、配置错误和 Provider 不可达返回稳定可观察状态，不以 500 表达正常未配置 | 同一登记 Demo 上打开并刷新存储页一次，无 500，页面状态与后台 readiness 一致 |
+| 2 | PE02 | Platform 存储路由与 Tenant 详情错误语义 | 未开始 | 让未配置、配置错误和 Provider 不可达返回稳定可观察状态；消除 Tenant 详情成功数据与失败 toast 并存，不以 500 表达正常未配置 | 同一登记 Demo 上打开并刷新存储页、查看三个 Tenant 详情各一次，无 500 或矛盾 toast，页面状态与后台 readiness 一致 |
 | 3 | PE03 | Admin/Platform locale 与组件 API 收敛 | 未开始 | 补齐 readiness/装修导航稳定 key；checkbox 使用 Element Plus 当前 value API | 覆盖本轮对应页面一次，DA03—DA05 不再出现；不顺手升级依赖 |
 | 4 | PE04 | Release、Demo 与派生应用入口说明统一 | 未开始 | README、快速开始、部署升级与 Demo handoff 明确 annotated Release、tag archive、Demo overlay、`create-app` 和 clone 的不同用途 | 文档不再把移动分支 clone 写成正式派生应用输入；公开页不泄露密码，交付回复仍提供 owner 授权 Demo 凭据 |
 | 5 | PE05 | 修复候选四站点聚焦验收 | 未开始 | 对一个固定修复候选复核 Platform、共享 Admin 两 persona、Tenant A/B 的受影响页面和安全表单 | 受影响路径通过；保留未执行破坏性动作清单。权限/Tenant Runtime 变化按 L2 在正式发布候选只运行一次 P0-E，不在迭代期重复全量 Gate |
