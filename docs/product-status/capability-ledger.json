@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "dev",
-    "commit": "eeb204445dd37d3273959b46b4c3df100122e795",
+    "branch": "main",
+    "commit": "fe328a320b7c68b3c2f47512f2aa4afcad43c630",
     "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
-    "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已在 v3.0.11 全部完成；发布后 demo 安装暴露的候选镜像预检、Plugin lock/schema、official reconcile 与 overlay 打包闭包已由 PR #371 合入 dev，v3.0.12 hotfix 的 scaffold 已封存，尚待 main 固定候选八组资格、annotated tag、GitHub Release、同源 demo 和文档站发布。真实 Provider 资格、Marketplace、T16 与完整 SaaS 仍按各自范围后置。"
+    "status": "verified",
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成；部署闭包 hotfix 的 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已通过 P0-E 8/8、发布 annotated v3.0.12/GitHub Release，并由同提交 production-candidate Demo 与 Cloudflare 文档站完成采用验证。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1040,22 +1040,22 @@
     },
     {
       "id": "PA-DELIVERY-004",
-      "name": "2.0 发布后部署与演示闭环",
+      "name": "正式发布后部署与演示闭环",
       "area": "release",
       "status": "verified",
-      "summary": "v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。",
+      "summary": "v3.0.12 已在固定 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 完成 P0-E 8/8、annotated tag/GitHub Release，并以同提交 demo overlay 对登记 production-candidate 完成 fresh 多租户部署；Platform、共享 Admin、Tenant A/B 公开入口、Host 绑定和文档入口已验证。",
       "acceptance": [
-        "从不可变 v2.0.0 tag 对登记目标执行非交互 fresh 或同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
+        "从不可变正式 tag 对登记目标执行非交互 fresh 或受支持的同版本线 upgrade，并正确处理数据库迁移、备份和失败停止",
         "Standalone 与 Multi-tenant 各形成一个独立部署、数据库、域名和最小浏览器证据",
         "演示补丁只作用于登记的可丢弃演示目标，Tenant、Host、账号、密码、标题和数据终态一致",
         "普通生产升级不覆盖既有演示或生产配置，凭据安全写入且不会出现在仓库和日志",
         "经受控渠道向授权接收方交付访问方式；账本只记录无秘密的交付确认和已人工检查的浏览器截图结论"
       ],
       "evidence": [
-        {"kind": "release", "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v2.1.5"},
-        {"kind": "document", "ref": "docs/product-status/releases/v2.1.5.json"},
-        {"kind": "document", "ref": "docs/product-status/deployments/v2.1.5-online-experience.json"},
-        {"kind": "report", "ref": "output/p0e-p0e215b/summary.json"},
+        {"kind": "release", "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.12"},
+        {"kind": "document", "ref": "docs/product-status/releases/v3.0.12.json"},
+        {"kind": "document", "ref": "docs/product-status/deployments/v3.0.12-online-experience.json"},
+        {"kind": "report", "ref": "output/post-deployment-v3.0.12/summary.json"},
         {"kind": "resource", "ref": "resources/project-resources.json"}
       ],
       "dependencies": [
@@ -1066,9 +1066,9 @@
         "docs-site/capabilities.md",
         "docs-site/guide/deployment-upgrade.md",
         "resources/project-resources.json",
-        "docs/product-status/releases/v2.1.5.json",
-        "docs/product-status/deployments/v2.1.5-online-experience.json",
-        "output/p0e-p0e215b/summary.json"
+        "docs/product-status/releases/v3.0.12.json",
+        "docs/product-status/deployments/v3.0.12-online-experience.json",
+        "output/post-deployment-v3.0.12/summary.json"
       ]
     },
     {
@@ -1270,7 +1270,7 @@
       "name": "正式可消费源码交付",
       "area": "delivery",
       "status": "verified",
-      "summary": "CR01—CR40 已完成；main@a55e2e4470a1e8dd140bdb7612d63c397f49f862（tree 6fb951b36e895936a2e3c2f1716ae11524a5eadd）以 cr31q7 通过正式 create-app、双模式 fresh、Module v1→v2 全生命周期、Compose/浏览器和零残留八组资格，并已发布 annotated v3.0.11 与同名 GitHub Release。",
+      "summary": "CR01—CR40 保持完成；部署闭包 hotfix 的最终 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630（tree b5be33c5bd180e6b89f00d49002cd4fa96aeb523）以 p0e3012a 通过正式 create-app、双模式 fresh、Plugin/Module 生命周期、Compose/浏览器和零残留八组资格，并已发布 annotated v3.0.12 与同名 GitHub Release。",
       "acceptance": [
         "同一固定 commit/tree 通过 create-app、双模式 fresh、Module v1 到 v2 全生命周期、应用升级、生产 Compose/浏览器和零残留组合资格",
         "dev、main、annotated tag、GitHub Release、scaffold manifest、源码附件和能力快照引用同一不可变身份",
@@ -1292,15 +1292,15 @@
         },
         {
           "kind": "tag",
-          "ref": "v3.0.11"
+          "ref": "v3.0.12"
         },
         {
           "kind": "release",
-          "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.11"
+          "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.12"
         },
         {
           "kind": "document",
-          "ref": "docs/product-status/releases/v3.0.11.json"
+          "ref": "docs/product-status/releases/v3.0.12.json"
         }
       ],
       "dependencies": [
@@ -1318,15 +1318,15 @@
         "scripts/p0e-runtime-qualification",
         "scripts/create-app",
         "scaffold/releases",
-        "docs/product-status/releases/v3.0.11.json"
+        "docs/product-status/releases/v3.0.12.json"
       ]
     },
     {
       "id": "PA-DELIVERY-006",
       "name": "3.0.12 部署闭包 Hotfix",
       "area": "delivery",
-      "status": "implemented",
-      "summary": "PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；v3.0.11 加 demo overlay 的四 Host 已通过浏览器验证，但正式 v3.0.12 仍待同一 main 候选完整资格、发布和 demo/docs 采用。",
+      "status": "verified",
+      "summary": "PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已以 p0e3012a 通过 P0-E 8/8、发布 v3.0.12，并由同提交 demo 与公开文档入口完成采用验证。",
       "acceptance": [
         "生产 PHP 镜像包含安装预检和 Plugin lock 所需的发布身份与 schema",
         "deploy-release 在替换目标或删除登记卷前验证精确候选镜像和 canonical Plugin lock",
@@ -1344,8 +1344,16 @@
           "ref": "eeb204445dd37d3273959b46b4c3df100122e795"
         },
         {
+          "kind": "release",
+          "ref": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.12"
+        },
+        {
           "kind": "document",
-          "ref": "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json"
+          "ref": "docs/product-status/releases/v3.0.12.json"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/deployments/v3.0.12-online-experience.json"
         }
       ],
       "dependencies": [
@@ -1361,7 +1369,9 @@
         "server/tests/Productization/DemoSitePatchContractTest.php",
         "server/tests/Productization/InstallerBootstrapTest.php",
         "scaffold/releases/v3.0.12",
-        "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json"
+        "docs/product-status/releases/v3.0.12.json",
+        "docs/product-status/deployments/v3.0.12-online-experience.json",
+        "docs-site/demo-access.md"
       ]
     },
     {

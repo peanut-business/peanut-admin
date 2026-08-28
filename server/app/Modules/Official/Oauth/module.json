@@ -1,5 +1,5 @@
 {
-  "schema_version":1,"key":"official.oauth","name":"OAuth and Channels","description":"Tenant-owned OAuth identities and WeChat channel bindings.","version":"1.0.0","kernel_constraint":"^1.0","license":"proprietary",
+  "schema_version":1,"key":"official.oauth","name":"OAuth and Channels","description":"Tenant-owned OAuth identities and WeChat channel bindings.","version":"1.0.0","kernel_constraint":"^1.0","license":"Apache-2.0",
   "php_package":"peanut-business/official-oauth","web_package":"@peanut-admin/official-oauth","dependencies":[{"module_key":"official.file","version":"^1.0"},{"module_key":"official.member","version":"^1.0"},{"module_key":"official.notification","version":"^1.0"}],
   "backend":{"provider":"app\\Modules\\Official\\Oauth\\ModuleProvider","routes":"Http/routes.php","migrations":"Database/Migrations","menus":"Resources/menus.json","permissions":"Resources/permissions.json","setting_definitions":"Resources/setting-definitions.json"},
   "frontend":{"entry":"web/src/modules/official-oauth/contribution.ts"},

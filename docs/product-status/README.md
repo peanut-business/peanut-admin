@@ -32,9 +32,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已在 v3.0.11 全部完成；发布后 demo 安装暴露的候选镜像预检、Plugin lock/schema、official reconcile 与 overlay 打包闭包已由 PR #371 合入 dev，v3.0.12 hotfix 的 scaffold 已封存，尚待 main 固定候选八组资格、annotated tag、GitHub Release、同源 demo 和文档站发布。真实 Provider 资格、Marketplace、T16 与完整 SaaS 仍按各自范围后置。
+> 总体状态：**已验证**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成；部署闭包 hotfix 的 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已通过 P0-E 8/8、发布 annotated v3.0.12/GitHub Release，并由同提交 production-candidate Demo 与 Cloudflare 文档站完成采用验证。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
 >
-> 事实基线：`dev@eeb204445dd37d3273959b46b4c3df100122e795`，复核日期：`2026-08-28`。
+> 事实基线：`main@fe328a320b7c68b3c2f47512f2aa4afcad43c630`，复核日期：`2026-08-28`。
 
 ### 已验证可用
 
@@ -65,18 +65,13 @@ php scripts/check-product-capability-ledger
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
-| `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。 |
+| `PA-DELIVERY-004` | 正式发布后部署与演示闭环 | 已验证 | v3.0.12 已在固定 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 完成 P0-E 8/8、annotated tag/GitHub Release，并以同提交 demo overlay 对登记 production-candidate 完成 fresh 多租户部署；Platform、共享 Admin、Tenant A/B 公开入口、Host 绑定和文档入口已验证。 |
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
 | `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已验证 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架。CR20 已由 PR #342 合入唯一只读 module:check Host/CLI，复用现有 manifest schema、版本约束、package preflight 与 archive validator，稳定报告八项检查且不访问数据库。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
 | `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 已验证 | CR10 已冻结显式 Package 生命周期合同；CR11/CR12 已合入 development update 与 deployment-owned 安全编排。CR21 已由 PR #346 在两个独立生成应用间直接完成签名 Module v1→v2 的 create/check/pack/install/update/disable/reactivate/retire/Purge，TenantModule、Package、ModuleInstallation 与成员 RBAC 四层保持分离，app-owned 摘要不变。正式 Release adoption 仍由 CR31 验收。 |
 | `PA-TENANCY-002` | Tenant 停用全局 Fail-Closed | 已验证 | CR13 已由 PR #344 合入 dev：管理/API/PC/H5 与公开内容继续通过 active Tenant/Host context；全部 Tenant 文件 URL 统一为短期签名应用交付，读取时重新查询 active Tenant 与 ready 对象，生产和开发 Nginx 的历史 `/storage/` 直出固定 404。登记 MySQL 聚焦验证证明已签发 URL 在 suspend 后拒绝、reactivate 后只恢复 ready 对象，archived 对象与 suspended 异步任务不复活。 |
-| `PA-DELIVERY-005` | 正式可消费源码交付 | 已验证 | CR01—CR40 已完成；main@a55e2e4470a1e8dd140bdb7612d63c397f49f862（tree 6fb951b36e895936a2e3c2f1716ae11524a5eadd）以 cr31q7 通过正式 create-app、双模式 fresh、Module v1→v2 全生命周期、Compose/浏览器和零残留八组资格，并已发布 annotated v3.0.11 与同名 GitHub Release。 |
-
-### 已实现或正在验收
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-DELIVERY-006` | 3.0.12 部署闭包 Hotfix | 已实现，待验收 | PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；v3.0.11 加 demo overlay 的四 Host 已通过浏览器验证，但正式 v3.0.12 仍待同一 main 候选完整资格、发布和 demo/docs 采用。 |
+| `PA-DELIVERY-005` | 正式可消费源码交付 | 已验证 | CR01—CR40 保持完成；部署闭包 hotfix 的最终 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630（tree b5be33c5bd180e6b89f00d49002cd4fa96aeb523）以 p0e3012a 通过正式 create-app、双模式 fresh、Plugin/Module 生命周期、Compose/浏览器和零残留八组资格，并已发布 annotated v3.0.12 与同名 GitHub Release。 |
+| `PA-DELIVERY-006` | 3.0.12 部署闭包 Hotfix | 已验证 | PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已以 p0e3012a 通过 P0-E 8/8、发布 v3.0.12，并由同提交 demo 与公开文档入口完成采用验证。 |
 
 ### 暂缓或范围外
 

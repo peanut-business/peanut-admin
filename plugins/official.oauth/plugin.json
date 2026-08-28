@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "eeaff34f164ef5848f8a7a853a6d6407010ee89345449c948f9413a269d38c97"
+        "sha256": "689637ddf3ef1750c88c7486b972de3d5d29ddeaf32bd7fb0453782c57852a6b"
     },
     "trust": {
         "channel": "bundled",
@@ -26,7 +26,7 @@
             "sha256": null
         },
         "license": {
-            "identifier": "proprietary",
+            "identifier": "Apache-2.0",
             "status": "declared"
         },
         "qualification": {
@@ -76,14 +76,14 @@
         {
             "name": "peanut-business/official-oauth",
             "version": "1.0.0",
-            "sha256": "68d1136b619683fbe801e00510c8f40587cbfed3275ac72b4ceb81bed7043574"
+            "sha256": "ccd8ce8fa1dfcb55590fe5a8f1c67fd89e5874393aa229449e7efcd1cd242d3e"
         }
     ],
     "npm": [
         {
             "name": "@peanut-admin/official-oauth",
             "version": "1.0.0",
-            "integrity": "sha256-KcwPmbz1lUGOl9fhRrt1EQHjZcSR/H2XzSSb4UFBos0="
+            "integrity": "sha256-49i5EMxVJ5mr609QjknzvDZqSSkJApPO8Z6Lncb1qNw="
         }
     ],
     "frontend": [

@@ -5111,25 +5111,25 @@
     {
       "id": "pa-docs-site-demo-access",
       "path": "docs-site/demo-access.md",
-      "title": "演示与本地访问",
+      "title": "在线演示",
       "audience": [
-        "maintainer",
-        "architect",
-        "ai"
+        "developer",
+        "operator"
       ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
+      "content_type": "public-projection",
+      "authority": "projection",
       "canonical_sources": [
         "resources/project-resources.json"
       ],
       "owner": "application-maintainers",
-      "status": "archived",
+      "status": "current",
       "scope": [
-        "application"
+        "docs-site"
       ],
       "related": [
         "documentation",
-        "scaffold"
+        "release",
+        "deployment"
       ],
       "site_projections": [],
       "replaced_by": null,

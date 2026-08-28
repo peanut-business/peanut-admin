@@ -1,5 +1,5 @@
 {
-  "schema_version":1,"key":"official.task","name":"Task Scheduler","description":"Tenant-owned schedules and trusted background task execution.","version":"1.0.0","kernel_constraint":"^1.0","license":"proprietary",
+  "schema_version":1,"key":"official.task","name":"Task Scheduler","description":"Tenant-owned schedules and trusted background task execution.","version":"1.0.0","kernel_constraint":"^1.0","license":"Apache-2.0",
   "php_package":"peanut-business/official-task","web_package":"@peanut-admin/official-task","dependencies":[],
   "backend":{"provider":"app\\Modules\\Official\\Task\\ModuleProvider","routes":"Http/routes.php","migrations":"Database/Migrations","menus":"Resources/menus.json","permissions":"Resources/permissions.json","setting_definitions":"Resources/setting-definitions.json"},
   "frontend":{"entry":"web/src/modules/official-task/contribution.ts"},

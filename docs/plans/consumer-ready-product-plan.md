@@ -258,6 +258,34 @@ Git 可恢复性、当前 owner 和不可变证据价值；CR02 只处理复核�
   SHA-256 为 `7c2e79a3cf8e44ae2e25aba7579689bc4df1e61b4c746dc1fb2900125b856c38`。
 - 本轮正式交付只发布源码，不代表 Standalone/Multi-tenant 生产部署或真实 Provider 资格；第 3 节范围边界保持。
 
+### 7.8 v3.0.12 发布后部署闭包完成记录
+
+- PR #371 已把生产镜像安装预检、Plugin lock/schema、migration 后 official Plugin reconcile 与
+  demo overlay 打包闭包合入 `dev=eeb204445dd37d3273959b46b4c3df100122e795`；PR #372 封存
+  `v3.0.12` scaffold，PR #373 将最终候选提升为
+  `main@fe328a320b7c68b3c2f47512f2aa4afcad43c630`（tree
+  `b5be33c5bd180e6b89f00d49002cd4fa96aeb523`）。
+- 固定候选 `p0e3012a` 的正式 create-app、Standalone/Multi-tenant fresh、Plugin lifecycle、
+  consumer Module lifecycle、production Compose 与双模式浏览器八组全部通过；数据库、Compose、
+  容器、卷、网络、镜像、监听、cache 均零残留且租约已释放。
+- annotated tag `v3.0.12`（tag object `231b0f5f62b6b637f816bca0a5775ae604f194e8`）与
+  [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.12) 已发布；规范源码包
+  SHA-256 为 `a70b335809989ec6fa33f43b0107a1a0f657ed1bd92782d6b7dd689b2e5f86ad`，外部 manifest
+  SHA-256 为 `8ce1a924e593d34bbf5a5bc18ea51c9cde40232d6f3d093e93e42ad9986c036a`。
+- 登记 `production-candidate` Demo 已 fresh 重建到同一提交；overlay SHA-256 为
+  `555330dcd405b340b12a0fb9f49486a2520229c24a24e075773724dd530674da`。Platform、共享 Admin、
+  Tenant A 与 Tenant B 四个 HTTPS 入口均完成登录；两个绑定 Host 的浏览器标题分别为 Tenant A/B。
+  共享入口的登录挑战、用户信息与切换 API 进一步证明 Tenant A/B 两项、
+  `canSwitchTenant=true` 和 Tenant B 切换目标。浏览器工具在下拉过渡完成前读取选项的假阴性已
+  保留在原始摘要中，没有通过第三次点状重试改写；聚合证据见
+  `output/post-deployment-v3.0.12/summary.json`。
+- Cloudflare Pages 项目 `peanut-admin-docs` 已发布并通过
+  <https://peanut-admin-doc.007345.xyz/> 与 `/demo-access` 的 HTTPS/TLS 验证；本次部署身份为
+  <https://0cf61e43.peanut-admin-docs.pages.dev>。公开站只投影 owner 授权的入口和账号，不提交密码。
+- 因此 CR01—CR40 的 13 项任务保持全部完成，当前正式 consumer-ready 身份由 `v3.0.12` 取代
+  `v3.0.11`；Marketplace、T16 部分/多次退款、真实 Provider 资格、跨实例运营平台、完整 SaaS
+  商业化、预构建生产镜像和第三方业务生产部署仍保持暂缓或范围外。
+
 ## 8. 状态同步与最终报告
 
 新执行会话的最终报告必须包含：13 个任务状态、合入 PR/commit/tree、实际资源与一次最低验证、删除/

@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "459c02a102b5eb89bcf1f8ddb1ff0342c2674dee2167ed323dc4771f4e99e40d"
+        "sha256": "3a5b337dd21c3e1350034cf1e4558ff69d779e653f5cebd39e3eb8dcc64cbff9"
     },
     "trust": {
         "channel": "bundled",
@@ -26,7 +26,7 @@
             "sha256": null
         },
         "license": {
-            "identifier": "proprietary",
+            "identifier": "Apache-2.0",
             "status": "declared"
         },
         "qualification": {
@@ -63,14 +63,14 @@
         {
             "name": "peanut-business/fixture-delivery-record",
             "version": "1.0.0",
-            "sha256": "a5862bdd2a37b5dade659e3b1a25ed8e56dea9a0d007901988602e2f68f6c551"
+            "sha256": "d919cce5ae82e5ba9faef8a41f61be883e0fcb1ce7465ba8ec91aa2dd42ee5b6"
         }
     ],
     "npm": [
         {
             "name": "@peanut-admin/fixture-delivery-record",
             "version": "1.0.0",
-            "integrity": "sha256-ZVeub731LcGgH1dsSLVy0OfmRUD5NjUgSVT9hHRFqHs="
+            "integrity": "sha256-QcAVCuXkfgGZ9z7/7nuJ7b/orjkxRyEwvAosm3wenQY="
         }
     ],
     "frontend": [

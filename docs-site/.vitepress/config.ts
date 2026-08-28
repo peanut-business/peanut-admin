@@ -20,6 +20,7 @@ const development = [
 ]
 
 const delivery = [
+  { text: '在线演示', link: '/demo-access' },
   { text: '创建应用与交付 Module', link: '/guide/application-module-lifecycle' },
   { text: '测试与排错', link: '/guide/testing' },
   { text: '部署与升级', link: '/guide/deployment-upgrade' },
@@ -39,7 +40,6 @@ export default defineConfig({
     'architecture/identity-and-tenancy.md',
     'architecture/module-execution-context.md',
     'architecture/official-module-qualification.md',
-    'demo-access.md',
   ],
   lang: 'zh-CN',
   title: `${website.name} 开发者文档`,
@@ -57,6 +57,7 @@ export default defineConfig({
     siteTitle: `${website.name} 文档`,
     nav: [
       { text: '文档', link: '/guide/' },
+      { text: '在线演示', link: '/demo-access' },
       { text: '概念', link: '/guide/concepts' },
       { text: '开发', items: development },
       { text: '交付', items: delivery },

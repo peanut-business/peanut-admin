@@ -10,7 +10,7 @@
     "url": "git+https://github.com/peanut-business/peanut-admin.git",
     "directory": "pc"
   },
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "../scripts/local-client-dev pc",

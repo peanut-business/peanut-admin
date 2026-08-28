@@ -1,5 +1,5 @@
 {
-  "schema_version":1,"key":"official.member","name":"Member CRM","description":"Tenant-owned customer profiles, tags, balances and member sessions.","version":"1.0.0","kernel_constraint":"^1.0","license":"proprietary",
+  "schema_version":1,"key":"official.member","name":"Member CRM","description":"Tenant-owned customer profiles, tags, balances and member sessions.","version":"1.0.0","kernel_constraint":"^1.0","license":"Apache-2.0",
   "php_package":"peanut-business/official-member","web_package":"@peanut-admin/official-member","dependencies":[{"module_key":"official.file","version":"^1.0"}],
   "backend":{"provider":"app\\Modules\\Official\\Member\\ModuleProvider","routes":"Http/routes.php","migrations":"Database/Migrations","menus":"Resources/menus.json","permissions":"Resources/permissions.json","setting_definitions":"Resources/setting-definitions.json"},
   "frontend":{"entry":"web/src/modules/official-member/contribution.ts"},
