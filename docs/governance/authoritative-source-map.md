@@ -13,6 +13,7 @@ This page answers “where must this fact be changed first?”. Explanations and
 | Project identity, branches and execution rules | `AGENTS.md`, `AGENT_EXECUTION_RULES.md` | root indexes only |
 | Runtime resources, environments and fixed ports | `resources/project-resources.json`; P0-E-only bindings in `resources/p0e-runtime-qualification.json` | internal operations docs; public pages receive only safe local instructions |
 | Capability and completion status | `docs/product-status/capability-ledger.json`; immutable release/deployment snapshots in its sibling directories | `docs/product-status/README.md`; never imported wholesale into the public site |
+| Public demo entry and account handoff | owner-authorized `public_demo_access` in `resources/project-resources.json`, plus the exact release/deployment snapshots | `docs/operations/demo-access.md` internally and `docs-site/demo-access.md` publicly; passwords, tokens, cookies and private credential references are excluded from the public projection |
 | Product-closure and consumer-ready delivery ownership, package compatibility, execution state and evidence-retention decisions | accepted ownership decision, package manifests/locks, fixed commits, PRs, completed minimum verification and Git-traceable cleanup baseline | `docs/architecture/product-closure-ownership-and-adoption.md`, `docs/architecture/product-closure-core-application-compatibility.md`, `docs/plans/product-closure-execution-queue.md`, `docs/product-status/product-closure-observability.md`, `docs/plans/consumer-ready-product-plan.md` and `docs/maintenance/consumer-ready-evidence-retention.md`; stable capability completion still returns to the capability ledger |
 | Consumer-ready delivery preflight policy | `resources/consumer-ready-control.json` and `scripts/consumer-ready-control` | `docs/operations/consumer-ready-control.md`; this internal control has no public-site projection |
 | Service ownership and maturity | `resources/service-registry.json` | `docs/architecture/service-layer-registry.md` |
@@ -34,7 +35,7 @@ When a boundary changes, update the owning repository first, fix the consuming r
 
 ## Public projection boundary
 
-The developer site may publish product-neutral concepts, commands, localhost examples, stable public APIs and released package identities. It must not publish credential references, private hosts, internal candidate IDs, raw qualification evidence or the internal capability ledger. Generated public pages declare their upstream and regeneration command.
+The developer site may publish product-neutral concepts, commands, localhost examples, stable public APIs, released package identities, and owner-authorized public demo hosts/account names. It must not publish passwords, tokens, cookies, private credential references, private hosts, internal candidate IDs, raw qualification evidence or the internal capability ledger. Generated public pages declare their upstream and regeneration command.
 
 Consumer support projects only the fixed diagnostic schema and redaction boundary. Ordinary reports point to
 public Issues; security reports follow the repository `SECURITY.md` and never publish vulnerability details.
