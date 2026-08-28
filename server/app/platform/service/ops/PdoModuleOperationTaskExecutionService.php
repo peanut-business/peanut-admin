@@ -507,21 +507,37 @@ SQL);
             return false;
         }
         $statement = $this->pdo->prepare(
-            'SELECT status,installed_version,artifact_sha256 FROM pa_plugin_installation WHERE plugin_key=?'
+            'SELECT status,installed_version,artifact_sha256,lock_digest FROM pa_plugin_installation WHERE plugin_key=?'
         );
         $statement->execute([$payload['package_key']]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
         if ($payload['operation'] === 'update') {
-            $target = $result['plan']['target'] ?? null;
-            return is_array($row) && is_array($target)
+            return is_array($row)
                 && (string)$row['status'] === 'active'
-                && hash_equals((string)($target['version'] ?? ''), (string)$row['installed_version'])
-                && hash_equals((string)($target['artifact_sha256'] ?? ''), (string)$row['artifact_sha256']);
+                && hash_equals((string)($result['version'] ?? ''), (string)$row['installed_version'])
+                && hash_equals((string)($result['artifact_sha256'] ?? ''), (string)$row['artifact_sha256'])
+                && hash_equals((string)($result['lock_digest'] ?? ''), (string)$row['lock_digest']);
         }
         if ($payload['operation'] === 'retire') {
             return is_array($row) && (string)$row['status'] === 'uninstalled';
         }
-        return $row === false;
+        if ($row !== false) {
+            return false;
+        }
+        $modules = $result['affected_modules'] ?? [];
+        if (!is_array($modules) || $modules === []) {
+            return ($result['operation'] ?? null) === 'unchanged';
+        }
+        $keys = array_values(array_filter(array_column($modules, 'module_key'), 'is_string'));
+        if (count($keys) !== count($modules)) {
+            return false;
+        }
+        $check = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM pa_module_installation WHERE module_key IN ('
+            . implode(',', array_fill(0, count($keys), '?')) . ')'
+        );
+        $check->execute($keys);
+        return (int)$check->fetchColumn() === 0;
     }
 
     /** @param array<string,string> $payload @param array<string,mixed> $execution @return array<string,mixed> */
