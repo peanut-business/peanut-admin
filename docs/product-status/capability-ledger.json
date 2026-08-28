@@ -10,7 +10,7 @@
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@f34f6d297d791124779e601ebd1d0cf02b17b9cc 已完成 CR01/CR02/CR10—CR13/CR20—CR23/CR30，正式 scaffold adoption 的第 8 消费资格组和第 6 隔离数据库场景已完成 Development 聚焦验证。CR31/CR40 的固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 仍不能冒充 consumer-ready Release。"
+    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@f34f6d297d791124779e601ebd1d0cf02b17b9cc 已完成 CR01/CR02/CR10—CR13/CR20—CR23/CR30。CR31 正在冻结产品/scaffold 同名的 3.0.11 唯一候选；CR31/CR40 的组合资格和正式 main/Tag/Release 尚未完成，当前 dev 仍不能冒充 consumer-ready Release。"
   },
   "capabilities": [
     {
@@ -1270,7 +1270,7 @@
       "name": "正式可消费源码交付",
       "area": "delivery",
       "status": "planned",
-      "summary": "PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 已建立公开消费者支持并完成历史证据收敛。CR30 已封存 scaffold v3.0.10，并以正式 adoption 双应用 Module v1→v2 通过第 8 资格组的 Development 聚焦链；CR31/CR40 仍须只对一个冻结候选完成组合资格和正式 main/Tag/GitHub Release。",
+      "summary": "PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 已建立公开消费者支持并完成历史证据收敛。CR30 已以正式 adoption 双应用 Module v1→v2 通过第 8 资格组的 Development 聚焦链；CR31 正在冻结产品/scaffold 同名的 3.0.11 候选，随后 CR31/CR40 仍须完成唯一组合资格和正式 main/Tag/GitHub Release。",
       "acceptance": [
         "同一固定 commit/tree 通过 create-app、双模式 fresh、Module v1 到 v2 全生命周期、应用升级、生产 Compose/浏览器和零残留组合资格",
         "dev、main、annotated tag、GitHub Release、scaffold manifest、源码附件和能力快照引用同一不可变身份",

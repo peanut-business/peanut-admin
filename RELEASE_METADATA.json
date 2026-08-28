@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.5",
-  "expected_tag": "v3.0.5",
-  "release_date": "2026-08-21",
+  "version": "3.0.11",
+  "expected_tag": "v3.0.11",
+  "release_date": "2026-08-28",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "proprietary",
@@ -14,7 +14,7 @@
   "normative_artifact": {
     "type": "source-release",
     "prebuilt_images_published": false,
-    "new_core_packages_published": true,
+    "new_core_packages_published": false,
     "saas_included": false
   },
   "supported_build_and_runtime": {
@@ -41,24 +41,24 @@
   "legal_files": {
     "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
     "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "f77dd2ae21d361f462b57c7ec664f9486ae45c971f14b1d2d51fc343b07ec395",
-    "RELEASE_SBOM.spdx.json": "a784e1c2fb937e166909643d314882411d95ce43168aa6be5586c8b3750b6630"
+    "THIRD_PARTY_NOTICES.md": "7f87cc15de477cb9d2e99f7f33d6f0dce313c248d0b0adf36b86fa31099acf57",
+    "RELEASE_SBOM.spdx.json": "527ce365a7d0a7fdc19603ece776c541b71e3b33139f982b276c3cb851fc8465"
   },
   "technical_qualification": {
-    "phase": "3.0.5-qualified",
-    "result": "passed",
-    "final_candidate_commit": "ea87c53df14e598470a077199cb87568c5b3d951",
-    "final_candidate_tree": "53cd29d4e686f7a285da3f1be81fbcb70a7586a8",
-    "run_id": "p0e305b",
-    "groups_passed": 7,
-    "summary_sha256": "7c90faccead089e5b62802cecfdcfc58a4333ac26c8d78150d0bf4b3009257e4",
-    "cleanup_residual_count": 0,
-    "lease_released": true,
-    "migrations": 4,
-    "scaffold_version": "3.0.5",
+    "phase": "3.0.11-pending-qualification",
+    "result": "pending",
+    "final_candidate_commit": null,
+    "final_candidate_tree": null,
+    "run_id": null,
+    "groups_passed": 0,
+    "summary_sha256": null,
+    "cleanup_residual_count": null,
+    "lease_released": false,
+    "migrations": 8,
+    "scaffold_version": "3.0.11",
     "application_initial_version": "0.1.0",
-    "evidence": "Local fixed candidate passed all seven L2 P0-E groups with zero resource residuals.",
-    "release_delta": "Demo overlays use peanut1234 only in demo mode; application-owned 12–128 password policy is injected over Core's loose default; Core and Web lockfiles consume alpha.7; current release docs describe the main/tag/create-app lifecycle."
+    "evidence": "CR31 qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
+    "release_delta": "Consumer-ready Module package update, deployment-owned lifecycle operations, Tenant suspension fail-closed delivery, independent-application reference flow, public support guidance and the eighth P0-E consumer group."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

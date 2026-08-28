@@ -1,6 +1,6 @@
 # Peanut Admin Third-Party Notices
 
-Generated for Peanut Admin 3.0.5 on 2026-08-21.
+Generated for Peanut Admin 3.0.11 on 2026-08-28.
 
 Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. All rights reserved. Third-party components remain governed by their own licenses. Nothing in the Peanut Admin proprietary license restricts rights granted by those third-party licenses.
 
@@ -107,7 +107,7 @@ These 33 packages are installed with `composer install --no-dev` in the producti
 | `opis/json-schema` | `2.6.0` | `Apache-2.0` | https://github.com/opis/json-schema.git |
 | `opis/string` | `2.1.0` | `Apache-2.0` | https://github.com/opis/string.git |
 | `opis/uri` | `1.1.0` | `Apache-2.0` | https://github.com/opis/uri.git |
-| `peanut-admin/core` | `0.1.0-alpha.7` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core-php.git |
+| `peanut-admin/core` | `0.1.0-alpha.9` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core-php.git |
 | `psr/container` | `2.0.2` | `MIT` | https://github.com/php-fig/container.git |
 | `psr/http-client` | `1.0.3` | `MIT` | https://github.com/php-fig/http-client.git |
 | `psr/http-factory` | `1.1.0` | `MIT` | https://github.com/php-fig/http-factory.git |

@@ -3,7 +3,28 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
-## [3.0.5] - Pending qualification
+## [3.0.11] - Pending qualification
+
+### Added
+
+- Added an explicit signed Module package v1→v2 update path, deployment-owned update/retire/Purge
+  operations and a two-independent-application consumer reference flow.
+- Added a public consumer task guide, compatibility/command index, redacted diagnostics workflow
+  and separate ordinary/security issue paths.
+- Added an eighth fixed-candidate qualification group that consumes the formal scaffold release and
+  proves the complete Module lifecycle without source-private fixtures.
+
+### Security
+
+- Tenant suspension now fails closed across management, API, PC/H5, public content, asynchronous work
+  and Tenant file delivery, while reactivation restores only valid access.
+
+### Delivery
+
+- The application and scaffold candidate share version `3.0.11`; the final commit/tree and qualification
+  identity remain external until CR31 completes.
+
+## [3.0.5] - 2026-08-21
 
 ### Fixed
 

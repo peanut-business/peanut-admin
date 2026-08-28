@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.10",
+    "template_version": "3.0.11",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -271,7 +271,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a784e1c2fb937e166909643d314882411d95ce43168aa6be5586c8b3750b6630"
+            "source_sha256": "527ce365a7d0a7fdc19603ece776c541b71e3b33139f982b276c3cb851fc8465"
         },
         {
             "path": "SECURITY.md",
@@ -299,7 +299,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f77dd2ae21d361f462b57c7ec664f9486ae45c971f14b1d2d51fc343b07ec395"
+            "source_sha256": "7f87cc15de477cb9d2e99f7f33d6f0dce313c248d0b0adf36b86fa31099acf57"
         },
         {
             "path": "compose.yaml",
