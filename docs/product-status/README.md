@@ -32,9 +32,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。v3.0.5 已完成固定 main 候选的 L2 P0-E 7/7、annotated tag、GitHub Release，并更新登记的 Standalone 与 Multi-tenant Demo；公开演示账号已恢复为 peanut1234，Platform 登录不再出现 null state。后续 T15/T16 仍按范围暂缓。
+> 总体状态：**已验证**。产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成；pc70q14 的生成应用、双模式空库、Plugin 生命周期、生产 Compose 与双模式浏览器 P0-E 7/7 通过且资源零残留。该结论是开发候选组合资格，不冒充 main、Tag、GitHub Release 或生产部署；T15/T16 仍按范围暂缓。
 >
-> 事实基线：`dev@869fea3fc9966d499e7712dd4967cd42e18ef823`，复核日期：`2026-08-28`。
+> 事实基线：`dev@f6378f255241cbde25f374a8a0218fda4616c1ce`，复核日期：`2026-08-28`。
 
 ### 已验证可用
 
@@ -42,6 +42,15 @@ php scripts/check-product-capability-ledger
 |---|---|---|---|
 | `PA-NATIVE-001` | 2.0.0 原生身份与干净安装基线 | 已验证 | 原生管理身份、独立业务会员、canonical fresh Schema、官方能力强制 Tenant 资格、头像 fallback、本地域名显式白名单和 fresh-only P0-E Runtime 已实现。固定候选 78e9667 的最终 P0-E 七组全部通过，并已作为 v2.0.0 正式源码 Release 发布。 |
 | `PA-FOUNDATION-001` | 1.x LikeAdmin 标准版基础能力对齐（历史） | 已验证 | 基础后台能力、空库安装、迁移账本和代表路由已有独立验证。 |
+| `PA-INSTALL-001` | 统一只读安装预检 | 已验证 | PC10 已在 dev 形成 CLI、未来 Web 与自动化共用的唯一只读安装预检 Host；稳定返回状态、代码、原因和修复建议，不连接数据库、不猜测地址或凭据，并裁剪资源秘密。PC70 pc70q14 已在固定派生应用候选完成 P0-E 7/7 组合资格。 |
+| `PA-INSTALL-002` | 一次性引导安装 | 已验证 | PC11 已由 PR #279 合入 dev：guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导已形成；Standalone/Multi-tenant 登记空库资格与 Web 生产构建通过。PC70 pc70q14 已在固定派生应用候选完成 P0-E 7/7 组合资格。 |
+| `PA-READINESS-001` | 首次运行生产准备清单 | 已验证 | PC12 已由 PR #281 合入 dev：Tenant 安全的只读 Host 与 Admin 页面统一展示品牌、通知、存储、备份、Worker、当前域名/TLS 和账户安全的状态、影响、入口与生产阻塞性；状态严格区分本地配置、当前请求观察、未验证和尚未实施。PC70 pc70q14 已在固定派生应用候选完成 P0-E 7/7 组合资格。 |
+| `PA-OPS-002` | 单实例运行与维护控制台 | 已验证 | PC20/PC40 已完成：Platform 控制面采用 Core Ops PHP/Web 状态与维护公共合同，展示数据库、迁移、Module、缓存、存储和版本，并可按 reason/revision/时间范围计划或关闭维护窗口。全局后端写门禁已在登记 development 数据库上真实返回 MAINTENANCE_WRITE_BLOCKED 并记录 denied 审计；PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
+| `PA-DIAGNOSTICS-001` | 可下载脱敏诊断包 | 已验证 | PC21 已由 PR #285 合入 dev：Platform Operator 可下载固定 schema 的有界 JSON 诊断制品；运行状态、非秘密配置、Module、失败任务和 Platform 审计事件均为聚合或安全投影，服务端与浏览器共同验证 SHA-256。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
+| `PA-BACKUP-001` | 受信配对备份、恢复验证与应用备份中心 | 已验证 | PC30—PC32 已完成：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 backup/restore worker、Application evidence 和 Platform 备份中心已形成。最终 dev@af7b1c9 的真实 Gate 将已验证配对制品恢复到登记新目标，得到 97 表、6 migration、Account/Tenant/TenantMember 各 1、零发布端口、受保护 Runtime 不变和成功零残留；PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
+| `PA-UPGRADE-002` | 应用升级就绪、执行与恢复停止点 | 已验证 | PC41/PC42 已由 PR #307/#310 合入 dev：Platform 先以固定 source/target、Release、migration、Module、scaffold、备份/恢复 evidence、维护窗口和 recovery pointer 判定就绪，再由持久化任务状态机与独立登记 worker 串联 preflight、配对备份、维护、唯一 deploy-release、迁移、smoke 和恢复指引。HTTP 不接受路径、URL、命令、Release、镜像或凭据；PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
+| `PA-PROVIDER-001` | 外部 Provider 生产资格可见性 | 已验证 | PC60 已由 PR #313 合入 dev：通知、支付、OAuth 和 Storage contributor 以 Platform-only 只读安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness；通用面板不外呼、不发送消息、不扣款，真实平台资格仍由各 Provider owner 按授权目标独立执行。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
+| `PA-CONFIG-001` | Tenant 配置包与环境转移 | 已验证 | PC51 已由 PR #315 合入 dev：ImportExport Module 以 Tenant-only schema 1 包导出逻辑配置，使用 canonical checksum、dry-run、abort/overwrite/skip 冲突策略、秘密引用重绑定、原子写入与同事务审计；包、响应和审计均不包含密码、token、Cookie、callback key 或密钥。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
 | `PA-TENANCY-001` | 1.x 多租户隔离与平台租户治理（历史） | 已验证 | 1.x MT00 至 MT06 已完成并封存；2.0 以原生身份、fresh Schema 和当前 P0-E 重新验证，不依赖 1.x 兼容 Runtime。 |
 | `PA-PRODUCT-001` | 1.x 产品化部署与发布基线（历史） | 已验证 | 生产 Compose、最低 CI、正式部署、法律制品和 v1.1.5 发布链已经封存。 |
 | `PA-OWNERSHIP-001` | 核心包与应用唯一实现边界 | 已验证 | 权限、管理员、字典、文件、任务、会员财务、内容装修、通知、支付和 OAuth 已固定应用 Runtime 与核心边界。 |
@@ -51,28 +60,14 @@ php scripts/check-product-capability-ledger
 | `PA-SCAFFOLD-003` | 新应用 Plugin 空锁合同 | 已验证 | 正式生成应用使用有效空 plugins.lock，不再引用仅供源仓测试的 fixture。 |
 | `PA-SCAFFOLD-004` | 2.x 派生应用受控升级 | 已验证 | 2.0.0 生成应用已经记录不可变模板身份、逐文件所有权和 managed baseline；2.x Release 转换策略与 preflight/apply/verify/recover 执行器已通过一次真实 v2.0.0 -> v2.0.1 派生应用资格，app-owned 字节保持且恢复闭环通过。 |
 | `PA-COMPAT-001` | 1.x 公开核心包升级兼容（历史） | 已验证 | 公开 PHP Alpha.2 到 Alpha.5 与 Web Alpha.4 到 Alpha.5 的真实安装、构建、入口和 app-owned 摘要矩阵已通过。 |
-| `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过，最终零资源残留且 lease released。 |
+| `PA-P0E-001` | P0-E 隔离资源登记 | 已验证 | 项目自有资源登记、原子租约、精确候选绑定和清理释放已在 P0-E 实跑中通过；PC70 pc70q14 固定候选 f6378f255241cbde25f374a8a0218fda4616c1ce 完成七组资格，数据库、Compose、容器、卷、网络、镜像、监听、cache 和 lease 均零残留或已释放。 |
 | `PA-P0E-002` | 1.x 最终生成应用运行时验收（历史） | 已验证 | 固定候选 8fa274b 的 scaffold v1.1.9 生成全新应用后，干净依赖安装、双模式空库与服务、生产 Compose 和真实浏览器验收均已通过。 |
 | `PA-P0E-003` | 1.x 最终升级应用运行时验收（历史） | 已验证 | 固定旧应用完成十段 scaffold preflight/apply/verify、故障恢复、五套依赖安装构建、729 个 app-owned 文件逐字节保持，并通过升级后 Plugin、Compose 与双模式真实浏览器复验。 |
 | `PA-DELIVERY-002` | 1.x 正式发布与生产证明（历史） | 已验证 | v1.1.5 已完成 P0-E 16/16、dev/main、annotated tag、GitHub Release、配对生产备份、54 条迁移和最低登录/API/核心页/TLS/demo smoke，达到 production-demonstrated。 |
 | `PA-DELIVERY-003` | 2.0.0 正式源码发布 | 已验证 | v2.0.0 fresh-only 固定候选完成 P0-E 7/7 后，已由 PR #148/#149 合入 dev/main，并创建 annotated tag、GitHub Release、确定性源码包和法律附件；生产部署明确留给独立工作流。 |
 | `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。 |
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
-
-### 已实现或正在验收
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-INSTALL-001` | 统一只读安装预检 | 已实现，待验收 | PC10 已在 dev 形成 CLI、未来 Web 与自动化共用的唯一只读安装预检 Host；稳定返回状态、代码、原因和修复建议，不连接数据库、不猜测地址或凭据，并裁剪资源秘密。正式 Release 组合资格归 PC70。 |
-| `PA-INSTALL-002` | 一次性引导安装 | 已实现，待验收 | PC11 已由 PR #279 合入 dev：guided/automatic 共用唯一执行 Host、一次性 setup token、安装态 fail-closed、官方 Module 选择和 Admin Web 向导已形成；Standalone/Multi-tenant 登记空库资格与 Web 生产构建通过。正式 Release 的派生应用组合资格仍归 PC70。 |
-| `PA-READINESS-001` | 首次运行生产准备清单 | 已实现，待验收 | PC12 已由 PR #281 合入 dev：Tenant 安全的只读 Host 与 Admin 页面统一展示品牌、通知、存储、备份、Worker、当前域名/TLS 和账户安全的状态、影响、入口与生产阻塞性；状态严格区分本地配置、当前请求观察、未验证和尚未实施。完整 released-scaffold 组合资格仍归 PC70。 |
-| `PA-OPS-002` | 单实例运行与维护控制台 | 已实现，待验收 | PC20/PC40 已完成：Platform 控制面采用 Core Ops PHP/Web 状态与维护公共合同，展示数据库、迁移、Module、缓存、存储和版本，并可按 reason/revision/时间范围计划或关闭维护窗口。全局后端写门禁已在登记 development 数据库上真实返回 MAINTENANCE_WRITE_BLOCKED 并记录 denied 审计；正式浏览器和 released-scaffold 组合资格归 PC70。 |
-| `PA-DIAGNOSTICS-001` | 可下载脱敏诊断包 | 已实现，待验收 | PC21 已由 PR #285 合入 dev：Platform Operator 可下载固定 schema 的有界 JSON 诊断制品；运行状态、非秘密配置、Module、失败任务和 Platform 审计事件均为聚合或安全投影，服务端与浏览器共同验证 SHA-256。正式数据库、浏览器和 released-scaffold 组合资格归 PC70。 |
-| `PA-BACKUP-001` | 受信配对备份、恢复验证与应用备份中心 | 已实现，待验收 | PC30—PC32 已完成：单一 DB/文件 Provider、schema 1 manifest、Core 任务提交/查询、受信 backup/restore worker、Application evidence 和 Platform 备份中心已形成。最终 dev@af7b1c9 的真实 Gate 将已验证配对制品恢复到登记新目标，得到 97 表、6 migration、Account/Tenant/TenantMember 各 1、零发布端口、受保护 Runtime 不变和成功零残留；正式 released-scaffold 组合资格归 PC70。 |
-| `PA-UPGRADE-002` | 应用升级就绪、执行与恢复停止点 | 已实现，待验收 | PC41/PC42 已由 PR #307/#310 合入 dev：Platform 先以固定 source/target、Release、migration、Module、scaffold、备份/恢复 evidence、维护窗口和 recovery pointer 判定就绪，再由持久化任务状态机与独立登记 worker 串联 preflight、配对备份、维护、唯一 deploy-release、迁移、smoke 和恢复指引。HTTP 不接受路径、URL、命令、Release、镜像或凭据；正式 released-scaffold 组合资格归 PC70。 |
-| `PA-PROVIDER-001` | 外部 Provider 生产资格可见性 | 已实现，待验收 | PC60 已由 PR #313 合入 dev：通知、支付、OAuth 和 Storage contributor 以 Platform-only 只读安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness；通用面板不外呼、不发送消息、不扣款，真实平台资格仍由各 Provider owner 按授权目标独立执行。正式 released-scaffold 组合资格归 PC70。 |
-| `PA-CONFIG-001` | Tenant 配置包与环境转移 | 已实现，待验收 | PC51 已由 PR #315 合入 dev：ImportExport Module 以 Tenant-only schema 1 包导出逻辑配置，使用 canonical checksum、dry-run、abort/overwrite/skip 冲突策略、秘密引用重绑定、原子写入与同事务审计；包、响应和审计均不包含密码、token、Cookie、callback key 或密钥。正式 released-scaffold 组合资格归 PC70。 |
-| `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已实现，待验收 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架，固定 A/B Tenant、伪造 payload/resource ID、撤权、TenantModule 停用及 migration 失败/禁止无修复重放场景，未引入第二 Plugin Runtime。正式 released-scaffold 组合资格归 PC70。 |
+| `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已验证 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架，固定 A/B Tenant、伪造 payload/resource ID、撤权、TenantModule 停用及 migration 失败/禁止无修复重放场景，未引入第二 Plugin Runtime。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
 
 ### 暂缓或范围外
 
