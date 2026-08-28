@@ -651,8 +651,6 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         install_env = consumer_env | {
             "ADMIN_INITIAL_EMAIL": "cr21-admin@example.test",
             "ADMIN_INITIAL_PASSWORD": "cr21-admin-strong-password",
-            "PLATFORM_INITIAL_EMAIL": "cr21-platform@example.test",
-            "PLATFORM_INITIAL_PASSWORD": "cr21-platform-strong-password",
         }
         installed = json_output(command(
             [str(PHP), "server/database/install.php"], cwd=consumer, env=install_env, log=logs / "consumer.log"
