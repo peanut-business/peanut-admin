@@ -19,6 +19,17 @@ Application Service、ModuleGuard、权限 Repository 与隔离 migration fixtur
 `php server/tests/Modules/<Vendor>/<Module>/TenantSecurityTest.php`。固定场景包括 A/B Tenant、
 payload/resource 伪造 ID、TenantModule 停用、成员撤权，以及 migration 失败后不得 active 或无修复重放。
 
+在同步或打包前运行统一作者检查：
+
+```bash
+php think module:check <module.key>
+```
+
+命令与自动化共用唯一只读 Host，依次报告 manifest、版本/Kernel 约束、依赖、权限、菜单、
+migration、frontend 和 package 八项结果。输出固定包含 `status`、`code`、`reason`、
+`remediation` 与 `checks`，失败项给出稳定修复建议；检查不连接或写入数据库。默认会在临时目录
+生成并校验一个确定性 package，也可以用 `--package=<path> --sha256=<hash>` 校验已有 archive。
+
 ## 开发期工作流
 
 1. 修改模块的 `module.json`、`Resources/permissions.json`、`Resources/menus.json` 和设置定义。
@@ -39,6 +50,9 @@ payload/resource 伪造 ID、TenantModule 停用、成员撤权，以及 migrati
 ## 打包与分发
 
 ```bash
+# 先检查源码、版本规则和交付包
+php think module:check <module.key>
+
 # 单模块包
 php think module:pack <module.key>
 
