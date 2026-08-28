@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "dev",
-    "commit": "fbdfafcc1bfdaa4334eee2498e9c235e142c076b",
+    "commit": "50c8577af25da078e8e35ee30a0311141d21b99f",
     "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@fbdfafcc1bfdaa4334eee2498e9c235e142c076b 已完成 CR01/CR02/CR10—CR13/CR20，active Module package 更新、交付环境安全入口与 Tenant 停用全局门禁已落地。CR21—CR40 的双应用参考链、消费者文档、固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 结果仍不能冒充 consumer-ready Release。"
+    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@50c8577af25da078e8e35ee30a0311141d21b99f 已完成 CR01/CR02/CR10—CR13/CR20/CR21，双独立应用 Module v1→v2 参考链已通过。CR22—CR40 的消费者文档、证据收敛、固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 结果仍不能冒充 consumer-ready Release。"
   },
   "capabilities": [
     {
@@ -1176,8 +1176,8 @@
       "id": "PA-MODULE-004",
       "name": "可消费 Module Package 全生命周期",
       "area": "plugins",
-      "status": "in_progress",
-      "summary": "CR10 已冻结显式 Package 生命周期合同；CR11 已由 PR #339 合入 development/debug/Standalone 的 module:update-package。CR12 已由 PR #340 合入 deployment-owned opaque request/worker，串联登记 target、配对备份、隔离恢复、维护、update/retire/Purge、审计、smoke 和 recovery pointer；完整双应用消费者纵向资格仍由 CR21 提供。",
+      "status": "verified",
+      "summary": "CR10 已冻结显式 Package 生命周期合同；CR11/CR12 已合入 development update 与 deployment-owned 安全编排。CR21 已由 PR #346 在两个独立生成应用间直接完成签名 Module v1→v2 的 create/check/pack/install/update/disable/reactivate/retire/Purge，TenantModule、Package、ModuleInstallation 与成员 RBAC 四层保持分离，app-owned 摘要不变。正式 Release adoption 仍由 CR31 验收。",
       "acceptance": [
         "应用 owner 使用受信 archive 完成 install、显式 v1 到 v2 update、disable、reactivate、retire 和双确认 Purge",
         "update dry-run 零写入，并在版本、依赖、签名、checksum、migration、备份或维护不满足时于破坏性步骤前拒绝",
@@ -1189,6 +1189,18 @@
         {
           "kind": "document",
           "ref": "docs/architecture/consumer-module-lifecycle-contract.md"
+        },
+        {
+          "kind": "git",
+          "ref": "50c8577af25da078e8e35ee30a0311141d21b99f"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/346"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/plans/consumer-ready-product-plan.md"
         }
       ],
       "dependencies": [
@@ -1199,12 +1211,14 @@
       "paths": [
         "server/app/command/ModuleInstallPackage.php",
         "server/app/command/ModuleUpdatePackage.php",
+        "server/app/command/ModuleDisablePackage.php",
         "server/app/command/ModuleUninstallPackage.php",
         "server/app/platform/service/plugin/PluginPackageInstaller.php",
         "server/app/platform/service/plugin/PluginLifecycleService.php",
         "server/app/platform/service/ops/DeploymentModuleRequestService.php",
         "server/app/platform/service/ops/PdoModuleOperationTaskExecutionService.php",
         "scripts/ops-module-worker",
+        "scripts/consumer-module-reference-chain",
         "server/tests/Productization/ModuleBundleLifecycleTest.php",
         "server/tests/Productization/ModuleDeliveryOperationTest.php",
         "docs/architecture/consumer-module-lifecycle-contract.md",
@@ -1256,7 +1270,7 @@
       "name": "正式可消费源码交付",
       "area": "delivery",
       "status": "planned",
-      "summary": "PC70 已证明产品闭环 dev 候选，但尚未形成包含直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁的新 main/Tag/GitHub Release。CR30—CR40 将只对一个冻结候选完成资格和正式发布。",
+      "summary": "PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 尚需完成消费者文档与证据收敛，CR30—CR40 再只对一个冻结候选完成资格和正式 main/Tag/GitHub Release。",
       "acceptance": [
         "同一固定 commit/tree 通过 create-app、双模式 fresh、Module v1 到 v2 全生命周期、应用升级、生产 Compose/浏览器和零残留组合资格",
         "dev、main、annotated tag、GitHub Release、scaffold manifest、源码附件和能力快照引用同一不可变身份",

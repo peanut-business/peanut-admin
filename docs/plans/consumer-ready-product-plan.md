@@ -18,7 +18,7 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20 已完成，下一关键路径为 CR21**
+> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20/CR21 已完成，下一关键路径为 CR22**
 > - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
@@ -35,11 +35,11 @@ app-owned 文件不会被框架升级静默覆盖。
 | 目标能力 | 当前事实 | 可消费结论 | 本计划处理 |
 |---|---|---|---|
 | 从正式版本创建独立应用 | `create-app`、应用 manifest、文件 owner、fresh install 和 3.x scaffold upgrade 已验证 | Runtime 已具备；PC70 结果仍是 `dev` 候选，不是新的 main/Tag/Release | CR30、CR31、CR40 |
-| 创建和开发 Module | `module:create`、development `module:sync`、Tenant 安全骨架已验证 | 已可用，但缺少一个面向作者的统一只读检查和完整交付示例 | CR20、CR21 |
-| 打包 Module | `module:pack` / `bundle:pack` 生成确定性 tar、SHA-256，可选 Ed25519 签名 | 已具备直接分发基础，不等于 Marketplace 已开放 | CR20、CR21 |
-| 安装 Module 包 | `module:install-package` 与 dev-tools HTTP/UI 已实现，service/真实数据库合同已覆盖 | 仅允许 development + debug + Standalone，且当前没有直接执行该 CLI、HTTP 请求或 UI 操作的端到端证据；不能冒充正式部署安装面 | CR10—CR12、CR21 |
-| 更新已安装 Module | PR #339 已合入显式 `module:update-package`；PR #340 已合入 deployment-owned opaque request/worker | development/debug/Standalone 更新与交付编排均已通过登记 MySQL 聚焦验证；完整消费者纵向证据仍由 CR21 提供 | CR10—CR12、CR21 |
-| 停用、恢复、卸载 | dev-tools/CLI 已有 disable、同制品 reactivation、retire 与双确认 Purge；PR #340 把 update/retire/Purge 接入登记 target、配对备份、隔离恢复、维护、审计、smoke 和 recovery pointer | 开发工具与交付编排已形成；完整消费者纵向证据仍由 CR21 提供 | CR10—CR12、CR21 |
+| 创建和开发 Module | `module:create`、development `module:sync`、Tenant 安全骨架和统一 `module:check` 已验证 | CR21 已在两个独立生成应用之间完成作者与消费者参考链；正式 Release 复现仍由 CR31 验收 | CR20、CR21 |
+| 打包 Module | `module:pack` / `bundle:pack` 生成确定性 tar、SHA-256，可选 Ed25519 签名 | CR21 已完成签名 v1/v2 打包和消费者验签；不等于 Marketplace 已开放 | CR20、CR21 |
+| 安装 Module 包 | `module:install-package` 与 dev-tools HTTP/UI 已实现，service/真实数据库合同已覆盖 | CR21 已直接执行 development/debug/Standalone CLI 安装；生产交付仍只走 CR12 的 deployment-owned 入口 | CR10—CR12、CR21 |
+| 更新已安装 Module | PR #339 已合入显式 `module:update-package`；PR #340 已合入 deployment-owned opaque request/worker | CR21 已证明独立应用 v1→v2 dry-run 零写和真实更新，正式 Release 复现留给 CR31 | CR10—CR12、CR21 |
+| 停用、恢复、卸载 | dev-tools/CLI 已有 disable、同制品 reactivation、retire 与双确认 Purge；PR #340 把 update/retire/Purge 接入登记 target、配对备份、隔离恢复、维护、审计、smoke 和 recovery pointer | CR21 已证明 disable/reactivate/retire/Purge，并保持 TenantModule 与 Package/RBAC 分层 | CR10—CR12、CR21 |
 | Tenant 开通与成员授权 | TenantModule enable/disable 与 RBAC 已验证 | 保持与 Package 安装分离；安装不得自动给 Tenant 或成员授权 | 全程不改变 |
 | Tenant 停用安全边界 | PR #344 已统一 active-Tenant 查询、签名应用交付和 Nginx `/storage/` 404；suspend/reactivate 聚焦安全验证通过 | CR13 已完成；最终 consumer-ready 候选仍须在 CR30/CR31 消费组合资格中复核 | CR13、CR30、CR31 |
 | 文档与资料可发现性 | 文档治理与公开站已建立 | 建立本计划前登记有 72 项 archived、57 项 planned；`output/` 有 318 个受控文件，历史材料仍混在现行树 | CR01、CR02、CR22、CR23 |
@@ -95,7 +95,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 5 | CR12 | 交付环境 Module 操作入口 | 已完成 | CR10、CR11 | PR #340 合入 `dev=4844ef3…`（tree `c4b6971…`）；opaque request→备份→隔离恢复→维护→update→smoke→recovery pointer 全链通过且一次性数据库已清理 | Sol xhigh；部署与数据安全 |
 | 6 | CR13 | Tenant 停用全局 Fail-Closed | 已完成 | 无 | PR #344 合入 `dev=fbdfafc…`（tree `42d1d01…`）；active-Tenant 查询、签名应用交付与 Nginx `/storage/` 404 已形成，登记 MySQL 上 suspend/reactivate、ready/archived 和异步拒绝通过且零资源残留 | Sol xhigh；Tenant 安全停止线 |
 | 7 | CR20 | Module 作者只读检查与版本规则 | 已完成 | CR10 | PR #342 合入 `dev=5797e28…`（tree `953ff07…`）；真实 CLI 正/负输出、八项稳定检查和零数据库访问验证通过 | Terra 定位 + Sol/Worker 实现 |
-| 8 | CR21 | 双独立应用二开参考链 | 未开始 | CR11、CR12、CR20 | 从 Release 生成应用 A/B；第三方 Module v1→v2 完成 create/check/pack/install/update/disable/reactivate/retire/Purge 与 Tenant A/B | Sol high；真实纵向 fixture |
+| 8 | CR21 | 双独立应用二开参考链 | 已完成 | CR11、CR12、CR20 | PR #346 合入 `dev=50c8577…`（tree `69f0ac1…`）；双独立生成应用完成签名 Module v1→v2 全生命周期、Tenant A/B 四层断言和 app-owned 摘要 | Sol high；真实纵向 fixture |
 | 9 | CR22 | 消费者文档与支持入口 | 未开始 | CR11、CR12、CR20 | 任务导航、唯一命令索引、错误修复、版本兼容、诊断包/Issue 提交规范；不公开内部资源和证据 | Luna 文档；主代理事实复核 |
 | 10 | CR23 | 历史文档与证据最终收敛 | 未开始 | CR02、CR22 | 处理被新指南替代的 planned/archived 文件，重建登记与导航，输出保留证据清单和删除报告 | Luna 机械执行；主代理批准删除 |
 | 11 | CR30 | 封存前消费资格就绪 | 未开始 | CR11—CR13、CR20—CR23 | 用实际生成应用和第三方包形态验证所有入口、身份、目录、driver、阶段隔离与失败恢复；不产生 qualified | Sol high；Development mode |
@@ -180,6 +180,22 @@ Git 可恢复性、当前 owner 和不可变证据价值；CR02 只处理复核�
   scaffold/inventory、生成器、测试或账本消费，本批未删除；其退出决定后置到对应 scaffold
   owner 或 CR23，不影响 CR01/CR02 完成。
 
+### 7.3 CR21 完成记录
+
+- PR #346 已合入 `dev=50c8577af25da078e8e35ee30a0311141d21b99f`（tree
+  `69f0ac1c391be670472562900310a38a2af38e34`）；直接通过的固定开发候选为
+  `d5ccb1b695cb0a2358ec2c48f1c035b9f0b2627d`，与合入后的文件树一致。
+- `scripts/consumer-module-reference-chain` 从候选生成作者应用 A 和消费者应用 B，不复制源仓私有
+  fixture；作者端完成 `module:create`、八项只读检查、签名 v1/v2 pack，消费者端完成 fresh install、
+  install、v1→v2 dry-run/update、disable/reactivate、retire 与双确认 Purge。
+- Tenant A/B、Package、ModuleInstallation 与成员 RBAC 四层断言通过；Purge 删除 owned table、
+  migration ledger、catalog 和 RBAC，但按合同保留两个 disabled TenantModule。两应用各 889 个
+  app-owned 文件的前后摘要一致。
+- 验证使用登记资源 `peanut-admin-p0e-mysql84-gate` 的独立 development 租约；数据库、生成应用、
+  Composer cache、临时签名密钥和租约均已清零。脱敏 summary SHA-256 为
+  `99e6544aee5bd58aa58f0f76f91d6517dec6aee79efc06a0015f81c188bd3a9b`；Development source candidate
+  不冒充正式 Release adoption，后者仍由 CR31 验收。
+
 ## 8. 状态同步与最终报告
 
 新执行会话的最终报告必须包含：13 个任务状态、合入 PR/commit/tree、实际资源与一次最低验证、删除/
@@ -197,10 +213,7 @@ php scripts/check-product-capability-ledger
 ./scripts/docs-governance generate
 ./scripts/docs-governance check
 ./scripts/docs-governance impact --base origin/dev \
-  --classification technical --classification developer-site --classification generated \
-  --waive-target docs-site/index.md \
-  --waive-target docs-site/reference/source-map.generated.md \
-  --reason "internal plan and capability status are intentionally excluded from the public site"
+  --classification technical
 git diff --check
 ```
 

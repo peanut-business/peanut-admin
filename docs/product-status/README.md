@@ -32,9 +32,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@fbdfafcc1bfdaa4334eee2498e9c235e142c076b 已完成 CR01/CR02/CR10—CR13/CR20，active Module package 更新、交付环境安全入口与 Tenant 停用全局门禁已落地。CR21—CR40 的双应用参考链、消费者文档、固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 结果仍不能冒充 consumer-ready Release。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@50c8577af25da078e8e35ee30a0311141d21b99f 已完成 CR01/CR02/CR10—CR13/CR20/CR21，双独立应用 Module v1→v2 参考链已通过。CR22—CR40 的消费者文档、证据收敛、固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 结果仍不能冒充 consumer-ready Release。
 >
-> 事实基线：`dev@fbdfafcc1bfdaa4334eee2498e9c235e142c076b`，复核日期：`2026-08-28`。
+> 事实基线：`dev@50c8577af25da078e8e35ee30a0311141d21b99f`，复核日期：`2026-08-28`。
 
 ### 已验证可用
 
@@ -68,19 +68,14 @@ php scripts/check-product-capability-ledger
 | `PA-DELIVERY-004` | 2.0 发布后部署与演示闭环 | 已验证 | v2.1.5 已在固定 tag aefc5779c97db1cd17442269e50156baeaa4ba0c 上完成 P0-E 7/7、生产单租户升级、多租户 Demo fresh 部署、无秘密 post-deployment 快照和受控访问交付；v3.0.0 候选仍需独立重新资格。 |
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
 | `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已验证 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架。CR20 已由 PR #342 合入唯一只读 module:check Host/CLI，复用现有 manifest schema、版本约束、package preflight 与 archive validator，稳定报告八项检查且不访问数据库。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
+| `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 已验证 | CR10 已冻结显式 Package 生命周期合同；CR11/CR12 已合入 development update 与 deployment-owned 安全编排。CR21 已由 PR #346 在两个独立生成应用间直接完成签名 Module v1→v2 的 create/check/pack/install/update/disable/reactivate/retire/Purge，TenantModule、Package、ModuleInstallation 与成员 RBAC 四层保持分离，app-owned 摘要不变。正式 Release adoption 仍由 CR31 验收。 |
 | `PA-TENANCY-002` | Tenant 停用全局 Fail-Closed | 已验证 | CR13 已由 PR #344 合入 dev：管理/API/PC/H5 与公开内容继续通过 active Tenant/Host context；全部 Tenant 文件 URL 统一为短期签名应用交付，读取时重新查询 active Tenant 与 ready 对象，生产和开发 Nginx 的历史 `/storage/` 直出固定 404。登记 MySQL 聚焦验证证明已签发 URL 在 suspend 后拒绝、reactivate 后只恢复 ready 对象，archived 对象与 suspended 异步任务不复活。 |
-
-### 已实现或正在验收
-
-| ID | 能力 | 状态 | 当前事实 |
-|---|---|---|---|
-| `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 进行中 | CR10 已冻结显式 Package 生命周期合同；CR11 已由 PR #339 合入 development/debug/Standalone 的 module:update-package。CR12 已由 PR #340 合入 deployment-owned opaque request/worker，串联登记 target、配对备份、隔离恢复、维护、update/retire/Purge、审计、smoke 和 recovery pointer；完整双应用消费者纵向资格仍由 CR21 提供。 |
 
 ### 计划中或受阻
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-005` | 正式可消费源码交付 | 计划中 | PC70 已证明产品闭环 dev 候选，但尚未形成包含直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁的新 main/Tag/GitHub Release。CR30—CR40 将只对一个冻结候选完成资格和正式发布。 |
+| `PA-DELIVERY-005` | 正式可消费源码交付 | 计划中 | PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 尚需完成消费者文档与证据收敛，CR30—CR40 再只对一个冻结候选完成资格和正式 main/Tag/GitHub Release。 |
 
 ### 暂缓或范围外
 
