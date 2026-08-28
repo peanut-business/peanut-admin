@@ -213,8 +213,8 @@ foreach ([
     'down --volumes',
     '--fresh requires --confirm-destroy $TARGET',
     'major release change ${current_tag} -> ${tag} requires --fresh',
-    'mktemp ./.env.deploy.',
-    'mv -f -- "$temporary" .env',
+    'mktemp "${target_file}.deploy.',
+    'mv -f -- "$temporary" "$target_file"',
     'server/database/install.php',
     'server/database/install.php --migrate --target-version="$version"',
     'plugin:reconcile --official-locked',
@@ -262,11 +262,11 @@ $expect(
     'deployment does not recompute the overlay migration maximum from its declared migration files'
 );
 $expect(
-    substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 12,
+    substr_count($deploy, '"${compose[@]}" run -T --rm --no-deps --entrypoint php') === 11,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );
 $expect(
-    substr_count($deploy, '</dev/null') === 12,
+    substr_count($deploy, '</dev/null') === 11,
     'remote one-shot Compose commands must close inherited standard input'
 );
 

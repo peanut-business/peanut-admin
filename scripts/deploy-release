@@ -666,6 +666,7 @@ fi
 unset ADMIN_INITIAL_EMAIL ADMIN_INITIAL_PASSWORD PLATFORM_INITIAL_EMAIL PLATFORM_INITIAL_PASSWORD
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$migration_target_version" </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/environment-guard.php --current </dev/null
+"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
 demo_mode_enabled=0
 if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
   demo_mode_enabled=1

@@ -78,6 +78,7 @@ COPY server/view server/view
 COPY server/think server/think
 COPY server/composer.json server/composer.lock server/
 COPY server/public server/public
+COPY server/resources/schemas server/resources/schemas
 COPY --from=composer-deps /build/server/vendor server/vendor
 COPY deploy/docker/php-entrypoint.sh /usr/local/bin/peanut-php-entrypoint
 
