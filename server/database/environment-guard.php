@@ -270,7 +270,7 @@ function assertP0eLeaseContract(
         'gate' => 1,
         'http-port' => 1,
         'lease-proof-dir' => 1,
-        'mysql-db' => 5,
+        'mysql-db' => count($database['allowed_scenarios']),
         'output-dir' => 1,
         'port' => 2,
         'resource-id' => 1,
@@ -282,7 +282,7 @@ function assertP0eLeaseContract(
         $actualCounts[$type] = count($values);
     }
     ksort($actualCounts, SORT_STRING);
-    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== 28) {
+    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== array_sum($expectedCounts)) {
         throw new RuntimeException('P0-E lease resource set 存在缺失、额外项或 cardinality 冲突');
     }
 
