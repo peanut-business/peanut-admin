@@ -1,5 +1,12 @@
 # 发布工程
 
+## Consumer-ready 准备检查
+
+在版本准备、scaffold seal、固定资格或正式发布前，先运行内部只读入口
+`scripts/consumer-ready-control preflight --phase <prepare|seal|qualify|release>`。它集中检查候选、
+版本、scaffold/fixture、资源命名、工具和资格身份，但不 claim 资源或执行 Gate。功能、边界和升级路线见
+[`Consumer-ready 最小交付控制器`](operations/consumer-ready-control.md)。
+
 ## 生产构建
 
 ```bash

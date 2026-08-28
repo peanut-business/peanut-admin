@@ -59,9 +59,10 @@ function excluded(string $path): bool
         || in_array($path, [
             'AGENTS.md', 'AGENT_EXECUTION_RULES.md',
             'resources/codegraph-registry.json', 'resources/service-registry.json',
+            'resources/consumer-ready-control.json',
             'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
             'scripts/core-upgrade-compatibility', 'scripts/combined-upgrade-qualification',
-            'scripts/consumer-module-reference-chain',
+            'scripts/consumer-module-reference-chain', 'scripts/consumer-ready-control',
             'scripts/select-legacy-pre-alpha5-fixture',
             'scripts/test-core-upgrade-public-entry-gate',
             'scripts/check-product-capability-ledger',
