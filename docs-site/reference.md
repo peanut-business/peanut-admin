@@ -30,6 +30,13 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 - [数据、权限与多租户](/guide/data-permissions-tenancy)
 - [文档事实来源](/reference/source-map.generated)
 
+## Module Package 命令
+
+| 命令 | 当前边界 |
+| --- | --- |
+| `php think module:update-package <path> --sha256=<hash> --dry-run` | development/debug/Standalone 中验证并计划同一 Package 的显式更新，产品状态零写入 |
+| `php think module:update-package <path> --sha256=<hash>` | development/debug/Standalone 中应用更高不可变版本；不是生产 HTTP 上传入口 |
+
 ## 验证
 
 命令、路径或配置被页面引用时，`./scripts/docs-governance check` 会验证关键路径与公共边界；站点构建负责导航和链接。

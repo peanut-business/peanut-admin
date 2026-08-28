@@ -69,11 +69,16 @@ php scripts/check-product-capability-ledger
 | `PA-MODULE-002` | 官方可选 Module 产品化 | 已验证 | 文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。 |
 | `PA-MODULE-003` | Module 开发与 Tenant 安全脚手架 | 已验证 | PC52 已由 PR #306 合入 dev：唯一 module:create 生成公开 Commands 合同、append-only migration 指南和 Plugin 制品外 Tenant 安全测试骨架，固定 A/B Tenant、伪造 payload/resource ID、撤权、TenantModule 停用及 migration 失败/禁止无修复重放场景，未引入第二 Plugin Runtime。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。 |
 
+### 已实现或正在验收
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 进行中 | CR10 已冻结显式 Package 生命周期合同；CR11 候选新增 development/debug/Standalone 的 module:update-package、同一 preflight dry-run、active v1 到 v2 update、降级/同版本冲突拒绝和失败 recovery pointer。交付环境的统一维护、配对备份、审计和恢复入口仍由 CR12 实现，当前不能冒充生产操作面。 |
+
 ### 计划中或受阻
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-MODULE-004` | 可消费 Module Package 全生命周期 | 计划中 | 当前受信 Module 包可在 development/debug/Standalone 安装、停用和卸载，内部 Plugin Runtime 也具升级计划；但公共 package 入口不能把正常 active v1 安全更新为 v2，交付环境也没有统一维护、配对备份、审计和恢复入口。CR10—CR12 将形成不依赖 Marketplace 的直接分发闭环。 |
 | `PA-TENANCY-002` | Tenant 停用全局 Fail-Closed | 计划中 | 管理/API 身份链已有 Tenant 状态门禁，但 Tenant 文件直出和未统一挂载状态检查的公共内容入口仍可能在停用后可读。CR13 将统一公共 API、PC/H5、文件与静态交付边界。 |
 | `PA-DELIVERY-005` | 正式可消费源码交付 | 计划中 | PC70 已证明产品闭环 dev 候选，但尚未形成包含直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁的新 main/Tag/GitHub Release。CR30—CR40 将只对一个冻结候选完成资格和正式发布。 |
 
