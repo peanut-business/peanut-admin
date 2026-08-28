@@ -997,6 +997,18 @@ class Runner:
             fail(f"database inspection failed for {label}")
         self.write_json(self.output / "groups" / f"{label}.json", parsed)
 
+    def create_app_environment(self) -> dict[str, str]:
+        create_app_excludes = self.cache / "create-app-git-excludes"
+        create_app_excludes.write_text(
+            f"/{self.output.relative_to(ROOT).as_posix()}/\n",
+            encoding="utf-8",
+        )
+        return {
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "core.excludesFile",
+            "GIT_CONFIG_VALUE_0": str(create_app_excludes),
+        }
+
     def generated_application(self) -> None:
         log = self.group_log("generated-application")
         composer_env = {"COMPOSER_CACHE_DIR": str(self.cache / "composer")}
@@ -1007,19 +1019,11 @@ class Runner:
                 env=composer_env,
                 log=log,
             )
-        create_app_excludes = self.cache / "create-app-git-excludes"
-        create_app_excludes.write_text(
-            f"/{self.output.relative_to(ROOT).as_posix()}/\n",
-            encoding="utf-8",
-        )
+        create_app_env = self.create_app_environment()
         command([
             "php", "scripts/create-app", "--name=P0E Qualification", "--slug=p0e-qualification",
             "--package=p0e/qualification", "--profile=full", f"--target={self.generated}",
-        ], env={
-            "GIT_CONFIG_COUNT": "1",
-            "GIT_CONFIG_KEY_0": "core.excludesFile",
-            "GIT_CONFIG_VALUE_0": str(create_app_excludes),
-        }, log=log)
+        ], env=create_app_env, log=log)
         build_database = self.plan["databases"]["standalone_fresh"]
         with self.backend_process_environment(self.generated, build_database, "standalone") as backend_env:
             command(
@@ -1267,7 +1271,7 @@ class Runner:
         ]
         result = command(
             arguments,
-            env={
+            env=self.create_app_environment() | {
                 "DB_HOST": host,
                 "DB_PORT": port,
                 "DB_USER": required_environment("P0E_DB_USER"),
