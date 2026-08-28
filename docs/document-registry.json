@@ -4552,6 +4552,41 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-plans-post-release-enhancement-plan",
+      "path": "docs/plans/post-release-enhancement-plan.md",
+      "title": "Peanut Admin 发布后增强任务计划",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "docs/plans/consumer-ready-product-plan.md",
+        "docs/product-status/capability-ledger.json",
+        "docs/product-status/current-task-list.md",
+        "docs/product-status/deployments/v3.0.12-online-experience.json",
+        "docs/plans/product-release-operations-saas-roadmap.md",
+        "docs/plans/saas-enhancement-development-plan.md",
+        "docs/design/saas-enhancement-blueprint.md"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "consumer-ready",
+        "deployment",
+        "enhancement"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-plans-product-release-operations-saas-roadmap",
       "path": "docs/plans/product-release-operations-saas-roadmap.md",
       "title": "Peanut Admin 产品发布、运营平台与 SaaS 路线",
