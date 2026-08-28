@@ -13,6 +13,8 @@ return [
         'ops-backup:task' => \app\command\OpsBackupTask::class,
         'ops-restore:task' => \app\command\OpsRestoreTask::class,
         'ops-upgrade:task' => \app\command\OpsUpgradeTask::class,
+        'ops-module:request' => \app\command\OpsModuleRequest::class,
+        'ops-module:task' => \app\command\OpsModuleTask::class,
         'module:install'   => \app\command\ModuleInstall::class,
         'module:create'    => \app\command\ModuleCreate::class,
         'module:pack'      => \app\command\ModulePack::class,

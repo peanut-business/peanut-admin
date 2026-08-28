@@ -81,6 +81,48 @@ final readonly class PdoOpsTaskDispatcher implements OpsTaskDispatcher
 
     /**
      * @param array<string,string> $payload
+     * @return array<string,mixed>
+     */
+    public function dispatchModuleOperation(
+        PlatformContext $context,
+        array $payload,
+        string $idempotencyKey,
+    ): array {
+        if (strlen($idempotencyKey) < 8 || strlen($idempotencyKey) > 200
+            || preg_match('/^[\x21-\x7e]+$/D', $idempotencyKey) !== 1
+        ) {
+            throw OpsConsoleException::invalid();
+        }
+        $idempotencyDigest = hash('sha256', $idempotencyKey);
+        $requestDigest = hash('sha256', json_encode(
+            ['task_type' => PlatformModuleOperationExecutionService::TASK_TYPE, 'payload' => $payload],
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES,
+        ));
+        return $this->dispatchRow(
+            $context,
+            PlatformModuleOperationExecutionService::TASK_TYPE,
+            PlatformModuleOperationExecutionService::HANDLER_KEY,
+            $payload,
+            $idempotencyDigest,
+            $requestDigest,
+            PlatformModuleOperationExecutionService::CONCURRENCY_KEY,
+            1,
+            'platform.ops.module.submitted',
+            'module.submit',
+            [
+                'request_key' => $payload['request_key'],
+                'environment' => $payload['environment'],
+                'target_resource_id' => $payload['target_resource_id'],
+                'package_key' => $payload['package_key'],
+                'operation' => $payload['operation'],
+                'idempotency_digest' => $idempotencyDigest,
+                'request_digest' => $requestDigest,
+            ],
+        );
+    }
+
+    /**
+     * @param array<string,string> $payload
      * @param array<string,bool|int|string|null> $auditMetadata
      * @return array<string,mixed>
      */

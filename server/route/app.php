@@ -176,6 +176,13 @@ Route::post('api/platform/v1/ops/tasks/upgrade', [PlatformOpsController::class, 
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read')
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.upgrade.manage');
+Route::post('api/platform/v1/ops/tasks/module', [PlatformOpsController::class, 'moduleOperation'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read')
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.module.manage');
+Route::get('api/platform/v1/ops/modules', [PlatformOpsController::class, 'moduleOperations'])
+    ->middleware(PlatformLoginMiddleware::class)
+    ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
 Route::get('api/platform/v1/ops/upgrades', [PlatformOpsController::class, 'upgrades'])
     ->middleware(PlatformLoginMiddleware::class)
     ->middleware(PlatformPermissionMiddleware::class, 'platform.ops.read');
