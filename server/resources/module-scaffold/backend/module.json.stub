@@ -5,7 +5,7 @@
   "description": ${DESCRIPTION_JSON},
   "version": "1.0.0",
   "kernel_constraint": "^1.0",
-  "license": "proprietary",
+  "license": "Apache-2.0",
   "php_package": ${PHP_PACKAGE_JSON},
   "web_package": ${WEB_PACKAGE_JSON},
   "dependencies": [],

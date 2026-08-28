@@ -10,7 +10,7 @@
     "url": "git+https://github.com/peanut-business/peanut-admin.git",
     "directory": "uniapp"
   },
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "scripts": {
     "dev:custom": "uni -p",
     "dev:h5": "../scripts/local-client-dev mobile",

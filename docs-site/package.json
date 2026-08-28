@@ -10,7 +10,7 @@
     "url": "git+https://github.com/peanut-business/peanut-admin.git",
     "directory": "docs-site"
   },
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "sync:legal": "node scripts/sync-legal-assets.mjs",

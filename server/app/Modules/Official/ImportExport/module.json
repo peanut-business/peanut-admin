@@ -5,7 +5,7 @@
   "description": "Tenant-private import and export operations, jobs and result files.",
   "version": "1.0.0",
   "kernel_constraint": "^1.0",
-  "license": "proprietary",
+  "license": "Apache-2.0",
   "php_package": "peanut-business/official-import-export",
   "web_package": "@peanut-admin/official-import-export",
   "dependencies": [

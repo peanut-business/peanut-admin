@@ -1,5 +1,5 @@
 {
-  "schema_version":1,"key":"official.notification","name":"Notification","description":"Tenant-owned notification channels, scenes, templates and delivery logs.","version":"1.0.0","kernel_constraint":"^1.0","license":"proprietary",
+  "schema_version":1,"key":"official.notification","name":"Notification","description":"Tenant-owned notification channels, scenes, templates and delivery logs.","version":"1.0.0","kernel_constraint":"^1.0","license":"Apache-2.0",
   "php_package":"peanut-business/official-notification","web_package":"@peanut-admin/official-notification","dependencies":[],
   "backend":{"provider":"app\\Modules\\Official\\Notification\\ModuleProvider","routes":"Http/routes.php","migrations":"Database/Migrations","menus":"Resources/menus.json","permissions":"Resources/permissions.json","setting_definitions":"Resources/setting-definitions.json"},
   "frontend":{"entry":"web/src/modules/official-notification/contribution.ts"},

@@ -187,6 +187,6 @@ npx wrangler pages deploy .vitepress/dist --project-name=peanut-admin-docs --bra
 [`v1.1.5`](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.5)。源码发布、演示部署与
 业务生产部署是三类独立证据；本仓公开演示不代表任何第三方业务生产环境已部署。
 
-Peanut Admin 应用当前采用专有 / All Rights Reserved 许可；公开 Core 包维持 Apache-2.0。
-具体边界见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和
+Peanut Admin 当前源码自开源许可变更提交起采用 Apache-2.0；既有不可变 tag 与 GitHub Release
+保留其发布时附带的许可证。公开 Core 包同样采用 Apache-2.0。具体边界见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
