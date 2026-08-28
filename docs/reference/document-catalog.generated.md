@@ -128,6 +128,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-likeadmin-user-finance-contract` | `docs/likeadmin-user-finance-contract.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-likeadmin-workbench-contract` | `docs/likeadmin-workbench-contract.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-luna-handoff-20260802` | `docs/luna-handoff-20260802.md` | `archived` | `evidence` | `release-qualification` |
+| `pa-docs-maintenance-consumer-ready-evidence-retention` | `docs/maintenance/consumer-ready-evidence-retention.md` | `current` | `evidence` | `product-architecture` |
 | `pa-docs-maintenance-stale-facts-audit` | `docs/maintenance/stale-facts-audit.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-module-architecture-completion-report` | `docs/module-architecture-completion-report.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-module-development-guide` | `docs/module-development-guide.md` | `current` | `reference` | `application-maintainers` |

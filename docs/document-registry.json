@@ -3924,6 +3924,36 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-maintenance-consumer-ready-evidence-retention",
+      "path": "docs/maintenance/consumer-ready-evidence-retention.md",
+      "title": "Consumer-ready 资料与证据保留登记",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/plans/consumer-ready-product-plan.md",
+        "docs/document-registry.json",
+        "docs/product-status/capability-ledger.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "consumer-ready",
+        "release-evidence"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-maintenance-stale-facts-audit",
       "path": "docs/maintenance/stale-facts-audit.md",
       "title": "Peanut Admin 过期事实收敛登记",

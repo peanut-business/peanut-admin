@@ -18,7 +18,7 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**待执行**
+> - 计划状态：**执行中；CR01/CR02 候选已形成，等待合入 `dev` 后完成同步**
 > - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
@@ -88,8 +88,8 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 
 | 顺序 | ID | 任务 | 状态 | 直接依赖 | 主要交付物 | 推荐执行能力 |
 |---:|---|---|---|---|---|---|
-| 1 | CR01 | 历史资料与证据保留清单 | 未开始 | 无 | 路径级 keep/archive/delete/unknown 分类、引用与风险、体积和 owner | Terra 只读扫描；主代理决策 |
-| 2 | CR02 | 安全清理第一批 | 未开始 | CR01 | 删除或归档零引用过期材料、清理本地缓存、登记 redirect/tombstone；不可变发布证据保持 | Luna 机械执行；主代理复核 |
+| 1 | CR01 | 历史资料与证据保留清单 | 进行中 | 无 | 候选登记见 `docs/maintenance/consumer-ready-evidence-retention.md`；待本批合入后记为完成 | Terra 只读扫描；主代理决策 |
+| 2 | CR02 | 安全清理第一批 | 进行中 | CR01 | 候选删除 23 个零引用过期文件；待本批合入和文档 Gate 后记为完成 | Luna 机械执行；主代理复核 |
 | 3 | CR10 | 可消费 Module 生命周期合同 | 未开始 | 无 | install/update/disable/reactivate/retire/purge 状态机、权限、维护、备份、审计、恢复与 HTTP 禁区 | Sol xhigh；公共 API/破坏性边界 |
 | 4 | CR11 | Module package 更新实现 | 未开始 | CR10 | active v1→v2 的显式 update、dry-run、依赖/签名/version/migration preflight、原子文件+lock+DB 与恢复 | Sol high；聚焦实现 |
 | 5 | CR12 | 交付环境 Module 操作入口 | 未开始 | CR10、CR11 | deployment-owned CLI/worker 串联维护、配对备份、update/retire/Purge、smoke、审计和 recovery pointer | Sol xhigh；部署与数据安全 |
@@ -166,6 +166,17 @@ Git 可恢复性、当前 owner 和不可变证据价值；CR02 只处理复核�
 | `scripts/scaffold-doctor` | 无已知日常调用者，但被 application inventory 与 v3.0.x scaffold manifest 导出 | 条件性候选 | 不能单文件删除，需先决定正式 scaffold 合同 |
 | `docs-site/deployment.md`、`platform.md`、`product-status.md`、`troubleshooting.md` 及四个旧 `guide/` 页面 | VitePress 已 `srcExclude`，但仍在模板 inventory | 条件性候选 | 需先决定是否退出模板，再同步 registry、inventory 与生成物 |
 | `output/p0e-p0e78e9667/`、`p0e-p0e215b/`、`p0e-pc11e1/`、`p0e-p0e210a1/`、`p0e-p0e211b2/`、`p0e-pc70q14/` | 被正式 Release、能力账本或当前 PC70 资格引用 | 保留 | 维持不可变发布、Module 与当前组合资格的追溯链 |
+
+### 7.2 CR01/CR02 当前执行候选
+
+- 固定盘点基线：`origin/dev=8735a669a3669d0628a1d02db2d1cbf02e3b823c`
+  （tree `5204bae49cb60a36dee974dce68d20e38425035b`）。
+- 路径级决定与恢复方式登记在
+  `docs/maintenance/consumer-ready-evidence-retention.md`；当前候选仅删除两个无有效入站引用的
+  旧 P0-E 输出和一个未执行 MT05 harness，共 23 个 tracked 文件、2,824 KiB。
+- `server/database/import.php`、`scripts/scaffold-doctor` 和八个 archived docs-site 页面仍被
+  scaffold/inventory、生成器、测试或账本消费，本批不删除。CR01/CR02 只有在候选合入 `dev`
+  且文档治理检查通过后才更新为 `已完成`。
 
 ## 8. 状态同步与最终报告
 
