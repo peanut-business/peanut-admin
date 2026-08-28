@@ -42,6 +42,13 @@ SQL);
         $row=$statement->fetch(PDO::FETCH_ASSOC); return is_array($row)?$this->decode($row):null;
     }
 
+    public function deliverableObjectForTenant(int $tenantId, string $fileKey): ?array
+    {
+        $statement=$this->pdo->prepare($this->objectSelect()." WHERE f.tenant_id=:tenant_id AND f.file_key=:file_key AND f.status='ready' AND t.status='active' LIMIT 1");
+        $statement->execute(['tenant_id'=>$tenantId,'file_key'=>$fileKey]);
+        $row=$statement->fetch(PDO::FETCH_ASSOC); return is_array($row)?$this->decode($row):null;
+    }
+
     public function publicObject(string $reference): ?array
     {
         $reference=trim($reference); $field='f.file_key';
@@ -51,7 +58,7 @@ SQL);
             if(preg_match('#^tenants/v1/[1-9][0-9]*/#D',$reference)!==1) return null;
             $reference=StoragePath::assertObjectKey($reference); $field='f.object_key';
         }
-        $statement=$this->pdo->prepare($this->objectSelect()." WHERE {$field}=:reference AND f.access_type='public' AND f.status='ready' LIMIT 1");
+        $statement=$this->pdo->prepare($this->objectSelect()." WHERE {$field}=:reference AND f.access_type='public' AND f.status='ready' AND t.status='active' LIMIT 1");
         $statement->execute(['reference'=>$reference]); $row=$statement->fetch(PDO::FETCH_ASSOC);
         return is_array($row)?$this->decode($row):null;
     }
@@ -104,7 +111,7 @@ SQL); $statement->execute($data);
 
     private function objectSelect(): string
     {
-        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ciphertext,a.credential_key_version,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
+        return 'SELECT f.*,a.id account_id,a.account_key,a.driver,a.name account_name,a.credential_ciphertext,a.credential_key_version,a.status account_status,s.space_key,s.name space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status space_status FROM pa_file_object f JOIN pa_tenant t ON t.id=f.tenant_id JOIN pa_storage_space s ON s.id=f.storage_space_id JOIN pa_storage_account a ON a.id=s.account_id';
     }
     private function decode(array $row): array
     {

@@ -61,6 +61,12 @@ Authorization: Bearer <token>
 access token，并从已验证会话建立 Account/TenantMember/TenantContext；会话会检查
 audience、过期时间、账号、成员和 Tenant 状态。任一主体被停用后，新请求必须被拒绝。
 
+Tenant 文件无论业务上标记为 public 还是 private，都只通过短期签名的
+`GET /api/storage/delivery` 读取。服务器在每次请求中同时要求对象仍为 `ready`、签名未过期且
+Tenant 仍为 `active`，随后代理 local 或私有 Provider 内容，并返回 `Cache-Control: no-store`。
+`/storage/`、Provider 公开 URL 或 CDN 不是支持的交付入口；Tenant 停用后不能等待旧 token、
+URL 或缓存自然过期。
+
 ## 权限标识
 
 管理端权限标识由请求路径去掉 `api/admin/` 得到。例如：

@@ -297,7 +297,7 @@ SQL);
     $completed = $runtime->operation($alpha, $success->operationKey);
     expectAsyncTenant($completed->status === 'succeeded' && $completed->resultFileKey !== null, 'successful export did not publish a result');
     $download = $runtime->download($alpha, $completed->resultFileKey);
-    expectAsyncTenant(isset($download['url']) && is_string($download['url']) && str_contains($download['url'], '/api/storage/private?'), 'private CSV URL is missing');
+    expectAsyncTenant(isset($download['url']) && is_string($download['url']) && str_contains($download['url'], '/api/storage/delivery?'), 'Tenant-gated CSV URL is missing');
     expectAsyncTenant(!str_contains((string)$download['url'], '/public/'), 'CSV was exposed below public/');
     try {
         $runtime->download($beta, $completed->resultFileKey);

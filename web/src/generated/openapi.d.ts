@@ -84,6 +84,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/storage/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Delivers a ready Tenant-owned public or private file only while its Tenant is active. The signed application URL is short-lived, every request rechecks Tenant state, responses are no-store, and direct local or Provider object URLs are not part of the delivery contract. */
+        get: operations["deliverTenantFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/official.file.list": {
         parameters: {
             query?: never;
@@ -695,6 +712,39 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["ApiResponse"];
+        };
+    };
+    deliverTenantFile: {
+        parameters: {
+            query: {
+                tenant_id: number;
+                file_key: string;
+                expires: number;
+                signature: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-gated file contents */
+            200: {
+                headers: {
+                    "Cache-Control"?: "no-store, private";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description Signature, object state or Tenant state rejected */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     listFiles: {

@@ -432,7 +432,7 @@ Route::get('api/index/policy',  [ApiIndexController::class, 'policy'])
     ->middleware(PublicDecorationTenantMiddleware::class, 'decoration.config');
 
 Route::post('api/login/logout',   [ApiLoginController::class, 'logout']);
-Route::get('api/storage/private', [ApiStorageController::class, 'privateFile']);
+Route::get('api/storage/delivery', [ApiStorageController::class, 'delivery']);
 
 Route::get('api/article/cate',    [ApiArticleController::class, 'cate'])
     ->middleware(PublicArticleTenantMiddleware::class, 'article.cate');

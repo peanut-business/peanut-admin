@@ -57,6 +57,16 @@ Schema、安装包、create-app inventory 或日常文档。
 不满足 Gate 的非核心能力必须在修复后交付，或从版本 Runtime、菜单和文档中退出。不能
 标记为“可选支持多租户”。当前基线不把现有 app-owned 能力重构为 Plugin。
 
+Tenant 状态是连续请求边界，不只在登录或签发 URL 时检查。`suspended/closed` Tenant 的管理会话、
+公开 API、PC/H5 内容、异步任务和文件交付都必须在新请求中 fail closed；恢复为 `active` 只恢复仍
+满足 Host、身份、TenantModule、RBAC、对象 `ready` 状态和签名时效的访问，不重放 dead task 或恢复
+archived 对象。
+
+Tenant 文件统一通过短期签名的 `/api/storage/delivery` 读取，并在对象查询中同时要求 Tenant
+`active`。应用服务器代理 local 与私有 Provider 内容，响应固定 `no-store`；Nginx 对历史
+`/storage/` 直出返回 404。云 Provider bucket 必须保持私有，公开/私有仅是业务用途和 disposition，
+不允许成为绕过 Tenant 状态的物理公开 ACL。
+
 ## 5. 文档边界
 
 当前公开文档只说明 fresh install、原生身份、模块开发、多租户不变量和当前交付能力。
