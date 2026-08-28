@@ -9,7 +9,10 @@ use Opis\JsonSchema\Validator;
 /** Builds deterministic Plugin manifests and the repository Plugin lock without runtime services. */
 final readonly class PluginArtifactWriter
 {
-    public function __construct(private string $serverRoot)
+    public function __construct(
+        private string $serverRoot,
+        private bool $validateJsonSchema = true,
+    )
     {
     }
 
@@ -58,7 +61,9 @@ final readonly class PluginArtifactWriter
         $plugins = [];
         foreach ($manifests as $manifestPath) {
             $manifest = $this->readJson($manifestPath);
-            $this->assertSchema($manifest);
+            if ($this->validateJsonSchema) {
+                $this->assertSchema($manifest);
+            }
             $key = $this->key($manifest['key'] ?? '');
             $moduleRoots = [];
             foreach ((array)($manifest['modules'] ?? []) as $module) {
@@ -184,7 +189,9 @@ final readonly class PluginArtifactWriter
             'frontend' => $frontend,
             'modules' => $modules,
         ];
-        $this->assertSchema($manifest);
+        if ($this->validateJsonSchema) {
+            $this->assertSchema($manifest);
+        }
         return $manifest;
     }
 

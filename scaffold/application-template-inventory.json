@@ -14062,7 +14062,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "e7b6f4e8704940424830c9b9b96ea46f21e7df654e3725437d88d0ae20f49e19"
+            "source_sha256": "4e23145e8e04692c576151127f2b422ac2155a2996cc0bcd2b34407d2de641f2"
         },
         {
             "path": "server/app/platform/service/plugin/PluginCatalogSyncService.php",
