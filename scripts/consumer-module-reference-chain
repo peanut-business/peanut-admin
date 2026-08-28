@@ -290,8 +290,6 @@ def lifecycle_helper() -> str:
     return r'''<?php
 declare(strict_types=1);
 
-use app\platform\service\plugin\PlatformModuleRuntimeService;
-
 require $argv[1] . '/server/bootstrap/environment.php';
 require $argv[1] . '/server/vendor/autoload.php';
 
@@ -303,8 +301,6 @@ $pdo = new PDO(
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
 );
 $module = 'acme.reference-chain';
-$config = ['plugin_lock' => '../plugins.lock', 'kernel_version' => '1.0.0', 'registered_client_keys' => ['admin-web','platform-web']];
-
 $tableExists = static function (PDO $pdo): bool {
     return (int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='pa_acme_reference_chain_record'")->fetchColumn() === 1;
 };
@@ -359,11 +355,6 @@ if ($action === 'enable-b') {
 if ($action === 'disable-tenants') {
     $pdo->exec("UPDATE pa_tenant_module SET status='disabled',disabled_at=UTC_TIMESTAMP(3),disabled_reason='cr21-package-operation',updated_at=UTC_TIMESTAMP(3) WHERE module_key='acme.reference-chain'");
     echo json_encode($snapshot(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), PHP_EOL;
-    exit(0);
-}
-if ($action === 'disable-package') {
-    $result = (new PlatformModuleRuntimeService($pdo, $argv[1] . '/server', $config, []))->disable($module);
-    echo json_encode(['operation' => $result, 'snapshot' => $snapshot()], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), PHP_EOL;
     exit(0);
 }
 if ($action === 'snapshot') {
@@ -561,9 +552,15 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
 
         disabled_tenants = helper_action(helper, consumer, consumer_env, "disable-tenants", logs / "consumer.log")
         expect(set(tenant_statuses(disabled_tenants).values()) == {"disabled"}, "TenantModules were not disabled")
-        disabled_package = helper_action(helper, consumer, consumer_env, "disable-package", logs / "consumer.log")
-        expect(disabled_package.get("operation", {}).get("operation") == "disabled"
-               and disabled_package.get("snapshot", {}).get("module_installation", {}).get("status") == "maintenance",
+        disabled_package = run_think(
+            consumer,
+            consumer_env,
+            ["module:disable-package", MODULE_KEY],
+            logs / "consumer.log",
+        )
+        after_disable = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
+        expect(disabled_package.get("operation") == "disabled"
+               and after_disable.get("module_installation", {}).get("status") == "maintenance",
                "Package disable did not enter maintenance")
         reactivated = run_think(consumer, consumer_env, [
             "module:install-package", str(v2_path), f"--sha256={v2_sha}", f"--signature-key-id={PACKAGE_KEY_ID}",

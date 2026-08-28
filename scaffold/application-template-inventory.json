@@ -475,7 +475,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d6a2bbaa915ef438d00e26e5ed48a0c2bea876fd17e11e9369f559f6dc612116"
+            "source_sha256": "d09bf5c481825bccd67617a552c4cabaf154531f1e94c1326ec0b33b89575f7d"
         },
         {
             "path": "docs-site/.gitignore",
@@ -1146,6 +1146,19 @@
         {
             "path": "docs/architecture/codegraph-worktree-policy.md",
             "target": "docs/architecture/codegraph-worktree-policy.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/architecture/consumer-module-lifecycle-contract.md",
+            "target": "docs/architecture/consumer-module-lifecycle-contract.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -2691,6 +2704,19 @@
             ]
         },
         {
+            "path": "docs/maintenance/consumer-ready-evidence-retention.md",
+            "target": "docs/maintenance/consumer-ready-evidence-retention.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/maintenance/stale-facts-audit.md",
             "target": "docs/maintenance/stale-facts-audit.md",
             "classification": "excluded",
@@ -2861,6 +2887,19 @@
                 "full"
             ],
             "source_sha256": "075d9107bfb8f5975d6dcd6cf49703ed1753b745e1352da5dbdb6c3504879d30"
+        },
+        {
+            "path": "docs/plans/consumer-ready-product-plan.md",
+            "target": "docs/plans/consumer-ready-product-plan.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
         },
         {
             "path": "docs/plans/multi-tenancy-platform-management-plan.md",
@@ -4123,7 +4162,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b5242913c92bb3f2e7f7b4a87c928a4302ccd45e559f22f9e835961bf0e5cebf"
+            "source_sha256": "5c072409fd4c0ed6f5e7252f739b488d461d94af5d5cddca84bbdb5203626d20"
         },
         {
             "path": "resources/service-registry.json",
@@ -4277,6 +4316,19 @@
         {
             "path": "scripts/combined-upgrade-qualification",
             "target": "scripts/combined-upgrade-qualification",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "scripts/consumer-module-reference-chain",
+            "target": "scripts/consumer-module-reference-chain",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -4476,6 +4528,20 @@
                 "full"
             ],
             "source_sha256": "a87982387a53a9080630ff70922e9de57e818a713b2ab9aa2926acc5a5265319"
+        },
+        {
+            "path": "scripts/ops-module-worker",
+            "target": "scripts/ops-module-worker",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "5d9fa72a52ff37e0e010dde894c936a307c0f83fe4999c8c397e371a997b6bc3"
         },
         {
             "path": "scripts/ops-restore-worker",
@@ -9039,7 +9105,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "88ef4d711d742ef25c7ca01b62a9873aa91f1be11c66c4a491c943b574036822"
+            "source_sha256": "857fbfee9bcfba5581d0aecaae9a63a9e0d90a75d0b5c56ce3e3e6d8a3a5ff5b"
         },
         {
             "path": "server/app/api/controller/UploadController.php",
@@ -9420,6 +9486,20 @@
             "source_sha256": "873f3a12f59f5a4d3c288e12c032df49ac9226046d2c0c3ad6f7a146ce3b391b"
         },
         {
+            "path": "server/app/command/ModuleCheck.php",
+            "target": "server/app/command/ModuleCheck.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "2dcd4e9b621b7bc306f136b98362fb3b0de9986e59f849886a22c507033f8d0f"
+        },
+        {
             "path": "server/app/command/ModuleCreate.php",
             "target": "server/app/command/ModuleCreate.php",
             "classification": "app-owned",
@@ -9432,6 +9512,20 @@
                 "full"
             ],
             "source_sha256": "5629adc774fa3d70b302245007ef768520f7448c3cb23a3b3db81e6b0673057a"
+        },
+        {
+            "path": "server/app/command/ModuleDisablePackage.php",
+            "target": "server/app/command/ModuleDisablePackage.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "f14f3cde449fb92569aef2b7b7ef9d887e52c20fccbd8d4176ddeb2303cc3320"
         },
         {
             "path": "server/app/command/ModuleInstall.php",
@@ -9518,6 +9612,20 @@
             "source_sha256": "7d5eae1bc8a516dee0e86f85da1081d82a2a79b4739d30be53ba9958dae6dd46"
         },
         {
+            "path": "server/app/command/ModuleUpdatePackage.php",
+            "target": "server/app/command/ModuleUpdatePackage.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "15b1bcade1747e8a60529e6d9130197af0b01b73f4d4e6c2eee934a82d5aff8a"
+        },
+        {
             "path": "server/app/command/OpsBackupTask.php",
             "target": "server/app/command/OpsBackupTask.php",
             "classification": "app-owned",
@@ -9530,6 +9638,34 @@
                 "full"
             ],
             "source_sha256": "c97b5ca7bc5cedc286d8695cde26d3a87d59dfa2d81e4dfbe82ff37dab9e8b13"
+        },
+        {
+            "path": "server/app/command/OpsModuleRequest.php",
+            "target": "server/app/command/OpsModuleRequest.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "3108502ead51c51c686489ce2655b0bb6d4246e25edb18ef53d36e23bf0e7f77"
+        },
+        {
+            "path": "server/app/command/OpsModuleTask.php",
+            "target": "server/app/command/OpsModuleTask.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "80e9b7aec50c35f91e8d08c43edd5510f97ebf13d02d4496f529dcbe795ebc7c"
         },
         {
             "path": "server/app/command/OpsRestoreTask.php",
@@ -12606,7 +12742,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c03780aed6f2df2e61b9f9740ecd046bddec7bd8f8c4d4de44ef4f647194f619"
+            "source_sha256": "398821075d93849fe1fd59b42c1228b510f554be8f8525108239c982047f731e"
         },
         {
             "path": "server/app/common/service/storage/StorageDriverFactory.php",
@@ -12662,7 +12798,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "721e3b0ba86d9b3390b0daacb0c65a567e1a5283e950c0b94d6963b1355b7c72"
+            "source_sha256": "b29a8bd3bda3510839c6444c7c4b5efaecf15459b365e36905d8c47cc8d51d57"
         },
         {
             "path": "server/app/common/service/storage/StorageService.php",
@@ -12676,7 +12812,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "110f24c3bbef958693bce231cf1b3e2d0d7dc5ccf1e59e87692ce3e2c931e732"
+            "source_sha256": "fa65038cf7d7f7e05e476245855e429bce9b3a0b862443248d81ff5c780404ac"
         },
         {
             "path": "server/app/common/service/storage/driver/AliyunStorageDriver.php",
@@ -12690,7 +12826,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "56debe9dc81d061801ece931c7f8166c2e064bfff88eb36c2b977ea3c1d515bf"
+            "source_sha256": "c68dfc95e9c57b3c542a95bf73d5dda55167bf2f52b7874c224d12fb5ec1b505"
         },
         {
             "path": "server/app/common/service/storage/driver/LocalStorageDriver.php",
@@ -12704,7 +12840,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4c2a59c4d7b0160104da6428bb062f60a642a8d81a003a997777d10cbaddf0bd"
+            "source_sha256": "77183a831854d2755040a51d1e1aa94134dfc799c374af93e60be15886acc00a"
         },
         {
             "path": "server/app/common/service/storage/driver/QcloudStorageDriver.php",
@@ -12718,7 +12854,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2e5b28605c1f7f574b903f2d3c07fc56abe7d4c58b565e9472782aac153028ed"
+            "source_sha256": "d2505ada7ce45df0eb8adf788a6b9713818e1837a910529feeee69c255f09352"
         },
         {
             "path": "server/app/common/service/storage/driver/QiniuStorageDriver.php",
@@ -12732,7 +12868,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "937030d627b339c995a675c0fb41fde90dbe4a2931fb09c2a3e95ec806da3ffd"
+            "source_sha256": "485543a4c73d8e1f10639af49aa04a8d88d7885baca04d94024159b70cc213fe"
         },
         {
             "path": "server/app/common/service/tenant/ApplicationHostPolicy.php",
@@ -13174,7 +13310,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "11c6d61a4b798482e87f1264347937f93a0ce8158a8b0b5fa51a63a05b9a4d14"
+            "source_sha256": "98d365217b5d6dbbd24dc0880b848c11eda91e27cec601b915fb979da8f1d90b"
         },
         {
             "path": "server/app/platform/controller/PlatformSessionController.php",
@@ -13753,6 +13889,18 @@
             "source_sha256": "bc1edf223f23ee8faaf5148d484fbc6c008aab606e376239043616a47abba1ac"
         },
         {
+            "path": "server/app/platform/service/ops/DeploymentModuleRequestService.php",
+            "target": "server/app/platform/service/ops/DeploymentModuleRequestService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "a262e015eecf0495278612c77a8516073818446e09de2f0c3f4761bcb1c72d0a"
+        },
+        {
             "path": "server/app/platform/service/ops/PairedBackupManifest.php",
             "target": "server/app/platform/service/ops/PairedBackupManifest.php",
             "classification": "app-owned",
@@ -13801,6 +13949,18 @@
             "source_sha256": "468a76da02e24c65a0de4fdea799e3c1642c31739753ebc0c8c5960ac85c5138"
         },
         {
+            "path": "server/app/platform/service/ops/PdoModuleOperationTaskExecutionService.php",
+            "target": "server/app/platform/service/ops/PdoModuleOperationTaskExecutionService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "37cc91c97133e201712aeb876ed3d36e73ca251168e27c5dc500bbe6939377a7"
+        },
+        {
             "path": "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
             "target": "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
             "classification": "app-owned",
@@ -13810,7 +13970,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "23e8fcb46d6fc1e0dfa4b52b82546c327c35ebd87bb93e2147a3a21325d3916c"
+            "source_sha256": "7b693585478c7f10ffac4e3b38dcb021b10413e7c9b7016ce6b2ccaf49a9cafb"
         },
         {
             "path": "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
@@ -13873,6 +14033,18 @@
             "source_sha256": "87a97df92f8ac0d30497c97e303374e63193b58665dd10260bcb6b95c7207db9"
         },
         {
+            "path": "server/app/platform/service/ops/PlatformModuleOperationExecutionService.php",
+            "target": "server/app/platform/service/ops/PlatformModuleOperationExecutionService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "bea67579947696020c9137bd95799c826c6dc99d623b28c0ce66d9b9f230728d"
+        },
+        {
             "path": "server/app/platform/service/ops/PlatformOpsPermissionChecker.php",
             "target": "server/app/platform/service/ops/PlatformOpsPermissionChecker.php",
             "classification": "app-owned",
@@ -13894,7 +14066,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "d6189f0691689920265e97dc6d1d60ef5bf76f0b4e5e045d53cb24d7677701ed"
+            "source_sha256": "f3908decd420dc4131d0df4d7760c0d618910e9134c7ff578f5fc5b1902a79f5"
         },
         {
             "path": "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
@@ -13967,6 +14139,18 @@
                 "full"
             ],
             "source_sha256": "6958d2e64c2368cd17b9b23e68ac27f56592a606d3c4a921c643743222689d71"
+        },
+        {
+            "path": "server/app/platform/service/plugin/ModuleAuthorCheckHost.php",
+            "target": "server/app/platform/service/plugin/ModuleAuthorCheckHost.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "bcd1102062b86d78914561e0c354047d03e8decec8748293309010b53bd14fc5"
         },
         {
             "path": "server/app/platform/service/plugin/ModuleCatalogApplier.php",
@@ -14158,7 +14342,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "28f6d0ff8289383b2f2f04134aa51fe327e0d9eb29a460071969f5ca21eedb6d"
+            "source_sha256": "6ed17aeb27a7dc32f48b0a76e26f00801b6e506a1f49d1b42f8d987b94087056"
         },
         {
             "path": "server/app/platform/service/plugin/PluginPackageInstaller.php",
@@ -14170,7 +14354,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "ea458be61b3bf608c21a9e816ee4ef70cc0e720a04599296e2837b0cf912ac2f"
+            "source_sha256": "0b5a3eb08af37ddf240b84be152a3c61ebddb547c9de6ec91daf46f85bfca3b6"
         },
         {
             "path": "server/app/platform/service/plugin/PluginRuntimeGovernanceService.php",
@@ -14606,7 +14790,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "159671c969cac9d1aca39c32e9886e9e22f1685d0187035621c7c80e5b2ccea0"
+            "source_sha256": "5121d5aacc1162fa8cac4632efad7b0f20759583b55943fba9d19bd48ec2f273"
         },
         {
             "path": "server/config/cookie.php",
@@ -15041,6 +15225,20 @@
                 "full"
             ],
             "source_sha256": "6f0e9955feba612c2a871b643ebd37d42c796b4e02623bf4f55447877af89055"
+        },
+        {
+            "path": "server/database/migrations/20260828-z-create-ops-module-execution.sql",
+            "target": "server/database/migrations/20260828-z-create-ops-module-execution.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "aa50663719e6fe0b707090284edba8c60eb129bcf426c4756bfdf98330ba30bc"
         },
         {
             "path": "server/database/seed-demo-data.php",
@@ -15487,7 +15685,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8c9770447ff098ddda657a36b71f970e741984a1b6a83a31e5e364b1fd12d654"
+            "source_sha256": "07a87faab2d5f0ea3fe7c89a0750d05774ef2e06dad74d2c06cbac4a111e9069"
         },
         {
             "path": "server/route/fixture_delivery_record.php",
@@ -16491,6 +16689,19 @@
         {
             "path": "server/tests/Productization/ModuleCreateCommandTest.php",
             "target": "server/tests/Productization/ModuleCreateCommandTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/Productization/ModuleDeliveryOperationTest.php",
+            "target": "server/tests/Productization/ModuleDeliveryOperationTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -19105,7 +19316,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1e2bed5a550e515bc8bd4af28291c9a68543b0cf8b318e03147672e3986f5a40"
+            "source_sha256": "02f133c6e2910a4808cc163aad0a23d836cfd5051fadbba56f56778561b093f0"
         },
         {
             "path": "web/src/hooks/chart-option.ts",
