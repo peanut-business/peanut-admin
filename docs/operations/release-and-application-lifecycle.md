@@ -67,7 +67,7 @@ Peanut Admin 源仓的 `dev/main` 没有 Git 跟随关系。
 ```bash
 php scripts/scaffold-upgrade preflight --project-root=/path/to/app \
   --from-manifest=/path/to/scaffold/releases/v3.0.4/scaffold-manifest.json \
-  --to-manifest=/path/to/scaffold/releases/v3.0.5/scaffold-manifest.json
+  --to-manifest=/path/to/scaffold/releases/v3.0.11/scaffold-manifest.json
 php scripts/scaffold-upgrade apply --project-root=/path/to/app --plan=/path/to/app/.peanut/upgrades/plans/<candidate>.json
 php scripts/scaffold-upgrade verify --project-root=/path/to/app --plan=/path/to/app/.peanut/upgrades/plans/<candidate>.json
 ```
