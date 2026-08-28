@@ -4343,6 +4343,41 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-plans-consumer-ready-product-plan",
+      "path": "docs/plans/consumer-ready-product-plan.md",
+      "title": "Peanut Admin 可消费交付推进计划",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "docs/plans/product-closure-execution-queue.md",
+        "docs/product-status/product-closure-observability.md",
+        "docs/product-status/capability-ledger.json",
+        "server/config/console.php",
+        "server/app/platform/service/plugin/PluginPackageInstaller.php",
+        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "resources/service-registry.json"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "product-closure",
+        "module-lifecycle",
+        "consumer-ready"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-plans-product-release-operations-saas-roadmap",
       "path": "docs/plans/product-release-operations-saas-roadmap.md",
       "title": "Peanut Admin 产品发布、运营平台与 SaaS 路线",

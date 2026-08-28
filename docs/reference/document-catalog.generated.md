@@ -141,6 +141,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-peanut-admin-development-guide` | `docs/peanut-admin-development-guide.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-peanut-admin-release-deployment` | `docs/peanut-admin-release-deployment.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-peanut-admin-user-manual` | `docs/peanut-admin-user-manual.md` | `archived` | `reference` | `application-maintainers` |
+| `pa-docs-plans-consumer-ready-product-plan` | `docs/plans/consumer-ready-product-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-multi-tenancy-platform-management-plan` | `docs/plans/multi-tenancy-platform-management-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-closure-execution-queue` | `docs/plans/product-closure-execution-queue.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-release-operations-saas-roadmap` | `docs/plans/product-release-operations-saas-roadmap.md` | `planned` | `plan` | `product-architecture` |
