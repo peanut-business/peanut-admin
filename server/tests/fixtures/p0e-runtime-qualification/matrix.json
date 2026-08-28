@@ -24,6 +24,7 @@
     "standalone_fresh": { "deployment_mode": "standalone", "action": "fresh" },
     "multi_tenant_fresh": { "deployment_mode": "multi-tenant", "action": "fresh" },
     "plugin_lifecycle": { "deployment_mode": "multi-tenant", "action": "plugin" },
+    "consumer_module_cycle": { "deployment_mode": "standalone", "action": "consumer-module" },
     "standalone_browser": { "deployment_mode": "standalone", "action": "browser" },
     "multi_tenant_browser": { "deployment_mode": "multi-tenant", "action": "browser" }
   },
@@ -32,6 +33,7 @@
     "standalone-fresh",
     "multi-tenant-fresh",
     "plugin-lifecycle",
+    "consumer-module-lifecycle",
     "production-compose",
     "standalone-browser",
     "multi-tenant-browser"

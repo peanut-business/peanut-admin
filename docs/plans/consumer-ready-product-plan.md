@@ -18,7 +18,7 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20—CR23 已完成，下一关键路径为 CR30**
+> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20—CR23 已完成，CR30 正在准备唯一消费组合候选**
 > - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
@@ -98,7 +98,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 8 | CR21 | 双独立应用二开参考链 | 已完成 | CR11、CR12、CR20 | PR #346 合入 `dev=50c8577…`（tree `69f0ac1…`）；双独立生成应用完成签名 Module v1→v2 全生命周期、Tenant A/B 四层断言和 app-owned 摘要 | Sol high；真实纵向 fixture |
 | 9 | CR22 | 消费者文档与支持入口 | 已完成 | CR11、CR12、CR20 | PR #348 合入从创建应用到 Module/应用升级的公开任务导航、唯一命令/错误/兼容索引、脱敏诊断包、普通 Issue 与安全问题规范 | Luna 文档；主代理事实复核 |
 | 10 | CR23 | 历史文档与证据最终收敛 | 已完成 | CR02、CR22 | PR #350 合入 8 个旧页和一次性 import 的退出、3 个已完成计划归档及当前消费者指南/安全支持面的生成应用投影；恢复清单已固定 | Luna 机械执行；主代理批准删除 |
-| 11 | CR30 | 封存前消费资格就绪 | 未开始 | CR11—CR13、CR20—CR23 | 用实际生成应用和第三方包形态验证所有入口、身份、目录、driver、阶段隔离与失败恢复；不产生 qualified | Sol high；Development mode |
+| 11 | CR30 | 封存前消费资格就绪 | 进行中 | CR11—CR13、CR20—CR23 | 正在把正式 scaffold adoption 的双应用 Module v1→v2 链接入独立第 8 资格组，并以第 6 个隔离数据库验证阶段与恢复边界；本阶段不产生 qualified | Sol high；Development mode |
 | 12 | CR31 | 固定候选消费组合资格 | 未开始 | CR30 | 同一候选一次完成 create-app、双模式 fresh、Module v1→v2 全生命周期、应用升级、生产 Compose/浏览器与零残留 | Sol xhigh；唯一资格 owner |
 | 13 | CR40 | 正式可消费源码发布 | 未开始 | CR31 | `dev→main`、annotated tag、GitHub Release、scaffold/manifest/能力快照和一次最低发布后核验 | Sol high；发布 owner |
 

@@ -31,6 +31,7 @@ REGISTRY_TOOL = ROOT / "scripts/project-resource-registry"
 INSPECTOR = ROOT / "server/tests/fixtures/mt05/inspect.php"
 BROWSER_RUNNER = ROOT / "scripts/p0e-browser-smoke"
 BROWSER_TOOLING = ROOT / "scripts/p0e-browser-tooling"
+CONSUMER_MODULE_CHAIN = ROOT / "scripts/consumer-module-reference-chain"
 DEVELOPMENT_DATABASE_SYNC = ROOT / "scripts/project-development-database.sh"
 LOCAL_BACKEND_ENV = ROOT / "server/.env"
 PERSISTENT_DATABASE = "peanut_admin_development"
@@ -731,6 +732,7 @@ class Runner:
             "standalone-fresh": ["standalone_fresh"],
             "multi-tenant-fresh": ["multi_tenant_fresh"],
             "plugin-lifecycle": ["plugin_lifecycle"],
+            "consumer-module-lifecycle": ["consumer_module_cycle"],
             "production-compose": ["standalone_browser"],
             "multi-tenant-browser": ["multi_tenant_browser"],
         }
@@ -739,6 +741,10 @@ class Runner:
                 shutil.rmtree(self.generated)
             if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
                 shutil.rmtree(ROOT / "server/vendor")
+        if group == "consumer-module-lifecycle":
+            consumer_output = self.cache / "consumer-module-lifecycle"
+            if consumer_output.exists():
+                shutil.rmtree(consumer_output)
         if group == "production-compose" and self.compose_env.exists() and self.compose_overlay.exists():
             self.compose("down", "--volumes", "--remove-orphans", check=False, project_root=self.active_compose_root)
         if group == "multi-tenant-browser" and self.compose_env.exists() and self.compose_overlay.exists():
@@ -1244,6 +1250,54 @@ class Runner:
             "app_owned_after_sha256": after["tree_sha256"],
         })
 
+    def consumer_module_lifecycle(self) -> None:
+        group = "consumer-module-lifecycle"
+        database = self.plan["databases"]["consumer_module_cycle"]
+        output = self.cache / group
+        log = self.group_log(group)
+        self.create_database(database)
+        host, port = self.plan["endpoint"].rsplit(":", 1)
+        arguments = [
+            str(CONSUMER_MODULE_CHAIN),
+            "--candidate", self.args.candidate,
+            "--lease", self.args.lease,
+            "--database", database,
+            "--output", str(output),
+            "--formal-release-adoption",
+        ]
+        result = command(
+            arguments,
+            env={
+                "DB_HOST": host,
+                "DB_PORT": port,
+                "DB_USER": required_environment("P0E_DB_USER"),
+                "DB_PASS": required_environment("P0E_DB_PASSWORD"),
+            },
+            capture=True,
+            check=False,
+        )
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write("$ " + shlex.join(arguments) + "\n")
+            stream.write(result.stdout)
+            stream.write(result.stderr)
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip().splitlines()
+            fail("consumer Module lifecycle failed: " + (detail[-1] if detail else "no output"))
+        try:
+            summary = json.loads(result.stdout.strip())
+        except json.JSONDecodeError as exception:
+            fail(f"consumer Module lifecycle summary is invalid: {exception}")
+        if (
+            not isinstance(summary, dict)
+            or summary.get("status") != "passed"
+            or summary.get("candidate") != self.args.candidate
+            or summary.get("candidate_tree") != self.plan["candidate_tree"]
+            or summary.get("database") != database
+            or summary.get("gates", {}).get("formal_release_adoption") != "passed"
+        ):
+            fail("consumer Module lifecycle summary identity diverged")
+        self.write_json(self.output / "groups/consumer-module-lifecycle.json", summary)
+
     def write_compose_env(self, project_root: Path, database: str, mode: str) -> None:
         self.compose_backend_env = self.write_backend_env(
             project_root,
@@ -1528,6 +1582,7 @@ class Runner:
                 "standalone_fresh": "groups/standalone-fresh.json",
                 "multi_tenant_fresh": "groups/multi-tenant-fresh.json",
                 "plugin_lifecycle": "groups/plugin-lifecycle.json",
+                "consumer_module_lifecycle": "groups/consumer-module-lifecycle.json",
                 "production_compose": "groups/production-compose.json",
                 "browser": "browser/generated",
             },
@@ -1554,6 +1609,7 @@ class Runner:
         self.run_group("standalone-fresh", lambda: self.fresh("standalone_fresh", "standalone-fresh", "standalone"))
         self.run_group("multi-tenant-fresh", lambda: self.fresh("multi_tenant_fresh", "multi-tenant-fresh", "multi-tenant"))
         self.run_group("plugin-lifecycle", self.plugin_lifecycle)
+        self.run_group("consumer-module-lifecycle", self.consumer_module_lifecycle)
         self.run_group("production-compose", self.production_compose)
         self.run_group("standalone-browser", lambda: self.browser("standalone"))
         self.run_group("multi-tenant-browser", lambda: self.browser("multi-tenant"))

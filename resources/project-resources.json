@@ -185,6 +185,7 @@
           "standalone_fresh",
           "multi_tenant_fresh",
           "plugin_lifecycle",
+          "consumer_module_cycle",
           "standalone_browser",
           "multi_tenant_browser"
         ],
