@@ -32,7 +32,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@9a01f3f4d69980995b9b2eedcef9bf16381763d2 已完成 CR01/CR02/CR10—CR13/CR20—CR23，双独立应用 Module v1→v2、公开消费者支持和历史证据收敛均已形成。CR30 正在准备正式 scaffold adoption 的第 8 消费资格组；CR31/CR40 的固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 仍不能冒充 consumer-ready Release。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；可消费交付截至 dev@f34f6d297d791124779e601ebd1d0cf02b17b9cc 已完成 CR01/CR02/CR10—CR13/CR20—CR23/CR30，正式 scaffold adoption 的第 8 消费资格组和第 6 隔离数据库场景已完成 Development 聚焦验证。CR31/CR40 的固定组合资格和正式 main/Tag/Release 尚未完成，当前 dev 仍不能冒充 consumer-ready Release。
 >
 > 事实基线：`dev@2d704557bfde17a0333d0be9b9007a81c4e12f5f`，复核日期：`2026-08-28`。
 
@@ -75,7 +75,7 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-DELIVERY-005` | 正式可消费源码交付 | 计划中 | PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 已建立公开消费者支持并完成历史证据收敛。CR30 正在把正式 scaffold adoption 的双应用 Module v1→v2 链接入独立第 8 资格组；CR31/CR40 仍须只对一个冻结候选完成组合资格和正式 main/Tag/GitHub Release。 |
+| `PA-DELIVERY-005` | 正式可消费源码交付 | 计划中 | PC70 已证明产品闭环 dev 候选；CR11—CR13/CR20/CR21 已在 dev 形成直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁。CR22/CR23 已建立公开消费者支持并完成历史证据收敛。CR30 已封存 scaffold v3.0.10，并以正式 adoption 双应用 Module v1→v2 通过第 8 资格组的 Development 聚焦链；CR31/CR40 仍须只对一个冻结候选完成组合资格和正式 main/Tag/GitHub Release。 |
 
 ### 暂缓或范围外
 
