@@ -3,6 +3,14 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
+## [Unreleased]
+
+### Changed
+
+- Relicensed the current Peanut Admin source repository and its application
+  components under Apache-2.0. Existing immutable tags and Releases keep the
+  license files originally published with those artifacts.
+
 ## [3.0.12] - Pending qualification
 
 ### Fixed

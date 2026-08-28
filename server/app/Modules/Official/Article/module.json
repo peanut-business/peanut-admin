@@ -5,7 +5,7 @@
   "description": "Tenant-owned article and category content with member collections.",
   "version": "1.0.0",
   "kernel_constraint": "^1.0",
-  "license": "proprietary",
+  "license": "Apache-2.0",
   "php_package": "peanut-business/official-article",
   "web_package": "@peanut-admin/official-article",
   "dependencies": [
