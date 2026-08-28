@@ -18,7 +18,7 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**执行中；CR01/CR02/CR10—CR12/CR20 已完成，CR13 候选已形成并待聚焦安全验证；CR21 独立准备**
+> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20 已完成，下一关键路径为 CR21**
 > - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
@@ -41,7 +41,7 @@ app-owned 文件不会被框架升级静默覆盖。
 | 更新已安装 Module | PR #339 已合入显式 `module:update-package`；PR #340 已合入 deployment-owned opaque request/worker | development/debug/Standalone 更新与交付编排均已通过登记 MySQL 聚焦验证；完整消费者纵向证据仍由 CR21 提供 | CR10—CR12、CR21 |
 | 停用、恢复、卸载 | dev-tools/CLI 已有 disable、同制品 reactivation、retire 与双确认 Purge；PR #340 把 update/retire/Purge 接入登记 target、配对备份、隔离恢复、维护、审计、smoke 和 recovery pointer | 开发工具与交付编排已形成；完整消费者纵向证据仍由 CR21 提供 | CR10—CR12、CR21 |
 | Tenant 开通与成员授权 | TenantModule enable/disable 与 RBAC 已验证 | 保持与 Package 安装分离；安装不得自动给 Tenant 或成员授权 | 全程不改变 |
-| Tenant 停用安全边界 | API/管理入口已有门禁 | 直出 Tenant 文件和部分公共入口仍存在已登记 fail-closed 缺口 | CR13 |
+| Tenant 停用安全边界 | PR #344 已统一 active-Tenant 查询、签名应用交付和 Nginx `/storage/` 404；suspend/reactivate 聚焦安全验证通过 | CR13 已完成；最终 consumer-ready 候选仍须在 CR30/CR31 消费组合资格中复核 | CR13、CR30、CR31 |
 | 文档与资料可发现性 | 文档治理与公开站已建立 | 建立本计划前登记有 72 项 archived、57 项 planned；`output/` 有 318 个受控文件，历史材料仍混在现行树 | CR01、CR02、CR22、CR23 |
 | 正式消费者支持 | 有脱敏诊断包、版本和 Release 证据 | 缺统一问题提交物、兼容矩阵、失败恢复路径和消费者入口 | CR22、CR40 |
 
@@ -93,7 +93,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 3 | CR10 | 可消费 Module 生命周期合同 | 已完成 | 无 | PR #338 合入唯一 Package 状态机、四层状态分离、维护/备份/审计/恢复边界与生产 HTTP 禁区 | Sol xhigh；公共 API/破坏性边界 |
 | 4 | CR11 | Module package 更新实现 | 已完成 | CR10 | PR #339 合入 `module:update-package` 与共享 update service；登记 MySQL 8.4.10 聚焦生命周期验证通过且零数据库残留 | Sol high；聚焦实现 |
 | 5 | CR12 | 交付环境 Module 操作入口 | 已完成 | CR10、CR11 | PR #340 合入 `dev=4844ef3…`（tree `c4b6971…`）；opaque request→备份→隔离恢复→维护→update→smoke→recovery pointer 全链通过且一次性数据库已清理 | Sol xhigh；部署与数据安全 |
-| 6 | CR13 | Tenant 停用全局 Fail-Closed | 进行中 | 无 | 候选已把文件交付收敛为 active-Tenant 查询、应用代理和 Nginx `/storage/` 404；待 Tenant suspend/reactivate 与 local delivery 聚焦安全验证 | Sol xhigh；Tenant 安全停止线 |
+| 6 | CR13 | Tenant 停用全局 Fail-Closed | 已完成 | 无 | PR #344 合入 `dev=fbdfafc…`（tree `42d1d01…`）；active-Tenant 查询、签名应用交付与 Nginx `/storage/` 404 已形成，登记 MySQL 上 suspend/reactivate、ready/archived 和异步拒绝通过且零资源残留 | Sol xhigh；Tenant 安全停止线 |
 | 7 | CR20 | Module 作者只读检查与版本规则 | 已完成 | CR10 | PR #342 合入 `dev=5797e28…`（tree `953ff07…`）；真实 CLI 正/负输出、八项稳定检查和零数据库访问验证通过 | Terra 定位 + Sol/Worker 实现 |
 | 8 | CR21 | 双独立应用二开参考链 | 未开始 | CR11、CR12、CR20 | 从 Release 生成应用 A/B；第三方 Module v1→v2 完成 create/check/pack/install/update/disable/reactivate/retire/Purge 与 Tenant A/B | Sol high；真实纵向 fixture |
 | 9 | CR22 | 消费者文档与支持入口 | 未开始 | CR11、CR12、CR20 | 任务导航、唯一命令索引、错误修复、版本兼容、诊断包/Issue 提交规范；不公开内部资源和证据 | Luna 文档；主代理事实复核 |
