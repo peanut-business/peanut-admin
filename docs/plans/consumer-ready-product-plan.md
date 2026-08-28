@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-plans-consumer-ready-product-plan`
 
-Status: `planned`
+Status: `current`
 
 Owner: `product-architecture`
 
@@ -18,8 +18,11 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20—CR23/CR30 已完成，CR31 正在冻结 `3.0.11` 唯一消费组合候选**
-> - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
+> - 计划状态：**已完成；CR01—CR40 全部完成，`v3.0.11` 已达到 consumer-ready 正式源码交付**
+> - 正式身份：`main/tag@a55e2e4470a1e8dd140bdb7612d63c397f49f862`（tree
+>   `6fb951b36e895936a2e3c2f1716ae11524a5eadd`），annotated tag object
+>   `24d0cd3e6b21a2b855abc93ebe04f48a6ba1396d`
+> - 规模：**5 个阶段、13 个任务、最终候选 1 次完整组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
 应用 owner 应能从正式 Release 创建独立应用，并在明确的开发与交付边界内创建、校验、打包、
@@ -28,22 +31,22 @@ app-owned 文件不会被框架升级静默覆盖。
 
 ## 1. 当前结论
 
-产品闭环 PC00—PC70 已经完成，本计划不重新实施安装向导、健康诊断、备份、恢复、维护、
-应用升级、配置转移、基础 Plugin 生命周期或 Module 生成器。当前真正的差距是“已有内部能力”
-尚未全部形成“外部消费者可独立、可重复、可恢复地操作的正式交付面”。
+产品闭环 PC00—PC70 与 CR01—CR40 均已完成。本计划没有重新实施安装向导、健康诊断、备份、
+恢复、维护、应用升级、配置转移、基础 Plugin 生命周期或 Module 生成器，而是把已有内部能力
+收敛为外部消费者可独立、可重复、可恢复地操作的 `v3.0.11` 正式交付面。
 
 | 目标能力 | 当前事实 | 可消费结论 | 本计划处理 |
 |---|---|---|---|
-| 从正式版本创建独立应用 | `create-app`、应用 manifest、文件 owner、fresh install 和 3.x scaffold upgrade 已验证 | Runtime 已具备；PC70 结果仍是 `dev` 候选，不是新的 main/Tag/Release | CR30、CR31、CR40 |
-| 创建和开发 Module | `module:create`、development `module:sync`、Tenant 安全骨架和统一 `module:check` 已验证 | CR21 已在两个独立生成应用之间完成作者与消费者参考链；正式 Release 复现仍由 CR31 验收 | CR20、CR21 |
+| 从正式版本创建独立应用 | `create-app`、应用 manifest、文件 owner、fresh install 和 3.x scaffold upgrade 已验证 | `v3.0.11` 已从同一 main/tag/Release 身份发布，q7 正式 adoption、双模式 fresh、Compose 与浏览器通过 | CR30、CR31、CR40 |
+| 创建和开发 Module | `module:create`、development `module:sync`、Tenant 安全骨架和统一 `module:check` 已验证 | CR21 参考链与 CR31 正式 Release adoption 双应用 v1→v2 链均通过 | CR20、CR21、CR31 |
 | 打包 Module | `module:pack` / `bundle:pack` 生成确定性 tar、SHA-256，可选 Ed25519 签名 | CR21 已完成签名 v1/v2 打包和消费者验签；不等于 Marketplace 已开放 | CR20、CR21 |
 | 安装 Module 包 | `module:install-package` 与 dev-tools HTTP/UI 已实现，service/真实数据库合同已覆盖 | CR21 已直接执行 development/debug/Standalone CLI 安装；生产交付仍只走 CR12 的 deployment-owned 入口 | CR10—CR12、CR21 |
-| 更新已安装 Module | PR #339 已合入显式 `module:update-package`；PR #340 已合入 deployment-owned opaque request/worker | CR21 已证明独立应用 v1→v2 dry-run 零写和真实更新，正式 Release 复现留给 CR31 | CR10—CR12、CR21 |
+| 更新已安装 Module | PR #339 已合入显式 `module:update-package`；PR #340 已合入 deployment-owned opaque request/worker | CR21 与 CR31 已证明独立应用 v1→v2 dry-run 零写和真实更新 | CR10—CR12、CR21、CR31 |
 | 停用、恢复、卸载 | dev-tools/CLI 已有 disable、同制品 reactivation、retire 与双确认 Purge；PR #340 把 update/retire/Purge 接入登记 target、配对备份、隔离恢复、维护、审计、smoke 和 recovery pointer | CR21 已证明 disable/reactivate/retire/Purge，并保持 TenantModule 与 Package/RBAC 分层 | CR10—CR12、CR21 |
 | Tenant 开通与成员授权 | TenantModule enable/disable 与 RBAC 已验证 | 保持与 Package 安装分离；安装不得自动给 Tenant 或成员授权 | 全程不改变 |
-| Tenant 停用安全边界 | PR #344 已统一 active-Tenant 查询、签名应用交付和 Nginx `/storage/` 404；suspend/reactivate 聚焦安全验证通过 | CR13 已完成；最终 consumer-ready 候选仍须在 CR30/CR31 消费组合资格中复核 | CR13、CR30、CR31 |
-| 文档与资料可发现性 | 文档治理、公开站与 CR22 消费者任务导航已建立 | CR22 已补齐当前入口；planned/archived 与历史证据的最终收敛仍由 CR23 完成 | CR01、CR02、CR22、CR23 |
-| 正式消费者支持 | 脱敏诊断包、唯一命令/兼容索引、普通 Issue 与安全问题规范已公开 | PR #348 已形成公开支持面；最终 Release 身份与发布后入口仍由 CR40 固定 | CR22、CR40 |
+| Tenant 停用安全边界 | PR #344 已统一 active-Tenant 查询、签名应用交付和 Nginx `/storage/` 404；suspend/reactivate 聚焦安全验证通过 | CR13 完成，最终 consumer-ready 候选已在 CR31 复核 | CR13、CR30、CR31 |
+| 文档与资料可发现性 | 文档治理、公开站与 CR22 消费者任务导航已建立 | CR22 补齐当前入口，CR23 已完成 planned/archived 与历史证据收敛 | CR01、CR02、CR22、CR23 |
+| 正式消费者支持 | 脱敏诊断包、唯一命令/兼容索引、普通 Issue 与安全问题规范已公开 | PR #348 的公开支持面已由 `v3.0.11` Release 固定 | CR22、CR40 |
 
 ## 2. 可消费完成定义
 
@@ -99,8 +102,8 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 9 | CR22 | 消费者文档与支持入口 | 已完成 | CR11、CR12、CR20 | PR #348 合入从创建应用到 Module/应用升级的公开任务导航、唯一命令/错误/兼容索引、脱敏诊断包、普通 Issue 与安全问题规范 | Luna 文档；主代理事实复核 |
 | 10 | CR23 | 历史文档与证据最终收敛 | 已完成 | CR02、CR22 | PR #350 合入 8 个旧页和一次性 import 的退出、3 个已完成计划归档及当前消费者指南/安全支持面的生成应用投影；恢复清单已固定 | Luna 机械执行；主代理批准删除 |
 | 11 | CR30 | 封存前消费资格就绪 | 已完成 | CR11—CR13、CR20—CR23 | PR #352 合入独立第 8 资格组、第 6 个隔离数据库与正式 scaffold adoption 双应用 Module v1→v2 链；Development 聚焦验证通过，本阶段不产生 qualified | Sol high；Development mode |
-| 12 | CR31 | 固定候选消费组合资格 | 进行中 | CR30 | 正在收敛未占用且产品/scaffold 同名的 `3.0.11` 身份；冻结后同一候选一次完成 create-app、双模式 fresh、Module v1→v2 全生命周期、应用升级、生产 Compose/浏览器与零残留 | Sol xhigh；唯一资格 owner |
-| 13 | CR40 | 正式可消费源码发布 | 未开始 | CR31 | `dev→main`、annotated tag、GitHub Release、scaffold/manifest/能力快照和一次最低发布后核验 | Sol high；发布 owner |
+| 12 | CR31 | 固定候选消费组合资格 | 已完成 | CR30 | 最终 `main@a55e2e4…`（tree `6fb951b…`）以 `cr31q7` 完成八组资格，6 个登记数据库、Compose、镜像、监听、缓存与租约零残留 | Sol xhigh；唯一资格 owner |
+| 13 | CR40 | 正式可消费源码发布 | 已完成 | CR31 | annotated `v3.0.11`、tag object `24d0cd3…`、GitHub Release、候选锁、源码/法律制品、scaffold 与能力快照身份一致，发布后核验通过 | Sol high；发布 owner |
 
 ## 5. 任务合同与最低验收
 
@@ -240,6 +243,20 @@ Git 可恢复性、当前 owner 和不可变证据价值；CR02 只处理复核�
   summary SHA-256 为 `9a435d28cb96970f2fbf3732fae09163da27ddae7c07507a445aac7da8e1c0a8`。
 - 验证使用登记的 development 资源 `peanut-admin-p0e-mysql84-gate`；精确数据库、临时凭据和租约
   已清理。CR30 只证明资格就绪，不产生 `qualified`；CR31 仍须只对一个冻结候选运行一次完整组合资格。
+
+### 7.7 CR31 与 CR40 完成记录
+
+- `main@a55e2e4470a1e8dd140bdb7612d63c397f49f862`（tree
+  `6fb951b36e895936a2e3c2f1716ae11524a5eadd`）的 `cr31q7` 八组全部通过：正式
+  create-app、Standalone/Multi-tenant fresh、Plugin lifecycle、consumer Module 双应用 v1→v2、
+  production Compose 与双模式浏览器；6 个登记数据库及容器、卷、网络、镜像、监听、缓存和租约均零残留。
+- 先前 `main@34f18ae…` 的 `cr31q6` 虽完成 Runtime 组，但发布 preflight 暴露 source-only 控制器参数与
+  evidence 输出边界缺陷，因此该候选在发布前失效，证据未复用；PR #368 收敛边界后才冻结并完整资格最终候选。
+- annotated tag `v3.0.11`（tag object `24d0cd3e6b21a2b855abc93ebe04f48a6ba1396d`）与
+  [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.11) 已发布；规范源码包
+  SHA-256 为 `bb4fcc2e53bdea880b2370bafe95ba97bb0cbe7c690a4284af5f6528ec5fdb2a`，外部 manifest
+  SHA-256 为 `7c2e79a3cf8e44ae2e25aba7579689bc4df1e61b4c746dc1fb2900125b856c38`。
+- 本轮正式交付只发布源码，不代表 Standalone/Multi-tenant 生产部署或真实 Provider 资格；第 3 节范围边界保持。
 
 ## 8. 状态同步与最终报告
 
