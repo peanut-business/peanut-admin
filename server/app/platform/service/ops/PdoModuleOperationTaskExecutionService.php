@@ -467,16 +467,19 @@ SQL);
                 $now->modify('+23 hours')->format('Y-m-d\TH:i:s.v\Z'),
                 1,
             );
+            $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-open');
+            $requestDigest = hash('sha256', $key . ':' . $window->startsAt . ':' . $window->endsAt);
             $created = (new PdoMaintenanceWindowStore($this->pdo))->schedule(
                 $context,
                 $window,
                 0,
-                hash('sha256', (string)$task['task_key'] . ':maintenance-open'),
-                hash('sha256', $key . ':' . $window->startsAt . ':' . $window->endsAt),
+                $idempotencyDigest,
+                $requestDigest,
                 new OpsAuditEvent('platform.ops.maintenance.scheduled', 'maintenance.schedule', [
                     'maintenance_key' => $key,
                     'revision' => 1,
-                    'reason_key' => 'module-lifecycle',
+                    'idempotency_digest' => $idempotencyDigest,
+                    'request_digest' => $requestDigest,
                 ]),
             );
             $update = $this->pdo->prepare(<<<'SQL'
