@@ -1170,7 +1170,7 @@
       "name": "可消费 Module Package 全生命周期",
       "area": "plugins",
       "status": "in_progress",
-      "summary": "CR10 已冻结显式 Package 生命周期合同；CR11 已由 PR #339 合入 development/debug/Standalone 的 module:update-package、同一 preflight dry-run、active v1 到 v2 update、降级/同版本冲突拒绝和失败 recovery pointer。CR12 候选新增 deployment-owned opaque request/worker，串联登记 target、配对备份、隔离恢复、维护、update/retire/Purge、审计、smoke 和 recovery pointer；待合入后才成为 dev 事实。",
+      "summary": "CR10 已冻结显式 Package 生命周期合同；CR11 已由 PR #339 合入 development/debug/Standalone 的 module:update-package。CR12 已由 PR #340 合入 deployment-owned opaque request/worker，串联登记 target、配对备份、隔离恢复、维护、update/retire/Purge、审计、smoke 和 recovery pointer；完整双应用消费者纵向资格仍由 CR21 提供。",
       "acceptance": [
         "应用 owner 使用受信 archive 完成 install、显式 v1 到 v2 update、disable、reactivate、retire 和双确认 Purge",
         "update dry-run 零写入，并在版本、依赖、签名、checksum、migration、备份或维护不满足时于破坏性步骤前拒绝",
