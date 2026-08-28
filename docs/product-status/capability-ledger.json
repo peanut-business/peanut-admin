@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "dev",
-    "commit": "f6378f255241cbde25f374a8a0218fda4616c1ce",
+    "commit": "8ce916792829f08a1a17aa935667c06d55928a10",
     "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
-    "status": "verified",
-    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成；pc70q14 的生成应用、双模式空库、Plugin 生命周期、生产 Compose 与双模式浏览器 P0-E 7/7 通过且资源零残留。该结论是开发候选组合资格，不冒充 main、Tag、GitHub Release 或生产部署；T15/T16 仍按范围暂缓。"
+    "status": "in_progress",
+    "summary": "产品闭环 PC00—PC70 已在固定 dev 候选 f6378f255241cbde25f374a8a0218fda4616c1ce（tree 184033c89425a0aa08f5591ce7f6a82735d47ad4）完成且 pc70q14 P0-E 7/7 通过；在 dev@8ce916792829f08a1a17aa935667c06d55928a10 复核后，下一阶段转入可消费交付：补齐 active Module package 更新、交付环境安全入口、Tenant 停用全局门禁、双独立应用二开链、历史资料清理及正式 main/Tag/Release。产品闭环资格仍有效，但尚不能把该 dev 结果冒充新的正式可消费 Release。"
   },
   "capabilities": [
     {
@@ -1163,6 +1163,96 @@
         "docs/module-development-guide.md",
         "docs/plugin-module-development.md",
         "scaffold/application-template-inventory.json"
+      ]
+    },
+    {
+      "id": "PA-MODULE-004",
+      "name": "可消费 Module Package 全生命周期",
+      "area": "plugins",
+      "status": "planned",
+      "summary": "当前受信 Module 包可在 development/debug/Standalone 安装、停用和卸载，内部 Plugin Runtime 也具升级计划；但公共 package 入口不能把正常 active v1 安全更新为 v2，交付环境也没有统一维护、配对备份、审计和恢复入口。CR10—CR12 将形成不依赖 Marketplace 的直接分发闭环。",
+      "acceptance": [
+        "应用 owner 使用受信 archive 完成 install、显式 v1 到 v2 update、disable、reactivate、retire 和双确认 Purge",
+        "update dry-run 零写入，并在版本、依赖、签名、checksum、migration、备份或维护不满足时于破坏性步骤前拒绝",
+        "成功更新时 package 文件、plugins.lock、Plugin/Module installation 和 migration ledger 采用同一不可变身份，失败时没有越权部分状态且有恢复指针",
+        "生产 HTTP 不接受任意包、路径或命令；交付变更只由 deployment-owned CLI/worker 消费登记资源",
+        "Package 安装、TenantModule 开通和成员 RBAC 保持三类独立写入，不自动互相授权"
+      ],
+      "evidence": [
+        {
+          "kind": "document",
+          "ref": "docs/plans/consumer-ready-product-plan.md"
+        }
+      ],
+      "dependencies": [
+        "PA-PLUGIN-001",
+        "PA-BACKUP-001",
+        "PA-UPGRADE-002"
+      ],
+      "paths": [
+        "server/app/command/ModuleInstallPackage.php",
+        "server/app/command/ModuleUninstallPackage.php",
+        "server/app/platform/service/plugin/PluginPackageInstaller.php",
+        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "docs/plans/consumer-ready-product-plan.md"
+      ]
+    },
+    {
+      "id": "PA-TENANCY-002",
+      "name": "Tenant 停用全局 Fail-Closed",
+      "area": "tenancy",
+      "status": "planned",
+      "summary": "管理/API 身份链已有 Tenant 状态门禁，但 Tenant 文件直出和未统一挂载状态检查的公共内容入口仍可能在停用后可读。CR13 将统一公共 API、PC/H5、文件与静态交付边界。",
+      "acceptance": [
+        "Tenant 停用后管理、公开 API、PC/H5、公共内容和 Tenant 文件均拒绝访问",
+        "缓存、反向代理和对象存储路径不能绕过权威 Tenant 状态",
+        "Tenant 恢复后只恢复通过正常身份、Host、TenantModule 和 RBAC 判定的访问",
+        "任一绕过均作为安全阻塞，不得进入可消费固定候选"
+      ],
+      "evidence": [
+        {
+          "kind": "document",
+          "ref": "docs/plans/consumer-ready-product-plan.md"
+        }
+      ],
+      "dependencies": [
+        "PA-NATIVE-001"
+      ],
+      "paths": [
+        "server/app/common/service/tenant",
+        "server/route",
+        "docs/plans/consumer-ready-product-plan.md"
+      ]
+    },
+    {
+      "id": "PA-DELIVERY-005",
+      "name": "正式可消费源码交付",
+      "area": "delivery",
+      "status": "planned",
+      "summary": "PC70 已证明产品闭环 dev 候选，但尚未形成包含直接 Module package 更新、双独立应用二开参考链和 Tenant 停用全局门禁的新 main/Tag/GitHub Release。CR30—CR40 将只对一个冻结候选完成资格和正式发布。",
+      "acceptance": [
+        "同一固定 commit/tree 通过 create-app、双模式 fresh、Module v1 到 v2 全生命周期、应用升级、生产 Compose/浏览器和零残留组合资格",
+        "dev、main、annotated tag、GitHub Release、scaffold manifest、源码附件和能力快照引用同一不可变身份",
+        "从正式 Release 创建的两个独立应用能复现 Module 作者与应用 owner 的完整二次开发和交付流程",
+        "公开文档、兼容矩阵、诊断包与支持入口不再把旧版本示例写成当前正式指引"
+      ],
+      "evidence": [
+        {
+          "kind": "document",
+          "ref": "docs/plans/consumer-ready-product-plan.md"
+        }
+      ],
+      "dependencies": [
+        "PA-MODULE-004",
+        "PA-TENANCY-002",
+        "PA-SCAFFOLD-001",
+        "PA-MODULE-003"
+      ],
+      "paths": [
+        "docs/plans/consumer-ready-product-plan.md",
+        "scripts/p0e-runtime-qualification",
+        "scripts/create-app",
+        "scaffold/releases"
       ]
     },
     {
