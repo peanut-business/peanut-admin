@@ -4,7 +4,8 @@
 server/.env
 server/.env.*
 !server/.env.example
-server/runtime/
+server/runtime/*
+!server/runtime/.gitkeep
 server/vendor/
 server/public/uploads/
 
@@ -42,5 +43,7 @@ uniapp/node_modules/
 uniapp/dist/
 
 # Runtime-generated storage (uploads/exports)
-server/public/storage/
-server/private/storage/
+server/public/storage/*
+!server/public/storage/.gitkeep
+server/private/storage/*
+!server/private/storage/.gitkeep
