@@ -1164,16 +1164,24 @@ class Runner:
         original_lock = lock.read_bytes()
         original_mode = lock.stat().st_mode & 0o777
         source_lock = read_json(ROOT / "plugins.lock")
-        expected_official_lock = {
-            "schema_version": 1,
-            "plugins": [
-                entry
-                for entry in source_lock.get("plugins", [])
-                if isinstance(entry, dict) and str(entry.get("key", "")).startswith("official.")
-            ],
-        }
-        if expected_official_lock["plugins"] == [] or json.loads(original_lock) != expected_official_lock:
-            fail("generated application Plugin lock is not the released official-only lock")
+        expected_official_keys = sorted(
+            str(entry.get("key"))
+            for entry in source_lock.get("plugins", [])
+            if isinstance(entry, dict) and str(entry.get("key", "")).startswith("official.")
+        )
+        generated_lock = json.loads(original_lock)
+        generated_official_keys = sorted(
+            str(entry.get("key"))
+            for entry in generated_lock.get("plugins", [])
+            if isinstance(entry, dict) and str(entry.get("key", "")).startswith("official.")
+        ) if isinstance(generated_lock, dict) else []
+        if expected_official_keys == [] or generated_official_keys != expected_official_keys:
+            fail("generated application Plugin lock does not contain the released official Plugin set")
+        command(
+            ["php", "server/think", "plugin:lock", "--check"],
+            cwd=self.generated,
+            log=log,
+        )
         fixture_paths = [
             (ROOT / "plugins/fixture.delivery-record", self.generated / "plugins/fixture.delivery-record"),
             (ROOT / "server/app/Modules/Fixture/DeliveryRecord", self.generated / "server/app/Modules/Fixture/DeliveryRecord"),

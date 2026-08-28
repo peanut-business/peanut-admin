@@ -3,9 +3,16 @@ declare(strict_types=1);
 
 namespace app\common\service\scaffold;
 
+use app\platform\service\plugin\PluginArtifactWriter;
+use app\platform\service\plugin\PluginLockResolver;
 use RuntimeException;
 
 require_once __DIR__ . '/VersionContract.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginArtifactToolException.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginArtifactWriter.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginLifecycleException.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginDescriptor.php';
+require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginLockResolver.php';
 
 final class ApplicationCreator
 {
@@ -94,6 +101,7 @@ final class ApplicationCreator
             if ($adoption !== null) {
                 $this->assertAdoptionEquivalent($stage, $adoption, $parameters, $files);
             }
+            $files = $this->rebuildOfficialPluginArtifacts($stage, $files);
             $templateIdentity = $adoption === null
                 ? [
                     'version' => $inventory['template_version'],
@@ -242,7 +250,8 @@ final class ApplicationCreator
                 throw new RuntimeException('CREATE_APP_ADOPTION_ARTIFACT_DIGEST_MISMATCH: ' . $path);
             }
             $rendered = $this->replaceReleaseTokens($artifactContent, $tokens, $renderParameters);
-            if (!hash_equals($generatedDigest, hash('sha256', $rendered))) {
+            if (!$this->isDerivedPluginArtifact($path)
+                && !hash_equals($generatedDigest, hash('sha256', $rendered))) {
                 throw new RuntimeException('CREATE_APP_ADOPTION_RENDER_MISMATCH: ' . $path);
             }
             $releaseTree[] = [
@@ -256,6 +265,12 @@ final class ApplicationCreator
             || !hash_equals($recordedTreeDigest, $releaseTreeDigest)) {
             throw new RuntimeException('CREATE_APP_ADOPTION_MANAGED_TREE_MISMATCH');
         }
+    }
+
+    private function isDerivedPluginArtifact(string $path): bool
+    {
+        return $path === 'plugins.lock'
+            || preg_match('#^plugins/official\.[a-z0-9.-]+/plugin\.json$#D', $path) === 1;
     }
 
     /** @param array<string,string> $tokens @param array<string,string> $values */
@@ -488,6 +503,32 @@ final class ApplicationCreator
             $content = str_replace(
                 ["MD5(CONCAT(MD5('admin123456')", '密码：admin123456', 'known password expression must not reach the database', 'installer must only replace the executable seed'],
                 ["MD5(CONCAT(MD5('__INSTALLER_MUST_REPLACE__')", '密码必须由安装器注入', 'placeholder password expression must not reach the database', 'installer must preserve the neutral seed comment'],
+                $content
+            );
+        }
+        if ($path === 'scripts/check-local-runtime-contract') {
+            $contractIdentity = $parameters['SLUG'] . '-contract';
+            $content = str_replace(
+                [
+                    'peanut-admin-php:contract',
+                    'peanut-admin-nginx:contract',
+                    'peanut-admin-mysql84-development-host-direct',
+                    'peanut-admin-mysql84-development',
+                    'DB_HOST=192.168.192.2',
+                    'DB_PORT=20183',
+                    'DB_NAME=peanut_admin_development',
+                    'DB_USER=peanut_admin_development',
+                ],
+                [
+                    $parameters['SLUG'] . '-php:contract',
+                    $parameters['SLUG'] . '-nginx:contract',
+                    $parameters['SLUG'] . '-mysql84-contract-host',
+                    $parameters['SLUG'] . '-mysql84-contract',
+                    'DB_HOST=127.0.0.1',
+                    'DB_PORT=3306',
+                    'DB_NAME=' . $contractIdentity,
+                    'DB_USER=' . $contractIdentity,
+                ],
                 $content
             );
         }
@@ -892,6 +933,86 @@ PHP;
             ['schema_version' => 1, 'plugins' => $official],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
         ) . "\n";
+    }
+
+    /** @param list<array<string,mixed>> $files @return list<array<string,mixed>> */
+    private function rebuildOfficialPluginArtifacts(string $stage, array $files): array
+    {
+        $manifestPaths = [];
+        foreach ($files as $file) {
+            $path = (string)($file['path'] ?? '');
+            if (preg_match('#^plugins/(official\.[a-z0-9.-]+)/plugin\.json$#D', $path, $matches) !== 1) {
+                continue;
+            }
+            $manifestPaths[$matches[1]] = $path;
+        }
+        ksort($manifestPaths, SORT_STRING);
+        if ($manifestPaths === []) {
+            throw new RuntimeException('CREATE_APP_OFFICIAL_PLUGIN_SET_EMPTY');
+        }
+
+        // create-app is intentionally PHP/Git-only. The Writer still owns the
+        // canonical bytes, while the dependency-free Resolver verifies the
+        // completed derived artifacts without requiring Composer installation.
+        $writer = new PluginArtifactWriter($stage . '/server', false);
+        $rewritten = [];
+        foreach ($manifestPaths as $directoryKey => $path) {
+            $absolute = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            try {
+                $manifest = json_decode((string)file_get_contents($absolute), true, 128, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $exception) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_INVALID: ' . $path, 0, $exception);
+            }
+            if (!is_array($manifest) || array_is_list($manifest)
+                || ($manifest['key'] ?? null) !== $directoryKey
+                || !is_string($manifest['version'] ?? null)
+                || !is_array($manifest['modules'] ?? null)
+                || !array_is_list($manifest['modules'])
+                || $manifest['modules'] === []) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_INVALID: ' . $path);
+            }
+            $moduleSpecs = [];
+            foreach ($manifest['modules'] as $module) {
+                if (!is_array($module) || array_is_list($module)
+                    || !is_string($module['key'] ?? null) || !is_string($module['root'] ?? null)) {
+                    throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_INVALID: ' . $path);
+                }
+                $moduleSpecs[] = $module['key'] . '=' . $module['root'];
+            }
+            $result = $writer->make($directoryKey, $manifest['version'], $moduleSpecs);
+            if (($result['path'] ?? null) !== $path) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_MANIFEST_PATH_MISMATCH: ' . $path);
+            }
+            $rewritten[$path] = true;
+        }
+        $lock = $writer->writeLock();
+        if (($lock['path'] ?? null) !== 'plugins.lock') {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_PATH_MISMATCH');
+        }
+        $rewritten['plugins.lock'] = true;
+        $resolved = (new PluginLockResolver($stage . '/server', '../plugins.lock'))->all();
+        if (array_keys($resolved) !== array_keys($manifestPaths)) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SET_MISMATCH');
+        }
+
+        foreach ($files as &$file) {
+            $path = (string)($file['path'] ?? '');
+            if (!isset($rewritten[$path])) {
+                continue;
+            }
+            $absolute = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            $content = file_get_contents($absolute);
+            if (!is_string($content) || (fileperms($absolute) & 0777) !== ($file['mode'] ?? null)) {
+                throw new RuntimeException('CREATE_APP_PLUGIN_ARTIFACT_WRITE_MISMATCH: ' . $path);
+            }
+            $file['sha256'] = hash('sha256', $content);
+            unset($rewritten[$path]);
+        }
+        unset($file);
+        if ($rewritten !== []) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_ARTIFACT_UNDECLARED: ' . implode(',', array_keys($rewritten)));
+        }
+        return $files;
     }
 
     private function writeFile(string $path, string $content, int $mode): void
