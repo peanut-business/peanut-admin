@@ -753,10 +753,12 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         purge_preview, purged = preview_and_execute(consumer, consumer_env, output, True, logs / "consumer.log")
         expect(purged.get("operation") == "purged", "Package Purge failed")
         after_purge = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
-        expect(after_purge.get("owned_table") is False and after_purge.get("migration_count") == 0
-               and after_purge.get("permission_count") == 0 and after_purge.get("tenant_modules") == []
-               and after_purge.get("rbac") == [],
-               "Purge left owned data, migration, TenantModule, catalog, or RBAC state")
+        expect(after_purge.get("plugin", {}).get("status") == "uninstalled"
+               and after_purge.get("module_installation") is None
+               and tenant_statuses(after_purge) == {"default": "disabled", "tenant-b": "disabled"}
+               and after_purge.get("owned_table") is False and after_purge.get("migration_count") == 0
+               and after_purge.get("permission_count") == 0 and after_purge.get("rbac") == [],
+               "Purge changed TenantModule or left Package, Module, owned data, migration, catalog, or RBAC state")
 
         owned_after = {"application_a": app_owned_proof(author), "application_b": app_owned_proof(consumer)}
         expect(owned_after == owned_before, "consumer lifecycle changed a generated application app-owned file")
