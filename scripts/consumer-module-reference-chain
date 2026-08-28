@@ -175,13 +175,67 @@ def ini_quote(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def backend_environment(path: Path, database: str, public_key: str) -> dict[str, str]:
+def configure_generated_database(
+    project: Path,
+    resource_id: str,
+    endpoint_id: str,
+    database: str,
+) -> str:
+    registry_path = project / "resources/project-resources.json"
+    registry = read_json(registry_path)
+    resources = registry.get("resources")
+    if not isinstance(resources, dict) or not isinstance(resources.get("databases"), list):
+        fail("generated application database registry is invalid")
+    host = required_environment("DB_HOST")
+    port = required_environment("DB_PORT")
+    if not port.isdigit():
+        fail("registered database port is invalid")
+    if any(item.get("stable_resource_id") == resource_id for item in resources["databases"] if isinstance(item, dict)):
+        fail("generated application database resource is duplicated")
+    resources["databases"].append({
+        "stable_resource_id": resource_id,
+        "purpose": "CR21 lease-owned independent application lifecycle verification",
+        "environments": ["development"],
+        "owner": "CR21 generated application owner",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "database": database,
+        "schema": "pa_ table prefix",
+        "namespace": database,
+        "upstream_endpoint": {
+            "endpoint_id": endpoint_id,
+            "host": host,
+            "port": int(port),
+            "consumers": ["host"],
+            "network_scope": "lease-owned Peanut Admin development gate endpoint",
+        },
+        "container_endpoint": None,
+        "credential_ref": "CR21 lease process environment; secret values are not persisted",
+        "data_source": "fresh synthetic CR21 application database",
+        "freshness_requirement": "database is absent or empty before the lease-owned fresh install",
+        "health_check": "consumer-module-reference-chain validates the exact endpoint, database and empty baseline",
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "cleanup_responsibility": "active CR21 resource lease owner",
+        "backup_responsibility": "not applicable; synthetic fresh-only data",
+    })
+    write_json(registry_path, registry)
+    return sha256(registry_path)
+
+
+def backend_environment(
+    path: Path,
+    database: str,
+    public_key: str,
+    resource_id: str,
+    endpoint_id: str,
+) -> dict[str, str]:
     values = {
         "APP_ENV": "development",
         "APP_DEBUG": "true",
         "PEANUT_DEPLOYMENT_TARGET": "local-development",
-        "PEANUT_DATABASE_RESOURCE_ID": "peanut-admin-p0e-mysql84-gate",
-        "PEANUT_DATABASE_ENDPOINT_ID": "peanut-admin-p0e-mysql84-gate-host-direct",
+        "PEANUT_DATABASE_RESOURCE_ID": resource_id,
+        "PEANUT_DATABASE_ENDPOINT_ID": endpoint_id,
         "PEANUT_DATABASE_CONSUMER": "host",
         "DEPLOYMENT_MODE": "standalone",
         "DB_HOST": required_environment("DB_HOST"),
@@ -508,6 +562,24 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
                    and manifest.get("generation_source", {}).get("commit") == args.candidate
                    and manifest.get("generation_source", {}).get("tree") == candidate_tree,
                    "generated application did not use the fixed candidate")
+        author_resource = "cr21-author-mysql84-development"
+        author_endpoint = "cr21-author-mysql84-development-host"
+        consumer_resource = "cr21-consumer-mysql84-development"
+        consumer_endpoint = "cr21-consumer-mysql84-development-host"
+        configured_registries = {
+            "application_a": configure_generated_database(
+                author,
+                author_resource,
+                author_endpoint,
+                args.database,
+            ),
+            "application_b": configure_generated_database(
+                consumer,
+                consumer_resource,
+                consumer_endpoint,
+                args.database,
+            ),
+        }
         owned_before = {"application_a": app_owned_proof(author), "application_b": app_owned_proof(consumer)}
 
         keys = json_output(command([
@@ -519,8 +591,20 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         secret_key.write_text(str(keys.get("secret", "")) + "\n", encoding="utf-8")
         secret_key.chmod(0o600)
         expect(public_key != "" and secret_key.stat().st_size > 1, "ephemeral signing key generation failed")
-        author_env = backend_environment(author / "server/.env.cr21", args.database, public_key)
-        consumer_env = backend_environment(consumer / "server/.env.cr21", args.database, public_key)
+        author_env = backend_environment(
+            author / "server/.env.cr21",
+            args.database,
+            public_key,
+            author_resource,
+            author_endpoint,
+        )
+        consumer_env = backend_environment(
+            consumer / "server/.env.cr21",
+            args.database,
+            public_key,
+            consumer_resource,
+            consumer_endpoint,
+        )
         install_dependencies(author, cache, author_env, logs / "composer-a.log")
         install_dependencies(consumer, cache, consumer_env, logs / "composer-b.log")
 
@@ -656,6 +740,7 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
                 "consumer_manifest_sha256": sha256(consumer / ".peanut/application-manifest.json"),
                 "app_owned_before": owned_before,
                 "app_owned_after": owned_after,
+                "configured_resource_registry_sha256": configured_registries,
             },
             "module": {
                 "key": MODULE_KEY,
