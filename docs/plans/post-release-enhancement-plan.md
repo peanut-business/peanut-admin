@@ -84,6 +84,8 @@ owner `scripts/deploy-release` 从正式 annotated tag 生成不可变源码归�
 - 需要自定义名称、slug、package identity 的用户：从固定 Peanut Admin Release 运行
   `create-app`。
 - 已有应用升级：使用独立升级包，不用新的完整应用仓库或完整应用压缩包直接覆盖。
+- 面向用户的官方 Demo：从已发布的标准应用仓库 tag 或同内容应用包部署，再叠加只含演示数据、
+  写保护和入口配置的 Demo overlay；源码仓直接部署只保留为内部参考/资格路径。
 - 核心团队发布：源码 Release、标准应用仓库 tag、应用压缩包和升级包必须来自同一个固定
   Peanut Admin Release，并记录同一 source commit/tree 和逐制品摘要。
 
@@ -198,7 +200,7 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 | REL04 | 发布全部正式制品 | 未开始 | 源码 Release、应用仓库 tag、应用包和升级包全部发布且身份一致 |
 | REL05 | 正式应用独立消费 | 未开始 | 从官方应用仓库或应用包开始完成一次独立安装，不依赖开发 worktree |
 | REL06 | 正式升级独立消费 | 未开始 | 从已发布旧应用使用正式升级包完成一次升级和恢复边界验证 |
-| REL07 | 更新 Demo 和文档站 | 未开始 | Demo 采用同一正式身份；公开文档给出安装、升级、Demo 和下载入口 |
+| REL07 | 更新 Demo 和文档站 | 未开始 | 面向用户的 Demo 从正式标准应用 tag/包部署并叠加受控 Demo overlay；公开文档给出安装、升级、Demo 和下载入口 |
 | REL08 | 冻结统一发布快照 | 未开始 | Release、应用仓库、应用包、升级包、Demo 与文档版本/摘要可互相核对 |
 
 只有 REL01—REL08 全部完成，才能报告“普通开发者应用分发与升级体验已完成”。这不会改写
