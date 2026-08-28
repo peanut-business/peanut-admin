@@ -3,7 +3,23 @@
 All notable Peanut Admin application changes are recorded here. The application
 and the two public core packages have independent version histories.
 
-## [3.0.11] - Pending qualification
+## [3.0.12] - Pending qualification
+
+### Fixed
+
+- Production PHP images now include the release identity and Plugin schema required by installation
+  preflight and lock validation.
+- `deploy-release` validates the exact candidate image and Plugin lock before target replacement,
+  then reconciles locked official Plugins after migrations.
+- Demo overlays now follow the current Module/service paths, include the installation preflight Host
+  and strip macOS metadata from their archives.
+
+### Delivery
+
+- The application and scaffold candidate share version `3.0.12`; the final commit/tree and
+  qualification identity remain external until the fixed-candidate qualification completes.
+
+## [3.0.11] - 2026-08-28
 
 ### Added
 

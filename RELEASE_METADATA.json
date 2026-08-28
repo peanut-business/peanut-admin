@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.11",
-  "expected_tag": "v3.0.11",
+  "version": "3.0.12",
+  "expected_tag": "v3.0.12",
   "release_date": "2026-08-28",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
@@ -45,7 +45,7 @@
     "RELEASE_SBOM.spdx.json": "527ce365a7d0a7fdc19603ece776c541b71e3b33139f982b276c3cb851fc8465"
   },
   "technical_qualification": {
-    "phase": "3.0.11-pending-qualification",
+    "phase": "3.0.12-pending-qualification",
     "result": "pending",
     "final_candidate_commit": null,
     "final_candidate_tree": null,
@@ -55,10 +55,10 @@
     "cleanup_residual_count": null,
     "lease_released": false,
     "migrations": 9,
-    "scaffold_version": "3.0.11",
+    "scaffold_version": "3.0.12",
     "application_initial_version": "0.1.0",
-    "evidence": "CR31 qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
-    "release_delta": "Consumer-ready Module package update, deployment-owned lifecycle operations, Tenant suspension fail-closed delivery, independent-application reference flow, public support guidance and the eighth P0-E consumer group."
+    "evidence": "The fixed-candidate qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
+    "release_delta": "Closes the production-mode demo installation path, including generated application preflight, demo overlay archive hygiene and plugin/runtime closure."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }
