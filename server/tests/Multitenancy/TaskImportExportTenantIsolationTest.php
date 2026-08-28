@@ -334,7 +334,7 @@ SQL);
         )['path']),
         'reactivation did not restore the still-ready signed file',
     );
-    $pdo->prepare("UPDATE pa_file_object SET status='archived' WHERE tenant_id=101 AND file_key=?")
+    $pdo->prepare("UPDATE pa_file_object SET status='archived', archived_at=UTC_TIMESTAMP(3) WHERE tenant_id=101 AND file_key=?")
         ->execute([(string)$deliveryQuery['file_key']]);
     try {
         $storage->authorizedDownload(
