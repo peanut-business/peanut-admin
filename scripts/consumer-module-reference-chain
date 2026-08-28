@@ -251,7 +251,7 @@ def backend_environment(
     }
     path.write_text("".join(f"{key}={ini_quote(value)}\n" for key, value in values.items()), encoding="utf-8")
     path.chmod(0o600)
-    return {"PEANUT_SERVER_ENV_FILE": str(path)}
+    return values | {"PEANUT_SERVER_ENV_FILE": str(path)}
 
 
 def create_application(
