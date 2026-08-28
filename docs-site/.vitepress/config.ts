@@ -20,9 +20,11 @@ const development = [
 ]
 
 const delivery = [
+  { text: '创建应用与交付 Module', link: '/guide/application-module-lifecycle' },
   { text: '测试与排错', link: '/guide/testing' },
   { text: '部署与升级', link: '/guide/deployment-upgrade' },
   { text: '版本与发布', link: '/releases' },
+  { text: '支持与问题提交', link: '/support' },
 ]
 
 const reference = [

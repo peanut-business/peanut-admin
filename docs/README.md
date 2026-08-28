@@ -10,6 +10,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
 | Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md), [consumer lifecycle contract](architecture/consumer-module-lifecycle-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
 | Understand Module development | [Module development guide](module-development-guide.md) | current guide |
+| Follow the public consumer path | [Create applications and deliver Modules](../docs-site/guide/application-module-lifecycle.md), [command reference](../docs-site/reference.md) and [support guide](../docs-site/support.md) | public task projection; runtime and release facts remain upstream |
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |
 | Follow the product-closure work | [Execution queue](plans/product-closure-execution-queue.md), [compatibility baseline](architecture/product-closure-core-application-compatibility.md) and [observability panel](product-status/product-closure-observability.md) | internal decisions and execution evidence; not capability completion proof |

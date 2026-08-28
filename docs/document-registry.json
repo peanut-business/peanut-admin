@@ -331,6 +331,42 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-site-guide-application-module-lifecycle",
+      "path": "docs-site/guide/application-module-lifecycle.md",
+      "title": "创建应用与交付 Module",
+      "audience": [
+        "developer",
+        "operator"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "scripts/create-app",
+        "server/app/command/ModuleCreate.php",
+        "server/app/command/ModuleCheck.php",
+        "server/app/command/ModulePack.php",
+        "server/app/command/ModuleInstallPackage.php",
+        "server/app/command/ModuleUpdatePackage.php",
+        "server/app/command/ModuleDisablePackage.php",
+        "server/app/command/ModuleUninstallPackage.php",
+        "docs/architecture/consumer-module-lifecycle-contract.md",
+        "scripts/scaffold-upgrade"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation",
+        "module-lifecycle",
+        "application-scaffold"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-site-guide-module-development",
       "path": "docs-site/guide/module-development.md",
       "title": "Module 开发教程",
@@ -467,7 +503,19 @@
         "server/.env.example",
         "server/database/init.sql",
         "server/app/Modules",
-        "scripts/local-stack.sh"
+        "server/config/console.php",
+        "server/app/command/ModuleCreate.php",
+        "server/app/command/ModuleCheck.php",
+        "server/app/command/ModulePack.php",
+        "server/app/command/ModuleInstallPackage.php",
+        "server/app/command/ModuleUpdatePackage.php",
+        "server/app/command/ModuleDisablePackage.php",
+        "server/app/command/ModuleUninstallPackage.php",
+        "server/app/command/OpsModuleRequest.php",
+        "scripts/create-app",
+        "scripts/local-stack.sh",
+        "scripts/ops-module-worker",
+        "scripts/scaffold-upgrade"
       ],
       "owner": "developer-experience",
       "status": "current",
@@ -531,6 +579,37 @@
       ],
       "related": [
         "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-site-support",
+      "path": "docs-site/support.md",
+      "title": "支持与问题提交",
+      "audience": [
+        "developer",
+        "operator",
+        "user"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "SECURITY.md",
+        "server/app/platform/controller/PlatformOpsController.php",
+        "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
+        "platform/src/api/platform.ts"
+      ],
+      "owner": "developer-experience",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "documentation",
+        "consumer-support",
+        "security-reporting"
       ],
       "site_projections": [],
       "replaced_by": null,

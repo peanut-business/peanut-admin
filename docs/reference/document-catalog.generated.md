@@ -169,6 +169,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-site-capabilities` | `docs-site/capabilities.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-site-demo-access` | `docs-site/demo-access.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-deployment` | `docs-site/deployment.md` | `archived` | `archive` | `application-maintainers` |
+| `pa-docs-site-guide-application-module-lifecycle` | `docs-site/guide/application-module-lifecycle.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-backend` | `docs-site/guide/backend.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-concepts` | `docs-site/guide/concepts.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-guide-data-permissions-tenancy` | `docs-site/guide/data-permissions-tenancy.md` | `current` | `public-projection` | `developer-experience` |
@@ -187,6 +188,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-site-product-status` | `docs-site/product-status.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-site-reference` | `docs-site/reference.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-releases` | `docs-site/releases.md` | `current` | `public-projection` | `developer-experience` |
+| `pa-docs-site-support` | `docs-site/support.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-docs-site-troubleshooting` | `docs-site/troubleshooting.md` | `archived` | `archive` | `application-maintainers` |
 | `pa-docs-source-map` | `docs/governance/authoritative-source-map.md` | `authoritative` | `source-map` | `documentation-architecture` |
 | `pa-docs-template` | `docs/governance/templates/document-template.md` | `current` | `reference` | `documentation-architecture` |

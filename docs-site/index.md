@@ -41,8 +41,10 @@ features:
 1. [快速开始](/getting-started)：确认工具链、配置文件和最短启动路径。
 2. [核心概念](/guide/concepts)：理解身份、Tenant、Module 与 Application/Core 边界。
 3. [开发总览](/guide/development)：选择后端、前端或 Module 路径。
-4. [测试与排错](/guide/testing)：用最小验证确认改动。
-5. [部署与升级](/guide/deployment-upgrade)：固定身份、备份、迁移、验证与恢复。
+4. [创建应用与交付 Module](/guide/application-module-lifecycle)：完成生成、校验、打包、安装、Tenant 开通、更新、卸载和应用升级。
+5. [测试与排错](/guide/testing)：用最小验证确认改动。
+6. [部署与升级](/guide/deployment-upgrade)：固定身份、备份、迁移、验证与恢复。
+7. [支持与问题提交](/support)：收集版本身份、脱敏诊断包和最小复现，并把安全问题送到非公开渠道。
 
 ## 事实边界
 
