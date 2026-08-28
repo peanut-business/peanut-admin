@@ -655,7 +655,9 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         installed = json_output(command(
             [str(PHP), "server/database/install.php"], cwd=consumer, env=install_env, log=logs / "consumer.log"
         ), "consumer fresh install")
-        expect(int(installed.get("tables", 0)) > 0, "consumer fresh install did not create the canonical schema")
+        expect(installed.get("state") == "installed"
+               and int(installed.get("health", {}).get("installed_table_count", 0)) > 0,
+               "consumer fresh install did not create the canonical schema")
         install_v1 = run_think(consumer, consumer_env, [
             "module:install-package", str(v1_path), f"--sha256={v1_sha}", f"--signature-key-id={PACKAGE_KEY_ID}",
         ], logs / "consumer.log")
