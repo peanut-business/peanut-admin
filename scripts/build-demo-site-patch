@@ -45,14 +45,14 @@ files=(
   server/app/adminapi/controller/auth/LoginController.php
   server/app/adminapi/logic/auth/AdminLogic.php
   server/app/adminapi/logic/WorkbenchLogic.php
-  server/app/adminapi/logic/article/ArticleLogic.php
+  server/app/Modules/Official/Article/Service/ArticleLogic.php
   server/app/adminapi/logic/config/ConfigLogic.php
   server/app/adminapi/logic/decoration/DecorationPageLogic.php
   server/app/adminapi/logic/decoration/DecorationTabbarLogic.php
   server/app/Modules/Official/Member/Service/MemberLogic.php
   server/app/Modules/Official/Oauth/Service/MiniProgramLogic.php
   server/app/Modules/Official/Oauth/Service/OfficialAccountLogic.php
-  server/app/adminapi/service/NativeAdminPrincipalRepository.php
+  server/app/common/service/authorization/NativeAdminPrincipalRepository.php
   server/app/common/service/DemoAccountPolicy.php
   server/app/api/logic/IndexLogic.php
   server/app/api/logic/OAuthLogic.php
