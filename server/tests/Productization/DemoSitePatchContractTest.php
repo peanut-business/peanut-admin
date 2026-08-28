@@ -99,6 +99,7 @@ $expect(
         && str_contains($overlayBuilder, 'server/app/platform/service/module/ProductTenantModuleProfileService.php')
         && str_contains($overlayBuilder, 'server/app/common/service/ProductAssetReferenceService.php')
         && str_contains($overlayBuilder, 'server/app/common/service/RichTextResourceService.php')
+        && str_contains($overlayBuilder, 'server/app/common/service/installation/InstallationPreflightHost.php')
         && str_contains($overlayBuilder, 'server/app/common/service/decoration/DecorationSchemaService.php')
         && str_contains($overlayBuilder, 'server/app/common/service/file/FileObjectNamespace.php')
         && str_contains($overlayBuilder, 'web/src/components/menu/index.vue')

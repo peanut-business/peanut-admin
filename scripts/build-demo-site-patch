@@ -54,6 +54,7 @@ files=(
   server/app/Modules/Official/Oauth/Service/OfficialAccountLogic.php
   server/app/common/service/authorization/NativeAdminPrincipalRepository.php
   server/app/common/service/DemoAccountPolicy.php
+  server/app/common/service/installation/InstallationPreflightHost.php
   server/app/api/logic/IndexLogic.php
   server/app/api/logic/OAuthLogic.php
   server/app/api/logic/UserLogic.php
