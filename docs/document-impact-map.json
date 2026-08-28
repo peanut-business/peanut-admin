@@ -30,7 +30,7 @@
     },
     {
       "id": "cli-command",
-      "paths": ["scripts/*", "server/think", "server/app/**/command/**/*.php"],
+      "paths": ["scripts/*", "server/think", "server/app/command/*.php", "server/app/**/command/**/*.php"],
       "exclude_paths": ["scripts/docs-governance"],
       "classifications": ["technical", "developer-site"],
       "upstream": ["executable command and --help output"],
