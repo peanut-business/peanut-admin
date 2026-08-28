@@ -664,6 +664,8 @@ function guardedDatabaseConfig(): array
     $environment = requiredEnvironment('APP_ENV');
     $deploymentTarget = requiredEnvironment('PEANUT_DEPLOYMENT_TARGET');
     $resourceId = requiredEnvironment('PEANUT_DATABASE_RESOURCE_ID');
+    $endpointId = requiredEnvironment('PEANUT_DATABASE_ENDPOINT_ID');
+    $consumer = requiredEnvironment('PEANUT_DATABASE_CONSUMER');
     $registryPath = dirname(__DIR__, 2) . '/resources/project-resources.json';
     $raw = file_get_contents($registryPath);
     $registry = is_string($raw) ? json_decode($raw, true) : null;
@@ -690,23 +692,11 @@ function guardedDatabaseConfig(): array
         'port' => requiredEnvironment('DB_PORT'),
         'database' => requiredEnvironment('DB_NAME'),
     ];
-    $endpoints = [];
-    foreach (['upstream_endpoint', 'container_endpoint'] as $key) {
-        if (is_array($registered[$key] ?? null)) {
-            $endpoints[] = $registered[$key];
-        }
-    }
-    if (isset($registered['host'], $registered['port'])) {
-        $endpoints[] = ['host' => $registered['host'], 'port' => $registered['port']];
-    }
-    $endpointMatch = false;
-    foreach ($endpoints as $endpoint) {
-        if ((string)($endpoint['host'] ?? '') === $actual['host'] && (string)($endpoint['port'] ?? '') === $actual['port']) {
-            $endpointMatch = true;
-            break;
-        }
-    }
-    if (!$endpointMatch || !hash_equals((string)($registered['database'] ?? ''), $actual['database'])) {
+    $endpoint = registeredDatabaseEndpoint($registered, $consumer);
+    if (!hash_equals((string)$endpoint['endpoint_id'], $endpointId)
+        || !hash_equals((string)$endpoint['host'], $actual['host'])
+        || !hash_equals((string)$endpoint['port'], $actual['port'])
+        || !hash_equals((string)($registered['database'] ?? ''), $actual['database'])) {
         throw new RuntimeException("数据库资源 {$resourceId} 的地址或 database 不匹配登记值");
     }
     if (!in_array(requiredEnvironment('DEPLOYMENT_MODE'), ['standalone', 'multi-tenant'], true)) {
@@ -716,6 +706,8 @@ function guardedDatabaseConfig(): array
         'environment' => $environment,
         'deployment_target' => $deploymentTarget,
         'resource_id' => $resourceId,
+        'endpoint_id' => $endpointId,
+        'consumer' => $consumer,
         ...$actual,
         'user' => requiredEnvironment('DB_USER'),
         'password' => requiredEnvironment('DB_PASS'),
