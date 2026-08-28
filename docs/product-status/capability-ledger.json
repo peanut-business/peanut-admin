@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "main",
-    "commit": "a55e2e4470a1e8dd140bdb7612d63c397f49f862",
+    "branch": "dev",
+    "commit": "eeb204445dd37d3273959b46b4c3df100122e795",
     "reviewed_at": "2026-08-28"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
-    "status": "verified",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成；最终 main@a55e2e4470a1e8dd140bdb7612d63c397f49f862（tree 6fb951b36e895936a2e3c2f1716ae11524a5eadd）通过 cr31q7 八组组合资格并以 annotated v3.0.11 / GitHub Release 正式发布，候选锁、scaffold、源码附件、能力快照和零残留身份一致。生产部署、真实 Provider 资格、Marketplace、T16 与完整 SaaS 仍按各自范围后置。"
+    "status": "in_progress",
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已在 v3.0.11 全部完成；发布后 demo 安装暴露的候选镜像预检、Plugin lock/schema、official reconcile 与 overlay 打包闭包已由 PR #371 合入 dev，v3.0.12 hotfix 的 scaffold 已封存，尚待 main 固定候选八组资格、annotated tag、GitHub Release、同源 demo 和文档站发布。真实 Provider 资格、Marketplace、T16 与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1319,6 +1319,49 @@
         "scripts/create-app",
         "scaffold/releases",
         "docs/product-status/releases/v3.0.11.json"
+      ]
+    },
+    {
+      "id": "PA-DELIVERY-006",
+      "name": "3.0.12 部署闭包 Hotfix",
+      "area": "delivery",
+      "status": "implemented",
+      "summary": "PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；v3.0.11 加 demo overlay 的四 Host 已通过浏览器验证，但正式 v3.0.12 仍待同一 main 候选完整资格、发布和 demo/docs 采用。",
+      "acceptance": [
+        "生产 PHP 镜像包含安装预检和 Plugin lock 所需的发布身份与 schema",
+        "deploy-release 在替换目标或删除登记卷前验证精确候选镜像和 canonical Plugin lock",
+        "migration 后只通过唯一部署入口幂等 reconcile 锁定的 official Plugin",
+        "同一固定 main commit/tree 通过八组 P0-E 并发布 annotated v3.0.12 与 GitHub Release",
+        "production-candidate demo 和公开文档站采用可追溯的 v3.0.12 身份并通过公开入口验证"
+      ],
+      "evidence": [
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/371"
+        },
+        {
+          "kind": "git",
+          "ref": "eeb204445dd37d3273959b46b4c3df100122e795"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json"
+        }
+      ],
+      "dependencies": [
+        "PA-DELIVERY-005",
+        "PA-INSTALL-001",
+        "PA-PLUGIN-001"
+      ],
+      "paths": [
+        "deploy/docker/production.Dockerfile",
+        "scripts/build-demo-site-patch",
+        "scripts/deploy-release",
+        "server/app/common/service/installation/InstallationPreflightHost.php",
+        "server/tests/Productization/DemoSitePatchContractTest.php",
+        "server/tests/Productization/InstallerBootstrapTest.php",
+        "scaffold/releases/v3.0.12",
+        "docs/product-status/deployments/v3.0.11-demo-overlay-online-experience.json"
       ]
     },
     {
