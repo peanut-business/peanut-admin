@@ -80,12 +80,18 @@ try {
     $applicationMigrationIds = $pdo->query(
         "SELECT migration_id FROM pa_schema_migration WHERE status = 'applied' ORDER BY migration_id"
     )->fetchAll(PDO::FETCH_COLUMN);
+    $migrationFiles = glob(dirname(__DIR__, 3) . '/database/migrations/*.sql');
     expectInvariant(
-        $applicationMigrationIds === [
-            '20260827-create-ops-backup-evidence',
-            '20260827-create-ops-restore-evidence',
-            '20260827-first-run-readiness',
-        ],
+        is_array($migrationFiles) && $migrationFiles !== [],
+        'MT05_APPLICATION_MIGRATION_SOURCE_INVALID'
+    );
+    $expectedApplicationMigrationIds = array_map(
+        static fn(string $path): string => basename($path, '.sql'),
+        $migrationFiles
+    );
+    sort($expectedApplicationMigrationIds, SORT_STRING);
+    expectInvariant(
+        $applicationMigrationIds === $expectedApplicationMigrationIds,
         'MT05_APPLICATION_MIGRATION_LEDGER_INVALID'
     );
     $applicationMigrationCount = count($applicationMigrationIds);
