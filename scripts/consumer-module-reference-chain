@@ -1,0 +1,839 @@
+#!/usr/bin/env python3
+"""Run the CR21 two-application consumer Module reference chain."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parent.parent
+LEASE_TOOL = ROOT / "scripts/project-resource-lease"
+PHP = Path("/opt/homebrew/bin/php")
+COMPOSER = Path("/usr/local/bin/composer")
+MODULE_KEY = "acme.reference-chain"
+PACKAGE_KEY_ID = "cr21-author"
+BACKEND_ENVIRONMENT_KEYS = {
+    "APP_ENV",
+    "APP_DEBUG",
+    "PEANUT_DEPLOYMENT_TARGET",
+    "PEANUT_DATABASE_RESOURCE_ID",
+    "PEANUT_DATABASE_ENDPOINT_ID",
+    "PEANUT_DATABASE_CONSUMER",
+    "DEPLOYMENT_MODE",
+    "DB_HOST",
+    "DB_PORT",
+    "DB_NAME",
+    "DB_USER",
+    "DB_PASS",
+    "DB_ROOT_PASS",
+    "DB_PREFIX",
+    "JWT_SECRET",
+    "PEANUT_MODULE_KERNEL_VERSION",
+    "PEANUT_MODULE_TRUSTED_KEYS_JSON",
+}
+
+
+class ChainError(RuntimeError):
+    pass
+
+
+def fail(message: str) -> None:
+    raise ChainError(message)
+
+
+def command(
+    arguments: list[str],
+    *,
+    cwd: Path = ROOT,
+    env: dict[str, str] | None = None,
+    log: Path | None = None,
+) -> str:
+    merged = os.environ.copy()
+    if env and "PEANUT_SERVER_ENV_FILE" in env:
+        for name in BACKEND_ENVIRONMENT_KEYS:
+            merged.pop(name, None)
+    if env:
+        merged.update(env)
+    result = subprocess.run(
+        arguments,
+        cwd=cwd,
+        env=merged,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if log is not None:
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write("$ " + " ".join(arguments) + "\n")
+            stream.write(result.stdout)
+            if not result.stdout.endswith("\n"):
+                stream.write("\n")
+    if result.returncode != 0:
+        detail = result.stdout.strip().splitlines()
+        suffix = detail[-1] if detail else "no output"
+        fail(f"command failed ({result.returncode}): {arguments[0]}: {suffix}")
+    return result.stdout
+
+
+def json_output(output: str, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(output.strip())
+        if isinstance(value, dict):
+            return value
+    except json.JSONDecodeError:
+        pass
+    for line in reversed(output.splitlines()):
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            return value
+    fail(f"{label} did not return a JSON object")
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exception:
+        fail(f"cannot read JSON {path}: {exception}")
+    if not isinstance(value, dict):
+        fail(f"JSON root must be an object: {path}")
+    return value
+
+
+def write_json(path: Path, value: Any, mode: int = 0o644) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    path.chmod(mode)
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def app_owned_proof(project_root: Path) -> dict[str, Any]:
+    manifest = read_json(project_root / ".peanut/application-manifest.json")
+    files = manifest.get("files")
+    if not isinstance(files, list):
+        fail("application manifest files are invalid")
+    paths: list[str] = []
+    rows: list[str] = []
+    for item in files:
+        if not isinstance(item, dict) or item.get("classification") != "app-owned":
+            continue
+        relative = item.get("path")
+        if not isinstance(relative, str) or not relative or relative.startswith("/") or ".." in Path(relative).parts:
+            fail("application manifest contains an unsafe app-owned path")
+        path = project_root / relative
+        if not path.is_file() or path.is_symlink():
+            fail(f"app-owned file is unavailable: {relative}")
+        mode = stat.S_IMODE(path.stat().st_mode)
+        paths.append(relative)
+        rows.append(f"{relative}\0{sha256(path)}\0{mode:04o}")
+    if not rows:
+        fail("application manifest contains no app-owned files")
+    return {
+        "file_count": len(rows),
+        "paths_sha256": hashlib.sha256("\n".join(paths).encode()).hexdigest(),
+        "tree_sha256": hashlib.sha256("\n".join(rows).encode()).hexdigest(),
+    }
+
+
+def tree_sha256(root: Path) -> str:
+    rows: list[str] = []
+    for path in sorted(root.rglob("*")):
+        if path.is_file() and not path.is_symlink():
+            rows.append(f"{path.relative_to(root).as_posix()}\0{sha256(path)}")
+    return hashlib.sha256("\n".join(rows).encode()).hexdigest()
+
+
+def lease_fields(lease_id: str) -> tuple[dict[str, str], list[tuple[str, str]]]:
+    output = command([str(LEASE_TOOL), "show", "--lease", lease_id])
+    metadata: dict[str, str] = {}
+    resources: list[tuple[str, str]] = []
+    in_resources = False
+    for line in output.splitlines():
+        if line == "resources":
+            in_resources = True
+            continue
+        parts = line.split("\t", 1)
+        if len(parts) != 2:
+            continue
+        if in_resources:
+            resources.append((parts[0], parts[1]))
+        else:
+            metadata[parts[0]] = parts[1]
+    return metadata, resources
+
+
+def required_environment(name: str) -> str:
+    value = os.environ.get(name, "")
+    if value == "":
+        fail(f"missing required environment: {name}")
+    return value
+
+
+def ini_quote(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def backend_ini_value(name: str, value: str) -> str:
+    if name == "PEANUT_MODULE_TRUSTED_KEYS_JSON":
+        if re.fullmatch(r'\{"[a-z0-9-]+":"[A-Za-z0-9+/=]+"\}', value) is None:
+            fail("trusted Module key map is not a canonical single-key JSON object")
+        return value
+    return ini_quote(value)
+
+
+def configure_generated_database(
+    project: Path,
+    resource_id: str,
+    endpoint_id: str,
+    database: str,
+) -> str:
+    registry_path = project / "resources/project-resources.json"
+    registry = read_json(registry_path)
+    resources = registry.get("resources")
+    if not isinstance(resources, dict) or not isinstance(resources.get("databases"), list):
+        fail("generated application database registry is invalid")
+    host = required_environment("DB_HOST")
+    port = required_environment("DB_PORT")
+    if not port.isdigit():
+        fail("registered database port is invalid")
+    if any(item.get("stable_resource_id") == resource_id for item in resources["databases"] if isinstance(item, dict)):
+        fail("generated application database resource is duplicated")
+    resources["databases"].append({
+        "stable_resource_id": resource_id,
+        "purpose": "CR21 lease-owned independent application lifecycle verification",
+        "environments": ["development"],
+        "owner": "CR21 generated application owner",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "database": database,
+        "schema": "pa_ table prefix",
+        "namespace": database,
+        "upstream_endpoint": {
+            "endpoint_id": endpoint_id,
+            "host": host,
+            "port": int(port),
+            "consumers": ["host"],
+            "network_scope": "lease-owned Peanut Admin development gate endpoint",
+        },
+        "container_endpoint": None,
+        "credential_ref": "CR21 lease process environment; secret values are not persisted",
+        "data_source": "fresh synthetic CR21 application database",
+        "freshness_requirement": "database is absent or empty before the lease-owned fresh install",
+        "health_check": "consumer-module-reference-chain validates the exact endpoint, database and empty baseline",
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "cleanup_responsibility": "active CR21 resource lease owner",
+        "backup_responsibility": "not applicable; synthetic fresh-only data",
+    })
+    write_json(registry_path, registry)
+    return sha256(registry_path)
+
+
+def backend_environment(
+    path: Path,
+    database: str,
+    public_key: str,
+    resource_id: str,
+    endpoint_id: str,
+) -> dict[str, str]:
+    values = {
+        "APP_ENV": "development",
+        "APP_DEBUG": "true",
+        "PEANUT_DEPLOYMENT_TARGET": "local-development",
+        "PEANUT_DATABASE_RESOURCE_ID": resource_id,
+        "PEANUT_DATABASE_ENDPOINT_ID": endpoint_id,
+        "PEANUT_DATABASE_CONSUMER": "host",
+        "DEPLOYMENT_MODE": "standalone",
+        "DB_HOST": required_environment("DB_HOST"),
+        "DB_PORT": required_environment("DB_PORT"),
+        "DB_NAME": database,
+        "DB_USER": required_environment("DB_USER"),
+        "DB_PASS": required_environment("DB_PASS"),
+        "DB_ROOT_PASS": "",
+        "DB_PREFIX": "pa_",
+        "JWT_SECRET": "cr21-reference-chain-jwt-secret-20260828",
+        "PEANUT_MODULE_KERNEL_VERSION": "1.0.0",
+        "PEANUT_MODULE_TRUSTED_KEYS_JSON": json.dumps({PACKAGE_KEY_ID: public_key}, separators=(",", ":")),
+    }
+    path.write_text(
+        "".join(f"{key}={backend_ini_value(key, value)}\n" for key, value in values.items()),
+        encoding="utf-8",
+    )
+    path.chmod(0o600)
+    return {"PEANUT_SERVER_ENV_FILE": str(path)}
+
+
+def create_application(
+    target: Path,
+    name: str,
+    slug: str,
+    package: str,
+    candidate: str,
+    candidate_tree: str,
+    log: Path,
+) -> None:
+    source_builder = r'''
+$root=$argv[1];
+require $root.'/server/app/common/service/scaffold/ScaffoldPathGuard.php';
+require $root.'/server/app/common/service/scaffold/ScaffoldManifest.php';
+require $root.'/server/app/common/service/scaffold/VersionContract.php';
+require $root.'/server/app/common/service/scaffold/ApplicationCreator.php';
+$manifest=(new app\common\service\scaffold\ApplicationCreator(
+    $root,
+    $root.'/scaffold/application-template-inventory.json',
+    ['commit'=>$argv[2],'tree'=>$argv[3]],
+))->create($argv[4],$argv[5],$argv[6],$argv[7],null,'full');
+echo json_encode([
+    'status'=>'created',
+    'target'=>$argv[7],
+    'template'=>$manifest['template'],
+    'generation_source'=>$manifest['generation_source'],
+],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES),PHP_EOL;
+'''
+    command(
+        [
+            str(PHP),
+            "-r",
+            source_builder,
+            str(ROOT),
+            candidate,
+            candidate_tree,
+            name,
+            slug,
+            package,
+            str(target),
+        ],
+        log=log,
+    )
+
+
+def install_dependencies(
+    project: Path,
+    cache: Path,
+    backend_env: dict[str, str],
+    log: Path,
+) -> None:
+    command(
+        [str(COMPOSER), "install", "--no-interaction", "--no-progress", "--prefer-dist"],
+        cwd=project / "server",
+        env=backend_env | {"COMPOSER_CACHE_DIR": str(cache)},
+        log=log,
+    )
+
+
+def run_think(project: Path, env: dict[str, str], arguments: list[str], log: Path) -> dict[str, Any]:
+    return json_output(
+        command([str(PHP), "think", *arguments], cwd=project / "server", env=env, log=log),
+        "think " + " ".join(arguments),
+    )
+
+
+def author_module_v1(author: Path) -> tuple[Path, Path]:
+    backend = author / "server/app/Modules/Acme/ReferenceChain"
+    frontend = author / "web/src/modules/acme-reference-chain"
+    manifest_path = backend / "module.json"
+    manifest = read_json(manifest_path)
+    manifest["description"] = "CR21 independent consumer reference chain"
+    manifest["database"]["owned_tables"] = ["pa_acme_reference_chain_record"]
+    write_json(manifest_path, manifest)
+    write_json(backend / "Resources/permissions.json", [{
+        "key": "acme.reference-chain.write",
+        "type": "action",
+        "name": "Write reference records",
+        "risk_level": "sensitive",
+    }])
+    write_json(backend / "Resources/menus.json", [{
+        "key": "acme.reference-chain.page",
+        "scope": "tenant",
+        "parent_key": None,
+        "type": "page",
+        "name": "Reference Chain",
+        "route_name": "acme-reference-chain",
+        "route_path": "/app/acme/reference-chain",
+        "component_key": "acme.reference-chain.page",
+        "required_permission": "acme.reference-chain.write",
+        "icon": "Link",
+        "sort_order": 900,
+        "client_keys": ["admin-web"],
+    }])
+    migration = backend / "Database/Migrations/20260828010101_create_reference_chain.sql"
+    migration.write_text(
+        "CREATE TABLE `pa_acme_reference_chain_record` (\n"
+        "  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n"
+        "  `tenant_id` BIGINT UNSIGNED NOT NULL,\n"
+        "  `reference` VARCHAR(120) NOT NULL,\n"
+        "  `created_at` DATETIME(3) NOT NULL,\n"
+        "  PRIMARY KEY (`id`),\n"
+        "  KEY `idx_acme_reference_tenant` (`tenant_id`,`id`),\n"
+        "  CONSTRAINT `fk_acme_reference_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `pa_tenant` (`id`) ON DELETE RESTRICT\n"
+        ") ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;\n",
+        encoding="utf-8",
+    )
+    return backend, frontend
+
+
+def author_module_v2(backend: Path, frontend: Path) -> None:
+    for path in [backend / "module.json", backend / "composer.json", frontend / "package.json"]:
+        document = read_json(path)
+        document["version"] = "2.0.0"
+        write_json(path, document)
+    (backend / "Database/Migrations/20260828010201_add_revision_note.sql").write_text(
+        "ALTER TABLE `pa_acme_reference_chain_record` ADD COLUMN `revision_note` VARCHAR(160) NULL AFTER `reference`;\n",
+        encoding="utf-8",
+    )
+
+
+def lifecycle_helper() -> str:
+    return r'''<?php
+declare(strict_types=1);
+
+require $argv[1] . '/server/bootstrap/environment.php';
+require $argv[1] . '/server/vendor/autoload.php';
+
+$action = $argv[2] ?? '';
+$pdo = new PDO(
+    'mysql:host=' . getenv('DB_HOST') . ';port=' . getenv('DB_PORT') . ';dbname=' . getenv('DB_NAME') . ';charset=utf8mb4',
+    (string)getenv('DB_USER'),
+    (string)getenv('DB_PASS'),
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
+);
+$module = 'acme.reference-chain';
+$tableExists = static function (PDO $pdo): bool {
+    return (int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='pa_acme_reference_chain_record'")->fetchColumn() === 1;
+};
+$snapshot = static function () use ($pdo, $module, $tableExists): array {
+    $plugin = $pdo->query("SELECT installed_version,status FROM pa_plugin_installation WHERE plugin_key='acme.reference-chain'")->fetch() ?: null;
+    $installation = $pdo->query("SELECT installed_version,status FROM pa_module_installation WHERE module_key='acme.reference-chain'")->fetch() ?: null;
+    $tenantModules = $pdo->query("SELECT t.code,tm.status FROM pa_tenant_module tm JOIN pa_tenant t ON t.id=tm.tenant_id WHERE tm.module_key='acme.reference-chain' ORDER BY t.code")->fetchAll();
+    $rbac = $pdo->query("SELECT t.code,COUNT(*) grants FROM pa_role_permission rp JOIN pa_role r ON r.tenant_id=rp.tenant_id AND r.id=rp.role_id JOIN pa_tenant t ON t.id=rp.tenant_id JOIN pa_permission p ON p.id=rp.permission_id WHERE p.module_key='acme.reference-chain' GROUP BY t.code ORDER BY t.code")->fetchAll();
+    $exists = $tableExists($pdo);
+    return [
+        'plugin' => $plugin,
+        'module_installation' => $installation,
+        'tenant_modules' => $tenantModules,
+        'rbac' => $rbac,
+        'permission_count' => (int)$pdo->query("SELECT COUNT(*) FROM pa_permission WHERE module_key='acme.reference-chain'")->fetchColumn(),
+        'migration_count' => (int)$pdo->query("SELECT COUNT(*) FROM pa_module_migration WHERE module_key='acme.reference-chain' AND status='applied'")->fetchColumn(),
+        'owned_table' => $exists,
+        'owned_rows' => $exists ? (int)$pdo->query('SELECT COUNT(*) FROM pa_acme_reference_chain_record')->fetchColumn() : 0,
+        'v2_column' => $exists ? (int)$pdo->query("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pa_acme_reference_chain_record' AND column_name='revision_note'")->fetchColumn() === 1 : false,
+    ];
+};
+
+if ($action === 'seed') {
+    $tenantA = $pdo->query("SELECT id FROM pa_tenant WHERE code='default' AND status='active'")->fetchColumn();
+    if ($tenantA === false) throw new RuntimeException('default Tenant is unavailable');
+    $pdo->exec("INSERT INTO pa_tenant(code,name,display_name,status,activated_at,created_at,updated_at) VALUES ('tenant-b','Tenant B','Tenant B','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
+    $tenantB = (int)$pdo->lastInsertId();
+    $roleA = $pdo->query('SELECT id FROM pa_role WHERE tenant_id=' . (int)$tenantA . " AND status='active' ORDER BY id LIMIT 1")->fetchColumn();
+    if ($roleA === false) throw new RuntimeException('Tenant A role is unavailable');
+    $role = $pdo->prepare("INSERT INTO pa_role(tenant_id,`key`,name,is_builtin,status,created_at,updated_at) VALUES (?,'reference-owner','Reference Owner',0,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
+    $role->execute([$tenantB]);
+    $roleB = (int)$pdo->lastInsertId();
+    $tenantModule = $pdo->prepare("INSERT INTO pa_tenant_module(tenant_id,module_key,status,source,config_json,config_revision,authorization_revision,effective_at,enabled_at,disabled_at,disabled_reason,created_at,updated_at) VALUES (?,'acme.reference-chain',?,'manual','{}',1,1,?,?,?, ?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
+    $now = gmdate('Y-m-d H:i:s.v');
+    $tenantModule->execute([(int)$tenantA, 'enabled', $now, $now, null, null]);
+    $tenantModule->execute([$tenantB, 'disabled', null, null, $now, 'not-yet-enabled']);
+    $permission = $pdo->query("SELECT id FROM pa_permission WHERE `key`='acme.reference-chain.write' AND status='active'")->fetchColumn();
+    if ($permission === false) throw new RuntimeException('Module permission is unavailable');
+    $grant = $pdo->prepare('INSERT INTO pa_role_permission(tenant_id,role_id,permission_id,granted_at) VALUES (?,?,?,UTC_TIMESTAMP(3))');
+    $grant->execute([(int)$tenantA, (int)$roleA, (int)$permission]);
+    $record = $pdo->prepare('INSERT INTO pa_acme_reference_chain_record(tenant_id,reference,created_at) VALUES (?,?,UTC_TIMESTAMP(3))');
+    $record->execute([(int)$tenantA, 'tenant-a']);
+    $record->execute([$tenantB, 'tenant-b']);
+    echo json_encode($snapshot(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), PHP_EOL;
+    exit(0);
+}
+if ($action === 'enable-b') {
+    $pdo->exec("UPDATE pa_tenant_module tm JOIN pa_tenant t ON t.id=tm.tenant_id SET tm.status='enabled',tm.effective_at=UTC_TIMESTAMP(3),tm.enabled_at=UTC_TIMESTAMP(3),tm.disabled_at=NULL,tm.disabled_reason=NULL,tm.updated_at=UTC_TIMESTAMP(3) WHERE t.code='tenant-b' AND tm.module_key='acme.reference-chain'");
+    echo json_encode($snapshot(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), PHP_EOL;
+    exit(0);
+}
+if ($action === 'disable-tenants') {
+    $pdo->exec("UPDATE pa_tenant_module SET status='disabled',disabled_at=UTC_TIMESTAMP(3),disabled_reason='cr21-package-operation',updated_at=UTC_TIMESTAMP(3) WHERE module_key='acme.reference-chain'");
+    echo json_encode($snapshot(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), PHP_EOL;
+    exit(0);
+}
+if ($action === 'snapshot') {
+    echo json_encode($snapshot(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), PHP_EOL;
+    exit(0);
+}
+throw new RuntimeException('unknown CR21 helper action');
+'''
+
+
+def helper_action(
+    helper: Path,
+    consumer: Path,
+    env: dict[str, str],
+    action: str,
+    log: Path,
+) -> dict[str, Any]:
+    return json_output(
+        command([str(PHP), str(helper), str(consumer), action], cwd=consumer, env=env, log=log),
+        f"consumer helper {action}",
+    )
+
+
+def expect(condition: bool, message: str) -> None:
+    if not condition:
+        fail(message)
+
+
+def tenant_statuses(snapshot: dict[str, Any]) -> dict[str, str]:
+    rows = snapshot.get("tenant_modules", [])
+    return {str(row["code"]): str(row["status"]) for row in rows if isinstance(row, dict)}
+
+
+def rbac_counts(snapshot: dict[str, Any]) -> dict[str, int]:
+    rows = snapshot.get("rbac", [])
+    return {str(row["code"]): int(row["grants"]) for row in rows if isinstance(row, dict)}
+
+
+def preview_and_execute(
+    consumer: Path,
+    env: dict[str, str],
+    output: Path,
+    purge: bool,
+    log: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    arguments = ["module:uninstall-package", MODULE_KEY]
+    if purge:
+        arguments.append("--purge")
+    preview = run_think(consumer, env, arguments, log)
+    plan = preview.get("confirm_plan")
+    digest = preview.get("plan_digest")
+    expect(isinstance(plan, dict) and isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest) is not None,
+           "retire/purge preview did not return its canonical confirmation")
+    plan_path = output / ("purge-plan.json" if purge else "retire-plan.json")
+    write_json(plan_path, plan, 0o600)
+    execute = [*arguments, f"--confirm-plan-file={plan_path}", f"--confirm-plan-digest={digest}"]
+    return preview, run_think(consumer, env, execute, log)
+
+
+def run_chain(args: argparse.Namespace) -> dict[str, Any]:
+    if not re.fullmatch(r"[0-9a-f]{40}", args.candidate):
+        fail("candidate must be an exact lowercase 40-hex commit")
+    if command(["git", "rev-parse", "HEAD"]).strip() != args.candidate:
+        fail("candidate does not match current HEAD")
+    candidate_tree = command(["git", "rev-parse", "HEAD^{tree}"]).strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", candidate_tree):
+        fail("candidate tree identity is invalid")
+    if command(["git", "status", "--porcelain", "--untracked-files=no"]).strip() != "":
+        fail("candidate worktree must be clean")
+    if not re.fullmatch(r"peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle", args.database):
+        fail("database is not an allowed registered P0-E plugin_lifecycle target")
+    output = Path(args.output)
+    if not output.is_absolute() or output == Path("/") or output.exists() or output.is_symlink():
+        fail("output must be an absent absolute path")
+    metadata, resources = lease_fields(args.lease)
+    expected_resources = {
+        ("database-resource", "peanut-admin-p0e-mysql84-gate"),
+        ("endpoint", "peanut-admin-p0e-mysql84-gate-host-direct"),
+        ("database", args.database),
+        ("output-root", str(output)),
+        ("cache-root", str(output / "cache")),
+    }
+    expect(metadata.get("candidate") == args.candidate and metadata.get("status") == "ACTIVE",
+           "active lease candidate does not match")
+    expect(expected_resources.issubset(set(resources)), "lease is missing a CR21 resource")
+
+    output.mkdir(mode=0o700, parents=True)
+    logs = output / "logs"
+    author = output / "application-a"
+    consumer = output / "application-b"
+    cache = output / "cache/composer"
+    cache.mkdir(parents=True)
+    completed = False
+    try:
+        create_application(
+            author,
+            "CR21 Author",
+            "cr21-author",
+            "consumer/author",
+            args.candidate,
+            candidate_tree,
+            logs / "create-app-a.log",
+        )
+        create_application(
+            consumer,
+            "CR21 Consumer",
+            "cr21-consumer",
+            "consumer/runtime",
+            args.candidate,
+            candidate_tree,
+            logs / "create-app-b.log",
+        )
+        for project in [author, consumer]:
+            manifest = read_json(project / ".peanut/application-manifest.json")
+            expect(manifest.get("template", {}).get("source_commit") == args.candidate
+                   and manifest.get("template", {}).get("source_tree") == candidate_tree
+                   and manifest.get("generation_source", {}).get("commit") == args.candidate
+                   and manifest.get("generation_source", {}).get("tree") == candidate_tree,
+                   "generated application did not use the fixed candidate")
+        author_resource = "cr21-author-mysql84-development"
+        author_endpoint = "cr21-author-mysql84-development-host"
+        consumer_resource = "cr21-consumer-mysql84-development"
+        consumer_endpoint = "cr21-consumer-mysql84-development-host"
+        configured_registries = {
+            "application_a": configure_generated_database(
+                author,
+                author_resource,
+                author_endpoint,
+                args.database,
+            ),
+            "application_b": configure_generated_database(
+                consumer,
+                consumer_resource,
+                consumer_endpoint,
+                args.database,
+            ),
+        }
+        owned_before = {"application_a": app_owned_proof(author), "application_b": app_owned_proof(consumer)}
+
+        keys = json_output(command([
+            str(PHP), "-r",
+            '$k=sodium_crypto_sign_keypair(); echo json_encode(["public"=>base64_encode(sodium_crypto_sign_publickey($k)),"secret"=>base64_encode(sodium_crypto_sign_secretkey($k))]),PHP_EOL;',
+        ]), "signing key generation")
+        public_key = str(keys.get("public", ""))
+        secret_key = output / "author-signing-key.base64"
+        secret_key.write_text(str(keys.get("secret", "")) + "\n", encoding="utf-8")
+        secret_key.chmod(0o600)
+        expect(public_key != "" and secret_key.stat().st_size > 1, "ephemeral signing key generation failed")
+        author_env = backend_environment(
+            author / "server/.env.cr21",
+            args.database,
+            public_key,
+            author_resource,
+            author_endpoint,
+        )
+        consumer_env = backend_environment(
+            consumer / "server/.env.cr21",
+            args.database,
+            public_key,
+            consumer_resource,
+            consumer_endpoint,
+        )
+        install_dependencies(author, cache, author_env, logs / "composer-a.log")
+        install_dependencies(consumer, cache, consumer_env, logs / "composer-b.log")
+
+        created = run_think(author, author_env, ["module:create", MODULE_KEY, "--vendor=Acme"], logs / "author.log")
+        expect(created.get("module_key") == MODULE_KEY, "module:create returned another identity")
+        backend, frontend = author_module_v1(author)
+        check_v1 = run_think(author, author_env, ["module:check", MODULE_KEY], logs / "author.log")
+        expect(check_v1.get("status") == "ready" and len(check_v1.get("checks", [])) == 8,
+               "module:check v1 did not pass all eight checks")
+        v1_path = output / "acme-reference-chain-v1.tar"
+        packed_v1 = run_think(author, author_env, [
+            "module:pack", MODULE_KEY, f"--output={v1_path}", f"--signing-key-id={PACKAGE_KEY_ID}",
+            f"--signing-secret-key-file={secret_key}",
+        ], logs / "author.log")
+        v1_sha = str(packed_v1.get("sha256", ""))
+        expect(v1_sha == sha256(v1_path), "v1 package digest changed")
+        check_v1_package = run_think(author, author_env, [
+            "module:check", MODULE_KEY, f"--package={v1_path}", f"--sha256={v1_sha}",
+        ], logs / "author.log")
+        expect(check_v1_package.get("status") == "ready", "module:check did not accept signed v1 package")
+
+        install_env = consumer_env | {
+            "ADMIN_INITIAL_EMAIL": "cr21-admin@example.test",
+            "ADMIN_INITIAL_PASSWORD": "cr21-admin-strong-password",
+        }
+        installed = json_output(command(
+            [str(PHP), "server/database/install.php"], cwd=consumer, env=install_env, log=logs / "consumer.log"
+        ), "consumer fresh install")
+        expect(installed.get("state") == "installed"
+               and int(installed.get("health", {}).get("installed_table_count", 0)) > 0,
+               "consumer fresh install did not create the canonical schema")
+        install_v1 = run_think(consumer, consumer_env, [
+            "module:install-package", str(v1_path), f"--sha256={v1_sha}", f"--signature-key-id={PACKAGE_KEY_ID}",
+        ], logs / "consumer.log")
+        expect(install_v1.get("operation") == "installed", "consumer v1 package install failed")
+
+        helper = output / "consumer-lifecycle.php"
+        helper.write_text(lifecycle_helper(), encoding="utf-8")
+        helper.chmod(0o600)
+        seeded = helper_action(helper, consumer, consumer_env, "seed", logs / "consumer.log")
+        expect(tenant_statuses(seeded) == {"default": "enabled", "tenant-b": "disabled"},
+               "Tenant A/B initial Module separation changed")
+        expect(rbac_counts(seeded) == {"default": 1}, "Tenant A/B initial RBAC separation changed")
+        expect(seeded.get("owned_rows") == 2 and seeded.get("migration_count") == 1,
+               "v1 owned data or migration state is invalid")
+        enabled_b = helper_action(helper, consumer, consumer_env, "enable-b", logs / "consumer.log")
+        expect(tenant_statuses(enabled_b) == {"default": "enabled", "tenant-b": "enabled"}
+               and rbac_counts(enabled_b) == {"default": 1},
+               "TenantModule enablement changed Package or RBAC state")
+
+        author_module_v2(backend, frontend)
+        check_v2 = run_think(author, author_env, ["module:check", MODULE_KEY], logs / "author.log")
+        expect(check_v2.get("status") == "ready", "module:check v2 failed")
+        v2_path = output / "acme-reference-chain-v2.tar"
+        packed_v2 = run_think(author, author_env, [
+            "module:pack", MODULE_KEY, f"--output={v2_path}", f"--signing-key-id={PACKAGE_KEY_ID}",
+            f"--signing-secret-key-file={secret_key}",
+        ], logs / "author.log")
+        v2_sha = str(packed_v2.get("sha256", ""))
+        expect(v2_sha == sha256(v2_path) and v2_sha != v1_sha, "v2 immutable package identity is invalid")
+        check_v2_package = run_think(author, author_env, [
+            "module:check", MODULE_KEY, f"--package={v2_path}", f"--sha256={v2_sha}",
+        ], logs / "author.log")
+        expect(check_v2_package.get("status") == "ready", "module:check did not accept signed v2 package")
+        dry_run = run_think(consumer, consumer_env, [
+            "module:update-package", str(v2_path), f"--sha256={v2_sha}",
+            f"--signature-key-id={PACKAGE_KEY_ID}", "--dry-run",
+        ], logs / "consumer.log")
+        expect(dry_run.get("operation") == "update" and dry_run.get("dry_run") is True,
+               "v2 update dry-run did not return a zero-write plan")
+        before_update = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
+        expect(before_update == enabled_b, "v2 update dry-run changed consumer state")
+        updated = run_think(consumer, consumer_env, [
+            "module:update-package", str(v2_path), f"--sha256={v2_sha}", f"--signature-key-id={PACKAGE_KEY_ID}",
+        ], logs / "consumer.log")
+        expect(updated.get("operation") == "upgraded", "consumer v2 package update failed")
+        after_update = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
+        expect(after_update.get("plugin", {}).get("installed_version") == "2.0.0"
+               and after_update.get("migration_count") == 2 and after_update.get("v2_column") is True,
+               "v2 package, migration, and schema identity diverged")
+        expect(tenant_statuses(after_update) == tenant_statuses(enabled_b)
+               and rbac_counts(after_update) == rbac_counts(enabled_b)
+               and after_update.get("owned_rows") == 2,
+               "v2 update changed TenantModule, RBAC, or business data")
+
+        disabled_tenants = helper_action(helper, consumer, consumer_env, "disable-tenants", logs / "consumer.log")
+        expect(set(tenant_statuses(disabled_tenants).values()) == {"disabled"}, "TenantModules were not disabled")
+        disabled_package = run_think(
+            consumer,
+            consumer_env,
+            ["module:disable-package", MODULE_KEY],
+            logs / "consumer.log",
+        )
+        after_disable = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
+        expect(disabled_package.get("operation") == "disabled"
+               and after_disable.get("module_installation", {}).get("status") == "maintenance",
+               "Package disable did not enter maintenance")
+        reactivated = run_think(consumer, consumer_env, [
+            "module:install-package", str(v2_path), f"--sha256={v2_sha}", f"--signature-key-id={PACKAGE_KEY_ID}",
+        ], logs / "consumer.log")
+        expect(reactivated.get("operation") == "reactivated", "same-artifact Package reactivation failed")
+        after_reactivate = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
+        expect(after_reactivate.get("module_installation", {}).get("status") == "active"
+               and rbac_counts(after_reactivate) == {"default": 1},
+               "Package reactivation changed RBAC or Module state")
+
+        retire_preview, retired = preview_and_execute(consumer, consumer_env, output, False, logs / "consumer.log")
+        expect(retired.get("operation") == "retired", "Package retire failed")
+        after_retire = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
+        expect(after_retire.get("owned_table") is True and after_retire.get("owned_rows") == 2
+               and after_retire.get("migration_count") == 2 and rbac_counts(after_retire) == {"default": 1},
+               "retire did not preserve business data, migration ledger, and RBAC")
+        purge_preview, purged = preview_and_execute(consumer, consumer_env, output, True, logs / "consumer.log")
+        expect(purged.get("operation") == "purged", "Package Purge failed")
+        after_purge = helper_action(helper, consumer, consumer_env, "snapshot", logs / "consumer.log")
+        expect(after_purge.get("plugin", {}).get("status") == "uninstalled"
+               and after_purge.get("module_installation") is None
+               and tenant_statuses(after_purge) == {"default": "disabled", "tenant-b": "disabled"}
+               and after_purge.get("owned_table") is False and after_purge.get("migration_count") == 0
+               and after_purge.get("permission_count") == 0 and after_purge.get("rbac") == [],
+               "Purge changed TenantModule or left Package, Module, owned data, migration, catalog, or RBAC state")
+
+        owned_after = {"application_a": app_owned_proof(author), "application_b": app_owned_proof(consumer)}
+        expect(owned_after == owned_before, "consumer lifecycle changed a generated application app-owned file")
+        summary = {
+            "schema_version": 1,
+            "status": "passed",
+            "candidate": args.candidate,
+            "candidate_tree": candidate_tree,
+            "lease": args.lease,
+            "database_resource_id": "peanut-admin-p0e-mysql84-gate",
+            "database": args.database,
+            "applications": {
+                "author_manifest_sha256": sha256(author / ".peanut/application-manifest.json"),
+                "consumer_manifest_sha256": sha256(consumer / ".peanut/application-manifest.json"),
+                "app_owned_before": owned_before,
+                "app_owned_after": owned_after,
+                "configured_resource_registry_sha256": configured_registries,
+            },
+            "module": {
+                "key": MODULE_KEY,
+                "v1_sha256": v1_sha,
+                "v2_sha256": v2_sha,
+                "v2_source_tree_sha256": tree_sha256(backend),
+                "signature_key_id": PACKAGE_KEY_ID,
+            },
+            "gates": {
+                "create": "passed",
+                "check_v1_v2": "passed",
+                "signed_pack_v1_v2": "passed",
+                "install_update": "passed",
+                "tenant_package_rbac_separation": "passed",
+                "disable_reactivate": "passed",
+                "retire_purge": "passed",
+                "app_owned_preservation": "passed",
+                "source_private_fixture_copy": "not_used",
+                "generation_mode": "development_source_candidate",
+                "formal_release_adoption": "deferred_to_cr31",
+            },
+            "snapshots": {
+                "after_update": after_update,
+                "after_retire": after_retire,
+                "after_purge": after_purge,
+            },
+            "preview_digests": {
+                "retire": retire_preview["plan_digest"],
+                "purge": purge_preview["plan_digest"],
+            },
+        }
+        write_json(output / "summary.json", summary)
+        completed = True
+        return summary
+    finally:
+        if completed and not args.keep:
+            shutil.rmtree(output)
+
+
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--candidate", required=True)
+    parser.add_argument("--lease", required=True)
+    parser.add_argument("--database", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--keep", action="store_true", help="Keep the lease-owned output after success")
+    return parser.parse_args()
+
+
+def main() -> int:
+    try:
+        summary = run_chain(parse_arguments())
+        print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        return 0
+    except ChainError as exception:
+        print(f"consumer-module-reference-chain: {exception}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

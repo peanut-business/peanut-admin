@@ -22,6 +22,7 @@ return [
         'bundle:pack'      => \app\command\BundlePack::class,
         'module:install-package' => \app\command\ModuleInstallPackage::class,
         'module:update-package' => \app\command\ModuleUpdatePackage::class,
+        'module:disable-package' => \app\command\ModuleDisablePackage::class,
         'module:uninstall-package' => \app\command\ModuleUninstallPackage::class,
         'module:sync' => \app\command\ModuleSync::class,
         'plugin:install'   => \app\command\PluginInstall::class,
