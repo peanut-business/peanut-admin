@@ -18,7 +18,7 @@ scaffold Release、文档登记和固定资格证据。
 > - 已通过产品闭环资格的 Runtime：`f6378f255241cbde25f374a8a0218fda4616c1ce`
 >   （tree `184033c89425a0aa08f5591ce7f6a82735d47ad4`）
 > - Core 输入基线：`8608dafe30467c442000ce408b106d8750ffd766`
-> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20—CR22 已完成，CR23 正在收敛历史文档与模板**
+> - 计划状态：**执行中；CR01/CR02/CR10—CR13/CR20—CR23 已完成，下一关键路径为 CR30**
 > - 规模：**5 个阶段、13 个任务、1 次固定候选组合资格、1 次正式源码发布**
 
 “可消费”是本计划的验收标签，不是新的产品名、版本后缀或长期兼容层。完成本计划后，外部
@@ -97,7 +97,7 @@ owner 在同一 PR 或紧随的纯文档 PR 更新本表；稳定产品能力同
 | 7 | CR20 | Module 作者只读检查与版本规则 | 已完成 | CR10 | PR #342 合入 `dev=5797e28…`（tree `953ff07…`）；真实 CLI 正/负输出、八项稳定检查和零数据库访问验证通过 | Terra 定位 + Sol/Worker 实现 |
 | 8 | CR21 | 双独立应用二开参考链 | 已完成 | CR11、CR12、CR20 | PR #346 合入 `dev=50c8577…`（tree `69f0ac1…`）；双独立生成应用完成签名 Module v1→v2 全生命周期、Tenant A/B 四层断言和 app-owned 摘要 | Sol high；真实纵向 fixture |
 | 9 | CR22 | 消费者文档与支持入口 | 已完成 | CR11、CR12、CR20 | PR #348 合入从创建应用到 Module/应用升级的公开任务导航、唯一命令/错误/兼容索引、脱敏诊断包、普通 Issue 与安全问题规范 | Luna 文档；主代理事实复核 |
-| 10 | CR23 | 历史文档与证据最终收敛 | 进行中 | CR02、CR22 | 正在退出 8 个已替代旧页和一次性 import，归档 3 个已完成计划，并把 CR22 当前指南与安全支持面纳入新生成应用 | Luna 机械执行；主代理批准删除 |
+| 10 | CR23 | 历史文档与证据最终收敛 | 已完成 | CR02、CR22 | PR #350 合入 8 个旧页和一次性 import 的退出、3 个已完成计划归档及当前消费者指南/安全支持面的生成应用投影；恢复清单已固定 | Luna 机械执行；主代理批准删除 |
 | 11 | CR30 | 封存前消费资格就绪 | 未开始 | CR11—CR13、CR20—CR23 | 用实际生成应用和第三方包形态验证所有入口、身份、目录、driver、阶段隔离与失败恢复；不产生 qualified | Sol high；Development mode |
 | 12 | CR31 | 固定候选消费组合资格 | 未开始 | CR30 | 同一候选一次完成 create-app、双模式 fresh、Module v1→v2 全生命周期、应用升级、生产 Compose/浏览器与零残留 | Sol xhigh；唯一资格 owner |
 | 13 | CR40 | 正式可消费源码发布 | 未开始 | CR31 | `dev→main`、annotated tag、GitHub Release、scaffold/manifest/能力快照和一次最低发布后核验 | Sol high；发布 owner |
@@ -209,6 +209,21 @@ Git 可恢复性、当前 owner 和不可变证据价值；CR02 只处理复核�
   私密漏洞表单未被写成已启用，表单不可用时公开 Issue 只允许无漏洞细节的联系请求。
 - 最新候选通过 `docs-governance`、精确 docs-impact 闭包、VitePress 1.6.4 全站构建和差异检查；
   本切片未连接数据库、端口、服务、容器、浏览器或 P0-E 资源。
+
+### 7.5 CR23 完成记录
+
+- PR #350 已合入 `dev=c503bb5377d55fd3faf883dab0ee4276249b553f`（tree
+  `69c50e2007b0c5f8311f5e28422d157461940e03`）；删除 8 个已被 CR22 当前指南替代的 archived
+  docs-site 页和一次性 `server/database/import.php`，合计 9 个 tracked 文件、52,430 bytes。
+- 三份已完成计划从 `planned` 收敛为 `archived` 并保留文件；其余 planned/archived 文档、
+  `scripts/scaffold-doctor` 和全部历史 `scaffold/releases/**` 保持。精确路径、固定恢复提交和联动
+  恢复范围见 `docs/maintenance/consumer-ready-evidence-retention.md`。
+- current inventory 的 full-profile builder 生成应用包含 lifecycle、reference、support 和根级
+  `SECURITY.md`，9 个退出路径均不存在；文档治理、能力账本、VitePress 1.6.4 全站构建和差异检查
+  通过。本 worktree 的 `docs-site/node_modules` 与 `.vitepress/dist` 共约 110 MiB 已清理。
+- 已发布 v3.0.9 scaffold 的 managed 集合为 389 项，当前 inventory 因 CR12 的
+  `scripts/ops-module-worker` 为 390 项；正式 adoption 等价必须由 CR30 封存新 scaffold 后验证，
+  CR23 未删除该生产 worker、未改写旧 Release，也未把这一预封存差异冒充通过。
 
 ## 8. 状态同步与最终报告
 
