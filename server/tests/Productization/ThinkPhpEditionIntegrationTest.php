@@ -408,6 +408,7 @@ function tpq52RunStandalone(PDO $pdo, array &$sql): array
     )->fetchAll(PDO::FETCH_ASSOC);
     expectTpq52(!in_array('tenant_id', $columns, true), 'Standalone Schema contains tenant_id');
     foreach ($indexes as $index) {
+        $index = array_change_key_case($index, CASE_LOWER);
         expectTpq52($index['column_name'] !== 'tenant_id', 'Standalone index contains tenant_id');
     }
 
