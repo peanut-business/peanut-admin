@@ -84,14 +84,21 @@ function tpq52DatabaseIsAbsent(PDO $admin, string $database): bool
 
 function tpq52Activate(string $database, string $edition): void
 {
-    IsolatedBackendEnvironment::activateDatabase(
-        IsolatedBackendEnvironment::required('DB_HOST'),
-        IsolatedBackendEnvironment::required('DB_PORT'),
-        $database,
-        IsolatedBackendEnvironment::required('DB_USER'),
-        IsolatedBackendEnvironment::required('DB_PASS'),
-        $edition === 'multi_tenant' ? 'multi-tenant' : 'standalone',
-    );
+    IsolatedBackendEnvironment::activate([
+        'APP_ENV' => 'development',
+        'APP_DEBUG' => 'true',
+        'PEANUT_DEPLOYMENT_TARGET' => 'local-development',
+        'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-p0e-mysql84-gate',
+        'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-p0e-mysql84-gate-host-direct',
+        'PEANUT_DATABASE_CONSUMER' => 'host',
+        'DEPLOYMENT_MODE' => $edition === 'multi_tenant' ? 'multi-tenant' : 'standalone',
+        'DB_HOST' => IsolatedBackendEnvironment::required('DB_HOST'),
+        'DB_PORT' => IsolatedBackendEnvironment::required('DB_PORT'),
+        'DB_NAME' => $database,
+        'DB_USER' => IsolatedBackendEnvironment::required('DB_USER'),
+        'DB_PASS' => IsolatedBackendEnvironment::required('DB_PASS'),
+        'DB_PREFIX' => 'pa_',
+    ]);
 }
 
 function tpq52CreateMultiTenantSchema(PDO $pdo): void
