@@ -117,6 +117,26 @@
         "cleanup_responsibility": "Core Alpha.10 qualification owner removes only /private/tmp/peanut-admin-core-tools after all dependent publication and consumer checks complete"
       },
       {
+        "stable_resource_id": "peanut-admin-core-node24-pnpm11-cli",
+        "purpose": "exact Node and project-resolved pnpm toolchain for Core Alpha.10 qualification",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core Alpha.10 qualification lease owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/Users/xing/.nvm/versions/node/v24.13.0/bin",
+        "service_type": "local NVM Node runtime and Corepack pnpm shim",
+        "version": "Node 24.13.0; pnpm 11.13.0 from the Core candidate packageManager field",
+        "credential_ref": null,
+        "data_source": "owner-managed local NVM installation plus candidate package.json packageManager identity",
+        "freshness_requirement": "from the fixed Core candidate directory after claim, the exact node path reports v24.13.0 and the exact pnpm path resolves packageManager to 11.13.0",
+        "health_check": "/Users/xing/.nvm/versions/node/v24.13.0/bin/node --version and /Users/xing/.nvm/versions/node/v24.13.0/bin/pnpm --version executed with the fixed Core candidate as cwd",
+        "fallback": "none",
+        "lifecycle": "persistent owner-managed development toolchain with exclusive qualification lease while in use",
+        "cleanup_responsibility": "qualification removes no file from the owner-managed NVM installation"
+      },
+      {
         "stable_resource_id": "peanut-admin-production-upgrade-control-worker",
         "purpose": "trusted deployment-control worker for one fixed in-application production upgrade task",
         "environments": ["production"],
@@ -209,7 +229,8 @@
           "peanut-admin-core-alpha10-starter-frontend"
         ],
         "tool_resource_ids": [
-          "peanut-admin-core-composer-2.10.2-cli"
+          "peanut-admin-core-composer-2.10.2-cli",
+          "peanut-admin-core-node24-pnpm11-cli"
         ],
         "dependency_cache_resource_ids": [
           "peanut-admin-core-alpha10-pnpm-store",
