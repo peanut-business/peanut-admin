@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 function expectPlatformStorageBoundary(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -9,7 +11,7 @@ function expectPlatformStorageBoundary(bool $condition, string $message): void
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$routes = (string)file_get_contents($serverRoot . '/route/app.php');
+$routes = peanut_route_registry_source($serverRoot);
 $policy = (string)file_get_contents($serverRoot . '/vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php');
 $permissions = (string)file_get_contents($serverRoot . '/app/common/service/authorization/AdminAuthorizationService.php');
 

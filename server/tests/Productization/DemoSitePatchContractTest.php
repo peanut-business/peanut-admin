@@ -78,12 +78,12 @@ $expect(
     'demo seed does not preserve the default Tenant plus independent A/B Tenant codes'
 );
 
-$admin = $read($root . '/server/app/adminapi/logic/auth/AdminLogic.php');
+$admin = $read($root . '/server/app/adminapi/application/auth/AdminApplicationService.php');
 $expect(
     str_contains($admin, 'DemoAccountPolicy::assertPasswordChangeAllowed'),
     'demo password mutation is not rejected by the Server'
 );
-$workbench = $read($root . '/server/app/adminapi/logic/WorkbenchLogic.php');
+$workbench = $read($root . '/server/app/adminapi/application/WorkbenchApplicationService.php');
 $expect(
     str_contains($workbench, 'AdminAuthorizationService')
         && str_contains($workbench, "self::menuContainsPath(\$moduleMenus, '/system/file')"),
@@ -93,7 +93,7 @@ $overlayBuilder = $read($root . '/scripts/build-demo-site-patch');
 $expect(
     str_contains($overlayBuilder, 'plugins.lock')
         && str_contains($overlayBuilder, 'plugins/official.file/plugin.json')
-        && str_contains($overlayBuilder, 'server/app/adminapi/logic/WorkbenchLogic.php')
+        && str_contains($overlayBuilder, 'server/app/adminapi/application/WorkbenchApplicationService.php')
         && str_contains($overlayBuilder, 'server/app/command/TenantModuleProfile.php')
         && str_contains($overlayBuilder, 'server/app/command/PluginReconcile.php')
         && str_contains($overlayBuilder, 'server/app/platform/service/module/ProductTenantModuleProfileService.php')
@@ -281,7 +281,7 @@ $expect(
     'remote one-shot Compose commands must close inherited standard input'
 );
 
-$index = $read($root . '/server/app/api/logic/IndexLogic.php');
+$index = $read($root . '/server/app/api/application/IndexApplicationService.php');
 $expect(
     str_contains($index, 'in_array($host, $sharedHosts, true)')
         && str_contains($index, "return ['enabled' => false, 'email' => '', 'password' => ''];"),

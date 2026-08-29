@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 use app\platform\service\provider\PlatformProviderQualificationService;
 use app\platform\service\provider\ProviderQualificationContributor;
 use app\platform\service\provider\ProviderQualificationEvidenceRepository;
@@ -177,7 +179,7 @@ expectProviderQualification(array_keys($recorderRepository->rows[0]) === [
     'outcome', 'config_digest', 'status_code', 'request_id', 'observed_at', 'expires_at', 'recorded_at',
 ], 'recorder accepted an unsafe evidence payload shape');
 
-$routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+$routes = peanut_route_registry_source(dirname(__DIR__, 2));
 expectProviderQualification(
     str_contains($routes, "Route::get('api/platform/v1/ops/providers'")
         && !str_contains($routes, "Route::post('api/platform/v1/ops/providers'"),

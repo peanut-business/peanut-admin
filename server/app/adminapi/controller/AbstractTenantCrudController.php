@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller;
 
+use app\common\http\PageResult;
 use LogicException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\response\Json;
@@ -16,8 +17,10 @@ use think\response\Json;
  */
 abstract class AbstractTenantCrudController extends BaseAdminController
 {
+    private ?object $crudServiceInstance = null;
+
     /** @var class-string */
-    protected const CRUD_LOGIC = '';
+    protected const CRUD_SERVICE = '';
 
     /** @var class-string */
     protected const CRUD_VALIDATE = '';
@@ -114,59 +117,47 @@ abstract class AbstractTenantCrudController extends BaseAdminController
         return $this->validatedInput($context, static::CRUD_STATUS_SCENE, $this->request->post());
     }
 
-    /** @return array{lists:array,count:int,pageNo?:int,pageSize?:int,page_no?:int,page_size?:int,extend?:array}|false */
-    protected function performLists(TenantContext $context, array $params): array|false
+    protected function performLists(TenantContext $context, array $params): PageResult|array|false
     {
-        $logic = $this->crudLogicClass();
-        return $logic::lists($context, $params);
+        return $this->crudService()->lists($context, $params);
     }
 
     protected function performDetail(TenantContext $context, array $params): array
     {
-        $logic = $this->crudLogicClass();
-        return $logic::detail($context, (int) $params['id']);
+        return $this->crudService()->detail($context, (int) $params['id']);
     }
 
     protected function performAdd(TenantContext $context, array $params): bool
     {
-        $logic = $this->crudLogicClass();
-        return $logic::add($context, $params);
+        return $this->crudService()->add($context, $params);
     }
 
     protected function performEdit(TenantContext $context, array $params): bool
     {
-        $logic = $this->crudLogicClass();
-        return $logic::edit($context, $params);
+        return $this->crudService()->edit($context, $params);
     }
 
     protected function performDelete(TenantContext $context, array $params): bool
     {
-        $logic = $this->crudLogicClass();
-        return $logic::delete($context, (int) $params['id']);
+        return $this->crudService()->delete($context, (int) $params['id']);
     }
 
     protected function performStatusUpdate(TenantContext $context, array $params): bool
     {
-        $logic = $this->crudLogicClass();
-        return $logic::updateStatus(
+        return $this->crudService()->updateStatus(
             $context,
             (int) $params['id'],
             (int) $params[static::CRUD_STATUS_FIELD],
         );
     }
 
-    protected function renderLists(array|false $result): Json
+    protected function renderLists(PageResult|array|false $result): Json
     {
         if ($result === false) {
             return $this->fail($this->crudError());
         }
 
-        return $this->dataLists(
-            $result['lists'],
-            (int) $result['count'],
-            (int) $result['pageNo'],
-            (int) $result['pageSize'],
-        );
+        return $this->data($result);
     }
 
     protected function renderDetail(array $result): Json
@@ -194,12 +185,12 @@ abstract class AbstractTenantCrudController extends BaseAdminController
     }
 
     /** @return class-string */
-    final protected function crudLogicClass(): string
+    final protected function crudServiceClass(): string
     {
-        $logic = static::CRUD_LOGIC;
+        $logic = static::CRUD_SERVICE;
         if ($logic === '' || !class_exists($logic)) {
             throw new LogicException(sprintf(
-                '%s must configure a valid CRUD_LOGIC class.',
+                '%s must configure a valid CRUD_SERVICE class.',
                 static::class,
             ));
         }
@@ -223,14 +214,22 @@ abstract class AbstractTenantCrudController extends BaseAdminController
 
     final protected function crudError(): string
     {
-        $logic = $this->crudLogicClass();
-        if (!is_callable([$logic, 'getError'])) {
+        $service = $this->crudService();
+        if (!is_callable([$service, 'getError'])) {
             throw new LogicException(sprintf(
-                '%s must provide a static getError() method.',
-                $logic,
+                '%s must provide a getError() method.',
+                $service::class,
             ));
         }
 
-        return (string) $logic::getError();
+        return (string) $service->getError();
+    }
+
+    final protected function crudService(): object
+    {
+        if ($this->crudServiceInstance === null) {
+            $this->crudServiceInstance = app($this->crudServiceClass());
+        }
+        return $this->crudServiceInstance;
     }
 }

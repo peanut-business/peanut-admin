@@ -6,7 +6,7 @@ declare(strict_types=1);
  * controller templates.
  *
  * This file deliberately does not bootstrap ThinkPHP, create a request, or
- * instantiate a controller, Logic, or Validate class. Composer autoloading is
+ * instantiate a controller, Application Service, or Validate class. Composer autoloading is
  * the only runtime setup required for Reflection to inspect the declarations.
  */
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -181,33 +181,33 @@ foreach (['resolveCrudContext', 'renderLists', 'renderDetail', 'validatedInput']
     expectAdminTenantCrudMethod($articleAbstract, $hook, $articleAbstractName, false, true);
 }
 expectAdminTenantCrud(
-    str_contains(adminTenantCrudSource($articleAbstract), 'ArticleTenantContext::member($this->request)'),
+    str_contains(adminTenantCrudSource($articleAbstract), 'ArticleTenantContext::member()'),
     $articleAbstractName . ' lost its Article Tenant context hook',
 );
 
-// Direct subclasses configure only their Logic/Validate pair; their hooks
+// Direct subclasses configure only their Application Service/Validate pair; their hooks
 // remain visible through Reflection and are checked against the source marker
 // so this contract never has to instantiate either dependency.
 $directTenantCrud = [
     'app\\adminapi\\controller\\dict\\DictTypeController' => [
-        'logic' => 'app\\adminapi\\logic\\dict\\DictTypeLogic',
+        'service' => 'app\\adminapi\\application\\dict\\DictTypeApplicationService',
         'validate' => 'app\\adminapi\\validate\\dict\\DictTypeValidate',
         'notFound' => '字典类型不存在',
-        'context' => 'DictTenantContext::member($this->request)',
+        'context' => 'DictTenantContext::member()',
         'extraMethods' => ['all'],
     ],
     'app\\adminapi\\controller\\dict\\DictDataController' => [
-        'logic' => 'app\\adminapi\\logic\\dict\\DictDataLogic',
+        'service' => 'app\\adminapi\\application\\dict\\DictDataApplicationService',
         'validate' => 'app\\adminapi\\validate\\dict\\DictDataValidate',
         'notFound' => '字典数据不存在',
-        'context' => 'DictTenantContext::member($this->request)',
+        'context' => 'DictTenantContext::member()',
         'extraMethods' => ['byType'],
     ],
     'app\\Modules\\Official\\Oauth\\Http\\Controller\\OfficialAccountReplyController' => [
-        'logic' => 'app\\Modules\\Official\\Oauth\\Service\\OfficialAccountReplyLogic',
+        'service' => 'app\\Modules\\Official\\Oauth\\Application\\OfficialAccountReplyApplicationService',
         'validate' => 'app\\Modules\\Official\\Oauth\\Validation\\OfficialAccountReplyValidate',
         'notFound' => '自动回复不存在',
-        'context' => 'MemberTenantContext::member($this->request)',
+        'context' => 'MemberTenantContext::member()',
         'extraMethods' => [],
     ],
 ];
@@ -217,7 +217,7 @@ foreach ($directTenantCrud as $className => $contract) {
         $class->getParentClass()?->getName() === $baseName,
         $className . ' must extend AbstractTenantCrudController directly',
     );
-    expectAdminTenantCrudConstant($class, 'CRUD_LOGIC', $contract['logic'], $className);
+    expectAdminTenantCrudConstant($class, 'CRUD_SERVICE', $contract['service'], $className);
     expectAdminTenantCrudConstant($class, 'CRUD_VALIDATE', $contract['validate'], $className);
     expectAdminTenantCrudConstant($class, 'CRUD_NOT_FOUND_MESSAGE', $contract['notFound'], $className);
     expectAdminTenantCrudMethod($class, 'resolveCrudContext', $className, false, true);
@@ -236,14 +236,20 @@ expectAdminTenantCrudMethod($reply, 'renderLists', $reply->getName(), false, tru
 
 // Article resources share the Article-specific template, not the generic
 // template directly; this preserves their is_show/list-validation contract.
+$articleConstructor = $articleAbstract->getConstructor();
+expectAdminTenantCrud($articleConstructor !== null, $articleAbstractName . ' must receive its Application contract');
+$articleParameters = $articleConstructor->getParameters();
+expectAdminTenantCrud(
+    count($articleParameters) === 2
+        && $articleParameters[1]->getType()?->getName() === 'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
+    $articleAbstractName . ' must inject ArticleAdministration',
+);
 foreach ([
     'app\\Modules\\Official\\Article\\Http\\Controller\\ArticleController' => [
-        'logic' => 'app\\Modules\\Official\\Article\\Service\\ArticleLogic',
         'validate' => 'app\\Modules\\Official\\Article\\Validation\\ArticleValidate',
         'extraMethods' => [],
     ],
     'app\\Modules\\Official\\Article\\Http\\Controller\\ArticleCateController' => [
-        'logic' => 'app\\Modules\\Official\\Article\\Service\\ArticleCateLogic',
         'validate' => 'app\\Modules\\Official\\Article\\Validation\\ArticleCateValidate',
         'extraMethods' => ['all'],
     ],
@@ -253,7 +259,6 @@ foreach ([
         $class->getParentClass()?->getName() === $articleAbstractName,
         $className . ' must extend AbstractArticleCrudController directly',
     );
-    expectAdminTenantCrudConstant($class, 'CRUD_LOGIC', $contract['logic'], $className);
     expectAdminTenantCrudConstant($class, 'CRUD_VALIDATE', $contract['validate'], $className);
     foreach ($contract['extraMethods'] as $methodName) {
         expectAdminTenantCrudMethod($class, $methodName, $className, true);
@@ -284,19 +289,19 @@ expectAdminTenantCrud(
 expectAdminTenantCrudConstant($orgBase, 'CRUD_STATUS_FIELD', 'status', $orgBaseName);
 expectAdminTenantCrudMethod($orgBase, 'resolveCrudContext', $orgBaseName, false, true);
 expectAdminTenantCrudMethod($orgBase, 'validatedInput', $orgBaseName, false, true);
-expectAdminTenantCrud(str_contains(adminTenantCrudSource($orgBase), 'OrgTenantContext::member($this->request)'), $orgBaseName . ' lost its Org Tenant context hook');
-expectAdminTenantCrud(str_contains(adminTenantCrudSource($orgBase), 'validationRules'), $orgBaseName . ' lost Logic validationRules hook');
+expectAdminTenantCrud(str_contains(adminTenantCrudSource($orgBase), 'OrgTenantContext::member()'), $orgBaseName . ' lost its Org Tenant context hook');
+expectAdminTenantCrud(str_contains(adminTenantCrudSource($orgBase), 'validationRules'), $orgBaseName . ' lost Application Service validationRules hook');
 foreach ([
     $dept->getName() => [
-        'logic' => 'app\\adminapi\\logic\\dept\\DeptLogic',
+        'service' => 'app\\adminapi\\application\\dept\\DeptApplicationService',
         'extraMethods' => ['all', 'leaderDept'],
     ],
     $jobs->getName() => [
-        'logic' => 'app\\adminapi\\logic\\dept\\JobsLogic',
+        'service' => 'app\\adminapi\\application\\dept\\JobsApplicationService',
         'extraMethods' => ['all'],
     ],
 ] as $className => $contract) {
-    expectAdminTenantCrudConstant($className === $dept->getName() ? $dept : $jobs, 'CRUD_LOGIC', $contract['logic'], $className);
+    expectAdminTenantCrudConstant($className === $dept->getName() ? $dept : $jobs, 'CRUD_SERVICE', $contract['service'], $className);
     $class = $className === $dept->getName() ? $dept : $jobs;
     expectAdminTenantCrudMethod($class, 'resolveCrudContext', $orgBaseName, false, true);
     foreach ($contract['extraMethods'] as $methodName) {

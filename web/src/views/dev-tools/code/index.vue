@@ -199,6 +199,24 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
+            <el-form-item prop="data_owner" label="数据所有权">
+              <el-select v-model="editForm.data_owner">
+                <el-option value="tenant-orm" label="租户业务数据" />
+                <el-option value="platform" label="平台控制数据" />
+                <el-option value="instance" label="实例配置数据" />
+                <el-option value="shared" label="全局共享数据" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="target_edition" label="目标 Edition">
+              <el-select v-model="editForm.target_edition">
+                <el-option value="standalone" label="Standalone" />
+                <el-option value="multi-tenant" label="Multi-tenant" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
             <el-form-item prop="author" label="作者">
               <el-input v-model="editForm.author" />
             </el-form-item>
@@ -541,6 +559,8 @@
     module_name: '',
     entity_name: '',
     template_type: 'crud',
+    data_owner: '' as GeneratorUpdateForm['data_owner'],
+    target_edition: '' as GeneratorUpdateForm['target_edition'],
     author: '',
     tree_config: { id_field: '', parent_field: '', name_field: '' },
     relations: [],
@@ -551,6 +571,8 @@
     module_name: [{ required: true, message: '模块名称不能为空' }],
     entity_name: [{ required: true, message: '实体名称不能为空' }],
     template_type: [{ required: true, message: '模板类型不能为空' }],
+    data_owner: [{ required: true, message: '请选择数据所有权' }],
+    target_edition: [{ required: true, message: '请选择目标 Edition' }],
   };
   const openEdit = async (record: GeneratorRecord) => {
     const [{ data }, modelResult] = await Promise.all([
@@ -563,6 +585,8 @@
       module_name: data.module_name,
       entity_name: data.entity_name,
       template_type: data.template_type === 'tree' ? 'tree' : 'crud',
+      data_owner: data.data_owner,
+      target_edition: data.target_edition,
       author: data.author || '',
       tree_config: {
         id_field: data.tree_config?.id_field || '',

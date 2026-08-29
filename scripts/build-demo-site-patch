@@ -45,11 +45,12 @@ files=(
   server/app/adminapi/controller/auth/LoginController.php
   server/app/adminapi/logic/auth/AdminLogic.php
   server/app/adminapi/logic/WorkbenchLogic.php
-  server/app/Modules/Official/Article/Service/ArticleLogic.php
+  server/app/Modules/Official/Article/Application/ArticleAdministrationService.php
+  server/app/Modules/Official/Article/Contracts/ArticleAdministration.php
   server/app/adminapi/logic/config/ConfigLogic.php
   server/app/adminapi/logic/decoration/DecorationPageLogic.php
   server/app/adminapi/logic/decoration/DecorationTabbarLogic.php
-  server/app/Modules/Official/Member/Service/MemberLogic.php
+  server/app/Modules/Official/Member/Application/MemberAdministrationService.php
   server/app/Modules/Official/Oauth/Service/MiniProgramLogic.php
   server/app/Modules/Official/Oauth/Service/OfficialAccountLogic.php
   server/app/common/service/authorization/NativeAdminPrincipalRepository.php
@@ -74,7 +75,7 @@ files=(
   server/config/console.php
   server/database/migrations/20260822-classify-official-article-permissions.sql
   server/database/seed-multi-tenant-demo.php
-  server/route/app.php
+  server/route/*.php
   web/src/api/system/config.ts
   web/src/components/menu/index.vue
   web/src/components/navbar/index.vue

@@ -8,7 +8,7 @@ use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Status\OpsStatusSnapshot;
 use PeanutAdmin\OpsConsole\Status\RuntimeStatusProvider;
 use app\platform\service\module\PdoModuleGovernanceProvider;
-use think\facade\Cache;
+use app\common\service\runtime\ApplicationCache;
 use Throwable;
 
 /** Application-owned runtime evidence provider for the Core Ops status contract. */
@@ -107,7 +107,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         $checks[] = $this->check('module.catalog', $moduleStatus, true, $moduleLatency);
 
         [$cacheStatus, $cacheLatency] = $this->probe(static function (): void {
-            Cache::get('peanut.ops.readonly-health');
+            ApplicationCache::get('ops.readonly-health');
         });
         $checks[] = $this->check('cache.read', $cacheStatus, false, $cacheLatency);
 

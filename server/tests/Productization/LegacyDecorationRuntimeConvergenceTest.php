@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 function expectLegacyDecorationConvergence(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -38,7 +40,7 @@ expectLegacyDecorationConvergence(
     'customer-service QR is not normalized by the Decoration resource boundary'
 );
 
-$routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
+$routeSource = peanut_route_registry_source($serverRoot);
 foreach (['setting/customer-service/config', 'setting/customer-service/save', 'setting/decorate/config', 'setting/decorate/save'] as $legacyRoute) {
     expectLegacyDecorationConvergence(
         !str_contains($routeSource, $legacyRoute),
@@ -51,9 +53,9 @@ foreach (['decoration/mobile/page/lists', 'decoration/mobile/page/detail', 'deco
 
 foreach ([
     'app/adminapi/controller/setting/CustomerServiceController.php',
-    'app/adminapi/logic/setting/CustomerServiceLogic.php',
+    'app/adminapi/application/setting/CustomerServiceLogic.php',
     'app/adminapi/controller/setting/DecorateController.php',
-    'app/adminapi/logic/setting/DecorateLogic.php',
+    'app/adminapi/application/setting/DecorateLogic.php',
 ] as $retiredPath) {
     expectLegacyDecorationConvergence(!is_file($serverRoot . '/' . $retiredPath), 'retired setting Runtime remains: ' . $retiredPath);
 }

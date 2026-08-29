@@ -5,13 +5,13 @@ namespace app\command;
 
 use app\common\service\module\ModuleScaffoldException;
 use app\common\service\module\ModuleScaffoldGenerator;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 
-final class ModuleCreate extends Command
+final class ModuleCreate extends ContextualCommand
 {
     protected function configure()
     {
@@ -20,7 +20,7 @@ final class ModuleCreate extends Command
             ->addOption('vendor', null, Option::VALUE_REQUIRED, 'Optional vendor assertion derived from the Module key', '');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $result = (new ModuleScaffoldGenerator(dirname(__DIR__, 3)))->create(

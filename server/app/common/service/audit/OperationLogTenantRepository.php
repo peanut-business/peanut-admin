@@ -4,35 +4,27 @@ declare(strict_types=1);
 namespace app\common\service\audit;
 
 use app\common\model\log\OperationLog;
-use PeanutAdmin\Kernel\Auth\TenantContext;
+use app\common\execution\CurrentExecutionContext;
 
 final class OperationLogTenantRepository
 {
-    public static function query(TenantContext $context)
+    public static function query()
     {
-        return OperationLog::where('tenant_id', OperationLogTenantContext::tenantId($context));
+        return OperationLog::where([]);
     }
 
-    public static function create(TenantContext $context, array $data): OperationLog
+    public static function create(array $data): OperationLog
     {
-        return self::createForTenant(OperationLogTenantContext::tenantId($context), $context->requestId, $data);
-    }
-
-    public static function createForTenant(int $tenantId, string $requestId, array $data): OperationLog
-    {
-        if ($tenantId < 1 || trim($requestId) === '') {
-            throw new \InvalidArgumentException('OPERATION_LOG_CONTEXT_INVALID');
-        }
         unset($data['tenant_id'], $data['request_id']);
+        $requestId = app(CurrentExecutionContext::class)->requestId();
         return OperationLog::create([
-            'tenant_id' => $tenantId,
             'request_id' => $requestId,
         ] + $data);
     }
 
-    public static function detail(TenantContext $context, int $id): array
+    public static function detail(int $id): array
     {
-        $row = self::query($context)->where('id', $id)->find();
+        $row = self::query()->where('id', $id)->find();
         if ($row === null) {
             throw new \InvalidArgumentException('操作日志不存在');
         }

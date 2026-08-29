@@ -3,14 +3,21 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller\dept;
 
-use app\adminapi\logic\dept\JobsLogic;
+use think\App;
+
+use app\adminapi\application\dept\JobsApplicationService;
 
 class JobsController extends AbstractOrgCrudController
 {
-    protected const CRUD_LOGIC = JobsLogic::class;
+    public function __construct(App $app, private readonly JobsApplicationService $jobs)
+    {
+        parent::__construct($app);
+    }
+
+    protected const CRUD_SERVICE = JobsApplicationService::class;
 
     public function all()
     {
-        return $this->data(JobsLogic::all($this->resolveCrudContext()));
+        return $this->data($this->jobs->all($this->resolveCrudContext()));
     }
 }

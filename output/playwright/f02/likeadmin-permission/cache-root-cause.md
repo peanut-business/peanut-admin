@@ -31,8 +31,8 @@ This explains the exact behavior:
 2. `AuthMiddleware::handle()` builds `controller/action`, checks it against `AdminAuthCache::getAllUri()`, and accepts only when it is present in `AdminAuthCache::getAdminUri()`; otherwise it returns `权限不足，无法访问或操作`.
 3. `AdminAuthCache` names the per-admin key `admin_auth_url_{adminId}` and caches the result of `AuthLogic::getAuthByAdminId()` for 3600 seconds.
 4. `AuthLogic::getAuthByAdminId()` resolves `admin -> role -> role_menu -> system_menu.perms`.
-5. `MenuLogic::getMenuByAdminId()` and `AuthLogic::getBtnAuthByRoleId()` query `role_menu` directly for the UI/self payload rather than reading `AdminAuthCache`, so UI and cached API authorization can diverge if the API cache is not invalidated.
-6. The normal LikeAdmin role edit flow calls `(new AdminAuthCache())->deleteTag()` in `RoleLogic::edit()`, clearing the actual application cache tag.
+5. `MenuApplicationService::getMenuByAdminId()` and `AuthLogic::getBtnAuthByRoleId()` query `role_menu` directly for the UI/self payload rather than reading `AdminAuthCache`, so UI and cached API authorization can diverge if the API cache is not invalidated.
+6. The normal LikeAdmin role edit flow calls `(new AdminAuthCache())->deleteTag()` in `RoleApplicationService::edit()`, clearing the actual application cache tag.
 
 ## Runtime-path proof
 
@@ -58,5 +58,5 @@ This excludes a root-admin bypass or wrong-token explanation.
 
 ## Correct re-acceptance requirement
 
-Repeat the revoke/restore acceptance only after invalidating the real `adminapi` authorization cache, preferably through LikeAdmin's normal `RoleLogic::edit()` path or by targeting the exact `runtime/adminapi/cache` object in a reversible fixture-only procedure. Do not treat the earlier API-allow result as the LikeAdmin contract.
+Repeat the revoke/restore acceptance only after invalidating the real `adminapi` authorization cache, preferably through LikeAdmin's normal `RoleApplicationService::edit()` path or by targeting the exact `runtime/adminapi/cache` object in a reversible fixture-only procedure. Do not treat the earlier API-allow result as the LikeAdmin contract.
 

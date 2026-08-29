@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace app\Modules\Official\Payment\Model;
 
 use app\common\enum\UserTerminalEnum;
-use app\common\model\BaseModel;
+use app\common\model\SharedModel;
 
 /**
  * 充值支付终端与渠道场景。
  */
-class PaymentScene extends BaseModel
+class PaymentScene extends SharedModel
 {
     protected $name = 'payment_scene';
 

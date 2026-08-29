@@ -14,7 +14,7 @@
 
 本切片因此执行 PB03 的应用 owner 决策：网站配置 key、规则、`pa_config` 兼容和 ThinkPHP Host 由应用唯一拥有。核心仓不改 Runtime，不创建伪 adapter，不双写 `pa_config` 与 `pa_setting_*`。未来若单租户 Host 与核心 Settings 形成完整等价 schema，再以独立 P1 合同评估消费。
 
-目标是把网站配置字段、默认值、校验、标准化、图片 URL 映射和原子存储收口到一个应用服务，通过一个应用存储端口使用 `pa_config`。Controller 只负责 HTTP 输入/输出，`ConfigLogic` 只保留现有兼容调用面。
+目标是把网站配置字段、默认值、校验、标准化、图片 URL 映射和原子存储收口到一个应用服务，通过一个应用存储端口使用 `pa_config`。Controller 只负责 HTTP 输入/输出，`ConfigApplicationService` 只保留现有兼容调用面。
 
 ## 2. 非目标
 
@@ -42,7 +42,7 @@ pc_logo, pc_title, pc_ico, pc_desc, pc_keywords, h5_favicon
 
 - HTTP 路由和权限保持 `config/website`、`config/website/save`。
 - `ConfigController` 不再维护第二套网站字段规则；它把 payload 交给唯一服务，并把领域输入错误映射到现有失败 envelope。
-- `ConfigLogic::getWebsite/saveWebsite` 保持现有静态签名，内部只装配并委托 `WebsiteConfigService`。
+- `ConfigApplicationService::getWebsite/saveWebsite` 保持现有静态签名，内部只装配并委托 `WebsiteConfigService`。
 - `WebsiteConfigStore` 是应用内部端口，不是核心公共 API，也不是可发布包。
 - `PaConfigWebsiteStore` 是唯一生产 adapter，只能读取网站分组并原子替换完整字段集合。
 - 错误消息不得包含 SQL、连接信息、配置值或路径。
@@ -54,7 +54,7 @@ Runtime 任务只允许修改：
 - `server/app/common/contract/config/WebsiteConfigStore.php`；
 - `server/app/common/service/config/PaConfigWebsiteStore.php`；
 - `server/app/common/service/config/WebsiteConfigService.php`；
-- `server/app/adminapi/logic/config/ConfigLogic.php`；
+- `server/app/adminapi/application/config/ConfigApplicationService.php`；
 - `server/app/adminapi/controller/config/ConfigController.php`；
 - `server/app/adminapi/validate/config/WebsiteValidate.php`；
 - `server/tests/Productization/WebsiteConfigServiceTest.php`；
@@ -80,7 +80,7 @@ Runtime 任务只允许修改：
 
 ## 8. 实施证据
 
-- `WebsiteConfigService` 是字段、默认值、校验、标准化和图片映射的唯一实现；`ConfigLogic` 只装配委托。
+- `WebsiteConfigService` 是字段、默认值、校验、标准化和图片映射的唯一实现；`ConfigApplicationService` 只装配委托。
 - `WebsiteConfigStore` 与 `PaConfigWebsiteStore` 固定应用内部端口和唯一 `pa_config(type=website)` 生产 adapter。
 - `ConfigController` 只映射输入错误到现有失败 envelope；`WebsiteValidate` 不再保留网站字段规则。
 - `PB04-SETTINGS-WEBSITE-001` 聚焦测试通过；变更 PHP lint 通过。

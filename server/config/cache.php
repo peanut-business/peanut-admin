@@ -1,5 +1,9 @@
 <?php
 
+use app\common\service\runtime\RuntimeNamespace;
+
+$runtimeNamespace = RuntimeNamespace::fromEnvironment();
+
 // +----------------------------------------------------------------------
 // | 缓存设置
 // +----------------------------------------------------------------------
@@ -16,11 +20,11 @@ return [
             // 缓存保存目录
             'path'       => '',
             // 缓存前缀
-            'prefix'     => '',
+            'prefix'     => $runtimeNamespace->cachePrefix(),
             // 缓存有效期 0表示永久缓存
             'expire'     => 0,
             // 缓存标签前缀
-            'tag_prefix' => 'tag:',
+            'tag_prefix' => $runtimeNamespace->cacheTagPrefix(),
             // 序列化机制 例如 ['serialize', 'unserialize']
             'serialize'  => [],
         ],

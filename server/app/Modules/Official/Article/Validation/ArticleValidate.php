@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Validation;
 
 use app\common\service\article\ArticleTenantRepository;
+use app\common\validate\PageSizeRule;
 use app\common\validate\TenantContextValidate;
 
 class ArticleValidate extends TenantContextValidate
 {
+    use PageSizeRule;
+
     protected $rule = [
         'id'         => 'require|checkArticle',
         'title'      => 'require|length:1,255',
@@ -49,20 +52,16 @@ class ArticleValidate extends TenantContextValidate
 
     protected function checkArticle($value): bool|string
     {
-        return ArticleTenantRepository::articles($this->requireTenantContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
+        $this->requireTenantContext();
+        return ArticleTenantRepository::articles()->where('id', (int) $value)->findOrEmpty()->isEmpty()
             ? '资讯不存在' : true;
     }
 
     protected function checkCategory($value): bool|string
     {
-        return ArticleTenantRepository::categories($this->requireTenantContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
+        $this->requireTenantContext();
+        return ArticleTenantRepository::categories()->where('id', (int) $value)->findOrEmpty()->isEmpty()
             ? '所属栏目必须存在' : true;
     }
 
-    protected function pageSizeMax($value): bool|string
-    {
-        return (int) $value > 25000
-            ? '已超出系统限制数量，请分页查询或导出，当前最多记录数为：25000'
-            : true;
-    }
 }

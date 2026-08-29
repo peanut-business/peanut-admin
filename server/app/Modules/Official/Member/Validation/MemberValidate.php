@@ -4,20 +4,11 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Validation;
 
 use app\common\enum\AccountLogEnum;
-use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\MemberTenantRepository;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\Validate;
+use app\common\validate\TenantContextValidate;
 
-class MemberValidate extends Validate
+class MemberValidate extends TenantContextValidate
 {
-    private ?TenantContext $tenantContext = null;
-
-    public function forTenant(TenantContext $context): self
-    {
-        $this->tenantContext = $context;
-        return $this;
-    }
     protected $rule = [
         'id'       => 'require|integer|gt:0|checkMember',
         'nickname' => 'require|max:50',
@@ -63,7 +54,7 @@ class MemberValidate extends Validate
 
     protected function checkMember($value): bool|string
     {
-        return MemberTenantRepository::members($this->requireContext())->where('id', (int)$value)->findOrEmpty()->isEmpty()
+        return MemberTenantRepository::members($this->requireTenantContext())->where('id', (int)$value)->findOrEmpty()->isEmpty()
             ? '用户不存在！' : true;
     }
 
@@ -74,7 +65,7 @@ class MemberValidate extends Validate
         }
 
         if ($value === 'account') {
-            $exists = MemberTenantRepository::members($this->requireContext())->where('id', '<>', (int)($data['id'] ?? 0))
+            $exists = MemberTenantRepository::members($this->requireTenantContext())->where('id', '<>', (int)($data['id'] ?? 0))
                 ->where('account', (string)($data['value'] ?? ''))
                 ->findOrEmpty();
             if (!$exists->isEmpty()) {
@@ -87,7 +78,7 @@ class MemberValidate extends Validate
             if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                 return '手机号码格式错误';
             }
-            $exists = MemberTenantRepository::members($this->requireContext())->where('id', '<>', (int)($data['id'] ?? 0))
+            $exists = MemberTenantRepository::members($this->requireTenantContext())->where('id', '<>', (int)($data['id'] ?? 0))
                 ->where('mobile', $mobile)
                 ->findOrEmpty();
             if (!$exists->isEmpty()) {
@@ -100,7 +91,7 @@ class MemberValidate extends Validate
 
     protected function checkMoney($value, $rule, array $data): bool|string
     {
-        $member = MemberTenantRepository::members($this->requireContext())->where('id', (int)($data['user_id'] ?? 0))->findOrEmpty();
+        $member = MemberTenantRepository::members($this->requireTenantContext())->where('id', (int)($data['user_id'] ?? 0))->findOrEmpty();
         if ($member->isEmpty()) {
             return '用户不存在';
         }
@@ -113,8 +104,4 @@ class MemberValidate extends Validate
         return true;
     }
 
-    private function requireContext(): TenantContext
-    {
-        return $this->tenantContext ?? throw new \RuntimeException('缺少可信租户上下文');
-    }
 }

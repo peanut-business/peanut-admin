@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\common\model\log;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 
-class OperationLog extends BaseModel
+class OperationLog extends TenantOwnedModel
 {
     protected $name = 'operation_log';
     protected $type = ['tenant_id' => 'integer'];

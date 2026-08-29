@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 use think\model\concern\SoftDelete;
 
-class MemberTag extends BaseModel
+class MemberTag extends TenantOwnedModel
 {
     use SoftDelete;
     protected $name       = 'member_tag';

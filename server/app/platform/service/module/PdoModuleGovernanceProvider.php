@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\platform\service\module;
 
 use app\common\contract\module\ModuleGovernanceProvider;
-use app\common\contract\module\ModuleExecutionGuard as ModuleExecutionGuardContract;
 use app\common\contract\module\ModuleQualificationQuery;
 use app\common\contract\module\PluginLifecycleCommands;
 use PDO;
@@ -12,7 +11,6 @@ use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLifecycleService;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\PluginModuleRegistryFactory;
-use app\common\service\module\ModuleExecutionGuard;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use think\facade\Config;
 
@@ -80,11 +78,6 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
             $this->pdo,
             $this->registry()
         );
-    }
-
-    public function executionGuard(string $moduleKey): ModuleExecutionGuardContract
-    {
-        return new ModuleExecutionGuard($this->pdo, $moduleKey);
     }
 
     private function lockResolver(?string $lockPath = null): PluginLockResolver

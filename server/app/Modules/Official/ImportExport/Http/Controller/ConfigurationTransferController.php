@@ -3,23 +3,29 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Http\Controller;
 
-use app\Modules\Official\ImportExport\Application\ConfigurationTransferApplicationService;
+use app\Modules\Official\ImportExport\Application\TenantConfigurationTransferService;
 use app\adminapi\controller\BaseAdminController;
 use app\common\dto\authorization\AdminPrincipal;
-use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\audit\OperationLogTenantContext;
-use PDO;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
+use think\App;
 
 /** Tenant-scoped, path-free configuration package HTTP Host. */
 final class ConfigurationTransferController extends BaseAdminController
 {
+    public function __construct(
+        App $app,
+        private readonly TenantConfigurationTransferService $transfers,
+    ) {
+        parent::__construct($app);
+    }
+
     public function export()
     {
         try {
-            [$service, $context] = $this->authorized('official.import-export.configuration.export');
-            return $this->data($service->export($context, 'tenant'));
+            return $this->data($this->transfers->export(
+                OperationLogTenantContext::member(),
+                AdminPrincipal::fromArray($this->adminInfo),
+            ));
         } catch (\Throwable $exception) {
             return $this->fail($this->safeError($exception));
         }
@@ -28,11 +34,10 @@ final class ConfigurationTransferController extends BaseAdminController
     public function dryRun()
     {
         try {
-            [$service, $context] = $this->authorized('official.import-export.configuration.dry-run');
             [$package, $secretBindings, $conflictPolicy] = $this->requestPayload();
-            return $this->data($service->dryRun(
-                $context,
-                'tenant',
+            return $this->data($this->transfers->dryRun(
+                OperationLogTenantContext::member(),
+                AdminPrincipal::fromArray($this->adminInfo),
                 $package,
                 $secretBindings,
                 $conflictPolicy,
@@ -45,11 +50,10 @@ final class ConfigurationTransferController extends BaseAdminController
     public function apply()
     {
         try {
-            [$service, $context] = $this->authorized('official.import-export.configuration.apply');
             [$package, $secretBindings, $conflictPolicy] = $this->requestPayload();
-            return $this->data($service->apply(
-                $context,
-                'tenant',
+            return $this->data($this->transfers->apply(
+                OperationLogTenantContext::member(),
+                AdminPrincipal::fromArray($this->adminInfo),
                 $package,
                 $secretBindings,
                 $conflictPolicy,
@@ -57,25 +61,6 @@ final class ConfigurationTransferController extends BaseAdminController
         } catch (\Throwable $exception) {
             return $this->fail($this->safeError($exception));
         }
-    }
-
-    /** @return array{0:ConfigurationTransferApplicationService,1:TenantContext} */
-    private function authorized(string $permission): array
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('TRANSFER_DATABASE_UNAVAILABLE');
-        }
-        // OperationLogTenantContext is the strict Tenant Admin boundary. The
-        // broader MemberTenantContext also accepts business-member contexts,
-        // which are not valid inputs for configuration transfer or RBAC.
-        $context = OperationLogTenantContext::member($this->request);
-        $authorization = new AdminAuthorizationService($pdo);
-        $principal = AdminPrincipal::fromArray($this->adminInfo);
-        if (!$authorization->decide($context, $principal, $permission)->allowed) {
-            throw new \RuntimeException('TRANSFER_PERMISSION_DENIED');
-        }
-        return [new ConfigurationTransferApplicationService($pdo), $context];
     }
 
     /** @return array{0:array<string,mixed>|string,1:array<string,mixed>,2:string} */

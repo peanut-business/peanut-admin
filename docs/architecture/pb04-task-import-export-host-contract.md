@@ -69,10 +69,10 @@ system cron -> php think crontab -> app\command\Crontab
 Runtime 白名单：
 
 - `server/app/common/service/XlsxExportService.php`；
-- `server/app/adminapi/logic/auth/AdminLogic.php`；
-- `server/app/adminapi/logic/dept/JobsLogic.php`；
-- `server/app/Modules/Official/Member/Service/MemberLogic.php`；
-- `server/app/Modules/Official/Payment/Service/RechargeLogic.php`。
+- `server/app/adminapi/application/auth/AdminApplicationService.php`；
+- `server/app/adminapi/application/dept/JobsApplicationService.php`；
+- `server/app/Modules/Official/Member/Application/MemberAdministrationService.php`；
+- `server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php`。
 
 证据与状态白名单：
 

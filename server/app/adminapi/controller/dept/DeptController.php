@@ -3,19 +3,26 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller\dept;
 
-use app\adminapi\logic\dept\DeptLogic;
+use think\App;
+
+use app\adminapi\application\dept\DeptApplicationService;
 
 class DeptController extends AbstractOrgCrudController
 {
-    protected const CRUD_LOGIC = DeptLogic::class;
+    public function __construct(App $app, private readonly DeptApplicationService $departments)
+    {
+        parent::__construct($app);
+    }
+
+    protected const CRUD_SERVICE = DeptApplicationService::class;
 
     public function all()
     {
-        return $this->data(DeptLogic::all($this->resolveCrudContext()));
+        return $this->data($this->departments->all($this->resolveCrudContext()));
     }
 
     public function leaderDept()
     {
-        return $this->data(DeptLogic::leaderDept($this->resolveCrudContext()));
+        return $this->data($this->departments->leaderDept($this->resolveCrudContext()));
     }
 }

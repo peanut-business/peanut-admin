@@ -4,16 +4,26 @@ declare(strict_types=1);
 namespace app\adminapi\controller\auth;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\auth\LoginLogic;
+use app\adminapi\application\auth\LoginApplicationService;
+use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\dto\authorization\AdminPrincipal;
-use app\common\service\authorization\AdminAuthorizationService;
 use app\adminapi\service\AdminTokenService;
 use app\adminapi\validate\auth\LoginValidate;
 use app\common\service\DemoAccountPolicy;
+use app\common\execution\ExecutionContextAccess;
+use think\App;
 
 class LoginController extends BaseAdminController
 {
     public array $notNeedLogin = ['login', 'logout'];
+
+    public function __construct(
+        App $app,
+        private readonly AdminAuthorizationQuery $authorization,
+        private readonly LoginApplicationService $loginApplication,
+    ) {
+        parent::__construct($app);
+    }
 
     public function login()
     {
@@ -24,10 +34,10 @@ class LoginController extends BaseAdminController
         $params['terminal'] = (int)($params['terminal'] ?? 1);
 
         $this->validate($params, LoginValidate::class);
-        $result = LoginLogic::login($params);
+        $result = $this->loginApplication->login($params);
 
         return $result === false
-            ? $this->fail(LoginLogic::getError())
+            ? $this->fail($this->loginApplication->getError())
             : $this->data($result);
     }
 
@@ -36,8 +46,8 @@ class LoginController extends BaseAdminController
         $admin = $this->adminInfo;
         if ($admin === []) return $this->fail('管理员不存在');
         $roleNames = array_column($admin['roles'] ?? [], 'name');
-        $accessData = (new AdminAuthorizationService())->accessData(
-            $this->request->tenantContext,
+        $accessData = $this->authorization->accessData(
+            ExecutionContextAccess::tenantAdmin(),
             AdminPrincipal::fromArray($admin),
         );
 
@@ -55,7 +65,7 @@ class LoginController extends BaseAdminController
             'menu'        => $accessData->menu,
             'permissions' => $accessData->permissions,
             'tenantName' => $admin['tenant_name'],
-            'canSwitchTenant' => !($this->request->tenantEntryBound ?? false)
+            'canSwitchTenant' => !ExecutionContextAccess::tenantEntryBound()
                 && ($admin['switchable_tenant_count'] ?? 0) > 1,
             'demoMode' => DemoAccountPolicy::isDemoEmail((string)$admin['username']),
         ]);
@@ -65,7 +75,7 @@ class LoginController extends BaseAdminController
     {
         $token = AdminTokenService::tokenFromRequest($this->request);
         if ($token !== '') {
-            LoginLogic::logout($token);
+            $this->loginApplication->logout($token);
         }
 
         return $this->success('退出成功');

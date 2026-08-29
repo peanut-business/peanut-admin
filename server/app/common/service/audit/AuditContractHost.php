@@ -39,6 +39,7 @@ final class AuditContractHost implements AuditRepository
     {
         if ($event->projection === AuditEvent::OPERATION_LOG) {
             $this->operationLogs->append($event);
+            $this->appendTenantEvent($event);
             return;
         }
         if ($event->projection === AuditEvent::PLATFORM) {
@@ -56,8 +57,22 @@ final class AuditContractHost implements AuditRepository
         string $uri,
         string $method,
         mixed $params,
+        AuditOutcome $outcome = AuditOutcome::Success,
+        ?string $reasonCode = null,
+        int $httpStatus = 200,
     ): void {
-        $this->record(AuditEvent::operationLog($context, $adminId, $username, $ip, $uri, $method, $params));
+        $this->record(AuditEvent::operationLog(
+            $context,
+            $adminId,
+            $username,
+            $ip,
+            $uri,
+            $method,
+            $params,
+            $outcome,
+            $reasonCode,
+            $httpStatus,
+        ));
     }
 
     public function recordPlatform(

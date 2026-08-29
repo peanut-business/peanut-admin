@@ -3,18 +3,26 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\Modules\Official\Oauth\ModuleProvider as OAuthModuleProvider;
+use app\Modules\Official\Oauth\Contracts\OAuthCommands;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\module\ModuleExecutionContext;
-use app\platform\service\module\PdoModuleGovernanceProvider;
-use PDO;
-use think\facade\Db;
+use app\common\service\module\ModuleExecutionBoundary;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\http\RequestTrace;
+use think\App;
 
 class OAuthController extends BaseApiController
 {
+    public function __construct(
+        App $app,
+        private readonly OAuthCommands $commands,
+    ) {
+        parent::__construct($app);
+    }
+
     public function begin()
     {
         $params = $this->request->post();
@@ -42,19 +50,23 @@ class OAuthController extends BaseApiController
                     'oauth.begin',
                     $this->operationId(),
                 );
-            $this->assertModule($resolution->context);
-            $commands = (new OAuthModuleProvider())->commands();
-            $result = $commands->begin(
-                $resolution->context,
-                $scene,
-                (string)$params['return_path'],
-                $callbackUrl,
-                $resolution->binding,
+            $result = app(ExecutionContextStore::class)->run(
+                ExecutionContext::system($resolution->context),
+                function () use ($resolution, $scene, $params, $callbackUrl) {
+                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    return $this->commands->begin(
+                        $resolution->context,
+                        $scene,
+                        (string)$params['return_path'],
+                        $callbackUrl,
+                        $resolution->binding,
+                    );
+                },
             );
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail($commands->error()) : $this->data($result);
+        return $result === false ? $this->fail($this->commands->error()) : $this->data($result);
     }
 
     public function redirectPc()
@@ -83,19 +95,23 @@ class OAuthController extends BaseApiController
                 (string)$params['state'],
                 $this->operationId(),
             );
-            $this->assertModule($resolution->context);
-            $commands = (new OAuthModuleProvider())->commands();
-            $result = $commands->callback(
-                $resolution->context,
-                (string)$params['scene'],
-                (string)$params['code'],
-                (string)$params['state'],
-                $resolution->binding,
+            $result = app(ExecutionContextStore::class)->run(
+                ExecutionContext::system($resolution->context),
+                function () use ($resolution, $params) {
+                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    return $this->commands->callback(
+                        $resolution->context,
+                        (string)$params['scene'],
+                        (string)$params['code'],
+                        (string)$params['state'],
+                        $resolution->binding,
+                    );
+                },
             );
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail($commands->error()) : $this->data($result);
+        return $result === false ? $this->fail($this->commands->error()) : $this->data($result);
     }
 
     public function miniProgram()
@@ -117,17 +133,21 @@ class OAuthController extends BaseApiController
                     'oauth.mini-program',
                     $this->operationId(),
                 );
-            $this->assertModule($resolution->context);
-            $commands = (new OAuthModuleProvider())->commands();
-            $result = $commands->miniProgramLogin(
-                $resolution->context,
-                (string)$params['code'],
-                $resolution->binding,
+            $result = app(ExecutionContextStore::class)->run(
+                ExecutionContext::system($resolution->context),
+                function () use ($resolution, $params) {
+                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    return $this->commands->miniProgramLogin(
+                        $resolution->context,
+                        (string)$params['code'],
+                        $resolution->binding,
+                    );
+                },
             );
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail($commands->error()) : $this->data($result);
+        return $result === false ? $this->fail($this->commands->error()) : $this->data($result);
     }
 
     public function complete()
@@ -140,45 +160,35 @@ class OAuthController extends BaseApiController
                 (string)$params['ticket'],
                 $this->operationId(),
             );
-            $this->assertModule($resolution->context);
-            $commands = (new OAuthModuleProvider())->commands();
-            $result = $commands->complete($resolution->context, $params);
+            $result = app(ExecutionContextStore::class)->run(
+                ExecutionContext::system($resolution->context),
+                function () use ($resolution, $params) {
+                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    return $this->commands->complete($resolution->context, $params);
+                },
+            );
         } catch (\Throwable) {
             return $this->fail('微信授权请求无效');
         }
-        return $result === false ? $this->fail($commands->error()) : $this->data($result);
+        return $result === false ? $this->fail($this->commands->error()) : $this->data($result);
     }
 
     public function bind()
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.bind');
-        $commands = (new OAuthModuleProvider())->commands();
-        $result = $commands->bind(
-            MemberTenantContext::member($this->request),
+        $result = $this->commands->bind(
+            MemberTenantContext::member(),
             $this->memberId,
             (string)$params['scene'],
             (string)$params['code']
         );
-        return $result ? $this->success('绑定成功') : $this->fail($commands->error());
+        return $result ? $this->success('绑定成功') : $this->fail($this->commands->error());
     }
 
     private function operationId(): string
     {
-        $requestId = trim((string)$this->request->header('X-Request-Id', ''));
-        return $requestId !== '' ? $requestId : bin2hex(random_bytes(16));
+        return RequestTrace::id($this->request, 'oauth');
     }
 
-    private function assertModule(\PeanutAdmin\Kernel\Context\TenantSystemContext $context): void
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('OAUTH_MODULE_DATABASE_UNAVAILABLE');
-        }
-        PdoModuleGovernanceProvider::forExecution($pdo)
-            ->executionGuard('official.oauth')
-            ->assertEnabled(
-            ModuleExecutionContext::system('official.oauth', $context),
-        );
-    }
 }

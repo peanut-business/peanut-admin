@@ -126,9 +126,9 @@ try {
     expectTenantXlsx(is_file($betaPath), 'Alpha cleanup deleted Beta export');
 
     foreach ([
-        'app/Modules/Official/Member/Service/MemberLogic.php',
-        'app/Modules/Official/Payment/Service/RechargeLogic.php',
-        'app/adminapi/logic/log/OperationLogLogic.php',
+        'app/Modules/Official/Member/Application/MemberAdministrationService.php',
+        'app/Modules/Official/Payment/Application/RechargeAdministrationService.php',
+        'app/adminapi/application/log/OperationLogApplicationService.php',
     ] as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
         expectTenantXlsx(str_contains($source, 'XlsxExportService::createForTenant('), 'Tenant caller did not adopt the trusted export API: ' . $relativePath);

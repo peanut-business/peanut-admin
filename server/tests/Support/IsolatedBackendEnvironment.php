@@ -16,8 +16,12 @@ final class IsolatedBackendEnvironment
         string $database,
         string $user,
         string $password,
+        string $deploymentMode,
         string $prefix = 'pa_',
     ): string {
+        if (!in_array($deploymentMode, ['standalone', 'multi-tenant'], true)) {
+            throw new RuntimeException('ISOLATED_BACKEND_DEPLOYMENT_MODE_INVALID');
+        }
         return self::activate([
             'DB_HOST' => $host,
             'DB_PORT' => $port,
@@ -25,6 +29,7 @@ final class IsolatedBackendEnvironment
             'DB_USER' => $user,
             'DB_PASS' => $password,
             'DB_PREFIX' => $prefix,
+            'DEPLOYMENT_MODE' => $deploymentMode,
         ]);
     }
 

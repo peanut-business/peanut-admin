@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\context\PlatformOperatorContext;
@@ -220,7 +222,7 @@ SQL);
         'TenantMember identity revoked the independent platform session'
     );
 
-    $routeSource = file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+    $routeSource = peanut_route_registry_source(dirname(__DIR__, 2));
     poExpect(is_string($routeSource) && str_contains($routeSource, "Route::post('api/platform/session/login'"), 'independent platform route prefix is missing');
     poExpect(str_contains($routeSource, 'PlatformLoginMiddleware::class'), 'platform routes lack their dedicated login guard');
     poExpect(str_contains($routeSource, "'platform.tenant.read'"), 'platform tenant route lacks explicit RBAC');

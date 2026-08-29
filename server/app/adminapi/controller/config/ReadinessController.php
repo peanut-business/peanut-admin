@@ -13,7 +13,7 @@ final class ReadinessController extends BaseAdminController
     public function checklist(): Json
     {
         return $this->data((new FirstRunReadinessHost())->checklist(
-            MemberTenantContext::member($this->request),
+            MemberTenantContext::member(),
             (string)$this->request->domain(),
             (string)config('deployment.mode'),
         ));

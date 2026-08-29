@@ -5,6 +5,8 @@ namespace app\adminapi\http\middleware;
 
 use app\adminapi\http\AdminRequest;
 use app\adminapi\service\AdminTokenService;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\tenant\TenantEntryBindingResolver;
@@ -14,14 +16,18 @@ use app\tenant\service\TenantAuthRuntimeFactory;
 /** Establishes management identity only from a validated native Tenant session. */
 final class LoginMiddleware
 {
+    public function __construct(private readonly ?ExecutionContextStore $executionContexts = null)
+    {
+    }
+
     public function handle($request, \Closure $next)
     {
         $token = AdminTokenService::tokenFromRequest($request);
         if ($token === '') {
-            return JsonService::fail('请求缺少 token', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('请求缺少 token', null, 40100);
         }
         if (!str_starts_with($token, 'pa_tat_')) {
-            return JsonService::fail('登录超时，请重新登录', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('登录超时，请重新登录', null, 40100);
         }
 
         try {
@@ -37,19 +43,23 @@ final class LoginMiddleware
                 $context->tenantId,
             );
             $principal = (new AdminAuthorizationService())->principal($context)->toArray();
-            $principal['token'] = $token;
             $principal['terminal'] = 1;
-            $request->adminInfo = $principal;
-            $request->adminId = (int)$principal['id'];
-            $request->tenantContext = $context;
-            $request->tenantEntryBound = $entryBindings->boundTenantId(
+            $entryBound = $entryBindings->boundTenantId(
                 $request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
             ) !== null;
         } catch (\Throwable) {
-            return JsonService::fail('租户会话不可用', null, 40300);
+            throw \app\common\http\ApiProblem::fromEnvelope('租户会话不可用', null, 40300);
         }
 
-        return $next($request);
+        $operation = sprintf(
+            'http.admin.%s.%s',
+            strtolower((string)$request->method()),
+            trim((string)$request->pathinfo(), '/'),
+        );
+        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
+            ExecutionContext::tenantAdmin($context, $operation, $principal, $entryBound),
+            static fn() => $next($request),
+        );
     }
 }

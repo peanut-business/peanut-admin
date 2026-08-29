@@ -16,7 +16,7 @@ final class PlatformTenantModuleController extends BasePlatformController
     public function enable()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         $params = $this->request->post();
@@ -38,7 +38,7 @@ final class PlatformTenantModuleController extends BasePlatformController
         } catch (ModuleException $exception) {
             return $this->moduleFailure($exception);
         } catch (\Exception) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 'Tenant Module request is invalid.',
                 ['error_code' => 'MODULE_REQUEST_INVALID'],
                 42200
@@ -49,7 +49,7 @@ final class PlatformTenantModuleController extends BasePlatformController
     public function disable()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         $params = $this->request->post();
@@ -84,7 +84,7 @@ final class PlatformTenantModuleController extends BasePlatformController
 
     private function accessFailure(AdminAccessException $exception)
     {
-        return JsonService::fail(
+        throw \app\common\http\ApiProblem::fromEnvelope(
             $exception->getMessage(),
             ['error_code' => $exception->errorCode],
             $exception->httpStatus * 100
@@ -94,7 +94,7 @@ final class PlatformTenantModuleController extends BasePlatformController
     private function moduleFailure(ModuleException $exception)
     {
         $status = $exception->errorCode === 'MODULE_REGISTRY_UNAVAILABLE' ? 503 : 409;
-        return JsonService::fail(
+        throw \app\common\http\ApiProblem::fromEnvelope(
             'Tenant Module request was rejected.',
             ['error_code' => $exception->errorCode],
             $status * 100

@@ -3,24 +3,31 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Http\Controller;
 
+use think\App;
+
 use app\adminapi\controller\BaseAdminController;
-use app\Modules\Official\Oauth\Service\OpenPlatformLogic;
+use app\Modules\Official\Oauth\Application\OpenPlatformApplicationService;
 use app\Modules\Official\Oauth\Validation\OpenPlatformValidate;
 use app\common\service\member\MemberTenantContext;
 
 class OpenPlatformController extends BaseAdminController
 {
+    public function __construct(App $app, private readonly OpenPlatformApplicationService $openPlatforms)
+    {
+        parent::__construct($app);
+    }
+
     public function getConfig()
     {
-        return $this->data(OpenPlatformLogic::getConfig(MemberTenantContext::member($this->request)));
+        return $this->data($this->openPlatforms->getConfig(MemberTenantContext::member()));
     }
 
     public function setConfig()
     {
         $params = $this->request->post();
         $this->validate($params, OpenPlatformValidate::class);
-        return OpenPlatformLogic::setConfig(MemberTenantContext::member($this->request), $params)
+        return $this->openPlatforms->setConfig(MemberTenantContext::member(), $params)
             ? $this->success('操作成功')
-            : $this->fail(OpenPlatformLogic::getError());
+            : $this->fail($this->openPlatforms->getError());
     }
 }

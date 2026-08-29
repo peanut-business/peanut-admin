@@ -25,12 +25,12 @@ final class DictionaryRuntime implements DictionaryQuery, TenantDictionaryComman
 
     public function types(TenantContext $context, array $filters, int $page, int $pageSize): DictionaryPageDto
     {
-        return $this->page($this->core->types($context, $filters, $page, $pageSize));
+        return $this->toPage($this->core->types($context, $filters, $page, $pageSize));
     }
 
     public function entries(TenantContext $context, array $filters, int $page, int $pageSize): DictionaryPageDto
     {
-        return $this->page($this->core->entries($context, $filters, $page, $pageSize));
+        return $this->toPage($this->core->entries($context, $filters, $page, $pageSize));
     }
 
     public function type(TenantContext $context, int $id): ?DictionaryTypeDto
@@ -104,7 +104,7 @@ final class DictionaryRuntime implements DictionaryQuery, TenantDictionaryComman
         $this->core->setEntryDisabled($context, $id, $disabled);
     }
 
-    private function page(DictionaryPage $page): DictionaryPageDto
+    private function toPage(DictionaryPage $page): DictionaryPageDto
     {
         $items = array_map(
             static fn (DictionaryType|DictionaryEntry $item): DictionaryTypeDto|DictionaryEntryDto

@@ -131,7 +131,7 @@ TPQ 任务、逐路径清单和验收结论。发现新问题时先新增唯一 
 | TPQ07 | 建立 `PlatformTenantDataGateway` 和唯一可审计 scope bypass；清点 Platform、安装、迁移、bootstrap、修复和系统查询 | 未开始 | Sol high | `withoutGlobalScope` 只出现在 allowlist gateway；每次跨 Tenant 查询有 actor/operation/audit |
 | TPQ08 | 为 18 张无 Model Tenant 表和 Db/PDO 路径建立 `TenantQuery`/领域 gateway；禁止普通业务直接 Db/PDO 查询 Tenant 表 | 未开始 | Sol 定边界；Luna max 机械迁移 | INV02 的 18 张表均有 owner；Db/PDO 混用归零或进入事务 owner allowlist |
 | TPQ09 | 拆分 15 个 TenantRepository：保留领域 persistence/transaction，删除手写 Tenant 谓词、create 注入和 Module 门禁 | 未开始 | Sol 处理 Finance/OAuth/Task/File；Luna max 处理低风险 CRUD | Repository 不再重复 global scope 或 Module guard；直接 Model 绕过清单归零 |
-| TPQ10 | 修复 JobsValidate、OfficialAccountReplyLogic、Dictionary Provider、支付 callback 等直接绕过点 | 未开始 | Sol high；低风险验证迁移可交 Luna max | 双 Tenant 同名岗位合法；跨 Tenant ID 不可枚举；callback 仍从可信绑定恢复上下文 |
+| TPQ10 | 修复 JobsValidate、OfficialAccountReplyApplicationService、Dictionary Provider、支付 callback 等直接绕过点 | 未开始 | Sol high；低风险验证迁移可交 Luna max | 双 Tenant 同名岗位合法；跨 Tenant ID 不可枚举；callback 仍从可信绑定恢复上下文 |
 | TPQ11 | 逐关系核对复合 FK、全局 ID 和查询谓词，删除数据库已蕴含的重复 JOIN/WHERE；`ArticleCollectionSummaryService` 在全局 Scope 与现有复合 FK 生效后只按 `article_id` 关联，不再重复比较收藏/文章 tenant_id；先补文件、支付、OAuth、通知等关系缺口 | 未开始 | Sol high | 每个被删谓词有 FK/唯一键证据；Article 收藏汇总只有根 Scope 一个 Tenant 条件且结果不变；缺口先迁移、后删查询条件，不按文本批量删除 |
 | TPQ12 | 改造生成器：所有权必填，按 owner 生成 Tenant/Platform/Instance Model、global scope、Application Service、分页和验证；拒绝裸 BaseModel 模板 | 未开始 | Sol 合同；Luna max 模板实现 | 新生成 Tenant CRUD 没有裸 Model 查询、手写 tenant_id、静态 Logic 或手工分页 |
 | TPQ13 | 冻结 Model/Query 写入合同：字段白名单、readonly、mass assignment、create/save/saveAll/insertAll/update/delete 的 Tenant 注入、事件覆盖和返回语义 | 未开始 | Sol high | 请求 tenant_id 永不生效；所有写 API 要么自动受 policy 保护，要么被静态禁止并只能走受控 persistence gateway |

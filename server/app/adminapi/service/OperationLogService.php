@@ -5,6 +5,7 @@ namespace app\adminapi\service;
 
 use app\common\service\audit\AuditContractHost;
 use app\common\service\audit\RedactionPolicy;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 管理端操作日志的唯一写入与脱敏入口。 */
@@ -17,7 +18,10 @@ final class OperationLogService
         string $ip,
         string $uri,
         string $method,
-        mixed $params
+        mixed $params,
+        AuditOutcome $outcome = AuditOutcome::Success,
+        ?string $reasonCode = null,
+        int $httpStatus = 200,
     ): void {
         AuditContractHost::production()->recordOperationLog(
             $context,
@@ -27,6 +31,9 @@ final class OperationLogService
             $uri,
             $method,
             $params,
+            $outcome,
+            $reasonCode,
+            $httpStatus,
         );
     }
 

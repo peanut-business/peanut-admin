@@ -26,13 +26,13 @@ final class InstallationStateMiddleware
             if (($status['state'] ?? null) === 'installed') {
                 return $next($request);
             }
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 '系统尚未完成安装。',
                 ['error_code' => (string)($status['code'] ?? 'INSTALLATION_REQUIRED')],
                 50300,
             );
         } catch (\Throwable) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 '系统安装状态不可用。',
                 ['error_code' => 'INSTALL_STATUS_UNAVAILABLE'],
                 50300,

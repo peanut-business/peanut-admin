@@ -46,7 +46,7 @@ foreach ($actions as $action) {
 }
 
 $system = (string)file_get_contents($serverRoot . '/app/adminapi/controller/system/SystemController.php');
-foreach (['info' => 'SystemLogic::getInfo', 'clearCache' => 'SystemLogic::clearCache'] as $action => $effect) {
+foreach (['info' => 'SystemApplicationService::getInfo', 'clearCache' => 'SystemApplicationService::clearCache'] as $action => $effect) {
     instanceToolExpect(
         preg_match(
             '/public function ' . $action . '\(\)\s*\{\s*\$denial = \$this->instanceToolAccessDenial\(\);\s*if \(\$denial !== null\).*?return \$denial;.*?' . preg_quote($effect, '/') . '\(/s',
@@ -66,8 +66,8 @@ foreach (['lists', 'detail', 'add', 'edit', 'delete', 'updateStatus'] as $action
     );
 }
 instanceToolExpect(
-    substr_count($generator, "JsonService::fail('实例级开发工具仅在 standalone 部署中可用', null, 40300)") === 1
-        && substr_count($system, "JsonService::fail('实例级维护工具仅在 standalone 部署中可用', null, 40300)") === 1,
+    substr_count($generator, "ApiProblem::fromEnvelope('实例级开发工具仅在 standalone 部署中可用', null, 40300)") === 1
+        && substr_count($system, "ApiProblem::fromEnvelope('实例级维护工具仅在 standalone 部署中可用', null, 40300)") === 1,
     'instance tool denial must retain a stable forbidden response'
 );
 

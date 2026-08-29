@@ -31,14 +31,12 @@ final readonly class DeliveryRecordHttpHandler
 
     private function assertMemberContext(): void
     {
-        $context = $this->executionContext->tenantAdmin();
-        $principal = $this->executionContext->actor();
-        if ((int)($principal['tenant_id'] ?? 0) !== $context->tenantId
-            || (int)($principal['account_id'] ?? 0) !== $context->accountId
-            || (int)($principal['id'] ?? 0) !== $context->memberId) {
+        try {
+            $this->executionContext->tenantAdmin();
+        } catch (\DomainException) {
             throw new ModuleException(
-                'AUTHORIZATION_PERMISSION_DENIED',
-                'The Tenant member principal does not match the request context.'
+                'CONTEXT_TENANT_REQUIRED',
+                'A validated Tenant member context is required.',
             );
         }
     }

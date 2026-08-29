@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 function platformQueryExpect(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -14,7 +16,7 @@ $querySource = (string)file_get_contents($queryPath);
 $controllerSource = (string)file_get_contents(
     $serverRoot . '/app/platform/controller/PlatformControlPlaneQueryController.php'
 );
-$routesSource = (string)file_get_contents($serverRoot . '/route/app.php');
+$routesSource = peanut_route_registry_source($serverRoot);
 
 preg_match_all('/\b(?:FROM|JOIN)\s+(pa_[a-z0-9_]+)/i', $querySource, $matches);
 $tables = array_values(array_unique(array_map('strtolower', $matches[1] ?? [])));

@@ -12,21 +12,21 @@ use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\payment\PaymentScheduledTenantContext;
 use app\common\service\payment\PaymentTenantDiagnostics;
-use think\console\Command;
+use app\common\service\runtime\OperationalLog;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
 use think\facade\Db;
-use think\facade\Log;
 
 /** 查询支付渠道并收敛充值退款的最终状态。 */
-class RefundReconcile extends Command
+class RefundReconcile extends ContextualCommand
 {
     protected function configure()
     {
         $this->setName('refund:reconcile')->setDescription('收敛充值退款状态');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         $scope = PaymentScheduledTenantContext::require();
         $diagnostics = PaymentTenantDiagnostics::fromScope($scope);
@@ -36,18 +36,38 @@ class RefundReconcile extends Command
             ->order('id', 'asc')
             ->select();
 
+        $recordIds = [];
+        $orderIds = [];
+        foreach ($records as $record) {
+            $recordIds[] = (int)$record->id;
+            $orderIds[] = (int)$record->order_id;
+        }
+        $logsByRecord = [];
+        if ($recordIds !== []) {
+            $logs = FinanceTenantRepository::logs($scope)
+                ->whereIn('record_id', $recordIds)
+                ->where('refund_status', RefundEnum::REFUND_ING)
+                ->order(['record_id' => 'asc', 'id' => 'desc'])
+                ->select();
+            foreach ($logs as $candidate) {
+                $recordId = (int)$candidate->record_id;
+                $logsByRecord[$recordId] ??= $candidate;
+            }
+        }
+        $ordersById = [];
+        if ($orderIds !== []) {
+            foreach (FinanceTenantRepository::orders($scope)->whereIn('id', $orderIds)->select() as $candidate) {
+                $ordersById[(int)$candidate->id] = $candidate;
+            }
+        }
+
         $checked = 0;
         $settled = 0;
         foreach ($records as $record) {
-            /** @var RefundLog $log */
-            $log = FinanceTenantRepository::logs($scope)->where('record_id', (int)$record->id)
-                ->where('refund_status', RefundEnum::REFUND_ING)
-                ->order('id', 'desc')
-                ->findOrEmpty();
-            /** @var RechargeOrder $order */
-            $order = FinanceTenantRepository::orders($scope)->findOrEmpty((int)$record->order_id);
-            if ($log->isEmpty() || $order->isEmpty()) {
-                Log::warning('refund_reconcile_related_data_missing', $diagnostics + [
+            $log = $logsByRecord[(int)$record->id] ?? null;
+            $order = $ordersById[(int)$record->order_id] ?? null;
+            if (!$log instanceof RefundLog || !$order instanceof RechargeOrder) {
+                OperationalLog::warning('refund_reconcile_related_data_missing', $diagnostics + [
                     'record_id' => (int)$record->id,
                 ]);
                 continue;
@@ -65,7 +85,7 @@ class RefundReconcile extends Command
                     (string)$log->sn
                 );
             } catch (\Throwable $e) {
-                Log::warning('refund_reconcile_gateway_query_failed', $diagnostics + [
+                OperationalLog::warning('refund_reconcile_gateway_query_failed', $diagnostics + [
                     'record_id' => (int)$record->id,
                     'exception' => $e::class,
                 ]);
@@ -80,61 +100,69 @@ class RefundReconcile extends Command
                 RefundGatewayInterface::STATUS_SUCCESS,
                 RefundGatewayInterface::STATUS_FAILED,
             ], true)) {
-                Log::warning('refund_reconcile_gateway_status_unknown', $diagnostics + [
+                OperationalLog::warning('refund_reconcile_gateway_status_unknown', $diagnostics + [
                     'record_id' => (int)$record->id,
                 ]);
                 continue;
             }
 
-            Db::startTrans();
             try {
-                /** @var RefundRecord $lockedRecord */
-                $lockedRecord = FinanceTenantRepository::records($scope)->where('id', (int)$record->id)
-                    ->lock(true)
-                    ->findOrEmpty();
-                /** @var RefundLog $lockedLog */
-                $lockedLog = FinanceTenantRepository::logs($scope)->where('record_id', (int)$record->id)
-                    ->order('id', 'desc')
-                    ->lock(true)
-                    ->findOrEmpty();
-                /** @var RechargeOrder $lockedOrder */
-                $lockedOrder = FinanceTenantRepository::orders($scope)->where('id', (int)$lockedRecord->order_id)
-                    ->lock(true)
-                    ->findOrEmpty();
+                $updated = Db::transaction(function () use (
+                    $scope,
+                    $record,
+                    $order,
+                    $log,
+                    $gatewayStatus,
+                    $result,
+                ): bool {
+                    /** @var RefundRecord $lockedRecord */
+                    $lockedRecord = FinanceTenantRepository::records($scope)->where('id', (int)$record->id)
+                        ->lock(true)
+                        ->findOrEmpty();
+                    /** @var RefundLog $lockedLog */
+                    $lockedLog = FinanceTenantRepository::logs($scope)->where('record_id', (int)$record->id)
+                        ->order('id', 'desc')
+                        ->lock(true)
+                        ->findOrEmpty();
+                    /** @var RechargeOrder $lockedOrder */
+                    $lockedOrder = FinanceTenantRepository::orders($scope)->where('id', (int)$lockedRecord->order_id)
+                        ->lock(true)
+                        ->findOrEmpty();
 
-                $isCurrent = !$lockedRecord->isEmpty()
-                    && !$lockedLog->isEmpty()
-                    && !$lockedOrder->isEmpty()
-                    && (int)$lockedRecord->refund_status === RefundEnum::REFUND_ING
-                    && (string)$lockedRecord->order_type === RefundEnum::ORDER_TYPE_RECHARGE
-                    && (int)$lockedOrder->id === (int)$order->id
-                    && (int)$lockedLog->id === (int)$log->id
-                    && (int)$lockedLog->refund_status === RefundEnum::REFUND_ING;
-                if (!$isCurrent) {
-                    Db::rollback();
-                    continue;
+                    $isCurrent = !$lockedRecord->isEmpty()
+                        && !$lockedLog->isEmpty()
+                        && !$lockedOrder->isEmpty()
+                        && (int)$lockedRecord->refund_status === RefundEnum::REFUND_ING
+                        && (string)$lockedRecord->order_type === RefundEnum::ORDER_TYPE_RECHARGE
+                        && (int)$lockedOrder->id === (int)$order->id
+                        && (int)$lockedLog->id === (int)$log->id
+                        && (int)$lockedLog->refund_status === RefundEnum::REFUND_ING;
+                    if (!$isCurrent) {
+                        return false;
+                    }
+
+                    $finalStatus = $gatewayStatus === RefundGatewayInterface::STATUS_SUCCESS
+                        ? RefundEnum::REFUND_SUCCESS
+                        : RefundEnum::REFUND_ERROR;
+                    $message = self::encodeGatewayResult($result['receipt'] ?? []);
+                    $lockedLog->refund_status = $finalStatus;
+                    $lockedLog->refund_msg = $message;
+                    $lockedRecord->refund_status = $finalStatus;
+                    $lockedRecord->refund_msg = $message;
+
+                    if ($finalStatus === RefundEnum::REFUND_SUCCESS) {
+                        $lockedOrder->refund_transaction_id = (string)($result['transaction_id'] ?? '');
+                        $lockedOrder->save();
+                    }
+                    $lockedLog->save();
+                    $lockedRecord->save();
+                    return true;
+                });
+                if ($updated) {
+                    $settled++;
                 }
-
-                $finalStatus = $gatewayStatus === RefundGatewayInterface::STATUS_SUCCESS
-                    ? RefundEnum::REFUND_SUCCESS
-                    : RefundEnum::REFUND_ERROR;
-                $message = self::encodeGatewayResult($result['receipt'] ?? []);
-                $lockedLog->refund_status = $finalStatus;
-                $lockedLog->refund_msg = $message;
-                $lockedRecord->refund_status = $finalStatus;
-                $lockedRecord->refund_msg = $message;
-
-                if ($finalStatus === RefundEnum::REFUND_SUCCESS) {
-                    $lockedOrder->refund_transaction_id = (string)($result['transaction_id'] ?? '');
-                    $lockedOrder->save();
-                }
-                $lockedLog->save();
-                $lockedRecord->save();
-                Db::commit();
-                $settled++;
             } catch (\Throwable $e) {
-                Db::rollback();
-                Log::warning('refund_reconcile_persist_failed', $diagnostics + [
+                OperationalLog::warning('refund_reconcile_persist_failed', $diagnostics + [
                     'record_id' => (int)$record->id,
                     'exception' => $e::class,
                 ]);

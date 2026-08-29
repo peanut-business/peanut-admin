@@ -35,7 +35,7 @@ class UploadController extends BaseAdminController
             }
             $cid = (int)$cidValue;
             $res = UploadService::$method(
-                FileTenantContext::member($this->request),
+                FileTenantContext::member(),
                 $cid,
                 $this->adminId,
                 FileEnum::SOURCE_ADMIN

@@ -18,6 +18,8 @@ class GeneratorValidate extends Validate
         'module_name'   => 'require|regex:/^[a-z][a-z0-9_]{0,31}$/',
         'entity_name'   => 'require|regex:/^[A-Z][A-Za-z0-9]{0,63}$/',
         'template_type' => 'require|in:crud,tree',
+        'data_owner'    => 'require|in:tenant-orm,platform,instance,shared',
+        'target_edition'=> 'require|in:standalone,multi-tenant',
         'author'        => 'max:100',
         'tree_config'   => 'array',
         'relations'     => 'array',
@@ -36,6 +38,10 @@ class GeneratorValidate extends Validate
         'entity_name.regex' => '实体名称格式错误',
         'template_type.require' => '模板类型不能为空',
         'template_type.in' => '模板类型错误',
+        'data_owner.require' => '数据所有权不能为空',
+        'data_owner.in' => '数据所有权错误',
+        'target_edition.require' => '目标 Edition 不能为空',
+        'target_edition.in' => '目标 Edition 错误',
         'columns.require' => '字段配置不能为空',
         'token.require' => '下载令牌不能为空',
         'token.regex' => '下载令牌格式错误',
@@ -49,7 +55,7 @@ class GeneratorValidate extends Validate
         'ids' => ['ids'],
         'update' => [
             'id', 'table_comment', 'module_name', 'entity_name', 'template_type',
-            'author', 'tree_config', 'relations', 'columns',
+            'data_owner', 'target_edition', 'author', 'tree_config', 'relations', 'columns',
         ],
         'download' => ['token'],
     ];

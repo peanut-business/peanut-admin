@@ -3,54 +3,61 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller\auth;
 
+use think\App;
+
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\auth\AdminLogic;
+use app\adminapi\application\auth\AdminApplicationService;
 use app\adminapi\validate\auth\AdminValidate;
 use app\adminapi\validate\auth\EditSelfValidate;
 use app\common\service\org\OrgTenantContext;
 
 class AdminController extends BaseAdminController
 {
+    public function __construct(App $app, private readonly AdminApplicationService $admins)
+    {
+        parent::__construct($app);
+    }
+
     public function lists()
     {
-        $params = AdminLogic::normalizeInput($this->request->get());
+        $params = $this->admins->normalizeInput($this->request->get());
         $this->validate($params, AdminValidate::class . '.lists');
-        $result = AdminLogic::lists(OrgTenantContext::member($this->request), $params);
-        return $result === false ? $this->fail(AdminLogic::getError()) : $this->data($result);
+        $result = $this->admins->lists(OrgTenantContext::member(), $params);
+        return $result === false ? $this->fail($this->admins->getError()) : $this->data($result);
     }
 
     public function detail()
     {
         $params = ['id' => (int)$this->request->get('id')];
         $this->validate($params, ['id' => 'require|integer|gt:0']);
-        return $this->data(AdminLogic::detail(OrgTenantContext::member($this->request), $params['id']));
+        return $this->data($this->admins->detail(OrgTenantContext::member(), $params['id']));
     }
 
-    public function self()   { return $this->data(AdminLogic::detail(OrgTenantContext::member($this->request), $this->adminId)); }
-    public function editSelf() { $this->validate($this->request->post(), EditSelfValidate::class); $r = AdminLogic::editSelf(OrgTenantContext::member($this->request), $this->adminId, $this->request->post()); return $r ? $this->success('操作成功') : $this->fail(AdminLogic::getError()); }
+    public function self()   { return $this->data($this->admins->detail(OrgTenantContext::member(), $this->adminId)); }
+    public function editSelf() { $this->validate($this->request->post(), EditSelfValidate::class); $r = $this->admins->editSelf(OrgTenantContext::member(), $this->adminId, $this->request->post()); return $r ? $this->success('操作成功') : $this->fail($this->admins->getError()); }
 
     public function add()
     {
-        $params = AdminLogic::normalizeInput($this->request->post());
-        $this->validate($params, AdminLogic::validationRules('add'));
-        $result = AdminLogic::add(OrgTenantContext::member($this->request), $params);
-        return $result ? $this->success('操作成功') : $this->fail(AdminLogic::getError());
+        $params = $this->admins->normalizeInput($this->request->post());
+        $this->validate($params, $this->admins->validationRules('add'));
+        $result = $this->admins->add(OrgTenantContext::member(), $params);
+        return $result ? $this->success('操作成功') : $this->fail($this->admins->getError());
     }
 
     public function edit()
     {
-        $params = AdminLogic::normalizeInput($this->request->post());
-        $this->validate($params, AdminLogic::validationRules('edit'));
-        $result = AdminLogic::edit(OrgTenantContext::member($this->request), $params);
-        return $result ? $this->success('操作成功') : $this->fail(AdminLogic::getError());
+        $params = $this->admins->normalizeInput($this->request->post());
+        $this->validate($params, $this->admins->validationRules('edit'));
+        $result = $this->admins->edit(OrgTenantContext::member(), $params);
+        return $result ? $this->success('操作成功') : $this->fail($this->admins->getError());
     }
 
     public function delete()
     {
         $params = ['id' => (int)$this->request->post('id')];
         $this->validate($params, ['id' => 'require|integer|gt:0']);
-        $result = AdminLogic::delete(OrgTenantContext::member($this->request), $params['id'], $this->adminId);
-        return $result ? $this->success('操作成功') : $this->fail(AdminLogic::getError());
+        $result = $this->admins->delete(OrgTenantContext::member(), $params['id'], $this->adminId);
+        return $result ? $this->success('操作成功') : $this->fail($this->admins->getError());
     }
 
     public function updateStatus()
@@ -60,7 +67,7 @@ class AdminController extends BaseAdminController
             'disable' => $this->request->post('disable'),
         ];
         $this->validate($params, ['id' => 'require|integer|gt:0', 'disable' => 'require|in:0,1']);
-        $result = AdminLogic::updateStatus(OrgTenantContext::member($this->request), $params['id'], (int)$params['disable'], $this->adminId);
-        return $result ? $this->success('操作成功') : $this->fail(AdminLogic::getError());
+        $result = $this->admins->updateStatus(OrgTenantContext::member(), $params['id'], (int)$params['disable'], $this->adminId);
+        return $result ? $this->success('操作成功') : $this->fail($this->admins->getError());
     }
 }

@@ -56,7 +56,7 @@ flowchart LR
 | 文章、分类、搜索 | Article/ArticleCate/Search；`ProductAssetReferenceService` 固定产品资源 provenance | 暂无产品内容模块；可复用设置/文件/任务原语 | PB06 保留应用 Content Module 唯一 Runtime，拥有发布/分类/收藏/计数与搜索规则 |
 | 移动/PC/Tabbar 装修 | Decoration Logic；管理端/API/PC/UniApp 共用 `DecorationReadService` | Web Shell/client 只有通用宿主能力 | PB06 保留应用 Decoration Module 唯一 Runtime，拥有 Schema、DTO 与即时渲染结果；三端不得复制状态机 |
 | 充值、退款、支付 | `PaymentServiceFactory` 唯一装配预支付、回调与退款；Recharge/Refund 状态机和余额事务由应用拥有 | 无支付 Runtime；Integration Security 仅为 Tenant 机器身份/Webhook/会话候选且无应用采用授权 | PB07 支付切片保留应用 Finance/Payment Module 唯一 Runtime；可信渠道事件才能结算，微信/支付宝响应验签，核心不得写产品订单/余额 |
-| 微信 OAuth、公众号、小程序、开放平台 | `OAuthLogic`、唯一微信 transport、三个独立配置模型和固定 callback bridge；旧 Channel/AES 写入口已退出 | Integration Security 候选可复用签名/密钥能力，但无下游采用授权 | PB07 保留应用 Channel/OAuth Module 唯一 Runtime；state/ticket 单次消费，PC/公众号固定回跳，核心不得写产品身份或渠道配置 |
+| 微信 OAuth、公众号、小程序、开放平台 | `OAuthApplicationService`、唯一微信 transport、三个独立配置模型和固定 callback bridge；旧 Channel/AES 写入口已退出 | Integration Security 候选可复用签名/密钥能力，但无下游采用授权 | PB07 保留应用 Channel/OAuth Module 唯一 Runtime；state/ticket 单次消费，PC/公众号固定回跳，核心不得写产品身份或渠道配置 |
 
 ## 4. 唯一实现门禁
 

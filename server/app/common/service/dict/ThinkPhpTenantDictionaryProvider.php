@@ -13,6 +13,7 @@ use PeanutAdmin\Kernel\Dictionary\DictionaryPage;
 use PeanutAdmin\Kernel\Dictionary\DictionaryType;
 use RuntimeException;
 use think\facade\Db;
+use app\common\support\PaginationInput;
 
 /** ThinkPHP/ThinkORM implementation of the core dictionary ports. */
 final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryProvider, TenantDictionaryCommandProvider
@@ -24,10 +25,10 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
         if (!empty($filters['name'])) $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
         if (!empty($filters['type'])) $where[] = ['type', 'like', '%' . $filters['type'] . '%'];
         if (isset($filters['is_disable']) && $filters['is_disable'] !== '') $where[] = ['is_disable', '=', (int) $filters['is_disable']];
-        $query = $this->typesQuery($context)->where($where);
-        $count = (clone $query)->count();
-        $rows = $query->order(['id' => 'desc'])->page($page, $pageSize)->select()->toArray();
-        return new DictionaryPage(array_map(static fn (array $row): DictionaryType => DictionaryType::fromArray($row), $rows), $count, $page, $pageSize);
+        $query = $this->typesQuery()->where($where);
+        $pageResult = PaginationInput::from(['page_no' => $page, 'page_size' => $pageSize])->result($query->order(['id' => 'desc']));
+        $rows = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+        return new DictionaryPage(array_map(static fn (array $row): DictionaryType => DictionaryType::fromArray($row), $rows), $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
 
     /** @param array<string,mixed> $filters */
@@ -37,35 +38,35 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
         if (!empty($filters['type_id'])) $where[] = ['type_id', '=', (int) $filters['type_id']];
         if (!empty($filters['name'])) $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
         if (isset($filters['is_disable']) && $filters['is_disable'] !== '') $where[] = ['is_disable', '=', (int) $filters['is_disable']];
-        $query = $this->entriesQuery($context)->where($where);
-        $count = (clone $query)->count();
-        $rows = $query->order(['sort' => 'desc', 'id' => 'desc'])->page($page, $pageSize)->select()->toArray();
-        return new DictionaryPage(array_map(static fn (array $row): DictionaryEntry => DictionaryEntry::fromArray($row), $rows), $count, $page, $pageSize);
+        $query = $this->entriesQuery()->where($where);
+        $pageResult = PaginationInput::from(['page_no' => $page, 'page_size' => $pageSize])->result($query->order(['sort' => 'desc', 'id' => 'desc']));
+        $rows = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+        return new DictionaryPage(array_map(static fn (array $row): DictionaryEntry => DictionaryEntry::fromArray($row), $rows), $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
 
     public function type(TenantContext $context, int $id): ?DictionaryType
     {
-        $model = $this->typesQuery($context)->where('id', $id)->findOrEmpty();
+        $model = $this->typesQuery()->where('id', $id)->findOrEmpty();
         return $model->isEmpty() ? null : DictionaryType::fromArray($model->toArray());
     }
 
     /** @return list<DictionaryType> */
     public function enabledTypes(TenantContext $context): array
     {
-        $rows = $this->typesQuery($context)->where('is_disable', 0)->field('id,name,type')->order(['id' => 'desc'])->select()->toArray();
+        $rows = $this->typesQuery()->where('is_disable', 0)->field('id,name,type')->order(['id' => 'desc'])->select()->toArray();
         return array_map(static fn (array $row): DictionaryType => DictionaryType::fromArray($row), $rows);
     }
 
     public function entry(TenantContext $context, int $id): ?DictionaryEntry
     {
-        $model = $this->entriesQuery($context)->where('id', $id)->findOrEmpty();
+        $model = $this->entriesQuery()->where('id', $id)->findOrEmpty();
         return $model->isEmpty() ? null : DictionaryEntry::fromArray($model->toArray());
     }
 
     /** @return list<DictionaryEntry> */
     public function enabledEntriesByType(TenantContext $context, string $type): array
     {
-        $rows = $this->entriesQuery($context)->where('type_value', $type)->where('is_disable', 0)
+        $rows = $this->entriesQuery()->where('type_value', $type)->where('is_disable', 0)
             ->field('id,name,value,sort')->order(['sort' => 'desc', 'id' => 'desc'])->select()->toArray();
         return array_map(static fn (array $row): DictionaryEntry => DictionaryEntry::fromArray($row + ['source' => 'tenant']), $rows);
     }
@@ -74,8 +75,8 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
     public function createType(TenantContext $context, array $values): DictionaryType
     {
         unset($values['tenant_id']);
-        if ($this->typeExists($context, (string) ($values['type'] ?? ''))) throw new RuntimeException('字典类型标识已存在');
-        $model = DictType::create(['tenant_id' => DictTenantContext::tenantId($context)] + $values);
+        if ($this->typeExists((string) ($values['type'] ?? ''))) throw new RuntimeException('字典类型标识已存在');
+        $model = DictType::create($values);
         return DictionaryType::fromArray($model->toArray());
     }
 
@@ -83,26 +84,26 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
     public function replaceType(TenantContext $context, int $id, array $values): DictionaryType
     {
         unset($values['tenant_id']);
-        if ($this->typeExists($context, (string) ($values['type'] ?? ''), $id)) throw new RuntimeException('字典类型标识已存在');
-        return Db::transaction(function () use ($context, $id, $values): DictionaryType {
-            $model = $this->typesQuery($context)->where('id', $id)->lock(true)->findOrEmpty();
+        if ($this->typeExists((string) ($values['type'] ?? ''), $id)) throw new RuntimeException('字典类型标识已存在');
+        return Db::transaction(function () use ($id, $values): DictionaryType {
+            $model = $this->typesQuery()->where('id', $id)->lock(true)->findOrEmpty();
             if ($model->isEmpty()) throw new RuntimeException('字典类型不存在');
             $model->name = (string) ($values['name'] ?? '');
             $model->type = (string) ($values['type'] ?? '');
             $model->is_disable = (int) ($values['is_disable'] ?? 0);
             $model->remark = (string) ($values['remark'] ?? '');
             $model->save();
-            $this->entriesQuery($context)->where('type_id', (int) $model->id)->update(['type_value' => (string) $model->type]);
+            $this->entriesQuery()->where('type_id', (int) $model->id)->update(['type_value' => (string) $model->type]);
             return DictionaryType::fromArray($model->toArray());
         });
     }
 
     public function deleteType(TenantContext $context, int $id): void
     {
-        Db::transaction(function () use ($context, $id): void {
-            $model = $this->typesQuery($context)->where('id', $id)->lock(true)->findOrEmpty();
+        Db::transaction(function () use ($id): void {
+            $model = $this->typesQuery()->where('id', $id)->lock(true)->findOrEmpty();
             if ($model->isEmpty()) throw new RuntimeException('字典类型不存在');
-            if (!$this->entriesQuery($context)->where('type_id', $id)->lock(true)->findOrEmpty()->isEmpty()) {
+            if (!$this->entriesQuery()->where('type_id', $id)->lock(true)->findOrEmpty()->isEmpty()) {
                 throw new RuntimeException('字典类型已被数据项使用，请先删除数据项');
             }
             $model->delete();
@@ -111,7 +112,7 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
 
     public function setTypeDisabled(TenantContext $context, int $id, bool $disabled): void
     {
-        $model = $this->typesQuery($context)->where('id', $id)->findOrEmpty();
+        $model = $this->typesQuery()->where('id', $id)->findOrEmpty();
         if ($model->isEmpty()) throw new RuntimeException('字典类型不存在');
         $model->is_disable = $disabled ? 1 : 0;
         $model->save();
@@ -121,10 +122,10 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
     public function createEntry(TenantContext $context, array $values): DictionaryEntry
     {
         unset($values['tenant_id']);
-        $type = $this->typesQuery($context)->where('id', (int) ($values['type_id'] ?? 0))->findOrEmpty();
+        $type = $this->typesQuery()->where('id', (int) ($values['type_id'] ?? 0))->findOrEmpty();
         if ($type->isEmpty()) throw new RuntimeException('字典类型不存在');
         $values['type_value'] = (string) $type->type;
-        $model = DictData::create(['tenant_id' => DictTenantContext::tenantId($context)] + $values);
+        $model = DictData::create($values);
         return DictionaryEntry::fromArray($model->toArray());
     }
 
@@ -132,7 +133,7 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
     public function replaceEntry(TenantContext $context, int $id, array $values): DictionaryEntry
     {
         unset($values['tenant_id'], $values['type_id'], $values['type_value']);
-        $model = $this->entriesQuery($context)->where('id', $id)->findOrEmpty();
+        $model = $this->entriesQuery()->where('id', $id)->findOrEmpty();
         if ($model->isEmpty()) throw new RuntimeException('字典数据不存在');
         $model->name = (string) ($values['name'] ?? '');
         $model->value = (string) ($values['value'] ?? '');
@@ -145,32 +146,32 @@ final class ThinkPhpTenantDictionaryProvider implements TenantDictionaryQueryPro
 
     public function deleteEntry(TenantContext $context, int $id): void
     {
-        $model = $this->entriesQuery($context)->where('id', $id)->findOrEmpty();
+        $model = $this->entriesQuery()->where('id', $id)->findOrEmpty();
         if ($model->isEmpty()) throw new RuntimeException('字典数据不存在');
         $model->delete();
     }
 
     public function setEntryDisabled(TenantContext $context, int $id, bool $disabled): void
     {
-        $model = $this->entriesQuery($context)->where('id', $id)->findOrEmpty();
+        $model = $this->entriesQuery()->where('id', $id)->findOrEmpty();
         if ($model->isEmpty()) throw new RuntimeException('字典数据不存在');
         $model->is_disable = $disabled ? 1 : 0;
         $model->save();
     }
 
-    private function typesQuery(TenantContext $context)
+    private function typesQuery()
     {
-        return DictType::where('tenant_id', DictTenantContext::tenantId($context));
+        return DictType::where([]);
     }
 
-    private function entriesQuery(TenantContext $context)
+    private function entriesQuery()
     {
-        return DictData::where('tenant_id', DictTenantContext::tenantId($context));
+        return DictData::where([]);
     }
 
-    private function typeExists(TenantContext $context, string $type, int $exceptId = 0): bool
+    private function typeExists(string $type, int $exceptId = 0): bool
     {
-        $query = $this->typesQuery($context)->where('type', $type);
+        $query = $this->typesQuery()->where('type', $type);
         if ($exceptId > 0) $query->where('id', '<>', $exceptId);
         return $query->count() > 0;
     }

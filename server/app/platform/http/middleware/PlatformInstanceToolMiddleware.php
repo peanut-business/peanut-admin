@@ -15,7 +15,7 @@ final class PlatformInstanceToolMiddleware
         if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'
             || !app()->isDebug()
             || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 'Runtime Module mutation is disabled.',
                 ['error_code' => 'MODULE_RUNTIME_MUTATION_DISABLED'],
                 40300,

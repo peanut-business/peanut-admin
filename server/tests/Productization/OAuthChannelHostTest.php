@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 use app\common\service\oauth\OAuthBrowserCallbackService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -44,7 +46,7 @@ expectOAuthChannelHost(
     'official-account callback bridge target is invalid'
 );
 
-$oauthLogic = (string)file_get_contents($serverRoot . '/app/api/logic/OAuthLogic.php');
+$oauthLogic = (string)file_get_contents($serverRoot . '/app/api/application/OAuthApplicationService.php');
 foreach ([
     'private const ATTEMPT_TTL = 600',
     'private const COMPLETION_TTL = 600',
@@ -66,7 +68,7 @@ expectOAuthChannelHost(
     'application OAuth owner imports core outside trusted notification context types'
 );
 
-$routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
+$routeSource = peanut_route_registry_source($serverRoot);
 $oauthRouteSource = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Oauth/Http/routes.php'
 );
@@ -84,13 +86,13 @@ foreach (['api/oauth/wechat/redirect/pc', 'api/oauth/wechat/redirect/official-ac
 }
 foreach ([
     'app/adminapi/controller/setting/ChannelController.php',
-    'app/adminapi/logic/setting/ChannelLogic.php',
+    'app/adminapi/application/setting/ChannelLogic.php',
 ] as $retiredPath) {
     expectOAuthChannelHost(!is_file($serverRoot . '/' . $retiredPath), 'legacy Channel Runtime remains: ' . $retiredPath);
 }
 
 $officialAccountConfig = (string)file_get_contents(
-    $serverRoot . '/app/Modules/Official/Oauth/Service/OfficialAccountLogic.php'
+    $serverRoot . '/app/Modules/Official/Oauth/Application/OfficialAccountApplicationService.php'
 );
 $officialAccountApi = (string)file_get_contents($repositoryRoot . '/web/src/modules/official-oauth/api.ts');
 $officialAccountView = (string)file_get_contents(

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\http\PageResult;
 use app\common\service\module\ModuleScaffoldException;
 use app\common\service\JsonService;
 use app\platform\service\PlatformRuntimeFactory;
@@ -21,7 +22,7 @@ final class PlatformModuleLifecycleController extends BasePlatformController
             if ($pageSize > 100) throw new PluginLifecycleException('PAGE_SIZE_INVALID', 'Page size is invalid.');
             $moduleKey = trim((string)$this->request->get('module_key', ''));
             $result = PlatformRuntimeFactory::moduleRuntime()->modules($page, $pageSize, $moduleKey === '' ? null : $moduleKey);
-            return $this->dataLists($result['items'], $result['total'], $page, $pageSize);
+            return $this->dataLists(new PageResult($result['items'], $result['total'], $page, $pageSize));
         } catch (PluginLifecycleException $exception) {
             return $this->domainFailure($exception);
         } catch (\Throwable) {
@@ -158,11 +159,11 @@ final class PlatformModuleLifecycleController extends BasePlatformController
                 $code === 'MODULE_UNINSTALL_BLOCKED', $code === 'MODULE_CREATE_TARGET_EXISTS' => 40900,
             default => 42200,
         };
-        return JsonService::fail('Module runtime request was rejected.', ['error_code' => $code], $status);
+        throw \app\common\http\ApiProblem::fromEnvelope('Module runtime request was rejected.', ['error_code' => $code], $status);
     }
 
     private function unavailable()
     {
-        return JsonService::fail('Module registry is unavailable.', ['error_code' => 'MODULE_REGISTRY_UNAVAILABLE'], 50300);
+        throw \app\common\http\ApiProblem::fromEnvelope('Module registry is unavailable.', ['error_code' => 'MODULE_REGISTRY_UNAVAILABLE'], 50300);
     }
 }

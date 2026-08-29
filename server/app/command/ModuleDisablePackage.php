@@ -7,14 +7,14 @@ use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginLifecycleException;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 use think\facade\Db;
 
-final class ModuleDisablePackage extends Command
+final class ModuleDisablePackage extends ContextualCommand
 {
     protected function configure()
     {
@@ -23,7 +23,7 @@ final class ModuleDisablePackage extends Command
             ->addArgument('module_key', Argument::REQUIRED, 'Module key or package key');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'

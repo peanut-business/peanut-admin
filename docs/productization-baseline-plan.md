@@ -78,7 +78,7 @@
 
 支付合同见 `docs/architecture/pb07-payment-host-contract.md`。核心没有产品支付 Runtime，Integration Security 的 Tenant 机器身份/Webhook/会话能力也不等价且未获应用采用授权；充值订单、商户凭据、预支付、渠道回调、结算和退款继续由应用 Payment/Finance Module 唯一拥有。本片将退款 gateway 纳入 `PaymentServiceFactory` 和可注入 transport，删除旧静态退款签名/HTTP 路径与重复 Web facade；微信预支付/退款响应强制平台证书验签，支付宝退款响应继续 RSA2 验签，持久化仅保留白名单回执。`PB07-PAYMENT-HOST-001` 绑定封存 S01/F02 并以纯内存证书证明响应篡改拒绝；支付切片完成，PB07 下一片为 OAuth 与外部渠道。
 
-OAuth 与渠道合同见 `docs/architecture/pb07-oauth-channel-host-contract.md`。应用 `OAuthLogic → OAuthTransportInterface → WechatOAuthTransport` 是会员 OAuth 与身份表唯一 Runtime，`mnp_setting/oa_setting/open_platform` 是微信渠道唯一配置；核心 Integration Security 不等价且没有采用授权。本片以 `OAuthBrowserCallbackService` 固定 PC 与公众号 API bridge，再分别回到 `/pc/` 和 `/mobile/` 客户端；UniApp completion ticket 改为读后即删的临时端内状态，不进入 URL。旧 Channel CRUD/Web facade、重复微信/QQ 凭据及未实现的公众号 AES 配置入口退出，精确迁移清理敏感旧行。`PB07-OAUTH-CHANNEL-HOST-001` 绑定封存 S01/CH02/CH03，明确真实微信凭据与平台登记未验证；PB07 至此完成，下一阶段为 PB08A。
+OAuth 与渠道合同见 `docs/architecture/pb07-oauth-channel-host-contract.md`。应用 `OAuthApplicationService → OAuthTransportInterface → WechatOAuthTransport` 是会员 OAuth 与身份表唯一 Runtime，`mnp_setting/oa_setting/open_platform` 是微信渠道唯一配置；核心 Integration Security 不等价且没有采用授权。本片以 `OAuthBrowserCallbackService` 固定 PC 与公众号 API bridge，再分别回到 `/pc/` 和 `/mobile/` 客户端；UniApp completion ticket 改为读后即删的临时端内状态，不进入 URL。旧 Channel CRUD/Web facade、重复微信/QQ 凭据及未实现的公众号 AES 配置入口退出，精确迁移清理敏感旧行。`PB07-OAUTH-CHANNEL-HOST-001` 绑定封存 S01/CH02/CH03，明确真实微信凭据与平台登记未验证；PB07 至此完成，下一阶段为 PB08A。
 
 ## 5. PB09 前脚手架与官网门禁
 

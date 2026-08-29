@@ -5,7 +5,7 @@ namespace app\command;
 
 use app\platform\service\ops\PdoUpgradeTaskExecutionService;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -14,7 +14,7 @@ use think\facade\Db;
 use Throwable;
 
 /** Deployment-control bridge for the fixed PC42 upgrade state machine. */
-final class OpsUpgradeTask extends Command
+final class OpsUpgradeTask extends ContextualCommand
 {
     protected function configure(): void
     {
@@ -26,7 +26,7 @@ final class OpsUpgradeTask extends Command
             ->setDescription('Advance one fixed application-upgrade task');
     }
 
-    protected function execute(Input $input, Output $output): int
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $pdo = Db::connect()->connect();

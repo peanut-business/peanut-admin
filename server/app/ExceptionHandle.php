@@ -1,6 +1,11 @@
 <?php
 namespace app;
 
+use app\common\http\ApiProblem;
+use app\common\http\ApiProblemMapper;
+use app\common\http\RequestTrace;
+use app\common\application\BusinessException;
+use app\common\service\runtime\OperationalLog;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
 use think\exception\Handle;
@@ -25,6 +30,8 @@ class ExceptionHandle extends Handle
         ModelNotFoundException::class,
         DataNotFoundException::class,
         ValidateException::class,
+        ApiProblem::class,
+        BusinessException::class,
     ];
 
     /**
@@ -50,13 +57,29 @@ class ExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
-        // 参数校验失败：框架原生 validate() 抛出的 ValidateException，
-        // 统一转成 {code:40000, msg:友好提示}，避免泄露内部错误页。
-        if ($e instanceof ValidateException) {
-            return json(['code' => 40000, 'msg' => $e->getError(), 'data' => null]);
+        $problem = (new ApiProblemMapper())->map($e);
+        if ($problem instanceof ApiProblem) {
+            $requestId = RequestTrace::id($request);
+            $this->reportProblem($request, $problem, $requestId);
+            return json([
+                'code' => $problem->apiCode(),
+                'msg' => $problem->getMessage(),
+                'data' => $problem->data(),
+            ])->header(['X-Request-Id' => $requestId] + $problem->headers);
         }
 
         // 其他错误交给系统处理
         return parent::render($request, $e);
+    }
+
+    private function reportProblem($request, ApiProblem $problem, string $requestId): void
+    {
+        OperationalLog::warning('api_problem', [
+            'method' => $request->method(),
+            'path' => '/' . ltrim($request->pathinfo(), '/'),
+            'error_code' => $problem->errorCode,
+            'api_code' => $problem->apiCode(),
+            'request_id' => $requestId,
+        ]);
     }
 }

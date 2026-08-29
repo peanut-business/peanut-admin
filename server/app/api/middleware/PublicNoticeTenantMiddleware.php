@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\api\middleware;
 
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\JsonService;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\tenant\DefaultTenantContextResolver;
@@ -13,13 +15,17 @@ final class PublicNoticeTenantMiddleware
 {
     private const OPERATIONS = ['notice.verification.send', 'notice.verification.verify'];
 
+    public function __construct(private readonly ?ExecutionContextStore $executionContexts = null)
+    {
+    }
+
     public function handle($request, \Closure $next, string $operation)
     {
         if (!in_array($operation, self::OPERATIONS, true)) {
-            return JsonService::fail('默认租户不可用', null, 50300);
+            throw \app\common\http\ApiProblem::fromEnvelope('默认租户不可用', null, 50300);
         }
         try {
-            $request->tenantContext = TenantEntryBindingResolver::production()->system(
+            $context = TenantEntryBindingResolver::production()->system(
                 $request,
                 TenantEntryBindingResolver::MEMBER_CLIENT,
                 NoticeTenantContext::VERIFICATION_ACTOR,
@@ -27,9 +33,12 @@ final class PublicNoticeTenantMiddleware
                 DefaultTenantContextResolver::operationId($request),
             );
         } catch (\Throwable) {
-            return JsonService::fail('租户入口不可用', null, 50300);
+            throw \app\common\http\ApiProblem::fromEnvelope('租户入口不可用', null, 50300);
         }
 
-        return $next($request);
+        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
+            ExecutionContext::system($context),
+            static fn() => $next($request),
+        );
     }
 }

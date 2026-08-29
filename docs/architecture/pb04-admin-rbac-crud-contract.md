@@ -56,7 +56,7 @@ Runtime 白名单：
 
 - `server/app/adminapi/service/AdminPermissionService.php`；
 - `server/app/adminapi/controller/auth/MenuController.php`；
-- `server/app/adminapi/logic/auth/MenuLogic.php`、`RoleLogic.php`；
+- `server/app/adminapi/application/auth/MenuApplicationService.php`、`RoleApplicationService.php`；
 - `server/app/adminapi/validate/auth/MenuValidate.php`。
 
 证据与状态白名单：

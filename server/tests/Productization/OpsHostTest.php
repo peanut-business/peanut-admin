@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\system\SystemLogic;
+use app\adminapi\application\system\SystemApplicationService;
 use app\adminapi\service\OperationLogService;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
 
@@ -73,7 +73,7 @@ expectOpsHost(
     'oversized payload must fail closed to bounded metadata'
 );
 
-$info = SystemLogic::getInfo();
+$info = app(SystemApplicationService::class)->getInfo();
 expectOpsHost(array_keys($info) === ['server', 'env', 'auth'], 'maintenance probe shape changed');
 expectOpsHost(($info['env'][0]['require'] ?? null) === '8.3版本以上', 'PHP requirement must match Composer');
 foreach ($info['auth'] as $directory) {
@@ -85,7 +85,7 @@ foreach ($info['auth'] as $directory) {
 $encodedInfo = json_encode($info, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 expectOpsHost(!str_contains($encodedInfo, root_path()), 'maintenance probe must not expose absolute paths');
 
-$systemSource = (string)file_get_contents($serverRoot . '/app/adminapi/logic/system/SystemLogic.php');
+$systemSource = (string)file_get_contents($serverRoot . '/app/adminapi/application/system/SystemApplicationService.php');
 $probeStart = strpos($systemSource, 'public static function getInfo');
 $probeEnd = strpos($systemSource, 'public static function clearCache');
 expectOpsHost($probeStart !== false && $probeEnd !== false, 'maintenance probe source was not found');
@@ -97,7 +97,7 @@ foreach (['check_dir_write', 'file_put_contents', 'touch(', 'mkdir(', 'unlink(',
 $middlewareSource = (string)file_get_contents(
     $serverRoot . '/app/adminapi/http/middleware/OperationLogMiddleware.php'
 );
-$logicSource = (string)file_get_contents($serverRoot . '/app/adminapi/logic/log/OperationLogLogic.php');
+$logicSource = (string)file_get_contents($serverRoot . '/app/adminapi/application/log/OperationLogApplicationService.php');
 $serviceSource = (string)file_get_contents($serverRoot . '/app/adminapi/service/OperationLogService.php');
 $auditHostSource = (string)file_get_contents($serverRoot . '/app/common/service/audit/AuditContractHost.php');
 $projectionSource = (string)file_get_contents($serverRoot . '/app/common/service/audit/OperationLogProjection.php');

@@ -3,18 +3,19 @@ declare(strict_types=1);
 
 namespace app\common\service\async;
 
-use app\common\service\module\ModuleExecutionContext;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\service\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\TaskJob\Execution\JobExecution;
 use PeanutAdmin\TaskJob\Execution\TaskHandler;
-use PDO;
 
 /** Rechecks the owning Module immediately before a background handler runs. */
 final readonly class ModuleAwareTaskHandler implements TaskHandler
 {
     public function __construct(
-        private PDO $pdo,
+        private ModuleExecutionBoundary $modules,
+        private ExecutionContextStore $executionContexts,
         private string $moduleKey,
         private TaskHandler $inner,
     ) {
@@ -30,17 +31,13 @@ final readonly class ModuleAwareTaskHandler implements TaskHandler
 
     public function handle(AuthorizedOperationContext $context, JobExecution $execution): void
     {
-        $governance = PdoModuleGovernanceProvider::forExecution($this->pdo);
-        $governance->executionGuard('official.task')->assertWorker(
-            ModuleExecutionContext::admin('official.task', $context->tenantContext, 'async.worker'),
+        $this->executionContexts->run(
+            ExecutionContext::tenantAdmin($context->tenantContext, 'async.worker'),
+            function () use ($context, $execution): void {
+                $this->modules->assertWorker('official.task');
+                $this->modules->assertWorker($this->moduleKey);
+                $this->inner->handle($context, $execution);
+            },
         );
-        $moduleContext = ModuleExecutionContext::admin(
-            $this->moduleKey,
-            $context->tenantContext,
-            'async.worker',
-        );
-        $governance->executionGuard($this->moduleKey)
-            ->assertWorker($moduleContext);
-        $this->inner->handle($context, $execution);
     }
 }

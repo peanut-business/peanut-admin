@@ -40,7 +40,7 @@ U01 用户数据模型与列表
 ### Peanut U01 实现
 
 - `pa_member` 已补齐 `account/password/real_name/channel/login_time/login_ip/is_new_user/total_recharge_amount`，并增加 account、channel、create_time 查询索引；
-- `MemberController → MemberLogic → Member` 保持 Peanut 既有 ThinkPHP 分层；列表按 `id desc`，keyword 同时模糊匹配 `sn/nickname/mobile/account`，channel 精确匹配，注册时间按闭区间过滤；
+- `MemberController → MemberAdministration` 保持 Peanut 的 ThinkPHP Application 分层；列表按 `id desc`，keyword 同时模糊匹配 `sn/nickname/mobile/account`，channel 精确匹配，注册时间按闭区间过滤；
 - 列表响应包含参考核心字段，并追加 `sex_value/channel_value/is_disable/user_money` 兼容字段；密码由模型隐藏，头像继续使用公共文件 URL 转换；
 - `export=1` 返回与参考相同的导出信息，`export=2` 按全部/分页范围生成 XLSX；默认文件名 `用户列表`，单次上限 25,000 条；
 - 导出列固定为用户编号、用户昵称、账号、手机号码、注册来源、注册时间；

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 $repositoryRoot = dirname(__DIR__);
-$routeFile = $repositoryRoot . '/server/route/app.php';
-$routeSource = (string)file_get_contents($routeFile);
+require_once $repositoryRoot . '/server/route/registry_source.php';
+$routeSource = peanut_route_registry_source($repositoryRoot . '/server');
 $accessConfig = require $repositoryRoot . '/server/config/admin_api_access.php';
 
 /** @return list<array{method:string,path:string,permission:string,access:string}> */
@@ -30,6 +30,12 @@ function adminApiMatrix(string $repositoryRoot, string $routeSource, array $acce
 
     $permissionKeys = [];
     $sqlFiles = [$repositoryRoot . '/server/database/init.sql'];
+    $sqlFiles = array_merge(
+        $sqlFiles,
+        glob($repositoryRoot . '/server/database/migrations/*.sql') ?: [],
+        glob($repositoryRoot . '/server/app/Modules/*/*/Database/Migrations/*.sql') ?: [],
+        glob($repositoryRoot . '/server/app/Modules/*/Database/Migrations/*.sql') ?: [],
+    );
     foreach ($sqlFiles as $sqlFile) {
         $sql = (string)file_get_contents($sqlFile);
         preg_match_all("/['\"]([a-z0-9_.-]+(?:\\/[a-z0-9_.-]+)+)['\"]/i", $sql, $permissions);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\controller;
 
 use app\BaseController;
+use app\common\http\PageResult;
 use app\common\service\JsonService;
 use think\response\Json;
 
@@ -18,7 +19,7 @@ class BaseLikeAdminController extends BaseController
 
     protected function fail(string $msg = 'fail'): Json
     {
-        return JsonService::fail($msg);
+        throw \app\common\http\ApiProblem::fromEnvelope($msg);
     }
 
     protected function data(mixed $data): Json
@@ -26,9 +27,9 @@ class BaseLikeAdminController extends BaseController
         return JsonService::data($data);
     }
 
-    protected function dataLists(array $lists, int $count, int $pageNo = 1, int $pageSize = 15): Json
+    protected function dataLists(PageResult $page): Json
     {
-        return JsonService::dataLists($lists, $count, $pageNo, $pageSize);
+        return JsonService::dataLists($page);
     }
 
     public function isNotNeedLogin(): bool

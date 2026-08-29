@@ -5,11 +5,19 @@ namespace app\common\service\storage\driver;
 
 use app\common\service\storage\StorageDriver;
 use app\common\service\storage\StoragePath;
-use Qcloud\Cos\Client;
+use app\common\service\storage\QcloudStorageClientFactory;
 
 final readonly class QcloudStorageDriver implements StorageDriver
 {
-    public function __construct(private array $account, private array $space) {}
+    private \Qcloud\Cos\Client $client;
+
+    public function __construct(
+        array $account,
+        private array $space,
+        QcloudStorageClientFactory $clients,
+    ) {
+        $this->client = $clients->make($account, $space);
+    }
 
     public function put(string $objectKey, string $sourcePath): void
     {
@@ -18,7 +26,7 @@ final readonly class QcloudStorageDriver implements StorageDriver
             throw new \RuntimeException('待上传文件不可读');
         }
         try {
-            $this->client()->putObject([
+            $this->client->putObject([
                 'Bucket' => (string)$this->space['bucket'],
                 'Key' => StoragePath::assertObjectKey($objectKey),
                 'Body' => $stream,
@@ -33,7 +41,7 @@ final readonly class QcloudStorageDriver implements StorageDriver
 
     public function delete(string $objectKey): void
     {
-        $this->client()->deleteObject([
+        $this->client->deleteObject([
             'Bucket' => (string)$this->space['bucket'],
             'Key' => StoragePath::assertObjectKey($objectKey),
         ]);
@@ -41,7 +49,7 @@ final readonly class QcloudStorageDriver implements StorageDriver
 
     public function downloadTo(string $objectKey, string $targetPath): void
     {
-        $this->client()->download(
+        $this->client->download(
             (string)$this->space['bucket'],
             StoragePath::assertObjectKey($objectKey),
             $targetPath,
@@ -50,15 +58,4 @@ final readonly class QcloudStorageDriver implements StorageDriver
 
     public function localPath(string $objectKey): ?string { return null; }
 
-    private function client(): Client
-    {
-        $credentials = (array)($this->account['resolved_credentials'] ?? []);
-        return new Client([
-            'region' => (string)($this->space['region'] ?? ''),
-            'credentials' => [
-                'secretId' => (string)($credentials['access_key'] ?? ''),
-                'secretKey' => (string)($credentials['secret_key'] ?? ''),
-            ],
-        ]);
-    }
 }

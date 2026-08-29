@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\plugin\PluginPackageArchiveService;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 
-final class ModulePack extends Command
+final class ModulePack extends ContextualCommand
 {
     use ModulePackageCommandSupport;
 
@@ -23,7 +23,7 @@ final class ModulePack extends Command
             ->addOption('signing-secret-key-file', null, Option::VALUE_REQUIRED, 'Base64 Ed25519 secret key file', '');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         return $this->runPackageCommand($output, function () use ($input): array {
             $key = trim((string)$input->getArgument('module_key'));

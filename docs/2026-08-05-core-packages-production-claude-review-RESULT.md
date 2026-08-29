@@ -37,7 +37,7 @@ VERDICT: APPROVED_WITH_BLOCKERS
 - **最低修正**：初始化前统一为单一 canonical 路径 + remote，写回 32/44/48。
 
 ### [P1-5] payment 包边界与本仓真实耦合矛盾
-- **证据**：§5.2 称 payment 包不拥有订单/余额，“订单归属由 Host/业务 Module 决定”。但本仓 `RechargeLogic.php:101-105` 直接改 `member->user_money/balance/total_recharge_amount` 并 `save()`，finance 与 member model 紧耦合。
+- **证据**：§5.2 称 payment 包不拥有订单/余额，“订单归属由 Host/业务 Module 决定”。但本仓 `RechargeApplicationService.php:101-105` 直接改 `member->user_money/balance/total_recharge_amount` 并 `save()`，finance 与 member model 紧耦合。
 - **风险**：若有人从本仓“抽” payment，会把 member-balance 耦合一起带走，破坏包边界。
 - **最低修正**：重申 payment = rebuild 仓按 kernel 契约新建；本仓 finance 不作为抽包来源。
 
@@ -122,7 +122,7 @@ VERDICT: APPROVED_WITH_BLOCKERS
 1. `git log --all -- frontend-arco packages backend frontend starter` = 空 → §3.2 架构从未在本仓存在。
 2. `server/composer.json` = `"type":"project"`、psr-4 仅 `app\\` → 本仓是应用非包，无 `PeanutAdmin\\`。
 3. `web/package.json` = `arco-design-pro-vue` / `private:true` / `@arco-design/web-vue` / Vue3.2；60 vue 页、45 页用 Arco → 本仓零 Element Plus。
-4. `RechargeLogic.php:101-108` 内联改写 member 余额三字段 → finance↔member 紧耦合。
+4. `RechargeApplicationService.php:101-108` 内联改写 member 余额三字段 → finance↔member 紧耦合。
 5. `server/LICENSE.txt` = ThinkPHP 上游 Apache-2.0；无根 LICENSE。16 处 “likeadmin” 均为对齐注释。
 6. Playwright s01/ch03：`real_merchant_called:false`、`real_wechat_called:false` → 外部集成确为注入传输，与 §3.3 一致。
 7. 新仓路径三处不一致（company-os / Dev/Project / GitHub peanut-opensource）。

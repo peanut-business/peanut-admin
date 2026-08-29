@@ -219,11 +219,11 @@
         params as Parameters<typeof getNoticeLogList>[0]
       );
       const payload = res.data as unknown as {
-        list: NoticeLogRecord[];
-        total: number;
+        lists: NoticeLogRecord[];
+        count: number;
       };
-      tableData.value = payload.list;
-      pagination.total = payload.total;
+      tableData.value = payload.lists;
+      pagination.total = payload.count;
     } finally {
       loading.value = false;
     }

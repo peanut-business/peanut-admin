@@ -1,9 +1,11 @@
 # ${MODULE_KEY} migrations
 
 Create a new, append-only `YYYYMMDDHHMMSS_description.sql` file for each schema change. Never edit an
-applied migration. Every Module-owned business table must include `tenant_id`, a Tenant-scoped unique
-key, and a Tenant foreign key. Add the final table name to `module.json.database.owned_tables` before
-packaging.
+applied migration. Peanut Admin keeps one tenant-first development source: every Module-owned business
+table must include `tenant_id`, a Tenant-scoped unique key, and a Tenant foreign key. Do not create
+separate Standalone and Multi-tenant migration sources. The release Edition builder derives both Schema
+artifacts from the same fixed source. Add the final table name to `module.json.database.owned_tables`
+before packaging.
 
 Copy and adapt this minimum shape; the example table is deliberately not an executable migration:
 

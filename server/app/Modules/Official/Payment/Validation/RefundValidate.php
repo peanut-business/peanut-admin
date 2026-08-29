@@ -3,11 +3,14 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Validation;
 
+use app\common\validate\PageSizeRule;
 use think\Validate;
 
 /** 退款记录与退款日志查询参数验证。 */
 class RefundValidate extends Validate
 {
+    use PageSizeRule;
+
     protected $rule = [
         'sn' => 'max:32',
         'order_sn' => 'max:64',
@@ -52,10 +55,4 @@ class RefundValidate extends Validate
             : '搜索的时间范围不正确';
     }
 
-    protected function pageSizeMax($value): bool|string
-    {
-        return (int)$value <= 25000
-            ? true
-            : '已超出系统限制数量，请分页查询或导出，当前最多记录数为：25000';
-    }
 }

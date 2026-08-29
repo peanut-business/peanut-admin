@@ -4,11 +4,17 @@ declare(strict_types=1);
 namespace app\common\service\oauth;
 
 use app\common\service\oauth\contract\OAuthTransportInterface;
+use app\common\service\http\OutboundHttpRequest;
+use app\common\service\http\OutboundHttpTransport;
 use PeanutAdmin\IntegrationSecurity\OAuth\OAuthProfile;
 
 /** 微信小程序、公众号和开放平台 PC 的生产 OAuth 传输。 */
 final class WechatOAuthTransport implements OAuthTransportInterface
 {
+    public function __construct(private readonly ?OutboundHttpTransport $transport = null)
+    {
+    }
+
     public function authorizationUrl(
         string $scene,
         array $config,
@@ -85,29 +91,13 @@ final class WechatOAuthTransport implements OAuthTransportInterface
 
     private function getJson(string $url): array
     {
-        if (!function_exists('curl_init')) {
-            throw new \RuntimeException('服务器未安装 cURL 扩展，无法调用微信授权');
+        $response = ($this->transport ?? app(OutboundHttpTransport::class))->send(
+            new OutboundHttpRequest('GET', $url, ['Accept' => 'application/json'], retrySafe: true),
+        );
+        if ($response->status < 200 || $response->status >= 300) {
+            throw new \RuntimeException('微信授权网络异常');
         }
-        $curl = curl_init($url);
-        if ($curl === false) {
-            throw new \RuntimeException('微信授权请求初始化失败');
-        }
-        curl_setopt_array($curl, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_HTTPHEADER => ['Accept: application/json'],
-        ]);
-        $body = curl_exec($curl);
-        $status = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($curl);
-        curl_close($curl);
-        if ($body === false || $status < 200 || $status >= 300) {
-            throw new \RuntimeException('微信授权网络异常' . ($error !== '' ? ':' . $error : ''));
-        }
-        $data = json_decode((string)$body, true);
+        $data = json_decode($response->body, true);
         if (!is_array($data)) {
             throw new \RuntimeException('微信授权响应格式异常');
         }

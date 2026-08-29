@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 use think\model\concern\SoftDelete;
 
-class OfficialAccountReply extends BaseModel
+class OfficialAccountReply extends TenantOwnedModel
 {
     use SoftDelete;
 

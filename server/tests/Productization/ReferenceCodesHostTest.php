@@ -44,8 +44,8 @@ $ownedFiles = [
     'app/adminapi/controller/dict/DictDataController.php',
     'app/adminapi/validate/dict/DictTypeValidate.php',
     'app/adminapi/validate/dict/DictDataValidate.php',
-    'app/adminapi/logic/dict/DictTypeLogic.php',
-    'app/adminapi/logic/dict/DictDataLogic.php',
+    'app/adminapi/application/dict/DictTypeApplicationService.php',
+    'app/adminapi/application/dict/DictDataApplicationService.php',
     'app/common/model/dict/DictType.php',
     'app/common/model/dict/DictData.php',
     'app/common/service/dict/ThinkPhpTenantDictionaryProvider.php',
@@ -58,8 +58,8 @@ foreach ($ownedFiles as $relativePath) {
     $sources[$relativePath] = (string)file_get_contents($absolutePath);
 }
 
-$typeLogic = $sources['app/adminapi/logic/dict/DictTypeLogic.php'];
-$dataLogic = $sources['app/adminapi/logic/dict/DictDataLogic.php'];
+$typeLogic = $sources['app/adminapi/application/dict/DictTypeApplicationService.php'];
+$dataLogic = $sources['app/adminapi/application/dict/DictDataApplicationService.php'];
 $tenantProvider = $sources['app/common/service/dict/ThinkPhpTenantDictionaryProvider.php'];
 expectReferenceCodes(str_contains($tenantProvider, 'Db::transaction('), 'type mutations must retain a transaction');
 expectReferenceCodes(str_contains($tenantProvider, '->lock(true)'), 'type mutations must retain row locks');

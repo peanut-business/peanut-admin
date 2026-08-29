@@ -40,7 +40,7 @@ final class FirstRunReadinessHost
 
         $items = [
             $this->brand($context),
-            $this->notification($context, $notificationEnabled),
+            $this->notification($notificationEnabled),
             $this->storage($deploymentMode),
             $this->backup($deploymentMode),
             $this->worker($deploymentMode, $taskEnabled),
@@ -98,13 +98,11 @@ final class FirstRunReadinessHost
         );
     }
 
-    private function notification(
-        AuthenticatedMemberContext|TenantContext $context,
-        bool $moduleEnabled,
-    ): array {
+    private function notification(bool $moduleEnabled): array
+    {
         $smsConfigured = false;
         if ($moduleEnabled) {
-            $detail = (new NotificationModuleProvider())->queries()->channelDetail($context);
+            $detail = (new NotificationModuleProvider())->queries()->channelDetail();
             $smsConfigured = (bool)($detail['status']['sms'] ?? false);
         }
 

@@ -181,7 +181,7 @@ SQL);
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
     )->execute([101, 11, $permissionId, $now]);
 
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
 

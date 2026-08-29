@@ -153,7 +153,7 @@ final class PlatformAccessController extends BasePlatformController
     private function mutate(string $scene, callable $operation)
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         $params = $this->request->post();
@@ -161,7 +161,7 @@ final class PlatformAccessController extends BasePlatformController
         try {
             return $this->data($operation($params, $this->platformContext->core));
         } catch (AdminAccessException $exception) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 $exception->getMessage(),
                 ['error_code' => $exception->errorCode],
                 $exception->httpStatus * 100

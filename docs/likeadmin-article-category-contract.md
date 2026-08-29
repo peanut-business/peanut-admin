@@ -144,7 +144,7 @@ GET /adminapi/article.articleCate/all
 - 返回基础模型字段，不追加 `is_show_desc` 或 `article_count`；
 - 不分页。
 
-该接口供文章新增/编辑时选择分类。关键实现位于 `server/app/adminapi/logic/article/ArticleCateLogic.php:119-125`。
+该接口供文章新增/编辑时选择分类。关键实现位于 `server/app/adminapi/application/article/ArticleCateLogic.php:119-125`。
 
 ### 3.3 新增
 
@@ -314,9 +314,9 @@ Peanut 的 PC 消费路径已完成修复：`/api/pc/infoCenter` 调用文章查
 
 关键依据：
 
-- `server/app/api/logic/ArticleLogic.php:103-109`；
+- `server/app/api/application/ArticleApplicationService.php:103-109`；
 - `server/app/api/lists/article/ArticleLists.php:38-118`；
-- `server/app/api/logic/PcLogic.php:191-205`；
+- `server/app/api/application/PcApplicationService.php:191-205`；
 - `server/app/common/model/article/Article.php:94-109`。
 
 ## 7. 权限契约与参考缺陷
@@ -453,14 +453,14 @@ C01 已关闭，后续批次不得重复执行上述业务验收。
 - `server/app/adminapi/controller/article/ArticleCateController.php`；
 - `server/app/adminapi/validate/article/ArticleCateValidate.php`；
 - `server/app/adminapi/lists/article/ArticleCateLists.php`；
-- `server/app/adminapi/logic/article/ArticleCateLogic.php`；
+- `server/app/adminapi/application/article/ArticleCateLogic.php`；
 - `server/app/common/model/article/ArticleCate.php`；
 - `server/app/common/model/article/Article.php`；
 - `server/app/adminapi/http/middleware/AuthMiddleware.php`；
 - `server/app/api/controller/ArticleController.php`；
-- `server/app/api/logic/ArticleLogic.php`；
+- `server/app/api/application/ArticleApplicationService.php`；
 - `server/app/api/lists/article/ArticleLists.php`；
-- `server/app/api/logic/PcLogic.php`；
+- `server/app/api/application/PcApplicationService.php`；
 - `server/public/install/db/like.sql`；
 - `admin/src/api/article.ts`；
 - `admin/src/views/article/column/index.vue`；

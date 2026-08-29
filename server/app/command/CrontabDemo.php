@@ -4,25 +4,25 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\service\diagnostics\TenantDiagnosticAttributes;
+use app\common\service\runtime\OperationalLog;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
-use think\facade\Log;
 
 /**
  * 定时任务演示命令。
  * 供「定时任务」模块开箱验证：被调度时向 runtime 日志写入一条记录。
  * 命令名填 `crontab:demo`，可用于确认调度链路是否打通。
  */
-class CrontabDemo extends Command
+class CrontabDemo extends ContextualCommand
 {
     protected function configure()
     {
         $this->setName('crontab:demo')->setDescription('定时任务演示命令');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         $scope = ScheduledTenantContext::require();
         $diagnostics = TenantDiagnosticAttributes::fromScope($scope);
@@ -31,7 +31,7 @@ class CrontabDemo extends Command
             $scope->tenantId(),
             date('Y-m-d H:i:s')
         );
-        Log::info($msg, $diagnostics);
+        OperationalLog::info('crontab_demo_executed', $diagnostics + ['message' => $msg]);
         $output->writeln($msg);
         return 0;
     }

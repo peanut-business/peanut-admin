@@ -323,8 +323,8 @@ try {
     }
     foreach ([
         'server/config/project.php',
-        'server/app/adminapi/logic/WorkbenchLogic.php',
-        'server/app/api/logic/IndexLogic.php',
+        'server/app/adminapi/application/WorkbenchApplicationService.php',
+        'server/app/api/application/IndexApplicationService.php',
         'uniapp/src/pages/as_us/as_us.vue',
     ] as $versionSurface) {
         createApplicationExpect(

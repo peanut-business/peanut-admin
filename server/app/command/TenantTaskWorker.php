@@ -5,13 +5,13 @@ namespace app\command;
 
 use app\common\service\async\TaskImportExportRuntimeFactory;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;
 use think\facade\Db;
 
-final class TenantTaskWorker extends Command
+final class TenantTaskWorker extends ContextualCommand
 {
     protected function configure()
     {
@@ -20,7 +20,7 @@ final class TenantTaskWorker extends Command
             ->addArgument('tenant_id', Argument::REQUIRED, 'Tenant ID');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         $raw = (string)$input->getArgument('tenant_id');
         if (preg_match('/^[1-9][0-9]*$/D', $raw) !== 1) {

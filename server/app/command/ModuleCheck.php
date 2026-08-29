@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\plugin\ModuleAuthorCheckHost;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 
-final class ModuleCheck extends Command
+final class ModuleCheck extends ContextualCommand
 {
     protected function configure()
     {
@@ -21,7 +21,7 @@ final class ModuleCheck extends Command
             ->addOption('sha256', null, Option::VALUE_REQUIRED, 'Optional expected package SHA-256', '');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $kernelVersion = trim((string)$input->getOption('kernel-version'));

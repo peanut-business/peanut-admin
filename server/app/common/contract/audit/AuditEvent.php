@@ -53,6 +53,9 @@ final readonly class AuditEvent
         string $uri,
         string $method,
         mixed $params,
+        AuditOutcome $outcome = AuditOutcome::Success,
+        ?string $reasonCode = null,
+        int $httpStatus = 200,
     ): self {
         $normalizedUri = strtolower(trim($uri, '/'));
         $normalizedMethod = strtoupper($method);
@@ -66,8 +69,8 @@ final readonly class AuditEvent
             new AuditResource('http.route', $normalizedUri),
             null,
             new AuditTrace($context->requestId, null, trim($ip)),
-            AuditOutcome::Success,
-            null,
+            $outcome,
+            $reasonCode,
             [
                 'admin_id' => $adminId,
                 'username' => $username,
@@ -75,6 +78,7 @@ final readonly class AuditEvent
                 'uri' => $normalizedUri,
                 'method' => $normalizedMethod,
                 'params' => $params,
+                'http_status' => $httpStatus,
             ],
         );
     }
