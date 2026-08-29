@@ -95,6 +95,28 @@
         "cleanup_responsibility": "qualification removes only generated Starter directories and temporary outputs; it never deletes this shared cache"
       },
       {
+        "stable_resource_id": "peanut-admin-core-composer-2.10.2-cli",
+        "purpose": "exact Composer toolchain for Core Alpha.10 lock generation, aggregate qualification and package projection",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core Alpha.10 qualification lease owner",
+        "host": "getcomposer.org",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "/private/tmp/peanut-admin-core-tools/composer-2.10.2",
+        "service_type": "official Composer PHAR and local fixed executable",
+        "version": "2.10.2",
+        "download_url": "https://getcomposer.org/download/2.10.2/composer.phar",
+        "sha256": "5ee7125f8a30a34d246cefdc0bc85b8a783b28f2aec968994118512350d28027",
+        "credential_ref": null,
+        "data_source": "official Composer 2.10.2 immutable download",
+        "freshness_requirement": "after claim and before use, the fixed local path is either absent or matches the registered SHA-256 and reports Composer 2.10.2; a mismatched existing file blocks instead of being overwritten",
+        "health_check": "shasum -a 256 on the exact local path equals the registered digest and php <path> --version reports Composer 2.10.2",
+        "fallback": "none",
+        "lifecycle": "retained through Core Alpha.10 qualification, projection and clean-consumer checks",
+        "cleanup_responsibility": "Core Alpha.10 qualification owner removes only /private/tmp/peanut-admin-core-tools after all dependent publication and consumer checks complete"
+      },
+      {
         "stable_resource_id": "peanut-admin-production-upgrade-control-worker",
         "purpose": "trusted deployment-control worker for one fixed in-application production upgrade task",
         "environments": ["production"],
@@ -185,6 +207,9 @@
           "peanut-admin-core-alpha10-browser-frontend",
           "peanut-admin-core-alpha10-starter-backend",
           "peanut-admin-core-alpha10-starter-frontend"
+        ],
+        "tool_resource_ids": [
+          "peanut-admin-core-composer-2.10.2-cli"
         ],
         "dependency_cache_resource_ids": [
           "peanut-admin-core-alpha10-pnpm-store",
