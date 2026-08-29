@@ -279,9 +279,13 @@ function tpq52RunMultiTenant(PDO $pdo, array &$sql): array
         ) === 0,
         'Alpha updated the Beta category',
     );
+    expectTpq52($store->run($alpha, static fn() => ArticleCate::destroy(12)), 'Alpha delete path failed');
+    $betaDelete = $pdo->query(
+        'SELECT delete_time FROM pa_article_cate WHERE id = 12'
+    )->fetch(PDO::FETCH_ASSOC);
     expectTpq52(
-        $store->run($alpha, static fn() => ArticleCate::where('id', 12)->delete()) === 0,
-        'Alpha deleted the Beta category',
+        is_array($betaDelete) && $betaDelete['delete_time'] === null,
+        'Alpha soft-deleted the Beta category',
     );
 
     $articles = $store->run(
@@ -348,8 +352,12 @@ function tpq52RunMultiTenant(PDO $pdo, array &$sql): array
     );
 
     expectTpq52(
-        $store->run($alpha, static fn() => ArticleCate::where('id', $createdId)->delete()) === 1,
-        'Alpha delete did not affect its own row',
+        $store->run($alpha, static fn() => ArticleCate::destroy($createdId)),
+        'Alpha soft-delete path failed',
+    );
+    expectTpq52(
+        $pdo->query("SELECT delete_time FROM pa_article_cate WHERE id = {$createdId}")->fetchColumn() !== null,
+        'Alpha soft-delete did not affect its own row',
     );
     expectTpq52(
         (string)$pdo->query('SELECT name FROM pa_article_cate WHERE id = 12')->fetchColumn() === 'Beta',
@@ -428,7 +436,11 @@ function tpq52RunStandalone(PDO $pdo, array &$sql): array
             && count($pageData['lists']) === 1,
         'Standalone pagination envelope changed',
     );
-    expectTpq52(ArticleCate::where('id', $createdId)->delete() === 1, 'Standalone delete failed');
+    expectTpq52(ArticleCate::destroy($createdId), 'Standalone soft-delete path failed');
+    expectTpq52(
+        $pdo->query("SELECT delete_time FROM pa_article_cate WHERE id = {$createdId}")->fetchColumn() !== null,
+        'Standalone soft-delete did not affect its own row',
+    );
 
     $relevantSql = tpq52RelevantSql($sql);
     expectTpq52($relevantSql !== [], 'no Standalone SQL was captured');
