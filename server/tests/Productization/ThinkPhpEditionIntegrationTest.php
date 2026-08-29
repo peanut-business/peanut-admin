@@ -235,8 +235,20 @@ function tpq52RunMultiTenant(PDO $pdo, array &$sql): array
     $alpha = ExecutionContext::tenantAdmin(tpq52TenantContext(101, 1001, 501), 'tpq52.alpha');
     $beta = ExecutionContext::tenantAdmin(tpq52TenantContext(202, 2002, 502), 'tpq52.beta');
 
+    $payloadRejected = false;
+    try {
+        $store->run($alpha, static fn() => (new ArticleCate([
+            'tenant_id' => 202,
+            'name' => 'Rejected cross-Tenant payload',
+            'sort' => 20,
+            'is_show' => 1,
+        ]))->save());
+    } catch (DomainException $exception) {
+        $payloadRejected = $exception->getMessage() === 'TENANT_WRITE_OWNERSHIP_MISMATCH';
+    }
+    expectTpq52($payloadRejected, 'request payload overrode the trusted Alpha Tenant');
+
     $created = new ArticleCate([
-        'tenant_id' => 202,
         'name' => 'Alpha created',
         'sort' => 20,
         'is_show' => 1,
@@ -246,7 +258,7 @@ function tpq52RunMultiTenant(PDO $pdo, array &$sql): array
     expectTpq52($createdId > 0, 'Alpha create did not return an id');
     expectTpq52(
         (int)$pdo->query("SELECT tenant_id FROM pa_article_cate WHERE id = {$createdId}")->fetchColumn() === 101,
-        'request payload overrode the trusted Alpha Tenant',
+        'trusted Alpha Tenant was not injected on create',
     );
 
     $alphaNames = $store->run(
@@ -447,6 +459,8 @@ expectTpq52(tpq52DatabaseIsAbsent($admin, $database), 'TPQ52_DATABASE_NOT_FRESH'
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 $passed = false;
+$failure = null;
+$summary = null;
 try {
     tpq52Activate($database, $edition);
     $pdo = new PDO(
@@ -478,18 +492,40 @@ try {
         ? tpq52RunMultiTenant($pdo, $sql)
         : tpq52RunStandalone($pdo, $sql);
 
-    $passed = true;
-    echo json_encode([
+    $summary = [
         'gate' => 'TPQ52-EDITION-INTEGRATION',
         'edition' => str_replace('_', '-', $edition),
         'database_resource_id' => 'peanut-admin-p0e-mysql84-gate',
         'database' => $database,
         'result' => $result,
         'status' => 'passed',
-    ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) . "\n";
-} finally {
-    if ($passed) {
+    ];
+    $passed = true;
+} catch (Throwable $exception) {
+    $failure = $exception;
+}
+
+if ($passed) {
+    try {
         $admin->exec("DROP DATABASE `{$database}`");
         expectTpq52(tpq52DatabaseIsAbsent($admin, $database), 'TPQ52_DATABASE_CLEANUP_FAILED');
+    } catch (Throwable $exception) {
+        $failure = $exception;
+        $passed = false;
     }
 }
+
+if (!$passed) {
+    fwrite(STDERR, sprintf(
+        "TPQ52_FAILED %s %s database=%s\n",
+        $failure instanceof Throwable ? $failure::class : 'RuntimeException',
+        $failure instanceof Throwable ? $failure->getMessage() : 'UNKNOWN',
+        $database,
+    ));
+    exit(1);
+}
+
+echo json_encode(
+    $summary,
+    JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES,
+) . "\n";
