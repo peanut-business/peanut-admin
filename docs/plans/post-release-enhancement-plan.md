@@ -335,6 +335,27 @@ owner `scripts/deploy-release` 从正式 annotated tag 生成不可变源码归�
 | AR05 | 校验双包身份与差异 | 未开始 | 机器可读身份/差异报告 | 共享源码身份一致；差异仅来自登记的 Edition profile 与生成规则 |
 | AR06 | 双 Edition 首次安装验收 | 未开始 | 两个正式包分别完成一次最低充分空库安装 | 不依赖开发 worktree，均能配置、安装、启动和登录 |
 
+### 7.1 AR02 的 gateway/runtime 前置合同
+
+Standalone 不能只对 ORM 表删除 `tenant_id`。现行数据归属登记中另有 18 张正式
+`tenant-gateway` 表；它们由 PDO、Db gateway 或 Core package repository 访问。AR02 只有在下列
+闭包全部完成后才可标记完成：
+
+1. Edition profile 对 18 张表逐表登记 `strip_tenant_column` 或 `exclude_platform`，并同时声明
+   唯一键、索引、外键和 seed/migration 的投影规则；`pa_tenant_entry_binding` 与
+   `pa_tenant_owner_invitation` 在 Standalone 整表排除，其余表不得保留仅用于过滤的 Tenant 字段。
+2. 应用内非 ORM gateway 统一消费一个由 composition root 选择的 Tenant-column scope；业务服务不
+   读取 Edition，不散布 `if (standalone)`，Multi-tenant 默认行为和 fail-closed Tenant 语义不变。
+3. Core 的 Idempotency、Task/Job 与 Import/Export repository/schema 先提供产品中性的
+   `tenant-scoped` / `instance-scoped` 持久化合同并发布固定版本；应用不得复制 Core SQL、修改
+   `vendor/` 或依赖移动分支。
+4. `init.sql`、受影响 migration、运行时 repository、安装 manifest 和升级 manifest 必须来自同一
+   Edition profile。只证明 29 张 ORM 表去字段，或只生成可解压 archive，均不算 AR02 完成。
+
+Core 上游任务固定为 `P1-ED01 Edition persistence scope`；其实现默认值必须保持
+`tenant-scoped`，只有 Peanut Admin Standalone composition root 可以显式选择
+`instance-scoped`。Core 固定版本未发布前，只允许本地路径联调，不得封存正式安装包。
+
 ## 8. 第四阶段：建立双 Edition 升级包和跨版本升级流程
 
 | ID | 任务 | 状态 | 交付结果 | 最低验收 |

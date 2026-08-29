@@ -160,12 +160,38 @@ def main() -> int:
             "MT_DEMO_VITE_PORT": 20179,
             "MT_DEMO_PLATFORM_PORT": 20176,
         }
-        registered_ports = {
-            item.get("port_env"): item.get("port")
-            for item in registry["resources"].get("local_listeners", [])
-        }
-        if registered_ports != expected_ports:
-            fail(f"local listener ports do not match the fixed project block: {registered_ports}")
+        listeners = registry["resources"].get("local_listeners", [])
+        if not isinstance(listeners, list):
+            fail("local listener registry is invalid")
+        resource_ids: set[str] = set()
+        claimed_ports: set[int] = set()
+        for item in listeners:
+            resource_id = item.get("stable_resource_id")
+            port = item.get("port")
+            if (
+                not isinstance(resource_id, str)
+                or not resource_id
+                or resource_id in resource_ids
+                or not isinstance(port, int)
+                or port < 1
+                or port > 65535
+                or port in claimed_ports
+                or not isinstance(item.get("environment"), str)
+                or not item.get("environment")
+                or not isinstance(item.get("owner"), str)
+                or not item.get("owner")
+                or item.get("fallback") != "none"
+            ):
+                fail(f"local listener registration is invalid: {resource_id}")
+            resource_ids.add(resource_id)
+            claimed_ports.add(port)
+        for port_env, expected_port in expected_ports.items():
+            matches = [item for item in listeners if item.get("port_env") == port_env]
+            if len(matches) != 1 or matches[0].get("port") != expected_port:
+                fail(
+                    f"fixed local listener {port_env} does not use registered port "
+                    f"{expected_port}"
+                )
         redis = [
             item
             for item in registry["resources"].get("optional_services", [])
