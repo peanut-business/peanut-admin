@@ -9,7 +9,8 @@ Peanut Admin project resource lease registry
 Usage:
   scripts/project-resource-lease claim \
     --lease <run-id> --owner <owner> [--thread <thread-id>] \
-    --candidate <40-hex-commit> --gate <gate-name> [--ttl <seconds>] \
+    --candidate <40-hex-commit> [--candidate-repository <absolute-path>] \
+    --gate <gate-name> [--ttl <seconds>] \
     --resource <type=value> [--resource <type=value> ...]
   scripts/project-resource-lease renew --lease <run-id> --owner <owner> [--ttl <seconds>]
   scripts/project-resource-lease release --lease <run-id> --owner <owner>
@@ -176,6 +177,7 @@ case "$COMMAND" in
     OWNER=""
     THREAD_ID=""
     CANDIDATE=""
+    CANDIDATE_REPOSITORY="$REPO_ROOT"
     GATE=""
     TTL=14400
     RESOURCES=()
@@ -185,6 +187,7 @@ case "$COMMAND" in
         --owner) [[ $# -ge 2 ]] || die '--owner requires a value'; OWNER="$2"; shift 2 ;;
         --thread) [[ $# -ge 2 ]] || die '--thread requires a value'; THREAD_ID="$2"; shift 2 ;;
         --candidate) [[ $# -ge 2 ]] || die '--candidate requires a value'; CANDIDATE="$2"; shift 2 ;;
+        --candidate-repository) [[ $# -ge 2 ]] || die '--candidate-repository requires a value'; CANDIDATE_REPOSITORY="$2"; shift 2 ;;
         --gate) [[ $# -ge 2 ]] || die '--gate requires a value'; GATE="$2"; shift 2 ;;
         --ttl) [[ $# -ge 2 ]] || die '--ttl requires a value'; TTL="$2"; shift 2 ;;
         --resource) [[ $# -ge 2 ]] || die '--resource requires a value'; RESOURCES+=("$2"); shift 2 ;;
@@ -197,7 +200,13 @@ case "$COMMAND" in
     [[ -n "$THREAD_ID" ]] || THREAD_ID="$OWNER"
     validate_owner "$THREAD_ID"
     [[ "$CANDIDATE" =~ ^[0-9a-f]{40}$ ]] || die 'candidate must be an exact lowercase 40-hex commit'
-    git cat-file -e "${CANDIDATE}^{commit}" 2>/dev/null || die "candidate is unavailable: $CANDIDATE"
+    [[ "$CANDIDATE_REPOSITORY" == /* && -d "$CANDIDATE_REPOSITORY" ]] \
+      || die 'candidate repository must be an existing absolute directory'
+    CANDIDATE_REPOSITORY="$(cd "$CANDIDATE_REPOSITORY" && pwd -P)"
+    git -C "$CANDIDATE_REPOSITORY" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+      || die "candidate repository is not a Git worktree: $CANDIDATE_REPOSITORY"
+    git -C "$CANDIDATE_REPOSITORY" cat-file -e "${CANDIDATE}^{commit}" 2>/dev/null \
+      || die "candidate is unavailable in $CANDIDATE_REPOSITORY: $CANDIDATE"
     [[ "$GATE" =~ ^[a-z0-9][a-z0-9._-]{0,63}$ ]] || die 'gate has an invalid name'
     [[ "$TTL" =~ ^[0-9]+$ && "$TTL" -ge 60 && "$TTL" -le 86400 ]] || die 'ttl must be 60-86400 seconds'
     WORKTREE="$(cd "$REPO_ROOT" && pwd -P)"
@@ -239,8 +248,8 @@ case "$COMMAND" in
     done
     rm -f "$SEEN_FILE"
     SEEN_FILE=""
-    printf 'lease\t%s\nowner\t%s\nthread\t%s\ncandidate\t%s\ngate\t%s\nworktree\t%s\ncreated_at\t%s\nexpires_at\t%s\nstatus\tACTIVE\n' \
-      "$LEASE_ID" "$OWNER" "$THREAD_ID" "$CANDIDATE" "$GATE" "$WORKTREE" "$NOW" "$EXPIRES_AT" > "$CLAIM_TMP_DIR/metadata.tsv"
+    printf 'lease\t%s\nowner\t%s\nthread\t%s\ncandidate\t%s\ncandidate_repository\t%s\ngate\t%s\nworktree\t%s\ncreated_at\t%s\nexpires_at\t%s\nstatus\tACTIVE\n' \
+      "$LEASE_ID" "$OWNER" "$THREAD_ID" "$CANDIDATE" "$CANDIDATE_REPOSITORY" "$GATE" "$WORKTREE" "$NOW" "$EXPIRES_AT" > "$CLAIM_TMP_DIR/metadata.tsv"
     mv "$CLAIM_TMP_DIR" "$LEASE_DIR"
     CLAIM_TMP_DIR=""
     rm -f "$CREATED_RESOURCES_FILE"
