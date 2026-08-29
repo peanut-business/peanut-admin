@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RUNNER_ID=''
+CANDIDATE=''
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/core-qualification-runner --runner-id <resource-id> --candidate <40-hex-commit>
+
+Loads the complete non-secret Core qualification environment from the project
+resource registry, proves the fixed candidate and resource namespace are clean,
+bootstraps locked dependencies, then runs the candidate's single aggregate gate.
+The caller must claim every registered resource before invoking this command.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --runner-id)
+      RUNNER_ID="${2:-}"
+      shift 2
+      ;;
+    --candidate)
+      CANDIDATE="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "core-qualification-runner: unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ ! "$RUNNER_ID" =~ ^[a-z0-9][a-z0-9-]+$ ]] || [[ ! "$CANDIDATE" =~ ^[0-9a-f]{40}$ ]]; then
+  echo 'core-qualification-runner: runner ID and full candidate commit are required' >&2
+  exit 2
+fi
+
+while IFS='=' read -r name value; do
+  export "$name=$value"
+done < <("$ROOT/scripts/project-resource-registry" qualification-env --runner-id "$RUNNER_ID")
+
+cd "$PEANUT_QUALIFICATION_WORKTREE"
+if [[ "$(git rev-parse HEAD)" != "$CANDIDATE" ]] || ! git diff --quiet || ! git diff --cached --quiet; then
+  echo 'core-qualification-runner: fixed candidate is not the clean registered tree' >&2
+  exit 1
+fi
+for port in \
+  "$MYSQL_PORT" "$CACHE_PORT" \
+  "$PEANUT_BROWSER_BACKEND_PORT" "$PEANUT_BROWSER_FRONTEND_PORT" \
+  "$PEANUT_STARTER_BACKEND_PORT" "$PEANUT_STARTER_FRONTEND_PORT"; do
+  if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "core-qualification-runner: registered port is already listening: $port" >&2
+    exit 1
+  fi
+done
+if [[ -e "$PEANUT_QUALIFICATION_OUTPUT_ROOT" \
+  || -e /tmp/peanut-admin-playwright-results \
+  || -e /tmp/peanut-admin-recovery-report.json ]]; then
+  echo 'core-qualification-runner: qualification output path is not clean' >&2
+  exit 1
+fi
+if [[ -n "$(docker ps -aq --filter "name=^/${COMPOSE_PROJECT_NAME}-")" \
+  || -n "$(docker network ls -q --filter "name=^${COMPOSE_PROJECT_NAME}_default$")" \
+  || -n "$(docker volume ls -q --filter "name=^${COMPOSE_PROJECT_NAME}_")" ]]; then
+  echo 'core-qualification-runner: qualification Compose resources are not clean' >&2
+  exit 1
+fi
+
+composer install --no-interaction --prefer-dist
+./scripts/bootstrap-worktree-dependencies
+mkdir -p "$PEANUT_QUALIFICATION_OUTPUT_ROOT"
+./scripts/check 2>&1 | tee "$PEANUT_QUALIFICATION_OUTPUT_ROOT/check.log"

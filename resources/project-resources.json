@@ -55,6 +55,150 @@
         "cleanup_responsibility": "not applicable"
       },
       {
+        "stable_resource_id": "peanut-admin-core-alpha11-pnpm-store",
+        "purpose": "offline pnpm dependency content store for the fixed Peanut Admin Core Alpha.11 candidate",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/Users/xing/Library/pnpm/store/v11",
+        "service_type": "pnpm content-addressable dependency cache",
+        "version": "pnpm 11.13.0 store v11",
+        "credential_ref": null,
+        "data_source": "public packages fixed by the Core candidate pnpm-lock.yaml and starter/pnpm-lock.yaml",
+        "freshness_requirement": "scripts/bootstrap-worktree-dependencies must complete offline from this exact store before qualification; a cache miss blocks the candidate instead of switching stores or enabling an unregistered fallback",
+        "health_check": "pnpm store path equals /Users/xing/Library/pnpm/store/v11 and the candidate offline frozen bootstrap succeeds after claim",
+        "fallback": "none",
+        "lifecycle": "persistent shared dependency cache with exclusive qualification lease while in use",
+        "cleanup_responsibility": "qualification removes only candidate-local dependency links and temporary outputs; it never deletes this shared store"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-composer-cache",
+        "purpose": "Composer distribution cache for generated Starter dependency installation during the fixed Peanut Admin Core Alpha.11 qualification",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/Users/xing/Library/Caches/composer",
+        "service_type": "Composer package distribution cache",
+        "version": "Composer 2.10.2 client cache layout",
+        "credential_ref": "local Composer provider configuration is separate from cache content and is not read for qualification publication",
+        "data_source": "public packages fixed by the Core candidate composer.lock and generated Starter composer.lock",
+        "freshness_requirement": "composer config cache-dir --global must equal this exact path before qualification; any missing locked distribution is handled by the repository command without switching to another cache",
+        "health_check": "composer config cache-dir --global returns /Users/xing/Library/Caches/composer after claim",
+        "fallback": "none",
+        "lifecycle": "persistent shared dependency cache with exclusive qualification lease while in use",
+        "cleanup_responsibility": "qualification removes only generated Starter directories and temporary outputs; it never deletes this shared cache"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-php83-cli",
+        "purpose": "exact PHP CLI for the fixed Peanut Admin Core aggregate qualification",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core qualification lease owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/opt/homebrew/bin/php",
+        "service_type": "PHP CLI",
+        "version": "8.3.24",
+        "command": "/opt/homebrew/bin/php",
+        "credential_ref": null,
+        "data_source": "owner-managed Homebrew PHP installation",
+        "freshness_requirement": "after claim, the exact path reports PHP 8.3.24 and remains present in the fixed qualification PATH",
+        "health_check": "/opt/homebrew/bin/php --version reports PHP 8.3.24",
+        "fallback": "none",
+        "lifecycle": "persistent owner-managed toolchain with exclusive qualification lease while in use",
+        "cleanup_responsibility": "qualification removes no file from the owner-managed Homebrew installation"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-composer-2.10.2-cli",
+        "purpose": "exact Composer toolchain for Core Alpha.11 lock generation, aggregate qualification and package projection",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "getcomposer.org",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "/private/tmp/peanut-admin-core-tools/composer-2.10.2",
+        "service_type": "official Composer PHAR and local fixed executable",
+        "version": "2.10.2",
+        "download_url": "https://getcomposer.org/download/2.10.2/composer.phar",
+        "sha256": "5ee7125f8a30a34d246cefdc0bc85b8a783b28f2aec968994118512350d28027",
+        "credential_ref": null,
+        "data_source": "official Composer 2.10.2 immutable download",
+        "freshness_requirement": "after claim and before use, the fixed local path is either absent or matches the registered SHA-256 and reports Composer 2.10.2; a mismatched existing file blocks instead of being overwritten",
+        "health_check": "shasum -a 256 on the exact local path equals the registered digest and php <path> --version reports Composer 2.10.2",
+        "fallback": "none",
+        "lifecycle": "retained through Core Alpha.11 qualification, projection and clean-consumer checks",
+        "cleanup_responsibility": "Core Alpha.11 qualification owner removes only /private/tmp/peanut-admin-core-tools after all dependent publication and consumer checks complete"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-node24-pnpm11-cli",
+        "purpose": "exact Node and project-resolved pnpm toolchain for Core Alpha.11 qualification",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/Users/xing/.nvm/versions/node/v24.13.0/bin",
+        "service_type": "local NVM Node runtime and Corepack pnpm shim",
+        "version": "Node 24.13.0; pnpm 11.13.0 from the Core candidate packageManager field",
+        "credential_ref": null,
+        "data_source": "owner-managed local NVM installation plus candidate package.json packageManager identity",
+        "freshness_requirement": "from the fixed Core candidate directory after claim, the exact node path reports v24.13.0 and the exact pnpm path resolves packageManager to 11.13.0",
+        "health_check": "/Users/xing/.nvm/versions/node/v24.13.0/bin/node --version and /Users/xing/.nvm/versions/node/v24.13.0/bin/pnpm --version executed with the fixed Core candidate as cwd",
+        "fallback": "none",
+        "lifecycle": "persistent owner-managed development toolchain with exclusive qualification lease while in use",
+        "cleanup_responsibility": "qualification removes no file from the owner-managed NVM installation"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-ripgrep15-cli",
+        "purpose": "required negative-pattern scanner for Core architecture, OpenAPI and repository qualification scripts",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/opt/homebrew/bin/rg",
+        "service_type": "Homebrew ripgrep CLI",
+        "version": "15.1.0",
+        "credential_ref": null,
+        "data_source": "owner-managed local Homebrew installation",
+        "freshness_requirement": "after claim and before qualification, the exact path reports ripgrep 15.1.0 and remains present in the fixed qualification PATH",
+        "health_check": "/opt/homebrew/bin/rg --version reports ripgrep 15.1.0",
+        "fallback": "none",
+        "lifecycle": "persistent owner-managed toolchain with exclusive qualification lease while in use",
+        "cleanup_responsibility": "qualification removes no file from the owner-managed Homebrew installation"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-docker29-cli",
+        "purpose": "exact Docker Desktop CLI used by the fixed Peanut Admin Core aggregate qualification",
+        "environments": ["qualification"],
+        "owner": "Peanut Admin Core qualification lease owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/usr/local/bin/docker",
+        "service_type": "Docker Desktop CLI",
+        "version": "29.7.2",
+        "command": "/usr/local/bin/docker",
+        "credential_ref": null,
+        "data_source": "owner-managed Docker Desktop installation",
+        "freshness_requirement": "after claim, the exact path reports Docker client 29.7.2 and remains present in the fixed qualification PATH",
+        "health_check": "/usr/local/bin/docker version --format '{{.Client.Version}}' reports 29.7.2",
+        "fallback": "none",
+        "lifecycle": "persistent owner-managed toolchain with exclusive qualification lease while in use",
+        "cleanup_responsibility": "qualification removes no file from Docker Desktop"
+      },
+      {
         "stable_resource_id": "peanut-admin-production-upgrade-control-worker",
         "purpose": "trusted deployment-control worker for one fixed in-application production upgrade task",
         "environments": ["production"],
@@ -118,6 +262,58 @@
         "lifecycle": "operator-triggered single task; no daemon and no listener",
         "cleanup_responsibility": "successful request manifests may be retained as restricted audit evidence; unclaimed archives are removed only by the deployment owner; failed maintenance and recovery coordinates remain active",
         "backup_responsibility": "update, retire and purge require a new paired backup and successful isolated restore verification before maintenance and execution"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-qualification-runner",
+        "purpose": "one fixed-candidate aggregate qualification for Peanut Admin Core 0.1.0-alpha.11",
+        "environments": [
+          "qualification"
+        ],
+        "owner": "Peanut Admin post-release enhancement qualification owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": "exclusive databases inside peanut-admin-core-alpha11-mysql84-qualification",
+        "schema": "Core-owned synthetic qualification schemas",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "service_type": "registry-driven scripts/core-qualification-runner plus repository-locked ./scripts/check",
+        "version": "0.1.0-alpha.11 candidate",
+        "command": "scripts/core-qualification-runner --runner-id peanut-admin-core-alpha11-qualification-runner --candidate <40-hex-commit>",
+        "candidate_worktree": "/Users/xing/.codex/worktrees/core-alpha11-candidate/peanut-admin-core",
+        "compose_project": "peanut-admin-core-alpha11-q09",
+        "database_resource_id": "peanut-admin-core-alpha11-mysql84-qualification",
+        "cache_resource_id": "peanut-admin-core-alpha11-valkey91-qualification",
+        "listener_resource_ids": [
+          "peanut-admin-core-alpha11-mysql-listener",
+          "peanut-admin-core-alpha11-cache-listener",
+          "peanut-admin-core-alpha11-browser-backend",
+          "peanut-admin-core-alpha11-browser-frontend",
+          "peanut-admin-core-alpha11-starter-backend",
+          "peanut-admin-core-alpha11-starter-frontend"
+        ],
+        "tool_resource_ids": [
+          "peanut-admin-core-php83-cli",
+          "peanut-admin-core-composer-2.10.2-cli",
+          "peanut-admin-core-node24-pnpm11-cli",
+          "peanut-admin-core-ripgrep15-cli",
+          "peanut-admin-core-docker29-cli"
+        ],
+        "dependency_cache_resource_ids": [
+          "peanut-admin-core-alpha11-pnpm-store",
+          "peanut-admin-core-alpha11-composer-cache"
+        ],
+        "output_root": "/private/tmp/peanut-admin-core-alpha11-q09",
+        "fixed_output_paths": [
+          "/tmp/peanut-admin-playwright-results",
+          "/tmp/peanut-admin-recovery-report.json"
+        ],
+        "credential_ref": "candidate-local Compose synthetic MySQL credentials supplied only through the qualification environment; npm and Packagist credentials are not used by qualification",
+        "data_source": "one clean detached worktree at the merged Alpha.11 candidate; synthetic fixtures only",
+        "freshness_requirement": "candidate commit/tree and package identities are fixed, Composer 2.10.2, Node 24.13.0, project-resolved pnpm 11.13.0 and ripgrep 15.1.0 are present in the fixed PATH, root vendor/autoload.php and worktree-local pnpm layouts are installed from the exact locks, all six listeners and the output root are absent, the Compose project has no container/network/volume, and the registered images match before claim-bound start",
+        "health_check": "after claim, scripts/project-resource-registry qualification-env proves the complete PHP, Composer, Node, pnpm, ripgrep, Docker, seven-port, Compose and output matrix; the fixed candidate is clean, locked dependencies are present, all listeners and output paths are absent, and the Compose resources and registered image identities match before scripts/core-qualification-runner invokes ./scripts/check",
+        "fallback": "none",
+        "lifecycle": "single aggregate qualification run",
+        "cleanup_responsibility": "qualification owner removes only the claimed Compose project containers, network and volumes, the two fixed output paths, the qualification output root and the active lease after evidence capture",
+        "backup_responsibility": "not applicable; synthetic data only"
       }
     ],
     "databases": [
@@ -222,6 +418,186 @@
         "cleanup_responsibility": "the active P0-E lease owner drops only databases matching its exact run_id after evidence capture; unmatched, expired or ownerless databases require an explicit project-owner gate",
         "backup_responsibility": "not applicable; all scenarios start from absent or empty synthetic databases",
         "failure_retention_policy": "on failure, the lease owner preserves the exact run_id databases and output, renews or explicitly transfers the lease, and reports recovery coordinates; cleanup waits for evidence capture and the named owner decision"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-p1ed01-mysql84-gate",
+        "purpose": "isolated Task/Job and Import/Export focused verification databases for the fixed Peanut Admin Core P1-ED01 persistence-scope candidate",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin Core P1-ED01 integration owner through the Peanut Admin project-resource lease registry",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_core_<run_id>_<scenario>",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_core_<run_id>_",
+        "run_id_pattern": "^[a-z0-9]{1,11}$",
+        "database_name_max_length": 64,
+        "allowed_scenarios": [
+          "task_job",
+          "import_export"
+        ],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-core-p1ed01-mysql84-gate-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-core-p1ed01-mysql84-gate-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "lease-owned synthetic fixtures created only by the fixed Core P1-ED01 candidate; persistent development data and production data are forbidden",
+        "freshness_requirement": "each candidate uses a new lease-bound run_id; every exact scenario database must be absent before its harness creates the schema",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer host --resource-id peanut-admin-core-p1ed01-mysql84-gate --database-name <exact_lease_database>",
+          "database": "after a successful claim, perform a credential-backed MySQL ping and confirm the three exact scenario databases are absent before running the focused group"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "claim_precondition": "before connection, creation, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed Core candidate, this resource ID and all three exact database names",
+        "creation_policy": "the active lease owner may create and drop only peanut_admin_core_<run_id>_task_job and peanut_admin_core_<run_id>_import_export",
+        "cleanup_responsibility": "the active lease owner drops only its two exact run_id databases after the focused group; unmatched, expired or ownerless databases require an explicit project-owner gate",
+        "backup_responsibility": "not applicable; all scenarios contain only synthetic test data",
+        "failure_retention_policy": "on failure, preserve the exact failed database and lease until the single diagnostic is captured; drop it only during the authorized cleanup for this owner"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-p1ed01-kernel-mysql84-gate",
+        "purpose": "fixed-name isolated Kernel idempotency verification database required by the current Core DatabaseTestCase",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin Core P1-ED01 integration owner through the Peanut Admin project-resource lease registry",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_kernel_test",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_kernel_test",
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-core-p1ed01-kernel-mysql84-gate-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-core-p1ed01-kernel-mysql84-gate-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "lease-owned synthetic Kernel fixtures created only by the fixed Core P1-ED01 candidate; persistent development data and production data are forbidden",
+        "freshness_requirement": "the database must be absent before the focused owner starts and is recreated by DatabaseTestCase for each test",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
+          "database": "after a successful claim, perform a credential-backed MySQL ping and confirm peanut_admin_kernel_test is absent"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral fixed-name test database; exclusive lease required",
+        "claim_precondition": "before connection, creation, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed Core candidate, this resource ID and mysql-db=peanut_admin_kernel_test",
+        "creation_policy": "the active lease owner may create and drop only peanut_admin_kernel_test",
+        "cleanup_responsibility": "DatabaseTestCase drops peanut_admin_kernel_test after each test; the lease owner performs one final exact absence check and may drop only this database if a completed successful test left it behind",
+        "backup_responsibility": "not applicable; contains only synthetic test data",
+        "failure_retention_policy": "on failure, preserve peanut_admin_kernel_test and the lease until the single diagnostic is captured; cleanup waits for the authorized owner decision"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-p1ed01-settings-mysql84-gate",
+        "purpose": "fixed-name isolated Settings verification database for the Core P1-ED01-R01 persistence-scope candidate",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin Core P1-ED01-R01 integration owner through the Peanut Admin project-resource lease registry",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_p1_b03_settings_test",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_p1_b03_settings_test",
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-core-p1ed01-settings-mysql84-gate-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-core-p1ed01-settings-mysql84-gate-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "lease-owned synthetic Settings fixtures created only by the fixed Core P1-ED01-R01 candidate; persistent development data and production data are forbidden",
+        "freshness_requirement": "the database must be absent before the focused owner starts and is recreated by SettingsDatabaseTestCase for each test",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
+          "database": "after a successful claim, perform a credential-backed MySQL ping and confirm peanut_admin_p1_b03_settings_test is absent"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral fixed-name test database; exclusive lease required",
+        "claim_precondition": "before connection, creation, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed Core candidate, this resource ID and mysql-db=peanut_admin_p1_b03_settings_test",
+        "creation_policy": "the active lease owner may create and drop only peanut_admin_p1_b03_settings_test",
+        "cleanup_responsibility": "SettingsDatabaseTestCase drops peanut_admin_p1_b03_settings_test after each test; the lease owner performs one final exact absence check and may drop only this database if a completed successful test left it behind",
+        "backup_responsibility": "not applicable; contains only synthetic test data",
+        "failure_retention_policy": "on failure, preserve peanut_admin_p1_b03_settings_test and the lease until the single diagnostic is captured; cleanup waits for the authorized owner decision"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-mysql84-qualification",
+        "purpose": "exclusive local MySQL allocation for the fixed Peanut Admin Core Alpha.11 aggregate qualification",
+        "environments": [
+          "qualification"
+        ],
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "image": "mysql:8.4.10@sha256:c831a0f11348d402b43d77453e17d770be2eef356615a2823fe0f5a0d6c8b9af",
+        "database": "peanut_admin_core_alpha11_q09 plus repository-owned fixed and process-local synthetic test databases",
+        "schema": "Core-owned synthetic qualification schemas",
+        "namespace": "exclusive Docker volume peanut-admin-core-alpha11-q09_mysql-data",
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-core-alpha11-mysql-host",
+          "host": "127.0.0.1",
+          "port": 20276,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "qualification owner loopback only"
+        },
+        "credential_ref": "qualification environment variables MYSQL_ROOT_PASSWORD, MYSQL_USER and MYSQL_PASSWORD; synthetic values are not committed",
+        "data_source": "empty lease-owned Compose volume and candidate-owned synthetic fixtures",
+        "freshness_requirement": "container, network, volume, listener and all prior test databases are absent before allocation; no persistent development or production data is mounted",
+        "health_check": "after claim, docker compose -p peanut-admin-core-alpha11-q09 ps mysql plus a credential-backed ping on 127.0.0.1:20276",
+        "fallback": "none",
+        "lifecycle": "single aggregate qualification run",
+        "cleanup_responsibility": "qualification owner runs docker compose -p peanut-admin-core-alpha11-q09 down --volumes --remove-orphans and proves the project container, network, volume and listener set is empty",
+        "backup_responsibility": "not applicable; synthetic data only",
+        "failure_retention_policy": "on failure retain only the exact claimed project and output until the single diagnosis is captured, then follow the owner decision"
       },
       {
         "stable_resource_id": "peanut-admin-mysql84-local-multi-tenant-demo",
@@ -579,6 +955,105 @@
         },
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh prod-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-mysql-listener",
+        "environment": "qualification",
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "127.0.0.1",
+        "port": 20276,
+        "port_env": "MYSQL_PORT",
+        "additional_port_envs": [
+          "DB_PORT"
+        ],
+        "service_type": "mysql",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "credential_ref": "qualification environment synthetic MySQL credentials",
+        "data_source": "peanut-admin-core-alpha11-mysql84-qualification",
+        "freshness_requirement": "port is unbound before claim-bound Compose start",
+        "health_check": "credential-backed MySQL ping",
+        "fallback": "none",
+        "cleanup_responsibility": "Core Alpha.11 qualification owner"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-cache-listener",
+        "environment": "qualification",
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "127.0.0.1",
+        "port": 20277,
+        "port_env": "CACHE_PORT",
+        "service_type": "valkey",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "credential_ref": null,
+        "data_source": "peanut-admin-core-alpha11-valkey91-qualification",
+        "freshness_requirement": "port is unbound before claim-bound Compose start",
+        "health_check": "Valkey PING",
+        "fallback": "none",
+        "cleanup_responsibility": "Core Alpha.11 qualification owner"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-browser-backend",
+        "environment": "qualification",
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "127.0.0.1",
+        "port": 20278,
+        "port_env": "PEANUT_BROWSER_BACKEND_PORT",
+        "service_type": "PHP browser fixture backend",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "credential_ref": null,
+        "data_source": "fixed candidate browser fixture",
+        "freshness_requirement": "port is unbound before the claimed browser group",
+        "health_check": "fixture readiness check owned by Playwright",
+        "fallback": "none",
+        "cleanup_responsibility": "Core Alpha.11 qualification owner"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-browser-frontend",
+        "environment": "qualification",
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "127.0.0.1",
+        "port": 20279,
+        "port_env": "PEANUT_BROWSER_FRONTEND_PORT",
+        "service_type": "Vite browser fixture frontend",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "credential_ref": null,
+        "data_source": "fixed candidate browser fixture",
+        "freshness_requirement": "port is unbound before the claimed browser group",
+        "health_check": "fixture readiness check owned by Playwright",
+        "fallback": "none",
+        "cleanup_responsibility": "Core Alpha.11 qualification owner"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-starter-backend",
+        "environment": "qualification",
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "127.0.0.1",
+        "port": 20280,
+        "port_env": "PEANUT_STARTER_BACKEND_PORT",
+        "service_type": "generated starter PHP backend",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "credential_ref": null,
+        "data_source": "fixed candidate generated starter",
+        "freshness_requirement": "port is unbound before every starter verification invocation",
+        "health_check": "GET /health",
+        "fallback": "none",
+        "cleanup_responsibility": "Core Alpha.11 qualification owner"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-starter-frontend",
+        "environment": "qualification",
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "127.0.0.1",
+        "port": 20281,
+        "port_env": "PEANUT_STARTER_FRONTEND_PORT",
+        "service_type": "generated starter Vite preview",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "credential_ref": null,
+        "data_source": "fixed candidate generated starter",
+        "freshness_requirement": "port is unbound before every starter verification invocation",
+        "health_check": "HTTP readiness check owned by the starter verifier",
+        "fallback": "none",
+        "cleanup_responsibility": "Core Alpha.11 qualification owner"
       }
     ],
     "containers": [
@@ -817,9 +1292,86 @@
         "lifecycle": "single qualification Gate; remove after complete evidence and status capture, retain the exact image on failure",
         "cleanup_responsibility": "PC32 lease owner removes only the exact candidate-tagged image after successful qualification",
         "backup_responsibility": "not applicable; image contains code and dependencies only"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-qualification-containers",
+        "purpose": "exclusive MySQL and Valkey containers for one fixed Peanut Admin Core Alpha.11 aggregate qualification",
+        "environment": "qualification",
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "Docker Desktop local engine",
+        "port": "20276 and 20277 through the registered qualification listeners",
+        "compose_project": "peanut-admin-core-alpha11-q09",
+        "compose_file": "compose.yaml",
+        "services": {
+          "mysql": "peanut-admin-core-alpha11-q09-mysql-1",
+          "cache": "peanut-admin-core-alpha11-q09-cache-1"
+        },
+        "network": "peanut-admin-core-alpha11-q09_default",
+        "persistent_volumes": [
+          "peanut-admin-core-alpha11-q09_mysql-data",
+          "peanut-admin-core-alpha11-q09_cache-data"
+        ],
+        "database_resource_id": "peanut-admin-core-alpha11-mysql84-qualification",
+        "cache_resource_id": "peanut-admin-core-alpha11-valkey91-qualification",
+        "database": "lease-owned synthetic qualification databases",
+        "schema": "Core-owned synthetic qualification schemas",
+        "namespace": "peanut-admin-core-alpha11-q09",
+        "service_type": "Docker Compose MySQL 8.4.10 and Valkey 9.1.0",
+        "credential_ref": "qualification environment synthetic MySQL credentials",
+        "data_source": "fixed Core candidate compose.yaml and empty lease-owned volumes",
+        "freshness_requirement": "the two containers, network, volumes and listeners are absent before allocation; image identity matches the registered resources",
+        "health_check": "docker compose -p peanut-admin-core-alpha11-q09 ps plus MySQL and Valkey health checks",
+        "fallback": "none",
+        "lifecycle": "single aggregate qualification run",
+        "cleanup_responsibility": "qualification owner removes this exact Compose project with volumes and proves zero residual resources",
+        "backup_responsibility": "not applicable; synthetic data only"
       }
     ],
     "optional_services": [
+      {
+        "stable_resource_id": "peanut-admin-core-p1ed01-mysql84-tunnel",
+        "purpose": "lease-owned loopback SSH tunnel used only because the current Core Kernel integration base fixes the database host to 127.0.0.1",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin Core P1-ED01 integration owner",
+        "host": "127.0.0.1",
+        "port": 20188,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-core-p1ed01",
+        "service_type": "SSH local TCP forwarding through mac-14 to the registered upstream endpoint 192.168.192.2:20183",
+        "credential_ref": "operator-local SSH configuration for alias mac-14",
+        "data_source": "peanut-admin-mysql84-development through the two registered Core P1-ED01 logical database resources",
+        "freshness_requirement": "the port must be unbound before allocation; the active lease must include port=20188 and the exact SSH control-socket path",
+        "health_check": "credential-backed MySQL ping through 127.0.0.1:20188 after the tunnel starts",
+        "fallback": "none",
+        "lifecycle": "single focused verification group",
+        "cleanup_responsibility": "the P1-ED01 lease owner terminates only the SSH master reached through the exact claimed control socket, then removes that socket"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-alpha11-valkey91-qualification",
+        "purpose": "exclusive local cache allocation for the fixed Peanut Admin Core Alpha.11 aggregate qualification",
+        "environments": [
+          "qualification"
+        ],
+        "owner": "Peanut Admin Core Alpha.11 qualification lease owner",
+        "host": "127.0.0.1",
+        "port": 20277,
+        "database": null,
+        "schema": null,
+        "namespace": "exclusive Docker volume peanut-admin-core-alpha11-q09_cache-data",
+        "service_type": "valkey/valkey:9.1.0-alpine",
+        "version": "9.1.0",
+        "image": "valkey/valkey:9.1.0-alpine@sha256:c9b77919daeba2c02ad954d0c844cc4e7142069d177b89c5fd771f405daf9e02",
+        "credential_ref": null,
+        "data_source": "empty lease-owned Compose volume and candidate-owned synthetic fixtures",
+        "freshness_requirement": "container, network, volume and listener are absent before allocation",
+        "health_check": "after claim, docker compose -p peanut-admin-core-alpha11-q09 ps cache plus Valkey PING on 127.0.0.1:20277",
+        "fallback": "none",
+        "lifecycle": "single aggregate qualification run",
+        "cleanup_responsibility": "qualification owner removes only the exact Compose cache service, volume, network and listener"
+      },
       {
         "stable_resource_id": "peanut-admin-local-redis-experiment",
         "purpose": "opt-in local experiments only",
@@ -909,28 +1461,7 @@
       },
       {
         "stable_resource_id": "peanut-admin-core-source-github-repository",
-        "purpose": "read-only core release tag and embedded package metadata verification for compatibility gates",
-        "environments": [
-          "development"
-        ],
-        "owner": "peanut-opensource GitHub organization",
-        "host": "github.com",
-        "port": 443,
-        "database": null,
-        "schema": null,
-        "namespace": "peanut-opensource/peanut-admin",
-        "service_type": "GitHub source repository",
-        "version": "immutable annotated release tags",
-        "credential_ref": null,
-        "data_source": "https://github.com/peanut-opensource/peanut-admin.git",
-        "freshness_requirement": "fetch only the exact recorded release tags immediately before the compatibility gate",
-        "health_check": "git ls-remote --tags https://github.com/peanut-opensource/peanut-admin.git",
-        "fallback": "none",
-        "cleanup_responsibility": "not applicable"
-      },
-      {
-        "stable_resource_id": "peanut-admin-core-composer-split-github-repository",
-        "purpose": "read-only generated Composer split tag, commit and tree verification for compatibility gates",
+        "purpose": "Core source control, pull requests, immutable release tags and embedded package metadata verification",
         "environments": [
           "development"
         ],
@@ -940,12 +1471,33 @@
         "database": null,
         "schema": null,
         "namespace": "peanut-opensource/peanut-admin-core",
-        "service_type": "GitHub generated Composer split repository",
+        "service_type": "GitHub Core source repository",
         "version": "immutable annotated release tags",
         "credential_ref": null,
         "data_source": "https://github.com/peanut-opensource/peanut-admin-core.git",
         "freshness_requirement": "fetch only the exact recorded release tags immediately before the compatibility gate",
         "health_check": "git ls-remote --tags https://github.com/peanut-opensource/peanut-admin-core.git",
+        "fallback": "none",
+        "cleanup_responsibility": "not applicable"
+      },
+      {
+        "stable_resource_id": "peanut-admin-core-composer-split-github-repository",
+        "purpose": "generated-only Composer split publication plus immutable tag, commit and tree verification",
+        "environments": [
+          "development"
+        ],
+        "owner": "peanut-opensource GitHub organization",
+        "host": "github.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-opensource/peanut-admin-core-php",
+        "service_type": "GitHub generated Composer split repository",
+        "version": "immutable annotated release tags",
+        "credential_ref": null,
+        "data_source": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
+        "freshness_requirement": "fetch only the exact recorded release tags immediately before the compatibility gate",
+        "health_check": "git ls-remote --tags https://github.com/peanut-opensource/peanut-admin-core-php.git",
         "fallback": "none",
         "cleanup_responsibility": "not applicable"
       },
