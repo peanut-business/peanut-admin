@@ -4,37 +4,35 @@ declare(strict_types=1);
 namespace app\Modules\Fixture\DeliveryRecord\Http;
 
 use app\Modules\Fixture\DeliveryRecord\Contracts\DeliveryRecordCommands;
-use PeanutAdmin\Kernel\Auth\TenantContext;
+use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Module\ModuleException;
 
 /** Tenant-member HTTP boundary; root and system actors never bypass Module commands. */
 final readonly class DeliveryRecordHttpHandler
 {
-    public function __construct(private DeliveryRecordCommands $commands)
+    public function __construct(
+        private DeliveryRecordCommands $commands,
+        private CurrentExecutionContext $executionContext,
+    ) {}
+
+    /** @return list<array<string,mixed>> */
+    public function lists(): array
     {
+        $this->assertMemberContext();
+        return $this->commands->list();
     }
 
-    /** @param array<string,mixed> $principal @return list<array<string,mixed>> */
-    public function lists(mixed $context, array $principal): array
+    /** @return array<string,mixed> */
+    public function record(string $reference): array
     {
-        return $this->commands->list($this->memberContext($context, $principal));
+        $this->assertMemberContext();
+        return $this->commands->record($reference);
     }
 
-    /** @param array<string,mixed> $principal @return array<string,mixed> */
-    public function record(mixed $context, array $principal, string $reference): array
+    private function assertMemberContext(): void
     {
-        return $this->commands->record($this->memberContext($context, $principal), $reference);
-    }
-
-    /** @param array<string,mixed> $principal */
-    private function memberContext(mixed $context, array $principal): TenantContext
-    {
-        if (!$context instanceof TenantContext) {
-            throw new ModuleException(
-                'CONTEXT_TENANT_REQUIRED',
-                'A validated Tenant member context is required.'
-            );
-        }
+        $context = $this->executionContext->tenantAdmin();
+        $principal = $this->executionContext->actor();
         if ((int)($principal['tenant_id'] ?? 0) !== $context->tenantId
             || (int)($principal['account_id'] ?? 0) !== $context->accountId
             || (int)($principal['id'] ?? 0) !== $context->memberId) {
@@ -43,7 +41,5 @@ final readonly class DeliveryRecordHttpHandler
                 'The Tenant member principal does not match the request context.'
             );
         }
-
-        return $context;
     }
 }

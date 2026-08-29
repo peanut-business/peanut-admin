@@ -3,61 +3,53 @@ declare(strict_types=1);
 
 namespace app\Modules\Fixture\DeliveryRecord\Http;
 
-use app\Modules\Fixture\DeliveryRecord\ModuleProvider;
 use app\adminapi\controller\BaseAdminController;
-use app\common\service\JsonService;
-use PDO;
+use app\common\execution\CurrentExecutionContext;
+use app\common\http\ApiProblem;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use think\facade\Db;
+use think\App;
 
 final class DeliveryRecordController extends BaseAdminController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly DeliveryRecordHttpHandler $handler,
+    )
+    {
+        parent::__construct($app, $executionContext);
+    }
+
     public function lists()
     {
         try {
-            return $this->data($this->handler()->lists(
-                $this->request->tenantContext ?? null,
-                $this->adminInfo
-            ));
+            return $this->handler->lists();
         } catch (ModuleException $exception) {
-            return $this->moduleFailure($exception);
+            $this->moduleFailure($exception);
         }
     }
 
     public function record()
     {
         try {
-            return $this->data($this->handler()->record(
-                $this->request->tenantContext ?? null,
-                $this->adminInfo,
-                (string)$this->request->post('reference', '')
-            ));
+            return $this->handler->record((string)$this->request->post('reference', ''));
         } catch (ModuleException $exception) {
-            return $this->moduleFailure($exception);
+            $this->moduleFailure($exception);
         } catch (\InvalidArgumentException $exception) {
-            return JsonService::fail($exception->getMessage(), null, 42200);
+            throw new ApiProblem('DELIVERY_RECORD_INPUT_INVALID', 422, $exception->getMessage());
         }
     }
 
-    private function handler(): DeliveryRecordHttpHandler
+    private function moduleFailure(ModuleException $exception): never
     {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('FIXTURE_DELIVERY_RECORD_DATABASE_UNAVAILABLE');
-        }
-        return new DeliveryRecordHttpHandler((new ModuleProvider())->commands($pdo));
-    }
-
-    private function moduleFailure(ModuleException $exception)
-    {
-        $status = in_array($exception->errorCode, [
+        $httpStatus = in_array($exception->errorCode, [
             'MODULE_NOT_INSTALLED',
             'MODULE_INSTALLATION_FAILED',
-        ], true) ? 50300 : 40300;
-        return JsonService::fail(
+        ], true) ? 503 : 403;
+        throw new ApiProblem(
+            $exception->errorCode,
+            $httpStatus,
             'Delivery record Module request was rejected.',
-            ['error_code' => $exception->errorCode],
-            $status
         );
     }
 }
