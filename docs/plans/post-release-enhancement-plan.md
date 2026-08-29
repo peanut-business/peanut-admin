@@ -1,12 +1,12 @@
 # Peanut Admin 发布后增强任务计划
 
-> 状态：当前计划；Phase 0 实施中
+> 状态：当前计划；Phase 0 已完成，进入双 Edition 分发与升级
 >
 > 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
 >
-> 计划事实基线：`origin/dev@91b62c4e01ef029a7a3a1cc7cfdc4ee0dd365d7c`
+> 计划事实基线：`origin/dev@fc6fcb803240effdb584c0442dcfdb5650d3e913`
 >
-> 决策日期：2026-08-29
+> 决策日期：2026-08-30
 >
 > 完成事实仍以 `docs/product-status/capability-ledger.json` 为准
 
@@ -30,9 +30,9 @@ PC00—PC70 保持完成，本计划不重做这些工作。
 
 ## 2. Phase 0：ThinkPHP 架构质量全局前置队列
 
-本阶段是 PE01 以后所有产品逻辑、双 Edition、Schema、构建物和升级工作的前置阶段。它不是
-“挑一个 Module 做示例”的局部重构，而是一次全仓横切边界替换。安全热修可以进入同一合同，
-但不得继续新增手写 Tenant 谓词、逐 Repository Module 门禁、手工分页或新的静态 Logic。
+本阶段已经由 PR #380 合入 `dev`，是 PE01 以后所有产品逻辑、双 Edition、Schema、构建物和
+升级工作的共同前置。它不是“挑一个 Module 做示例”的局部重构，而是一次全仓横切边界替换；
+后续代码不得重新引入手写 Tenant 谓词、逐 Repository Module 门禁、手工分页或新的静态 Logic。
 
 ### 2.1 已冻结的最终方向
 
@@ -58,11 +58,10 @@ PC00—PC70 保持完成，本计划不重做这些工作。
 6. **非 ORM 显式边界**：Db/PDO、安装、迁移、修复、Platform、callback 定位和批处理不能冒充已被
    Model Scope 保护；它们统一经过 `TenantQuery`/专用 gateway，或进入有 owner 和理由的 allowlist。
 
-### 2.2 当前完整静态基线
+### 2.2 实施前完整静态基线（历史）
 
 基线为 `origin/dev@b51610b49632f2a3a38357c73bebb9186dea43f7`，只读扫描未连接数据库或
-运行服务。下列数量是问题队列的起点，不是完成结论；实施候选必须用同一规则重算并归零或进入
-审核后的 allowlist。
+运行服务。下列数量是问题队列的历史起点，不再代表现行实现；最终关闭结果见 2.5。
 
 | 清单 ID | 当前事实 | 可复现范围 |
 | --- | --- | --- |
@@ -83,11 +82,10 @@ PC00—PC70 保持完成，本计划不重做这些工作。
 | INV15 | `AppService` 注册/启动为空，provider 只含最低绑定；请求相关 RuntimeFactory 使用静态缓存，Controller/Application 内仍直接 `new Pdo*` | provider/container、静态 factory、`new Pdo` 清单 |
 | INV16 | cache/session/log 尚无统一 Tenant namespace；Provider 同时存在裸 curl 与 Guzzle；操作审计只覆盖部分 Admin 写路由 | cache/session/log 配置、HTTP client、audit 调用清单 |
 
-### 2.3 ThinkPHP/ThinkORM 能力覆盖索引
+### 2.3 ThinkPHP/ThinkORM 能力覆盖索引（历史问题映射）
 
-下表是本轮必须逐项检查并关闭的能力全集。它不是“建议关注方向”；每一行必须落到后续明确的
-TPQ 任务、逐路径清单和验收结论。发现新问题时先新增唯一 TPQ ID，再实施；禁止把新发现藏进
-“继续系统性检查”或某个既有任务的备注。
+下表记录本轮已经逐项关闭的能力全集。每一行均已落到明确 TPQ、逐路径清单和验收结论；后续
+扫描发现新问题时仍须新增唯一问题 ID，禁止把新发现藏进“继续系统性检查”或既有任务备注。
 
 | 能力面 | 当前已确认的重复/风险 | 问题队列 |
 | --- | --- | --- |
@@ -121,72 +119,87 @@ TPQ 任务、逐路径清单和验收结论。发现新问题时先新增唯一 
 
 | ID | 问题与最终交付 | 状态 | 执行 owner | 最低验收 |
 | --- | --- | --- | --- | --- |
-| TPQ00 | 建立版本化问题登记：每个扫描命中记录 `issue_id/category/path/symbol/owner/decision/status/verification`；allowlist 另含理由、风险和到期/复核条件 | 未开始 | Terra medium 生成只读清单；Sol 审批 | INV01—INV16 每个命中可追溯到 TPQ 或 allowlist；不存在“其他类似问题”未登记桶 |
-| TPQ01 | 冻结 35 个 Model 与 47 张 Tenant 表的 `tenant/platform/instance/shared/tenant-derived` 所有权登记；禁止以目录或命名猜 owner | 部分完成；静态清单已形成 | Terra medium 盘点；Sol 决策 | 每个 Model/表恰有一个 owner、scope policy 和访问入口；18 张无 Model 表全部有显式边界 |
-| TPQ02 | 建立 request/console/callback/worker/scheduled 共用的不可变 `ExecutionContext` 生命周期，替换 Request 动态属性和静态 Runtime 缓存中的 Tenant 状态 | 未开始 | Sol high | 三种 HTTP 身份和三种非 HTTP 执行形态均无上下文串用；缺上下文 fail-closed |
-| TPQ03 | 冻结 `MultiTenantDataScopePolicy` 与 `StandaloneDataScopePolicy`；Edition 只在 policy/composition root 选择，业务代码没有 edition `if` | 未开始 | Sol high | 同一业务调用在 Multi-tenant 生成一个 Tenant 谓词，在 Standalone 生成零个 Tenant 谓词 |
-| TPQ04 | 实现全局 `TenantOwnedModel`/global scope，并迁移 29 个 Tenant ORM Model；6 个非 Tenant Model 明确不继承 | 未开始 | Sol 建合同；Luna max 按清单迁移 | 任意 Tenant Model 的 select/find/update/delete 自动带 scope；普通代码无法漏调命名 scope |
-| TPQ05 | 用 Model write hook/受控 persistence hook 自动写入 Tenant，拒绝请求 payload 覆盖；bulk update/delete 也受 global scope | 未开始 | Sol high | create/save/bulk update/delete 四类写入均不能跨 Tenant；Standalone 不写不存在字段 |
-| TPQ06 | 统一 belongsTo/hasMany/eager loading 的 Tenant 规则，删除依赖 `$this->tenant_id` 的关系谓词；验证 global scope 在 alias/relation/with/withLimit 下的真实 SQL | 未开始 | Sol high | 多父记录 eager load 不串 Tenant；relation 查询没有重复或歧义 tenant_id |
-| TPQ07 | 建立 `PlatformTenantDataGateway` 和唯一可审计 scope bypass；清点 Platform、安装、迁移、bootstrap、修复和系统查询 | 未开始 | Sol high | `withoutGlobalScope` 只出现在 allowlist gateway；每次跨 Tenant 查询有 actor/operation/audit |
-| TPQ08 | 为 18 张无 Model Tenant 表和 Db/PDO 路径建立 `TenantQuery`/领域 gateway；禁止普通业务直接 Db/PDO 查询 Tenant 表 | 未开始 | Sol 定边界；Luna max 机械迁移 | INV02 的 18 张表均有 owner；Db/PDO 混用归零或进入事务 owner allowlist |
-| TPQ09 | 拆分 15 个 TenantRepository：保留领域 persistence/transaction，删除手写 Tenant 谓词、create 注入和 Module 门禁 | 未开始 | Sol 处理 Finance/OAuth/Task/File；Luna max 处理低风险 CRUD | Repository 不再重复 global scope 或 Module guard；直接 Model 绕过清单归零 |
-| TPQ10 | 修复 JobsValidate、OfficialAccountReplyApplicationService、Dictionary Provider、支付 callback 等直接绕过点 | 未开始 | Sol high；低风险验证迁移可交 Luna max | 双 Tenant 同名岗位合法；跨 Tenant ID 不可枚举；callback 仍从可信绑定恢复上下文 |
-| TPQ11 | 逐关系核对复合 FK、全局 ID 和查询谓词，删除数据库已蕴含的重复 JOIN/WHERE；`ArticleCollectionSummaryService` 在全局 Scope 与现有复合 FK 生效后只按 `article_id` 关联，不再重复比较收藏/文章 tenant_id；先补文件、支付、OAuth、通知等关系缺口 | 未开始 | Sol high | 每个被删谓词有 FK/唯一键证据；Article 收藏汇总只有根 Scope 一个 Tenant 条件且结果不变；缺口先迁移、后删查询条件，不按文本批量删除 |
-| TPQ12 | 改造生成器：所有权必填，按 owner 生成 Tenant/Platform/Instance Model、global scope、Application Service、分页和验证；拒绝裸 BaseModel 模板 | 未开始 | Sol 合同；Luna max 模板实现 | 新生成 Tenant CRUD 没有裸 Model 查询、手写 tenant_id、静态 Logic 或手工分页 |
-| TPQ13 | 冻结 Model/Query 写入合同：字段白名单、readonly、mass assignment、create/save/saveAll/insertAll/update/delete 的 Tenant 注入、事件覆盖和返回语义 | 未开始 | Sol high | 请求 tenant_id 永不生效；所有写 API 要么自动受 policy 保护，要么被静态禁止并只能走受控 persistence gateway |
+| TPQ00 | 建立版本化问题登记：每个扫描命中记录 `issue_id/category/path/symbol/owner/decision/status/verification`；allowlist 另含理由、风险和到期/复核条件 | 已完成 | Terra medium 生成只读清单；Sol 审批 | INV01—INV16 每个命中可追溯到 TPQ 或 allowlist；不存在“其他类似问题”未登记桶 |
+| TPQ01 | 冻结 35 个 Model 与 47 张 Tenant 表的 `tenant/platform/instance/shared/tenant-derived` 所有权登记；禁止以目录或命名猜 owner | 已完成 | Terra medium 盘点；Sol 决策 | 每个 Model/表恰有一个 owner、scope policy 和访问入口；18 张无 Model 表全部有显式边界 |
+| TPQ02 | 建立 request/console/callback/worker/scheduled 共用的不可变 `ExecutionContext` 生命周期，替换 Request 动态属性和静态 Runtime 缓存中的 Tenant 状态 | 已完成 | Sol high | 三种 HTTP 身份和三种非 HTTP 执行形态均无上下文串用；缺上下文 fail-closed |
+| TPQ03 | 冻结 `MultiTenantDataScopePolicy` 与 `StandaloneDataScopePolicy`；Edition 只在 policy/composition root 选择，业务代码没有 edition `if` | 已完成 | Sol high | 同一业务调用在 Multi-tenant 生成一个 Tenant 谓词，在 Standalone 生成零个 Tenant 谓词 |
+| TPQ04 | 实现全局 `TenantOwnedModel`/global scope，并迁移 29 个 Tenant ORM Model；6 个非 Tenant Model 明确不继承 | 已完成 | Sol 建合同；Luna max 按清单迁移 | 任意 Tenant Model 的 select/find/update/delete 自动带 scope；普通代码无法漏调命名 scope |
+| TPQ05 | 用 Model write hook/受控 persistence hook 自动写入 Tenant，拒绝请求 payload 覆盖；bulk update/delete 也受 global scope | 已完成 | Sol high | create/save/bulk update/delete 四类写入均不能跨 Tenant；Standalone 不写不存在字段 |
+| TPQ06 | 统一 belongsTo/hasMany/eager loading 的 Tenant 规则，删除依赖 `$this->tenant_id` 的关系谓词；验证 global scope 在 alias/relation/with/withLimit 下的真实 SQL | 已完成 | Sol high | 多父记录 eager load 不串 Tenant；relation 查询没有重复或歧义 tenant_id |
+| TPQ07 | 建立 `PlatformTenantDataGateway` 和唯一可审计 scope bypass；清点 Platform、安装、迁移、bootstrap、修复和系统查询 | 已完成 | Sol high | `withoutGlobalScope` 只出现在 allowlist gateway；每次跨 Tenant 查询有 actor/operation/audit |
+| TPQ08 | 为 18 张无 Model Tenant 表和 Db/PDO 路径建立 `TenantQuery`/领域 gateway；禁止普通业务直接 Db/PDO 查询 Tenant 表 | 已完成 | Sol 定边界；Luna max 机械迁移 | INV02 的 18 张表均有 owner；Db/PDO 混用归零或进入事务 owner allowlist |
+| TPQ09 | 拆分 15 个 TenantRepository：保留领域 persistence/transaction，删除手写 Tenant 谓词、create 注入和 Module 门禁 | 已完成 | Sol 处理 Finance/OAuth/Task/File；Luna max 处理低风险 CRUD | Repository 不再重复 global scope 或 Module guard；直接 Model 绕过清单归零 |
+| TPQ10 | 修复 JobsValidate、OfficialAccountReplyApplicationService、Dictionary Provider、支付 callback 等直接绕过点 | 已完成 | Sol high；低风险验证迁移可交 Luna max | 双 Tenant 同名岗位合法；跨 Tenant ID 不可枚举；callback 仍从可信绑定恢复上下文 |
+| TPQ11 | 逐关系核对复合 FK、全局 ID 和查询谓词，删除数据库已蕴含的重复 JOIN/WHERE；`ArticleCollectionSummaryService` 在全局 Scope 与现有复合 FK 生效后只按 `article_id` 关联，不再重复比较收藏/文章 tenant_id；先补文件、支付、OAuth、通知等关系缺口 | 已完成 | Sol high | 每个被删谓词有 FK/唯一键证据；Article 收藏汇总只有根 Scope 一个 Tenant 条件且结果不变；缺口先迁移、后删查询条件，不按文本批量删除 |
+| TPQ12 | 改造生成器：所有权必填，按 owner 生成 Tenant/Platform/Instance Model、global scope、Application Service、分页和验证；拒绝裸 BaseModel 模板 | 已完成 | Sol 合同；Luna max 模板实现 | 新生成 Tenant CRUD 没有裸 Model 查询、手写 tenant_id、静态 Logic 或手工分页 |
+| TPQ13 | 冻结 Model/Query 写入合同：字段白名单、readonly、mass assignment、create/save/saveAll/insertAll/update/delete 的 Tenant 注入、事件覆盖和返回语义 | 已完成 | Sol high | 请求 tenant_id 永不生效；所有写 API 要么自动受 policy 保护，要么被静态禁止并只能走受控 persistence gateway |
 
 #### B. Module、权限与统一执行边界
 
 | ID | 问题与最终交付 | 状态 | 执行 owner | 最低验收 |
 | --- | --- | --- | --- | --- |
-| TPQ20 | 把现有 `OfficialModuleMiddleware`、`ModuleExecutionGuard` 和各特例收敛为唯一 `ModuleExecutionBoundary`；明确删除 `ArticleTenantRepository::assertAvailable()` 及六个逐查询调用 | 未开始 | Sol high | installed/disabled/failure 保持稳定 40300/50300 envelope；同一次入口只查一次 Module；Article Repository 不再取得 PDO 或检查 Module |
-| TPQ21 | Admin、Platform、member、public 路由按身份边界分组，固定认证→Host/Tenant→Module→RBAC→audit 顺序；删除 Article 专用 middleware | 未开始 | Sol 定顺序；Luna max 路由迁移 | URI、method、permission 和响应不变；middleware 顺序有机器检查 |
-| TPQ22 | public Article/OAuth、支付回调、external resolver、Worker、Scheduler 采用同一 boundary adapter，不在 Controller/Logic 手写 executionGuard | 未开始 | Sol high | 无 Tenant、错 Tenant、disabled、重放和合法路径矩阵通过 |
-| TPQ23 | Repository 只接收已授权 `ExecutionContext`，Module 可用性不再由每个查询方法重复检查 | 未开始 | Sol high | `assertAvailable()` 类方法归零；内部/cross-Module 调用不能绕过 boundary |
-| TPQ24 | 使用 ThinkPHP Provider/Container 作为 composition root，替换空 `AppService`、控制器 `new Pdo*` 和请求相关静态 factory 缓存 | 未开始 | Sol high | Controller 注入 application contract；长驻进程不复用上次请求的 Tenant/PDO 状态 |
-| TPQ25 | 用不可变 Request/Actor/Edition/Module 子上下文替换 Request 动态属性，规定建立、只读消费、finally 清理和禁止序列化 secret 的生命周期 | 未开始 | Sol high | admin/member/platform/public 四种请求不会互相残留 actor/Tenant；Scope 只能读取已验证上下文 |
-| TPQ26 | 为 command/callback/worker/scheduled 建立同构 context factory 与 boundary adapter；逐项决定 event/listener 是否有真实消费者，不为形式引入事件总线 | 未开始 | Sol high | 每个非 HTTP 入口都有 actor、Tenant/instance、module、operation 和清理点；无来源上下文 fail-closed |
+| TPQ20 | 把现有 `OfficialModuleMiddleware`、`ModuleExecutionGuard` 和各特例收敛为唯一 `ModuleExecutionBoundary`；明确删除 `ArticleTenantRepository::assertAvailable()` 及六个逐查询调用 | 已完成 | Sol high | installed/disabled/failure 保持稳定 40300/50300 envelope；同一次入口只查一次 Module；Article Repository 不再取得 PDO 或检查 Module |
+| TPQ21 | Admin、Platform、member、public 路由按身份边界分组，固定认证→Host/Tenant→Module→RBAC→audit 顺序；删除 Article 专用 middleware | 已完成 | Sol 定顺序；Luna max 路由迁移 | URI、method、permission 和响应不变；middleware 顺序有机器检查 |
+| TPQ22 | public Article/OAuth、支付回调、external resolver、Worker、Scheduler 采用同一 boundary adapter，不在 Controller/Logic 手写 executionGuard | 已完成 | Sol high | 无 Tenant、错 Tenant、disabled、重放和合法路径矩阵通过 |
+| TPQ23 | Repository 只接收已授权 `ExecutionContext`，Module 可用性不再由每个查询方法重复检查 | 已完成 | Sol high | `assertAvailable()` 类方法归零；内部/cross-Module 调用不能绕过 boundary |
+| TPQ24 | 使用 ThinkPHP Provider/Container 作为 composition root，替换空 `AppService`、控制器 `new Pdo*` 和请求相关静态 factory 缓存 | 已完成 | Sol high | Controller 注入 application contract；长驻进程不复用上次请求的 Tenant/PDO 状态 |
+| TPQ25 | 用不可变 Request/Actor/Edition/Module 子上下文替换 Request 动态属性，规定建立、只读消费、finally 清理和禁止序列化 secret 的生命周期 | 已完成 | Sol high | admin/member/platform/public 四种请求不会互相残留 actor/Tenant；Scope 只能读取已验证上下文 |
+| TPQ26 | 为 command/callback/worker/scheduled 建立同构 context factory 与 boundary adapter；逐项决定 event/listener 是否有真实消费者，不为形式引入事件总线 | 已完成 | Sol high | 每个非 HTTP 入口都有 actor、Tenant/instance、module、operation 和清理点；无来源上下文 fail-closed |
 
 #### C. 分页、查询效率与 ORM 高级能力
 
 | ID | 问题与最终交付 | 状态 | 执行 owner | 最低验收 |
 | --- | --- | --- | --- | --- |
-| TPQ30 | 冻结唯一 `PageRequest`、`PageResult` 与最大页大小规则；清理 `PaginationInput`、`ExportPageInfo` 和各 Logic 自行 clamp 的重复 | 未开始 | Sol 合同；Luna max 迁移 | 请求字段、空页、上限和导出语义只有一个事实源 |
-| TPQ31 | 实现 route-group `PaginationResponseMiddleware` 或唯一 response transformer，把 Paginator/PageResult 转为既有 `dataLists` envelope | 未开始 | Sol high | 外部结构精确保持 `code/msg/data.{lists,count,pageNo,pageSize}`；Controller 不再拆数组 |
-| TPQ32 | 迁移 INV04 的 27 个 `page()` 调用到 ThinkORM `paginate()`/PageResult；需要扩展统计的列表使用 PageResult metadata | 未开始 | Luna max 分模块迁移；Sol 处理 Finance/Platform | `paginate()` 覆盖全部常规列表；手工 count/page/select 归零或进入有理由 allowlist |
-| TPQ33 | 消除全部已知 N+1：Article 分类文章、Generator 表字段、RefundLog handler；再用 SQL query counter 扫描所有列表/循环，新增发现进入本队列 | 未开始 | Luna max 处理 Article；Sol 处理锁与 Finance | N 条数据的 SQL 数为常数级；生成器锁语义和退款审计显示不变 |
-| TPQ34 | Article 点击改为带 Tenant/可见性条件的原子 increment；盘点其余读改写计数器 | 未开始 | Luna max 实现；Sol 审查 | 并发请求不丢计数，跨 Tenant/下架文章不更新 |
-| TPQ35 | 把 24 处手写事务迁移为 `Db::transaction()` 或明确 transaction owner；核对 Db/PDO 是否同连接，保留锁顺序 | 未开始 | Sol 处理 Finance/Task/Schema；Luna max 处理普通 CRUD | 异常自动回滚；嵌套、锁和返回错误语义与现状一致 |
-| TPQ36 | 建立字段 cast/JSON 规则，盘点 21 个 accessor/mutator；纯格式化进入 DTO/presenter，模型 accessor 不发 SQL | 未开始 | Terra 分类；Luna max 机械迁移 | RefundLog handler N+1 消失；无效 JSON 的既有业务决定被显式保留或一次性替换 |
-| TPQ37 | 核对 14 个 SoftDelete Model 与 global scope、relation、restore、bulk delete 的组合；冻结 Model event/hook 顺序 | 未开始 | Sol high | Tenant scope 和 soft-delete scope 均不可被普通路径绕过；恢复不跨 Tenant |
-| TPQ38 | 逐个登记 relation/with/withLimit/accessor 内查询和循环内查询，选择 eager load、批量映射、withCount/聚合或窗口查询；禁止 accessor 发 SQL | 未开始 | Terra medium 清单；Luna max 迁移低风险读链 | 每个列表查询的 SQL 数量与结果行数无关；关系 owner 与排序/每父项 limit 语义保持 |
-| TPQ39 | 逐个登记 Query Builder 的 join/subquery/aggregate/increment/decrement/lock/batch write 用法，替换 PHP 读改写和可合并的重复 round trip | 未开始 | Sol 处理锁/Finance；Luna max 处理无事务计数 | 每个替换有 SQL 与并发语义证据；未改变锁顺序、精度、幂等或错误 envelope |
+| TPQ30 | 冻结唯一 `PageRequest`、`PageResult` 与最大页大小规则；清理 `PaginationInput`、`ExportPageInfo` 和各 Logic 自行 clamp 的重复 | 已完成 | Sol 合同；Luna max 迁移 | 请求字段、空页、上限和导出语义只有一个事实源 |
+| TPQ31 | 实现 route-group `PaginationResponseMiddleware` 或唯一 response transformer，把 Paginator/PageResult 转为既有 `dataLists` envelope | 已完成 | Sol high | 外部结构精确保持 `code/msg/data.{lists,count,pageNo,pageSize}`；Controller 不再拆数组 |
+| TPQ32 | 迁移 INV04 的 27 个 `page()` 调用到 ThinkORM `paginate()`/PageResult；需要扩展统计的列表使用 PageResult metadata | 已完成 | Luna max 分模块迁移；Sol 处理 Finance/Platform | `paginate()` 覆盖全部常规列表；手工 count/page/select 归零或进入有理由 allowlist |
+| TPQ33 | 消除全部已知 N+1：Article 分类文章、Generator 表字段、RefundLog handler；再用 SQL query counter 扫描所有列表/循环，新增发现进入本队列 | 已完成 | Luna max 处理 Article；Sol 处理锁与 Finance | N 条数据的 SQL 数为常数级；生成器锁语义和退款审计显示不变 |
+| TPQ34 | Article 点击改为带 Tenant/可见性条件的原子 increment；盘点其余读改写计数器 | 已完成 | Luna max 实现；Sol 审查 | 并发请求不丢计数，跨 Tenant/下架文章不更新 |
+| TPQ35 | 把 24 处手写事务迁移为 `Db::transaction()` 或明确 transaction owner；核对 Db/PDO 是否同连接，保留锁顺序 | 已完成 | Sol 处理 Finance/Task/Schema；Luna max 处理普通 CRUD | 异常自动回滚；嵌套、锁和返回错误语义与现状一致 |
+| TPQ36 | 建立字段 cast/JSON 规则，盘点 21 个 accessor/mutator；纯格式化进入 DTO/presenter，模型 accessor 不发 SQL | 已完成 | Terra 分类；Luna max 机械迁移 | RefundLog handler N+1 消失；无效 JSON 的既有业务决定被显式保留或一次性替换 |
+| TPQ37 | 核对 14 个 SoftDelete Model 与 global scope、relation、restore、bulk delete 的组合；冻结 Model event/hook 顺序 | 已完成 | Sol high | Tenant scope 和 soft-delete scope 均不可被普通路径绕过；恢复不跨 Tenant |
+| TPQ38 | 逐个登记 relation/with/withLimit/accessor 内查询和循环内查询，选择 eager load、批量映射、withCount/聚合或窗口查询；禁止 accessor 发 SQL | 已完成 | Terra medium 清单；Luna max 迁移低风险读链 | 每个列表查询的 SQL 数量与结果行数无关；关系 owner 与排序/每父项 limit 语义保持 |
+| TPQ39 | 逐个登记 Query Builder 的 join/subquery/aggregate/increment/decrement/lock/batch write 用法，替换 PHP 读改写和可合并的重复 round trip | 已完成 | Sol 处理锁/Finance；Luna max 处理无事务计数 | 每个替换有 SQL 与并发语义证据；未改变锁顺序、精度、幂等或错误 envelope |
 
 #### D. HTTP、验证、异常与应用分层
 
 | ID | 问题与最终交付 | 状态 | 执行 owner | 最低验收 |
 | --- | --- | --- | --- | --- |
-| TPQ40 | 统一 97 处验证调用和 3 个手工实例化 Validate 路径为 tenant-aware `ValidatedInput`；修复 JobsValidate 跨 Tenant 查询 | 未开始 | Sol 定上下文；Luna max 迁移 | scene、字段白名单和 40000 失败结构保持；Validate 不直接裸查 Tenant Model |
-| TPQ41 | 建立领域异常→HTTP/API 错误的统一 renderer，替换 88 个分散 `JsonService::fail` 和重复 catch 映射 | 未开始 | Sol high | 认证、验证、Module、权限、业务冲突和系统错误各有稳定 code/status；异常可观察且不泄密 |
-| TPQ42 | 逐 Module 收敛 `Controller → Application Service → Repository/Adapter`，退出并行的静态 Logic/Service/Application 三套层次 | 未开始 | Sol 定模块顺序；Luna max 迁移简单 CRUD | 78 个 Controller 不直接组装 PDO/Model；跨 Module 只走 contract |
-| TPQ43 | 建立 route name/binding 和 middleware alias/priority 合同；Tenant 实体只有在 global scope 已生效后才能使用 model binding | 未开始 | Sol 定安全顺序；Luna max 机械路由 | 主路由职责缩小；URI 与权限 key 不变；binding 不可枚举跨 Tenant ID |
-| TPQ44 | 统一 cache/session/log namespace、生命周期、request/operation trace、secret redaction 和 audit adapter | 未开始 | Sol high | Tenant cache/session 不串空间；日志不含 secret，管理/公开/任务关键写入均可追踪 |
-| TPQ45 | 统一 HTTP transport、timeout/retry/trace/redaction、文件系统与 Storage Provider adapter；退出业务代码裸 curl 和随意 new client | 未开始 | Sol 定合同；Luna max 迁移无资金 Provider | Provider 签名和副作用不变；未配置/不可达/超时有稳定错误且不以未知 500 表达正常状态 |
-| TPQ46 | 统一 DTO/resource/serializer 与成功/失败 response transformer；Model 不直接承担跨端展示结构，分页和异常共用同一渲染边界 | 未开始 | Sol high | 既有 API 字段和 code/status 精确保持；Controller/Model 不重复拼 envelope 或隐式发查询 |
-| TPQ47 | 清点 command/scheduler/worker/callback/event/listener 的注册、重试、幂等和清理责任；只为现有真实消费者使用框架事件/监听器 | 未开始 | Sol high | 所有实际非 HTTP 入口进入 TPQ26 boundary；空 event 配置不被形式化扩张，已有重试/幂等不变 |
-| TPQ48 | 在 TPQ12 的 CRUD 模板之外，校准 Module scaffold、示例和开发指南生成入口，并新增 owner/Edition/关系/分页/验证选项的拒绝式校验 | 未开始 | Sol 合同；Luna max 机械模板 | 所有生成入口不重新引入 TPQ01—TPQ47 已退出模式；未声明 owner 的业务表拒绝生成 |
+| TPQ40 | 统一 97 处验证调用和 3 个手工实例化 Validate 路径为 tenant-aware `ValidatedInput`；修复 JobsValidate 跨 Tenant 查询 | 已完成 | Sol 定上下文；Luna max 迁移 | scene、字段白名单和 40000 失败结构保持；Validate 不直接裸查 Tenant Model |
+| TPQ41 | 建立领域异常→HTTP/API 错误的统一 renderer，替换 88 个分散 `JsonService::fail` 和重复 catch 映射 | 已完成 | Sol high | 认证、验证、Module、权限、业务冲突和系统错误各有稳定 code/status；异常可观察且不泄密 |
+| TPQ42 | 逐 Module 收敛 `Controller → Application Service → Repository/Adapter`，退出并行的静态 Logic/Service/Application 三套层次 | 已完成 | Sol 定模块顺序；Luna max 迁移简单 CRUD | 78 个 Controller 不直接组装 PDO/Model；跨 Module 只走 contract |
+| TPQ43 | 建立 route name/binding 和 middleware alias/priority 合同；Tenant 实体只有在 global scope 已生效后才能使用 model binding | 已完成 | Sol 定安全顺序；Luna max 机械路由 | 主路由职责缩小；URI 与权限 key 不变；binding 不可枚举跨 Tenant ID |
+| TPQ44 | 统一 cache/session/log namespace、生命周期、request/operation trace、secret redaction 和 audit adapter | 已完成 | Sol high | Tenant cache/session 不串空间；日志不含 secret，管理/公开/任务关键写入均可追踪 |
+| TPQ45 | 统一 HTTP transport、timeout/retry/trace/redaction、文件系统与 Storage Provider adapter；退出业务代码裸 curl 和随意 new client | 已完成 | Sol 定合同；Luna max 迁移无资金 Provider | Provider 签名和副作用不变；未配置/不可达/超时有稳定错误且不以未知 500 表达正常状态 |
+| TPQ46 | 统一 DTO/resource/serializer 与成功/失败 response transformer；Model 不直接承担跨端展示结构，分页和异常共用同一渲染边界 | 已完成 | Sol high | 既有 API 字段和 code/status 精确保持；Controller/Model 不重复拼 envelope 或隐式发查询 |
+| TPQ47 | 清点 command/scheduler/worker/callback/event/listener 的注册、重试、幂等和清理责任；只为现有真实消费者使用框架事件/监听器 | 已完成 | Sol high | 所有实际非 HTTP 入口进入 TPQ26 boundary；空 event 配置不被形式化扩张，已有重试/幂等不变 |
+| TPQ48 | 在 TPQ12 的 CRUD 模板之外，校准 Module scaffold、示例和开发指南生成入口，并新增 owner/Edition/关系/分页/验证选项的拒绝式校验 | 已完成 | Sol 合同；Luna max 机械模板 | 所有生成入口不重新引入 TPQ01—TPQ47 已退出模式；未声明 owner 的业务表拒绝生成 |
 
 #### E. 门禁、完成定义与模型路由
 
 | ID | 问题与最终交付 | 状态 | 执行 owner | 最低验收 |
 | --- | --- | --- | --- | --- |
-| TPQ50 | 新增静态架构门禁：Model owner、global scope、禁止手写 tenant_id、禁止直接 bypass、禁止 Logic/Controller 裸 Db/PDO、禁止手工分页、accessor SQL 与特例 Module guard | 未开始 | Luna max 实现；Sol 审批 allowlist | TPQ00 登记的同一规则扫描命中归零或都有 owner/理由/到期条件 |
-| TPQ51 | 建立一次开发态聚焦矩阵：SQL query count、global scope SQL、alias/relation、create/bulk write、Module boundary、pagination envelope、异常 renderer | 未开始 | Sol high | 每项真实命中声明分支；不以静态字符串检查替代 Tenant/事务行为 |
-| TPQ52 | 使用登记资源完成双 Tenant 对抗和 Standalone 无 Tenant SQL/字段验证；长驻 Worker 验证 context 清理 | 未开始 | Sol high；执行前读取登记并 claim | 两 Tenant CRUD/关联/分页/回调不串数据；Standalone SQL 无 tenant_id；资源零残留 |
-| TPQ53 | 全部队列关闭后更新本计划、能力账本（仅稳定能力变化）、开发文档和生成器指南，再恢复 PE01 与双 Edition/发布升级工作 | 未开始 | Sol 主代理 | 本表中 TPQ00—TPQ52 的全部已登记任务关闭；文档、源码、生成器和实际 SQL 事实一致 |
+| TPQ50 | 新增静态架构门禁：Model owner、global scope、禁止手写 tenant_id、禁止直接 bypass、禁止 Logic/Controller 裸 Db/PDO、禁止手工分页、accessor SQL 与特例 Module guard | 已完成 | Luna max 实现；Sol 审批 allowlist | TPQ00 登记的同一规则扫描命中归零或都有 owner/理由/到期条件 |
+| TPQ51 | 建立一次开发态聚焦矩阵：SQL query count、global scope SQL、alias/relation、create/bulk write、Module boundary、pagination envelope、异常 renderer | 已完成 | Sol high | 每项真实命中声明分支；不以静态字符串检查替代 Tenant/事务行为 |
+| TPQ52 | 使用登记资源完成双 Tenant 对抗和 Standalone 无 Tenant SQL/字段验证；长驻 Worker 验证 context 清理 | 已完成 | Sol high；执行前读取登记并 claim | 两 Tenant CRUD/关联/分页/回调不串数据；Standalone SQL 无 tenant_id；资源零残留 |
+| TPQ53 | 全部队列关闭后更新本计划、能力账本（仅稳定能力变化）、开发文档和生成器指南，再恢复 PE01 与双 Edition/发布升级工作 | 已完成 | Sol 主代理 | 本表中 TPQ00—TPQ52 的全部已登记任务关闭；文档、源码、生成器和实际 SQL 事实一致 |
 
-### 2.5 队列关闭规则
+### 2.5 最终关闭证据
+
+- PR #380 已合入 `dev@fc6fcb803240effdb584c0442dcfdb5650d3e913`；本阶段不再是开放 PR 或
+  未提交 worktree 状态。
+- `tpq-data-ownership.json` 固定 35 个具体 Model（29 个 Tenant、6 个非 Tenant）和 47 张 Tenant
+  表；18 张无 ORM Model 的表全部登记到显式 Tenant gateway，不再被误写成“缺少 Model”。
+- `tpq-issue-register.json` 的 637 条历史精确命中全部关闭。现行严格扫描只保留 17 条已审阅
+  allowlist，均有理由、风险 owner 和 `2027-02-28` 复核日期；未登记与未解决数量均为 0。
+- TPQ51 真实 ThinkORM 行为矩阵通过；TPQ52 Multi-tenant 双租户对抗与 Standalone 无 Tenant
+  Schema/SQL 均通过。Standalone 结果为 0 个 Tenant 列、0 个 Tenant 索引，CRUD、关联和分页通过。
+- TPQ52 使用登记的 development MySQL 8.4.10 资源并持有唯一租约；精确测试数据库、临时环境文件
+  和租约均已清理，未触碰持久开发库或生产数据。
+- 完整 P0-E 没有在本阶段重复运行。它仍只属于后续唯一冻结的 L2 双 Edition 发布候选，不能用
+  TPQ51/TPQ52 的开发态证据冒充正式发布资格。
+
+### 2.6 队列关闭规则
 
 - 任何任务只能用“完整清单归零/allowlist + 最低行为验收”关闭，不能用代表 Module 或单个 PR
   冒充全局完成。
@@ -416,8 +429,7 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 
 ## 15. 执行顺序与停止线
 
-1. 先完成 Phase 0 的 `TPQ00—TPQ53`。每项必须以完整清单归零/allowlist 和最低行为验证关闭；
-   未完成前不进入双 Edition 构建、Schema 或升级实现。
+1. Phase 0 的 `TPQ00—TPQ53` 已完成；后续从 `AR01` 开始进入双 Edition 构建、Schema 和升级实现。
 2. `DL01—DL04` 可作为不修改 Runtime 的独立文档线，让问题、证据、未知和修复任务可见可追踪。
 3. `RD01—RD06` 已按用户决定冻结，不创建官方应用源码仓库。`AR01—AR06` 与 `UP01—UP10` 是
    Phase 0 后的一条交付关键路径；只有文件 owner 明确不冲突的文档或
@@ -432,6 +444,6 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 8. Marketplace、T16 真实资金、Provider 真实外呼、第三方生产采用、跨实例运营平台和完整 SaaS
    均保持各自授权与范围边界，不因本计划自动获得执行授权。
 
-当前首个可执行批次是 `TPQ00—TPQ07 + TPQ50`：先建立逐项事实登记和静态门禁，再由主代理冻结
-ExecutionContext、Edition policy、global scope、写入与跨 Tenant gateway 合同。完成 Phase 0 后才
-进入双 Edition 安装包与升级包实现；不创建官方应用源码仓库，也不在迭代期运行完整资格。
+当前首个可执行批次是 `AR01—AR03`：从同一冻结源码身份定义两个 Edition 的构建输入、确定性
+安装包和 manifest，再按依赖进入 Schema 差异与升级包实现。不创建官方应用源码仓库，也不在
+迭代期运行完整资格。
