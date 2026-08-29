@@ -108,7 +108,7 @@ SELECT 61, 101, id, REPEAT('b', 64), 11, 1, 0, 2147483647
 FROM pa_external_channel_binding
 WHERE tenant_id = 101 AND provider = 'oauth.wechat.oa';
 SQL);
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App(); $app->initialize();
 
     $alpha = oauthTenantContext(101, 11, 'fresh-oauth-alpha');

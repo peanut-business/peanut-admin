@@ -6,14 +6,14 @@ namespace app\command;
 use app\platform\service\module\ProductTenantModuleProfileService;
 use PDO;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 use think\facade\Db;
 
-final class TenantModuleProfile extends Command
+final class TenantModuleProfile extends ContextualCommand
 {
     protected function configure()
     {
@@ -22,7 +22,7 @@ final class TenantModuleProfile extends Command
             ->addArgument('profile', Argument::REQUIRED, 'Product profile: standalone or demo');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $pdo = Db::connect()->connect();

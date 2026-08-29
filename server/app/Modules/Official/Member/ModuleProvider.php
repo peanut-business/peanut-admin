@@ -9,6 +9,7 @@ use app\Modules\Official\Member\Application\MemberQueryService;
 use app\Modules\Official\Member\Application\MemberProfileContractService;
 use app\Modules\Official\Member\Application\MemberTagContractService;
 use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
+use app\Modules\Official\Member\Contracts\MemberAdministration;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
@@ -22,9 +23,14 @@ final class ModuleProvider implements ModuleProviderContract
         return 'official.member';
     }
 
+    public function administration(): MemberAdministration
+    {
+        return app(MemberAdministration::class);
+    }
+
     public function queries(): MemberQueries
     {
-        return new MemberQueryService();
+        return app(MemberQueries::class);
     }
 
     public function balanceCommands(): MemberBalanceCommands

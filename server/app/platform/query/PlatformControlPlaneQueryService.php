@@ -25,7 +25,7 @@ final readonly class PlatformControlPlaneQueryService
     public function operators(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.operator.read');
-        return $this->page(<<<'SQL'
+        return $this->paginateQuery(<<<'SQL'
 SELECT po.id, po.account_id, po.display_name, po.status, po.security_revision,
        a.display_name AS account_display_name, a.status AS account_status,
        c.identifier_normalized AS email,
@@ -49,7 +49,7 @@ SQL, [], $page, static function (array $row): array {
     public function roles(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.role.read');
-        return $this->page(<<<'SQL'
+        return $this->paginateQuery(<<<'SQL'
 SELECT pr.id, pr.`key`, pr.name, pr.description, pr.is_builtin, pr.status, pr.revision,
        COUNT(DISTINCT prp.permission_id) AS permission_count,
        COALESCE(GROUP_CONCAT(DISTINCT p.`key` ORDER BY p.`key` SEPARATOR ','), '') AS permission_keys,
@@ -72,7 +72,7 @@ SQL, [], $page, static function (array $row): array {
     public function permissions(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.permission.read');
-        return $this->page(<<<'SQL'
+        return $this->paginateQuery(<<<'SQL'
 SELECT id, `key`, module_key, `type`, name, description, risk_level, status,
        manifest_version, created_at, updated_at, retired_at
 FROM pa_permission
@@ -85,7 +85,7 @@ SQL, [], $page);
     public function audit(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.audit.read');
-        $result = $this->page(<<<'SQL'
+        $result = $this->paginateQuery(<<<'SQL'
 SELECT id, event_type, action, outcome, reason_code, operator_id, account_id,
        target_type, target_id, request_id, operation_id, ip_address,
        user_agent_hash, before_json, after_json, metadata_json, occurred_at
@@ -172,7 +172,7 @@ SQL);
     }
 
     /** @param array<string,mixed> $parameters @return array{items:list<array<string,mixed>>,total:int} */
-    private function page(
+    private function paginateQuery(
         string $sql,
         array $parameters,
         PageRequest $page,

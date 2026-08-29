@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 use app\platform\service\module\OpisManifestSchemaValidator;
 use app\platform\service\module\ReflectionContractInspector;
 use app\platform\service\module\StrictVersionConstraintMatcher;
@@ -54,7 +56,7 @@ $runtime = (string)file_get_contents(dirname(__DIR__, 2) . '/app/platform/servic
 $registryFactory = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/platform/service/plugin/PluginModuleRegistryFactory.php'
 );
-$routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+$routes = peanut_route_registry_source(dirname(__DIR__, 2));
 $adminBridge = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/common/service/authorization/CoreTenantModuleAdminBridge.php'
 );

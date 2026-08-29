@@ -21,7 +21,7 @@ fresh clone 与尚未连接 Runtime 的静态构建需要确定性默认值。�
 限定 CodeGraph/静态审计确认：
 
 - `WebsiteConfigService` 当前拥有 12 个规范字段，但管理端 `WebsiteConfig` DTO 和表单仍提交已退出的 `logo/favicon/copyright/icp` 字段，保存链与 UI 不一致。
-- 公共 `IndexLogic::getConfigData` 仍逐字段读取 `ConfigService`；PC 与 UniApp 只消费 `shop_name/shop_logo`，并各自保留小写 `peanut` fallback。
+- 公共 `IndexApplicationService::getConfigData` 仍逐字段读取 `ConfigService`；PC 与 UniApp 只消费 `shop_name/shop_logo`，并各自保留小写 `peanut` fallback。
 - 管理端 HTML、壳层、logo/favicon 和登录轮播没有统一消费品牌配置；UniApp `pages.json`、manifest、package 元数据和固定 `static/logo.png` 未产品化。
 - 默认品牌图片为空，`server/public/favicon.ico` 仍是 ThinkPHP 图标，`server/config/project.php` 用同一 favicon 代替头像、菜单和文档等不同用途。
 - `server/composer.json` 仍是 ThinkPHP 项目元数据；UniApp 仍名为 `uni-preset-vue` 且 manifest 名称/描述为空。
@@ -78,7 +78,7 @@ manifest 修改是克隆后首次安装前的脚手架覆盖入口；安装后�
 
 ## 5. 四端 Host 与元数据责任
 
-- 后端：`WebsiteConfigService` 输出完整规范 DTO；`IndexLogic`、工作台版本信息和安装器只装配该服务或 bootstrap reader，不逐字段复制规则。
+- 后端：`WebsiteConfigService` 输出完整规范 DTO；`IndexApplicationService`、工作台版本信息和安装器只装配该服务或 bootstrap reader，不逐字段复制规则。
 - 管理端：未登录品牌 bootstrap 与登录后 Runtime 使用同一 DTO；页面标题、navbar/menu logo、favicon、登录背景、slogan、页脚和网站配置表单全部对齐规范字段。
 - PC：store 拥有一次配置加载；layout/head metadata 只消费 store DTO，无小写 `peanut` 或环境域名 fallback。
 - UniApp/H5：store 拥有一次配置加载；页面标题、manifest/package 元数据、about/login、logo/favicon 由规范字段或生成 fallback 提供，不保留固定 `/static/logo.png` 产品引用和“感谢使用本产品”等泛化占位文案。

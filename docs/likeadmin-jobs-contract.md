@@ -8,7 +8,7 @@
 
 - `likeadmin/server/app/adminapi/lists/dept/JobsLists.php`
 - `likeadmin/server/app/adminapi/controller/dept/JobsController.php`
-- `likeadmin/server/app/adminapi/logic/dept/JobsLogic.php`
+- `likeadmin/server/app/adminapi/application/dept/JobsApplicationService.php`
 - `likeadmin/server/app/adminapi/validate/dept/JobsValidate.php`
 - `likeadmin/admin/src/views/organization/post/index.vue`
 - `likeadmin/admin/src/views/organization/post/edit.vue`

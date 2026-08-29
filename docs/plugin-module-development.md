@@ -165,6 +165,12 @@ php think module:check acme.inventory
 Module migration 必须在每张业务表上固定 `tenant_id`，索引和外键也要包含 Tenant 边界。
 fixture 的关键约束是：
 
+开发阶段始终维护这一份 tenant-first Module 源码，不为 Standalone 复制第二套 Model、Repository
+或 migration。正式发布时，Edition 构建器从同一个冻结源码身份生成 Standalone 与
+Multi-tenant 制品；Standalone 的 Tenant Runtime、字段和索引差异属于构建规则，不由 Module
+作者在业务代码里散落 Edition 分支。`module:create` 因此生成 `Application/`、`Contracts/`、
+`Infrastructure/Persistence/` 和 Tenant 安全骨架，而不生成并行的旧式 `Service/` 层。
+
 ```sql
 UNIQUE KEY uk_fixture_delivery_tenant_ref (tenant_id, reference)
 FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id)

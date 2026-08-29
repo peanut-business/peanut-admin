@@ -284,7 +284,7 @@
         "phase": "merged_to_dev",
         "candidate": {"worktree": "/Users/xing/.codex/worktrees/0367/peanut-admin", "commit": "7618254d92a13f708ac79f5b9b067f35aa82a808", "tree": "0cc551f97563be192cb247fcc0821c3277bbf8d9", "base": "51b85343225107fb18811130ecb364d45d7ae23d", "merge_commit": "00644081714bff105c26a5360c7cd20450bb1d4c", "integration": "merged_to_dev", "pr": "#230", "gate_evidence": "output/task-gate-task8255/summary.txt"},
         "business_summary": "Task 候选已将 scheduler、可信 TaskJob、worker、执行前 Module/授权复核和 Module identity fixture 固定在 7618254d…；登记 P0-E 资源上幂等、Task/Import-Export 停用负向、结果下载/跨 Tenant 负向均通过。",
-        "side_effects": "相对最新 origin/dev 的写集包含 Task Runtime、异步验收 fixture 和测试；不改变身份模型、Schema owner 或存储合同。额外原子失败注入因登记账号缺少 SUPER 被明确 skipped；TaskImportExportHostTest 的既有 CrontabLogic 参数类型失败不属于本服务写集。",
+        "side_effects": "相对最新 origin/dev 的写集包含 Task Runtime、异步验收 fixture 和测试；不改变身份模型、Schema owner 或存储合同。额外原子失败注入因登记账号缺少 SUPER 被明确 skipped；TaskImportExportHostTest 的既有 CrontabApplicationService 参数类型失败不属于本服务写集。",
         "next_action": "已合入 dev=006440817…；后续导入导出服务可消费 Task Runtime，继续保留 atomic injection 的资源权限限制说明。",
         "blockers": []
       },
@@ -1183,7 +1183,7 @@
       ],
       "current_implementation": [
         "server/app/Modules/Official/Oauth/module.json",
-        "server/app/api/logic/OAuthLogic.php",
+        "server/app/api/logic/OAuthApplicationService.php",
         "server/app/common/service/oauth/OAuthBrowserCallbackService.php",
         "server/app/common/service/wechat/OfficialAccountService.php"
       ],

@@ -68,7 +68,7 @@ type TrendSeries = {
 type Support = { image: string; title: string; desc: string }
 ```
 
-参考源码：`/Users/xing/Documents/company-projects/peanut-admin/.workspace/likeadmin/server/app/adminapi/controller/WorkbenchController.php`、`/Users/xing/Documents/company-projects/peanut-admin/.workspace/likeadmin/server/app/adminapi/logic/WorkbenchLogic.php`。
+参考源码：`/Users/xing/Documents/company-projects/peanut-admin/.workspace/likeadmin/server/app/adminapi/controller/WorkbenchController.php`、`/Users/xing/Documents/company-projects/peanut-admin/.workspace/likeadmin/server/app/adminapi/application/WorkbenchApplicationService.php`。
 
 ## 3. version
 
@@ -143,7 +143,7 @@ type Support = { image: string; title: string; desc: string }
 低冲突独立文件：
 
 - `server/app/adminapi/controller/WorkbenchController.php`；
-- `server/app/adminapi/logic/WorkbenchLogic.php`；
+- `server/app/adminapi/application/WorkbenchApplicationService.php`；
 - `server/config/project.php`；
 - `web/src/api/workbench.ts`；
 - `web/src/views/dashboard/workplace/index.vue`；

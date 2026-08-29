@@ -1,25 +1,32 @@
 # Peanut Admin 发布后增强任务计划
 
-> 状态：当前计划；尚未开始实现
+> 状态：当前计划；Phase 0 实施中
 >
-> 基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
+> 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
+>
+> 计划事实基线：`origin/dev@91b62c4e01ef029a7a3a1cc7cfdc4ee0dd365d7c`
 >
 > 决策日期：2026-08-29
 >
 > 完成事实仍以 `docs/product-status/capability-ledger.json` 为准
 
-## 1. 目标与事实边界
+## 1. 用业务语言说明当前状态
 
-本计划承接 consumer-ready 正式源码发布后的体验修正和可选增强。它不重做已经完成的
-PC00—PC70、CR01—CR40，也不把计划、浏览器探索或历史材料写成已实现能力。
+Peanut Admin 已经有一个经过完整资格验证、不会再变化的正式源码版本 `v3.0.12`。这个版本能
+创建新应用、完成空库安装、启动、登录并部署 Demo，开发文档站也已经上线。CR01—CR40 和
+PC00—PC70 保持完成，本计划不重做这些工作。
 
-当前 `v3.0.12` 的正式源码、annotated tag、GitHub Release、scaffold 和 P0-E 8/8 身份保持
-不变。登记 Demo 与文档站已经采用该提交；下表新增的是后续候选，不改写不可变 Release。
+但“正式源码已经发布”还不等于“普通开发者能方便地取得、安装和升级产品”。当前仍有两个
+产品体验缺口：
 
-本轮 Demo 审计使用登记的 `production-candidate` 部署、MySQL 和四域名资源，固定候选为
-`fe328a320b7c68b3c2f47512f2aa4afcad43c630`。证据位于
-`output/playwright/demo-audit-v3012/`，仅用于问题定位；密码、Cookie、token 和环境内容不进入
-计划或证据。
+1. **Demo 能打开和登录，但部分功能看起来像坏了。** 一些没有权限的功能仍显示给用户，点击
+   后才提示无权限；Platform 存储页会返回 500；个别页面同时显示成功内容和失败提示。
+2. **产品有正式源码，但没有清楚的双 Edition 交付入口。** 同一套开发源码可以运行于
+   Standalone 和 Multi-tenant 两种模式，但目前还没有从同一冻结 Release 生成的两套正式安装包、
+   对应升级包和跨受支持版本升级说明。用户不应从另一个人工维护的“应用源码仓库”取得产品。
+
+因此当前准确结论是：Peanut Admin 已完成 consumer-ready 正式源码交付；双 Edition 安装包、
+升级包、跨版本升级体验和 Demo 可见质量是下一轮产品化工作，尚未完成。
 
 ## 2. Phase 0：ThinkPHP 架构质量全局前置队列
 
@@ -124,7 +131,7 @@ TPQ 任务、逐路径清单和验收结论。发现新问题时先新增唯一 
 | TPQ07 | 建立 `PlatformTenantDataGateway` 和唯一可审计 scope bypass；清点 Platform、安装、迁移、bootstrap、修复和系统查询 | 未开始 | Sol high | `withoutGlobalScope` 只出现在 allowlist gateway；每次跨 Tenant 查询有 actor/operation/audit |
 | TPQ08 | 为 18 张无 Model Tenant 表和 Db/PDO 路径建立 `TenantQuery`/领域 gateway；禁止普通业务直接 Db/PDO 查询 Tenant 表 | 未开始 | Sol 定边界；Luna max 机械迁移 | INV02 的 18 张表均有 owner；Db/PDO 混用归零或进入事务 owner allowlist |
 | TPQ09 | 拆分 15 个 TenantRepository：保留领域 persistence/transaction，删除手写 Tenant 谓词、create 注入和 Module 门禁 | 未开始 | Sol 处理 Finance/OAuth/Task/File；Luna max 处理低风险 CRUD | Repository 不再重复 global scope 或 Module guard；直接 Model 绕过清单归零 |
-| TPQ10 | 修复 JobsValidate、OfficialAccountReplyLogic、Dictionary Provider、支付 callback 等直接绕过点 | 未开始 | Sol high；低风险验证迁移可交 Luna max | 双 Tenant 同名岗位合法；跨 Tenant ID 不可枚举；callback 仍从可信绑定恢复上下文 |
+| TPQ10 | 修复 JobsValidate、OfficialAccountReplyApplicationService、Dictionary Provider、支付 callback 等直接绕过点 | 未开始 | Sol high；低风险验证迁移可交 Luna max | 双 Tenant 同名岗位合法；跨 Tenant ID 不可枚举；callback 仍从可信绑定恢复上下文 |
 | TPQ11 | 逐关系核对复合 FK、全局 ID 和查询谓词，删除数据库已蕴含的重复 JOIN/WHERE；`ArticleCollectionSummaryService` 在全局 Scope 与现有复合 FK 生效后只按 `article_id` 关联，不再重复比较收藏/文章 tenant_id；先补文件、支付、OAuth、通知等关系缺口 | 未开始 | Sol high | 每个被删谓词有 FK/唯一键证据；Article 收藏汇总只有根 Scope 一个 Tenant 条件且结果不变；缺口先迁移、后删查询条件，不按文本批量删除 |
 | TPQ12 | 改造生成器：所有权必填，按 owner 生成 Tenant/Platform/Instance Model、global scope、Application Service、分页和验证；拒绝裸 BaseModel 模板 | 未开始 | Sol 合同；Luna max 模板实现 | 新生成 Tenant CRUD 没有裸 Model 查询、手写 tenant_id、静态 Logic 或手工分页 |
 | TPQ13 | 冻结 Model/Query 写入合同：字段白名单、readonly、mass assignment、create/save/saveAll/insertAll/update/delete 的 Tenant 注入、事件覆盖和返回语义 | 未开始 | Sol high | 请求 tenant_id 永不生效；所有写 API 要么自动受 policy 保护，要么被静态禁止并只能走受控 persistence gateway |
@@ -193,105 +200,238 @@ TPQ 任务、逐路径清单和验收结论。发现新问题时先新增唯一 
 - 本阶段迭代只做 lint、静态门禁和受影响聚焦验证；TPQ52 才领取数据库/服务资源。最终 L2 候选
   只运行一次完整 P0-E，不在每个机械迁移后重复。
 
-## 3. 当前 Demo 部署与推荐消费方式
+## 3. 当前发布流程与双 Edition 最终方向
 
-线上 Demo 不是在服务器上克隆移动的 `dev` 或 `main` 分支后直接运行。唯一部署 owner
-`scripts/deploy-release` 从 annotated Release tag 生成不可变 `git archive`，校验 SHA-256，
-传输到登记的 oracle3 目录，并在部署端构建 Docker Compose 镜像。Multi-tenant Demo 再叠加
-带 `base_tag`、`base_commit`、`overlay_commit` 和 SHA-256 的受控 Demo overlay；`v3.0.12`
-的 base 与 overlay commit 都是同一个正式 Release commit。overlay 只承担合成 Demo 数据、
-Demo 写保护和入口投影，不是另一套生产源码。
+### 3.1 核心团队怎样发布 Peanut Admin
 
-推荐入口按用途区分：
+核心团队在 Peanut Admin 源码仓库开发。功能先进入 `dev`，固定候选通过资格后进入 `main`，
+然后对同一提交创建 annotated tag 和 GitHub Release。Release 里的规范 `tar.gz` 是整个 Peanut
+Admin 源码仓库的确定性归档，并附带 manifest、SBOM、许可证和资格身份；它不是由
+`create-app` 生成的 Edition 安装包。
 
-- 部署 Peanut Admin：使用不可变 annotated Release/tag 和唯一 `scripts/deploy-release`，不从
-  `dev` 部署，也不在服务器上维护一份漂移 clone。
-- 创建正式派生应用：从已核验的不可变 Release checkout 运行 `scripts/create-app`；生成后由
-  派生应用维护自己的仓库、资源登记和 app-owned 源码。
-- 直接 clone Peanut Admin：只用于维护参考应用或取得 Release checkout，不是创建正式下游
-  应用的最终入口。
+### 3.2 普通开发者当前怎样创建应用
 
-## 4. Demo 审计问题登记
+普通开发者先取得一个固定 Release checkout，再运行 `scripts/create-app`。创建器会生成独立
+应用目录、应用 manifest、框架基线和文件 owner，并把用户业务文件标为 `app-owned`。生成后
+开发者还需要配置资源、安装并发布；是否为自己的业务应用建立 Git 仓库由开发者决定。
 
-下列结论来自一次真实浏览器批量探索。修复 owner 领取任务时先把相邻现象归并为同一权限、
-会话或 UI 边界，再做一次聚焦验证；不得为每条 toast 分别创建修复候选。
+这条技术路径已经验证，但当前创建器没有把 Standalone 与 Multi-tenant 固化为两个正式、可下载、
+身份可核对的 Edition 安装包。独立应用仓库不会成为产品来源，也不会形成第二套产品源码。
 
-| ID | 站点/操作面 | 可见现象与证据 | 当前判定 | 影响 |
+### 3.3 Demo 当前怎样部署
+
+线上 Demo 不是从移动的 `dev`/`main` 分支部署，也不是先运行 `create-app` 再部署。唯一部署
+owner `scripts/deploy-release` 从正式 annotated tag 生成不可变源码归档，校验 SHA-256 后上传
+到登记服务器，在服务器构建 Docker 镜像，再叠加受控 Demo 数据、写保护和入口配置。
+
+这能证明 Peanut Admin 正式源码本身可以部署，但还不能证明普通用户拿到的两个 Edition 安装包
+都能独立安装，并使用对应升级包完成受支持的跨版本升级。
+
+### 3.4 当前怎样升级
+
+现有 `scripts/scaffold-upgrade` 已有安全的 `preflight → apply → verify → recover` 闭环。它只
+替换 Peanut Admin 管理的框架文件，遇到用户也改过的文件会停止，不静默覆盖 `app-owned`
+业务代码。数据库迁移、依赖安装、备份、服务重启和 smoke 仍由应用自己的发布流程执行。
+
+当前不足不是“完全没有升级能力”，而是升级输入和操作体验没有产品化：开发者需要自己准备
+新旧 scaffold manifest 和对应文件，没有独立升级包、稳定下载入口、统一版本选择、完整冲突
+说明和一份普通人能按步骤执行的升级手册。
+
+### 3.5 已确认的最终交付方式
+
+只保留一个人工开发事实源，从同一冻结 Release 生成五类正式制品：
+
+| 交付物 | 面向谁 | 用户得到什么 | 维护原则 |
+| --- | --- | --- | --- |
+| Peanut Admin 源码仓库 | 核心开发者 | 开发、修复、资格和发布来源 | 唯一人工开发事实源 |
+| Standalone 安装包 | 单组织、自托管用户 | 不启用 Tenant 过滤和 Tenant 字段/索引的独立版构建物 | 从固定 Release 生成，不人工维护第二份源码 |
+| Multi-tenant 安装包 | 多组织、平台化用户 | 保留完整 Tenant 隔离和 Platform 能力的多租户构建物 | 从同一固定 Release 生成，不复制开发源码 |
+| Standalone 升级包 | 已部署独立版用户 | 在 Standalone Edition 内跨受支持版本升级 | 只更新受管文件和对应 Schema，不覆盖用户业务与秘密 |
+| Multi-tenant 升级包 | 已部署多租户版用户 | 在 Multi-tenant Edition 内跨受支持版本升级 | 保留 Tenant 数据/索引/隔离合同，不覆盖用户业务与秘密 |
+
+推荐默认入口如下：
+
+- 普通用户首次使用：先选择 Standalone 或 Multi-tenant，再下载该 Edition 的正式安装包。
+- 需要自定义名称、slug 或 package identity 的用户：用固定 Peanut Admin Release 的创建器生成
+  同一 Edition 的派生应用；生成结果可以进入用户自己的业务仓库，但不是新的官方产品源。
+- 已有应用升级：只能使用当前 Edition 对应的升级包，不能用另一 Edition 或完整安装包覆盖。
+- 跨版本升级：升级包声明支持的源版本范围、目标版本、Edition、迁移链和恢复边界；允许跳过版本
+  时必须执行完整迁移链，不能只替换最终文件。Edition 转换不是普通升级，另行立项。
+- 面向用户的官方 Demo：Multi-tenant Demo 从正式 Multi-tenant 安装包部署，再叠加只含合成数据、
+  写保护和入口配置的 Demo overlay；Standalone 另做最小安装/登录验收，不伪装成多租户 Demo。
+- 核心团队发布：源码 Release、两个安装包和两个升级包来自同一 source commit/tree，逐制品记录
+  Edition、版本、生成器版本、Schema 身份和 SHA-256。
+
+完整安装包不能直接当升级包，因为它无法安全区分用户的订单、库存等业务代码、第三方 Module、
+环境配置和 Peanut Admin 管理文件。Edition 升级包沿用现有 manifest 文件 owner 和三方比较能力，
+只把升级所需的受管文件、checksum、兼容范围、恢复信息和说明封装成可下载制品。
+
+## 4. Demo 审计问题与证据现状
+
+本轮真实浏览器审计曾在 `output/playwright/demo-audit-v3012/` 生成 202 份快照、截图和 console
+记录，但文件都位于各站点的隐藏目录 `.playwright-cli/`，没有提交为长期证据，也没有形成
+人类可读报告。Finder 或普通文件浏览器会让该目录看起来是空的；这不符合可交付审计要求。
+
+当前问题只登记在本计划的 `DA01—DA08`；修正工作是下方 `PE01—PE05`。执行后必须建立
+`docs/product-status/audits/demo-experience-audit.md`、同名 JSON 问题清单和少量脱敏截图索引，
+原始隐藏目录只作为过程材料，不再要求用户自行寻找。
+
+| ID | 站点/操作面 | 用户看到的现象 | 当前判定 | 业务影响 |
 | --- | --- | --- | --- | --- |
-| DA01 | 共享 Admin 的 Tenant A persona、Tenant A、Tenant B 的可见菜单与按钮 | 共享入口的用户设置、操作日志查询/重置和移动端/Tabbar 装修；Tenant A 的操作日志查询/重置/导出、网站设置、字典、装修与用户设置；Tenant B 的网站设置出现“暂无访问权限” | 高置信；需要按 persona 对齐菜单、按钮和 API permission key | Demo 看起来可用但主要操作失败，直接影响体验可信度 |
-| DA02 | Platform → 存储基础设施/路由 | `/api/platform/infrastructure/storage/route` 两次返回 HTTP 500 | 高置信、稳定复现 | Platform 运维页不能可靠表达未配置或错误状态 |
-| DA03 | Admin/Tenant → 生产准备清单 | `readiness.items.undefined.title` 在 zh/en-US/en 均缺失 | 高置信、跨共享/Tenant A/Tenant B | 页面出现不完整文案并污染 console |
-| DA04 | Admin/Tenant → 装修管理 | `装修管理`、`移动端装修`、`Tabbar 装修`、`PC 装修` 缺少 locale key | 高置信；在共享 Admin/Tenant A 可见 | 导航国际化回退，英文或严格 locale 下体验不完整 |
-| DA05 | Platform → 角色/权限复选框 | Element Plus 持续报告 checkbox `label` 作为 value 即将废弃 | 高置信；同一页面重复出现 | 后续 Element Plus 3 升级风险，当前 console 噪声较大 |
-| DA06 | Tenant A 长会话中的装修/业务入口 | 后段出现“租户会话不可用”，与前段“暂无访问权限”并存 | 待区分；可能是审计中的会话切换/退出残留，也可能是 Host 会话恢复缺陷 | 未核实前不得作为 Tenant 隔离缺陷或已知 Runtime 故障发布 |
-| DA07 | Tenant 审计中的三个无地址快照 | 页面只显示 `404`，现有快照没有 URL/Host，无法归属到 Tenant A/B 或判断是否由刻意访问未知路由产生 | unknown；不作为已确认产品缺陷 | 后续修复验证应记录 URL 与导航来源，无法复现则关闭而不是猜测 |
-| DA08 | Platform → 租户与生命周期 → default/Tenant A/Tenant B 详情 | 三个详情动作都伴随“请求失败，请稍后重试”，同时详情对话框仍能展示数据 | 高置信、三 Tenant 一致；具体失败请求 unknown | 成功数据与失败 toast 同时出现，误导 operator 判断操作结果 |
+| DA01 | 共享 Admin、Tenant A、Tenant B 的菜单和按钮 | 多个看得见的操作点击后才提示“暂无访问权限” | 高置信 | 用户认为产品功能损坏，而不是账号能力受限 |
+| DA02 | Platform → 存储 | 默认存储路由接口重复返回 HTTP 500 | 高置信、稳定复现 | 运维人员无法判断是未配置还是系统故障 |
+| DA03 | 生产准备清单 | 页面出现 `readiness.items.undefined.title` | 高置信、三站点出现 | 页面文案不完整，降低产品可信度 |
+| DA04 | 装修管理 | 中文菜单缺少稳定翻译 key | 高置信 | 切换语言或严格 locale 时显示异常 |
+| DA05 | Platform 角色权限 | 浏览器持续提示 checkbox API 将废弃 | 高置信 | 当前是噪声，未来组件升级会成为兼容问题 |
+| DA06 | Tenant A 长会话 | 后段出现“租户会话不可用”，与无权限提示并存 | 待核实 | 可能是审计会话残留，也可能是真实会话恢复问题 |
+| DA07 | 三张 404 快照 | 没有记录 URL 和 Host，无法归属站点 | unknown | 不能作为已确认缺陷，也不能直接关闭 |
+| DA08 | Platform → Tenant 详情 | 详情能显示，同时弹出“请求失败” | 高置信 | operator 无法判断操作到底成功还是失败 |
 
-本轮未执行 Tenant 暂停/关闭、清空日志、密码修改、真实 Provider、真实资金、删除和其他不可逆
-动作。按钮可见性已纳入检查，但这些动作的成功路径必须在专用可丢弃资源和独立授权下验证。
-Tenant B 的登录、文章/分类和文件页面已确认基本可读；共享 Admin 的 bootstrap persona 没有形成
-可归属证据，不能用 Tenant A persona 的结果代替。
+未执行 Tenant 暂停/关闭、清空日志、密码修改、真实 Provider、真实资金、删除和其他不可逆
+动作。第二个共享 Admin persona、具体失败 endpoint、公开 PC/H5/callback 流程也没有形成充分
+证据；计划必须如实标明未知，不能把“按钮被看见”写成成功验证。
 
-## 5. 第一阶段：Demo 体验修正
+## 5. 第一阶段：补齐审计事实
+
+| ID | 任务 | 状态 | 交付结果 | 最低验收 |
+| --- | --- | --- | --- | --- |
+| DL01 | 建立长期 Demo 审计报告 | 未开始 | 一份按站点、账号角色、页面、操作、预期和实际结果编写的人类可读报告 | 用户无需打开隐藏目录就能找到全部已确认问题 |
+| DL02 | 建立机器可读问题与证据索引 | 未开始 | JSON 问题清单、证据 ID、URL/Host、时间、候选身份和脱敏截图索引 | 每个高置信问题至少有一个可归属证据；秘密、Cookie、token 不进入仓库 |
+| DL03 | 建立计划与问题的双向链接 | 未开始 | 审计项关联 PE 修复任务，修复任务反向关联审计 ID | 从问题能找到修正 owner、状态和验收；从修正能找到原始现象 |
+| DL04 | 明确未执行范围 | 未开始 | 单列未执行的破坏性、资金、Provider、第二 persona 和公开端流程 | 未覆盖项不被描述为通过或失败 |
+
+## 6. 第二阶段：冻结双 Edition 分发与升级决定
+
+| ID | 任务 | 状态 | 需要决定或产出 | 最低验收 |
+| --- | --- | --- | --- | --- |
+| RD01 | 冻结唯一开发事实源 | 已确认 | Peanut Admin 源码仓库是唯一人工开发来源；不建立官方应用源码仓库 | Standalone 与 Multi-tenant 不形成两套人工维护源码 |
+| RD02 | 冻结双 Edition 构建物 | 已确认 | 同一固定 Release 生成 Standalone 与 Multi-tenant 安装包 | 两包来源相同，Edition 和 Schema 差异显式可查 |
+| RD03 | 冻结双 Edition 升级物 | 已确认 | 每个 Edition 有独立升级包；Edition 之间不互相覆盖升级 | 升级包声明 Edition、源版本范围、目标版本和迁移链 |
+| RD04 | 冻结普通用户主入口 | 已确认 | 首次安装下载所选 Edition 安装包；定制应用使用固定 Release 的创建器 | 快速开始先选择 Edition，不要求用户理解内部发布工程 |
+| RD05 | 冻结统一来源身份 | 已确认 | 源码、两安装包和两升级包都记录 source commit/tree、生成器/Schema 版本与 checksum | 任一制品可追溯到唯一正式 Release |
+| RD06 | 冻结跨版本与转换边界 | 已确认 | 同 Edition 可按兼容矩阵跳版本并执行完整迁移链；跨 Edition 转换不属于普通升级 | 漂移、降级、错 Edition、缺迁移或篡改均 fail-closed |
+
+## 7. 第三阶段：建立双 Edition 安装包
+
+| ID | 任务 | 状态 | 交付结果 | 最低验收 |
+| --- | --- | --- | --- | --- |
+| AR01 | 冻结 Edition 构建输入 | 未开始 | 同一固定 Release、依赖锁、Module 集和生成器版本，只有 Edition profile 不同 | 构建脚本不从移动分支或第二仓库取产品源码 |
+| AR02 | 生成 Standalone 安装包 | 未开始 | 不启用 Tenant Runtime、字段和索引的确定性 `tar.gz`/可选 `zip` | manifest、Schema、managed/app-owned owner 和来源身份完整 |
+| AR03 | 生成 Multi-tenant 安装包 | 未开始 | 保留 Tenant/Platform 能力的确定性 `tar.gz`/可选 `zip` | manifest、Schema、managed/app-owned owner 和来源身份完整 |
+| AR04 | 发布双包与 checksum | 未开始 | 两个 Edition 包、外部 manifest、SBOM、许可证和 SHA-256 | 文件名和下载页不能让用户混淆 Edition |
+| AR05 | 校验双包身份与差异 | 未开始 | 机器可读身份/差异报告 | 共享源码身份一致；差异仅来自登记的 Edition profile 与生成规则 |
+| AR06 | 双 Edition 首次安装验收 | 未开始 | 两个正式包分别完成一次最低充分空库安装 | 不依赖开发 worktree，均能配置、安装、启动和登录 |
+
+## 8. 第四阶段：建立双 Edition 升级包和跨版本升级流程
+
+| ID | 任务 | 状态 | 交付结果 | 最低验收 |
+| --- | --- | --- | --- | --- |
+| UP01 | 冻结升级包格式 | 未开始 | 包含 Edition、源版本范围、目标版本、迁移链、受管文件、checksum、来源和恢复元数据 | 包可以离线校验，不依赖移动分支 |
+| UP02 | 冻结文件 owner | 未开始 | 明确 `managed`、`generated-managed`、`app-owned` 和第三方 Module 的处理 | 用户业务、秘密和第三方 Module 永不进入默认覆盖写集 |
+| UP03 | 生成两个最小升级包 | 未开始 | 每个 Edition 只包含升级器、目标 manifest、迁移和允许更新的受管文件 | 完整安装包不被伪装成升级包，两个 Edition 不混用 |
+| UP04 | 让升级器消费升级包 | 未开始 | 支持显式本地包路径；可选支持固定版本下载入口 | 先生成只读计划，确认后才写应用 |
+| UP05 | 支持在线与离线两种取得方式 | 未开始 | 下载固定版本或使用本地包，二者进入同一校验和执行链 | 网络失败不触发 fallback 或改用未知版本 |
+| UP06 | 增加身份与兼容检查 | 未开始 | checksum、签名 authority、Edition、源/目标版本、跳版本迁移链和大版本策略检查 | 漂移、降级、错 Edition、缺迁移、篡改或未知签名 fail-closed |
+| UP07 | 显示冲突与修改计划 | 未开始 | 业务语言列出会替换、保留、冲突和停止的文件 | 用户在写入前知道影响范围和需要手工处理的内容 |
+| UP08 | 串联完整应用升级步骤 | 未开始 | 文档/编排串联备份、依赖、脚手架、数据库迁移、构建、启动、smoke 和恢复 | 每个停止点都给出继续或恢复方法，不宣称一条命令包办所有步骤 |
+| UP09 | 双 Edition 跨版本演练 | 未开始 | Standalone 与 Multi-tenant 各从最老受支持版本升级到目标版本 | preflight/apply/verify、完整 migration chain、登录和关键页面通过 |
+| UP10 | 证明用户内容不被覆盖 | 未开始 | 在派生应用加入代表业务代码、配置和第三方 Module 后升级 | app-owned 字节、秘密引用和第三方 Module 保持不变；冲突按计划停止 |
+
+## 9. 第五阶段：重写普通开发者与核心开发者文档
+
+| ID | 任务 | 状态 | 主要文档 | 最低验收 |
+| --- | --- | --- | --- | --- |
+| DOC01 | 重写普通开发者快速开始 | 未开始 | `docs-site/getting-started.md` | 首屏先帮助用户选择 Standalone 或 Multi-tenant，不要求理解核心发布工程 |
+| DOC02 | 编写双 Edition 安装指南 | 未开始 | 快速开始与安装页 | 从下载对应安装包到登录的步骤、输入、结果和常见停止点完整 |
+| DOC03 | 编写 `create-app` 定制指南 | 未开始 | `docs/create-application.md` 及公开投影 | 清楚说明何时下载正式包、何时定制生成，以及生成后如何进入用户自己的业务仓库 |
+| DOC04 | 编写普通用户升级指南 | 未开始 | `docs-site/guide/deployment-upgrade.md` | 用业务语言说明预检查、冲突、备份、升级、验证和恢复 |
+| DOC05 | 重写核心发布手册 | 未开始 | `docs/release-engineering.md`、operations 指南 | 核心开发者能从唯一候选发布全部制品、Demo 和文档站 |
+| DOC06 | 编写制品身份对应说明 | 未开始 | 新架构合同与 Release 说明 | 用户能查明两个安装包和两个升级包来自哪个源码 Release，并核对 Edition/Schema/checksum |
+| DOC07 | 更新文档站导航与 Release 页面 | 未开始 | docs-site 导航、下载与升级入口 | 新用户最多两次导航可到安装或升级主流程 |
+
+## 10. 第六阶段：修复 Demo 可见体验
 
 | 顺序 | ID | 任务 | 状态 | 主要交付 | 最低验收 |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | PE01 | Demo persona 权限与 UI 投影对齐 | 未开始 | 固定 Platform、bootstrap Admin、共享 Admin、Tenant A/B persona 的 menu/button/API permission 矩阵；修正 Demo seed、菜单投影或按钮状态 | 预期可用操作不再出现 DA01；无权限能力隐藏或禁用并解释；Demo 写保护继续由 Demo policy 拒绝破坏性操作，不能靠错误 RBAC 代替 |
-| 2 | PE02 | Platform 存储路由与 Tenant 详情错误语义 | 未开始 | 让未配置、配置错误和 Provider 不可达返回稳定可观察状态；消除 Tenant 详情成功数据与失败 toast 并存，不以 500 表达正常未配置 | 同一登记 Demo 上打开并刷新存储页、查看三个 Tenant 详情各一次，无 500 或矛盾 toast，页面状态与后台 readiness 一致 |
-| 3 | PE03 | Admin/Platform locale 与组件 API 收敛 | 未开始 | 补齐 readiness/装修导航稳定 key；checkbox 使用 Element Plus 当前 value API | 覆盖本轮对应页面一次，DA03—DA05 不再出现；不顺手升级依赖 |
-| 4 | PE04 | Release、Demo 与派生应用入口说明统一 | 未开始 | README、快速开始、部署升级与 Demo handoff 明确 annotated Release、tag archive、Demo overlay、`create-app` 和 clone 的不同用途 | 文档不再把移动分支 clone 写成正式派生应用输入；公开页不泄露密码，交付回复仍提供 owner 授权 Demo 凭据 |
-| 5 | PE05 | 修复候选四站点聚焦验收 | 未开始 | 对一个固定修复候选复核 Platform、共享 Admin 两 persona、Tenant A/B 的受影响页面和安全表单 | 受影响路径通过；保留未执行破坏性动作清单。权限/Tenant Runtime 变化按 L2 在正式发布候选只运行一次 P0-E，不在迭代期重复全量 Gate |
+| 1 | PE01 | Demo 账号权限与页面投影对齐 | 未开始 | 固定 Platform、bootstrap Admin、共享 Admin、Tenant A/B 角色可见的菜单、按钮和 API 权限；修正 Demo seed、菜单或按钮状态 | 预期可用操作不再出现 DA01；无权功能隐藏或禁用并解释；Demo 写保护继续独立生效 |
+| 2 | PE02 | 修复 Platform 存储和 Tenant 详情状态 | 未开始 | 未配置、配置错误和 Provider 不可达显示稳定状态；消除详情成功与失败提示并存 | 存储页无 500；三个 Tenant 详情各查看一次，无矛盾提示 |
+| 3 | PE03 | 补齐页面文案和组件兼容 | 未开始 | 修复 readiness、装修导航翻译和 checkbox 当前 API | DA03—DA05 对应页面各检查一次，不再复现 |
+| 4 | PE04 | 统一 Release、Demo 和应用入口说明 | 被 DOC01—DOC07 吸收 | 清楚说明源码 Release、双 Edition 安装包、Demo overlay、`create-app` 和用户自有业务仓库 | 文档不再把移动分支 clone 或另一官方应用仓库写成正式安装输入，也不泄露密码 |
+| 5 | PE05 | 四站点聚焦复验 | 未开始 | 固定一个修复候选复核 Platform、共享 Admin 两角色、Tenant A/B 和安全表单 | 受影响路径通过；DA06—DA08 被复现修复或以充分证据关闭；保留未执行破坏性动作清单 |
 
-PE01 是关键路径。PE02 与 PE03 可在文件 owner 不冲突时并行；PE04 是纯文档独立线。PE05 只在
-PE01—PE04 的实际前置满足后执行，不因阶段编号冻结无依赖工作。
+PE01 是 Demo 关键路径。PE02 与 PE03 可在文件 owner 不冲突时并行；文档先写权威上游再投影。
+PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化属于 L2，完整 P0-E 只在最终
+冻结候选运行一次，不在迭代修复阶段重复。
 
-## 6. 第二阶段：本仓可继续增强
+## 11. 第七阶段：冻结候选并形成一次完整交付
 
-| 顺序 | ID | 任务 | 状态 | 前置与边界 | 最低结果 |
-| ---: | --- | --- | --- | --- | --- |
-| 10 | PE10 | 跨 Module 可运行业务示例与新增入口 Guard | 未开始 | CR21 已证明双独立应用签名 Module v1→v2，不重复该资格；本任务只补一个真实跨 Module 业务链，并让后续新增入口消费现有 Module/Tenant/RBAC 合同 | 一个可运行示例证明跨 Module 调用、权限、Tenant 与失败语义；不新建第二套服务层或授权源 |
-| 11 | PE11 | 外部回调可信 Tenant 路由 | 未开始 | 先冻结公众号回复等无浏览器 Tenant 会话的可信路由、签名和领域映射；不得从客户端 Host 或未签名字段猜 Tenant | 一个无 Tenant、错 Tenant、重放和合法回调矩阵；合法路径只进入唯一业务 owner |
-| 12 | PE12 | T16 部分/多次退款 | 外部阻塞 | 当前 `30+70` 第二笔失败；候选修复是每笔退款独立流水来源号并保留请求级幂等。真实资金不在本任务默认授权内 | 只对登记测试资源重跑失败的 `30+70` 组，两条退款记录和两条余额流水成立；未通过前不宣称支持 |
-| 13 | PE13 | 真实 Provider 分项资格 | 外部阻塞 | 邮件、短信、支付、OAuth、微信和 Storage 分别由 Provider owner 提供真实测试资格、凭据引用和副作用授权；PC60 的只读 readiness 不是连通资格 | 每个 Provider 单独记录发送/回调/失败/撤销或清理证据；支付与消息不共用一个笼统“已配置”结论 |
-| 14 | PE14 | 第三方业务生产采用 | 外部阻塞 | 需要一个非 Peanut Admin、非合成 Demo 的真实业务 owner、独立资源登记和部署授权 | 从正式 Release 生成的第三方应用完成安装、最小业务、备份/恢复责任和生产 smoke；不把本仓 Demo 冒充该证据 |
+| ID | 任务 | 状态 | 最低结果 |
+| --- | --- | --- | --- |
+| REL01 | 聚焦验证 | 未开始 | 分发、升级和 Demo 各自最低充分局部检查通过 |
+| REL02 | 冻结唯一候选 | 未开始 | worktree 干净，source commit/tree、inventory、scaffold、依赖和制品身份锁定 |
+| REL03 | 正式资格 | 未开始 | 只对冻结 L2 候选运行一次 P0-E；失败候选返回 Development mode，不边跑边修 |
+| REL04 | 发布全部正式制品 | 未开始 | 源码 Release、Standalone/Multi-tenant 安装包和对应升级包全部发布且身份一致 |
+| REL05 | 双 Edition 独立消费 | 未开始 | 从两个正式安装包分别完成一次独立安装，不依赖开发 worktree |
+| REL06 | 双 Edition 升级消费 | 未开始 | 两个 Edition 分别使用正式升级包完成一次受支持的跨版本升级和恢复边界验证 |
+| REL07 | 更新 Demo 和文档站 | 未开始 | Demo 从正式 Multi-tenant 安装包部署并叠加受控 overlay；公开文档给出 Edition 选择、安装、升级、Demo 和下载入口 |
+| REL08 | 冻结统一发布快照 | 未开始 | Release、两个安装包、两个升级包、Demo 与文档版本/摘要可互相核对 |
 
-## 7. 第三阶段：生态与独立项目
+只有 REL01—REL08 全部完成，才能报告“普通开发者应用分发与升级体验已完成”。这不会改写
+`v3.0.12` 已经完成的正式源码交付事实，而会形成一个新的正式版本。
+
+## 12. 后续仍可计划的产品增强
+
+| ID | 任务 | 当前状态 | 前置与业务结果 |
+| --- | --- | --- | --- |
+| PE10 | 跨 Module 可运行业务示例与新增入口 Guard | 未开始 | 补一个真实跨 Module 业务链，证明权限、Tenant 和失败语义；不重做 CR21 的 Module v1→v2 资格 |
+| PE11 | 外部回调可信 Tenant 路由 | 未开始 | 公众号等没有浏览器会话的回调必须通过签名和可信业务映射找 Tenant，不从 Host 或客户端字段猜测 |
+| PE12 | T16 部分/多次退款 | 外部阻塞 | 每笔退款需独立流水来源号并保持请求幂等；真实资金仍需另行授权，只对登记测试资源复核失败组 |
+| PE13 | 真实 Provider 分项资格 | 外部阻塞 | 邮件、短信、支付、OAuth、微信、Storage 分别取得 owner、凭据引用和副作用授权后逐项验证 |
+| PE14 | 第三方业务生产采用 | 外部阻塞 | 需要非 Peanut Admin、非合成 Demo 的真实业务 owner 和独立资源/部署授权 |
+
+## 13. 生态、独立项目和历史暂缓项
 
 | ID | 事项 | 当前分类 | 恢复条件与归属 |
 | --- | --- | --- | --- |
-| PE20 | Marketplace | blocked | CR10—CR31 的受控直接分发保持可用；只有 archive SHA-256、受信签名 authority、SBOM、许可证审核、漏洞响应和兼容 authority 完整后另行立项 |
-| PE21 | 跨实例运营平台 OP01/OP02 | 本仓范围外；独立项目可立即计划 | 在同级 `peanut-operations-platform` 独立仓、数据库和部署环境推进实例登记、Release、健康、备份证据、签名升级与审计；不得进入 Peanut Admin Runtime/Core |
-| PE22 | DCS Product-only 与业务 Module | 本仓范围外；有前置可计划 | 在 DCS 仓先冻结 Tenant 与经营主体映射并取得 D1 业务批准，再实现 Party/Product/Inventory/Procurement 等业务；Peanut Admin 只提供已完成的扩展合同 |
-| PE23 | 跨应用身份联邦与通用 Outbox/Event Bus | deferred 设计候选 | 只有两个以上真实消费者提出共同身份或事件需求后冻结协议；当前不为假想消费者扩张 Core |
+| PE20 | Marketplace | blocked | 需要包摘要、受信签名、SBOM、许可证审核、漏洞响应和兼容 authority；当前受控直接分发继续可用 |
+| PE21 | 跨实例运营平台 | 本仓范围外；独立项目可计划 | 在独立仓库、数据库和部署环境实现实例登记、健康、备份证据、签名升级和审计，不进入 Peanut Admin Runtime/Core |
+| PE22 | DCS 业务 Module | 本仓范围外；有前置可计划 | 在 DCS 仓先冻结 Tenant 与经营主体映射并取得业务批准，再推进 Party/Product/Inventory/Procurement |
+| PE23 | 跨应用身份联邦、Outbox/Event Bus | deferred 设计候选 | 至少两个真实消费者提出共同身份或事件需求后再冻结协议 |
+| PE24 | 预构建生产镜像 | out_of_scope | 另批容器 Registry、签名、SBOM 和供应链发布合同后才能计划 |
+| PE30 | 完整 SaaS 商业化 | deferred | 至少两个真实实例接入运营平台并完成升级、备份恢复演练，再冻结客户、Tenant、套餐、Entitlement 和资金合同 |
+| PE31 | SupportSession/跨租户客服代运营 | deferred | 有真实支持场景和客户授权后，冻结能力、到期、撤销和双边审计；PlatformOperator 不直接读取租户业务 |
+| PE32 | 父子 Tenant、集团权限继承、每 Tenant 独立数据库、客户业务分析 | deferred 设计候选 | 分别出现真实组织、隔离或分析需求后独立立项 |
+| PE33 | 远程入口/SSH 托管 | out_of_scope | 实例默认主动出站；只有独立安全设计和用户授权后才能评估 |
 
-## 8. 第四阶段：长期 SaaS 与历史暂缓项
+## 14. 永久不恢复的边界
 
-| ID | 事项 | 当前分类 | 恢复条件 |
-| --- | --- | --- | --- |
-| PE30 | 完整 SaaS 商业化：套餐、订阅、试用、续费、配额、计费、支付、发票和收款 | deferred | 至少两个真实应用/实例接入运营平台，完成一次升级、配对备份与恢复/回滚演练，并冻结客户、合同主体、Tenant、套餐和 Entitlement 映射及资金合同 |
-| PE31 | 限时 SupportSession/跨租户客服代运营 | deferred | 有真实支持场景和客户授权后，冻结精确能力、到期、撤销和双边审计；PlatformOperator 永远不直接获得租户业务读权限 |
-| PE32 | 父子 Tenant、集团权限继承、每 Tenant 独立数据库、客户业务分析 | deferred 设计候选 | 分别出现真实组织、隔离或分析需求后独立立项；不得把它们作为现有多租户 Runtime 的隐式承诺 |
-| PE33 | 远程入口/SSH 托管 | out_of_scope | 实例默认主动出站；SSH 不作为公共管理协议。只有独立安全设计和用户授权后才能评估，不并入 OP01/OP02 默认范围 |
-
-## 9. 不恢复的边界与条件性范围外事项
-
-- 自动重构、静默覆盖或双写 app-owned 业务源码永久禁止；确需源码迁移时另建显式、可审阅、
+- 自动重构、静默覆盖或双写 `app-owned` 业务源码永久禁止；确需源码迁移时另建显式、可审阅、
   可恢复的迁移工具。
 - 1.x 数据库/scaffold 原地 adopt、长期双 Runtime、长期双字段和兼容镜像不恢复；3.0 保持
-  fresh-only。历史 1.x 证据只用于追溯。
-- 超级管理员读取全部租户业务、每租户业务表、把 Ops Platform 嵌入 Core/SaaS Host 均不恢复。
-- 预构建生产镜像保持范围外；只有另批容器 Registry、签名、SBOM 和供应链发布合同后，才从
-  `out_of_scope` 转为 `planned`。当前继续从不可变 tag 在部署端构建。
+  fresh-only，历史证据只用于追溯。
+- 超级管理员读取全部租户业务、每租户业务表、把运营平台嵌入 Core/SaaS Host 均不恢复。
+- 完整安装包直接覆盖升级永久禁止；升级只能按相同 Edition 的受管文件、Schema 与迁移链合同执行。
+- Standalone 与 Multi-tenant 之间的转换永久不得伪装成普通版本升级；如有真实需求，必须单独设计
+  数据归属、Schema 重建、回滚和停机合同。
 
-## 10. 领取、验证与状态同步
+## 15. 执行顺序与停止线
 
-1. 每个任务开始前重新核对 `origin/dev`、开放 PR、worktree、租约和文件 owner；不得依赖本计划
-   的历史 commit。
-2. `PE01—PE05` 可作为一个 Demo 体验批次进入 `feat/* -> dev`；不同安全/Schema/Provider 停止线
-   才拆分 PR。后续任务按独立业务结果分批，不以 PR 数量作为目标。
-3. 普通任务只运行一次受影响的 lint、静态检查和聚焦验证。Tenant、权限、Schema、支付、部署
-   变化增加对应安全 Gate；完整 P0-E 只在一个冻结的 L2 发布候选运行一次。
-4. 任务完成时更新本计划；只有稳定能力真实变化时才更新 capability ledger 及生成投影。开放 PR、
-   未提交证据或浏览器探索不得提前写成完成。
-5. deferred、blocked 或 out-of-scope 项恢复前，必须补齐目标 Release、直接依赖、资源登记、owner、
-   副作用授权和最低验收。无法满足时只阻塞该项，不冻结无依赖任务。
+1. 先完成 Phase 0 的 `TPQ00—TPQ53`。每项必须以完整清单归零/allowlist 和最低行为验证关闭；
+   未完成前不进入双 Edition 构建、Schema 或升级实现。
+2. `DL01—DL04` 可作为不修改 Runtime 的独立文档线，让问题、证据、未知和修复任务可见可追踪。
+3. `RD01—RD06` 已按用户决定冻结，不创建官方应用源码仓库。`AR01—AR06` 与 `UP01—UP10` 是
+   Phase 0 后的一条交付关键路径；只有文件 owner 明确不冲突的文档或
+   Demo 修复才并行。最多保持一条关键路径和两条独立线。
+4. `DOC01—DOC07` 先更新权威文档，再更新公开 docs-site；内部证据、资源地址和凭据引用不进入
+   公共投影。
+5. `PE01—PE05` 完成后只做一次受影响站点聚焦复验。迭代期不运行完整 P0-E。
+6. `REL01—REL08` 只对一个冻结候选执行。所有数据库、端口、服务、容器、缓存、浏览器或 Gate
+   必须先读取资源登记、声明实际 resource ID/环境/地址并成功 claim 租约。
+7. 每个逻辑批次使用 `feat/* → dev` 的单一可审查 PR；完成后同步本计划。只有稳定能力真实变化
+   时才更新 capability ledger 及生成投影。
+8. Marketplace、T16 真实资金、Provider 真实外呼、第三方生产采用、跨实例运营平台和完整 SaaS
+   均保持各自授权与范围边界，不因本计划自动获得执行授权。
+
+当前首个可执行批次是 `TPQ00—TPQ07 + TPQ50`：先建立逐项事实登记和静态门禁，再由主代理冻结
+ExecutionContext、Edition policy、global scope、写入与跨 Tenant gateway 合同。完成 Phase 0 后才
+进入双 Edition 安装包与升级包实现；不创建官方应用源码仓库，也不在迭代期运行完整资格。

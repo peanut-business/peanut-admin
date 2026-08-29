@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 use think\model\concern\SoftDelete;
 
 /**
@@ -11,7 +11,7 @@ use think\model\concern\SoftDelete;
  *
  * 对应表 pa_recharge_order
  */
-class RechargeOrder extends BaseModel
+class RechargeOrder extends TenantOwnedModel
 {
     use SoftDelete;
 
@@ -35,23 +35,6 @@ class RechargeOrder extends BaseModel
     public const STATUS_PENDING = self::PAY_STATUS_UNPAID;
     public const STATUS_PAID = self::PAY_STATUS_PAID;
     public const STATUS_FAILED = 2;
-
-    public function getPayWayTextAttr($value, array $data): string
-    {
-        return [
-            self::PAY_WAY_BALANCE => '余额支付',
-            self::PAY_WAY_WECHAT => '微信支付',
-            self::PAY_WAY_ALIPAY => '支付宝支付',
-        ][(int)($data['pay_way'] ?? 0)] ?? '';
-    }
-
-    public function getPayStatusTextAttr($value, array $data): string
-    {
-        return [
-            self::PAY_STATUS_UNPAID => '未支付',
-            self::PAY_STATUS_PAID => '已支付',
-        ][(int)($data['pay_status'] ?? 0)] ?? '';
-    }
 
     /** 生成不可预测且全局唯一的充值订单号。 */
     public static function generateSn(): string

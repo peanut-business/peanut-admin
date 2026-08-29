@@ -17,7 +17,8 @@ final class NoticeTenantRepository
         string $operation = ''
     )
     {
-        return NoticeScene::where('tenant_id', self::tenantId($context, $operation));
+        self::tenantId($context, $operation);
+        return NoticeScene::where([]);
     }
 
     public static function templates(TenantContext $context)
@@ -30,7 +31,8 @@ final class NoticeTenantRepository
         string $operation = ''
     )
     {
-        return NoticeLog::where('tenant_id', self::tenantId($context, $operation));
+        self::tenantId($context, $operation);
+        return NoticeLog::where([]);
     }
 
     /** @param array<string,mixed> $data */
@@ -40,10 +42,9 @@ final class NoticeTenantRepository
         string $operation = ''
     ): NoticeLog
     {
+        self::tenantId($context, $operation);
         unset($data['tenant_id']);
-        return NoticeLog::create([
-            'tenant_id' => self::tenantId($context, $operation),
-        ] + $data);
+        return NoticeLog::create($data);
     }
 
     private static function tenantId(

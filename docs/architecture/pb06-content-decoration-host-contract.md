@@ -42,10 +42,10 @@
 ## 4. 唯一调用链
 
 ```text
-文章管理 -> ArticleLogic -> Article/ArticleCate
-公开文章/收藏 -> API ArticleLogic -> Article/ArticleCollect
+文章管理 -> ArticleApplicationService -> Article/ArticleCate
+公开文章/收藏 -> API ArticleApplicationService -> Article/ArticleCollect
 
-管理端页面/Tabbar保存 -> DecorationPageLogic/DecorationTabbarLogic
+管理端页面/Tabbar保存 -> DecorationPageApplicationService/DecorationTabbarApplicationService
   -> DecorationSchemaService -> pa_decorate_*
 
 管理端详情 ─┐
@@ -72,8 +72,8 @@ Runtime 与 schema 白名单：
 - `server/app/adminapi/validate/article/ArticleValidate.php`；
 - `server/app/common/service/decoration/DecorationReadService.php`；
 - `server/app/common/service/decoration/DecorationSchemaService.php`；
-- `server/app/adminapi/logic/decoration/DecorationPageLogic.php`；
-- `server/app/adminapi/logic/decoration/DecorationTabbarLogic.php`；
+- `server/app/adminapi/application/decoration/DecorationPageApplicationService.php`；
+- `server/app/adminapi/application/decoration/DecorationTabbarApplicationService.php`；
 - `server/database/migrations/20260811-content-asset-reference.sql`。
 
 证据与状态白名单：

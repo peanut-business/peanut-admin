@@ -85,22 +85,19 @@ expectContentDecoration(
     'article category existence bypasses Tenant-first ownership'
 );
 
-$categoryLogic = (string)file_get_contents(
-    $serverRoot . '/app/Modules/Official/Article/Service/ArticleCateLogic.php'
+$articleAdministration = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Article/Application/ArticleAdministrationService.php'
 );
-expectContentDecoration(str_contains($categoryLogic, 'ArticleTenantRepository::categories'), 'category delete bypasses Tenant-first ownership');
-expectContentDecoration(str_contains($categoryLogic, 'ArticleTenantRepository::articles'), 'occupied category check bypasses Tenant-first ownership');
-expectContentDecoration(str_contains($categoryLogic, 'lock(true)'), 'category delete must lock tenant-owned rows');
-
-$articleLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Article/Service/ArticleLogic.php');
-expectContentDecoration(str_contains($articleLogic, 'ArticleTenantRepository::createArticle'), 'article create bypasses Tenant-first ownership');
-expectContentDecoration(str_contains($articleLogic, 'ArticleTenantRepository::articles'), 'article mutation bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($articleAdministration, 'ArticleTenantRepository::categories'), 'category delete bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($articleAdministration, 'ArticleTenantRepository::articles'), 'occupied category check bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($articleAdministration, 'lock(true)'), 'category delete must lock tenant-owned rows');
+expectContentDecoration(str_contains($articleAdministration, 'ArticleTenantRepository::createArticle'), 'article create bypasses Tenant-first ownership');
 
 $pageLogic = (string)file_get_contents(
-    $serverRoot . '/app/adminapi/logic/decoration/DecorationPageLogic.php'
+    $serverRoot . '/app/adminapi/application/decoration/DecorationPageApplicationService.php'
 );
 $tabbarLogic = (string)file_get_contents(
-    $serverRoot . '/app/adminapi/logic/decoration/DecorationTabbarLogic.php'
+    $serverRoot . '/app/adminapi/application/decoration/DecorationTabbarApplicationService.php'
 );
 expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::formatPage'), 'admin page detail bypasses shared read DTO');
 expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::pageByType'), 'admin type detail bypasses shared read DTO');
@@ -110,8 +107,8 @@ expectContentDecoration(str_contains($tabbarLogic, 'DecorationReadService::tabba
 
 foreach ([
     'app/api/controller/DecorationController.php',
-    'app/api/logic/IndexLogic.php',
-    'app/api/logic/PcLogic.php',
+    'app/api/application/IndexApplicationService.php',
+    'app/api/application/PcApplicationService.php',
 ] as $relativePath) {
     $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
     expectContentDecoration(

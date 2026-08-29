@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\identity\PlatformOperatorIdentity;
@@ -283,7 +285,7 @@ try {
         'rejected closed Tenant transition changed persisted state'
     );
 
-    $route = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+    $route = peanut_route_registry_source(dirname(__DIR__, 2));
     lifecycleExpect(
         str_contains($route, "Route::post('api/platform/tenants/provision'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner'")

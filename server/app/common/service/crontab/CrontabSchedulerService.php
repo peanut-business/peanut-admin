@@ -5,16 +5,21 @@ namespace app\common\service\crontab;
 
 use app\common\enum\CrontabEnum;
 use app\Modules\Official\Task\Model\Crontab;
+use app\common\contract\audit\AuditResource;
 use app\common\service\CrontabCommandService;
-use app\common\service\module\ModuleExecutionContext;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\common\service\audit\AuditContractHost;
+use app\common\service\module\ModuleExecutionBoundary;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextAccess;
+use app\common\execution\ExecutionContextStore;
+use app\common\tenancy\PlatformTenantDataGateway;
 use PeanutAdmin\Kernel\Scheduling\ScheduleWindow;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use Cron\CronExpression;
 use think\facade\Console;
-use think\facade\Db;
-use PDO;
 
 final class CrontabSchedulerService
 {
@@ -23,7 +28,9 @@ final class CrontabSchedulerService
 
     public static function runDue(int $now): void
     {
-        $models = Crontab::alias('c')
+        $models = (new PlatformTenantDataGateway())
+            ->query(Crontab::class, 'scheduler', 'crontab.discover-due')
+            ->alias('c')
             ->join('tenant t', 't.id = c.tenant_id')
             ->where('t.status', 'active')
             ->where('c.status', CrontabEnum::START)
@@ -45,10 +52,19 @@ final class CrontabSchedulerService
             sprintf('crontab:v1:tenant=%d:job=%d:window=%d', $tenantId, $jobId, max(0, $lastTime))
         );
 
-        if (!CrontabTenantLock::acquire($scope, $jobId)) {
-            return false;
-        }
-        try {
+        $system = new TenantSystemContext(
+            $tenantId,
+            'scheduler',
+            'crontab.consider',
+            $scope->contextIdentity(),
+        );
+        return app(ExecutionContextStore::class)->run(
+            ExecutionContext::system($system),
+            static function () use ($scope, $jobId, $lastTime, $now, $item): bool {
+                if (!CrontabTenantLock::acquire($scope, $jobId)) {
+                    return false;
+                }
+                try {
             $window = new ScheduleWindow($lastTime, $now);
             if ($window->isInitial()) {
                 return self::owned($scope, $jobId)
@@ -68,6 +84,14 @@ final class CrontabSchedulerService
                         'error' => '运行规则错误：' . $exception->getMessage(),
                         'status' => CrontabEnum::ERROR,
                     ]);
+                self::audit(
+                    $scope,
+                    $jobId,
+                    'task.crontab.rejected',
+                    'crontab.schedule',
+                    AuditOutcome::Error,
+                    'CRONTAB_EXPRESSION_INVALID',
+                );
                 return false;
             }
 
@@ -86,9 +110,11 @@ final class CrontabSchedulerService
             $item['last_time'] = $now;
             self::start($scope, $item);
             return true;
-        } finally {
-            CrontabTenantLock::release($scope, $jobId);
-        }
+                } finally {
+                    CrontabTenantLock::release($scope, $jobId);
+                }
+            },
+        );
     }
 
     public static function start(TenantScope $scope, array $item): void
@@ -98,13 +124,33 @@ final class CrontabSchedulerService
         if ($ownerId !== $scope->tenantId()) {
             throw new \RuntimeException('Scheduled job owner is unavailable');
         }
-        $ownedItem = self::owned($scope, $jobId)->where('tenant_id', $ownerId)->findOrEmpty();
+        $system = new TenantSystemContext(
+            $ownerId,
+            'scheduler',
+            'crontab.execute',
+            $scope->contextIdentity(),
+        );
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::system($system),
+            static fn() => self::startInContext($scope, $item, $jobId, $ownerId),
+        );
+    }
+
+    private static function startInContext(
+        TenantScope $scope,
+        array $item,
+        int $jobId,
+        int $ownerId,
+    ): void {
+        $ownedItem = self::owned($scope, $jobId)->findOrEmpty();
         if ($ownedItem->isEmpty()) {
             throw new \RuntimeException('Scheduled job owner is unavailable');
         }
         $item = $ownedItem->getData();
 
         $startTime = microtime(true);
+        $outcome = AuditOutcome::Success;
+        $reasonCode = null;
         try {
             $command = trim((string)($item['command'] ?? ''));
             CrontabCommandService::assertTenantAware($command);
@@ -112,17 +158,9 @@ final class CrontabSchedulerService
             if ($moduleKey === null) {
                 throw new \RuntimeException('定时任务所属模块未注册');
             }
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new \RuntimeException('定时任务数据库不可用');
-            }
-            $governance = PdoModuleGovernanceProvider::forExecution($pdo);
-            $governance->executionGuard('official.task')->assertScheduled(
-                ModuleExecutionContext::scheduled('official.task', $scope, 'scheduler.execute'),
-            );
-            $governance->executionGuard($moduleKey)->assertScheduled(
-                ModuleExecutionContext::scheduled($moduleKey, $scope, 'scheduler.execute'),
-            );
+            $modules = app(ModuleExecutionBoundary::class);
+            $modules->assertScheduled('official.task');
+            $modules->assertScheduled($moduleKey);
             $params = (($item['params'] ?? '') !== '') ? explode(' ', (string)$item['params']) : [];
             ScheduledTenantContext::run($scope, static function () use ($command, $params): void {
                 if (self::$dispatcher !== null) {
@@ -133,6 +171,8 @@ final class CrontabSchedulerService
             });
             self::owned($scope, $jobId)->update(['error' => '']);
         } catch (\Throwable $exception) {
+            $outcome = AuditOutcome::Error;
+            $reasonCode = 'CRONTAB_EXECUTION_FAILED';
             self::owned($scope, $jobId)->update([
                 'error' => $exception->getMessage(),
                 'status' => CrontabEnum::ERROR,
@@ -143,6 +183,17 @@ final class CrontabSchedulerService
                 'time' => $useTime,
                 'max_time' => max($useTime, (float)($item['max_time'] ?? 0)),
             ]);
+            self::audit(
+                $scope,
+                $jobId,
+                $outcome === AuditOutcome::Success
+                    ? 'task.crontab.completed'
+                    : 'task.crontab.failed',
+                'crontab.execute',
+                $outcome,
+                $reasonCode,
+                ['duration_seconds' => $useTime],
+            );
         }
     }
 
@@ -154,7 +205,7 @@ final class CrontabSchedulerService
 
     private static function owned(TenantScope $scope, int $jobId)
     {
-        return CrontabTenantRepository::schedules($scope)->where('id', $jobId);
+        return CrontabTenantRepository::schedules()->where('id', $jobId);
     }
 
     private static function positiveInt(mixed $value, string $message): int
@@ -167,5 +218,31 @@ final class CrontabSchedulerService
             throw new \InvalidArgumentException($message);
         }
         return $value;
+    }
+
+    /** @param array<string,mixed> $metadata */
+    private static function audit(
+        TenantScope $scope,
+        int $jobId,
+        string $eventType,
+        string $operation,
+        AuditOutcome $outcome,
+        ?string $reasonCode,
+        array $metadata = [],
+    ): void {
+        $current = ExecutionContextAccess::current();
+        if ($current === null || $current->tenantId() !== $scope->tenantId()) {
+            throw new \DomainException('CRONTAB_AUDIT_CONTEXT_REQUIRED');
+        }
+        app(AuditContractHost::class)->recordTenantSystem(
+            $scope->tenantId(),
+            $eventType,
+            $operation,
+            $current->requestId,
+            ['job_id' => $jobId] + $metadata,
+            $outcome,
+            $reasonCode,
+            new AuditResource('crontab', (string)$jobId),
+        );
     }
 }

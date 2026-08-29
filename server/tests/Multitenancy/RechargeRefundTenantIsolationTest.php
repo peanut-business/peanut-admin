@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\api\logic\RechargeLogic as ApiRechargeLogic;
+use app\api\application\RechargeApplicationService as ApiRechargeLogic;
 use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
@@ -168,7 +168,7 @@ try {
     $pdo = financePdo($host, $port, $user, $password, $database);
     createFinanceTenantSchema($pdo);
     seedFinanceTenantSchema($pdo);
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App(); $app->initialize();
     $alpha = financeTenantContext(101, 501, 'mt03-finance-alpha');
     $beta = financeTenantContext(202, 502, 'mt03-finance-beta');

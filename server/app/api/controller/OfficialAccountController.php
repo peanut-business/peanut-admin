@@ -3,24 +3,39 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\api\logic\OfficialAccountLogic;
+use think\App;
+
+use app\api\application\OfficialAccountApplicationService;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\http\RequestTrace;
+use app\common\service\module\ModuleExecutionBoundary;
 
 class OfficialAccountController extends BaseApiController
 {
+    public function __construct(App $app, private readonly OfficialAccountApplicationService $officialAccount)
+    {
+        parent::__construct($app);
+    }
+
     public array $notNeedLogin = ['verify', 'callback'];
 
     public function verify()
     {
         $params = $this->request->get();
         try {
-            ExternalTenantResolver::production()->verifiedModuleCallback(
-                'official.oauth',
+            $resolution = ExternalTenantResolver::production()->verifiedCallback(
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.verify',
                 $this->operationId(),
-                static fn(array $config): bool => OfficialAccountLogic::verify($params, $config),
+                static fn(array $config): bool => $this->officialAccount->verify($params, $config),
+            );
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::system($resolution->context),
+                static fn() => app(ModuleExecutionBoundary::class)
+                    ->assertExternalCallback('official.oauth'),
             );
         } catch (\Throwable) {
             return response('callback rejected', 403, ['Content-Type' => 'text/plain; charset=utf-8']);
@@ -32,20 +47,25 @@ class OfficialAccountController extends BaseApiController
     {
         $params = $this->request->get();
         try {
-            $resolution = ExternalTenantResolver::production()->verifiedModuleCallback(
-                'official.oauth',
+            $resolution = ExternalTenantResolver::production()->verifiedCallback(
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.callback',
                 $this->operationId(),
                 static function (array $config) use ($params): bool {
                     return strtolower((string)($params['encrypt_type'] ?? '')) !== 'aes'
-                        && OfficialAccountLogic::verify($params, $config);
+                        && $this->officialAccount->verify($params, $config);
                 },
             );
-            $result = OfficialAccountLogic::handlePlain(
-                $resolution->context,
-                (string)$this->request->getContent(),
+            $result = app(ExecutionContextStore::class)->run(
+                ExecutionContext::system($resolution->context),
+                function () use ($resolution): string {
+                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    return $this->officialAccount->handlePlain(
+                        $resolution->context,
+                        (string)$this->request->getContent(),
+                    );
+                },
             );
         } catch (\Throwable) {
             return response('callback rejected', 403, ['Content-Type' => 'text/plain; charset=utf-8']);
@@ -56,7 +76,6 @@ class OfficialAccountController extends BaseApiController
 
     private function operationId(): string
     {
-        $requestId = trim((string)$this->request->header('X-Request-Id', ''));
-        return $requestId !== '' ? $requestId : bin2hex(random_bytes(16));
+        return RequestTrace::id($this->request, 'wechat');
     }
 }

@@ -6,12 +6,13 @@ namespace app\common\service\crontab;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use app\common\execution\ExecutionContextAccess;
 
 final class CrontabTenantContext
 {
-    public static function member(object $request): TenantContext
+    public static function member(): TenantContext
     {
-        $context = $request->tenantContext ?? null;
+        $context = ExecutionContextAccess::current()?->scope;
         if (!$context instanceof TenantContext
             || $context->tenantId < 1
             || $context->accountId < 1

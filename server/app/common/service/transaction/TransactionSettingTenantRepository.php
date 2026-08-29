@@ -4,26 +4,20 @@ declare(strict_types=1);
 namespace app\common\service\transaction;
 
 use app\common\model\setting\TransactionSetting;
-use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class TransactionSettingTenantRepository
 {
-    public static function settings(TenantContext $context)
+    public static function settings()
     {
-        return TransactionSetting::where(
-            'tenant_id',
-            TransactionSettingTenantContext::tenantId($context)
-        );
+        return TransactionSetting::where([]);
     }
 
-    public static function update(TenantContext $context, array $data): void
+    public static function update(array $data): void
     {
         unset($data['tenant_id']);
-        $setting = self::settings($context)->lock(true)->findOrEmpty();
+        $setting = self::settings()->lock(true)->findOrEmpty();
         if ($setting->isEmpty()) {
-            TransactionSetting::create([
-                'tenant_id' => TransactionSettingTenantContext::tenantId($context),
-            ] + $data);
+            TransactionSetting::create($data);
             return;
         }
         $setting->save($data);

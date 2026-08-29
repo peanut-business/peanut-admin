@@ -15,7 +15,7 @@ final class InstallationController extends BaseLikeAdminController
         try {
             return $this->data($this->host()->status());
         } catch (\Throwable) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 '安装状态不可用。',
                 ['error_code' => 'INSTALL_STATUS_UNAVAILABLE'],
                 50300,
@@ -26,7 +26,7 @@ final class InstallationController extends BaseLikeAdminController
     public function execute()
     {
         if (!$this->sameOriginRequest()) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 '安装请求来源无效。',
                 ['error_code' => 'INSTALL_REQUEST_ORIGIN_INVALID'],
                 40300,
@@ -39,13 +39,13 @@ final class InstallationController extends BaseLikeAdminController
         try {
             return $this->data($this->host()->executeGuided($token, $this->request->post()));
         } catch (InstallationExecutionException $exception) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 $exception->getMessage(),
                 ['error_code' => $exception->errorCode],
                 $exception->httpStatus * 100,
             );
         } catch (\Throwable) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 '安装执行失败。',
                 ['error_code' => 'INSTALL_EXECUTION_FAILED'],
                 40900,

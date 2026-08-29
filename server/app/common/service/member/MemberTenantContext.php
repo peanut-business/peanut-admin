@@ -7,6 +7,8 @@ use app\common\service\notice\NoticeTenantContext;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\decoration\DecorationTenantContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -14,22 +16,23 @@ final class MemberTenantContext
 {
     public const PUBLIC_AUTH_ACTOR = 'peanut.member.public-auth';
 
-    public static function member(object $request): AuthenticatedMemberContext|TenantContext
+    public static function member(): AuthenticatedMemberContext|TenantContext
     {
-        $context = $request->authenticatedMemberContext ?? null;
-        if ($context instanceof AuthenticatedMemberContext) {
+        $current = ExecutionContextAccess::current();
+        $context = $current?->scope;
+        if ($current?->actorType === ExecutionContext::MEMBER && $context instanceof AuthenticatedMemberContext) {
             return $context;
         }
-        $context = $request->tenantContext ?? null;
-        if ($context instanceof TenantContext && self::trusted($context)) {
+        if ($current?->actorType === ExecutionContext::TENANT_ADMIN
+            && $context instanceof TenantContext && self::trusted($context)) {
             return $context;
         }
         throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
-    public static function system(object $request, string $operation): TenantSystemContext
+    public static function system(string $operation): TenantSystemContext
     {
-        $context = $request->tenantContext ?? null;
+        $context = ExecutionContextAccess::current()?->scope;
         if (!$context instanceof TenantSystemContext
             || $context->tenantId < 1
             || $context->actorKey !== self::PUBLIC_AUTH_ACTOR

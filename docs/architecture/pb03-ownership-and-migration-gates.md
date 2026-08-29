@@ -105,7 +105,7 @@ PB04 从网站基础设置开始；该首片已按本节更新后的应用 owner
 ### 7.1 现有路径与数据 owner
 
 - HTTP Host：`server/app/adminapi/controller/config/ConfigController.php` 和 `server/route/app.php`。
-- 产品校验/映射：`WebsiteValidate` 与 `ConfigLogic::getWebsite/saveWebsite`。
+- 产品校验/映射：`WebsiteValidate` 与 `ConfigApplicationService::getWebsite/saveWebsite`。
 - 现有存储：`ConfigService`、`Config` model、真实表 `pa_config`，唯一键为 `(type, name)`；网站组 `type=website`。
 - 文件 URL 映射继续通过应用 `FileService`，不属于通用 Settings 存储。
 - 管理页、路由和品牌字段仍由应用拥有。

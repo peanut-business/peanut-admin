@@ -39,11 +39,11 @@ PB04-03 保留应用 `pa_dict_type` / `pa_dict_data` 为 Peanut Admin 租户扩�
 ```text
 DictTypeController / DictDataController
   → DictTypeValidate / DictDataValidate
-  → DictTypeLogic / DictDataLogic
+  → DictTypeApplicationService / DictDataApplicationService
   → DictType / DictData
   → pa_dict_type / pa_dict_data
 
-业务选择器读取：`DictDataLogic::byType` → `SystemDictRepository` + `DictTenantRepository`
+业务选择器读取：`DictDataApplicationService::byType` → `SystemDictRepository` + `DictTenantRepository`
 ```
 
 固定现有已验收语义：

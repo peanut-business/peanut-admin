@@ -1,12 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\Article\Http\ArticleModuleMiddleware;
+use app\Modules\Official\Article\ModuleProvider;
 use app\Modules\Official\Article\Http\Controller\ArticleCateController;
 use app\Modules\Official\Article\Http\Controller\ArticleController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
+use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
 Route::group('api/admin', function (): void {
@@ -25,7 +26,7 @@ Route::group('api/admin', function (): void {
     Route::post('official.article.update-status', [ArticleController::class, 'updateStatus']);
 })->middleware([
     LoginMiddleware::class,
-    ArticleModuleMiddleware::class,
+    [OfficialModuleMiddleware::class, [(new ModuleProvider())->moduleKey(), 'http.admin']],
     AuthMiddleware::class,
     OperationLogMiddleware::class,
 ]);

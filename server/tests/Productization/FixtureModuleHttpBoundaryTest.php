@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 use app\Modules\Fixture\DeliveryRecord\Contracts\DeliveryRecordCommands;
 use app\Modules\Fixture\DeliveryRecord\Http\DeliveryRecordHttpHandler;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -41,42 +44,43 @@ $context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
     new DateTimeImmutable('now', new DateTimeZone('UTC')),
     1
 ), 'fixture-http-boundary');
-$root = ['id' => 31, 'tenant_id' => 11, 'account_id' => 21, 'root' => 1];
-
 $disabledCommands = new class implements DeliveryRecordCommands {
     public int $calls = 0;
 
-    public function record(TenantContext $context, string $reference): array
+    public function record(string $reference): array
     {
         ++$this->calls;
         throw new ModuleException('MODULE_TENANT_DISABLED', 'disabled');
     }
 
-    public function list(TenantContext $context): array
+    public function list(): array
     {
         ++$this->calls;
         throw new ModuleException('MODULE_TENANT_DISABLED', 'disabled');
     }
 };
-$handler = new DeliveryRecordHttpHandler($disabledCommands);
+$contexts = new ExecutionContextStore();
+$handler = new DeliveryRecordHttpHandler($disabledCommands, new CurrentExecutionContext($contexts));
 fixtureHttpRejects(
-    static fn() => $handler->lists($context, $root),
+    static fn() => $contexts->run(
+        ExecutionContext::tenantAdmin($context, 'test.fixture.delivery-record.list'),
+        static fn() => $handler->lists(),
+    ),
     'MODULE_TENANT_DISABLED'
 );
-fixtureHttpExpect($disabledCommands->calls === 1, 'root request did not reach the guarded Module command exactly once');
+fixtureHttpExpect($disabledCommands->calls === 1, 'Tenant Admin request did not reach the guarded Module command exactly once');
+fixtureHttpExpect($contexts->isEmpty(), 'Tenant Admin failure leaked execution context');
 
 $systemContext = new TenantSystemContext(11, 'fixture.system', 'list', 'fixture-system-1');
 fixtureHttpRejects(
-    static fn() => $handler->lists($systemContext, $root),
+    static fn() => $contexts->run(
+        ExecutionContext::system($systemContext),
+        static fn() => $handler->lists(),
+    ),
     'CONTEXT_TENANT_REQUIRED'
 );
 fixtureHttpExpect($disabledCommands->calls === 1, 'system actor reached the Module command');
-
-fixtureHttpRejects(
-    static fn() => $handler->lists($context, ['id' => 31, 'tenant_id' => 12, 'account_id' => 21, 'root' => 1]),
-    'AUTHORIZATION_PERMISSION_DENIED'
-);
-fixtureHttpExpect($disabledCommands->calls === 1, 'mismatched root principal reached the Module command');
+fixtureHttpExpect($contexts->isEmpty(), 'system actor refusal leaked execution context');
 
 $routeSource = (string)file_get_contents(dirname(__DIR__, 2)
     . '/app/Modules/Fixture/DeliveryRecord/Http/routes.php');

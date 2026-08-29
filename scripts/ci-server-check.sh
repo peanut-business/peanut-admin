@@ -124,7 +124,7 @@ while IFS= read -r path; do
       select_test server/tests/Productization/AdminPermissionHostTest.php
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       ;;
-    server/config/admin_api_access.php|server/route/app.php|scripts/check-admin-api-permissions.php)
+    server/config/admin_api_access.php|server/route/*.php|scripts/check-admin-api-permissions.php)
       select_test server/tests/Productization/AdminPermissionHostTest.php
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       ;;

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\notice\driver\sms;
 
+use app\common\service\http\OutboundHttpRequest;
+use app\common\service\http\OutboundHttpTransport;
 use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
 
 /**
@@ -18,7 +20,7 @@ final class AliyunSms extends TemplateSmsDriver
     private string $accessKeySecret;
     private string $signName;
 
-    public function __construct(array $config)
+    public function __construct(array $config, private readonly OutboundHttpTransport $transport)
     {
         $this->accessKeyId     = (string) ($config['access_key_id']     ?? '');
         $this->accessKeySecret = (string) ($config['access_key_secret'] ?? '');
@@ -57,24 +59,14 @@ final class AliyunSms extends TemplateSmsDriver
 
         $body = http_build_query($params);
 
-        $ch = curl_init('https://dysmsapi.aliyuncs.com');
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $body,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_SSL_VERIFYPEER => true,
-        ]);
-
-        $resp = curl_exec($ch);
-        $curlErr = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlErr || $resp === false) {
-            $this->error = 'cURL error: ' . $curlErr;
-            return false;
-        }
+        $response = $this->transport->send(new OutboundHttpRequest(
+            'POST',
+            'https://dysmsapi.aliyuncs.com',
+            ['Content-Type' => 'application/x-www-form-urlencoded'],
+            $body,
+            timeoutSeconds: 10,
+        ));
+        $resp = $response->body;
 
         $data = json_decode((string) $resp, true);
         $this->result = is_array($data) ? $data : ['raw' => (string) $resp];

@@ -5,12 +5,8 @@ namespace app\common\service\external;
 
 use app\common\service\audit\AuditContractHost;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\module\ModuleExecutionContext;
-use app\platform\service\module\PdoModuleGovernanceProvider;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use think\facade\Db;
 
 /** @deprecated Application adapter around the framework-agnostic Core resolver. */
 final class ExternalTenantResolver
@@ -41,19 +37,6 @@ final class ExternalTenantResolver
     public function verifiedCallback(string $provider, string $callbackKey, string $operation, string $operationId, callable $verifier): ExternalTenantResolution
     {
         return $this->resolution(fn() => $this->core->verifiedCallback($provider, $callbackKey, $operation, $operationId, $verifier));
-    }
-
-    public function verifiedModuleCallback(string $moduleKey, string $provider, string $callbackKey, string $operation, string $operationId, callable $verifier): ExternalTenantResolution
-    {
-        $resolution = $this->verifiedCallback($provider, $callbackKey, $operation, $operationId, $verifier);
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new ExternalTenantResolutionException();
-        }
-        PdoModuleGovernanceProvider::forExecution($pdo)
-            ->executionGuard($moduleKey)
-            ->assertExternalCallback(ModuleExecutionContext::system($moduleKey, $resolution->context));
-        return $resolution;
     }
 
     public function clientIdentity(string $provider, string $clientIdentity, string $operation, string $operationId): ExternalTenantResolution

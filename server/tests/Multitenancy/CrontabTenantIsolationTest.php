@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\Task\Service\CrontabLogic;
+use app\Modules\Official\Task\Application\CrontabApplicationService;
 use app\common\enum\CrontabEnum;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\CrontabCommandService;
 use app\common\service\crontab\CrontabSchedulerService;
 use app\common\service\crontab\CrontabTenantContext;
@@ -97,14 +99,14 @@ try {
     createCrontabTenantSchema($pdo);
     $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
     $pdo->exec("INSERT INTO pa_crontab (id, tenant_id, name, command, status, expression) VALUES (11, 101, 'Alpha seed', 'crontab:demo', 1, '* * * * *')");
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App();
     $app->initialize();
 
     $alpha = crontabTenantContext(101, 501, 'mt03-crontab-alpha-' . $runId);
     $beta = crontabTenantContext(202, 502, 'mt03-crontab-beta-' . $runId);
     try {
-        CrontabTenantContext::member(new stdClass());
+        CrontabTenantContext::member();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectCrontabTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
@@ -121,26 +123,110 @@ try {
         'sort' => 0,
         'remark' => 'MT03-CRONTAB-TENANT-ISOLATION-001',
     ];
-    expectCrontabTenant(CrontabLogic::add($alpha, $task), CrontabLogic::getError());
-    expectCrontabTenant(CrontabLogic::add($beta, $task), CrontabLogic::getError());
-    $alphaId = (int)CrontabTenantRepository::schedules($alpha)->where('name', 'Same task')->value('id');
-    $betaId = (int)CrontabTenantRepository::schedules($beta)->where('name', 'Same task')->value('id');
+    expectCrontabTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.add.alpha'),
+            fn() => app(CrontabApplicationService::class)->add($task),
+        ),
+        app(CrontabApplicationService::class)->getError(),
+    );
+    expectCrontabTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.crontab.add.beta'),
+            fn() => app(CrontabApplicationService::class)->add($task),
+        ),
+        app(CrontabApplicationService::class)->getError(),
+    );
+    $alphaId = (int)app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.crontab.query.alpha'),
+        fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
+    );
+    $betaId = (int)app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.crontab.query.beta'),
+        fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
+    );
     expectCrontabTenant($alphaId > 0 && $betaId > 0 && $alphaId !== $betaId, 'Tenant tasks were not independently created');
     expectCrontabTenant((int)$pdo->query("SELECT tenant_id FROM pa_crontab WHERE id = {$alphaId}")->fetchColumn() === 101, 'payload forged task owner');
-    expectCrontabTenant(CrontabLogic::lists($alpha, ['name' => 'Same task'])['count'] === 1, 'Alpha task list leaked or lost rows');
-    expectCrontabTenant(CrontabLogic::lists($beta, ['name' => 'Same task'])['count'] === 1, 'Beta task list leaked or lost rows');
-    expectCrontabTenant(CrontabLogic::detail($alpha, $betaId) === [], 'cross-Tenant task detail leaked');
-    expectCrontabTenant(!CrontabLogic::delete($alpha, $betaId), 'cross-Tenant task delete succeeded');
-    expectCrontabTenant(CrontabLogic::getError() === '定时任务不存在', 'cross/missing task denial enumerated owner');
-    expectCrontabTenant(!CrontabLogic::delete($alpha, 999999), 'missing task delete succeeded');
-    expectCrontabTenant(CrontabLogic::getError() === '定时任务不存在', 'missing task denial changed shape');
+    expectCrontabTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.list.alpha'),
+            fn() => app(CrontabApplicationService::class)->lists(['name' => 'Same task']),
+        )->total() === 1,
+        'Alpha task list leaked or lost rows',
+    );
+    expectCrontabTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.crontab.list.beta'),
+            fn() => app(CrontabApplicationService::class)->lists(['name' => 'Same task']),
+        )->total() === 1,
+        'Beta task list leaked or lost rows',
+    );
+    expectCrontabTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.detail.cross-tenant'),
+            fn() => app(CrontabApplicationService::class)->detail($betaId),
+        ) === [],
+        'cross-Tenant task detail leaked',
+    );
+    expectCrontabTenant(
+        !app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.delete.cross-tenant'),
+            fn() => app(CrontabApplicationService::class)->delete($betaId),
+        ),
+        'cross-Tenant task delete succeeded',
+    );
+    expectCrontabTenant(app(CrontabApplicationService::class)->getError() === '定时任务不存在', 'cross/missing task denial enumerated owner');
+    expectCrontabTenant(
+        !app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.delete.missing'),
+            fn() => app(CrontabApplicationService::class)->delete(999999),
+        ),
+        'missing task delete succeeded',
+    );
+    expectCrontabTenant(app(CrontabApplicationService::class)->getError() === '定时任务不存在', 'missing task denial changed shape');
 
-    Db::name('crontab')->where('id', $alphaId)->update(['status' => CrontabEnum::ERROR, 'error' => 'alpha']);
-    Db::name('crontab')->where('id', $betaId)->update(['status' => CrontabEnum::ERROR, 'error' => 'beta']);
-    expectCrontabTenant(!CrontabLogic::operate($alpha, $betaId, 'start'), 'cross-Tenant retry succeeded');
-    expectCrontabTenant(CrontabLogic::operate($alpha, $alphaId, 'start'), CrontabLogic::getError());
-    expectCrontabTenant((string)Db::name('crontab')->where('id', $alphaId)->value('error') === '', 'Alpha retry did not clear Alpha error');
-    expectCrontabTenant((string)Db::name('crontab')->where('id', $betaId)->value('error') === 'beta', 'Alpha retry cleared Beta error');
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.crontab.seed-error.alpha'),
+        fn() => Db::name('crontab')->where('id', $alphaId)->update([
+            'status' => CrontabEnum::ERROR,
+            'error' => 'alpha',
+        ]),
+    );
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.crontab.seed-error.beta'),
+        fn() => Db::name('crontab')->where('id', $betaId)->update([
+            'status' => CrontabEnum::ERROR,
+            'error' => 'beta',
+        ]),
+    );
+    expectCrontabTenant(
+        !app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.operate.cross-tenant'),
+            fn() => app(CrontabApplicationService::class)->operate($betaId, 'start'),
+        ),
+        'cross-Tenant retry succeeded',
+    );
+    expectCrontabTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.operate.alpha'),
+            fn() => app(CrontabApplicationService::class)->operate($alphaId, 'start'),
+        ),
+        app(CrontabApplicationService::class)->getError(),
+    );
+    expectCrontabTenant(
+        (string)app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.query-error.alpha'),
+            fn() => Db::name('crontab')->where('id', $alphaId)->value('error'),
+        ) === '',
+        'Alpha retry did not clear Alpha error',
+    );
+    expectCrontabTenant(
+        (string)app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.crontab.query-error.beta'),
+            fn() => Db::name('crontab')->where('id', $betaId)->value('error'),
+        ) === 'beta',
+        'Alpha retry cleared Beta error',
+    );
 
     $alphaScope = TenantScope::fromTrustedContext(101, 'fixture:' . $runId . ':alpha');
     $betaScope = TenantScope::fromTrustedContext(202, 'fixture:' . $runId . ':beta');
@@ -173,7 +259,10 @@ try {
         $scope = ScheduledTenantContext::require();
         $dispatches[] = [$command, $scope->tenantId(), $scope->contextIdentity(), $params];
     });
-    $alphaItem = CrontabTenantRepository::find($alpha, $alphaId)?->getData() ?? [];
+    $alphaItem = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.crontab.scheduler-item.alpha'),
+        fn() => CrontabTenantRepository::find($alphaId)?->getData() ?? [],
+    );
     CrontabSchedulerService::start($alphaScope, $alphaItem);
     expectCrontabTenant(count($dispatches) === 1 && $dispatches[0][1] === 101, 'dispatch did not restore Alpha scope');
     expectCrontabTenant(ScheduledTenantContext::current() === null, 'scheduled scope leaked after handler');
@@ -197,11 +286,30 @@ try {
     expectCrontabTenant($dispatches[$sideEffects][0] === 'crontab:demo' && $dispatches[$sideEffects][3] === [], 'payload fields overrode the persisted job envelope');
     $sideEffects = count($dispatches);
 
-    Db::name('crontab')->where('id', $alphaId)->update(['command' => 'generator:cleanup', 'status' => CrontabEnum::START, 'error' => '']);
-    $blockedItem = CrontabTenantRepository::find($alpha, $alphaId)?->getData() ?? [];
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.crontab.blocked.seed'),
+        fn() => Db::name('crontab')->where('id', $alphaId)->update([
+            'command' => 'generator:cleanup',
+            'status' => CrontabEnum::START,
+            'error' => '',
+        ]),
+    );
+    $blockedItem = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.crontab.blocked-item'),
+        fn() => CrontabTenantRepository::find($alphaId)?->getData() ?? [],
+    );
     CrontabSchedulerService::start($alphaScope, $blockedItem);
     expectCrontabTenant(count($dispatches) === $sideEffects, 'unadopted command reached handler');
-    expectCrontabTenant(str_contains((string)Db::name('crontab')->where('id', $alphaId)->value('error'), '尚未采用可信租户上下文'), 'unadopted command did not fail closed');
+    expectCrontabTenant(
+        str_contains(
+            (string)app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($alpha, 'test.crontab.blocked-error'),
+                fn() => Db::name('crontab')->where('id', $alphaId)->value('error'),
+            ),
+            '尚未采用可信租户上下文',
+        ),
+        'unadopted command did not fail closed',
+    );
     expectCrontabTenant(ScheduledTenantContext::current() === null, 'blocked command installed a scope');
     CrontabSchedulerService::useDispatcherForTest(null);
 

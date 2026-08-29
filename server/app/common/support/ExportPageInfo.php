@@ -9,6 +9,8 @@ use InvalidArgumentException;
 /** Mechanical metadata shared by the five paged export endpoints. */
 final readonly class ExportPageInfo
 {
+    public const MAX_ROWS = 25000;
+
     public function __construct(
         public int $count,
         public int $pageSize,

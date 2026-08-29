@@ -3,23 +3,30 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\api\logic\UserLogic;
+use think\App;
+
+use app\api\application\UserApplicationService;
 use app\common\service\article\ArticleTenantContext;
 use app\common\service\member\MemberTenantContext;
 
 class UserController extends BaseApiController
 {
+    public function __construct(App $app, private readonly UserApplicationService $users)
+    {
+        parent::__construct($app);
+    }
+
     /** 用户中心 */
     public function center()
     {
-        $data = UserLogic::center(ArticleTenantContext::member($this->request), $this->memberId);
+        $data = $this->users->center(ArticleTenantContext::member(), $this->memberId);
         return $this->data($data);
     }
 
     /** 个人信息 */
     public function info()
     {
-        $data = UserLogic::info(MemberTenantContext::member($this->request), $this->memberId);
+        $data = $this->users->info(MemberTenantContext::member(), $this->memberId);
         return $this->data($data);
     }
 
@@ -31,9 +38,9 @@ class UserController extends BaseApiController
             'value' => $this->request->post('value', ''),
         ];
 
-        $result = UserLogic::setInfo(MemberTenantContext::member($this->request), $this->memberId, $params);
+        $result = $this->users->setInfo(MemberTenantContext::member(), $this->memberId, $params);
         if ($result === false) {
-            return $this->fail(UserLogic::getError());
+            return $this->fail($this->users->getError());
         }
 
         return $this->success('修改成功');
@@ -51,9 +58,9 @@ class UserController extends BaseApiController
             return $this->fail('旧密码和新密码不能为空');
         }
 
-        $result = UserLogic::changePassword(MemberTenantContext::member($this->request), $this->memberId, $params);
+        $result = $this->users->changePassword(MemberTenantContext::member(), $this->memberId, $params);
         if ($result === false) {
-            return $this->fail(UserLogic::getError());
+            return $this->fail($this->users->getError());
         }
 
         return $this->success('修改成功');
@@ -67,9 +74,9 @@ class UserController extends BaseApiController
             'code'   => $this->request->post('code/s', ''),
         ];
 
-        $result = UserLogic::bindMobile(MemberTenantContext::member($this->request), $this->memberId, $params);
+        $result = $this->users->bindMobile(MemberTenantContext::member(), $this->memberId, $params);
         if ($result === false) {
-            return $this->fail(UserLogic::getError());
+            return $this->fail($this->users->getError());
         }
 
         return $this->success('绑定成功');

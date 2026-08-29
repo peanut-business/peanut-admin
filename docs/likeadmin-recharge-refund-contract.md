@@ -378,20 +378,20 @@ RechargeController::lists
 
 RechargeController::refund
   → RechargeRefundValidate::checkRecharge
-  → RechargeLogic::refund
-  → AccountLogLogic::add
+  → RechargeApplicationService::refund
+  → MemberBalanceService::applyInTransaction
   → RefundRecord::create
-  → RefundLogic::refund
+  → RefundApplicationService::refund
   → RefundLog::create
   → WeChatPayService::refund / AliPayService::refund
 
 RechargeController::refundAgain
   → RechargeRefundValidate::checkRecord
-  → RechargeLogic::refundAgain
-  → RefundLogic::refund
+  → RechargeApplicationService::refundAgain
+  → RefundApplicationService::refund
 
 RefundController::record/log/stat
-  → RefundRecordLists / RefundLogic::refundLog / RefundLogic::stat
+  → RefundRecordLists / RefundApplicationService::refundLog / RefundApplicationService::stat
 
 query_refund
   → QueryRefund::checkReFundStatus
@@ -403,10 +403,10 @@ query_refund
 
 - `server/app/adminapi/controller/recharge/RechargeController.php`；
 - `server/app/adminapi/validate/recharge/RechargeRefundValidate.php`；
-- `server/app/adminapi/logic/recharge/RechargeLogic.php`；
+- `server/app/adminapi/application/recharge/RechargeApplicationService.php`；
 - `server/app/adminapi/lists/recharge/RechargeLists.php`；
 - `server/app/Modules/Official/Payment/Http/Controller/RefundController.php`；
 - `server/app/adminapi/lists/finance/RefundRecordLists.php`；
-- `server/app/common/logic/RefundLogic.php`；
+- `server/app/common/logic/RefundApplicationService.php`；
 - `server/app/common/command/QueryRefund.php`；
 - `server/public/install/db/like.sql`。

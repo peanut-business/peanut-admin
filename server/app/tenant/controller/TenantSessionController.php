@@ -33,7 +33,7 @@ final class TenantSessionController extends BaseLikeAdminController
                 PlatformRequest::requestId($this->request)
             ));
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            return JsonService::fail('Tenant authentication was rejected.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Tenant authentication was rejected.', null, 40100);
         }
     }
 
@@ -55,7 +55,7 @@ final class TenantSessionController extends BaseLikeAdminController
                 PlatformRequest::requestId($this->request)
             ));
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            return JsonService::fail('Tenant selection was rejected.', null, 40300);
+            throw \app\common\http\ApiProblem::fromEnvelope('Tenant selection was rejected.', null, 40300);
         }
     }
 
@@ -76,7 +76,7 @@ final class TenantSessionController extends BaseLikeAdminController
                 PlatformRequest::requestId($this->request)
             ));
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            return JsonService::fail('Tenant switch was rejected.', null, 40300);
+            throw \app\common\http\ApiProblem::fromEnvelope('Tenant switch was rejected.', null, 40300);
         }
     }
 
@@ -93,7 +93,7 @@ final class TenantSessionController extends BaseLikeAdminController
                 PlatformRequest::requestId($this->request)
             ));
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            return JsonService::fail('Tenant refresh credential is invalid.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Tenant refresh credential is invalid.', null, 40100);
         }
     }
 
@@ -106,7 +106,7 @@ final class TenantSessionController extends BaseLikeAdminController
                 PlatformRequest::requestId($this->request)
             ));
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            return JsonService::fail('Tenant session is invalid.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Tenant session is invalid.', null, 40100);
         }
     }
 

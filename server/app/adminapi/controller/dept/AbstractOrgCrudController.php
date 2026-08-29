@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\dept;
 
 use app\adminapi\controller\AbstractTenantCrudController;
+use app\common\http\PageResult;
 use app\common\service\org\OrgTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\response\Json;
@@ -15,7 +16,7 @@ abstract class AbstractOrgCrudController extends AbstractTenantCrudController
 
     protected function resolveCrudContext(): TenantContext
     {
-        return OrgTenantContext::member($this->request);
+        return OrgTenantContext::member();
     }
 
     protected function validatedInput(
@@ -23,15 +24,15 @@ abstract class AbstractOrgCrudController extends AbstractTenantCrudController
         string $scene,
         array $params,
     ): array {
-        $logic = $this->crudLogicClass();
-        if (is_callable([$logic, 'normalizeInput'])) {
-            $params = $logic::normalizeInput($params);
+        $service = $this->crudService();
+        if (is_callable([$service, 'normalizeInput'])) {
+            $params = $service->normalizeInput($params);
         }
         if (!array_key_exists('status', $params) && array_key_exists('is_disable', $params)) {
             $params['status'] = (int) $params['is_disable'] === 0 ? 1 : 0;
         }
 
-        $rules = $logic::validationRules($scene);
+        $rules = $service->validationRules($scene);
         if (in_array($scene, ['detail', 'delete'], true)) {
             $rules = ['id' => $rules['id'] ?? 'require|integer|gt:0'];
         } elseif ($scene === 'status') {
@@ -44,7 +45,7 @@ abstract class AbstractOrgCrudController extends AbstractTenantCrudController
         return $params;
     }
 
-    protected function renderLists(array|false $result): Json
+    protected function renderLists(PageResult|array|false $result): Json
     {
         return $result === false
             ? $this->fail($this->crudError())

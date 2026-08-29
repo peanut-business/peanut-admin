@@ -18,11 +18,11 @@ $noticeService = $read('app/common/service/notice/NoticeChannelService.php');
 $sender = $read('app/common/service/notice/ApplicationNoticeSmsSender.php');
 $verification = $read('app/common/service/notice/VerificationCodeService.php');
 $menuController = $read('app/Modules/Official/Oauth/Http/Controller/OfficialAccountMenuController.php');
-$menuLogic = $read('app/Modules/Official/Oauth/Service/OfficialAccountMenuLogic.php');
+$menuLogic = $read('app/Modules/Official/Oauth/Application/OfficialAccountMenuApplicationService.php');
 
 foreach ([$noticeController, $menuController] as $controller) {
     expectChannelBindingTenant(
-        str_contains($controller, 'MemberTenantContext::member($this->request)'),
+        str_contains($controller, 'MemberTenantContext::member()'),
         'admin controller does not inject its trusted Tenant context'
     );
 }

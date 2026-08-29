@@ -13,8 +13,8 @@ $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 $settingService = (string)file_get_contents($serverRoot . '/app/common/service/tenant/TenantSettingService.php');
 $settingProvider = (string)file_get_contents($serverRoot . '/app/common/service/tenant/ThinkPhpTenantSettingsProvider.php');
 $rechargeService = (string)file_get_contents($serverRoot . '/app/common/service/finance/RechargeTenantSettingService.php');
-$adminLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Service/RechargeSettingLogic.php');
-$apiLogic = (string)file_get_contents($serverRoot . '/app/api/logic/RechargeLogic.php');
+$adminLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeSettingApplicationService.php');
+$apiLogic = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
 
 foreach (['`tenant_id`', '`namespace`', '`config_json`', 'uk_tenant_setting_namespace',
     'fk_tenant_setting_tenant'] as $marker) {

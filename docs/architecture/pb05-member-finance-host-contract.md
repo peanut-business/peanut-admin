@@ -14,7 +14,7 @@
 
 - 应用拥有客户会员、资料/状态/标签、`pa_member`、余额与流水、充值订单、退款记录/日志、管理与会员 HTTP/UI，以及支付回调后的产品结算状态机。
 - `MemberBalanceService` 是 `user_money`、兼容 `balance`、累计充值和分类流水的唯一写入入口；后台余额调整、可信支付回调入账和每笔充值退款只装配各自领域状态。
-- 管理端 `RechargeLogic` 拥有退款，会员端 `RechargeLogic` 拥有建单/预支付/可信回调结算；两者职责与状态不同，不是同一用例的双实现。
+- 管理端 `RechargeApplicationService` 拥有退款，会员端 `RechargeApplicationService` 拥有建单/预支付/可信回调结算；两者职责与状态不同，不是同一用例的双实现。
 - 核心 Tenant membership 是管理账号与 Tenant 的成员关系，不是客户会员。核心 R01/R02 事务、幂等、审计和 Host kit 只是未来候选，不提供余额、流水、充值或退款模型。
 - Alpha.2 发布不批准 Peanut Admin 迁移，R01/R02 也没有固定候选聚合资格与下游采用授权。本片不 deep import、不新增 override、不复制核心 Runtime、不双写核心 schema。
 
@@ -38,13 +38,13 @@
 每笔充值退款 ───┘       └─> MemberBalanceService(row lock)
                               ├─> user_money + balance
                               ├─> total_recharge_amount(optional)
-                              └─> AccountLogLogic -> pa_member_balance_log
+                              └─> MemberBalanceService::appendBalanceLog -> pa_member_balance_log
 ```
 
 固定规则：
 
 1. 三个调用方先开启包含自身订单/退款状态的 ThinkPHP 数据库事务，再调用 `MemberBalanceService::applyInTransaction`；服务锁定会员行并同步余额、镜像、可选累计充值和流水。任一步失败由调用方整体回滚。
-2. `AccountLogLogic` 只创建已经完成余额变动后的流水，不允许 controller、支付适配器或其他领域绕过余额服务直接调用。
+2. `MemberBalanceService` 只创建已经完成余额变动后的流水，不允许 controller、支付适配器或其他领域绕过余额服务直接调用。
 3. `user_money` 是应用源码内唯一权威 writer marker；旧 `balance` 不能反向覆盖它。迁移只在首次新增 `user_money` 时从旧字段初始化。
 4. 后台调账必须携带 `Idempotency-Key`；记录按 Tenant、管理成员、操作和请求参数哈希落库。同 Key 同参数重放直接复用结果，同 Key 不同参数拒绝，余额与流水不会重复变动。
 5. 余额验证器只能提前改善错误提示，真正的非负检查必须在会员行锁内再次执行。
@@ -60,7 +60,7 @@
 
 ## 5. 会员、标签、查询与权限边界
 
-- 会员资料、状态、标签和标签关联继续由应用 `MemberLogic`/`MemberTagLogic` 及现有表唯一拥有；它们不写余额。
+- 会员资料、状态、标签和标签关联继续由 `MemberAdministration`/Member contract 及现有表唯一拥有；它们不写余额。
 - 管理端读取会员、余额流水、充值和退款；PC/UniApp 当前只消费本人充值接口。缺少端入口不是核心包迁移理由。
 - 管理接口继续经过 `LoginMiddleware -> AuthMiddleware -> OperationLogMiddleware`；会员接口继续使用会员 token，支付回调保持匿名路由但必须通过渠道验签。
 - 本片复用已经封存的 LikeAdmin 页面/API/权限结果，不重复 PB00、F02、S01 或浏览器验收。
@@ -70,10 +70,10 @@
 Runtime 白名单：
 
 - `server/app/common/service/MemberBalanceService.php`；
-- `server/app/Modules/Official/Member/Service/MemberLogic.php`；
+- `server/app/Modules/Official/Member/Application/MemberAdministrationService.php`；
 - `server/database/migrations/20260820-member-balance-idempotency.sql`；
-- `server/app/api/logic/RechargeLogic.php`；
-- `server/app/Modules/Official/Payment/Service/RechargeLogic.php`。
+- `server/app/api/application/RechargeApplicationService.php`；
+- `server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php`。
 
 证据与状态白名单：
 

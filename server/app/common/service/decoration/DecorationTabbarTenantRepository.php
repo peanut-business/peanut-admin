@@ -5,8 +5,6 @@ namespace app\common\service\decoration;
 
 use app\common\model\decoration\DecorateTabbar;
 use app\common\model\decoration\DecorationTabbarSetting;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class DecorationTabbarTenantRepository
 {
@@ -15,31 +13,19 @@ final class DecorationTabbarTenantRepository
         'selected_color' => '#2F80ED',
     ];
 
-    public static function items(
-        TenantContext|TenantSystemContext $context,
-        string $operation = ''
-    ) {
-        return DecorateTabbar::where(
-            'tenant_id',
-            DecorationTenantContext::tenantId($context, $operation)
-        );
+    public static function items()
+    {
+        return DecorateTabbar::where([]);
     }
 
-    public static function settings(
-        TenantContext|TenantSystemContext $context,
-        string $operation = ''
-    ) {
-        return DecorationTabbarSetting::where(
-            'tenant_id',
-            DecorationTenantContext::tenantId($context, $operation)
-        );
+    public static function settings()
+    {
+        return DecorationTabbarSetting::where([]);
     }
 
-    public static function readStyle(
-        TenantContext|TenantSystemContext $context,
-        string $operation = ''
-    ): array {
-        $raw = self::settings($context, $operation)->value('style');
+    public static function readStyle(): array
+    {
+        $raw = self::settings()->value('style');
         if ($raw === null) {
             return self::DEFAULT_STYLE;
         }
@@ -51,25 +37,24 @@ final class DecorationTabbarTenantRepository
     }
 
     /** @param list<array<string,mixed>> $items */
-    public static function replace(TenantContext $context, array $style, array $items): void
+    public static function replace(array $style, array $items): void
     {
-        $tenantId = DecorationTenantContext::tenantId($context);
-        $setting = self::settings($context)->lock(true)->findOrEmpty();
+        $setting = self::settings()->lock(true)->findOrEmpty();
         $storedStyle = json_encode(
             $style,
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
         );
         if ($setting->isEmpty()) {
-            DecorationTabbarSetting::create(['tenant_id' => $tenantId, 'style' => $storedStyle]);
+            DecorationTabbarSetting::create(['style' => $storedStyle]);
         } else {
             $setting->style = $storedStyle;
             $setting->save();
         }
 
-        self::items($context)->delete();
+        self::items()->delete();
+        $rows = [];
         foreach ($items as $position => $item) {
-            DecorateTabbar::create([
-                'tenant_id' => $tenantId,
+            $rows[] = [
                 'position' => $position,
                 'name' => trim((string)$item['name']),
                 'selected' => (string)$item['selected'],
@@ -79,7 +64,10 @@ final class DecorationTabbarTenantRepository
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 ),
                 'is_show' => (int)$item['is_show'],
-            ]);
+            ];
+        }
+        if ($rows !== []) {
+            (new DecorateTabbar())->saveAll($rows);
         }
     }
 

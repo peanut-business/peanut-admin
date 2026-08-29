@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\setting\TransactionSettingsLogic;
+use app\adminapi\application\setting\TransactionSettingsApplicationService;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\transaction\TransactionSettingTenantContext;
 use app\common\service\transaction\TransactionSettingTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -126,23 +128,50 @@ SQL);
         expectTransactionTenant($exception->getCode() === '23000', 'transaction policy Tenant foreign key failed unexpectedly');
     }
 
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
     $alpha = transactionTenantContext(101, 11, 'fresh-transaction-alpha');
     $beta = transactionTenantContext(202, 22, 'fresh-transaction-beta');
 
-    TransactionSettingsLogic::setConfig($beta, [
-        'tenant_id' => 101,
-        'cancel_unpaid_orders' => 1,
-        'cancel_unpaid_orders_times' => 60,
-        'verification_orders' => 0,
-        'verification_orders_times' => 48,
-    ]);
-    expectTransactionTenant(TransactionSettingsLogic::getConfig($alpha)['cancel_unpaid_orders_times'] === 30, 'Beta changed Alpha transaction policy');
-    expectTransactionTenant(TransactionSettingsLogic::getConfig($beta)['cancel_unpaid_orders_times'] === 60, 'Beta transaction policy was not updated');
-    expectTransactionTenant((int)TransactionSettingTenantRepository::settings($alpha)->count() === 1, 'Alpha query crossed Tenant boundary');
-    expectTransactionTenant((int)TransactionSettingTenantRepository::settings($beta)->count() === 1, 'Beta query crossed Tenant boundary');
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.transaction-settings.set.beta'),
+        fn() => app(TransactionSettingsApplicationService::class)->setConfig([
+            'tenant_id' => 101,
+            'cancel_unpaid_orders' => 1,
+            'cancel_unpaid_orders_times' => 60,
+            'verification_orders' => 0,
+            'verification_orders_times' => 48,
+        ]),
+    );
+    expectTransactionTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.transaction-settings.get.alpha'),
+            fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
+        )['cancel_unpaid_orders_times'] === 30,
+        'Beta changed Alpha transaction policy',
+    );
+    expectTransactionTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.transaction-settings.get.beta'),
+            fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
+        )['cancel_unpaid_orders_times'] === 60,
+        'Beta transaction policy was not updated',
+    );
+    expectTransactionTenant(
+        (int)app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.transaction-settings.query.alpha'),
+            fn() => TransactionSettingTenantRepository::settings()->count(),
+        ) === 1,
+        'Alpha query crossed Tenant boundary',
+    );
+    expectTransactionTenant(
+        (int)app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.transaction-settings.query.beta'),
+            fn() => TransactionSettingTenantRepository::settings()->count(),
+        ) === 1,
+        'Beta query crossed Tenant boundary',
+    );
 
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_tenant
@@ -151,17 +180,26 @@ VALUES
   (303, 'gamma', 'Gamma', 'Gamma', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
 SQL);
     $gamma = transactionTenantContext(303, 33, 'fresh-transaction-gamma');
-    expectTransactionTenant(TransactionSettingsLogic::getConfig($gamma) === [
-        'cancel_unpaid_orders' => 1,
-        'cancel_unpaid_orders_times' => 30,
-        'verification_orders' => 1,
-        'verification_orders_times' => 24,
-    ], 'new Tenant did not receive stable Runtime defaults');
-    TransactionSettingsLogic::setConfig($gamma, [
-        'tenant_id' => 101,
-        'cancel_unpaid_orders' => 0,
-        'verification_orders' => 0,
-    ]);
+    expectTransactionTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($gamma, 'test.transaction-settings.get.gamma'),
+            fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
+        ) === [
+            'cancel_unpaid_orders' => 1,
+            'cancel_unpaid_orders_times' => 30,
+            'verification_orders' => 1,
+            'verification_orders_times' => 24,
+        ],
+        'new Tenant did not receive stable Runtime defaults',
+    );
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($gamma, 'test.transaction-settings.set.gamma'),
+        fn() => app(TransactionSettingsApplicationService::class)->setConfig([
+            'tenant_id' => 101,
+            'cancel_unpaid_orders' => 0,
+            'verification_orders' => 0,
+        ]),
+    );
     expectTransactionTenant(
         (int)$pdo->query('SELECT tenant_id FROM pa_transaction_setting WHERE tenant_id = 303')->fetchColumn() === 303,
         'payload forged new policy Tenant ownership'

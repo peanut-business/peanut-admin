@@ -3,12 +3,19 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\api\logic\LoginLogic;
+use think\App;
+
+use app\api\application\LoginApplicationService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\notice\NoticeTenantContext;
 
 class LoginController extends BaseApiController
 {
+    public function __construct(App $app, private readonly LoginApplicationService $login)
+    {
+        parent::__construct($app);
+    }
+
     public array $notNeedLogin = ['register', 'account', 'mobile', 'resetPassword', 'logout'];
 
     /** 注册账号 */
@@ -23,9 +30,9 @@ class LoginController extends BaseApiController
             return $this->fail('账号和密码不能为空');
         }
 
-        $result = LoginLogic::register(MemberTenantContext::system($this->request, 'member.register'), $params);
+        $result = $this->login->register(MemberTenantContext::system('member.register'), $params);
         if ($result === false) {
-            return $this->fail(LoginLogic::getError());
+            return $this->fail($this->login->getError());
         }
 
         return $this->success('注册成功');
@@ -44,9 +51,9 @@ class LoginController extends BaseApiController
             return $this->fail('账号和密码不能为空');
         }
 
-        $result = LoginLogic::login(MemberTenantContext::system($this->request, 'member.login'), $params);
+        $result = $this->login->login(MemberTenantContext::system('member.login'), $params);
         if ($result === false) {
-            return $this->fail(LoginLogic::getError());
+            return $this->fail($this->login->getError());
         }
 
         return $this->data($result);
@@ -63,12 +70,12 @@ class LoginController extends BaseApiController
             return $this->fail('手机号或验证码格式不正确');
         }
 
-        $result = LoginLogic::mobileLogin(
+        $result = $this->login->mobileLogin(
             NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
             $params
         );
         return $result === false
-            ? $this->fail(LoginLogic::getError())
+            ? $this->fail($this->login->getError())
             : $this->data($result);
     }
 
@@ -85,18 +92,18 @@ class LoginController extends BaseApiController
             return $this->fail('手机号、验证码或新密码格式不正确');
         }
 
-        return LoginLogic::resetPassword(
+        return $this->login->resetPassword(
             NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
             $params
         )
             ? $this->success('密码已重置')
-            : $this->fail(LoginLogic::getError());
+            : $this->fail($this->login->getError());
     }
 
     /** 退出登录 */
     public function logout()
     {
-        LoginLogic::logout();
+        $this->login->logout();
         return $this->success('退出成功');
     }
 }

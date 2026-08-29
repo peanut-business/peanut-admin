@@ -7,14 +7,14 @@ use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginLifecycleException;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\facade\Db;
 
-final class ModuleSync extends Command
+final class ModuleSync extends ContextualCommand
 {
     protected function configure()
     {
@@ -22,7 +22,7 @@ final class ModuleSync extends Command
             ->addOption('module', null, Option::VALUE_REQUIRED, 'Optional single Module key', '');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'

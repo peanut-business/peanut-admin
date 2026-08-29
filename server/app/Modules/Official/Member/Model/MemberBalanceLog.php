@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\model\concern\SoftDelete;
 
-class MemberBalanceLog extends BaseModel
+class MemberBalanceLog extends TenantOwnedModel
 {
     use SoftDelete;
 

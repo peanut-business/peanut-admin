@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller\setting;
 
+use think\App;
+
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\setting\TransactionSettingsLogic;
+use app\adminapi\application\setting\TransactionSettingsApplicationService;
 use app\common\service\transaction\TransactionSettingTenantContext;
 
 /**
@@ -12,10 +14,15 @@ use app\common\service\transaction\TransactionSettingTenantContext;
  */
 class TransactionSettingsController extends BaseAdminController
 {
+    public function __construct(App $app, private readonly TransactionSettingsApplicationService $transactionSettings)
+    {
+        parent::__construct($app);
+    }
+
     public function getConfig()
     {
-        return $this->data(TransactionSettingsLogic::getConfig(
-            TransactionSettingTenantContext::member($this->request)
+        return $this->data($this->transactionSettings->getConfig(
+            TransactionSettingTenantContext::member()
         ));
     }
 
@@ -43,8 +50,8 @@ class TransactionSettingsController extends BaseAdminController
             }
         }
 
-        TransactionSettingsLogic::setConfig(
-            TransactionSettingTenantContext::member($this->request),
+        $this->transactionSettings->setConfig(
+            TransactionSettingTenantContext::member(),
             $post
         );
         return $this->success('操作成功', [], 1, 1);

@@ -3,11 +3,16 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\api\logic\AccountLogLogic;
-use app\common\service\member\MemberTenantContext;
+use app\Modules\Official\Member\Contracts\MemberQueries;
+use think\App;
 
 class AccountLogController extends BaseApiController
 {
+    public function __construct(App $app, private readonly MemberQueries $members)
+    {
+        parent::__construct($app);
+    }
+
     /** 账户流水 */
     public function lists()
     {
@@ -16,7 +21,7 @@ class AccountLogController extends BaseApiController
             'page_size' => $this->request->get('page_size/d', 15),
         ];
 
-        $result = AccountLogLogic::lists(MemberTenantContext::member($this->request), $this->memberId, $params);
-        return $this->dataLists($result['lists'], $result['count'], $result['page_no'], $result['page_size']);
+        $result = $this->members->balanceLogsForCurrentMember($params['page_no'], $params['page_size']);
+        return $this->data($result);
     }
 }

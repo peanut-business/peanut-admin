@@ -9,6 +9,7 @@ use app\common\service\external\ExternalTenantResolver;
 use app\common\service\notice\driver\sms\AliyunSms;
 use app\common\service\notice\driver\sms\SmsDriver;
 use app\common\service\notice\driver\sms\TencentSms;
+use app\common\service\http\OutboundHttpTransport;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -221,8 +222,8 @@ final class NoticeChannelService
     private static function makeDriver(string $provider, array $config): SmsDriver
     {
         return match ($provider) {
-            'aliyun' => new AliyunSms($config),
-            'tencent' => new TencentSms($config),
+            'aliyun' => new AliyunSms($config, app(OutboundHttpTransport::class)),
+            'tencent' => new TencentSms($config, app(OutboundHttpTransport::class)),
             default => throw new \RuntimeException('短信服务商不受支持'),
         };
     }

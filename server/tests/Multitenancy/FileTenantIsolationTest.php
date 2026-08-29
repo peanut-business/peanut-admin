@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\File\Service\FileCateLogic;
-use app\Modules\Official\File\Service\FileLogic;
+use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\file\FileObjectNamespace;
 use app\common\service\file\FileTenantContext;
 use app\common\service\file\FileTenantRepository;
@@ -109,14 +110,15 @@ try {
     $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
     $pdo->exec("INSERT INTO pa_file_cate (id, tenant_id, pid, type, name) VALUES (11, 101, 0, 10, 'Alpha seed')");
     $pdo->exec("INSERT INTO pa_file (id, tenant_id, cid, source_id, source, type, name, uri, storage) VALUES (21, 101, 11, 1, 0, 10, 'alpha-seed.png', 'storage/tenants/v1/101/uploads/images/alpha-seed.png', 'local')");
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App();
     $app->initialize();
+    $files = app(FileAdministration::class);
 
     $alpha = fileTenantContext(101, 501, 'mt03-file-alpha-' . $runId);
     $beta = fileTenantContext(202, 502, 'mt03-file-beta-' . $runId);
     try {
-        FileTenantContext::member(new stdClass());
+        FileTenantContext::member();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectFileTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
@@ -126,10 +128,28 @@ try {
         FileObjectNamespace::directory($alpha, FileEnum::IMAGE) !== FileObjectNamespace::directory($beta, FileEnum::IMAGE),
         'two Tenants share the same object namespace'
     );
-    expectFileTenant(FileCateLogic::add($alpha, ['tenant_id' => 202, 'pid' => 0, 'type' => 10, 'name' => 'Same category']), FileCateLogic::getError());
-    expectFileTenant(FileCateLogic::add($beta, ['tenant_id' => 101, 'pid' => 0, 'type' => 10, 'name' => 'Same category']), FileCateLogic::getError());
-    $alphaCategory = (int)FileTenantRepository::categories($alpha)->where('name', 'Same category')->value('id');
-    $betaCategory = (int)FileTenantRepository::categories($beta)->where('name', 'Same category')->value('id');
+    expectFileTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.file.category.add.alpha'),
+            fn() => $files->addCategory(['tenant_id' => 202, 'pid' => 0, 'type' => 10, 'name' => 'Same category']),
+        ),
+        'Alpha category was not created',
+    );
+    expectFileTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.file.category.add.beta'),
+            fn() => $files->addCategory(['tenant_id' => 101, 'pid' => 0, 'type' => 10, 'name' => 'Same category']),
+        ),
+        'Beta category was not created',
+    );
+    $alphaCategory = (int)app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.file.category.query.alpha'),
+        fn() => FileTenantRepository::categories()->where('name', 'Same category')->value('id'),
+    );
+    $betaCategory = (int)app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.file.category.query.beta'),
+        fn() => FileTenantRepository::categories()->where('name', 'Same category')->value('id'),
+    );
     expectFileTenant($alphaCategory > 0 && $betaCategory > 0, 'same-name Tenant categories were not created');
     expectFileTenant(
         (int)$pdo->query("SELECT tenant_id FROM pa_file_cate WHERE id = {$alphaCategory}")->fetchColumn() === 101,
@@ -140,26 +160,65 @@ try {
     mkdir($betaDirectory, 0777, true);
     file_put_contents($alphaObject, 'alpha');
     file_put_contents($betaObject, 'beta');
-    FileTenantRepository::createFile($alpha, [
-        'tenant_id' => 202, 'cid' => $alphaCategory, 'source_id' => 501, 'source' => 0,
-        'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/101/uploads/images/' . $objectName, 'storage' => 'local',
-    ]);
-    FileTenantRepository::createFile($beta, [
-        'tenant_id' => 101, 'cid' => $betaCategory, 'source_id' => 502, 'source' => 0,
-        'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/202/uploads/images/' . $objectName, 'storage' => 'local',
-    ]);
-    $alphaFile = (int)FileTenantRepository::files($alpha)->where('name', 'same.png')->value('id');
-    $betaFile = (int)FileTenantRepository::files($beta)->where('name', 'same.png')->value('id');
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.file.create.alpha'),
+        fn() => FileTenantRepository::createFile([
+            'tenant_id' => 202, 'cid' => $alphaCategory, 'source_id' => 501, 'source' => 0,
+            'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/101/uploads/images/' . $objectName, 'storage' => 'local',
+        ]),
+    );
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.file.create.beta'),
+        fn() => FileTenantRepository::createFile([
+            'tenant_id' => 101, 'cid' => $betaCategory, 'source_id' => 502, 'source' => 0,
+            'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/202/uploads/images/' . $objectName, 'storage' => 'local',
+        ]),
+    );
+    $alphaFile = (int)app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.file.query.alpha'),
+        fn() => FileTenantRepository::files()->where('name', 'same.png')->value('id'),
+    );
+    $betaFile = (int)app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.file.query.beta'),
+        fn() => FileTenantRepository::files()->where('name', 'same.png')->value('id'),
+    );
     expectFileTenant($alphaFile > 0 && $betaFile > 0, 'same-name Tenant files were not created');
 
-    expectFileTenant(count(FileLogic::lists($alpha, ['type' => 10, 'name' => 'same.png'])['lists']) === 1, 'Alpha file list leaked or lost same-name files');
-    expectFileTenant(count(FileLogic::lists($beta, ['type' => 10, 'name' => 'same.png'])['lists']) === 1, 'Beta file list leaked or lost same-name files');
-    expectFileTenant(count(FileCateLogic::lists($alpha, 10)) === 2, 'Alpha category tree leaked or lost categories');
-    expectFileTenant(count(FileCateLogic::lists($beta, 10)) === 1, 'Beta category tree leaked or lost categories');
+    expectFileTenant(
+        count(app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.file.list.alpha'),
+            fn() => $files->lists(['type' => 10, 'name' => 'same.png']),
+        )->items) === 1,
+        'Alpha file list leaked or lost same-name files',
+    );
+    expectFileTenant(
+        count(app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.file.list.beta'),
+            fn() => $files->lists(['type' => 10, 'name' => 'same.png']),
+        )->items) === 1,
+        'Beta file list leaked or lost same-name files',
+    );
+    expectFileTenant(
+        count(app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.file.category.list.alpha'),
+            fn() => $files->categoryLists(10),
+        )) === 2,
+        'Alpha category tree leaked or lost categories',
+    );
+    expectFileTenant(
+        count(app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.file.category.list.beta'),
+            fn() => $files->categoryLists(10),
+        )) === 1,
+        'Beta category tree leaked or lost categories',
+    );
 
     foreach ([$betaCategory, 999999] as $target) {
         try {
-            FileCateLogic::delete($alpha, $target);
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($alpha, 'test.file.category.delete.denied'),
+                fn() => $files->deleteCategory($target),
+            );
             throw new RuntimeException('cross/missing category delete unexpectedly succeeded');
         } catch (InvalidArgumentException $exception) {
             expectFileTenant($exception->getMessage() === '分类不存在', 'category denial enumerated Tenant ownership');
@@ -167,28 +226,49 @@ try {
     }
     foreach ([$betaFile, 999999] as $target) {
         try {
-            FileLogic::delete($alpha, [$target]);
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($alpha, 'test.file.delete.denied'),
+                fn() => $files->delete([$target]),
+            );
             throw new RuntimeException('cross/missing file delete unexpectedly succeeded');
         } catch (InvalidArgumentException $exception) {
             expectFileTenant($exception->getMessage() === '包含不存在的素材', 'file denial enumerated Tenant ownership');
         }
     }
     try {
-        FileTenantRepository::createFile($alpha, [
-            'tenant_id' => 101, 'cid' => 0, 'source_id' => 501, 'source' => 0, 'type' => 10,
-            'name' => 'forged.png', 'uri' => 'storage/tenants/v1/202/uploads/images/forged.png', 'storage' => 'local',
-        ]);
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.file.create.foreign-namespace'),
+            fn() => FileTenantRepository::createFile([
+                'tenant_id' => 101, 'cid' => 0, 'source_id' => 501, 'source' => 0, 'type' => 10,
+                'name' => 'forged.png', 'uri' => 'storage/tenants/v1/202/uploads/images/forged.png', 'storage' => 'local',
+            ]),
+        );
         throw new RuntimeException('foreign object namespace unexpectedly succeeded');
     } catch (RuntimeException $exception) {
         expectFileTenant($exception->getMessage() === '素材对象不属于当前租户', 'object namespace denial changed');
     }
 
-    $result = FileCateLogic::delete($alpha, $alphaCategory);
+    $result = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.file.category.delete.alpha'),
+        fn() => $files->deleteCategory($alphaCategory),
+    );
     expectFileTenant($result === ['categories_deleted' => 1, 'files_deleted' => 1, 'storage_deleted' => 1], 'Alpha category cleanup result changed');
     expectFileTenant(!file_exists($alphaObject), 'Alpha object survived Tenant cleanup');
     expectFileTenant(file_exists($betaObject) && file_get_contents($betaObject) === 'beta', 'Alpha cleanup touched Beta object');
-    expectFileTenant(FileTenantRepository::findCategory($beta, $betaCategory) !== null, 'Alpha cleanup deleted Beta category');
-    expectFileTenant(FileTenantRepository::findFile($beta, $betaFile) !== null, 'Alpha cleanup deleted Beta file row');
+    expectFileTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.file.category.query.beta'),
+            fn() => FileTenantRepository::findCategory($betaCategory) !== null,
+        ),
+        'Alpha cleanup deleted Beta category',
+    );
+    expectFileTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.file.query.beta'),
+            fn() => FileTenantRepository::findFile($betaFile) !== null,
+        ),
+        'Alpha cleanup deleted Beta file row',
+    );
     expectFileTenant((int)$pdo->query("SELECT COUNT(*) FROM pa_file WHERE tenant_id = 202 AND delete_time IS NULL")->fetchColumn() === 1, 'Beta active file count changed');
 
     echo "MT03-FILE-TENANT-OWNERSHIP-001 passed\n";

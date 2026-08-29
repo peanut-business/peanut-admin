@@ -5,13 +5,13 @@ namespace app\command;
 
 use app\platform\service\plugin\PluginArtifactToolException;
 use app\platform\service\plugin\PluginArtifactWriter;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 
-final class PluginMake extends Command
+final class PluginMake extends ContextualCommand
 {
     protected function configure()
     {
@@ -21,7 +21,7 @@ final class PluginMake extends Command
             ->addOption('module', null, Option::VALUE_REQUIRED | Option::VALUE_IS_ARRAY, 'Module key=project-relative-root');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $result = (new PluginArtifactWriter(dirname(__DIR__, 2)))->make(

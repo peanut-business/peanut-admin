@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 use think\model\concern\SoftDelete;
 
-class ArticleCate extends BaseModel
+class ArticleCate extends TenantOwnedModel
 {
     use SoftDelete;
     protected $name       = 'article_cate';

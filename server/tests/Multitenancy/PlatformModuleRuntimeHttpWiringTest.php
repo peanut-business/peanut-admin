@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
@@ -48,7 +50,7 @@ function platformModuleHttpContext(int $operatorId, int $accountId, string $sess
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
+$routeSource = peanut_route_registry_source($serverRoot);
 $controllerSource = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformModuleLifecycleController.php');
 $middlewareSource = (string)file_get_contents($serverRoot . '/app/platform/http/middleware/PlatformInstanceToolMiddleware.php');
 $serviceSource = (string)file_get_contents($serverRoot . '/app/platform/service/plugin/PlatformModuleRuntimeService.php');

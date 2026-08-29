@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace app\common\support;
 
+use app\common\http\PageResult;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
+use think\db\BaseQuery;
 
 /**
  * Normalized list pagination input.
@@ -36,12 +38,23 @@ final readonly class PaginationInput
         $page = (int)($params['page_no'] ?? $params['page'] ?? $defaultPage);
         $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? $defaultPageSize);
 
-        // PageRequest deliberately owns the normal page-size upper bound (100).
-        return new self(new PageRequest(max(1, $page), min(100, max(1, $pageSize))));
+        // PageRequest is the single validation source for normal page bounds.
+        return new self(new PageRequest($page, $pageSize));
     }
 
     public function offset(): int
     {
         return $this->pageRequest->offset();
+    }
+
+    public function result(BaseQuery $query): PageResult
+    {
+        $paginator = $query->paginate([
+            'list_rows' => $this->pageSize,
+            'page' => $this->page,
+            'var_page' => 'page_no',
+        ]);
+
+        return PageResult::fromPaginator($paginator, $this->page);
     }
 }

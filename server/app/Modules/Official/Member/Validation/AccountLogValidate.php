@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Validation;
 
+use app\common\validate\PageSizeRule;
 use think\Validate;
 
 class AccountLogValidate extends Validate
 {
+    use PageSizeRule;
+
     protected $rule = [
         'page_no' => 'integer|gt:0',
         'page_size' => 'integer|gt:0|pageSizeMax',
@@ -29,11 +32,4 @@ class AccountLogValidate extends Validate
         ]);
     }
 
-    protected function pageSizeMax($value): bool|string
-    {
-        if ((int)$value > 25000) {
-            return '已超出系统限制数量，请分页查询或导出，当前最多记录数为：25000';
-        }
-        return true;
-    }
 }

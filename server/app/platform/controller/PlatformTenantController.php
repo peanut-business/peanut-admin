@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\http\PageResult;
 use app\common\service\JsonService;
 use app\platform\http\PlatformRequest;
 use app\platform\service\PlatformRuntimeFactory;
@@ -16,7 +17,7 @@ final class PlatformTenantController extends BasePlatformController
     public function provision()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         $params = $this->request->post();
@@ -36,7 +37,7 @@ final class PlatformTenantController extends BasePlatformController
         } catch (AdminAccessException $exception) {
             return $this->accessFailure($exception);
         } catch (\DomainException|\InvalidArgumentException) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 'Tenant provisioning was rejected.',
                 ['error_code' => 'TENANT_PROVISION_REJECTED'],
                 40900
@@ -47,7 +48,7 @@ final class PlatformTenantController extends BasePlatformController
     public function activate()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         $params = $this->request->post();
@@ -64,7 +65,7 @@ final class PlatformTenantController extends BasePlatformController
         } catch (AdminAccessException $exception) {
             return $this->accessFailure($exception);
         } catch (\DomainException|\InvalidArgumentException) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 'Tenant activation was rejected.',
                 ['error_code' => 'TENANT_ACTIVATION_REJECTED'],
                 40900
@@ -75,7 +76,7 @@ final class PlatformTenantController extends BasePlatformController
     public function suspend()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         $params = $this->request->post();
@@ -92,7 +93,7 @@ final class PlatformTenantController extends BasePlatformController
         } catch (AdminAccessException $exception) {
             return $this->accessFailure($exception);
         } catch (\DomainException|\InvalidArgumentException) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 'Tenant suspension was rejected.',
                 ['error_code' => 'TENANT_SUSPENSION_REJECTED'],
                 40900
@@ -103,7 +104,7 @@ final class PlatformTenantController extends BasePlatformController
     public function close()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         $params = $this->request->post();
@@ -120,7 +121,7 @@ final class PlatformTenantController extends BasePlatformController
         } catch (AdminAccessException $exception) {
             return $this->accessFailure($exception);
         } catch (\DomainException|\InvalidArgumentException) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 'Tenant closure was rejected.',
                 ['error_code' => 'TENANT_CLOSURE_REJECTED'],
                 40900
@@ -131,7 +132,7 @@ final class PlatformTenantController extends BasePlatformController
     public function lists()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         try {
@@ -145,13 +146,13 @@ final class PlatformTenantController extends BasePlatformController
             return $this->accessFailure($exception);
         }
 
-        return $this->dataLists($result['items'], $result['total'], $page, $pageSize);
+        return $this->dataLists(new PageResult($result['items'], $result['total'], $page, $pageSize));
     }
 
     public function detail()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
         try {
@@ -179,7 +180,7 @@ final class PlatformTenantController extends BasePlatformController
 
     private function accessFailure(AdminAccessException $exception)
     {
-        return JsonService::fail(
+        throw \app\common\http\ApiProblem::fromEnvelope(
             $exception->getMessage(),
             ['error_code' => $exception->errorCode],
             $exception->httpStatus * 100

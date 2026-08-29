@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Application;
 
+use app\common\application\BusinessException;
+use app\common\http\PageResult;
 use app\Modules\Official\Notification\Contracts\DeliveryResult;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
@@ -13,24 +15,25 @@ use app\common\service\notice\NoticeChannelService;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\NoticeTenantRepository;
 use app\common\service\notice\VerificationCodeService;
+use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Auth\TenantContext as KernelTenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use app\common\support\PaginationInput;
 
 final class NotificationApplicationService implements NotificationCommands, NotificationQueries, VerificationCodeCommands
 {
-    public function saveChannel(TenantContext $context, string $section, array $input): void
+    public function saveChannel(string $section, array $input): void
     {
-        NoticeChannelService::save($context, $section, $input);
+        NoticeChannelService::save(NoticeTenantContext::member(), $section, $input);
     }
 
-    public function saveScene(TenantContext $context, array $params): void
+    public function saveScene(array $params): void
     {
-        $scene = NoticeTenantRepository::scenes($context)
+        $scene = NoticeTenantRepository::scenes(NoticeTenantContext::member())
             ->where('id', (int) $params['id'])
             ->findOrEmpty();
         if ($scene->isEmpty()) {
-            throw new \RuntimeException('通知场景不存在');
+            throw BusinessException::notFound('NOTIFICATION_SCENE_NOT_FOUND', '通知场景不存在');
         }
 
         $scene->sms_template_id = trim((string) ($params['sms_template_id'] ?? ''));
@@ -39,14 +42,14 @@ final class NotificationApplicationService implements NotificationCommands, Noti
         $scene->save();
     }
 
-    public function channelDetail(TenantContext $context): array
+    public function channelDetail(): array
     {
-        return NoticeChannelService::detail($context);
+        return NoticeChannelService::detail(NoticeTenantContext::member());
     }
 
-    public function scenes(TenantContext $context): array
+    public function scenes(): array
     {
-        $list = NoticeTenantRepository::scenes($context)->field([
+        $list = NoticeTenantRepository::scenes(NoticeTenantContext::member())->field([
             'id', 'code', 'name', 'description', 'recipient', 'variables',
             'sms_template_id', 'sms_content', 'sms_status', 'update_time',
         ])->order('id', 'asc')->select()->toArray();
@@ -54,22 +57,21 @@ final class NotificationApplicationService implements NotificationCommands, Noti
         return ['list' => $list, 'total' => count($list)];
     }
 
-    public function sceneDetail(TenantContext $context, int $id): array
+    public function sceneDetail(int $id): array
     {
-        return NoticeTenantRepository::scenes($context)->where('id', $id)->findOrEmpty()->toArray();
+        return NoticeTenantRepository::scenes(NoticeTenantContext::member())->where('id', $id)->findOrEmpty()->toArray();
     }
 
-    public function sceneExists(TenantContext $context, int $id): bool
+    public function sceneExists(int $id): bool
     {
-        return !NoticeTenantRepository::scenes($context)->where('id', $id)->findOrEmpty()->isEmpty();
+        return !NoticeTenantRepository::scenes(NoticeTenantContext::member())->where('id', $id)->findOrEmpty()->isEmpty();
     }
 
-    public function logs(TenantContext $context, array $params): array
+    public function logs(array $params): PageResult
     {
-        $tenantId = NoticeTenantContext::tenantId($context);
         $query = NoticeLog::alias('l')
-            ->leftJoin('notice_template t', 't.tenant_id = l.tenant_id AND t.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.tenant_id = l.tenant_id AND s.id = l.scene_id')
+            ->leftJoin('notice_template t', 't.id = l.template_id')
+            ->leftJoin('notice_scene s', 's.id = l.scene_id')
             ->field([
                 'l.id', 'l.template_id', 'l.scene_id', 'l.channel', 'l.provider',
                 'l.receiver', 'l.title', 'l.content', 'l.is_verified', 'l.check_count',
@@ -77,7 +79,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
                 't.name as template_name', 't.code as template_code',
                 's.name as scene_name', 's.code as scene_code',
             ])
-            ->where('l.tenant_id', $tenantId);
+            ->where([]);
 
         if (!empty($params['receiver'])) {
             $query->whereLike('l.receiver', '%' . $params['receiver'] . '%');
@@ -98,20 +100,21 @@ final class NotificationApplicationService implements NotificationCommands, Noti
             $query->where('l.send_time', '<=', (int) $params['end_time']);
         }
 
-        $total = $query->count();
-        $page = max(1, (int) ($params['page'] ?? 1));
-        $limit = max(1, (int) ($params['limit'] ?? 15));
-        $list = $query->order('l.id', 'desc')->page($page, $limit)->select()->toArray();
+        $pagination = PaginationInput::from($params);
+        $pageResult = $pagination->result($query->order('l.id', 'desc'));
+        $list = array_map(
+            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
+            $pageResult->items,
+        );
 
-        return ['total' => $total, 'list' => $list];
+        return new PageResult($list, $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
 
-    public function logDetail(TenantContext $context, int $id): array
+    public function logDetail(int $id): array
     {
-        $tenantId = NoticeTenantContext::tenantId($context);
         return NoticeLog::alias('l')
-            ->leftJoin('notice_template t', 't.tenant_id = l.tenant_id AND t.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.tenant_id = l.tenant_id AND s.id = l.scene_id')
+            ->leftJoin('notice_template t', 't.id = l.template_id')
+            ->leftJoin('notice_scene s', 's.id = l.scene_id')
             ->field([
                 'l.id', 'l.template_id', 'l.scene_id', 'l.channel', 'l.provider',
                 'l.receiver', 'l.title', 'l.content', 'l.is_verified', 'l.check_count',
@@ -119,7 +122,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
                 't.name as template_name', 't.code as template_code',
                 's.name as scene_name', 's.code as scene_code',
             ])
-            ->where('l.tenant_id', $tenantId)
+            ->where([])
             ->where('l.id', $id)
             ->findOrEmpty()
             ->toArray();
@@ -131,7 +134,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
     }
 
     public function verifyCode(
-        \app\common\service\member\AuthenticatedMemberContext|KernelTenantContext|TenantSystemContext $context,
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $sceneCode,
         string $mobile,
         string $code

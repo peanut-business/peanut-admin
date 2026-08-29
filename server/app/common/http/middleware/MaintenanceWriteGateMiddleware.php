@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\http\middleware;
 
+use app\common\http\RequestTrace;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\JsonService;
 use PDO;
@@ -22,7 +23,7 @@ final class MaintenanceWriteGateMiddleware
             return $next($request);
         }
 
-        $requestId = $this->requestId($request);
+        $requestId = RequestTrace::id($request, 'maintenance');
         try {
             $pdo = Db::connect()->connect();
             if (!$pdo instanceof PDO) {
@@ -49,17 +50,19 @@ final class MaintenanceWriteGateMiddleware
                 'MAINTENANCE_WRITE_BLOCKED',
             );
 
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 '系统维护中，暂不支持写入操作。',
                 ['error_code' => 'MAINTENANCE_WRITE_BLOCKED'],
                 50300,
-            )->header(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
+                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
+            );
         } catch (\Throwable) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 '系统维护状态不可用，写入操作已拒绝。',
                 ['error_code' => 'MAINTENANCE_GATE_UNAVAILABLE'],
                 50300,
-            )->header(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
+                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
+            );
         }
     }
 
@@ -88,12 +91,4 @@ SQL);
                 && preg_match('#^api/platform/v1/ops/maintenance/maintenance_[a-f0-9]{32}/close$#D', $path) === 1);
     }
 
-    private function requestId($request): string
-    {
-        $value = trim((string)$request->header('X-Request-Id', ''));
-        if (preg_match('/^[A-Za-z0-9._-]{1,64}$/D', $value) === 1) {
-            return $value;
-        }
-        return 'maintenance-' . bin2hex(random_bytes(16));
-    }
 }

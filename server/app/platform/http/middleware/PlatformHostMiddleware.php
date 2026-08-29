@@ -13,7 +13,7 @@ final class PlatformHostMiddleware
         try {
             ApplicationHostPolicy::production()->assertPlatform($request);
         } catch (\DomainException|\InvalidArgumentException) {
-            return JsonService::fail('Platform host is not allowed.', null, 40300);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform host is not allowed.', null, 40300);
         }
 
         return $next($request);

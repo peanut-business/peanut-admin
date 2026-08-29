@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\http\PageResult;
 use app\common\service\JsonService;
 use app\platform\invitation\PlatformInvitationRuntimeFactory;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
@@ -38,7 +39,7 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
     public function owner()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         try {
             return $this->data(PlatformInvitationRuntimeFactory::queries()->owner(
@@ -53,7 +54,7 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
     private function listQuery(string $method)
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         try {
             $page = $this->positiveInteger($this->request->get('page', 1));
@@ -66,7 +67,7 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
             $result = $method === 'moduleStates'
                 ? $query->moduleStates($this->platformContext, $this->positiveInteger($this->request->get('tenant_id')), $request)
                 : $query->{$method}($this->platformContext, $request);
-            return $this->dataLists($result['items'], $result['total'], $page, $pageSize);
+            return $this->dataLists(new PageResult($result['items'], $result['total'], $page, $pageSize));
         } catch (AdminAccessException $exception) {
             return $this->failure($exception);
         }
@@ -83,7 +84,7 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
 
     private function failure(AdminAccessException $exception)
     {
-        return JsonService::fail(
+        throw \app\common\http\ApiProblem::fromEnvelope(
             $exception->getMessage(),
             ['error_code' => $exception->errorCode],
             $exception->httpStatus * 100

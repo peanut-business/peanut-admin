@@ -43,6 +43,8 @@ export interface GeneratorRelation {
   foreign_key: string;
   module?: string;
   model?: string;
+  data_owner?: 'tenant-orm' | 'platform' | 'instance' | 'shared' | '';
+  target_edition?: 'standalone' | 'multi-tenant' | '';
 }
 
 export interface GeneratorRecord {
@@ -53,6 +55,8 @@ export interface GeneratorRecord {
   module_name: string;
   entity_name: string;
   template_type: 'crud' | 'tree' | string;
+  data_owner: 'tenant-orm' | 'platform' | 'instance' | 'shared' | '';
+  target_edition: 'standalone' | 'multi-tenant' | '';
   author: string;
   tree_config: Record<string, string>;
   relations: GeneratorRelation[];
@@ -73,6 +77,8 @@ export interface GeneratorUpdateForm {
   module_name: string;
   entity_name: string;
   template_type: 'crud' | 'tree';
+  data_owner: 'tenant-orm' | 'platform' | 'instance' | 'shared';
+  target_edition: 'standalone' | 'multi-tenant';
   author?: string;
   tree_config?: Record<string, string>;
   relations?: GeneratorRelation[];
@@ -96,6 +102,8 @@ export interface GeneratorModel {
   module_name: string;
   entity_name: string;
   table_name: string;
+  data_owner: 'tenant-orm' | 'platform' | 'instance' | 'shared' | '';
+  target_edition: 'standalone' | 'multi-tenant' | '';
 }
 
 export function getGeneratorSourceTables(params: GeneratorListParams) {

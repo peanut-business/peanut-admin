@@ -111,7 +111,8 @@ try {
     $expectedBackendFiles = [
         'module.json', 'ModuleProvider.php', 'Contracts/Generated' . ucfirst($suffix) . 'Commands.php',
         'Http/routes.php', 'Http/Controller/.gitkeep',
-        'Service/.gitkeep', 'Model/.gitkeep', 'Resources/permissions.json', 'Resources/menus.json',
+        'Application/.gitkeep', 'Infrastructure/Persistence/.gitkeep', 'Model/.gitkeep',
+        'Resources/permissions.json', 'Resources/menus.json',
         'Resources/setting-definitions.json', 'Database/Migrations/README.md', 'composer.json',
     ];
     $expectedFrontendFiles = ['contribution.ts', 'views/.gitkeep', 'api.ts', 'package.json'];

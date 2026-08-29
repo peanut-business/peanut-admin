@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
 
@@ -69,7 +71,7 @@ $authenticatedWrongMethod = new class {
 $wrongMethodDenial = responsePayload($middleware->handle($authenticatedWrongMethod, $next));
 expectAdminApiBoundary($wrongMethodDenial === ['code' => 40300, 'msg' => '暂无访问权限', 'data' => null], 'wrong-method denial must keep the generic permission shape');
 
-$routeSource = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+$routeSource = peanut_route_registry_source(dirname(__DIR__, 2));
 expectAdminApiBoundary(str_contains($routeSource, "Route::group('api/admin'"), 'Tenant Admin route group is missing');
 expectAdminApiBoundary(str_contains($routeSource, 'LoginMiddleware::class, AuthMiddleware::class'), 'Tenant Admin guard chain is missing');
 expectAdminApiBoundary(!str_contains($routeSource, "Route::group('api/platform'"), 'Platform routes must remain individually guarded');

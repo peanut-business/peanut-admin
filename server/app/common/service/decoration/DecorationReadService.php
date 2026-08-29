@@ -16,7 +16,7 @@ class DecorationReadService
         string $operation = ''
     ): array
     {
-        $page = DecorationTenantRepository::pages($context, $operation)
+        $page = DecorationTenantRepository::pages()
             ->where('type', $type)->findOrEmpty();
         if ($page->isEmpty()) {
             throw new \RuntimeException('装修页面不存在');
@@ -29,8 +29,8 @@ class DecorationReadService
         bool $visibleOnly = false,
         string $operation = ''
     ): array {
-        $style = DecorationTabbarTenantRepository::readStyle($context, $operation);
-        $rows = DecorationTabbarTenantRepository::items($context, $operation)
+        $style = DecorationTabbarTenantRepository::readStyle();
+        $rows = DecorationTabbarTenantRepository::items()
             ->order(['position' => 'asc', 'id' => 'asc'])->select()->toArray();
         $list = [];
         foreach ($rows as $item) {

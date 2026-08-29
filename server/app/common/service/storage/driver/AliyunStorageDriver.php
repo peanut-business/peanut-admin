@@ -5,15 +5,24 @@ namespace app\common\service\storage\driver;
 
 use app\common\service\storage\StorageDriver;
 use app\common\service\storage\StoragePath;
+use app\common\service\storage\AliyunStorageClientFactory;
 use OSS\OssClient;
 
 final readonly class AliyunStorageDriver implements StorageDriver
 {
-    public function __construct(private array $account, private array $space) {}
+    private OssClient $client;
+
+    public function __construct(
+        array $account,
+        private array $space,
+        AliyunStorageClientFactory $clients,
+    ) {
+        $this->client = $clients->make($account, $space);
+    }
 
     public function put(string $objectKey, string $sourcePath): void
     {
-        $this->client()->uploadFile(
+        $this->client->uploadFile(
             (string)$this->space['bucket'],
             StoragePath::assertObjectKey($objectKey),
             $sourcePath,
@@ -23,12 +32,12 @@ final readonly class AliyunStorageDriver implements StorageDriver
 
     public function delete(string $objectKey): void
     {
-        $this->client()->deleteObject((string)$this->space['bucket'], StoragePath::assertObjectKey($objectKey));
+        $this->client->deleteObject((string)$this->space['bucket'], StoragePath::assertObjectKey($objectKey));
     }
 
     public function downloadTo(string $objectKey, string $targetPath): void
     {
-        $this->client()->getObject(
+        $this->client->getObject(
             (string)$this->space['bucket'],
             StoragePath::assertObjectKey($objectKey),
             [OssClient::OSS_FILE_DOWNLOAD => $targetPath],
@@ -40,14 +49,4 @@ final readonly class AliyunStorageDriver implements StorageDriver
         return null;
     }
 
-    private function client(): OssClient
-    {
-        $credentials = (array)($this->account['resolved_credentials'] ?? []);
-        return new OssClient(
-            (string)($credentials['access_key'] ?? ''),
-            (string)($credentials['secret_key'] ?? ''),
-            (string)$this->space['endpoint'],
-            true,
-        );
-    }
 }

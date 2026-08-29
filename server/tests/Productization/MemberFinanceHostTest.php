@@ -19,7 +19,7 @@ $balanceService = (string)file_get_contents($balanceServicePath);
 $balanceContractPath = $serverRoot . '/app/Modules/Official/Member/Application/MemberBalanceContractService.php';
 $balanceContract = (string)file_get_contents($balanceContractPath);
 $memberManifest = (string)file_get_contents($serverRoot . '/app/Modules/Official/Member/module.json');
-$accountLog = (string)file_get_contents($serverRoot . '/app/common/logic/AccountLogLogic.php');
+$administration = (string)file_get_contents($serverRoot . '/app/Modules/Official/Member/Application/MemberAdministrationService.php');
 $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 
 expectMemberFinance(MemberBalanceService::moneyToCents('10.10') === 1010, 'decimal amount conversion changed');
@@ -29,13 +29,13 @@ expectMemberFinance(
     str_contains($balanceService, 'MemberTenantRepository::members($context)->lock(true)'),
     'balance owner must lock the Tenant-scoped member row'
 );
-expectMemberFinance(str_contains($balanceService, 'AccountLogLogic::add'), 'balance owner must append a ledger row');
+expectMemberFinance(str_contains($balanceService, 'appendBalanceLog'), 'balance owner must append a ledger row');
 expectMemberFinance(!str_contains($balanceService, '$member->balance'), 'balance owner must not write a compatibility mirror');
-expectMemberFinance(!str_contains($accountLog, "'after_amount' =>"), 'ledger owner must not write a compatibility mirror');
+expectMemberFinance(!str_contains($balanceService, "'after_amount' =>"), 'ledger owner must not write a compatibility mirror');
 expectMemberFinance(!str_contains($schema, '`balance` DECIMAL'), 'member compatibility balance remains in the fresh schema');
 expectMemberFinance(!str_contains($schema, '`after_amount` DECIMAL'), 'ledger compatibility amount remains in the fresh schema');
 $memberSave = strpos($balanceService, '$member->save()');
-$ledgerAppend = strpos($balanceService, 'AccountLogLogic::add');
+$ledgerAppend = strpos($balanceService, 'appendBalanceLog');
 expectMemberFinance(
     $memberSave !== false && $ledgerAppend !== false && $memberSave < $ledgerAppend,
     'ledger must record the updated balance'
@@ -68,14 +68,14 @@ expectMemberFinance(
 );
 
 $callers = [
-    'app/Modules/Official/Member/Service/MemberLogic.php',
-    'app/api/logic/RechargeLogic.php',
-    'app/Modules/Official/Payment/Service/RechargeLogic.php',
+    'app/api/application/RechargeApplicationService.php',
+    'app/Modules/Official/Payment/Application/RechargeAdministrationService.php',
 ];
 expectMemberFinance(
     $balanceCallers === [$balanceContractPath],
     'Member balance contract must be the only caller of the unique writer: ' . implode(', ', $balanceCallers)
 );
+expectMemberFinance(str_contains($administration, 'MemberBalanceCommands'), 'member administration must depend on the balance contract');
 expectMemberFinance(
     str_contains($memberManifest, 'Contracts\\\\MemberQueries')
         && str_contains($memberManifest, 'Contracts\\\\MemberBalanceCommands'),
@@ -93,12 +93,14 @@ foreach ($callers as $relativePath) {
     $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
     $call = strpos($source, 'balanceCommands()->applyInTransaction');
     expectMemberFinance($call !== false, 'balance path bypasses the unique owner: ' . $relativePath);
-    expectMemberFinance(strrpos(substr($source, 0, $call), 'Db::startTrans()') !== false, 'balance path lacks an outer transaction: ' . $relativePath);
-    expectMemberFinance(strpos($source, 'Db::commit()', $call) !== false, 'balance path lacks an atomic commit: ' . $relativePath);
-    expectMemberFinance(!str_contains($source, 'AccountLogLogic::add'), 'caller writes the ledger directly: ' . $relativePath);
+    $beforeCall = substr($source, 0, $call);
+    $hasTransactionBoundary = strrpos($beforeCall, 'Db::transaction(') !== false
+        || strrpos($beforeCall, 'TransactionalExecution::class)->run(') !== false;
+    expectMemberFinance($hasTransactionBoundary, 'balance path lacks an outer transaction: ' . $relativePath);
+    expectMemberFinance(!str_contains($source, 'MemberBalanceLog::create'), 'caller writes the ledger directly: ' . $relativePath);
 }
 
-$settle = (string)file_get_contents($serverRoot . '/app/api/logic/RechargeLogic.php');
+$settle = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
 $paidGuard = strpos($settle, 'pay_status === RechargeOrder::PAY_STATUS_PAID');
 $credit = strpos($settle, 'balanceCommands()->applyInTransaction');
 expectMemberFinance($paidGuard !== false && $credit !== false && $paidGuard < $credit, 'paid callback guard must precede credit');
@@ -108,7 +110,7 @@ expectMemberFinance(
     'Payment must query Member through the public contract'
 );
 
-$refund = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Service/RechargeLogic.php');
+$refund = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeAdministrationService.php');
 $retryStart = strpos($refund, 'public static function refundAgain');
 $retryEnd = strpos($refund, 'private static function retryLockName', $retryStart ?: 0);
 expectMemberFinance($retryStart !== false && $retryEnd !== false, 'refund retry boundary is missing');

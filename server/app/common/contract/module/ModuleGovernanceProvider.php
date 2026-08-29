@@ -13,5 +13,4 @@ interface ModuleGovernanceProvider
 
     public function qualification(): ModuleQualificationQuery;
 
-    public function executionGuard(string $moduleKey): ModuleExecutionGuard;
 }

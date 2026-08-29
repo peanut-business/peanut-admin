@@ -45,12 +45,12 @@
   "direct_cause": {
     "file": "server/app/api/controller/PcController.php",
     "method": "infoCenter",
-    "behavior": "delegates to ArticleLogic::lists without filtering ArticleCate.is_show",
-    "source_path": "server/app/api/logic/ArticleLogic.php::lists only filters Article.is_show and optional cate_id"
+    "behavior": "delegates to ArticleApplicationService::lists without filtering ArticleCate.is_show",
+    "source_path": "server/app/api/logic/ArticleApplicationService.php::lists only filters Article.is_show and optional cate_id"
   },
   "repair": {
     "controller": "server/app/api/controller/PcController.php",
-    "logic": "server/app/api/logic/ArticleLogic.php",
+    "logic": "server/app/api/logic/ArticleApplicationService.php",
     "behavior": "PC infoCenter passes an internal only_enabled_cate constraint; mobile article lists and details remain category-status independent."
   },
   "single_failed_request_revalidation": {

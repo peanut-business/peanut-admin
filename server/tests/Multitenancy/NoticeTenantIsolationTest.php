@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\Notification\Service\NoticeLogLogic;
-use app\Modules\Official\Notification\Service\NoticeSceneLogic;
+use app\Modules\Official\Notification\Application\NotificationApplicationService;
 use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
 use app\Modules\Official\Notification\Model\NoticeLog;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\NoticeTenantRepository;
 use app\common\service\notice\NoticeSmsSender;
@@ -37,6 +38,14 @@ function noticeTenantContext(int $tenantId, int $accountId, int $memberId, strin
         new DateTimeImmutable('2031-01-01T00:00:00Z'),
         1,
     ), $requestId);
+}
+
+function runNoticeTenant(TenantContext $context, string $operation, callable $callback): mixed
+{
+    return app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, $operation),
+        $callback,
+    );
 }
 
 function noticeDatabase(PDO $admin): string
@@ -144,37 +153,45 @@ SQL);
         expectNoticeTenant($exception->getCode() === '23000', 'tenant-scoped template uniqueness failed with an unexpected shape');
     }
 
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App();
     $app->initialize();
 
     $alpha = noticeTenantContext(101, 1001, 501, 'fresh-notice-alpha');
     $beta = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta');
+    $notifications = app(NotificationApplicationService::class);
     $invalidSend = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.send', 'invalid-send');
     $invalidVerify = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.verify', 'invalid-verify');
 
     $request = new stdClass();
     try {
-        NoticeTenantContext::member($request);
+        NoticeTenantContext::member();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectNoticeTenant($exception->getMessage() !== '', 'missing TenantContext denial lost its shape');
     }
 
-    expectNoticeTenant(NoticeSceneLogic::lists($alpha)['total'] === 4, 'Alpha scene list crossed Tenant boundary');
-    expectNoticeTenant(NoticeSceneLogic::lists($beta)['total'] === 1, 'Beta scene list crossed Tenant boundary');
-    expectNoticeTenant(NoticeSceneLogic::detail($alpha, 112) === [], 'cross-tenant scene detail was visible');
-    expectNoticeTenant(NoticeSceneLogic::detail($alpha, 999999) === [], 'missing scene detail shape changed');
+    expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.scenes.alpha', fn() => $notifications->scenes())['total'] === 4, 'Alpha scene list crossed Tenant boundary');
+    expectNoticeTenant(runNoticeTenant($beta, 'test.notice.scenes.beta', fn() => $notifications->scenes())['total'] === 1, 'Beta scene list crossed Tenant boundary');
+    expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.scene.cross', fn() => $notifications->sceneDetail(112)) === [], 'cross-tenant scene detail was visible');
+    expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.scene.missing', fn() => $notifications->sceneDetail(999999)) === [], 'missing scene detail shape changed');
     $betaSceneBefore = $pdo->query("SELECT sms_template_id, sms_content, sms_status FROM pa_notice_scene WHERE id = 112")
         ->fetch(PDO::FETCH_ASSOC);
-    expectNoticeTenant(!NoticeSceneLogic::save($alpha, [
-        'id' => 112, 'sms_template_id' => 'cross-tenant', 'sms_content' => 'Code ${code}', 'sms_status' => 1,
-    ]), 'cross-tenant scene save unexpectedly succeeded');
-    $crossSceneError = NoticeSceneLogic::getError();
-    expectNoticeTenant(!NoticeSceneLogic::save($alpha, [
-        'id' => 999999, 'sms_template_id' => 'missing', 'sms_content' => 'Code ${code}', 'sms_status' => 1,
-    ]), 'missing scene save unexpectedly succeeded');
-    expectNoticeTenant(NoticeSceneLogic::getError() === $crossSceneError, 'scene save enumerated cross-Tenant ownership');
+    $saveErrors = [];
+    foreach ([112, 999999] as $sceneId) {
+        try {
+            runNoticeTenant($alpha, 'test.notice.scene.save.denied', fn() => $notifications->saveScene([
+                'id' => $sceneId,
+                'sms_template_id' => 'denied',
+                'sms_content' => 'Code ${code}',
+                'sms_status' => 1,
+            ]));
+            throw new RuntimeException('invalid scene save unexpectedly succeeded');
+        } catch (Throwable $exception) {
+            $saveErrors[] = $exception->getMessage();
+        }
+    }
+    expectNoticeTenant(count(array_unique($saveErrors)) === 1, 'scene save enumerated cross-Tenant ownership');
     expectNoticeTenant(
         $pdo->query("SELECT sms_template_id, sms_content, sms_status FROM pa_notice_scene WHERE id = 112")
             ->fetch(PDO::FETCH_ASSOC) === $betaSceneBefore,
@@ -184,7 +201,11 @@ SQL);
     $validationErrors = [];
     foreach ([112, 999999] as $sceneId) {
         try {
-            (new NoticeSceneValidate())->forTenant($alpha)->scene('detail')->failException(true)->check(['id' => $sceneId]);
+            runNoticeTenant(
+                $alpha,
+                'test.notice.scene.validate',
+                fn() => (new NoticeSceneValidate())->scene('detail')->failException(true)->check(['id' => $sceneId]),
+            );
             throw new RuntimeException('invalid scene validation unexpectedly succeeded');
         } catch (Throwable $exception) {
             $validationErrors[] = $exception->getMessage();
@@ -256,13 +277,13 @@ SQL);
     expectNoticeTenant(!$service->verify($beta, 'login_code', '13800000004', '5938'), 'missing verification unexpectedly succeeded');
     expectNoticeTenant($service->getError() === $crossTenantError, 'cross-tenant verification enumerated Alpha log');
 
-    $alphaLogs = NoticeLogLogic::lists($alpha, ['page' => 1, 'limit' => 50]);
-    $betaLogs = NoticeLogLogic::lists($beta, ['page' => 1, 'limit' => 50]);
-    expectNoticeTenant($alphaLogs['total'] === 3, 'Alpha admin log list crossed Tenant boundary');
-    expectNoticeTenant($betaLogs['total'] === 2, 'Beta admin log list crossed Tenant boundary');
+    $alphaLogs = runNoticeTenant($alpha, 'test.notice.logs.alpha', fn() => $notifications->logs(['page' => 1, 'limit' => 50]));
+    $betaLogs = runNoticeTenant($beta, 'test.notice.logs.beta', fn() => $notifications->logs(['page' => 1, 'limit' => 50]));
+    expectNoticeTenant($alphaLogs->total === 3, 'Alpha admin log list crossed Tenant boundary');
+    expectNoticeTenant($betaLogs->total === 2, 'Beta admin log list crossed Tenant boundary');
     $betaLogId = (int)NoticeTenantRepository::logs($beta)->order('id', 'desc')->value('id');
-    expectNoticeTenant(NoticeLogLogic::detail($alpha, $betaLogId) === [], 'cross-tenant log detail was visible');
-    expectNoticeTenant(NoticeLogLogic::detail($alpha, 999999) === [], 'missing log detail shape changed');
+    expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.cross', fn() => $notifications->logDetail($betaLogId)) === [], 'cross-tenant log detail was visible');
+    expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.missing', fn() => $notifications->logDetail(999999)) === [], 'missing log detail shape changed');
 
     echo json_encode([
         'status' => 'passed',

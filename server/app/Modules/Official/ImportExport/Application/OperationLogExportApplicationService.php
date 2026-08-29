@@ -1,0 +1,64 @@
+<?php
+declare(strict_types=1);
+
+namespace app\Modules\Official\ImportExport\Application;
+
+use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
+use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
+use app\common\dto\authorization\AdminPrincipal;
+use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\common\service\authorization\AdminAuthorizationService;
+use PDO;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+
+/** Application boundary for the Tenant Admin operation-log export workflow. */
+final readonly class OperationLogExportApplicationService
+{
+    private AdminAuthorizationService $authorization;
+    private TaskImportExportRuntime $runtime;
+
+    public function __construct(PDO $pdo)
+    {
+        $this->authorization = new AdminAuthorizationService($pdo);
+        $this->runtime = TaskImportExportRuntimeFactory::fromConfig($pdo);
+    }
+
+    public function submit(
+        TenantContext $context,
+        AdminPrincipal $principal,
+        string $idempotencyKey,
+    ): AsyncExportOperation {
+        return $this->runtime->commands()->submitCsvExport(
+            $this->authorized($context, $principal),
+            CsvExportOperation::operationLog($idempotencyKey),
+        );
+    }
+
+    public function operation(
+        TenantContext $context,
+        AdminPrincipal $principal,
+        string $operationKey,
+    ): AsyncExportOperation {
+        return $this->runtime->queries()->operation(
+            $this->authorized($context, $principal),
+            $operationKey,
+        );
+    }
+
+    /** @return array{url:string,filename:string} */
+    public function download(
+        TenantContext $context,
+        AdminPrincipal $principal,
+        string $fileKey,
+    ): array {
+        return $this->runtime->download(
+            $this->authorized($context, $principal),
+            $fileKey,
+        );
+    }
+
+    private function authorized(TenantContext $context, AdminPrincipal $principal): \PeanutAdmin\Kernel\Context\AuthorizedOperationContext
+    {
+        return $this->authorization->authorizedAsyncExport($context, $principal);
+    }
+}

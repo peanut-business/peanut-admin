@@ -12,11 +12,11 @@
 
 核心公开包没有支付订单、商户预支付、回调验签、余额结算或退款 Runtime。`IntegrationSecurity` 是 Tenant 机器身份、出站 Webhook 和会话设备控制候选，既不等价于商户支付，也没有 Peanut Admin 下游采用授权；本片不升级依赖、不 deep import、不修改核心。
 
-应用 Payment/Finance Module 唯一拥有 `pa_config(type=pay/recharge)`、六终端支付场景、充值订单、微信/支付宝预支付、匿名渠道回调、充值结算、退款与对账。`PaymentServiceFactory` 是唯一 Payment Host：只由它装配预支付、回调 parser、退款 gateway 与生产/测试 transport。`RechargeLogic` 继续拥有产品订单与余额状态机，不把产品状态写入核心。
+应用 Payment/Finance Module 唯一拥有 `pa_config(type=pay/recharge)`、六终端支付场景、充值订单、微信/支付宝预支付、匿名渠道回调、充值结算、退款与对账。`PaymentServiceFactory` 是唯一 Payment Host：只由它装配预支付、回调 parser、退款 gateway 与生产/测试 transport。`RechargeApplicationService` 继续拥有产品订单与余额状态机，不把产品状态写入核心。
 
 ## 2. 收款与结算合同
 
-1. 管理端支付配置字段白名单、完整性和密钥掩码由 `PayConfigLogic` 唯一维护；`******` 不覆盖原密钥，整组配置原子保存。管理端以 `web/src/modules/official-payment/api.ts` 为唯一支付 facade。
+1. 管理端支付配置字段白名单、完整性和密钥掩码由 `PayConfigApplicationService` 唯一维护；`******` 不覆盖原密钥，整组配置原子保存。管理端以 `web/src/modules/official-payment/api.ts` 为唯一支付 facade。
 2. 用户只能为当前会员创建/读取本人充值单；终端、开关、金额上下限、启用渠道和默认渠道全部由服务端复核。
 3. 预支付锁定本人未支付订单并生成唯一请求号；微信/支付宝参数只从服务端订单和配置生成，客户端不能提交通知结果或结算金额。
 4. 微信回调校验时间窗口、平台证书序列号、RSA 签名、AES-GCM、商户号和 AppID；支付宝回调校验 RSA2、AppID 和 SellerID。只有标准化可信 `PaymentEvent` 能进入结算。
@@ -47,7 +47,7 @@
 
 ## 6. 精确写集
 
-Runtime 白名单为 `server/app/common/service/payment/**`、退款调用方 `server/app/Modules/Official/Payment/Service/RechargeLogic.php`、`server/app/command/RefundReconcile.php`，以及删除旧 `server/app/common/service/RefundGatewayService.php`。Web 只删除 `web/src/api/app.ts` 的未消费支付 facade。
+Runtime 白名单为 `server/app/common/service/payment/**`、退款调用方 `server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php`、`server/app/command/RefundReconcile.php`，以及删除旧 `server/app/common/service/RefundGatewayService.php`。Web 只删除 `web/src/api/app.ts` 的未消费支付 facade。
 
 证据/状态白名单为 `server/tests/Productization/PaymentHostTest.php`、CI、本合同、产品化计划、能力图、应用发布契约、`AGENTS.md` 及支付相关用户/开发/部署文档。禁止修改订单/余额 schema、路由、页面、核心仓、依赖目录、封存 S01/F02 证据或其他领域。
 

@@ -265,7 +265,7 @@ owner 明确 instance-owned schedule 模型及独立可信系统上下文，不�
 - `server/app/common/model/Crontab.php`；
 - `server/app/command/Crontab.php`、`server/app/command/CrontabDemo.php`；
 - `server/app/adminapi/controller/crontab/CrontabController.php`；
-- `server/app/adminapi/logic/crontab/CrontabLogic.php`；
+- `server/app/adminapi/application/crontab/CrontabApplicationService.php`；
 - `server/tests/Multitenancy/CrontabTenantIsolationTest.php`；
 - `.github/workflows/ci.yml` 仅登记 `MT03-CRONTAB-TENANT-ISOLATION-001`；
 - 本节边界、解除条件与实施证据。
@@ -319,8 +319,8 @@ Generator。将来出现真实文件 grant/retention Runtime 时，必须另立�
 - `server/app/common/service/UploadService.php`；
 - `server/app/adminapi/controller/file/UploadController.php`；
 - `server/app/adminapi/controller/file/FileController.php`；
-- `server/app/adminapi/logic/file/FileLogic.php`；
-- `server/app/adminapi/logic/file/FileCateLogic.php`；
+- `server/app/adminapi/application/file/FileLogic.php`；
+- `server/app/adminapi/application/file/FileCateLogic.php`；
 - `server/tests/Multitenancy/FileTenantIsolationTest.php`；
 - `.github/workflows/ci.yml` 仅登记 `MT03-FILE-TENANT-OWNERSHIP-001`；
 - 本节实施边界与证据。
@@ -366,7 +366,7 @@ TenantContext 的实例安全日志硬塞进默认 Tenant，也不在 tenant-onl
 - `server/app/adminapi/service/OperationLogService.php`；
 - `server/app/adminapi/http/middleware/OperationLogMiddleware.php`；
 - `server/app/common/model/log/OperationLog.php`；
-- `server/app/adminapi/logic/log/OperationLogLogic.php`；
+- `server/app/adminapi/application/log/OperationLogApplicationService.php`；
 - `server/app/adminapi/controller/log/OperationLogController.php`；
 - `server/app/common/service/XlsxExportService.php`，仅新增受约束的相对导出目录入口；
 - `server/tests/Multitenancy/OperationLogTenantIsolationTest.php`；

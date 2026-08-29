@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\tenant;
 
+use app\common\http\RequestTrace;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver as CoreDefaultTenantContextResolver;
 use think\facade\Db;
@@ -19,7 +20,7 @@ final class DefaultTenantContextResolver
 
     public static function operationId(object $request): string
     {
-        return CoreDefaultTenantContextResolver::operationId($request);
+        return RequestTrace::id($request, 'public');
     }
 
     private function __construct()

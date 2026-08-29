@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\setting\HotSearchLogic as AdminHotSearchLogic;
-use app\api\logic\SearchLogic as ApiSearchLogic;
+use app\adminapi\application\setting\HotSearchApplicationService as AdminHotSearchLogic;
+use app\api\application\SearchApplicationService as ApiSearchLogic;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\hot_search\HotSearchTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -103,7 +105,7 @@ try {
     );
     createHotSearchTenantSchema($pdo);
     seedHotSearchTenantSchema($pdo);
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App();
     $app->initialize();
 
@@ -113,7 +115,7 @@ try {
     $statusBefore = (string)$pdo->query("SELECT config_json FROM pa_tenant_setting WHERE tenant_id = 202 AND namespace = 'hot-search'")->fetchColumn();
 
     try {
-        HotSearchTenantContext::member(new stdClass());
+        HotSearchTenantContext::member();
         throw new RuntimeException('missing TenantContext unexpectedly reached hot-search write path');
     } catch (Throwable $exception) {
         expectHotSearchTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
@@ -133,13 +135,19 @@ try {
         expectHotSearchTenant($exception->getMessage() !== '', 'missing public context denial lost its shape');
     }
 
-    expectHotSearchTenant(AdminHotSearchLogic::setConfig($alpha, [
-        'status' => 0,
-        'data' => [
-            ['tenant_id' => 202, 'name' => 'Same term', 'sort' => 90],
-            ['tenant_id' => 202, 'name' => 'Alpha only', 'sort' => 80],
-        ],
-    ]), AdminHotSearchLogic::getError());
+    expectHotSearchTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.hot-search.set.alpha'),
+            fn() => AdminHotSearchLogic::setConfig([
+                'status' => 0,
+                'data' => [
+                    ['tenant_id' => 202, 'name' => 'Same term', 'sort' => 90],
+                    ['tenant_id' => 202, 'name' => 'Alpha only', 'sort' => 80],
+                ],
+            ]),
+        ),
+        AdminHotSearchLogic::getError(),
+    );
     expectHotSearchTenant(
         $pdo->query("SELECT id, name, sort FROM pa_hot_search WHERE tenant_id = 202 ORDER BY id")->fetchAll(PDO::FETCH_ASSOC) === $before,
         'Alpha full replacement changed Beta terms'
@@ -156,16 +164,28 @@ try {
         'Alpha status update changed Beta status'
     );
 
-    $adminAlpha = AdminHotSearchLogic::getConfig($alpha);
-    $adminBeta = AdminHotSearchLogic::getConfig($beta);
+    $adminAlpha = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.hot-search.get.alpha'),
+        fn() => AdminHotSearchLogic::getConfig(),
+    );
+    $adminBeta = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.hot-search.get.beta'),
+        fn() => AdminHotSearchLogic::getConfig(),
+    );
     expectHotSearchTenant(array_column($adminAlpha['data'], 'name') === ['Same term', 'Alpha only'], 'admin Alpha list leaked or lost terms');
     expectHotSearchTenant(array_column($adminBeta['data'], 'name') === ['Same term', 'Beta only'], 'admin Beta list leaked or lost terms');
     expectHotSearchTenant($adminAlpha['status'] === 0 && $adminBeta['status'] === 1, 'status is not Tenant-owned');
 
     $publicAlpha = new TenantSystemContext(101, HotSearchTenantContext::PUBLIC_ACTOR, HotSearchTenantContext::PUBLIC_LIST_OPERATION, 'public-alpha-' . $runId);
     $publicBeta = new TenantSystemContext(202, HotSearchTenantContext::PUBLIC_ACTOR, HotSearchTenantContext::PUBLIC_LIST_OPERATION, 'public-beta-' . $runId);
-    $publicAlphaResult = ApiSearchLogic::hotLists($publicAlpha);
-    $publicBetaResult = ApiSearchLogic::hotLists($publicBeta);
+    $publicAlphaResult = app(ExecutionContextStore::class)->run(
+        ExecutionContext::system($publicAlpha),
+        fn() => ApiSearchLogic::hotLists($publicAlpha),
+    );
+    $publicBetaResult = app(ExecutionContextStore::class)->run(
+        ExecutionContext::system($publicBeta),
+        fn() => ApiSearchLogic::hotLists($publicBeta),
+    );
     expectHotSearchTenant(array_column($publicAlphaResult['data'], 'name') === ['Same term', 'Alpha only'], 'public Alpha read crossed Tenant');
     expectHotSearchTenant(array_column($publicBetaResult['data'], 'name') === ['Same term', 'Beta only'], 'public Beta read crossed Tenant');
     expectHotSearchTenant($publicAlphaResult['status'] === 0 && $publicBetaResult['status'] === 1, 'public status crossed Tenant');
