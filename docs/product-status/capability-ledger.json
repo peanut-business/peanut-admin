@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "main",
-    "commit": "fe328a320b7c68b3c2f47512f2aa4afcad43c630",
-    "reviewed_at": "2026-08-28"
+    "branch": "dev",
+    "commit": "fc6fcb803240effdb584c0442dcfdb5650d3e913",
+    "reviewed_at": "2026-08-30"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "verified",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成；部署闭包 hotfix 的 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已通过 P0-E 8/8、发布 annotated v3.0.12/GitHub Release，并由同提交 production-candidate Demo 与 Cloudflare 文档站完成采用验证。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成；部署闭包 hotfix 的 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已通过 P0-E 8/8、发布 annotated v3.0.12/GitHub Release，并由同提交 production-candidate Demo 与 Cloudflare 文档站完成采用验证。dev@fc6fcb803240effdb584c0442dcfdb5650d3e913 已实现 TPQ00—TPQ53 架构收敛，仍需随双 Edition 固定候选完成正式资格。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1076,11 +1076,11 @@
       "name": "官方可选 Module 产品化",
       "area": "plugins",
       "status": "verified",
-      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和 TenantModule Guard；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。",
+      "summary": "文件、通知、OAuth、支付、会员、任务和导入导出已拆出独立 manifest、Plugin、Provider、HTTP 路由、菜单/权限目录、前端 contribution 和统一 Module 执行边界；v2.1.4 正式候选已完成真实数据库安装、Plugin 生命周期、Standalone/Multi-tenant 运行、Tenant A/B 浏览器矩阵和停用负向资格；v2.1.5 将复用同一合同在最终 origin/main 候选上验证。跨 Module 可运行示例不属于本次 Release 阻塞项。",
       "acceptance": [
         "每个官方 Module 拥有稳定 manifest、权限目录、自有表和版本身份",
         "Plugin 安装、TenantModule、成员 RBAC 和领域数据权限四道 Gate 同时生效",
-        "HTTP、内部命令、任务、worker、外部回调和模块文件入口全部使用统一 ModuleGuard",
+        "HTTP、内部命令、任务、worker、外部回调和模块文件入口全部使用统一 ModuleExecutionBoundary",
         "每个 Module 有启用正向测试、停用负向测试、Tenant A/B 隔离测试和独立浏览器验收",
         "共享基础设施与业务 Module 生命周期分离，停用业务 Module 不会错误关闭全局文件或调度能力"
       ],
@@ -1112,7 +1112,7 @@
       ],
       "paths": [
         "server/app/common/service/module/ModuleExecutionContext.php",
-        "server/app/common/service/module/ModuleExecutionGuard.php",
+        "server/app/common/service/module/ModuleExecutionBoundary.php",
         "docs/architecture/module-execution-context-contract.md",
         "docs-site/guide/module-development.md",
         "docs-site/guide/data-permissions-tenancy.md",
@@ -1223,6 +1223,59 @@
         "server/tests/Productization/ModuleDeliveryOperationTest.php",
         "docs/architecture/consumer-module-lifecycle-contract.md",
         "docs/plans/consumer-ready-product-plan.md"
+      ]
+    },
+    {
+      "id": "PA-ARCH-001",
+      "name": "ThinkPHP/ThinkORM 统一执行与数据边界",
+      "area": "architecture",
+      "status": "implemented",
+      "summary": "TPQ00—TPQ53 已由 PR #380 合入 dev：一套可信 ExecutionContext 驱动 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。",
+      "acceptance": [
+        "35 个具体 Model 和 47 张 Tenant 表都有唯一 owner；18 张无 ORM Model 的表全部通过显式 Tenant gateway 访问",
+        "Multi-tenant 查询与写入自动受可信 Tenant global scope 约束，Standalone 不生成 tenant_id SQL、字段或索引",
+        "HTTP、callback、command、worker 和 scheduled 入口建立不可变执行上下文并在完成或异常后清理",
+        "Module 可用性只在统一执行边界检查，Repository 不重复查询 Module 或接收不可信 Tenant 参数",
+        "分页、成功/失败响应、验证与 Application Service 使用统一框架边界，生成器不会重新产出已退出模式",
+        "严格架构扫描没有未登记或未解决命中，双 Tenant 对抗、关联、分页、回调和 Worker 清理行为通过"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "fc6fcb803240effdb584c0442dcfdb5650d3e913"
+        },
+        {
+          "kind": "pull_request",
+          "ref": "https://github.com/peanut-business/peanut-admin/pull/380"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/plans/post-release-enhancement-plan.md"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/tpq-issue-register.json"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/tpq-data-ownership.json"
+        }
+      ],
+      "dependencies": [
+        "PA-TENANCY-002",
+        "PA-MODULE-004"
+      ],
+      "paths": [
+        "server/app/common/execution",
+        "server/app/common/model/TenantOwnedModel.php",
+        "server/app/common/tenancy",
+        "server/app/common/service/module/ModuleExecutionBoundary.php",
+        "server/app/common/http/PageResult.php",
+        "server/app/common/http/ApiProblemMapper.php",
+        "server/app/AppService.php",
+        "scripts/check-thinkphp-architecture",
+        "server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php",
+        "server/tests/Productization/ThinkPhpEditionIntegrationTest.php"
       ]
     },
     {
