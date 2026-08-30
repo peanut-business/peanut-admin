@@ -29,10 +29,9 @@ class PcController extends BaseApiController
     /** PC 配置 */
     public function config()
     {
-        $result = $this->indexApplication->getConfigData(DecorationTenantContext::read(
-            $this->request,
-            DecorationTenantContext::CONFIG_OPERATION
-        ));
+        $result = $this->indexApplication->getConfigData(
+            DecorationTenantContext::read(DecorationTenantContext::CONFIG_OPERATION)
+        );
         return $this->data($result);
     }
 

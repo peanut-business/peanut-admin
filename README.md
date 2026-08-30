@@ -47,16 +47,20 @@ Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的
 - MySQL 8.0.36+ 或 8.4
 - Node.js 20/22、pnpm 9
 
-### 2. 创建独立应用与配置
+### 2. 创建定制应用与配置
+
+普通用户首次部署应直接从正式 Release 下载 Standalone 或 Multi-tenant 安装包；只有需要改产品名、
+package identity 或继续开发业务代码时，才从固定 tag 运行创建器：
 
 ```bash
-git clone git@github.com:peanut-business/peanut-admin.git
+git clone --branch vX.Y.Z --depth 1 git@github.com:peanut-business/peanut-admin.git
 cd peanut-admin
 php scripts/create-app \
   --name="Acme Console" \
   --slug=acme-console \
   --package=acme/acme-console \
-  --target=/absolute/path/to/acme-console
+  --target=/absolute/path/to/acme-console \
+  --edition=standalone
 cd /absolute/path/to/acme-console
 git init
 cp .env.example .env
@@ -64,7 +68,8 @@ cp server/.env.example server/.env
 chmod 600 .env server/.env
 ```
 
-创建器使用完整版本化 inventory，生成 `.peanut/application-manifest.json` 和受管文件基线；
+需要一个实例服务多个组织时，把 `--edition` 改为 `multi-tenant`。创建器使用完整版本化
+inventory，生成 `.peanut/application-manifest.json` 和受管文件基线；
 应用业务与稳定 Host/override 入口属于 app-owned，不由 future scaffold 默认接管。直接 clone
 仍用于维护 Peanut Admin 参考应用，不再是创建正式下游应用的入口。详见
 [创建独立应用](docs/create-application.md)。

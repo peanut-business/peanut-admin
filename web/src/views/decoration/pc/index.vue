@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <Breadcrumb :items="['装修管理', 'PC 装修']" />
+    <Breadcrumb :items="['menu.decoration', 'menu.decoration.pc']" />
     <div v-loading="loading">
       <el-card class="general-card" header="PC 首页 Banner">
         <el-alert type="info" :closable="false" style="margin-bottom: 16px">

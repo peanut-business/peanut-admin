@@ -28,7 +28,7 @@ class WorkbenchApplicationService extends ApplicationService
     {
         $website = self::websiteService($context)->get();
         return [
-            'version' => (string) config('project.version', '2.0.1'),
+            'version' => (string) config('project.version'),
             'website' => $website['official_url'],
             'name'    => $website['name'],
             'based'   => (string) config(

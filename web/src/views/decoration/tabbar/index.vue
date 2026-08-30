@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <Breadcrumb :items="['装修管理', 'Tabbar 装修']" />
+    <Breadcrumb :items="['menu.decoration', 'menu.decoration.tabbar']" />
     <div v-loading="loading">
       <el-card class="general-card" header="Tabbar">
         <el-alert type="info" :closable="false" style="margin-bottom: 16px">

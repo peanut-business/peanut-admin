@@ -314,6 +314,29 @@
         "lifecycle": "single aggregate qualification run",
         "cleanup_responsibility": "qualification owner removes only the claimed Compose project containers, network and volumes, the two fixed output paths, the qualification output root and the active lease after evidence capture",
         "backup_responsibility": "not applicable; synthetic data only"
+      },
+      {
+        "stable_resource_id": "peanut-admin-edition-upgrade-release-signing-key",
+        "purpose": "sign official Standalone and Multi-tenant Edition upgrade packages",
+        "environments": [
+          "release"
+        ],
+        "owner": "Peanut Admin release owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-release-2026-01",
+        "service_type": "Ed25519 release signing authority",
+        "version": "Ed25519 / libsodium",
+        "public_key_source": "UPGRADE_TRUSTED_KEYS.json",
+        "credential_ref": "/Users/xing/.config/peanut-admin/edition-upgrade-release-ed25519-secret.base64",
+        "data_source": "owner-generated release keypair; only the public key is versioned and published",
+        "freshness_requirement": "before building a formal upgrade package, derive the public key from the restricted secret and require an exact match with UPGRADE_TRUSTED_KEYS.json",
+        "health_check": "PHP sodium verifies the restricted secret is 64 bytes and its derived 32-byte public key matches peanut-admin-release-2026-01 without printing the secret",
+        "fallback": "none",
+        "lifecycle": "persistent until an explicit signed-key rotation release",
+        "cleanup_responsibility": "Peanut Admin release owner; never delete or replace the private key while a supported Release trusts this key"
       }
     ],
     "databases": [
@@ -1398,43 +1421,47 @@
     "external_services": [
       {
         "stable_resource_id": "peanut-admin-packagist-registry",
-        "purpose": "immutable Composer package metadata and distribution downloads for compatibility gates",
+        "purpose": "immutable Composer package publication, metadata refresh and distribution downloads for compatibility gates",
         "environments": [
           "development"
         ],
         "owner": "Packagist public registry; peanut-opensource package publisher",
         "host": "repo.packagist.org",
+        "control_plane_host": "packagist.org",
         "port": 443,
         "database": null,
         "schema": null,
         "namespace": "peanut-admin/core",
         "service_type": "Packagist Composer v2 registry",
         "version": "public HTTPS API",
-        "credential_ref": null,
-        "data_source": "published peanut-admin/core version metadata and immutable dist references",
-        "freshness_requirement": "resolve each exact version immediately before the compatibility gate and retain the lockfile content reference",
-        "health_check": "composer show peanut-admin/core --all --format=json",
+        "credential_ref": "operator-authenticated Packagist maintainer session for peanut-admin/core; credentials and session material are never stored in Git",
+        "data_source": "the immutable peanut-opensource/peanut-admin-core-php release tag refreshed by an authenticated peanut-admin/core maintainer, plus published package metadata and dist references",
+        "freshness_requirement": "before refresh, prove the exact Composer split annotated tag and projection identity; after refresh, resolve the exact version immediately and retain the lockfile content reference",
+        "health_check": "read-only https://repo.packagist.org/p2/peanut-admin/core.json lookup, followed by authenticated peanut-admin/core ownership verification before any refresh",
+        "publication_policy": "manual authenticated refresh only after the matching generated split tag exists; no source repository, moving branch or credential fallback",
         "fallback": "none",
         "cleanup_responsibility": "not applicable"
       },
       {
         "stable_resource_id": "peanut-admin-npm-registry",
-        "purpose": "immutable npm package metadata and tarball downloads for compatibility gates",
+        "purpose": "immutable npm package publication, token control and tarball downloads for compatibility gates",
         "environments": [
           "development"
         ],
         "owner": "npm public registry; peanut-opensource package publisher",
         "host": "registry.npmjs.org",
+        "control_plane_host": "www.npmjs.com",
         "port": 443,
         "database": null,
         "schema": null,
         "namespace": "@peanut-admin/admin",
         "service_type": "npm registry",
         "version": "public HTTPS API",
-        "credential_ref": null,
-        "data_source": "published @peanut-admin/admin version metadata and immutable tarballs",
-        "freshness_requirement": "resolve each exact version immediately before the compatibility gate and retain version, integrity and tarball identity",
-        "health_check": "npm view @peanut-admin/admin --json",
+        "credential_ref": "npm account xingkoo for token control; GitHub environment peanut-opensource/peanut-admin-core/npm-release secret NPM_TOKEN for publication; token values are never printed or stored in Git",
+        "data_source": "the immutable peanut-opensource/peanut-admin-core source tag published by its repository workflow with provenance, plus npm version metadata and tarballs",
+        "freshness_requirement": "before publication, prove the target version is absent, the publisher token is limited to @peanut-admin/admin with package write and CI 2FA bypass, and the GitHub environment secret was updated without revealing it; after publication retain version, integrity, provenance and tarball identity",
+        "health_check": "npm whoami must return xingkoo for token control; gh secret list must show npm-release/NPM_TOKEN; npm view @peanut-admin/admin@<exact-version> verifies publication visibility",
+        "publication_policy": "GitHub tag workflow only; direct local npm publish, account-wide package access, organization write access and interactive OTP fallback are forbidden",
         "fallback": "none",
         "cleanup_responsibility": "not applicable"
       },

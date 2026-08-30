@@ -11,7 +11,32 @@ and the two public core packages have independent version histories.
   components under Apache-2.0. Existing immutable tags and Releases keep the
   license files originally published with those artifacts.
 
-## [3.0.12] - Pending qualification
+## [3.0.13] - Pending qualification
+
+### Added
+
+- Added deterministic Standalone and Multi-tenant installers from one source identity, with explicit
+  Edition, Schema and checksum manifests.
+- Added signed same-Edition upgrade packages and a business-readable preflight/apply/verify/recover
+  flow that preserves application-owned files, secrets and third-party Modules.
+
+### Changed
+
+- Adopted the qualified Peanut Admin Core Alpha.11 Composer and npm packages across every client.
+- Demo deployment now consumes the formal Multi-tenant installer and a seed-only overlay instead of
+  copying product Runtime files from a moving source checkout.
+
+### Fixed
+
+- Fixed initial configuration, operation-log export permissions, readiness translations and global
+  action icons found by the real-browser Demo audit.
+
+### Delivery
+
+- This is the first correct dual-Edition installation baseline. It intentionally publishes no upgrade
+  package from older releases; the next release establishes the first supported same-Edition upgrade.
+
+## [3.0.12] - 2026-08-28
 
 ### Fixed
 

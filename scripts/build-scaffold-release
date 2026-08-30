@@ -9,7 +9,7 @@ const RELEASE_APPLICATION_VERSION_TOKEN = '999999.999999.999999';
 
 function releaseUsage(): never
 {
-    fwrite(STDERR, "Usage: php scripts/build-scaffold-release --version=<semver> --source-commit=<full-sha> --output=<absolute-directory> [--check]\n");
+    fwrite(STDERR, "Usage: php scripts/build-scaffold-release --version=<semver> --source-commit=<full-sha> --output=<absolute-directory> [--edition=standalone|multi-tenant] [--check]\n");
     exit(64);
 }
 
@@ -17,7 +17,7 @@ $root = dirname(__DIR__); $options = []; $check = false;
 require_once $root.'/server/vendor/autoload.php';
 foreach (array_slice($argv, 1) as $argument) {
     if ($argument === '--check') { $check = true; continue; }
-    if (preg_match('/^--(version|source-commit|output)=(.+)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) releaseUsage();
+    if (preg_match('/^--(version|source-commit|output|edition)=(.+)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) releaseUsage();
     $options[$matches[1]] = $matches[2];
 }
 foreach (['version','source-commit','output'] as $required) if (!isset($options[$required])) releaseUsage();
@@ -30,7 +30,8 @@ try {
         releaseUsage();
     }
 } catch (Throwable) { releaseUsage(); }
-if (preg_match('/^[a-f0-9]{40}$/D',$options['source-commit'])!==1 || !str_starts_with($options['output'],'/')) releaseUsage();
+if (preg_match('/^[a-f0-9]{40}$/D',$options['source-commit'])!==1 || !str_starts_with($options['output'],'/')
+    || (isset($options['edition']) && !in_array($options['edition'], ['standalone', 'multi-tenant'], true))) releaseUsage();
 
 function releaseRun(array $command, ?string $cwd = null): string
 {
@@ -78,12 +79,14 @@ try {
     require $source.'/server/app/common/service/scaffold/ScaffoldManifest.php';
     require $source.'/server/app/common/service/scaffold/ApplicationCreator.php';
     $application=$temporary.'/application';
-    $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree]);
+    $edition=$options['edition']??null;
+    $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree],null,$edition!==null);
     $manifest=$creator->create(
         RELEASE_PRODUCT_TOKEN,
         RELEASE_SLUG_TOKEN,
         RELEASE_PACKAGE_TOKEN,
         $application,
+        $edition??'multi-tenant',
         RELEASE_APPLICATION_VERSION_TOKEN,
         'full'
     );
@@ -123,6 +126,7 @@ try {
         $release=['schema_version'=>3,'protocol'=>'peanut.scaffold-release.v3','application'=>['version'=>$applicationVersion],
             'release'=>$releaseIdentity,'files'=>$files,'renames'=>[]];
     }
+    if($edition!==null)$release['edition']=$manifest['edition'];
     $json=json_encode($release,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n";
     $manifestPath=rtrim($options['output'],'/').'/scaffold-manifest.json';
     if($check){if(!is_file($manifestPath)||!hash_equals($json,(string)file_get_contents($manifestPath)))throw new RuntimeException('SCAFFOLD_RELEASE_MANIFEST_STALE'); echo "SCAFFOLD-RELEASE-{$options['version']} verified\n";}

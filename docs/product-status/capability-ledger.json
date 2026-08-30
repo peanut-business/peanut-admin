@@ -3,14 +3,14 @@
   "title": "Peanut Admin 产品能力与交付状态",
   "visibility": "internal",
   "facts_baseline": {
-    "branch": "dev",
-    "commit": "fc6fcb803240effdb584c0442dcfdb5650d3e913",
+    "branch": "feat/dual-edition-artifacts",
+    "commit": "818c3376ae9ac49263b3a57ab0a20fff1b612206",
     "reviewed_at": "2026-08-30"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
-    "status": "verified",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成；部署闭包 hotfix 的 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已通过 P0-E 8/8、发布 annotated v3.0.12/GitHub Release，并由同提交 production-candidate Demo 与 Cloudflare 文档站完成采用验证。dev@fc6fcb803240effdb584c0442dcfdb5650d3e913 已实现 TPQ00—TPQ53 架构收敛，仍需随双 Edition 固定候选完成正式资格。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
+    "status": "in_progress",
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。v3.0.13 的双 Edition 安装分发、升级包合同、Demo 可见问题修复和正式资格入口已在功能冻结提交 818c3376ae9ac49263b3a57ab0a20fff1b612206 完成聚焦验证，并已从该提交最终重封 scaffold、同步 P0-E fixture；当前尚未合入、资格、发布或由 Demo/文档站采用。跨版本升级体验需等 v3.0.13 成为合格来源后由下一补丁完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1425,6 +1425,47 @@
         "docs/product-status/releases/v3.0.12.json",
         "docs/product-status/deployments/v3.0.12-online-experience.json",
         "docs-site/demo-access.md"
+      ]
+    },
+    {
+      "id": "PA-DELIVERY-007",
+      "name": "双 Edition 安装与升级分发",
+      "area": "delivery",
+      "status": "implemented",
+      "summary": "功能冻结提交 818c337… 已通过最终 inventory、双安装包确定性 build/check、升级包合同、Demo overlay 合同、资格入口合同和文档构建；Demo 可见问题已在 836d8a9… 聚焦复验关闭。最终 scaffold 与 P0-E fixture 已从 818c337… 同步封存，首个正式安装基线仍待合入、P0-E、Release 附件独立消费及 Demo/文档采用；同 Edition 跨版本升级将在 v3.0.13 成为合格来源后的下一补丁采用，因此当前不能标记为已验证。",
+      "acceptance": [
+        "同一冻结 source commit/tree 生成两个 Edition 安装包并显式记录 Schema 与 checksum 差异",
+        "下一正式版本为两个 Edition 分别发布签名升级包，并拒绝错 Edition、篡改、降级与不受支持来源",
+        "正式附件分别完成空库安装和同 Edition 跨版本 preflight/apply/verify/recover",
+        "正式 Multi-tenant 安装包加 seed-only overlay 更新 Demo，公开文档站给出下载、安装、升级和身份核对入口"
+      ],
+      "evidence": [
+        {
+          "kind": "git",
+          "ref": "818c3376ae9ac49263b3a57ab0a20fff1b612206"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/plans/post-release-enhancement-plan.md"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/audits/demo-experience-audit.md"
+        }
+      ],
+      "dependencies": [
+        "PA-DELIVERY-005",
+        "PA-ARCH-001",
+        "PA-SCAFFOLD-001"
+      ],
+      "paths": [
+        "scaffold/edition-profiles.json",
+        "scripts/build-edition-installers",
+        "scripts/build-edition-upgrades",
+        "scripts/publish-github-release",
+        "scripts/deploy-release",
+        "scaffold/releases/v3.0.13",
+        "docs/operations/release-and-application-lifecycle.md"
       ]
     },
     {

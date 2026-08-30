@@ -61,12 +61,15 @@ function excluded(string $path): bool
             'resources/codegraph-registry.json', 'resources/service-registry.json',
             'resources/consumer-ready-control.json',
             'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
+            'scripts/build-edition-installers', 'scripts/build-edition-upgrades',
+            'scripts/core-qualification-runner',
             'scripts/core-upgrade-compatibility', 'scripts/combined-upgrade-qualification',
             'scripts/consumer-module-reference-chain', 'scripts/consumer-ready-control',
             'scripts/select-legacy-pre-alpha5-fixture',
             'scripts/test-core-upgrade-public-entry-gate',
             'scripts/check-product-capability-ledger',
             'scripts/check-release-consistency', 'scripts/generate-release-legal.mjs', 'scripts/publish-github-release',
+            'server/database/seed-multi-tenant-demo.php',
             'docs-site/.vitepress/theme/ProductStatus.vue',
             'server/tests/Productization/CreateApplicationTest.php',
             'server/tests/Productization/CombinedUpgradePolicyTest.php',
@@ -162,7 +165,7 @@ function transform(string $path, string $classification): string
     if (preg_match('#(^|/)(composer\.json|package\.json|package-lock\.json|pnpm-lock\.yaml)$#', $path) === 1) return 'package';
     $basename = basename($path);
     $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-    $textExtensions = ['php', 'json', 'md', 'sql', 'ts', 'tsx', 'js', 'mjs', 'cjs', 'sh', 'lock', 'vue', 'css', 'less', 'scss', 'html', 'xml', 'yaml', 'yml', 'toml', 'txt', 'svg', 'conf', 'ini', 'env', 'example', 'dockerfile'];
+    $textExtensions = ['php', 'json', 'md', 'sql', 'stub', 'ts', 'tsx', 'js', 'mjs', 'cjs', 'sh', 'lock', 'vue', 'css', 'less', 'scss', 'html', 'xml', 'yaml', 'yml', 'toml', 'txt', 'svg', 'conf', 'ini', 'env', 'example', 'dockerfile'];
     if (in_array($extension, $textExtensions, true)
         || str_starts_with($path, 'scripts/')
         || in_array($basename, ['compose.yaml', 'think', '.gitignore', '.dockerignore', '.env.example', '.htaccess'], true)

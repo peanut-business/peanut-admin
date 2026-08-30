@@ -9,7 +9,8 @@
 
 ```bash
 php scripts/create-app --name="Acme Console" --slug=acme-console \
-  --package=acme/acme-console --target=/absolute/path/to/acme-console
+  --package=acme/acme-console --target=/absolute/path/to/acme-console \
+  --edition=standalone
 ```
 
 创建结果是不含 Git 历史和 Peanut 演示身份的独立应用候选；品牌、资源登记和 package

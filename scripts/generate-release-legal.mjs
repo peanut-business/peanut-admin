@@ -13,8 +13,9 @@ const checkOnly = process.argv.includes('--check')
 const expectedCounts = {
   composer: 42,
   web: 1031,
-  pc: 928,
-  uniapp: 1013,
+  platform: 103,
+  pc: 923,
+  uniapp: 1008,
   'docs-site': 174,
 }
 
@@ -188,6 +189,7 @@ const readPnpmLock = (ecosystem, relativeDir) => {
 const allPackages = [
   ...composerPackages,
   ...readPnpmLock('web', 'web'),
+  ...readNpmLock('platform', 'platform/package-lock.json'),
   ...readNpmLock('pc', 'pc/package-lock.json'),
   ...readNpmLock('uniapp', 'uniapp/package-lock.json'),
   ...readPnpmLock('docs-site', 'docs-site'),
@@ -213,9 +215,9 @@ const rootPackage = {
   versionInfo: releaseVersion,
   downloadLocation: 'https://github.com/peanut-business/peanut-admin',
   filesAnalyzed: false,
-  licenseConcluded: 'LicenseRef-Peanut-Admin-Proprietary',
-  licenseDeclared: 'LicenseRef-Peanut-Admin-Proprietary',
-  copyrightText: 'Copyright (c) 2026 花生科技. All rights reserved.',
+  licenseConcluded: 'Apache-2.0',
+  licenseDeclared: 'Apache-2.0',
+  copyrightText: 'Copyright 2026 花生科技',
   primaryPackagePurpose: 'APPLICATION',
   externalRefs: [{
     referenceCategory: 'PACKAGE-MANAGER',
@@ -238,10 +240,6 @@ const sbom = {
   },
   documentDescribes: [rootPackage.SPDXID],
   hasExtractedLicensingInfos: [{
-    licenseId: 'LicenseRef-Peanut-Admin-Proprietary',
-    extractedText: 'Peanut Admin is proprietary software. Copyright (c) 2026 花生科技. All rights reserved. See the repository root LICENSE file.',
-    name: 'Peanut Admin Proprietary License',
-  }, {
     licenseId: 'LicenseRef-BSD-ambiguous',
     extractedText: 'The upstream package declares BSD without a more specific SPDX identifier. Consult the package source recorded in this SBOM.',
     name: 'Upstream ambiguous BSD declaration',
@@ -290,13 +288,13 @@ const notices = `# Peanut Admin Third-Party Notices
 
 Generated for Peanut Admin ${releaseVersion} on ${releaseDate}.
 
-Peanut Admin itself is proprietary software: Copyright (c) 2026 花生科技. All rights reserved. Third-party components remain governed by their own licenses. Nothing in the Peanut Admin proprietary license restricts rights granted by those third-party licenses.
+Peanut Admin is licensed under Apache-2.0: Copyright 2026 花生科技. Third-party components remain governed by their own licenses.
 
 ## Distribution boundary
 
 - The normative GitHub Release distributes this repository's source. It does not attach prebuilt PHP/Nginx images; the fixed core packages are published separately in their public registries.
 - Production Compose builds static management, PC and H5 assets and installs the 33 Composer production packages listed below. No \`node_modules\` directory is copied into the final images.
-- The exhaustive package/version/license/source inventory for the five locked dependency graphs is \`RELEASE_SBOM.spdx.json\` (SPDX 2.3). Build-only entries are retained there so source-release recipients can reproduce the build and its notices.
+- The exhaustive package/version/license/source inventory for the six locked dependency graphs is \`RELEASE_SBOM.spdx.json\` (SPDX 2.3). Build-only entries are retained there so source-release recipients can reproduce the build and its notices.
 - Each installed dependency may include additional license or notice files. Those files remain authoritative for that dependency and must not be removed from redistributed dependency archives.
 
 ## Material source and framework attributions

@@ -7,11 +7,11 @@
         <el-col :span="12">
           <el-space>
             <el-button type="primary" @click="handleAdd()">
-              <template #icon><icon-plus /></template>
+              <template #icon><Plus /></template>
               {{ $t('systemMenu.operation.create') }}
             </el-button>
             <el-button @click="fetchData">
-              <template #icon><icon-refresh /></template>
+              <template #icon><Refresh /></template>
               {{ $t('systemMenu.operation.refresh') }}
             </el-button>
           </el-space>
@@ -187,6 +187,7 @@
   import { useI18n } from 'vue-i18n';
   import { ElMessage } from 'element-plus';
   import type { FormInstance } from 'element-plus';
+  import { Plus, Refresh } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     getMenuList,

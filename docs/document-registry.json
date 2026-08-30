@@ -226,6 +226,7 @@
       "canonical_sources": [
         "release-versions.json",
         "scripts/deploy-release",
+        "scripts/build-edition-upgrades",
         "scripts/scaffold-upgrade",
         "server/database/migrations",
         "docs/release-engineering.md"
@@ -1994,6 +1995,8 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/create-app",
+        "scripts/build-edition-upgrades",
+        "scripts/scaffold-upgrade",
         "release-versions.json",
         "scaffold/releases/"
       ],
@@ -4240,6 +4243,9 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/publish-github-release",
+        "scripts/build-edition-installers",
+        "scripts/build-edition-upgrades",
+        "scripts/scaffold-upgrade",
         "scripts/create-app",
         "release-versions.json",
         "RELEASE_METADATA.json"
@@ -4670,6 +4676,38 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-product-status-audits-demo-experience-audit",
+      "path": "docs/product-status/audits/demo-experience-audit.md",
+      "title": "Demo 体验审计（v3.0.12）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/audits/demo-experience-audit.json",
+        "docs/product-status/audits/demo-experience-evidence.json",
+        "docs/product-status/deployments/v3.0.12-online-experience.json",
+        "docs/plans/post-release-enhancement-plan.md"
+      ],
+      "owner": "release-qualification",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "consumer-ready",
+        "demo",
+        "release-evidence"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-product-status-readme",
       "path": "docs/product-status/README.md",
       "title": "产品能力与交付状态",
@@ -4952,6 +4990,8 @@
       "canonical_sources": [
         "scripts/package-release.sh",
         "scripts/publish-github-release",
+        "scripts/build-edition-installers",
+        "scripts/build-edition-upgrades",
         "release-versions.json",
         "RELEASE_METADATA.json"
       ],
@@ -4983,6 +5023,8 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/scaffold-upgrade",
+        "scripts/build-edition-upgrades",
+        "scripts/scaffold-runtime/EditionUpgradePackage.php",
         "scaffold/releases/",
         "scaffold/application-template-inventory.json"
       ],

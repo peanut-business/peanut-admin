@@ -19,7 +19,6 @@ class DecorationController extends BaseApiController
         }
         try {
             $context = DecorationTenantContext::read(
-                $this->request,
                 DecorationTenantContext::MOBILE_PAGE_OPERATION
             );
             return $this->data(DecorationReadService::pageByType(
@@ -36,7 +35,6 @@ class DecorationController extends BaseApiController
     {
         try {
             $context = DecorationTenantContext::read(
-                $this->request,
                 DecorationTenantContext::CONFIG_OPERATION
             );
             return $this->data(DecorationReadService::tabbar(
@@ -53,7 +51,6 @@ class DecorationController extends BaseApiController
     {
         try {
             $context = DecorationTenantContext::read(
-                $this->request,
                 DecorationTenantContext::PC_PAGE_OPERATION
             );
             return $this->data(DecorationReadService::pageByType(

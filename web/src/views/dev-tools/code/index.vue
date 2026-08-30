@@ -27,7 +27,7 @@
               type="primary"
               @click="openSourceTables"
             >
-              <template #icon><icon-plus /></template>
+              <template #icon><Plus /></template>
               导入数据表
             </el-button>
             <el-button
@@ -433,6 +433,7 @@
   import { reactive, ref } from 'vue';
   import { ElMessage } from 'element-plus';
   import type { FormInstance } from 'element-plus';
+  import { Plus } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     deleteGenerator,

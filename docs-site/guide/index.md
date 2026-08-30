@@ -5,9 +5,15 @@ description: 按开发任务选择 Peanut Admin 文档路径。
 
 # 文档入口
 
+## 我想安装或升级
+
+第一次使用：打开[快速开始](/getting-started)，先选择 Standalone 或 Multi-tenant，再按正式安装包的下载、校验、配置、安装和登录步骤执行。
+
+已经有部署中的应用：直接打开[部署与升级](/guide/deployment-upgrade)，只使用当前 Edition 对应的升级包；完整安装包不能覆盖已有应用，跨 Edition 也不是普通升级。
+
 ## 我想开始运行项目
 
-打开[快速开始](/getting-started)。你会核对工具链、创建本地配置、启动开发栈，并用状态命令验证结果。
+打开[快速开始](/getting-started)。普通用户从正式安装包开始；核心开发者再按页面末尾的源码 checkout 路径核对工具链、创建本地配置、启动开发栈并验证结果。
 
 ## 我想理解系统
 

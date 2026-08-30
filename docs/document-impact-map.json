@@ -50,6 +50,16 @@
       "reason": "The controller is an internal release-preparation guard and has no public developer-site projection."
     },
     {
+      "id": "dual-edition-distribution",
+      "paths": ["scripts/build-edition-installers", "scripts/build-edition-upgrades", "scripts/scaffold-upgrade", "scripts/scaffold-runtime/EditionUpgradePackage.php", "scaffold/edition-profiles.json"],
+      "classifications": ["technical", "developer-site", "architecture-decision"],
+      "upstream": ["Edition profile", "installer/upgrade package manifests", "signed package loader"],
+      "technical_docs": ["docs/create-application.md", "docs/scaffold-upgrade.md", "docs/release-engineering.md", "docs/operations/release-and-application-lifecycle.md"],
+      "site_docs": ["docs-site/guide/deployment-upgrade.md", "docs-site/reference.md"],
+      "generated": ["docs/reference/document-catalog.generated.md", "docs-site/reference/source-map.generated.md"],
+      "reason": "Edition packaging, package trust and application upgrade ownership must remain one documented release contract."
+    },
+    {
       "id": "schema-migration-owner",
       "paths": ["server/database/**/*.sql", "server/database/**/*.php", "server/app/**/model/**/*.php", "server/app/**/module.json"],
       "classifications": ["technical", "developer-site", "architecture-decision"],

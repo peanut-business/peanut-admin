@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <Breadcrumb :items="['装修管理', '移动端装修']" />
+    <Breadcrumb :items="['menu.decoration', 'menu.decoration.mobile']" />
     <div v-loading="loading">
       <el-card class="general-card">
         <el-tabs

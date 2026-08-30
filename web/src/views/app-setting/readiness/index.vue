@@ -35,7 +35,7 @@
       <el-table :data="checklist.items" row-key="key" border>
         <el-table-column :label="$t('readiness.columns.item')" min-width="170">
           <template #default="{ row }">
-            <div class="item-title">
+            <div v-if="row.key" class="item-title">
               {{ $t(`readiness.items.${row.key}.title`) }}
             </div>
             <el-text size="small" type="info">
@@ -78,10 +78,10 @@
               class="entry-button"
               type="primary"
               link
+              :icon="ArrowRight"
               @click="openEntry(row.entry.route)"
             >
               {{ $t(`readiness.audience.${row.entry.audience}`) }}
-              <icon-right />
             </el-button>
             <el-text v-else class="entry-owner" type="info" size="small">
               {{ $t('readiness.ownerPrefix') }}:
@@ -97,6 +97,7 @@
 <script lang="ts" setup>
   import { reactive } from 'vue';
   import { useRouter } from 'vue-router';
+  import { ArrowRight } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     getReadinessChecklist,

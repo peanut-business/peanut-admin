@@ -20,6 +20,8 @@ use think\facade\Db;
  */
 final readonly class CoreTenantModuleAdminBridge
 {
+    private const APPLICATION_PERMISSION_OWNER = 'peanut.admin';
+
     /** @return list<string> */
     public static function officialModuleMenuPaths(): array
     {
@@ -53,10 +55,13 @@ final readonly class CoreTenantModuleAdminBridge
         }
 
         $pdo = $this->connection();
-        $permissions = (new PdoTenantAuthorizationRepository($pdo))->permissions(
-            $tenantContext->tenantId,
-            $tenantContext->memberId
-        )->keys();
+        $permissions = array_values(array_unique([
+            ...(new PdoTenantAuthorizationRepository($pdo))->permissions(
+                $tenantContext->tenantId,
+                $tenantContext->memberId
+            )->keys(),
+            ...$this->applicationPermissions($pdo, $tenantContext),
+        ]));
         if ($this->isTenantOwner($pdo, $tenantContext)) {
             $permissions = array_values(array_unique([
                 ...$permissions,
@@ -120,13 +125,13 @@ final readonly class CoreTenantModuleAdminBridge
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
         ), true);
-        $active = array_values(array_filter(
-            $qualification->activeTenantModuleKeys($tenantId),
-            static fn(string $moduleKey): bool => isset($installed[$moduleKey])
-        ));
-        if ($active === []) {
-            return [];
-        }
+        $active = array_values(array_unique([
+            self::APPLICATION_PERMISSION_OWNER,
+            ...array_filter(
+                $qualification->activeTenantModuleKeys($tenantId),
+                static fn(string $moduleKey): bool => isset($installed[$moduleKey])
+            ),
+        ]));
         $placeholders = implode(',', array_map(
             static fn(int $index): string => ':module_' . $index,
             array_keys($active)
@@ -155,10 +160,13 @@ final readonly class CoreTenantModuleAdminBridge
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
         ), true);
-        $active = array_fill_keys(array_values(array_filter(
-            $qualification->activeTenantModuleKeys($tenantId),
-            static fn(string $moduleKey): bool => isset($installed[$moduleKey])
-        )), true);
+        $active = array_fill_keys(array_values(array_unique([
+            self::APPLICATION_PERMISSION_OWNER,
+            ...array_filter(
+                $qualification->activeTenantModuleKeys($tenantId),
+                static fn(string $moduleKey): bool => isset($installed[$moduleKey])
+            ),
+        ])), true);
         $rows = $pdo->query(
             "SELECT DISTINCT m.perms, p.module_key, p.status AS permission_status "
             . "FROM pa_system_menu m LEFT JOIN pa_permission p ON p.`key` = m.perms "
@@ -189,6 +197,41 @@ final readonly class CoreTenantModuleAdminBridge
             throw new \RuntimeException('CORE_TENANT_MODULE_DATABASE_UNAVAILABLE');
         }
         return $connection;
+    }
+
+    /** @return list<string> */
+    private function applicationPermissions(PDO $pdo, TenantContext $context): array
+    {
+        $statement = $pdo->prepare(<<<'SQL'
+SELECT DISTINCT permission.`key`
+FROM pa_tenant tenant
+JOIN pa_tenant_member member
+  ON member.tenant_id = tenant.id
+ AND member.id = :member_id
+ AND member.status = 'active'
+JOIN pa_member_role member_role
+  ON member_role.tenant_id = tenant.id
+ AND member_role.tenant_member_id = member.id
+JOIN pa_role role
+  ON role.tenant_id = tenant.id
+ AND role.id = member_role.role_id
+ AND role.status = 'active'
+JOIN pa_role_permission role_permission
+  ON role_permission.tenant_id = tenant.id
+ AND role_permission.role_id = role.id
+JOIN pa_permission permission
+  ON permission.id = role_permission.permission_id
+ AND permission.module_key = 'peanut.admin'
+ AND permission.status = 'active'
+WHERE tenant.id = :tenant_id AND tenant.status = 'active'
+ORDER BY permission.`key`
+SQL);
+        $statement->execute([
+            'tenant_id' => $context->tenantId,
+            'member_id' => $context->memberId,
+        ]);
+
+        return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
     }
 
     /**
