@@ -17,7 +17,7 @@ class BaseLikeAdminController extends BaseController
         return JsonService::success($msg, $data);
     }
 
-    protected function fail(string $msg = 'fail'): Json
+    protected function fail(string $msg = 'fail'): never
     {
         throw \app\common\http\ApiProblem::fromEnvelope($msg);
     }

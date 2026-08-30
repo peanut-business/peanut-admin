@@ -40,8 +40,7 @@ axios.interceptors.request.use(
   }
 );
 // add response interceptors
-axios.interceptors.response.use(
-  async (response: AxiosResponse<HttpResponse>) => {
+const handleResponse = async (response: AxiosResponse<HttpResponse>) => {
     const res = response.data;
     // 20000 is the normal success envelope; LikeAdmin uses code=2 for a
     // successfully generated export file.
@@ -102,9 +101,18 @@ axios.interceptors.response.use(
       }
       return Promise.reject(new Error(res.msg || 'Error'));
     }
-    return res;
-  },
+  return res;
+};
+
+axios.interceptors.response.use(
+  handleResponse,
   (error) => {
+    const response = axios.isAxiosError(error)
+      ? error.response as AxiosResponse<HttpResponse> | undefined
+      : undefined;
+    if (response?.data && typeof response.data.code === 'number') {
+      return handleResponse(response);
+    }
     ElMessage.error({
       message: error.msg || 'Request Error',
       duration: 5 * 1000,

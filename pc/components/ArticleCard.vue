@@ -10,17 +10,14 @@
       <p class="text-gray-400 text-xs line-clamp-2 mb-3">{{ article.desc }}</p>
       <div class="flex justify-between text-xs text-gray-400">
         <span>{{ article.author }}</span>
-        <span>{{ article.click_num }} 次浏览</span>
+        <span>{{ article.click }} 次浏览</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  article: {
-    id: number; cate_name: string; title: string; image: string
-    desc: string; author: string; click_num: number
-  }
-}>()
+import type { Article } from '~/api/article'
+
+defineProps<{ article: Article }>()
 </script>

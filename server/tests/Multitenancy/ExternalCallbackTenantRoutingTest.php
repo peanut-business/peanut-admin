@@ -208,7 +208,8 @@ foreach ([$paymentController, $officialController, $oauthController] as $source)
     externalExpect(!str_contains($source, "['tenant_id']") && !str_contains($source, "get('tenant_id")
         && !str_contains($source, "header('tenant_id"), 'callback wiring trusts request tenant_id');
 }
-externalExpect(strpos($paymentController, 'verifiedCallback(') < strpos($paymentController, 'app(RechargeApplicationService::class)->settleVerifiedCallback('), 'payment write precedes verification');
+externalExpect(!str_contains($paymentController, 'static function () use ($event, $resolution): void'), 'payment callback uses injected service from a static closure');
+externalExpect(strpos($paymentController, 'verifiedCallback(') < strpos($paymentController, '$this->recharges->settleVerifiedCallback('), 'payment write precedes verification');
 externalExpect(str_contains($settlement, 'settle(object $context'), 'settlement does not require a verified context port');
 externalExpect(!str_contains($settlement, 'VerifiedPaymentTenantResolver::resolve'), 'settlement still derives Tenant from an order number');
 foreach (['uk_external_callback_key', 'uk_external_provider_identity', 'uk_external_tenant_provider',

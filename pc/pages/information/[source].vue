@@ -25,14 +25,17 @@
 </template>
 
 <script setup lang="ts">
+import {
+  getArticleCategories,
+  getArticles,
+  type Article,
+} from '~/api/article'
+
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
 const cateId = Number(route.params.source)
-const apiBase = useRuntimeConfig().public.apiBase
-
-interface Article { id: number; cate_id: number; cate_name: string; title: string; image: string; desc: string; author: string; click_num: number; collect_num: number; create_time: string }
-interface ArticleCate { id: number; name: string; image: string; sort: number }
+const request = useRequest()
 
 const pageNo = ref(1)
 const pageSize = 12
@@ -40,16 +43,18 @@ const articles = ref<Article[]>([])
 const total = ref(0)
 
 // Get category name from cate list
-const { data: cateData } = await useFetch<{ code: number; data: ArticleCate[] }>(`${apiBase}/api/article/cate`)
-const cateName = computed(() => cateData.value?.data?.find((c) => c.id === cateId)?.name || '分类资讯')
+const categories = await getArticleCategories(request)
+const cateName = computed(() => categories.find((category) => category.id === cateId)?.name || '分类资讯')
 
 await loadArticles()
 
 async function loadArticles() {
-  const res = await $fetch<{ code: number; data: { lists: Article[]; count: number } }>(
-    `${apiBase}/api/article/lists?cate_id=${cateId}&page_no=${pageNo.value}&page_size=${pageSize}`
-  )
-  articles.value = res.data?.lists || []
-  total.value = res.data?.count || 0
+  const data = await getArticles(request, {
+    cid: cateId,
+    pageNo: pageNo.value,
+    pageSize,
+  })
+  articles.value = data?.lists || []
+  total.value = data?.count || 0
 }
 </script>

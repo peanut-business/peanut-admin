@@ -70,7 +70,7 @@
               <view class="article-title">{{ item.title }}</view>
               <view class="article-meta">
                 <text class="author">{{ item.author }}</text>
-                <text class="views">{{ item.click_num ?? item.click ?? 0 }} 次浏览</text>
+                <text class="views">{{ item.click }} 次浏览</text>
               </view>
             </view>
           </view>

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { PageData } from '@/types/global';
 
 export interface WebPageConfig {
   status: 0 | 1;
@@ -134,12 +135,7 @@ export interface OfficialAccountReplyListParams {
   page_size?: number;
 }
 
-export interface OfficialAccountReplyListResponse {
-  list: OfficialAccountReplyRecord[];
-  total: number;
-  page_no: number;
-  page_size: number;
-}
+export type OfficialAccountReplyListResponse = PageData<OfficialAccountReplyRecord>;
 
 export type OfficialAccountReplyForm = Pick<
   OfficialAccountReplyRecord,

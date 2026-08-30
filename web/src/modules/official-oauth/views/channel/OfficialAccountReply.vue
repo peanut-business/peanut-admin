@@ -300,9 +300,10 @@
         page_no: page,
         page_size: pagination.pageSize,
       });
-      rows.value = data.list;
-      pagination.current = data.page_no;
-      pagination.total = data.total;
+      rows.value = data.lists;
+      pagination.current = data.pageNo;
+      pagination.pageSize = data.pageSize;
+      pagination.total = data.count;
     } finally {
       loading.value = false;
     }

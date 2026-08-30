@@ -40,7 +40,7 @@ class PaymentNotifyController extends BaseApiController
             $event = $resolution->verifiedValue;
             app(ExecutionContextStore::class)->run(
                 ExecutionContext::system($resolution->context),
-                static function () use ($event, $resolution): void {
+                function () use ($event, $resolution): void {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.payment');
                     if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,
@@ -71,7 +71,7 @@ class PaymentNotifyController extends BaseApiController
             $event = $resolution->verifiedValue;
             app(ExecutionContextStore::class)->run(
                 ExecutionContext::system($resolution->context),
-                static function () use ($event, $resolution): void {
+                function () use ($event, $resolution): void {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.payment');
                     if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,

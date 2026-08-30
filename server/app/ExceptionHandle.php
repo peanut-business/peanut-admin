@@ -5,6 +5,7 @@ use app\common\http\ApiProblem;
 use app\common\http\ApiProblemMapper;
 use app\common\http\RequestTrace;
 use app\common\application\BusinessException;
+use app\common\service\JsonService;
 use app\common\service\runtime\OperationalLog;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
@@ -61,11 +62,12 @@ class ExceptionHandle extends Handle
         if ($problem instanceof ApiProblem) {
             $requestId = RequestTrace::id($request);
             $this->reportProblem($request, $problem, $requestId);
-            return json([
-                'code' => $problem->apiCode(),
-                'msg' => $problem->getMessage(),
-                'data' => $problem->data(),
-            ])->header(['X-Request-Id' => $requestId] + $problem->headers);
+            return JsonService::response(
+                $problem->apiCode(),
+                $problem->getMessage(),
+                $problem->data(),
+                $problem->httpStatus,
+            )->header(['X-Request-Id' => $requestId] + $problem->headers);
         }
 
         // 其他错误交给系统处理

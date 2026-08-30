@@ -5,7 +5,6 @@ namespace app\common\http\middleware;
 
 use app\common\http\RequestTrace;
 use app\common\service\audit\AuditContractHost;
-use app\common\service\JsonService;
 use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use think\facade\Db;
@@ -30,40 +29,40 @@ final class MaintenanceWriteGateMiddleware
                 throw new \RuntimeException('MAINTENANCE_GATE_DATABASE_UNAVAILABLE');
             }
             $window = $this->activeWindow($pdo);
-            if ($window === null) {
-                return $next($request);
+            if ($window !== null) {
+                AuditContractHost::fromPdo($pdo)->recordPlatform(
+                    'platform.maintenance.write-blocked',
+                    'maintenance.write',
+                    $requestId,
+                    null,
+                    null,
+                    [
+                        'maintenance_key' => (string)$window['maintenance_key'],
+                        'reason_key' => (string)$window['reason_key'],
+                        'request_method' => strtoupper((string)$request->method()),
+                        'request_path' => trim((string)$request->pathinfo(), '/'),
+                    ],
+                    AuditOutcome::Denied,
+                    'MAINTENANCE_WRITE_BLOCKED',
+                );
             }
-
-            AuditContractHost::fromPdo($pdo)->recordPlatform(
-                'platform.maintenance.write-blocked',
-                'maintenance.write',
-                $requestId,
-                null,
-                null,
-                [
-                    'maintenance_key' => (string)$window['maintenance_key'],
-                    'reason_key' => (string)$window['reason_key'],
-                    'request_method' => strtoupper((string)$request->method()),
-                    'request_path' => trim((string)$request->pathinfo(), '/'),
-                ],
-                AuditOutcome::Denied,
-                'MAINTENANCE_WRITE_BLOCKED',
-            );
-
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                '系统维护中，暂不支持写入操作。',
-                ['error_code' => 'MAINTENANCE_WRITE_BLOCKED'],
-                50300,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
         } catch (\Throwable) {
             throw \app\common\http\ApiProblem::fromEnvelope(
                 '系统维护状态不可用，写入操作已拒绝。',
                 ['error_code' => 'MAINTENANCE_GATE_UNAVAILABLE'],
                 50300,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
+            )->withHeaders(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
         }
+
+        if ($window === null) {
+            return $next($request);
+        }
+
+        throw \app\common\http\ApiProblem::fromEnvelope(
+            '系统维护中，暂不支持写入操作。',
+            ['error_code' => 'MAINTENANCE_WRITE_BLOCKED'],
+            50300,
+        )->withHeaders(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
     }
 
     /** @return array{maintenance_key:string,reason_key:string}|null */
