@@ -53,6 +53,7 @@ function editionInstallerWrite(string $path, string $content): void
 }
 
 $root = dirname(__DIR__);
+require_once $root . '/server/vendor/autoload.php';
 $options = [];
 $check = false;
 foreach (array_slice($argv, 1) as $argument) {
