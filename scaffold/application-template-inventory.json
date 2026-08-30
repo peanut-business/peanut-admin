@@ -4222,7 +4222,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ad9e7dec0d33a1daafd3025fefee9ee48b5b55dbaee77290779aa6a0defe4d57"
+            "source_sha256": "12762492de0e60f9652e8667369566aa9a7d9c04eaa2eb526f0bddb11bc64476"
         },
         {
             "path": "resources/service-registry.json",
