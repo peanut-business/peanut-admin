@@ -1115,7 +1115,7 @@ class Runner:
                 or generation.get("tree") != self.plan["candidate_tree"]
                 or generation.get("inventory_sha256") != target["inventory_sha256"]
                 or artifact_manifest.get("application", {}).get("manifest_sha256") != sha256(manifest_path)
-                or artifact_manifest.get("application", {}).get("managed_tree_sha256") != target["managed_tree_sha256"]
+                or artifact_manifest.get("application", {}).get("managed_tree_sha256") != manifest.get("digests", {}).get("managed_tree_sha256")
             ):
                 fail(f"{edition} application identity does not match its installer")
             uniapp_manifest = (generated / "uniapp/src/manifest.json").read_text(encoding="utf-8")
