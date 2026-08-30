@@ -4670,6 +4670,38 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-product-status-audits-demo-experience-audit",
+      "path": "docs/product-status/audits/demo-experience-audit.md",
+      "title": "Demo 体验审计（v3.0.12）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/audits/demo-experience-audit.json",
+        "docs/product-status/audits/demo-experience-evidence.json",
+        "docs/product-status/deployments/v3.0.12-online-experience.json",
+        "docs/plans/post-release-enhancement-plan.md"
+      ],
+      "owner": "release-qualification",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "consumer-ready",
+        "demo",
+        "release-evidence"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-product-status-readme",
       "path": "docs/product-status/README.md",
       "title": "产品能力与交付状态",
