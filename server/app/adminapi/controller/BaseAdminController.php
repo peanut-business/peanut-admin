@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\adminapi\controller;
 
 use app\common\controller\BaseLikeAdminController;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContext;
 
 class BaseAdminController extends BaseLikeAdminController
 {
@@ -12,9 +14,10 @@ class BaseAdminController extends BaseLikeAdminController
 
     public function initialize(): void
     {
-        if (!empty($this->request->adminInfo)) {
-            $this->adminInfo = $this->request->adminInfo;
-            $this->adminId   = (int) ($this->request->adminInfo['id'] ?? 0);
+        $current = app(CurrentExecutionContext::class);
+        if ($current->current()?->actorType === ExecutionContext::TENANT_ADMIN) {
+            $this->adminInfo = $current->tenantAdminPrincipal();
+            $this->adminId = (int)$this->adminInfo['id'];
         }
     }
 }

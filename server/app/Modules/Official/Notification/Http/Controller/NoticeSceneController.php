@@ -4,39 +4,39 @@ declare(strict_types=1);
 namespace app\Modules\Official\Notification\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\Modules\Official\Notification\Service\NoticeSceneLogic;
+use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
-use app\common\service\notice\NoticeTenantContext;
-use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\App;
 
 class NoticeSceneController extends BaseAdminController
 {
+    public function __construct(
+        App $app,
+        private readonly NotificationQueries $queries,
+        private readonly NotificationCommands $commands,
+    ) {
+        parent::__construct($app);
+    }
+
     public function lists()
     {
-        return $this->data(NoticeSceneLogic::lists(NoticeTenantContext::member($this->request)));
+        return $this->data($this->queries->scenes());
     }
 
     public function detail()
     {
         $params = $this->request->get();
-        $context = NoticeTenantContext::member($this->request);
-        $this->validateForTenant($context, $params, 'detail');
-        return $this->data(NoticeSceneLogic::detail($context, (int) $params['id']));
+        $this->validate($params, NoticeSceneValidate::class . '.detail');
+        return $this->data($this->queries->sceneDetail((int) $params['id']));
     }
 
     public function save()
     {
         $params = $this->request->post();
-        $context = NoticeTenantContext::member($this->request);
-        $this->validateForTenant($context, $params, 'save');
-        $result = NoticeSceneLogic::save($context, $params);
-        return $result
-            ? $this->success('保存成功')
-            : $this->fail(NoticeSceneLogic::getError());
+        $this->validate($params, NoticeSceneValidate::class . '.save');
+        $this->commands->saveScene($params);
+        return $this->success('保存成功');
     }
 
-    private function validateForTenant(TenantContext $context, array $data, string $scene): void
-    {
-        (new NoticeSceneValidate())->forTenant($context)->scene($scene)->failException(true)->check($data);
-    }
 }

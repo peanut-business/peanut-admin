@@ -90,7 +90,7 @@ function createApplicationTamperedReleaseFails(
     $target = $temporary . '/tampered-' . $case;
     $creator = new ApplicationCreator($root, $inventoryPath, $identity, $manifestPath);
     createApplicationFails(
-        fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $target, null, 'full'),
+        fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $target, 'multi-tenant', null, 'full'),
         $error
     );
     createApplicationExpect(!file_exists($target), 'failed adoption committed target: ' . $case);
@@ -149,9 +149,11 @@ try {
     $first = $temporary . '/first';
     $second = $temporary . '/second';
     $other = $temporary . '/other';
-    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, null, 'full');
-    $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second, null, 'full');
-    $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other, null, 'full');
+    $standalone = $temporary . '/standalone';
+    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, 'multi-tenant', null, 'full');
+    $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second, 'multi-tenant', null, 'full');
+    $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other, 'multi-tenant', null, 'full');
+    $standaloneManifest = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $standalone, 'standalone', null, 'full');
     $release = json_decode((string)file_get_contents($releasePath), true, 512, JSON_THROW_ON_ERROR)['release'];
 
     createApplicationExpect($manifestOne['template'] === [
@@ -164,14 +166,19 @@ try {
         'commit' => $identity['commit'],
         'tree' => $identity['tree'],
         'inventory_sha256' => hash_file('sha256', $inventoryPath),
+        'edition_profile_sha256' => hash_file('sha256', $root . '/scaffold/edition-profiles.json'),
     ], 'generation source must record the actual source identity and current inventory');
     createApplicationExpect($manifestOther['template'] === $manifestOne['template'], 'all parameter groups must adopt the same release identity');
     createApplicationExpect($manifestOther['generation_source'] === $manifestOne['generation_source'], 'all parameter groups must record the same generation source');
+    createApplicationExpect($standaloneManifest['template'] === $manifestOne['template'], 'both Editions must adopt one template identity');
+    createApplicationExpect($standaloneManifest['generation_source'] === $manifestOne['generation_source'], 'both Editions must record one generation identity');
     createApplicationExpect($manifestOther['application']['name'] === 'Beta Workspace', 'second parameter group must be rendered independently');
     createApplicationExpect(
         $manifestOne['schema_version'] === 2
             && $manifestOne['protocol'] === 'peanut.application-scaffold.v2'
-            && $manifestOne['application']['version'] === '0.1.0',
+            && $manifestOne['application']['version'] === '0.1.0'
+            && $manifestOne['application']['edition'] === 'multi-tenant'
+            && $manifestOne['edition']['name'] === 'multi-tenant',
         'generated application manifest must carry the default application version contract'
     );
     createApplicationExpect(
@@ -240,12 +247,79 @@ try {
         preg_match('/COPY plugins\\.lock \/build\/plugins\\.lock\\R+COPY web\/ \.\/\\R+RUN pnpm exec vue-tsc --noEmit/', $generatedProductionDockerfile) === 1,
         'admin production builder must copy the fail-closed Plugin lock to the repository root before Vite build'
     );
-    foreach (['standalone', 'multi-tenant'] as $deploymentMode) {
+    createApplicationExpect(
+        str_contains($generatedProductionDockerfile, 'VITE_DEPLOYMENT_MODE=multi-tenant')
+            && !str_contains($generatedProductionDockerfile, 'VITE_DEPLOYMENT_MODE=standalone'),
+        'multi-tenant artifact must compile only its selected admin bundle'
+    );
+    $standaloneDockerfile = (string)file_get_contents($standalone . '/deploy/docker/production.Dockerfile');
+    createApplicationExpect(
+        str_contains($standaloneDockerfile, 'VITE_DEPLOYMENT_MODE=standalone')
+            && !str_contains($standaloneDockerfile, 'VITE_DEPLOYMENT_MODE=multi-tenant')
+            && !str_contains($standaloneDockerfile, 'AS platform-builder')
+            && !str_contains($standaloneDockerfile, '/server/public/platform'),
+        'Standalone artifact must omit the multi-tenant admin and Platform bundles'
+    );
+    createApplicationExpect(
+        !str_contains((string)file_get_contents($standalone . '/server/route/app.php'), "require __DIR__ . '/platform.php';")
+            && str_contains((string)file_get_contents($first . '/server/route/app.php'), "require __DIR__ . '/platform.php';")
+            && str_contains((string)file_get_contents($standalone . '/server/.env.example'), 'DEPLOYMENT_MODE=standalone')
+            && str_contains((string)file_get_contents($first . '/server/.env.example'), 'DEPLOYMENT_MODE=multi-tenant'),
+        'Edition route and environment composition changed outside the selected profile'
+    );
+    $editionProfiles = json_decode(
+        (string)file_get_contents($root . '/scaffold/edition-profiles.json'),
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    $standaloneSchema = (string)file_get_contents($standalone . '/server/database/init.sql');
+    $multiTenantSchema = (string)file_get_contents($first . '/server/database/init.sql');
+    foreach ($editionProfiles['editions']['standalone']['schema']['table_rules'] as $table => $rule) {
+        if (!in_array('server/database/init.sql', $rule['sources'], true)) {
+            continue;
+        }
+        $tablePattern = '/CREATE TABLE `' . preg_quote($table, '/') . '` \(.*?\n\) ENGINE=.*?;(?=\n)/s';
+        if ($rule['action'] === 'exclude_table') {
+            createApplicationExpect(
+                preg_match($tablePattern, $standaloneSchema) === 0
+                    && preg_match($tablePattern, $multiTenantSchema) === 1,
+                'Standalone schema did not exclusively remove ' . $table,
+            );
+            continue;
+        }
         createApplicationExpect(
-            str_contains($generatedProductionDockerfile, 'VITE_DEPLOYMENT_MODE=' . $deploymentMode),
-            'admin production builder must compile the ' . $deploymentMode . ' bundle'
+            preg_match($tablePattern, $standaloneSchema, $standaloneTable) === 1
+                && !str_contains($standaloneTable[0], '`tenant_id`'),
+            'Standalone schema retained Tenant ownership on ' . $table,
+        );
+        createApplicationExpect(
+            preg_match($tablePattern, $multiTenantSchema, $multiTenantTable) === 1
+                && str_contains($multiTenantTable[0], '`tenant_id`'),
+            'Multi-tenant schema lost Tenant ownership on ' . $table,
         );
     }
+    foreach ([
+        'server/database/migrations/20260823-unify-storage-service.sql',
+        'server/database/migrations/20260824-payment-channel-grants.sql',
+    ] as $projectedMigration) {
+        createApplicationExpect(
+            !str_contains((string)file_get_contents($standalone . '/' . $projectedMigration), '`tenant_id`')
+                && str_contains((string)file_get_contents($first . '/' . $projectedMigration), '`tenant_id`'),
+            'Edition migration projection did not remove only Standalone Tenant persistence: ' . $projectedMigration,
+        );
+    }
+    createApplicationExpect(
+        !str_contains(
+            (string)file_get_contents($standalone . '/server/database/migrations/20260828-provider-qualification-evidence.sql'),
+            '`pa_provider_qualification_evidence`',
+        )
+            && str_contains(
+                (string)file_get_contents($first . '/server/database/migrations/20260828-provider-qualification-evidence.sql'),
+                '`pa_provider_qualification_evidence`',
+            ),
+        'Standalone must exclude the Platform-only Provider qualification table',
+    );
     createApplicationExpect(
         str_contains($generatedProductionDockerfile, 'nginx-select-admin.sh /docker-entrypoint.d/40-select-admin.sh')
             && is_executable($first . '/deploy/docker/nginx-select-admin.sh'),
@@ -303,7 +377,7 @@ try {
         $package = json_decode((string)file_get_contents($first . "/{$client}/package.json"), true, 512, JSON_THROW_ON_ERROR);
         createApplicationExpect(($package['version'] ?? null) === '0.1.0', "{$client} root package must use application.version");
         if (in_array($client, ['web', 'pc', 'uniapp'], true)) {
-            $expectedPublicAdmin = $client === 'web' ? '0.1.0-alpha.7' : '0.1.0-alpha.5';
+            $expectedPublicAdmin = '0.1.0-alpha.11';
             createApplicationExpect(
                 ($package['dependencies']['@peanut-admin/admin'] ?? null) === $expectedPublicAdmin,
                 "{$client} public admin dependency must remain {$expectedPublicAdmin}"
@@ -317,21 +391,21 @@ try {
             "{$client} root lock metadata must use application.version"
         );
         createApplicationExpect(
-            ($lock['packages']['']['dependencies']['@peanut-admin/admin'] ?? null) === '0.1.0-alpha.5',
-            "{$client} lock root dependency must remain Alpha.5"
+            ($lock['packages']['']['dependencies']['@peanut-admin/admin'] ?? null) === '0.1.0-alpha.11',
+            "{$client} lock root dependency must remain Alpha.11"
         );
     }
-    foreach ([
-        'server/config/project.php',
-        'server/app/adminapi/logic/WorkbenchLogic.php',
-        'server/app/api/logic/IndexLogic.php',
-        'uniapp/src/pages/as_us/as_us.vue',
-    ] as $versionSurface) {
+    foreach (['server/config/project.php', 'server/app/adminapi/application/WorkbenchApplicationService.php', 'server/app/api/application/IndexApplicationService.php'] as $versionSurface) {
         createApplicationExpect(
-            str_contains((string)file_get_contents($first . '/' . $versionSurface), "'0.1.0'"),
-            $versionSurface . ' fallback must use application.version'
+            !str_contains((string)file_get_contents($first . '/' . $versionSurface), "'2.0.1'"),
+            $versionSurface . ' must not retain a historical product version'
         );
     }
+    createApplicationExpect(
+        str_contains((string)file_get_contents($first . '/server/config/project.php'), 'release-versions.json')
+            && str_contains((string)file_get_contents($first . '/uniapp/src/pages/as_us/as_us.vue'), "'0.1.0'"),
+        'generated Runtime version surfaces must use the application version authority'
+    );
     $uniappManifest = (string)file_get_contents($first . '/uniapp/src/manifest.json');
     createApplicationExpect(
         preg_match('/"versionName"\s*:\s*"0\.1\.0"/', $uniappManifest) === 1
@@ -355,17 +429,18 @@ try {
 
     mkdir($temporary . '/non-empty');
     file_put_contents($temporary . '/non-empty/keep.txt', 'keep');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty', null, 'full'), 'CREATE_APP_TARGET_NOT_EMPTY');
-    createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug', null, 'full'), 'CREATE_APP_SLUG_INVALID');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'not-a-version', 'full'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape', null, 'full'), 'CREATE_APP_TARGET_PATH_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/non-empty', 'multi-tenant', null, 'full'), 'CREATE_APP_TARGET_NOT_EMPTY');
+    createApplicationFails(fn() => $creator->create('Acme Console', '../bad', 'acme/acme-console', $temporary . '/bad-slug', 'multi-tenant', null, 'full'), 'CREATE_APP_SLUG_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-version', 'multi-tenant', 'not-a-version', 'full'), 'CREATE_APP_APPLICATION_VERSION_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/bad-edition', 'other', null, 'full'), 'CREATE_APP_EDITION_INVALID');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/../escape', 'multi-tenant', null, 'full'), 'CREATE_APP_TARGET_PATH_INVALID');
 
     mkdir($temporary . '/outside');
     symlink($temporary . '/outside', $temporary . '/linked-target');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-target', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-target', 'multi-tenant', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
     mkdir($temporary . '/outside-parent');
     symlink($temporary . '/outside-parent', $temporary . '/linked-parent');
-    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-parent/escape', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
+    createApplicationFails(fn() => $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/linked-parent/escape', 'multi-tenant', null, 'full'), 'CREATE_APP_TARGET_SYMLINK_REJECTED');
 
     $generatedCi = (string)file_get_contents($first . '/.github/workflows/ci.yml');
     createApplicationExpect(!str_contains($generatedCi, 'stale-facts:') && !str_contains($generatedCi, 'create-app:'), 'generated CI must not depend on source-template governance jobs');
@@ -389,7 +464,7 @@ try {
 
     $builderTarget = $temporary . '/builder-identity';
     $builderManifest = (new ApplicationCreator($root, $inventoryPath, $identity))->create(
-        'Builder Token', 'builder-token', 'builder/builder-token', $builderTarget
+        'Builder Token', 'builder-token', 'builder/builder-token', $builderTarget, 'multi-tenant'
     );
     createApplicationExpect(
         $builderManifest['template']['source_commit'] === $identity['commit']
@@ -421,7 +496,7 @@ try {
     createApplicationWriteJson($sourceOnlyInventoryPath, $sourceOnlyInventory);
     $sourceOnlyTarget = $temporary . '/source-only-allowed';
     $sourceOnlyManifest = (new ApplicationCreator($root, $sourceOnlyInventoryPath, $identity, $releasePath))->create(
-        'Acme Console', 'acme-console', 'acme/acme-console', $sourceOnlyTarget, null, 'full'
+        'Acme Console', 'acme-console', 'acme/acme-console', $sourceOnlyTarget, 'multi-tenant', null, 'full'
     );
     createApplicationExpect($sourceOnlyManifest['template'] === $manifestOne['template'], 'app-owned/excluded-only source changes must retain release adoption');
     createApplicationExpect(
@@ -448,7 +523,7 @@ try {
     $managedChangeTarget = $temporary . '/managed-change-rejected';
     $managedChangeCreator = new ApplicationCreator($root, $managedChangeInventoryPath, $identity, $releasePath);
     createApplicationFails(
-        fn() => $managedChangeCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $managedChangeTarget, null, 'full'),
+        fn() => $managedChangeCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $managedChangeTarget, 'multi-tenant', null, 'full'),
         'CREATE_APP_ADOPTION_RENDER_MISMATCH'
     );
     createApplicationExpect(!file_exists($managedChangeTarget), 'managed source change committed an unsealed target');
@@ -525,14 +600,14 @@ try {
     $unknownPath = $temporary . '/unknown.json';
     file_put_contents($unknownPath, json_encode($unknown, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     $unknownCreator = new ApplicationCreator($root, $unknownPath, $identity);
-    createApplicationFails(fn() => $unknownCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/unknown'), 'CREATE_APP_INVENTORY_ENTRY_INVALID');
+    createApplicationFails(fn() => $unknownCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/unknown', 'multi-tenant'), 'CREATE_APP_INVENTORY_ENTRY_INVALID');
 
     $unknownVariable = $inventory;
     $unknownVariable['variables'][] = 'UNDECLARED_INPUT';
     $unknownVariablePath = $temporary . '/unknown-variable.json';
     file_put_contents($unknownVariablePath, json_encode($unknownVariable, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     $unknownVariableCreator = new ApplicationCreator($root, $unknownVariablePath, $identity);
-    createApplicationFails(fn() => $unknownVariableCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/unknown-variable'), 'CREATE_APP_INVENTORY_UNKNOWN_VARIABLE');
+    createApplicationFails(fn() => $unknownVariableCreator->create('Acme Console', 'acme-console', 'acme/acme-console', $temporary . '/unknown-variable', 'multi-tenant'), 'CREATE_APP_INVENTORY_UNKNOWN_VARIABLE');
 } finally {
     createApplicationDelete($temporary);
 }

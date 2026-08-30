@@ -9,6 +9,8 @@ use app\common\dto\authorization\PermissionDecision;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\DemoAccountPolicy;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 
 /**
  * 权限中间件（原生 TP 风格）
@@ -21,9 +23,12 @@ class AuthMiddleware
 {
     public function handle($request, \Closure $next)
     {
-        $adminInfo = $request->adminInfo ?? null;
+        $current = ExecutionContextAccess::current();
+        $adminInfo = $current?->actorType === ExecutionContext::TENANT_ADMIN
+            ? ExecutionContextAccess::principal()
+            : null;
         if (empty($adminInfo)) {
-            return JsonService::fail('请先登录', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('请先登录', null, 40100);
         }
 
         $path = strtolower(trim($request->pathinfo(), '/'));
@@ -34,7 +39,7 @@ class AuthMiddleware
         // 权限字符使用 api/admin/ 之后的精确路径，不做 URI alias 展开。
         $accessUri = preg_replace('#^api/admin/#', '', $path);
 
-        $tenantContext = $request->tenantContext ?? null;
+        $tenantContext = $current?->scope;
         $decision = $tenantContext instanceof \PeanutAdmin\Kernel\Auth\TenantContext
             ? (new AdminAuthorizationService())->decide(
                 $tenantContext,
@@ -43,12 +48,12 @@ class AuthMiddleware
             )
             : PermissionDecision::deny($accessUri, 'INVALID_TENANT_ADMIN_CONTEXT');
         if (!$decision->allowed) {
-            return JsonService::fail('暂无访问权限', null, 40300);
+            throw \app\common\http\ApiProblem::fromEnvelope('暂无访问权限', null, 40300);
         }
 
         if (in_array(strtoupper((string)$request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)
             && DemoAccountPolicy::mutationLocked($adminInfo, $accessUri)) {
-            return JsonService::fail('演示账号已锁定关键配置和权限操作', null, 40300);
+            throw \app\common\http\ApiProblem::fromEnvelope('演示账号已锁定关键配置和权限操作', null, 40300);
         }
 
         return $next($request);

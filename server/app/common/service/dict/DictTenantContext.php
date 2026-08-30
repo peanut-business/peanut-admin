@@ -5,12 +5,13 @@ namespace app\common\service\dict;
 
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use app\common\execution\ExecutionContextAccess;
 
 final class DictTenantContext
 {
-    public static function member(object $request): TenantContext
+    public static function member(): TenantContext
     {
-        $context = $request->tenantContext ?? null;
+        $context = ExecutionContextAccess::current()?->scope;
         self::tenantId($context);
         return $context;
     }

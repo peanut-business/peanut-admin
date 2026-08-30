@@ -13,7 +13,7 @@ final class PlatformTenantEntryBindingController extends BasePlatformController
     public function lists()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         $tenantId = trim((string)$this->request->get('tenant_id', ''));
         try {
@@ -53,7 +53,7 @@ final class PlatformTenantEntryBindingController extends BasePlatformController
     private function mutate(string $scene, callable $operation)
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         $params = $this->request->post();
         $this->validate($params, TenantEntryBindingValidate::class . '.' . $scene);
@@ -62,7 +62,7 @@ final class PlatformTenantEntryBindingController extends BasePlatformController
         } catch (AdminAccessException $exception) {
             return $this->accessFailure($exception);
         } catch (\DomainException $exception) {
-            return JsonService::fail(
+            throw \app\common\http\ApiProblem::fromEnvelope(
                 'Tenant entry binding request was rejected.',
                 ['error_code' => $exception->getMessage()],
                 40900
@@ -72,7 +72,7 @@ final class PlatformTenantEntryBindingController extends BasePlatformController
 
     private function accessFailure(AdminAccessException $exception)
     {
-        return JsonService::fail(
+        throw \app\common\http\ApiProblem::fromEnvelope(
             $exception->getMessage(),
             ['error_code' => $exception->errorCode],
             $exception->httpStatus * 100

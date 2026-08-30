@@ -6,7 +6,7 @@ namespace app\command;
 use app\platform\service\module\DeploymentModuleInstaller;
 use PDO;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
@@ -14,7 +14,7 @@ use think\facade\Config;
 use think\facade\Db;
 
 /** Registers a manifest from the explicit PEANUT_MODULE_ROOTS deployment registry. */
-final class ModuleInstall extends Command
+final class ModuleInstall extends ContextualCommand
 {
     protected function configure()
     {
@@ -23,7 +23,7 @@ final class ModuleInstall extends Command
             ->addArgument('module_key', Argument::REQUIRED, 'Module key');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $pdo = Db::connect()->connect();

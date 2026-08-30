@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\PlatformOperatorSessionService;
@@ -54,7 +56,7 @@ function platformAccessHttpSessions(PDO $pdo): PlatformOperatorSessionService
 }
 
 $serverRoot = dirname(__DIR__, 2);
-$routes = (string)file_get_contents($serverRoot . '/route/app.php');
+$routes = peanut_route_registry_source($serverRoot);
 $factory = (string)file_get_contents($serverRoot . '/app/platform/service/PlatformRuntimeFactory.php');
 $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformAccessController.php');
 

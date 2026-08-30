@@ -10,48 +10,54 @@ use app\Modules\Official\Member\Model\MemberTagRelation;
 use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use app\common\execution\ExecutionContextAccess;
 
 final class MemberTenantRepository
 {
-    public static function members(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
+    public static function members(AuthenticatedMemberContext|TenantContext|TenantSystemContext|null $context = null)
     {
-        return Member::where('tenant_id', MemberTenantContext::tenantId($context));
+        self::tenantId($context);
+        return Member::where([]);
     }
 
-    public static function tags(TenantContext|TenantSystemContext $context)
+    public static function tags(TenantContext|TenantSystemContext|null $context = null)
     {
-        return MemberTag::where('tenant_id', MemberTenantContext::tenantId($context));
+        self::tenantId($context);
+        return MemberTag::where([]);
     }
 
-    public static function relations(TenantContext|TenantSystemContext $context)
+    public static function relations(TenantContext|TenantSystemContext|null $context = null)
     {
-        return MemberTagRelation::where('tenant_id', MemberTenantContext::tenantId($context));
+        self::tenantId($context);
+        return MemberTagRelation::where([]);
     }
 
-    public static function balanceLogs(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
+    public static function balanceLogs(AuthenticatedMemberContext|TenantContext|TenantSystemContext|null $context = null)
     {
-        return MemberBalanceLog::where('tenant_id', MemberTenantContext::tenantId($context));
+        self::tenantId($context);
+        return MemberBalanceLog::where([]);
     }
 
-    public static function createMember(TenantContext|TenantSystemContext $context, array $data): Member
+    public static function createMember(TenantContext|TenantSystemContext|null $context, array $data): Member
     {
+        self::tenantId($context);
         unset($data['tenant_id']);
-        return Member::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
+        return Member::create($data);
     }
 
-    public static function createTag(TenantContext $context, array $data): MemberTag
+    public static function createTag(TenantContext|null $context, array $data): MemberTag
     {
+        self::tenantId($context);
         unset($data['tenant_id']);
-        return MemberTag::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
+        return MemberTag::create($data);
     }
 
     /** @param list<int> $tagIds */
     public static function createTagRelations(TenantContext $context, int $memberId, array $tagIds): void
     {
-        $tenantId = MemberTenantContext::tenantId($context);
-        (new MemberTagRelation())->insertAll(array_map(
+        self::tenantId($context);
+        (new MemberTagRelation())->saveAll(array_map(
             static fn(int $tagId): array => [
-                'tenant_id' => $tenantId,
                 'member_id' => $memberId,
                 'tag_id' => $tagId,
             ],
@@ -68,6 +74,12 @@ final class MemberTenantRepository
             FinanceTenantContext::tenantId($context);
         }
         unset($data['tenant_id']);
-        return MemberBalanceLog::create(['tenant_id' => MemberTenantContext::tenantId($context)] + $data);
+        return MemberBalanceLog::create($data);
+    }
+
+    private static function tenantId(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext|null $context,
+    ): int {
+        return MemberTenantContext::tenantId($context ?? ExecutionContextAccess::scope());
     }
 }

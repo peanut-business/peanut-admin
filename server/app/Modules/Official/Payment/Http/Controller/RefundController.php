@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Http\Controller;
 
+use think\App;
+
 use app\adminapi\controller\BaseAdminController;
-use app\Modules\Official\Payment\Service\RefundLogic;
+use app\Modules\Official\Payment\Application\RefundApplicationService;
 use app\Modules\Official\Payment\Validation\RefundValidate;
 use app\common\service\finance\FinanceTenantContext;
 
@@ -13,10 +15,15 @@ use app\common\service\finance\FinanceTenantContext;
  */
 class RefundController extends BaseAdminController
 {
+    public function __construct(App $app, private readonly RefundApplicationService $refunds)
+    {
+        parent::__construct($app);
+    }
+
     /** 退款统计（四个金额汇总） */
     public function stat()
     {
-        return $this->data(RefundLogic::stat(FinanceTenantContext::member($this->request)));
+        return $this->data($this->refunds->stat(FinanceTenantContext::member()));
     }
 
     /** 退款记录列表（分页） */
@@ -24,9 +31,9 @@ class RefundController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, RefundValidate::class . '.record');
-        $result = RefundLogic::lists(FinanceTenantContext::member($this->request), $params);
+        $result = $this->refunds->lists(FinanceTenantContext::member(), $params);
         return $result === false
-            ? $this->fail(RefundLogic::getError())
+            ? $this->fail($this->refunds->getError())
             : $this->data($result);
     }
 
@@ -36,8 +43,8 @@ class RefundController extends BaseAdminController
         $params = $this->request->get();
         $this->validate($params, RefundValidate::class . '.log');
         $recordId = (int)$params['record_id'];
-        return $this->data(RefundLogic::refundLog(
-            FinanceTenantContext::member($this->request),
+        return $this->data($this->refunds->refundLog(
+            FinanceTenantContext::member(),
             $recordId
         ));
     }

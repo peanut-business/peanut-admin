@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\common\controller\BaseLikeAdminController;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContext;
 
 class BaseApiController extends BaseLikeAdminController
 {
@@ -12,9 +14,9 @@ class BaseApiController extends BaseLikeAdminController
 
     public function initialize(): void
     {
-        if (!empty($this->request->memberInfo)) {
-            $this->memberInfo = $this->request->memberInfo;
-            $this->memberId   = (int) ($this->request->memberInfo['id'] ?? 0);
+        $current = app(CurrentExecutionContext::class);
+        if ($current->current()?->actorType === ExecutionContext::MEMBER) {
+            $this->memberId = $current->memberId();
         }
     }
 }

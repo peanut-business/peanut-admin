@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Validation;
 
 use app\common\service\article\ArticleTenantRepository;
+use app\common\validate\PageSizeRule;
 use app\common\validate\TenantContextValidate;
 
 class ArticleCateValidate extends TenantContextValidate
 {
+    use PageSizeRule;
+
     protected $rule = [
         'id'         => 'require|checkArticleCate',
         'name'       => 'require|length:1,90',
@@ -54,21 +57,17 @@ class ArticleCateValidate extends TenantContextValidate
 
     protected function checkArticleCate($value): bool|string
     {
-        return ArticleTenantRepository::categories($this->requireTenantContext())->where('id', (int) $value)->findOrEmpty()->isEmpty()
+        $this->requireTenantContext();
+        return ArticleTenantRepository::categories()->where('id', (int) $value)->findOrEmpty()->isEmpty()
             ? '资讯分类不存在' : true;
     }
 
     protected function checkDeleteArticleCate($value): bool|string
     {
-        return ArticleTenantRepository::articles($this->requireTenantContext())->where('cid', (int) $value)->findOrEmpty()->isEmpty()
+        $this->requireTenantContext();
+        return ArticleTenantRepository::articles()->where('cid', (int) $value)->findOrEmpty()->isEmpty()
             ? true
             : '资讯分类已使用，请先删除绑定该资讯分类的资讯';
     }
 
-    protected function pageSizeMax($value): bool|string
-    {
-        return (int) $value > 25000
-            ? '已超出系统限制数量，请分页查询或导出，当前最多记录数为：25000'
-            : true;
-    }
 }

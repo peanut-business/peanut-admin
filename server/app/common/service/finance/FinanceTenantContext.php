@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\finance;
 
 use app\common\service\member\AuthenticatedMemberContext;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use app\common\service\external\ExternalTenantContext;
 use app\common\service\external\ExternalTenantResolver;
@@ -13,14 +15,15 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class FinanceTenantContext
 {
-    public static function member(object $request): AuthenticatedMemberContext|TenantContext
+    public static function member(): AuthenticatedMemberContext|TenantContext
     {
-        $context = $request->authenticatedMemberContext ?? null;
-        if ($context instanceof AuthenticatedMemberContext) {
+        $current = ExecutionContextAccess::current();
+        $context = $current?->scope;
+        if ($current?->actorType === ExecutionContext::MEMBER && $context instanceof AuthenticatedMemberContext) {
             return $context;
         }
-        $context = $request->tenantContext ?? null;
-        if ($context instanceof TenantContext && self::trustedMember($context)) {
+        if ($current?->actorType === ExecutionContext::TENANT_ADMIN
+            && $context instanceof TenantContext && self::trustedMember($context)) {
             return $context;
         }
         throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);

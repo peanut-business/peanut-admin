@@ -13,18 +13,18 @@ require $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
 
 function createAppUsage(): never
 {
-    fwrite(STDERR, "Usage: php scripts/create-app --name=<product> --slug=<slug> --package=<vendor/name> --target=/absolute/path [--application-version=<semver>] [--profile=minimal|standard|full]\n");
+    fwrite(STDERR, "Usage: php scripts/create-app --name=<product> --slug=<slug> --package=<vendor/name> --target=/absolute/path --edition=standalone|multi-tenant [--application-version=<semver>] [--profile=minimal|standard|full]\n");
     exit(64);
 }
 
 $options = [];
 foreach (array_slice($argv, 1) as $argument) {
-    if (preg_match('/^--(name|slug|package|target|application-version|profile)=(.*)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
+    if (preg_match('/^--(name|slug|package|target|edition|application-version|profile)=(.*)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
         createAppUsage();
     }
     $options[$matches[1]] = $matches[2];
 }
-foreach (['name', 'slug', 'package', 'target'] as $required) {
+foreach (['name', 'slug', 'package', 'target', 'edition'] as $required) {
     if (!isset($options[$required]) || $options[$required] === '') {
         createAppUsage();
     }
@@ -51,6 +51,7 @@ try {
         $options['slug'],
         $options['package'],
         $options['target'],
+        $options['edition'],
         $options['application-version'] ?? null,
         $options['profile'] ?? 'standard'
     );
@@ -60,6 +61,7 @@ try {
         'template_version' => $manifest['template']['version'],
         'application_version' => $manifest['application']['version'],
         'profile' => $manifest['application']['profile'],
+        'edition' => $manifest['application']['edition'],
         'source_commit' => $manifest['template']['source_commit'],
         'generation_source_commit' => $manifest['generation_source']['commit'],
         'managed_tree_sha256' => $manifest['digests']['managed_tree_sha256'],

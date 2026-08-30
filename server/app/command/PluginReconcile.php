@@ -5,13 +5,13 @@ namespace app\command;
 
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLockResolver;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 
-final class PluginReconcile extends Command
+final class PluginReconcile extends ContextualCommand
 {
     use PluginCommandSupport;
 
@@ -22,7 +22,7 @@ final class PluginReconcile extends Command
             ->addOption('official-locked', null, Option::VALUE_NONE, 'Reconcile every official.* Plugin in plugins.lock');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         if (!(bool)$input->getOption('official-locked')) {
             $output->writeln('{"error":"OFFICIAL_LOCKED_REQUIRED"}');

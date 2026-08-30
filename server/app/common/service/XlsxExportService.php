@@ -3,27 +3,31 @@ declare(strict_types=1);
 
 namespace app\common\service;
 
+use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
-use PeanutAdmin\Kernel\Auth\TenantContext;
 use ZipArchive;
 
 /** 小型无外部依赖 XLSX 导出器，供管理端表格导出复用。 */
 class XlsxExportService
 {
+    public function __construct(private readonly CurrentExecutionContext $executionContext)
+    {
+    }
+
     /** Creates a private XLSX through the canonical storage service. */
-    public static function createForTenant(
-        TenantContext $context,
+    public function create(
         string $name,
         array $headings,
         array $rows,
         string $relativeDirectory = ''
     ): array
     {
-        $tenantId = self::trustedTenantId($context);
+        $tenantId = $this->trustedTenantId();
+        $memberId = $this->executionContext->tenantAdmin()->memberId;
         [$path,$filename] = self::createArtifact($name,$headings,$rows);
         try {
             return \app\common\service\storage\StorageService::fromDefaultConnection()->storePath(
-                $tenantId,(int)$context->memberId,'export.xlsx',$path,$filename,
+                $tenantId,(int)$memberId,'export.xlsx',$path,$filename,
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             );
         } finally { @unlink($path); }
@@ -75,8 +79,9 @@ class XlsxExportService
         return [$path,$fileName];
     }
 
-    private static function trustedTenantId(TenantContext $context): int
+    private function trustedTenantId(): int
     {
+        $context = $this->executionContext->tenantAdmin();
         if ($context->tenantId < 1
             || $context->accountId < 1
             || $context->memberId < 1

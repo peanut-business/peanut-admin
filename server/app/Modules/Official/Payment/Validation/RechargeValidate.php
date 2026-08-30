@@ -4,21 +4,15 @@ declare(strict_types=1);
 namespace app\Modules\Official\Payment\Validation;
 
 use app\common\enum\RefundEnum;
+use app\common\validate\PageSizeRule;
 use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\common\service\finance\FinanceTenantRepository;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\Validate;
+use app\common\validate\TenantContextValidate;
 
 /** 充值列表、部分退款和失败重试参数验证。 */
-class RechargeValidate extends Validate
+class RechargeValidate extends TenantContextValidate
 {
-    private ?TenantContext $tenantContext = null;
-
-    public function forTenant(TenantContext $context): self
-    {
-        $this->tenantContext = $context;
-        return $this;
-    }
+    use PageSizeRule;
     protected $rule = [
         'sn' => 'max:64',
         'pay_way' => 'in:1,2,3',
@@ -75,16 +69,9 @@ class RechargeValidate extends Validate
             : '搜索的时间范围不正确';
     }
 
-    protected function pageSizeMax($value): bool|string
-    {
-        return (int)$value <= 25000
-            ? true
-            : '已超出系统限制数量，请分页查询或导出，当前最多记录数为：25000';
-    }
-
     protected function checkRecharge($value): bool|string
     {
-        $order = FinanceTenantRepository::orders($this->requireContext())->findOrEmpty((int)$value);
+        $order = FinanceTenantRepository::orders($this->requireTenantContext())->findOrEmpty((int)$value);
         if ($order->isEmpty()) {
             return '充值订单不存在';
         }
@@ -96,7 +83,7 @@ class RechargeValidate extends Validate
 
     protected function checkRecord($value): bool|string
     {
-        $record = FinanceTenantRepository::records($this->requireContext())->findOrEmpty((int)$value);
+        $record = FinanceTenantRepository::records($this->requireTenantContext())->findOrEmpty((int)$value);
         if ($record->isEmpty()) {
             return '退款记录不存在';
         }
@@ -110,8 +97,4 @@ class RechargeValidate extends Validate
         return true;
     }
 
-    private function requireContext(): TenantContext
-    {
-        return $this->tenantContext ?? throw new \RuntimeException('缺少可信租户上下文');
-    }
 }

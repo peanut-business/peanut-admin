@@ -5,6 +5,7 @@ namespace app\Modules\Official\Article;
 
 use PDO;
 use app\Modules\Official\Article\Application\ArticleCollectionSummaryService;
+use app\Modules\Official\Article\Contracts\ArticleAdministration;
 use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
 use app\Modules\Official\Article\Contracts\ArticleModuleAccess;
 use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess;
@@ -25,5 +26,10 @@ final class ModuleProvider implements ModuleProviderContract
     public function collectionSummary(): ArticleCollectionSummary
     {
         return new ArticleCollectionSummaryService();
+    }
+
+    public function administration(): ArticleAdministration
+    {
+        return app(ArticleAdministration::class);
     }
 }

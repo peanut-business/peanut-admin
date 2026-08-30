@@ -18,10 +18,12 @@ php scripts/create-app \
   --slug=acme-console \
   --package=acme/console \
   --target=/absolute/path/acme-console \
+  --edition=standalone \
   --profile=standard
 ```
 
-`--target` 必须是新的绝对路径。保存输出中的 template/application version、source commit、
+`--edition` 必须选择 `standalone` 或 `multi-tenant`，并在后续升级中保持不变；`--target` 必须是
+新的绝对路径。保存输出中的 template/application version、source commit、
 managed tree 和 app-owned tree 摘要；它们是后续升级和问题提交的身份。生成后在派生应用自己的
 资源登记中配置数据库、端口、服务和凭据，不继承 Peanut Admin 源仓环境。
 

@@ -8,8 +8,8 @@
 
 | 真实入口 | 可信解析身份 | 验签/消费顺序 | Tenant 业务入口 |
 | --- | --- | --- | --- |
-| 微信支付通知 | 服务端生成 callback binding key → 微信商户号 + AppID | binding 唯一/active → 该 binding 的证书、APIv3 key 验签解密 → TenantContext | `RechargeLogic::settle` |
-| 支付宝支付通知 | 服务端生成 callback binding key → AppID + SellerID | binding 唯一/active → 该 binding 的 RSA2 公钥验签 → TenantContext | `RechargeLogic::settle` |
+| 微信支付通知 | 服务端生成 callback binding key → 微信商户号 + AppID | binding 唯一/active → 该 binding 的证书、APIv3 key 验签解密 → TenantContext | `RechargeApplicationService::settle` |
+| 支付宝支付通知 | 服务端生成 callback binding key → AppID + SellerID | binding 唯一/active → 该 binding 的 RSA2 公钥验签 → TenantContext | `RechargeApplicationService::settle` |
 | 公众号服务器验证/明文 XML | 服务端生成 callback binding key → originalId/AppID | binding 唯一/active → 该 binding token 验签 → TenantContext | Tenant-first reply resolver |
 | 公众号/开放平台 OAuth callback | 服务器随机 state hash + provider binding | state 唯一/未用/未过期 → provider binding active → TenantContext → 单次消费 → code exchange | OAuth identity state machine |
 | 小程序 code login | 唯一 active 小程序 provider binding | 只有一个 active binding → TenantContext → 使用绑定 AppID/secret exchange | OAuth identity state machine |

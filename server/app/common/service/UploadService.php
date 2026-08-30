@@ -47,7 +47,7 @@ class UploadService
             throw new \InvalidArgumentException('目标分类无效');
         }
         if ($cid > 0) {
-            $category = FileTenantRepository::findCategory($context, $cid);
+            $category = FileTenantRepository::findCategory($cid);
             if (!$category) {
                 throw new \InvalidArgumentException('目标分类不存在');
             }
@@ -81,14 +81,14 @@ class UploadService
         $purpose = match ($type) {
             FileEnum::IMAGE => 'material.image', FileEnum::VIDEO => 'material.video', FileEnum::FILE => 'material.file',
         };
-        $tenantId = FileTenantRepository::tenantId($context);
+        $tenantId = FileTenantRepository::tenantId();
         $stored = StorageService::fromDefaultConnection()->storePath(
             $tenantId, (int)$context->memberId, $purpose, $uploaded->getPathname(), $name,
             (string)($uploaded->getMime() ?: 'application/octet-stream')
         );
 
         try {
-            $file = FileTenantRepository::createFile($context, [
+            $file = FileTenantRepository::createFile([
                 'cid'       => $cid,
                 'source_id' => $sourceId,
                 'source'    => $source,

@@ -96,7 +96,7 @@ Article/Cate/Collect model 不增加“无上下文返回全部”的全局 scop
 - `server/app/common/model/article/{Article,ArticleCate,ArticleCollect}.php`；
 - `server/app/common/service/article/*`；
 - `server/app/common/service/capability/ArticleCapabilityAuthorization.php`；
-- `server/app/adminapi/controller/article/*`、`server/app/adminapi/logic/article/*`、
+- `server/app/adminapi/controller/article/*`、`server/app/adminapi/application/article/*`、
   `server/app/adminapi/validate/article/*`；
 - 直接承载上述清单的既有 API/首页/PC/用户/装修 controller、logic 与
   `DecorationSchemaService.php`；

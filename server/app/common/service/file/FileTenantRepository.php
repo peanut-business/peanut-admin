@@ -5,48 +5,47 @@ namespace app\common\service\file;
 
 use app\Modules\Official\File\Model\File;
 use app\Modules\Official\File\Model\FileCate;
-use app\common\service\member\AuthenticatedMemberContext;
-use PeanutAdmin\Kernel\Auth\TenantContext;
+use app\common\execution\CurrentExecutionContext;
 
 final class FileTenantRepository
 {
-    public static function files(AuthenticatedMemberContext|TenantContext $context)
+    public static function files()
     {
-        return File::where('tenant_id', FileTenantContext::tenantId($context));
+        return File::where([]);
     }
 
-    public static function categories(AuthenticatedMemberContext|TenantContext $context)
+    public static function categories()
     {
-        return FileCate::where('tenant_id', FileTenantContext::tenantId($context));
+        return FileCate::where([]);
     }
 
-    public static function findFile(AuthenticatedMemberContext|TenantContext $context, int $id): ?File
+    public static function findFile(int $id): ?File
     {
-        return self::files($context)->where('id', $id)->find();
+        return self::files()->where('id', $id)->find();
     }
 
-    public static function findCategory(AuthenticatedMemberContext|TenantContext $context, int $id): ?FileCate
+    public static function findCategory(int $id): ?FileCate
     {
-        return self::categories($context)->where('id', $id)->find();
+        return self::categories()->where('id', $id)->find();
     }
 
-    public static function createFile(AuthenticatedMemberContext|TenantContext $context, array $data): File
+    public static function createFile(array $data): File
     {
         unset($data['tenant_id']);
         if (preg_match('/^file_[0-9a-f]{32}$/D', (string)($data['file_key'] ?? '')) !== 1) {
             throw new \RuntimeException('文件对象身份无效');
         }
-        return File::create(['tenant_id' => FileTenantContext::tenantId($context)] + $data);
+        return File::create($data);
     }
 
-    public static function tenantId(AuthenticatedMemberContext|TenantContext $context): int
+    public static function tenantId(): int
     {
-        return FileTenantContext::tenantId($context);
+        return app(CurrentExecutionContext::class)->tenantId();
     }
 
-    public static function createCategory(TenantContext $context, array $data): FileCate
+    public static function createCategory(array $data): FileCate
     {
         unset($data['tenant_id']);
-        return FileCate::create(['tenant_id' => FileTenantContext::tenantId($context)] + $data);
+        return FileCate::create($data);
     }
 }

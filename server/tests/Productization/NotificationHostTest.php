@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 use app\common\service\notice\VerificationCodeSecret;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -37,8 +39,9 @@ $applicationService = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Notification/Application/NotificationApplicationService.php'
 );
 expectNotificationHost(
-    str_contains($applicationService, "->where('l.tenant_id', \$tenantId)"),
-    'notification application service does not scope log reads to its trusted Tenant'
+    str_contains($applicationService, "NoticeLog::alias('l')")
+        && !str_contains($applicationService, "where('l.tenant_id'"),
+    'notification log reads do not rely on the global Tenant model scope'
 );
 
 $verificationService = (string)file_get_contents(
@@ -89,12 +92,11 @@ expectNotificationHost(
     str_contains($logModel, "protected \$hidden = ['verify_code_hash', 'extra']"),
     'secret hash or provider response can be serialized'
 );
-$logLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Notification/Service/NoticeLogLogic.php');
-expectNotificationHost(!str_contains($logLogic, "field('l.*"), 'notification API exposes unrestricted log columns');
-expectNotificationHost(!str_contains($logLogic, 'verify_code_hash'), 'notification API selects the verification hash');
-expectNotificationHost(!str_contains($logLogic, "'l.extra'"), 'notification API selects raw provider results');
+expectNotificationHost(!str_contains($applicationService, "field('l.*"), 'notification API exposes unrestricted log columns');
+expectNotificationHost(!str_contains($applicationService, 'verify_code_hash'), 'notification API selects the verification hash');
+expectNotificationHost(!str_contains($applicationService, "'l.extra'"), 'notification API selects raw provider results');
 
-$routeSource = (string)file_get_contents($serverRoot . '/route/app.php');
+$routeSource = peanut_route_registry_source($serverRoot);
 foreach (['notice/template/lists', 'notice/template/add', 'notice/template/edit', 'notice/template/delete'] as $route) {
     expectNotificationHost(!str_contains($routeSource, $route), 'retired generic template route remains: ' . $route);
 }
@@ -103,7 +105,7 @@ foreach ([
     'app/common/service/notice/driver/mail/SmtpMail.php',
     'app/common/model/notice/NoticeTemplate.php',
     'app/adminapi/controller/notice/NoticeTemplateController.php',
-    'app/adminapi/logic/notice/NoticeTemplateLogic.php',
+    'app/adminapi/application/notice/NoticeTemplateLogic.php',
 ] as $retiredPath) {
     expectNotificationHost(!is_file($serverRoot . '/' . $retiredPath), 'retired notification Runtime remains: ' . $retiredPath);
 }
@@ -149,7 +151,7 @@ foreach ([
     expectNotificationHost(($evidence['cleanup'] ?? false) === true, 'M01 fixtures were not cleaned: ' . $evidenceFile);
 }
 
-$tenantSources = [$channelService, $verificationService, $logLogic, (string)file_get_contents(
+$tenantSources = [$channelService, $verificationService, $applicationService, (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/NoticeTenantRepository.php'
 )];
 foreach ($tenantSources as $source) {

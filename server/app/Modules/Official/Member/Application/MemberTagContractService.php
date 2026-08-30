@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Application;
 
+use app\common\application\BusinessException;
 use app\Modules\Official\Member\Contracts\MemberTagCommands;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -12,7 +13,7 @@ final class MemberTagContractService implements MemberTagCommands
     public function create(TenantContext $context, string $name, string $remark): void
     {
         if (MemberTenantRepository::tags($context)->where('name', $name)->count() > 0) {
-            throw new \RuntimeException('标签名称已存在');
+            throw BusinessException::conflict('MEMBER_TAG_NAME_EXISTS', '标签名称已存在');
         }
         MemberTenantRepository::createTag($context, ['name' => $name, 'remark' => $remark]);
     }
@@ -20,11 +21,11 @@ final class MemberTagContractService implements MemberTagCommands
     public function update(TenantContext $context, int $tagId, string $name, ?string $remark): void
     {
         if (MemberTenantRepository::tags($context)->where('name', $name)->where('id', '<>', $tagId)->count() > 0) {
-            throw new \RuntimeException('标签名称已存在');
+            throw BusinessException::conflict('MEMBER_TAG_NAME_EXISTS', '标签名称已存在');
         }
         $tag = MemberTenantRepository::tags($context)->where('id', $tagId)->findOrEmpty();
         if ($tag->isEmpty()) {
-            throw new \RuntimeException('标签不存在');
+            throw BusinessException::notFound('MEMBER_TAG_NOT_FOUND', '标签不存在');
         }
         $data = ['name' => $name];
         if ($remark !== null) {
@@ -37,7 +38,7 @@ final class MemberTagContractService implements MemberTagCommands
     {
         $tag = MemberTenantRepository::tags($context)->where('id', $tagId)->findOrEmpty();
         if ($tag->isEmpty()) {
-            throw new \RuntimeException('标签不存在');
+            throw BusinessException::notFound('MEMBER_TAG_NOT_FOUND', '标签不存在');
         }
         MemberTenantRepository::relations($context)->where('tag_id', $tagId)->delete();
         $tag->delete();

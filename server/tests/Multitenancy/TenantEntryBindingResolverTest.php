@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
 use app\common\service\storage\StorageRepository;
@@ -286,7 +288,7 @@ $storageService = (string)file_get_contents(
 $storageController = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/api/controller/StorageController.php'
 );
-$routes = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+$routes = peanut_route_registry_source(dirname(__DIR__, 2));
 $productionNginx = (string)file_get_contents(dirname(__DIR__, 3) . '/deploy/nginx/peanut-admin.conf');
 $developmentNginx = (string)file_get_contents(dirname(__DIR__, 3) . '/deploy/nginx/development.conf');
 entryBindingExpect(

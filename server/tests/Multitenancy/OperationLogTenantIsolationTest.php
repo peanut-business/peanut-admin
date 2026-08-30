@@ -2,10 +2,13 @@
 declare(strict_types=1);
 
 use app\adminapi\http\middleware\OperationLogMiddleware;
-use app\adminapi\logic\log\OperationLogLogic;
+use app\adminapi\application\log\OperationLogApplicationService;
 use app\adminapi\service\OperationLogService;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\audit\OperationLogDiagnostics;
 use app\common\service\audit\OperationLogTenantContext;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -86,14 +89,14 @@ try {
     createOperationTenantSchema($pdo);
     $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
     $pdo->exec("INSERT INTO pa_operation_log (tenant_id, username, uri, method) VALUES (101, 'alpha-seed', 'seed/read', 'GET')");
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App();
     $app->initialize();
 
     $alpha = operationTenantContext(101, 501, 'mt03-audit-alpha-' . $runId);
     $beta = operationTenantContext(202, 502, 'mt03-audit-beta-' . $runId);
     try {
-        OperationLogTenantContext::member(new stdClass());
+        OperationLogTenantContext::member();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectOperationTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
@@ -126,14 +129,42 @@ try {
         );
     }
 
-    OperationLogService::record($alpha, 1, 'alpha', '127.0.0.1', 'same/write', 'POST', [
-        'tenant_id' => 202,
-        'marker' => 'alpha-only-' . $runId,
-    ]);
-    OperationLogService::record($beta, 2, 'beta', '127.0.0.2', 'same/write', 'POST', [
-        'tenant_id' => 101,
-        'marker' => 'beta-only-' . $runId,
-    ]);
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.record.alpha'),
+        fn() => OperationLogService::record(
+            $alpha,
+            1,
+            'alpha',
+            '127.0.0.1',
+            'same/write',
+            'POST',
+            [
+                'tenant_id' => 202,
+                'marker' => 'alpha-only-' . $runId,
+            ],
+            AuditOutcome::Success,
+            null,
+            200,
+        ),
+    );
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.operation-log.record.beta'),
+        fn() => OperationLogService::record(
+            $beta,
+            2,
+            'beta',
+            '127.0.0.2',
+            'same/write',
+            'POST',
+            [
+                'tenant_id' => 101,
+                'marker' => 'beta-only-' . $runId,
+            ],
+            AuditOutcome::Success,
+            null,
+            200,
+        ),
+    );
     expectOperationTenant(
         (int)$pdo->query("SELECT tenant_id FROM pa_operation_log WHERE username = 'alpha'")->fetchColumn() === 101,
         'payload forged Alpha audit ownership'
@@ -143,27 +174,47 @@ try {
         'payload forged Beta audit ownership'
     );
 
-    $alphaList = OperationLogLogic::lists($alpha, ['tenant_id' => 202, 'uri' => 'same/write']);
-    $betaList = OperationLogLogic::lists($beta, ['tenant_id' => 101, 'uri' => 'same/write']);
-    expectOperationTenant($alphaList['count'] === 1 && $alphaList['lists'][0]['username'] === 'alpha', 'Alpha list leaked or lost audit rows');
-    expectOperationTenant($betaList['count'] === 1 && $betaList['lists'][0]['username'] === 'beta', 'Beta list leaked or lost audit rows');
+    $alphaList = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.list.alpha'),
+        fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 202, 'uri' => 'same/write']),
+    );
+    $betaList = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($beta, 'test.operation-log.list.beta'),
+        fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 101, 'uri' => 'same/write']),
+    );
+    expectOperationTenant(
+        $alphaList->total() === 1
+            && $alphaList->getCollection()->toArray()[0]['username'] === 'alpha',
+        'Alpha list leaked or lost audit rows',
+    );
+    expectOperationTenant(
+        $betaList->total() === 1
+            && $betaList->getCollection()->toArray()[0]['username'] === 'beta',
+        'Beta list leaked or lost audit rows',
+    );
 
     $betaId = (int)$pdo->query("SELECT id FROM pa_operation_log WHERE username = 'beta'")->fetchColumn();
     foreach ([$betaId, 999999] as $target) {
         try {
-            OperationLogLogic::detail($alpha, $target);
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($alpha, 'test.operation-log.detail.denied'),
+                fn() => app(OperationLogApplicationService::class)->detail($target),
+            );
             throw new RuntimeException('cross/missing audit detail unexpectedly succeeded');
         } catch (InvalidArgumentException $exception) {
             expectOperationTenant($exception->getMessage() === '操作日志不存在', 'audit detail denial enumerated Tenant ownership');
         }
     }
 
-    $export = OperationLogLogic::lists($alpha, [
-        'tenant_id' => 202,
-        'uri' => 'same/write',
-        'export' => 2,
-        'file_name' => 'tenant-audit-' . $runId,
-    ]);
+    $export = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.export.alpha'),
+        fn() => app(OperationLogApplicationService::class)->lists([
+            'tenant_id' => 202,
+            'uri' => 'same/write',
+            'export' => 2,
+            'file_name' => 'tenant-audit-' . $runId,
+        ]),
+    );
     $exportUrl = (string)$export['url'];
     $storageOffset = strpos($exportUrl, 'storage/exports/');
     expectOperationTenant($storageOffset !== false, 'Alpha export URL lost its storage path');
@@ -181,7 +232,10 @@ try {
     expectOperationTenant(str_contains($sheet, 'alpha-only-' . $runId), 'Alpha export lost its own audit row');
     expectOperationTenant(!str_contains($sheet, 'beta-only-' . $runId), 'Alpha export leaked Beta audit content');
 
-    $cleared = OperationLogLogic::clear($alpha, 1, 'alpha', '127.0.0.1');
+    $cleared = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.clear.alpha'),
+        fn() => app(OperationLogApplicationService::class)->clear(1, 'alpha', '127.0.0.1'),
+    );
     expectOperationTenant($cleared === 2, 'Alpha clear did not count only Alpha rows');
     expectOperationTenant(
         (int)$pdo->query('SELECT COUNT(*) FROM pa_operation_log WHERE tenant_id = 101')->fetchColumn() === 1,

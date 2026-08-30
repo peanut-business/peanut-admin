@@ -5,7 +5,7 @@ namespace app\command;
 
 use app\platform\service\ops\PdoRestoreTaskExecutionService;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -14,7 +14,7 @@ use think\facade\Db;
 use Throwable;
 
 /** Deployment-only bridge for trusted isolated restore verification. */
-final class OpsRestoreTask extends Command
+final class OpsRestoreTask extends ContextualCommand
 {
     protected function configure(): void
     {
@@ -26,7 +26,7 @@ final class OpsRestoreTask extends Command
             ->setDescription('Claim or finalize one trusted isolated-restore task');
     }
 
-    protected function execute(Input $input, Output $output): int
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $pdo = Db::connect()->connect();

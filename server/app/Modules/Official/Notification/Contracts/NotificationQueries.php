@@ -3,20 +3,19 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Contracts;
 
-use PeanutAdmin\Kernel\Auth\TenantContext;
-
+use app\common\http\PageResult;
 interface NotificationQueries
 {
-    public function channelDetail(TenantContext $context): array;
+    public function channelDetail(): array;
 
-    public function scenes(TenantContext $context): array;
+    public function scenes(): array;
 
-    public function sceneDetail(TenantContext $context, int $id): array;
+    public function sceneDetail(int $id): array;
 
-    public function sceneExists(TenantContext $context, int $id): bool;
+    public function sceneExists(int $id): bool;
 
     /** @param array<string,mixed> $params */
-    public function logs(TenantContext $context, array $params): array;
+    public function logs(array $params): PageResult;
 
-    public function logDetail(TenantContext $context, int $id): array;
+    public function logDetail(int $id): array;
 }

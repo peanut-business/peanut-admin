@@ -4,57 +4,58 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\Modules\Official\Member\Service\MemberLogic;
+use app\Modules\Official\Member\Contracts\MemberAdministration;
 use app\Modules\Official\Member\Validation\MemberValidate;
-use app\common\service\member\MemberTenantContext;
+use think\App;
 
 class MemberController extends BaseAdminController
 {
+    public function __construct(App $app, private readonly MemberAdministration $members)
+    {
+        parent::__construct($app);
+    }
+
     public function lists()
     {
-        $result = MemberLogic::lists(MemberTenantContext::member($this->request), $this->request->get());
-        return $result === false ? $this->fail(MemberLogic::getError()) : $this->data($result);
+        return $this->data($this->members->members($this->request->get()));
     }
 
     public function detail()
     {
-        $context = MemberTenantContext::member($this->request);
-        $this->validateForTenant($context, $this->request->get(), 'detail');
-        return $this->data(MemberLogic::detail($context, (int)$this->request->get('id')));
+        $this->validate($this->request->get(), MemberValidate::class . '.detail');
+        return $this->data($this->members->memberDetail((int)$this->request->get('id')));
     }
 
     public function add()
     {
-        $context = MemberTenantContext::member($this->request);
-        $this->validateForTenant($context, $this->request->post(), 'add');
-        $r = MemberLogic::add($context, $this->request->post());
-        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
+        $params = $this->request->post();
+        $this->validate($params, MemberValidate::class . '.add');
+        $this->members->createMember($params);
+        return $this->success('操作成功');
     }
 
     public function edit()
     {
-        $context = MemberTenantContext::member($this->request);
-        $this->validateForTenant($context, $this->request->post(), 'setInfo');
-        $r = MemberLogic::setUserInfo($context, $this->request->post());
-        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
+        $params = $this->request->post();
+        $this->validate($params, MemberValidate::class . '.setInfo');
+        $this->members->updateMemberField($params);
+        return $this->success('操作成功');
     }
 
     public function updateStatus()
     {
         $params = $this->request->post();
-        $context = MemberTenantContext::member($this->request);
-        $this->validateForTenant($context, $params, 'status');
-        $r = MemberLogic::updateStatus($context, (int)$params['id'], (int)$params['status']);
-        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
+        $this->validate($params, MemberValidate::class . '.status');
+        $this->members->updateMemberStatus((int)$params['id'], (int)$params['status']);
+        return $this->success('操作成功');
     }
 
     public function adjustMoney()
     {
         $params = $this->request->post();
-        $context = MemberTenantContext::member($this->request);
-        $this->validateForTenant($context, $params, 'adjustMoney');
-        $r = MemberLogic::adjustUserMoney($context, $params, $this->adminId, $this->idempotencyKey());
-        return $r ? $this->success('操作成功') : $this->fail(MemberLogic::getError());
+        $this->validate($params, MemberValidate::class . '.adjustMoney');
+        $this->members->adjustMemberBalance($params, $this->adminId, $this->idempotencyKey());
+        return $this->success('操作成功');
     }
 
     private function idempotencyKey(): string
@@ -63,8 +64,4 @@ class MemberController extends BaseAdminController
         return $key;
     }
 
-    private function validateForTenant($context, array $data, string $scene): void
-    {
-        (new MemberValidate())->forTenant($context)->scene($scene)->failException(true)->check($data);
-    }
 }

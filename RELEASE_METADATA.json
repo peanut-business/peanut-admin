@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.12",
-  "expected_tag": "v3.0.12",
-  "release_date": "2026-08-28",
+  "version": "3.0.13",
+  "expected_tag": "v3.0.13",
+  "release_date": "2026-08-30",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
-    "type": "proprietary",
-    "composer_identifier": "proprietary",
-    "npm_identifier": "UNLICENSED",
+    "type": "Apache-2.0",
+    "composer_identifier": "Apache-2.0",
+    "npm_identifier": "Apache-2.0",
     "copyright_holder_display": "花生科技"
   },
   "normative_artifact": {
     "type": "source-release",
     "prebuilt_images_published": false,
-    "new_core_packages_published": false,
+    "new_core_packages_published": true,
     "saas_included": false
   },
   "supported_build_and_runtime": {
@@ -26,26 +26,28 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.7",
-    "web_npm": "@peanut-admin/admin@0.1.0-alpha.7",
-    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.5",
-    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.5"
+    "composer": "peanut-admin/core@0.1.0-alpha.11",
+    "web_npm": "@peanut-admin/admin@0.1.0-alpha.11",
+    "platform_npm": "@peanut-admin/admin@0.1.0-alpha.11",
+    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.11",
+    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.11"
   },
   "lockfiles": {
-    "server/composer.lock": "cd789aa4ea69a98a8ceb5c1dba88c23b388055eb699876659487712afc694170",
-    "web/pnpm-lock.yaml": "3f900a9f7ee7879bd1ed822231b46af985bcd42c0a979bdf009528f29fb84cee",
-    "pc/package-lock.json": "21060fd45566dfe3d6eb283d3c378abb539cb951c53cade052cd76405a378b69",
-    "uniapp/package-lock.json": "1c7805eaccc3b232777cfefaeae1fea6a47945e86ad7362b53d635293d10e2d4",
+    "server/composer.lock": "9b2111e4f0afc175399cab3e3c558f2333a63e04a0330b614acaca214f42af3b",
+    "web/pnpm-lock.yaml": "9e41543ee613cf6173483385d177a0da29e8b458c21780dd120225dc6dda3d24",
+    "platform/package-lock.json": "4032cfc75f1455113db6016c350f4f9d12875005d5ae36de2541ea2a695094e8",
+    "pc/package-lock.json": "3bc84a40a35d5be9adc328c28c533a2916feb2675b098965d9a3b41a9b6ede4c",
+    "uniapp/package-lock.json": "85507a09d1af30c308843dfbad7abea2f0e443d6585643bec4711608c40cc6e1",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
-    "LICENSE": "cd495bda0a05b73612ea86e6b23966fa56a4469dcbdd7833a949dbb5d98ea2df",
-    "NOTICE": "e921941ceaf164bb1f807589634a159c54ad0c83d74348de170de6671f1f7fd8",
-    "THIRD_PARTY_NOTICES.md": "7f87cc15de477cb9d2e99f7f33d6f0dce313c248d0b0adf36b86fa31099acf57",
-    "RELEASE_SBOM.spdx.json": "527ce365a7d0a7fdc19603ece776c541b71e3b33139f982b276c3cb851fc8465"
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "NOTICE": "908896ee207ef8973e8e40944112a19dec70a8b9a92501a0ff576d62895951c6",
+    "THIRD_PARTY_NOTICES.md": "04676aee45d11843defecf1446c4f2b35ceabf7a76bcdd657a3da12234adb2fd",
+    "RELEASE_SBOM.spdx.json": "b0706f8a0cdf2dae736f05b5a41cff23ea596c8995ab9f4740d1bf4e1206b069"
   },
   "technical_qualification": {
-    "phase": "3.0.12-pending-qualification",
+    "phase": "3.0.13-pending-qualification",
     "result": "pending",
     "final_candidate_commit": null,
     "final_candidate_tree": null,
@@ -54,11 +56,11 @@
     "summary_sha256": null,
     "cleanup_residual_count": null,
     "lease_released": false,
-    "migrations": 9,
-    "scaffold_version": "3.0.12",
+    "migrations": 10,
+    "scaffold_version": "3.0.13",
     "application_initial_version": "0.1.0",
     "evidence": "The fixed-candidate qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
-    "release_delta": "Closes the production-mode demo installation path, including generated application preflight, demo overlay archive hygiene and plugin/runtime closure."
+    "release_delta": "Establishes the first formal Standalone and Multi-tenant installer baseline, adopts the qualified Core Alpha.11 packages, adds signed same-Edition upgrade tooling and closes the confirmed Demo experience defects."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

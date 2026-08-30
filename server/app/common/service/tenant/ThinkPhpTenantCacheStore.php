@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\tenant;
 
+use app\common\service\runtime\ApplicationCache;
 use think\facade\Cache;
 
 /** Framework adapter used only behind TenantCache's scoped logical-key boundary. */
@@ -15,7 +16,7 @@ final class ThinkPhpTenantCacheStore implements TenantCacheStore
 
     public function set(string $physicalKey, mixed $value, int $ttlSeconds = 0): bool
     {
-        return (bool) Cache::set($physicalKey, $value, $ttlSeconds);
+        return Cache::tag(ApplicationCache::TAG)->set($physicalKey, $value, $ttlSeconds);
     }
 
     public function delete(string $physicalKey): bool

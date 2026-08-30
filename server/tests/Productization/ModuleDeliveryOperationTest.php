@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\ops\DeploymentModuleRequestService;
@@ -259,7 +261,7 @@ SQL)->execute([
     moduleDeliveryExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_ops_maintenance_window WHERE state='closed'")->fetchColumn() === 1, 'successful smoke did not close maintenance');
     moduleDeliveryExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_ops_module_execution WHERE current_step='completed' AND recovery_pointer_sha256 IS NOT NULL")->fetchColumn() === 1, 'recovery pointer was not persisted');
 
-    $route = (string)file_get_contents($serverRoot . '/route/app.php');
+    $route = peanut_route_registry_source($serverRoot);
     $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformOpsController.php');
     moduleDeliveryExpect(str_contains($route, "api/platform/v1/ops/tasks/module"), 'opaque Module task route is missing');
     moduleDeliveryExpect(!str_contains($controller, "archive_sha256'") && !str_contains($controller, "package_key'"), 'production HTTP accepts Module package details');

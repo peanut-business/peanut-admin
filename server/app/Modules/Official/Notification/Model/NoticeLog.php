@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 
 /**
  * 通知发送记录模型
  */
-class NoticeLog extends BaseModel
+class NoticeLog extends TenantOwnedModel
 {
     protected $name = 'notice_log';
     protected $updateTime = false;

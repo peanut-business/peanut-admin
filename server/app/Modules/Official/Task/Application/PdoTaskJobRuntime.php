@@ -6,6 +6,9 @@ namespace app\Modules\Official\Task\Application;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
 use app\common\service\async\ModuleAwareTaskHandler;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\service\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Async\JobHandlerAdapter;
 use PeanutAdmin\Kernel\Async\TrustedEnvelopeCodec;
 use PeanutAdmin\TaskJob\Application\TaskJobService;
@@ -51,7 +54,8 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
         $handlers = [];
         foreach ($definitions as $definition) {
             $handlers[] = new ModuleAwareTaskHandler(
-                $this->pdo,
+                new ModuleExecutionBoundary($this->pdo, app(CurrentExecutionContext::class)),
+                app(ExecutionContextStore::class),
                 $definition->ownerModuleKey(),
                 $definition->handler(),
             );

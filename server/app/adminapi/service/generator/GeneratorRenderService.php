@@ -18,8 +18,9 @@ class GeneratorRenderService
 
         return [
             self::file($context['modelPath'], 'php', self::renderModel($context)),
+            self::file($context['repositoryPath'], 'php', self::renderRepository($context)),
+            self::file($context['applicationPath'], 'php', self::renderApplicationService($context)),
             self::file($context['controllerPath'], 'php', self::renderController($context)),
-            self::file($context['logicPath'], 'php', self::renderLogic($context)),
             self::file($context['validatePath'], 'php', self::renderValidate($context)),
             self::file($context['apiPath'], 'typescript', self::renderApi($context)),
             self::file($context['viewPath'], 'vue', self::renderView($context)),
@@ -64,8 +65,24 @@ class GeneratorRenderService
         }
         $columns = self::columns($rawColumns);
         $primary = self::primaryColumn($columns);
+        $owner = strtolower(trim((string)($table['data_owner'] ?? $table['owner'] ?? $table['ownership'] ?? '')));
+        if ($owner === '') {
+            throw new RuntimeException('生成配置必须显式声明数据所有权');
+        }
+        $owner = match ($owner) {
+            'tenant', 'tenant_owned', 'tenant-orm' => 'tenant-orm',
+            'platform', 'instance', 'shared' => $owner,
+            default => throw new RuntimeException('生成配置必须声明有效的数据所有权'),
+        };
+        $edition = strtolower(trim((string)($table['target_edition'] ?? $table['edition'] ?? '')));
+        if (!in_array($edition, ['multi-tenant', 'standalone'], true)) {
+            throw new RuntimeException('生成配置必须声明 standalone 或 multi-tenant Edition');
+        }
+        if ($owner === 'tenant-orm' && !in_array('tenant_id', array_column($columns, 'name'), true)) {
+            throw new RuntimeException('Tenant-owned 生成实体必须包含 tenant_id 字段');
+        }
         $tree = self::treeConfig($table['tree_config'] ?? [], $columns);
-        $relations = self::relations($table['relations'] ?? [], $module);
+        $relations = self::relations($table['relations'] ?? [], $module, $owner, $edition);
 
         $base = [
             'module' => $module,
@@ -78,11 +95,14 @@ class GeneratorRenderService
             'primary' => $primary,
             'tree' => $tree,
             'relations' => $relations,
+            'owner' => $owner,
+            'edition' => $edition,
         ];
         return $base + [
             'modelPath' => "server/app/common/model/{$module}/{$entity}.php",
+            'repositoryPath' => "server/app/common/repository/{$module}/{$entity}Repository.php",
+            'applicationPath' => "server/app/adminapi/application/{$module}/{$entity}ApplicationService.php",
             'controllerPath' => "server/app/adminapi/controller/{$module}/{$entity}Controller.php",
-            'logicPath' => "server/app/adminapi/logic/{$module}/{$entity}Logic.php",
             'validatePath' => "server/app/adminapi/validate/{$module}/{$entity}Validate.php",
             'apiPath' => "web/src/api/{$module}/{$resource}.ts",
             'viewPath' => "web/src/views/{$module}/{$resource}/index.vue",
@@ -112,6 +132,8 @@ class GeneratorRenderService
                     || (($raw['is_nullable'] ?? 'YES') === 'NO'),
                 'list' => self::truthy($raw['is_lists'] ?? $raw['is_list'] ?? false),
                 'query' => self::truthy($raw['is_query'] ?? false),
+                'insert' => self::truthy($raw['is_insert'] ?? false),
+                'update' => self::truthy($raw['is_update'] ?? false),
                 'length' => self::columnLength($raw),
                 'tsType' => self::tsType($type),
                 'rule' => self::validationRule($type, self::columnLength($raw)),
@@ -158,19 +180,28 @@ class GeneratorRenderService
     }
 
     /** @return array<int,array<string,string>> */
-    private static function relations(mixed $rawRelations, string $defaultModule): array
+    private static function relations(
+        mixed $rawRelations,
+        string $defaultModule,
+        string $owner,
+        string $edition,
+    ): array
     {
         if (is_string($rawRelations)) {
-            $rawRelations = json_decode($rawRelations, true) ?? [];
+            try {
+                $rawRelations = json_decode($rawRelations, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $exception) {
+                throw new RuntimeException('关联配置 JSON 无效', 0, $exception);
+            }
         }
         if (!is_array($rawRelations)) {
-            return [];
+            throw new RuntimeException('关联配置必须是数组');
         }
         $relations = [];
         $used = [];
         foreach ($rawRelations as $index => $raw) {
             if (!is_array($raw)) {
-                continue;
+                throw new RuntimeException('关联配置项格式无效');
             }
             $model = trim((string)($raw['model'] ?? ''));
             $module = trim((string)($raw['module'] ?? $defaultModule));
@@ -195,8 +226,19 @@ class GeneratorRenderService
             $method = match ($type) {
                 'hasone', 'has_one' => 'hasOne',
                 'hasmany', 'has_many' => 'hasMany',
-                default => 'belongsTo',
+                'belongsto', 'belongs_to' => 'belongsTo',
+                default => throw new RuntimeException('关联类型只允许 belongsTo、hasOne 或 hasMany'),
             };
+            $relatedOwner = strtolower(trim((string)($raw['data_owner'] ?? '')));
+            $relatedEdition = strtolower(trim((string)($raw['target_edition'] ?? '')));
+            if (!in_array($relatedOwner, ['tenant-orm', 'platform', 'instance', 'shared'], true)
+                || $relatedEdition !== $edition) {
+                throw new RuntimeException('关联模型必须声明相同 Edition 的有效数据所有权');
+            }
+            if (($owner === 'tenant-orm' && !in_array($relatedOwner, ['tenant-orm', 'shared'], true))
+                || ($owner !== 'tenant-orm' && $relatedOwner === 'tenant-orm')) {
+                throw new RuntimeException('关联模型的数据所有权边界不兼容');
+            }
             $localKey = self::safeIdentifier((string)($raw['local_key'] ?? 'id'));
             $foreignKey = self::safeIdentifier((string)($raw['foreign_key'] ?? 'id'));
             $name = $configuredName !== '' ? $configuredName : lcfirst(self::pascal($relatedName));
@@ -211,6 +253,8 @@ class GeneratorRenderService
                 'entity' => $model !== '' ? $model : self::pascal($relatedName),
                 'localKey' => $localKey,
                 'foreignKey' => $foreignKey,
+                'dataOwner' => $relatedOwner,
+                'edition' => $relatedEdition,
             ];
         }
         return $relations;
@@ -227,24 +271,78 @@ class GeneratorRenderService
                 . "        return \$this->{$relation['method']}(\\app\\common\\model\\{$relation['module']}\\{$relation['entity']}::class, {$arguments});\n"
                 . "    }\n";
         }
+        $baseModel = match ($c['owner']) {
+            'tenant-orm' => 'TenantOwnedModel',
+            'platform' => 'PlatformOwnedModel',
+            'instance' => 'InstanceOwnedModel',
+            'shared' => 'SharedModel',
+        };
+        $baseImport = "use app\\common\\model\\{$baseModel};";
         return self::replace(<<<'PHP'
 <?php
 declare(strict_types=1);
 
 namespace app\common\model\{{module}};
 
-use app\common\model\BaseModel;
+{{baseImport}}
 
-class {{entity}} extends BaseModel
+class {{entity}} extends {{baseModel}}
 {
     protected $name = '{{tableName}}';
     protected $pk = '{{primary}}';
 {{relationMethods}}}
-PHP, $c + ['relationMethods' => $relationMethods]);
+PHP, $c + [
+            'relationMethods' => $relationMethods,
+            'baseModel' => $baseModel,
+            'baseImport' => $baseImport,
+        ]);
+    }
+
+    private static function renderRepository(array $c): string
+    {
+        return self::replace(<<<'PHP'
+<?php
+declare(strict_types=1);
+
+namespace app\common\repository\{{module}};
+
+use app\common\model\{{module}}\{{entity}};
+use think\db\BaseQuery;
+
+final readonly class {{entity}}Repository
+{
+    public function query(): BaseQuery
+    {
+        return {{entity}}::where([]);
+    }
+
+    /** @param array<string,mixed> $attributes */
+    public function create(array $attributes): {{entity}}
+    {
+        return {{entity}}::create($attributes);
+    }
+
+    public function find(int|string $id, bool $lock = false): {{entity}}
+    {
+        $query = $this->query()->where('{{primary}}', $id);
+        if ($lock) {
+            $query->lock(true);
+        }
+        $model = $query->findOrEmpty();
+        if ($model->isEmpty()) {
+            throw new \DomainException('{{title}}不存在');
+        }
+        return $model;
+    }
+}
+PHP, $c);
     }
 
     private static function renderController(array $c): string
     {
+        $listResponse = $c['tree'] !== []
+            ? "return \$this->data(\$result);"
+            : "return \$this->dataLists(\$result);";
         return self::replace(<<<'PHP'
 <?php
 declare(strict_types=1);
@@ -252,56 +350,72 @@ declare(strict_types=1);
 namespace app\adminapi\controller\{{module}};
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\logic\{{module}}\{{entity}}Logic;
+use app\adminapi\application\{{module}}\{{entity}}ApplicationService;
 use app\adminapi\validate\{{module}}\{{entity}}Validate;
+use think\App;
 
 class {{entity}}Controller extends BaseAdminController
 {
+    public function __construct(
+        App $app,
+        private readonly {{entity}}ApplicationService $service,
+    ) {
+        parent::__construct($app);
+    }
+
     public function lists()
     {
-        $result = {{entity}}Logic::lists($this->request->get());
-        return $this->data($result);
+        $result = $this->service->lists($this->request->get());
+        {{listResponse}}
     }
 
     public function detail()
     {
         $params = $this->request->get();
         $this->validate($params, {{entity}}Validate::class . '.detail');
-        return $this->data({{entity}}Logic::detail($params['{{primary}}']));
+        return $this->data($this->service->detail($params['{{primary}}']));
     }
 
     public function add()
     {
         $params = $this->request->post();
         $this->validate($params, {{entity}}Validate::class . '.add');
-        return {{entity}}Logic::add($params)
-            ? $this->success('操作成功') : $this->fail({{entity}}Logic::getError());
+        $this->service->add($params);
+        return $this->success('操作成功');
     }
 
     public function edit()
     {
         $params = $this->request->post();
         $this->validate($params, {{entity}}Validate::class . '.edit');
-        return {{entity}}Logic::edit($params)
-            ? $this->success('操作成功') : $this->fail({{entity}}Logic::getError());
+        $this->service->edit($params);
+        return $this->success('操作成功');
     }
 
     public function delete()
     {
         $params = $this->request->post();
         $this->validate($params, {{entity}}Validate::class . '.delete');
-        return {{entity}}Logic::delete($params['{{primary}}'])
-            ? $this->success('操作成功') : $this->fail({{entity}}Logic::getError());
+        $this->service->delete($params['{{primary}}']);
+        return $this->success('操作成功');
     }
 }
-PHP, $c);
+PHP, $c + ['listResponse' => $listResponse]);
     }
 
-    private static function renderLogic(array $c): string
+    private static function renderApplicationService(array $c): string
     {
-        $fillable = array_values(array_filter(array_column($c['columns'], 'name'), static fn(string $name): bool =>
-            $name !== $c['primary'] && !in_array($name, ['create_time', 'update_time', 'delete_time'], true)));
-        $fillableExport = var_export($fillable, true);
+        $systemFields = [$c['primary'], 'tenant_id', 'create_time', 'update_time', 'delete_time'];
+        $insertFields = array_values(array_map(
+            static fn(array $column): string => $column['name'],
+            array_filter($c['columns'], static fn(array $column): bool =>
+                $column['insert'] && !in_array($column['name'], $systemFields, true)),
+        ));
+        $updateFields = array_values(array_map(
+            static fn(array $column): string => $column['name'],
+            array_filter($c['columns'], static fn(array $column): bool =>
+                $column['update'] && !in_array($column['name'], $systemFields, true)),
+        ));
         $queryCode = '';
         foreach ($c['columns'] as $column) {
             if ($column['query']) {
@@ -317,85 +431,74 @@ PHP, $c);
         if ($c['tree'] !== []) {
             $listBody = "        \$rows = \$query{$withCode}->order(['{$c['primary']}' => 'desc'])->select()->toArray();\n"
                 . "        return linear_to_tree(\$rows, 'children', '{$c['primary']}', '{$c['tree']['parent']}');";
-            $childGuard = "            if ({$c['entity']}::where('{$c['tree']['parent']}', \$id)->count() > 0) {\n"
+            $childGuard = "            if (\$this->records->query()->where('{$c['tree']['parent']}', \$id)->count() > 0) {\n"
                 . "                throw new \\RuntimeException('请先删除下级节点');\n            }\n";
         } else {
-            $listBody = "        \$pageNo = max(1, (int)(\$params['page_no'] ?? 1));\n"
-                . "        \$pageSize = min(100, max(1, (int)(\$params['page_size'] ?? 15)));\n"
-                . "        \$count = (clone \$query)->count();\n"
-                . "        \$lists = \$query{$withCode}->order(['{$c['primary']}' => 'desc'])->page(\$pageNo, \$pageSize)->select()->toArray();\n"
-                . "        return compact('lists', 'count', 'pageNo', 'pageSize');";
+            $listBody = "        \$page = PaginationInput::from(\$params)->result(\$query{$withCode}->order(['{$c['primary']}' => 'desc']));\n"
+                . "        return \$page->map(static fn(\$item): array => \$item instanceof \\think\\Model ? \$item->toArray() : (array)\$item);";
             $childGuard = '';
         }
         return self::replace(<<<'PHP'
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\logic\{{module}};
+namespace app\adminapi\application\{{module}};
 
-use app\common\logic\BaseLogic;
+use app\common\http\PageResult;
 use app\common\model\{{module}}\{{entity}};
+use app\common\repository\{{module}}\{{entity}}Repository;
+use app\common\support\PaginationInput;
 use think\facade\Db;
 
-class {{entity}}Logic extends BaseLogic
+final readonly class {{entity}}ApplicationService
 {
-    private const FILLABLE = {{fillable}};
+    private const INSERT_FIELDS = {{insertFields}};
+    private const UPDATE_FIELDS = {{updateFields}};
 
-    public static function lists(array $params): array
+    public function __construct(private {{entity}}Repository $records)
     {
-        $query = {{entity}}::where([]);
+    }
+
+    public function lists(array $params): array|PageResult
+    {
+        $query = $this->records->query();
 {{queryCode}}{{listBody}}
     }
 
-    public static function detail(int|string $id): array
+    public function detail(int|string $id): array
     {
-        return {{entity}}::findOrEmpty($id)->toArray();
+        return $this->records->find($id)->toArray();
     }
 
-    public static function add(array $params): bool
+    public function add(array $params): void
     {
-        try {
-            {{entity}}::create(array_intersect_key($params, array_flip(self::FILLABLE)));
-            return true;
-        } catch (\Throwable $exception) {
-            self::setError($exception->getMessage());
-            return false;
-        }
+        $this->records->create(array_intersect_key($params, array_flip(self::INSERT_FIELDS)));
     }
 
-    public static function edit(array $params): bool
+    public function edit(array $params): void
     {
-        return self::mutate($params['{{primary}}'], function ({{entity}} $model) use ($params): void {
-            $model->save(array_intersect_key($params, array_flip(self::FILLABLE)));
+        $this->mutate($params['{{primary}}'], function ({{entity}} $model) use ($params): void {
+            $model->save(array_intersect_key($params, array_flip(self::UPDATE_FIELDS)));
         });
     }
 
-    public static function delete(int|string $id): bool
+    public function delete(int|string $id): void
     {
-        return self::mutate($id, function ({{entity}} $model) use ($id): void {
+        $this->mutate($id, function ({{entity}} $model) use ($id): void {
 {{childGuard}}            $model->delete();
         });
     }
 
-    private static function mutate(int|string $id, callable $callback): bool
+    private function mutate(int|string $id, callable $callback): void
     {
-        try {
-            Db::transaction(function () use ($id, $callback): void {
-                $model = {{entity}}::where('{{primary}}', $id)->lock(true)->findOrEmpty();
-                if ($model->isEmpty()) {
-                    throw new \RuntimeException('{{title}}不存在');
-                }
-                $callback($model);
-            });
-            return true;
-        } catch (\Throwable $exception) {
-            self::setError($exception->getMessage());
-            return false;
-        }
+        Db::transaction(function () use ($id, $callback): void {
+            $callback($this->records->find($id, true));
+        });
     }
 }
 PHP, $c + [
-            'fillable' => $fillableExport,
+            'insertFields' => var_export($insertFields, true),
+            'updateFields' => var_export($updateFields, true),
             'queryCode' => $queryCode,
             'listBody' => $listBody,
             'childGuard' => $childGuard,
@@ -407,8 +510,12 @@ PHP, $c + [
         $rules = [];
         $messages = [];
         $addFields = [];
+        $updateFields = [];
         foreach ($c['columns'] as $column) {
-            if (in_array($column['name'], ['create_time', 'update_time', 'delete_time'], true)) {
+            if (in_array($column['name'], ['tenant_id', 'create_time', 'update_time', 'delete_time'], true)) {
+                continue;
+            }
+            if (!$column['primary'] && !$column['insert'] && !$column['update']) {
                 continue;
             }
             $parts = [];
@@ -421,14 +528,17 @@ PHP, $c + [
             if ($parts !== []) {
                 $rules[$column['name']] = implode('|', array_unique($parts));
             }
-            if ($column['required'] && !$column['primary']) {
+            if ($column['required'] && !$column['primary'] && $column['insert']) {
                 $messages[$column['name'] . '.require'] = $column['comment'] . '不能为空';
             }
-            if (!$column['primary']) {
+            if (!$column['primary'] && $column['insert']) {
                 $addFields[] = $column['name'];
             }
+            if (!$column['primary'] && $column['update']) {
+                $updateFields[] = $column['name'];
+            }
         }
-        $editFields = array_merge([$c['primary']], $addFields);
+        $editFields = array_merge([$c['primary']], $updateFields);
         return self::replace(<<<'PHP'
 <?php
 declare(strict_types=1);

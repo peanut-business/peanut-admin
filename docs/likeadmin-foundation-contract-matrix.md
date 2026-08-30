@@ -52,7 +52,7 @@ Peanut 现有实现证据：
 
 参考目标证据：
 
-- `/Users/xing/Documents/company-projects/peanut-admin/.workspace/likeadmin/server/app/adminapi/logic/LoginLogic.php`；
+- `/Users/xing/Documents/company-projects/peanut-admin/.workspace/likeadmin/server/app/adminapi/application/LoginApplicationService.php`；
 - `/Users/xing/Documents/company-projects/peanut-admin/.workspace/likeadmin/server/app/adminapi/validate/LoginValidate.php`。
 
 参考实现的精确会话契约：

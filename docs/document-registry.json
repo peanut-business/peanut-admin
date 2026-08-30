@@ -226,6 +226,7 @@
       "canonical_sources": [
         "release-versions.json",
         "scripts/deploy-release",
+        "scripts/build-edition-upgrades",
         "scripts/scaffold-upgrade",
         "server/database/migrations",
         "docs/release-engineering.md"
@@ -1994,6 +1995,8 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/create-app",
+        "scripts/build-edition-upgrades",
+        "scripts/scaffold-upgrade",
         "release-versions.json",
         "scaffold/releases/"
       ],
@@ -4240,6 +4243,9 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/publish-github-release",
+        "scripts/build-edition-installers",
+        "scripts/build-edition-upgrades",
+        "scripts/scaffold-upgrade",
         "scripts/create-app",
         "release-versions.json",
         "RELEASE_METADATA.json"
@@ -4552,6 +4558,41 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-plans-post-release-enhancement-plan",
+      "path": "docs/plans/post-release-enhancement-plan.md",
+      "title": "Peanut Admin 发布后增强任务计划",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "docs/plans/consumer-ready-product-plan.md",
+        "docs/product-status/capability-ledger.json",
+        "docs/product-status/current-task-list.md",
+        "docs/product-status/deployments/v3.0.12-online-experience.json",
+        "docs/plans/product-release-operations-saas-roadmap.md",
+        "docs/plans/saas-enhancement-development-plan.md",
+        "docs/design/saas-enhancement-blueprint.md"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "consumer-ready",
+        "deployment",
+        "enhancement"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-plans-product-release-operations-saas-roadmap",
       "path": "docs/plans/product-release-operations-saas-roadmap.md",
       "title": "Peanut Admin 产品发布、运营平台与 SaaS 路线",
@@ -4631,6 +4672,38 @@
       "site_projections": [
         "pa-docs-site-guide-module-development"
       ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-status-audits-demo-experience-audit",
+      "path": "docs/product-status/audits/demo-experience-audit.md",
+      "title": "Demo 体验审计（v3.0.12）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "historical-record",
+      "canonical_sources": [
+        "docs/product-status/audits/demo-experience-audit.json",
+        "docs/product-status/audits/demo-experience-evidence.json",
+        "docs/product-status/deployments/v3.0.12-online-experience.json",
+        "docs/plans/post-release-enhancement-plan.md"
+      ],
+      "owner": "release-qualification",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "consumer-ready",
+        "demo",
+        "release-evidence"
+      ],
+      "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
     },
@@ -4917,6 +4990,8 @@
       "canonical_sources": [
         "scripts/package-release.sh",
         "scripts/publish-github-release",
+        "scripts/build-edition-installers",
+        "scripts/build-edition-upgrades",
         "release-versions.json",
         "RELEASE_METADATA.json"
       ],
@@ -4948,6 +5023,8 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/scaffold-upgrade",
+        "scripts/build-edition-upgrades",
+        "scripts/scaffold-runtime/EditionUpgradePackage.php",
         "scaffold/releases/",
         "scaffold/application-template-inventory.json"
       ],

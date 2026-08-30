@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\notice;
 
 use app\common\service\member\AuthenticatedMemberContext;
+use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -12,9 +13,9 @@ final class NoticeTenantContext
 {
     public const VERIFICATION_ACTOR = 'peanut.notice.verification';
 
-    public static function member(object $request): TenantContext
+    public static function member(): TenantContext
     {
-        $context = $request->tenantContext ?? null;
+        $context = ExecutionContextAccess::current()?->scope;
         self::tenantId($context);
         return $context;
     }
@@ -36,7 +37,7 @@ final class NoticeTenantContext
 
     public static function verification(object $request, string $operation): TenantContext|TenantSystemContext
     {
-        $context = $request->tenantContext ?? null;
+        $context = ExecutionContextAccess::current()?->scope;
         if ($context instanceof TenantContext) {
             self::tenantId($context);
             return $context;

@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\decoration\DecorationTabbarLogic;
+use app\adminapi\application\decoration\DecorationTabbarApplicationService;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationTabbarTenantRepository;
 use app\common\service\decoration\DecorationTenantContext;
@@ -133,7 +135,7 @@ SQL);
         expectTabbarTenant($exception->getCode() === '23000', 'Tabbar Tenant foreign key failed unexpectedly');
     }
 
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
     $alpha = tabbarTenantContext(101, 11, 'fresh-tabbar-alpha');
@@ -142,27 +144,59 @@ SQL);
         'SELECT id FROM pa_decorate_tabbar WHERE tenant_id = 101 ORDER BY position, id LIMIT 1'
     )->fetchColumn();
 
-    expectTabbarTenant(DecorationTabbarLogic::detail($alpha)['list'][0]['name'] === '首页', 'Alpha detail crossed Tenant boundary');
-    expectTabbarTenant(DecorationTabbarLogic::detail($beta)['list'][0]['name'] === 'Beta Home', 'Beta detail crossed Tenant boundary');
-    expectTabbarTenant(DecorationReadService::tabbar($alpha, true)['list'][0]['id'] === $alphaFirstId, 'same order read selected another Tenant');
+    expectTabbarTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.detail.alpha'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+        )['list'][0]['name'] === '首页',
+        'Alpha detail crossed Tenant boundary',
+    );
+    expectTabbarTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.decoration.tabbar.detail.beta'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+        )['list'][0]['name'] === 'Beta Home',
+        'Beta detail crossed Tenant boundary',
+    );
+    expectTabbarTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.read.alpha'),
+            fn() => DecorationReadService::tabbar($alpha, true),
+        )['list'][0]['id'] === $alphaFirstId,
+        'same order read selected another Tenant',
+    );
 
     $betaBefore = $pdo->query('SELECT id, tenant_id, position, name, link, is_show FROM pa_decorate_tabbar WHERE tenant_id = 202 ORDER BY position')
         ->fetchAll(PDO::FETCH_ASSOC);
     expectTabbarTenant(
-        DecorationTabbarLogic::save(
-            $alpha,
-            ['default_color' => '#333333', 'selected_color' => '#CC5500'],
-            tabbarItems('Saved Alpha')
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.save.alpha'),
+            fn() => app(DecorationTabbarApplicationService::class)->save(
+                ['default_color' => '#333333', 'selected_color' => '#CC5500'],
+                tabbarItems('Saved Alpha'),
+            ),
         ),
-        DecorationTabbarLogic::getError()
+        app(DecorationTabbarApplicationService::class)->getError()
     );
-    expectTabbarTenant(DecorationTabbarLogic::detail($alpha)['list'][0]['name'] === 'Saved Alpha Home', 'Alpha Tabbar save did not persist');
+    expectTabbarTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.detail.saved-alpha'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+        )['list'][0]['name'] === 'Saved Alpha Home',
+        'Alpha Tabbar save did not persist',
+    );
     expectTabbarTenant(
         $pdo->query('SELECT id, tenant_id, position, name, link, is_show FROM pa_decorate_tabbar WHERE tenant_id = 202 ORDER BY position')
             ->fetchAll(PDO::FETCH_ASSOC) === $betaBefore,
         'Alpha save changed Beta rows'
     );
-    expectTabbarTenant(DecorationTabbarLogic::detail($beta)['style']['default_color'] === '#222222', 'Alpha save changed Beta style');
+    expectTabbarTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.decoration.tabbar.detail.saved-beta'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+        )['style']['default_color'] === '#222222',
+        'Alpha save changed Beta style',
+    );
 
     $publicAlpha = new TenantSystemContext(
         101,
@@ -171,22 +205,20 @@ SQL);
         'fresh-tabbar-public-alpha'
     );
     expectTabbarTenant(
-        DecorationReadService::tabbar($publicAlpha, true, DecorationTenantContext::CONFIG_OPERATION)['list'][0]['name'] === 'Saved Alpha Home',
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::system($publicAlpha),
+            fn() => DecorationReadService::tabbar($publicAlpha, true, DecorationTenantContext::CONFIG_OPERATION),
+        )['list'][0]['name'] === 'Saved Alpha Home',
         'trusted public Tabbar read selected another Tenant'
     );
     try {
-        DecorationTabbarTenantRepository::items(new TenantSystemContext(
-            101,
-            'untrusted.actor',
-            DecorationTenantContext::CONFIG_OPERATION,
-            'fresh-tabbar-forged'
-        ), DecorationTenantContext::CONFIG_OPERATION)->count();
+        DecorationTabbarTenantRepository::items()->count();
         throw new RuntimeException('untrusted public Tabbar context unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectTabbarTenant($exception->getMessage() !== '', 'untrusted context denial lost shape');
     }
     try {
-        DecorationTenantContext::member(new stdClass());
+        DecorationTenantContext::member();
         throw new RuntimeException('missing TenantContext unexpectedly reached Tabbar Runtime');
     } catch (Throwable $exception) {
         expectTabbarTenant($exception->getMessage() !== '', 'missing context denial lost shape');

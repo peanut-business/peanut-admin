@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\auth\AdminLogic;
-use app\adminapi\logic\auth\RoleLogic;
-use app\adminapi\logic\dept\DeptLogic;
-use app\adminapi\logic\dept\JobsLogic;
+use app\adminapi\application\auth\AdminApplicationService;
+use app\adminapi\application\auth\RoleApplicationService;
+use app\adminapi\application\dept\DeptApplicationService;
+use app\adminapi\application\dept\JobsApplicationService;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\org\OrgTenantContext;
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
@@ -97,23 +99,41 @@ try {
     $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]);
     createOrgTenantSchema($pdo);
 
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
 
     $alpha = orgTenantContext(101, 501, 'mt02-org-alpha-' . $runId);
     $beta = orgTenantContext(202, 502, 'mt02-org-beta-' . $runId);
     try {
-        OrgTenantContext::member(new stdClass());
+        OrgTenantContext::member();
         throw new RuntimeException('missing TenantContext reached org Runtime');
     } catch (Throwable $exception) {
         expectOrgTenant($exception->getMessage() !== '', 'missing context denial lost shape');
     }
 
     foreach ([[$alpha, 202], [$beta, 101]] as [$context, $payloadTenantId]) {
-        expectOrgTenant(RoleLogic::add($context, ['tenant_id' => $payloadTenantId, 'name' => 'Manager', 'menu_id' => [1]]), RoleLogic::getError());
-        expectOrgTenant(DeptLogic::add($context, ['tenant_id' => $payloadTenantId, 'pid' => 0, 'name' => 'Operations', 'status' => 1]), DeptLogic::getError());
-        expectOrgTenant(JobsLogic::add($context, ['tenant_id' => $payloadTenantId, 'name' => 'Operator', 'code' => 'OPS', 'status' => 1]), JobsLogic::getError());
+        expectOrgTenant(
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($context, 'test.role.add'),
+                fn() => app(RoleApplicationService::class)->add(['tenant_id' => $payloadTenantId, 'name' => 'Manager', 'menu_id' => [1]]),
+            ),
+            app(RoleApplicationService::class)->getError(),
+        );
+        expectOrgTenant(
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($context, 'test.department.add'),
+                fn() => app(DeptApplicationService::class)->add(['tenant_id' => $payloadTenantId, 'pid' => 0, 'name' => 'Operations', 'status' => 1]),
+            ),
+            app(DeptApplicationService::class)->getError(),
+        );
+        expectOrgTenant(
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($context, 'test.jobs.add'),
+                fn() => app(JobsApplicationService::class)->add(['tenant_id' => $payloadTenantId, 'name' => 'Operator', 'code' => 'OPS', 'status' => 1]),
+            ),
+            app(JobsApplicationService::class)->getError(),
+        );
     }
 
     $alphaRole = (int)$pdo->query("SELECT id FROM pa_role WHERE tenant_id=101 AND name='Manager'")->fetchColumn();
@@ -125,33 +145,108 @@ try {
     expectOrgTenant($alphaRole > 0 && $betaRole > 0 && $alphaRole !== $betaRole, 'same role name was not Tenant-local');
     expectOrgTenant($alphaDept > 0 && $betaDept > 0 && $alphaDept !== $betaDept, 'same department name was not Tenant-local');
     expectOrgTenant($alphaJobs > 0 && $betaJobs > 0 && $alphaJobs !== $betaJobs, 'same job code was not Tenant-local');
-    expectOrgTenant(RoleLogic::detail($alpha, $betaRole) === [], 'cross-Tenant role detail leaked');
-    expectOrgTenant(DeptLogic::detail($alpha, $betaDept) === [], 'cross-Tenant department detail leaked');
-    expectOrgTenant(JobsLogic::detail($alpha, $betaJobs) === [], 'cross-Tenant job detail leaked');
-    expectOrgTenant(RoleLogic::lists($alpha, [])['count'] === 1, 'role list crossed Tenant boundary');
-    expectOrgTenant(count(DeptLogic::lists($alpha)) === 1, 'department list crossed Tenant boundary');
-    expectOrgTenant(JobsLogic::lists($alpha, ['export' => 1])['count'] === 1, 'job export query crossed Tenant boundary');
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.role.detail.cross-tenant'),
+            fn() => app(RoleApplicationService::class)->detail($betaRole),
+        ) === [],
+        'cross-Tenant role detail leaked',
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.department.detail.cross-tenant'),
+            fn() => app(DeptApplicationService::class)->detail($betaDept),
+        ) === [],
+        'cross-Tenant department detail leaked',
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.jobs.detail.cross-tenant'),
+            fn() => app(JobsApplicationService::class)->detail($betaJobs),
+        ) === [],
+        'cross-Tenant job detail leaked',
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.role.list'),
+            fn() => app(RoleApplicationService::class)->lists([]),
+        )->total() === 1,
+        'role list crossed Tenant boundary',
+    );
+    expectOrgTenant(
+        count(app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.department.list'),
+            fn() => app(DeptApplicationService::class)->lists(),
+        )) === 1,
+        'department list crossed Tenant boundary',
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.jobs.list.export'),
+            fn() => app(JobsApplicationService::class)->lists(['export' => 1]),
+        )['count'] === 1,
+        'job export query crossed Tenant boundary',
+    );
 
-    expectOrgTenant(!AdminLogic::add($alpha, [
-        'tenant_id' => 202, 'account' => 'blocked', 'name' => 'Blocked', 'password' => 'password123',
-        'disable' => 0, 'multipoint_login' => 1, 'role_id' => [$betaRole], 'dept_id' => [$alphaDept], 'jobs_id' => [$alphaJobs],
-    ]), 'cross-Tenant role assignment succeeded');
-    expectOrgTenant(AdminLogic::add($alpha, [
-        'tenant_id' => 202, 'account' => 'shared-admin', 'name' => 'Shared Admin', 'password' => 'password123',
-        'disable' => 0, 'multipoint_login' => 1, 'role_id' => [$alphaRole], 'dept_id' => [$alphaDept], 'jobs_id' => [$alphaJobs],
-    ]), AdminLogic::getError());
-    expectOrgTenant(AdminLogic::add($beta, [
-        'tenant_id' => 101, 'account' => 'shared-admin', 'name' => 'Shared Admin', 'password' => 'password123',
-        'disable' => 0, 'multipoint_login' => 1, 'role_id' => [$betaRole], 'dept_id' => [$betaDept], 'jobs_id' => [$betaJobs],
-    ]), AdminLogic::getError());
+    expectOrgTenant(
+        !app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.admin.add.cross-tenant'),
+            fn() => app(AdminApplicationService::class)->add([
+                'tenant_id' => 202, 'account' => 'blocked', 'name' => 'Blocked', 'password' => 'password123',
+                'disable' => 0, 'multipoint_login' => 1, 'role_id' => [$betaRole], 'dept_id' => [$alphaDept], 'jobs_id' => [$alphaJobs],
+            ]),
+        ),
+        'cross-Tenant role assignment succeeded',
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.admin.add.alpha'),
+            fn() => app(AdminApplicationService::class)->add([
+                'tenant_id' => 202, 'account' => 'shared-admin', 'name' => 'Shared Admin', 'password' => 'password123',
+                'disable' => 0, 'multipoint_login' => 1, 'role_id' => [$alphaRole], 'dept_id' => [$alphaDept], 'jobs_id' => [$alphaJobs],
+            ]),
+        ),
+        app(AdminApplicationService::class)->getError(),
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($beta, 'test.admin.add.beta'),
+            fn() => app(AdminApplicationService::class)->add([
+                'tenant_id' => 101, 'account' => 'shared-admin', 'name' => 'Shared Admin', 'password' => 'password123',
+                'disable' => 0, 'multipoint_login' => 1, 'role_id' => [$betaRole], 'dept_id' => [$betaDept], 'jobs_id' => [$betaJobs],
+            ]),
+        ),
+        app(AdminApplicationService::class)->getError(),
+    );
     $alphaAdmin = (int)$pdo->query("SELECT tm.id FROM pa_tenant_member tm JOIN pa_credential c ON c.account_id=tm.account_id WHERE tm.tenant_id=101 AND c.identifier_normalized='shared-admin'")->fetchColumn();
     $betaAdmin = (int)$pdo->query("SELECT tm.id FROM pa_tenant_member tm JOIN pa_credential c ON c.account_id=tm.account_id WHERE tm.tenant_id=202 AND c.identifier_normalized='shared-admin'")->fetchColumn();
-    expectOrgTenant(AdminLogic::detail($alpha, $betaAdmin) === [], 'cross-Tenant admin detail leaked');
-    $alphaAdminList = AdminLogic::lists($alpha, []);
-    expectOrgTenant($alphaAdminList !== false, 'admin list failed: ' . AdminLogic::getError());
-    expectOrgTenant($alphaAdminList['count'] === 1, 'admin list crossed Tenant boundary');
-    expectOrgTenant(!AdminLogic::updateStatus($alpha, $betaAdmin, 1), 'cross-Tenant admin status changed');
-    expectOrgTenant(!AdminLogic::delete($alpha, $betaAdmin), 'cross-Tenant admin delete succeeded');
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.admin.detail.cross-tenant'),
+            fn() => app(AdminApplicationService::class)->detail($betaAdmin),
+        ) === [],
+        'cross-Tenant admin detail leaked',
+    );
+    $alphaAdminList = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($alpha, 'test.admin.list'),
+        fn() => app(AdminApplicationService::class)->lists([]),
+    );
+    expectOrgTenant($alphaAdminList !== false, 'admin list failed: ' . app(AdminApplicationService::class)->getError());
+    expectOrgTenant($alphaAdminList->total() === 1, 'admin list crossed Tenant boundary');
+    expectOrgTenant(
+        !app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.admin.status.cross-tenant'),
+            fn() => app(AdminApplicationService::class)->updateStatus($betaAdmin, 1),
+        ),
+        'cross-Tenant admin status changed',
+    );
+    expectOrgTenant(
+        !app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.admin.delete.cross-tenant'),
+            fn() => app(AdminApplicationService::class)->delete($betaAdmin),
+        ),
+        'cross-Tenant admin delete succeeded',
+    );
     expectOrgTenant($pdo->query("SELECT status FROM pa_tenant_member WHERE tenant_id=202 AND id={$betaAdmin}")->fetchColumn() === 'active', 'cross-Tenant status denial mutated target');
 
     foreach ([
@@ -167,10 +262,34 @@ try {
     }
 
     expectOrgTenant((int)$pdo->query("SELECT COUNT(*) FROM pa_member_role WHERE tenant_id=101 AND tenant_member_id={$alphaAdmin} AND role_id={$alphaRole}")->fetchColumn() === 1, 'owned admin role relation missing');
-    expectOrgTenant(RoleLogic::edit($alpha, ['id' => $alphaRole, 'name' => 'Manager Alpha', 'menu_id' => [1]]), RoleLogic::getError());
-    expectOrgTenant(DeptLogic::edit($alpha, ['id' => $alphaDept, 'pid' => 0, 'name' => 'Operations Alpha', 'status' => 1]), DeptLogic::getError());
-    expectOrgTenant(JobsLogic::edit($alpha, ['id' => $alphaJobs, 'name' => 'Operator Alpha', 'code' => 'OPS-A', 'status' => 1]), JobsLogic::getError());
-    expectOrgTenant(JobsLogic::updateStatus($alpha, $alphaJobs, 0), JobsLogic::getError());
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.role.edit'),
+            fn() => app(RoleApplicationService::class)->edit(['id' => $alphaRole, 'name' => 'Manager Alpha', 'menu_id' => [1]]),
+        ),
+        app(RoleApplicationService::class)->getError(),
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.department.edit'),
+            fn() => app(DeptApplicationService::class)->edit(['id' => $alphaDept, 'pid' => 0, 'name' => 'Operations Alpha', 'status' => 1]),
+        ),
+        app(DeptApplicationService::class)->getError(),
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.jobs.edit'),
+            fn() => app(JobsApplicationService::class)->edit(['id' => $alphaJobs, 'name' => 'Operator Alpha', 'code' => 'OPS-A', 'status' => 1]),
+        ),
+        app(JobsApplicationService::class)->getError(),
+    );
+    expectOrgTenant(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($alpha, 'test.jobs.status'),
+            fn() => app(JobsApplicationService::class)->updateStatus($alphaJobs, 0),
+        ),
+        app(JobsApplicationService::class)->getError(),
+    );
 } finally {
     $adminPdo->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

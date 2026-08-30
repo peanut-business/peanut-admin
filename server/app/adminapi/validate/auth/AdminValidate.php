@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace app\adminapi\validate\auth;
 
+use app\common\validate\PageSizeRule;
 use think\Validate;
 
 class AdminValidate extends Validate
 {
+    use PageSizeRule;
+
     protected $rule = [
         'id' => 'require|integer|gt:0',
         'account' => 'require|email|max:255',
@@ -20,7 +23,7 @@ class AdminValidate extends Validate
         'disable' => 'require|in:0,1',
         'multipoint_login' => 'require|in:0,1',
         'page_no' => 'integer|gt:0',
-        'page_size' => 'integer|between:1,25000',
+        'page_size' => 'integer|gt:0|pageSizeMax',
         'page_type' => 'in:0,1',
         'page_start' => 'integer|gt:0',
         'page_end' => 'integer|gt:0|checkPageEnd',
@@ -53,7 +56,6 @@ class AdminValidate extends Validate
         'page_no.integer' => '页码必须为整数',
         'page_no.gt' => '页码必须大于0',
         'page_size.integer' => '每页数量必须为整数',
-        'page_size.between' => '每页数量须在1-25000之间',
         'page_type.in' => '导出范围类型错误',
         'page_start.integer' => '导出起始页必须为整数',
         'page_start.gt' => '导出起始页必须大于0',

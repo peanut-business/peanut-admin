@@ -5,7 +5,7 @@ namespace app\command;
 
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -15,7 +15,7 @@ use think\facade\Db;
 use Throwable;
 
 /** Deployment-control bridge for one fixed Module operation task. */
-final class OpsModuleTask extends Command
+final class OpsModuleTask extends ContextualCommand
 {
     protected function configure(): void
     {
@@ -27,7 +27,7 @@ final class OpsModuleTask extends Command
             ->setDescription('Advance one deployment-owned Module package operation');
     }
 
-    protected function execute(Input $input, Output $output): int
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $pdo = Db::connect()->connect();

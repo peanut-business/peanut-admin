@@ -19,6 +19,11 @@ const development = [
   { text: '数据、权限与多租户', link: '/guide/data-permissions-tenancy' },
 ]
 
+const installUpgrade = [
+  { text: '首次安装：选择 Edition', link: '/getting-started' },
+  { text: '升级已有应用', link: '/guide/deployment-upgrade' },
+]
+
 const delivery = [
   { text: '在线演示', link: '/demo-access' },
   { text: '创建应用与交付 Module', link: '/guide/application-module-lifecycle' },
@@ -59,6 +64,7 @@ export default defineConfig({
       { text: '文档', link: '/guide/' },
       { text: '在线演示', link: '/demo-access' },
       { text: '概念', link: '/guide/concepts' },
+      { text: '安装与升级', items: installUpgrade },
       { text: '开发', items: development },
       { text: '交付', items: delivery },
       { text: '参考', items: reference },

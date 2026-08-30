@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@peanut-admin/admin": "0.1.0-alpha.7",
+    "@peanut-admin/admin": "0.1.0-alpha.11",
     "axios": "^0.24.0",
     "element-plus": "2.14.3",
     "pinia": "2.0.23",

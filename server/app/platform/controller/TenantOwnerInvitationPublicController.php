@@ -42,7 +42,7 @@ final class TenantOwnerInvitationPublicController extends BaseLikeAdminControlle
 
     private function failure(TenantOwnerInvitationException $exception)
     {
-        return JsonService::fail(
+        throw \app\common\http\ApiProblem::fromEnvelope(
             $exception->getMessage(),
             ['error_code' => $exception->errorCode],
             $exception->httpStatus * 100

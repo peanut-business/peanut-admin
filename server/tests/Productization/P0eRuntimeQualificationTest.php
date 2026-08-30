@@ -26,6 +26,10 @@ $fixture = json_decode((string)file_get_contents($fixturePath), true, 512, JSON_
 $registry = json_decode((string)file_get_contents($registryPath), true, 512, JSON_THROW_ON_ERROR);
 $p0eRegistry = json_decode((string)file_get_contents($p0eRegistryPath), true, 512, JSON_THROW_ON_ERROR);
 $releaseMetadata = json_decode((string)file_get_contents($releaseMetadataPath), true, 512, JSON_THROW_ON_ERROR);
+$releaseVersion = (string)($releaseMetadata['version'] ?? '');
+$scaffoldManifestPath = $root . '/scaffold/releases/v' . $releaseVersion . '/scaffold-manifest.json';
+$scaffoldManifestText = (string)file_get_contents($scaffoldManifestPath);
+$scaffoldManifest = json_decode($scaffoldManifestText, true, 512, JSON_THROW_ON_ERROR);
 
 $expectedScenarios = [
     'standalone_fresh',
@@ -46,15 +50,15 @@ $expectedGroups = [
     'multi-tenant-browser',
 ];
 $expectedTarget = [
-    'version' => '3.0.11',
-    'source_commit' => '62a5d52ff19d04868ed393df95f819b41a663a46',
-    'source_tree' => 'ed770f785893eb5e598bf8826882e3ced8c992df',
-    'manifest_sha256' => '2ed2351a49c8157abea7c88af717d27a9b759ecc12b5a62724c5ee635fbe125f',
-    'inventory_sha256' => '0129bb9283950ee004cf4dae6a7c5320f1de2b7087304348aef649167ba069e2',
-    'managed_tree_sha256' => 'b33a421c9098f3397054e604ec2bc789c98e281c0cfa2f6a1acd81f9e42ba171',
-    'file_count' => 393,
+    'version' => $releaseVersion,
+    'source_commit' => $scaffoldManifest['release']['source_commit'] ?? null,
+    'source_tree' => $scaffoldManifest['release']['source_tree'] ?? null,
+    'manifest_sha256' => hash('sha256', $scaffoldManifestText),
+    'inventory_sha256' => $scaffoldManifest['release']['inventory_sha256'] ?? null,
+    'managed_tree_sha256' => $scaffoldManifest['release']['managed_tree_sha256'] ?? null,
+    'file_count' => count($scaffoldManifest['files'] ?? []),
     'application_manifest_schema' => 2,
-    'default_application_version' => '0.1.0',
+    'default_application_version' => $scaffoldManifest['application']['version'] ?? null,
     'default_uniapp_version_code' => '10',
 ];
 
@@ -170,7 +174,12 @@ foreach ($expectedGroups as $group) {
     $expect(str_contains($runClosure, 'run_group("' . $group . '"'), "runner omitted group {$group}");
 }
 $expect(!str_contains($runClosure, 'forward') && !str_contains($runClosure, 'legacy') && !str_contains($runClosure, 'recovery'), 'runner closure retained a legacy qualification group');
-$expect(str_contains($runnerSource, 'self.generated,') && str_contains($runnerSource, 'plugin_lock_restored_sha256'), 'Plugin lifecycle is not exercised in the generated application');
+$expect(
+    str_contains($runnerSource, '"php", "scripts/build-edition-installers"')
+    && str_contains($runnerSource, 'self.generated["multi-tenant"]')
+    && str_contains($runnerSource, 'plugin_lock_restored_sha256'),
+    'Plugin lifecycle is not exercised from the formal Multi-tenant installer'
+);
 $expect(str_contains($runnerSource, 'consumer-module-reference-chain'), 'consumer Module lifecycle does not use the independent application driver');
 $expect(str_contains($runnerSource, '--formal-release-adoption'), 'consumer Module lifecycle does not require the sealed scaffold adoption path');
 $expect(str_contains($runnerSource, 'consumer_module_cycle'), 'consumer Module lifecycle does not own a length-safe isolated database scenario');

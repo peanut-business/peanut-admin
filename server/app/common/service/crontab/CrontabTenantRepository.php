@@ -4,28 +4,26 @@ declare(strict_types=1);
 namespace app\common\service\crontab;
 
 use app\Modules\Official\Task\Model\Crontab;
-use PeanutAdmin\Kernel\Tenancy\TenantScope;
-use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class CrontabTenantRepository
 {
-    public static function schedules(TenantContext|TenantScope $context)
+    public static function schedules()
     {
-        return Crontab::where('tenant_id', CrontabTenantContext::tenantId($context));
+        return Crontab::where([]);
     }
 
-    public static function find(TenantContext|TenantScope $context, int $id): ?Crontab
+    public static function find(int $id): ?Crontab
     {
         if ($id < 1) {
             return null;
         }
-        $row = self::schedules($context)->where('id', $id)->findOrEmpty();
+        $row = self::schedules()->where('id', $id)->findOrEmpty();
         return $row->isEmpty() ? null : $row;
     }
 
-    public static function create(TenantContext $context, array $data): Crontab
+    public static function create(array $data): Crontab
     {
         unset($data['tenant_id']);
-        return Crontab::create(['tenant_id' => CrontabTenantContext::tenantId($context)] + $data);
+        return Crontab::create($data);
     }
 }

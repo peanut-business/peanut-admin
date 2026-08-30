@@ -176,12 +176,17 @@ INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at) V
   (202, 504, 44, '{$now}');
 SQL);
     $permissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'official.import-export.operation-log.export'")->fetchColumn();
+    $applicationPermissionId = (int)$pdo->query("SELECT id FROM pa_permission WHERE `key` = 'dict/type/lists'")->fetchColumn();
     expectRbacTenant($permissionId > 0, 'canonical export permission is missing');
+    expectRbacTenant($applicationPermissionId > 0, 'application-owned dictionary permission is missing');
     $pdo->prepare(
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
     )->execute([101, 11, $permissionId, $now]);
+    $pdo->prepare(
+        'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'
+    )->execute([101, 11, $applicationPermissionId, $now]);
 
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
 
@@ -200,6 +205,14 @@ SQL);
         'same-Tenant RBAC permission was denied'
     );
     expectRbacTenant(
+        $authorization->decide($alphaContext, $alpha, 'dict/type/lists')->allowed,
+        'application-owned RBAC permission was denied'
+    );
+    expectRbacTenant(
+        !$authorization->decide($betaContext, $beta, 'dict/type/lists')->allowed,
+        'application-owned RBAC permission leaked across Tenants'
+    );
+    expectRbacTenant(
         !$authorization->decide($betaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'mismatched TenantContext accepted an Alpha principal'
     );
@@ -210,6 +223,10 @@ SQL);
     expectRbacTenant(
         $authorization->decide($alphaRootContext, $alphaRoot, 'official.import-export.operation-log.export')->allowed,
         'root did not bypass role grant for an active Module permission'
+    );
+    expectRbacTenant(
+        $authorization->decide($betaRootContext, $betaRoot, 'dict/type/lists')->allowed,
+        'Tenant owner did not receive registered application-owned permission'
     );
     expectRbacTenant(
         !$authorization->decide($alphaRootContext, $alphaRoot, 'unregistered/read')->allowed,
@@ -231,6 +248,10 @@ SQL);
     expectRbacTenant(
         !$authorization->decide($alphaContext, $alpha, 'official.import-export.operation-log.export')->allowed,
         'revoked RBAC permission still authorized'
+    );
+    expectRbacTenant(
+        !$authorization->decide($alphaContext, $alpha, 'dict/type/lists')->allowed,
+        'revoked application-owned permission still authorized'
     );
     $pdo->prepare(
         'INSERT INTO pa_role_permission (tenant_id, role_id, permission_id, granted_at) VALUES (?, ?, ?, ?)'

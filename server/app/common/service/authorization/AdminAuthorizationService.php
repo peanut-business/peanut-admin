@@ -36,7 +36,8 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
         if (!$admin instanceof AdminPrincipal) {
             return new AdminAccessData([], []);
         }
-        $native = (new CoreTenantModuleAdminBridge($this->pdo))->accessData($tenantContext);
+        $bridge = new CoreTenantModuleAdminBridge($this->pdo);
+        $native = $bridge->accessData($tenantContext);
         $permissions = $native['permissions'];
 
         return new AdminAccessData(
@@ -44,7 +45,9 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
                 ...$this->compatibilityMenus($tenantContext, $admin, $permissions),
                 ...$native['menu'],
             ],
-            permissions: $admin->root ? ['*'] : array_values(array_unique($permissions)),
+            permissions: $admin->root
+                ? $bridge->registeredPermissions($tenantContext->tenantId)
+                : array_values(array_unique($permissions)),
         );
     }
 

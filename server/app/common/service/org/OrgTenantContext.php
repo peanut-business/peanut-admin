@@ -5,12 +5,15 @@ namespace app\common\service\org;
 
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantContextRequirement;
+use app\common\execution\ExecutionContextAccess;
 
 final class OrgTenantContext
 {
-    public static function member(object $request): TenantContext
+    public static function member(): TenantContext
     {
-        return TenantContextRequirement::fromRequest($request);
+        $context = ExecutionContextAccess::current()?->scope;
+        TenantContextRequirement::tenantId($context);
+        return $context;
     }
 
     public static function tenantId(mixed $context): int

@@ -118,7 +118,7 @@ class DecorationSchemaService
         if ($type === 'article') {
             $articleId = filter_var($target, FILTER_VALIDATE_INT);
             if ($articleId === false || $articleId <= 0
-                || ArticleTenantRepository::articles($context)
+                || ArticleTenantRepository::articles()
                     ->where(['id' => $articleId, 'is_show' => 1])->findOrEmpty()->isEmpty()) {
                 throw new \RuntimeException('文章链接必须指向存在且可见的文章');
             }

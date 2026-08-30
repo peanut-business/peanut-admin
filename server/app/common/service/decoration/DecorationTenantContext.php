@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\decoration;
 
 use PeanutAdmin\Kernel\Auth\AuthException;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -24,18 +26,20 @@ final class DecorationTenantContext
         self::ARTICLE_PC_INDEX_OPERATION => 'peanut.article.public-read',
     ];
 
-    public static function member(object $request): TenantContext
+    public static function member(): TenantContext
     {
-        $context = $request->tenantContext ?? null;
+        $current = ExecutionContextAccess::current();
+        $context = $current?->scope;
         if (!$context instanceof TenantContext || !self::trustedMember($context)) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
         return $context;
     }
 
-    public static function read(object $request, string $operation): TenantContext|TenantSystemContext
+    public static function read(string $operation): TenantContext|TenantSystemContext
     {
-        $context = $request->tenantContext ?? null;
+        $current = ExecutionContextAccess::current();
+        $context = $current?->scope;
         self::tenantId($context, $operation);
         return $context;
     }

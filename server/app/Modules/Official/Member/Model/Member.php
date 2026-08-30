@@ -3,24 +3,19 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 use app\common\service\FileService;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\model\concern\SoftDelete;
 
-class Member extends BaseModel
+class Member extends TenantOwnedModel
 {
     use SoftDelete;
     protected $name       = 'member';
     protected $deleteTime = 'delete_time';
     protected $hidden     = ['password'];
-
-    public function getAvatarAttr($value): string
-    {
-        return FileService::getFileUrl((string)$value);
-    }
 
     public function setAvatarAttr($value): string
     {

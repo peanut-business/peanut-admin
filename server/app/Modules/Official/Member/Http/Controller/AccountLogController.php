@@ -4,27 +4,23 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
-use app\Modules\Official\Member\Service\AccountLogLogic;
+use app\Modules\Official\Member\Contracts\MemberAdministration;
 use app\Modules\Official\Member\Validation\AccountLogValidate;
 use app\common\enum\AccountLogEnum;
-use app\common\service\member\MemberTenantContext;
+use think\App;
 
 class AccountLogController extends BaseAdminController
 {
+    public function __construct(App $app, private readonly MemberAdministration $members)
+    {
+        parent::__construct($app);
+    }
+
     public function lists()
     {
         $params = $this->request->get();
         $this->validate($params, AccountLogValidate::class . '.lists');
-        $result = AccountLogLogic::lists(MemberTenantContext::member($this->request), $params);
-        if ($result === false) {
-            return $this->fail(AccountLogLogic::getError());
-        }
-        return $this->dataLists(
-            $result['lists'],
-            $result['count'],
-            $result['pageNo'],
-            $result['pageSize']
-        );
+        return $this->data($this->members->balanceLogs($params));
     }
 
     public function getUmChangeType()

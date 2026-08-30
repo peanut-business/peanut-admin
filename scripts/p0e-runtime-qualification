@@ -16,6 +16,7 @@ import signal
 import socket
 import subprocess
 import sys
+import tarfile
 import time
 import urllib.request
 from pathlib import Path
@@ -541,7 +542,12 @@ class Runner:
         self.cache = Path(plan_data["paths"]["cache-dir"])
         self.checkpoint_path = self.output / "checkpoint.json"
         self.summary_path = self.output / "summary.json"
-        self.generated = self.cache / "generated-application"
+        version = fixture["target_release"]["version"]
+        self.generated = {
+            edition: self.cache / f"peanut-admin-{version}-{edition}"
+            for edition in ("standalone", "multi-tenant")
+        }
+        self.edition_artifacts = self.cache / "edition-artifacts"
         self.compose_env = self.cache / "compose.env"
         self.compose_backend_env: Path | None = None
         self.compose_overlay = self.cache / "compose.lease-proof.yml"
@@ -737,8 +743,11 @@ class Runner:
             "multi-tenant-browser": ["multi_tenant_browser"],
         }
         if group == "generated-application":
-            if self.generated.exists():
-                shutil.rmtree(self.generated)
+            for generated in self.generated.values():
+                if generated.exists():
+                    shutil.rmtree(generated)
+            if self.edition_artifacts.exists():
+                shutil.rmtree(self.edition_artifacts)
             if self.created_candidate_vendor and (ROOT / "server/vendor").exists():
                 shutil.rmtree(ROOT / "server/vendor")
         if group == "consumer-module-lifecycle":
@@ -911,8 +920,8 @@ class Runner:
     def reset_generated_installation_state(self, project_root: Path) -> None:
         if project_root == ROOT:
             return
-        if project_root != self.generated:
-            fail("refusing to reset installation state outside the generated application")
+        if project_root not in self.generated.values():
+            fail("refusing to reset installation state outside a generated Edition application")
         state_root = project_root / "server/runtime/installation"
         for name in ("executing.json", "installed.json", "execution.lock"):
             state = state_root / name
@@ -1019,67 +1028,119 @@ class Runner:
                 env=composer_env,
                 log=log,
             )
-        create_app_env = self.create_app_environment()
-        command([
-            "php", "scripts/create-app", "--name=P0E Qualification", "--slug=p0e-qualification",
-            "--package=p0e/qualification", "--profile=full", f"--target={self.generated}",
-        ], env=create_app_env, log=log)
-        build_database = self.plan["databases"]["standalone_fresh"]
-        with self.backend_process_environment(self.generated, build_database, "standalone") as backend_env:
-            command(
-                ["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"],
-                cwd=self.generated / "server",
-                env=composer_env | backend_env,
-                log=log,
-            )
-        command(["php", "-r", "require 'vendor/autoload.php'; echo 'autoload=ok\\n';"], cwd=self.generated / "server", log=log)
-        command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=self.generated / "web", log=log)
-        command(["pnpm", "run", "build"], cwd=self.generated / "web", log=log)
-        command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=self.generated / "pc", log=log)
-        command(["npm", "run", "typecheck"], cwd=self.generated / "pc", log=log)
-        command(["npm", "run", "generate"], cwd=self.generated / "pc", log=log)
-        command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=self.generated / "uniapp", log=log)
-        command(["npm", "run", "type-check"], cwd=self.generated / "uniapp", log=log)
-        command(["npm", "run", "build:h5"], cwd=self.generated / "uniapp", log=log)
-        command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=self.generated / "docs-site", log=log)
-        command(["pnpm", "run", "build"], cwd=self.generated / "docs-site", log=log)
         target = self.fixture["target_release"]
-        manifest = read_json(self.generated / ".peanut/application-manifest.json")
-        expected_template = {
-            "version": target["version"],
-            "inventory_sha256": target["inventory_sha256"],
-            "source_commit": target["source_commit"],
-            "source_tree": target["source_tree"],
-        }
-        generation = manifest.get("generation_source", {})
-        if (
-            manifest.get("schema_version") != target["application_manifest_schema"]
-            or manifest.get("protocol") != "peanut.application-scaffold.v2"
-            or manifest.get("application", {}).get("version") != target["default_application_version"]
-            or manifest.get("template") != expected_template
-            or generation.get("commit") != self.args.candidate
-            or generation.get("tree") != self.plan["candidate_tree"]
-            or generation.get("inventory_sha256") != target["inventory_sha256"]
-        ):
-            fail("generated application identity does not match the fixed target release")
-        uniapp_manifest = (self.generated / "uniapp/src/manifest.json").read_text(encoding="utf-8")
-        expected_version = re.escape(target["default_application_version"])
-        expected_code = re.escape(target["default_uniapp_version_code"])
-        if (
-            re.search(rf'"versionName"\s*:\s*"{expected_version}"', uniapp_manifest) is None
-            or re.search(rf'"versionCode"\s*:\s*"{expected_code}"', uniapp_manifest) is None
-        ):
-            fail("generated UniApp version identity changed")
+        self.edition_artifacts.mkdir()
+        command([
+            "php", "scripts/build-edition-installers",
+            f"--version={target['version']}",
+            f"--source-commit={self.args.candidate}",
+            f"--output={self.edition_artifacts}",
+        ], log=log)
+        edition_results: dict[str, Any] = {}
+        for edition, generated in self.generated.items():
+            filename = f"peanut-admin-{target['version']}-{edition}.tar.gz"
+            archive = self.edition_artifacts / filename
+            artifact_manifest_path = self.edition_artifacts / f"{filename}.manifest.json"
+            artifact_manifest = read_json(artifact_manifest_path)
+            archive_root = artifact_manifest.get("archive", {}).get("root")
+            if (
+                artifact_manifest.get("protocol") != "peanut.edition-installer.v1"
+                or artifact_manifest.get("product", {}).get("version") != target["version"]
+                or artifact_manifest.get("edition", {}).get("name") != edition
+                or artifact_manifest.get("source") != {
+                    "commit": self.args.candidate,
+                    "tree": self.plan["candidate_tree"],
+                    "inventory_sha256": target["inventory_sha256"],
+                }
+                or artifact_manifest.get("archive", {}).get("filename") != filename
+                or artifact_manifest.get("archive", {}).get("sha256") != sha256(archive)
+                or archive_root != generated.name
+            ):
+                fail(f"{edition} installer identity does not match the fixed candidate")
+            with tarfile.open(archive, "r:gz") as package:
+                members = package.getmembers()
+                prefix = generated.name + "/"
+                if not members or any(
+                    (member.name != generated.name and not member.name.startswith(prefix))
+                    or Path(member.name).is_absolute()
+                    or ".." in Path(member.name).parts
+                    or not (member.isdir() or member.isfile())
+                    for member in members
+                ):
+                    fail(f"{edition} installer archive contains an unsafe entry")
+                package.extractall(self.cache)
+            if not generated.is_dir():
+                fail(f"{edition} installer did not extract its declared root")
+
+            build_database = self.plan["databases"][f"{'multi_tenant' if edition == 'multi-tenant' else 'standalone'}_fresh"]
+            with self.backend_process_environment(generated, build_database, edition) as backend_env:
+                command(
+                    ["/usr/local/bin/composer", "install", "--no-interaction", "--no-progress", "--prefer-dist"],
+                    cwd=generated / "server",
+                    env=composer_env | backend_env,
+                    log=log,
+                )
+            command(["php", "-r", "require 'vendor/autoload.php'; echo 'autoload=ok\\n';"], cwd=generated / "server", log=log)
+            command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=generated / "web", log=log)
+            command(["pnpm", "run", "build"], cwd=generated / "web", log=log)
+            if edition == "multi-tenant":
+                command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=generated / "platform", log=log)
+                command(["npm", "run", "build"], cwd=generated / "platform", log=log)
+            command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=generated / "pc", log=log)
+            command(["npm", "run", "typecheck"], cwd=generated / "pc", log=log)
+            command(["npm", "run", "generate"], cwd=generated / "pc", log=log)
+            command(["npm", "ci", "--cache", str(self.cache / "npm")], cwd=generated / "uniapp", log=log)
+            command(["npm", "run", "type-check"], cwd=generated / "uniapp", log=log)
+            command(["npm", "run", "build:h5"], cwd=generated / "uniapp", log=log)
+            command(["pnpm", "install", "--frozen-lockfile", "--store-dir", str(self.cache / "pnpm-store")], cwd=generated / "docs-site", log=log)
+            command(["pnpm", "run", "build"], cwd=generated / "docs-site", log=log)
+
+            manifest_path = generated / ".peanut/application-manifest.json"
+            manifest = read_json(manifest_path)
+            expected_template = {
+                "version": target["version"],
+                "inventory_sha256": target["inventory_sha256"],
+                "source_commit": self.args.candidate,
+                "source_tree": self.plan["candidate_tree"],
+            }
+            generation = manifest.get("generation_source", {})
+            if (
+                manifest.get("schema_version") != target["application_manifest_schema"]
+                or manifest.get("protocol") != "peanut.application-scaffold.v2"
+                or manifest.get("application", {}).get("version") != target["version"]
+                or manifest.get("application", {}).get("edition") != edition
+                or manifest.get("edition", {}).get("name") != edition
+                or manifest.get("template") != expected_template
+                or generation.get("commit") != self.args.candidate
+                or generation.get("tree") != self.plan["candidate_tree"]
+                or generation.get("inventory_sha256") != target["inventory_sha256"]
+                or artifact_manifest.get("application", {}).get("manifest_sha256") != sha256(manifest_path)
+                or artifact_manifest.get("application", {}).get("managed_tree_sha256") != target["managed_tree_sha256"]
+            ):
+                fail(f"{edition} application identity does not match its installer")
+            uniapp_manifest = (generated / "uniapp/src/manifest.json").read_text(encoding="utf-8")
+            expected_version = re.escape(target["version"])
+            expected_code = re.escape(target["default_uniapp_version_code"])
+            if (
+                re.search(rf'"versionName"\s*:\s*"{expected_version}"', uniapp_manifest) is None
+                or re.search(rf'"versionCode"\s*:\s*"{expected_code}"', uniapp_manifest) is None
+            ):
+                fail(f"{edition} generated UniApp version identity changed")
+            edition_results[edition] = {
+                "installer_manifest_sha256": sha256(artifact_manifest_path),
+                "archive_sha256": sha256(archive),
+                "application_manifest_sha256": sha256(manifest_path),
+                "application_version": manifest["application"]["version"],
+                "app_owned": self.app_owned_proof(generated),
+            }
         self.write_json(self.output / "groups/generated-application.json", {
             "schema_version": 1,
             "status": "passed",
             "candidate": self.args.candidate,
             "candidate_tree": self.plan["candidate_tree"],
             "target_release": target,
-            "application_manifest_sha256": sha256(self.generated / ".peanut/application-manifest.json"),
-            "application_version": manifest["application"]["version"],
+            "editions": edition_results,
             "uniapp_version_code": target["default_uniapp_version_code"],
-            "app_owned": self.app_owned_proof(self.generated),
         })
 
     @staticmethod
@@ -1113,9 +1174,10 @@ class Runner:
     def fresh(self, scenario: str, group: str, mode: str) -> None:
         database = self.plan["databases"][scenario]
         log = self.group_log(group)
+        generated = self.generated[mode]
         self.create_database(database)
-        self.install_current(database, mode, log)
-        self.inspect(database, mode, group)
+        self.install_current(database, mode, log, project_root=generated)
+        self.inspect(database, mode, group, project_root=generated)
         self.drop_database(database)
 
     def seed_multi_tenant_browser_binding(self, database: str, log: Path) -> None:
@@ -1171,7 +1233,8 @@ class Runner:
 
     def plugin_lifecycle(self) -> None:
         log = self.group_log("plugin-lifecycle")
-        lock = self.generated / "plugins.lock"
+        generated = self.generated["multi-tenant"]
+        lock = generated / "plugins.lock"
         original_lock = lock.read_bytes()
         original_mode = lock.stat().st_mode & 0o777
         source_lock = read_json(ROOT / "plugins.lock")
@@ -1195,19 +1258,19 @@ class Runner:
                 r"$result=(new \app\platform\service\plugin\PluginArtifactWriter(getcwd().'/server'))->checkLock(); "
                 r"echo json_encode($result, JSON_UNESCAPED_SLASHES), PHP_EOL;",
             ],
-            cwd=self.generated,
+            cwd=generated,
             log=log,
         )
         fixture_paths = [
-            (ROOT / "plugins/fixture.delivery-record", self.generated / "plugins/fixture.delivery-record"),
-            (ROOT / "server/app/Modules/Fixture/DeliveryRecord", self.generated / "server/app/Modules/Fixture/DeliveryRecord"),
-            (ROOT / "web/src/modules/fixture-delivery-record", self.generated / "web/src/modules/fixture-delivery-record"),
+            (ROOT / "plugins/fixture.delivery-record", generated / "plugins/fixture.delivery-record"),
+            (ROOT / "server/app/Modules/Fixture/DeliveryRecord", generated / "server/app/Modules/Fixture/DeliveryRecord"),
+            (ROOT / "web/src/modules/fixture-delivery-record", generated / "web/src/modules/fixture-delivery-record"),
         ]
         runner_source = ROOT / "server/fixtures/plugin-module-lifecycle/run.php"
-        runner_target = self.generated / "server/fixtures/plugin-module-lifecycle/run.php"
+        runner_target = generated / "server/fixtures/plugin-module-lifecycle/run.php"
         if any(target.exists() for _, target in fixture_paths) or runner_target.exists():
             fail("generated application already contains a Plugin qualification fixture")
-        before = self.app_owned_proof(self.generated)
+        before = self.app_owned_proof(generated)
         try:
             for source, target in fixture_paths:
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -1226,7 +1289,7 @@ class Runner:
                 fail("fixture Plugin lock entry is missing or duplicated")
             lock.write_text(json.dumps(fixture_lock, indent=2) + "\n", encoding="utf-8")
             self.plugin_lifecycle_at(
-                self.generated,
+                generated,
                 "plugin_lifecycle",
                 "plugin-lifecycle",
             )
@@ -1240,13 +1303,13 @@ class Runner:
                 runner_target.unlink()
             with contextlib.suppress(OSError):
                 runner_target.parent.rmdir()
-        after = self.app_owned_proof(self.generated)
+        after = self.app_owned_proof(generated)
         if before != after or lock.read_bytes() != original_lock or (lock.stat().st_mode & 0o777) != original_mode:
             fail("generated application Plugin qualification changed released bytes")
         self.write_json(self.output / "groups/plugin-lifecycle.json", {
             "schema_version": 1,
             "status": "passed",
-            "application_root": str(self.generated),
+            "application_root": str(generated),
             "database": self.plan["databases"]["plugin_lifecycle"],
             "plugin_lock_restored_sha256": sha256(lock),
             "fixture_removed": True,
@@ -1454,7 +1517,7 @@ class Runner:
         })
 
     def production_compose(self) -> None:
-        self.production_compose_at(self.generated, "standalone_browser", "production-compose")
+        self.production_compose_at(self.generated["standalone"], "standalone_browser", "production-compose")
 
     def start_docs(self, project_root: Path) -> None:
         if self.docs_process is not None and self.docs_process.poll() is None and self.docs_root == project_root:
@@ -1471,6 +1534,12 @@ class Runner:
     def browser_at(self, mode: str, project_root: Path, scenario: str, group: str, output_scope: str) -> None:
         database = self.plan["databases"][scenario]
         if mode == "multi-tenant":
+            if self.compose_env.exists() and self.compose_overlay.exists() and self.active_compose_root != project_root:
+                self.compose(
+                    "down", "--volumes", "--remove-orphans", "--rmi", "local",
+                    check=False,
+                    project_root=self.active_compose_root,
+                )
             if not self.database_exists(database):
                 self.create_database(database)
                 self.install_current(database, mode, self.group_log(group), project_root=project_root)
@@ -1485,7 +1554,7 @@ class Runner:
             self.seed_multi_tenant_browser_binding(database, self.group_log(group))
             self.write_compose_env(project_root, database, mode)
             self.compose(
-                "up", "-d", "--no-build", "--force-recreate", "php", "nginx", "cron",
+                "up", "-d", "--build", "--force-recreate", "php", "nginx", "cron",
                 log=self.group_log(group),
                 project_root=project_root,
             )
@@ -1513,7 +1582,7 @@ class Runner:
     def browser(self, mode: str) -> None:
         group = f"{mode}-browser"
         scenario = "standalone_browser" if mode == "standalone" else "multi_tenant_browser"
-        self.browser_at(mode, self.generated, scenario, group, "generated")
+        self.browser_at(mode, self.generated[mode], scenario, group, mode)
 
     def stop_docs(self) -> None:
         if self.docs_process is None or self.docs_process.poll() is not None:
@@ -1588,7 +1657,10 @@ class Runner:
                 "plugin_lifecycle": "groups/plugin-lifecycle.json",
                 "consumer_module_lifecycle": "groups/consumer-module-lifecycle.json",
                 "production_compose": "groups/production-compose.json",
-                "browser": "browser/generated",
+                "browser": {
+                    "standalone": "browser/standalone",
+                    "multi_tenant": "browser/multi-tenant",
+                },
             },
             "cleanup": {
                 "database_residual_count": 0,

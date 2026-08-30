@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 function qualificationExpect(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -28,7 +30,7 @@ foreach ([
     'public_notice_middleware' => 'app/api/middleware/PublicNoticeTenantMiddleware.php',
     'public_hot_search_middleware' => 'app/api/middleware/PublicHotSearchTenantMiddleware.php',
     'tenant_session' => 'app/tenant/controller/TenantSessionController.php',
-    'admin_login' => 'app/adminapi/logic/auth/LoginLogic.php',
+    'admin_login' => 'app/adminapi/application/auth/LoginApplicationService.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
     'authenticated_member_context_core' => 'vendor/peanut-admin/core/kernel/src/Context/AuthenticatedMemberContext.php',
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
@@ -69,7 +71,7 @@ foreach ([
     'async_worker_definition' => 'app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php',
     'async_files' => 'app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php',
     'storage_path' => 'app/common/service/storage/StoragePath.php',
-    'routes' => 'route/app.php',
+    'routes' => 'route/registry_source.php',
     'official_file_routes' => 'app/Modules/Official/File/Http/routes.php',
     'official_notification_routes' => 'app/Modules/Official/Notification/Http/routes.php',
     'official_oauth_routes' => 'app/Modules/Official/Oauth/Http/routes.php',
@@ -78,11 +80,14 @@ foreach ([
     'official_task_routes' => 'app/Modules/Official/Task/Http/routes.php',
     'official_import_export_routes' => 'app/Modules/Official/ImportExport/Http/routes.php',
     'official_module_middleware' => 'app/common/service/module/OfficialModuleMiddleware.php',
+    'module_execution_boundary' => 'app/common/service/module/ModuleExecutionBoundary.php',
     'module_execution_context' => 'app/common/service/module/ModuleExecutionContext.php',
     'module_execution_context_core' => 'vendor/peanut-admin/core/kernel/src/Module/ModuleExecutionContext.php',
-    'module_execution_guard' => 'app/common/service/module/ModuleExecutionGuard.php',
     'module_guard_core' => 'vendor/peanut-admin/core/kernel/src/Module/ModuleGuard.php',
     'oauth_controller' => 'app/api/controller/OAuthController.php',
+    'payment_notify_controller' => 'app/api/controller/PaymentNotifyController.php',
+    'official_account_controller' => 'app/api/controller/OfficialAccountController.php',
+    'module_worker' => 'app/common/service/async/ModuleAwareTaskHandler.php',
     'console' => 'config/console.php',
     'module_manifest' => 'vendor/peanut-admin/core/kernel/src/Module/ManifestLoader.php',
     'module_availability' => 'vendor/peanut-admin/core/kernel/src/Host/ModuleAvailabilityAdapter.php',
@@ -96,11 +101,16 @@ foreach ([
     'menu_controller' => 'app/adminapi/controller/auth/MenuController.php',
     'system_controller' => 'app/adminapi/controller/system/SystemController.php',
 ] as $key => $relative) {
-    $sources[$key] = qualificationSource($root, $relative);
+    $sources[$key] = $key === 'routes'
+        ? peanut_route_registry_source($root)
+        : qualificationSource($root, $relative);
 }
 
 foreach (['file_repository', 'article_repository', 'decoration_repository', 'notice_repository', 'oauth_repository', 'finance_repository'] as $key) {
-    qualificationExpect(str_contains($sources[$key], 'tenant_id'), $key . ' lost SQL Tenant scope');
+    qualificationExpect(
+        str_contains($sources[$key], '::where([])'),
+        $key . ' lost its global-scope ORM entry',
+    );
 }
 qualificationExpect(
     str_contains($sources['file_namespace'], 'TenantObjectNamespace::directory')
@@ -149,7 +159,9 @@ qualificationExpect(
     str_contains($sources['member_context'], 'new AuthenticatedMemberContext(')
         && !str_contains($sources['member_context'], 'ValidatedTenantSession')
         && !str_contains($sources['member_context'], 'TenantContext::fromValidatedSession')
-        && str_contains($sources['member_middleware'], '$request->authenticatedMemberContext =')
+        && str_contains($sources['member_middleware'], 'ExecutionContext::member(')
+        && str_contains($sources['member_middleware'], 'ExecutionContextStore')
+        && !str_contains($sources['member_middleware'], '$request->authenticatedMemberContext =')
         && !str_contains($sources['member_middleware'], '$request->tenantContext = $this->tenantContexts()'),
     'member JWT context is still written into the Core TenantContext request boundary'
 );
@@ -360,9 +372,8 @@ qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")
         && str_contains($sources['module_availability'], 'assertDeployment(')
         && str_contains($sources['module_availability'], 'assertTenant(')
-        && str_contains($sources['fixture_module_access'], 'PdoModuleGovernanceProvider::forExecution')
-        && str_contains($sources['fixture_module_access'], '->executionGuard(')
-        && str_contains($sources['fixture_module_access'], '->assertAdminPermission(')
+        && str_contains($sources['fixture_module_access'], 'PdoTenantAuthorizationRepository')
+        && str_contains($sources['fixture_module_access'], "AUTHORIZATION_PERMISSION_DENIED")
         && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
     'optional Modules are not guarded by both module.json and Tenant enablement'
 );
@@ -397,25 +408,27 @@ qualificationExpect(
         && str_contains($sources['module_execution_context_core'], 'public static function scheduled(')
         && str_contains($sources['module_execution_context_core'], 'authorizationRevision < 1')
         && str_contains($sources['module_execution_context_core'], 'MODULE_CONTEXT_INVALID')
-        && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::admin(')
-        && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::system(')
-        && str_contains($sources['official_module_middleware'], 'ModuleExecutionContext::businessMember(')
-        && str_contains($sources['official_module_middleware'], 'assertEnabled($context)')
-        && str_contains($sources['module_execution_guard'], '$this->guard->assertDeployment(')
-        && str_contains($sources['module_execution_guard'], '$this->guard->assertTenant(')
-        && str_contains($sources['module_execution_guard'], 'PdoTenantAuthorizationRepository')
-        && str_contains($sources['module_execution_guard'], '$this->guard->assertMemberAccess(')
+        && str_contains($sources['module_execution_boundary'], 'CurrentExecutionContext')
+        && str_contains($sources['module_execution_boundary'], 'ModuleExecutionContext::admin(')
+        && str_contains($sources['module_execution_boundary'], 'ModuleExecutionContext::system(')
+        && str_contains($sources['module_execution_boundary'], 'ModuleExecutionContext::businessMember(')
+        && str_contains($sources['official_module_middleware'], '->assertHttp($moduleKey, $operation)')
+        && str_contains($sources['module_execution_boundary'], '$this->guard->assertDeployment(')
+        && str_contains($sources['module_execution_boundary'], '$this->guard->assertTenant(')
         && str_contains($sources['module_guard_core'], "MODULE_TENANT_DISABLED")
         && str_contains($sources['module_guard_core'], "AUTHORIZATION_PERMISSION_DENIED"),
     'shared official Module middleware does not require a trusted Tenant context and TenantModule state'
 );
 qualificationExpect(
-    str_contains($sources['oauth_controller'], 'PdoModuleGovernanceProvider::forExecution')
-        && str_contains($sources['external_resolver'], 'assertExternalCallback(')
+    str_contains($sources['oauth_controller'], "assertExternalCallback('official.oauth')")
+        && str_contains($sources['official_account_controller'], "assertExternalCallback('official.oauth')")
+        && str_contains($sources['payment_notify_controller'], "assertExternalCallback('official.payment')")
+        && !str_contains($sources['external_resolver'], 'assertExternalCallback(')
         && str_contains($sources['async_runtime'], 'ImportExportModuleProvider')
         && str_contains($sources['async_runtime_factory'], 'TaskModuleProvider')
         && str_contains($sources['async_worker_definition'], "return 'official.import-export'")
-        && str_contains($sources['crontab_scheduler'], "ModuleExecutionContext::scheduled('official.task'")
+        && str_contains($sources['module_worker'], "assertWorker('official.task')")
+        && str_contains($sources['crontab_scheduler'], "assertScheduled('official.task')")
         && str_contains($sources['console'], "'refund:reconcile' => 'official.payment'"),
     'external callback, worker or scheduler entry bypasses its official Module lifecycle'
 );

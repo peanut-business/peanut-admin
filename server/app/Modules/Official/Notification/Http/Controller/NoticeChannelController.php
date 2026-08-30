@@ -3,21 +3,30 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Http\Controller;
 
-use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\adminapi\controller\BaseAdminController;
-use app\common\service\member\MemberTenantContext;
+use think\App;
 
 /**
  * 通知渠道配置控制器
  */
 class NoticeChannelController extends BaseAdminController
 {
+    public function __construct(
+        App $app,
+        private readonly NotificationQueries $queries,
+        private readonly NotificationCommands $commands,
+    ) {
+        parent::__construct($app);
+    }
+
     /**
      * 获取渠道配置（脱敏：密钥只返回是否已设置）
      */
     public function detail(): \think\Response
     {
-        return $this->data((new ModuleProvider())->queries()->channelDetail(MemberTenantContext::member($this->request)));
+        return $this->data($this->queries->channelDetail());
     }
 
     /**
@@ -30,11 +39,7 @@ class NoticeChannelController extends BaseAdminController
         $section = (string) ($post['section'] ?? '');
 
         unset($post['section']);
-        try {
-            (new ModuleProvider())->commands()->saveChannel(MemberTenantContext::member($this->request), $section, $post);
-            return $this->success('保存成功');
-        } catch (\Throwable $exception) {
-            return $this->fail($exception->getMessage());
-        }
+        $this->commands->saveChannel($section, $post);
+        return $this->success('保存成功');
     }
 }

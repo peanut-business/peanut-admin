@@ -3,17 +3,23 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Application;
 
-use app\Modules\Official\Member\Contracts\Dto\MemberBalanceLogPage;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceSnapshot;
 use app\Modules\Official\Member\Contracts\MemberQueries;
+use app\common\http\PageResult;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\MemberBalanceService;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use app\common\support\PaginationInput;
 
 final class MemberQueryService implements MemberQueries
 {
+    public function __construct(private readonly CurrentExecutionContext $executionContext)
+    {
+    }
+
     public function memberFields(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         int $memberId,
@@ -52,22 +58,23 @@ final class MemberQueryService implements MemberQueries
         );
     }
 
-    public function balanceLogsForMember(
-        AuthenticatedMemberContext $context,
-        int $memberId,
-        int $page,
-        int $pageSize,
-    ): MemberBalanceLogPage {
+    public function balanceLogsForCurrentMember(int $page, int $pageSize): PageResult
+    {
+        $context = $this->executionContext->member();
+        $memberId = $context->memberId;
         $page = max(1, $page);
         $pageSize = max(1, $pageSize);
         $query = MemberTenantRepository::balanceLogs($context)->where('member_id', $memberId);
-        $total = $query->count();
+        $pageResult = PaginationInput::from([
+            'page_no' => $page,
+            'page_size' => $pageSize,
+        ])->result($query->order('id', 'desc'));
 
-        return new MemberBalanceLogPage(
-            $query->order('id', 'desc')->page($page, $pageSize)->select()->toArray(),
-            $total,
-            $page,
-            $pageSize,
+        return new PageResult(
+            array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items),
+            $pageResult->total,
+            $pageResult->page,
+            $pageResult->pageSize,
         );
     }
 }

@@ -5,12 +5,12 @@ namespace app\command;
 
 use app\platform\service\plugin\PluginArtifactToolException;
 use app\platform\service\plugin\PluginArtifactWriter;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Option;
 use think\console\Output;
 
-final class PluginLock extends Command
+final class PluginLock extends ContextualCommand
 {
     protected function configure()
     {
@@ -19,7 +19,7 @@ final class PluginLock extends Command
             ->addOption('check', null, Option::VALUE_NONE, 'Check plugins.lock without writing');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $write = (bool)$input->getOption('write');

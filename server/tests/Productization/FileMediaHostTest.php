@@ -72,8 +72,8 @@ namespace {
         'app/common/service/FileService.php',
         'app/common/service/UploadService.php',
         'app/Modules/Official/File/Model/File.php',
-        'app/Modules/Official/File/Service/FileLogic.php',
-        'app/Modules/Official/File/Service/FileCateLogic.php',
+        'app/Modules/Official/File/Application/FileAdministrationService.php',
+        'app/Modules/Official/File/Contracts/FileAdministration.php',
         'app/common/service/storage/StorageService.php',
         'app/common/service/storage/StorageRepository.php',
         'app/common/service/storage/StoragePurpose.php',
@@ -85,15 +85,19 @@ namespace {
         $sources[$relativePath] = (string)file_get_contents($absolutePath);
     }
     expectFileMedia(
-        str_contains($sources['app/Modules/Official/File/Model/File.php'], "['file_key']"),
-        'File model must resolve the canonical file object'
+        !str_contains($sources['app/Modules/Official/File/Model/File.php'], 'getUrlAttr')
+            && str_contains(
+                $sources['app/Modules/Official/File/Application/FileAdministrationService.php'],
+                "FileService::getFileUrl((string) (\$item['file_key'] ?? ''))",
+            ),
+        'File presentation URL must be resolved by the application boundary from the canonical object key'
     );
     expectFileMedia(
         str_contains($sources['app/common/service/UploadService.php'], 'StorageService::fromDefaultConnection()'),
         'upload must use the unified storage service'
     );
     expectFileMedia(
-        str_contains($sources['app/Modules/Official/File/Service/FileLogic.php'], 'StorageService::fromDefaultConnection()->delete'),
+        str_contains($sources['app/Modules/Official/File/Application/FileAdministrationService.php'], 'StorageService::fromDefaultConnection()->delete'),
         'delete must use the unified storage service'
     );
     expectFileMedia(

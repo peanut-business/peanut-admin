@@ -146,12 +146,14 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-peanut-admin-user-manual` | `docs/peanut-admin-user-manual.md` | `archived` | `reference` | `application-maintainers` |
 | `pa-docs-plans-consumer-ready-product-plan` | `docs/plans/consumer-ready-product-plan.md` | `current` | `plan` | `product-architecture` |
 | `pa-docs-plans-multi-tenancy-platform-management-plan` | `docs/plans/multi-tenancy-platform-management-plan.md` | `planned` | `plan` | `product-architecture` |
+| `pa-docs-plans-post-release-enhancement-plan` | `docs/plans/post-release-enhancement-plan.md` | `current` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-closure-execution-queue` | `docs/plans/product-closure-execution-queue.md` | `archived` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-release-operations-saas-roadmap` | `docs/plans/product-release-operations-saas-roadmap.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-saas-enhancement-development-plan` | `docs/plans/saas-enhancement-development-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plugin-module-development` | `docs/plugin-module-development.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-pr-checklist` | `docs/governance/templates/docs-impact-checklist.md` | `current` | `reference` | `documentation-architecture` |
 | `pa-docs-product-status-acceptance-gates` | `docs/product-status/acceptance-gates.md` | `archived` | `evidence` | `release-qualification` |
+| `pa-docs-product-status-audits-demo-experience-audit` | `docs/product-status/audits/demo-experience-audit.md` | `current` | `evidence` | `release-qualification` |
 | `pa-docs-product-status-current-task-list` | `docs/product-status/current-task-list.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-product-status-deferred-scope` | `docs/product-status/deferred-scope.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-product-status-evidence-guide` | `docs/product-status/evidence-guide.md` | `archived` | `evidence` | `release-qualification` |

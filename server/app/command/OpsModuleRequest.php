@@ -5,7 +5,7 @@ namespace app\command;
 
 use app\platform\service\ops\DeploymentModuleRequestService;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -15,7 +15,7 @@ use think\facade\Db;
 use Throwable;
 
 /** Deployment-only preparation of an opaque Module operation request. */
-final class OpsModuleRequest extends Command
+final class OpsModuleRequest extends ContextualCommand
 {
     protected function configure(): void
     {
@@ -31,7 +31,7 @@ final class OpsModuleRequest extends Command
             ->setDescription('Preview or stage one registry-bound Module delivery request');
     }
 
-    protected function execute(Input $input, Output $output): int
+    protected function handle(Input $input, Output $output): int
     {
         try {
             $pdo = Db::connect()->connect();

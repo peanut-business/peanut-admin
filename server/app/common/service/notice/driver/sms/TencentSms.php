@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\notice\driver\sms;
 
+use app\common\service\http\OutboundHttpRequest;
+use app\common\service\http\OutboundHttpTransport;
 use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
 
 /**
@@ -20,7 +22,7 @@ final class TencentSms extends TemplateSmsDriver
     private string $signName;
     private string $region;
 
-    public function __construct(array $config)
+    public function __construct(array $config, private readonly OutboundHttpTransport $transport)
     {
         $this->secretId  = (string) ($config['secret_id']  ?? '');
         $this->secretKey = (string) ($config['secret_key'] ?? '');
@@ -72,32 +74,22 @@ final class TencentSms extends TemplateSmsDriver
         $authorization = "TC3-HMAC-SHA256 Credential={$this->secretId}/{$credentialScope}, "
             . "SignedHeaders={$signedHeaders}, Signature={$signature}";
 
-        $ch = curl_init("https://{$host}");
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json; charset=utf-8',
-                "Host: {$host}",
-                "Authorization: {$authorization}",
-                "X-TC-Action: {$action}",
-                "X-TC-Timestamp: {$timestamp}",
-                "X-TC-Version: {$version}",
-                "X-TC-Region: {$this->region}",
+        $response = $this->transport->send(new OutboundHttpRequest(
+            'POST',
+            "https://{$host}",
+            [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'Host' => $host,
+                'Authorization' => $authorization,
+                'X-TC-Action' => $action,
+                'X-TC-Timestamp' => (string)$timestamp,
+                'X-TC-Version' => $version,
+                'X-TC-Region' => $this->region,
             ],
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_SSL_VERIFYPEER => true,
-        ]);
-
-        $resp    = curl_exec($ch);
-        $curlErr = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlErr || $resp === false) {
-            $this->error = 'cURL error: ' . $curlErr;
-            return false;
-        }
+            (string)$payload,
+            timeoutSeconds: 10,
+        ));
+        $resp = $response->body;
 
         $data = json_decode((string) $resp, true);
         $this->result = is_array($data) ? $data : ['raw' => (string) $resp];

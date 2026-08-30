@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use app\adminapi\logic\auth\AdminLogic;
-use app\adminapi\logic\auth\MenuLogic;
-use app\adminapi\logic\auth\RoleLogic;
-use app\adminapi\logic\dept\DeptLogic;
-use app\adminapi\logic\dept\JobsLogic;
+use app\adminapi\application\auth\AdminApplicationService;
+use app\adminapi\application\auth\MenuApplicationService;
+use app\adminapi\application\auth\RoleApplicationService;
+use app\adminapi\application\dept\DeptApplicationService;
+use app\adminapi\application\dept\JobsApplicationService;
 use app\common\model\auth\Admin;
 use app\common\model\auth\AdminDept;
 use app\common\model\auth\AdminJobs;
@@ -68,7 +68,7 @@ $rootDept = Dept::where('pid', 0)->where('status', 1)->findOrEmpty();
 expectCrud(!$rootDept->isEmpty(), 'active root department is required');
 
 try {
-    expectCrud(MenuLogic::add([
+    expectCrud(app(MenuApplicationService::class)->add([
         'pid' => 0,
         'type' => 'M',
         'name' => $names['menu_parent'],
@@ -78,11 +78,11 @@ try {
         'is_cache' => 0,
         'is_show' => 1,
         'is_disable' => 0,
-    ]), MenuLogic::getError());
+    ]), app(MenuApplicationService::class)->getError());
     $ids['menu_parent'] = (int)SystemMenu::where('perms', $names['menu_parent_perm'])->value('id');
     expectCrud($ids['menu_parent'] > 0, 'parent menu was not created');
 
-    expectCrud(MenuLogic::add([
+    expectCrud(app(MenuApplicationService::class)->add([
         'pid' => $ids['menu_parent'],
         'type' => 'C',
         'name' => $names['menu_child'],
@@ -92,61 +92,61 @@ try {
         'is_cache' => 0,
         'is_show' => 1,
         'is_disable' => 0,
-    ]), MenuLogic::getError());
+    ]), app(MenuApplicationService::class)->getError());
     $ids['menu_child'] = (int)SystemMenu::where('perms', $names['menu_child_perm'])->value('id');
     expectCrud($ids['menu_child'] > 0, 'child menu was not created');
 
     expectCrudFailure(
-        MenuLogic::delete($ids['menu_parent']),
-        MenuLogic::getError(),
+        app(MenuApplicationService::class)->delete($ids['menu_parent']),
+        app(MenuApplicationService::class)->getError(),
         '已关联下级菜单'
     );
 
     $parent = SystemMenu::findOrEmpty($ids['menu_parent'])->toArray();
     $parent['pid'] = $ids['menu_child'];
     expectCrudFailure(
-        MenuLogic::edit($parent),
-        MenuLogic::getError(),
+        app(MenuApplicationService::class)->edit($parent),
+        app(MenuApplicationService::class)->getError(),
         '上级菜单不可是当前菜单或其下级菜单'
     );
 
-    expectCrud(RoleLogic::add([
+    expectCrud(app(RoleApplicationService::class)->add([
         'name' => $names['role'],
         'desc' => 'PB04 productization probe',
         'sort' => 0,
         'menu_id' => [$ids['menu_child']],
-    ]), RoleLogic::getError());
+    ]), app(RoleApplicationService::class)->getError());
     $ids['role'] = (int)SystemRole::where('name', $names['role'])->value('id');
     expectCrud($ids['role'] > 0, 'role was not created');
 
     expectCrudFailure(
-        MenuLogic::delete($ids['menu_child']),
-        MenuLogic::getError(),
+        app(MenuApplicationService::class)->delete($ids['menu_child']),
+        app(MenuApplicationService::class)->getError(),
         '菜单已被角色使用'
     );
 
-    expectCrud(DeptLogic::add([
+    expectCrud(app(DeptApplicationService::class)->add([
         'pid' => (int)$rootDept->id,
         'name' => $names['dept'],
         'leader' => '',
         'mobile' => '',
         'sort' => 0,
         'status' => 1,
-    ]), DeptLogic::getError());
+    ]), app(DeptApplicationService::class)->getError());
     $ids['dept'] = (int)Dept::where('name', $names['dept'])->value('id');
     expectCrud($ids['dept'] > 0, 'department was not created');
 
-    expectCrud(JobsLogic::add([
+    expectCrud(app(JobsApplicationService::class)->add([
         'name' => $names['jobs'],
         'code' => $names['jobs_code'],
         'sort' => 0,
         'status' => 1,
         'remark' => 'PB04 productization probe',
-    ]), JobsLogic::getError());
+    ]), app(JobsApplicationService::class)->getError());
     $ids['jobs'] = (int)Jobs::where('code', $names['jobs_code'])->value('id');
     expectCrud($ids['jobs'] > 0, 'job was not created');
 
-    expectCrud(AdminLogic::add([
+    expectCrud(app(AdminApplicationService::class)->add([
         'account' => $names['admin'],
         'name' => $names['nickname'],
         'password' => 'pb04-test-password',
@@ -156,7 +156,7 @@ try {
         'role_id' => [$ids['role']],
         'dept_id' => [$ids['dept']],
         'jobs_id' => [$ids['jobs']],
-    ]), AdminLogic::getError());
+    ]), app(AdminApplicationService::class)->getError());
     $ids['admin'] = (int)Admin::where('username', $names['admin'])->value('id');
     expectCrud($ids['admin'] > 0, 'administrator was not created');
     expectCrud(AdminRole::where(['admin_id' => $ids['admin'], 'role_id' => $ids['role']])->count() === 1, 'admin role relation missing');
@@ -164,35 +164,35 @@ try {
     expectCrud(AdminJobs::where(['admin_id' => $ids['admin'], 'jobs_id' => $ids['jobs']])->count() === 1, 'admin job relation missing');
 
     expectCrudFailure(
-        AdminLogic::delete($ids['admin'], $ids['admin']),
-        AdminLogic::getError(),
+        app(AdminApplicationService::class)->delete($ids['admin'], $ids['admin']),
+        app(AdminApplicationService::class)->getError(),
         '不能操作当前登录的管理员'
     );
     expectCrudFailure(
-        AdminLogic::updateStatus($ids['admin'], 1, $ids['admin']),
-        AdminLogic::getError(),
+        app(AdminApplicationService::class)->updateStatus($ids['admin'], 1, $ids['admin']),
+        app(AdminApplicationService::class)->getError(),
         '不能操作当前登录的管理员'
     );
     expectCrudFailure(
-        AdminLogic::delete((int)$rootAdmin->id),
-        AdminLogic::getError(),
+        app(AdminApplicationService::class)->delete((int)$rootAdmin->id),
+        app(AdminApplicationService::class)->getError(),
         '超级管理员不允许被删除'
     );
     expectCrudFailure(
-        AdminLogic::updateStatus((int)$rootAdmin->id, 1),
-        AdminLogic::getError(),
+        app(AdminApplicationService::class)->updateStatus((int)$rootAdmin->id, 1),
+        app(AdminApplicationService::class)->getError(),
         '超级管理员不允许被禁用'
     );
-    expectCrudFailure(RoleLogic::delete($ids['role']), RoleLogic::getError(), '有管理员在使用该角色');
-    expectCrudFailure(DeptLogic::delete($ids['dept']), DeptLogic::getError(), '已关联管理员');
-    expectCrudFailure(JobsLogic::delete($ids['jobs']), JobsLogic::getError(), '已关联管理员');
+    expectCrudFailure(app(RoleApplicationService::class)->delete($ids['role']), app(RoleApplicationService::class)->getError(), '有管理员在使用该角色');
+    expectCrudFailure(app(DeptApplicationService::class)->delete($ids['dept']), app(DeptApplicationService::class)->getError(), '已关联管理员');
+    expectCrudFailure(app(JobsApplicationService::class)->delete($ids['jobs']), app(JobsApplicationService::class)->getError(), '已关联管理员');
 
-    expectCrud(AdminLogic::delete($ids['admin'], (int)$rootAdmin->id), AdminLogic::getError());
-    expectCrud(RoleLogic::delete($ids['role']), RoleLogic::getError());
-    expectCrud(MenuLogic::delete($ids['menu_child']), MenuLogic::getError());
-    expectCrud(MenuLogic::delete($ids['menu_parent']), MenuLogic::getError());
-    expectCrud(DeptLogic::delete($ids['dept']), DeptLogic::getError());
-    expectCrud(JobsLogic::delete($ids['jobs']), JobsLogic::getError());
+    expectCrud(app(AdminApplicationService::class)->delete($ids['admin'], (int)$rootAdmin->id), app(AdminApplicationService::class)->getError());
+    expectCrud(app(RoleApplicationService::class)->delete($ids['role']), app(RoleApplicationService::class)->getError());
+    expectCrud(app(MenuApplicationService::class)->delete($ids['menu_child']), app(MenuApplicationService::class)->getError());
+    expectCrud(app(MenuApplicationService::class)->delete($ids['menu_parent']), app(MenuApplicationService::class)->getError());
+    expectCrud(app(DeptApplicationService::class)->delete($ids['dept']), app(DeptApplicationService::class)->getError());
+    expectCrud(app(JobsApplicationService::class)->delete($ids['jobs']), app(JobsApplicationService::class)->getError());
 } finally {
     Db::transaction(static function () use ($ids): void {
         $adminIds = array_values(array_filter([(int)$ids['admin']]));

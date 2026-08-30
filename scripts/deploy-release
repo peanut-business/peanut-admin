@@ -15,6 +15,8 @@ APPLY=0
 DRY_RUN=0
 SSH_ALIAS="oracle3"
 OVERLAY=""
+EDITION_PACKAGE=""
+EDITION_MANIFEST=""
 CONFIRM_DESTROY=""
 ADMIN_EMAIL="${PEANUT_GENERATED_ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${PEANUT_GENERATED_ADMIN_PASSWORD:-}"
@@ -34,6 +36,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/deploy-release <vX.Y.Z> --target <production|production-candidate> \
   (--install | --update | --fresh) [--apply | --dry-run] [--ssh-alias <alias>] \
+  [--edition-package <installer.tar.gz> --edition-manifest <manifest.json>] \
   [--overlay <demo-patch.tar>] \
   [--confirm-destroy <target>]
 
@@ -46,6 +49,10 @@ instance. It never guesses a host, path, port, database or fallback target.
   --dry-run  validate the release and print the exact remote plan only
   --apply    execute the plan over the registered SSH alias
   --overlay  apply a checked demo-only source overlay before building
+  --edition-package
+             deploy the selected Edition installer instead of the source archive
+  --edition-manifest
+             external manifest shipped beside --edition-package
   --confirm-destroy
              required for --fresh; value must exactly equal the target
 
@@ -165,6 +172,12 @@ while [[ $# -gt 0 ]]; do
     --overlay)
       [[ $# -ge 2 ]] || fail '--overlay requires a value'
       OVERLAY="$2"; shift 2 ;;
+    --edition-package)
+      [[ $# -ge 2 ]] || fail '--edition-package requires a value'
+      EDITION_PACKAGE="$2"; shift 2 ;;
+    --edition-manifest)
+      [[ $# -ge 2 ]] || fail '--edition-manifest requires a value'
+      EDITION_MANIFEST="$2"; shift 2 ;;
     --confirm-destroy)
       [[ $# -ge 2 ]] || fail '--confirm-destroy requires a value'
       CONFIRM_DESTROY="$2"; shift 2 ;;
@@ -191,6 +204,17 @@ if [[ -n "$OVERLAY" ]]; then
     "$DEMO_TENANT_A_HOST" "$DEMO_TENANT_B_HOST" "$DEMO_DOCS_URL"; do
     [[ -n "$value" ]] || fail 'overlay deployment is missing a required PEANUT_DEMO_* value'
   done
+fi
+if [[ -n "$EDITION_PACKAGE" || -n "$EDITION_MANIFEST" ]]; then
+  [[ -n "$EDITION_PACKAGE" && -n "$EDITION_MANIFEST" ]] \
+    || fail '--edition-package and --edition-manifest must be provided together'
+  [[ -f "$EDITION_PACKAGE" && ! -L "$EDITION_PACKAGE" ]] \
+    || fail "Edition installer is unavailable: $EDITION_PACKAGE"
+  [[ -f "$EDITION_MANIFEST" && ! -L "$EDITION_MANIFEST" ]] \
+    || fail "Edition installer manifest is unavailable: $EDITION_MANIFEST"
+fi
+if [[ -n "$OVERLAY" && -z "$EDITION_PACKAGE" ]]; then
+  fail 'Demo overlay deployment must consume the formal Multi-tenant Edition installer'
 fi
 if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled && "$UPDATE" != 1 ]]; then
   fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
@@ -255,6 +279,37 @@ version="${TAG#v}"
 metadata_version="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.version // empty')"
 metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
 [[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || fail "RELEASE_METADATA.json does not match $TAG"
+tag_tree="$(git rev-parse "$TAG^{tree}")"
+archive_kind=source
+if [[ -n "$EDITION_PACKAGE" ]]; then
+  archive_kind=edition
+  edition_protocol="$(jq -r '.protocol // empty' "$EDITION_MANIFEST")"
+  edition_name="$(jq -r '.edition.name // .edition // empty' "$EDITION_MANIFEST")"
+  edition_version="$(jq -r '.product.version // empty' "$EDITION_MANIFEST")"
+  edition_commit="$(jq -r '.source.commit // empty' "$EDITION_MANIFEST")"
+  edition_tree="$(jq -r '.source.tree // empty' "$EDITION_MANIFEST")"
+  edition_filename="$(jq -r '.archive.filename // empty' "$EDITION_MANIFEST")"
+  edition_root="$(jq -r '.archive.root // empty' "$EDITION_MANIFEST")"
+  edition_sha256="$(jq -r '.archive.sha256 // empty' "$EDITION_MANIFEST")"
+  edition_bytes="$(jq -r '.archive.bytes // empty' "$EDITION_MANIFEST")"
+  actual_edition_sha256="$(shasum -a 256 "$EDITION_PACKAGE" | awk '{print $1}')"
+  actual_edition_bytes="$(wc -c < "$EDITION_PACKAGE" | tr -d ' ')"
+  [[ "$edition_protocol" == peanut.edition-installer.v1
+    && "$edition_name" == "$deployment_mode"
+    && "$edition_version" == "$version"
+    && "$edition_commit" == "$tag_commit"
+    && "$edition_tree" == "$tag_tree"
+    && "$edition_filename" == "$(basename "$EDITION_PACKAGE")"
+    && "$edition_root" == "peanut-admin-${version}-${deployment_mode}"
+    && "$edition_sha256" == "$actual_edition_sha256"
+    && "$edition_bytes" == "$actual_edition_bytes" ]] \
+    || fail 'Edition installer and release tag identities differ'
+  tar -tzf "$EDITION_PACKAGE" | awk -v root="$edition_root/" '
+    index($0, root) != 1 || $0 ~ /(^|\/)\.\.($|\/)/ { bad = 1 }
+    $0 == root "compose.yaml" { compose = 1 }
+    END { exit (!bad && compose) ? 0 : 1 }
+  ' || fail 'Edition installer archive layout is unsafe or incomplete'
+fi
 
 if [[ "$UPDATE" != 1 && ( -z "$ADMIN_EMAIL" || -z "$ADMIN_PASSWORD" ) ]]; then
   fail 'fresh deployment requires PEANUT_GENERATED_ADMIN_EMAIL and PEANUT_GENERATED_ADMIN_PASSWORD'
@@ -315,6 +370,7 @@ mode=install
 [[ "$FRESH" == 1 ]] && mode=fresh
 printf 'release=%s\ncommit=%s\ntarget=%s\nmode=%s\nssh=%s\nremote_root=%s\ncompose_project=%s\norigin_port=%s\ndatabase_resource=%s\ndeployment_mode=%s\n' \
   "$TAG" "$tag_commit" "$TARGET" "$mode" "$SSH_ALIAS" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode"
+printf 'deployment_artifact=%s\n' "$archive_kind"
 [[ -z "$overlay_sha256" ]] || printf 'overlay_sha256=%s\n' "$overlay_sha256"
 
 if [[ "$DRY_RUN" == 1 ]]; then
@@ -338,7 +394,11 @@ secrets_file="$(mktemp -t peanut-admin-deploy-secrets.XXXXXX.env)"
 remote_secrets="/tmp/peanut-admin-deploy-secrets-$$.env"
 remote_overlay=""
 trap 'rm -f "$archive_file" "$secrets_file"' EXIT
-git archive --format=tar "$TAG" -o "$archive_file"
+if [[ "$archive_kind" == edition ]]; then
+  cp "$EDITION_PACKAGE" "$archive_file"
+else
+  git archive --format=tar "$TAG" -o "$archive_file"
+fi
 archive_sha256="$(shasum -a 256 "$archive_file" | awk '{print $1}')"
 [[ "$archive_sha256" =~ ^[0-9a-f]{64}$ ]] || fail 'cannot calculate release archive SHA-256'
 encode_remote_arg() {
@@ -372,7 +432,7 @@ fi
 # remote control script through the registered non-interactive sudo boundary so
 # its preflight, Compose and filesystem operations all observe the same target.
 ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" sudo -n bash -s -- \
-  "$TAG" "$tag_commit" "$TARGET" "$mode" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" <<'REMOTE_SCRIPT'
+  "$TAG" "$tag_commit" "$TARGET" "$mode" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" "$archive_kind" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 
 decode_remote_arg() {
@@ -393,6 +453,7 @@ secrets="${11}"
 overlay="$(decode_remote_arg "${12:-__PEANUT_EMPTY__}")"
 expected_overlay_sha="$(decode_remote_arg "${13:-__PEANUT_EMPTY__}")"
 expected_archive_sha="${14:-}"
+archive_kind="${15:-}"
 version="${tag#v}"
 migration_target_version="$version"
 
@@ -413,6 +474,7 @@ version_greater_than() {
 [[ "$port" == 18092 || "$port" == 18093 ]] || fail 'unregistered origin port'
 [[ "$target" == production || "$target" == production-candidate ]] || fail 'unregistered deployment target'
 [[ "$mode" == install || "$mode" == update || "$mode" == fresh ]] || fail 'unregistered deployment mode'
+[[ "$archive_kind" == source || "$archive_kind" == edition ]] || fail 'unregistered deployment artifact kind'
 [[ -d "$root" && -f "$root/compose.yaml" && -f "$root/.env" && -f "$root/server/.env" ]] \
   || fail "deployment files or split environments are missing under $root"
 [[ -f "$secrets" ]] || fail 'deployment credential payload is missing'
@@ -457,7 +519,13 @@ actual_archive_sha="$(sha256sum "$archive" | awk '{print $1}')"
 [[ "$actual_archive_sha" == "$expected_archive_sha" ]] || fail 'immutable release archive SHA-256 mismatch'
 
 staging="$(mktemp -d /tmp/peanut-admin-release.XXXXXX)"
-sudo -n tar --no-same-owner -xf "$archive" -C "$staging" || fail 'cannot unpack immutable release archive'
+if [[ "$archive_kind" == edition ]]; then
+  sudo -n tar --no-same-owner -xzf "$archive" --strip-components=1 -C "$staging" \
+    || fail 'cannot unpack immutable Edition installer'
+else
+  sudo -n tar --no-same-owner -xf "$archive" -C "$staging" \
+    || fail 'cannot unpack immutable source release archive'
+fi
 if [[ -n "$overlay" ]]; then
   [[ -f "$overlay" && "$expected_overlay_sha" =~ ^[0-9a-f]{64}$ ]] || fail 'demo overlay identity is incomplete'
   actual_overlay_sha="$(sha256sum "$overlay" | awk '{print $1}')"

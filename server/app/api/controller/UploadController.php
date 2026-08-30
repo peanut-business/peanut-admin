@@ -20,7 +20,7 @@ class UploadController extends BaseApiController
                 throw new \InvalidArgumentException('目标分类无效');
             }
             $result = UploadService::image(
-                MemberTenantContext::member($this->request),
+                MemberTenantContext::member(),
                 (int)$cidValue,
                 $this->memberId,
                 FileEnum::SOURCE_USER

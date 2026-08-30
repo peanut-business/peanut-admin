@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\http\PageResult;
 use app\common\service\JsonService;
 use app\platform\http\PlatformRequest;
 use app\platform\invitation\PlatformInvitationRuntimeFactory;
@@ -43,7 +44,7 @@ final class PlatformTenantInvitationController extends BasePlatformController
     public function lists()
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         $params = $this->request->get();
         $this->validate($params, TenantOwnerInvitationValidate::class . '.lists');
@@ -55,12 +56,7 @@ final class PlatformTenantInvitationController extends BasePlatformController
                 (int)$params['tenant_id'],
                 new PageRequest($page, $pageSize)
             );
-            return $this->dataLists(
-                $result['items'],
-                $result['total'],
-                $page,
-                $pageSize
-            );
+            return $this->dataLists(new PageResult($result['items'], $result['total'], $page, $pageSize));
         } catch (AdminAccessException|TenantOwnerInvitationException $exception) {
             return $this->failure($exception);
         }
@@ -90,7 +86,7 @@ final class PlatformTenantInvitationController extends BasePlatformController
     private function mutate(string $scene, callable $operation)
     {
         if ($this->platformContext === null) {
-            return JsonService::fail('Platform authentication is required.', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         $params = $this->request->post();
         $this->validate($params, TenantOwnerInvitationValidate::class . '.' . $scene);
@@ -99,13 +95,13 @@ final class PlatformTenantInvitationController extends BasePlatformController
         } catch (AdminAccessException|TenantOwnerInvitationException $exception) {
             return $this->failure($exception);
         } catch (\InvalidArgumentException $exception) {
-            return JsonService::fail($exception->getMessage(), ['error_code' => 'INVITATION_INPUT_INVALID'], 42200);
+            throw \app\common\http\ApiProblem::fromEnvelope($exception->getMessage(), ['error_code' => 'INVITATION_INPUT_INVALID'], 42200);
         }
     }
 
     private function failure(AdminAccessException|TenantOwnerInvitationException $exception)
     {
-        return JsonService::fail(
+        throw \app\common\http\ApiProblem::fromEnvelope(
             $exception->getMessage(),
             ['error_code' => $exception->errorCode],
             $exception->httpStatus * 100

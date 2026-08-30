@@ -7,7 +7,7 @@ use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -15,7 +15,7 @@ use think\console\Output;
 use think\facade\Config;
 use think\facade\Db;
 
-final class ModuleUninstallPackage extends Command
+final class ModuleUninstallPackage extends ContextualCommand
 {
     protected function configure()
     {
@@ -26,7 +26,7 @@ final class ModuleUninstallPackage extends Command
             ->addOption('confirm-plan-digest', null, Option::VALUE_REQUIRED, 'SHA-256 returned by preview', '');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'

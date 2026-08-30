@@ -5,9 +5,11 @@ namespace app\api\middleware;
 
 use app\api\service\UserTokenService;
 use app\Modules\Official\Member\Model\Member;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\http\RequestTrace;
 use app\common\service\JsonService;
 use app\common\service\member\MemberApiTenantContextResolver;
-use app\common\service\member\MemberTenantContext;
 use app\common\service\member\MemberTenantRepository;
 
 /**
@@ -17,49 +19,53 @@ use app\common\service\member\MemberTenantRepository;
  */
 class CheckTokenMiddleware
 {
-    public function __construct(private ?MemberApiTenantContextResolver $tenantContexts = null)
-    {
-    }
+    public function __construct(
+        private readonly ?ExecutionContextStore $executionContexts = null,
+        private ?MemberApiTenantContextResolver $tenantContexts = null,
+    ) {}
 
     public function handle($request, \Closure $next)
     {
         $token = self::bearerToken((string)$request->header('Authorization', ''));
 
         if (empty($token)) {
-            return JsonService::fail('请求缺少 token', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('请求缺少 token', null, 40100);
         }
 
         $memberId = UserTokenService::parseToken($token);
         if ($memberId === false) {
-            return JsonService::fail('登录超时，请重新登录', null, 40100);
+            throw \app\common\http\ApiProblem::fromEnvelope('登录超时，请重新登录', null, 40100);
         }
 
         try {
-            $requestId = trim((string)$request->header('X-Request-Id', ''));
-            if ($requestId === '') {
-                $requestId = bin2hex(random_bytes(16));
-            }
-            $request->authenticatedMemberContext = $this->tenantContexts()->resolve(
+            $requestId = RequestTrace::id($request, 'member');
+            $memberContext = $this->tenantContexts()->resolve(
                 $memberId,
                 $token,
                 $requestId,
             );
-            $context = MemberTenantContext::member($request);
         } catch (\Throwable) {
-            return JsonService::fail('租户上下文不可用', null, 40300);
-        }
-        $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
-        if ($member->isEmpty()) {
-            return JsonService::fail('账号不存在', null, 40100);
-        }
-        if (!$member->status) {
-            return JsonService::fail('账号已被禁用', null, 40300);
+            throw \app\common\http\ApiProblem::fromEnvelope('租户上下文不可用', null, 40300);
         }
 
-        $request->memberId   = $memberId;
-        $request->memberInfo = $member->toArray();
+        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
+            ExecutionContext::member($memberContext, sprintf(
+                'http.member.%s.%s',
+                strtolower((string)$request->method()),
+                trim((string)$request->pathinfo(), '/'),
+            )),
+            static function () use ($memberId, $next, $request) {
+                $member = MemberTenantRepository::members()->where('id', $memberId)->findOrEmpty();
+                if ($member->isEmpty()) {
+                    throw \app\common\http\ApiProblem::fromEnvelope('账号不存在', null, 40100);
+                }
+                if (!$member->status) {
+                    throw \app\common\http\ApiProblem::fromEnvelope('账号已被禁用', null, 40300);
+                }
 
-        return $next($request);
+                return $next($request);
+            },
+        );
     }
 
     private static function bearerToken(string $authorization): string

@@ -78,12 +78,14 @@ $expect(
     'demo seed does not preserve the default Tenant plus independent A/B Tenant codes'
 );
 
-$admin = $read($root . '/server/app/adminapi/logic/auth/AdminLogic.php');
+$admin = $read($root . '/server/app/adminapi/application/auth/AdminApplicationService.php');
+$tenantAdminRuntime = $read($root . '/server/app/common/service/org/TenantAdminRuntime.php');
 $expect(
-    str_contains($admin, 'DemoAccountPolicy::assertPasswordChangeAllowed'),
+    str_contains($admin, 'self::runtime()->assertPasswordChangeAllowed')
+        && str_contains($tenantAdminRuntime, 'DemoAccountPolicy::assertPasswordChangeAllowed'),
     'demo password mutation is not rejected by the Server'
 );
-$workbench = $read($root . '/server/app/adminapi/logic/WorkbenchLogic.php');
+$workbench = $read($root . '/server/app/adminapi/application/WorkbenchApplicationService.php');
 $expect(
     str_contains($workbench, 'AdminAuthorizationService')
         && str_contains($workbench, "self::menuContainsPath(\$moduleMenus, '/system/file')"),
@@ -91,36 +93,14 @@ $expect(
 );
 $overlayBuilder = $read($root . '/scripts/build-demo-site-patch');
 $expect(
-    str_contains($overlayBuilder, 'plugins.lock')
-        && str_contains($overlayBuilder, 'plugins/official.file/plugin.json')
-        && str_contains($overlayBuilder, 'server/app/adminapi/logic/WorkbenchLogic.php')
-        && str_contains($overlayBuilder, 'server/app/command/TenantModuleProfile.php')
-        && str_contains($overlayBuilder, 'server/app/command/PluginReconcile.php')
-        && str_contains($overlayBuilder, 'server/app/platform/service/module/ProductTenantModuleProfileService.php')
-        && str_contains($overlayBuilder, 'server/app/common/service/ProductAssetReferenceService.php')
-        && str_contains($overlayBuilder, 'server/app/common/service/RichTextResourceService.php')
-        && str_contains($overlayBuilder, 'server/app/common/service/installation/InstallationPreflightHost.php')
-        && str_contains($overlayBuilder, 'server/app/common/service/decoration/DecorationSchemaService.php')
-        && str_contains($overlayBuilder, 'server/app/common/service/file/FileObjectNamespace.php')
-        && str_contains($overlayBuilder, 'web/src/components/menu/index.vue')
-        && str_contains($overlayBuilder, 'web/src/core/tenant-session.ts')
-        && str_contains($overlayBuilder, 'web/src/layout/default-layout.vue')
-        && str_contains($overlayBuilder, 'web/src/modules/official-file/contribution.ts'),
-    'demo overlay omits capability-aware menu or product-profile Runtime'
-);
-$expect(
-    str_contains($overlayBuilder, 'migration_target_version')
-        && str_contains($overlayBuilder, 'peanut-release:')
-        && str_contains($overlayBuilder, 'version_greater_than'),
-    'demo overlay does not bind its application migration target to metadata'
+    preg_match('/files=\(\n(?<files>.*?)\n\)/s', $overlayBuilder, $fileMatch) === 1
+        && trim((string)$fileMatch['files']) === 'server/database/seed-multi-tenant-demo.php'
+        && str_contains($overlayBuilder, 'migration_target_version="${BASE_TAG#v}"'),
+    'demo overlay must contain only the source-only synthetic data seed'
 );
 $expect(
     str_contains($overlayBuilder, 'COPYFILE_DISABLE=1 tar --no-xattrs'),
     'demo overlay archive does not suppress macOS xattrs and AppleDouble files'
-);
-$expect(
-    preg_match('/files=\(\n(?<files>.*?)\n\)/s', $overlayBuilder, $fileMatch) === 1,
-    'demo overlay file closure is unavailable to the executable contract'
 );
 $temporaryRoot = sys_get_temp_dir() . '/peanut-demo-overlay-contract-' . bin2hex(random_bytes(6));
 $repository = $temporaryRoot . '/repository';
@@ -137,10 +117,7 @@ try {
         if (!is_dir(dirname($absolute))) {
             mkdir(dirname($absolute), 0700, true);
         }
-        $contents = str_ends_with($path, '.sql')
-            ? "-- peanut-release: 3.0.6\nSELECT 1;\n"
-            : $path . "\n";
-        file_put_contents($absolute, $contents);
+        file_put_contents($absolute, $path . "\n");
     }
     foreach ([
         ['git', 'init', '-q'],
@@ -163,18 +140,18 @@ try {
     );
     $expect(
         ($metadata['base_tag'] ?? null) === 'v3.0.5'
-            && ($metadata['migration_target_version'] ?? null) === '3.0.6',
-        'generated overlay metadata does not raise the migration target to the maximum release marker'
+            && ($metadata['migration_target_version'] ?? null) === '3.0.5',
+        'generated overlay metadata does not keep the formal installer version'
     );
-    $migrationMetadata = array_values(array_filter(
+    $seedMetadata = array_values(array_filter(
         is_array($metadata['files'] ?? null) ? $metadata['files'] : [],
         static fn(mixed $file): bool => is_array($file)
-            && ($file['path'] ?? null) === 'server/database/migrations/20260822-classify-official-article-permissions.sql'
+            && ($file['path'] ?? null) === 'server/database/seed-multi-tenant-demo.php'
     ));
     $expect(
-        count($migrationMetadata) === 1
-            && preg_match('/^[0-9a-f]{64}$/D', (string)($migrationMetadata[0]['sha256'] ?? '')) === 1,
-        'generated overlay metadata does not bind the migration used to derive its target version'
+        count($seedMetadata) === 1
+            && preg_match('/^[0-9a-f]{64}$/D', (string)($seedMetadata[0]['sha256'] ?? '')) === 1,
+        'generated overlay metadata does not bind the synthetic data seed'
     );
 
     file_put_contents($repository . '/untracked.txt', "dirty\n");
@@ -281,7 +258,7 @@ $expect(
     'remote one-shot Compose commands must close inherited standard input'
 );
 
-$index = $read($root . '/server/app/api/logic/IndexLogic.php');
+$index = $read($root . '/server/app/api/application/IndexApplicationService.php');
 $expect(
     str_contains($index, 'in_array($host, $sharedHosts, true)')
         && str_contains($index, "return ['enabled' => false, 'email' => '', 'password' => ''];"),

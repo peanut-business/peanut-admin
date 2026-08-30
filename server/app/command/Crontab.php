@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
 use think\facade\Db;
@@ -15,14 +15,14 @@ use PeanutAdmin\Kernel\Tenancy\TenantScope;
  * 由系统 cron 每分钟调用一次：`* * * * * cd /path/to/server && php think crontab`
  * 每次调用扫描所有「运行中」任务，比对 cron 表达式，派发到期的 console 命令。
  */
-class Crontab extends Command
+class Crontab extends ContextualCommand
 {
     protected function configure()
     {
         $this->setName('crontab')->setDescription('定时任务调度器');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         if (!self::acquireSchedulerLock()) {
             return 0;

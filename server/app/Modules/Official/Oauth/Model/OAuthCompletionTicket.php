@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Model;
 
-use app\common\model\BaseModel;
+use app\common\model\TenantOwnedModel;
 
 /** OAuth 首登资料/手机补全的一次性受限票据。 */
-class OAuthCompletionTicket extends BaseModel
+class OAuthCompletionTicket extends TenantOwnedModel
 {
     protected $name = 'oauth_completion_ticket';
 }

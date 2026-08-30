@@ -35,7 +35,7 @@ PB04-06 保留 Peanut Admin 应用操作日志与环境维护 Host，不接入�
 
 ```text
 Login -> Auth -> OperationLogMiddleware -> OperationLogService -> pa_operation_log
-log/clear -> OperationLogLogic transaction -> OperationLogService -> pa_operation_log
+log/clear -> OperationLogApplicationService transaction -> OperationLogService -> pa_operation_log
 ```
 
 固定规则：
@@ -68,9 +68,9 @@ Runtime 白名单：
 
 - `server/app/adminapi/service/OperationLogService.php`；
 - `server/app/adminapi/http/middleware/OperationLogMiddleware.php`；
-- `server/app/adminapi/logic/log/OperationLogLogic.php`；
+- `server/app/adminapi/application/log/OperationLogApplicationService.php`；
 - `server/app/adminapi/controller/log/OperationLogController.php`；
-- `server/app/adminapi/logic/system/SystemLogic.php`。
+- `server/app/adminapi/application/system/SystemApplicationService.php`。
 
 证据与状态白名单：
 

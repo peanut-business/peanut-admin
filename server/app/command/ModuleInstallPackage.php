@@ -8,7 +8,7 @@ use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageException;
 use app\platform\service\plugin\PluginPackageInstaller;
 use PDO;
-use think\console\Command;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -16,7 +16,7 @@ use think\console\Output;
 use think\facade\Config;
 use think\facade\Db;
 
-final class ModuleInstallPackage extends Command
+final class ModuleInstallPackage extends ContextualCommand
 {
     protected function configure()
     {
@@ -26,7 +26,7 @@ final class ModuleInstallPackage extends Command
             ->addOption('signature-key-id', null, Option::VALUE_REQUIRED, 'Required trusted signature key id', '');
     }
 
-    protected function execute(Input $input, Output $output)
+    protected function handle(Input $input, Output $output): int
     {
         try {
             if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'

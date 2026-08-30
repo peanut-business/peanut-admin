@@ -76,12 +76,10 @@
         <el-divider style="height: 84px" direction="vertical" />
         <el-col :span="6" style="text-align: right">
           <el-space direction="vertical" :size="18">
-            <el-button type="primary" @click="search">
-              <template #icon><icon-search /></template>
+            <el-button type="primary" :icon="Search" @click="search">
               {{ $t('systemLog.form.search') }}
             </el-button>
-            <el-button @click="reset">
-              <template #icon><icon-refresh /></template>
+            <el-button :icon="Refresh" @click="reset">
               {{ $t('systemLog.form.reset') }}
             </el-button>
           </el-space>
@@ -91,8 +89,12 @@
       <el-row style="margin-bottom: 16px">
         <el-col :span="12">
           <el-space>
-            <el-button v-permission="['log/lists']" plain @click="openExport">
-              <template #icon><icon-export /></template>
+            <el-button
+              v-permission="['official.import-export.operation-log.export']"
+              plain
+              :icon="Download"
+              @click="openExport"
+            >
               {{ $t('systemLog.operation.export') }}
             </el-button>
             <el-popconfirm
@@ -100,8 +102,11 @@
               @confirm="handleClear"
             >
               <template #reference
-                ><el-button v-permission="['log/clear']" type="danger">
-                  <template #icon><icon-delete /></template>
+                ><el-button
+                  v-permission="['log/clear']"
+                  type="danger"
+                  :icon="Delete"
+                >
                   {{ $t('systemLog.operation.clear') }}
                 </el-button></template
               >
@@ -235,6 +240,7 @@
   import { computed, ref, reactive } from 'vue';
   import { useI18n } from 'vue-i18n';
   import { ElMessage } from 'element-plus';
+  import { Delete, Download, Refresh, Search } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     getOperationLogList,

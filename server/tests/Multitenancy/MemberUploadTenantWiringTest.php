@@ -105,7 +105,7 @@ CREATE TABLE pa_file (
 INSERT INTO pa_config (type, name, value) VALUES ('storage', 'default', 'local');
 SQL);
 
-    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password);
+    IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
 
     $app = new think\App($serverRoot);
     $app->initialize();

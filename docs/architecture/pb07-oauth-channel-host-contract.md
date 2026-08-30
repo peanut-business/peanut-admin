@@ -10,7 +10,7 @@
 
 微信 OAuth、公众号、小程序、开放平台及其 Peanut Admin 会员绑定、首次资料补全和端回跳属于应用 Channel/OAuth Module。核心 `integration-security` 的 Tenant 机器身份、Webhook 与会话能力不是产品会员 OAuth，当前固定核心提交 `7fbd445d8fa547830b7782a7ac147d9ed414e0fd` 也没有 Peanut Admin 下游采用授权。本片不修改核心、不升级依赖、不 deep import，且不把产品表、场景或路由迁入核心。
 
-应用唯一 OAuth 生产链为：`OAuthController → OAuthLogic → OAuthTransportInterface → WechatOAuthTransport`。`OAuthLogic` 是 `pa_oauth_attempt`、`pa_oauth_principal`、`pa_oauth_identity`、`pa_oauth_completion_ticket` 及会员身份关联的唯一 writer；管理端 `MiniProgramLogic`、`OfficialAccountLogic`、`OpenPlatformLogic` 分别拥有 `mnp_setting`、`oa_setting`、`open_platform` 凭据。设置聚合页继续保留，H5、小程序、公众号、公众号菜单/回复和开放平台页面不得因旧 Channel CRUD 退出而删除。
+应用唯一 OAuth 生产链为：`OAuthController → OAuthApplicationService → OAuthTransportInterface → WechatOAuthTransport`。`OAuthApplicationService` 是 `pa_oauth_attempt`、`pa_oauth_principal`、`pa_oauth_identity`、`pa_oauth_completion_ticket` 及会员身份关联的唯一 writer；管理端 `MiniProgramApplicationService`、`OfficialAccountApplicationService`、`OpenPlatformApplicationService` 分别拥有 `mnp_setting`、`oa_setting`、`open_platform` 凭据。设置聚合页继续保留，H5、小程序、公众号、公众号菜单/回复和开放平台页面不得因旧 Channel CRUD 退出而删除。
 
 ## 2. 浏览器回跳合同
 

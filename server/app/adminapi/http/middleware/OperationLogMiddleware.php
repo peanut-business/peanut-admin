@@ -7,7 +7,10 @@ use app\adminapi\service\OperationLogService;
 use app\common\service\audit\OperationLogDiagnostics;
 use app\common\service\audit\OperationLogTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Log;
+use app\common\execution\ExecutionContextAccess;
+use app\common\http\ApiProblemMapper;
+use app\common\service\runtime\OperationalLog;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 
 /**
  * 操作日志中间件（原生 TP 风格）
@@ -24,21 +27,48 @@ class OperationLogMiddleware
     public function handle($request, \Closure $next)
     {
         try {
-            $context = OperationLogTenantContext::member($request);
+            $context = ExecutionContextAccess::tenantAdmin();
         } catch (\Throwable $exception) {
-            Log::warning('operation_log_tenant_context_unavailable', OperationLogDiagnostics::attributes(null));
+            OperationalLog::warning('operation_log_tenant_context_unavailable', OperationLogDiagnostics::attributes(null));
             throw $exception;
         }
+        $outcome = AuditOutcome::Success;
+        $reasonCode = null;
+        $httpStatus = 200;
         try {
-            return $next($request);
+            $response = $next($request);
+            if (is_object($response) && method_exists($response, 'getCode')) {
+                $httpStatus = (int)$response->getCode();
+                if ($httpStatus >= 400) {
+                    $outcome = in_array($httpStatus, [401, 403], true)
+                        ? AuditOutcome::Denied
+                        : AuditOutcome::Error;
+                    $reasonCode = 'HTTP_' . $httpStatus;
+                }
+            }
+            return $response;
+        } catch (\Throwable $exception) {
+            $problem = (new ApiProblemMapper())->map($exception);
+            $httpStatus = $problem?->httpStatus ?? 500;
+            $outcome = in_array($httpStatus, [401, 403], true)
+                ? AuditOutcome::Denied
+                : AuditOutcome::Error;
+            $reasonCode = $problem?->errorCode ?? 'UNHANDLED_EXCEPTION';
+            throw $exception;
         } finally {
             if (in_array(strtoupper((string)$request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
-                $this->record($context, $request);
+                $this->record($context, $request, $outcome, $reasonCode, $httpStatus);
             }
         }
     }
 
-    protected function record(TenantContext $context, $request): void
+    protected function record(
+        TenantContext $context,
+        $request,
+        AuditOutcome $outcome,
+        ?string $reasonCode,
+        int $httpStatus,
+    ): void
     {
         $uri = strtolower(trim($request->pathinfo(), '/'));
         foreach ($this->except as $skip) {
@@ -47,7 +77,7 @@ class OperationLogMiddleware
             }
         }
 
-        $adminInfo = $request->adminInfo ?? [];
+        $adminInfo = ExecutionContextAccess::principal();
 
         try {
             OperationLogService::record(
@@ -57,10 +87,13 @@ class OperationLogMiddleware
                 (string)$request->ip(),
                 $uri,
                 (string)$request->method(),
-                $request->post()
+                $request->post(),
+                $outcome,
+                $reasonCode,
+                $httpStatus,
             );
         } catch (\Throwable $exception) {
-            Log::error('operation_log_write_failed', OperationLogDiagnostics::attributes($context) + [
+            OperationalLog::error('operation_log_write_failed', OperationLogDiagnostics::attributes($context) + [
                 'exception' => $exception::class,
             ]);
             // 记录日志失败不得影响主流程

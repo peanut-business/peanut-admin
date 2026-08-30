@@ -1,9 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\Task\Service\CrontabLogic;
+use app\Modules\Official\Task\Application\CrontabApplicationService;
 use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\XlsxExportService;
 use app\common\service\storage\StorageService;
@@ -78,51 +80,93 @@ $exportPath = '';
 $exportFileKey = '';
 
 try {
-    expectTaskHost(CrontabLogic::add($context, [
-        'name' => $taskName,
-        'type' => 1,
-        'command' => 'crontab:demo',
-        'params' => '',
-        'status' => CrontabEnum::START,
-        'expression' => '* * * * *',
-        'sort' => 0,
-        'remark' => 'PB04-TASK-OPS-HOST-001',
-    ]), CrontabLogic::getError());
-    $taskId = (int)Crontab::where('name', $taskName)->value('id');
+    expectTaskHost(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.add'),
+            fn() => app(CrontabApplicationService::class)->add([
+                'name' => $taskName,
+                'type' => 1,
+                'command' => 'crontab:demo',
+                'params' => '',
+                'status' => CrontabEnum::START,
+                'expression' => '* * * * *',
+                'sort' => 0,
+                'remark' => 'PB04-TASK-OPS-HOST-001',
+            ]),
+        ),
+        app(CrontabApplicationService::class)->getError(),
+    );
+    $taskId = (int)app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.query'),
+        fn() => Crontab::where('name', $taskName)->value('id'),
+    );
     expectTaskHost($taskId > 0, 'temporary crontab was not created');
 
-    $task = Crontab::findOrEmpty($taskId);
+    $task = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.find'),
+        fn() => Crontab::findOrEmpty($taskId),
+    );
     expectTaskHost(!$task->isEmpty(), 'temporary crontab is missing');
     CrontabCommand::start($scope, $task->getData());
-    $task = Crontab::findOrEmpty($taskId);
+    $task = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.find.allowed'),
+        fn() => Crontab::findOrEmpty($taskId),
+    );
     expectTaskHost((string)$task->error === '', 'allowed task must succeed');
     expectTaskHost((int)$task->status === CrontabEnum::START, 'successful task must remain started');
 
-    Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab']);
-    $task = Crontab::findOrEmpty($taskId);
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.seed-denied'),
+        fn() => Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab']),
+    );
+    $task = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.find.denied'),
+        fn() => Crontab::findOrEmpty($taskId),
+    );
     CrontabCommand::start($scope, $task->getData());
-    $task = Crontab::findOrEmpty($taskId);
+    $task = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.find.denied-result'),
+        fn() => Crontab::findOrEmpty($taskId),
+    );
     expectTaskHost((int)$task->status === CrontabEnum::ERROR, 'disallowed task must enter error state');
     expectTaskHost(
         str_contains((string)$task->error, '未注册或不允许调度'),
         'disallowed task must expose the stable allowlist failure'
     );
 
-    Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab:demo']);
-    expectTaskHost(CrontabLogic::operate($context, $taskId, 'start'), CrontabLogic::getError());
-    $task = Crontab::findOrEmpty($taskId);
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.seed-retry'),
+        fn() => Db::name('crontab')->where('id', $taskId)->update(['command' => 'crontab:demo']),
+    );
+    expectTaskHost(
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.operate'),
+            fn() => app(CrontabApplicationService::class)->operate($taskId, 'start'),
+        ),
+        app(CrontabApplicationService::class)->getError(),
+    );
+    $task = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.find.retry'),
+        fn() => Crontab::findOrEmpty($taskId),
+    );
     expectTaskHost((int)$task->status === CrontabEnum::START, 'manual retry must restore started state');
     expectTaskHost((string)$task->error === '', 'manual retry must clear the previous error');
     CrontabCommand::start($scope, $task->getData());
-    $task = Crontab::findOrEmpty($taskId);
+    $task = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.find.retried'),
+        fn() => Crontab::findOrEmpty($taskId),
+    );
     expectTaskHost((int)$task->status === CrontabEnum::START, 'retried task must succeed');
     expectTaskHost((string)$task->error === '', 'retried task must finish without an error');
 
-    $file = XlsxExportService::createForTenant(
-        $context,
-        'PB04-task-export-' . $suffix,
-        ['任务', '次数', '公式文本'],
-        [['crontab:demo', 2, '=1+1']]
+    $file = app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.xlsx.export'),
+        fn() => XlsxExportService::createForTenant(
+            $context,
+            'PB04-task-export-' . $suffix,
+            ['任务', '次数', '公式文本'],
+            [['crontab:demo', 2, '=1+1']],
+        ),
     );
     $exportFileKey = (string)($file['file_key'] ?? '');
     $exportPath = $serverRoot . '/private/storage/' . (string)($file['object_key'] ?? '');
@@ -138,11 +182,11 @@ try {
     $zip->close();
 
     $exportCallers = [
-        'app/adminapi/logic/auth/AdminLogic.php',
-        'app/adminapi/logic/dept/JobsLogic.php',
-        'app/Modules/Official/Member/Service/MemberLogic.php',
-        'app/Modules/Official/Payment/Service/RechargeLogic.php',
-        'app/adminapi/logic/log/OperationLogLogic.php',
+        'app/adminapi/application/auth/AdminApplicationService.php',
+        'app/adminapi/application/dept/JobsApplicationService.php',
+        'app/Modules/Official/Member/Application/MemberAdministrationService.php',
+        'app/Modules/Official/Payment/Application/RechargeAdministrationService.php',
+        'app/adminapi/application/log/OperationLogApplicationService.php',
     ];
     foreach ($exportCallers as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
@@ -162,8 +206,8 @@ try {
 
     foreach ([
         'app/command/Crontab.php',
-        'app/Modules/Official/Task/Service/CrontabLogic.php',
-        'app/adminapi/logic/generator/GeneratorLogic.php',
+        'app/Modules/Official/Task/Application/CrontabApplicationService.php',
+        'app/adminapi/application/generator/GeneratorApplicationService.php',
         'app/adminapi/service/generator/GeneratorArchiveService.php',
     ] as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
@@ -175,13 +219,19 @@ try {
         StorageService::fromDefaultConnection()->delete($tenantId, $exportFileKey);
     }
     if ($taskId > 0) {
-        Db::name('crontab')->where('id', $taskId)->delete();
+        app(ExecutionContextStore::class)->run(
+            ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.cleanup'),
+            fn() => Db::name('crontab')->where('id', $taskId)->delete(),
+        );
     }
 }
 
 expectTaskHost(!is_file($exportPath), 'temporary XLSX was not cleaned');
 expectTaskHost(
-    Db::name('crontab')->where('name', $taskName)->count() === 0,
+    app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, 'test.task-import-export.crontab.cleanup.verify'),
+        fn() => Db::name('crontab')->where('name', $taskName)->count(),
+    ) === 0,
     'temporary crontab was not cleaned'
 );
 

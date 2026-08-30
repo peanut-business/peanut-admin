@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
@@ -150,7 +152,7 @@ SQL);
     $auth->logout($betaAuth->tokens->access->expose(), 'mt04-logout');
     tenantHostRejects(static fn() => $auth->context($betaAuth->tokens->access->expose(), 'mt04-after-logout'));
 
-    $route = (string)file_get_contents(dirname(__DIR__, 2) . '/route/app.php');
+    $route = peanut_route_registry_source(dirname(__DIR__, 2));
     foreach (['login', 'select', 'switch', 'logout'] as $action) {
         tenantHostExpect(str_contains($route, "api/tenant/session/{$action}"), "Tenant session {$action} route is missing");
     }

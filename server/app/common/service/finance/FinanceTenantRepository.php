@@ -18,23 +18,20 @@ final class FinanceTenantRepository
         string $alias = ''
     )
     {
-        $tenantId = FinanceTenantContext::tenantId($context);
-        return $alias === ''
-            ? RechargeOrder::where('tenant_id', $tenantId)
-            : RechargeOrder::alias($alias)->where($alias . '.tenant_id', $tenantId);
+        FinanceTenantContext::tenantId($context);
+        return $alias === '' ? RechargeOrder::where([]) : RechargeOrder::alias($alias)->where([]);
     }
 
     public static function records(TenantContext|TenantSystemContext|TenantScope $context, string $alias = '')
     {
-        $tenantId = FinanceTenantContext::tenantId($context);
-        return $alias === ''
-            ? RefundRecord::where('tenant_id', $tenantId)
-            : RefundRecord::alias($alias)->where($alias . '.tenant_id', $tenantId);
+        FinanceTenantContext::tenantId($context);
+        return $alias === '' ? RefundRecord::where([]) : RefundRecord::alias($alias)->where([]);
     }
 
     public static function logs(TenantContext|TenantSystemContext|TenantScope $context)
     {
-        return RefundLog::where('tenant_id', FinanceTenantContext::tenantId($context));
+        FinanceTenantContext::tenantId($context);
+        return RefundLog::where([]);
     }
 
     public static function createOrder(
@@ -42,19 +39,22 @@ final class FinanceTenantRepository
         array $data
     ): RechargeOrder
     {
+        FinanceTenantContext::tenantId($context);
         unset($data['tenant_id']);
-        return RechargeOrder::create(['tenant_id' => FinanceTenantContext::tenantId($context)] + $data);
+        return RechargeOrder::create($data);
     }
 
     public static function createRecord(TenantContext $context, array $data): RefundRecord
     {
+        FinanceTenantContext::tenantId($context);
         unset($data['tenant_id']);
-        return RefundRecord::create(['tenant_id' => FinanceTenantContext::tenantId($context)] + $data);
+        return RefundRecord::create($data);
     }
 
     public static function createLog(TenantContext $context, array $data): RefundLog
     {
+        FinanceTenantContext::tenantId($context);
         unset($data['tenant_id']);
-        return RefundLog::create(['tenant_id' => FinanceTenantContext::tenantId($context)] + $data);
+        return RefundLog::create($data);
     }
 }

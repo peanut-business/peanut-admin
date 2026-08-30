@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/route/registry_source.php';
+
 function officialArticleExpect(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -79,15 +81,39 @@ officialArticleExpect(
 );
 
 $routes = (string)file_get_contents($moduleRoot . '/Http/routes.php');
-$hostRoutes = (string)file_get_contents($serverRoot . '/route/app.php');
+$hostRoutes = peanut_route_registry_source($serverRoot);
 $repository = (string)file_get_contents($serverRoot . '/app/common/service/article/ArticleTenantRepository.php');
 $capability = (string)file_get_contents($serverRoot . '/app/common/service/capability/ArticleCapabilityAuthorization.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicArticleTenantMiddleware.php');
-$menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/logic/auth/MenuLogic.php');
+$administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
+$categoryController = (string)file_get_contents($moduleRoot . '/Http/Controller/ArticleCateController.php');
+$menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/application/auth/MenuApplicationService.php');
 $permissionService = (string)file_get_contents($serverRoot . '/app/common/service/authorization/AdminAuthorizationService.php');
 officialArticleExpect(substr_count($routes, "Route::get('official.article.") === 5, 'Article GET route count changed');
 officialArticleExpect(substr_count($routes, "Route::post('official.article.") === 8, 'Article POST route count changed');
-officialArticleExpect(str_contains($routes, 'ArticleModuleMiddleware::class'), 'Article routes lost ModuleGuard middleware');
+officialArticleExpect(
+    str_contains($routes, 'OfficialModuleMiddleware::class')
+        && str_contains($routes, "(new ModuleProvider())->moduleKey()"),
+    'Article routes lost the shared Module execution boundary',
+);
+officialArticleExpect(
+    str_contains($categoryController, 'categoryLists(')
+        && str_contains($categoryController, 'categoryDetail(')
+        && str_contains($categoryController, 'addCategory(')
+        && str_contains($categoryController, 'editCategory(')
+        && str_contains($categoryController, 'deleteCategory(')
+        && str_contains($categoryController, 'updateCategoryStatus('),
+    'Article category controller is not mapped to category application use cases',
+);
+officialArticleExpect(
+    !str_contains($administration, 'class ArticleAdministrationService extends BaseLogic')
+        && str_contains($administration, 'implements ArticleAdministration'),
+    'Article administration did not converge on its application contract',
+);
+officialArticleExpect(
+    !is_file($moduleRoot . '/Http/ArticleModuleMiddleware.php'),
+    'Article-specific Module middleware was reintroduced',
+);
 officialArticleExpect(!str_contains($hostRoutes, "Route::get('official.article."), 'Article Admin routes remain Host-owned');
 officialArticleExpect(!str_contains($hostRoutes, "Route::post('official.article."), 'Article Admin writes remain Host-owned');
 officialArticleExpect(
@@ -115,40 +141,48 @@ officialArticleExpect(
 );
 
 $pcController = (string)file_get_contents($serverRoot . '/app/api/controller/PcController.php');
-$pcLogic = (string)file_get_contents($serverRoot . '/app/api/logic/PcLogic.php');
-$articleLogic = (string)file_get_contents($serverRoot . '/app/api/logic/ArticleLogic.php');
-$userLogic = (string)file_get_contents($serverRoot . '/app/api/logic/UserLogic.php');
+$pcApplication = (string)file_get_contents($serverRoot . '/app/api/application/PcApplicationService.php');
+$articleApplication = (string)file_get_contents($serverRoot . '/app/api/application/ArticleApplicationService.php');
+$userApplication = (string)file_get_contents($serverRoot . '/app/api/application/UserApplicationService.php');
 officialArticleExpect(
     substr_count($pcController, 'ArticleTenantContext::read(') >= 3,
     'PC article/detail aggregation lost Article Tenant context'
 );
 officialArticleExpect(
-    str_contains($pcLogic, 'ArticleLogic::limitArticles($context')
-        && str_contains($pcLogic, 'DecorationReadService::pageByType('),
+    str_contains($pcApplication, 'private readonly ArticleApplicationService $articles')
+        && substr_count($pcApplication, '$this->articles->limitArticles(') === 3
+        && !str_contains($pcApplication, 'app(ArticleApplicationService::class)')
+        && str_contains($pcApplication, 'DecorationReadService::pageByType('),
     'PC aggregation no longer routes Article and decoration reads through guarded services'
 );
 officialArticleExpect(
-    substr_count($articleLogic, 'ArticleTenantRepository::collections(') >= 4,
+    substr_count($articleApplication, 'ArticleTenantRepository::collections(') >= 4,
     'member collection path lost Article-owned storage boundary'
 );
 officialArticleExpect(
-    str_contains($userLogic, 'collectionSummary()')
-        && str_contains($userLogic, 'catch (ModuleException)')
-        && !str_contains($userLogic, 'ArticleCollect::'),
+    str_contains($userApplication, 'collectionSummary()')
+        && str_contains($userApplication, 'catch (ModuleException)')
+        && !str_contains($userApplication, 'ArticleCollect::'),
     'member center bypasses the public Article collection summary contract'
 );
 officialArticleExpect(
-    str_contains($publicMiddleware, "JsonService::fail('文章模块当前不可用'")
+    str_contains($publicMiddleware, "ApiProblem::fromEnvelope('文章模块当前不可用'")
         && str_contains($publicMiddleware, '\'error_code\' => $exception->errorCode'),
     'public Article disable refusal is not fail-closed with a stable error code'
 );
 
-officialArticleExpect(str_contains($repository, 'ModuleProvider'), 'Article repository lost TenantModule enforcement');
+officialArticleExpect(
+    !str_contains($repository, 'ModuleProvider')
+        && !str_contains($repository, 'assertAvailable')
+        && !str_contains($repository, "where('tenant_id'")
+        && !str_contains($repository, "['tenant_id' =>"),
+    'Article repository reintroduced per-query Module or Tenant enforcement',
+);
 officialArticleExpect(str_contains($capability, 'assertTenant('), 'Article typed target lost TenantModule enforcement');
 officialArticleExpect(
     str_contains($publicMiddleware, 'TenantEntryBindingResolver::production()->system(')
-        && str_contains($publicMiddleware, 'ModuleExecutionContext::system(')
-        && str_contains($publicMiddleware, 'PdoModuleGovernanceProvider::forExecution'),
+        && str_contains($publicMiddleware, "assertHttp('official.article')")
+        && str_contains($publicMiddleware, 'ModuleExecutionBoundary'),
     'public Article entry is not Host-bound and Module guarded'
 );
 
@@ -168,8 +202,8 @@ $moduleFiles = [
     'Http/Controller/AbstractArticleCrudController.php',
     'Http/Controller/ArticleCateController.php',
     'Http/Controller/ArticleController.php',
-    'Service/ArticleCateLogic.php',
-    'Service/ArticleLogic.php',
+    'Application/ArticleAdministrationService.php',
+    'Contracts/ArticleAdministration.php',
     'Validation/ArticleCateValidate.php',
     'Validation/ArticleValidate.php',
     'Model/Article.php',
@@ -181,7 +215,7 @@ foreach ($moduleFiles as $relative) {
 }
 foreach ([
     '/app/adminapi/controller/article',
-    '/app/adminapi/logic/article',
+    '/app/adminapi/application/article',
     '/app/adminapi/validate/article',
     '/app/common/model/article',
 ] as $legacyDirectory) {
