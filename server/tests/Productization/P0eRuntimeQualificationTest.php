@@ -192,6 +192,7 @@ $expect(!str_contains($runnerSource, 'pwcli-cache-*'), 'browser tooling retained
 $expect(str_contains($runnerSource, 'prepare_database_credentials()'), 'P0-E runner does not synchronize the registered database credential source');
 $expect(str_contains($runnerSource, 'runtime-credentials.env'), 'P0-E runner does not retain per-run browser credentials for resume');
 $expect(str_contains($runnerSource, 'resources != expected_resources'), 'lease verification is not an exact-set comparison');
+$expect(str_contains($runnerSource, '"candidate_repository": plan_data["worktree"]'), 'lease verification lost the candidate repository boundary');
 $expect(str_contains($runnerSource, 'read_only: true'), 'container lease proof is not read-only');
 $expect(str_contains($runnerSource, 'PERSISTENT_DATABASE'), 'persistent database refusal is missing');
 $expect(!str_contains($runnerSource, '["mysql"'), 'runner reintroduced a bare host MySQL client');
