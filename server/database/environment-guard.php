@@ -129,7 +129,7 @@ function activeLeaseMetadata(string $proofPath, int $now): array
         }
         $metadata[$fields[0]] = $fields[1];
     }
-    $expectedKeys = ['lease', 'owner', 'thread', 'candidate', 'gate', 'worktree', 'created_at', 'expires_at', 'status'];
+    $expectedKeys = ['lease', 'owner', 'thread', 'candidate', 'candidate_repository', 'gate', 'worktree', 'created_at', 'expires_at', 'status'];
     $actualKeys = array_keys($metadata);
     sort($expectedKeys, SORT_STRING);
     sort($actualKeys, SORT_STRING);
@@ -137,6 +137,7 @@ function activeLeaseMetadata(string $proofPath, int $now): array
         || preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/D', $metadata['lease']) !== 1
         || preg_match('/^[a-f0-9]{40}$/D', $metadata['candidate']) !== 1
         || $metadata['gate'] !== 'p0e-runtime-qualification'
+        || !str_starts_with($metadata['candidate_repository'], '/')
         || !str_starts_with($metadata['worktree'], '/')
         || preg_match('/^[0-9]+$/D', $metadata['created_at']) !== 1
         || preg_match('/^[0-9]+$/D', $metadata['expires_at']) !== 1
@@ -313,6 +314,7 @@ function assertP0eLeaseContract(
     assertLeaseResourceValues($resources, 'gate', [$metadata['gate']]);
     assertLeaseResourceValues($resources, 'worktree', [$metadata['worktree']]);
     if ($metadata['lease'] !== 'p0e-runtime-' . $runId
+        || $metadata['candidate_repository'] !== $metadata['worktree']
         || !isLexicallyAbsolutePath($metadata['worktree'])
         || preg_match('/^[a-f0-9]{40}$/D', $resources['candidate-tree'][0]) !== 1) {
         throw new RuntimeException('P0-E lease candidate/run_id/worktree identity 不匹配');

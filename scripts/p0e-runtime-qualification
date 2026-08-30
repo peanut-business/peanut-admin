@@ -518,6 +518,7 @@ def verify_lease(args: argparse.Namespace, plan_data: dict[str, Any]) -> None:
         "owner": args.owner,
         "thread": args.thread,
         "candidate": args.candidate,
+        "candidate_repository": plan_data["worktree"],
         "gate": plan_data["gate"],
         "worktree": plan_data["worktree"],
         "status": "ACTIVE",
