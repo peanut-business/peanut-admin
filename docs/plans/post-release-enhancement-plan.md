@@ -1,10 +1,10 @@
 # Peanut Admin 发布后增强任务计划
 
-> 状态：当前计划；Phase 0 已完成，双 Edition 安装/升级制品已有本地候选，尚未形成正式 Release
+> 状态：当前计划；Phase 0 已完成，v3.0.13 双 Edition 安装基线已封存，尚未合入、资格或发布
 >
 > 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
 >
-> 计划事实基线：`origin/dev@3193314e24d8204b65218a2c6de5d162b32de82c`；本分发/升级候选 `8d3a4f08672a78c0867ac9991d7af4882f15fc05`
+> 计划事实基线：`origin/dev@3193314e24d8204b65218a2c6de5d162b32de82c`；功能冻结提交 `dd1e7bab86fe8c5a02419c1c14cd40a60c4da0fc`，v3.0.13 scaffold 已生成但仍属未合入候选
 >
 > 决策日期：2026-08-30
 >
