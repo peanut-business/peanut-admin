@@ -32,9 +32,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。v3.0.13 的双 Edition 安装分发、升级包合同、Demo 可见问题修复和正式资格入口已在候选 d6784ffb15c1f079a8b3e45f6abc5e5cabbf64fd 实现；旧 scaffold seal 仍指向更早提交，当前尚未最终封存、合入、资格、发布或由 Demo/文档站采用。跨版本升级体验需等 v3.0.13 成为合格来源后由下一补丁完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。v3.0.13 的双 Edition 安装分发、升级包合同、Demo 可见问题修复和正式资格入口已在功能冻结提交 5ab0ea402a3af3b1403f629983bc5c5963aaf90a 完成聚焦验证；旧 scaffold seal 仍指向更早提交，当前正在最终重封，尚未合入、资格、发布或由 Demo/文档站采用。跨版本升级体验需等 v3.0.13 成为合格来源后由下一补丁完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
 >
-> 事实基线：`feat/dual-edition-artifacts@d6784ffb15c1f079a8b3e45f6abc5e5cabbf64fd`，复核日期：`2026-08-30`。
+> 事实基线：`feat/dual-edition-artifacts@5ab0ea402a3af3b1403f629983bc5c5963aaf90a`，复核日期：`2026-08-30`。
 
 ### 已验证可用
 
@@ -78,7 +78,7 @@ php scripts/check-product-capability-ledger
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-ARCH-001` | ThinkPHP/ThinkORM 统一执行与数据边界 | 已实现，待验收 | TPQ00—TPQ53 已由 PR #380 合入 dev：一套可信 ExecutionContext 驱动 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。 |
-| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已实现，待验收 | 候选 d6784ff… 已实现从同一 source commit/tree 生成 Standalone 与 Multi-tenant 安装包、签名同 Edition 升级包合同、升级影响计划、正式附件发布入口和直接消费两安装包的资格入口；Demo 可见问题已在 836d8a9… 聚焦复验关闭。旧 scaffold seal 已失效，首个正式安装基线仍待最终 reseal、P0-E、Release 附件独立消费及 Demo/文档采用；同 Edition 跨版本升级将在 v3.0.13 成为合格来源后的下一补丁采用，因此当前不能标记为已验证。 |
+| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已实现，待验收 | 功能冻结提交 5ab0ea4… 已通过双安装包确定性 build/check、升级包合同、Demo overlay 合同、资格入口合同和文档构建；Demo 可见问题已在 836d8a9… 聚焦复验关闭。旧 scaffold seal 已失效，首个正式安装基线仍待最终 reseal、P0-E、Release 附件独立消费及 Demo/文档采用；同 Edition 跨版本升级将在 v3.0.13 成为合格来源后的下一补丁采用，因此当前不能标记为已验证。 |
 
 ### 暂缓或范围外
 

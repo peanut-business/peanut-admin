@@ -1,7 +1,7 @@
 # Peanut Admin 发布后增强任务计划
 
-> 状态：当前执行中；Phase 0、审计、文档与 PE01—PE05 已完成，v3.0.13 双 Edition 候选待
-> 最终 reseal、合入、资格和发布
+> 状态：当前执行中；Phase 0、审计、文档、PE01—PE05 与 REL01 已完成，v3.0.13 双 Edition
+> 候选正在最终 reseal，随后待合入、资格和发布
 >
 > 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
 >
@@ -9,7 +9,8 @@
 > `82fd612…` 的 PE05 复验依次发现共享 Vue 构建标志、Platform favicon 和历史 `2.0.1` Runtime
 > 版本回退，两个候选均已失效并返回 Development mode。产品 Runtime 候选 `836d8a9…` 已完成
 > DA01—DA08 与第二 persona 聚焦复验；资格工具提交 `d6784ff…` 已改为直接消费两个正式安装包。
-> 旧 scaffold seal 仍指向 `dd1e7bab…`，必须在新的最终功能提交上重封后才可进入资格
+> 功能冻结提交 `5ab0ea4…` 的双安装包确定性构建、升级/Demo/资格合同与文档构建均已通过；
+> 旧 scaffold seal 仍指向 `dd1e7bab…`，必须从该功能冻结提交重封后才可进入资格
 >
 > 决策日期：2026-08-30
 >
@@ -335,9 +336,9 @@ owner `scripts/deploy-release` 从正式 annotated tag 生成不可变源码归�
 
 | ID | 任务 | 状态 | 交付结果 | 最低验收 |
 | --- | --- | --- | --- | --- |
-| AR01 | 冻结 Edition 构建输入 | 部分完成（本地候选） | `edition-profiles.json` 与固定 commit/tree、依赖锁、Module lock、Schema profile 已进入同一生成链 | 正式新版本尚未冻结，不能把开发 commit 当 Release |
-| AR02 | 生成 Standalone 安装包 | 部分完成（开发制品） | 固定提交 `e03e418…` 已生成确定性 Standalone `tar.gz` 和外部 manifest | 仍缺正式版本身份、独立空库安装和发布附件 |
-| AR03 | 生成 Multi-tenant 安装包 | 部分完成（开发制品） | 同一提交已生成 Multi-tenant `tar.gz`，保留 Tenant/Platform profile | 仍缺正式版本身份、独立空库安装和发布附件 |
+| AR01 | 冻结 Edition 构建输入 | 已完成（功能冻结候选） | `5ab0ea4…` 固定 commit/tree、Edition profile、依赖锁、Module lock 与 Schema profile 已进入同一生成链 | 尚不是正式 Release，最终 scaffold 与资格身份仍须从该提交收敛 |
+| AR02 | 生成 Standalone 安装包 | 部分完成（聚焦制品通过） | `5ab0ea4…` 已生成并确定性复核 Standalone `tar.gz` 和外部 manifest | 仍缺正式发布附件与独立空库消费 |
+| AR03 | 生成 Multi-tenant 安装包 | 部分完成（聚焦制品通过） | 同一提交已生成并确定性复核 Multi-tenant `tar.gz`，保留 Tenant/Platform profile | 仍缺正式发布附件与独立空库消费 |
 | AR04 | 发布双包与 checksum | 部分完成（未发布） | 开发制品已有区分 Edition 的文件名、外部 manifest 与 SHA-256 | SBOM/许可证附件、正式 Release 下载入口尚缺 |
 | AR05 | 校验双包身份与差异 | 部分完成（聚焦合同通过） | 构建器与 `CreateApplicationTest` 已核对来源一致、Edition 投影和 Schema 差异 | 固定 Release 上的最终机器差异报告尚缺 |
 | AR06 | 双 Edition 首次安装验收 | 未开始 | 两个正式包分别完成一次最低充分空库安装 | 不依赖开发 worktree，均能配置、安装、启动和登录 |
@@ -408,8 +409,8 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 
 | ID | 任务 | 状态 | 最低结果 |
 | --- | --- | --- | --- |
-| REL01 | 聚焦验证 | 未开始 | 分发、升级和 Demo 各自最低充分局部检查通过 |
-| REL02 | 冻结唯一候选 | 未开始 | worktree 干净，source commit/tree、inventory、scaffold、依赖和制品身份锁定 |
+| REL01 | 聚焦验证 | 已完成（`5ab0ea4…`） | 双安装包 build/check、升级包合同、Demo overlay 合同、资格入口合同、账本、文档治理和 VitePress 构建通过；未运行完整 P0-E |
+| REL02 | 冻结唯一候选 | 进行中 | worktree 已清洁、功能提交已冻结；正在重建 inventory/scaffold 与资格 fixture，完成后锁定唯一 candidate/tree |
 | REL03 | 正式资格 | 未开始 | 只对冻结 L2 候选运行一次 P0-E；失败候选返回 Development mode，不边跑边修 |
 | REL04 | 发布全部正式制品 | 未开始 | v3.0.13 发布源码与 Standalone/Multi-tenant 安装包；首个升级版本再发布两个同 Edition 升级包，不能伪造来源 |
 | REL05 | 双 Edition 独立消费 | 未开始 | 从两个正式安装包分别完成一次独立安装，不依赖开发 worktree |
@@ -473,6 +474,6 @@ v3.0.13 完成 REL01—REL05、REL07 和 REL08 后，只能报告“首个双 Ed
 8. Marketplace、T16 真实资金、Provider 真实外呼、第三方生产采用、跨实例运营平台和完整 SaaS
    均保持各自授权与范围边界，不因本计划自动获得执行授权。
 
-当前关键路径是完成审计/计划同步、一次聚焦合同与文档治理、最终 scaffold reseal，然后只对
-一个冻结 L2 候选执行 v3.0.13 的 REL01—REL05、REL07、REL08。v3.0.13 发布后才具备 UP09/REL06
+当前关键路径是从 `5ab0ea4…` 完成最终 scaffold reseal，然后只对一个冻结 L2 候选执行
+v3.0.13 的 REL02—REL05、REL07、REL08。v3.0.13 发布后才具备 UP09/REL06
 需要的合格来源；该升级采用进入下一补丁，不创建官方应用源码仓库，也不在迭代期运行完整资格。
