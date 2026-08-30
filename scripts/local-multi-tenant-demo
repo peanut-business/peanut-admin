@@ -216,6 +216,8 @@ case "${1:-}" in
             PLATFORM_INITIAL_EMAIL=platform@local.test PLATFORM_INITIAL_PASSWORD=peanut1234 \
             PEANUT_SERVER_ENV_FILE="$backend_env" \
             php "$repo_dir/server/database/install.php" --skip-if-installed
+        PEANUT_SERVER_ENV_FILE="$backend_env" \
+            php "$repo_dir/server/database/seed-multi-tenant-demo.php" --apply
         PEANUT_SERVER_ENV_FILE="$backend_env" php "$repo_dir/server/database/environment-guard.php" --current
         PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_SERVER_ENV_FILE="$backend_env" PEANUT_PHP_PID_FILE="$php_pid" \
             PEANUT_PHP_LOG_FILE="$php_log" \
