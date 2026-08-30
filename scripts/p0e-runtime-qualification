@@ -952,15 +952,14 @@ class Runner:
             "$result+=assertCurrentDatabase($pdo);"
             "echo json_encode($result,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT),PHP_EOL;"
         )
-        with self.backend_process_environment(ROOT, database, mode) as env:
-            result = command(
-                ["php", "-r", guard_php],
-                # The generated application intentionally omits the qualification-only
-                # P0-E resource registration; the candidate root owns this Gate contract.
-                cwd=ROOT,
-                env=env,
-                capture=True,
-            )
+        with self.generated_install_bridge(project_root):
+            with self.backend_process_environment(project_root, database, mode) as env:
+                result = command(
+                    ["php", "-r", guard_php],
+                    cwd=project_root,
+                    env=env,
+                    capture=True,
+                )
         with log.open("a", encoding="utf-8") as stream:
             stream.write(result.stdout)
         parsed = json.loads(result.stdout)
