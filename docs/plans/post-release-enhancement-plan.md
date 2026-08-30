@@ -1,7 +1,7 @@
 # Peanut Admin 发布后增强任务计划
 
-> 状态：当前执行中；Phase 0、审计、文档、PE01—PE05 与 REL01 已完成，v3.0.13 双 Edition
-> 候选正在最终 reseal，随后待合入、资格和发布
+> 状态：当前执行中；Phase 0、审计、文档、PE01—PE05、REL01 与 REL02 已完成，v3.0.13
+> 双 Edition 候选待单一 PR 合入、唯一 L2 资格和发布采用
 >
 > 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
 >
@@ -10,7 +10,8 @@
 > 版本回退，两个候选均已失效并返回 Development mode。产品 Runtime 候选 `836d8a9…` 已完成
 > DA01—DA08 与第二 persona 聚焦复验；资格工具提交 `d6784ff…` 已改为直接消费两个正式安装包。
 > 功能冻结提交 `818c337…` 的双安装包确定性构建、升级/Demo/资格合同与文档构建均已通过；
-> 旧 scaffold seal 仍指向 `dd1e7bab…`，必须从该功能冻结提交重封后才可进入资格
+> 最终 scaffold 已从该功能冻结提交重封，P0-E fixture 已同步到同一 manifest、inventory 和
+> managed tree 身份；当前尚未把本分支或 scaffold 冒充已合入、已资格或已发布
 >
 > 决策日期：2026-08-30
 >
@@ -410,7 +411,7 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 | ID | 任务 | 状态 | 最低结果 |
 | --- | --- | --- | --- |
 | REL01 | 聚焦验证 | 已完成（`818c337…`） | 最终 inventory 与双安装包 build/check、升级包合同、Demo overlay 合同、资格入口合同、账本、文档治理和 VitePress 构建通过；未运行完整 P0-E |
-| REL02 | 冻结唯一候选 | 进行中 | worktree 已清洁、功能提交已冻结；正在重建 inventory/scaffold 与资格 fixture，完成后锁定唯一 candidate/tree |
+| REL02 | 冻结唯一候选 | 已完成（source `818c337…`） | 最终 inventory、scaffold manifest/files 与 P0-E fixture 已锁定同一 source commit/tree、manifest、inventory 和 managed tree；封存后未修改产品 Runtime |
 | REL03 | 正式资格 | 未开始 | 只对冻结 L2 候选运行一次 P0-E；失败候选返回 Development mode，不边跑边修 |
 | REL04 | 发布全部正式制品 | 未开始 | v3.0.13 发布源码与 Standalone/Multi-tenant 安装包；首个升级版本再发布两个同 Edition 升级包，不能伪造来源 |
 | REL05 | 双 Edition 独立消费 | 未开始 | 从两个正式安装包分别完成一次独立安装，不依赖开发 worktree |
@@ -474,6 +475,6 @@ v3.0.13 完成 REL01—REL05、REL07 和 REL08 后，只能报告“首个双 Ed
 8. Marketplace、T16 真实资金、Provider 真实外呼、第三方生产采用、跨实例运营平台和完整 SaaS
    均保持各自授权与范围边界，不因本计划自动获得执行授权。
 
-当前关键路径是从 `818c337…` 完成最终 scaffold reseal，然后只对一个冻结 L2 候选执行
-v3.0.13 的 REL02—REL05、REL07、REL08。v3.0.13 发布后才具备 UP09/REL06
+当前关键路径是把本封存批次通过单一 PR 合入 `dev`，再只对一个冻结 L2 候选执行
+v3.0.13 的 REL03—REL05、REL07、REL08。v3.0.13 发布后才具备 UP09/REL06
 需要的合格来源；该升级采用进入下一补丁，不创建官方应用源码仓库，也不在迭代期运行完整资格。

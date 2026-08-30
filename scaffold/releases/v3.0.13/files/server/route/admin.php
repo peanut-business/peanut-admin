@@ -22,7 +22,6 @@ use app\adminapi\controller\log\OperationLogController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
-use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
@@ -158,16 +157,6 @@ Route::group('api/admin', function () {
     Route::get('decoration/pc/page/lists', [DecorationPageController::class, 'pcLists']);
     Route::get('decoration/pc/page/detail', [DecorationPageController::class, 'pcDetail']);
     Route::post('decoration/pc/page/save', [DecorationPageController::class, 'pcSave']);
+    Route::get('decoration/mobile/article', [DecorationPageController::class, 'article']);
 
 })->middleware([LoginMiddleware::class, AuthMiddleware::class, OperationLogMiddleware::class]);
-
-// The decoration article picker needs its Module guard after the native session
-// is established but before RBAC and operation logging inspect the request.
-Route::group('api/admin', function (): void {
-    Route::get('decoration/mobile/article', [DecorationPageController::class, 'article']);
-})->middleware([
-    LoginMiddleware::class,
-    [OfficialModuleMiddleware::class, ['official.article', 'http.admin']],
-    AuthMiddleware::class,
-    OperationLogMiddleware::class,
-]);

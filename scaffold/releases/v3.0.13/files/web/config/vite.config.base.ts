@@ -126,6 +126,7 @@ export function createBaseConfig(
     },
     define: {
       'process.env': {},
+      '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': false,
       '__PEANUT_INSTANCE_TOOLS_COMPILED__': JSON.stringify(
         instanceToolsCompiled
       ),

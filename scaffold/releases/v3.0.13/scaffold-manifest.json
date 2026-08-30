@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "3.0.13",
-        "source_commit": "dd1e7bab86fe8c5a02419c1c14cd40a60c4da0fc",
-        "source_tree": "63b2eca24ced46d9e329aaee9e5ef80f1c562134",
-        "inventory_sha256": "c76faa9946fae09fbe6a46190a8d12e26a6abbbc8856c71cf40efd86471e6f53",
+        "source_commit": "818c3376ae9ac49263b3a57ab0a20fff1b612206",
+        "source_tree": "2f72898bd1fd7c68a1a4558763580b9d6c6a678a",
+        "inventory_sha256": "9cdbea11efc858b799e9c9b75d04fa8b794f84320c97ff78302dff2fd7226c5e",
         "inventory_template_version": "3.0.13",
-        "managed_tree_sha256": "ed684d73dc1bb5cc8ebf16faa5fa9aaa455f181800d8f5a985a87ed3c3689e3b",
+        "managed_tree_sha256": "d15bec8541a78e9f4be39cb1b9fa005d841f2078ba3d4ee55ee76e6d7780d217",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -552,7 +552,7 @@
         {
             "path": "platform/index.html",
             "source": "files/platform/index.html",
-            "template_sha256": "19b1c2f1692d09162092a1f94ab6ae2122bb800b587791ea0623a34954e1798f",
+            "template_sha256": "724a0cf664f242fdee14659b1e67edfc6984d4cda79e8dc0fdbddb7879f28105",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -592,7 +592,7 @@
         {
             "path": "platform/vite.config.ts",
             "source": "files/platform/vite.config.ts",
-            "template_sha256": "96f04816343b279efa32966afd0f3bbece53cdc758c31e946a65e36efcf91a3e",
+            "template_sha256": "262f3a6d32147ccc7ca7d2c4b1a9024da7d027b4f14677ce208e8c482ab92aa5",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -602,7 +602,7 @@
         {
             "path": "plugins.lock",
             "source": "files/plugins.lock",
-            "template_sha256": "0046a826c7a09eef4f408cd0fe3e357be4e2d2a36b7b95c89cd64ccbe3f21671",
+            "template_sha256": "87b2f9c5549aee18b38cfebdc676d9162d4756a7e27ff365eb2c74309bc2f5fa",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -632,7 +632,7 @@
         {
             "path": "plugins/official.file/plugin.json",
             "source": "files/plugins/official.file/plugin.json",
-            "template_sha256": "7e1107576449376d67b2545243fd1204d3e7b217cb4dace7bd5aba986fcd0481",
+            "template_sha256": "8548b3696e6ee23efec4e172d0a00dc05385bb419b4b5a2d50698bc5a6dd2aca",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -692,7 +692,7 @@
         {
             "path": "plugins/official.task/plugin.json",
             "source": "files/plugins/official.task/plugin.json",
-            "template_sha256": "b9a838e44652c87d6d7350743bd4000d214339f4905547a12d7759b59fc409f7",
+            "template_sha256": "d76f88008a8ac0bf6d4c9f59e55c46fab86b231b7a0293aa1a7009cf48c470d1",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -852,7 +852,7 @@
         {
             "path": "scripts/local-multi-tenant-demo",
             "source": "files/scripts/local-multi-tenant-demo",
-            "template_sha256": "67dda802f72471d9caaf61d9a9ecb5f3aae53a418c0f5793d6f6b575851ea379",
+            "template_sha256": "06986e57bbd57b7bc8c1ba958369e199888fd14067a48f42a95a6d69e5c7dc2f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -1232,7 +1232,7 @@
         {
             "path": "server/config/project.php",
             "source": "files/server/config/project.php",
-            "template_sha256": "f119272187c077577d84988ec7262b1cb8ea49e9b873a0fc07abdabdfe9505d5",
+            "template_sha256": "51498bda2039e0cf52b931ea4425674751021175b7c7b4720f0ffdafdc907b6b",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1602,7 +1602,7 @@
         {
             "path": "server/route/admin.php",
             "source": "files/server/route/admin.php",
-            "template_sha256": "2cd4a50ff7e9d8dcfca65ef56c7f8479418070874f891d407c7179a33dd6f2de",
+            "template_sha256": "9cefe2c92593e0464fe9a227c8219f05032744c3daeec04ad60798c35f6c8eb5",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2062,7 +2062,7 @@
         {
             "path": "web/config/vite.config.base.ts",
             "source": "files/web/config/vite.config.base.ts",
-            "template_sha256": "893273213b2df736b33b11407d32bbe973ca06e44ba9e951b7f02d5056aa879b",
+            "template_sha256": "37be035507c48a73e5df129993008a76c6969464cddd0f9d9201c665ce0c129b",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2972,7 +2972,7 @@
         {
             "path": "web/src/modules/official-file/views/index.vue",
             "source": "files/web/src/modules/official-file/views/index.vue",
-            "template_sha256": "9976aa3eca813813e4887a19e8b454dfc4fc9289f06cec35352850a32eeeb011",
+            "template_sha256": "d570f2661c16c67726cddafff24285cf38d60ebe95571b4d3732a6d806a97b42",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3562,7 +3562,7 @@
         {
             "path": "web/src/modules/official-task/views/index.vue",
             "source": "files/web/src/modules/official-task/views/index.vue",
-            "template_sha256": "dc46ede46ec956c759ebf3c6a95c5d08e8eeeb1779ed25976ed01c139124a6ed",
+            "template_sha256": "fdef0ffd554133527513fe29183e50f21c457ed0ce1c4daba79e673a59bd0c9e",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

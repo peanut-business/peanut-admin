@@ -21,7 +21,7 @@
                 size="small"
                 @click="handleCateAdd()"
               >
-                <template #icon><icon-plus /></template>
+                <template #icon><Plus /></template>
               </el-button>
             </div>
             <ul class="cate-list">
@@ -42,7 +42,7 @@
                 </span>
                 <span class="cate-ops" @click.stop>
                   <span v-permission="['official.file.category.add']">
-                    <icon-plus @click="handleCateAdd(c.id)" />
+                    <Plus @click="handleCateAdd(c.id)" />
                   </span>
                   <span v-permission="['official.file.category.edit']">
                     <icon-edit @click="handleCateEdit(c)" />
@@ -52,7 +52,7 @@
                     :title="$t('systemFile.cate.delete.confirm')"
                     @confirm="handleCateDelete(c)"
                   >
-                    <template #reference><icon-delete /></template>
+                    <template #reference><Delete /></template>
                   </el-popconfirm>
                 </span>
               </li>
@@ -100,7 +100,7 @@
                 <el-option :value="1" :label="$t('systemFile.source.user')" />
               </el-select>
               <el-button @click="() => fetchFiles(1)">
-                <template #icon><icon-search /></template>
+                <template #icon><Search /></template>
               </el-button>
             </el-space>
             <el-space v-if="checkedIds.length">
@@ -304,6 +304,7 @@
   import { useI18n } from 'vue-i18n';
   import { ElMessage } from 'element-plus';
   import type { FormInstance } from 'element-plus';
+  import { Delete, Plus, Search } from '@element-plus/icons-vue';
   import { getToken } from '@/utils/auth';
   import useLoading from '@/hooks/loading';
   import {

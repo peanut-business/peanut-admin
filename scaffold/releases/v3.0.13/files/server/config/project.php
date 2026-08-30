@@ -4,9 +4,17 @@ $brandManifest = json_decode((string)file_get_contents(__DIR__ . '/brand.json'),
 $defaultImage = is_array($brandManifest['default_image'] ?? null)
     ? $brandManifest['default_image']
     : throw new RuntimeException('品牌默认图片配置格式错误');
+$releaseVersions = json_decode(
+    (string)file_get_contents(dirname(__DIR__, 2) . '/release-versions.json'),
+    true,
+);
+$defaultVersion = is_string($releaseVersions['product_release'] ?? null)
+    && preg_match('/^\d+\.\d+\.\d+$/D', $releaseVersions['product_release']) === 1
+    ? $releaseVersions['product_release']
+    : throw new RuntimeException('产品版本配置格式错误');
 
 return [
-    'version' => env('project.version', '999999.999999.999999'),
+    'version' => env('project.version', $defaultVersion),
     'based' => 'Vue 3.x、Element Plus、ThinkPHP 8、MySQL',
     // 用途化的中性默认资源；品牌 logo/favicon 由 config/brand.json 拥有。
     'default_image' => [
