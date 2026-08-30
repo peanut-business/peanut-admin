@@ -78,6 +78,8 @@ try {
         ];
     }
     editionUpgradeFile($project . '/business.php', "<?php // user business\n");
+    editionUpgradeFile($project . '/server/.env', "APP_KEY=do-not-touch\n");
+    editionUpgradeFile($project . '/server/app/Modules/ThirdParty/Custom.php', "<?php // third-party module\n");
     $files[] = [
         'path' => 'business.php',
         'sha256' => hash('sha256', "<?php // user business\n"),
@@ -217,20 +219,45 @@ try {
 
     $prepared = (new EditionUpgradePackage())->prepare($project, $package, 'test-release');
     $runner = new ScaffoldUpgradeRunner();
+    editionUpgradeFile($project . '/managed.txt', "user managed customization\n");
+    $blocked = $runner->preview($project, $prepared['from_manifest'], $prepared['to_manifest']);
+    editionUpgradeExpect(
+        $blocked['status'] === 'blocked'
+            && count($blocked['impact']['must_resolve']) === 1
+            && str_contains($blocked['impact']['message'], 'No files will be changed'),
+        'managed conflict must have a business-readable stop plan',
+    );
+    editionUpgradeFile($project . '/managed.txt', $old['managed.txt']);
     $plan = $runner->preflight($project, $prepared['from_manifest'], $prepared['to_manifest']);
-    editionUpgradeExpect($plan['status'] === 'ready' && $plan['summary']['conflicts'] === 0, 'package plan must be ready');
+    editionUpgradeExpect(
+        $plan['status'] === 'ready'
+            && $plan['summary']['conflicts'] === 0
+            && $plan['impact']['must_resolve'] === []
+            && str_contains($plan['impact']['ownership_notice'], 'third-party Modules'),
+        'package plan must be ready and explain the protected ownership boundary',
+    );
     $businessDigest = hash_file('sha256', $project . '/business.php');
+    $secretDigest = hash_file('sha256', $project . '/server/.env');
+    $thirdPartyDigest = hash_file('sha256', $project . '/server/app/Modules/ThirdParty/Custom.php');
     $planPath = $project . '/' . $plan['plan_path'];
     editionUpgradeExpect($runner->apply($project, $planPath)['status'] === 'applied', 'package apply failed');
     editionUpgradeExpect($runner->verify($project, $planPath)['status'] === 'verified', 'package verify failed');
     editionUpgradeExpect((string)file_get_contents($project . '/managed.txt') === "new managed\n", 'managed target not applied');
     editionUpgradeExpect(hash_equals((string)$businessDigest, (string)hash_file('sha256', $project . '/business.php')), 'app-owned file changed');
+    editionUpgradeExpect(hash_equals((string)$secretDigest, (string)hash_file('sha256', $project . '/server/.env')), 'secret changed');
+    editionUpgradeExpect(hash_equals((string)$thirdPartyDigest, (string)hash_file('sha256', $project . '/server/app/Modules/ThirdParty/Custom.php')), 'third-party Module changed');
     $appliedManifest = json_decode((string)file_get_contents($project . '/.peanut/application-manifest.json'), true, 512, JSON_THROW_ON_ERROR);
     foreach ($appliedManifest['files'] as $file) {
         if (in_array($file['classification'], ['managed', 'generated-managed'], true)) {
             editionUpgradeExpect(isset($file['baseline_sha256']), 'upgraded managed file lost its baseline digest');
         }
     }
+    editionUpgradeExpect($runner->recover($project, $planPath)['status'] === 'recovered', 'package recovery failed');
+    editionUpgradeExpect((string)file_get_contents($project . '/managed.txt') === "old managed\n", 'managed recovery did not restore the source');
+    editionUpgradeExpect(!is_file($project . '/server/database/migrations/20260830-edition-upgrade.sql'), 'recovery retained a target-only migration');
+    editionUpgradeExpect(hash_equals((string)$businessDigest, (string)hash_file('sha256', $project . '/business.php')), 'recovery changed app-owned file');
+    editionUpgradeExpect(hash_equals((string)$secretDigest, (string)hash_file('sha256', $project . '/server/.env')), 'recovery changed secret');
+    editionUpgradeExpect(hash_equals((string)$thirdPartyDigest, (string)hash_file('sha256', $project . '/server/app/Modules/ThirdParty/Custom.php')), 'recovery changed third-party Module');
 
     editionUpgradeFile($package . '/target/files/managed.txt', "tampered\n");
     editionUpgradeFails(fn() => (new EditionUpgradePackage())->prepare($project, $package, 'test-release'), 'EDITION_UPGRADE_FILE_DIGEST_MISMATCH');

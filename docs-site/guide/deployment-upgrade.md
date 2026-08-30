@@ -25,6 +25,14 @@ Release 页面会分别提供两个安装包和两个升级包；已有应用只
 Ed25519 公钥必须来自包外的正式维护者入口，不能相信升级包自己携带的公钥：
 
 ```bash
+# 在线取得时固定 tag 和 Edition；离线环境把同一组文件人工带入即可。
+gh release download vX.Y.Z \
+  --pattern 'peanut-admin-X.Y.Z-standalone-upgrade.tar.gz' \
+  --pattern 'peanut-admin-X.Y.Z-standalone-upgrade.tar.gz.manifest.json' \
+  --pattern 'SHA256SUMS.upgrades'
+shasum -a 256 -c SHA256SUMS.upgrades
+tar -xzf peanut-admin-X.Y.Z-standalone-upgrade.tar.gz
+
 export PEANUT_UPGRADE_TRUSTED_KEYS_JSON='{"<official-key-id>":"<base64-ed25519-public-key>"}'
 
 php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade preflight \
@@ -46,6 +54,19 @@ php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade preflight \
 5. fresh 部署选择 automatic（CI/托管）或 guided（人工页面）入口；两者共用同一安装 Host。
 6. 运行 migration、official Plugin reconcile、账本校验、服务健康检查和受影响入口 smoke。
 7. 失败时停止流量变更，按配对备份和已验证恢复流程处理；不要跳过 checksum 或手改账本。
+
+## 每个停止点怎么处理
+
+| 停止点 | 当前状态 | 下一步 |
+| --- | --- | --- |
+| 下载或 SHA/签名失败 | 应用未变化 | 停止；重新核对固定 tag、Edition、Release 摘要和包外公钥，不换用其他版本 |
+| preflight 显示冲突 | 应用未变化 | 逐项决定保留用户修改还是采用上游；不要编辑 plan 绕过冲突 |
+| apply 失败或文件 verify 失败 | 数据库尚未迁移时只涉及受管文件 | 使用同一 plan 的 `recover` 恢复文件，再修正唯一失败原因 |
+| migration 失败 | 文件可能已更新，数据库可能部分前滚 | 停止服务切换；按 migration 账本和配对数据库备份处理，不能只运行文件 `recover` 就宣称恢复 |
+| 构建、启动或 smoke 失败 | 新版本未完成采用 | 保留日志和恢复指针；回到配对文件/数据库备份，或修复后从明确停止点继续 |
+
+`recover` 只恢复本次 scaffold 管理文件，不能逆转 Composer/npm、数据库、对象存储或外部 Provider
+副作用。因此数据库迁移前必须先做配对备份，完整升级不能压缩成一条无停止点命令。
 
 脚手架文件升级使用升级包内 `scripts/scaffold-upgrade` 的 `preflight/apply/verify/recover` 合同。
 它只管理 manifest 声明的文件，不替代业务 migration、依赖安装、构建、服务重启或 smoke。

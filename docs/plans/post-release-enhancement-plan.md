@@ -367,10 +367,10 @@ Core 上游任务固定为 `P1-ED01 Edition persistence scope`；其实现默认
 | UP04 | 让升级器消费升级包 | 部分完成（本地路径） | 包内自带升级器；解压后用 `--package` 与 `--signature-key-id` 进入既有 preflight/apply/verify/recover | 正式下载入口尚缺 |
 | UP05 | 支持在线与离线两种取得方式 | 部分完成（仅离线） | 本地解压包进入唯一校验链 | 固定版本下载和有界网络失败说明尚缺，不会静默 fallback |
 | UP06 | 增加身份与兼容检查 | 部分完成（聚焦合同通过） | Ed25519 包外 trust、inventory/checksum、Edition、同大版本范围、完整 migration 列表均 fail-closed | 正式 key authority、真实跳版本演练与大版本发布策略证据尚缺 |
-| UP07 | 显示冲突与修改计划 | 未开始 | 业务语言列出会替换、保留、冲突和停止的文件 | 用户在写入前知道影响范围和需要手工处理的内容 |
-| UP08 | 串联完整应用升级步骤 | 未开始 | 文档/编排串联备份、依赖、脚手架、数据库迁移、构建、启动、smoke 和恢复 | 每个停止点都给出继续或恢复方法，不宣称一条命令包办所有步骤 |
+| UP07 | 显示冲突与修改计划 | 部分完成（候选待合入） | plan 新增 `impact`，逐文件列出 will-change、will-preserve、must-resolve 和所有权说明；篡改说明会被拒绝 | 仍需在 UP09 正式双 Edition 演练中核对真实输出可读性 |
+| UP08 | 串联完整应用升级步骤 | 部分完成（文档候选） | 普通指南已串联固定下载/离线包、验签、备份、文件计划、依赖、migration、构建、启动、smoke 和分层恢复 | 正式版本号、下载入口和最终演练结果待 REL04/REL06 填入 |
 | UP09 | 双 Edition 跨版本演练 | 未开始 | Standalone 与 Multi-tenant 各从最老受支持版本升级到目标版本 | preflight/apply/verify、完整 migration chain、登录和关键页面通过 |
-| UP10 | 证明用户内容不被覆盖 | 部分完成（app-owned） | 聚焦合同已证明代表 `app-owned` 文件字节不变，并为后续升级记录独立 baseline digest | 秘密引用、第三方 Module 和冲突 fixture 尚缺 |
+| UP10 | 证明用户内容不被覆盖 | 部分完成（候选待合入） | 聚焦合同已证明代表 `app-owned`、`server/.env` 秘密和第三方 Module 在 apply/verify/recover 中字节不变；冲突先生成零写入停止计划 | 尚缺 UP09 固定候选上的双 Edition 真实演练采用 |
 
 ## 9. 第五阶段：重写普通开发者与核心开发者文档
 

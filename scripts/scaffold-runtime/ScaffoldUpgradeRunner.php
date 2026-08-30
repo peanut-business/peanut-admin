@@ -24,6 +24,7 @@ final class ScaffoldUpgradeRunner
         $parameters = $this->parameters($application);
         $actions = $this->classify($root, $from, $to, $parameters);
         $summary = $this->summary($actions);
+        $impact = $this->impact($actions);
         $appOwnedState = $this->ownershipState($root, $application, 'app-owned');
         $managedState = $this->actionState($root, $actions);
         $identity = [
@@ -44,6 +45,7 @@ final class ScaffoldUpgradeRunner
             'identity' => $identity,
             'manifest_paths' => ['from' => $from->path, 'to' => $to->path],
             'summary' => $summary,
+            'impact' => $impact,
             'managed_pre_state' => $managedState['files'],
             'app_owned_pre_state' => $appOwnedState['files'],
             'actions' => $actions,
@@ -301,6 +303,28 @@ final class ScaffoldUpgradeRunner
         return $summary;
     }
 
+    private function impact(array $actions): array
+    {
+        $changes = [];
+        $preserved = [];
+        $conflicts = [];
+        foreach ($actions as $action) {
+            $item = ['path' => $action['path'], 'action' => $action['action'], 'reason' => $action['reason']];
+            if ($action['conflict']) $conflicts[] = $item;
+            elseif (in_array($action['action'], ['create', 'delete', 'replace', 'regenerate'], true)) $changes[] = $item;
+            else $preserved[] = $item;
+        }
+        return [
+            'message' => $conflicts === []
+                ? sprintf('%d managed files will change; %d files will be preserved. Review the plan before apply.', count($changes), count($preserved))
+                : sprintf('No files will be changed until %d conflicts are resolved.', count($conflicts)),
+            'will_change' => $changes,
+            'will_preserve' => $preserved,
+            'must_resolve' => $conflicts,
+            'ownership_notice' => 'App-owned files, third-party Modules and secrets are outside the automatic write set.',
+        ];
+    }
+
     private function parameters(array $application): array
     {
         return [
@@ -395,6 +419,7 @@ final class ScaffoldUpgradeRunner
         if(!hash_equals($expected,$data['candidate']))throw new RuntimeException('SCAFFOLD_PLAN_CHECKSUM_DRIFT');
         $expectedStatus=count(array_filter($data['actions'],static fn(array $action):bool=>($action['conflict']??null)===true))===0?'ready':'blocked';
         if(($data['status']??null)!==$expectedStatus)throw new RuntimeException('SCAFFOLD_PLAN_STATUS_DRIFT');
+        if (($data['impact'] ?? null) !== $this->impact($data['actions'])) throw new RuntimeException('SCAFFOLD_PLAN_IMPACT_DRIFT');
         return $data;
     }
 

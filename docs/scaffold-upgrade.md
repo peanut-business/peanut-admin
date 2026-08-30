@@ -33,6 +33,10 @@ preflight 会先验 Ed25519 authority、完整文件 inventory、目标 manifest
 缺 migration、文件篡改或不受支持的源版本都在写应用前停止。解压目录必须保留到 apply/verify
 结束，因为 plan 固定其中目标 manifest 和逐文件摘要。
 
+plan 的 `impact` 用 `will_change`、`will_preserve` 与 `must_resolve` 分组列出路径、动作和原因。
+存在冲突时 message 明确说明零文件写入；impact 由 actions 重新计算，手工改写说明会在 apply
+前被 `SCAFFOLD_PLAN_IMPACT_DRIFT` 拒绝。
+
 应用的 `.peanut/scaffold-baseline/<version>/` 是旧受管文件的比较输入；新 manifest 同时记录
 `baseline_sha256`，因此用户曾保留的 managed 定制和上游目标基线不再混为同一个摘要。
 `app-owned`、第三方 Module 和秘密不进入升级包默认写集。
