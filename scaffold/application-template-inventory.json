@@ -271,7 +271,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "527ce365a7d0a7fdc19603ece776c541b71e3b33139f982b276c3cb851fc8465"
+            "source_sha256": "b0706f8a0cdf2dae736f05b5a41cff23ea596c8995ab9f4740d1bf4e1206b069"
         },
         {
             "path": "SECURITY.md",
@@ -299,7 +299,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7f87cc15de477cb9d2e99f7f33d6f0dce313c248d0b0adf36b86fa31099acf57"
+            "source_sha256": "04676aee45d11843defecf1446c4f2b35ceabf7a76bcdd657a3da12234adb2fd"
         },
         {
             "path": "compose.yaml",
@@ -2963,6 +2963,84 @@
             ]
         },
         {
+            "path": "docs/product-status/audits/demo-experience-audit.json",
+            "target": "docs/product-status/audits/demo-experience-audit.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/demo-experience-audit.md",
+            "target": "docs/product-status/audits/demo-experience-audit.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/demo-experience-evidence.json",
+            "target": "docs/product-status/audits/demo-experience-evidence.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/screenshots/da06-tenant-a-decoration-session.png",
+            "target": "docs/product-status/audits/screenshots/da06-tenant-a-decoration-session.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/screenshots/da07-unattributed-404.png",
+            "target": "docs/product-status/audits/screenshots/da07-unattributed-404.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/screenshots/da08-platform-tenant-detail-error.png",
+            "target": "docs/product-status/audits/screenshots/da08-platform-tenant-detail-error.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/product-status/capability-ledger.json",
             "target": "docs/product-status/capability-ledger.json",
             "classification": "excluded",
@@ -3506,7 +3584,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ba8c3920358073bec856e56e07af0ab3b8d1718642039dcb4ed952e73ffa1c8a"
+            "source_sha256": "3bc84a40a35d5be9adc328c28c533a2916feb2675b098965d9a3b41a9b6ede4c"
         },
         {
             "path": "pc/package.json",
@@ -3519,7 +3597,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "95b6feed346b63f819d16aa7f1d5bca547a66c54cb248d3a99faf46052f31ace"
+            "source_sha256": "4043a21e3cbd5911cefe28b939fe4ddf116f99e23438360844fc3e4e11c8bc03"
         },
         {
             "path": "pc/pages/account/security.vue",
@@ -3893,7 +3971,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5a412afcab0cda554996fd346f738b18e3386dbffb936343ee99faa7c31ba9d9"
+            "source_sha256": "4032cfc75f1455113db6016c350f4f9d12875005d5ae36de2541ea2a695094e8"
         },
         {
             "path": "platform/package.json",
@@ -3905,7 +3983,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "289d7d163ab975c12e0cd22915a6f1bf4736fb03ba453489c1935e626fe34a90"
+            "source_sha256": "41115cc0aa262d647411b4b2d49f137afb116922ed144ba22b1307a5ef0be3b9"
         },
         {
             "path": "platform/src/App.vue",
@@ -4222,7 +4300,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "12762492de0e60f9652e8667369566aa9a7d9c04eaa2eb526f0bddb11bc64476"
+            "source_sha256": "562bcdad7ab45a66a53ad9ab9065f346d72fecf2a4da61b41b057b2d902a2728"
         },
         {
             "path": "resources/service-registry.json",
@@ -15332,7 +15410,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e323e1159337a1fd3fe0be29945e502a3a22c3fae13812c54d2d2a67af9802b0"
+            "source_sha256": "221caf19c517f6c94b83471c88a2ee8c765ca98cb2cbd9e20e1b88d42c20a613"
         },
         {
             "path": "server/composer.lock",
@@ -15346,7 +15424,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "62afbc66ee2cf89a3599bbbf942c11c7e3f3ec8660746ccc258f50db32520f33"
+            "source_sha256": "9b2111e4f0afc175399cab3e3c558f2333a63e04a0330b614acaca214f42af3b"
         },
         {
             "path": "server/config/admin_api_access.php",
@@ -18230,7 +18308,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b9cd0a9a4319c614a82b4150577cba8ce1555fb4364fce60167fd3c8494833f6"
+            "source_sha256": "85507a09d1af30c308843dfbad7abea2f0e443d6585643bec4711608c40cc6e1"
         },
         {
             "path": "uniapp/package.json",
@@ -18243,7 +18321,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cc4b73b31d96ac9199f31c3de4b446c838ef7ea2299fa740540dc8bbc938e2f7"
+            "source_sha256": "03d8a6707616fbd262573557da8a3abae3f934d06dffdba36accb36290007037"
         },
         {
             "path": "uniapp/packages/pages/404/404.vue",
@@ -19306,7 +19384,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9b40f333140c96037c691589793ab8b19f92f6aafc955bfc17666e658f200022"
+            "source_sha256": "5de63f26bf3e907dca3fcdf8539aacd63585cdf7ac0a71d72b4fd93f883fb280"
         },
         {
             "path": "web/pnpm-lock.yaml",
@@ -19320,7 +19398,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3f900a9f7ee7879bd1ed822231b46af985bcd42c0a979bdf009528f29fb84cee"
+            "source_sha256": "9e41543ee613cf6173483385d177a0da29e8b458c21780dd120225dc6dda3d24"
         },
         {
             "path": "web/public/brand/avatar-admin.svg",
