@@ -484,7 +484,8 @@ final class ScaffoldUpgradeRunner
             $state = $this->regularFileState(ScaffoldPathGuard::projectPath($root, $action['path']), $action['path']);
             if (!$state['present']) throw new RuntimeException('SCAFFOLD_APPLY_MANAGED_MISSING: ' . $action['path']);
             $files[] = ['path'=>$action['path'],'sha256'=>$state['sha256'],'mode'=>$state['mode'],'classification'=>$action['classification'],
-                'owner'=>'scaffold','source'=>$action['path'],'baseline_path'=>'.peanut/scaffold-baseline/'.$to->version().'/files/'.$action['path']];
+                'owner'=>'scaffold','source'=>$action['path'],'baseline_path'=>'.peanut/scaffold-baseline/'.$to->version().'/files/'.$action['path'],
+                'baseline_sha256'=>$action['target_sha256']];
         }
         usort($files, static fn(array $a,array $b): int => strcmp($a['path'],$b['path']));
         $managed = array_values(array_filter($files, static fn(array $f): bool => in_array($f['classification'],['managed','generated-managed'],true)));

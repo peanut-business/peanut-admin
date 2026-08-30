@@ -61,7 +61,7 @@ function excluded(string $path): bool
             'resources/codegraph-registry.json', 'resources/service-registry.json',
             'resources/consumer-ready-control.json',
             'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
-            'scripts/build-edition-installers',
+            'scripts/build-edition-installers', 'scripts/build-edition-upgrades',
             'scripts/core-qualification-runner',
             'scripts/core-upgrade-compatibility', 'scripts/combined-upgrade-qualification',
             'scripts/consumer-module-reference-chain', 'scripts/consumer-ready-control',

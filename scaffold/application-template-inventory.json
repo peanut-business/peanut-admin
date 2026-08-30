@@ -4356,6 +4356,19 @@
             ]
         },
         {
+            "path": "scripts/build-edition-upgrades",
+            "target": "scripts/build-edition-upgrades",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "scripts/build-scaffold-release",
             "target": "scripts/build-scaffold-release",
             "classification": "excluded",
@@ -4896,6 +4909,19 @@
                 "full"
             ],
             "source_sha256": "439a074780604e17c443450a63e62fb05c87155a44575ce0db9f1485054aa77c"
+        },
+        {
+            "path": "scripts/scaffold-runtime/EditionUpgradePackage.php",
+            "target": "scripts/scaffold-runtime/EditionUpgradePackage.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
         },
         {
             "path": "scripts/scaffold-runtime/ScaffoldManifest.php",
@@ -17400,6 +17426,19 @@
         {
             "path": "server/tests/Productization/DevelopmentModuleDiscoveryTest.php",
             "target": "server/tests/Productization/DevelopmentModuleDiscoveryTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/Productization/EditionUpgradePackageTest.php",
+            "target": "server/tests/Productization/EditionUpgradePackageTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
