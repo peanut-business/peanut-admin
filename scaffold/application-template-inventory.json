@@ -3055,6 +3055,58 @@
             ]
         },
         {
+            "path": "docs/product-status/audits/screenshots/pe05-platform-roles.png",
+            "target": "docs/product-status/audits/screenshots/pe05-platform-roles.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/screenshots/pe05-platform-storage.png",
+            "target": "docs/product-status/audits/screenshots/pe05-platform-storage.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/screenshots/pe05-shared-owner-readiness.png",
+            "target": "docs/product-status/audits/screenshots/pe05-shared-owner-readiness.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/product-status/audits/screenshots/pe05-shared-persona-operation-log.png",
+            "target": "docs/product-status/audits/screenshots/pe05-shared-persona-operation-log.png",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/product-status/capability-ledger.json",
             "target": "docs/product-status/capability-ledger.json",
             "classification": "excluded",
