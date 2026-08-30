@@ -54,6 +54,27 @@ def database_by_id(registry: dict[str, Any], resource_id: str) -> dict[str, Any]
     return matches[0]
 
 
+def resource_by_id(
+    registry: dict[str, Any],
+    category: str,
+    resource_id: str,
+) -> dict[str, Any]:
+    resources = registry.get("resources", {}).get(category, [])
+    if not isinstance(resources, list):
+        fail(f"resource category {category} is invalid")
+    matches = [
+        item
+        for item in resources
+        if isinstance(item, dict) and item.get("stable_resource_id") == resource_id
+    ]
+    if len(matches) != 1:
+        fail(
+            f"expected exactly one {category} resource {resource_id}, "
+            f"found {len(matches)}"
+        )
+    return matches[0]
+
+
 def target_environment(target: str) -> str:
     return "development" if target == "local-development" else target
 
@@ -121,6 +142,9 @@ def main() -> int:
         choices=("local-development", "local-production-preview", "local-multi-tenant-demo"),
         required=True,
     )
+
+    qualification_parser = subparsers.add_parser("qualification-env")
+    qualification_parser.add_argument("--runner-id", required=True)
 
     subparsers.add_parser("validate")
     args = parser.parse_args()
@@ -263,6 +287,85 @@ def main() -> int:
             for item in registry["resources"].get("optional_services", []):
                 if "development" in item.get("environments", []) and item.get("port_env"):
                     values[item["port_env"]] = item["port"]
+    if args.command == "qualification-env":
+        runner = resource_by_id(registry, "tooling", args.runner_id)
+        if (
+            "qualification" not in runner.get("environments", [])
+            or runner.get("fallback") != "none"
+            or not isinstance(runner.get("compose_project"), str)
+            or not isinstance(runner.get("candidate_worktree"), str)
+            or not isinstance(runner.get("output_root"), str)
+        ):
+            fail(f"qualification runner {args.runner_id} is invalid")
+
+        listener_ids = runner.get("listener_resource_ids")
+        if not isinstance(listener_ids, list) or len(listener_ids) != 6:
+            fail(f"qualification runner {args.runner_id} must register six listeners")
+        listeners = {
+            listener_id: resource_by_id(registry, "local_listeners", listener_id)
+            for listener_id in listener_ids
+        }
+        port_values: dict[str, int] = {}
+        for listener_id, listener in listeners.items():
+            port = listener.get("port")
+            port_env = listener.get("port_env")
+            if (
+                listener.get("environment") != "qualification"
+                or listener.get("namespace") != runner["compose_project"]
+                or not isinstance(port, int)
+                or not isinstance(port_env, str)
+            ):
+                fail(f"qualification listener {listener_id} is invalid")
+            for name in [port_env, *listener.get("additional_port_envs", [])]:
+                if not isinstance(name, str) or name in port_values:
+                    fail(f"qualification listener env {name} is invalid or duplicated")
+                port_values[name] = port
+
+        required_port_envs = {
+            "MYSQL_PORT",
+            "DB_PORT",
+            "CACHE_PORT",
+            "PEANUT_BROWSER_BACKEND_PORT",
+            "PEANUT_BROWSER_FRONTEND_PORT",
+            "PEANUT_STARTER_BACKEND_PORT",
+            "PEANUT_STARTER_FRONTEND_PORT",
+        }
+        if set(port_values) != required_port_envs:
+            fail(f"qualification runner {args.runner_id} has an incomplete port matrix")
+
+        expected_tool_ids = {
+            "peanut-admin-core-php83-cli",
+            "peanut-admin-core-composer-2.10.2-cli",
+            "peanut-admin-core-node24-pnpm11-cli",
+            "peanut-admin-core-ripgrep15-cli",
+            "peanut-admin-core-docker29-cli",
+        }
+        tool_ids = runner.get("tool_resource_ids")
+        if not isinstance(tool_ids, list) or set(tool_ids) != expected_tool_ids:
+            fail(f"qualification runner {args.runner_id} has an incomplete tool matrix")
+        tools = {
+            tool_id: resource_by_id(registry, "tooling", tool_id)
+            for tool_id in tool_ids
+        }
+        path_parts = [
+            str(Path(tools["peanut-admin-core-composer-2.10.2-cli"]["namespace"]).parent),
+            tools["peanut-admin-core-node24-pnpm11-cli"]["namespace"],
+            str(Path(tools["peanut-admin-core-php83-cli"]["command"]).parent),
+            str(Path(tools["peanut-admin-core-ripgrep15-cli"]["namespace"]).parent),
+            str(Path(tools["peanut-admin-core-docker29-cli"]["command"]).parent),
+            "/usr/bin",
+            "/bin",
+            "/usr/sbin",
+            "/sbin",
+        ]
+        values = {
+            "PEANUT_QUALIFICATION_RUNNER_ID": args.runner_id,
+            "PEANUT_QUALIFICATION_WORKTREE": runner["candidate_worktree"],
+            "PEANUT_QUALIFICATION_OUTPUT_ROOT": runner["output_root"],
+            "COMPOSE_PROJECT_NAME": runner["compose_project"],
+            **port_values,
+            "PATH": ":".join(dict.fromkeys(path_parts)),
+        }
     emit(values)
     return 0
 

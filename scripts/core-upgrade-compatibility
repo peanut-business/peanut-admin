@@ -141,6 +141,7 @@ jq -e --arg version "$CURRENT_VERSION" \
   --name="$(jq -r '.current_create_app.application_name' "$METADATA")" \
   --slug="$(jq -r '.current_create_app.slug' "$METADATA")" \
   --package="$(jq -r '.current_create_app.package_identity' "$METADATA")" \
+  --edition=standalone \
   --target="$CURRENT_APP" >"$OUTPUT/create-app.json"
 
 CURRENT_MANIFEST="$CURRENT_APP/.peanut/application-manifest.json"

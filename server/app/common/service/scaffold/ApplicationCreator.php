@@ -8,6 +8,8 @@ use app\platform\service\plugin\PluginLockResolver;
 use RuntimeException;
 
 require_once __DIR__ . '/VersionContract.php';
+require_once __DIR__ . '/EditionProfile.php';
+require_once __DIR__ . '/EditionProjector.php';
 require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginArtifactToolException.php';
 require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginArtifactWriter.php';
 require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginLifecycleException.php';
@@ -32,6 +34,7 @@ final class ApplicationCreator
         private readonly string $inventoryPath,
         private readonly ?array $sourceIdentity = null,
         private readonly ?string $adoptionManifestPath = null,
+        private readonly bool $projectEdition = true,
     ) {
     }
 
@@ -41,6 +44,7 @@ final class ApplicationCreator
         string $slug,
         string $packageIdentity,
         string $target,
+        string $edition,
         ?string $applicationVersion = null,
         string $profile = 'standard'
     ): array
@@ -49,6 +53,10 @@ final class ApplicationCreator
         if (!in_array($profile, self::PROFILES, true)) {
             throw new RuntimeException('CREATE_APP_PROFILE_INVALID');
         }
+        $editionProfile = EditionProfile::load(
+            $this->sourceRoot . '/scaffold/edition-profiles.json',
+            $edition,
+        );
         $parameters = $this->validateParameters(
             $productName,
             $slug,
@@ -102,6 +110,9 @@ final class ApplicationCreator
                 $this->assertAdoptionEquivalent($stage, $adoption, $parameters, $files);
             }
             $files = $this->rebuildOfficialPluginArtifacts($stage, $files);
+            if ($this->projectEdition) {
+                $files = $this->projectEdition($stage, $inventory, $files, $editionProfile);
+            }
             $templateIdentity = $adoption === null
                 ? [
                     'version' => $inventory['template_version'],
@@ -122,7 +133,8 @@ final class ApplicationCreator
                 $templateIdentity,
                 $parameters,
                 $files,
-                $profile
+                $profile,
+                $editionProfile,
             );
 
             if (is_dir($target) && !rmdir($target)) {
@@ -136,6 +148,49 @@ final class ApplicationCreator
             $this->deleteTree($stage);
             throw $exception;
         }
+    }
+
+    /**
+     * @param array<string,mixed> $inventory
+     * @param list<array<string,mixed>> $files
+     * @return list<array<string,mixed>>
+     */
+    private function projectEdition(
+        string $stage,
+        array $inventory,
+        array $files,
+        EditionProfile $profile,
+    ): array {
+        $entries = [];
+        foreach ($inventory['files'] as $entry) {
+            if (is_array($entry) && isset($entry['target'])) {
+                $entries[(string)$entry['target']] = $entry;
+            }
+        }
+        $fileIndexes = [];
+        foreach ($files as $index => $file) {
+            $fileIndexes[(string)$file['path']] = $index;
+        }
+
+        $projector = new EditionProjector();
+        foreach ($projector->paths($profile) as $path) {
+            if (!isset($entries[$path], $fileIndexes[$path])) {
+                throw new RuntimeException('CREATE_APP_EDITION_PROJECTED_FILE_MISSING: ' . $path);
+            }
+            $absolute = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            $content = file_get_contents($absolute);
+            if (!is_string($content)) {
+                throw new RuntimeException('CREATE_APP_EDITION_PROJECTED_FILE_UNREADABLE: ' . $path);
+            }
+            $files[$fileIndexes[$path]] = $projector->project(
+                $stage,
+                $entries[$path],
+                $content,
+                $profile,
+            );
+        }
+        usort($files, static fn(array $a, array $b): int => strcmp((string)$a['path'], (string)$b['path']));
+        return $files;
     }
 
     /** @param array{commit:string,tree:string} $identity @return array{commit:string,tree:string} */
@@ -1070,7 +1125,8 @@ PHP;
         array $templateIdentity,
         array $parameters,
         array $files,
-        string $profile
+        string $profile,
+        EditionProfile $editionProfile,
     ): array {
         $baselineRoot = '.peanut/scaffold-baseline/' . $templateIdentity['version'] . '/files';
         foreach ($files as &$file) {
@@ -1098,12 +1154,15 @@ PHP;
                 'package_identity' => $parameters['PACKAGE_IDENTITY'],
                 'version' => $parameters['APPLICATION_VERSION'],
                 'profile' => $profile,
+                'edition' => $editionProfile->edition,
             ],
+            'edition' => $editionProfile->identity(),
             'template' => $templateIdentity,
             'generation_source' => [
                 'commit' => $generationIdentity['commit'],
                 'tree' => $generationIdentity['tree'],
                 'inventory_sha256' => $inventoryDigest,
+                'edition_profile_sha256' => $editionProfile->sourceSha256,
             ],
             'ownership' => [
                 'managed_default' => 'three-way against the recorded baseline; never overwrite a locally changed file without an explicit later apply decision',

@@ -302,7 +302,7 @@ def create_application(
             [
                 str(PHP), str(ROOT / "scripts/create-app"),
                 f"--name={name}", f"--slug={slug}", f"--package={package}",
-                f"--target={target}", "--profile=full",
+                f"--target={target}", "--edition=standalone", "--profile=full",
             ],
             log=log,
         )
@@ -317,7 +317,7 @@ $manifest=(new app\common\service\scaffold\ApplicationCreator(
     $root,
     $root.'/scaffold/application-template-inventory.json',
     ['commit'=>$argv[2],'tree'=>$argv[3]],
-))->create($argv[4],$argv[5],$argv[6],$argv[7],null,'full');
+))->create($argv[4],$argv[5],$argv[6],$argv[7],'standalone',null,'full');
 echo json_encode([
     'status'=>'created',
     'target'=>$argv[7],

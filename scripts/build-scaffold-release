@@ -78,12 +78,13 @@ try {
     require $source.'/server/app/common/service/scaffold/ScaffoldManifest.php';
     require $source.'/server/app/common/service/scaffold/ApplicationCreator.php';
     $application=$temporary.'/application';
-    $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree]);
+    $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree],null,false);
     $manifest=$creator->create(
         RELEASE_PRODUCT_TOKEN,
         RELEASE_SLUG_TOKEN,
         RELEASE_PACKAGE_TOKEN,
         $application,
+        'multi-tenant',
         RELEASE_APPLICATION_VERSION_TOKEN,
         'full'
     );

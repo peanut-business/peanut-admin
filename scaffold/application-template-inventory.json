@@ -4222,7 +4222,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d97f5173edf9843c5c8348ddfe2ffb44de56728e27cb6734c6653c7eb3474278"
+            "source_sha256": "ad9e7dec0d33a1daafd3025fefee9ee48b5b55dbaee77290779aa6a0defe4d57"
         },
         {
             "path": "resources/service-registry.json",
@@ -4263,6 +4263,19 @@
                 "full"
             ],
             "source_sha256": "4e8562fe22656eee505fe4df6de7112ae07ee0998d63259e482091e13b04deae"
+        },
+        {
+            "path": "scripts/build-edition-installers",
+            "target": "scripts/build-edition-installers",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
         },
         {
             "path": "scripts/build-scaffold-release",
@@ -4439,6 +4452,19 @@
                 "full"
             ],
             "source_sha256": "711fdea8a3bd7f71cb8628de6dfd2d0a757ed5ba2fb7fc96387d01f212863e9d"
+        },
+        {
+            "path": "scripts/core-qualification-runner",
+            "target": "scripts/core-qualification-runner",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
         },
         {
             "path": "scripts/core-upgrade-compatibility",
@@ -4750,7 +4776,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d66cf98be20f1fa491fca3de2edcfe50a77a08275f7c404d02860dcbd62d1280"
+            "source_sha256": "63dc2bfaba6628bb967a91a1e6aa79482534a4f241890601f716ddd9012f7ef7"
         },
         {
             "path": "scripts/project-resource-registry",
@@ -4764,7 +4790,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e878ffb63a9ac3f0ca6579bdc412ecc059629dca6bf8f96ec6a2b41bf4b77500"
+            "source_sha256": "6dedef597b29f86a469a7a578c06119b962210d667ce2cdbef0230c5f9a10737"
         },
         {
             "path": "scripts/publish-github-release",
@@ -13005,6 +13031,45 @@
             ]
         },
         {
+            "path": "server/app/common/service/scaffold/DeterministicEditionArchive.php",
+            "target": "server/app/common/service/scaffold/DeterministicEditionArchive.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/app/common/service/scaffold/EditionProfile.php",
+            "target": "server/app/common/service/scaffold/EditionProfile.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/app/common/service/scaffold/EditionProjector.php",
+            "target": "server/app/common/service/scaffold/EditionProjector.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "server/app/common/service/scaffold/ScaffoldManifest.php",
             "target": "server/app/common/service/scaffold/ScaffoldManifest.php",
             "classification": "excluded",
@@ -16302,7 +16367,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3fe64a5145838818fbfa682224fd1855dcf5a0b4974c3c624a6ebeab40649e2a"
+            "source_sha256": "2cd4a50ff7e9d8dcfca65ef56c7f8479418070874f891d407c7179a33dd6f2de"
         },
         {
             "path": "server/route/app.php",
@@ -16453,7 +16518,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "6199a531d17c8024a3e12bab0a8086acef5c45efb369f46c67f296b0afb49d05"
+            "source_sha256": "d5cb6180ce742930268fba0f698b2fd0ed03380496a75459a854d35dc82a0355"
         },
         {
             "path": "server/route/public_api.php",
@@ -16467,7 +16532,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "027f4909c8cacba109d6c96d9de6f25f146dabbcbd0ca1dcbc8b918f0af3bfb7"
+            "source_sha256": "70359400679bf05ea8363a6f09d335a20fb0768f69749ee219dc2909d36fa6bf"
         },
         {
             "path": "server/route/registry_source.php",
@@ -16481,7 +16546,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d68e06154040f8638ead76d229e5720493c56cb550ab1739711d71b28978fac9"
+            "source_sha256": "7137f7e6d7c99dd98a3ea2634f0f9221eb63ea41254d9d1145cc1077c79111d2"
         },
         {
             "path": "server/route/tenant.php",
@@ -16495,7 +16560,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7e1176ad83eaa8a066f7b3f85b6d128b2a5f898833f8d53a86fe96ca4a8ace0c"
+            "source_sha256": "d5dd0641572b09ffe2dab2c27c47aac50bb0a04ad6ae444a1e6ef113d44fea96"
         },
         {
             "path": "server/runtime/.gitkeep",
@@ -17648,6 +17713,32 @@
         {
             "path": "server/tests/Productization/TaskImportExportHostTest.php",
             "target": "server/tests/Productization/TaskImportExportHostTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php",
+            "target": "server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/Productization/ThinkPhpEditionIntegrationTest.php",
+            "target": "server/tests/Productization/ThinkPhpEditionIntegrationTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",

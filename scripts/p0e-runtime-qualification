@@ -1022,7 +1022,7 @@ class Runner:
         create_app_env = self.create_app_environment()
         command([
             "php", "scripts/create-app", "--name=P0E Qualification", "--slug=p0e-qualification",
-            "--package=p0e/qualification", "--profile=full", f"--target={self.generated}",
+            "--package=p0e/qualification", "--edition=standalone", "--profile=full", f"--target={self.generated}",
         ], env=create_app_env, log=log)
         build_database = self.plan["databases"]["standalone_fresh"]
         with self.backend_process_environment(self.generated, build_database, "standalone") as backend_env:
