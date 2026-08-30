@@ -89,7 +89,7 @@
                     plain
                     :loading="clearing"
                   >
-                    <template #icon><icon-delete /></template>
+                    <template #icon><Delete /></template>
                     {{ $t('systemMaintenance.cache.clear') }}
                   </el-button></template
                 >
@@ -106,6 +106,7 @@
   import { reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
   import { ElMessage } from 'element-plus';
+  import { Delete } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     getSystemInfo,

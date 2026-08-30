@@ -46,7 +46,7 @@
               type="primary"
               @click="handleAdd()"
             >
-              <template #icon><icon-plus /></template>
+              <template #icon><Plus /></template>
               {{ $t('systemDept.operation.create') }}
             </el-button>
             <el-button @click="toggleExpand">
@@ -196,6 +196,7 @@
   import { useI18n } from 'vue-i18n';
   import { ElMessage } from 'element-plus';
   import type { FormInstance } from 'element-plus';
+  import { Plus } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import {
     getDeptList,
