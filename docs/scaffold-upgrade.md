@@ -1,13 +1,16 @@
 # 脚手架升级执行器
 
-## 双 Edition 升级包候选
+## 双 Edition 升级包
 
-下一正式版本会从同一个固定 source commit/tree 生成 Standalone 与 Multi-tenant 两个独立升级包。
+`v3.0.13` 是首个正确的双 Edition 安装基线；此前的生成物没有合格的 Edition/Schema 身份，不能
+伪装成它的升级来源。因此该基线只发布两个安装包，不发布升级包。下一补丁版本会从同一个固定
+source commit/tree 生成 Standalone 与 Multi-tenant 两个独立升级包，并把 `v3.0.13` 写为最老
+受支持来源。
 升级包不是完整安装包，也不是第二个源码仓库；它只包含自带升级器、目标 scaffold manifest、
 完整 migration 列表和允许更新的 `managed` / `generated-managed` 文件。
 
-当前代码候选支持解压后的本地包。正式 Release 发布前，下列命令只用于开发验证，不能把本地
-开发包写成正式下载入口：
+下列命令适用于正式 Release 已提供升级包的版本；`X.Y.Z` 是占位符。Release 没有对应附件时必须
+停止，不能用本地开发包或完整安装包代替：
 
 ```bash
 tar -xzf peanut-admin-X.Y.Z-standalone-upgrade.tar.gz
@@ -41,11 +44,10 @@ plan 的 `impact` 用 `will_change`、`will_preserve` 与 `must_resolve` 分组�
 `baseline_sha256`，因此用户曾保留的 managed 定制和上游目标基线不再混为同一个摘要。
 `app-owned`、第三方 Module 和秘密不进入升级包默认写集。
 
-## 当前 3.x 路径
+## 当前 3.x 维护者诊断路径
 
-3.x 派生应用现在可以使用同一套 `preflight -> apply -> verify -> recover` 执行器在不可变
-scaffold Release 之间升级。`v3.0.12` 是当前正式源码/脚手架版本，后续 3.x patch/minor release
-继续使用同一执行器，保留 `app-owned` 修改并完成恢复。
+包内 `--package` 是普通用户的唯一升级输入。显式 `--from-manifest/--to-manifest` 仍保留给维护者
+诊断不可变 scaffold Release 之间的三方比较，不是正式下载或用户操作入口：
 
 ```bash
 php scripts/scaffold-upgrade preflight \

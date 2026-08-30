@@ -243,7 +243,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0a7f0dfa5e1860afda8e4434c767c6ae8f65ea5c3d40fa1846f0dd5d537e59a9"
+            "source_sha256": "ca059d19efb49f724bd59af82707908e012f700080a2b78b1f77e435c1e8ef5c"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -3973,7 +3973,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5b8968e71e13977aa195271d18a3c937b73de76e91a888984e765a89b2c31931"
+            "source_sha256": "a7511261f5e55be002bfb6950a2e18a29ba68eceafda424fe42a8f9f731f22d7"
         },
         {
             "path": "platform/package-lock.json",
@@ -4081,7 +4081,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "96f04816343b279efa32966afd0f3bbece53cdc758c31e946a65e36efcf91a3e"
+            "source_sha256": "262f3a6d32147ccc7ca7d2c4b1a9024da7d027b4f14677ce208e8c482ab92aa5"
         },
         {
             "path": "plugins.lock",
@@ -4095,7 +4095,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4c4319ddc837dff233cb850463f49da38d6b4541737d5f9320e6abf521c4db46"
+            "source_sha256": "68343a9ae0472e08028ecbc2a7e19e5ea97868a4aa477bc94042594c777ded91"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -4163,7 +4163,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7e1107576449376d67b2545243fd1204d3e7b217cb4dace7bd5aba986fcd0481"
+            "source_sha256": "8548b3696e6ee23efec4e172d0a00dc05385bb419b4b5a2d50698bc5a6dd2aca"
         },
         {
             "path": "plugins/official.import-export/plugin.json",
@@ -4247,7 +4247,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b9a838e44652c87d6d7350743bd4000d214339f4905547a12d7759b59fc409f7"
+            "source_sha256": "d76f88008a8ac0bf6d4c9f59e55c46fab86b231b7a0293aa1a7009cf48c470d1"
         },
         {
             "path": "release-versions.json",
@@ -4705,7 +4705,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "67dda802f72471d9caaf61d9a9ecb5f3aae53a418c0f5793d6f6b575851ea379"
+            "source_sha256": "06986e57bbd57b7bc8c1ba958369e199888fd14067a48f42a95a6d69e5c7dc2f"
         },
         {
             "path": "scripts/local-php-runtime",
@@ -8608,7 +8608,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b1daaa8bcde85562ac2ea340fffeaa821a69e85bc0e9e9e5e04f89f8ef24b862"
+            "source_sha256": "d4209cb8699c55688ee4827293f7d4bf717bc89afd9d9f722b311228c3b5e0f9"
         },
         {
             "path": "server/app/adminapi/controller/decoration/DecorationTabbarController.php",
@@ -11368,7 +11368,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3c8cfa07167d3be0a2e8e57c0f88c78ff1ff6a431a20721be6fec8617035cb75"
+            "source_sha256": "c546c044dfb004325ae05cb72856231418f3039bb7b2a24206f2af9cc7ba1c32"
         },
         {
             "path": "server/app/common/service/authorization/CoreTenantModuleAdminBridge.php",
@@ -13902,7 +13902,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "55bcb39fbfea518dd5306bfa2dd2ec50b5102a0f74fd86eb6c9f97cef33bcbb5"
+            "source_sha256": "09b6ac778c5c084f12167351c9996f04b43b95a13be95bccdaaf8202e9a867c3"
         },
         {
             "path": "server/app/common/validate/TenantContextValidate.php",
@@ -16484,7 +16484,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2cd4a50ff7e9d8dcfca65ef56c7f8479418070874f891d407c7179a33dd6f2de"
+            "source_sha256": "9cefe2c92593e0464fe9a227c8219f05032744c3daeec04ad60798c35f6c8eb5"
         },
         {
             "path": "server/route/app.php",
@@ -19380,7 +19380,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "893273213b2df736b33b11407d32bbe973ca06e44ba9e951b7f02d5056aa879b"
+            "source_sha256": "37be035507c48a73e5df129993008a76c6969464cddd0f9d9201c665ce0c129b"
         },
         {
             "path": "web/config/vite.config.dev.ts",
@@ -20695,7 +20695,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9976aa3eca813813e4887a19e8b454dfc4fc9289f06cec35352850a32eeeb011"
+            "source_sha256": "d570f2661c16c67726cddafff24285cf38d60ebe95571b4d3732a6d806a97b42"
         },
         {
             "path": "web/src/modules/official-file/views/locale/en-US.ts",
@@ -21521,7 +21521,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dc46ede46ec956c759ebf3c6a95c5d08e8eeeb1779ed25976ed01c139124a6ed"
+            "source_sha256": "fdef0ffd554133527513fe29183e50f21c457ed0ce1c4daba79e673a59bd0c9e"
         },
         {
             "path": "web/src/modules/official-task/views/locale/en-US.ts",
@@ -22208,7 +22208,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d982050bd297ed962c05e8427d4d956cf903b0ab2ca9f003238001480872ea64"
+            "source_sha256": "b215190fc7589e5052a07bf1f89a8a6ed1904bdf79d5097653c9b41a56d3520e"
         },
         {
             "path": "web/src/views/app-setting/readiness/locale/en-US.ts",
@@ -22390,7 +22390,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5b1db53fac9021163ab1c98edd3f9be53b38dc10d4425411300b91c5c4ae937b"
+            "source_sha256": "26f25a4c4ea5ebe1f14f62bc889ed9ee41b39fb36b8587aaa649300913fff61e"
         },
         {
             "path": "web/src/views/dev-tools/modules/index.vue",
@@ -22558,7 +22558,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "65c4364813edc705695abc2a0235d40021d8af44c5ad7469313c49424443fc42"
+            "source_sha256": "f3cc7bdd40168906efdf066eb8f79352d7b67c26a98988e5fc066a264d146edf"
         },
         {
             "path": "web/src/views/system/admin/locale/en-US.ts",
@@ -22642,7 +22642,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e26a652a43f86eadb590b1cbf650d0252026760597361cf0781e2ab786b59491"
+            "source_sha256": "018e824b86578178efa629fb958b7f71716f637abe6598bf025b6156a3b042fa"
         },
         {
             "path": "web/src/views/system/dept/locale/en-US.ts",
@@ -22698,7 +22698,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "07ba59be889b50884da825d4ebb9fb7da22644ee669ffd78a22d7721b4dc9447"
+            "source_sha256": "56e46e7cf83be6c949f90dff12ed6582df096b63244989f3609696843a9daf3b"
         },
         {
             "path": "web/src/views/system/dict/index.vue",
@@ -22712,7 +22712,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f640a2426c38f1141e2d2cd48bafa51ace646a690165882c49dc03cbd08b1ae0"
+            "source_sha256": "38c90f3a4882cc95ab1feadcc572d0021408b1d600173a93d75e377f0ec1decc"
         },
         {
             "path": "web/src/views/system/dict/locale/en-US.ts",
@@ -22754,7 +22754,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9231b78d483acd3a51652adf0911cc9f21006c550963ae4678c2bf79d0ab7b38"
+            "source_sha256": "f55baa61f753be8e01b422fb07596df92f07ae0f2aa34fec6765dd7cdb734a32"
         },
         {
             "path": "web/src/views/system/jobs/locale/en-US.ts",
@@ -22796,7 +22796,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "84b2666edf908110e1c5f1a7a104a48efcec5f64568770d27154d775195d8eee"
+            "source_sha256": "5f55818469382668130664421fb3b9e031191582213922b9d6c623e2831c1ce0"
         },
         {
             "path": "web/src/views/system/log/locale/en-US.ts",
@@ -22838,7 +22838,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a48a0efc72d3d5678fcc8fe67f24489feddd2f5a64dba93ead67a975dd505d90"
+            "source_sha256": "8f23f5ad700f203c863984f797846b2118f9f9b0cf4f1f1c58f80969529d1f29"
         },
         {
             "path": "web/src/views/system/maintenance/locale/en-US.ts",
@@ -22880,7 +22880,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "92ba8e5f9d6a5936c9bcad888f02f218b9a17739eda3572e02500df394f48e67"
+            "source_sha256": "a143ff068f2cc7b5a1a2127778996f8e4ab8c2e183331a22a25d714c6ae17f38"
         },
         {
             "path": "web/src/views/system/menu/locale/en-US.ts",
@@ -22922,7 +22922,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "76162e9b585cd8624ce8aac1d35015dc154ea09d141ecc285ed9e04467c84036"
+            "source_sha256": "42981368a887e1eb8c803e5e990afa4beb3168f20fbdec5232af85cd031827cd"
         },
         {
             "path": "web/src/views/system/role/locale/en-US.ts",

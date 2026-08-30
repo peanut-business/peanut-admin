@@ -8,8 +8,13 @@ php scripts/create-app \
   --name="Acme Console" \
   --slug=acme-console \
   --package=acme/acme-console \
-  --target=/absolute/path/to/acme-console
+  --target=/absolute/path/to/acme-console \
+  --edition=standalone
 ```
+
+`--edition` 必须明确选择 `standalone` 或 `multi-tenant`。这不是运行时开关：生成器会从同一份
+Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、索引、Tenant/Platform 能力和
+升级身份。生成后的应用只有一个 Edition；另一个 Edition 的安装包或升级包不能覆盖它。
 
 新应用的独立 `application.version` 默认是 `0.1.0`；需要在首次生成时指定其他 SemVer 时，
 使用 `--application-version=<semver>`。该值不是 Peanut Admin 产品版本，也不是
@@ -43,16 +48,15 @@ identity 必须包含 vendor/name。路径穿越、符号链接目标、非空�
 source-only 或 app-owned 演进无需伪造新的模板身份，而任何 managed 字节变化仍必须先形成
 新的不可变 scaffold release。
 
-当前 inventory 采用 fresh-only scaffold `v3.0.4` release。该 identity 只属于 scaffold
-命名空间，不是 Peanut Admin 产品 Tag/Release；既有 1.x scaffold identity 只存在于
-Git/Release 历史，当前 inventory 与生成应用不携带其 release artifact 或 upgrade Runtime。
-`v3.0.4` 生成原生 Account/TenantMember/RBAC Runtime、
-canonical Schema 和空数据库安装入口，不携带 legacy 映射、bootstrap 或兼容镜像。生产
-管理端 builder 在执行 Vite 前，
-把应用根目录的 `plugins.lock` 精确复制为 `/build/plugins.lock`；Plugin contribution resolver
-仍直接读取这份 lock，缺失或无效内容继续 fail-closed，不会回退到默认或忽略 Plugin 状态。
-生产镜像同时构建 Standalone 与 multi-tenant 管理端 bundle，并在容器启动时按
-`DEPLOYMENT_MODE` 选择；PHP 镜像携带应用自己的 `resources/project-resources.json`，并把受管
+当前 inventory 采用 `release-versions.json` 声明的 fresh-only scaffold release；具体版本和
+source commit/tree 以生成结果的 `.peanut/application-manifest.json` 为准。该 identity 属于
+scaffold 命名空间，不是用户自己的应用版本。生成物使用原生 Account/TenantMember/RBAC、空库
+安装入口和所选 Edition 的确定性投影，不携带 legacy 映射、bootstrap 或兼容镜像。
+
+生产管理端 builder 在执行 Vite 前，把应用根目录的 `plugins.lock` 精确复制为
+`/build/plugins.lock`；Plugin contribution resolver 直接读取这份 lock，缺失或无效内容继续
+fail-closed。安装包/生成器已在构建前固定 Edition，不再在一个正式构建物中同时携带两套管理端
+并依赖运行时切换。PHP 镜像携带应用自己的 `resources/project-resources.json`，并把受管
 `server/database/seed-demo-data.php` 暴露为 `peanut-seed-demo-data`，供数据库环境门禁与显式
 演示初始化使用。根 `scripts/seed-demo-data` 仍是 app-owned 命令入口；登记缺失或与显式部署
 目标不一致时仍 fail-closed。3.0.0 不提供 1.x scaffold preflight/apply/verify 或数据库
@@ -65,8 +69,8 @@ owner、managed/app-owned 树摘要，以及 managed baseline 路径和独立 `b
 
 ## 后续升级边界
 
-现在可以从 `v3.0.4` 创建并开发派生应用，但不能把它理解为“以后执行一条命令就会自动追上
-所有脚手架变化”。当前应按下表处理：
+从正式 Release 创建派生应用不代表它会自动跟随 Peanut Admin 的 `dev/main`。应用只按同
+Edition 的正式升级包和自己的发布流程采用后续版本：
 
 | 变化类型 | 当前处理方式 | 所有权与停止线 |
 | --- | --- | --- |
@@ -76,9 +80,10 @@ owner、managed/app-owned 树摘要，以及 managed baseline 路径和独立 `b
 | 应用数据库 | 3.0 首次安装必须为空；同一大版本通过 `install.php --migrate --target-version=X.Y.Z` 执行按发布版本筛选的追加 migration（文件名 `YYYYMMDD-<描述>.sql`） | 不复制 Peanut 新安装基线覆盖已有数据库；跨大版本必须 fresh/rebuild |
 | Peanut canonical migration | 随采用的 Release 显式执行并写入 `pa_schema_migration` 账本 | 必须绑定目标 Release、迁移 checksum、备份和应用验证 |
 
-2.x/3.x 升级器已提供 `preflight -> apply -> verify -> recover`。下一正式版本会为 Standalone 与
-Multi-tenant 分别发布签名升级包；派生应用解压与自身 Edition 相同的包后，使用包内升级器的
-`--package` 入口生成计划，不再自行拼接新旧 manifest。完整部署仍由应用 owner 安装锁定依赖、
+升级器提供 `preflight -> apply -> verify -> recover`。首个正确双 Edition Release 只建立安装
+基线，因为此前没有合格的旧 Edition 可作为升级来源；下一补丁版本才会以该基线为最老受支持
+版本，分别发布 Standalone 与 Multi-tenant 签名升级包。派生应用解压与自身 Edition 相同的包后，
+使用包内升级器的 `--package` 入口生成计划，不再自行拼接新旧 manifest。完整部署仍由应用 owner 安装锁定依赖、
 执行数据库迁移、构建、重启和 smoke；跨大版本必须按发布策略 `--fresh`。
 历史 `v2.0.0 -> v2.0.1` 已有真实派生
 应用资格，`v2.1.0` 沿用相同所有权和恢复合同。它只管理已登记的框架文件，不会把业务代码变成脚手架所有，也不会替

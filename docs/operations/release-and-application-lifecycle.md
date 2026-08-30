@@ -20,7 +20,7 @@
   → 从最新 origin/main 固定 candidate
   → 按风险运行资格（登录/密码/租户/依赖/scaffold 变更属于 L2，运行完整 P0-E）
   → 对同一 main commit 创建 annotated vX.Y.Z tag
-  → 从同一 commit 生成两个安装包和两个签名升级包
+  → 从同一 commit 生成两个安装包；非首个 Edition 基线再生成两个签名升级包
   → scripts/publish-github-release 一次发布源码和全部 Edition 附件
   → Demo 消费正式 Multi-tenant 安装包并叠加仅含合成数据 seed 的受控 overlay
   → 文档站采用同一版本和下载入口
@@ -50,7 +50,8 @@ php scripts/create-app \
   --name="Acme Console" \
   --slug=acme-console \
   --package=acme/acme-console \
-  --target=/absolute/path/to/acme-console
+  --target=/absolute/path/to/acme-console \
+  --edition=standalone
 cd /absolute/path/to/acme-console
 git init
 git add .
@@ -60,6 +61,8 @@ git commit -m "chore: create application from Peanut Admin vX.Y.Z"
 生成物必须包含 `.peanut/application-manifest.json`。其中记录应用自己的版本、采用的
 scaffold release、source commit/tree、inventory 摘要、逐文件 SHA-256、mode、classification、
 owner 以及 managed/app-owned 树摘要。这是核实生成版本和后续升级的指纹；它不记录密码。
+需要多租户产品时把 `--edition` 改为 `multi-tenant`。Edition 会进入应用 manifest、Schema 和
+升级兼容边界，不是在部署时随意切换的配置。
 
 应用 owner 随后为自己的仓库补充 `resources/project-resources.json`、域名、端口、数据库、外部
 服务和凭据引用。应用的业务代码、Host/override、页面和业务 migration 属于 `app-owned`，与

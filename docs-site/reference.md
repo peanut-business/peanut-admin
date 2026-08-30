@@ -40,7 +40,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 
 | 命令 | 用途与当前边界 |
 | --- | --- |
-| `php scripts/create-app --name=<name> --slug=<slug> --package=<vendor/name> --target=<absolute-path> [--application-version=<semver>] [--profile=minimal\|standard\|full]` | 从当前不可变 scaffold 创建全新应用；目标必须是新的绝对路径 |
+| `php scripts/create-app --name=<name> --slug=<slug> --package=<vendor/name> --target=<absolute-path> --edition=standalone\|multi-tenant [--application-version=<semver>] [--profile=minimal\|standard\|full]` | 从当前不可变 scaffold 创建指定 Edition 的全新应用；目标必须是新的绝对路径 |
 | `php think module:create <module.key> [--vendor=<Vendor>]` | 按 Module key 生成唯一 backend/frontend/Tenant 安全骨架；已存在目标时不覆盖 |
 | `php think module:check <module.key> [--kernel-version=<semver>] [--package=<tar>] [--sha256=<hash>]` | 作者与自动化共用的八项只读 preflight；不连接数据库 |
 | `php think module:pack <module.key> [--output=<tar>] [--signing-key-id=<id> --signing-secret-key-file=<file>]` | 生成确定性自包含 tar 和 SHA-256；可选 Ed25519 签名，私钥不得进入仓库 |

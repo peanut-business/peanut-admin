@@ -9,10 +9,14 @@ const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '')
 export default defineConfig({
   base: '/platform/',
   plugins: [vue()],
+  define: {
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+  },
   server: {
     allowedHosts,
     proxy: {
       '/api': { target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:20180', changeOrigin: false },
+      '/favicon.ico': { target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:20180', changeOrigin: false },
     },
   },
 });

@@ -1,10 +1,12 @@
 # Peanut Admin 发布后增强任务计划
 
-> 状态：当前计划；Phase 0 已完成，v3.0.13 双 Edition 安装基线已封存，尚未合入、资格或发布
+> 状态：当前执行中；Phase 0 已完成，v3.0.13 双 Edition 候选正在收口，尚未合入、资格或发布
 >
 > 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
 >
-> 计划事实基线：`origin/dev@3193314e24d8204b65218a2c6de5d162b32de82c`；功能冻结提交 `dd1e7bab86fe8c5a02419c1c14cd40a60c4da0fc`，v3.0.13 scaffold 已生成但仍属未合入候选
+> 计划事实基线：`origin/dev@3193314e24d8204b65218a2c6de5d162b32de82c`；`e5ef575…` 的首轮
+> PE05 复验发现共享 Vue 构建标志与 Platform favicon 仍需收敛，该候选已失效并返回 Development
+> mode。旧 scaffold seal 仍指向 `dd1e7bab…`，必须在新的最终功能提交上重封后才可进入资格
 >
 > 决策日期：2026-08-30
 >
@@ -309,10 +311,10 @@ owner `scripts/deploy-release` 从正式 annotated tag 生成不可变源码归�
 
 | ID | 任务 | 状态 | 交付结果 | 最低验收 |
 | --- | --- | --- | --- | --- |
-| DL01 | 建立长期 Demo 审计报告 | 部分完成（候选待合入） | [`demo-experience-audit.md`](../product-status/audits/demo-experience-audit.md) 按站点、角色、页面、操作、预期和实际结果记录 | 用户无需打开隐藏目录即可找到全部已确认问题 |
-| DL02 | 建立机器可读问题与证据索引 | 部分完成（候选待合入） | 同目录问题 JSON、21 项证据索引和 3 张脱敏截图 | 每个高置信问题有可归属证据；秘密、Cookie、token 未进入审计目录 |
-| DL03 | 建立计划与问题的双向链接 | 部分完成（候选待合入） | DA01—DA08 与 PE01—PE05 双向关联 | 从问题可找到修正任务，从修正任务可回到原始现象 |
-| DL04 | 明确未执行范围 | 部分完成（候选待合入） | 报告单列破坏性、资金、Provider、第二 persona 和公开端未执行流程 | 未覆盖项未被描述为通过或失败 |
+| DL01 | 建立长期 Demo 审计报告 | 已完成（候选待合入） | [`demo-experience-audit.md`](../product-status/audits/demo-experience-audit.md) 按站点、角色、页面、操作、预期和实际结果记录 | 用户无需打开隐藏目录即可找到全部已确认问题 |
+| DL02 | 建立机器可读问题与证据索引 | 已完成（候选待合入） | 同目录问题 JSON、21 项证据索引和 3 张脱敏截图 | 每个高置信问题有可归属证据；秘密、Cookie、token 未进入审计目录 |
+| DL03 | 建立计划与问题的双向链接 | 已完成（候选待合入） | DA01—DA08 与 PE01—PE05 双向关联 | 从问题可找到修正任务，从修正任务可回到原始现象 |
+| DL04 | 明确未执行范围 | 已完成（候选待合入） | 报告单列破坏性、资金、Provider、第二 persona 和公开端未执行流程 | 未覆盖项未被描述为通过或失败 |
 
 ## 6. 第二阶段：冻结双 Edition 分发与升级决定
 
@@ -363,36 +365,36 @@ Core 上游任务固定为 `P1-ED01 Edition persistence scope`；其实现默认
 | --- | --- | --- | --- | --- |
 | UP01 | 冻结升级包格式 | 部分完成（本地候选 `8d3a4f0…`） | v1 manifest 已包含 Edition、源版本下界/目标、完整 migration 列表、受管文件、来源、恢复和签名身份 | 正式版本采用与不可变 Release 附件尚缺 |
 | UP02 | 冻结文件 owner | 部分完成（聚焦合同通过） | 包只承载 `managed`/`generated-managed`；`app-owned`、第三方 Module 和秘密显式保留 | 仍需 UP10 的第三方 Module/秘密代表 fixture |
-| UP03 | 生成两个最小升级包 | 部分完成（开发制品） | 固定提交 `8d3a4f0…` 已生成 Standalone/Multi-tenant 两个签名开发包 | 一次性开发 key 不是正式 authority；正式包待新版本冻结 |
+| UP03 | 生成两个最小升级包 | 实现完成；正式采用后置到首个升级版本 | 固定提交 `8d3a4f0…` 已生成 Standalone/Multi-tenant 两个签名开发包 | v3.0.13 是首个正确 Edition 基线，不伪造旧来源；下一补丁从 v3.0.13 生成正式包 |
 | UP04 | 让升级器消费升级包 | 部分完成（本地路径） | 包内自带升级器；解压后用 `--package` 与 `--signature-key-id` 进入既有 preflight/apply/verify/recover | 正式下载入口尚缺 |
 | UP05 | 支持在线与离线两种取得方式 | 部分完成（仅离线） | 本地解压包进入唯一校验链 | 固定版本下载和有界网络失败说明尚缺，不会静默 fallback |
 | UP06 | 增加身份与兼容检查 | 部分完成（聚焦合同通过） | Ed25519 包外 trust、inventory/checksum、Edition、同大版本范围、完整 migration 列表均 fail-closed | 正式 key authority、真实跳版本演练与大版本发布策略证据尚缺 |
 | UP07 | 显示冲突与修改计划 | 部分完成（候选待合入） | plan 新增 `impact`，逐文件列出 will-change、will-preserve、must-resolve 和所有权说明；篡改说明会被拒绝 | 仍需在 UP09 正式双 Edition 演练中核对真实输出可读性 |
 | UP08 | 串联完整应用升级步骤 | 部分完成（文档候选） | 普通指南已串联固定下载/离线包、验签、备份、文件计划、依赖、migration、构建、启动、smoke 和分层恢复 | 正式版本号、下载入口和最终演练结果待 REL04/REL06 填入 |
-| UP09 | 双 Edition 跨版本演练 | 未开始 | Standalone 与 Multi-tenant 各从最老受支持版本升级到目标版本 | preflight/apply/verify、完整 migration chain、登录和关键页面通过 |
+| UP09 | 双 Edition 跨版本演练 | 后置到首个升级版本 | Standalone 与 Multi-tenant 各从首个正式 Edition 基线升级到下一补丁 | v3.0.13 发布前没有可诚实使用的旧 Edition；下一补丁执行 preflight/apply/verify、完整 migration chain、登录和关键页面 |
 | UP10 | 证明用户内容不被覆盖 | 部分完成（候选待合入） | 聚焦合同已证明代表 `app-owned`、`server/.env` 秘密和第三方 Module 在 apply/verify/recover 中字节不变；冲突先生成零写入停止计划 | 尚缺 UP09 固定候选上的双 Edition 真实演练采用 |
 
 ## 9. 第五阶段：重写普通开发者与核心开发者文档
 
 | ID | 任务 | 状态 | 主要文档 | 最低验收 |
 | --- | --- | --- | --- | --- |
-| DOC01 | 重写普通开发者快速开始 | 未开始 | `docs-site/getting-started.md` | 首屏先帮助用户选择 Standalone 或 Multi-tenant，不要求理解核心发布工程 |
-| DOC02 | 编写双 Edition 安装指南 | 未开始 | 快速开始与安装页 | 从下载对应安装包到登录的步骤、输入、结果和常见停止点完整 |
-| DOC03 | 编写 `create-app` 定制指南 | 未开始 | `docs/create-application.md` 及公开投影 | 清楚说明何时下载正式包、何时定制生成，以及生成后如何进入用户自己的业务仓库 |
-| DOC04 | 编写普通用户升级指南 | 未开始 | `docs-site/guide/deployment-upgrade.md` | 用业务语言说明预检查、冲突、备份、升级、验证和恢复 |
-| DOC05 | 重写核心发布手册 | 未开始 | `docs/release-engineering.md`、operations 指南 | 核心开发者能从唯一候选发布全部制品、Demo 和文档站 |
-| DOC06 | 编写制品身份对应说明 | 未开始 | 新架构合同与 Release 说明 | 用户能查明两个安装包和两个升级包来自哪个源码 Release，并核对 Edition/Schema/checksum |
-| DOC07 | 更新文档站导航与 Release 页面 | 未开始 | docs-site 导航、下载与升级入口 | 新用户最多两次导航可到安装或升级主流程 |
+| DOC01 | 重写普通开发者快速开始 | 已完成（候选待合入） | `docs-site/getting-started.md` | 首屏先帮助用户选择 Standalone 或 Multi-tenant，不要求理解核心发布工程 |
+| DOC02 | 编写双 Edition 安装指南 | 已完成（候选待合入） | 快速开始与安装页 | 从下载对应安装包到登录的步骤、输入、结果和常见停止点完整 |
+| DOC03 | 编写 `create-app` 定制指南 | 已完成（候选待合入） | `docs/create-application.md` 及公开投影 | 清楚说明何时下载正式包、何时定制生成，以及生成后如何进入用户自己的业务仓库 |
+| DOC04 | 编写普通用户升级指南 | 已完成（候选待合入） | `docs-site/guide/deployment-upgrade.md` | 用业务语言说明预检查、冲突、备份、升级、验证和恢复；首个 Edition 基线明确无升级包 |
+| DOC05 | 重写核心发布手册 | 已完成（候选待合入） | `docs/release-engineering.md`、operations 指南 | 核心开发者能从唯一候选发布全部制品、Demo 和文档站 |
+| DOC06 | 编写制品身份对应说明 | 已完成（候选待合入） | Release、安装/升级包、派生应用身份说明 | 用户能查明各制品来自哪个源码 Release，并核对 Edition/Schema/checksum |
+| DOC07 | 更新文档站导航与 Release 页面 | 已完成（候选待合入） | docs-site 导航、下载与升级入口 | 新用户最多两次导航可到安装或升级主流程 |
 
 ## 10. 第六阶段：修复 Demo 可见体验
 
 | 顺序 | ID | 任务 | 状态 | 主要交付 | 最低验收 |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | PE01 | Demo 账号权限与页面投影对齐 | 未开始 | 固定 Platform、bootstrap Admin、共享 Admin、Tenant A/B 角色可见的菜单、按钮和 API 权限；修正 Demo seed、菜单或按钮状态 | 预期可用操作不再出现 DA01；无权功能隐藏或禁用并解释；Demo 写保护继续独立生效 |
-| 2 | PE02 | 修复 Platform 存储和 Tenant 详情状态 | 未开始 | 未配置、配置错误和 Provider 不可达显示稳定状态；消除详情成功与失败提示并存 | 存储页无 500；三个 Tenant 详情各查看一次，无矛盾提示 |
-| 3 | PE03 | 补齐页面文案和组件兼容 | 未开始 | 修复 readiness、装修导航翻译和 checkbox 当前 API | DA03—DA05 对应页面各检查一次，不再复现 |
-| 4 | PE04 | 统一 Release、Demo 和应用入口说明 | 被 DOC01—DOC07 吸收 | 清楚说明源码 Release、双 Edition 安装包、Demo overlay、`create-app` 和用户自有业务仓库 | 文档不再把移动分支 clone 或另一官方应用仓库写成正式安装输入，也不泄露密码 |
-| 5 | PE05 | 四站点聚焦复验 | 未开始 | 固定一个修复候选复核 Platform、共享 Admin 两角色、Tenant A/B 和安全表单 | 受影响路径通过；DA06—DA08 被复现修复或以充分证据关闭；保留未执行破坏性动作清单 |
+| 1 | PE01 | Demo 账号权限与页面投影对齐 | 已实现，复验中 | 固定 Platform、bootstrap Admin、共享 Admin、Tenant A/B 角色可见的菜单、按钮和 API 权限；修正 Demo seed、菜单或按钮状态 | 预期可用操作不再出现 DA01；无权功能隐藏或禁用并解释；Demo 写保护继续独立生效 |
+| 2 | PE02 | 修复 Platform 存储和 Tenant 详情状态 | 已实现，复验中 | 未配置、配置错误和 Provider 不可达显示稳定状态；消除详情成功与失败提示并存 | 存储页无 500；三个 Tenant 详情各查看一次，无矛盾提示 |
+| 3 | PE03 | 补齐页面文案和组件兼容 | 已实现，复验中 | 修复 readiness、装修导航翻译、失效图标和 checkbox 当前 API | DA03—DA05 对应页面各检查一次，不再复现 |
+| 4 | PE04 | 统一 Release、Demo 和应用入口说明 | 已完成（DOC01—DOC07） | 清楚说明源码 Release、双 Edition 安装包、Demo overlay、`create-app` 和用户自有业务仓库 | 文档不再把移动分支 clone 或另一官方应用仓库写成正式安装输入，也不泄露密码 |
+| 5 | PE05 | 四站点聚焦复验 | 执行中（`e5ef575…` 已失效） | 固定一个修复候选复核 Platform、共享 Admin 两角色、Tenant A/B 和安全表单 | 受影响路径通过；DA06—DA08 被复现修复或以充分证据关闭；保留未执行破坏性动作清单 |
 
 PE01 是 Demo 关键路径。PE02 与 PE03 可在文件 owner 不冲突时并行；文档先写权威上游再投影。
 PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化属于 L2，完整 P0-E 只在最终
@@ -405,14 +407,15 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 | REL01 | 聚焦验证 | 未开始 | 分发、升级和 Demo 各自最低充分局部检查通过 |
 | REL02 | 冻结唯一候选 | 未开始 | worktree 干净，source commit/tree、inventory、scaffold、依赖和制品身份锁定 |
 | REL03 | 正式资格 | 未开始 | 只对冻结 L2 候选运行一次 P0-E；失败候选返回 Development mode，不边跑边修 |
-| REL04 | 发布全部正式制品 | 未开始 | 源码 Release、Standalone/Multi-tenant 安装包和对应升级包全部发布且身份一致 |
+| REL04 | 发布全部正式制品 | 未开始 | v3.0.13 发布源码与 Standalone/Multi-tenant 安装包；首个升级版本再发布两个同 Edition 升级包，不能伪造来源 |
 | REL05 | 双 Edition 独立消费 | 未开始 | 从两个正式安装包分别完成一次独立安装，不依赖开发 worktree |
-| REL06 | 双 Edition 升级消费 | 未开始 | 两个 Edition 分别使用正式升级包完成一次受支持的跨版本升级和恢复边界验证 |
+| REL06 | 双 Edition 升级消费 | 后置到首个升级版本 | v3.0.13 先成为合格来源；下一补丁分别使用正式升级包完成一次受支持的跨版本升级和恢复边界验证 |
 | REL07 | 更新 Demo 和文档站 | 未开始 | Demo 从正式 Multi-tenant 安装包部署并叠加受控 overlay；公开文档给出 Edition 选择、安装、升级、Demo 和下载入口 |
 | REL08 | 冻结统一发布快照 | 未开始 | Release、两个安装包、两个升级包、Demo 与文档版本/摘要可互相核对 |
 
-只有 REL01—REL08 全部完成，才能报告“普通开发者应用分发与升级体验已完成”。这不会改写
-`v3.0.12` 已经完成的正式源码交付事实，而会形成一个新的正式版本。
+v3.0.13 完成 REL01—REL05、REL07 和 REL08 后，只能报告“首个双 Edition 安装分发基线已完成”。
+只有下一补丁进一步完成 UP09、UP10 正式采用与 REL06，才能报告“跨版本升级体验已完成”。这不
+改写 `v3.0.12` 已经完成的正式源码交付事实，也不允许用旧错误生成物缩短发布顺序。
 
 ## 12. 后续仍可计划的产品增强
 
@@ -466,6 +469,7 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 8. Marketplace、T16 真实资金、Provider 真实外呼、第三方生产采用、跨实例运营平台和完整 SaaS
    均保持各自授权与范围边界，不因本计划自动获得执行授权。
 
-当前关键路径是完成 AR/UP 候选的正式版本采用、UP07—UP10 与 DOC01—DOC07；随后修复
-PE01—PE05，最后只对一个冻结 L2 候选执行 REL01—REL08。不创建官方应用源码仓库，也不在
-迭代期运行完整资格。
+当前关键路径是提交共享 Vue 构建标志与 Platform favicon 修复，在新候选上完成 PE05 聚焦复验、
+文档治理和最终 scaffold reseal，然后只对
+一个冻结 L2 候选执行 v3.0.13 的 REL01—REL05、REL07、REL08。v3.0.13 发布后才具备 UP09/REL06
+需要的合格来源；该升级采用进入下一补丁，不创建官方应用源码仓库，也不在迭代期运行完整资格。
