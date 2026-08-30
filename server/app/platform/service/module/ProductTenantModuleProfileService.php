@@ -7,6 +7,7 @@ use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
@@ -110,12 +111,14 @@ final readonly class ProductTenantModuleProfileService
                         'product_profile'
                     );
                     if ($before === null || !$before->isEffective($now)) {
-                        $audit->appendTenantSystem(
+                        $audit->recordTenantSystem(
                             (int)$tenant['id'],
                             'tenant-module.profile-enabled',
                             'tenant.module.apply-product-profile',
                             'product-profile:' . $profile . ':' . $tenant['code'] . ':' . $moduleKey,
-                            ['profile' => $profile, 'module_key' => $moduleKey]
+                            ['profile' => $profile, 'module_key' => $moduleKey],
+                            AuditOutcome::Success,
+                            null,
                         );
                     }
                 }

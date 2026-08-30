@@ -5,6 +5,7 @@ namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Task\OpsTask;
@@ -196,13 +197,15 @@ SQL);
                 'operator_id' => $context->operatorId,
             ]);
 
-            AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+            AuditContractHost::fromPdo($this->pdo)->recordPlatform(
                 $eventType,
                 $action,
                 $context->requestId,
                 $context->operatorId,
                 $context->accountId,
-                [...$auditMetadata, 'task_key' => $taskKey]
+                [...$auditMetadata, 'task_key' => $taskKey],
+                AuditOutcome::Success,
+                null,
             );
 
             $row = $this->one('SELECT * FROM pa_ops_task WHERE task_key = :task_key', ['task_key' => $taskKey]);

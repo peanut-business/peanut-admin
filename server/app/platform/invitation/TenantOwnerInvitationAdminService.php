@@ -9,6 +9,7 @@ use app\platform\service\PlatformOperatorSessionService;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
 use PeanutAdmin\Kernel\Membership\MembershipRepository;
@@ -84,13 +85,15 @@ final class TenantOwnerInvitationAdminService
                 $expiresAt,
                 $context->core->operatorId
             );
-            $this->audit->appendPlatform(
+            $this->audit->recordPlatform(
                 'tenant.owner-invitation.created',
                 self::INVITE_PERMISSION,
                 $context->core->requestId,
                 $context->core->operatorId,
                 $context->core->accountId,
-                ['tenant_id' => $tenant->id, 'invitation_id' => $invitation['id']]
+                ['tenant_id' => $tenant->id, 'invitation_id' => $invitation['id']],
+                AuditOutcome::Success,
+                null,
             );
 
             return $invitation + [
@@ -145,13 +148,15 @@ final class TenantOwnerInvitationAdminService
                 $expiresAt,
                 $context->core->operatorId
             );
-            $this->audit->appendPlatform(
+            $this->audit->recordPlatform(
                 'tenant.owner-invitation.created',
                 self::INVITE_PERMISSION,
                 $context->core->requestId,
                 $context->core->operatorId,
                 $context->core->accountId,
-                ['tenant_id' => $tenantId, 'invitation_id' => $invitation['id']]
+                ['tenant_id' => $tenantId, 'invitation_id' => $invitation['id']],
+                AuditOutcome::Success,
+                null,
             );
 
             return $invitation + [
@@ -238,13 +243,15 @@ SQL);
                 'updated_at' => $this->format($now),
                 'id' => $invitationId,
             ]);
-            $this->audit->appendPlatform(
+            $this->audit->recordPlatform(
                 'tenant.owner-invitation.resent',
                 self::INVITE_PERMISSION,
                 $context->core->requestId,
                 $context->core->operatorId,
                 $context->core->accountId,
-                ['tenant_id' => (int)$invitation['tenant_id'], 'invitation_id' => $invitationId]
+                ['tenant_id' => (int)$invitation['tenant_id'], 'invitation_id' => $invitationId],
+                AuditOutcome::Success,
+                null,
             );
 
             return [
@@ -291,13 +298,15 @@ SQL);
                 'updated_at' => $now,
                 'id' => $invitationId,
             ]);
-            $this->audit->appendPlatform(
+            $this->audit->recordPlatform(
                 'tenant.owner-invitation.revoked',
                 self::INVITE_PERMISSION,
                 $context->core->requestId,
                 $context->core->operatorId,
                 $context->core->accountId,
-                ['tenant_id' => (int)$invitation['tenant_id'], 'invitation_id' => $invitationId]
+                ['tenant_id' => (int)$invitation['tenant_id'], 'invitation_id' => $invitationId],
+                AuditOutcome::Success,
+                null,
             );
 
             return [

@@ -5,6 +5,7 @@ namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
@@ -189,13 +190,15 @@ SQL);
 
     private function audit(PlatformContext $context, OpsAuditEvent $audit): void
     {
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
             $audit->eventType,
             $audit->action,
             $context->requestId,
             $context->operatorId,
             $context->accountId,
             $audit->metadata,
+            AuditOutcome::Success,
+            null,
         );
     }
 
