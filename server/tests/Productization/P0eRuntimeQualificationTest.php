@@ -177,8 +177,9 @@ $expect(!str_contains($runClosure, 'forward') && !str_contains($runClosure, 'leg
 $expect(
     str_contains($runnerSource, '"php", "scripts/build-edition-installers"')
     && str_contains($runnerSource, 'self.generated["multi-tenant"]')
+    && str_contains($runnerSource, 'artifact_manifest.get("application", {}).get("managed_tree_sha256") != manifest.get("digests", {}).get("managed_tree_sha256")')
     && str_contains($runnerSource, 'plugin_lock_restored_sha256'),
-    'Plugin lifecycle is not exercised from the formal Multi-tenant installer'
+    'formal Edition installer qualification lost its projected application identity or Plugin lifecycle'
 );
 $expect(str_contains($runnerSource, 'consumer-module-reference-chain'), 'consumer Module lifecycle does not use the independent application driver');
 $expect(str_contains($runnerSource, '--formal-release-adoption'), 'consumer Module lifecycle does not require the sealed scaffold adoption path');
