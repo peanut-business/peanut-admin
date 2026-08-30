@@ -4,9 +4,10 @@
 >
 > 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
 >
-> 计划事实基线：`origin/dev@3193314e24d8204b65218a2c6de5d162b32de82c`；`e5ef575…` 的首轮
-> PE05 复验发现共享 Vue 构建标志与 Platform favicon 仍需收敛，该候选已失效并返回 Development
-> mode。旧 scaffold seal 仍指向 `dd1e7bab…`，必须在新的最终功能提交上重封后才可进入资格
+> 计划事实基线：`origin/dev@3193314e24d8204b65218a2c6de5d162b32de82c`；`e5ef575…` 与
+> `82fd612…` 的 PE05 复验依次发现共享 Vue 构建标志、Platform favicon 和历史 `2.0.1` Runtime
+> 版本回退，两个候选均已失效并返回 Development mode。旧 scaffold seal 仍指向 `dd1e7bab…`，
+> 必须在新的最终功能提交上重封后才可进入资格
 >
 > 决策日期：2026-08-30
 >
@@ -394,7 +395,7 @@ Core 上游任务固定为 `P1-ED01 Edition persistence scope`；其实现默认
 | 2 | PE02 | 修复 Platform 存储和 Tenant 详情状态 | 已实现，复验中 | 未配置、配置错误和 Provider 不可达显示稳定状态；消除详情成功与失败提示并存 | 存储页无 500；三个 Tenant 详情各查看一次，无矛盾提示 |
 | 3 | PE03 | 补齐页面文案和组件兼容 | 已实现，复验中 | 修复 readiness、装修导航翻译、失效图标和 checkbox 当前 API | DA03—DA05 对应页面各检查一次，不再复现 |
 | 4 | PE04 | 统一 Release、Demo 和应用入口说明 | 已完成（DOC01—DOC07） | 清楚说明源码 Release、双 Edition 安装包、Demo overlay、`create-app` 和用户自有业务仓库 | 文档不再把移动分支 clone 或另一官方应用仓库写成正式安装输入，也不泄露密码 |
-| 5 | PE05 | 四站点聚焦复验 | 执行中（`e5ef575…` 已失效） | 固定一个修复候选复核 Platform、共享 Admin 两角色、Tenant A/B 和安全表单 | 受影响路径通过；DA06—DA08 被复现修复或以充分证据关闭；保留未执行破坏性动作清单 |
+| 5 | PE05 | 四站点聚焦复验 | 执行中（`e5ef575…`、`82fd612…` 已失效） | 固定一个修复候选复核 Platform、共享 Admin 两角色、Tenant A/B 和安全表单 | 受影响路径通过；DA06—DA08 被复现修复或以充分证据关闭；保留未执行破坏性动作清单 |
 
 PE01 是 Demo 关键路径。PE02 与 PE03 可在文件 owner 不冲突时并行；文档先写权威上游再投影。
 PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化属于 L2，完整 P0-E 只在最终
@@ -469,7 +470,7 @@ v3.0.13 完成 REL01—REL05、REL07 和 REL08 后，只能报告“首个双 Ed
 8. Marketplace、T16 真实资金、Provider 真实外呼、第三方生产采用、跨实例运营平台和完整 SaaS
    均保持各自授权与范围边界，不因本计划自动获得执行授权。
 
-当前关键路径是提交共享 Vue 构建标志与 Platform favicon 修复，在新候选上完成 PE05 聚焦复验、
+当前关键路径是提交 Runtime 版本 authority 修复，在新候选上完成 PE05 聚焦复验、
 文档治理和最终 scaffold reseal，然后只对
 一个冻结 L2 候选执行 v3.0.13 的 REL01—REL05、REL07、REL08。v3.0.13 发布后才具备 UP09/REL06
 需要的合格来源；该升级采用进入下一补丁，不创建官方应用源码仓库，也不在迭代期运行完整资格。

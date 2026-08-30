@@ -395,17 +395,17 @@ try {
             "{$client} lock root dependency must remain Alpha.11"
         );
     }
-    foreach ([
-        'server/config/project.php',
-        'server/app/adminapi/application/WorkbenchApplicationService.php',
-        'server/app/api/application/IndexApplicationService.php',
-        'uniapp/src/pages/as_us/as_us.vue',
-    ] as $versionSurface) {
+    foreach (['server/config/project.php', 'server/app/adminapi/application/WorkbenchApplicationService.php', 'server/app/api/application/IndexApplicationService.php'] as $versionSurface) {
         createApplicationExpect(
-            str_contains((string)file_get_contents($first . '/' . $versionSurface), "'0.1.0'"),
-            $versionSurface . ' fallback must use application.version'
+            !str_contains((string)file_get_contents($first . '/' . $versionSurface), "'2.0.1'"),
+            $versionSurface . ' must not retain a historical product version'
         );
     }
+    createApplicationExpect(
+        str_contains((string)file_get_contents($first . '/server/config/project.php'), 'release-versions.json')
+            && str_contains((string)file_get_contents($first . '/uniapp/src/pages/as_us/as_us.vue'), "'0.1.0'"),
+        'generated Runtime version surfaces must use the application version authority'
+    );
     $uniappManifest = (string)file_get_contents($first . '/uniapp/src/manifest.json');
     createApplicationExpect(
         preg_match('/"versionName"\s*:\s*"0\.1\.0"/', $uniappManifest) === 1

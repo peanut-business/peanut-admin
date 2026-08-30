@@ -590,12 +590,7 @@ final class ApplicationCreator
         if ($path === 'server/app/adminapi/application/WorkbenchApplicationService.php') {
             $content = preg_replace("/'(today_sales|total_sales|today_visitor|total_visitor|today_new_user|total_new_user|order_num|order_sum)' => [0-9]+,/", "'$1' => 0,", $content) ?? $content;
         }
-        if (in_array($path, [
-            'server/config/project.php',
-            'server/app/adminapi/application/WorkbenchApplicationService.php',
-            'server/app/api/application/IndexApplicationService.php',
-            'uniapp/src/pages/as_us/as_us.vue',
-        ], true)) {
+        if ($path === 'uniapp/src/pages/as_us/as_us.vue') {
             $content = $this->replaceVersionLiteral($content, $parameters['APPLICATION_VERSION'], $path);
         }
         if ($path === 'uniapp/src/manifest.json') {
@@ -644,9 +639,6 @@ final class ApplicationCreator
     private function replaceVersionLiteral(string $content, string $version, string $path): string
     {
         $patterns = match ($path) {
-            'server/config/project.php' => ["/env\('project\.version', '[^']+'\)/"],
-            'server/app/adminapi/application/WorkbenchApplicationService.php',
-            'server/app/api/application/IndexApplicationService.php' => ["/config\('project\.version', '[^']+'\)/"],
             'uniapp/src/pages/as_us/as_us.vue' => ["/appStore\.config\?\.version \|\| '[^']+'/"],
             default => [],
         };

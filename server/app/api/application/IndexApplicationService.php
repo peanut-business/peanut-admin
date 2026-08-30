@@ -64,7 +64,7 @@ class IndexApplicationService extends ApplicationService
                 DecorationEnum::SYSTEM_THEME,
                 DecorationTenantContext::CONFIG_OPERATION
             ),
-            'version'  => (string) config('project.version', '2.0.1'),
+            'version'  => (string) config('project.version'),
         ];
     }
 
