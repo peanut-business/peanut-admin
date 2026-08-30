@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\idempotency;
 
+use app\common\persistence\CoreTenantRepositoryFactory;
 use LogicException;
 use PDO;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
@@ -17,7 +18,7 @@ final class PdoIdempotentCommandExecutor implements IdempotentCommandExecutor
 
     public function __construct(PDO $pdo)
     {
-        $this->repository = new PdoIdempotencyRepository($pdo);
+        $this->repository = (new CoreTenantRepositoryFactory($pdo))->idempotency();
     }
 
     public function begin(IdempotencyCommand $command): IdempotencyResult

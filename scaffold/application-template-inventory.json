@@ -6000,7 +6000,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fc0dc456cbc06655cf53f9b0f40f088b4abf680e30c06c2581ca4414aa29d05e"
+            "source_sha256": "4d40a713a1bb802049615c6027573ddfebe4b84c289a7034943f2f0e4f1c6d5e"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php",
@@ -6042,7 +6042,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b84101466642853d98c3b7312a57755900364c9b5fa595c5aab3ba20556057fb"
+            "source_sha256": "6352c2abbe104c9a573d6a6109703a4993edd87a05376cc938bc8c1e16a8d7fd"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Application/TenantConfigurationTransferService.php",
@@ -6266,7 +6266,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "39ead55fbd0b0532748e03857539ad9757e0894244c37c4dce5def773e4f8fcd"
+            "source_sha256": "5ec45caa60cb89553cce415e2df003eab7a4960d3ddc3643b961531450209b79"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
@@ -8044,7 +8044,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2fcc130b209d86157297193637c748b9553436145b2b8b982e29853efc968f7a"
+            "source_sha256": "30a19dfa5a298ecb639b08b1272cba85baea633c01b954127f5008f4f466d68c"
         },
         {
             "path": "server/app/Modules/Official/Task/Application/TaskAuthorizationRouter.php",
@@ -11071,6 +11071,20 @@
             "source_sha256": "1a82b96f56a59063c9eece7dd8899f0199ed437b9620a8e321813fff1a88d9b1"
         },
         {
+            "path": "server/app/common/persistence/CoreTenantRepositoryFactory.php",
+            "target": "server/app/common/persistence/CoreTenantRepositoryFactory.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "7a2955df7f674e778bd3ae80a999a04bedd8289de0df22e994d6579ebb27a04c"
+        },
+        {
             "path": "server/app/common/persistence/TransactionalExecution.php",
             "target": "server/app/common/persistence/TransactionalExecution.php",
             "classification": "app-owned",
@@ -12296,7 +12310,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "45393acde6f31f215db39e4960237ccd71a8b818fb610c12a84528f585fc9851"
+            "source_sha256": "50bf1a40af48fb1e01ab0f70766146bb3519a1b67758450c3b834dc2a73616d2"
         },
         {
             "path": "server/app/common/service/installation/InstallationExecutionException.php",
@@ -14986,7 +15000,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "b7607ce723354309c15eefc6d087cfa0c4a3236f6ebdd819347d2fe28dd5f72b"
+            "source_sha256": "5b8813f114bdc4a1b83cd41ebac1ff70f45d4e9a471d585f10efac73f7d28759"
         },
         {
             "path": "server/app/platform/service/plugin/ModuleCatalogMutationRepository.php",
