@@ -28,10 +28,9 @@ class IndexController extends BaseApiController
     /** 全局配置 */
     public function config()
     {
-        $result = $this->index->getConfigData(DecorationTenantContext::read(
-            $this->request,
-            DecorationTenantContext::CONFIG_OPERATION
-        ));
+        $result = $this->index->getConfigData(
+            DecorationTenantContext::read(DecorationTenantContext::CONFIG_OPERATION)
+        );
         return $this->data($result);
     }
 
@@ -40,10 +39,7 @@ class IndexController extends BaseApiController
     {
         $type   = $this->request->get('type/s', 'service');
         $result = $this->index->getPolicyByType(
-            DecorationTenantContext::read(
-                $this->request,
-                DecorationTenantContext::CONFIG_OPERATION
-            ),
+            DecorationTenantContext::read(DecorationTenantContext::CONFIG_OPERATION),
             $type,
         );
         return $this->data($result);

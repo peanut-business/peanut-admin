@@ -91,7 +91,11 @@
       <el-row style="margin-bottom: 16px">
         <el-col :span="12">
           <el-space>
-            <el-button v-permission="['log/lists']" plain @click="openExport">
+            <el-button
+              v-permission="['official.import-export.operation-log.export']"
+              plain
+              @click="openExport"
+            >
               <template #icon><icon-export /></template>
               {{ $t('systemLog.operation.export') }}
             </el-button>

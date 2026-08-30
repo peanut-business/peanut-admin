@@ -22,7 +22,7 @@ Peanut Admin 的源码 Release、正式安装包、升级包和派生应用版�
 
 正式版本号和附件列表以 [GitHub Releases](https://github.com/peanut-business/peanut-admin/releases) 页面为准。本文不预填尚未正式发布的版本；下面的 `X.Y.Z` 是明确占位符，实际值必须直接采用 Release 页面显示的值。
 
-每个正式 Release 会随附件提供以下两套安装物：
+从首个正确 Edition 分发基线开始，每个正式 Release 会随附件提供以下两套安装物：
 
 ```text
 peanut-admin-X.Y.Z-standalone.tar.gz
@@ -32,7 +32,8 @@ peanut-admin-X.Y.Z-multi-tenant.tar.gz.manifest.json
 SHA256SUMS
 ```
 
-以及对应的两套升级物：
+首个 Edition 分发基线没有可诚实支持的旧 Edition，因此只提供安装包，不提供升级包。后续版本
+才会提供下列两套升级物，并把该基线或更高受支持版本写进兼容范围：
 
 ```text
 peanut-admin-X.Y.Z-standalone-upgrade.tar.gz
@@ -42,7 +43,10 @@ peanut-admin-X.Y.Z-multi-tenant-upgrade.tar.gz.manifest.json
 SHA256SUMS.upgrades
 ```
 
-如果某个正式 Release 尚未列出某个 Edition 的附件，不要根据文件名猜测下载地址，也不要使用开发分支或另一个 Edition 的制品。安装包的下载、校验、配置、安装和登录步骤见[快速开始](/getting-started)；已部署应用的升级步骤见[部署与升级](/guide/deployment-upgrade)。
+基线 Release 缺少升级包是明确的产品边界，不代表可以用完整安装包覆盖已有目录。如果其他正式
+Release 尚未列出声明应有的 Edition 附件，不要根据文件名猜测下载地址，也不要使用开发分支或
+另一个 Edition 的制品。安装包的下载、校验、配置、安装和登录步骤见[快速开始](/getting-started)；
+已部署应用的升级步骤见[部署与升级](/guide/deployment-upgrade)。
 
 ## 如何核对制品身份
 

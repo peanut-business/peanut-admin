@@ -1,11 +1,14 @@
 # 发布、脚手架与独立应用生命周期
 
-这三个身份要分开理解：
+这些身份要分开理解：
 
 - **Core** 是独立 Composer/npm 依赖，按自己的仓库和 tag 发布。
-- **Peanut Admin** 是框架/脚手架源仓，`main` 上的应用版本 tag 发布源码和 scaffold release。
-- **独立应用** 是用户从已发布 Peanut Admin tag 生成后拥有的另一个 Git 仓库；它不是源仓的
-  工作树，也不会自动跟随源仓。
+- **Peanut Admin 源码 Release** 是唯一人工开发事实源，`main` 上的 tag 固定开发源码和资格身份。
+- **Standalone / Multi-tenant 安装包** 是同一个 Release 生成的两种首次安装构建物，不是两套
+  人工维护源码，也不是两个官方应用仓库。
+- **Standalone / Multi-tenant 升级包** 只升级同一 Edition 的受管文件与 Schema 链，不能互换。
+- **用户定制应用** 是用户用固定 Release 的 `create-app` 生成后自行拥有的业务仓库；它不是
+  Peanut Admin 的第二个官方源仓，也不会自动跟随 `dev/main`。
 
 ## 框架团队的发布顺序
 
@@ -17,8 +20,10 @@
   → 从最新 origin/main 固定 candidate
   → 按风险运行资格（登录/密码/租户/依赖/scaffold 变更属于 L2，运行完整 P0-E）
   → 对同一 main commit 创建 annotated vX.Y.Z tag
-  → scripts/publish-github-release 发布 GitHub Release
-  → 使用同一 tag 部署单租户或演示环境
+  → 从同一 commit 生成两个安装包和两个签名升级包
+  → scripts/publish-github-release 一次发布源码和全部 Edition 附件
+  → Demo 消费正式 Multi-tenant 安装包并叠加受控 overlay
+  → 文档站采用同一版本和下载入口
 ```
 
 当前仓库没有“push tag 后自动发布”的 GitHub Actions；tag 是不可变身份，发布由
@@ -29,13 +34,18 @@ Registry 身份，不能把移动的 `dev` 当作发布输入。
 Core 的 tag/Registry 发布是独立流程。Peanut Admin 的应用版本与 Core alpha 版本不必相同；只有
 当应用更新 Composer/npm lock 后，才把新 Core 版本作为应用候选的一部分重新资格化。
 
-## 什么时候执行 create-app
+## 普通用户先下载，定制用户才执行 create-app
 
-`create-app` 在 Peanut Admin Release 已发布之后执行，而不是在 `dev` 上创建用户应用：
+普通用户首次安装时，直接在 GitHub Release 选择 Standalone 或 Multi-tenant 安装包，不需要
+克隆开发仓库，也不需要先运行 `create-app`。已有应用升级时只下载当前 Edition 对应的升级包；
+完整安装包不能覆盖已有目录。
+
+只有需要自定义产品名称、slug、package identity 或继续开发业务代码时，才执行 `create-app`。
+它在 Peanut Admin Release 已发布之后运行，而不是在 `dev` 上创建用户应用：
 
 ```bash
-git clone --branch v3.0.4 <peanut-admin-repository> peanut-admin-3.0.4
-cd peanut-admin-3.0.4
+git clone --branch vX.Y.Z <peanut-admin-repository> peanut-admin-X.Y.Z
+cd peanut-admin-X.Y.Z
 php scripts/create-app \
   --name="Acme Console" \
   --slug=acme-console \
@@ -44,7 +54,7 @@ php scripts/create-app \
 cd /absolute/path/to/acme-console
 git init
 git add .
-git commit -m "chore: create application from Peanut Admin v3.0.4"
+git commit -m "chore: create application from Peanut Admin vX.Y.Z"
 ```
 
 生成物必须包含 `.peanut/application-manifest.json`。其中记录应用自己的版本、采用的

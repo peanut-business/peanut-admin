@@ -35,7 +35,7 @@
       <el-table :data="checklist.items" row-key="key" border>
         <el-table-column :label="$t('readiness.columns.item')" min-width="170">
           <template #default="{ row }">
-            <div class="item-title">
+            <div v-if="row.key" class="item-title">
               {{ $t(`readiness.items.${row.key}.title`) }}
             </div>
             <el-text size="small" type="info">
