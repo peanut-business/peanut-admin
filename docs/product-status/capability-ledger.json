@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/dual-edition-artifacts",
-    "commit": "dd1e7bab86fe8c5a02419c1c14cd40a60c4da0fc",
+    "commit": "d6784ffb15c1f079a8b3e45f6abc5e5cabbf64fd",
     "reviewed_at": "2026-08-30"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。v3.0.13 已从功能冻结提交 dd1e7bab86fe8c5a02419c1c14cd40a60c4da0fc 封存首个正式 Standalone/Multi-tenant 安装基线和 seed-only Demo overlay，当前仍是未合入、未资格、未发布候选；双 Edition 正式下载、跨版本升级、Demo 与文档采用尚未完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。v3.0.13 的双 Edition 安装分发、升级包合同、Demo 可见问题修复和正式资格入口已在候选 d6784ffb15c1f079a8b3e45f6abc5e5cabbf64fd 实现；旧 scaffold seal 仍指向更早提交，当前尚未最终封存、合入、资格、发布或由 Demo/文档站采用。跨版本升级体验需等 v3.0.13 成为合格来源后由下一补丁完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1432,7 +1432,7 @@
       "name": "双 Edition 安装与升级分发",
       "area": "delivery",
       "status": "implemented",
-      "summary": "v3.0.13 候选已从同一 source commit/tree 生成 Standalone 与 Multi-tenant 安装包合同、签名同 Edition 升级包合同、升级影响计划和正式附件发布入口；首个正式安装基线仍待 P0-E、Release 附件独立消费、同 Edition 跨版本升级及 Demo/文档采用，因此不能标记为已验证。",
+      "summary": "候选 d6784ff… 已实现从同一 source commit/tree 生成 Standalone 与 Multi-tenant 安装包、签名同 Edition 升级包合同、升级影响计划、正式附件发布入口和直接消费两安装包的资格入口；Demo 可见问题已在 836d8a9… 聚焦复验关闭。旧 scaffold seal 已失效，首个正式安装基线仍待最终 reseal、P0-E、Release 附件独立消费及 Demo/文档采用；同 Edition 跨版本升级将在 v3.0.13 成为合格来源后的下一补丁采用，因此当前不能标记为已验证。",
       "acceptance": [
         "同一冻结 source commit/tree 生成两个 Edition 安装包并显式记录 Schema 与 checksum 差异",
         "下一正式版本为两个 Edition 分别发布签名升级包，并拒绝错 Edition、篡改、降级与不受支持来源",
@@ -1442,11 +1442,15 @@
       "evidence": [
         {
           "kind": "git",
-          "ref": "dd1e7bab86fe8c5a02419c1c14cd40a60c4da0fc"
+          "ref": "d6784ffb15c1f079a8b3e45f6abc5e5cabbf64fd"
         },
         {
           "kind": "document",
           "ref": "docs/plans/post-release-enhancement-plan.md"
+        },
+        {
+          "kind": "document",
+          "ref": "docs/product-status/audits/demo-experience-audit.md"
         }
       ],
       "dependencies": [

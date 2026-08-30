@@ -4,7 +4,7 @@
   "title": "Peanut Admin v3.0.12 Demo experience audit",
   "audit_date": "2026-08-28",
   "recorded_at": "2026-08-30",
-  "status": "observed_issues",
+  "status": "historical_issues_resolved_in_candidate",
   "release": {
     "tag": "v3.0.12",
     "commit": "fe328a320b7c68b3c2f47512f2aa4afcad43c630",
@@ -32,7 +32,43 @@
     "raw_artifact_root": "output/playwright/demo-audit-v3012/",
     "raw_artifact_count": 202,
     "raw_artifact_policy": "Raw hidden capture files remain process evidence; durable references and selected screenshots are listed in demo-experience-evidence.json.",
-    "retest_after_capture": false
+    "retest_after_capture": true
+  },
+  "retest": {
+    "date": "2026-08-30",
+    "status": "passed",
+    "scope": "PE05 focused browser retest for DA01-DA08; not a P0-E or Release qualification",
+    "candidate": {
+      "commit": "836d8a95ddb097dc6299f33bd43dd636c7edd593",
+      "tree": "1a4e1b08ad088609bb52feeef8ff9387bf6f59df"
+    },
+    "environment": "local-multi-tenant-demo",
+    "resource_ids": [
+      "peanut-admin-mysql84-local-multi-tenant-demo",
+      "peanut-admin-local-multi-tenant-demo-php",
+      "peanut-admin-local-multi-tenant-demo-admin",
+      "peanut-admin-local-multi-tenant-demo-platform",
+      "peanut-admin-local-multi-tenant-demo-domains"
+    ],
+    "evidence_root": "output/playwright/pe05-836d8a9/",
+    "results": {
+      "DA01": "passed",
+      "DA02": "passed",
+      "DA03": "passed",
+      "DA04": "passed",
+      "DA05": "passed",
+      "DA06": "closed_after_clean_relogin",
+      "DA07": "closed_with_attributed_deliberate_404",
+      "DA08": "passed"
+    },
+    "session_note": "A seed-before-retest browser token failed closed as designed. It was discarded; the recorded result comes from a clean versioned Demo persona login.",
+    "proxy_note": "The first local 503 came from the workstation HTTP proxy because .test hosts were absent from NO_PROXY. The same registered host returned 200 when the local browser session bypassed that proxy; no product fallback was used.",
+    "cleanup": {
+      "destructive_actions_executed": false,
+      "browser_sessions_closed": true,
+      "listeners_stopped": true,
+      "lease_released": true
+    }
   },
   "issues": [
     {
@@ -66,7 +102,7 @@
         "EV-DA01-TENANT-A-CONSOLE",
         "EV-DA01-TENANT-B-CONSOLE"
       ],
-      "verification": "not_retested_after_capture"
+      "verification": "passed_on_836d8a9"
     },
     {
       "id": "DA02",
@@ -88,7 +124,7 @@
       "evidence_ids": [
         "EV-DA02-PLATFORM-CONSOLE"
       ],
-      "verification": "not_retested_after_capture"
+      "verification": "passed_on_836d8a9"
     },
     {
       "id": "DA03",
@@ -121,7 +157,7 @@
         "EV-DA03-TENANT-A-CONSOLE",
         "EV-DA03-TENANT-B-CONSOLE"
       ],
-      "verification": "not_retested_after_capture"
+      "verification": "passed_on_836d8a9"
     },
     {
       "id": "DA04",
@@ -148,7 +184,7 @@
         "EV-DA04-SHARED-CONSOLE",
         "EV-DA04-TENANT-A-CONSOLE"
       ],
-      "verification": "not_retested_after_capture"
+      "verification": "passed_on_836d8a9"
     },
     {
       "id": "DA05",
@@ -169,7 +205,7 @@
       "evidence_ids": [
         "EV-DA05-PLATFORM-CONSOLE"
       ],
-      "verification": "not_retested_after_capture"
+      "verification": "passed_on_836d8a9"
     },
     {
       "id": "DA06",
@@ -193,7 +229,7 @@
         "EV-DA06-TENANT-A-SNAPSHOT-2",
         "EV-DA06-SCREENSHOT"
       ],
-      "verification": "requires_focused_reproduction"
+      "verification": "closed_after_clean_relogin_on_836d8a9"
     },
     {
       "id": "DA07",
@@ -218,7 +254,7 @@
         "EV-DA07-404-3",
         "EV-DA07-SCREENSHOT"
       ],
-      "verification": "requires_attributed_reproduction"
+      "verification": "closed_with_attributed_deliberate_404_on_836d8a9"
     },
     {
       "id": "DA08",
@@ -241,7 +277,7 @@
         "EV-DA08-PLATFORM-TENANT-B",
         "EV-DA08-SCREENSHOT"
       ],
-      "verification": "not_retested_after_capture"
+      "verification": "passed_on_836d8a9"
     }
   ],
   "repair_map": [
@@ -276,9 +312,9 @@
     "Log clearing, password changes or destructive Demo writes",
     "Real Storage, payment, messaging, OAuth or other external Provider calls",
     "Real funds, orders, refunds or third-party business data flows",
-    "A complete comparison matrix for a second shared Admin persona",
+    "A complete all-product comparison matrix for the second shared Admin persona beyond the focused affected paths",
     "Complete public PC, H5 and callback end-to-end flows",
-    "Attribution of the DA01 failing endpoint and the three DA07 404 URLs/Hosts/navigation sources"
+    "A naturally elapsed long-session timeout; the retest covered stale-token fail-closed and a clean login instead"
   ],
   "redaction": {
     "sensitive_materials_recorded": false,

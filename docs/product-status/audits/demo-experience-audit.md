@@ -1,7 +1,8 @@
 # Demo 体验审计（v3.0.12）
 
 > 审计日期：2026-08-28（Asia/Shanghai）
-> 记录状态：已归档的观察证据；不是修复后复验，也不是新的 P0-E 资格结论。
+> 记录状态：v3.0.12 历史观察已归档；候选 `836d8a9…` 的 PE05 聚焦复验已通过，
+> 但它不是新的 P0-E 资格或正式 Release 结论。
 
 这份报告把 v3.0.12 production-candidate Demo 的真实浏览器审计收敛为长期可读记录。它保留
 用户实际看到的页面、操作、预期和结果，并明确哪些现象已经足够确认、哪些仍需复现。报告不
@@ -45,19 +46,46 @@
 | DA08 | Platform operator | 依次查看 default、Tenant A、Tenant B 的详情 | 详情读取成功时只显示成功结果；失败时不应同时展示成功数据 | 三个详情动作均出现“请求失败，请稍后重试”，同时对话框仍展示对应 Tenant 详情数据 | 高置信、三 Tenant 一致；失败请求的具体来源仍 unknown | `PE02` |
 
 DA01 的“可见但操作失败”说明的是 Demo persona 与 UI/API permission 投影不一致，不等于
-Tenant 隔离已经失效。DA06 和 DA07 保持不确定状态，不能用截图中出现了页面元素推断成功，
-也不能把未知 404 归因给某个 Tenant。
+Tenant 隔离已经失效。DA06 和 DA07 在历史采集时保持不确定；下面的独立复验保留了新的
+Host、URL、请求和干净登录状态，未用旧截图反推结论。
+
+## PE05 修复候选复验（2026-08-30）
+
+复验使用产品 Runtime 候选 `836d8a95ddb097dc6299f33bd43dd636c7edd593`
+（tree `1a4e1b08ad088609bb52feeef8ff9387bf6f59df`）和登记的
+`local-multi-tenant-demo` 数据库、PHP、Platform、Admin 与四个 Host。复验只覆盖 DA01—DA08
+直接相关路径；本机代理最初把 `.test` Host 送到代理端口而产生 503，按登记 Host 加入本次
+`NO_PROXY` 后同一 URL 返回 200，未修改产品配置或切换线上环境。
+
+| 问题 | 复验结果 | 可核对结果 |
+| --- | --- | --- |
+| DA01 | 已通过 | 共享 owner 和第二 persona 的权限、网站、字典、装修与日志可见投影一致；查询/重置返回 200；owner 可打开导出计划，第二 persona 不显示无权导出按钮 |
+| DA02 | 已通过 | Platform 存储列表 `GET /api/platform/infrastructure/storage` 返回 200，页面稳定显示本地 account/space/route |
+| DA03 | 已通过 | 共享 Admin、Tenant A、Tenant B 和第二 persona readiness 页面无 `undefined.title`，聚焦 console 为 0 error/0 warning |
+| DA04 | 已通过 | 共享 Admin、Tenant A/B 和第二 persona 的移动端、Tabbar、PC 装修页面均加载，直接 API 为 200，无 locale warning |
+| DA05 | 已通过 | Platform 角色权限页可操作，聚焦 console 为 0 error/0 warning，不再出现 checkbox label-as-value 警告 |
+| DA06 | 已关闭为旧会话证据 | seed 前旧 token 会准确 fail-closed；清除旧 session 并用版本化 Demo persona 重新登录后，跨 readiness、装修、日志与 reload 未再出现 Tenant session unavailable |
+| DA07 | 已关闭为可归属的预期 404 | `tenant-a.peanut-admin.test/.../pe05-attributed-404` 与 Tenant B 同路径均稳定进入通用 404；Host、URL 和主动导航来源已保留，不存在未知产品入口 |
+| DA08 | 已通过 | default、Tenant A、Tenant B 详情请求分别返回 200，只显示对应详情，无失败 toast |
+
+第二 persona 的最后一次干净登录同时证明：三种装修读取和操作日志查询/重置均为 200、
+console 0 error/0 warning；“清空日志”未点击，未产生破坏性写入。PE01—PE05 因此可以在本候选
+标记完成；正式发布身份仍由后续唯一 L2 P0-E 决定。
 
 ## 证据导航
 
 每条问题的原始来源、Host/URL 归属、行号和保留截图均在
 [demo-experience-evidence.json](demo-experience-evidence.json) 中。原始 console/YAML 位于
 审计运行产生的隐藏 `.playwright-cli` 目录，仅作为过程来源；长期交付不要求用户自行寻找该
-目录。可直接查看的三张脱敏截图为：
+目录。可直接查看的历史问题截图与修复候选截图为：
 
 - [DA06：Tenant A 装修页面与会话提示](screenshots/da06-tenant-a-decoration-session.png)
 - [DA07：无法归属的 404 页面](screenshots/da07-unattributed-404.png)
 - [DA08：Platform Tenant 详情与失败提示并存](screenshots/da08-platform-tenant-detail-error.png)
+- [PE05：Platform 角色与权限](screenshots/pe05-platform-roles.png)
+- [PE05：Platform 存储基础设施](screenshots/pe05-platform-storage.png)
+- [PE05：共享 owner 生产准备清单](screenshots/pe05-shared-owner-readiness.png)
+- [PE05：第二 persona 操作日志与权限投影](screenshots/pe05-shared-persona-operation-log.png)
 
 截图只保留 Demo 合成数据和页面状态；没有密码、Cookie、token、环境变量或凭据字段。截图
 SHA-256 与源文件相对路径见证据索引。
@@ -69,11 +97,11 @@ SHA-256 与源文件相对路径见证据索引。
 
 | 计划任务 | 关联问题 | 目的 |
 | --- | --- | --- |
-| `PE01` Demo persona 权限与 UI 投影对齐 | `DA01`、`DA06` | 对齐 menu/button/API permission；对 DA06 先复现会话归因 |
-| `PE02` Platform 存储路由与 Tenant 详情错误语义 | `DA02`、`DA08` | 消除 500 和成功数据/失败 toast 矛盾 |
-| `PE03` Admin/Platform locale 与组件 API 收敛 | `DA03`、`DA04`、`DA05` | 补稳定 locale key 并迁移 checkbox value API |
-| `PE04` Release、Demo 与派生应用入口说明统一 | 本审计的长期证据边界 | 说明 Demo overlay、Release 与派生应用的身份关系；不把审计当作 Runtime 修复 |
-| `PE05` 修复候选四站点聚焦验收 | `DA07`、全部受影响问题 | 在固定候选上复验并记录 URL/Host；不得把历史观察当作修复通过 |
+| `PE01` Demo persona 权限与 UI 投影对齐 | `DA01`、`DA06` | 已完成；权限投影与干净会话复验通过 |
+| `PE02` Platform 存储路由与 Tenant 详情错误语义 | `DA02`、`DA08` | 已完成；存储和三个详情动作均为 200 且反馈一致 |
+| `PE03` Admin/Platform locale 与组件 API 收敛 | `DA03`、`DA04`、`DA05` | 已完成；聚焦页面无原问题或对应 warning |
+| `PE04` Release、Demo 与派生应用入口说明统一 | 本审计的长期证据边界 | 已完成；文档固定 Demo overlay 与正式包身份关系 |
+| `PE05` 修复候选四站点聚焦验收 | `DA01`—`DA08` | 已完成；同一产品 Runtime 候选保留 Host、URL、请求与脱敏截图 |
 
 ## 未执行范围（DL04）
 
@@ -83,8 +111,8 @@ SHA-256 与源文件相对路径见证据索引。
 - 清空日志、修改密码以及任何会改变 Demo 数据的破坏性写操作；
 - 真实 Storage、支付、消息、OAuth 或其他外部 Provider 的连接、发送或扣款；
 - 真实资金、订单、退款和第三方业务数据流程；
-- 第二个共享 Admin persona 的完整对照矩阵；
+- 第二 persona 在本次聚焦路径之外的全产品对照矩阵；
 - 公开 PC/H5 页面和 callback 流程的完整端到端链路；
-- DA01 对应的精确失败 endpoint 归属，以及 DA07 三个 404 的 URL/Host/导航来源。
+- 模拟长时间自然过期的会话时钟；本轮只验证了 seed 前旧 token fail-closed 与干净重登录。
 
 这些范围需要新的固定候选、已登记资源和专门授权；不能借用本轮浏览器观察或截图替代。

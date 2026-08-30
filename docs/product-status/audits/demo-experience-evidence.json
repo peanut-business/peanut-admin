@@ -3,7 +3,7 @@
   "evidence_index_id": "demo-experience-evidence-v3012",
   "audit_id": "demo-experience-audit-v3012",
   "recorded_at": "2026-08-30",
-  "status": "historical_capture",
+  "status": "historical_capture_with_candidate_retest",
   "release": {
     "tag": "v3.0.12",
     "commit": "fe328a320b7c68b3c2f47512f2aa4afcad43c630",
@@ -18,6 +18,89 @@
     "raw_artifact_root": "output/playwright/demo-audit-v3012/",
     "raw_artifact_count": 202,
     "raw_artifact_policy": "The hidden .playwright-cli files are process-only sources. They are not the durable handoff and must not be copied into a release or public projection. This index records only relative paths, hashes and non-sensitive observations."
+  },
+  "retest": {
+    "candidate": {
+      "commit": "836d8a95ddb097dc6299f33bd43dd636c7edd593",
+      "tree": "1a4e1b08ad088609bb52feeef8ff9387bf6f59df"
+    },
+    "environment": "local-multi-tenant-demo",
+    "captured_on": "2026-08-30",
+    "status": "passed",
+    "raw_artifact_root": "output/playwright/pe05-836d8a9/",
+    "process_evidence": [
+      {
+        "issue_ids": ["DA02"],
+        "path": "output/playwright/pe05-836d8a9/platform-storage-requests.txt",
+        "sha256": "bb0e36fe1977002077d47f99b96cd778fa2c8488691bd43e0013177723070471"
+      },
+      {
+        "issue_ids": ["DA05"],
+        "path": "output/playwright/pe05-836d8a9/platform-roles-console.txt",
+        "sha256": "d0e5634bb0c1271965327ad2ac18107af18fa7da6d2c9ce13e03eeda6cb603db"
+      },
+      {
+        "issue_ids": ["DA03", "DA04"],
+        "path": "output/playwright/pe05-836d8a9/shared-owner-readiness-console-error.txt",
+        "sha256": "d0e5634bb0c1271965327ad2ac18107af18fa7da6d2c9ce13e03eeda6cb603db"
+      },
+      {
+        "issue_ids": ["DA06"],
+        "path": "output/playwright/pe05-836d8a9/tenant-a-da06-console-error.txt",
+        "sha256": "ed410c4062d4a10e96f0e89484917b688f271c829f0cd60f82df8cd5c6227d5c"
+      },
+      {
+        "issue_ids": ["DA07"],
+        "path": "output/playwright/pe05-836d8a9/tenant-a-404.md",
+        "sha256": "bbc7065a4e35e1a7b1e2c76e1b2243a7a17f7c52c7c6510e7116b6f1d2414b9e"
+      },
+      {
+        "issue_ids": ["DA07"],
+        "path": "output/playwright/pe05-836d8a9/tenant-b-404.md",
+        "sha256": "638b51ded66117505ff018e0003e19cbb66735249b29a7e133e63be457987a17"
+      },
+      {
+        "issue_ids": ["DA08"],
+        "path": "output/playwright/pe05-836d8a9/platform-default-detail-requests.txt",
+        "sha256": "455c1eadc80896afd74362cf3c6d11ccd896cbc373710acd11a5c8b8e137882b"
+      },
+      {
+        "issue_ids": ["DA08"],
+        "path": "output/playwright/pe05-836d8a9/platform-tenant-a-detail-requests.txt",
+        "sha256": "1d49daf2ae983fe5176b70e90d061ada57cdc9be902f7db4e1a7d423af82c53b"
+      },
+      {
+        "issue_ids": ["DA08"],
+        "path": "output/playwright/pe05-836d8a9/platform-tenant-b-detail-requests.txt",
+        "sha256": "46501492974ffcd2336983bf30d88d79ef181fd02bad2a80948d8faec5fd76e6"
+      },
+      {
+        "issue_ids": ["DA01", "DA04", "DA06"],
+        "path": "output/playwright/pe05-836d8a9/shared-persona-decoration-mobile-relogin-requests.txt",
+        "sha256": "f545e11bd6742c3cea38d74a9d49aabb069f0600a670fdda216c3ab2db5201fb"
+      },
+      {
+        "issue_ids": ["DA01", "DA04", "DA06"],
+        "path": "output/playwright/pe05-836d8a9/shared-persona-decoration-tabbar-relogin-requests.txt",
+        "sha256": "ca5835822d3fe40a75300ca12a6b859a0ffc46ceba87a3eeaeda1f4f05ca70fb"
+      },
+      {
+        "issue_ids": ["DA01", "DA04", "DA06"],
+        "path": "output/playwright/pe05-836d8a9/shared-persona-decoration-pc-relogin-requests.txt",
+        "sha256": "ba5f56ec983d51a555abc25ba449395fb2cf52a175dca9e7633ef5c6d2696373"
+      },
+      {
+        "issue_ids": ["DA01", "DA06"],
+        "path": "output/playwright/pe05-836d8a9/shared-persona-log-reset-relogin-requests.txt",
+        "sha256": "3b54054dc51d8c6e218086272da97c23dc29860b806c4078d50de9c59241cc1c"
+      },
+      {
+        "issue_ids": ["DA01"],
+        "path": "output/playwright/pe05-836d8a9/shared-persona-log-export-visibility-relogin.txt",
+        "sha256": "72ec5b99c1590150e9a5343dec356ed694b79a4a2683a0cdbc21e9ac9ab5e386"
+      }
+    ],
+    "note": "Process files may be removed after the retained screenshots and hashes are committed. The stale pre-seed browser session is excluded from the pass result."
   },
   "evidence": [
     {
@@ -472,6 +555,38 @@
       "path": "docs/product-status/audits/screenshots/da08-platform-tenant-detail-error.png",
       "sha256": "ca10965f649e03ccef9208ea701122a42a978c7da752eaf7af7c706abd1a4b64",
       "dimensions": "1440x1000",
+      "redacted": true
+    },
+    {
+      "evidence_id": "EV-PE05-PLATFORM-ROLES",
+      "issue_id": "DA05",
+      "path": "docs/product-status/audits/screenshots/pe05-platform-roles.png",
+      "sha256": "dc01440197db04c076c5a63a2e932d24b095fc59bbc957669541e439a5b91343",
+      "dimensions": "1440x1000",
+      "redacted": true
+    },
+    {
+      "evidence_id": "EV-PE05-PLATFORM-STORAGE",
+      "issue_id": "DA02",
+      "path": "docs/product-status/audits/screenshots/pe05-platform-storage.png",
+      "sha256": "bd5b9858c9c58526659db230b79e998677117abd5a13dbe930ecf53c881dc67c",
+      "dimensions": "1440x1000",
+      "redacted": true
+    },
+    {
+      "evidence_id": "EV-PE05-SHARED-OWNER-READINESS",
+      "issue_id": "DA03",
+      "path": "docs/product-status/audits/screenshots/pe05-shared-owner-readiness.png",
+      "sha256": "1a4cedc85c0cc887bea2b8a9cd67f05877d4cbb991117b0dd9ae5075ecd9f742",
+      "dimensions": "1440x1031",
+      "redacted": true
+    },
+    {
+      "evidence_id": "EV-PE05-SHARED-PERSONA-LOG",
+      "issue_id": "DA01",
+      "path": "docs/product-status/audits/screenshots/pe05-shared-persona-operation-log.png",
+      "sha256": "e9d7a940b8c3990ed7f3924864510a18258ddb62f8d3dd5dd32f5f73fc706f22",
+      "dimensions": "1200x1279",
       "redacted": true
     }
   ],
