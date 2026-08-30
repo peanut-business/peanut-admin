@@ -20042,7 +20042,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "999ad2526053a8384f73d60f1a476c46064ec75526cbd818f7c9dfb4c5f55fab"
+            "source_sha256": "a02e7454482be470b551f3f1dcc18b34b08e321edc1f00de6fc411839a12a112"
         },
         {
             "path": "web/src/config/settings.json",
