@@ -1,0 +1,178 @@
+:root {
+  color: #182230;
+  background: #f5f7fa;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+header,
+.editor-card,
+.result-card {
+  padding: 20px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+.eyebrow {
+  margin-bottom: 6px;
+  color: #175cd3;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.toolbar,
+.control-row,
+.anchor-row,
+.section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar,
+.control-row {
+  padding-bottom: 10px;
+}
+
+button,
+input,
+select {
+  min-height: 40px;
+  padding: 8px 12px;
+  color: inherit;
+  font: inherit;
+  background: #fff;
+  border: 1px solid #98a2b3;
+  border-radius: 6px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background: #eff4ff;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+.ProseMirror:focus-visible {
+  outline: 3px solid #84adff;
+  outline-offset: 2px;
+}
+
+input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+#editor {
+  border: 1px solid #667085;
+  border-radius: 8px;
+}
+
+.ProseMirror {
+  min-height: 280px;
+  padding: 16px;
+  line-height: 1.75;
+  outline: none;
+}
+
+.ProseMirror > *:first-child {
+  margin-top: 0;
+}
+
+.media-placeholder {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  margin: 12px 0;
+  color: #344054;
+  background: #f2f4f7;
+  border: 1px dashed #667085;
+  border-radius: 8px;
+}
+
+.anchor-row,
+.section-heading {
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+#anchor-status,
+#check-status {
+  color: #475467;
+}
+
+#check-status[data-state='ok'] {
+  color: #067647;
+}
+
+#check-status[data-state='error'] {
+  color: #b42318;
+}
+
+pre {
+  max-height: 360px;
+  padding: 12px;
+  overflow: auto;
+  color: #e6edf3;
+  background: #101828;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.readonly {
+  padding: 12px;
+  background: #f9fafb;
+  border-left: 4px solid #98a2b3;
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 12px 8px 32px;
+  }
+
+  header,
+  .editor-card,
+  .result-card {
+    padding: 14px;
+  }
+
+  .control-row > label,
+  .control-row > input {
+    flex-basis: 100%;
+  }
+
+  .anchor-row,
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
