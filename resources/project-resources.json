@@ -314,6 +314,29 @@
         "lifecycle": "single aggregate qualification run",
         "cleanup_responsibility": "qualification owner removes only the claimed Compose project containers, network and volumes, the two fixed output paths, the qualification output root and the active lease after evidence capture",
         "backup_responsibility": "not applicable; synthetic data only"
+      },
+      {
+        "stable_resource_id": "peanut-admin-edition-upgrade-release-signing-key",
+        "purpose": "sign official Standalone and Multi-tenant Edition upgrade packages",
+        "environments": [
+          "release"
+        ],
+        "owner": "Peanut Admin release owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-release-2026-01",
+        "service_type": "Ed25519 release signing authority",
+        "version": "Ed25519 / libsodium",
+        "public_key_source": "UPGRADE_TRUSTED_KEYS.json",
+        "credential_ref": "/Users/xing/.config/peanut-admin/edition-upgrade-release-ed25519-secret.base64",
+        "data_source": "owner-generated release keypair; only the public key is versioned and published",
+        "freshness_requirement": "before building a formal upgrade package, derive the public key from the restricted secret and require an exact match with UPGRADE_TRUSTED_KEYS.json",
+        "health_check": "PHP sodium verifies the restricted secret is 64 bytes and its derived 32-byte public key matches peanut-admin-release-2026-01 without printing the secret",
+        "fallback": "none",
+        "lifecycle": "persistent until an explicit signed-key rotation release",
+        "cleanup_responsibility": "Peanut Admin release owner; never delete or replace the private key while a supported Release trusts this key"
       }
     ],
     "databases": [

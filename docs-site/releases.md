@@ -1,27 +1,73 @@
 ---
 title: 版本与发布
-description: 区分源码 Release、资格候选、部署与派生应用升级。
+description: 认识源码 Release、双 Edition 安装包、升级包与派生应用版本。
 ---
 
 # 版本与发布
 
-## 前置条件
+## 先分清你要下载的东西
 
-确认你讨论的是源码 Release、固定资格候选、已部署实例，还是派生应用自己的版本。它们不能互相替代。
+Peanut Admin 的源码 Release、正式安装包、升级包和派生应用版本各自解决不同问题：
 
-## 版本来源
+| 交付物 | 用途 | 可以做什么 |
+| --- | --- | --- |
+| 源码 Release | 核对 Peanut Admin 的公开源码身份 | 核心开发、审阅和生成定制应用 |
+| Edition 安装包 | 第一次部署一个全新应用 | 在空环境中安装 Standalone 或 Multi-tenant |
+| Edition 升级包 | 更新已经部署的应用 | 只在同一个 Edition 内按兼容范围升级 |
+| 派生应用版本 | 你自己的业务仓库和发布线 | 维护业务代码、配置和第三方 Module |
 
-- Git Tag 和 Release 提供不可变源码身份。
-- `release-versions.json` 与 Release 元数据约束应用、脚手架和公共包版本关系。
-- 派生应用在 `.peanut/application-manifest.json` 记录采用来源和文件所有权。
-- Composer 与 npm 公共包拥有独立版本线，应用必须固定接受的版本。
+完整安装包不能当升级包使用：它没有办法安全区分用户业务代码、第三方 Module、环境配置和 Peanut Admin 管理文件。Standalone 与 Multi-tenant 之间也不是普通版本升级；需要转换时必须另行设计数据归属、Schema、停机和恢复方案。
 
-本站不手工维护“当前版本”数字，以免和 Release 漂移。选择版本时查看 GitHub Releases，并核对仓库内不可变元数据。
+## 双 Edition 正式附件
 
-## 发布不等于部署
+正式版本号和附件列表以 [GitHub Releases](https://github.com/peanut-business/peanut-admin/releases) 页面为准。本文不预填尚未正式发布的版本；下面的 `X.Y.Z` 是明确占位符，实际值必须直接采用 Release 页面显示的值。
 
-源码 Release 证明源码身份；固定资格证明约定 Gate；部署证明某一目标实际运行；线上 smoke 只覆盖执行过的入口。报告时分别写出已完成、已验证、未验证和计划。
+每个正式 Release 会随附件提供以下两套安装物：
 
-## 升级
+```text
+peanut-admin-X.Y.Z-standalone.tar.gz
+peanut-admin-X.Y.Z-standalone.tar.gz.manifest.json
+peanut-admin-X.Y.Z-multi-tenant.tar.gz
+peanut-admin-X.Y.Z-multi-tenant.tar.gz.manifest.json
+SHA256SUMS
+```
 
-脚手架升级与数据库/业务升级是不同责任域。执行前阅读[部署与升级](/guide/deployment-upgrade)，固定源版本与目标版本，完成备份、preflight、apply、verify 和 recover 准备。
+以及对应的两套升级物：
+
+```text
+peanut-admin-X.Y.Z-standalone-upgrade.tar.gz
+peanut-admin-X.Y.Z-standalone-upgrade.tar.gz.manifest.json
+peanut-admin-X.Y.Z-multi-tenant-upgrade.tar.gz
+peanut-admin-X.Y.Z-multi-tenant-upgrade.tar.gz.manifest.json
+SHA256SUMS.upgrades
+```
+
+如果某个正式 Release 尚未列出某个 Edition 的附件，不要根据文件名猜测下载地址，也不要使用开发分支或另一个 Edition 的制品。安装包的下载、校验、配置、安装和登录步骤见[快速开始](/getting-started)；已部署应用的升级步骤见[部署与升级](/guide/deployment-upgrade)。
+
+## 如何核对制品身份
+
+下载后，将 archive 的 SHA-256 与 Release 页面、对应外部 manifest 和 `SHA256SUMS`（升级包使用 `SHA256SUMS.upgrades`）中的同名记录逐字比较。manifest 至少应与文件名相符地声明：
+
+- Edition（`standalone` 或 `multi-tenant`）；
+- 产品/目标版本；
+- archive 文件名与摘要；
+- 安装包或升级包的协议类型。
+
+升级包还要核对源版本范围、目标版本、migration chain、受管文件和恢复边界。摘要或身份不一致时保持现有应用不变并停止；不要修改 manifest、checksum 或 plan 来让检查通过。
+
+## 源码 Release 与部署不是一回事
+
+- Git Tag 和 Release 提供不可变的源码身份。
+- 正式安装包和升级包是从同一个冻结 Release 生成的、各有 Edition 标识的制品。
+- 资格结果只说明某个固定候选通过了约定检查；部署结果只说明某个应用环境实际采用了一个版本。
+- 派生应用可以在自己的仓库中拥有独立版本，不会改变 Peanut Admin 的源码 Release。
+
+报告版本时，请分开写出源码、制品、已部署实例和 smoke 验证分别完成了什么；不要把其中一个状态当成另一个状态。
+
+## 定制应用的版本边界
+
+普通用户直接下载所选 Edition 的正式安装包即可。只有需要自定义名称、slug、package identity 或加入业务代码时，才从固定正式 Release 使用 `create-app` 生成派生应用。生成目录随后进入用户自己的业务仓库，并由用户维护业务代码、环境、发布和备份；它不是新的 Peanut Admin 官方源码仓库，也不取代正式安装包。
+
+## 升级入口
+
+升级前固定当前 Edition、源版本和目标版本，先按[部署与升级](/guide/deployment-upgrade)完成包校验、preflight、备份、冲突计划、apply、migration/依赖/构建、verify 和 recover 准备。升级包只接受发布说明声明的同 Edition、同大版本兼容范围；超出范围时按 Release 的 fresh/rebuild 方案处理。
