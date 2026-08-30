@@ -62,18 +62,24 @@ Peanut Admin 源仓的 `dev/main` 没有 Git 跟随关系。
 
 ## Peanut Admin 后续升级
 
-当新的 scaffold release 可用时，应用 owner 把新旧 manifest 传给：
+当新的正式 Edition 升级包可用时，应用 owner 下载与当前 Edition 相同的包、从正式发布入口取得
+受信公钥并解压，然后先生成只读计划：
 
 ```bash
-php scripts/scaffold-upgrade preflight --project-root=/path/to/app \
-  --from-manifest=/path/to/scaffold/releases/v3.0.4/scaffold-manifest.json \
-  --to-manifest=/path/to/scaffold/releases/v3.0.11/scaffold-manifest.json
-php scripts/scaffold-upgrade apply --project-root=/path/to/app --plan=/path/to/app/.peanut/upgrades/plans/<candidate>.json
-php scripts/scaffold-upgrade verify --project-root=/path/to/app --plan=/path/to/app/.peanut/upgrades/plans/<candidate>.json
+export PEANUT_UPGRADE_TRUSTED_KEYS_JSON='{"<official-key-id>":"<base64-ed25519-public-key>"}'
+php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade preflight \
+  --project-root=/path/to/app \
+  --package=/path/to/extracted-upgrade \
+  --signature-key-id=<official-key-id>
+php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade apply \
+  --project-root=/path/to/app --plan=/path/to/app/.peanut/upgrades/plans/<candidate>.json
+php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade verify \
+  --project-root=/path/to/app --plan=/path/to/app/.peanut/upgrades/plans/<candidate>.json
 ```
 
 升级器只处理 manifest 标记为 `managed` 或 `generated-managed` 的文件；`app-owned` 文件被
-保留并在计划中记录摘要。`recover` 可以恢复本次文件替换，但它不执行 Composer/npm 安装、
+保留并在计划中记录摘要。旧的显式 `--from-manifest/--to-manifest` 入口继续用于维护者诊断；普通
+用户不再自行拼装升级输入。`recover` 可以恢复本次文件替换，但它不执行 Composer/npm 安装、
 Plugin 安装、数据库 migration 或服务重启。
 
 因此一次完整的应用升级必须拆成可核验的步骤：

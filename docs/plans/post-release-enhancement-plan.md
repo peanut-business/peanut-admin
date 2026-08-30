@@ -1,10 +1,10 @@
 # Peanut Admin 发布后增强任务计划
 
-> 状态：当前计划；Phase 0 已完成，进入双 Edition 分发与升级
+> 状态：当前计划；Phase 0 已完成，双 Edition 安装/升级制品已有本地候选，尚未形成正式 Release
 >
 > 正式源码基线：`v3.0.12@fe328a320b7c68b3c2f47512f2aa4afcad43c630`
 >
-> 计划事实基线：`origin/dev@fc6fcb803240effdb584c0442dcfdb5650d3e913`
+> 计划事实基线：`origin/dev@3193314e24d8204b65218a2c6de5d162b32de82c`；本分发/升级候选 `8d3a4f08672a78c0867ac9991d7af4882f15fc05`
 >
 > 决策日期：2026-08-30
 >
@@ -329,11 +329,11 @@ owner `scripts/deploy-release` 从正式 annotated tag 生成不可变源码归�
 
 | ID | 任务 | 状态 | 交付结果 | 最低验收 |
 | --- | --- | --- | --- | --- |
-| AR01 | 冻结 Edition 构建输入 | 未开始 | 同一固定 Release、依赖锁、Module 集和生成器版本，只有 Edition profile 不同 | 构建脚本不从移动分支或第二仓库取产品源码 |
-| AR02 | 生成 Standalone 安装包 | 未开始 | 不启用 Tenant Runtime、字段和索引的确定性 `tar.gz`/可选 `zip` | manifest、Schema、managed/app-owned owner 和来源身份完整 |
-| AR03 | 生成 Multi-tenant 安装包 | 未开始 | 保留 Tenant/Platform 能力的确定性 `tar.gz`/可选 `zip` | manifest、Schema、managed/app-owned owner 和来源身份完整 |
-| AR04 | 发布双包与 checksum | 未开始 | 两个 Edition 包、外部 manifest、SBOM、许可证和 SHA-256 | 文件名和下载页不能让用户混淆 Edition |
-| AR05 | 校验双包身份与差异 | 未开始 | 机器可读身份/差异报告 | 共享源码身份一致；差异仅来自登记的 Edition profile 与生成规则 |
+| AR01 | 冻结 Edition 构建输入 | 部分完成（本地候选） | `edition-profiles.json` 与固定 commit/tree、依赖锁、Module lock、Schema profile 已进入同一生成链 | 正式新版本尚未冻结，不能把开发 commit 当 Release |
+| AR02 | 生成 Standalone 安装包 | 部分完成（开发制品） | 固定提交 `e03e418…` 已生成确定性 Standalone `tar.gz` 和外部 manifest | 仍缺正式版本身份、独立空库安装和发布附件 |
+| AR03 | 生成 Multi-tenant 安装包 | 部分完成（开发制品） | 同一提交已生成 Multi-tenant `tar.gz`，保留 Tenant/Platform profile | 仍缺正式版本身份、独立空库安装和发布附件 |
+| AR04 | 发布双包与 checksum | 部分完成（未发布） | 开发制品已有区分 Edition 的文件名、外部 manifest 与 SHA-256 | SBOM/许可证附件、正式 Release 下载入口尚缺 |
+| AR05 | 校验双包身份与差异 | 部分完成（聚焦合同通过） | 构建器与 `CreateApplicationTest` 已核对来源一致、Edition 投影和 Schema 差异 | 固定 Release 上的最终机器差异报告尚缺 |
 | AR06 | 双 Edition 首次安装验收 | 未开始 | 两个正式包分别完成一次最低充分空库安装 | 不依赖开发 worktree，均能配置、安装、启动和登录 |
 
 ### 7.1 AR02 的 gateway/runtime 前置合同
@@ -361,16 +361,16 @@ Core 上游任务固定为 `P1-ED01 Edition persistence scope`；其实现默认
 
 | ID | 任务 | 状态 | 交付结果 | 最低验收 |
 | --- | --- | --- | --- | --- |
-| UP01 | 冻结升级包格式 | 未开始 | 包含 Edition、源版本范围、目标版本、迁移链、受管文件、checksum、来源和恢复元数据 | 包可以离线校验，不依赖移动分支 |
-| UP02 | 冻结文件 owner | 未开始 | 明确 `managed`、`generated-managed`、`app-owned` 和第三方 Module 的处理 | 用户业务、秘密和第三方 Module 永不进入默认覆盖写集 |
-| UP03 | 生成两个最小升级包 | 未开始 | 每个 Edition 只包含升级器、目标 manifest、迁移和允许更新的受管文件 | 完整安装包不被伪装成升级包，两个 Edition 不混用 |
-| UP04 | 让升级器消费升级包 | 未开始 | 支持显式本地包路径；可选支持固定版本下载入口 | 先生成只读计划，确认后才写应用 |
-| UP05 | 支持在线与离线两种取得方式 | 未开始 | 下载固定版本或使用本地包，二者进入同一校验和执行链 | 网络失败不触发 fallback 或改用未知版本 |
-| UP06 | 增加身份与兼容检查 | 未开始 | checksum、签名 authority、Edition、源/目标版本、跳版本迁移链和大版本策略检查 | 漂移、降级、错 Edition、缺迁移、篡改或未知签名 fail-closed |
+| UP01 | 冻结升级包格式 | 部分完成（本地候选 `8d3a4f0…`） | v1 manifest 已包含 Edition、源版本下界/目标、完整 migration 列表、受管文件、来源、恢复和签名身份 | 正式版本采用与不可变 Release 附件尚缺 |
+| UP02 | 冻结文件 owner | 部分完成（聚焦合同通过） | 包只承载 `managed`/`generated-managed`；`app-owned`、第三方 Module 和秘密显式保留 | 仍需 UP10 的第三方 Module/秘密代表 fixture |
+| UP03 | 生成两个最小升级包 | 部分完成（开发制品） | 固定提交 `8d3a4f0…` 已生成 Standalone/Multi-tenant 两个签名开发包 | 一次性开发 key 不是正式 authority；正式包待新版本冻结 |
+| UP04 | 让升级器消费升级包 | 部分完成（本地路径） | 包内自带升级器；解压后用 `--package` 与 `--signature-key-id` 进入既有 preflight/apply/verify/recover | 正式下载入口尚缺 |
+| UP05 | 支持在线与离线两种取得方式 | 部分完成（仅离线） | 本地解压包进入唯一校验链 | 固定版本下载和有界网络失败说明尚缺，不会静默 fallback |
+| UP06 | 增加身份与兼容检查 | 部分完成（聚焦合同通过） | Ed25519 包外 trust、inventory/checksum、Edition、同大版本范围、完整 migration 列表均 fail-closed | 正式 key authority、真实跳版本演练与大版本发布策略证据尚缺 |
 | UP07 | 显示冲突与修改计划 | 未开始 | 业务语言列出会替换、保留、冲突和停止的文件 | 用户在写入前知道影响范围和需要手工处理的内容 |
 | UP08 | 串联完整应用升级步骤 | 未开始 | 文档/编排串联备份、依赖、脚手架、数据库迁移、构建、启动、smoke 和恢复 | 每个停止点都给出继续或恢复方法，不宣称一条命令包办所有步骤 |
 | UP09 | 双 Edition 跨版本演练 | 未开始 | Standalone 与 Multi-tenant 各从最老受支持版本升级到目标版本 | preflight/apply/verify、完整 migration chain、登录和关键页面通过 |
-| UP10 | 证明用户内容不被覆盖 | 未开始 | 在派生应用加入代表业务代码、配置和第三方 Module 后升级 | app-owned 字节、秘密引用和第三方 Module 保持不变；冲突按计划停止 |
+| UP10 | 证明用户内容不被覆盖 | 部分完成（app-owned） | 聚焦合同已证明代表 `app-owned` 文件字节不变，并为后续升级记录独立 baseline digest | 秘密引用、第三方 Module 和冲突 fixture 尚缺 |
 
 ## 9. 第五阶段：重写普通开发者与核心开发者文档
 
@@ -466,6 +466,6 @@ PE05 只在直接前置满足后运行一次。权限或 Tenant Runtime 变化�
 8. Marketplace、T16 真实资金、Provider 真实外呼、第三方生产采用、跨实例运营平台和完整 SaaS
    均保持各自授权与范围边界，不因本计划自动获得执行授权。
 
-当前首个可执行批次是 `AR01—AR03`：从同一冻结源码身份定义两个 Edition 的构建输入、确定性
-安装包和 manifest，再按依赖进入 Schema 差异与升级包实现。不创建官方应用源码仓库，也不在
+当前关键路径是完成 AR/UP 候选的正式版本采用、UP07—UP10 与 DOC01—DOC07；随后修复
+PE01—PE05，最后只对一个冻结 L2 候选执行 REL01—REL08。不创建官方应用源码仓库，也不在
 迭代期运行完整资格。

@@ -59,8 +59,9 @@ canonical Schema 和空数据库安装入口，不携带 legacy 映射、bootstr
 `--adopt-existing` 路径；需要保留旧应用时继续运行旧版本实例并为新应用准备独立空库。
 
 生成的 `.peanut/application-manifest.json` v2 还固定 `application.version`、参数、每个生成文件的 SHA-256、mode、分类、
-owner、managed/app-owned 树摘要与 managed baseline 路径。它是来源审计与未来 2.x 生命周期
-设计的输入；升级器只处理受管文件，不执行数据库迁移。
+owner、managed/app-owned 树摘要，以及 managed baseline 路径和独立 `baseline_sha256`。应用当前
+文件摘要与上游比较基线分开记录后，后续升级可以保留用户对 managed 文件的单边定制，同时仍
+识别上游是否变化。升级器只处理受管文件，不执行数据库迁移。
 
 ## 后续升级边界
 
@@ -75,8 +76,10 @@ owner、managed/app-owned 树摘要与 managed baseline 路径。它是来源审
 | 应用数据库 | 3.0 首次安装必须为空；同一大版本通过 `install.php --migrate --target-version=X.Y.Z` 执行按发布版本筛选的追加 migration（文件名 `YYYYMMDD-<描述>.sql`） | 不复制 Peanut 新安装基线覆盖已有数据库；跨大版本必须 fresh/rebuild |
 | Peanut canonical migration | 随采用的 Release 显式执行并写入 `pa_schema_migration` 账本 | 必须绑定目标 Release、迁移 checksum、备份和应用验证 |
 
-2.x/3.x 升级器已提供 `preflight -> apply -> verify -> recover`；同一大版本的部署更新
-另外由 `deploy-release --update` 安装锁定依赖并执行数据库迁移；跨大版本必须 `--fresh`。
+2.x/3.x 升级器已提供 `preflight -> apply -> verify -> recover`。下一正式版本会为 Standalone 与
+Multi-tenant 分别发布签名升级包；派生应用解压与自身 Edition 相同的包后，使用包内升级器的
+`--package` 入口生成计划，不再自行拼接新旧 manifest。完整部署仍由应用 owner 安装锁定依赖、
+执行数据库迁移、构建、重启和 smoke；跨大版本必须按发布策略 `--fresh`。
 历史 `v2.0.0 -> v2.0.1` 已有真实派生
 应用资格，`v2.1.0` 沿用相同所有权和恢复合同。它只管理已登记的框架文件，不会把业务代码变成脚手架所有，也不会替
 应用决定业务数据迁移。升级数据库和 Peanut 依赖时，必须同时参考对应 Release 的发布计划。

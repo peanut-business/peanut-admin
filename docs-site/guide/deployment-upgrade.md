@@ -15,17 +15,40 @@ description: 从不可变版本到备份、迁移、验证和恢复的交付闭�
 
 部署一个可追溯版本，应用所需 migration，验证关键入口，并能回到配对备份。
 
+## 先选对升级包
+
+Standalone 和 Multi-tenant 是同一套开发源码生成的两种正式构建物，但升级包不能混用。正式
+Release 页面会分别提供两个安装包和两个升级包；已有应用只下载与自己 Edition 相同、且源版本
+落在支持范围内的升级包。完整安装包不能覆盖已有应用，Edition 转换也不是普通升级。
+
+下载后先核对 Release 页面给出的 SHA-256，解压升级包，再使用包内升级器生成只读计划。受信
+Ed25519 公钥必须来自包外的正式维护者入口，不能相信升级包自己携带的公钥：
+
+```bash
+export PEANUT_UPGRADE_TRUSTED_KEYS_JSON='{"<official-key-id>":"<base64-ed25519-public-key>"}'
+
+php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade preflight \
+  --project-root=/path/to/application \
+  --package=/path/to/extracted-upgrade \
+  --signature-key-id=<official-key-id>
+```
+
+只有 `status=ready` 且冲突为 0 才继续。未知签名、checksum 漂移、错 Edition、降级、缺失迁移或
+不受支持版本都会在写入前停止；网络失败不会改用移动分支或其他版本。
+
 ## 步骤
 
 1. 核对 `release-versions.json`、Release 元数据、锁文件和部署目标。
 2. 备份数据库与用户持久文件，并记录它们对应的应用版本。
-3. 使用 `scripts/deploy-release --help` 确认当前参数；不要从历史文档复制已删除选项。
+3. 使用正式升级包的 preflight 核对会替换、保留和冲突的文件；部署 owner 再使用
+   `scripts/deploy-release --help` 确认当前参数，不从历史文档复制已删除选项。
 4. 让部署入口在刚构建的候选 PHP 镜像内完成只读安装预检和 Plugin lock 校验；未通过时不得替换旧服务或删除卷。
 5. fresh 部署选择 automatic（CI/托管）或 guided（人工页面）入口；两者共用同一安装 Host。
 6. 运行 migration、official Plugin reconcile、账本校验、服务健康检查和受影响入口 smoke。
 7. 失败时停止流量变更，按配对备份和已验证恢复流程处理；不要跳过 checksum 或手改账本。
 
-脚手架文件升级使用 `scripts/scaffold-upgrade` 的 `preflight/apply/verify/recover` 合同。它只管理 manifest 声明的文件，不替代业务 migration 或依赖升级。
+脚手架文件升级使用升级包内 `scripts/scaffold-upgrade` 的 `preflight/apply/verify/recover` 合同。
+它只管理 manifest 声明的文件，不替代业务 migration、依赖安装、构建、服务重启或 smoke。
 
 实例内 Platform 的应用升级中心只提交固定目标：浏览器不能选择路径、命令、Release、镜像、
 凭据或部署目标。登记的单次控制 worker 会先创建新备份并用同一备份完成隔离恢复验证，再进入

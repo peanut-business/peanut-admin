@@ -51,6 +51,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | `php think module:uninstall-package MODULE_OR_PACKAGE_KEY [--purge] [--confirm-plan-file=PLAN_JSON --confirm-plan-digest=PLAN_SHA256]` | 无确认参数时只预览；retire/Purge 执行必须提交同一完整 plan 和摘要 |
 | `php think ops-module:request preview\|prepare --delivery-resource-id=<id> --target-resource-id=<id> --operation=update\|retire\|purge --package-key=<key> ...` | deployment owner 在登记受限 inbox 中固定受信包、target 与 retire/Purge 计划；不接收 URL、任意路径或远程命令 |
 | `scripts/ops-module-worker --once` | 只接受 `--once`；从 opaque task 领取一次生产交付，串联配对备份、隔离恢复、维护、操作、smoke 和 recovery pointer |
+| `php <upgrade-package>/upgrader/scripts/scaffold-upgrade preflight --project-root=<path> --package=<extracted-package> --signature-key-id=<id>` | 验签并核对 Edition、版本范围、迁移全集和受管文件后生成只读升级计划；公钥必须来自包外信任入口 |
 | `php scripts/scaffold-upgrade preflight --project-root=<path> --from-manifest=<path> --to-manifest=<path>` | 生成 managed/generated-managed 升级计划，不覆盖 app-owned 源码 |
 | `php scripts/scaffold-upgrade apply\|verify\|recover --project-root=<path> --plan=<path>` | 应用、核验或恢复同一 scaffold 计划；不替代数据库或 Module migration |
 

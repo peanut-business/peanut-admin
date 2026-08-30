@@ -16,6 +16,34 @@ scripts/package-release.sh
 该脚本编译当前源码树中的后端和管理端生产成品。生产运行时不执行逐模块安装，也不发现
 `plugins.lock` 之外的模块；`/dev-tools` 页面和开发工具代码由生产构建门禁剔除。
 
+## 双 Edition 安装包与升级包
+
+固定候选完成版本、inventory、依赖锁、Module lock 和 Edition profile 收口后，核心维护者从
+同一个完整 commit 生成两套安装包与两套升级包：
+
+```bash
+php scripts/build-edition-installers \
+  --version=X.Y.Z \
+  --source-commit=<full-candidate-commit> \
+  --output=/absolute/path/to/release-artifacts
+
+php scripts/build-edition-upgrades \
+  --version=X.Y.Z \
+  --minimum-source-version=<oldest-supported-X.Y.Z> \
+  --source-commit=<same-full-candidate-commit> \
+  --output=/absolute/path/to/release-artifacts \
+  --signing-key-id=<official-release-key-id> \
+  --signing-secret-key-file=/credential-store/release-ed25519-secret.base64
+```
+
+私钥路径只来自发布环境的凭据引用，不写入仓库、计划、日志或 Release 附件。安装/升级 archive、
+外部 manifest、SHA-256、Edition、source commit/tree 和 inventory 必须一致；升级包内只包含自带
+升级器、目标受管文件与完整 migration 列表。Standalone 与 Multi-tenant 分别生成，不能用一个
+包在运行时切换 Edition。
+
+开发分支生成物只能用于聚焦验证。正式附件必须来自后续唯一冻结、通过 L2 资格并合入 `main`
+的候选；不得把开发 key、移动分支或本地 output 目录发布给用户。
+
 ## 内部 `plugin:*` 命令
 
 普通模块开发者使用 `module:*` / `bundle:*` 入口。以下命令属于发布工程或既有内部入口，不是第二套

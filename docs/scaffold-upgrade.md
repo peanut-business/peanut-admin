@@ -1,9 +1,46 @@
 # 脚手架升级执行器
 
+## 双 Edition 升级包候选
+
+下一正式版本会从同一个固定 source commit/tree 生成 Standalone 与 Multi-tenant 两个独立升级包。
+升级包不是完整安装包，也不是第二个源码仓库；它只包含自带升级器、目标 scaffold manifest、
+完整 migration 列表和允许更新的 `managed` / `generated-managed` 文件。
+
+当前代码候选支持解压后的本地包。正式 Release 发布前，下列命令只用于开发验证，不能把本地
+开发包写成正式下载入口：
+
+```bash
+tar -xzf peanut-admin-X.Y.Z-standalone-upgrade.tar.gz
+
+# 公钥映射必须来自包外的正式 Release/维护者信任入口，不能读取包内自声明的公钥。
+export PEANUT_UPGRADE_TRUSTED_KEYS_JSON='{"<official-key-id>":"<base64-ed25519-public-key>"}'
+
+php peanut-admin-X.Y.Z-standalone-upgrade/upgrader/scripts/scaffold-upgrade preflight \
+  --project-root=/absolute/path/to/application \
+  --package=/absolute/path/to/peanut-admin-X.Y.Z-standalone-upgrade \
+  --signature-key-id=<official-key-id>
+
+php peanut-admin-X.Y.Z-standalone-upgrade/upgrader/scripts/scaffold-upgrade apply \
+  --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+php peanut-admin-X.Y.Z-standalone-upgrade/upgrader/scripts/scaffold-upgrade verify \
+  --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<candidate>.json
+```
+
+preflight 会先验 Ed25519 authority、完整文件 inventory、目标 manifest、Edition、源版本范围、
+同大版本策略和 migration 全集，再复用既有三方比较生成计划。错 Edition、降级、未知 key、
+缺 migration、文件篡改或不受支持的源版本都在写应用前停止。解压目录必须保留到 apply/verify
+结束，因为 plan 固定其中目标 manifest 和逐文件摘要。
+
+应用的 `.peanut/scaffold-baseline/<version>/` 是旧受管文件的比较输入；新 manifest 同时记录
+`baseline_sha256`，因此用户曾保留的 managed 定制和上游目标基线不再混为同一个摘要。
+`app-owned`、第三方 Module 和秘密不进入升级包默认写集。
+
 ## 当前 3.x 路径
 
 3.x 派生应用现在可以使用同一套 `preflight -> apply -> verify -> recover` 执行器在不可变
-scaffold Release 之间升级。`v3.0.4` 是当前脚手架基线，后续 3.x patch/minor release
+scaffold Release 之间升级。`v3.0.12` 是当前正式源码/脚手架版本，后续 3.x patch/minor release
 继续使用同一执行器，保留 `app-owned` 修改并完成恢复。
 
 ```bash
