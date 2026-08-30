@@ -6,6 +6,7 @@ namespace app\Modules\Official\Task\Application;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
 use app\common\service\async\ModuleAwareTaskHandler;
+use app\common\persistence\CoreTenantRepositoryFactory;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\module\ModuleExecutionBoundary;
@@ -78,7 +79,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
 
     private function repository(): PdoTaskJobRepository
     {
-        return new PdoTaskJobRepository($this->pdo);
+        return (new CoreTenantRepositoryFactory($this->pdo))->taskJobs();
     }
 
     private function envelopes(): TrustedEnvelopeCodec

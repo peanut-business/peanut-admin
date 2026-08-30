@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Application;
 
+use app\common\persistence\CoreTenantRepositoryFactory;
 use app\common\service\audit\AuditContractHost;
 use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
 use app\Modules\Official\ImportExport\Contracts\ImportExportQueries;
@@ -17,7 +18,6 @@ use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\ImportExport\Contract\DataProviderRegistry;
 use PeanutAdmin\ImportExport\Execution\CsvOperationRunner;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
-use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 
@@ -60,7 +60,7 @@ final readonly class TaskImportExportRuntime
             $workerId,
             new ImportExportTaskWorkerDefinition(
                 new ImportExportTaskHandler(new CsvOperationRunner(
-                    new PdoImportExportRepository($this->pdo),
+                    (new CoreTenantRepositoryFactory($this->pdo))->importExport(),
                     $this->providers(),
                     $this->files(),
                     AuditContractHost::fromPdo($this->pdo),

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
+use app\common\persistence\CoreTenantRepositoryFactory;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -14,7 +15,6 @@ use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Settings\Definition\SettingDefinitionLoader;
 use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
-use PeanutAdmin\Settings\Persistence\PdoSettingRepository;
 
 /** The single application entry point for applying, retiring, and purging Module catalog contributions. */
 final readonly class ModuleCatalogApplier
@@ -68,7 +68,7 @@ final readonly class ModuleCatalogApplier
                     : [];
                 $settings->registerModule($key, $definitions);
             }
-            (new PdoSettingRepository($this->pdo))->synchronize(
+            (new CoreTenantRepositoryFactory($this->pdo))->settings()->synchronize(
                 $settings,
                 new DateTimeImmutable('now', new DateTimeZone('UTC')),
             );

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
 
+use app\common\persistence\CoreTenantRepositoryFactory;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -14,7 +15,6 @@ use PeanutAdmin\Settings\Application\SettingException;
 use PeanutAdmin\Settings\Definition\SettingDefinition;
 use PeanutAdmin\Settings\Definition\SettingDefinitionLoader;
 use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
-use PeanutAdmin\Settings\Persistence\PdoSettingRepository;
 use PeanutAdmin\Settings\Secret\SecretProtector;
 use think\facade\Config;
 
@@ -58,7 +58,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             return [];
         }
 
-        $repository = new PdoSettingRepository($this->pdo);
+        $repository = $this->settings();
         $entries = [];
         foreach ($definitions as $definition) {
             $snapshot = $repository->deploymentSnapshot($definition);
@@ -91,7 +91,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             throw new \RuntimeException('TRANSFER_CORE_SETTING_SCOPE_INVALID');
         }
 
-        $snapshot = (new PdoSettingRepository($this->pdo))->deploymentSnapshot($definition);
+        $snapshot = $this->settings()->deploymentSnapshot($definition);
         $row = $snapshot['deployment'];
         if (!is_array($row)) {
             return ['exists' => false, 'value' => null, 'revision' => null];
@@ -165,7 +165,12 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
 
     private function admin(): SettingAdminService
     {
-        return new SettingAdminService(new PdoSettingRepository($this->pdo), $this->protector);
+        return new SettingAdminService($this->settings(), $this->protector);
+    }
+
+    private function settings(): \PeanutAdmin\Settings\Persistence\PdoSettingRepository
+    {
+        return (new CoreTenantRepositoryFactory($this->pdo))->settings();
     }
 
     /** @return list<SettingDefinition> */
