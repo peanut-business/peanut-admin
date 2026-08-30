@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Application;
 
+use app\common\persistence\CoreTenantRepositoryFactory;
 use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
 use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
 use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
@@ -14,7 +15,6 @@ use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\ImportExport\Contract\DataProviderRegistry;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskSubmissionProvider;
-use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 
 final readonly class ImportExportApplicationService implements ImportExportCommands, ImportExportQueries
@@ -44,7 +44,7 @@ final readonly class ImportExportApplicationService implements ImportExportComma
     private function service(): ImportExportService
     {
         return new ImportExportService(
-            new PdoImportExportRepository($this->pdo),
+            (new CoreTenantRepositoryFactory($this->pdo))->importExport(),
             new DataProviderRegistry([new OperationLogExportProvider($this->pdo)]),
             $this->tasks->publisher(new ImportExportTaskSubmissionProvider()),
             $this->tasks->jobs(),
