@@ -69,6 +69,7 @@ prepare_env() {
     set_env "$orchestration_env" VITE_ALLOWED_HOSTS platform.peanut-admin.test,admin.peanut-admin.test,tenant-a.peanut-admin.test,tenant-b.peanut-admin.test
     set_env "$backend_env" APP_ENV development
     set_env "$backend_env" APP_DEBUG true
+    set_env "$backend_env" DB_PREFIX pa_
     set_env "$backend_env" PEANUT_DEMO_MODE enabled
     set_env "$backend_env" PEANUT_DEPLOYMENT_TARGET local-multi-tenant-demo
     set_env "$backend_env" DEPLOYMENT_MODE multi-tenant
