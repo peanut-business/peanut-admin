@@ -92,8 +92,9 @@ scripts/publish-github-release X.Y.Z \
 ```
 
 正式 Multi-tenant Demo 只消费 GitHub Release 中已发布的 Multi-tenant 安装包和同名外部
-manifest，再叠加受控 Demo overlay；不会重新从 `dev` 打包，也不会把 Standalone 包运行时切换
-成多租户：
+manifest，再叠加只含合成数据 seed 的受控 Demo overlay；写保护和入口绑定由正式安装包中的
+Demo policy 在 `PEANUT_DEMO_MODE=enabled` 时启用。它不会重新从 `dev` 打包，也不会把
+Standalone 包运行时切换成多租户：
 
 ```bash
 scripts/deploy-release vX.Y.Z --target production-candidate --fresh \

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.12",
-  "expected_tag": "v3.0.12",
-  "release_date": "2026-08-28",
+  "version": "3.0.13",
+  "expected_tag": "v3.0.13",
+  "release_date": "2026-08-30",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "Apache-2.0",
@@ -47,7 +47,7 @@
     "RELEASE_SBOM.spdx.json": "b0706f8a0cdf2dae736f05b5a41cff23ea596c8995ab9f4740d1bf4e1206b069"
   },
   "technical_qualification": {
-    "phase": "3.0.12-pending-qualification",
+    "phase": "3.0.13-pending-qualification",
     "result": "pending",
     "final_candidate_commit": null,
     "final_candidate_tree": null,
@@ -56,11 +56,11 @@
     "summary_sha256": null,
     "cleanup_residual_count": null,
     "lease_released": false,
-    "migrations": 9,
-    "scaffold_version": "3.0.12",
+    "migrations": 10,
+    "scaffold_version": "3.0.13",
     "application_initial_version": "0.1.0",
     "evidence": "The fixed-candidate qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
-    "release_delta": "Closes the production-mode demo installation path, including generated application preflight, demo overlay archive hygiene and plugin/runtime closure."
+    "release_delta": "Establishes the first formal Standalone and Multi-tenant installer baseline, adopts the qualified Core Alpha.11 packages, adds signed same-Edition upgrade tooling and closes the confirmed Demo experience defects."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

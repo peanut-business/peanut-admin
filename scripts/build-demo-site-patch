@@ -12,18 +12,6 @@ fail() {
   exit 1
 }
 
-version_greater_than() {
-  local left="$1" right="$2"
-  local left_major left_minor left_patch right_major right_minor right_patch
-  IFS=. read -r left_major left_minor left_patch <<<"$left"
-  IFS=. read -r right_major right_minor right_patch <<<"$right"
-  (( 10#$left_major > 10#$right_major )) && return 0
-  (( 10#$left_major < 10#$right_major )) && return 1
-  (( 10#$left_minor > 10#$right_minor )) && return 0
-  (( 10#$left_minor < 10#$right_minor )) && return 1
-  (( 10#$left_patch > 10#$right_patch ))
-}
-
 [[ "$BASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] \
   || fail 'usage: scripts/build-demo-site-patch <vX.Y.Z> <output.tar>'
 [[ -n "$OUTPUT" ]] || fail 'output path is required'
@@ -38,71 +26,10 @@ cd "$ROOT_DIR"
   || fail "$BASE_TAG must be an annotated local tag"
 
 files=(
-  deploy/docker-compose.prod.yml
-  deploy/docker/production.Dockerfile
-  plugins.lock
-  plugins/official.file/plugin.json
-  server/app/adminapi/controller/auth/LoginController.php
-  server/app/adminapi/logic/auth/AdminLogic.php
-  server/app/adminapi/logic/WorkbenchLogic.php
-  server/app/Modules/Official/Article/Application/ArticleAdministrationService.php
-  server/app/Modules/Official/Article/Contracts/ArticleAdministration.php
-  server/app/adminapi/logic/config/ConfigLogic.php
-  server/app/adminapi/logic/decoration/DecorationPageLogic.php
-  server/app/adminapi/logic/decoration/DecorationTabbarLogic.php
-  server/app/Modules/Official/Member/Application/MemberAdministrationService.php
-  server/app/Modules/Official/Oauth/Service/MiniProgramLogic.php
-  server/app/Modules/Official/Oauth/Service/OfficialAccountLogic.php
-  server/app/common/service/authorization/NativeAdminPrincipalRepository.php
-  server/app/common/service/DemoAccountPolicy.php
-  server/app/common/service/installation/InstallationPreflightHost.php
-  server/app/api/logic/IndexLogic.php
-  server/app/api/logic/OAuthLogic.php
-  server/app/api/logic/UserLogic.php
-  server/app/common/service/FileService.php
-  server/app/common/service/ProductAssetReferenceService.php
-  server/app/common/service/RichTextResourceService.php
-  server/app/common/service/decoration/DecorationSchemaService.php
-  server/app/common/service/file/FileObjectNamespace.php
-  server/app/command/TenantModuleProfile.php
-  server/app/command/PluginInstall.php
-  server/app/command/PluginReconcile.php
-  server/app/platform/service/module/ProductTenantModuleProfileService.php
-  server/app/platform/invitation/TenantOwnerInvitationPublicService.php
-  server/app/platform/service/ApplicationTenantBootstrapService.php
-  server/app/platform/service/PdoTenantOwnerAdminProvisioner.php
-  server/app/platform/service/plugin/PluginLifecycleService.php
-  server/config/console.php
-  server/database/migrations/20260822-classify-official-article-permissions.sql
   server/database/seed-multi-tenant-demo.php
-  server/route/*.php
-  web/src/api/system/config.ts
-  web/src/components/menu/index.vue
-  web/src/components/navbar/index.vue
-  web/src/core/tenant-session.ts
-  web/src/layout/default-layout.vue
-  web/src/modules/official-file/contribution.ts
-  web/src/store/modules/brand/index.ts
-  web/src/store/modules/user/index.ts
-  web/src/store/modules/user/types.ts
-  web/src/views/login/components/login-form.vue
-  web/src/views/user/setting/index.vue
-  web/src/views/user/setting/locale/en-US.ts
-  web/src/views/user/setting/locale/zh-CN.ts
 )
 
 migration_target_version="${BASE_TAG#v}"
-for file in "${files[@]}"; do
-  [[ "$file" == server/database/migrations/*.sql ]] || continue
-  [[ -f "$file" ]] || fail "patch source is missing: $file"
-  markers="$(sed -nE 's/^[[:space:]]*--[[:space:]]*peanut-release:[[:space:]]*((0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))[[:space:]]*$/\1/p' "$file")"
-  [[ "$(printf '%s\n' "$markers" | sed '/^$/d' | wc -l | tr -d ' ')" == 1 ]] \
-    || fail "overlay migration must contain exactly one peanut-release marker: $file"
-  marker="$(printf '%s\n' "$markers" | sed '/^$/d')"
-  if version_greater_than "$marker" "$migration_target_version"; then
-    migration_target_version="$marker"
-  fi
-done
 
 staging="$(mktemp -d -t peanut-admin-demo-patch.XXXXXX)"
 trap 'rm -rf "$staging"' EXIT

@@ -22,7 +22,7 @@
   → 对同一 main commit 创建 annotated vX.Y.Z tag
   → 从同一 commit 生成两个安装包和两个签名升级包
   → scripts/publish-github-release 一次发布源码和全部 Edition 附件
-  → Demo 消费正式 Multi-tenant 安装包并叠加受控 overlay
+  → Demo 消费正式 Multi-tenant 安装包并叠加仅含合成数据 seed 的受控 overlay
   → 文档站采用同一版本和下载入口
 ```
 
