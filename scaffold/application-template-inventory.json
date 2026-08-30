@@ -16295,7 +16295,7 @@
             "target": "server/resources/module-scaffold/backend/Contracts/ModuleCommands.php.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16309,7 +16309,7 @@
             "target": "server/resources/module-scaffold/backend/Database/Migrations/README.md.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16323,7 +16323,7 @@
             "target": "server/resources/module-scaffold/backend/Http/routes.php.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16337,7 +16337,7 @@
             "target": "server/resources/module-scaffold/backend/ModuleProvider.php.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16351,7 +16351,7 @@
             "target": "server/resources/module-scaffold/backend/composer.json.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16365,7 +16365,7 @@
             "target": "server/resources/module-scaffold/backend/empty-array.json.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16379,7 +16379,7 @@
             "target": "server/resources/module-scaffold/backend/module.json.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16393,7 +16393,7 @@
             "target": "server/resources/module-scaffold/frontend/api.ts.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16407,7 +16407,7 @@
             "target": "server/resources/module-scaffold/frontend/contribution.ts.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16421,7 +16421,7 @@
             "target": "server/resources/module-scaffold/frontend/package.json.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16435,7 +16435,7 @@
             "target": "server/resources/module-scaffold/tests/TenantSecurityDriver.php.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -16449,7 +16449,7 @@
             "target": "server/resources/module-scaffold/tests/TenantSecurityTest.php.stub",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "copy",
+            "transform": "text",
             "mode": 420,
             "profiles": [
                 "minimal",

@@ -165,7 +165,7 @@ function transform(string $path, string $classification): string
     if (preg_match('#(^|/)(composer\.json|package\.json|package-lock\.json|pnpm-lock\.yaml)$#', $path) === 1) return 'package';
     $basename = basename($path);
     $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-    $textExtensions = ['php', 'json', 'md', 'sql', 'ts', 'tsx', 'js', 'mjs', 'cjs', 'sh', 'lock', 'vue', 'css', 'less', 'scss', 'html', 'xml', 'yaml', 'yml', 'toml', 'txt', 'svg', 'conf', 'ini', 'env', 'example', 'dockerfile'];
+    $textExtensions = ['php', 'json', 'md', 'sql', 'stub', 'ts', 'tsx', 'js', 'mjs', 'cjs', 'sh', 'lock', 'vue', 'css', 'less', 'scss', 'html', 'xml', 'yaml', 'yml', 'toml', 'txt', 'svg', 'conf', 'ini', 'env', 'example', 'dockerfile'];
     if (in_array($extension, $textExtensions, true)
         || str_starts_with($path, 'scripts/')
         || in_array($basename, ['compose.yaml', 'think', '.gitignore', '.dockerignore', '.env.example', '.htaccess'], true)
