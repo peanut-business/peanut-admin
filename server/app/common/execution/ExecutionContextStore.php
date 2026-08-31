@@ -23,6 +23,13 @@ final class ExecutionContextStore
 
     public function run(ExecutionContext $context, callable $operation): mixed
     {
+        $currentTenantId = $this->current()?->tenantId();
+        $nextTenantId = $context->tenantId();
+        if ($currentTenantId !== null
+            && $nextTenantId !== null
+            && $currentTenantId !== $nextTenantId) {
+            throw new \DomainException('EXECUTION_TENANT_CONTEXT_MISMATCH');
+        }
         $this->stack[] = $context;
         try {
             return $operation();

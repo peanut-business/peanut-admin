@@ -30,8 +30,10 @@ final class TenantOwnerInvitationPublicService
     private AuditContractHost $audit;
     private PasswordHasher $passwords;
 
-    public function __construct(private readonly PDO $pdo)
-    {
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly ApplicationTenantBootstrapService $applicationBootstrap,
+    ) {
         $this->transactions = new PdoTransactionManager($pdo);
         $this->identity = new PdoIdentityRepository($pdo);
         $this->memberships = new PdoMembershipRepository($pdo);
@@ -149,7 +151,7 @@ final class TenantOwnerInvitationPublicService
                 return ['_error' => 'TENANT_MEMBER_INACTIVE'];
             }
             $this->memberships->assignRole($tenantId, $member->id, $role->id);
-            (new ApplicationTenantBootstrapService($this->pdo))->provision(
+            $this->applicationBootstrap->provision(
                 $tenantId,
                 $member->id,
                 $role->id,

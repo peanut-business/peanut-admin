@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use app\common\service\tenant\TenantEntryBindingResolver;
+use app\Modules\Official\Notification\Application\NotificationApplicationService;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\DemoAccountPolicy;
+use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
@@ -466,7 +470,15 @@ function demoMultiMain(): int
         new PdoAuditRepository($pdo),
         $passwords
     );
-    $adminProvisioner = new PdoTenantOwnerAdminProvisioner($pdo);
+    $applicationContexts = new ExecutionContextStore();
+    $adminProvisioner = new PdoTenantOwnerAdminProvisioner(
+        $pdo,
+        new ApplicationTenantBootstrapService(
+            $pdo,
+            new NotificationApplicationService($pdo, new CurrentExecutionContext($applicationContexts)),
+            $applicationContexts,
+        ),
+    );
     [$tenantA, $tenantB] = $transactions->run(function () use (
         $pdo,
         $bootstrap,

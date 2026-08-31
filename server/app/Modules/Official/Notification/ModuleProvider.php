@@ -33,6 +33,6 @@ final class ModuleProvider implements ModuleProviderContract
 
     private function application(): NotificationApplicationService
     {
-        return new NotificationApplicationService();
+        return app(NotificationApplicationService::class);
     }
 }

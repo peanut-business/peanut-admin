@@ -23,6 +23,7 @@ use app\Modules\Official\Member\Contracts\MemberTagCommands;
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
+use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Oauth\Application\OAuthCommandService;
 use app\Modules\Official\Oauth\Application\OAuthQueryService;
 use app\Modules\Official\Oauth\Contracts\OAuthCommands;
@@ -105,8 +106,13 @@ class AppService extends Service
             $this->app->make(MemberBalanceCommands::class),
             $this->app->make(IdempotentCommandExecutor::class),
         ));
-        $this->app->bind(NotificationCommands::class, fn(): NotificationCommands => new NotificationApplicationService());
-        $this->app->bind(NotificationQueries::class, fn(): NotificationQueries => new NotificationApplicationService());
+        $this->app->bind(NotificationApplicationService::class, fn(): NotificationApplicationService => new NotificationApplicationService(
+            $this->database(),
+            $this->app->make(CurrentExecutionContext::class),
+        ));
+        $this->app->bind(NotificationCommands::class, fn(): NotificationCommands => $this->app->make(NotificationApplicationService::class));
+        $this->app->bind(NotificationQueries::class, fn(): NotificationQueries => $this->app->make(NotificationApplicationService::class));
+        $this->app->bind(VerificationCodeCommands::class, fn(): VerificationCodeCommands => $this->app->make(NotificationApplicationService::class));
         $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport());
         $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
             return new ModuleExecutionBoundary(

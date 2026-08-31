@@ -225,6 +225,19 @@ SQL);
     }
     expectNoticeTenant($sender->calls === 0, 'untrusted Tenant context reached the provider Host');
 
+    $mismatchRejected = false;
+    try {
+        runNoticeTenant(
+            $alpha,
+            'test.notice.context-mismatch',
+            fn() => $service->send($beta, 'login_code', '13800000001'),
+        );
+    } catch (Throwable) {
+        $mismatchRejected = true;
+    }
+    expectNoticeTenant($mismatchRejected, 'explicit Notification context diverged from the ORM Tenant scope');
+    expectNoticeTenant($sender->calls === 0, 'mismatched Notification context reached the provider Host');
+
     $sendResult = runNoticeTenant(
         $beta,
         'test.notice.verification.send.beta',

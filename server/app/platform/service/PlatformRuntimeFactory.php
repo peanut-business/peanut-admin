@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
+use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\audit\AuditContractHost;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
@@ -141,7 +143,7 @@ final class PlatformRuntimeFactory
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $modules),
-            new PdoTenantOwnerAdminProvisioner($pdo)
+            self::ownerAdminProvisioner($pdo)
         );
     }
 
@@ -179,7 +181,7 @@ final class PlatformRuntimeFactory
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $manager),
-            new PdoTenantOwnerAdminProvisioner($pdo)
+            self::ownerAdminProvisioner($pdo)
         );
 
         return self::$tenantModules = new PlatformTenantModuleService(
@@ -210,6 +212,18 @@ final class PlatformRuntimeFactory
             throw new \RuntimeException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE');
         }
         return $pdo;
+    }
+
+    private static function ownerAdminProvisioner(PDO $pdo): PdoTenantOwnerAdminProvisioner
+    {
+        return new PdoTenantOwnerAdminProvisioner(
+            $pdo,
+            new ApplicationTenantBootstrapService(
+                $pdo,
+                app(NotificationCommands::class),
+                app(ExecutionContextStore::class),
+            ),
+        );
     }
 
     private function __construct()
