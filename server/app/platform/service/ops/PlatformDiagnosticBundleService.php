@@ -79,6 +79,7 @@ final readonly class PlatformDiagnosticBundleService
                 'maximum_modules' => 100,
                 'maximum_task_groups' => 200,
                 'maximum_log_groups' => 100,
+                'maximum_operation_logs' => 100,
             ],
             'redaction' => [
                 'raw_log_files' => 'excluded',
@@ -87,6 +88,7 @@ final readonly class PlatformDiagnosticBundleService
                 'request_headers_and_cookies' => 'excluded',
                 'absolute_paths' => 'excluded',
                 'personal_and_tenant_records' => 'excluded',
+                'operation_log_payloads_and_identity' => 'excluded',
             ],
             'configuration' => [
                 'deployment_mode' => $mode?->value ?? 'unconfigured',
@@ -105,6 +107,10 @@ final readonly class PlatformDiagnosticBundleService
             'structured_logs' => [
                 'source' => 'platform.audit',
                 'items' => $logs['items'],
+            ],
+            'operation_logs' => [
+                'source' => 'tenant.audit',
+                'items' => $this->operationLogEvidence($since),
             ],
         ];
 
@@ -171,6 +177,34 @@ SQL);
             ];
         }
         return $groups;
+    }
+
+    /** @return list<array{tenant_id:int,request_id:string,operation_id:?string,operation:string,outcome:string,reason_code:?string,route:string,occurred_at:string}> */
+    private function operationLogEvidence(DateTimeImmutable $since): array
+    {
+        $statement = $this->pdo->prepare(<<<'SQL'
+SELECT tenant_id, request_id, operation_id, action, outcome, reason_code,
+       target_resource_id, occurred_at
+FROM pa_tenant_audit_event
+WHERE event_type = 'admin.operation' AND occurred_at >= :since
+ORDER BY occurred_at DESC, id DESC
+LIMIT 100
+SQL);
+        $statement->execute(['since' => $this->databaseInstant($since)]);
+
+        return array_map(fn(array $row): array => [
+            'tenant_id' => (int)$row['tenant_id'],
+            'request_id' => (string)$row['request_id'],
+            'operation_id' => $row['operation_id'] === null ? null : (string)$row['operation_id'],
+            'operation' => (string)$row['action'],
+            'outcome' => (string)$row['outcome'],
+            'reason_code' => $row['reason_code'] === null ? null : (string)$row['reason_code'],
+            'route' => (string)$row['target_resource_id'],
+            'occurred_at' => $this->instant(new DateTimeImmutable(
+                $this->databaseValue((string)$row['occurred_at']),
+                new DateTimeZone('UTC'),
+            )),
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
     }
 
     private function instant(DateTimeImmutable $value): string

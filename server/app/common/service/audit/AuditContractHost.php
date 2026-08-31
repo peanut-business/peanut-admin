@@ -18,7 +18,7 @@ final class AuditContractHost implements AuditRepository
 
     public function __construct(private readonly PDO $pdo)
     {
-        $this->operationLogs = new OperationLogProjection();
+        $this->operationLogs = new OperationLogProjection($pdo);
     }
 
     public static function fromPdo(PDO $pdo): self
@@ -38,8 +38,22 @@ final class AuditContractHost implements AuditRepository
     public function record(AuditEvent $event): void
     {
         if ($event->projection === AuditEvent::OPERATION_LOG) {
-            $this->operationLogs->append($event);
-            $this->appendTenantEvent($event);
+            $ownsTransaction = !$this->pdo->inTransaction();
+            if ($ownsTransaction) {
+                $this->pdo->beginTransaction();
+            }
+            try {
+                $this->operationLogs->append($event);
+                $this->appendTenantEvent($event);
+                if ($ownsTransaction) {
+                    $this->pdo->commit();
+                }
+            } catch (\Throwable $exception) {
+                if ($ownsTransaction && $this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+                throw $exception;
+            }
             return;
         }
         if ($event->projection === AuditEvent::PLATFORM) {
