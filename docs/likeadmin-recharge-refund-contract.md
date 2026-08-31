@@ -123,7 +123,7 @@ Peanut 在一个数据库事务中完成以下步骤，并对充值单和会员�
 5. 写一条 `change_type=101, action=2` 的充值退款余额流水；
 6. 创建一条独立的 `refund_record`，初始状态为 0；
 7. 创建首次 `refund_log`，初始状态为 0；
-8. 提交本地事务后调用支付渠道。
+8. 提交本地事务后，以稳定的 `refund_record.sn` 为 Provider 幂等键调用支付渠道；渠道调用不持有数据库事务。
 
 余额流水至少满足：
 
@@ -153,6 +153,8 @@ refund_log：每次渠道尝试独立记录 0/1/2
 
 渠道请求明确失败时，Peanut 保留已提交的一次性扣款、`refund_record` 和失败 `refund_log`，记录可重试错误原因；不能因异常回滚到“没有退款记录但渠道状态未知”的状态。
 
+渠道返回后，Peanut 在短结果事务内锁定当前 `refund_record/refund_log`，同时保存业务结果并 finalize 首次请求的幂等 receipt；任一步失败时两者一起回滚。`refund_log.sn` 只标识本地尝试，不进入 Provider。
+
 ## 5. 失败重试
 
 请求：
@@ -172,6 +174,7 @@ Peanut 的安全重试规则：
 - 只允许状态 2 的记录重试；状态 0 不允许并发重试，状态 1 永不重试；
 - 锁定 `refund_record` 后重新检查状态；
 - 复用同一条 `refund_record`，每次尝试新增唯一 `refund_log`；
+- 首次请求和每次重试均复用 `refund_record.sn` 作为 Provider 幂等键；
 - 重试开始时将主记录恢复为 0，并清除或更新本次展示错误；
 - 只调用支付渠道，不再次扣减 `user_money`、`total_recharge_amount`，不新增余额流水，不新建退款记录；
 - 不再次以当前用户余额作为重试门槛，因为首次退款已经完成一次性扣款；
@@ -188,7 +191,7 @@ Peanut 的安全重试规则：
 ```text
 POST v3/refund/domestic/refunds
 transaction_id = recharge_order.transaction_id
-out_refund_no = refund_log.sn
+out_refund_no = refund_record.sn
 amount.refund = refund_amount * 100
 amount.total = order_amount * 100
 currency = CNY
@@ -197,7 +200,7 @@ currency = CNY
 微信受理请求不等于退款成功，记录保持 0。后续使用退款日志单号查询：
 
 ```text
-GET v3/refund/domestic/refunds/{refund_log.sn}
+GET v3/refund/domestic/refunds/{refund_record.sn}
 ```
 
 只有渠道明确返回成功，才将当前日志和主记录更新为 1。明确失败更新为 2 并保留原因；未知、处理中结果继续保持 0。回调或轮询更新必须校验当前记录和尝试日志，并保持幂等。
@@ -207,7 +210,7 @@ GET v3/refund/domestic/refunds/{refund_log.sn}
 参考调用：
 
 ```text
-refund(order_sn, refund_amount, refund_log.sn)
+refund(order_sn, refund_amount, refund_record.sn)
 ```
 
 只有同时满足以下真实响应条件才同步标记成功：

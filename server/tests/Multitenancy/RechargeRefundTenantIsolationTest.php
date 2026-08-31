@@ -1,13 +1,26 @@
 <?php
 declare(strict_types=1);
 
-use app\api\application\RechargeApplicationService as ApiRechargeLogic;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\enum\RefundEnum;
+use app\common\contract\idempotency\IdempotentCommandExecutor;
+use app\common\contract\idempotency\IdempotencyCommand;
+use app\common\contract\idempotency\IdempotencyReceipt;
+use app\common\contract\idempotency\IdempotencyResult;
+use app\common\service\payment\contract\RefundGatewayInterface;
+use app\common\service\idempotency\IdempotencyRuntimeFactory;
+use app\common\service\XlsxExportService;
+use app\Modules\Official\Payment\Application\RechargeAdministrationService;
 use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
-use app\common\service\member\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
+use think\facade\Console;
+use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -46,11 +59,116 @@ function financePdo(string $host, int $port, string $user, string $password, str
     );
 }
 
-function financeDatabase(PDO $admin, string $prefix): string
+function financeDatabase(PDO $admin, string $name): string
 {
-    $name = $prefix . strtolower(bin2hex(random_bytes(5)));
+    if (preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_consumer_module_cycle$/D', $name) !== 1) {
+        throw new RuntimeException('refund test database is outside the registered P0-E namespace');
+    }
     $admin->exec("CREATE DATABASE `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     return $name;
+}
+
+function financeRun(TenantContext $context, string $operation, callable $callback): mixed
+{
+    return app(ExecutionContextStore::class)->run(
+        ExecutionContext::tenantAdmin($context, $operation),
+        $callback,
+    );
+}
+
+function financeReconcile(TenantContext $context): void
+{
+    $scope = TenantScope::fromTrustedContext($context->tenantId, 'refund-test:' . $context->requestId);
+    financeRun($context, 'test.refund.reconcile', static fn() => ScheduledTenantContext::run(
+        $scope,
+        static fn() => Console::call('refund:reconcile'),
+    ));
+}
+
+final class RefundBehaviorGateway implements RefundGatewayInterface
+{
+    /** @var array<string,string> */
+    private static array $modes = [];
+    /** @var array<string,list<string>> */
+    public static array $refundKeys = [];
+    /** @var array<string,list<string>> */
+    public static array $queryKeys = [];
+    /** @var array<string,int> */
+    public static array $effects = [];
+
+    public static function mode(string $orderSn, string $mode): void
+    {
+        self::$modes[$orderSn] = $mode;
+    }
+
+    public function refund(array $order, string $refundSn, int $refundAmountCents): array
+    {
+        $orderSn = (string)($order['sn'] ?? '');
+        self::$refundKeys[$orderSn][] = $refundSn;
+        $attempt = count(self::$refundKeys[$orderSn]);
+        $mode = self::$modes[$orderSn] ?? 'success';
+        if ($mode === 'accepted_unknown') {
+            self::$effects[$refundSn] = (self::$effects[$refundSn] ?? 0) + 1;
+            throw new RuntimeException('provider accepted before transport failure', self::ERROR_RESULT_UNKNOWN);
+        }
+        if ($mode === 'known_failure_then_success' && $attempt === 1) {
+            throw new RuntimeException('provider rejected refund');
+        }
+        self::$effects[$refundSn] = (self::$effects[$refundSn] ?? 0) + 1;
+        return [
+            'status' => self::STATUS_SUCCESS,
+            'transaction_id' => 'provider-' . $refundSn,
+            'receipt' => ['refund_sn' => $refundSn],
+        ];
+    }
+
+    public function query(array $order, string $refundSn): array
+    {
+        $orderSn = (string)($order['sn'] ?? '');
+        self::$queryKeys[$orderSn][] = $refundSn;
+        return [
+            'status' => self::STATUS_SUCCESS,
+            'transaction_id' => 'provider-' . $refundSn,
+            'receipt' => ['refund_sn' => $refundSn],
+        ];
+    }
+}
+
+final class RefundBehaviorPaymentFactory
+{
+    public static function forTenant(object $context, string $channel, mixed $transport = null): self
+    {
+        return new self();
+    }
+
+    public function refund(string $channel): RefundGatewayInterface
+    {
+        return new RefundBehaviorGateway();
+    }
+}
+
+final readonly class FailingRefundIdempotency implements IdempotentCommandExecutor
+{
+    public function __construct(private IdempotentCommandExecutor $delegate) {}
+
+    public function begin(IdempotencyCommand $command): IdempotencyResult
+    {
+        return $this->delegate->begin($command);
+    }
+
+    public function complete(IdempotencyResult $execution, IdempotencyReceipt $receipt): void
+    {
+        throw new RuntimeException('fixture receipt finalize failure');
+    }
+
+    public function fail(IdempotencyResult $execution, IdempotencyReceipt $receipt): void
+    {
+        throw new RuntimeException('fixture receipt finalize failure');
+    }
+}
+
+if (!class_alias(RefundBehaviorPaymentFactory::class, 'app\\common\\service\\payment\\PaymentServiceFactory')) {
+    throw new RuntimeException('cannot install fake refund Provider factory');
 }
 
 function createFinanceTenantSchema(PDO $pdo): void
@@ -136,6 +254,18 @@ CREATE TABLE pa_refund_log (
   CONSTRAINT fk_refund_log_member FOREIGN KEY (tenant_id, user_id) REFERENCES pa_member (tenant_id, id) ON DELETE RESTRICT,
   CONSTRAINT fk_refund_log_record FOREIGN KEY (tenant_id, record_id) REFERENCES pa_refund_record (tenant_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+CREATE TABLE pa_tenant_idempotency_record (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id BIGINT UNSIGNED NOT NULL,
+  tenant_member_id BIGINT UNSIGNED NOT NULL, operation_key VARCHAR(160) NOT NULL,
+  idempotency_key_hash CHAR(64) NOT NULL, request_hash CHAR(64) NOT NULL,
+  status VARCHAR(16) NOT NULL, response_status SMALLINT UNSIGNED NULL,
+  response_body_json JSON NULL, resource_type VARCHAR(160) NULL, resource_id VARCHAR(128) NULL,
+  expires_at DATETIME(3) NOT NULL, created_at DATETIME(3) NOT NULL, updated_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_tenant_idempotency (tenant_id, tenant_member_id, operation_key, idempotency_key_hash),
+  KEY idx_tenant_idempotency_expiry (expires_at, status, id),
+  CONSTRAINT chk_tenant_idempotency_status CHECK (status IN ('processing','completed','failed'))
+) ENGINE=InnoDB;
 SQL);
 }
 
@@ -144,10 +274,13 @@ function seedFinanceTenantSchema(PDO $pdo): void
     $pdo->exec(<<<'SQL'
 INSERT INTO pa_tenant (id,code,status) VALUES (101,'alpha','active'),(202,'beta','active');
 INSERT INTO pa_member (id,tenant_id,sn,account,nickname,user_money,total_recharge_amount)
-VALUES (11,101,'M-ALPHA','alpha','Alpha',100.00,10.00),(22,202,'M-BETA','beta','Beta',20.00,0);
+VALUES (11,101,'M-ALPHA','alpha','Alpha',100.00,30.00),(22,202,'M-BETA','beta','Beta',20.00,0);
 INSERT INTO pa_recharge_order
   (id,tenant_id,sn,user_id,pay_sn,pay_way,pay_status,pay_time,order_amount,order_terminal,transaction_id,refund_status,create_time)
-VALUES (21,101,'RC-ALPHA',11,'PY-ALPHA',2,1,1700000000,10.00,3,'TX-ALPHA',1,1700000000);
+VALUES (21,101,'RC-ALPHA',11,'PY-ALPHA',2,1,1700000000,10.00,3,'TX-ALPHA',1,1700000000),
+       (23,101,'RC-UNKNOWN',11,'PY-UNKNOWN',2,1,1700000000,10.00,3,'TX-UNKNOWN',0,1700000000),
+       (24,101,'RC-RETRY',11,'PY-RETRY',2,1,1700000000,10.00,3,'TX-RETRY',0,1700000000),
+       (25,101,'RC-FINALIZE',11,'PY-FINALIZE',2,1,1700000000,10.00,3,'TX-FINALIZE',0,1700000000);
 INSERT INTO pa_refund_record
   (id,tenant_id,sn,user_id,order_id,order_sn,order_type,order_amount,refund_amount,transaction_id,refund_way,refund_type,refund_status,refund_msg)
 VALUES (31,101,'RF-ALPHA',11,21,'RC-ALPHA','recharge',10.00,10.00,'TX-ALPHA',1,1,2,'');
@@ -162,7 +295,7 @@ $port = (int)IsolatedBackendEnvironment::required('DB_PORT');
 $user = IsolatedBackendEnvironment::required('DB_USER');
 $password = IsolatedBackendEnvironment::required('DB_PASS');
 $admin = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-$database = financeDatabase($admin, 'peanut_admin_mt03_finance_');
+$database = financeDatabase($admin, IsolatedBackendEnvironment::required('DB_NAME'));
 
 try {
     $pdo = financePdo($host, $port, $user, $password, $database);
@@ -172,36 +305,148 @@ try {
     $app = new think\App(); $app->initialize();
     $alpha = financeTenantContext(101, 501, 'mt03-finance-alpha');
     $beta = financeTenantContext(202, 502, 'mt03-finance-beta');
-    expectFinanceTenant(!FinanceTenantRepository::records($alpha)->where('id', 31)->findOrEmpty()->isEmpty(), 'Alpha refund record disappeared');
-    expectFinanceTenant(FinanceTenantRepository::records($beta)->where('id', 31)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund record');
-    expectFinanceTenant(!FinanceTenantRepository::logs($alpha)->where('id', 41)->findOrEmpty()->isEmpty(), 'Alpha refund log disappeared');
-    expectFinanceTenant(FinanceTenantRepository::logs($beta)->where('id', 41)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund log');
+    financeRun($alpha, 'test.refund.seed.alpha', static function () use ($alpha): void {
+        expectFinanceTenant(!FinanceTenantRepository::records($alpha)->where('id', 31)->findOrEmpty()->isEmpty(), 'Alpha refund record disappeared');
+        expectFinanceTenant(!FinanceTenantRepository::logs($alpha)->where('id', 41)->findOrEmpty()->isEmpty(), 'Alpha refund log disappeared');
+    });
+    financeRun($beta, 'test.refund.seed.beta', static function () use ($beta): void {
+        expectFinanceTenant(FinanceTenantRepository::records($beta)->where('id', 31)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund record');
+        expectFinanceTenant(FinanceTenantRepository::logs($beta)->where('id', 41)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund log');
+    });
 
-    $betaOrder = FinanceTenantRepository::createOrder($beta, [
+    $betaOrder = financeRun($beta, 'test.refund.beta-order', static fn() => FinanceTenantRepository::createOrder($beta, [
         'tenant_id' => 101,
         'sn' => 'RC-BETA-22', 'user_id' => 22, 'pay_sn' => null, 'pay_way' => 2,
         'pay_status' => RechargeOrder::PAY_STATUS_UNPAID, 'order_amount' => '5.00',
         'order_terminal' => 3, 'transaction_id' => null, 'refund_status' => 0,
-    ]);
+    ]));
     expectFinanceTenant((int)$betaOrder->tenant_id === 202, 'payload forged order Tenant ownership');
-    expectFinanceTenant(FinanceTenantRepository::orders($alpha)->where('id', (int)$betaOrder->id)->findOrEmpty()->isEmpty(), 'Alpha read Beta order');
+    financeRun($alpha, 'test.refund.beta-order-isolation', static function () use ($alpha, $betaOrder): void {
+        expectFinanceTenant(FinanceTenantRepository::orders($alpha)->where('id', (int)$betaOrder->id)->findOrEmpty()->isEmpty(), 'Alpha read Beta order');
+    });
 
-    $system = FinanceTenantContext::externalPayment(202, 'fixture:RC-BETA-22');
-    expectFinanceTenant(FinanceTenantContext::tenantId($system) === 202, 'verified callback did not carry Beta Tenant');
-    $betaBefore = (string)MemberTenantRepository::members($beta)->where('id', 22)->value('user_money');
-    expectFinanceTenant(ApiRechargeLogic::settle($system, [
-        'order_sn' => 'RC-BETA-22', 'pay_way' => 2, 'transaction_id' => 'TX-BETA-22',
-        'amount_cents' => 500, 'currency' => 'CNY', 'status' => 'success',
-    ]), 'verified callback settlement failed: ' . ApiRechargeLogic::getError());
-    expectFinanceTenant((string)MemberTenantRepository::members($beta)->where('id', 22)->value('user_money') !== $betaBefore, 'verified callback did not credit Beta');
-    expectFinanceTenant((int)MemberTenantRepository::balanceLogs($beta)->where('source_sn', 'RC-BETA-22')->count() === 1, 'verified callback did not append Beta ledger');
-    expectFinanceTenant((int)MemberTenantRepository::balanceLogs($alpha)->where('source_sn', 'RC-BETA-22')->count() === 0, 'verified callback leaked ledger to Alpha');
-    try {
-        FinanceTenantContext::tenantId(new PeanutAdmin\Kernel\Context\TenantSystemContext(202, 'forged', 'finance.recharge.settle', 'x'));
-        throw new RuntimeException('forged payment system actor was accepted');
-    } catch (Throwable $e) {
-        expectFinanceTenant($e->getMessage() !== '', 'forged actor denial lost shape');
-    }
+    $dbPdo = Db::connect()->connect();
+    expectFinanceTenant($dbPdo instanceof PDO, 'ThinkPHP refund PDO is unavailable');
+    $idempotency = IdempotencyRuntimeFactory::forPdo($dbPdo);
+    $xlsx = (new ReflectionClass(XlsxExportService::class))->newInstanceWithoutConstructor();
+    $refunds = new RechargeAdministrationService($xlsx, $idempotency);
+
+    RefundBehaviorGateway::mode('RC-UNKNOWN', 'accepted_unknown');
+    $unknown = financeRun($alpha, 'test.refund.accepted-unknown', static fn() => $refunds->refund(
+        $alpha,
+        ['recharge_id' => 23],
+        1,
+        'refund-unknown-001',
+    ));
+    expectFinanceTenant($unknown === [true, '操作成功'], 'accepted Provider result was not kept pending');
+    $unknownRecord = financeRun($alpha, 'test.refund.accepted-unknown-record', static fn() => FinanceTenantRepository::records($alpha)
+        ->where('order_id', 23)->findOrEmpty());
+    expectFinanceTenant(!$unknownRecord->isEmpty() && (int)$unknownRecord->refund_status === RefundEnum::REFUND_ING, 'accepted unknown result did not stay ING');
+    expectFinanceTenant(
+        (string)$pdo->query("SELECT status FROM pa_tenant_idempotency_record WHERE operation_key='recharge.refund.create' ORDER BY id DESC LIMIT 1")->fetchColumn() === 'completed',
+        'pending business result and idempotency receipt did not commit together'
+    );
+    $unknownReplay = financeRun($alpha, 'test.refund.accepted-unknown-replay', static fn() => $refunds->refund(
+        $alpha,
+        ['recharge_id' => 23],
+        1,
+        'refund-unknown-001',
+    ));
+    expectFinanceTenant($unknownReplay === $unknown, 'duplicate refund request did not replay its receipt');
+    expectFinanceTenant(
+        (RefundBehaviorGateway::$refundKeys['RC-UNKNOWN'] ?? []) === [(string)$unknownRecord->sn]
+            && (RefundBehaviorGateway::$effects[(string)$unknownRecord->sn] ?? 0) === 1,
+        'accepted unknown refund repeated the external effect or changed its Provider key'
+    );
+    financeReconcile($alpha);
+    $unknownRecord = financeRun($alpha, 'test.refund.accepted-unknown-settled', static fn() => FinanceTenantRepository::records($alpha)
+        ->where('id', (int)$unknownRecord->id)->findOrEmpty());
+    expectFinanceTenant((int)$unknownRecord->refund_status === RefundEnum::REFUND_SUCCESS, 'reconcile did not settle accepted refund');
+    expectFinanceTenant(
+        (RefundBehaviorGateway::$queryKeys['RC-UNKNOWN'] ?? []) === [(string)$unknownRecord->sn],
+        'reconcile did not query with the original RefundRecord SN'
+    );
+
+    RefundBehaviorGateway::mode('RC-RETRY', 'known_failure_then_success');
+    $failed = financeRun($alpha, 'test.refund.known-failure', static fn() => $refunds->refund(
+        $alpha,
+        ['recharge_id' => 24],
+        1,
+        'refund-retry-001',
+    ));
+    expectFinanceTenant($failed === [false, 'provider rejected refund'], 'known Provider failure result changed');
+    $retryRecord = financeRun($alpha, 'test.refund.known-failure-record', static fn() => FinanceTenantRepository::records($alpha)
+        ->where('order_id', 24)->findOrEmpty());
+    expectFinanceTenant((int)$retryRecord->refund_status === RefundEnum::REFUND_ERROR, 'known Provider failure did not settle ERROR');
+    $failedReplay = financeRun($alpha, 'test.refund.known-failure-replay', static fn() => $refunds->refund(
+        $alpha,
+        ['recharge_id' => 24],
+        1,
+        'refund-retry-001',
+    ));
+    expectFinanceTenant($failedReplay === $failed, 'failed refund receipt was not replayed');
+    $retried = financeRun($alpha, 'test.refund.retry', static fn() => $refunds->refundAgain(
+        $alpha,
+        ['record_id' => (int)$retryRecord->id],
+        1,
+    ));
+    expectFinanceTenant($retried === [true, '操作成功'], 'failed refund retry did not succeed');
+    expectFinanceTenant(
+        (RefundBehaviorGateway::$refundKeys['RC-RETRY'] ?? []) === [(string)$retryRecord->sn, (string)$retryRecord->sn]
+            && (RefundBehaviorGateway::$effects[(string)$retryRecord->sn] ?? 0) === 1,
+        'refund retry changed the Provider key or duplicated the external effect'
+    );
+    expectFinanceTenant(
+        financeRun($alpha, 'test.refund.retry-logs', static fn() => (int)FinanceTenantRepository::logs($alpha)
+            ->where('record_id', (int)$retryRecord->id)->count()) === 2,
+        'refund retry did not append exactly one local attempt log'
+    );
+
+    RefundBehaviorGateway::mode('RC-FINALIZE', 'success');
+    $failingRefunds = new RechargeAdministrationService(
+        $xlsx,
+        new FailingRefundIdempotency($idempotency),
+    );
+    $finalizeFailure = financeRun($alpha, 'test.refund.finalize-failure', static fn() => $failingRefunds->refund(
+        $alpha,
+        ['recharge_id' => 25],
+        1,
+        'refund-finalize-001',
+    ));
+    expectFinanceTenant($finalizeFailure[0] === false, 'fixture receipt finalize failure was hidden');
+    $finalizeRecord = financeRun($alpha, 'test.refund.finalize-failure-record', static fn() => FinanceTenantRepository::records($alpha)
+        ->where('order_id', 25)->findOrEmpty());
+    $finalizeLog = financeRun($alpha, 'test.refund.finalize-failure-log', static fn() => FinanceTenantRepository::logs($alpha)
+        ->where('record_id', (int)$finalizeRecord->id)->order('id', 'desc')->findOrEmpty());
+    $finalizeOrder = financeRun($alpha, 'test.refund.finalize-failure-order', static fn() => FinanceTenantRepository::orders($alpha)
+        ->where('id', 25)->findOrEmpty());
+    expectFinanceTenant(
+        (int)$finalizeRecord->refund_status === RefundEnum::REFUND_ING
+            && (int)$finalizeLog->refund_status === RefundEnum::REFUND_ING
+            && trim((string)$finalizeOrder->refund_transaction_id) === ''
+            && (string)$pdo->query("SELECT status FROM pa_tenant_idempotency_record WHERE operation_key='recharge.refund.create' ORDER BY id DESC LIMIT 1")->fetchColumn() === 'processing',
+        'business result committed without its idempotency receipt'
+    );
+    expectFinanceTenant(
+        (RefundBehaviorGateway::$refundKeys['RC-FINALIZE'] ?? []) === [(string)$finalizeRecord->sn]
+            && (RefundBehaviorGateway::$effects[(string)$finalizeRecord->sn] ?? 0) === 1,
+        'finalize failure changed the Provider key or repeated the external effect'
+    );
+    financeReconcile($alpha);
+    $finalizeRecord = financeRun($alpha, 'test.refund.finalize-failure-settled', static fn() => FinanceTenantRepository::records($alpha)
+        ->where('id', (int)$finalizeRecord->id)->findOrEmpty());
+    expectFinanceTenant(
+        (int)$finalizeRecord->refund_status === RefundEnum::REFUND_SUCCESS
+            && (RefundBehaviorGateway::$queryKeys['RC-FINALIZE'] ?? []) === [(string)$finalizeRecord->sn],
+        'reconcile did not recover the rolled-back local Provider result with the stable key'
+    );
+
+    $alphaRecordIds = [(int)$unknownRecord->id, (int)$retryRecord->id, (int)$finalizeRecord->id];
+    expectFinanceTenant(
+        financeRun($beta, 'test.refund.behavior-isolation', static fn() => (int)FinanceTenantRepository::records($beta)
+            ->whereIn('id', $alphaRecordIds)->count()) === 0,
+        'Beta read Alpha refund behavior records'
+    );
 } finally {
     $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

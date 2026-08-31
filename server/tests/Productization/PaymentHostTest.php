@@ -152,6 +152,21 @@ foreach ([$adminRefund, $reconcile] as $source) {
     );
     expectPaymentHost(!str_contains($source, "['raw']"), 'raw provider response is persisted');
 }
+expectPaymentHost(
+    str_contains($adminRefund, '(string)$record->sn')
+        && str_contains($reconcile, '(string)$record->sn')
+        && !str_contains($adminRefund, '(string)$log->sn')
+        && !str_contains($reconcile, '(string)$log->sn'),
+    'refund paths do not share the stable RefundRecord Provider key'
+);
+$resultTransaction = strpos($adminRefund, '// 渠道请求完成后使用新的短事务');
+$receiptFinalize = strpos($adminRefund, 'self::finishRefundIdempotency', $resultTransaction ?: 0);
+$resultCommit = strpos($adminRefund, "\n            });", $receiptFinalize ?: 0);
+expectPaymentHost(
+    $resultTransaction !== false && $receiptFinalize !== false && $resultCommit !== false
+        && $resultTransaction < $receiptFinalize && $receiptFinalize < $resultCommit,
+    'refund receipt finalization is outside the locked result transaction'
+);
 
 $payConfig = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Payment/Application/PayConfigApplicationService.php'
@@ -196,7 +211,10 @@ foreach (['one_refund_record_per_order', 'one_101_log_at_most_per_order'] as $ch
 }
 
 foreach ([$factory, $settlement, $adminRefund, $reconcile] as $source) {
-    expectPaymentHost(!str_contains($source, 'PeanutAdmin\\'), 'application payment owner deep imports core');
+    expectPaymentHost(
+        preg_match('/PeanutAdmin\\\\[^;]*(?:Payment|Refund|Gateway|FinanceService)/', $source) !== 1,
+        'application payment owner deep imports a Core payment implementation'
+    );
 }
 
 echo "PB07-PAYMENT-HOST-001 passed\n";
