@@ -14,6 +14,7 @@ use app\common\service\configuration_transfer\ExternalBindingConfigurationAdapte
 use app\common\service\configuration_transfer\TenantModuleConfigurationAdapter;
 use app\common\service\configuration_transfer\TenantSettingsConfigurationAdapter;
 use app\common\service\audit\AuditContractHost;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Audit\AuditRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
@@ -471,13 +472,15 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
             );
             return;
         }
-        $this->audit->appendPlatform(
+        $this->audit->recordPlatform(
             'platform.configuration.transfer.' . $operation,
             'configuration.transfer.' . $operation,
             $context->requestId,
             $context->operatorId,
             $context->accountId,
             $metadata,
+            AuditOutcome::Success,
+            null,
         );
     }
 

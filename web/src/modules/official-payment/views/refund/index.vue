@@ -320,9 +320,8 @@
     try {
       const { data } = await getRefundRecords(listParams(pageNo));
       list.value = data.lists;
-      pagination.current = data.page_no ?? data.pageNo ?? pageNo;
-      pagination.pageSize =
-        data.page_size ?? data.pageSize ?? pagination.pageSize;
+      pagination.current = data.pageNo;
+      pagination.pageSize = data.pageSize;
       pagination.total = data.count;
       Object.assign(extend, data.extend);
     } finally {

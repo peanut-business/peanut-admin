@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AxiosResponse } from 'axios';
 import type {
   MaintenanceScheduleInput,
   OpsConsoleTransport,
@@ -314,7 +315,7 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-client.interceptors.response.use(async (response) => {
+const handleResponse = async (response: AxiosResponse<Envelope<unknown>>) => {
   const envelope = response.data as Envelope<unknown>;
   const config = response.config as typeof response.config & {
     platformRefreshRetried?: boolean;
@@ -347,7 +348,19 @@ client.interceptors.response.use(async (response) => {
     }
   }
   return response;
-});
+};
+
+client.interceptors.response.use(
+  handleResponse,
+  (error) => {
+    const response = axios.isAxiosError(error)
+      ? error.response as AxiosResponse<Envelope<unknown>> | undefined
+      : undefined;
+    return response?.data && typeof response.data.code === 'number'
+      ? handleResponse(response)
+      : Promise.reject(error);
+  }
+);
 
 async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
   const result = await request;

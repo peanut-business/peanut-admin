@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { PageData } from '@/types/global';
 
 // ─── 渠道配置 ─────────────────────────────────────────────────────────────────
 
@@ -108,10 +109,10 @@ export function getNoticeLogList(params?: {
   scene_id?: string;
   start_time?: number;
   end_time?: number;
-  page?: number;
-  limit?: number;
+  page_no?: number;
+  page_size?: number;
 }) {
-  return axios.get<NoticeLogRecord[]>('/api/admin/official.notification.log.list', {
+  return axios.get<PageData<NoticeLogRecord>>('/api/admin/official.notification.log.list', {
     params,
   });
 }

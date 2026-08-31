@@ -38,7 +38,7 @@
           <view class="article-title">{{ item.title }}</view>
           <view class="article-meta">
             <text>{{ item.author }}</text>
-            <text>{{ item.click_num }} 次浏览</text>
+            <text>{{ item.click }} 次浏览</text>
           </view>
         </view>
       </view>

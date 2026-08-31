@@ -7,7 +7,7 @@
         <view class="title">{{ article.title }}</view>
         <view class="meta">
           <text>{{ article.author }}</text>
-          <text>{{ article.click_num }} 次浏览</text>
+          <text>{{ article.click }} 次浏览</text>
           <text>{{ article.create_time }}</text>
         </view>
         <!-- rich text content -->

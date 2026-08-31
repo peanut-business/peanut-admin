@@ -93,8 +93,7 @@ final class PlatformOpsController extends BasePlatformController
                 'Diagnostic window is invalid.',
                 ['error_code' => 'OPS_DIAGNOSTIC_WINDOW_INVALID'],
                 42200,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
+            )->withHeaders(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
         }
 
         try {
@@ -118,15 +117,13 @@ final class PlatformOpsController extends BasePlatformController
                 'Diagnostic bundle is unavailable.',
                 ['error_code' => $exception->problemCode],
                 $exception->status * 100,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
+            )->withHeaders(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
         } catch (Throwable) {
             throw \app\common\http\ApiProblem::fromEnvelope(
                 'Diagnostic bundle is unavailable.',
                 ['error_code' => 'OPS_DIAGNOSTIC_UNAVAILABLE'],
                 50300,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
+            )->withHeaders(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
         }
     }
 
@@ -225,21 +222,19 @@ final class PlatformOpsController extends BasePlatformController
                 'Operations status is unavailable.',
                 ['error_code' => $exception->problemCode],
                 $exception->status * 100,
-                [
+            )->withHeaders([
                     'Cache-Control' => 'no-store',
                     'X-Request-Id' => PlatformRequest::requestId($this->request),
-                ],
-            );
+                ]);
         } catch (Throwable) {
             throw \app\common\http\ApiProblem::fromEnvelope(
                 'Operations status is unavailable.',
                 ['error_code' => 'OPS_STATUS_UNAVAILABLE'],
                 50300,
-                [
+            )->withHeaders([
                     'Cache-Control' => 'no-store',
                     'X-Request-Id' => PlatformRequest::requestId($this->request),
-                ],
-            );
+                ]);
         }
     }
 

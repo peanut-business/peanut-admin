@@ -7,6 +7,7 @@ use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -87,7 +88,7 @@ SQL);
                 'task_key' => $task['task_key'],
                 'target_release_key' => $payload['target_release_key'],
                 'execution_revision' => $revision,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'execution_revision' => $revision,
@@ -267,7 +268,7 @@ SQL);
                 'task_key' => $task['task_key'],
                 'target_release_key' => $lockedExecution['target_release_key'],
                 'recovery_pointer_sha256' => $pointerSha,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'status' => 'succeeded',
@@ -309,7 +310,7 @@ SQL);
                 'task_key' => $taskKey,
                 'failed_step' => $step,
                 'error_code' => $errorCode,
-            ]);
+            ], AuditOutcome::Error, $errorCode);
             return ['task_key' => $taskKey, 'status' => 'dead', 'error_code' => $errorCode];
         });
     }
@@ -837,15 +838,24 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformUpgradeExecutionService::TA
     }
 
     /** @param array<string,mixed> $task @param array<string,mixed> $metadata */
-    private function audit(array $task, string $eventType, string $action, array $metadata): void
+    private function audit(
+        array $task,
+        string $eventType,
+        string $action,
+        array $metadata,
+        AuditOutcome $outcome,
+        ?string $reasonCode,
+    ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
             $eventType,
             $action,
             'upgrade-' . substr((string)$task['task_key'], 4),
             (int)$task['submitted_by_operator_id'],
             (int)$task['account_id'],
             $metadata,
+            $outcome,
+            $reasonCode,
         );
     }
 

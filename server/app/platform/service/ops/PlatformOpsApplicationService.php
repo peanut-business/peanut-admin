@@ -5,6 +5,7 @@ namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 
 /** Container-owned application boundary for all Platform Ops use cases. */
@@ -68,7 +69,7 @@ final readonly class PlatformOpsApplicationService
     public function diagnostics(PlatformContext $context, int $windowMinutes, string $requestId): array
     {
         $artifact = (new PlatformDiagnosticBundleService($this->pdo))->create($context, $windowMinutes);
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
             'platform.ops.diagnostics.downloaded',
             'platform.ops.logs.read',
             $requestId,
@@ -79,6 +80,8 @@ final readonly class PlatformOpsApplicationService
                 'artifact_bytes' => $artifact['bytes'],
                 'window_minutes' => $windowMinutes,
             ],
+            AuditOutcome::Success,
+            null,
         );
         return $artifact;
     }

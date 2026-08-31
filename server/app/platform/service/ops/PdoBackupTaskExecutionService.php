@@ -5,6 +5,7 @@ namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\OpsConsole\Package;
 use RuntimeException;
 use Throwable;
@@ -138,7 +139,7 @@ SQL);
                 $this->audit($task, 'platform.ops.backup.failed', 'backup.fail', [
                     'task_key' => (string)$task['task_key'],
                     'provider_key' => PairedBackupProvider::PROVIDER_KEY,
-                ]);
+                ], AuditOutcome::Error, 'OPS_BACKUP_RUNTIME_FAILED');
             }
         }
     }
@@ -215,7 +216,7 @@ SQL);
             $this->audit($task, 'platform.ops.backup.succeeded', 'backup.succeed', [
                 'task_key' => $taskKey,
                 'provider_key' => PairedBackupProvider::PROVIDER_KEY,
-            ]);
+            ], AuditOutcome::Success, null);
 
             return [
                 'task_key' => $taskKey,
@@ -262,7 +263,7 @@ SQL);
             $this->audit($task, 'platform.ops.backup.failed', 'backup.fail', [
                 'task_key' => $taskKey,
                 'provider_key' => PairedBackupProvider::PROVIDER_KEY,
-            ]);
+            ], AuditOutcome::Error, $errorCode);
             return ['task_key' => $taskKey, 'status' => 'dead', 'last_error_code' => $errorCode];
         });
     }
@@ -303,15 +304,24 @@ SQL);
     }
 
     /** @param array<string,mixed> $task @param array<string,string> $metadata */
-    private function audit(array $task, string $eventType, string $action, array $metadata): void
+    private function audit(
+        array $task,
+        string $eventType,
+        string $action,
+        array $metadata,
+        AuditOutcome $outcome,
+        ?string $reasonCode,
+    ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
             $eventType,
             $action,
             'ops-worker-' . bin2hex(random_bytes(16)),
             (int)$task['submitted_by_operator_id'],
             (int)$task['account_id'],
-            $metadata
+            $metadata,
+            $outcome,
+            $reasonCode,
         );
     }
 

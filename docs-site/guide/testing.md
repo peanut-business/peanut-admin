@@ -20,6 +20,8 @@ description: 按变更路径选择最低充分验证并定位常见失败。
 | Tenant、权限、Schema、部署 | 仓库规则指定的安全/完整性 Gate |
 
 不要为后端局部修改构建所有客户端，也不要用历史成功结果证明新 HEAD。
+客户端检查前按对应 lockfile 在当前 worktree 安装依赖；Platform 使用 `npm ci`，Web 使用
+`pnpm install --frozen-lockfile`，不得复用其他 worktree 的 `node_modules`。
 
 ## 常见排错顺序
 

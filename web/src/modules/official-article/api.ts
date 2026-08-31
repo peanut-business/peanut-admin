@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { PageData } from '@/types/global';
 
 // ─── 文章分类 ──────────────────────────────────────────────────────────────
 export interface ArticleCateRecord {
@@ -26,13 +27,9 @@ export interface ArticleCateListParams {
   export?: 1 | 2;
 }
 
-export interface ArticleCateListRes {
-  lists: ArticleCateRecord[];
-  count: number;
-  page_no: number;
-  page_size: number;
+export type ArticleCateListRes = PageData<ArticleCateRecord> & {
   extend: [];
-}
+};
 
 export function getArticleCateList(params: ArticleCateListParams = {}) {
   return axios.get<ArticleCateListRes>(
@@ -102,13 +99,9 @@ export interface ArticleListParams {
   order_by?: 'asc' | 'desc';
 }
 
-export interface ArticleListRes {
-  lists: ArticleRecord[];
-  count: number;
-  page_no: number;
-  page_size: number;
+export type ArticleListRes = PageData<ArticleRecord> & {
   extend: [];
-}
+};
 
 export function getArticleList(params: ArticleListParams = {}) {
   return axios.get<ArticleListRes>('/api/admin/official.article.list', {

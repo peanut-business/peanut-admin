@@ -42,8 +42,11 @@ final class PlatformSessionController extends BasePlatformController
                 PlatformRequest::requestId($this->request)
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            return $this->fail('Platform refresh credential is invalid.')
-                ->header(['Set-Cookie' => PlatformRefreshCookie::clear()]);
+            throw \app\common\http\ApiProblem::fromEnvelope(
+                'Platform refresh credential is invalid.',
+                ['error_code' => 'PLATFORM_REFRESH_CREDENTIAL_INVALID'],
+                40100,
+            )->withHeaders(['Set-Cookie' => PlatformRefreshCookie::clear()]);
         }
 
         return $this->data($authentication->responseData())

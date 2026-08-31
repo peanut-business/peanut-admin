@@ -7,6 +7,7 @@ use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
@@ -86,7 +87,7 @@ SQL);
                 'package_key' => $payload['package_key'],
                 'operation' => $payload['operation'],
                 'execution_revision' => $revision,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'execution_revision' => $revision,
@@ -217,7 +218,7 @@ SQL);
                 'package_key' => $payload['package_key'],
                 'operation' => $payload['operation'],
                 'recovery_pointer_sha256' => $pointerSha,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'status' => 'succeeded',
@@ -274,7 +275,7 @@ SQL);
                 'failed_step' => $execution['current_step'],
                 'error_code' => $errorCode,
                 'recovery_pointer_sha256' => $pointerSha,
-            ]);
+            ], AuditOutcome::Error, $errorCode);
             return [
                 'task_key' => $taskKey,
                 'status' => 'dead',
@@ -742,15 +743,24 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionSer
     }
 
     /** @param array<string,mixed> $task @param array<string,mixed> $metadata */
-    private function audit(array $task, string $eventType, string $action, array $metadata): void
+    private function audit(
+        array $task,
+        string $eventType,
+        string $action,
+        array $metadata,
+        AuditOutcome $outcome,
+        ?string $reasonCode,
+    ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
             $eventType,
             $action,
             'module-' . substr((string)$task['task_key'], 4),
             (int)$task['submitted_by_operator_id'],
             (int)$task['account_id'],
             $metadata,
+            $outcome,
+            $reasonCode,
         );
     }
 

@@ -200,8 +200,8 @@
     loading.value = true;
     try {
       const params: Record<string, unknown> = {
-        page: pagination.current,
-        limit: pagination.pageSize,
+        page_no: pagination.current,
+        page_size: pagination.pageSize,
       };
       if (filterForm.receiver) params.receiver = filterForm.receiver;
       if (filterForm.channel) params.channel = filterForm.channel;
@@ -215,15 +215,13 @@
           new Date(filterForm.timeRange[1]).getTime() / 1000
         );
       }
-      const res = await getNoticeLogList(
+      const { data } = await getNoticeLogList(
         params as Parameters<typeof getNoticeLogList>[0]
       );
-      const payload = res.data as unknown as {
-        lists: NoticeLogRecord[];
-        count: number;
-      };
-      tableData.value = payload.lists;
-      pagination.total = payload.count;
+      tableData.value = data.lists;
+      pagination.current = data.pageNo;
+      pagination.pageSize = data.pageSize;
+      pagination.total = data.count;
     } finally {
       loading.value = false;
     }

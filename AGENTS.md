@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-28
+> Last updated: 2026-08-31
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -235,6 +235,10 @@ peanut-admin/
   不含 PHP 服务，容器通过 `host.docker.internal:${PHP_PORT}` 访问宿主 API。所有本地
   监听从 `.local/stack.env` 或 `PEANUT_LOCAL_ENV_FILE` 读取，`201xx` 只是项目登记默认值。
   Docker PHP 只用于 local-production-preview、生产构建和明确要求的容器等价 Gate。
+- Platform 的日常依赖安装和静态检查使用登记资源
+  `peanut-admin-host-node24-npm-development`（Node 24.13.0、npm 11.6.2）与
+  `platform/package-lock.json`；每个 worktree 运行自己的 `npm ci`，不得复用其他
+  worktree 的 `node_modules`。
 
 ---
 

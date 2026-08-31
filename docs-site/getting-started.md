@@ -150,9 +150,13 @@ cp .env.example .env
 cp server/.env.example server/.env
 chmod 600 .env server/.env
 composer install --working-dir=server
+npm ci --prefix platform
+pnpm --dir web install --frozen-lockfile
 ```
 
-开发环境同样要选择 `DEPLOYMENT_MODE`，并使用空库和显式初始身份。启动本地栈后，按命令输出的入口登录；不要把核心开发环境当成用户正式安装输入。
+Platform 使用自己的 `package-lock.json`，Web 使用自己的 `pnpm-lock.yaml`；不要在
+worktree 之间复制 `node_modules`。开发环境同样要选择 `DEPLOYMENT_MODE`，并使用空库和
+显式初始身份。启动本地栈后，按命令输出的入口登录；不要把核心开发环境当成用户正式安装输入。
 
 ## 下一步
 

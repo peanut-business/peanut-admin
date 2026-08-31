@@ -9,6 +9,7 @@ use app\platform\service\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Identity\AccountStatus;
 use PeanutAdmin\Kernel\Identity\CredentialStatus;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
@@ -177,12 +178,14 @@ SQL);
                     'Invitation acceptance lost its concurrency guard.'
                 );
             }
-            $this->audit->appendTenantSystem(
+            $this->audit->recordTenantSystem(
                 $tenantId,
                 'tenant.owner-invitation.accepted',
                 'platform.tenant.provision-owner',
                 'owner-invitation:' . (int)$invitation['id'],
-                ['invitation_id' => (int)$invitation['id'], 'member_id' => $member->id]
+                ['invitation_id' => (int)$invitation['id'], 'member_id' => $member->id],
+                AuditOutcome::Success,
+                null,
             );
 
             return [

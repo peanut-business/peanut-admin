@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { PageData } from '@/types/global';
 
 export interface PayConfig {
   wx_pay_status: number;
@@ -75,15 +76,9 @@ export interface RechargeParams {
   file_name?: string;
 }
 
-export interface RechargeListRes {
-  lists: RechargeRecord[];
-  count: number;
+export type RechargeListRes = PageData<RechargeRecord> & {
   extend: [];
-  page_no?: number;
-  page_size?: number;
-  pageNo?: number;
-  pageSize?: number;
-}
+};
 
 export interface RechargeExportInfo {
   count: number;
@@ -172,15 +167,9 @@ export interface RefundListExtend {
   error: number;
 }
 
-export interface RefundListRes {
-  lists: RefundRecord[];
-  count: number;
-  page_no?: number;
-  page_size?: number;
-  pageNo?: number;
-  pageSize?: number;
+export type RefundListRes = PageData<RefundRecord> & {
   extend: RefundListExtend;
-}
+};
 
 export interface RefundParams {
   sn?: string;

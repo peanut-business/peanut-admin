@@ -40,17 +40,12 @@
 
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
+import { getPcIndex } from '~/api/article'
 
 definePageMeta({ layout: 'default' })
 
 const appStore = useAppStore()
 const config = computed(() => appStore.config)
-
-interface Article {
-  id: number; cate_id: number; cate_name: string; title: string
-  image: string; desc: string; author: string; click_num: number
-  collect_num: number; create_time: string
-}
 
 interface DecorationLink {
   target_type: 'shop' | 'article' | 'custom' | 'mini_program'
@@ -71,15 +66,10 @@ interface DecorationComponent {
   styles?: Record<string, string | number>
 }
 
-const runtimeConfig = useRuntimeConfig()
-const apiBase = import.meta.server
-  ? runtimeConfig.apiServerBase
-  : runtimeConfig.public.apiBase
-const { data: indexData } = await useFetch<{ code: number; data: { all?: Article[]; article?: Article[]; decorate?: { data: DecorationComponent[] } } }>(
-  () => `${apiBase}/api/pc/index`
-)
-const articles = computed(() => indexData.value?.data?.all || indexData.value?.data?.article || [])
-const decorate = computed(() => indexData.value?.data?.decorate)
+const indexData = await getPcIndex<{ data: DecorationComponent[] }>(useRequest())
+  .catch(() => null)
+const articles = computed(() => indexData?.all || indexData?.article || [])
+const decorate = computed(() => indexData?.decorate)
 const bannerComponent = computed(() => {
   const list = decorate.value?.data
   return Array.isArray(list) ? list.find((item) => item.name === 'pc-banner') : undefined
