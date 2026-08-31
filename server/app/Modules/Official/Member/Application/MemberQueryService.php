@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Application;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceSnapshot;
+use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberQueries;
+use app\Modules\Official\Member\Model\Member;
 use app\common\http\PageResult;
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\MemberBalanceService;
@@ -18,6 +20,20 @@ final class MemberQueryService implements MemberQueries
 {
     public function __construct(private readonly CurrentExecutionContext $executionContext)
     {
+    }
+
+    public function identity(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+    ): ?MemberIdentitySnapshot {
+        return $this->identitySnapshot($context, $memberId, false);
+    }
+
+    public function lockedIdentity(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+    ): ?MemberIdentitySnapshot {
+        return $this->identitySnapshot($context, $memberId, true);
     }
 
     public function memberFields(
@@ -75,6 +91,31 @@ final class MemberQueryService implements MemberQueries
             $pageResult->total,
             $pageResult->page,
             $pageResult->pageSize,
+        );
+    }
+
+    private function identitySnapshot(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+        bool $lock,
+    ): ?MemberIdentitySnapshot {
+        $query = MemberTenantRepository::members($context)->where('id', $memberId);
+        if ($lock) {
+            $query->lock(true);
+        }
+        $member = $query->findOrEmpty();
+        return $member->isEmpty() ? null : self::snapshot($member);
+    }
+
+    private static function snapshot(Member $member): MemberIdentitySnapshot
+    {
+        return new MemberIdentitySnapshot(
+            (int)$member->id,
+            (string)$member->sn,
+            (string)$member->nickname,
+            (string)$member->avatar,
+            (string)$member->mobile,
+            (int)$member->status,
         );
     }
 }
