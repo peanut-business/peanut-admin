@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\common\service\runtime\OperationalLog;
 use PDO;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
@@ -39,9 +40,25 @@ final class TenantTaskWorker extends ContextualCommand
             );
             $output->writeln(sprintf('[tenant-task:work] tenant=%d processed=%d', (int)$raw, $processed));
             return 0;
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            OperationalLog::error('tenant_task_worker_startup_failed', [
+                'tenant_id' => (int)$raw,
+                'failure_code' => self::startupFailureCode($exception),
+            ]);
             $output->writeln('[tenant-task:work] failed');
             return 1;
         }
+    }
+
+    private static function startupFailureCode(\Throwable $exception): string
+    {
+        return in_array($exception->getMessage(), [
+            'ASYNC_SIGNING_KEY_INVALID',
+            'MODULE_CONTEXT_INVALID',
+            'TASK_AUTHORIZATION_DUPLICATE',
+            'TASK_AUTHORIZATION_INVALID',
+            'TASK_JOB_INVALID',
+            'TASK_WORKER_DEFINITION_REQUIRED',
+        ], true) ? $exception->getMessage() : 'TENANT_TASK_WORKER_STARTUP_FAILED';
     }
 }

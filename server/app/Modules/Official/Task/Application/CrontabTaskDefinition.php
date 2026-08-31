@@ -134,7 +134,12 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
             $scope->contextIdentity(),
         );
 
-        $this->executionContexts->run(ExecutionContext::system($system), function () use ($scope, $moduleKey, $command, $params): void {
+        $task = $this->currentExecution->get()->attributes;
+        $this->executionContexts->run(ExecutionContext::system($system, [
+            'job_key' => $task['job_key'] ?? null,
+            'attempt_number' => $task['attempt_number'] ?? null,
+            'handler_key' => $task['handler_key'] ?? null,
+        ]), function () use ($scope, $moduleKey, $command, $params): void {
             $modules = new ModuleExecutionBoundary($this->pdo, $this->currentExecution);
             $modules->assertScheduled('official.task');
             $modules->assertScheduled($moduleKey);
