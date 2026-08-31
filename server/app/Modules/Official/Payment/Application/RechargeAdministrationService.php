@@ -6,7 +6,6 @@ namespace app\Modules\Official\Payment\Application;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
 use app\Modules\Official\Member\Contracts\MemberContracts;
 use DateTimeImmutable;
-use PDO;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\RefundEnum;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
@@ -20,7 +19,6 @@ use app\Modules\Official\Payment\Model\RefundLog;
 use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\MemberBalanceService;
-use app\common\service\idempotency\IdempotencyRuntimeFactory;
 use app\common\service\finance\FinanceTenantContext;
 use app\common\service\finance\FinanceTenantRepository;
 use app\common\service\payment\PaymentRetryLock;
@@ -37,9 +35,10 @@ class RechargeAdministrationService extends ApplicationService
     private const EXPORT_MAX_ROWS = 25000;
     private const EXPORT_DEFAULT_NAME = '充值记录';
 
-    public function __construct(private readonly XlsxExportService $xlsxExport)
-    {
-    }
+    public function __construct(
+        private readonly XlsxExportService $xlsxExport,
+        private readonly IdempotentCommandExecutor $refundIdempotency,
+    ) {}
 
     /**
      * @return PageResult|array|false
@@ -86,7 +85,7 @@ class RechargeAdministrationService extends ApplicationService
                 ['extend' => []],
             );
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
+            $this->setError($e->getMessage());
             return false;
         }
     }
@@ -104,7 +103,7 @@ class RechargeAdministrationService extends ApplicationService
     {
         try {
             $prepared = Db::transaction(function () use ($context, $params, $adminId, $idempotencyKey): array {
-                $idempotency = self::refundIdempotency();
+                $idempotency = $this->refundIdempotency;
                 /** @var RechargeOrder $order */
                 $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$params['recharge_id']);
                 self::assertRefundableOrder($order);
@@ -167,7 +166,7 @@ class RechargeAdministrationService extends ApplicationService
                 return compact('idempotency', 'lease', 'order', 'record', 'log') + ['replay' => false];
             });
         } catch (\Throwable $e) {
-            self::setError($e->getMessage());
+            $this->setError($e->getMessage());
             return [false, $e->getMessage()];
         }
 
@@ -181,9 +180,7 @@ class RechargeAdministrationService extends ApplicationService
         $log = $prepared['log'];
 
         // 渠道调用必须发生在本地原子业务事务提交后，避免渠道已受理而本地整体回滚。
-        $result = self::requestGatewayRefund($context, $order, $record, $log);
-        self::finishRefundIdempotency($idempotency, $lease, $result);
-        return $result;
+        return $this->requestGatewayRefund($context, $order, $record, $log, $idempotency, $lease);
     }
 
     /**
@@ -196,7 +193,7 @@ class RechargeAdministrationService extends ApplicationService
         $retryLock = self::retryLockName($context, $recordId);
         if (!self::acquireRetryLock($retryLock)) {
             $message = '退款正在处理中，请勿重复操作';
-            self::setError($message);
+            $this->setError($message);
             return [false, $message];
         }
 
@@ -235,12 +232,12 @@ class RechargeAdministrationService extends ApplicationService
                     return [$order, $record, $log];
                 });
             } catch (\Throwable $e) {
-                self::setError($e->getMessage());
+                $this->setError($e->getMessage());
                 return [false, $e->getMessage()];
             }
 
             // 重试同样先提交 ERROR -> ING 和本次日志，再在事务外请求渠道。
-            return self::requestGatewayRefund($context, $order, $record, $log);
+            return $this->requestGatewayRefund($context, $order, $record, $log);
         } finally {
             self::releaseRetryLock($retryLock);
         }
@@ -311,15 +308,6 @@ class RechargeAdministrationService extends ApplicationService
         return $amountCents;
     }
 
-    private static function refundIdempotency(): IdempotentCommandExecutor
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('数据库连接不可用');
-        }
-        return IdempotencyRuntimeFactory::forPdo($pdo);
-    }
-
     private static function refundRequestHash(int $orderId, ?int $amountCents): string
     {
         return hash('sha256', json_encode([
@@ -376,11 +364,13 @@ class RechargeAdministrationService extends ApplicationService
     }
 
     /** @return array{0:bool,1:string} */
-    private static function requestGatewayRefund(
+    private function requestGatewayRefund(
         object $context,
         RechargeOrder $order,
         RefundRecord $record,
-        RefundLog $log
+        RefundLog $log,
+        ?IdempotentCommandExecutor $idempotency = null,
+        ?IdempotencyResult $lease = null,
     ): array {
         $result = null;
         $gatewayError = null;
@@ -392,7 +382,7 @@ class RechargeAdministrationService extends ApplicationService
             };
             $result = PaymentServiceFactory::forTenant($context, $channel)->refund($channel)->refund(
                 $order->getData(),
-                (string)$log->sn,
+                (string)$record->sn,
                 MemberBalanceService::moneyToCents((string)$record->refund_amount)
             );
         } catch (\Throwable $e) {
@@ -409,16 +399,23 @@ class RechargeAdministrationService extends ApplicationService
             }
         }
 
-        // 渠道请求完成后使用新的短事务锁定本次记录和日志，原子落下结果。
+        $businessResult = $gatewayError === null
+            ? [true, '操作成功']
+            : [false, $gatewayError];
+
+        // 渠道请求完成后使用新的短事务锁定本次记录和日志，原子落下业务结果和幂等回执。
         try {
-            $message = Db::transaction(function () use (
+            Db::transaction(function () use (
                 $context,
                 $record,
                 $log,
                 $order,
                 $gatewayError,
                 $result,
-            ): string {
+                $idempotency,
+                $lease,
+                $businessResult,
+            ): void {
                 /** @var RefundRecord $lockedRecord */
                 $lockedRecord = FinanceTenantRepository::records($context)->lock(true)->findOrEmpty((int)$record->id);
                 /** @var RefundLog $lockedLog */
@@ -447,20 +444,18 @@ class RechargeAdministrationService extends ApplicationService
                 $lockedRecord->refund_msg = $message;
                 $lockedLog->save();
                 $lockedRecord->save();
-                return $message;
+                self::finishRefundIdempotency($idempotency, $lease, $businessResult);
             });
         } catch (\Throwable $e) {
             $message = $e->getMessage();
-            self::setError($message);
+            $this->setError($message);
             return [false, $message];
         }
 
-        if ($gatewayError !== null) {
-            self::setError($message);
-            return [false, $message];
+        if (!$businessResult[0]) {
+            $this->setError($businessResult[1]);
         }
-
-        return [true, '操作成功'];
+        return $businessResult;
     }
 
     private static function encodeGatewayResult(mixed $result): string

@@ -82,7 +82,7 @@ class RefundReconcile extends ContextualCommand
                 };
                 $result = PaymentServiceFactory::forTenant($scope, $channel)->refund($channel)->query(
                     $order->getData(),
-                    (string)$log->sn
+                    (string)$record->sn
                 );
             } catch (\Throwable $e) {
                 OperationalLog::warning('refund_reconcile_gateway_query_failed', $diagnostics + [
