@@ -19,6 +19,7 @@ use PeanutAdmin\TaskJob\Persistence\PdoTaskJobRepository;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionProvider;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionRegistry;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PDO;
 
 final readonly class PdoTaskJobRuntime implements TaskJobRuntime
@@ -26,6 +27,8 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
     public function __construct(
         private PDO $pdo,
         private string $signingKey,
+        private ExecutionContextStore $executionContexts,
+        private CurrentExecutionContext $currentExecution,
     ) {
         if (strlen($this->signingKey) < 32) {
             throw new \RuntimeException('ASYNC_SIGNING_KEY_INVALID');
@@ -46,17 +49,29 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
         return new TaskJobService($this->repository());
     }
 
+    public function enqueueCrontab(TenantScope $scope, int $scheduleId, string $contextIdentity): void
+    {
+        $definition = $this->crontabs();
+        $this->publisher($definition)->publish(
+            $definition->submissionContext($scope, $contextIdentity),
+            CrontabTaskDefinition::TASK_TYPE,
+            ['schedule_id' => $scheduleId, 'context_identity' => $contextIdentity],
+            'crontab:' . hash('sha256', $contextIdentity),
+        );
+    }
+
     public function runTenant(int $tenantId, string $workerId, TaskWorkerDefinition ...$definitions): int
     {
         if ($tenantId < 1) {
             throw new \RuntimeException('ASYNC_TENANT_INVALID');
         }
 
+        $definitions[] = $this->crontabs();
         $handlers = [];
         foreach ($definitions as $definition) {
             $handlers[] = new ModuleAwareTaskHandler(
-                new ModuleExecutionBoundary($this->pdo, app(CurrentExecutionContext::class)),
-                app(ExecutionContextStore::class),
+                new ModuleExecutionBoundary($this->pdo, $this->currentExecution),
+                $this->executionContexts,
                 $definition->ownerModuleKey(),
                 $definition->handler(),
             );
@@ -85,5 +100,10 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
     private function envelopes(): TrustedEnvelopeCodec
     {
         return new TrustedEnvelopeCodec($this->signingKey);
+    }
+
+    private function crontabs(): CrontabTaskDefinition
+    {
+        return new CrontabTaskDefinition($this->pdo, $this->executionContexts, $this->currentExecution);
     }
 }

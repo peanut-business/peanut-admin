@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\common\execution\ContextualCommand;
+use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\Modules\Official\Task\Contracts\TaskScheduler;
+use PDO;
 use think\console\Input;
 use think\console\Output;
 use think\facade\Db;
@@ -28,7 +30,7 @@ class Crontab extends ContextualCommand
             return 0;
         }
         try {
-            (new TaskModuleProvider())->scheduler()->runDue(time());
+            self::scheduler()->runDue(time());
         } finally {
             self::releaseSchedulerLock();
         }
@@ -39,7 +41,16 @@ class Crontab extends ContextualCommand
     /** Compatibility entry for explicit trusted scheduler callers. */
     public static function start(TenantScope $scope, array $item): void
     {
-        (new TaskModuleProvider())->scheduler()->start($scope, $item);
+        self::scheduler()->start($scope, $item);
+    }
+
+    private static function scheduler(): TaskScheduler
+    {
+        $pdo = Db::connect()->connect();
+        if (!$pdo instanceof PDO) {
+            throw new \RuntimeException('TASK_DATABASE_CONNECTION_UNAVAILABLE');
+        }
+        return TaskImportExportRuntimeFactory::scheduler($pdo);
     }
 
     private static function acquireSchedulerLock(): bool
