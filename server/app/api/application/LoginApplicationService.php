@@ -5,10 +5,10 @@ namespace app\api\application;
 
 use app\Modules\Official\Notification\ModuleProvider;
 use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\api\service\UserTokenService;
 use app\common\application\ApplicationService;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\Modules\Official\Member\Model\Member;
 use app\common\service\FileService;
 use app\common\service\config\TenantApplicationSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -124,7 +124,7 @@ class LoginApplicationService extends ApplicationService
         }
     }
 
-    private static function loginResult(Member $member, bool $recordLogin = true): array
+    private static function loginResult(MemberIdentitySnapshot $member, bool $recordLogin = true): array
     {
         if ($recordLogin) {
             throw new \LogicException('Member login must be recorded by MemberIdentityCommands');

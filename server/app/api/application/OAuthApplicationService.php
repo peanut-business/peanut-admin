@@ -5,20 +5,19 @@ namespace app\api\application;
 
 use app\Modules\Official\Notification\ModuleProvider;
 use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\application\ApplicationService;
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
 use app\common\persistence\TransactionalExecution;
-use app\Modules\Official\Member\Model\Member;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\oauth\OAuthTenantContext;
 use app\common\service\oauth\OAuthTenantRepository;
 use app\common\service\oauth\WechatOAuthTransport;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
-use app\common\service\member\MemberTenantRepository;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
@@ -127,8 +126,8 @@ class OAuthApplicationService extends ApplicationService
             if (!in_array($scene, ['mnp', 'oa'], true)) {
                 throw new \RuntimeException('该微信场景不支持账号绑定');
             }
-            $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
-            if ($member->isEmpty() || !(int)$member->status) {
+            $member = (new MemberModuleProvider())->queries()->identity($context, $memberId);
+            if ($member === null || !$member->status) {
                 throw new \RuntimeException('用户不存在或已禁用');
             }
             $transport ??= new WechatOAuthTransport();
@@ -164,9 +163,11 @@ class OAuthApplicationService extends ApplicationService
                 if ($ticket->isEmpty() || !empty($ticket->used_at) || (int)$ticket->expires_at < time()) {
                     throw new \RuntimeException('登录补全票据无效或已过期');
                 }
-                /** @var Member $member */
-                $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty((int)$ticket->member_id);
-                if ($member->isEmpty() || !(int)$member->status) {
+                $member = (new MemberModuleProvider())->queries()->lockedIdentity(
+                    $context,
+                    (int)$ticket->member_id,
+                );
+                if ($member === null || !$member->status) {
                     throw new \RuntimeException('用户不存在或已禁用');
                 }
 
@@ -188,11 +189,11 @@ class OAuthApplicationService extends ApplicationService
                     if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                         throw new \RuntimeException('手机号格式错误');
                     }
-                    $occupied = MemberTenantRepository::members($context)->where('mobile', $mobile)
-                        ->where('id', '<>', (int)$member->id)->lock(true)->findOrEmpty();
-                    if (!$occupied->isEmpty()) {
-                        throw new \RuntimeException('手机号已被其他账号绑定');
-                    }
+                    (new MemberModuleProvider())->identityCommands()->assertMobileAvailable(
+                        $context,
+                        $member->id,
+                        $mobile,
+                    );
                     $result = (new ModuleProvider())->verification()->verifyCode(
                         $context,
                         NoticeSceneEnum::BIND_MOBILE,
@@ -204,20 +205,23 @@ class OAuthApplicationService extends ApplicationService
                     }
                     (new MemberModuleProvider())->identityCommands()->bindVerifiedMobile(
                         $context,
-                        (int)$member->id,
+                        $member->id,
                         $mobile,
                     );
                 }
 
                 (new MemberModuleProvider())->profileCommands()->completeOAuthProfile(
                     $context,
-                    (int)$member->id,
+                    $member->id,
                     $nickname,
                     $avatar,
                     time(),
                     request()->ip(),
                 );
-                $member = MemberTenantRepository::members($context)->findOrEmpty((int)$member->id);
+                $member = (new MemberModuleProvider())->queries()->identity($context, $member->id);
+                if ($member === null) {
+                    throw new \RuntimeException('用户不存在');
+                }
                 $ticket->used_at = time();
                 $ticket->save();
                 return self::fullLoginResult($member);
@@ -236,20 +240,20 @@ class OAuthApplicationService extends ApplicationService
     ): array
     {
         [$member, $created] = self::resolveIdentity($context, $scene, $profile, null, $binding);
-        if (!(int)$member->status) {
+        if (!$member->status) {
             throw new \RuntimeException('账号已被禁用');
         }
         $needProfile = $created && $scene === 'mnp';
         $needMobile = (int)TenantApplicationSettingService::login($context)['coerce_mobile'] === 1
-            && trim((string)$member->mobile) === '';
+            && trim($member->mobile) === '';
         if ($needProfile || $needMobile) {
             return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
         }
-        (new MemberModuleProvider())->identityCommands()->recordLogin($context, (int)$member->id, request()->ip());
+        (new MemberModuleProvider())->identityCommands()->recordLogin($context, $member->id, request()->ip());
         return self::fullLoginResult($member);
     }
 
-    /** @return array{0:Member,1:bool} */
+    /** @return array{0:MemberIdentitySnapshot,1:bool} */
     private static function resolveIdentity(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $scene,
@@ -284,11 +288,14 @@ class OAuthApplicationService extends ApplicationService
                         if ($bindingMemberId !== null && (int)$identity->member_id !== $bindingMemberId) {
                             throw new \RuntimeException('微信身份已绑定其他用户');
                         }
-                        $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty((int)$identity->member_id);
-                        if ($member->isEmpty()) {
+                        $member = (new MemberModuleProvider())->queries()->lockedIdentity(
+                            $context,
+                            (int)$identity->member_id,
+                        );
+                        if ($member === null) {
                             throw new \RuntimeException('微信身份关联用户不存在');
                         }
-                        $principalId = self::assertPrincipalOwnership($context, $profile, (int)$member->id);
+                        $principalId = self::assertPrincipalOwnership($context, $profile, $member->id);
                         if ($principalId !== null && (int)$identity->principal_id !== $principalId) {
                             $identity->principal_id = $principalId;
                             $identity->save();
@@ -308,8 +315,8 @@ class OAuthApplicationService extends ApplicationService
 
                     $created = false;
                     if ($bindingMemberId !== null) {
-                        $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty($bindingMemberId);
-                        if ($member->isEmpty()) {
+                        $member = (new MemberModuleProvider())->queries()->lockedIdentity($context, $bindingMemberId);
+                        if ($member === null) {
                             throw new \RuntimeException('用户不存在');
                         }
                         if ($principal !== null && !$principal->isEmpty()
@@ -317,8 +324,11 @@ class OAuthApplicationService extends ApplicationService
                             throw new \RuntimeException('微信联合身份已归属其他用户，不能自动合并账号');
                         }
                     } elseif ($principal !== null && !$principal->isEmpty()) {
-                        $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty((int)$principal->member_id);
-                        if ($member->isEmpty()) {
+                        $member = (new MemberModuleProvider())->queries()->lockedIdentity(
+                            $context,
+                            (int)$principal->member_id,
+                        );
+                        if ($member === null) {
                             throw new \RuntimeException('微信联合身份关联用户不存在');
                         }
                     } else {
@@ -334,13 +344,13 @@ class OAuthApplicationService extends ApplicationService
                             'provider' => self::PROVIDER,
                             'union_scope' => self::UNION_SCOPE,
                             'union_id' => $profile->unionId(),
-                            'member_id' => (int)$member->id,
+                            'member_id' => $member->id,
                         ]);
                     }
                     $sameClient = OAuthTenantRepository::identities($context)->where([
                         'provider' => self::PROVIDER,
                         'client_key' => $clientKey,
-                        'member_id' => (int)$member->id,
+                        'member_id' => $member->id,
                     ])->lock(true)->findOrEmpty();
                     if (!$sameClient->isEmpty()) {
                         throw new \RuntimeException('当前用户已绑定该微信应用的其他身份');
@@ -352,7 +362,7 @@ class OAuthApplicationService extends ApplicationService
                         'principal_id' => $principal !== null && !$principal->isEmpty()
                             ? (int)$principal->id
                             : null,
-                        'member_id' => (int)$member->id,
+                        'member_id' => $member->id,
                         'terminal' => (int)$sceneMeta['terminal'],
                     ]);
                     $member = self::updateProfile($context, $member, $profile);
@@ -396,7 +406,7 @@ class OAuthApplicationService extends ApplicationService
         TenantContext|TenantSystemContext $context,
         OAuthProfile $profile,
         int $terminal
-    ): Member
+    ): MemberIdentitySnapshot
     {
         return (new MemberModuleProvider())->identityCommands()->createOAuthMember($context, [
             'nickname' => $profile->nickname(),
@@ -409,17 +419,21 @@ class OAuthApplicationService extends ApplicationService
 
     private static function updateProfile(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
-        Member $member,
+        MemberIdentitySnapshot $member,
         OAuthProfile $profile,
-    ): Member
+    ): MemberIdentitySnapshot
     {
         (new MemberModuleProvider())->profileCommands()->fillOAuthProfile(
             $context,
-            (int)$member->id,
+            $member->id,
             $profile->nickname(),
             $profile->avatar(),
         );
-        return MemberTenantRepository::members($context)->findOrEmpty((int)$member->id);
+        $updated = (new MemberModuleProvider())->queries()->identity($context, $member->id);
+        if ($updated === null) {
+            throw new \RuntimeException('用户不存在');
+        }
+        return $updated;
     }
 
     private static function defaultAvatar(TenantContext|TenantSystemContext $context): string
@@ -430,7 +444,7 @@ class OAuthApplicationService extends ApplicationService
 
     private static function completionResult(
         TenantContext|TenantSystemContext $context,
-        Member $member,
+        MemberIdentitySnapshot $member,
         bool $needProfile,
         bool $needMobile,
         ExternalTenantBinding $binding,
@@ -440,7 +454,7 @@ class OAuthApplicationService extends ApplicationService
         OAuthTenantRepository::createCompletionTicket($context, [
             'token_hash' => hash('sha256', $raw),
             'binding_id' => $binding->id,
-            'member_id' => (int)$member->id,
+            'member_id' => $member->id,
             'need_profile' => $needProfile ? 1 : 0,
             'need_mobile' => $needMobile ? 1 : 0,
             'expires_at' => time() + self::COMPLETION_TTL,
@@ -456,23 +470,23 @@ class OAuthApplicationService extends ApplicationService
         ];
     }
 
-    private static function fullLoginResult(Member $member): array
+    private static function fullLoginResult(MemberIdentitySnapshot $member): array
     {
         return [
             'completed' => true,
-            'token' => UserTokenService::createToken((int)$member->id),
+            'token' => UserTokenService::createToken($member->id),
             'member' => self::memberSummary($member),
         ];
     }
 
-    private static function memberSummary(Member $member): array
+    private static function memberSummary(MemberIdentitySnapshot $member): array
     {
         return [
-            'id' => (int)$member->id,
-            'sn' => (string)$member->sn,
-            'nickname' => (string)$member->nickname,
-            'avatar' => \app\common\service\FileService::getFileUrl((string)$member->avatar),
-            'mobile' => (string)$member->mobile,
+            'id' => $member->id,
+            'sn' => $member->sn,
+            'nickname' => $member->nickname,
+            'avatar' => \app\common\service\FileService::getFileUrl($member->avatar),
+            'mobile' => $member->mobile,
         ];
     }
 

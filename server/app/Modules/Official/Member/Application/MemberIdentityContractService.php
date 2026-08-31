@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Application;
 
+use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\AuthenticatedMemberContext;
@@ -28,7 +29,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         ]);
     }
 
-    public function login(TenantSystemContext $context, string $identifier, string $password, string $loginIp): Member
+    public function login(TenantSystemContext $context, string $identifier, string $password, string $loginIp): MemberIdentitySnapshot
     {
         $member = MemberTenantRepository::members($context)->where(function ($query) use ($identifier): void {
             $query->where('account', $identifier)->whereOr('mobile', $identifier);
@@ -45,7 +46,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         $member->login_time = time();
         $member->login_ip = $loginIp;
         $member->save();
-        return $member;
+        return self::snapshot($member);
     }
 
     public function loginByVerifiedMobile(
@@ -53,7 +54,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         string $mobile,
         string $avatar,
         string $loginIp,
-    ): Member {
+    ): MemberIdentitySnapshot {
         $member = MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty();
         if ($member->isEmpty()) {
             $sn = Member::generateSn($context);
@@ -73,7 +74,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         $member->login_time = time();
         $member->login_ip = $loginIp;
         $member->save();
-        return $member;
+        return self::snapshot($member);
     }
 
     public function resetPasswordByVerifiedMobile(
@@ -101,7 +102,8 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         int $memberId,
         string $mobile,
     ): void {
-        if (MemberTenantRepository::members($context)->where('mobile', $mobile)->where('id', '<>', $memberId)->count()) {
+        if (!MemberTenantRepository::members($context)->where('mobile', $mobile)
+            ->where('id', '<>', $memberId)->lock(true)->findOrEmpty()->isEmpty()) {
             throw new \RuntimeException('手机号已被其他账号绑定');
         }
     }
@@ -127,13 +129,13 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         }
     }
 
-    public function createOAuthMember(TenantContext|TenantSystemContext $context, array $profile): Member
+    public function createOAuthMember(TenantContext|TenantSystemContext $context, array $profile): MemberIdentitySnapshot
     {
         $sn = Member::generateSn($context);
         do {
             $account = 'wx_' . strtolower(bin2hex(random_bytes(6)));
         } while (MemberTenantRepository::members($context)->withTrashed()->where('account', $account)->count() > 0);
-        return MemberTenantRepository::createMember($context, [
+        $member = MemberTenantRepository::createMember($context, [
             'sn' => $sn,
             'account' => $account,
             'password' => '',
@@ -148,6 +150,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
             'is_new_user' => 1,
             'status' => 1,
         ]);
+        return self::snapshot($member);
     }
 
     public function recordLogin(TenantContext|TenantSystemContext $context, int $memberId, string $loginIp): void
@@ -176,5 +179,17 @@ final class MemberIdentityContractService implements MemberIdentityCommands
     {
         $salt = substr(md5(uniqid((string)mt_rand(), true)), 0, 8);
         return md5(md5($password) . $salt) . ':' . $salt;
+    }
+
+    private static function snapshot(Member $member): MemberIdentitySnapshot
+    {
+        return new MemberIdentitySnapshot(
+            (int)$member->id,
+            (string)$member->sn,
+            (string)$member->nickname,
+            (string)$member->avatar,
+            (string)$member->mobile,
+            (int)$member->status,
+        );
     }
 }
