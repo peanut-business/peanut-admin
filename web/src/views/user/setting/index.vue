@@ -18,12 +18,12 @@
                 :label="$t('userSetting.label.avatar')"
               >
                 <el-upload
-                  :action="uploadAction"
-                  :headers="uploadHeaders"
+                  :http-request="
+                    (options: UploadRequestOptions) => uploadFile(10, options)
+                  "
                   :show-file-list="false"
                   accept="image/*"
                   :on-success="onAvatarSuccess"
-                  :on-error="onAvatarError"
                 >
                   <el-avatar :size="88" shape="square" :src="avatarUrl">
                     <el-icon><Plus /></el-icon>
@@ -136,11 +136,16 @@
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+  import {
+    ElMessage,
+    type FormInstance,
+    type FormRules,
+    type UploadRequestOptions,
+  } from 'element-plus';
   import { Plus } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import { useUserStore } from '@/store';
-  import { getToken } from '@/utils/auth';
+  import { uploadFile, type FileRecord } from '@/modules/official-file/api';
   import {
     getAdminSelf,
     editAdminSelf,
@@ -151,13 +156,6 @@
   const userStore = useUserStore();
   const { loading, setLoading } = useLoading(true);
 
-  const uploadAction = '/api/admin/official.file.upload.image';
-  const uploadHeaders = computed(() => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-  });
 
   const username = ref('');
   const basicRef = ref<FormInstance>();
@@ -232,17 +230,10 @@
   };
   fetchData();
 
-  const onAvatarSuccess = (res: any) => {
-    if (!res || res.code !== 20000) {
-      ElMessage.error(res?.msg || t('userSetting.avatar.uploadFail'));
-      return;
-    }
-    basicForm.avatar = res.data.uri;
-    basicForm.avatarUrl = res.data.url;
+  const onAvatarSuccess = (file: FileRecord) => {
+    basicForm.avatar = file.uri;
+    basicForm.avatarUrl = file.url;
     ElMessage.success(t('userSetting.avatar.uploadSuccess'));
-  };
-  const onAvatarError = () => {
-    ElMessage.error(t('userSetting.avatar.uploadFail'));
   };
 
   const saveBasic = async () => {

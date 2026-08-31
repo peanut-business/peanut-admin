@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { UploadProgressEvent, UploadRequestOptions } from 'element-plus';
 
 export interface ListRes<T> {
   lists: T[];
@@ -74,9 +75,25 @@ export function deleteFile(ids: number[]) {
   return axios.post('/api/admin/official.file.delete', { ids });
 }
 
-// 上传地址（供上传组件直接使用）
-export const uploadUrl: Record<FileType, string> = {
+const uploadUrl: Record<FileType, string> = {
   10: '/api/admin/official.file.upload.image',
   20: '/api/admin/official.file.upload.video',
   30: '/api/admin/official.file.upload.file',
 };
+
+export function uploadFile(type: FileType, options: UploadRequestOptions) {
+  const form = new FormData();
+  form.append(options.filename || 'file', options.file);
+  Object.entries(options.data || {}).forEach(([key, value]) =>
+    form.append(key, value as string | Blob)
+  );
+  return axios
+    .post<FileRecord>(uploadUrl[type], form, {
+      onUploadProgress: (event) =>
+        options.onProgress({
+          ...event,
+          percent: event.total ? (event.loaded / event.total) * 100 : 0,
+        } as UploadProgressEvent),
+    })
+    .then(({ data }) => data);
+}

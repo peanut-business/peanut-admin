@@ -65,13 +65,14 @@
             <el-space>
               <el-upload
                 v-permission="[uploadPermission]"
-                :action="uploadUrl[activeType]"
-                :headers="uploadHeaders"
+                :http-request="
+                  (options: UploadRequestOptions) =>
+                    uploadFile(activeType, options)
+                "
                 :data="{ cid: String(currentCid === '' ? 0 : currentCid) }"
                 :show-file-list="false"
                 :accept="acceptMap[activeType]"
                 @success="onUploadSuccess"
-                @error="onUploadError"
               >
                 <template #trigger>
                   <el-button type="primary">
@@ -303,9 +304,8 @@
   import { computed, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
   import { ElMessage } from 'element-plus';
-  import type { FormInstance } from 'element-plus';
+  import type { FormInstance, UploadRequestOptions } from 'element-plus';
   import { Delete, Plus, Search } from '@element-plus/icons-vue';
-  import { getToken } from '@/utils/auth';
   import useLoading from '@/hooks/loading';
   import {
     getFileCateList,
@@ -316,7 +316,7 @@
     moveFile,
     renameFile,
     deleteFile,
-    uploadUrl,
+    uploadFile,
     type FileType,
     type FileCateRecord,
     type FileRecord,
@@ -326,12 +326,6 @@
   const { loading, setLoading } = useLoading(false);
 
   const activeType = ref<FileType>(10);
-  const uploadHeaders = computed(() => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-  });
   const acceptMap: Record<FileType, string> = {
     10: 'image/*',
     20: 'video/*',
@@ -418,17 +412,9 @@
     else checkedIds.value.push(id);
   };
   // ---- 上传回调 ----
-  const onUploadSuccess = (fileItem: any) => {
-    const res = fileItem?.response ?? fileItem;
-    if (res && res.code !== 20000) {
-      ElMessage.error(res.msg || t('systemFile.tip.uploadFail'));
-      return;
-    }
+  const onUploadSuccess = () => {
     ElMessage.success(t('systemFile.tip.uploadOk'));
     fetchFiles(pagination.current);
-  };
-  const onUploadError = () => {
-    ElMessage.error(t('systemFile.tip.uploadFail'));
   };
 
   // ---- 分类弹窗 ----
