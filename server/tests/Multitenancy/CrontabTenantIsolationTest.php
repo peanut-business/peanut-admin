@@ -6,6 +6,7 @@ use app\Modules\Official\Task\Application\CrontabTaskDefinition;
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\common\enum\CrontabEnum;
 use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\crontab\CrontabTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -180,9 +181,18 @@ SQL);
     $setWindow->execute([$previousWindow, $betaId]);
 
     $dispatches = [];
-    CrontabTaskDefinition::useDispatcherForTest(static function (string $command, array $params) use (&$dispatches): void {
+    $taskTraces = [];
+    CrontabTaskDefinition::useDispatcherForTest(static function (string $command, array $params) use (&$dispatches, &$taskTraces): void {
         $scope = ScheduledTenantContext::require();
         $dispatches[] = [$command, $scope->tenantId(), $scope->contextIdentity(), $params];
+        $current = ExecutionContextAccess::current();
+        $taskTraces[] = [
+            'job_key' => $current?->attributes['job_key'] ?? null,
+            'attempt_number' => $current?->attributes['attempt_number'] ?? null,
+            'handler_key' => $current?->attributes['handler_key'] ?? null,
+            'tenant_id' => $current?->tenantId(),
+            'request_id' => $current?->requestId,
+        ];
         if ($scope->tenantId() === 202) {
             throw new RuntimeException('fixture retry');
         }
@@ -192,7 +202,7 @@ SQL);
     $scheduler->runDue($windowNow);
 
     $jobs = $pdo->query(<<<'SQL'
-SELECT id, tenant_id, task_type, status, attempt_count, max_attempts, last_error_code
+SELECT id, job_key, handler_key, tenant_id, task_type, status, attempt_count, max_attempts, last_error_code
 FROM pa_task_job ORDER BY tenant_id
 SQL)->fetchAll();
     expectCrontabTenant(count($jobs) === 2, 'due schedules did not create exactly one Task Job per Tenant');
@@ -219,6 +229,7 @@ SQL)->fetchAll();
         'scheduled handlers did not preserve two isolated Tenant contexts',
     );
     expectCrontabTenant(ScheduledTenantContext::current() === null, 'scheduled Tenant context leaked after Task handler');
+    expectCrontabTenant(app(ExecutionContextStore::class)->isEmpty(), 'Task execution context leaked after handler completion');
     expectCrontabTenant(
         (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job_attempt WHERE tenant_id=101') ->fetchColumn() === 1
             && (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job_attempt WHERE tenant_id=202')->fetchColumn() === 1,
@@ -258,6 +269,15 @@ SQL)->fetchAll();
         )->fetchAll(PDO::FETCH_COLUMN),
     );
     expectCrontabTenant($backoffs === [5, 10], 'Task Runtime exponential backoff policy changed');
+    $betaTrace = array_values(array_filter($taskTraces, static fn(array $trace): bool => $trace['tenant_id'] === 202));
+    expectCrontabTenant(
+        count($betaTrace) === 3
+            && array_values(array_unique(array_column($betaTrace, 'job_key'))) === [$jobs[1]['job_key']]
+            && array_column($betaTrace, 'attempt_number') === [1, 2, 3]
+            && array_values(array_unique(array_column($betaTrace, 'handler_key'))) === [$jobs[1]['handler_key']]
+            && array_values(array_unique(array_column($betaTrace, 'request_id'))) === [$dispatches[1][2]],
+        'Task trace lost stable job identity, distinct attempts, handler, Tenant or request trace',
+    );
 
     $dispatchCount = count($dispatches);
     expectCrontabTenant(
@@ -295,6 +315,13 @@ SQL)->fetchAll();
             && str_contains($runtimeSource, 'enqueueCrontab(')
             && str_contains($runtimeSource, '$definitions[] = $this->crontabs()'),
         'production Crontab still bypasses the Task Runtime execution path',
+    );
+    $workerSource = (string)file_get_contents($serverRoot . '/app/command/TenantTaskWorker.php');
+    expectCrontabTenant(
+        str_contains($workerSource, "OperationalLog::error('tenant_task_worker_startup_failed'")
+            && str_contains($workerSource, "'ASYNC_SIGNING_KEY_INVALID'")
+            && !str_contains($workerSource, 'getTraceAsString'),
+        'Task worker startup failures are not allowlisted operational diagnostics',
     );
 } finally {
     CrontabTaskDefinition::useDispatcherForTest(null);

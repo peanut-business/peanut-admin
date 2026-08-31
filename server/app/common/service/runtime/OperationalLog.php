@@ -60,7 +60,10 @@ final class OperationalLog
             'operation' => $context->operation,
             'actor_type' => $context->actorType,
             'tenant_id' => $context->tenantId(),
-        ];
+        ] + array_filter(
+            array_intersect_key($context->attributes, array_flip(['job_key', 'attempt_number', 'handler_key'])),
+            static fn(mixed $value): bool => $value !== null,
+        );
         $trace['runtime_id'] = RuntimeNamespace::fromEnvironment()->fingerprint();
 
         $sanitized = RedactionPolicy::sanitize($trace + $attributes);

@@ -32,7 +32,11 @@ final readonly class ModuleAwareTaskHandler implements TaskHandler
     public function handle(AuthorizedOperationContext $context, JobExecution $execution): void
     {
         $this->executionContexts->run(
-            ExecutionContext::tenantAdmin($context->tenantContext, 'async.worker'),
+            ExecutionContext::tenantAdmin($context->tenantContext, 'async.worker', attributes: [
+                'job_key' => $execution->jobKey,
+                'attempt_number' => $execution->attemptNumber,
+                'handler_key' => $this->key(),
+            ]),
             function () use ($context, $execution): void {
                 $this->modules->assertWorker('official.task');
                 $this->modules->assertWorker($this->moduleKey);

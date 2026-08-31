@@ -40,6 +40,7 @@ final readonly class ExecutionContext
         string $operation,
         array $principal = [],
         bool $entryBound = false,
+        array $attributes = [],
     ): self
     {
         if ($principal !== [] && (int)($principal['id'] ?? 0) !== $context->memberId) {
@@ -56,7 +57,7 @@ final readonly class ExecutionContext
                 'id' => $context->memberId,
             ],
             $context,
-            ['principal' => $principal, 'tenant_entry_bound' => $entryBound],
+            $attributes + ['principal' => $principal, 'tenant_entry_bound' => $entryBound],
         );
     }
 
@@ -74,7 +75,7 @@ final readonly class ExecutionContext
         );
     }
 
-    public static function system(TenantSystemContext $context): self
+    public static function system(TenantSystemContext $context, array $attributes = []): self
     {
         return new self(
             self::SYSTEM,
@@ -85,6 +86,7 @@ final readonly class ExecutionContext
                 'actor_key' => $context->actorKey,
             ],
             $context,
+            $attributes,
         );
     }
 
