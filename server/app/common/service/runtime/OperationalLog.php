@@ -38,7 +38,10 @@ final class OperationalLog
     private static function write(string $level, string $event, array $attributes): void
     {
         try {
-            Log::$level(self::event($event), self::attributes($attributes));
+            Log::$level(RedactionPolicy::encode([
+                'event' => self::event($event),
+                'attributes' => self::attributes($attributes),
+            ]));
         } catch (\Throwable) {
             // Runtime diagnostics must never replace the product operation.
         }

@@ -23,6 +23,7 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
         $attempts = $request->retrySafe ? 2 : 1;
         $last = null;
         for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            $startedAt = hrtime(true);
             try {
                 $response = $this->client->request(
                     strtoupper($request->method),
@@ -40,6 +41,9 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
                     ], static fn(mixed $value): bool => $value !== null),
                 );
                 $status = $response->getStatusCode();
+                OutboundHttpAttemptObservation::response(
+                    $request->method, $request->url, $attempt, $startedAt, $status,
+                );
                 if ($request->retrySafe && $attempt < $attempts && $status >= 500) {
                     continue;
                 }
@@ -54,6 +58,9 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
                 );
             } catch (GuzzleException $exception) {
                 $last = $exception;
+                OutboundHttpAttemptObservation::failure(
+                    $request->method, $request->url, $attempt, $startedAt, $exception,
+                );
                 if ($attempt < $attempts) {
                     continue;
                 }
@@ -67,4 +74,5 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
         ]);
         throw new OutboundHttpException($last);
     }
+
 }
