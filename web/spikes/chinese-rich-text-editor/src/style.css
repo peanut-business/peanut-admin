@@ -44,6 +44,8 @@ p {
 .toolbar,
 .control-row,
 .anchor-row,
+.collaboration-actions,
+.collaboration-row,
 .section-heading {
   display: flex;
   flex-wrap: wrap;
@@ -54,6 +56,19 @@ p {
 .toolbar,
 .control-row {
   padding-bottom: 10px;
+}
+
+.collaboration-row {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.collaboration-row h2 {
+  margin-bottom: 0;
+}
+
+.collaboration-actions {
+  justify-content: flex-end;
 }
 
 button,
@@ -125,6 +140,7 @@ input {
 }
 
 #anchor-status,
+#collaboration-status,
 #check-status {
   color: #475467;
 }
@@ -171,6 +187,8 @@ pre {
   }
 
   .anchor-row,
+  .collaboration-actions,
+  .collaboration-row,
   .section-heading {
     align-items: stretch;
     flex-direction: column;

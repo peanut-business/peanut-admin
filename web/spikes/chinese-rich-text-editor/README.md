@@ -1,50 +1,56 @@
-# 中文富文本编辑器临时 Spike
+# 中文富文本与实时协同临时 Spike
 
-本目录是可整体删除的技术验证，不注册为 Peanut Admin 正式 Module，不接文章 API，也不改变现有文章编辑器。
+本目录是可整体删除的技术验证，不注册为 Peanut Admin 正式 Module，不接文章 API，也不改变现有文章编辑器。它把原先分开的“中文富文本编辑器”和“实时协同/快照”收敛为同一个最小场景。
 
 ## 结论
 
-选择固定版本 `Tiptap/ProseMirror 3.30.0`，不做 Lexical 并列实现。理由：
+选择固定版本 `Tiptap/ProseMirror 3.30.0 + Yjs 13.6.32 + Hocuspocus 4.6.0`。编辑器与协同是同一条编辑链：Tiptap 提供新闻稿结构和输入体验，Yjs 同步同一份 ProseMirror 文档，Hocuspocus 负责连接鉴权、服务端确认和最终化前拒写。
 
 | 方案 | 当前证据 | 判断 |
 | --- | --- | --- |
-| 仓内 `contenteditable` | `official-article` 已有零依赖实现和 DOMPurify，但依赖已废弃的 `document.execCommand`，只保存 HTML，没有版本化节点模型或锚点映射 | 只复用清洗边界，不继续扩写 |
-| Tiptap/ProseMirror | Vue 3/Vite 可直接使用；原生 JSON、Schema、事务位置映射、输入法处理和撤销历史；媒体节点可扩展；媒体项目既有调研给出未来 Yjs/Hocuspocus 的最短采用路径 | 本 Spike 唯一实现 |
-| Lexical | 能力和许可证可接受，但仓内未安装；媒体项目调研仍要求补 Vue/Yjs/网关组合证据，当前没有能抵消第二套实现成本的优势 | 不实现 |
+| 仓内 `contenteditable` | `official-article` 已有 DOMPurify，但依赖已废弃的 `document.execCommand`，只保存 HTML，没有版本化节点模型或锚点映射 | 只复用清洗边界 |
+| Tiptap + Yjs + Hocuspocus | 原生 JSON/Schema、事务映射、IME 和撤销历史；官方 Collaboration 扩展直接把 ProseMirror 节点绑定到 Yjs；Hocuspocus 已验证鉴权、只读重连和自托管 WebSocket | 本 Spike 唯一实现 |
+| Lexical + Yjs | 编辑能力与许可证可接受，但仓内未安装，媒体项目仍缺 Vue/Yjs/网关组合证据 | 没有足以抵消第二套实现成本的优势，不实现 |
+| ShareDB | 成熟 OT 后端，但需要另一套 operation、富文本绑定和适配器 | 不减少当前场景的代码或风险，不实现 |
 
-## 文档边界
+## 可复用边界
 
-`peanut.richtext/1` 固定以下可被 Core 直接采用或薄适配的 JSON：
+`peanut.richtext/1` 固定可由 Core 直接采用或薄适配的文档 JSON：
 
-- `schemaVersion`：文档 Schema 身份，不绑定数据库版本；
-- `editorModel`：当前节点语义来源；
+- `schemaVersion`：编辑器 Schema 身份；
+- `editorModel`：固定为 `tiptap-prosemirror`；
 - `content`：ProseMirror JSON，覆盖标题、段落、列表、链接和 `mediaPlaceholder`；
-- `annotations`：本 Spike 只保存一个评论范围及 `active/invalid`。正文改变后无法保持原引用文字时明确变为 `invalid`，不静默漂移。
+- `annotations`：评论范围及 `active/invalid`，正文改变导致原引用无法保持时明确失效。
 
-媒体节点只保存稳定 `ref/kind/label`，不保存 URL、上传凭据或媒体系统私有字段。媒体资源管理系统可以直接提供同一引用，或在边界处把自身 AssetId 薄映射为 `ref`。`peanut.richtext/0` HTML 只做 DOMPurify 清洗后的只读渲染，不自动迁移或写回。
+媒体节点只保存稳定 `ref/kind/label`，不保存 URL、上传凭据或媒体系统私有字段。媒体资源管理系统可直接提供同一引用，或把自身 AssetId 薄映射为 `ref`。`peanut.richtext/0` HTML 只做 DOMPurify 清洗后的只读渲染，不自动迁移或写回。
+
+协同适配器只暴露会话授权、Yjs update、服务端确认 Snapshot 和最终化边界。Snapshot 固定 `through_server_sequence / content_digest / editor_schema_version / convergence_state / encoded_state_base64`；它只是可恢复的已确认协同状态，**不是 Revision**。`beginFinalization` pin 同一 Snapshot 并关闭旧连接，`finalize` 只返回该 pin；正式媒体系统以后用它创建不可变 Revision。
 
 ## 运行
 
-登记资源：
+先取得以下登记资源的项目租约：
 
-- `peanut-admin-rich-text-editor-spike-toolchain`（development，本机 Node 24.13.0 / pnpm 9.15.6）；
-- `peanut-admin-rich-text-editor-spike-pnpm-store`（development，`/private/tmp/peanut-admin-editor-spike-pnpm-store`）；
-- `peanut-admin-npm-registry`（development，`registry.npmjs.org:443`）；
-- `peanut-admin-local-development-admin`（development，`127.0.0.1:20181`）。
-
-取得项目资源租约后运行：
+- `peanut-admin-rich-text-editor-spike-toolchain`：Node 24.13.0 / pnpm 9.15.6；
+- `peanut-admin-rich-text-editor-spike-pnpm-store`：`/private/tmp/peanut-admin-editor-spike-pnpm-store`；
+- `peanut-admin-rich-text-editor-spike-npm-registry`：`registry.npmjs.org:443`；
+- `peanut-admin-rich-text-editor-spike-http`：`http://127.0.0.1:20181`；
+- `peanut-admin-rich-text-editor-spike-collaboration`：`ws://127.0.0.1:20282`；
+- `peanut-admin-rich-text-editor-spike-chromium`：唯一真实浏览器聚焦场景。
 
 ```sh
 pnpm install --frozen-lockfile --store-dir /private/tmp/peanut-admin-editor-spike-pnpm-store
 pnpm dev
 ```
 
-打开 `http://127.0.0.1:20181/`。页面的“运行聚焦检查”覆盖粘贴清洗、结构 JSON、评论锚点失效、撤销/重做和旧版只读；中文组合输入与 360px 布局须在真实 Chromium 的同一聚焦场景中验证。
+打开 `http://127.0.0.1:20181/?role=alice` 和 `?role=bob` 即为同一合成 Tenant 草稿的两个编辑会话。页面“运行聚焦检查”验证本地编辑合同；最终真实 Chromium 场景另验证中文组合输入、粘贴清洗、协同撤销/重做、两端收敛、断线待同步、重连、撤权拒写、Snapshot pin、旧会话拒写、360px 和基本无障碍。
 
 ## 刻意跳过
 
-- 协同传输、Yjs/CRDT、Presence、自动保存和最终化握手；
-- 评论线程、建议模式、工作流、文章 API 与完整产品 UI；
-- 旧文档可编辑迁移、未知 Schema 猜测和生产 Module/Plugin 打包。
+- Presence、评论线程、建议模式、工作流和完整产品 UI；
+- 数据库/对象存储持久化、跨实例广播、TLS、容量/性能、备份恢复和生产安全资格；
+- 正式 Revision/Artifact 写入、自动保存策略和最终化失败恢复；
+- 旧文档可编辑迁移、未知 Schema 猜测和正式 Module/Plugin 打包。
 
-只有进入正式采用阶段时，才把文档 Schema 和渲染器移入 Core，并另行资格验证协同与迁移；本 Spike 不提前搭这些层。
+内存适配器重启即丢失，Snapshot digest 绑定当前 Yjs 状态而不是跨文档重建的内容规范摘要；只有进入正式采用阶段时才替换为 Core 授权、持久化与 Revision 适配器。
+
+docs-impact：`technical, developer-site`。资源登记只服务此内部可删除 Spike；日常开发数据库、公开命令和 docs-site 使用方式未改变，因此对应通用资源文档目标应逐项 waiver，不投影临时端口或合成会话。

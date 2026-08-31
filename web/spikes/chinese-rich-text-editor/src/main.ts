@@ -1,10 +1,15 @@
 import { Editor, Node, type JSONContent } from '@tiptap/core';
+import { HocuspocusProvider } from '@hocuspocus/provider';
+import Collaboration from '@tiptap/extension-collaboration';
 import type { Transaction } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import DOMPurify from 'dompurify';
+import * as Y from 'yjs';
 import './style.css';
 
 const DOCUMENT_VERSION = 'peanut.richtext/1' as const;
+const COLLABORATION_DOCUMENT = 'tenant:7/draft:article-42';
+const COLLABORATION_URL = 'ws://127.0.0.1:20282';
 
 type CommentAnchor = {
   id: string;
@@ -101,8 +106,9 @@ const MediaPlaceholder = Node.create({
   },
 });
 
-const editorExtensions = () => [
+const editorExtensions = (collaborationDocument?: Y.Doc) => [
   StarterKit.configure({
+    undoRedo: collaborationDocument ? false : {},
     link: {
       autolink: false,
       openOnClick: false,
@@ -110,6 +116,9 @@ const editorExtensions = () => [
     },
   }),
   MediaPlaceholder,
+  ...(collaborationDocument
+    ? [Collaboration.configure({ document: collaborationDocument })]
+    : []),
 ];
 
 const initialContent: JSONContent = {
@@ -163,9 +172,80 @@ const editorElement = element<HTMLDivElement>('#editor');
 const jsonElement = element<HTMLElement>('#document-json');
 const anchorStatus = element<HTMLOutputElement>('#anchor-status');
 const checkStatus = element<HTMLElement>('#check-status');
+const collaborationStatus = element<HTMLOutputElement>('#collaboration-status');
+const collaborationRoleElement = element<HTMLElement>('#collaboration-role');
 const legacyElement = element<HTMLDivElement>('#legacy-render');
 let commentAnchor: CommentAnchor | null = null;
 let readonlyEditor: Editor | null = null;
+let editor: Editor;
+
+const roleParameter = new URLSearchParams(location.search).get('role');
+const collaborationRole = roleParameter === 'bob' ? 'bob' : 'alice';
+const collaborationDocument = new Y.Doc();
+let connectionState = 'connecting';
+let authorizationScope = 'pending';
+let unsyncedChanges = 0;
+let collaborationError = '';
+collaborationRoleElement.textContent = collaborationRole === 'alice' ? '甲编辑' : '乙编辑';
+
+const requestControl = async <T>(path: string, method = 'GET'): Promise<T> => {
+  const response = await fetch(`/__spike/${path}`, { method });
+  const value = await response.json();
+  if (!response.ok) throw new Error(value.error || `HTTP_${response.status}`);
+  return value as T;
+};
+
+const refreshCollaborationStatus = () => {
+  const labels: Record<string, string> = {
+    connected: '已连接',
+    connecting: '连接中',
+    disconnected: '已断开',
+  };
+  collaborationStatus.value = collaborationError
+    ? `协同拒绝：${collaborationError}`
+    : `${labels[connectionState] || connectionState} · ${authorizationScope} · ${unsyncedChanges ? '有本地待同步' : '服务端已确认'}`;
+};
+
+const provider = new HocuspocusProvider({
+  url: COLLABORATION_URL,
+  name: COLLABORATION_DOCUMENT,
+  document: collaborationDocument,
+  token: async () => (await requestControl<{ token: string }>(`session?role=${collaborationRole}`)).token,
+  delay: 20,
+  minDelay: 20,
+  maxDelay: 20,
+  jitter: false,
+  onStatus: ({ status }) => {
+    connectionState = status;
+    refreshCollaborationStatus();
+  },
+  onAuthenticated: ({ scope }) => {
+    collaborationError = '';
+    authorizationScope = scope;
+    editor?.setEditable(scope === 'read-write');
+    refreshCollaborationStatus();
+  },
+  onAuthenticationFailed: ({ reason }) => {
+    collaborationError = reason;
+    authorizationScope = 'denied';
+    editor?.setEditable(false);
+    refreshCollaborationStatus();
+  },
+  onUnsyncedChanges: ({ number }) => {
+    unsyncedChanges = number;
+    refreshCollaborationStatus();
+  },
+  onSynced: () => {
+    void requestControl<{ through_server_sequence: number }>('snapshot').then((snapshot) => {
+      if (collaborationRole === 'alice'
+        && snapshot.through_server_sequence === 0
+        && editor.isEmpty) {
+        editor.commands.setContent(initialContent);
+      }
+    });
+  },
+});
+refreshCollaborationStatus();
 
 const documentEnvelope = (editor: Editor, anchor: CommentAnchor | null): CurrentDocument => ({
   schemaVersion: DOCUMENT_VERSION,
@@ -205,10 +285,10 @@ const mapAnchor = (anchor: CommentAnchor, transaction: Transaction): CommentAnch
   };
 };
 
-const editor = new Editor({
+editor = new Editor({
   element: editorElement,
-  extensions: editorExtensions(),
-  content: initialContent,
+  extensions: editorExtensions(collaborationDocument),
+  editable: false,
   editorProps: {
     attributes: {
       'aria-label': '中文新闻稿正文',
@@ -224,6 +304,7 @@ const editor = new Editor({
   },
   onUpdate: updateJson,
 });
+editor.setEditable(authorizationScope === 'read-write');
 
 const setStatus = (message: string, state: 'ok' | 'error' | 'idle' = 'idle') => {
   checkStatus.textContent = message;
@@ -243,6 +324,14 @@ document.querySelectorAll<HTMLButtonElement>('[data-command]').forEach((button) 
     };
     commands[button.dataset.command || '']?.();
   });
+});
+
+element<HTMLButtonElement>('#disconnect-collaboration').addEventListener('click', () => {
+  provider.configuration.websocketProvider.disconnect();
+});
+
+element<HTMLButtonElement>('#reconnect-collaboration').addEventListener('click', () => {
+  void provider.configuration.websocketProvider.connect();
 });
 
 element<HTMLButtonElement>('#set-link').addEventListener('click', () => {
@@ -362,8 +451,9 @@ const runFocusedCheck = () => {
     const legacyHost = document.createElement('div');
     legacyHost.innerHTML = cleanPastedHtml('<h2>旧稿</h2><script>坏</script>');
     assert(legacyHost.textContent === '旧稿' && !legacyHost.querySelector('script'), '旧版只读渲染失败');
-    setStatus('通过：粘贴清洗、结构 JSON、锚点失效、撤销/重做、旧版只读', 'ok');
-    return { ok: true, checks: 5 };
+    assert(provider.isAuthenticated && provider.synced, '协同连接尚未服务端确认');
+    setStatus('通过：粘贴清洗、结构 JSON、锚点失效、撤销/重做、旧版只读、协同连接', 'ok');
+    return { ok: true, checks: 6 };
   } catch (error) {
     setStatus(`失败：${error instanceof Error ? error.message : String(error)}`, 'error');
     throw error;
@@ -380,8 +470,31 @@ updateJson();
 Object.assign(window, {
   __richTextEditorSpike: {
     editor,
+    provider,
+    collaborationDocument,
     cleanPastedHtml,
     documentEnvelope: () => documentEnvelope(editor, commentAnchor),
     runFocusedCheck,
+    disconnect: () => provider.configuration.websocketProvider.disconnect(),
+    reconnect: () => provider.configuration.websocketProvider.connect(),
+    revokeCurrentRole: () => requestControl(`revoke?role=${collaborationRole}`, 'POST'),
+    confirmedSnapshot: () => requestControl('snapshot'),
+    beginFinalization: (sequence: number) => requestControl(`begin?sequence=${sequence}`, 'POST'),
+    finishFinalization: (digest: string) => requestControl(`finish?digest=${digest}`, 'POST'),
+    collaborationState: () => ({
+      role: collaborationRole,
+      connectionState,
+      authorizationScope,
+      unsyncedChanges,
+      collaborationError,
+      authenticated: provider.isAuthenticated,
+      synced: provider.synced,
+    }),
   },
+});
+
+window.addEventListener('beforeunload', () => {
+  provider.destroy();
+  collaborationDocument.destroy();
+  readonlyEditor?.destroy();
 });

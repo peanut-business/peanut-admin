@@ -5,13 +5,17 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite --host 127.0.0.1 --port 20181 --strictPort"
+    "dev": "COLLABORATION_SPIKE_HOST=127.0.0.1 EDITOR_SPIKE_PORT=20181 COLLABORATION_SPIKE_PORT=20282 node server.mjs"
   },
   "dependencies": {
+    "@hocuspocus/provider": "4.6.0",
+    "@hocuspocus/server": "4.6.0",
     "@tiptap/core": "3.30.0",
+    "@tiptap/extension-collaboration": "3.30.0",
     "@tiptap/pm": "3.30.0",
     "@tiptap/starter-kit": "3.30.0",
-    "dompurify": "3.4.14"
+    "dompurify": "3.4.14",
+    "yjs": "13.6.32"
   },
   "devDependencies": {
     "vite": "3.2.11"

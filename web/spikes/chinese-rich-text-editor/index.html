@@ -10,11 +10,18 @@
       <header>
         <p class="eyebrow">临时技术 Spike</p>
         <h1>中文新闻稿编辑器</h1>
-        <p>验证输入、结构化文档、媒体引用与评论锚点；不包含协同传输和工作流。</p>
+        <p>验证输入、结构化文档、媒体引用、评论锚点与同一稿件的实时协同；不包含工作流。</p>
       </header>
 
       <section class="editor-card" aria-labelledby="editor-heading">
-        <h2 id="editor-heading">稿件正文</h2>
+        <div class="collaboration-row">
+          <h2 id="editor-heading">稿件正文 · <span id="collaboration-role"></span></h2>
+          <div class="collaboration-actions">
+            <output id="collaboration-status" role="status" aria-live="polite">连接中</output>
+            <button id="disconnect-collaboration" type="button">模拟断线</button>
+            <button id="reconnect-collaboration" type="button">重新连接</button>
+          </div>
+        </div>
         <div class="toolbar" role="toolbar" aria-label="正文格式">
           <button type="button" data-command="heading">标题</button>
           <button type="button" data-command="paragraph">段落</button>
