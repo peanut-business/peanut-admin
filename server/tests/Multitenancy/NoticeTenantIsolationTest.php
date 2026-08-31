@@ -48,13 +48,6 @@ function runNoticeTenant(TenantContext $context, string $operation, callable $ca
     );
 }
 
-function noticeDatabase(PDO $admin): string
-{
-    $database = 'peanut_admin_notice_fresh_' . strtolower(bin2hex(random_bytes(5)));
-    $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
-    return $database;
-}
-
 function noticePdo(string $host, int $port, string $user, string $password, string $database): PDO
 {
     return new PDO(
@@ -112,7 +105,8 @@ $admin = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
-$database = noticeDatabase($admin);
+$database = IsolatedBackendEnvironment::required('DB_NAME');
+$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
 
 try {
     $pdo = noticePdo($host, $port, $user, $password, $database);
@@ -231,7 +225,12 @@ SQL);
     }
     expectNoticeTenant($sender->calls === 0, 'untrusted Tenant context reached the provider Host');
 
-    expectNoticeTenant($service->send($beta, 'login_code', '13800000001'), $service->getError());
+    $sendResult = runNoticeTenant(
+        $beta,
+        'test.notice.verification.send.beta',
+        fn() => $service->send($beta, 'login_code', '13800000001'),
+    );
+    expectNoticeTenant($sendResult->success, $sendResult->error);
     expectNoticeTenant($sender->calls === 1, 'trusted tenant send did not cross the explicit sender port once');
     expectNoticeTenant(
         (int)$pdo->query("SELECT COUNT(*) FROM pa_notice_log WHERE tenant_id = 202 AND receiver = '13800000001'")->fetchColumn() === 1,
@@ -242,8 +241,16 @@ SQL);
         'Beta send log leaked into Alpha'
     );
 
-    $alphaScene = (int)NoticeTenantRepository::scenes($alpha)->where('code', 'login_code')->value('id');
-    $betaScene = (int)NoticeTenantRepository::scenes($beta)->where('code', 'login_code')->value('id');
+    $alphaScene = (int)runNoticeTenant(
+        $alpha,
+        'test.notice.scenes.alpha.login-code',
+        fn() => NoticeTenantRepository::scenes($alpha)->where('code', 'login_code')->value('id'),
+    );
+    $betaScene = (int)runNoticeTenant(
+        $beta,
+        'test.notice.scenes.beta.login-code',
+        fn() => NoticeTenantRepository::scenes($beta)->where('code', 'login_code')->value('id'),
+    );
     $logData = static fn(int $sceneId, string $receiver, string $code): array => [
         'template_id' => 0,
         'scene_id' => $sceneId,
@@ -261,27 +268,67 @@ SQL);
         'extra' => '{}',
         'send_time' => time(),
     ];
-    NoticeTenantRepository::createLog($alpha, $logData($alphaScene, '13800000002', '4827'));
-    NoticeTenantRepository::createLog($beta, $logData($betaScene, '13800000002', '4827'));
-    NoticeTenantRepository::createLog($alpha, $logData($alphaScene, '13800000003', '5938'));
+    runNoticeTenant(
+        $alpha,
+        'test.notice.logs.create.alpha.first',
+        fn() => NoticeTenantRepository::createLog($alpha, $logData($alphaScene, '13800000002', '4827')),
+    );
+    runNoticeTenant(
+        $beta,
+        'test.notice.logs.create.beta',
+        fn() => NoticeTenantRepository::createLog($beta, $logData($betaScene, '13800000002', '4827')),
+    );
+    runNoticeTenant(
+        $alpha,
+        'test.notice.logs.create.alpha.second',
+        fn() => NoticeTenantRepository::createLog($alpha, $logData($alphaScene, '13800000003', '5938')),
+    );
 
-    expectNoticeTenant($service->verify($alpha, 'login_code', '13800000002', '4827'), $service->getError());
+    $alphaVerification = runNoticeTenant(
+        $alpha,
+        'test.notice.verification.verify.alpha',
+        fn() => $service->verify($alpha, 'login_code', '13800000002', '4827'),
+    );
+    expectNoticeTenant($alphaVerification->accepted, $alphaVerification->error);
     expectNoticeTenant(
-        (int)NoticeTenantRepository::logs($beta)->where('receiver', '13800000002')->value('is_verified') === NoticeLog::VERIFIED_NO,
+        (int)runNoticeTenant(
+            $beta,
+            'test.notice.logs.beta.verification',
+            fn() => NoticeTenantRepository::logs($beta)->where('receiver', '13800000002')->value('is_verified'),
+        ) === NoticeLog::VERIFIED_NO,
         'Alpha verification consumed Beta code'
     );
-    expectNoticeTenant($service->verify($beta, 'login_code', '13800000002', '4827'), $service->getError());
+    $betaVerification = runNoticeTenant(
+        $beta,
+        'test.notice.verification.verify.beta',
+        fn() => $service->verify($beta, 'login_code', '13800000002', '4827'),
+    );
+    expectNoticeTenant($betaVerification->accepted, $betaVerification->error);
 
-    expectNoticeTenant(!$service->verify($beta, 'login_code', '13800000003', '5938'), 'cross-tenant verification succeeded');
-    $crossTenantError = $service->getError();
-    expectNoticeTenant(!$service->verify($beta, 'login_code', '13800000004', '5938'), 'missing verification unexpectedly succeeded');
-    expectNoticeTenant($service->getError() === $crossTenantError, 'cross-tenant verification enumerated Alpha log');
+    $crossTenantVerification = runNoticeTenant(
+        $beta,
+        'test.notice.verification.verify.cross-tenant',
+        fn() => $service->verify($beta, 'login_code', '13800000003', '5938'),
+    );
+    expectNoticeTenant(!$crossTenantVerification->accepted, 'cross-tenant verification succeeded');
+    $crossTenantError = $crossTenantVerification->error;
+    $missingVerification = runNoticeTenant(
+        $beta,
+        'test.notice.verification.verify.missing',
+        fn() => $service->verify($beta, 'login_code', '13800000004', '5938'),
+    );
+    expectNoticeTenant(!$missingVerification->accepted, 'missing verification unexpectedly succeeded');
+    expectNoticeTenant($missingVerification->error === $crossTenantError, 'cross-tenant verification enumerated Alpha log');
 
     $alphaLogs = runNoticeTenant($alpha, 'test.notice.logs.alpha', fn() => $notifications->logs(['page' => 1, 'limit' => 50]));
     $betaLogs = runNoticeTenant($beta, 'test.notice.logs.beta', fn() => $notifications->logs(['page' => 1, 'limit' => 50]));
     expectNoticeTenant($alphaLogs->total === 3, 'Alpha admin log list crossed Tenant boundary');
     expectNoticeTenant($betaLogs->total === 2, 'Beta admin log list crossed Tenant boundary');
-    $betaLogId = (int)NoticeTenantRepository::logs($beta)->order('id', 'desc')->value('id');
+    $betaLogId = (int)runNoticeTenant(
+        $beta,
+        'test.notice.logs.beta.latest',
+        fn() => NoticeTenantRepository::logs($beta)->order('id', 'desc')->value('id'),
+    );
     expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.cross', fn() => $notifications->logDetail($betaLogId)) === [], 'cross-tenant log detail was visible');
     expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.missing', fn() => $notifications->logDetail(999999)) === [], 'missing log detail shape changed');
 
