@@ -3,6 +3,11 @@ declare(strict_types=1);
 
 namespace app\common\service\storage;
 
+use app\common\service\http\OutboundHttpAttemptObservation;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\Create;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Qcloud\Cos\Client;
 
 /** Provider SDK assembly kept outside business storage drivers. */
@@ -11,7 +16,7 @@ final class QcloudStorageClientFactory
     public function make(array $account, array $space): Client
     {
         $credentials = (array)($account['resolved_credentials'] ?? []);
-        return new Client([
+        $client = new Client([
             'scheme' => 'https',
             'region' => (string)($space['region'] ?? ''),
             'connect_timeout' => 10,
@@ -23,5 +28,28 @@ final class QcloudStorageClientFactory
                 'secretKey' => (string)($credentials['secret_key'] ?? ''),
             ],
         ]);
+        /** @var HandlerStack $handler */
+        $handler = $client->httpClient->getConfig('handler');
+        $handler->push(static function (callable $next): callable {
+            return static function (RequestInterface $request, array $options) use ($next) {
+                $startedAt = hrtime(true);
+                $attempt = (int)($options['retries'] ?? 0) + 1;
+                return $next($request, $options)->then(
+                    static function (ResponseInterface $response) use ($request, $attempt, $startedAt): ResponseInterface {
+                        OutboundHttpAttemptObservation::response(
+                            $request->getMethod(), (string)$request->getUri(), $attempt, $startedAt, $response->getStatusCode(),
+                        );
+                        return $response;
+                    },
+                    static function (\Throwable $exception) use ($request, $attempt, $startedAt) {
+                        OutboundHttpAttemptObservation::failure(
+                            $request->getMethod(), (string)$request->getUri(), $attempt, $startedAt, $exception,
+                        );
+                        return Create::rejectionFor($exception);
+                    },
+                );
+            };
+        });
+        return $client;
     }
 }
