@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace app\platform\invitation;
 
+use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\common\execution\ExecutionContextStore;
 use app\platform\query\PlatformControlPlaneQueryService;
+use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\PlatformOperatorSessionService;
 use PDO;
 use think\facade\Config;
@@ -30,7 +33,15 @@ final class PlatformInvitationRuntimeFactory
 
     public static function publicInvitations(): TenantOwnerInvitationPublicService
     {
-        return self::$publicInvitations ??= new TenantOwnerInvitationPublicService(self::pdo());
+        $pdo = self::pdo();
+        return self::$publicInvitations ??= new TenantOwnerInvitationPublicService(
+            $pdo,
+            new ApplicationTenantBootstrapService(
+                $pdo,
+                app(NotificationCommands::class),
+                app(ExecutionContextStore::class),
+            ),
+        );
     }
 
     public static function queries(): PlatformControlPlaneQueryService

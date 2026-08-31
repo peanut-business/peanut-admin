@@ -11,6 +11,7 @@ use app\common\model\TenantOwnedModel;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
+use app\common\tenancy\PlatformTenantDataGateway;
 use app\common\tenancy\StandaloneDataScopePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -260,6 +261,27 @@ foreach ($connection->statements as $statement) {
         'bulk write lost Tenant global scope: ' . $statement['sql'],
     );
 }
+
+$differentTenantRejected = false;
+try {
+    $store->run($execution, static fn() => $store->run(
+        ExecutionContext::tenantAdmin(tpq51TenantContext(202), 'tpq51.different-tenant'),
+        static fn() => null,
+    ));
+} catch (DomainException $exception) {
+    $differentTenantRejected = $exception->getMessage() === 'EXECUTION_TENANT_CONTEXT_MISMATCH';
+}
+expectTpq51($differentTenantRejected, 'nested execution context changed the authoritative Tenant');
+expectTpq51($store->isEmpty(), 'rejected Tenant context leaked onto the execution stack');
+
+$connection->resetStatements();
+(new PlatformTenantDataGateway())
+    ->query(Tpq51Child::class, 'platform-test', 'tpq51.cross-tenant-read')
+    ->select();
+expectTpq51(
+    tpq51SqlCount($connection->statements[0]['sql'] ?? '', 'tenant_id') === 0,
+    'explicit Platform Tenant gateway did not preserve its audited scope bypass',
+);
 
 $container->instance(DataScopePolicy::class, new StandaloneDataScopePolicy());
 $connection->resetStatements();

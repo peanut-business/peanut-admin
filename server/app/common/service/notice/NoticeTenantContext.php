@@ -32,7 +32,7 @@ final class NoticeTenantContext
             || $context->requestId === '') {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
-        return $context->tenantId;
+        return self::authoritativeTenantId($context->tenantId);
     }
 
     public static function verification(object $request, string $operation): TenantContext|TenantSystemContext
@@ -57,7 +57,7 @@ final class NoticeTenantContext
         string $operation
     ): int {
         if ($context instanceof AuthenticatedMemberContext) {
-            return $context->tenantId;
+            return self::authoritativeTenantId($context->tenantId);
         }
         if ($context instanceof TenantContext) {
             return self::tenantId($context);
@@ -68,6 +68,14 @@ final class NoticeTenantContext
             || $context->operationId === '') {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
-        return $context->tenantId;
+        return self::authoritativeTenantId($context->tenantId);
+    }
+
+    private static function authoritativeTenantId(int $tenantId): int
+    {
+        if (ExecutionContextAccess::current()?->tenantId() !== $tenantId) {
+            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
+        }
+        return $tenantId;
     }
 }

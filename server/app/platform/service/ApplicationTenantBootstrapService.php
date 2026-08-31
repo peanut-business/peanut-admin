@@ -4,8 +4,12 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use PDO;
+use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\common\execution\ExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\config\BrandDefaults;
 use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
 final readonly class ApplicationTenantBootstrapService
@@ -24,8 +28,11 @@ final readonly class ApplicationTenantBootstrapService
         'pa_transaction_setting',
     ];
 
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private NotificationCommands $notifications,
+        private ExecutionContextStore $executionContexts,
+    ) {
     }
 
     public function provision(int $tenantId, int $ownerMemberId, int $ownerRoleId, string $tenantCode): void
@@ -39,7 +46,7 @@ final readonly class ApplicationTenantBootstrapService
 
         $this->grantOwnerPermissions($tenantId, $ownerMemberId, $ownerRoleId);
         $this->seedCrontab($tenantId);
-        $this->seedNoticeScenes($tenantId);
+        $this->seedNoticeScenes($tenantId, $tenantCode);
         $this->seedDecoration($tenantId);
         $this->seedSettings($tenantId);
         $this->seedExternalBindings($tenantId, $tenantCode);
@@ -109,32 +116,19 @@ SQL);
         }
     }
 
-    private function seedNoticeScenes(int $tenantId): void
+    private function seedNoticeScenes(int $tenantId, string $tenantCode): void
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_notice_scene
-  (code,name,description,recipient,variables,sms_template_id,sms_content,sms_status,create_time,update_time,tenant_id)
-SELECT :code,:name,:description,'用户',JSON_ARRAY('code'),'',:content,0,0,0,:tenant_id
-WHERE NOT EXISTS (
-  SELECT 1 FROM pa_notice_scene WHERE tenant_id = :tenant_scope AND code = :code_scope
-)
-SQL);
-        foreach ([
-            ['login_code', '登录验证码', '用户使用手机号验证码登录', '您的登录验证码是${code}，五分钟内有效。'],
-            ['bind_mobile', '绑定手机验证码', '用户首次绑定手机号', '您的绑定手机验证码是${code}，五分钟内有效。'],
-            ['change_mobile', '变更手机验证码', '用户更换已绑定手机号', '您的变更手机验证码是${code}，五分钟内有效。'],
-            ['reset_password', '找回密码验证码', '用户通过手机号重置密码', '您的找回密码验证码是${code}，五分钟内有效。'],
-        ] as [$code, $name, $description, $content]) {
-            $statement->execute([
-                'code' => $code,
-                'name' => $name,
-                'description' => $description,
-                'content' => $content,
-                'tenant_id' => $tenantId,
-                'tenant_scope' => $tenantId,
-                'code_scope' => $code,
-            ]);
-        }
+        $operationId = $this->executionContexts->current()?->requestId
+            ?? 'tenant-bootstrap:' . $tenantCode;
+        $this->executionContexts->run(
+            ExecutionContext::system(new TenantSystemContext(
+                $tenantId,
+                'platform.tenant-bootstrap',
+                'notification.provision-tenant-defaults',
+                $operationId,
+            )),
+            fn() => $this->notifications->provisionTenantDefaults(),
+        );
     }
 
     private function seedDecoration(int $tenantId): void

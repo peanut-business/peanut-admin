@@ -36,7 +36,6 @@ $removeTree = static function (string $path) use (&$removeTree): void {
 $bootstrap = $read($root . '/server/app/platform/service/ApplicationTenantBootstrapService.php');
 foreach ([
     'pa_role_permission',
-    'pa_notice_scene',
     'pa_decorate_page',
     'pa_decorate_tabbar',
     'pa_transaction_setting',
@@ -44,6 +43,16 @@ foreach ([
 ] as $table) {
     $expect(str_contains($bootstrap, $table), 'new Tenant bootstrap omits ' . $table);
 }
+$notificationCommands = $read($root . '/server/app/Modules/Official/Notification/Contracts/NotificationCommands.php');
+$notificationApplication = $read($root . '/server/app/Modules/Official/Notification/Application/NotificationApplicationService.php');
+$expect(
+    str_contains($bootstrap, 'NotificationCommands')
+        && str_contains($bootstrap, '->provisionTenantDefaults()')
+        && !str_contains($bootstrap, 'INSERT INTO pa_notice_scene')
+        && str_contains($notificationCommands, 'provisionTenantDefaults')
+        && str_contains($notificationApplication, 'INSERT INTO pa_notice_scene'),
+    'new Tenant notification defaults bypass the Notification owner command'
+);
 $provisioner = $read($root . '/server/app/platform/service/PdoTenantOwnerAdminProvisioner.php');
 $expect(
     str_contains($provisioner, 'ApplicationTenantBootstrapService')

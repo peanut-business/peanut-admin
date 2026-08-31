@@ -14,7 +14,13 @@ Module 不重新认证账号，也不从请求参数推断租户。应用入口�
   -> 领域数据权限与业务规则
 ```
 
-`tenant_id` 不接受前端提交值覆盖；Repository 必须从执行上下文写入或添加租户条件。
+`tenant_id` 不接受前端提交值覆盖；`ExecutionContextStore` 是运行时唯一 Tenant
+权威，不同 Tenant 上下文不得嵌套。Repository 和 ThinkORM global scope 只从当前
+`CurrentExecutionContext` 写入或添加租户条件；旧合同中保留的显式 context 只能作为
+身份凭据，与当前执行 Tenant 不一致时必须拒绝。
+
+Platform 控制面需要跨 Tenant 发现数据时，只能走会留下操作记录的
+`PlatformTenantDataGateway`；这个显式 gateway 不改变普通 Module/ORM 的 Tenant scope。
 
 ## 四种入口
 
@@ -30,6 +36,8 @@ Module 不重新认证账号，也不从请求参数推断租户。应用入口�
 ## 当前代码采用情况
 
 - `ModuleExecutionContext` 和 `ModuleExecutionGuard` 已加入应用 Runtime。
+- 新 Tenant 的 Module 自有默认值由 bootstrap 建立 Tenant system execution context 后调用
+  数据 owner 的 Commands；bootstrap 不直接写入其他 Module 的表。
 - Fixture `delivery-record` 已使用统一的管理成员执行合同。
 - Article 管理入口和公开入口已使用统一的安装/Tenant 开通检查；Repository 的原有 Tenant
   条件仍保留，作为数据层防线。

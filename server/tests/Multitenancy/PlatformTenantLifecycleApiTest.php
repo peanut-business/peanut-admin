@@ -7,6 +7,10 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
+use app\Modules\Official\Notification\Application\NotificationApplicationService;
+use app\common\execution\ExecutionContextStore;
+use app\common\execution\CurrentExecutionContext;
+use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
 use app\platform\service\TenantOwnerAdminProvisioner;
@@ -124,12 +128,20 @@ SQL);
             }
         }
     );
+    $applicationContexts = new ExecutionContextStore();
     $service = new TenantGovernanceService(
         new LifecycleIdentity(new PlatformOperatorIdentity($platform->operatorId, $platform->accountId)),
         $transactions,
         $bootstrap,
         new PlatformTenantAdminService($pdo, $modules),
-        new PdoTenantOwnerAdminProvisioner($pdo)
+        new PdoTenantOwnerAdminProvisioner(
+            $pdo,
+            new ApplicationTenantBootstrapService(
+                $pdo,
+                new NotificationApplicationService($pdo, new CurrentExecutionContext($applicationContexts)),
+                $applicationContexts,
+            ),
+        )
     );
 
     lifecycleRejects(static fn() => $service->provision(
@@ -206,7 +218,17 @@ SQL);
     $memberCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn();
     $failingOwnerAdmins = new class($pdo) implements TenantOwnerAdminProvisioner {
         private PdoTenantOwnerAdminProvisioner $delegate;
-        public function __construct(PDO $pdo) { $this->delegate = new PdoTenantOwnerAdminProvisioner($pdo); }
+        public function __construct(PDO $pdo) {
+            $contexts = new ExecutionContextStore();
+            $this->delegate = new PdoTenantOwnerAdminProvisioner(
+                $pdo,
+                new ApplicationTenantBootstrapService(
+                    $pdo,
+                    new NotificationApplicationService($pdo, new CurrentExecutionContext($contexts)),
+                    $contexts,
+                ),
+            );
+        }
         public function provision(
             int $tenantId,
             int $accountId,
