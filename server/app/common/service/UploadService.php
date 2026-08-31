@@ -16,26 +16,26 @@ use think\file\UploadedFile;
  */
 class UploadService
 {
-    public static function image(AuthenticatedMemberContext|TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function image(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
-        return self::save($context, FileEnum::IMAGE, $cid, $sourceId, $source);
+        return self::save($context, $uploaded, FileEnum::IMAGE, $cid, $sourceId, $source);
     }
 
-    public static function video(AuthenticatedMemberContext|TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function video(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
-        return self::save($context, FileEnum::VIDEO, $cid, $sourceId, $source);
+        return self::save($context, $uploaded, FileEnum::VIDEO, $cid, $sourceId, $source);
     }
 
-    public static function file(AuthenticatedMemberContext|TenantContext $context, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public static function file(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
-        return self::save($context, FileEnum::FILE, $cid, $sourceId, $source);
+        return self::save($context, $uploaded, FileEnum::FILE, $cid, $sourceId, $source);
     }
 
     /**
      * @param int $type FileEnum::IMAGE|VIDEO|FILE
      * @throws \Exception 校验失败
      */
-    protected static function save(AuthenticatedMemberContext|TenantContext $context, int $type, int $cid, int $sourceId, int $source): array
+    protected static function save(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $type, int $cid, int $sourceId, int $source): array
     {
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');
@@ -54,12 +54,6 @@ class UploadService
             if ((int)$category->type !== $type) {
                 throw new \InvalidArgumentException('上传类型与目标分类不一致');
             }
-        }
-
-        /** @var UploadedFile|null $uploaded */
-        $uploaded = request()->file('file');
-        if (!$uploaded) {
-            throw new \Exception('未接收到上传文件');
         }
 
         // 扩展名白名单

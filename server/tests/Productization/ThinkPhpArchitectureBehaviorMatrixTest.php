@@ -7,6 +7,7 @@ use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblemMapper;
 use app\common\http\PageResult;
+use app\common\validate\InputValidator;
 use app\common\model\TenantOwnedModel;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\tenancy\DataScopePolicy;
@@ -21,6 +22,9 @@ use think\DbManager;
 use think\db\BaseQuery;
 use think\db\connector\Mysql;
 use think\paginator\driver\Bootstrap;
+use think\App;
+use think\exception\ValidateException;
+use think\Validate;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/vendor/topthink/framework/src/helper.php';
@@ -131,6 +135,18 @@ final class Tpq51Child extends Tpq51TenantModel
     {
         return $this->belongsTo(Tpq51Parent::class, 'parent_id', 'id');
     }
+}
+
+final class Tpq51SceneValidate extends Validate
+{
+    protected $rule = [
+        'narrow' => 'require',
+        'default_only' => 'require',
+    ];
+
+    protected $scene = [
+        'narrow' => ['narrow'],
+    ];
 }
 
 final class Tpq51UnconnectedPdo extends PDO
@@ -337,6 +353,19 @@ try {
     $contextFailure = $exception->getMessage() === 'EXECUTION_CONTEXT_REQUIRED';
 }
 expectTpq51($contextFailure, 'Module execution boundary did not fail closed without trusted context');
+
+$sceneValidator = 'app\\test\\Tpq51SceneValidate';
+class_alias(Tpq51SceneValidate::class, $sceneValidator);
+$inputValidator = new InputValidator(new App(dirname(__DIR__, 2)), $current);
+$inputValidator->validate(['narrow' => 'accepted'], $sceneValidator . '.narrow');
+$unknownSceneRejected = false;
+try {
+    $inputValidator->validate(['narrow' => 'accepted'], $sceneValidator . '.unknown');
+} catch (ValidateException $exception) {
+    $unknownSceneRejected = $exception->getMessage() === '验证场景不存在'
+        && $mapper->map($exception)?->apiCode() === 40000;
+}
+expectTpq51($unknownSceneRejected, 'unknown validation scene fell back to default rules or escaped the input error envelope');
 
 try {
     $store->run($execution, static function (): void {

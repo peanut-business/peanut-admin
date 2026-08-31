@@ -7,6 +7,7 @@ use app\adminapi\controller\BaseAdminController;
 use app\common\enum\FileEnum;
 use app\common\service\UploadService;
 use app\common\service\file\FileTenantContext;
+use think\file\UploadedFile;
 
 class UploadController extends BaseAdminController
 {
@@ -33,9 +34,14 @@ class UploadController extends BaseAdminController
             if (!is_int($cidValue) && !(is_string($cidValue) && preg_match('/^-?\d+$/D', $cidValue) === 1)) {
                 throw new \InvalidArgumentException('目标分类无效');
             }
+            $uploaded = $this->request->file('file');
+            if (!$uploaded instanceof UploadedFile) {
+                throw new \Exception('未接收到上传文件');
+            }
             $cid = (int)$cidValue;
             $res = UploadService::$method(
                 FileTenantContext::member(),
+                $uploaded,
                 $cid,
                 $this->adminId,
                 FileEnum::SOURCE_ADMIN
