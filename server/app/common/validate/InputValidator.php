@@ -37,6 +37,9 @@ final readonly class InputValidator
             $validator->forTenant($scope);
         }
         if ($scene !== null) {
+            if (!$validator->hasScene($scene)) {
+                throw new \think\exception\ValidateException('验证场景不存在');
+            }
             $validator->scene($scene);
         }
         $validator->message($messages);
