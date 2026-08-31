@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace app\common\http;
 
 use app\common\application\BusinessException;
+use app\common\service\module\ModuleScaffoldException;
 use app\common\service\installation\InstallationExecutionException;
 use app\common\service\http\OutboundHttpException;
 use app\common\service\storage\StorageProviderException;
 use app\platform\invitation\TenantOwnerInvitationException;
+use app\platform\service\plugin\PluginLifecycleException;
+use app\platform\service\plugin\PluginPackageException;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -64,6 +67,13 @@ final class ApiProblemMapper
                 $exception->status,
                 'Operations request was rejected.',
             ),
+            $exception instanceof PluginLifecycleException
+                || $exception instanceof PluginPackageException
+                || $exception instanceof ModuleScaffoldException => new ApiProblem(
+                    $exception->errorCode,
+                    $this->moduleLifecycleStatus($exception->errorCode),
+                    'Module runtime request was rejected.',
+                ),
             $exception instanceof ModuleException => new ApiProblem(
                 $exception->errorCode,
                 $this->moduleStatus($exception->errorCode),
@@ -82,6 +92,17 @@ final class ApiProblemMapper
             'MODULE_INSTALLATION_FAILED',
             'MODULE_REGISTRY_UNAVAILABLE' => 503,
             default => 409,
+        };
+    }
+
+    private function moduleLifecycleStatus(string $errorCode): int
+    {
+        return match (true) {
+            in_array($errorCode, ['MODULE_REGISTRY_UNAVAILABLE', 'PLUGIN_LOCK_INVALID', 'PLUGIN_ARTIFACT_MISMATCH'], true) => 503,
+            str_contains($errorCode, 'PLAN_CHANGED'), str_contains($errorCode, 'CONFLICT'), str_contains($errorCode, 'DEPENDENT'),
+                str_contains($errorCode, 'TENANT_MODULE_ACTIVE'), str_contains($errorCode, 'STATE'), str_contains($errorCode, 'IN_PROGRESS'),
+                $errorCode === 'MODULE_UNINSTALL_BLOCKED', $errorCode === 'MODULE_CREATE_TARGET_EXISTS' => 409,
+            default => 422,
         };
     }
 }
