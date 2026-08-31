@@ -320,6 +320,11 @@ const runFocusedCheck = () => {
     content: initialContent,
     editorProps: { transformPastedHTML: cleanPastedHtml },
   });
+  const historyEditor = new Editor({
+    element: document.createElement('div'),
+    extensions: editorExtensions(),
+    content: '<p>起</p>',
+  });
   let checkAnchor: CommentAnchor | null = null;
   checkEditor.on('transaction', ({ transaction }) => {
     if (checkAnchor) checkAnchor = mapAnchor(checkAnchor, transaction);
@@ -347,13 +352,12 @@ const runFocusedCheck = () => {
     checkEditor.commands.insertContent('改');
     assert(checkAnchor.status === 'invalid', '锚点内容变化后未明确失效');
 
-    checkEditor.commands.setContent('<p>起</p>');
-    checkEditor.commands.setTextSelection(2);
-    checkEditor.commands.insertContent('点');
-    checkEditor.commands.undo();
-    assert(checkEditor.getText() === '起', '撤销失败');
-    checkEditor.commands.redo();
-    assert(checkEditor.getText() === '起点', '重做失败');
+    historyEditor.commands.setTextSelection(2);
+    historyEditor.commands.insertContent('点');
+    historyEditor.commands.undo();
+    assert(historyEditor.getText() === '起', '撤销失败');
+    historyEditor.commands.redo();
+    assert(historyEditor.getText() === '起点', '重做失败');
 
     const legacyHost = document.createElement('div');
     legacyHost.innerHTML = cleanPastedHtml('<h2>旧稿</h2><script>坏</script>');
@@ -365,6 +369,7 @@ const runFocusedCheck = () => {
     throw error;
   } finally {
     checkEditor.destroy();
+    historyEditor.destroy();
   }
 };
 
