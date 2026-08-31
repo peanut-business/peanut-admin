@@ -8,6 +8,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | --- | --- | --- |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
+| Understand the target backend organization | [Application and Module architecture blueprint](architecture/application-module-blueprint/README.md) | accepted target and migration input; explicitly not proof that the Runtime has migrated |
 | Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md), [consumer lifecycle contract](architecture/consumer-module-lifecycle-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
 | Understand Module development | [Module development guide](module-development-guide.md) | current guide |
 | Follow the public consumer path | [Create applications and deliver Modules](../docs-site/guide/application-module-lifecycle.md), [command reference](../docs-site/reference.md) and [support guide](../docs-site/support.md) | public task projection; runtime and release facts remain upstream |
