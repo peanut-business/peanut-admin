@@ -63,6 +63,7 @@ foreach ([
     'file_admin_context' => 'app/common/service/file/FileTenantContext.php',
     'finance_admin_context' => 'app/common/service/finance/FinanceTenantContext.php',
     'crontab_scheduler' => 'app/common/service/crontab/CrontabSchedulerService.php',
+    'crontab_task_definition' => 'app/Modules/Official/Task/Application/CrontabTaskDefinition.php',
     'scheduled_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/ScheduledTenantContext.php',
     'tenant_scope_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantScope.php',
     'async_authorization' => 'app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php',
@@ -227,9 +228,10 @@ qualificationExpect(
 );
 qualificationExpect(
     str_contains($sources['crontab_scheduler'], "t.status', 'active'")
-        && str_contains($sources['crontab_scheduler'], 'use PeanutAdmin\\Kernel\\Tenancy\\ScheduledTenantContext;')
         && str_contains($sources['crontab_scheduler'], 'use PeanutAdmin\\Kernel\\Tenancy\\TenantScope;')
-        && str_contains($sources['crontab_scheduler'], 'ScheduledTenantContext::run')
+        && !str_contains($sources['crontab_scheduler'], 'Console::call')
+        && str_contains($sources['crontab_task_definition'], 'ScheduledTenantContext::run')
+        && str_contains($sources['crontab_task_definition'], 'RetryableTaskException')
         && str_contains($sources['scheduled_context_core'], 'finally')
         && str_contains($sources['scheduled_context_core'], 'self::$scope = null')
         && str_contains($sources['scheduled_context_core'], "throw new \\RuntimeException('Scheduled TenantContext is required')")
@@ -428,7 +430,7 @@ qualificationExpect(
         && str_contains($sources['async_runtime_factory'], 'TaskModuleProvider')
         && str_contains($sources['async_worker_definition'], "return 'official.import-export'")
         && str_contains($sources['module_worker'], "assertWorker('official.task')")
-        && str_contains($sources['crontab_scheduler'], "assertScheduled('official.task')")
+        && str_contains($sources['crontab_task_definition'], "assertScheduled('official.task')")
         && str_contains($sources['console'], "'refund:reconcile' => 'official.payment'"),
     'external callback, worker or scheduler entry bypasses its official Module lifecycle'
 );

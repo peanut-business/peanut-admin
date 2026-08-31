@@ -13,6 +13,7 @@ use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAut
 use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
+use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\ImportExport\Contract\DataProviderRegistry;
@@ -58,15 +59,20 @@ final readonly class TaskImportExportRuntime
         return $this->tasks->runTenant(
             $tenantId,
             $workerId,
-            new ImportExportTaskWorkerDefinition(
-                new ImportExportTaskHandler(new CsvOperationRunner(
-                    (new CoreTenantRepositoryFactory($this->pdo))->importExport(),
-                    $this->providers(),
-                    $this->files(),
-                    AuditContractHost::fromPdo($this->pdo),
-                )),
-                new AdminAsyncAuthorization($this->pdo),
-            ),
+            $this->workerDefinition(),
+        );
+    }
+
+    public function workerDefinition(): TaskWorkerDefinition
+    {
+        return new ImportExportTaskWorkerDefinition(
+            new ImportExportTaskHandler(new CsvOperationRunner(
+                (new CoreTenantRepositoryFactory($this->pdo))->importExport(),
+                $this->providers(),
+                $this->files(),
+                AuditContractHost::fromPdo($this->pdo),
+            )),
+            new AdminAsyncAuthorization($this->pdo),
         );
     }
 

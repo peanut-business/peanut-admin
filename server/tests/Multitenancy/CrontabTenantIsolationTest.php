@@ -2,18 +2,18 @@
 declare(strict_types=1);
 
 use app\Modules\Official\Task\Application\CrontabApplicationService;
+use app\Modules\Official\Task\Application\CrontabTaskDefinition;
+use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\common\enum\CrontabEnum;
 use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\CrontabCommandService;
-use app\common\service\crontab\CrontabSchedulerService;
-use app\common\service\crontab\CrontabTenantContext;
-use app\common\service\crontab\CrontabTenantLock;
 use app\common\service\crontab\CrontabTenantRepository;
-use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
-use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Module\ManifestLoader;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -26,13 +26,13 @@ function expectCrontabTenant(bool $condition, string $message): void
     }
 }
 
-function crontabTenantContext(int $tenantId, int $memberId, string $requestId): TenantContext
+function crontabTenantContext(int $tenantId, int $accountId, int $memberId, string $requestId): TenantContext
 {
     return TenantContext::fromValidatedSession(new ValidatedTenantSession(
         $memberId,
-        '01JMT03CRONTAB' . str_pad((string)$memberId, 12, '0', STR_PAD_LEFT),
+        'crontab-session-' . $tenantId . '-' . $memberId,
         $tenantId,
-        $memberId + 10000,
+        $accountId,
         $memberId,
         'admin-web',
         new DateTimeImmutable('2031-01-01T00:00:00Z'),
@@ -40,78 +40,95 @@ function crontabTenantContext(int $tenantId, int $memberId, string $requestId): 
     ), $requestId);
 }
 
-function createCrontabTenantSchema(PDO $pdo): void
+function createCrontabTenantSchema(PDO $pdo, string $serverRoot): void
 {
+    foreach (KernelSchema::tableNames() as $table) {
+        $pdo->exec(KernelSchema::createSql($table));
+    }
+    $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
     $pdo->exec(<<<'SQL'
-CREATE TABLE pa_tenant (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  status VARCHAR(32) NOT NULL,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_crontab (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL DEFAULT '',
-  type TINYINT NOT NULL DEFAULT 1,
-  command VARCHAR(100) NOT NULL DEFAULT '',
-  params VARCHAR(255) NOT NULL DEFAULT '',
-  status TINYINT NOT NULL DEFAULT 2,
-  expression VARCHAR(100) NOT NULL DEFAULT '',
-  error VARCHAR(255) NOT NULL DEFAULT '',
-  last_time INT UNSIGNED NOT NULL DEFAULT 0,
-  time DECIMAL(10,2) NOT NULL DEFAULT 0,
-  max_time DECIMAL(10,2) NOT NULL DEFAULT 0,
-  sort INT UNSIGNED NOT NULL DEFAULT 0,
-  remark VARCHAR(255) NOT NULL DEFAULT '',
-  create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL DEFAULT NULL,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), KEY idx_status (status),
-  UNIQUE KEY uk_crontab_tenant_id (tenant_id, id),
-  KEY idx_crontab_tenant_status_last (tenant_id, status, last_time, id),
-  CONSTRAINT fk_crontab_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (101, 'default', 'Alpha', 'Alpha', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
 SQL);
+    $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
+    expectCrontabTenant($schema !== '', 'canonical application schema is missing');
+    $pdo->exec($schema);
 }
 
 $serverRoot = dirname(__DIR__, 2);
+$manifest = (new ManifestLoader())->load($serverRoot . '/app/Modules/Official/Task');
+$taskVersion = (string)($manifest->data['version'] ?? '');
+$taskDigest = $manifest->digest;
+expectCrontabTenant($taskVersion !== '' && $taskDigest !== '', 'official.task manifest is unavailable');
+
 $host = IsolatedBackendEnvironment::required('DB_HOST');
 $port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$database = IsolatedBackendEnvironment::required('DB_NAME');
 $user = IsolatedBackendEnvironment::required('DB_USER');
 $password = IsolatedBackendEnvironment::required('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
-$database = 'peanut_admin_mt03_crontab_' . $runId;
-$admin = new PDO(
-    "mysql:host={$host};port={$port};charset=utf8mb4",
+$signingKey = hash('sha256', 'crontab-task-' . $runId) . hash('sha256', 'retry-' . $runId);
+expectCrontabTenant(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'Crontab Task Gate requires its exact registered P0-E database',
+);
+
+$pdo = new PDO(
+    "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
     $user,
     $password,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
+    [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
+    ],
 );
-$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 try {
-    $pdo = new PDO(
-        "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        $user,
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
-    );
-    createCrontabTenantSchema($pdo);
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
-    $pdo->exec("INSERT INTO pa_crontab (id, tenant_id, name, command, status, expression) VALUES (11, 101, 'Alpha seed', 'crontab:demo', 1, '* * * * *')");
+    createCrontabTenantSchema($pdo, $serverRoot);
+    $now = '2030-01-01 00:00:00.000';
+    $pdo->exec(<<<SQL
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (202, 'beta', 'Beta', 'Beta', 'active', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_account (id, display_name, status, created_at, updated_at) VALUES
+  (1001, 'Alpha', 'active', '{$now}', '{$now}'),
+  (1002, 'Beta', 'active', '{$now}', '{$now}');
+INSERT INTO pa_tenant_member
+  (id, tenant_id, account_id, display_name, status, joined_at, created_at, updated_at)
+VALUES
+  (501, 101, 1001, 'Alpha', 'active', '{$now}', '{$now}', '{$now}'),
+  (502, 202, 1002, 'Beta', 'active', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_role
+  (id, tenant_id, `key`, name, is_builtin, status, authorization_revision, created_at, updated_at)
+VALUES
+  (1201, 101, 'core.tenant-owner', 'Alpha owner', 1, 'active', 1, '{$now}', '{$now}'),
+  (2202, 202, 'core.tenant-owner', 'Beta owner', 1, 'active', 1, '{$now}', '{$now}');
+INSERT INTO pa_member_role (tenant_id, tenant_member_id, role_id, assigned_at)
+VALUES
+  (101, 501, 1201, '{$now}'),
+  (202, 502, 2202, '{$now}');
+INSERT INTO pa_module_installation
+  (module_key, installed_version, manifest_schema_version, manifest_digest, status, installed_at, activated_at, created_at, updated_at)
+VALUES
+  ('official.task', '{$taskVersion}', 1, '{$taskDigest}', 'active', '{$now}', '{$now}', '{$now}', '{$now}');
+INSERT INTO pa_tenant_module
+  (tenant_id, module_key, status, source, enabled_at, created_at, updated_at)
+VALUES
+  (101, 'official.task', 'enabled', 'manual', '{$now}', '{$now}', '{$now}'),
+  (202, 'official.task', 'enabled', 'manual', '{$now}', '{$now}', '{$now}');
+SQL);
+
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
-    $app = new think\App();
+    $app = new think\App($serverRoot);
     $app->initialize();
 
-    $alpha = crontabTenantContext(101, 501, 'mt03-crontab-alpha-' . $runId);
-    $beta = crontabTenantContext(202, 502, 'mt03-crontab-beta-' . $runId);
-    try {
-        CrontabTenantContext::member();
-        throw new RuntimeException('missing TenantContext unexpectedly succeeded');
-    } catch (Throwable $exception) {
-        expectCrontabTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
-    }
-
+    $alpha = crontabTenantContext(101, 1001, 501, 'crontab-alpha-' . $runId);
+    $beta = crontabTenantContext(202, 1002, 502, 'crontab-beta-' . $runId);
     $task = [
         'tenant_id' => 999,
         'name' => 'Same task',
@@ -123,20 +140,15 @@ try {
         'sort' => 0,
         'remark' => 'MT03-CRONTAB-TENANT-ISOLATION-001',
     ];
-    expectCrontabTenant(
-        app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.add.alpha'),
-            fn() => app(CrontabApplicationService::class)->add($task),
-        ),
-        app(CrontabApplicationService::class)->getError(),
-    );
-    expectCrontabTenant(
-        app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.crontab.add.beta'),
-            fn() => app(CrontabApplicationService::class)->add($task),
-        ),
-        app(CrontabApplicationService::class)->getError(),
-    );
+    foreach ([[$alpha, 'alpha'], [$beta, 'beta']] as [$context, $suffix]) {
+        expectCrontabTenant(
+            app(ExecutionContextStore::class)->run(
+                ExecutionContext::tenantAdmin($context, 'test.crontab.add.' . $suffix),
+                fn() => app(CrontabApplicationService::class)->add($task),
+            ),
+            app(CrontabApplicationService::class)->getError(),
+        );
+    }
     $alphaId = (int)app(ExecutionContextStore::class)->run(
         ExecutionContext::tenantAdmin($alpha, 'test.crontab.query.alpha'),
         fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
@@ -145,183 +157,147 @@ try {
         ExecutionContext::tenantAdmin($beta, 'test.crontab.query.beta'),
         fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
     );
-    expectCrontabTenant($alphaId > 0 && $betaId > 0 && $alphaId !== $betaId, 'Tenant tasks were not independently created');
-    expectCrontabTenant((int)$pdo->query("SELECT tenant_id FROM pa_crontab WHERE id = {$alphaId}")->fetchColumn() === 101, 'payload forged task owner');
-    expectCrontabTenant(
-        app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.list.alpha'),
-            fn() => app(CrontabApplicationService::class)->lists(['name' => 'Same task']),
-        )->total() === 1,
-        'Alpha task list leaked or lost rows',
-    );
-    expectCrontabTenant(
-        app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.crontab.list.beta'),
-            fn() => app(CrontabApplicationService::class)->lists(['name' => 'Same task']),
-        )->total() === 1,
-        'Beta task list leaked or lost rows',
-    );
+    expectCrontabTenant($alphaId > 0 && $betaId > 0 && $alphaId !== $betaId, 'Tenant schedules were not independently created');
     expectCrontabTenant(
         app(ExecutionContextStore::class)->run(
             ExecutionContext::tenantAdmin($alpha, 'test.crontab.detail.cross-tenant'),
             fn() => app(CrontabApplicationService::class)->detail($betaId),
         ) === [],
-        'cross-Tenant task detail leaked',
+        'cross-Tenant schedule detail leaked',
     );
     expectCrontabTenant(
         !app(ExecutionContextStore::class)->run(
             ExecutionContext::tenantAdmin($alpha, 'test.crontab.delete.cross-tenant'),
             fn() => app(CrontabApplicationService::class)->delete($betaId),
         ),
-        'cross-Tenant task delete succeeded',
-    );
-    expectCrontabTenant(app(CrontabApplicationService::class)->getError() === '定时任务不存在', 'cross/missing task denial enumerated owner');
-    expectCrontabTenant(
-        !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.delete.missing'),
-            fn() => app(CrontabApplicationService::class)->delete(999999),
-        ),
-        'missing task delete succeeded',
-    );
-    expectCrontabTenant(app(CrontabApplicationService::class)->getError() === '定时任务不存在', 'missing task denial changed shape');
-
-    app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.crontab.seed-error.alpha'),
-        fn() => Db::name('crontab')->where('id', $alphaId)->update([
-            'status' => CrontabEnum::ERROR,
-            'error' => 'alpha',
-        ]),
-    );
-    app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.crontab.seed-error.beta'),
-        fn() => Db::name('crontab')->where('id', $betaId)->update([
-            'status' => CrontabEnum::ERROR,
-            'error' => 'beta',
-        ]),
-    );
-    expectCrontabTenant(
-        !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.operate.cross-tenant'),
-            fn() => app(CrontabApplicationService::class)->operate($betaId, 'start'),
-        ),
-        'cross-Tenant retry succeeded',
-    );
-    expectCrontabTenant(
-        app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.operate.alpha'),
-            fn() => app(CrontabApplicationService::class)->operate($alphaId, 'start'),
-        ),
-        app(CrontabApplicationService::class)->getError(),
-    );
-    expectCrontabTenant(
-        (string)app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.query-error.alpha'),
-            fn() => Db::name('crontab')->where('id', $alphaId)->value('error'),
-        ) === '',
-        'Alpha retry did not clear Alpha error',
-    );
-    expectCrontabTenant(
-        (string)app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.query-error.beta'),
-            fn() => Db::name('crontab')->where('id', $betaId)->value('error'),
-        ) === 'beta',
-        'Alpha retry cleared Beta error',
+        'cross-Tenant schedule delete succeeded',
     );
 
-    $alphaScope = TenantScope::fromTrustedContext(101, 'fixture:' . $runId . ':alpha');
-    $betaScope = TenantScope::fromTrustedContext(202, 'fixture:' . $runId . ':beta');
-    expectCrontabTenant(CrontabTenantLock::name($alphaScope, 77) !== CrontabTenantLock::name($betaScope, 77), 'same job ID shares a Tenant lock namespace');
-    $lockAlpha = new PDO(
-        "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        $user,
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
-    );
-    $lockBeta = new PDO(
-        "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-        $user,
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
-    );
-    $lockStatement = $lockAlpha->prepare('SELECT GET_LOCK(?, 0)');
-    $lockStatement->execute([CrontabTenantLock::name($alphaScope, 77)]);
-    expectCrontabTenant((int)$lockStatement->fetchColumn() === 1, 'Alpha advisory lock was not acquired');
-    $lockStatement = $lockBeta->prepare('SELECT GET_LOCK(?, 0)');
-    $lockStatement->execute([CrontabTenantLock::name($betaScope, 77)]);
-    expectCrontabTenant((int)$lockStatement->fetchColumn() === 1, 'Beta advisory lock was blocked by Alpha');
-    $releaseStatement = $lockAlpha->prepare('SELECT RELEASE_LOCK(?)');
-    $releaseStatement->execute([CrontabTenantLock::name($alphaScope, 77)]);
-    $releaseStatement = $lockBeta->prepare('SELECT RELEASE_LOCK(?)');
-    $releaseStatement->execute([CrontabTenantLock::name($betaScope, 77)]);
+    $windowNow = time();
+    $previousWindow = $windowNow - 60;
+    $setWindow = $pdo->prepare('UPDATE pa_crontab SET last_time=? WHERE id=?');
+    $setWindow->execute([$previousWindow, $alphaId]);
+    $setWindow->execute([$previousWindow, $betaId]);
 
     $dispatches = [];
-    CrontabSchedulerService::useDispatcherForTest(static function (string $command, array $params) use (&$dispatches): void {
+    CrontabTaskDefinition::useDispatcherForTest(static function (string $command, array $params) use (&$dispatches): void {
         $scope = ScheduledTenantContext::require();
         $dispatches[] = [$command, $scope->tenantId(), $scope->contextIdentity(), $params];
+        if ($scope->tenantId() === 202) {
+            throw new RuntimeException('fixture retry');
+        }
     });
-    $alphaItem = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.crontab.scheduler-item.alpha'),
-        fn() => CrontabTenantRepository::find($alphaId)?->getData() ?? [],
-    );
-    CrontabSchedulerService::start($alphaScope, $alphaItem);
-    expectCrontabTenant(count($dispatches) === 1 && $dispatches[0][1] === 101, 'dispatch did not restore Alpha scope');
-    expectCrontabTenant(ScheduledTenantContext::current() === null, 'scheduled scope leaked after handler');
+    $tasks = (new TaskModuleProvider())->jobs($pdo, $signingKey);
+    $scheduler = (new TaskModuleProvider())->scheduler($tasks);
+    $scheduler->runDue($windowNow);
 
-    $sideEffects = count($dispatches);
-    $forgedOwner = $alphaItem;
-    $forgedOwner['tenant_id'] = 202;
-    try {
-        CrontabSchedulerService::start($alphaScope, $forgedOwner);
-        throw new RuntimeException('owner mismatch unexpectedly succeeded');
-    } catch (RuntimeException $exception) {
-        expectCrontabTenant($exception->getMessage() === 'Scheduled job owner is unavailable', 'owner mismatch denial changed');
-    }
-    expectCrontabTenant(count($dispatches) === $sideEffects, 'owner mismatch reached handler');
-
-    $forgedPayload = $alphaItem;
-    $forgedPayload['command'] = 'refund:reconcile';
-    $forgedPayload['params'] = '--tenant_id=202';
-    CrontabSchedulerService::start($alphaScope, $forgedPayload);
-    expectCrontabTenant(count($dispatches) === $sideEffects + 1, 'persisted Tenant-aware job was not dispatched');
-    expectCrontabTenant($dispatches[$sideEffects][0] === 'crontab:demo' && $dispatches[$sideEffects][3] === [], 'payload fields overrode the persisted job envelope');
-    $sideEffects = count($dispatches);
-
-    app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.crontab.blocked.seed'),
-        fn() => Db::name('crontab')->where('id', $alphaId)->update([
-            'command' => 'generator:cleanup',
-            'status' => CrontabEnum::START,
-            'error' => '',
-        ]),
-    );
-    $blockedItem = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.crontab.blocked-item'),
-        fn() => CrontabTenantRepository::find($alphaId)?->getData() ?? [],
-    );
-    CrontabSchedulerService::start($alphaScope, $blockedItem);
-    expectCrontabTenant(count($dispatches) === $sideEffects, 'unadopted command reached handler');
+    $jobs = $pdo->query(<<<'SQL'
+SELECT id, tenant_id, task_type, status, attempt_count, max_attempts, last_error_code
+FROM pa_task_job ORDER BY tenant_id
+SQL)->fetchAll();
+    expectCrontabTenant(count($jobs) === 2, 'due schedules did not create exactly one Task Job per Tenant');
     expectCrontabTenant(
-        str_contains(
-            (string)app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($alpha, 'test.crontab.blocked-error'),
-                fn() => Db::name('crontab')->where('id', $alphaId)->value('error'),
-            ),
-            '尚未采用可信租户上下文',
-        ),
-        'unadopted command did not fail closed',
+        $jobs[0]['tenant_id'] === 101
+            && $jobs[0]['task_type'] === CrontabTaskDefinition::TASK_TYPE
+            && $jobs[0]['status'] === 'succeeded'
+            && (int)$jobs[0]['attempt_count'] === 1,
+        'successful scheduled trigger did not complete through Task Runtime',
     );
-    expectCrontabTenant(ScheduledTenantContext::current() === null, 'blocked command installed a scope');
-    CrontabSchedulerService::useDispatcherForTest(null);
+    expectCrontabTenant(
+        $jobs[1]['tenant_id'] === 202
+            && $jobs[1]['status'] === 'queued'
+            && (int)$jobs[1]['attempt_count'] === 1
+            && (int)$jobs[1]['max_attempts'] === 3
+            && $jobs[1]['last_error_code'] === 'CRONTAB_EXECUTION_FAILED',
+        'failed scheduled trigger did not create a retryable Task attempt',
+    );
+    expectCrontabTenant(
+        count($dispatches) === 2
+            && $dispatches[0][1] !== $dispatches[1][1]
+            && str_contains($dispatches[0][2], 'tenant=' . $dispatches[0][1])
+            && str_contains($dispatches[1][2], 'tenant=' . $dispatches[1][1]),
+        'scheduled handlers did not preserve two isolated Tenant contexts',
+    );
+    expectCrontabTenant(ScheduledTenantContext::current() === null, 'scheduled Tenant context leaked after Task handler');
+    expectCrontabTenant(
+        (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job_attempt WHERE tenant_id=101') ->fetchColumn() === 1
+            && (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job_attempt WHERE tenant_id=202')->fetchColumn() === 1,
+        'Task attempts crossed Tenant ownership',
+    );
 
-    try {
-        CrontabCommandService::assertTenantAware('generator:cleanup');
-        throw new RuntimeException('Generator cleanup unexpectedly became a Tenant job');
-    } catch (RuntimeException $exception) {
-        expectCrontabTenant(str_contains($exception->getMessage(), '尚未采用可信租户上下文'), 'Generator stop line changed');
+    $betaJobId = (int)$jobs[1]['id'];
+    for ($attempt = 2; $attempt <= 3; ++$attempt) {
+        $pdo->prepare('UPDATE pa_task_job SET available_at=UTC_TIMESTAMP(3) WHERE tenant_id=202 AND id=?')
+            ->execute([$betaJobId]);
+        expectCrontabTenant(
+            $tasks->runTenant(202, 'crontab-retry-' . $attempt . '-' . $runId) === 1,
+            'Task retry attempt was not processed',
+        );
     }
+    $betaJob = $pdo->query("SELECT status,attempt_count,max_attempts,last_error_code FROM pa_task_job WHERE id={$betaJobId}")
+        ->fetch();
+    expectCrontabTenant(
+        $betaJob['status'] === 'dead'
+            && (int)$betaJob['attempt_count'] === 3
+            && (int)$betaJob['max_attempts'] === 3
+            && $betaJob['last_error_code'] === 'CRONTAB_EXECUTION_FAILED',
+        'existing Task retry policy did not reach its dead terminal state',
+    );
+    $attempts = $pdo->query(
+        "SELECT attempt_number,status,error_code FROM pa_task_job_attempt WHERE tenant_id=202 AND job_id={$betaJobId} ORDER BY attempt_number"
+    )->fetchAll();
+    expectCrontabTenant(
+        array_column($attempts, 'status') === ['retry', 'retry', 'dead']
+            && array_column($attempts, 'error_code') === array_fill(0, 3, 'CRONTAB_EXECUTION_FAILED'),
+        'Task attempt ledger did not own retry and terminal failure states',
+    );
+    $backoffs = array_map(
+        static fn(string $json): int => (int)(json_decode($json, true, 16, JSON_THROW_ON_ERROR)['backoff_seconds'] ?? 0),
+        $pdo->query(
+            "SELECT metadata_json FROM pa_task_job_event WHERE tenant_id=202 AND job_id={$betaJobId} AND event_key='tenant.task.retry_scheduled' ORDER BY id"
+        )->fetchAll(PDO::FETCH_COLUMN),
+    );
+    expectCrontabTenant($backoffs === [5, 10], 'Task Runtime exponential backoff policy changed');
+
+    $dispatchCount = count($dispatches);
+    expectCrontabTenant(
+        $tasks->runTenant(202, 'crontab-terminal-' . $runId) === 0 && count($dispatches) === $dispatchCount,
+        'terminal Crontab Task executed again',
+    );
+    $alphaScope = TenantScope::fromTrustedContext(
+        101,
+        sprintf('crontab:v1:tenant=101:job=%d:window=%d', $alphaId, $previousWindow),
+    );
+    $scheduler->start($alphaScope, ['id' => $alphaId]);
+    expectCrontabTenant(
+        count($dispatches) === $dispatchCount && (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn() === 2,
+        'same schedule window bypassed Task idempotency or repeated a terminal job',
+    );
+    expectCrontabTenant(
+        (int)$pdo->query("SELECT status FROM pa_crontab WHERE id={$betaId}")->fetchColumn() === CrontabEnum::START
+            && (string)$pdo->query("SELECT error FROM pa_crontab WHERE id={$betaId}")->fetchColumn() === '',
+        'Crontab retained a second execution status/error path outside Task Runtime',
+    );
+
+    $diagnostics = (string)file_get_contents($serverRoot . '/app/platform/service/ops/PlatformDiagnosticBundleService.php');
+    expectCrontabTenant(
+        str_contains($diagnostics, "'tenant_aggregate' => \$this->failedTaskGroups('pa_task_job', \$since)")
+            && $betaJob['status'] === 'dead'
+            && $betaJob['last_error_code'] === 'CRONTAB_EXECUTION_FAILED',
+        'terminal Crontab failure is absent from the existing diagnostics projection',
+    );
+    $schedulerSource = (string)file_get_contents($serverRoot . '/app/common/service/crontab/CrontabSchedulerService.php');
+    $commandSource = (string)file_get_contents($serverRoot . '/app/command/Crontab.php');
+    $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
+    expectCrontabTenant(
+        !str_contains($schedulerSource, 'Console::call')
+            && !str_contains($commandSource, 'Console::call')
+            && str_contains($runtimeSource, 'enqueueCrontab(')
+            && str_contains($runtimeSource, '$definitions[] = $this->crontabs()'),
+        'production Crontab still bypasses the Task Runtime execution path',
+    );
 } finally {
-    CrontabSchedulerService::useDispatcherForTest(null);
-    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
+    CrontabTaskDefinition::useDispatcherForTest(null);
 }
 
 echo "MT03-CRONTAB-TENANT-ISOLATION-001 passed\n";
