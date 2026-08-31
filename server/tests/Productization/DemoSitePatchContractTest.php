@@ -168,7 +168,7 @@ $profile = $read($root . '/server/app/platform/service/module/ProductTenantModul
 $expect(
     str_contains($profile, 'TenantModuleManager')
         && str_contains($profile, 'VerifiedTenantModuleRepository')
-        && str_contains($profile, 'appendTenantSystem')
+        && str_contains($profile, 'recordTenantSystem')
         && str_contains($profile, "'product_profile'")
         && !str_contains($profile, 'INSERT INTO pa_tenant_module'),
     'product profile bypasses the canonical TenantModule runtime or audit boundary'
