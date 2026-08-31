@@ -11,7 +11,6 @@ use app\platform\service\TenantGovernanceService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
 use app\platform\service\TenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
-use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
@@ -72,7 +71,7 @@ $admin = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
 );
-$database = 'pa_pm01_http_' . strtolower(bin2hex(random_bytes(6)));
+$database = IsolatedBackendEnvironment::required('DB_NAME');
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
 
 try {
@@ -90,9 +89,15 @@ try {
         $pdo->exec(KernelSchema::createSql($table));
     }
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
-    foreach (ModuleSchema::tableNames() as $table) {
-        $pdo->exec(ModuleSchema::createSql($table));
-    }
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_tenant
+  (code,name,display_name,status,activated_at,created_at,updated_at)
+VALUES
+  ('default','Default','Default','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))
+SQL);
+    $applicationSchema = (string)file_get_contents(dirname(__DIR__, 2) . '/database/init.sql');
+    lifecycleExpect($applicationSchema !== '', 'canonical application schema is missing');
+    $pdo->exec($applicationSchema);
     $transactions = new PdoTransactionManager($pdo);
     $bootstrap = new BootstrapService(
         $transactions,
@@ -136,7 +141,7 @@ try {
         'Forged Owner',
         'pm01-forged'
     ));
-    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn() === 0, 'forged platform token wrote a Tenant');
+    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn() === 1, 'forged platform token wrote a Tenant');
 
     $candidate = $service->provision(
         'pm01-lifecycle-token',
@@ -168,6 +173,10 @@ try {
     lifecycleExpect(
         (int)$pdo->query("SELECT COUNT(*) FROM pa_member_role WHERE tenant_id={$tenantId} AND tenant_member_id={$candidate['member_id']} AND role_id={$candidate['role_id']}")->fetchColumn() === 1,
         'owner membership does not point to the native Tenant role'
+    );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_notice_scene WHERE tenant_id={$tenantId}")->fetchColumn() === 4,
+        'provision did not run application-owned Tenant bootstrap'
     );
 
     $secondCandidate = $service->provision(
