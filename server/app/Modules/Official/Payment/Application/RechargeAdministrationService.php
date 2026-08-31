@@ -13,6 +13,7 @@ use app\common\contract\idempotency\IdempotencyReceipt;
 use app\common\contract\idempotency\IdempotencyResult;
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
+use app\common\persistence\AdvisoryLockUnavailable;
 use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\Modules\Official\Payment\Model\RefundLog;
 use app\Modules\Official\Payment\Model\RefundRecord;
@@ -181,13 +182,9 @@ class RechargeAdministrationService
     public function refundAgain(object $context, array $params, int $adminId): string
     {
         $recordId = (int)$params['record_id'];
-        $retryLock = $this->retryLocks->name($context, $recordId);
-        if (!$this->retryLocks->acquire($retryLock)) {
-            throw BusinessException::conflict('REFUND_IN_PROGRESS', '退款正在处理中，请勿重复操作');
-        }
-
         try {
-            [$order, $record, $log] = $this->transactions->run(function () use ($context, $recordId, $adminId): array {
+            return $this->retryLocks->run($context, $recordId, function () use ($context, $recordId, $adminId): string {
+                [$order, $record, $log] = $this->transactions->run(function () use ($context, $recordId, $adminId): array {
                     /** @var RefundRecord $record */
                     $record = FinanceTenantRepository::records($context)->lock(true)->findOrEmpty($recordId);
                     if ($record->isEmpty()) {
@@ -218,12 +215,13 @@ class RechargeAdministrationService
                         $adminId
                     );
                     return [$order, $record, $log];
-            });
+                });
 
-            // 重试同样先提交 ERROR -> ING 和本次日志，再在事务外请求渠道。
-            return $this->requestGatewayRefund($context, $order, $record, $log);
-        } finally {
-            $this->retryLocks->release($retryLock);
+                // 重试同样先提交 ERROR -> ING 和本次日志，再在事务外请求渠道。
+                return $this->requestGatewayRefund($context, $order, $record, $log);
+            });
+        } catch (AdvisoryLockUnavailable) {
+            throw BusinessException::conflict('REFUND_IN_PROGRESS', '退款正在处理中，请勿重复操作');
         }
     }
 

@@ -6,6 +6,8 @@ namespace app\command;
 use app\common\execution\DatabaseContextualCommand;
 use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
+use app\common\persistence\AdvisoryLockExecution;
+use app\common\persistence\AdvisoryLockUnavailable;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
 use PDO;
 use think\console\Input;
@@ -24,6 +26,7 @@ class Crontab extends DatabaseContextualCommand
         ExecutionContextAccess $contextAccess,
         PDO $pdo,
         private readonly TaskScheduler $taskScheduler,
+        private readonly AdvisoryLockExecution $locks,
     ) {
         parent::__construct($contexts, $contextAccess, $pdo);
     }
@@ -35,13 +38,14 @@ class Crontab extends DatabaseContextualCommand
 
     protected function handle(Input $input, Output $output): int
     {
-        if (!$this->acquireSchedulerLock()) {
-            return 0;
-        }
         try {
-            $this->scheduler()->runDue(time());
-        } finally {
-            $this->releaseSchedulerLock();
+            $this->locks->run(
+                'peanut:crontab:scheduler',
+                0,
+                fn() => $this->scheduler()->runDue(time()),
+            );
+        } catch (AdvisoryLockUnavailable) {
+            return 0;
         }
 
         return 0;
@@ -56,19 +60,5 @@ class Crontab extends DatabaseContextualCommand
     private function scheduler(): TaskScheduler
     {
         return $this->taskScheduler;
-    }
-
-    private function acquireSchedulerLock(): bool
-    {
-        $statement = $this->database()->query("SELECT GET_LOCK('peanut:crontab:scheduler', 0)");
-        return (int)$statement->fetchColumn() === 1;
-    }
-
-    private function releaseSchedulerLock(): void
-    {
-        try {
-            $this->database()->query("SELECT RELEASE_LOCK('peanut:crontab:scheduler')");
-        } catch (\Throwable) {
-        }
     }
 }

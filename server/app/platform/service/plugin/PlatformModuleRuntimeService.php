@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
+use app\common\persistence\AdvisoryLockExecution;
+use app\common\persistence\AdvisoryLockUnavailable;
 use app\common\service\module\ModuleScaffoldGenerator;
 use PDO;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
@@ -141,51 +143,58 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
         $packageKey = $scope['package_key'];
         $moduleKeys = array_keys($scope['manifests']);
         $lockName = 'pa:module-runtime:' . substr(hash('sha256', $packageKey), 0, 40);
-        if (!$this->advisoryLock($lockName)) {
+        $unchanged = null;
+        try {
+            (new AdvisoryLockExecution($this->pdo))->run($lockName, 0, function () use (
+                $scope,
+                $packageKey,
+                $moduleKeys,
+                &$unchanged,
+            ): void {
+                ModuleLifecyclePolicy::assertMutable($scope['manifests']);
+                $statuses = $this->moduleStatuses($moduleKeys);
+                if (count($statuses) !== count($moduleKeys)
+                    || array_diff(array_values($statuses), ['active', 'maintenance']) !== []) {
+                    throw new PluginLifecycleException('MODULE_STATE_INVALID', 'Every Bundle Module must be active or already disabled.');
+                }
+                if (count(array_filter($statuses, static fn(string $status): bool => $status === 'maintenance')) === count($moduleKeys)) {
+                    $unchanged = [
+                        'operation' => 'unchanged',
+                        'package_key' => $packageKey,
+                        'affected_modules' => $moduleKeys,
+                        'status' => 'maintenance',
+                        'catalog_revision' => $this->catalog()->catalogRevision(),
+                    ];
+                    return;
+                }
+                ModuleLifecyclePolicy::assertNoActiveBusinessDependents(
+                    $this->pdo,
+                    new PluginLockResolver(
+                        $this->serverRoot,
+                        (string)($this->moduleConfig['plugin_lock'] ?? '../plugins.lock'),
+                    ),
+                    $moduleKeys,
+                );
+                $enabled = $this->pdo->prepare('SELECT COUNT(*) FROM pa_tenant_module WHERE module_key IN (' . $this->placeholders($moduleKeys) . ") AND status='enabled'");
+                $enabled->execute($moduleKeys);
+                if ((int)$enabled->fetchColumn() !== 0) {
+                    throw new PluginLifecycleException('PLUGIN_TENANT_MODULE_ACTIVE', 'Disable every TenantModule in the Bundle first.');
+                }
+                $this->pdo->beginTransaction();
+                try {
+                    (new ModuleCatalogApplier($this->pdo))->retire($moduleKeys);
+                    $update = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=NULL,revision=revision+1,updated_at=UTC_TIMESTAMP(3) WHERE module_key IN (" . $this->placeholders($moduleKeys) . ") AND status='active'");
+                    $update->execute($moduleKeys);
+                    $this->pdo->commit();
+                } catch (\Throwable $exception) {
+                    if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+                    throw $exception;
+                }
+            });
+        } catch (AdvisoryLockUnavailable) {
             throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
         }
-        try {
-            ModuleLifecyclePolicy::assertMutable($scope['manifests']);
-            $statuses = $this->moduleStatuses($moduleKeys);
-            if (count($statuses) !== count($moduleKeys)
-                || array_diff(array_values($statuses), ['active', 'maintenance']) !== []) {
-                throw new PluginLifecycleException('MODULE_STATE_INVALID', 'Every Bundle Module must be active or already disabled.');
-            }
-            if (count(array_filter($statuses, static fn(string $status): bool => $status === 'maintenance')) === count($moduleKeys)) {
-                return [
-                    'operation' => 'unchanged',
-                    'package_key' => $packageKey,
-                    'affected_modules' => $moduleKeys,
-                    'status' => 'maintenance',
-                    'catalog_revision' => $this->catalog()->catalogRevision(),
-                ];
-            }
-            ModuleLifecyclePolicy::assertNoActiveBusinessDependents(
-                $this->pdo,
-                new PluginLockResolver(
-                    $this->serverRoot,
-                    (string)($this->moduleConfig['plugin_lock'] ?? '../plugins.lock'),
-                ),
-                $moduleKeys,
-            );
-            $enabled = $this->pdo->prepare('SELECT COUNT(*) FROM pa_tenant_module WHERE module_key IN (' . $this->placeholders($moduleKeys) . ") AND status='enabled'");
-            $enabled->execute($moduleKeys);
-            if ((int)$enabled->fetchColumn() !== 0) {
-                throw new PluginLifecycleException('PLUGIN_TENANT_MODULE_ACTIVE', 'Disable every TenantModule in the Bundle first.');
-            }
-            $this->pdo->beginTransaction();
-            try {
-                (new ModuleCatalogApplier($this->pdo))->retire($moduleKeys);
-                $update = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=NULL,revision=revision+1,updated_at=UTC_TIMESTAMP(3) WHERE module_key IN (" . $this->placeholders($moduleKeys) . ") AND status='active'");
-                $update->execute($moduleKeys);
-                $this->pdo->commit();
-            } catch (\Throwable $exception) {
-                if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-                throw $exception;
-            }
-        } finally {
-            $this->releaseAdvisoryLock($lockName);
-        }
+        if (is_array($unchanged)) return $unchanged;
         $catalog = $this->catalog();
         $catalog->invalidateTenantAuthorization($moduleKeys);
         return [
@@ -247,19 +256,4 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
         return implode(',', array_fill(0, count($values), '?'));
     }
 
-    private function advisoryLock(string $name): bool
-    {
-        $statement = $this->pdo->prepare('SELECT GET_LOCK(?,0)');
-        $statement->execute([$name]);
-        return (int)$statement->fetchColumn() === 1;
-    }
-
-    private function releaseAdvisoryLock(string $name): void
-    {
-        try {
-            $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(?)');
-            $statement->execute([$name]);
-        } catch (\Throwable) {
-        }
-    }
 }
