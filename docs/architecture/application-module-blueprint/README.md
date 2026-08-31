@@ -44,26 +44,32 @@ ThinkPHP Application：管理端必须经过管理身份、Tenant、RBAC 和数�
 
 ## 目标知识图谱
 
-```text
-访问者 / 事件
-├─ 管理员请求 ─────> adminapi Application ─┐
-├─ 会员/匿名请求 ──> api Application ──────┤
-├─ 平台运营请求 ──> platform Application ─┤
-├─ 安装请求 ──────> installation Host ────┤
-├─ CLI / Job ─────> console/worker Host ──┤
-├─ Provider 回调 ─> callback Host ────────┤
-└─ WS 消息 ───────> websocket Host ───────┘
-                                              │ 可信 Context + 已授权操作
-                                              ▼
-                                       Module Application
-                                              │
-                         ┌────────────────────┼────────────────────┐
-                         ▼                    ▼                    ▼
-                    Domain 规则          自有 Model/表        公开 Contracts
-                                                                  │
-                                                        其他 Module/Host
+```mermaid
+flowchart TB
+    Admin[管理员请求] --> AdminApi[adminapi Application] --> AdminContext[Admin Context<br/>Tenant + RBAC + DataScope]
+    Consumer[会员或匿名请求] --> Api[api Application] --> ConsumerContext[Consumer Context<br/>会员身份 + 可选 Tenant]
+    PlatformUser[平台运营请求] --> Platform[platform Application] --> PlatformContext[Platform Context<br/>平台权限 + 目标 Tenant]
+    Installer[安装请求] --> Installation[installation Host] --> InstallContext[Installation Context<br/>安装 token + 生命周期门禁]
+    Scheduled[CLI 或 Job] --> Worker[console / worker Host] --> SystemContext[System Context<br/>actor + Tenant + Attempt]
+    Provider[Provider 回调] --> Callback[integrationapi Host] --> ProviderContext[Provider Context<br/>验签 + 可信绑定 + receipt]
+    Socket[WS 消息] --> WebSocket[websocket Host] --> MessageContext[Message Context<br/>连接身份 + 每消息授权]
 
-Core：只在所有 Application/Module 都能复用且不含产品业务语义时提供底层合同。
+    AdminContext --> PublicApi[Module 公开 Query / Command]
+    ConsumerContext --> PublicApi
+    PlatformContext --> PublicApi
+    InstallContext --> PublicApi
+    SystemContext --> PublicApi
+    ProviderContext --> PublicApi
+    MessageContext --> PublicApi
+    Other[其他 Module / Host] --> PublicApi
+    PublicApi --> UseCase[Module Application 用例]
+    UseCase --> Domain[Domain 规则]
+    UseCase --> Persistence[自有 Model / 表]
+
+    Core[Core：无产品业务语义的通用底层合同] -.-> AdminContext
+    Core -.-> ConsumerContext
+    Core -.-> PlatformContext
+    Core -.-> UseCase
 ```
 
 ## 打开目录时应该怎样理解
