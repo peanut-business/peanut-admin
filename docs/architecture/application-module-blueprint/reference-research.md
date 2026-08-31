@@ -15,8 +15,11 @@ Module/插件和非 HTTP Runtime。
 | Hyperf | [`eee2d614`](https://github.com/hyperf/hyperf/tree/eee2d614e86ca98fd567bc2860397a2e5dbba497) | DI、Context、HTTP/WS、Queue、Process 组件 |
 | Hyperf Skeleton | [`v3.2.0`](https://github.com/hyperf/hyperf-skeleton/tree/855dd7ef145d9e1e3d0500d958ac55d51cbf6ef0) | `app`、`config`、可选包安装器、Listener 示例 |
 
-CodeGraph 用于找调用关系和重复边界，源码用于确认具体行为。此次没有运行这些项目、没有做性能 benchmark，
-也没有评价其商业功能完整度；结论只针对源码组织和运行模型。
+CodeGraph 用于找调用关系和重复边界，源码用于确认具体行为。Peanut Admin 自身事实已在
+`origin/dev@0cc1b9dd3c4fd0ff12b30f0bdcc138bcee33268a` 复核；Composer 锁定
+`peanut-admin/core@0.1.0-alpha.11`（source `fdd58c4873bea79759826ffe92aac52c5414d688`），但当前 worktree
+没有该精确 Core 源码，因此 manifest schema 与 multi-app 采用能力仍属于实施前核验。此次没有运行参考项目、
+没有做性能 benchmark，也没有评价其商业功能完整度；结论只针对源码组织和运行模型。
 
 ## 一眼对比
 
@@ -27,7 +30,23 @@ CodeGraph 用于找调用关系和重复边界，源码用于确认具体行为�
 | MineAdmin | `Http/Admin`、`Http/Api` 与全局 Service/Repository/Model | 路由注解 → 多个 middleware → Controller → DI Service → Repository → Model | DI、显式 Service/Repository、Admin/API 协议分区、异步与长期进程能力 | 每个简单 CRUD 都强制全套层级；AOP 数据权限过于隐式；运行依赖较重 |
 | BuildAdmin | ThinkPHP `admin`、`api` 多应用；大量能力集中在 Backend 基类和 Trait | Application → 基类 initialize → Controller/Trait → Model | CRUD 生成效率高、应用边界直观、插件安装体验完整 | 大型基类魔法、Controller 直接事务/数据操作、静态单例 Module 管理 |
 | Hyperf | Skeleton 很薄，能力由 Composer 组件与注解/配置组合 | Server → Middleware/DI → Handler；Queue/WS/Process 为独立入口 | 常驻进程 Context、DI、事件、队列、WS 和可观测扩展点 | 为当前问题整体迁移框架；协程状态、容器和部署复杂度会提高工资成本 |
-| Peanut 当前 | 有 adminapi/api/platform/tenant/Modules，但由统一根路由和 AppService 串起 | 根路由 → 各类 middleware → 多种 Controller/Application/Module Provider | 已有可信 Context、Module manifest、容器合同、服务登记 | Application 与 Module 的 HTTP owner 混合、Provider 手工定位、目录语义不稳定 |
+| Peanut 当前（`0cc1b9d`） | 有 adminapi/api/platform/tenant/Modules，但由统一根路由和 AppService 串起 | 根路由 → 各类 middleware → 多种 Controller/Application/Module Provider | 已有 Context 生命周期、Module manifest、容器合同、服务登记 | Application 与 Module 的 HTTP owner 混合、actor/Context 过宽、Provider 手工定位、目录语义不稳定 |
+
+## 三项只读推演的共同校准
+
+业务边界、运行时与数据安全、升级扩展与交付治理三项独立只读推演都保留母稿主轴，并共同否决了“共享 Module 就
+共享一套 CRUD/Context/DTO”和“先关闭根路由再迁业务域”两种解释。冻结增量是：
+
+1. 同一业务/数据 owner 面向 Admin、Consumer、Platform、Provider、System 提供不同窄端口；
+2. 每个顶层执行单元只有一个强类型 Context，Tenant ownership 与对象级 DataScope 分层；
+3. provider 只向唯一 composition root 贡献启动期 binding；
+4. 完整业务结果的 Module Command 持有最外事务，participant 只 join，强制 Audit 与业务原子；
+5. Job 是意图，Attempt 在 claim 时创建；外部 HTTP 不进入数据库事务；
+6. 迁移先核验框架/Core，再建 Application 地基并逐域硬切，最后关闭暂态根装载；
+7. 本蓝图明确排除 AOP、Event Bus、Outbox、微服务、独立队列和空 WS/Repository/Domain 层；未来只能由新的
+   架构决定显式取代本合同。
+
+这些是目标设计校准，不是当前 Runtime 已完成的证明。
 
 ## LikeAdmin：为什么易上手，又为什么会遇到上限
 
@@ -67,7 +86,7 @@ Repository 负责查询拼装，权限、操作日志和 Access Token 由 middle
 值得借鉴的是：
 
 - 依赖可见，业务服务不需要静态定位；
-- 横切能力放 middleware/interceptor，不复制到每个 Controller；
+- 横切能力放 middleware/显式 runner，不复制到每个 Controller；
 - 长期进程为每个请求/消息维护 Context，不使用进程级可变全局值。
 
 不应照搬的是“每个 CRUD 都必须 Controller → Service → Repository → Model”以及全局 AOP 的隐式魔法。简单查询
@@ -102,22 +121,29 @@ Peanut Admin 当前没有必须整体迁移 Hyperf 的证据。迁移会同时�
 - trace、身份和 Tenant 通过消息 envelope 显式传播；
 - 只有出现经过验证的长连接/高并发需求，才增加对应 Host 和 Runtime 依赖。
 
-## 从竞品抽出的九条第一性原理
+## 从竞品与内部推演抽出的十二条第一性原理
 
 1. **入口先分身份**：不同访问者使用不同 Application，避免一条 middleware 链同时兼容所有人。
 2. **业务再分 owner**：相同业务规则只属于一个 Module，不因有多个 API 入口而复制。
-3. **安全边界靠链路，不靠自觉**：认证、Tenant、RBAC、DataScope、审计在 Application 入口固定组合。
+3. **安全边界靠链路和类型，不靠自觉**：认证、Tenant、入口权限在 Application 固定组合；对象 DataScope 和不变量
+   由 audience 专属 Module 端口继续收窄。
 4. **依赖必须可见**：业务服务构造器能说明它依赖谁；运行时静态定位只会把成本推给排错者。
 5. **目录数量按复杂度增长**：简单 Module 不强制 Domain/Repository/Event 全家桶，复杂规则出现后再增加。
-6. **数据只有一个 owner**：跨 Module 读取走 Query，写入走 Command，不能为了方便直接共用 Model。
-7. **一个进程一份依赖图**：版本冲突要在构建期解决；无法收敛时隔离进程，而不是复制 vendor。
-8. **横切能力使用框架扩展点**：middleware、event、container、ORM scope 足够时，不再自建第二套机制。
-9. **性能靠减少重复工作**：模块表在启动/构建期编译，Context 每次入口建立，查询显式限界，不在每个请求扫描目录。
+6. **共享 owner 不等于共享入口**：多个受众可以复用规则、Repository 和表，但不能复用万能 Context、CRUD、DTO
+   或结果映射。
+7. **数据只有一个 owner**：跨 Module 读取走 Query，写入走 Command，不能为了方便直接共用 Model。
+8. **一个进程一份依赖图和一个 root**：版本冲突在构建期拒绝；provider 只贡献 binding，不复制 vendor 或容器。
+9. **事务跟随业务结果 owner**：Module Command 持有最外事务，participant 只 join，外部 HTTP 永不进入 DB 事务。
+10. **异步事实晚于意图**：提交只建 Job，成功 claim 才建 Attempt；System/Provider/Consumer 都不是 Admin。
+11. **横切机制不扩成框架**：本蓝图使用 middleware、container、显式 runner、ORM scope 和现有 Task，并明确排除
+    AOP、Event Bus、Outbox 和独立队列；未来只能由新的架构决定显式取代本合同。
+12. **性能靠减少重复工作**：Module registry 在启动/构建期编译，Context 每次入口建立，查询显式限界，不在每个请求扫描目录。
 
 ## 最终取舍
 
 Peanut Admin 采用“LikeAdmin 的多应用直观性 + MineAdmin 的依赖可见性 + Hyperf 的入口生命周期纪律 + 当前
-Peanut Module manifest/Context”，不采用任何一个竞品的完整目录复制。
+Peanut Module manifest/Context 生命周期”，不采用任何一个竞品的完整目录复制；本蓝图明确排除其 AOP、Event Bus、
+微服务和完整 Repository 层，未来只能由新的架构决定显式取代本合同。
 
 这不是折中拼盘，而是围绕四个成本做的选择：普通 CRUD 文件少、复杂业务能自然扩展、安全链不靠开发者记忆、
 非 HTTP 场景出现时无需重写业务规则。
