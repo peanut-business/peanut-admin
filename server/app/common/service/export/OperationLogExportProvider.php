@@ -58,7 +58,7 @@ final readonly class OperationLogExportProvider implements DataProvider
             $afterId = (int)$cursor;
         }
 
-        $records = OperationLog::where('tenant_id', $context->tenantContext->tenantId)
+        $records = OperationLog::where([])
             ->where('id', '>', $afterId)
             ->field(['id', 'username', 'ip', 'uri', 'method', 'params', 'create_time'])
             ->order('id')

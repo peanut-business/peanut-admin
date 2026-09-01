@@ -45,7 +45,7 @@ final readonly class ImportExportApplicationService implements ImportExportComma
     {
         return new ImportExportService(
             (new CoreTenantRepositoryFactory($this->pdo))->importExport(),
-            new DataProviderRegistry([new OperationLogExportProvider($this->pdo)]),
+            new DataProviderRegistry([new OperationLogExportProvider()]),
             $this->tasks->publisher(new ImportExportTaskSubmissionProvider()),
             $this->tasks->jobs(),
             AuditContractHost::fromPdo($this->pdo),
