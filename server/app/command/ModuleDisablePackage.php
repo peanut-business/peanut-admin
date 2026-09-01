@@ -6,13 +6,13 @@ namespace app\command;
 use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginLifecycleException;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 
-final class ModuleDisablePackage extends ContextualCommand
+final class ModuleDisablePackage extends DatabaseContextualCommand
 {
     protected function configure()
     {

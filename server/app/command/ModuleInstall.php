@@ -5,14 +5,14 @@ namespace app\command;
 
 use app\platform\service\module\DeploymentModuleInstaller;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 
 /** Registers a manifest from the explicit PEANUT_MODULE_ROOTS deployment registry. */
-final class ModuleInstall extends ContextualCommand
+final class ModuleInstall extends DatabaseContextualCommand
 {
     protected function configure()
     {

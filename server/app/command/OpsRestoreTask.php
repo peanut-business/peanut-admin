@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\ops\PdoRestoreTaskExecutionService;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -12,7 +12,7 @@ use think\console\Output;
 use Throwable;
 
 /** Deployment-only bridge for trusted isolated restore verification. */
-final class OpsRestoreTask extends ContextualCommand
+final class OpsRestoreTask extends DatabaseContextualCommand
 {
     protected function configure(): void
     {

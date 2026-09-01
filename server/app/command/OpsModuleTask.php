@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -13,7 +13,7 @@ use think\facade\Config;
 use Throwable;
 
 /** Deployment-control bridge for one fixed Module operation task. */
-final class OpsModuleTask extends ContextualCommand
+final class OpsModuleTask extends DatabaseContextualCommand
 {
     protected function configure(): void
     {

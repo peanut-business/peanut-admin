@@ -5,12 +5,12 @@ namespace app\command;
 
 use app\common\service\async\TaskImportExportRuntimeFactory;
 use app\common\service\runtime\OperationalLog;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;
 
-final class TenantTaskWorker extends ContextualCommand
+final class TenantTaskWorker extends DatabaseContextualCommand
 {
     protected function configure()
     {

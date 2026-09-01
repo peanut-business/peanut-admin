@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\common\execution;
 
-use PDO;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
@@ -14,7 +13,6 @@ abstract class ContextualCommand extends Command
     public function __construct(
         private readonly ExecutionContextStore $contexts,
         private readonly ExecutionContextAccess $contextAccess,
-        private readonly PDO $pdo,
     ) {
         parent::__construct();
     }
@@ -32,11 +30,6 @@ abstract class ContextualCommand extends Command
             ),
             fn(): int => $this->handle($input, $output),
         );
-    }
-
-    final protected function database(): PDO
-    {
-        return $this->pdo;
     }
 
     final protected function executionContext(): ExecutionContextAccess

@@ -7,14 +7,14 @@ use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageException;
 use app\platform\service\plugin\PluginPackageInstaller;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 
-final class ModuleInstallPackage extends ContextualCommand
+final class ModuleInstallPackage extends DatabaseContextualCommand
 {
     protected function configure()
     {

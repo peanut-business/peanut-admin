@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use app\common\service\async\TaskImportExportRuntimeFactory;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
 use think\console\Input;
@@ -15,7 +15,7 @@ use PeanutAdmin\Kernel\Tenancy\TenantScope;
  * 由系统 cron 每分钟调用一次：`* * * * * cd /path/to/server && php think crontab`
  * 每次调用扫描所有「运行中」任务，比对 cron 表达式，派发到期的 console 命令。
  */
-class Crontab extends ContextualCommand
+class Crontab extends DatabaseContextualCommand
 {
     protected function configure()
     {

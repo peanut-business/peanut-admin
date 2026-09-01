@@ -5,13 +5,13 @@ namespace app\command;
 
 use app\platform\service\module\ProductTenantModuleProfileService;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 
-final class TenantModuleProfile extends ContextualCommand
+final class TenantModuleProfile extends DatabaseContextualCommand
 {
     protected function configure()
     {
