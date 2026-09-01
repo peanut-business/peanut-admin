@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\readiness;
 
-use app\Modules\Official\Notification\ModuleProvider as NotificationModuleProvider;
+use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\config\BrandDefaults;
@@ -23,6 +23,10 @@ use think\facade\Db;
  */
 final class FirstRunReadinessHost
 {
+    public function __construct(private readonly NotificationQueries $notifications)
+    {
+    }
+
     /** @return array{production_ready:bool,summary:array<string,int>,items:list<array<string,mixed>>} */
     public function checklist(
         AuthenticatedMemberContext|TenantContext $context,
@@ -102,7 +106,7 @@ final class FirstRunReadinessHost
     {
         $smsConfigured = false;
         if ($moduleEnabled) {
-            $detail = (new NotificationModuleProvider())->queries()->channelDetail();
+            $detail = $this->notifications->channelDetail();
             $smsConfigured = (bool)($detail['status']['sms'] ?? false);
         }
 

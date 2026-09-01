@@ -41,9 +41,33 @@ $applicationService = (string)file_get_contents(
 $notificationProvider = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Notification/ModuleProvider.php'
 );
+$sceneValidator = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Notification/Validation/NoticeSceneValidate.php'
+);
+$readinessHost = (string)file_get_contents(
+    $serverRoot . '/app/common/service/readiness/FirstRunReadinessHost.php'
+);
+$readinessController = (string)file_get_contents(
+    $serverRoot . '/app/adminapi/controller/config/ReadinessController.php'
+);
 expectNotificationHost(
     str_contains($notificationProvider, 'bind(VerificationCodeCommands::class'),
     'verification command contract is not bound at startup'
+);
+expectNotificationHost(
+    str_contains($sceneValidator, 'private readonly NotificationQueries $queries')
+        && str_contains($sceneValidator, '$this->queries->sceneExists(')
+        && !str_contains($sceneValidator, 'new ModuleProvider'),
+    'scene validation bypasses the Notification query contract binding'
+);
+expectNotificationHost(
+    str_contains($readinessHost, 'private readonly NotificationQueries $notifications')
+        && str_contains($readinessHost, '$this->notifications->channelDetail()')
+        && !str_contains($readinessHost, 'NotificationModuleProvider')
+        && str_contains($readinessController, 'private readonly FirstRunReadinessHost $readiness')
+        && str_contains($readinessController, '$this->readiness->checklist(')
+        && !str_contains($readinessController, 'new FirstRunReadinessHost'),
+    'readiness projection bypasses its container-owned Notification dependency'
 );
 foreach (['Login', 'OAuth', 'Sms', 'User'] as $application) {
     $consumer = (string)file_get_contents($serverRoot . '/app/api/application/' . $application . 'ApplicationService.php');

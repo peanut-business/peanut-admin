@@ -3,11 +3,16 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Validation;
 
-use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use think\Validate;
 
 class NoticeSceneValidate extends Validate
 {
+    public function __construct(private readonly NotificationQueries $queries)
+    {
+        parent::__construct();
+    }
+
     protected $rule = [
         'id'              => 'require|integer|gt:0|checkScene',
         'sms_template_id' => 'max:100|checkTemplateId',
@@ -30,7 +35,7 @@ class NoticeSceneValidate extends Validate
 
     protected function checkScene($value): bool|string
     {
-        return (new ModuleProvider())->queries()->sceneExists((int) $value)
+        return $this->queries->sceneExists((int) $value)
             ? true
             : '通知场景不存在';
     }
