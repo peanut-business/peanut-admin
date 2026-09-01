@@ -328,7 +328,9 @@ class AppService extends Service
                 DeploymentMode::MultiTenant => new MultiTenantDataScopePolicy(
                     $this->app->make(CurrentExecutionContext::class),
                 ),
-                DeploymentMode::Standalone => new StandaloneDataScopePolicy(),
+                DeploymentMode::Standalone => new StandaloneDataScopePolicy(
+                    $this->app->make(CurrentExecutionContext::class),
+                ),
                 default => throw new \RuntimeException('DEPLOYMENT_MODE_UNCONFIGURED'),
             };
         });

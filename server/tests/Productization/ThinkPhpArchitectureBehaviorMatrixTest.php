@@ -317,22 +317,30 @@ expectTpq51(
     'explicit Platform Tenant gateway did not preserve its audited scope bypass',
 );
 
-tpq51InstallDataScopePolicy(new StandaloneDataScopePolicy());
+tpq51InstallDataScopePolicy(new StandaloneDataScopePolicy($current));
 $connection->resetStatements();
 $standalone = new Tpq51Child([
     'id' => 5,
-    'tenant_id' => 999,
     'parent_id' => 7,
     'name' => 'standalone',
 ]);
-expectTpq51($standalone->save(), 'Standalone Model save did not reach ThinkORM');
-Tpq51Child::alias('child')->where('child.id', '>', 0)->select();
-foreach ($connection->statements as $statement) {
-    expectTpq51(
-        tpq51SqlCount($statement['sql'], 'tenant_id') === 0,
-        'Standalone SQL unexpectedly references tenant_id: ' . $statement['sql'],
-    );
-}
+expectTpq51(
+    $store->run($execution, static fn() => $standalone->save()),
+    'Standalone Model save did not reach ThinkORM',
+);
+$store->run(
+    $execution,
+    static fn() => Tpq51Child::alias('child')->where('child.id', '>', 0)->select(),
+);
+expectTpq51(
+    (int)$standalone->getData('tenant_id') === 101
+        && tpq51SqlCount($connection->statements[0]['sql'] ?? '', 'tenant_id') === 1,
+    'Standalone write did not preserve canonical Tenant ownership',
+);
+expectTpq51(
+    tpq51SqlCount($connection->statements[1]['sql'] ?? '', 'tenant_id') === 0,
+    'Standalone read unexpectedly added a Tenant predicate',
+);
 
 $paginator = new Bootstrap([
     ['id' => 41],
