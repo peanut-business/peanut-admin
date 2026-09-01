@@ -7,7 +7,7 @@ use app\common\http\PageResult;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
 use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
-use app\Modules\Official\Oauth\ModuleProvider as OAuthModuleProvider;
+use app\Modules\Official\Oauth\Contracts\OAuthQueries;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\UserTerminalEnum;
 use app\common\application\ApplicationService;
@@ -38,6 +38,7 @@ class RechargeApplicationService extends ApplicationService
         private readonly AuditContractHost $audit,
         private readonly MemberQueries $members,
         private readonly MemberBalanceCommands $memberBalances,
+        private readonly OAuthQueries $oauth,
     ) {
     }
 
@@ -214,7 +215,7 @@ class RechargeApplicationService extends ApplicationService
             $grant = $attempt['grant'];
             if ($payWay === PaymentScene::PAY_WAY_WECHAT
                 && in_array((int)$order['order_terminal'], [1, 2], true)) {
-                $openid = (new OAuthModuleProvider())->queries()->wechatSubjectForMember(
+                $openid = $this->oauth->wechatSubjectForMember(
                     $context,
                     $memberId,
                     (int)$order['order_terminal']

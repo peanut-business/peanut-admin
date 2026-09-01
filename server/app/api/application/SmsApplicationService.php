@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\application\ApplicationService;
@@ -12,8 +12,10 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 class SmsApplicationService extends ApplicationService
 {
-    public function __construct(private readonly MemberIdentityCommands $memberIdentities)
-    {
+    public function __construct(
+        private readonly MemberIdentityCommands $memberIdentities,
+        private readonly VerificationCodeCommands $verificationCodes,
+    ) {
     }
 
     public function sendCode(TenantContext|TenantSystemContext $context, array $params): bool
@@ -30,7 +32,7 @@ class SmsApplicationService extends ApplicationService
             }
         }
 
-        $result = (new ModuleProvider())->verification()->sendCode($context, $scene, $mobile);
+        $result = $this->verificationCodes->sendCode($context, $scene, $mobile);
         if (!$result->success) {
             self::setError($result->error);
             return false;

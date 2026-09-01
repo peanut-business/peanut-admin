@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
@@ -43,6 +43,7 @@ class OAuthApplicationService extends ApplicationService
         private readonly MemberQueries $members,
         private readonly MemberIdentityCommands $memberIdentities,
         private readonly MemberProfileCommands $memberProfiles,
+        private readonly VerificationCodeCommands $verificationCodes,
     ) {
     }
 
@@ -203,7 +204,7 @@ class OAuthApplicationService extends ApplicationService
                         $member->id,
                         $mobile,
                     );
-                    $result = (new ModuleProvider())->verification()->verifyCode(
+                    $result = $this->verificationCodes->verifyCode(
                         $context,
                         NoticeSceneEnum::BIND_MOBILE,
                         $mobile,

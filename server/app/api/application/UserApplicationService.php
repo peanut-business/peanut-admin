@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
+use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\application\ApplicationService;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\FileService;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -20,6 +20,8 @@ class UserApplicationService extends ApplicationService
         private readonly MemberQueries $members,
         private readonly MemberIdentityCommands $memberIdentities,
         private readonly MemberProfileCommands $memberProfiles,
+        private readonly VerificationCodeCommands $verificationCodes,
+        private readonly ArticleCollectionSummary $articleCollections,
     ) {
     }
 
@@ -38,8 +40,7 @@ class UserApplicationService extends ApplicationService
         unset($data['user_money']);
         $data['avatar']     = FileService::getFileUrl((string) $data['avatar']);
         try {
-            $data['collect_num'] = (new ArticleModuleProvider())->collectionSummary()
-                ->countForMember($context, $memberId);
+            $data['collect_num'] = $this->articleCollections->countForMember($context, $memberId);
         } catch (ModuleException) {
             $data['collect_num'] = 0;
         }
@@ -131,7 +132,7 @@ class UserApplicationService extends ApplicationService
             $scene = empty($member['mobile'])
                 ? NoticeSceneEnum::BIND_MOBILE
                 : NoticeSceneEnum::CHANGE_MOBILE;
-            $result = (new ModuleProvider())->verification()->verifyCode(
+            $result = $this->verificationCodes->verifyCode(
                 $context,
                 $scene,
                 $mobile,
