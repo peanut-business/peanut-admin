@@ -39,5 +39,5 @@ export interface ReadinessChecklist {
 }
 
 export function getReadinessChecklist() {
-  return axios.get<ReadinessChecklist>('/api/admin/readiness/checklist');
+  return axios.get<ReadinessChecklist>('/adminapi/readiness/checklist');
 }

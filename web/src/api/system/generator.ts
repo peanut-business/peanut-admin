@@ -108,20 +108,20 @@ export interface GeneratorModel {
 
 export function getGeneratorSourceTables(params: GeneratorListParams) {
   return axios.get<GeneratorListRes<GeneratorSourceTable>>(
-    '/api/admin/generator/source-tables',
+    '/adminapi/generator/source-tables',
     { params }
   );
 }
 
 export function getGeneratorList(params: GeneratorListParams) {
   return axios.get<GeneratorListRes<GeneratorRecord>>(
-    '/api/admin/generator/lists',
+    '/adminapi/generator/lists',
     { params }
   );
 }
 
 export function getGeneratorDetail(id: number) {
-  return axios.get<GeneratorRecord>('/api/admin/generator/detail', {
+  return axios.get<GeneratorRecord>('/adminapi/generator/detail', {
     params: { id },
   });
 }
@@ -130,42 +130,42 @@ export function getGeneratorDetail(id: number) {
 // eslint-disable-next-line camelcase
 export function importGeneratorTables(table_names: string[]) {
   // eslint-disable-next-line camelcase
-  return axios.post('/api/admin/generator/import', { table_names });
+  return axios.post('/adminapi/generator/import', { table_names });
 }
 
 export function syncGenerator(id: number) {
-  return axios.post('/api/admin/generator/sync', { id });
+  return axios.post('/adminapi/generator/sync', { id });
 }
 
 export function updateGenerator(data: GeneratorUpdateForm) {
-  return axios.post('/api/admin/generator/update', data);
+  return axios.post('/adminapi/generator/update', data);
 }
 
 export function deleteGenerator(ids: number[]) {
-  return axios.post('/api/admin/generator/delete', { ids });
+  return axios.post('/adminapi/generator/delete', { ids });
 }
 
 export function previewGenerator(id: number) {
-  return axios.post<GeneratorPreviewFile[]>('/api/admin/generator/preview', {
+  return axios.post<GeneratorPreviewFile[]>('/adminapi/generator/preview', {
     id,
   });
 }
 
 export function generateGenerator(ids: number[]) {
-  return axios.post<GeneratorGenerateResult>('/api/admin/generator/generate', {
+  return axios.post<GeneratorGenerateResult>('/adminapi/generator/generate', {
     ids,
   });
 }
 
 export function getGeneratorModels() {
-  return axios.get<GeneratorModel[]>('/api/admin/generator/models');
+  return axios.get<GeneratorModel[]>('/adminapi/generator/models');
 }
 
 /** 下载只允许消费服务端签发的一次性令牌。 */
 export async function downloadGenerator(token: string): Promise<Blob> {
   const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
   const response = await fetch(
-    `${baseUrl}/api/admin/generator/download?token=${encodeURIComponent(
+    `${baseUrl}/adminapi/generator/download?token=${encodeURIComponent(
       token
     )}`,
     { headers: { Authorization: `Bearer ${getToken() || ''}` } }

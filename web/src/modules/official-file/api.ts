@@ -22,21 +22,21 @@ export interface FileCateRecord {
 }
 
 export function getFileCateList(type: FileType) {
-  return axios.get<FileCateRecord[]>('/api/admin/official.file.category.list', {
+  return axios.get<FileCateRecord[]>('/adminapi/official.file.category.list', {
     params: { type },
   });
 }
 
 export function addFileCate(data: { type: FileType; pid?: number; name: string }) {
-  return axios.post('/api/admin/official.file.category.add', data);
+  return axios.post('/adminapi/official.file.category.add', data);
 }
 
 export function editFileCate(data: { id: number; name: string }) {
-  return axios.post('/api/admin/official.file.category.edit', data);
+  return axios.post('/adminapi/official.file.category.edit', data);
 }
 
 export function deleteFileCate(id: number) {
-  return axios.post('/api/admin/official.file.category.delete', { id });
+  return axios.post('/adminapi/official.file.category.delete', { id });
 }
 
 // ---- 文件 ----
@@ -60,25 +60,25 @@ export interface FileListParams {
 }
 
 export function getFileList(params: FileListParams) {
-  return axios.get<ListRes<FileRecord>>('/api/admin/official.file.list', { params });
+  return axios.get<ListRes<FileRecord>>('/adminapi/official.file.list', { params });
 }
 
 export function moveFile(ids: number[], cid: number) {
-  return axios.post('/api/admin/official.file.move', { ids, cid });
+  return axios.post('/adminapi/official.file.move', { ids, cid });
 }
 
 export function renameFile(id: number, name: string) {
-  return axios.post('/api/admin/official.file.rename', { id, name });
+  return axios.post('/adminapi/official.file.rename', { id, name });
 }
 
 export function deleteFile(ids: number[]) {
-  return axios.post('/api/admin/official.file.delete', { ids });
+  return axios.post('/adminapi/official.file.delete', { ids });
 }
 
 const uploadUrl: Record<FileType, string> = {
-  10: '/api/admin/official.file.upload.image',
-  20: '/api/admin/official.file.upload.video',
-  30: '/api/admin/official.file.upload.file',
+  10: '/adminapi/official.file.upload.image',
+  20: '/adminapi/official.file.upload.video',
+  30: '/adminapi/official.file.upload.file',
 };
 
 export function uploadFile(type: FileType, options: UploadRequestOptions) {

@@ -47,27 +47,27 @@ export interface RoleListResult {
 
 /** 角色列表（按 sort desc, id desc） */
 export function getRoleList(params: RoleListParams) {
-  return axios.get<RoleListResult>('/api/admin/role/lists', { params });
+  return axios.get<RoleListResult>('/adminapi/role/lists', { params });
 }
 
 /** 全量角色（供下拉选择） */
 export function getRoleAll() {
-  return axios.get<RoleRecord[]>('/api/admin/role/all');
+  return axios.get<RoleRecord[]>('/adminapi/role/all');
 }
 
 /** 角色详情（含 menu_id，供分配权限回填权限树） */
 export function getRoleDetail(id: number) {
-  return axios.get<RoleDetail>('/api/admin/role/detail', { params: { id } });
+  return axios.get<RoleDetail>('/adminapi/role/detail', { params: { id } });
 }
 
 export function addRole(data: RoleBaseForm) {
-  return axios.post('/api/admin/role/add', data);
+  return axios.post('/adminapi/role/add', data);
 }
 
 export function editRole(data: RoleBaseForm | RoleAuthForm) {
-  return axios.post('/api/admin/role/edit', data);
+  return axios.post('/adminapi/role/edit', data);
 }
 
 export function deleteRole(id: number) {
-  return axios.post('/api/admin/role/delete', { id });
+  return axios.post('/adminapi/role/delete', { id });
 }

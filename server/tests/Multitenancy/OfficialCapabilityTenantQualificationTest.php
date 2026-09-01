@@ -298,7 +298,7 @@ qualificationExpect(
         && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::isTenantAdminRoute')
         && str_contains($sources['admin_permissions'], 'InstanceControlPlanePolicy::tenantAdminPermissions()')
         && !is_file($root . '/app/common/service/platform/InstanceControlPlanePolicy.php')
-        && str_contains($sources['routes'], 'api/platform/infrastructure/storage')
+        && str_contains($sources['routes'], 'infrastructure/storage')
         && !str_contains($sources['routes'], "Route::post('storage/setup'"),
     'instance storage control remains reachable from a Tenant Admin audience'
 );

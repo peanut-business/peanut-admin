@@ -28,13 +28,28 @@ final class PeanutRouteInventoryRoute
     /** @var list<string> */
     private static array $prefixes = [];
 
+    private static string $application = '';
+
+    private static string $applicationPrefix = '';
+
     private static string $serverRoot = '';
 
     public static function reset(string $serverRoot): void
     {
         self::$endpoints = [];
         self::$prefixes = [];
+        self::$application = '';
+        self::$applicationPrefix = '';
         self::$serverRoot = rtrim($serverRoot, '/');
+    }
+
+    public static function beginApplication(string $application, string $externalPrefix): void
+    {
+        if (self::$prefixes !== []) {
+            throw new RuntimeException('Route inventory application changed inside a route group');
+        }
+        self::$application = $application;
+        self::$applicationPrefix = trim($externalPrefix, '/');
     }
 
     public static function get(string $path, mixed $handler): PeanutRouteInventoryNode
@@ -108,7 +123,7 @@ final class PeanutRouteInventoryRoute
         }
 
         $parts = array_values(array_filter(
-            [...self::$prefixes, trim($path, '/')],
+            [self::$applicationPrefix, ...self::$prefixes, trim($path, '/')],
             static fn(string $part): bool => $part !== '',
         ));
         [$source, $line] = self::sourceLocation();
@@ -119,6 +134,7 @@ final class PeanutRouteInventoryRoute
             'action' => $handler[1],
             'source' => $source,
             'line' => $line,
+            'application' => self::$application,
             'middleware' => [],
         ];
 
@@ -177,8 +193,13 @@ final class PeanutRouteInventoryRoute
 /** Read the complete route registry for static contracts without executing it. */
 function peanut_route_registry_source(string $serverRoot): string
 {
-    $routeRoot = rtrim($serverRoot, '/') . '/route';
+    $serverRoot = rtrim($serverRoot, '/');
+    $routeRoot = $serverRoot . '/route';
     $files = [
+        '../app/adminapi/route/app.php',
+        '../app/api/route/app.php',
+        '../app/platform/route/app.php',
+        '../app/installation/route/app.php',
         'app.php',
         'platform.php',
         'tenant.php',
@@ -194,13 +215,17 @@ function peanut_route_registry_source(string $serverRoot): string
         'official_import_export.php',
     ];
 
+    foreach (glob($serverRoot . '/app/Modules/*/*/Http/routes.php') ?: [] as $moduleRoute) {
+        $files[] = '../' . substr($moduleRoute, strlen($serverRoot) + 1);
+    }
+
     $source = '';
     foreach ($files as $file) {
         $path = $routeRoot . '/' . $file;
         if (!is_file($path)) {
             throw new RuntimeException('Route registry file is missing: ' . $file);
         }
-        $source .= "\n/* route/{$file} */\n" . (string)file_get_contents($path);
+        $source .= "\n/* {$file} */\n" . (string)file_get_contents($path);
     }
     return $source;
 }
@@ -228,6 +253,7 @@ function peanut_route_endpoint_inventory(string $serverRoot): array
     }
 
     $moduleNamespaces = [];
+    $moduleSources = [];
     foreach (glob($resolvedRoot . '/app/Modules/*/*/module.json') ?: [] as $manifestPath) {
         $manifest = json_decode((string)file_get_contents($manifestPath), true, 32, JSON_THROW_ON_ERROR);
         $moduleKey = $manifest['key'] ?? null;
@@ -239,6 +265,7 @@ function peanut_route_endpoint_inventory(string $serverRoot): array
 
         $relative = substr(dirname($manifestPath), strlen($resolvedRoot . '/app/Modules/'));
         $moduleNamespaces['app\\Modules\\' . str_replace('/', '\\', $relative) . '\\'] = $moduleKey;
+        $moduleSources['server/app/Modules/' . $relative . '/'] = $moduleKey;
         if (!class_exists($provider, false)) {
             $separator = strrpos($provider, '\\');
             $namespace = substr($provider, 0, $separator);
@@ -249,26 +276,34 @@ function peanut_route_endpoint_inventory(string $serverRoot): array
     }
 
     PeanutRouteInventoryRoute::reset($resolvedRoot);
-    require $resolvedRoot . '/route/app.php';
+    foreach ([
+        'adminapi' => 'adminapi',
+        'api' => 'api',
+        'platform' => 'platformapi',
+        'installation' => 'installapi',
+    ] as $application => $externalPrefix) {
+        PeanutRouteInventoryRoute::beginApplication($application, $externalPrefix);
+        require $resolvedRoot . '/app/' . $application . '/route/app.php';
+    }
 
-    $applications = ['adminapi', 'api', 'platform', 'installation', 'tenant'];
     $endpoints = PeanutRouteInventoryRoute::endpoints();
     foreach ($endpoints as &$endpoint) {
         $controller = (string)$endpoint['controller'];
         $owner = null;
+        foreach ($moduleSources as $sourcePrefix => $moduleKey) {
+            if (str_starts_with((string)$endpoint['source'], $sourcePrefix)) {
+                $owner = ['type' => 'module', 'key' => $moduleKey];
+                break;
+            }
+        }
         foreach ($moduleNamespaces as $namespace => $moduleKey) {
-            if (str_starts_with($controller, $namespace)) {
+            if ($owner === null && str_starts_with($controller, $namespace)) {
                 $owner = ['type' => 'module', 'key' => $moduleKey];
                 break;
             }
         }
         if ($owner === null) {
-            foreach ($applications as $application) {
-                if (str_starts_with($controller, 'app\\' . $application . '\\')) {
-                    $owner = ['type' => 'application', 'key' => $application];
-                    break;
-                }
-            }
+            $owner = ['type' => 'application', 'key' => (string)$endpoint['application']];
         }
         if ($owner === null) {
             throw new RuntimeException('Route inventory owner is unknown: ' . $controller);
@@ -287,16 +322,20 @@ function peanut_route_endpoint_inventory(string $serverRoot): array
 
     $methods = [];
     $owners = [];
+    $applications = [];
     $identities = [];
     foreach ($endpoints as $endpoint) {
         $methods[$endpoint['method']] = ($methods[$endpoint['method']] ?? 0) + 1;
         $owner = $endpoint['owner']['type'] . ':' . $endpoint['owner']['key'];
         $owners[$owner] = ($owners[$owner] ?? 0) + 1;
+        $application = (string)$endpoint['application'];
+        $applications[$application] = ($applications[$application] ?? 0) + 1;
         $identity = $endpoint['method'] . ' ' . $endpoint['path'];
         $identities[$identity] = ($identities[$identity] ?? 0) + 1;
     }
     ksort($methods, SORT_STRING);
     ksort($owners, SORT_STRING);
+    ksort($applications, SORT_STRING);
     $duplicates = array_keys(array_filter($identities, static fn(int $count): bool => $count > 1));
     if ($duplicates !== []) {
         throw new RuntimeException('Route inventory contains duplicate method/path: ' . implode(', ', $duplicates));
@@ -307,6 +346,7 @@ function peanut_route_endpoint_inventory(string $serverRoot): array
         'summary' => [
             'total' => count($endpoints),
             'methods' => $methods,
+            'applications' => $applications,
             'owners' => $owners,
             'duplicates' => [],
         ],

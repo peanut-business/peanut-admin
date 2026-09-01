@@ -33,13 +33,13 @@ export interface RechargeSetting {
 }
 
 export const getPayConfig = () =>
-  axios.get<PayConfig>('/api/admin/official.payment.settings.detail');
+  axios.get<PayConfig>('/adminapi/official.payment.settings.detail');
 export const savePayConfig = (data: PayConfig) =>
-  axios.post('/api/admin/official.payment.settings.save', data);
+  axios.post('/adminapi/official.payment.settings.save', data);
 export const getRechargeSetting = () =>
-  axios.get<RechargeSetting>('/api/admin/official.payment.recharge-settings.detail');
+  axios.get<RechargeSetting>('/adminapi/official.payment.recharge-settings.detail');
 export const saveRechargeSetting = (data: RechargeSetting) =>
-  axios.post('/api/admin/official.payment.recharge-settings.save', data);
+  axios.post('/adminapi/official.payment.recharge-settings.save', data);
 
 // ─── 充值订单 ────────────────────────────────────────────────────────────────
 export interface RechargeRecord {
@@ -97,20 +97,20 @@ export interface RechargeExportResult {
 }
 
 export function getRechargeList(params: RechargeParams) {
-  return axios.get<RechargeListRes>('/api/admin/official.payment.recharge.list', {
+  return axios.get<RechargeListRes>('/adminapi/official.payment.recharge.list', {
     params,
   });
 }
 
 export function getRechargeExportInfo(params: RechargeParams) {
-  return axios.get<RechargeExportInfo>('/api/admin/official.payment.recharge.list', {
+  return axios.get<RechargeExportInfo>('/adminapi/official.payment.recharge.list', {
     params: { ...params, export: 1 },
   });
 }
 
 export function exportRecharge(params: RechargeParams) {
   return axios.get<RechargeExportResult>(
-    '/api/admin/official.payment.recharge.list',
+    '/adminapi/official.payment.recharge.list',
     { params: { ...params, export: 2 } }
   );
 }
@@ -121,7 +121,7 @@ export function refundRecharge(
   idempotencyKey = crypto.randomUUID(),
 ) {
   return axios.post(
-    '/api/admin/official.payment.recharge.refund',
+    '/adminapi/official.payment.recharge.refund',
     {
       recharge_id: rechargeId,
       ...(refundAmount === undefined ? {} : { refund_amount: refundAmount }),
@@ -199,23 +199,23 @@ export interface RefundLogRecord {
 }
 
 export function getRefundStat() {
-  return axios.get<RefundStat>('/api/admin/official.payment.refund.stat');
+  return axios.get<RefundStat>('/adminapi/official.payment.refund.stat');
 }
 
 export function getRefundRecords(params: RefundParams) {
-  return axios.get<RefundListRes>('/api/admin/official.payment.refund.list', {
+  return axios.get<RefundListRes>('/adminapi/official.payment.refund.list', {
     params,
   });
 }
 
 export function getRefundLog(recordId: number) {
-  return axios.get<RefundLogRecord[]>('/api/admin/official.payment.refund.log', {
+  return axios.get<RefundLogRecord[]>('/adminapi/official.payment.refund.log', {
     params: { record_id: recordId },
   });
 }
 
 export function refundAgain(recordId: number) {
-  return axios.post('/api/admin/official.payment.refund.retry', {
+  return axios.post('/adminapi/official.payment.refund.retry', {
     record_id: recordId,
   });
 }

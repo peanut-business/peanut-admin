@@ -573,7 +573,7 @@ PHP, $c + [
             $fields .= "  {$column['name']}" . ($column['required'] ? '' : '?') . ": {$column['tsType']};\n";
         }
         $treeField = $c['tree'] === [] ? '' : "  children?: {$c['entity']}Record[];\n";
-        $endpoint = "/api/admin/{$c['module']}/{$c['resource']}";
+        $endpoint = "/adminapi/{$c['module']}/{$c['resource']}";
         return self::replace(<<<'TS'
 import axios from 'axios';
 

@@ -15,7 +15,7 @@ $routes = peanut_route_registry_source($serverRoot);
 $policy = (string)file_get_contents($serverRoot . '/vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php');
 $permissions = (string)file_get_contents($serverRoot . '/app/common/service/authorization/AdminAuthorizationService.php');
 
-foreach (['api/platform/infrastructure/storage', 'platform.ops.read',
+foreach (['infrastructure/storage', 'platform.ops.read',
     'platform.ops.maintenance.manage', 'PlatformStorageController'] as $marker) {
     expectPlatformStorageBoundary(str_contains($routes, $marker), 'Platform storage route missing: ' . $marker);
 }

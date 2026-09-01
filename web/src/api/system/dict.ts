@@ -35,29 +35,29 @@ export interface ListRes<T> {
 }
 
 export function getDictTypeList(params: DictTypeListParams) {
-  return axios.get<ListRes<DictTypeRecord>>('/api/admin/dict/type/lists', {
+  return axios.get<ListRes<DictTypeRecord>>('/adminapi/dict/type/lists', {
     params,
   });
 }
 
 export function getDictTypeAll() {
-  return axios.get<DictTypeOption[]>('/api/admin/dict/type/all');
+  return axios.get<DictTypeOption[]>('/adminapi/dict/type/all');
 }
 
 export function addDictType(data: DictTypeForm) {
-  return axios.post('/api/admin/dict/type/add', data);
+  return axios.post('/adminapi/dict/type/add', data);
 }
 
 export function editDictType(data: DictTypeForm) {
-  return axios.post('/api/admin/dict/type/edit', data);
+  return axios.post('/adminapi/dict/type/edit', data);
 }
 
 export function deleteDictType(id: number) {
-  return axios.post('/api/admin/dict/type/delete', { id });
+  return axios.post('/adminapi/dict/type/delete', { id });
 }
 
 export function updateDictTypeStatus(id: number, isDisable: number) {
-  return axios.post('/api/admin/dict/type/status', {
+  return axios.post('/adminapi/dict/type/status', {
     id,
     is_disable: isDisable,
   });
@@ -88,7 +88,7 @@ export interface DictDataListParams {
 }
 
 export function getDictDataList(params: DictDataListParams) {
-  return axios.get<ListRes<DictDataRecord>>('/api/admin/dict/data/lists', {
+  return axios.get<ListRes<DictDataRecord>>('/adminapi/dict/data/lists', {
     params,
   });
 }
@@ -101,25 +101,25 @@ export interface DictDataOption {
 }
 
 export function getDictDataByType(typeValue: string) {
-  return axios.get<DictDataOption[]>('/api/admin/dict/data/byType', {
+  return axios.get<DictDataOption[]>('/adminapi/dict/data/byType', {
     params: { type_value: typeValue },
   });
 }
 
 export function addDictData(data: DictDataForm) {
-  return axios.post('/api/admin/dict/data/add', data);
+  return axios.post('/adminapi/dict/data/add', data);
 }
 
 export function editDictData(data: DictDataForm) {
-  return axios.post('/api/admin/dict/data/edit', data);
+  return axios.post('/adminapi/dict/data/edit', data);
 }
 
 export function deleteDictData(id: number) {
-  return axios.post('/api/admin/dict/data/delete', { id });
+  return axios.post('/adminapi/dict/data/delete', { id });
 }
 
 export function updateDictDataStatus(id: number, isDisable: number) {
-  return axios.post('/api/admin/dict/data/status', {
+  return axios.post('/adminapi/dict/data/status', {
     id,
     is_disable: isDisable,
   });

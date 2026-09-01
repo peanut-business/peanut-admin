@@ -85,9 +85,9 @@ SQL);
     {
         $method = strtoupper((string)$request->method());
         $path = trim((string)$request->pathinfo(), '/');
-        return ($method === 'PUT' && $path === 'api/platform/v1/ops/maintenance')
+        return ($method === 'PUT' && $path === 'platformapi/v1/ops/maintenance')
             || ($method === 'POST'
-                && preg_match('#^api/platform/v1/ops/maintenance/maintenance_[a-f0-9]{32}/close$#D', $path) === 1);
+                && preg_match('#^platformapi/v1/ops/maintenance/maintenance_[a-f0-9]{32}/close$#D', $path) === 1);
     }
 
 }

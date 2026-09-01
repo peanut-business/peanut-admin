@@ -223,7 +223,7 @@ SQL);
     );
 
     $routeSource = peanut_route_registry_source(dirname(__DIR__, 2));
-    poExpect(is_string($routeSource) && str_contains($routeSource, "Route::post('api/platform/session/login'"), 'independent platform route prefix is missing');
+    poExpect(is_string($routeSource) && str_contains($routeSource, "Route::post('session/login'"), 'independent platform route prefix is missing');
     poExpect(str_contains($routeSource, 'PlatformLoginMiddleware::class'), 'platform routes lack their dedicated login guard');
     poExpect(str_contains($routeSource, "'platform.tenant.read'"), 'platform tenant route lacks explicit RBAC');
 

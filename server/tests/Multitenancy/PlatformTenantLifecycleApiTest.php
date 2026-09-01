@@ -318,15 +318,15 @@ SQL);
 
     $route = peanut_route_registry_source(dirname(__DIR__, 2));
     lifecycleExpect(
-        str_contains($route, "Route::post('api/platform/tenants/provision'")
+        str_contains($route, "Route::post('tenants/provision'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner'")
-            && str_contains($route, "Route::post('api/platform/tenants/activate'")
-            && str_contains($route, "Route::post('api/platform/tenants/close'")
+            && str_contains($route, "Route::post('tenants/activate'")
+            && str_contains($route, "Route::post('tenants/close'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle'"),
         'platform lifecycle HTTP routes lost their dedicated permissions'
     );
-    $resendRoute = strpos($route, "Route::post('api/platform/tenants/invitations/resend'");
-    $inviteRoute = strpos($route, "Route::post('api/platform/tenants/invitations'");
+    $resendRoute = strpos($route, "Route::post('tenants/invitations/resend'");
+    $inviteRoute = strpos($route, "Route::post('tenants/invitations'");
     lifecycleExpect(
         $resendRoute !== false && $inviteRoute !== false && $resendRoute < $inviteRoute,
         'specific invitation actions must precede the prefix-sensitive invitation collection route'

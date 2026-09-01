@@ -32,15 +32,15 @@ expectPermission($policy->canAccess(false, 'admin/status', ['admin/edit'], ['adm
 $app = new think\App();
 $app->initialize();
 expectPermission(AdminApiAccessRegistry::version() === 1, 'admin exception metadata version must be fixed');
-expectPermission(AdminApiAccessRegistry::isAuthenticatedOnly('GET', 'api/admin/admin/self'), 'self endpoint must be authenticated-only');
-expectPermission(!AdminApiAccessRegistry::isAuthenticatedOnly('POST', 'api/admin/admin/self'), 'authenticated metadata must be method-specific');
-expectPermission(!AdminApiAccessRegistry::isAuthenticatedOnly('GET', 'api/admin/official.article.list'), 'business endpoint must not bypass RBAC');
-expectPermission(AdminApiAccessRegistry::isPublic('POST', 'api/user/login'), 'public login endpoint must be explicit');
-expectPermission(!AdminApiAccessRegistry::isPublic('GET', 'api/user/login'), 'public metadata must be method-specific');
-expectPermission(AdminApiAccessRegistry::isPublic('POST', 'api/tenant/session/select'), 'Tenant selection endpoint must be explicit');
-expectPermission(AdminApiAccessRegistry::isPlatformPublic('POST', 'api/platform/session/login'), 'Platform login must use its own metadata');
-expectPermission(AdminApiAccessRegistry::isPlatformAuthenticatedOnly('GET', 'api/platform/session/info'), 'Platform session info must be authenticated-only');
-expectPermission(!AdminApiAccessRegistry::isPublic('POST', 'api/platform/session/login'), 'Platform route must not enter Tenant Admin metadata');
+expectPermission(AdminApiAccessRegistry::isAuthenticatedOnly('GET', 'adminapi/admin/self'), 'self endpoint must be authenticated-only');
+expectPermission(!AdminApiAccessRegistry::isAuthenticatedOnly('POST', 'adminapi/admin/self'), 'authenticated metadata must be method-specific');
+expectPermission(!AdminApiAccessRegistry::isAuthenticatedOnly('GET', 'adminapi/official.article.list'), 'business endpoint must not bypass RBAC');
+expectPermission(AdminApiAccessRegistry::isPublic('POST', 'adminapi/user/login'), 'public login endpoint must be explicit');
+expectPermission(!AdminApiAccessRegistry::isPublic('GET', 'adminapi/user/login'), 'public metadata must be method-specific');
+expectPermission(AdminApiAccessRegistry::isPublic('POST', 'adminapi/tenant/session/select'), 'Tenant selection endpoint must be explicit');
+expectPermission(AdminApiAccessRegistry::isPlatformPublic('POST', 'platformapi/session/login'), 'Platform login must use its own metadata');
+expectPermission(AdminApiAccessRegistry::isPlatformAuthenticatedOnly('GET', 'platformapi/session/info'), 'Platform session info must be authenticated-only');
+expectPermission(!AdminApiAccessRegistry::isPublic('POST', 'platformapi/session/login'), 'Platform route must not enter Tenant Admin metadata');
 
 $resolution = CoreServiceOverrides::registry()->resolve(CoreServiceOverrides::ADMIN_PERMISSION_POLICY);
 expectPermission($resolution->key === 'authorization.permission.service.policy', 'PHP override key must be stable');

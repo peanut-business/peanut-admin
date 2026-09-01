@@ -53,5 +53,5 @@ export interface WorkbenchData {
 }
 
 export function getWorkbench() {
-  return axios.get<WorkbenchData>('/api/admin/workbench/index');
+  return axios.get<WorkbenchData>('/adminapi/workbench/index');
 }

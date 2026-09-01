@@ -111,6 +111,21 @@ export default defineConfig((configEnv) =>
           strict: true,
         },
         proxy: {
+          '/adminapi': {
+            target: apiProxyTarget,
+            changeOrigin: false,
+            headers: proxyHeaders,
+          },
+          '/platformapi': {
+            target: apiProxyTarget,
+            changeOrigin: false,
+            headers: proxyHeaders,
+          },
+          '/installapi': {
+            target: apiProxyTarget,
+            changeOrigin: false,
+            headers: proxyHeaders,
+          },
           '/api': {
             target: apiProxyTarget,
             changeOrigin: false,

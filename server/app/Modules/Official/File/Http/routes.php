@@ -12,7 +12,8 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) === 'adminapi') {
+Route::group(function (): void {
     Route::post('official.file.upload.image', [UploadController::class, 'image']);
     Route::post('official.file.upload.video', [UploadController::class, 'video']);
     Route::post('official.file.upload.file', [UploadController::class, 'file']);
@@ -28,7 +29,10 @@ Route::group('api/admin', function (): void {
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
+}
 
-Route::post('api/upload/image', [ApiUploadController::class, 'image'])
+if (($peanutRouteApplication ?? null) === 'api') {
+Route::post('upload/image', [ApiUploadController::class, 'image'])
     ->middleware(CheckTokenMiddleware::class)
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.member-upload');
+}
