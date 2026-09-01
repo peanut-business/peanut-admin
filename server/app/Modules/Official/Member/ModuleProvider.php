@@ -62,6 +62,7 @@ final class ModuleProvider implements ModuleProviderContract
         $app->bind(MemberQueries::class, fn(): MemberQueries => new MemberQueryService(
             $app->make(CurrentExecutionContext::class),
         ));
+        $app->bind(MemberIdentityCommands::class, fn(): MemberIdentityCommands => new MemberIdentityContractService());
         $app->bind(MemberProfileCommands::class, fn(): MemberProfileCommands => new MemberProfileContractService());
         $app->bind(MemberTagCommands::class, fn(): MemberTagCommands => new MemberTagContractService());
         $app->bind(MemberBalanceCommands::class, fn(): MemberBalanceCommands => new MemberBalanceContractService());

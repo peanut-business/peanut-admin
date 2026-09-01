@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\api\application;
 
 use app\Modules\Official\Notification\ModuleProvider;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
+use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\api\service\UserTokenService;
 use app\common\application\ApplicationService;
 use app\common\enum\notice\NoticeSceneEnum;
@@ -16,6 +16,10 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 class LoginApplicationService extends ApplicationService
 {
+    public function __construct(private readonly MemberIdentityCommands $memberIdentities)
+    {
+    }
+
     /**
      * 账号注册
      * params: account, password, scene(默认h5)
@@ -24,7 +28,7 @@ class LoginApplicationService extends ApplicationService
     {
         try {
             self::assertLoginWayEnabled($context, 1);
-            (new MemberModuleProvider())->identityCommands()->register(
+            $this->memberIdentities->register(
                 $context,
                 (string)$params['account'],
                 (string)$params['password'],
@@ -46,7 +50,7 @@ class LoginApplicationService extends ApplicationService
     {
         try {
             self::assertLoginWayEnabled($context, 1);
-            $member = (new MemberModuleProvider())->identityCommands()->login(
+            $member = $this->memberIdentities->login(
                 $context,
                 (string)$params['account'],
                 (string)$params['password'],
@@ -85,7 +89,7 @@ class LoginApplicationService extends ApplicationService
                 throw new \RuntimeException($result->error);
             }
 
-            $member = (new MemberModuleProvider())->identityCommands()->loginByVerifiedMobile(
+            $member = $this->memberIdentities->loginByVerifiedMobile(
                 $context,
                 $mobile,
                 self::defaultAvatar($context),
@@ -101,7 +105,7 @@ class LoginApplicationService extends ApplicationService
     public function resetPassword(TenantContext|TenantSystemContext $context, array $params): bool
     {
         try {
-            (new MemberModuleProvider())->identityCommands()->assertMobileBound($context, (string)$params['mobile']);
+            $this->memberIdentities->assertMobileBound($context, (string)$params['mobile']);
             $result = (new ModuleProvider())->verification()->verifyCode(
                 $context,
                 NoticeSceneEnum::RESET_PASSWORD,
@@ -112,7 +116,7 @@ class LoginApplicationService extends ApplicationService
                 throw new \RuntimeException($result->error);
             }
 
-            (new MemberModuleProvider())->identityCommands()->resetPasswordByVerifiedMobile(
+            $this->memberIdentities->resetPasswordByVerifiedMobile(
                 $context,
                 (string)$params['mobile'],
                 (string)$params['password'],

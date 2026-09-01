@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace app\api\application;
 
 use app\Modules\Official\Notification\ModuleProvider;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
+use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
+use app\Modules\Official\Member\Contracts\MemberProfileCommands;
+use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\application\ApplicationService;
@@ -36,6 +38,13 @@ class OAuthApplicationService extends ApplicationService
         'oa' => ['terminal' => 2],
         'open_pc' => ['terminal' => 4],
     ];
+
+    public function __construct(
+        private readonly MemberQueries $members,
+        private readonly MemberIdentityCommands $memberIdentities,
+        private readonly MemberProfileCommands $memberProfiles,
+    ) {
+    }
 
     public function begin(
         TenantSystemContext $context,
@@ -90,7 +99,7 @@ class OAuthApplicationService extends ApplicationService
             $returnPath = self::consumeAttempt($context, $scene, $state);
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange($scene, $binding->config, $code);
-            $result = self::loginWithProfile($context, $scene, $profile, $binding);
+            $result = $this->loginWithProfile($context, $scene, $profile, $binding);
             $result['return_path'] = $returnPath;
             return $result;
         } catch (\Throwable $e) {
@@ -108,7 +117,7 @@ class OAuthApplicationService extends ApplicationService
         try {
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange('mnp', $binding->config, $code);
-            return self::loginWithProfile($context, 'mnp', $profile, $binding);
+            return $this->loginWithProfile($context, 'mnp', $profile, $binding);
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
             return false;
@@ -126,7 +135,7 @@ class OAuthApplicationService extends ApplicationService
             if (!in_array($scene, ['mnp', 'oa'], true)) {
                 throw new \RuntimeException('该微信场景不支持账号绑定');
             }
-            $member = (new MemberModuleProvider())->queries()->identity($context, $memberId);
+            $member = $this->members->identity($context, $memberId);
             if ($member === null || !$member->status) {
                 throw new \RuntimeException('用户不存在或已禁用');
             }
@@ -136,7 +145,7 @@ class OAuthApplicationService extends ApplicationService
                 ExternalTenantResolver::oauthProvider($scene),
             );
             $profile = $transport->exchange($scene, $binding->config, $code);
-            [$bound] = self::resolveIdentity($context, $scene, $profile, $memberId, $binding);
+            [$bound] = $this->resolveIdentity($context, $scene, $profile, $memberId, $binding);
             if ((int)$bound->id !== $memberId) {
                 throw new \RuntimeException('微信身份已绑定其他用户');
             }
@@ -163,7 +172,7 @@ class OAuthApplicationService extends ApplicationService
                 if ($ticket->isEmpty() || !empty($ticket->used_at) || (int)$ticket->expires_at < time()) {
                     throw new \RuntimeException('登录补全票据无效或已过期');
                 }
-                $member = (new MemberModuleProvider())->queries()->lockedIdentity(
+                $member = $this->members->lockedIdentity(
                     $context,
                     (int)$ticket->member_id,
                 );
@@ -189,7 +198,7 @@ class OAuthApplicationService extends ApplicationService
                     if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                         throw new \RuntimeException('手机号格式错误');
                     }
-                    (new MemberModuleProvider())->identityCommands()->assertMobileAvailable(
+                    $this->memberIdentities->assertMobileAvailable(
                         $context,
                         $member->id,
                         $mobile,
@@ -203,14 +212,14 @@ class OAuthApplicationService extends ApplicationService
                     if (!$result->accepted) {
                         throw new \RuntimeException($result->error);
                     }
-                    (new MemberModuleProvider())->identityCommands()->bindVerifiedMobile(
+                    $this->memberIdentities->bindVerifiedMobile(
                         $context,
                         $member->id,
                         $mobile,
                     );
                 }
 
-                (new MemberModuleProvider())->profileCommands()->completeOAuthProfile(
+                $this->memberProfiles->completeOAuthProfile(
                     $context,
                     $member->id,
                     $nickname,
@@ -218,7 +227,7 @@ class OAuthApplicationService extends ApplicationService
                     time(),
                     request()->ip(),
                 );
-                $member = (new MemberModuleProvider())->queries()->identity($context, $member->id);
+                $member = $this->members->identity($context, $member->id);
                 if ($member === null) {
                     throw new \RuntimeException('用户不存在');
                 }
@@ -232,14 +241,14 @@ class OAuthApplicationService extends ApplicationService
         }
     }
 
-    private static function loginWithProfile(
+    private function loginWithProfile(
         TenantSystemContext $context,
         string $scene,
         OAuthProfile $profile,
         ExternalTenantBinding $binding,
     ): array
     {
-        [$member, $created] = self::resolveIdentity($context, $scene, $profile, null, $binding);
+        [$member, $created] = $this->resolveIdentity($context, $scene, $profile, null, $binding);
         if (!$member->status) {
             throw new \RuntimeException('账号已被禁用');
         }
@@ -249,12 +258,12 @@ class OAuthApplicationService extends ApplicationService
         if ($needProfile || $needMobile) {
             return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
         }
-        (new MemberModuleProvider())->identityCommands()->recordLogin($context, $member->id, request()->ip());
+        $this->memberIdentities->recordLogin($context, $member->id, request()->ip());
         return self::fullLoginResult($member);
     }
 
     /** @return array{0:MemberIdentitySnapshot,1:bool} */
-    private static function resolveIdentity(
+    private function resolveIdentity(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $scene,
         OAuthProfile $profile,
@@ -288,19 +297,19 @@ class OAuthApplicationService extends ApplicationService
                         if ($bindingMemberId !== null && (int)$identity->member_id !== $bindingMemberId) {
                             throw new \RuntimeException('微信身份已绑定其他用户');
                         }
-                        $member = (new MemberModuleProvider())->queries()->lockedIdentity(
+                        $member = $this->members->lockedIdentity(
                             $context,
                             (int)$identity->member_id,
                         );
                         if ($member === null) {
                             throw new \RuntimeException('微信身份关联用户不存在');
                         }
-                        $principalId = self::assertPrincipalOwnership($context, $profile, $member->id);
+                        $principalId = $this->assertPrincipalOwnership($context, $profile, $member->id);
                         if ($principalId !== null && (int)$identity->principal_id !== $principalId) {
                             $identity->principal_id = $principalId;
                             $identity->save();
                         }
-                        $member = self::updateProfile($context, $member, $profile);
+                        $member = $this->updateProfile($context, $member, $profile);
                         return [$member, false];
                     }
 
@@ -315,7 +324,7 @@ class OAuthApplicationService extends ApplicationService
 
                     $created = false;
                     if ($bindingMemberId !== null) {
-                        $member = (new MemberModuleProvider())->queries()->lockedIdentity($context, $bindingMemberId);
+                        $member = $this->members->lockedIdentity($context, $bindingMemberId);
                         if ($member === null) {
                             throw new \RuntimeException('用户不存在');
                         }
@@ -324,7 +333,7 @@ class OAuthApplicationService extends ApplicationService
                             throw new \RuntimeException('微信联合身份已归属其他用户，不能自动合并账号');
                         }
                     } elseif ($principal !== null && !$principal->isEmpty()) {
-                        $member = (new MemberModuleProvider())->queries()->lockedIdentity(
+                        $member = $this->members->lockedIdentity(
                             $context,
                             (int)$principal->member_id,
                         );
@@ -335,7 +344,7 @@ class OAuthApplicationService extends ApplicationService
                         if ($context instanceof AuthenticatedMemberContext) {
                             throw new \RuntimeException('已认证会员不能创建替代会员身份');
                         }
-                        $member = self::createMember($context, $profile, (int)$sceneMeta['terminal']);
+                        $member = $this->createMember($context, $profile, (int)$sceneMeta['terminal']);
                         $created = true;
                     }
 
@@ -365,7 +374,7 @@ class OAuthApplicationService extends ApplicationService
                         'member_id' => $member->id,
                         'terminal' => (int)$sceneMeta['terminal'],
                     ]);
-                    $member = self::updateProfile($context, $member, $profile);
+                    $member = $this->updateProfile($context, $member, $profile);
                     return [$member, $created];
                 }),
             );
@@ -374,7 +383,7 @@ class OAuthApplicationService extends ApplicationService
         }
     }
 
-    private static function assertPrincipalOwnership(
+    private function assertPrincipalOwnership(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         OAuthProfile $profile,
         int $memberId
@@ -402,13 +411,13 @@ class OAuthApplicationService extends ApplicationService
         return (int)$principal->id;
     }
 
-    private static function createMember(
+    private function createMember(
         TenantContext|TenantSystemContext $context,
         OAuthProfile $profile,
         int $terminal
     ): MemberIdentitySnapshot
     {
-        return (new MemberModuleProvider())->identityCommands()->createOAuthMember($context, [
+        return $this->memberIdentities->createOAuthMember($context, [
             'nickname' => $profile->nickname(),
             'avatar' => $profile->avatar() !== ''
                 ? $profile->avatar()
@@ -417,19 +426,19 @@ class OAuthApplicationService extends ApplicationService
         ]);
     }
 
-    private static function updateProfile(
+    private function updateProfile(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         MemberIdentitySnapshot $member,
         OAuthProfile $profile,
     ): MemberIdentitySnapshot
     {
-        (new MemberModuleProvider())->profileCommands()->fillOAuthProfile(
+        $this->memberProfiles->fillOAuthProfile(
             $context,
             $member->id,
             $profile->nickname(),
             $profile->avatar(),
         );
-        $updated = (new MemberModuleProvider())->queries()->identity($context, $member->id);
+        $updated = $this->members->identity($context, $member->id);
         if ($updated === null) {
             throw new \RuntimeException('用户不存在');
         }
