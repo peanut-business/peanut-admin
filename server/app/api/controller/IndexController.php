@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\IndexApplicationService;
 use app\common\service\article\ArticleTenantContext;
@@ -11,9 +12,9 @@ use app\common\service\decoration\DecorationTenantContext;
 
 class IndexController extends BaseApiController
 {
-    public function __construct(App $app, private readonly IndexApplicationService $index)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly IndexApplicationService $index)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public array $notNeedLogin = ['index', 'config', 'policy'];

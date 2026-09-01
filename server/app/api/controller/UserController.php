@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\UserApplicationService;
 use app\common\service\article\ArticleTenantContext;
@@ -11,9 +12,9 @@ use app\common\service\member\MemberTenantContext;
 
 class UserController extends BaseApiController
 {
-    public function __construct(App $app, private readonly UserApplicationService $users)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly UserApplicationService $users)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     /** 用户中心 */

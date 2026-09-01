@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\auth;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\auth\RoleApplicationService;
@@ -11,9 +12,9 @@ use app\common\service\org\OrgTenantContext;
 
 class RoleController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly RoleApplicationService $roles)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly RoleApplicationService $roles)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()

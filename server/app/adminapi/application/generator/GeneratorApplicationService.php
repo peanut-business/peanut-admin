@@ -12,11 +12,16 @@ use app\common\application\ApplicationService;
 use app\common\model\generator\GeneratorColumn;
 use app\common\model\generator\GeneratorDownload;
 use app\common\model\generator\GeneratorTable;
+use app\common\persistence\TransactionalExecution;
 use app\common\support\PaginationInput;
-use think\facade\Db;
 
 class GeneratorApplicationService extends ApplicationService
 {
+    public function __construct(
+        private readonly GeneratorImportPersistence $imports,
+        private readonly TransactionalExecution $transactions,
+    ) {}
+
     public function sourceTables(array $params): PageResult
     {
         $pagination = PaginationInput::from($params);
@@ -73,7 +78,7 @@ class GeneratorApplicationService extends ApplicationService
                     'columns' => $metadata[$tableName]['columns'],
                 ];
             }
-            app(GeneratorImportPersistence::class)->import($adminId, $definitions);
+            $this->imports->import($adminId, $definitions);
             return true;
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -84,7 +89,7 @@ class GeneratorApplicationService extends ApplicationService
     public function sync(int $adminId, int $id): bool
     {
         try {
-            Db::transaction(function () use ($adminId, $id): void {
+            $this->transactions->run(function () use ($adminId, $id): void {
                 $table = self::ownedTableModel($adminId, $id, true);
                 $metadata = GeneratorMetadataService::columns((string) $table->table_name);
                 $existing = [];
@@ -128,7 +133,7 @@ class GeneratorApplicationService extends ApplicationService
     public function update(int $adminId, array $params): bool
     {
         try {
-            Db::transaction(function () use ($adminId, $params): void {
+            $this->transactions->run(function () use ($adminId, $params): void {
                 $id = (int) $params['id'];
                 $table = self::ownedTableModel($adminId, $id, true);
                 $module = trim((string) $params['module_name']);
@@ -200,7 +205,7 @@ class GeneratorApplicationService extends ApplicationService
     {
         try {
             $ids = array_values(array_unique(array_map('intval', $ids)));
-            Db::transaction(function () use ($adminId, $ids): void {
+            $this->transactions->run(function () use ($adminId, $ids): void {
                 foreach (GeneratorTable::where('admin_id', $adminId)->whereNotIn('id', $ids)->select() as $table) {
                     foreach ((array)$table->relations as $relation) {
                         if (in_array((int)($relation['target_table_id'] ?? 0), $ids, true)) {
@@ -223,7 +228,7 @@ class GeneratorApplicationService extends ApplicationService
     public function preview(int $adminId, int $id): array|false
     {
         try {
-            $tables = self::snapshotTables($adminId, [$id]);
+            $tables = $this->snapshotTables($adminId, [$id]);
             return GeneratorRenderService::render($tables[0]);
         } catch (\Throwable $e) {
             self::setError($e->getMessage());
@@ -235,7 +240,7 @@ class GeneratorApplicationService extends ApplicationService
     {
         try {
             $ids = array_values(array_unique(array_map('intval', $ids)));
-            $tables = self::snapshotTables($adminId, $ids);
+            $tables = $this->snapshotTables($adminId, $ids);
             $files = [];
             foreach ($tables as $table) {
                 foreach (GeneratorRenderService::render($table) as $file) {
@@ -274,7 +279,7 @@ class GeneratorApplicationService extends ApplicationService
     public function consumeDownload(int $adminId, string $token): array|false
     {
         try {
-            return Db::transaction(function () use ($adminId, $token): array {
+            return $this->transactions->run(function () use ($adminId, $token): array {
                 $row = GeneratorDownload::where([
                     'admin_id' => $adminId,
                     'token_hash' => hash('sha256', $token),
@@ -398,10 +403,10 @@ class GeneratorApplicationService extends ApplicationService
     }
 
     /** @return array<int,array<string,mixed>> */
-    private static function snapshotTables(int $adminId, array $ids): array
+    private function snapshotTables(int $adminId, array $ids): array
     {
         sort($ids);
-        return Db::transaction(function () use ($adminId, $ids): array {
+        return $this->transactions->run(function () use ($adminId, $ids): array {
             $models = GeneratorTable::where('admin_id', $adminId)
                 ->whereIn('id', $ids)->order('id', 'asc')->lock(true)->select();
             if ($models->count() !== count($ids)) {

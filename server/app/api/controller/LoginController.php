@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\LoginApplicationService;
 use app\common\service\member\MemberTenantContext;
@@ -11,9 +12,9 @@ use app\common\service\notice\NoticeTenantContext;
 
 class LoginController extends BaseApiController
 {
-    public function __construct(App $app, private readonly LoginApplicationService $login)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly LoginApplicationService $login)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public array $notNeedLogin = ['register', 'account', 'mobile', 'resetPassword', 'logout'];

@@ -21,11 +21,16 @@ use app\common\execution\ExecutionContextAccess;
  */
 class AuthMiddleware
 {
+    public function __construct(
+        private readonly ExecutionContextAccess $contextAccess,
+        private readonly AdminAuthorizationService $authorization,
+    ) {}
+
     public function handle($request, \Closure $next)
     {
-        $current = ExecutionContextAccess::current();
+        $current = $this->contextAccess->current();
         $adminInfo = $current instanceof AdminExecutionContext
-            ? ExecutionContextAccess::principal()
+            ? $this->contextAccess->principal()
             : null;
         if (empty($adminInfo)) {
             throw \app\common\http\ApiProblem::fromEnvelope('请先登录', null, 40100);
@@ -41,7 +46,7 @@ class AuthMiddleware
 
         $tenantContext = $current instanceof AdminExecutionContext ? $current->tenant : null;
         $decision = $tenantContext instanceof \PeanutAdmin\Kernel\Auth\TenantContext
-            ? (new AdminAuthorizationService())->decide(
+            ? $this->authorization->decide(
                 $tenantContext,
                 AdminPrincipal::fromArray($adminInfo),
                 $accessUri,

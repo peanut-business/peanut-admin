@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\system;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\system\SystemApplicationService;
@@ -18,9 +19,9 @@ use think\response\Json;
  */
 class SystemController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly SystemApplicationService $system)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly SystemApplicationService $system)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     /** 系统环境信息 */

@@ -39,6 +39,8 @@ class RechargeApplicationService extends ApplicationService
         private readonly MemberQueries $members,
         private readonly MemberBalanceCommands $memberBalances,
         private readonly OAuthQueries $oauth,
+        private readonly TransactionalExecution $transactions,
+        private readonly ExecutionContextAccess $executionContext,
     ) {
     }
 
@@ -108,7 +110,7 @@ class RechargeApplicationService extends ApplicationService
                 throw new \RuntimeException('当前终端暂无可用支付方式');
             }
 
-            $order = app(TransactionalExecution::class)->run(function () use (
+            $order = $this->transactions->run(function () use (
                 $context,
                 $memberId,
                 $defaultScene,
@@ -148,7 +150,7 @@ class RechargeApplicationService extends ApplicationService
     public function prepareAttempt(object $context, int $memberId, int $orderId, int $payWay): array|false
     {
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $memberId, $orderId, $payWay): array {
+            return $this->transactions->run(function () use ($context, $memberId, $orderId, $payWay): array {
                 /** @var RechargeOrder $order */
                 $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty($orderId);
                 self::assertOwnedUnpaid($order, $memberId);
@@ -320,7 +322,7 @@ class RechargeApplicationService extends ApplicationService
     public function settle(object $context, PaymentEvent|array $payment): bool
     {
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $payment): bool {
+            return $this->transactions->run(function () use ($context, $payment): bool {
                 if ($payment instanceof PaymentEvent) {
                     $payment = [
                         'order_sn' => $payment->orderSn(),
@@ -446,7 +448,7 @@ class RechargeApplicationService extends ApplicationService
         array $metadata,
     ): void {
         $tenantId = FinanceTenantContext::tenantId($context);
-        $current = ExecutionContextAccess::current();
+        $current = $this->executionContext->current();
         $requestId = $current !== null && $current->tenantId() === $tenantId
             ? $current->requestId()
             : trim((string)($context->requestId ?? $context->operationId ?? ''));

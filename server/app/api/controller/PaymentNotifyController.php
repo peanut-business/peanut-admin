@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\RechargeApplicationService;
 use app\Modules\Official\Payment\Model\PaymentScene;
@@ -17,9 +18,15 @@ use app\common\service\module\ModuleExecutionBoundary;
 /** 渠道匿名回调入口：仅验签后的标准事件可进入充值状态机。 */
 class PaymentNotifyController extends BaseApiController
 {
-    public function __construct(App $app, private readonly RechargeApplicationService $recharges)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly RechargeApplicationService $recharges,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly ModuleExecutionBoundary $modules,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function wechat()
@@ -37,10 +44,10 @@ class PaymentNotifyController extends BaseApiController
                 static fn(array $config) => (new PaymentServiceFactory($config))->callback('wechat')->parse($request),
             );
             $event = $resolution->verifiedValue;
-            app(ExecutionContextStore::class)->run(
+            $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($event, $resolution): void {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.payment');
+                    $this->modules->assertExternalCallback('official.payment');
                     if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,
                         $event,
@@ -68,10 +75,10 @@ class PaymentNotifyController extends BaseApiController
                 static fn(array $config) => (new PaymentServiceFactory($config))->callback('alipay')->parse($request),
             );
             $event = $resolution->verifiedValue;
-            app(ExecutionContextStore::class)->run(
+            $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($event, $resolution): void {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.payment');
+                    $this->modules->assertExternalCallback('official.payment');
                     if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,
                         $event,

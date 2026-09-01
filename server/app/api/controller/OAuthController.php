@@ -12,14 +12,18 @@ use app\common\service\module\ModuleExecutionBoundary;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 class OAuthController extends BaseApiController
 {
     public function __construct(
         App $app,
+        CurrentExecutionContext $executionContext,
         private readonly OAuthCommands $commands,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly ModuleExecutionBoundary $modules,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function begin()
@@ -49,10 +53,10 @@ class OAuthController extends BaseApiController
                     'oauth.begin',
                     $this->operationId(),
                 );
-            $result = app(ExecutionContextStore::class)->run(
+            $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $scene, $params, $callbackUrl) {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    $this->modules->assertExternalCallback('official.oauth');
                     return $this->commands->begin(
                         $resolution->context,
                         $scene,
@@ -94,10 +98,10 @@ class OAuthController extends BaseApiController
                 (string)$params['state'],
                 $this->operationId(),
             );
-            $result = app(ExecutionContextStore::class)->run(
+            $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $params) {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    $this->modules->assertExternalCallback('official.oauth');
                     return $this->commands->callback(
                         $resolution->context,
                         (string)$params['scene'],
@@ -132,10 +136,10 @@ class OAuthController extends BaseApiController
                     'oauth.mini-program',
                     $this->operationId(),
                 );
-            $result = app(ExecutionContextStore::class)->run(
+            $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $params) {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    $this->modules->assertExternalCallback('official.oauth');
                     return $this->commands->miniProgramLogin(
                         $resolution->context,
                         (string)$params['code'],
@@ -159,10 +163,10 @@ class OAuthController extends BaseApiController
                 (string)$params['ticket'],
                 $this->operationId(),
             );
-            $result = app(ExecutionContextStore::class)->run(
+            $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $params) {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    $this->modules->assertExternalCallback('official.oauth');
                     return $this->commands->complete($resolution->context, $params);
                 },
             );

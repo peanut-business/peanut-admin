@@ -15,9 +15,10 @@ use PeanutAdmin\Kernel\Auth\TenantSelectionRequired;
 
 final class LoginApplicationService extends ApplicationService
 {
-    public function __construct(private readonly TenantAuthService $tenantAuth)
-    {
-    }
+    public function __construct(
+        private readonly TenantAuthService $tenantAuth,
+        private readonly AdminAuthorizationService $authorization,
+    ) {}
 
     public function login(array $params): array|false
     {
@@ -43,7 +44,7 @@ final class LoginApplicationService extends ApplicationService
                 throw new \DomainException('TENANT_AUTHENTICATION_INVALID');
             }
 
-            $principal = (new AdminAuthorizationService())->principal($outcome->context)->toArray();
+            $principal = $this->authorization->principal($outcome->context)->toArray();
             return [
                 'state' => 'authenticated',
                 'token' => $outcome->tokens->access->expose(),

@@ -12,6 +12,7 @@ use app\adminapi\validate\auth\LoginValidate;
 use app\common\service\DemoAccountPolicy;
 use app\common\execution\ExecutionContextAccess;
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 class LoginController extends BaseAdminController
 {
@@ -19,10 +20,12 @@ class LoginController extends BaseAdminController
 
     public function __construct(
         App $app,
+        CurrentExecutionContext $executionContext,
         private readonly AdminAuthorizationQuery $authorization,
         private readonly LoginApplicationService $loginApplication,
+        private readonly ExecutionContextAccess $contextAccess,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function login()
@@ -47,7 +50,7 @@ class LoginController extends BaseAdminController
         if ($admin === []) return $this->fail('管理员不存在');
         $roleNames = array_column($admin['roles'] ?? [], 'name');
         $accessData = $this->authorization->accessData(
-            ExecutionContextAccess::tenantAdmin(),
+            $this->contextAccess->tenantAdmin(),
             AdminPrincipal::fromArray($admin),
         );
 
@@ -65,7 +68,7 @@ class LoginController extends BaseAdminController
             'menu'        => $accessData->menu,
             'permissions' => $accessData->permissions,
             'tenantName' => $admin['tenant_name'],
-            'canSwitchTenant' => !ExecutionContextAccess::tenantEntryBound()
+            'canSwitchTenant' => !$this->contextAccess->tenantEntryBound()
                 && ($admin['switchable_tenant_count'] ?? 0) > 1,
             'demoMode' => DemoAccountPolicy::isDemoEmail((string)$admin['username']),
         ]);

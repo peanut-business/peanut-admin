@@ -22,6 +22,10 @@ use app\common\service\tenant\TenantIdentityQuery;
 
 class IndexApplicationService extends ApplicationService
 {
+    public function __construct(private readonly TenantIdentityQuery $tenantIdentities)
+    {
+    }
+
     /** 全局配置（uniapp / H5 用） */
     public function getConfigData(TenantContext|TenantSystemContext $context): array
     {
@@ -40,7 +44,7 @@ class IndexApplicationService extends ApplicationService
         return [
             'domain'   => $domain,
             'website'  => $website,
-            'tenantName' => self::entryTenantName(),
+            'tenantName' => $this->entryTenantName(),
             'demo'     => self::demoLogin(),
             'login'    => [
                 'login_way' => $login['login_way'],
@@ -103,7 +107,7 @@ class IndexApplicationService extends ApplicationService
         ];
     }
 
-    private static function entryTenantName(): string
+    private function entryTenantName(): string
     {
         try {
             $tenantId = TenantEntryBindingResolver::production()->boundTenantId(
@@ -113,7 +117,7 @@ class IndexApplicationService extends ApplicationService
             if ($tenantId === null) {
                 return '';
             }
-            return app(TenantIdentityQuery::class)->activeName($tenantId);
+            return $this->tenantIdentities->activeName($tenantId);
         } catch (\Throwable) {
             return '';
         }

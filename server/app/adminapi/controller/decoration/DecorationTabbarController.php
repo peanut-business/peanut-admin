@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\decoration;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\decoration\DecorationTabbarApplicationService;
@@ -12,9 +13,9 @@ use app\common\service\decoration\DecorationTenantContext;
 
 class DecorationTabbarController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly DecorationTabbarApplicationService $decorationTabbars)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly DecorationTabbarApplicationService $decorationTabbars)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function detail()

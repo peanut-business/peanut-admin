@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\OfficialAccountApplicationService;
 use app\common\service\external\ExternalTenantResolver;
@@ -13,9 +14,15 @@ use app\common\service\module\ModuleExecutionBoundary;
 
 class OfficialAccountController extends BaseApiController
 {
-    public function __construct(App $app, private readonly OfficialAccountApplicationService $officialAccount)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly OfficialAccountApplicationService $officialAccount,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly ModuleExecutionBoundary $modules,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public array $notNeedLogin = ['verify', 'callback'];
@@ -31,10 +38,9 @@ class OfficialAccountController extends BaseApiController
                 $this->operationId(),
                 static fn(array $config): bool => $this->officialAccount->verify($params, $config),
             );
-            app(ExecutionContextStore::class)->run(
+            $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
-                static fn() => app(ModuleExecutionBoundary::class)
-                    ->assertExternalCallback('official.oauth'),
+                fn() => $this->modules->assertExternalCallback('official.oauth'),
             );
         } catch (\Throwable) {
             return response('callback rejected', 403, ['Content-Type' => 'text/plain; charset=utf-8']);
@@ -56,10 +62,10 @@ class OfficialAccountController extends BaseApiController
                         && $this->officialAccount->verify($params, $config);
                 },
             );
-            $result = app(ExecutionContextStore::class)->run(
+            $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution): string {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    $this->modules->assertExternalCallback('official.oauth');
                     return $this->officialAccount->handlePlain(
                         $resolution->context,
                         (string)$this->request->getContent(),

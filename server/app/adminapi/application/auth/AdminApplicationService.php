@@ -21,9 +21,11 @@ final class AdminApplicationService extends ApplicationService
     private const EXPORT_MAX_ROWS = 25000;
     private const EXPORT_DEFAULT_NAME = '管理员列表';
 
-    public function __construct(private readonly XlsxExportService $xlsxExport)
-    {
-    }
+    public function __construct(
+        private readonly XlsxExportService $xlsxExport,
+        private readonly AdminDirectoryQuery $directory,
+        private readonly TenantAdminRuntime $tenantAdmins,
+    ) {}
 
     public function normalizeInput(array $params): array
     {
@@ -67,7 +69,7 @@ final class AdminApplicationService extends ApplicationService
                 self::EXPORT_MAX_ROWS,
                 (int)($params['page_size'] ?? $params['limit'] ?? 15),
             ));
-            $rows = self::rows($context, $params);
+            $rows = $this->rows($context, $params);
             $count = count($rows);
             if ((int)($params['export'] ?? 0) === 1) {
                 return self::exportInfo($count, $pageSize);
@@ -91,7 +93,7 @@ final class AdminApplicationService extends ApplicationService
     public function detail(TenantContext $context, int $id): array
     {
         self::clearError();
-        foreach (self::rows($context, ['id' => $id]) as $row) {
+        foreach ($this->rows($context, ['id' => $id]) as $row) {
             if ($row['id'] === $id) {
                 return $row;
             }
@@ -109,7 +111,7 @@ final class AdminApplicationService extends ApplicationService
                 throw new \RuntimeException('请选择角色');
             }
             $department = self::firstId($params['dept_id'] ?? []);
-            $service = self::runtime()->members();
+            $service = $this->tenantAdmins->members();
             $member = $service->createPending(
                 $context->tenantId,
                 (string)$params['account'],
@@ -164,7 +166,7 @@ final class AdminApplicationService extends ApplicationService
             if (!empty($params['password'])) {
                 throw new \RuntimeException('密码只能由账号本人修改');
             }
-            $service = self::runtime()->members();
+            $service = $this->tenantAdmins->members();
             $member = $service->get($context->tenantId, (int)$params['id']);
             $member = $service->update(
                 $context->tenantId,
@@ -204,7 +206,7 @@ final class AdminApplicationService extends ApplicationService
             return false;
         }
         try {
-            $service = self::runtime()->members();
+            $service = $this->tenantAdmins->members();
             $member = $service->get($context->tenantId, $id);
             $service->leave(
                 $context->tenantId,
@@ -228,7 +230,7 @@ final class AdminApplicationService extends ApplicationService
             return false;
         }
         try {
-            $service = self::runtime()->members();
+            $service = $this->tenantAdmins->members();
             self::transitionStatus($service, $context, $service->get($context->tenantId, $id), $disable);
             return true;
         } catch (\Throwable $e) {
@@ -243,7 +245,7 @@ final class AdminApplicationService extends ApplicationService
             if ($memberId !== $context->memberId) {
                 throw new \DomainException('TENANT_ADMIN_PRINCIPAL_INVALID');
             }
-            $service = self::runtime()->selfService();
+            $service = $this->tenantAdmins->selfService();
             $profile = $service->profile($context->tenantId, $memberId, $context->accountId);
             $service->updateProfile(
                 $context->tenantId,
@@ -254,7 +256,7 @@ final class AdminApplicationService extends ApplicationService
                 $context->requestId,
             );
             if (!empty($params['password'])) {
-                self::runtime()->assertPasswordChangeAllowed($context->accountId);
+                $this->tenantAdmins->assertPasswordChangeAllowed($context->accountId);
                 $service->changePassword(
                     $context->tenantId,
                     $memberId,
@@ -274,10 +276,10 @@ final class AdminApplicationService extends ApplicationService
     }
 
     /** @return list<array<string,mixed>> */
-    private static function rows(TenantContext $context, array $params): array
+    private function rows(TenantContext $context, array $params): array
     {
         $rows = [];
-        foreach (app(AdminDirectoryQuery::class)->rows($params) as $row) {
+        foreach ($this->directory->rows($params) as $row) {
             $roleIds = $row['role_ids'] === null || $row['role_ids'] === ''
                 ? []
                 : array_map('intval', explode(',', (string)$row['role_ids']));
@@ -354,8 +356,4 @@ final class AdminApplicationService extends ApplicationService
         return PositiveIds::normalize($ids, [PositiveIds::FILTER_INVALID, PositiveIds::SORT]);
     }
 
-    private static function runtime(): TenantAdminRuntime
-    {
-        return app(TenantAdminRuntime::class);
-    }
 }

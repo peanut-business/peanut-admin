@@ -24,10 +24,14 @@ class OperationLogMiddleware
     /** 不记录的动作后缀（避免日志模块自我刷屏） */
     protected array $except = ['log/clear'];
 
+    public function __construct(private readonly ExecutionContextAccess $contextAccess)
+    {
+    }
+
     public function handle($request, \Closure $next)
     {
         try {
-            $context = ExecutionContextAccess::tenantAdmin();
+            $context = $this->contextAccess->tenantAdmin();
         } catch (\Throwable $exception) {
             OperationalLog::warning('operation_log_tenant_context_unavailable', OperationLogDiagnostics::attributes(null));
             throw $exception;
@@ -77,7 +81,7 @@ class OperationLogMiddleware
             }
         }
 
-        $adminInfo = ExecutionContextAccess::principal();
+        $adminInfo = $this->contextAccess->principal();
 
         try {
             OperationLogService::record(

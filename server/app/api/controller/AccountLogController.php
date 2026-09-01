@@ -5,12 +5,13 @@ namespace app\api\controller;
 
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 class AccountLogController extends BaseApiController
 {
-    public function __construct(App $app, private readonly MemberQueries $members)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly MemberQueries $members)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     /** 账户流水 */

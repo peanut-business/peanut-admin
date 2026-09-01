@@ -9,11 +9,15 @@ use app\common\service\article\ArticleTenantRepository;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
 use app\common\service\decoration\DecorationTenantRepository;
-use think\facade\Db;
+use app\common\persistence\TransactionalExecution;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DecorationPageApplicationService extends ApplicationService
 {
+    public function __construct(private readonly TransactionalExecution $transactions)
+    {
+    }
+
     public function lists(TenantContext $context, array $allowedTypes): array
     {
         self::clearError();
@@ -58,7 +62,7 @@ class DecorationPageApplicationService extends ApplicationService
             $meta = $params['meta'] ?? [];
             DecorationSchemaService::validatePage($context, $type, $data, $meta);
 
-            Db::transaction(function () use ($context, $params, $type, $data, $meta): void {
+            $this->transactions->run(function () use ($context, $params, $type, $data, $meta): void {
                 $page = DecorationTenantRepository::pages()
                     ->where('id', (int)$params['id'])->lock(true)->findOrEmpty();
                 if ($page->isEmpty()) {

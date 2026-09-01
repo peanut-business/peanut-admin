@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\SmsApplicationService;
 use app\api\validate\SmsValidate;
@@ -11,9 +12,9 @@ use app\common\service\notice\NoticeTenantContext;
 
 class SmsController extends BaseApiController
 {
-    public function __construct(App $app, private readonly SmsApplicationService $sms)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly SmsApplicationService $sms)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public array $notNeedLogin = ['sendCode'];

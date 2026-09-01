@@ -100,7 +100,8 @@ foreach ($callers as $relativePath) {
     expectMemberFinance($call !== false, 'balance path bypasses the unique owner: ' . $relativePath);
     $beforeCall = substr($source, 0, $call);
     $hasTransactionBoundary = strrpos($beforeCall, 'Db::transaction(') !== false
-        || strrpos($beforeCall, 'TransactionalExecution::class)->run(') !== false;
+        || strrpos($beforeCall, 'TransactionalExecution::class)->run(') !== false
+        || strrpos($beforeCall, '$this->transactions->run(') !== false;
     expectMemberFinance($hasTransactionBoundary, 'balance path lacks an outer transaction: ' . $relativePath);
     expectMemberFinance(!str_contains($source, 'MemberBalanceLog::create'), 'caller writes the ledger directly: ' . $relativePath);
 }

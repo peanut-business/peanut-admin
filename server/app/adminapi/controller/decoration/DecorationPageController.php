@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\decoration;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\decoration\DecorationPageApplicationService;
@@ -15,9 +16,14 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 
 class DecorationPageController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly DecorationPageApplicationService $decorationPages)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly DecorationPageApplicationService $decorationPages,
+        private readonly ModuleExecutionBoundary $modules,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function mobileLists()
@@ -61,7 +67,7 @@ class DecorationPageController extends BaseAdminController
         $params = $this->request->get();
         $this->validate($params, DecorationPageValidate::class . '.article');
         try {
-            app(ModuleExecutionBoundary::class)->assertHttp('official.article', 'http.admin');
+            $this->modules->assertHttp('official.article', 'http.admin');
         } catch (ModuleException) {
             return $this->data([]);
         }

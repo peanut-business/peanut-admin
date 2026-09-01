@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\setting;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\setting\TransactionSettingsApplicationService;
@@ -14,9 +15,9 @@ use app\common\service\transaction\TransactionSettingTenantContext;
  */
 class TransactionSettingsController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly TransactionSettingsApplicationService $transactionSettings)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly TransactionSettingsApplicationService $transactionSettings)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function getConfig()

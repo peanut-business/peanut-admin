@@ -446,18 +446,19 @@ namespace app\adminapi\application\{{module}};
 
 use app\common\http\PageResult;
 use app\common\model\{{module}}\{{entity}};
+use app\common\persistence\TransactionalExecution;
 use app\common\repository\{{module}}\{{entity}}Repository;
 use app\common\support\PaginationInput;
-use think\facade\Db;
 
 final readonly class {{entity}}ApplicationService
 {
     private const INSERT_FIELDS = {{insertFields}};
     private const UPDATE_FIELDS = {{updateFields}};
 
-    public function __construct(private {{entity}}Repository $records)
-    {
-    }
+    public function __construct(
+        private {{entity}}Repository $records,
+        private TransactionalExecution $transactions,
+    ) {}
 
     public function lists(array $params): array|PageResult
     {
@@ -491,7 +492,7 @@ final readonly class {{entity}}ApplicationService
 
     private function mutate(int|string $id, callable $callback): void
     {
-        Db::transaction(function () use ($id, $callback): void {
+        $this->transactions->run(function () use ($id, $callback): void {
             $callback($this->records->find($id, true));
         });
     }
