@@ -5,24 +5,33 @@ namespace app\platform\invitation;
 
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\common\execution\ExecutionContextStore;
+use app\common\tenancy\PlatformTenantDataGateway;
 use app\platform\query\PlatformControlPlaneQueryService;
 use app\platform\service\ApplicationTenantBootstrapService;
-use app\platform\service\PlatformOperatorSessionService;
+use app\platform\service\PlatformRuntimeFactory;
 use PDO;
 use think\facade\Config;
-use think\facade\Db;
 
 final class PlatformInvitationRuntimeFactory
 {
-    private static ?TenantOwnerInvitationAdminService $invitations = null;
-    private static ?TenantOwnerInvitationPublicService $publicInvitations = null;
-    private static ?PlatformControlPlaneQueryService $queries = null;
+    private ?TenantOwnerInvitationAdminService $invitations = null;
+    private ?TenantOwnerInvitationPublicService $publicInvitations = null;
+    private ?PlatformControlPlaneQueryService $queries = null;
 
-    public static function invitations(): TenantOwnerInvitationAdminService
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly PlatformRuntimeFactory $platform,
+        private readonly NotificationCommands $notifications,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly PlatformTenantDataGateway $tenantData,
+    ) {
+    }
+
+    public function invitations(): TenantOwnerInvitationAdminService
     {
-        return self::$invitations ??= new TenantOwnerInvitationAdminService(
-            self::pdo(),
-            self::sessions(),
+        return $this->invitations ??= new TenantOwnerInvitationAdminService(
+            $this->pdo,
+            $this->platform->sessions(),
             new UnavailableOwnerInvitationDeliveryPort(),
             OwnerInvitationRuntimePolicy::fromEnvironment(
                 (string)env('APP_ENV', ''),
@@ -31,39 +40,24 @@ final class PlatformInvitationRuntimeFactory
         );
     }
 
-    public static function publicInvitations(): TenantOwnerInvitationPublicService
+    public function publicInvitations(): TenantOwnerInvitationPublicService
     {
-        $pdo = self::pdo();
-        return self::$publicInvitations ??= new TenantOwnerInvitationPublicService(
-            $pdo,
+        return $this->publicInvitations ??= new TenantOwnerInvitationPublicService(
+            $this->pdo,
             new ApplicationTenantBootstrapService(
-                $pdo,
-                app(NotificationCommands::class),
-                app(ExecutionContextStore::class),
+                $this->pdo,
+                $this->notifications,
+                $this->executionContexts,
+                $this->tenantData,
             ),
         );
     }
 
-    public static function queries(): PlatformControlPlaneQueryService
+    public function queries(): PlatformControlPlaneQueryService
     {
-        return self::$queries ??= new PlatformControlPlaneQueryService(self::pdo(), self::sessions());
-    }
-
-    private static function sessions(): PlatformOperatorSessionService
-    {
-        return \app\platform\service\PlatformRuntimeFactory::sessions();
-    }
-
-    private static function pdo(): PDO
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-        return $pdo;
-    }
-
-    private function __construct()
-    {
+        return $this->queries ??= new PlatformControlPlaneQueryService(
+            $this->pdo,
+            $this->platform->sessions(),
+        );
     }
 }

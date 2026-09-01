@@ -7,12 +7,10 @@ final readonly class StorageService
 {
     public const DELIVERY_URL_TTL = 600;
 
-    public function __construct(private StorageRepository $repository) {}
-
-    public static function fromDefaultConnection(): self
-    {
-        return new self(StorageRepository::fromDefaultConnection());
-    }
+    public function __construct(
+        private StorageRepository $repository,
+        private StorageDriverFactory $drivers,
+    ) {}
 
     public function storePath(
         int $tenantId,
@@ -35,7 +33,7 @@ final readonly class StorageService
             (string)pathinfo($originalName, PATHINFO_EXTENSION),
         );
         $route = $this->repository->route($purpose, $access);
-        $driver = StorageDriverFactory::make($route, $route);
+        $driver = $this->drivers->make($route, $route);
         $size = filesize($sourcePath);
         $sha256 = hash_file('sha256', $sourcePath);
         if (!is_int($size) || !is_string($sha256)) {
@@ -150,7 +148,7 @@ final readonly class StorageService
             throw new \RuntimeException('文件对象状态更新失败');
         }
         try {
-            StorageDriverFactory::make($object, $object)->delete((string)$object['object_key']);
+            $this->drivers->make($object, $object)->delete((string)$object['object_key']);
         } catch (\Throwable $error) {
             $this->repository->restore($tenantId, $fileKey);
             throw $error;
@@ -178,7 +176,7 @@ final readonly class StorageService
         if ($object === null) {
             throw new \RuntimeException('文件不存在或不可用');
         }
-        $driver = StorageDriverFactory::make($object, $object);
+        $driver = $this->drivers->make($object, $object);
         $path = $driver->localPath((string)$object['object_key']);
         $temporary = false;
         if ($path === null) {

@@ -11,7 +11,11 @@ final class RequestTrace
     /** @var \WeakMap<object,string>|null */
     private static ?\WeakMap $requestIds = null;
 
-    public static function id(object $request, string $prefix = 'http'): string
+    public static function id(
+        ExecutionContextAccess $contexts,
+        object $request,
+        string $prefix = 'http',
+    ): string
     {
         $candidate = method_exists($request, 'header')
             ? trim((string)$request->header('X-Request-Id', ''))
@@ -21,7 +25,7 @@ final class RequestTrace
         }
 
         try {
-            $current = ExecutionContextAccess::current();
+            $current = $contexts->current();
         } catch (\Throwable) {
             $current = null;
         }

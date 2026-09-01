@@ -7,7 +7,7 @@ use app\common\enum\CrontabEnum;
 use app\Modules\Official\Task\Model\Crontab;
 use app\common\contract\audit\AuditResource;
 use app\common\service\audit\AuditContractHost;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\tenancy\PlatformTenantDataGateway;
 use PeanutAdmin\Kernel\Scheduling\ScheduleWindow;
@@ -18,13 +18,22 @@ use Cron\CronExpression;
 
 final class CrontabSchedulerService
 {
+    public function __construct(
+        private readonly ExecutionContextStore $contexts,
+        private readonly CurrentExecutionContext $current,
+        private readonly CrontabTenantLock $locks,
+        private readonly AuditContractHost $audit,
+        private readonly PlatformTenantDataGateway $tenantData,
+    ) {
+    }
+
     /**
      * @param callable(TenantScope,array<string,mixed>):void $trigger
      * @return list<int> active Tenant IDs whose Task workers must be serviced
      */
-    public static function runDue(int $now, callable $trigger): array
+    public function runDue(int $now, callable $trigger): array
     {
-        $models = (new PlatformTenantDataGateway())
+        $models = $this->tenantData
             ->query(Crontab::class, 'scheduler', 'crontab.discover-due')
             ->alias('c')
             ->join('tenant t', 't.id = c.tenant_id')
@@ -38,13 +47,13 @@ final class CrontabSchedulerService
             $item = $model->getData();
             $tenantId = self::positiveInt($item['tenant_id'] ?? null, 'Scheduled job Tenant owner is invalid');
             $tenantIds[$tenantId] = true;
-            self::consider($item, $now, $trigger);
+            $this->consider($item, $now, $trigger);
         }
         return array_map('intval', array_keys($tenantIds));
     }
 
     /** @param callable(TenantScope,array<string,mixed>):void $trigger */
-    public static function consider(array $item, int $now, callable $trigger): bool
+    public function consider(array $item, int $now, callable $trigger): bool
     {
         $tenantId = self::positiveInt($item['tenant_id'] ?? null, 'Scheduled job Tenant owner is invalid');
         $jobId = self::positiveInt($item['id'] ?? null, 'Scheduled job ID is invalid');
@@ -60,10 +69,10 @@ final class CrontabSchedulerService
             'crontab.consider',
             $scope->contextIdentity(),
         );
-        return app(ExecutionContextStore::class)->run(
+        return $this->contexts->run(
             new \app\common\execution\SystemExecutionContext($system),
-            static function () use ($scope, $jobId, $lastTime, $now, $item, $trigger): bool {
-                if (!CrontabTenantLock::acquire($scope, $jobId)) {
+            function () use ($scope, $jobId, $lastTime, $now, $item, $trigger): bool {
+                if (!$this->locks->acquire($scope, $jobId)) {
                     return false;
                 }
                 try {
@@ -86,7 +95,7 @@ final class CrontabSchedulerService
                         'error' => '运行规则错误：' . $exception->getMessage(),
                         'status' => CrontabEnum::ERROR,
                     ]);
-                self::audit(
+                $this->audit(
                     $scope,
                     $jobId,
                     'task.crontab.rejected',
@@ -113,7 +122,7 @@ final class CrontabSchedulerService
             $trigger($scope, $item);
             return true;
                 } finally {
-                    CrontabTenantLock::release($scope, $jobId);
+                    $this->locks->release($scope, $jobId);
                 }
             },
         );
@@ -137,7 +146,7 @@ final class CrontabSchedulerService
     }
 
     /** @param array<string,mixed> $metadata */
-    private static function audit(
+    private function audit(
         TenantScope $scope,
         int $jobId,
         string $eventType,
@@ -146,11 +155,11 @@ final class CrontabSchedulerService
         ?string $reasonCode,
         array $metadata = [],
     ): void {
-        $current = ExecutionContextAccess::current();
+        $current = $this->current->current();
         if ($current === null || $current->tenantId() !== $scope->tenantId()) {
             throw new \DomainException('CRONTAB_AUDIT_CONTEXT_REQUIRED');
         }
-        app(AuditContractHost::class)->recordTenantSystem(
+        $this->audit->recordTenantSystem(
             $scope->tenantId(),
             $eventType,
             $operation,

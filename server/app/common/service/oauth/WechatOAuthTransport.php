@@ -11,7 +11,7 @@ use PeanutAdmin\IntegrationSecurity\OAuth\OAuthProfile;
 /** 微信小程序、公众号和开放平台 PC 的生产 OAuth 传输。 */
 final class WechatOAuthTransport implements OAuthTransportInterface
 {
-    public function __construct(private readonly ?OutboundHttpTransport $transport = null)
+    public function __construct(private readonly OutboundHttpTransport $transport)
     {
     }
 
@@ -91,7 +91,7 @@ final class WechatOAuthTransport implements OAuthTransportInterface
 
     private function getJson(string $url): array
     {
-        $response = ($this->transport ?? app(OutboundHttpTransport::class))->send(
+        $response = $this->transport->send(
             new OutboundHttpRequest('GET', $url, ['Accept' => 'application/json'], retrySafe: true),
         );
         if ($response->status < 200 || $response->status >= 300) {

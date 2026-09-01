@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\platform\controller;
 
 use app\common\service\JsonService;
-use app\platform\http\PlatformRequest;
+use app\common\execution\CurrentExecutionContext;
 use app\platform\service\ops\PlatformOpsApplicationService;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use think\App;
@@ -17,9 +17,10 @@ final class PlatformOpsController extends BasePlatformController
 {
     public function __construct(
         App $app,
+        CurrentExecutionContext $execution,
         private readonly PlatformOpsApplicationService $operations,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $execution);
     }
 
     public function status(): Json
@@ -85,7 +86,7 @@ final class PlatformOpsController extends BasePlatformController
 
     public function diagnostics(): Response
     {
-        $requestId = PlatformRequest::requestId($this->request);
+        $requestId = $this->requestId();
         try {
             $windowMinutes = $this->windowMinutes($this->request->get('window_minutes', 60));
         } catch (\InvalidArgumentException) {
@@ -215,7 +216,7 @@ final class PlatformOpsController extends BasePlatformController
         try {
             return JsonService::data($operation())->header([
                 'Cache-Control' => 'no-store',
-                'X-Request-Id' => PlatformRequest::requestId($this->request),
+                'X-Request-Id' => $this->requestId(),
             ]);
         } catch (OpsConsoleException $exception) {
             throw \app\common\http\ApiProblem::fromEnvelope(
@@ -224,7 +225,7 @@ final class PlatformOpsController extends BasePlatformController
                 $exception->status * 100,
             )->withHeaders([
                     'Cache-Control' => 'no-store',
-                    'X-Request-Id' => PlatformRequest::requestId($this->request),
+                    'X-Request-Id' => $this->requestId(),
                 ]);
         } catch (Throwable) {
             throw \app\common\http\ApiProblem::fromEnvelope(
@@ -233,7 +234,7 @@ final class PlatformOpsController extends BasePlatformController
                 50300,
             )->withHeaders([
                     'Cache-Control' => 'no-store',
-                    'X-Request-Id' => PlatformRequest::requestId($this->request),
+                    'X-Request-Id' => $this->requestId(),
                 ]);
         }
     }

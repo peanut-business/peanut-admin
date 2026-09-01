@@ -6,14 +6,12 @@ namespace app\command;
 use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
-use PDO;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use think\facade\Db;
 
 final class ModuleUninstallPackage extends ContextualCommand
 {
@@ -34,8 +32,7 @@ final class ModuleUninstallPackage extends ContextualCommand
                 || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
                 throw new PluginLifecycleException('MODULE_RUNTIME_MUTATION_DISABLED', 'Runtime Module mutation is disabled.');
             }
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) throw new PluginLifecycleException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE', 'Database is unavailable.');
+            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
             $service = new PluginRuntimeGovernanceService($pdo, dirname(__DIR__, 2), $config);

@@ -3,17 +3,29 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\service\JsonService;
 use app\platform\http\PlatformRequest;
-use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\PlatformTenantQueryService;
+use app\platform\service\TenantGovernanceService;
 use app\platform\validate\PlatformTenantLifecycleValidate;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
+use think\App;
 
 final class PlatformTenantController extends BasePlatformController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $execution,
+        private readonly TenantGovernanceService $tenantGovernance,
+        private readonly PlatformTenantQueryService $tenantQueries,
+    ) {
+        parent::__construct($app, $execution);
+    }
+
     public function provision()
     {
         if ($this->platformContext === null) {
@@ -23,7 +35,7 @@ final class PlatformTenantController extends BasePlatformController
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.provision');
         try {
-            return $this->data(PlatformRuntimeFactory::tenantGovernance()->provision(
+            return $this->data($this->tenantGovernance->provision(
                 PlatformRequest::bearerToken($this->request),
                 trim((string)$params['tenant_code']),
                 trim((string)$params['tenant_name']),
@@ -54,7 +66,7 @@ final class PlatformTenantController extends BasePlatformController
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.activate');
         try {
-            return $this->data(PlatformRuntimeFactory::tenantGovernance()->transition(
+            return $this->data($this->tenantGovernance->transition(
                 PlatformRequest::bearerToken($this->request),
                 (int)$params['tenant_id'],
                 (int)$params['expected_revision'],
@@ -82,7 +94,7 @@ final class PlatformTenantController extends BasePlatformController
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.suspend');
         try {
-            return $this->data(PlatformRuntimeFactory::tenantGovernance()->transition(
+            return $this->data($this->tenantGovernance->transition(
                 PlatformRequest::bearerToken($this->request),
                 (int)$params['tenant_id'],
                 (int)$params['expected_revision'],
@@ -110,7 +122,7 @@ final class PlatformTenantController extends BasePlatformController
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.close');
         try {
-            return $this->data(PlatformRuntimeFactory::tenantGovernance()->transition(
+            return $this->data($this->tenantGovernance->transition(
                 PlatformRequest::bearerToken($this->request),
                 (int)$params['tenant_id'],
                 (int)$params['expected_revision'],
@@ -138,7 +150,7 @@ final class PlatformTenantController extends BasePlatformController
         try {
             $page = $this->positiveInteger($this->request->get('page', 1), 'PAGE_INVALID');
             $pageSize = $this->positiveInteger($this->request->get('page_size', 20), 'PAGE_SIZE_INVALID');
-            $result = PlatformRuntimeFactory::tenantQueries()->tenants(
+            $result = $this->tenantQueries->tenants(
                 $this->platformContext,
                 new PageRequest($page, $pageSize)
             );
@@ -157,7 +169,7 @@ final class PlatformTenantController extends BasePlatformController
 
         try {
             $tenantId = $this->positiveInteger($this->request->get('id'), 'TENANT_ID_INVALID');
-            return $this->data(PlatformRuntimeFactory::tenantQueries()->tenant(
+            return $this->data($this->tenantQueries->tenant(
                 $this->platformContext,
                 $tenantId
             ));

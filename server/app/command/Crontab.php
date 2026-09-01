@@ -6,10 +6,8 @@ namespace app\command;
 use app\common\execution\ContextualCommand;
 use app\common\service\async\TaskImportExportRuntimeFactory;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
-use PDO;
 use think\console\Input;
 use think\console\Output;
-use think\facade\Db;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
 /**
@@ -26,43 +24,39 @@ class Crontab extends ContextualCommand
 
     protected function handle(Input $input, Output $output): int
     {
-        if (!self::acquireSchedulerLock()) {
+        if (!$this->acquireSchedulerLock()) {
             return 0;
         }
         try {
-            self::scheduler()->runDue(time());
+            $this->scheduler()->runDue(time());
         } finally {
-            self::releaseSchedulerLock();
+            $this->releaseSchedulerLock();
         }
 
         return 0;
     }
 
     /** Compatibility entry for explicit trusted scheduler callers. */
-    public static function start(TenantScope $scope, array $item): void
+    public function start(TenantScope $scope, array $item): void
     {
-        self::scheduler()->start($scope, $item);
+        $this->scheduler()->start($scope, $item);
     }
 
-    private static function scheduler(): TaskScheduler
+    private function scheduler(): TaskScheduler
     {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('TASK_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-        return TaskImportExportRuntimeFactory::scheduler($pdo);
+        return TaskImportExportRuntimeFactory::scheduler($this->database());
     }
 
-    private static function acquireSchedulerLock(): bool
+    private function acquireSchedulerLock(): bool
     {
-        $rows = Db::query("SELECT GET_LOCK('peanut:crontab:scheduler', 0) AS acquired");
-        return (int)($rows[0]['acquired'] ?? 0) === 1;
+        $statement = $this->database()->query("SELECT GET_LOCK('peanut:crontab:scheduler', 0)");
+        return (int)$statement->fetchColumn() === 1;
     }
 
-    private static function releaseSchedulerLock(): void
+    private function releaseSchedulerLock(): void
     {
         try {
-            Db::query("SELECT RELEASE_LOCK('peanut:crontab:scheduler')");
+            $this->database()->query("SELECT RELEASE_LOCK('peanut:crontab:scheduler')");
         } catch (\Throwable) {
         }
     }

@@ -3,13 +3,23 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\JsonService;
-use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\TenantEntryBindingAdminService;
 use app\platform\validate\TenantEntryBindingValidate;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
+use think\App;
 
 final class PlatformTenantEntryBindingController extends BasePlatformController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $execution,
+        private readonly TenantEntryBindingAdminService $entryBindings,
+    ) {
+        parent::__construct($app, $execution);
+    }
+
     public function lists()
     {
         if ($this->platformContext === null) {
@@ -17,7 +27,7 @@ final class PlatformTenantEntryBindingController extends BasePlatformController
         }
         $tenantId = trim((string)$this->request->get('tenant_id', ''));
         try {
-            return $this->data(PlatformRuntimeFactory::tenantEntryBindings()->lists(
+            return $this->data($this->entryBindings->lists(
                 $this->platformContext,
                 $tenantId === '' ? null : (int)$tenantId
             ));
@@ -29,7 +39,7 @@ final class PlatformTenantEntryBindingController extends BasePlatformController
     public function enable()
     {
         return $this->mutate('enable', fn(array $params): array =>
-            PlatformRuntimeFactory::tenantEntryBindings()->enable(
+            $this->entryBindings->enable(
                 $this->platformContext,
                 (int)$params['tenant_id'],
                 (string)$params['host'],
@@ -42,7 +52,7 @@ final class PlatformTenantEntryBindingController extends BasePlatformController
     public function disable()
     {
         return $this->mutate('disable', fn(array $params): array =>
-            PlatformRuntimeFactory::tenantEntryBindings()->disable(
+            $this->entryBindings->disable(
                 $this->platformContext,
                 (int)$params['binding_id'],
                 (string)$params['change_reason']

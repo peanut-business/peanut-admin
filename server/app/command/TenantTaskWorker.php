@@ -5,12 +5,10 @@ namespace app\command;
 
 use app\common\service\async\TaskImportExportRuntimeFactory;
 use app\common\service\runtime\OperationalLog;
-use PDO;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;
-use think\facade\Db;
 
 final class TenantTaskWorker extends ContextualCommand
 {
@@ -28,11 +26,7 @@ final class TenantTaskWorker extends ContextualCommand
             $output->writeln('[tenant-task:work] invalid tenant');
             return 1;
         }
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            $output->writeln('[tenant-task:work] database unavailable');
-            return 1;
-        }
+        $pdo = $this->database();
         try {
             $processed = TaskImportExportRuntimeFactory::fromConfig($pdo)->runTenant(
                 (int)$raw,
@@ -41,7 +35,7 @@ final class TenantTaskWorker extends ContextualCommand
             $output->writeln(sprintf('[tenant-task:work] tenant=%d processed=%d', (int)$raw, $processed));
             return 0;
         } catch (\Throwable $exception) {
-            OperationalLog::error('tenant_task_worker_startup_failed', [
+            OperationalLog::error($this->executionContext(), 'tenant_task_worker_startup_failed', [
                 'tenant_id' => (int)$raw,
                 'failure_code' => self::startupFailureCode($exception),
             ]);

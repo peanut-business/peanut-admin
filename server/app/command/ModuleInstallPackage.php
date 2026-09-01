@@ -7,14 +7,12 @@ use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageException;
 use app\platform\service\plugin\PluginPackageInstaller;
-use PDO;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use think\facade\Db;
 
 final class ModuleInstallPackage extends ContextualCommand
 {
@@ -34,10 +32,7 @@ final class ModuleInstallPackage extends ContextualCommand
                 || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
                 throw new PluginPackageException('MODULE_RUNTIME_MUTATION_DISABLED', 'Runtime Module mutation is disabled.');
             }
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new PluginPackageException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE', 'Database is unavailable.');
-            }
+            $pdo = $this->database();
             $trusted = [];
             foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
                 $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;

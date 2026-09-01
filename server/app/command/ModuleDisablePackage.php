@@ -6,13 +6,11 @@ namespace app\command;
 use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginLifecycleException;
-use PDO;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
-use think\facade\Db;
 
 final class ModuleDisablePackage extends ContextualCommand
 {
@@ -31,9 +29,9 @@ final class ModuleDisablePackage extends ContextualCommand
                 || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
                 throw new PluginLifecycleException('MODULE_RUNTIME_MUTATION_DISABLED', 'Runtime Module mutation is disabled.');
             }
-            $pdo = Db::connect()->connect();
+            $pdo = $this->database();
             $config = Config::get('modules', []);
-            if (!$pdo instanceof PDO || !is_array($config)) {
+            if (!is_array($config)) {
                 throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module registry is unavailable.');
             }
             $moduleKey = trim((string)$input->getArgument('module_key'));

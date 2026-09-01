@@ -17,9 +17,9 @@ final class MemberTenantContext
 {
     public const PUBLIC_AUTH_ACTOR = 'peanut.member.public-auth';
 
-    public static function member(): AuthenticatedMemberContext|TenantContext
+    public static function member(ExecutionContextAccess $contexts): AuthenticatedMemberContext|TenantContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         if ($current instanceof ConsumerExecutionContext
             && $current->member instanceof AuthenticatedMemberContext) {
             return $current->member;
@@ -30,9 +30,12 @@ final class MemberTenantContext
         throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
-    public static function system(string $operation): TenantSystemContext
+    public static function system(
+        ExecutionContextAccess $contexts,
+        string $operation,
+    ): TenantSystemContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         $context = $current instanceof ConsumerExecutionContext ? $current->publicTenant : null;
         if (!$context instanceof TenantSystemContext
             || $context->tenantId < 1

@@ -13,7 +13,6 @@ use app\common\service\member\MemberTenantContext;
 use app\common\service\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PDO;
-use think\facade\Db;
 
 /**
  * Read-only first-run readiness projection.
@@ -23,8 +22,12 @@ use think\facade\Db;
  */
 final class FirstRunReadinessHost
 {
-    public function __construct(private readonly NotificationQueries $notifications)
-    {
+    public function __construct(
+        private readonly NotificationQueries $notifications,
+        private readonly CoreTenantModuleAdminBridge $modules,
+        private readonly StorageConfigurationService $storage,
+        private readonly PDO $pdo,
+    ) {
     }
 
     /** @return array{production_ready:bool,summary:array<string,int>,items:list<array<string,mixed>>} */
@@ -34,7 +37,7 @@ final class FirstRunReadinessHost
         string $deploymentMode,
     ): array {
         $tenantId = MemberTenantContext::tenantId($context);
-        $registeredPermissions = (new CoreTenantModuleAdminBridge())->registeredPermissions($tenantId);
+        $registeredPermissions = $this->modules->registeredPermissions($tenantId);
         $notificationEnabled = in_array(
             'official.notification.channel.detail',
             $registeredPermissions,
@@ -131,7 +134,7 @@ final class FirstRunReadinessHost
     private function storage(string $deploymentMode): array
     {
         try {
-            $snapshot = StorageConfigurationService::fromDefaultConnection()->snapshot();
+            $snapshot = $this->storage->snapshot();
             $configured = $this->defaultStorageRoutesConfigured($snapshot);
         } catch (\Throwable) {
             $configured = false;
@@ -157,18 +160,15 @@ final class FirstRunReadinessHost
         $ledgerAvailable = false;
         $verifiedAt = null;
         try {
-            $pdo = Db::connect()->connect();
-            if ($pdo instanceof PDO) {
-                $statement = $pdo->query(
-                    'SELECT verified_at FROM pa_ops_backup_evidence ORDER BY verified_at DESC, id DESC LIMIT 1'
-                );
-                $ledgerAvailable = $statement !== false;
-                $value = $statement === false ? false : $statement->fetchColumn();
-                $verifiedAt = is_string($value) && $value !== ''
-                    ? (new \DateTimeImmutable($value, new \DateTimeZone('UTC')))
-                        ->format('Y-m-d\TH:i:s.v\Z')
-                    : null;
-            }
+            $statement = $this->pdo->query(
+                'SELECT verified_at FROM pa_ops_backup_evidence ORDER BY verified_at DESC, id DESC LIMIT 1'
+            );
+            $ledgerAvailable = $statement !== false;
+            $value = $statement === false ? false : $statement->fetchColumn();
+            $verifiedAt = is_string($value) && $value !== ''
+                ? (new \DateTimeImmutable($value, new \DateTimeZone('UTC')))
+                    ->format('Y-m-d\TH:i:s.v\Z')
+                : null;
         } catch (\Throwable) {
             $ledgerAvailable = false;
             $verifiedAt = null;

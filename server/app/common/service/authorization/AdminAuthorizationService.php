@@ -21,7 +21,7 @@ use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 /** Tenant Admin identity, RBAC and access projection service. */
 final class AdminAuthorizationService implements AdminAuthorizationQuery, AuthorizedOperationFactory
 {
-    public function __construct(private readonly ?PDO $pdo = null)
+    public function __construct(private readonly PDO $pdo)
     {
     }
 

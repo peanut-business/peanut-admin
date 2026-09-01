@@ -27,9 +27,9 @@ final class DecorationTenantContext
         self::ARTICLE_PC_INDEX_OPERATION => 'peanut.article.public-read',
     ];
 
-    public static function member(): TenantContext
+    public static function member(ExecutionContextAccess $contexts): TenantContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         $context = $current instanceof AdminExecutionContext ? $current->tenant : null;
         if (!$context instanceof TenantContext || !self::trustedMember($context)) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
@@ -37,9 +37,12 @@ final class DecorationTenantContext
         return $context;
     }
 
-    public static function read(string $operation): TenantContext|TenantSystemContext
+    public static function read(
+        ExecutionContextAccess $contexts,
+        string $operation,
+    ): TenantContext|TenantSystemContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         $context = match (true) {
             $current instanceof AdminExecutionContext => $current->tenant,
             $current instanceof ConsumerExecutionContext => $current->publicTenant,

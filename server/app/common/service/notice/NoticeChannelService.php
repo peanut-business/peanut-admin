@@ -128,6 +128,7 @@ final class NoticeChannelService
         string $mobile,
         string $templateId,
         array $variables,
+        OutboundHttpTransport $transport,
         ?callable $beforeSend = null
     ): array
     {
@@ -141,7 +142,7 @@ final class NoticeChannelService
             return self::result(false, $provider, '短信服务商未启用或配置不完整');
         }
 
-        $driver = self::makeDriver($provider, $config);
+        $driver = self::makeDriver($provider, $config, $transport);
         if ($beforeSend !== null) {
             $beforeSend($provider);
         }
@@ -219,11 +220,15 @@ final class NoticeChannelService
         return true;
     }
 
-    private static function makeDriver(string $provider, array $config): SmsDriver
+    private static function makeDriver(
+        string $provider,
+        array $config,
+        OutboundHttpTransport $transport,
+    ): SmsDriver
     {
         return match ($provider) {
-            'aliyun' => new AliyunSms($config, app(OutboundHttpTransport::class)),
-            'tencent' => new TencentSms($config, app(OutboundHttpTransport::class)),
+            'aliyun' => new AliyunSms($config, $transport),
+            'tencent' => new TencentSms($config, $transport),
             default => throw new \RuntimeException('短信服务商不受支持'),
         };
     }

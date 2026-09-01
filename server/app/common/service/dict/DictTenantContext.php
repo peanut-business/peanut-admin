@@ -9,9 +9,9 @@ use app\common\execution\ExecutionContextAccess;
 
 final class DictTenantContext
 {
-    public static function member(): TenantContext
+    public static function member(ExecutionContextAccess $contexts): TenantContext
     {
-        $context = ExecutionContextAccess::tenantAdmin();
+        $context = $contexts->tenantAdmin();
         self::tenantId($context);
         return $context;
     }

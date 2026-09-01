@@ -3,14 +3,24 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\service\JsonService;
-use app\platform\invitation\PlatformInvitationRuntimeFactory;
+use app\platform\query\PlatformControlPlaneQueryService;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
+use think\App;
 
 final class PlatformControlPlaneQueryController extends BasePlatformController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $execution,
+        private readonly PlatformControlPlaneQueryService $queries,
+    ) {
+        parent::__construct($app, $execution);
+    }
+
     public function operators()
     {
         return $this->listQuery('operators');
@@ -42,7 +52,7 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
             throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         try {
-            return $this->data(PlatformInvitationRuntimeFactory::queries()->owner(
+            return $this->data($this->queries->owner(
                 $this->platformContext,
                 $this->positiveInteger($this->request->get('tenant_id'))
             ));
@@ -63,7 +73,7 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
                 throw AdminAccessException::invalid('PAGE_SIZE_INVALID', 'Page size must be at most 100.');
             }
             $request = new PageRequest($page, $pageSize);
-            $query = PlatformInvitationRuntimeFactory::queries();
+            $query = $this->queries;
             $result = $method === 'moduleStates'
                 ? $query->moduleStates($this->platformContext, $this->positiveInteger($this->request->get('tenant_id')), $request)
                 : $query->{$method}($this->platformContext, $request);

@@ -4,39 +4,52 @@ declare(strict_types=1);
 namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
+use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
+use PeanutAdmin\OpsConsole\Status\OpsStatusService;
+use PeanutAdmin\OpsConsole\Task\OpsTaskService;
+use app\platform\service\provider\PlatformProviderQualificationService;
 
 /** Container-owned application boundary for all Platform Ops use cases. */
 final readonly class PlatformOpsApplicationService
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private OpsStatusService $status,
+        private ApplicationRuntimeStatusProvider $runtimeStatus,
+        private PlatformProviderQualificationService $providerQualifications,
+        private MaintenanceService $maintenance,
+        private PlatformDiagnosticBundleService $diagnostics,
+        private AuditContractHost $audit,
+        private OpsTaskService $tasks,
+        private PlatformUpgradeExecutionService $upgrades,
+        private PlatformModuleOperationExecutionService $moduleOperations,
+        private PlatformBackupCenterService $backups,
+    ) {
     }
 
     /** @return array<string,mixed> */
     public function status(PlatformContext $context): array
     {
-        return PlatformOpsRuntimeFactory::status($this->pdo)->read($context)->toPublicArray();
+        return $this->status->read($context)->toPublicArray();
     }
 
     /** @return array<string,mixed> */
     public function upgradeReadiness(PlatformContext $context): array
     {
-        return PlatformOpsRuntimeFactory::runtimeStatusProvider($this->pdo)->upgradeReadiness($context);
+        return $this->runtimeStatus->upgradeReadiness($context);
     }
 
     /** @return array<string,mixed> */
     public function providers(PlatformContext $context): array
     {
-        return PlatformOpsRuntimeFactory::providerQualifications($this->pdo)->snapshot($context);
+        return $this->providerQualifications->snapshot($context);
     }
 
     /** @return array<string,mixed>|null */
     public function maintenance(PlatformContext $context): ?array
     {
-        return PlatformOpsRuntimeFactory::maintenance($this->pdo)->current($context)?->toPublicArray();
+        return $this->maintenance->current($context)?->toPublicArray();
     }
 
     /** @return array<string,mixed> */
@@ -48,7 +61,7 @@ final readonly class PlatformOpsApplicationService
         int $revision,
         string $idempotencyKey,
     ): array {
-        return PlatformOpsRuntimeFactory::maintenance($this->pdo)
+        return $this->maintenance
             ->schedule($context, $reasonKey, $startsAt, $endsAt, $revision, $idempotencyKey)
             ->toPublicArray();
     }
@@ -60,7 +73,7 @@ final readonly class PlatformOpsApplicationService
         int $revision,
         string $idempotencyKey,
     ): array {
-        return PlatformOpsRuntimeFactory::maintenance($this->pdo)
+        return $this->maintenance
             ->close($context, $maintenanceKey, $revision, $idempotencyKey)
             ->toPublicArray();
     }
@@ -68,8 +81,8 @@ final readonly class PlatformOpsApplicationService
     /** @return array{json:string,sha256:string,filename:string,bytes:int} */
     public function diagnostics(PlatformContext $context, int $windowMinutes, string $requestId): array
     {
-        $artifact = (new PlatformDiagnosticBundleService($this->pdo))->create($context, $windowMinutes);
-        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
+        $artifact = $this->diagnostics->create($context, $windowMinutes);
+        $this->audit->recordPlatform(
             'platform.ops.diagnostics.downloaded',
             'platform.ops.logs.read',
             $requestId,
@@ -92,7 +105,7 @@ final readonly class PlatformOpsApplicationService
         string $providerKey,
         string $idempotencyKey,
     ): array {
-        return PlatformOpsRuntimeFactory::tasks($this->pdo)
+        return $this->tasks
             ->submitBackup($context, $providerKey, $idempotencyKey)
             ->toPublicArray();
     }
@@ -105,7 +118,7 @@ final readonly class PlatformOpsApplicationService
         string $targetKey,
         string $idempotencyKey,
     ): array {
-        return PlatformOpsRuntimeFactory::tasks($this->pdo)
+        return $this->tasks
             ->submitRestore($context, $providerKey, $backupReferenceKey, $targetKey, $idempotencyKey)
             ->toPublicArray();
     }
@@ -113,7 +126,7 @@ final readonly class PlatformOpsApplicationService
     /** @return array<string,mixed> */
     public function submitUpgrade(PlatformContext $context, string $idempotencyKey): array
     {
-        return PlatformOpsRuntimeFactory::upgrades($this->pdo)->submit($context, $idempotencyKey);
+        return $this->upgrades->submit($context, $idempotencyKey);
     }
 
     /** @return array<string,mixed> */
@@ -122,36 +135,36 @@ final readonly class PlatformOpsApplicationService
         string $requestKey,
         string $idempotencyKey,
     ): array {
-        return PlatformOpsRuntimeFactory::moduleOperations($this->pdo)
+        return $this->moduleOperations
             ->submit($context, $requestKey, $idempotencyKey);
     }
 
     /** @return array<string,mixed> */
     public function moduleOperations(PlatformContext $context): array
     {
-        return PlatformOpsRuntimeFactory::moduleOperations($this->pdo)->snapshot($context);
+        return $this->moduleOperations->snapshot($context);
     }
 
     /** @return array<string,mixed> */
     public function upgrades(PlatformContext $context): array
     {
-        return PlatformOpsRuntimeFactory::upgrades($this->pdo)->snapshot($context);
+        return $this->upgrades->snapshot($context);
     }
 
     /** @return array<string,mixed> */
     public function backups(PlatformContext $context): array
     {
-        return (new PlatformBackupCenterService($this->pdo))->snapshot($context);
+        return $this->backups->snapshot($context);
     }
 
     /** @return array<string,mixed> */
     public function task(PlatformContext $context, string $taskKey): array
     {
-        $module = PlatformOpsRuntimeFactory::moduleOperations($this->pdo)
+        $module = $this->moduleOperations
             ->taskIfModuleOperation($context, $taskKey);
-        $upgrade = PlatformOpsRuntimeFactory::upgrades($this->pdo)
+        $upgrade = $this->upgrades
             ->taskIfUpgrade($context, $taskKey);
-        return $module ?? $upgrade ?? PlatformOpsRuntimeFactory::tasks($this->pdo)
+        return $module ?? $upgrade ?? $this->tasks
             ->task($context, $taskKey)
             ->toPublicArray();
     }

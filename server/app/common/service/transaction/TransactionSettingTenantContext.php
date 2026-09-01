@@ -10,9 +10,9 @@ use PeanutAdmin\Kernel\Context\TenantContextRequirement;
 /** @deprecated Application compatibility bridge to the core TenantContext requirement. */
 final class TransactionSettingTenantContext
 {
-    public static function member(): TenantContext
+    public static function member(ExecutionContextAccess $contexts): TenantContext
     {
-        $context = ExecutionContextAccess::tenantAdmin();
+        $context = $contexts->tenantAdmin();
         TenantContextRequirement::tenantId($context);
         return $context;
     }

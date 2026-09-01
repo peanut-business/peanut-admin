@@ -3,16 +3,26 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\JsonService;
 use app\platform\http\PlatformRequest;
-use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\validate\PlatformTenantModuleValidate;
 use DateTimeImmutable;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Module\ModuleException;
+use think\App;
 
 final class PlatformTenantModuleController extends BasePlatformController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $execution,
+        private readonly PlatformTenantModuleService $tenantModules,
+    ) {
+        parent::__construct($app, $execution);
+    }
+
     public function enable()
     {
         if ($this->platformContext === null) {
@@ -22,7 +32,7 @@ final class PlatformTenantModuleController extends BasePlatformController
         $params = $this->request->post();
         $this->validate($params, PlatformTenantModuleValidate::class . '.enable');
         try {
-            return $this->data(PlatformRuntimeFactory::tenantModules()->enable(
+            return $this->data($this->tenantModules->enable(
                 PlatformRequest::bearerToken($this->request),
                 (int)$params['tenant_id'],
                 trim((string)$params['module_key']),
@@ -55,7 +65,7 @@ final class PlatformTenantModuleController extends BasePlatformController
         $params = $this->request->post();
         $this->validate($params, PlatformTenantModuleValidate::class . '.disable');
         try {
-            return $this->data(PlatformRuntimeFactory::tenantModules()->disable(
+            return $this->data($this->tenantModules->disable(
                 PlatformRequest::bearerToken($this->request),
                 (int)$params['tenant_id'],
                 trim((string)$params['module_key']),

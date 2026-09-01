@@ -9,9 +9,9 @@ use app\common\execution\ExecutionContextAccess;
 
 final class OrgTenantContext
 {
-    public static function member(): TenantContext
+    public static function member(ExecutionContextAccess $contexts): TenantContext
     {
-        $context = ExecutionContextAccess::tenantAdmin();
+        $context = $contexts->tenantAdmin();
         TenantContextRequirement::tenantId($context);
         return $context;
     }

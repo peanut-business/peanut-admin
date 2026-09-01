@@ -9,70 +9,70 @@ use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** Read-only access to the context established by the active boundary. */
-final class ExecutionContextAccess
+final readonly class ExecutionContextAccess
 {
-    public static function current(): ?ExecutionContext
+    public function __construct(private CurrentExecutionContext $current)
     {
-        return app(CurrentExecutionContext::class)->current();
     }
 
-    public static function tenantAdmin(): TenantContext
+    public function current(): ?ExecutionContext
     {
-        return app(CurrentExecutionContext::class)->tenantAdmin();
+        return $this->current->current();
     }
 
-    public static function admin(): AdminExecutionContext
+    public function tenantAdmin(): TenantContext
     {
-        return app(CurrentExecutionContext::class)->admin();
+        return $this->current->tenantAdmin();
     }
 
-    public static function member(): AuthenticatedMemberContext
+    public function admin(): AdminExecutionContext
     {
-        return app(CurrentExecutionContext::class)->member();
+        return $this->current->admin();
     }
 
-    public static function consumer(): ConsumerExecutionContext
+    public function member(): AuthenticatedMemberContext
     {
-        return app(CurrentExecutionContext::class)->consumer();
+        return $this->current->member();
     }
 
-    public static function system(): TenantSystemContext
+    public function consumer(): ConsumerExecutionContext
     {
-        return app(CurrentExecutionContext::class)->system();
+        return $this->current->consumer();
     }
 
-    public static function systemExecution(): SystemExecutionContext
+    public function system(): TenantSystemContext
     {
-        return app(CurrentExecutionContext::class)->systemExecution();
+        return $this->current->system();
     }
 
-    public static function platform(): PlatformOperatorContext
+    public function systemExecution(): SystemExecutionContext
     {
-        return app(CurrentExecutionContext::class)->platform();
+        return $this->current->systemExecution();
     }
 
-    public static function instance(): InstanceExecutionScope
+    public function platform(): PlatformOperatorContext
     {
-        return app(CurrentExecutionContext::class)->instance();
+        return $this->current->platform();
+    }
+
+    public function instance(): InstanceExecutionScope
+    {
+        return $this->current->instance();
     }
 
     /** @return array<string,mixed> */
-    public static function principal(): array
+    public function principal(): array
     {
-        return app(CurrentExecutionContext::class)->tenantAdminPrincipal();
+        return $this->current->tenantAdminPrincipal();
     }
 
-    public static function tenantEntryBound(): bool
+    public function tenantEntryBound(): bool
     {
-        return app(CurrentExecutionContext::class)->tenantEntryBound();
+        return $this->current->tenantEntryBound();
     }
 
-    public static function tenantId(): int
+    public function tenantId(): int
     {
-        return app(CurrentExecutionContext::class)->tenantId();
-    }
-
-    private function __construct()
-    {
+        return $this->current->tenantId();
     }
 }

@@ -16,9 +16,9 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class FinanceTenantContext
 {
-    public static function member(): AuthenticatedMemberContext|TenantContext
+    public static function member(ExecutionContextAccess $contexts): AuthenticatedMemberContext|TenantContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         if ($current instanceof ConsumerExecutionContext
             && $current->member instanceof AuthenticatedMemberContext) {
             return $current->member;
