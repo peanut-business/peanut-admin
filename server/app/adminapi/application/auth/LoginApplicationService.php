@@ -8,13 +8,17 @@ use app\common\service\authorization\AdminAuthorizationService;
 use app\common\application\ApplicationService;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
-use app\tenant\service\TenantAuthRuntimeFactory;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantAuthentication;
+use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TenantSelectionRequired;
 
 final class LoginApplicationService extends ApplicationService
 {
+    public function __construct(private readonly TenantAuthService $tenantAuth)
+    {
+    }
+
     public function login(array $params): array|false
     {
         try {
@@ -24,7 +28,7 @@ final class LoginApplicationService extends ApplicationService
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
             );
-            $outcome = TenantAuthRuntimeFactory::service()->login(
+            $outcome = $this->tenantAuth->login(
                 trim((string)$params['account']),
                 (string)$params['password'],
                 $tenantCode,
@@ -72,9 +76,9 @@ final class LoginApplicationService extends ApplicationService
             return;
         }
         try {
-            TenantAuthRuntimeFactory::service()->logout($token, 'admin-logout-' . bin2hex(random_bytes(8)));
+            $this->tenantAuth->logout($token, 'admin-logout-' . bin2hex(random_bytes(8)));
         } catch (\Throwable) {
-            // Logout is idempotent for the compatibility Admin endpoint.
+            // Logout is idempotent for the Admin endpoint.
         }
     }
 }

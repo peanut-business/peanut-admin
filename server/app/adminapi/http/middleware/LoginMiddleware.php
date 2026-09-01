@@ -11,14 +11,15 @@ use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
-use app\tenant\service\TenantAuthRuntimeFactory;
+use PeanutAdmin\Kernel\Auth\TenantAuthService;
 
 /** Establishes management identity only from a validated native Tenant session. */
 final class LoginMiddleware
 {
-    public function __construct(private readonly ?ExecutionContextStore $executionContexts = null)
-    {
-    }
+    public function __construct(
+        private readonly TenantAuthService $tenantAuth,
+        private readonly ?ExecutionContextStore $executionContexts = null,
+    ) {}
 
     public function handle($request, \Closure $next)
     {
@@ -32,7 +33,7 @@ final class LoginMiddleware
 
         try {
             ApplicationHostPolicy::production()->assertTenantAdmin($request);
-            $context = TenantAuthRuntimeFactory::service()->context(
+            $context = $this->tenantAuth->context(
                 $token,
                 AdminRequest::requestId($request),
             );

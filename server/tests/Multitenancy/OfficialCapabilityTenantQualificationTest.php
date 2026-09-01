@@ -29,7 +29,7 @@ foreach ([
     'public_decoration_middleware' => 'app/api/middleware/PublicDecorationTenantMiddleware.php',
     'public_notice_middleware' => 'app/api/middleware/PublicNoticeTenantMiddleware.php',
     'public_hot_search_middleware' => 'app/api/middleware/PublicHotSearchTenantMiddleware.php',
-    'tenant_session' => 'app/tenant/controller/TenantSessionController.php',
+    'tenant_session' => 'app/adminapi/controller/auth/TenantSessionController.php',
     'admin_login' => 'app/adminapi/application/auth/LoginApplicationService.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
     'authenticated_member_context_core' => 'vendor/peanut-admin/core/kernel/src/Context/AuthenticatedMemberContext.php',

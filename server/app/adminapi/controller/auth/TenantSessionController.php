@@ -1,19 +1,24 @@
 <?php
 declare(strict_types=1);
 
-namespace app\tenant\controller;
+namespace app\adminapi\controller\auth;
 
 use app\common\controller\BaseLikeAdminController;
-use app\common\service\JsonService;
-use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
+use app\common\service\tenant\TenantEntryBindingResolver;
 use app\platform\http\PlatformRequest;
-use app\tenant\service\TenantAuthRuntimeFactory;
 use PeanutAdmin\Kernel\Auth\AuthException;
+use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Http\TenantAuthResponse;
+use think\App;
 
 final class TenantSessionController extends BaseLikeAdminController
 {
+    public function __construct(App $app, private readonly TenantAuthEndpoint $tenantAuth)
+    {
+        parent::__construct($app);
+    }
+
     public function login()
     {
         $params = $this->request->post();
@@ -24,7 +29,7 @@ final class TenantSessionController extends BaseLikeAdminController
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
             );
-            return $this->response(TenantAuthRuntimeFactory::endpoint()->login(
+            return $this->response($this->tenantAuth->login(
                 trim((string)($params['email'] ?? '')),
                 (string)($params['password'] ?? ''),
                 $tenantCode,
@@ -47,7 +52,7 @@ final class TenantSessionController extends BaseLikeAdminController
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 (int)($params['tenant_id'] ?? 0),
             );
-            return $this->response(TenantAuthRuntimeFactory::endpoint()->selectTenant(
+            return $this->response($this->tenantAuth->selectTenant(
                 trim((string)($params['challenge_token'] ?? '')),
                 (int)($params['tenant_id'] ?? 0),
                 $this->request->ip(),
@@ -69,7 +74,7 @@ final class TenantSessionController extends BaseLikeAdminController
             ) !== null) {
                 throw new \DomainException('TENANT_SWITCH_BOUND_ENTRY');
             }
-            return $this->response(TenantAuthRuntimeFactory::endpoint()->switchChallenge(
+            return $this->response($this->tenantAuth->switchChallenge(
                 PlatformRequest::bearerToken($this->request),
                 $this->request->ip(),
                 $this->request->header('User-Agent'),
@@ -84,9 +89,8 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         try {
             ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
-            $endpoint = TenantAuthRuntimeFactory::endpoint();
-            return $this->response($endpoint->refresh(
-                trim((string)$this->request->cookie($endpoint->refreshCookieName(), '')),
+            return $this->response($this->tenantAuth->refresh(
+                trim((string)$this->request->cookie($this->tenantAuth->refreshCookieName(), '')),
                 $this->isTrustedBrowserOrigin(),
                 $this->request->ip(),
                 $this->request->header('User-Agent'),
@@ -101,7 +105,7 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         try {
             ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
-            return $this->response(TenantAuthRuntimeFactory::endpoint()->logout(
+            return $this->response($this->tenantAuth->logout(
                 PlatformRequest::bearerToken($this->request),
                 PlatformRequest::requestId($this->request)
             ));

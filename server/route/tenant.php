@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\tenant\controller\TenantSessionController;
+use app\adminapi\controller\auth\TenantSessionController;
 use app\platform\controller\TenantOwnerInvitationPublicController;
 use app\platform\http\middleware\PlatformHostMiddleware;
 use think\facade\Route;

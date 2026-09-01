@@ -22,6 +22,7 @@ use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\instance\DeploymentMode;
 use app\common\service\idempotency\IdempotencyRuntimeFactory;
 use app\common\service\module\ModuleExecutionBoundary;
+use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\authorization\MenuPermissionUsageQuery;
 use app\common\service\authorization\RoleAdministrationRuntime;
 use app\common\service\org\AdminDirectoryQuery;
@@ -37,6 +38,12 @@ use think\Service;
 use think\facade\Config;
 use think\facade\Db;
 use PDO;
+use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
+use PeanutAdmin\Kernel\Auth\SystemClock;
+use PeanutAdmin\Kernel\Auth\TenantAuthService;
+use PeanutAdmin\Kernel\Auth\TokenIssuer;
+use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 
 /**
  * 应用服务类
@@ -49,6 +56,24 @@ class AppService extends Service
         $this->app->instance(ExecutionContextStore::class, $contexts);
         $this->app->instance(CurrentExecutionContext::class, new CurrentExecutionContext($contexts));
         $this->app->bind(PDO::class, fn(): PDO => $this->database());
+        $this->app->bind(TenantAuthService::class, function (): TenantAuthService {
+            $key = trim((string)Config::get('tenant_auth.identifier_hmac_key', ''));
+            if (strlen($key) < 32) {
+                throw new \DomainException('TENANT_AUTH_CONFIGURATION_UNAVAILABLE');
+            }
+            $pdo = $this->database();
+            return new TenantAuthService(
+                new PdoTransactionManager($pdo),
+                new PdoTenantAuthRepository($pdo),
+                ApplicationPasswordPolicy::hasher(),
+                new SystemClock(),
+                new TokenIssuer(),
+                $key,
+            );
+        });
+        $this->app->bind(TenantAuthEndpoint::class, fn(): TenantAuthEndpoint => new TenantAuthEndpoint(
+            $this->app->make(TenantAuthService::class),
+        ));
         $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => AuditContractHost::fromPdo(
             $this->database(),
         ));

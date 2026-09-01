@@ -277,7 +277,7 @@ entryBindingExpect(
 );
 
 $sessionController = (string)file_get_contents(
-    dirname(__DIR__, 2) . '/app/tenant/controller/TenantSessionController.php'
+    dirname(__DIR__, 2) . '/app/adminapi/controller/auth/TenantSessionController.php'
 );
 $loginMiddleware = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/adminapi/http/middleware/LoginMiddleware.php'
