@@ -8,15 +8,9 @@ use app\common\service\installation\InstallationExecutionHost;
 /** Keeps every business API closed while a guided fresh installation is incomplete. */
 final class InstallationStateMiddleware
 {
-    private const INSTALLATION_PATHS = [
-        'installapi/status',
-        'installapi/execute',
-    ];
-
     public function handle($request, \Closure $next)
     {
-        if (trim((string)(getenv('PEANUT_INSTALLATION_MODE') ?: 'automatic')) !== 'guided'
-            || in_array(trim((string)$request->pathinfo(), '/'), self::INSTALLATION_PATHS, true)) {
+        if (trim((string)(getenv('PEANUT_INSTALLATION_MODE') ?: 'automatic')) !== 'guided') {
             return $next($request);
         }
 
