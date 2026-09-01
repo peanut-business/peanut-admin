@@ -32,9 +32,8 @@ final readonly class GeneratorImportPersistence
                 throw new \RuntimeException('数据表已导入：' . $existing);
             }
 
-            $columnRows = [];
-            foreach ($definitions as $definition) {
-                $table = GeneratorTable::create([
+            $tables = (new GeneratorTable())->saveAll(array_map(
+                static fn(array $definition): array => [
                     'admin_id' => $adminId,
                     'table_name' => $definition['table_name'],
                     'table_comment' => $definition['table_comment'],
@@ -46,12 +45,20 @@ final readonly class GeneratorImportPersistence
                     'author' => '',
                     'tree_config' => [],
                     'relations' => [],
-                ]);
+                ],
+                $definitions,
+            ));
+            if ($tables->count() !== count($definitions)) {
+                throw new \RuntimeException('生成器父表写入不完整');
+            }
+
+            $columnRows = [];
+            foreach ($tables as $index => $table) {
                 $tableId = (int)$table->id;
                 if ($tableId < 1) {
                     throw new \RuntimeException('生成器父表身份无效');
                 }
-                foreach ($definition['columns'] as $column) {
+                foreach ($definitions[$index]['columns'] as $column) {
                     $columnRows[] = ['table_id' => $tableId] + $column;
                 }
             }
