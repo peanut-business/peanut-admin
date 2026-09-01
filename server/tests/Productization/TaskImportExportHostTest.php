@@ -9,7 +9,6 @@ use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\XlsxExportService;
 use app\common\service\storage\StorageService;
 use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
-use app\common\service\async\TaskImportExportRuntimeFactory;
 use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
 use app\common\service\export\OperationLogExportProvider;
 use app\command\TenantTaskWorker;
@@ -48,7 +47,7 @@ $context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
 $scope = TenantScope::fromTrustedContext($tenantId, 'pb04-task-import-export-host');
 
 expectTaskHost(class_exists(TaskImportExportRuntime::class), 'application async Runtime is missing');
-expectTaskHost(class_exists(TaskImportExportRuntimeFactory::class), 'application async Runtime Host assembly is missing');
+expectTaskHost(!is_file($serverRoot . '/app/common/service/async/TaskImportExportRuntimeFactory.php'), 'retired static async Runtime factory was reintroduced');
 expectTaskHost(class_exists(TenantTaskWorker::class), 'Tenant worker command is missing');
 expectTaskHost(is_subclass_of(OperationLogExportProvider::class, \PeanutAdmin\ImportExport\Contract\DataProvider::class), 'operation-log export provider does not implement the Core contract');
 expectTaskHost(is_subclass_of(AppFileMediaGateway::class, \PeanutAdmin\ImportExport\File\FileMediaGateway::class), 'private file gateway does not implement the Core contract');
@@ -64,13 +63,23 @@ $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/
 expectTaskHost(str_contains($runtimeSource, 'TaskJobRuntime'), 'Import/Export does not depend on the official Task Runtime contract');
 expectTaskHost(!str_contains($runtimeSource, 'PdoTaskJobRepository'), 'Import/Export bypasses the official Task Runtime repository boundary');
 expectTaskHost(!str_contains($runtimeSource, 'TrustedJobPublisher'), 'Import/Export bypasses the official Task Runtime publisher boundary');
-$runtimeFactorySource = (string)file_get_contents($serverRoot . '/app/common/service/async/TaskImportExportRuntimeFactory.php');
-expectTaskHost(str_contains($runtimeFactorySource, 'TaskModuleProvider'), 'Import/Export Host assembly does not use the official Task Module provider');
+$moduleProviderSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/ModuleProvider.php');
+expectTaskHost(
+    str_contains($moduleProviderSource, 'TaskImportExportRuntime::class')
+        && str_contains($moduleProviderSource, 'TaskJobRuntime::class')
+        && str_contains($moduleProviderSource, 'StorageService::class'),
+    'Import/Export container assembly is incomplete',
+);
 $taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
 expectTaskHost(str_contains($taskRuntimeSource, 'TrustedJobPublisher'), 'official.task does not own trusted submission');
 expectTaskHost(str_contains($taskRuntimeSource, 'LocalWorker'), 'official.task does not own worker execution');
 $gatewaySource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php');
 expectTaskHost(!str_contains($gatewaySource, "'/public/"), 'private gateway writes below public/');
+expectTaskHost(
+    str_contains($gatewaySource, 'private StorageService $storage')
+        && !str_contains($gatewaySource, 'new StorageService('),
+    'private gateway does not use the injected Storage Runtime',
+);
 
 $suffix = strtolower(substr(bin2hex(random_bytes(8)), 0, 16));
 $taskName = 'PB04任务' . $suffix;
@@ -93,7 +102,7 @@ try {
                 'remark' => 'PB04-TASK-OPS-HOST-001',
             ]),
         ),
-        app(CrontabApplicationService::class)->getError(),
+        'temporary crontab was not created',
     );
     $taskId = (int)app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.query'),
@@ -106,7 +115,7 @@ try {
         fn() => Crontab::findOrEmpty($taskId),
     );
     expectTaskHost(!$task->isEmpty(), 'temporary crontab is missing');
-    CrontabCommand::start($scope, $task->getData());
+    app(CrontabCommand::class)->start($scope, $task->getData());
     $task = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.find.allowed'),
         fn() => Crontab::findOrEmpty($taskId),
@@ -122,7 +131,7 @@ try {
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.find.denied'),
         fn() => Crontab::findOrEmpty($taskId),
     );
-    CrontabCommand::start($scope, $task->getData());
+    app(CrontabCommand::class)->start($scope, $task->getData());
     $task = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.find.denied-result'),
         fn() => Crontab::findOrEmpty($taskId),
@@ -142,7 +151,7 @@ try {
             new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.operate'),
             fn() => app(CrontabApplicationService::class)->operate($taskId, 'start'),
         ),
-        app(CrontabApplicationService::class)->getError(),
+        'manual retry failed',
     );
     $task = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.find.retry'),
@@ -150,7 +159,7 @@ try {
     );
     expectTaskHost((int)$task->status === CrontabEnum::START, 'manual retry must restore started state');
     expectTaskHost((string)$task->error === '', 'manual retry must clear the previous error');
-    CrontabCommand::start($scope, $task->getData());
+    app(CrontabCommand::class)->start($scope, $task->getData());
     $task = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.find.retried'),
         fn() => Crontab::findOrEmpty($taskId),
@@ -215,7 +224,7 @@ try {
     }
 } finally {
     if ($exportFileKey !== '') {
-        StorageService::fromDefaultConnection()->delete($tenantId, $exportFileKey);
+        app(StorageService::class)->delete($tenantId, $exportFileKey);
     }
     if ($taskId > 0) {
         app(ExecutionContextStore::class)->run(

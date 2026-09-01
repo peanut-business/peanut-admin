@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\enum\RefundEnum;
+use app\Modules\Official\Payment\Application\RefundEnum;
 use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\Modules\Official\Payment\Model\RefundLog;
 use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
-use app\common\service\finance\FinanceTenantRepository;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\service\payment\PaymentScheduledTenantContext;
 use app\common\service\payment\PaymentTenantDiagnostics;
 use app\common\service\runtime\OperationalLog;

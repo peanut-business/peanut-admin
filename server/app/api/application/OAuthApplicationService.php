@@ -10,13 +10,12 @@ use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
 use app\common\persistence\TransactionalExecution;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\oauth\OAuthTenantContext;
-use app\common\service\oauth\OAuthTenantRepository;
+use app\Modules\Official\Oauth\Infrastructure\Persistence\OAuthTenantRepository;
 use app\common\service\oauth\WechatOAuthTransport;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
@@ -27,7 +26,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 微信 OAuth 登录、身份归一、绑定与受限首登补全。 */
-class OAuthApplicationService extends ApplicationService
+class OAuthApplicationService
 {
     private const PROVIDER = 'wechat';
     private const UNION_SCOPE = 'wechat_default';
@@ -46,6 +45,7 @@ class OAuthApplicationService extends ApplicationService
         private readonly VerificationCodeCommands $verificationCodes,
         private readonly AdvisoryLockExecution $locks,
         private readonly TransactionalExecution $transactions,
+        private readonly TenantApplicationSettingService $applicationSettings,
     ) {
     }
 
@@ -56,10 +56,9 @@ class OAuthApplicationService extends ApplicationService
         string $redirectUri,
         ExternalTenantBinding $binding,
         ?OAuthTransportInterface $transport = null
-    ): array|false {
-        try {
+    ): array {
             if (!in_array($scene, ['oa', 'open_pc'], true)) {
-                throw new \RuntimeException('该微信场景不支持浏览器授权');
+                throw BusinessException::invalid('OAUTH_SCENE_UNSUPPORTED', '该微信场景不支持浏览器授权');
             }
             self::assertReturnPath($returnPath);
             $config = $binding->config;
@@ -81,10 +80,6 @@ class OAuthApplicationService extends ApplicationService
                 ),
                 'expires_in' => self::ATTEMPT_TTL,
             ];
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
     }
 
     public function callback(
@@ -94,10 +89,9 @@ class OAuthApplicationService extends ApplicationService
         string $state,
         ExternalTenantBinding $binding,
         ?OAuthTransportInterface $transport = null
-    ): array|false {
-        try {
+    ): array {
             if (!in_array($scene, ['oa', 'open_pc'], true)) {
-                throw new \RuntimeException('微信授权场景无效');
+                throw BusinessException::invalid('OAUTH_SCENE_INVALID', '微信授权场景无效');
             }
             $returnPath = $this->consumeAttempt($context, $scene, $state);
             $transport ??= new WechatOAuthTransport();
@@ -105,10 +99,6 @@ class OAuthApplicationService extends ApplicationService
             $result = $this->loginWithProfile($context, $scene, $profile, $binding);
             $result['return_path'] = $returnPath;
             return $result;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
     }
 
     public function miniProgramLogin(
@@ -116,15 +106,10 @@ class OAuthApplicationService extends ApplicationService
         string $code,
         ExternalTenantBinding $binding,
         ?OAuthTransportInterface $transport = null
-    ): array|false {
-        try {
+    ): array {
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange('mnp', $binding->config, $code);
             return $this->loginWithProfile($context, 'mnp', $profile, $binding);
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
     }
 
     public function bind(
@@ -134,13 +119,12 @@ class OAuthApplicationService extends ApplicationService
         string $code,
         ?OAuthTransportInterface $transport = null
     ): bool {
-        try {
-            if (!in_array($scene, ['mnp', 'oa'], true)) {
-                throw new \RuntimeException('该微信场景不支持账号绑定');
-            }
+        if (!in_array($scene, ['mnp', 'oa'], true)) {
+            throw BusinessException::invalid('OAUTH_BIND_SCENE_UNSUPPORTED', '该微信场景不支持账号绑定');
+        }
             $member = $this->members->identity($context, $memberId);
             if ($member === null || !$member->status) {
-                throw new \RuntimeException('用户不存在或已禁用');
+                throw BusinessException::forbidden('MEMBER_UNAVAILABLE', '用户不存在或已禁用');
             }
             $transport ??= new WechatOAuthTransport();
             $binding = ExternalTenantResolver::production()->bindingForTenant(
@@ -150,37 +134,31 @@ class OAuthApplicationService extends ApplicationService
             $profile = $transport->exchange($scene, $binding->config, $code);
             [$bound] = $this->resolveIdentity($context, $scene, $profile, $memberId, $binding);
             if ((int)$bound->id !== $memberId) {
-                throw new \RuntimeException('微信身份已绑定其他用户');
+                throw BusinessException::conflict('OAUTH_IDENTITY_ALREADY_BOUND', '微信身份已绑定其他用户');
             }
             return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
     }
 
-    public function complete(TenantContext|TenantSystemContext $context, array $params): array|false
+    public function complete(TenantContext|TenantSystemContext $context, array $params): array
     {
         $rawTicket = trim((string)($params['ticket'] ?? ''));
         if ($rawTicket === '') {
-            self::setError('登录补全票据缺失');
-            return false;
+            throw BusinessException::invalid('OAUTH_COMPLETION_TICKET_REQUIRED', '登录补全票据缺失');
         }
 
-        try {
-            return $this->transactions->run(function () use ($context, $params, $rawTicket): array {
+        return $this->transactions->run(function () use ($context, $params, $rawTicket): array {
                 $ticket = OAuthTenantRepository::completionTickets($context)
                     ->where('token_hash', hash('sha256', $rawTicket))
                     ->lock(true)->findOrEmpty();
                 if ($ticket->isEmpty() || !empty($ticket->used_at) || (int)$ticket->expires_at < time()) {
-                    throw new \RuntimeException('登录补全票据无效或已过期');
+                    throw BusinessException::invalid('OAUTH_COMPLETION_TICKET_INVALID', '登录补全票据无效或已过期');
                 }
                 $member = $this->members->lockedIdentity(
                     $context,
                     (int)$ticket->member_id,
                 );
                 if ($member === null || !$member->status) {
-                    throw new \RuntimeException('用户不存在或已禁用');
+                    throw BusinessException::forbidden('MEMBER_UNAVAILABLE', '用户不存在或已禁用');
                 }
 
                 $nickname = null;
@@ -188,7 +166,7 @@ class OAuthApplicationService extends ApplicationService
                 if ((int)$ticket->need_profile === 1) {
                     $nickname = trim((string)($params['nickname'] ?? ''));
                     if ($nickname === '' || mb_strlen($nickname) > 50) {
-                        throw new \RuntimeException('请填写有效昵称');
+                        throw BusinessException::invalid('MEMBER_NICKNAME_INVALID', '请填写有效昵称');
                     }
                     if (trim((string)($params['avatar'] ?? '')) !== '') {
                         // Storage URL ownership remains outside OAuth; Member persists the opaque value.
@@ -199,7 +177,7 @@ class OAuthApplicationService extends ApplicationService
                 if ((int)$ticket->need_mobile === 1) {
                     $mobile = trim((string)($params['mobile'] ?? ''));
                     if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
-                        throw new \RuntimeException('手机号格式错误');
+                        throw BusinessException::invalid('MEMBER_MOBILE_INVALID', '手机号格式错误');
                     }
                     $this->memberIdentities->assertMobileAvailable(
                         $context,
@@ -213,7 +191,7 @@ class OAuthApplicationService extends ApplicationService
                         (string)($params['code'] ?? '')
                     );
                     if (!$result->accepted) {
-                        throw new \RuntimeException($result->error);
+                        throw BusinessException::invalid('MEMBER_VERIFICATION_REJECTED', $result->error);
                     }
                     $this->memberIdentities->bindVerifiedMobile(
                         $context,
@@ -232,16 +210,12 @@ class OAuthApplicationService extends ApplicationService
                 );
                 $member = $this->members->identity($context, $member->id);
                 if ($member === null) {
-                    throw new \RuntimeException('用户不存在');
+                    throw BusinessException::notFound('MEMBER_NOT_FOUND', '用户不存在');
                 }
                 $ticket->used_at = time();
                 $ticket->save();
                 return self::fullLoginResult($member);
-            });
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
     }
 
     private function loginWithProfile(
@@ -253,10 +227,10 @@ class OAuthApplicationService extends ApplicationService
     {
         [$member, $created] = $this->resolveIdentity($context, $scene, $profile, null, $binding);
         if (!$member->status) {
-            throw new \RuntimeException('账号已被禁用');
+            throw BusinessException::forbidden('MEMBER_DISABLED', '账号已被禁用');
         }
         $needProfile = $created && $scene === 'mnp';
-        $needMobile = (int)TenantApplicationSettingService::login($context)['coerce_mobile'] === 1
+        $needMobile = (int)$this->applicationSettings->login($context)['coerce_mobile'] === 1
             && trim($member->mobile) === '';
         if ($needProfile || $needMobile) {
             return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
@@ -275,7 +249,7 @@ class OAuthApplicationService extends ApplicationService
     ): array {
         $sceneMeta = self::SCENES[$scene];
         $clientKey = $scene . ':' . (string)($binding->config['app_id'] ?? '');
-        $tenantId = OAuthTenantContext::tenantId($context);
+        $tenantId = $context->tenantId;
         $lockSeed = $profile->unionId() !== ''
             ? 'union:' . $profile->unionId()
             : 'identity:' . $clientKey . ':' . $profile->subject();
@@ -298,14 +272,14 @@ class OAuthApplicationService extends ApplicationService
                     ])->lock(true)->findOrEmpty();
                     if (!$identity->isEmpty()) {
                         if ($bindingMemberId !== null && (int)$identity->member_id !== $bindingMemberId) {
-                            throw new \RuntimeException('微信身份已绑定其他用户');
+                            throw BusinessException::conflict('OAUTH_IDENTITY_ALREADY_BOUND', '微信身份已绑定其他用户');
                         }
                         $member = $this->members->lockedIdentity(
                             $context,
                             (int)$identity->member_id,
                         );
                         if ($member === null) {
-                            throw new \RuntimeException('微信身份关联用户不存在');
+                            throw BusinessException::notFound('OAUTH_MEMBER_NOT_FOUND', '微信身份关联用户不存在');
                         }
                         $principalId = $this->assertPrincipalOwnership($context, $profile, $member->id);
                         if ($principalId !== null && (int)$identity->principal_id !== $principalId) {
@@ -329,11 +303,11 @@ class OAuthApplicationService extends ApplicationService
                     if ($bindingMemberId !== null) {
                         $member = $this->members->lockedIdentity($context, $bindingMemberId);
                         if ($member === null) {
-                            throw new \RuntimeException('用户不存在');
+                            throw BusinessException::notFound('MEMBER_NOT_FOUND', '用户不存在');
                         }
                         if ($principal !== null && !$principal->isEmpty()
                             && (int)$principal->member_id !== $bindingMemberId) {
-                            throw new \RuntimeException('微信联合身份已归属其他用户，不能自动合并账号');
+                            throw BusinessException::conflict('OAUTH_PRINCIPAL_OWNERSHIP_CONFLICT', '微信联合身份已归属其他用户，不能自动合并账号');
                         }
                     } elseif ($principal !== null && !$principal->isEmpty()) {
                         $member = $this->members->lockedIdentity(
@@ -341,11 +315,11 @@ class OAuthApplicationService extends ApplicationService
                             (int)$principal->member_id,
                         );
                         if ($member === null) {
-                            throw new \RuntimeException('微信联合身份关联用户不存在');
+                            throw BusinessException::notFound('OAUTH_MEMBER_NOT_FOUND', '微信联合身份关联用户不存在');
                         }
                     } else {
                         if ($context instanceof AuthenticatedMemberContext) {
-                            throw new \RuntimeException('已认证会员不能创建替代会员身份');
+                            throw BusinessException::forbidden('OAUTH_MEMBER_CREATION_FORBIDDEN', '已认证会员不能创建替代会员身份');
                         }
                         $member = $this->createMember($context, $profile, (int)$sceneMeta['terminal']);
                         $created = true;
@@ -365,7 +339,7 @@ class OAuthApplicationService extends ApplicationService
                         'member_id' => $member->id,
                     ])->lock(true)->findOrEmpty();
                     if (!$sameClient->isEmpty()) {
-                        throw new \RuntimeException('当前用户已绑定该微信应用的其他身份');
+                        throw BusinessException::conflict('OAUTH_CLIENT_IDENTITY_EXISTS', '当前用户已绑定该微信应用的其他身份');
                     }
                     OAuthTenantRepository::createIdentity($context, [
                         'provider' => self::PROVIDER,
@@ -382,7 +356,7 @@ class OAuthApplicationService extends ApplicationService
                 }),
             );
         } catch (AdvisoryLockUnavailable) {
-            throw new \RuntimeException('微信登录正在处理中，请稍后重试');
+            throw BusinessException::conflict('OAUTH_LOGIN_BUSY', '微信登录正在处理中，请稍后重试');
         }
     }
 
@@ -401,7 +375,7 @@ class OAuthApplicationService extends ApplicationService
             'union_id' => $profile->unionId(),
         ])->lock(true)->findOrEmpty();
         if (!$principal->isEmpty() && (int)$principal->member_id !== $memberId) {
-            throw new \RuntimeException('微信联合身份归属冲突，不能自动合并账号');
+            throw BusinessException::conflict('OAUTH_PRINCIPAL_OWNERSHIP_CONFLICT', '微信联合身份归属冲突，不能自动合并账号');
         }
         if ($principal->isEmpty()) {
             $principal = OAuthTenantRepository::createPrincipal($context, [
@@ -443,14 +417,14 @@ class OAuthApplicationService extends ApplicationService
         );
         $updated = $this->members->identity($context, $member->id);
         if ($updated === null) {
-            throw new \RuntimeException('用户不存在');
+            throw BusinessException::notFound('MEMBER_NOT_FOUND', '用户不存在');
         }
         return $updated;
     }
 
-    private static function defaultAvatar(TenantContext|TenantSystemContext $context): string
+    private function defaultAvatar(TenantContext|TenantSystemContext $context): string
     {
-        $avatar = trim((string)TenantApplicationSettingService::memberProfile($context)['user_avatar']);
+        $avatar = trim((string)$this->applicationSettings->memberProfile($context)['user_avatar']);
         return $avatar !== '' ? $avatar : (string)config('project.default_image.user_avatar', '');
     }
 
@@ -510,7 +484,7 @@ class OAuthApplicationService extends ApplicationService
     {
         $state = trim($state);
         if ($state === '') {
-            throw new \RuntimeException('微信授权 state 缺失');
+            throw BusinessException::invalid('OAUTH_STATE_REQUIRED', '微信授权 state 缺失');
         }
         return $this->transactions->run(function () use ($context, $scene, $state): string {
             $attempt = OAuthTenantRepository::attempts($context)
@@ -518,7 +492,7 @@ class OAuthApplicationService extends ApplicationService
                 ->lock(true)->findOrEmpty();
             if ($attempt->isEmpty() || (string)$attempt->scene !== $scene
                 || !empty($attempt->used_at) || (int)$attempt->expires_at < time()) {
-                throw new \RuntimeException('微信授权 state 无效、已过期或已使用');
+                throw BusinessException::invalid('OAUTH_STATE_INVALID', '微信授权 state 无效、已过期或已使用');
             }
             $attempt->used_at = time();
             $attempt->save();
@@ -530,11 +504,11 @@ class OAuthApplicationService extends ApplicationService
     {
         if ($path === '' || strlen($path) > 500 || !str_starts_with($path, '/')
             || str_starts_with($path, '//') || str_contains($path, '\\')) {
-            throw new \RuntimeException('授权返回地址仅允许站内路径');
+            throw BusinessException::invalid('OAUTH_RETURN_PATH_INVALID', '授权返回地址仅允许站内路径');
         }
         $parts = parse_url($path);
         if ($parts === false || isset($parts['scheme']) || isset($parts['host'])) {
-            throw new \RuntimeException('授权返回地址仅允许站内路径');
+            throw BusinessException::invalid('OAUTH_RETURN_PATH_INVALID', '授权返回地址仅允许站内路径');
         }
     }
 }

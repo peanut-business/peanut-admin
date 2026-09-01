@@ -86,9 +86,9 @@ $legacyHostRoutes = implode('', array_map(
     static fn(string $file): string => (string)file_get_contents($serverRoot . '/route/' . $file),
     ['app.php', 'platform.php', 'tenant.php', 'admin.php', 'public_api.php'],
 ));
-$repository = (string)file_get_contents($serverRoot . '/app/common/service/article/ArticleTenantRepository.php');
-$capability = (string)file_get_contents($serverRoot . '/app/common/service/capability/ArticleCapabilityAuthorization.php');
-$publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicArticleTenantMiddleware.php');
+$repository = (string)file_get_contents($moduleRoot . '/Infrastructure/Persistence/ArticleTenantRepository.php');
+$capability = (string)file_get_contents($moduleRoot . '/Application/ArticleCapabilityAuthorization.php');
+$publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicTenantModuleMiddleware.php');
 $administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
 $provider = (string)file_get_contents($moduleRoot . '/ModuleProvider.php');
 $categoryController = (string)file_get_contents($moduleRoot . '/Http/Controller/ArticleCateController.php');
@@ -141,7 +141,7 @@ foreach ([
     officialArticleExpect(substr_count($publicRoutes, $entry) === 1, 'missing public Article entry: ' . $entry);
 }
 officialArticleExpect(
-    substr_count($publicRoutes, '->middleware(PublicArticleTenantMiddleware::class') === 7,
+    substr_count($publicRoutes, "->middleware(PublicTenantModuleMiddleware::class, 'peanut.article.public-read', 'official.article'") === 7,
     'public Article and PC aggregation entries are not uniformly Module guarded'
 );
 
@@ -150,8 +150,10 @@ $pcApplication = (string)file_get_contents($serverRoot . '/app/api/application/P
 $articleApplication = (string)file_get_contents($serverRoot . '/app/api/application/ArticleApplicationService.php');
 $userApplication = (string)file_get_contents($serverRoot . '/app/api/application/UserApplicationService.php');
 officialArticleExpect(
-    substr_count($pcController, 'ArticleTenantContext::read(') >= 3,
-    'PC article/detail aggregation lost Article Tenant context'
+    str_contains($pcController, "publicTenantContext('article.pc-index')")
+        && str_contains($pcController, "publicTenantContext('article.info-center')")
+        && str_contains($pcController, "publicTenantContext('article.pc-detail')"),
+    'PC article/detail aggregation lost the injected public Tenant context'
 );
 officialArticleExpect(
     str_contains($pcApplication, 'private readonly ArticleApplicationService $articles')
@@ -165,7 +167,7 @@ officialArticleExpect(
     'member collection path lost Article-owned storage boundary'
 );
 officialArticleExpect(
-    str_contains($provider, 'bind(ArticleCollectionSummary::class')
+    str_contains($provider, 'ArticleCollectionSummary::class =>')
         && str_contains($userApplication, 'private readonly ArticleCollectionSummary $articleCollections')
         && str_contains($userApplication, '$this->articleCollections->countForMember(')
         && !str_contains($userApplication, 'ArticleModuleProvider')
@@ -174,7 +176,7 @@ officialArticleExpect(
     'member center bypasses the public Article collection summary contract'
 );
 officialArticleExpect(
-    str_contains($publicMiddleware, "ApiProblem::fromEnvelope('文章模块当前不可用'")
+    str_contains($publicMiddleware, "'文章模块当前不可用'")
         && str_contains($publicMiddleware, '\'error_code\' => $exception->errorCode'),
     'public Article disable refusal is not fail-closed with a stable error code'
 );
@@ -188,8 +190,9 @@ officialArticleExpect(
 );
 officialArticleExpect(str_contains($capability, 'assertTenant('), 'Article typed target lost TenantModule enforcement');
 officialArticleExpect(
-    str_contains($publicMiddleware, 'TenantEntryBindingResolver::production()->system(')
-        && str_contains($publicMiddleware, "assertHttp('official.article')")
+    str_contains($publicMiddleware, '$this->entryBindings->system(')
+        && str_contains($publicMiddleware, 'assertHttp($moduleKey, $operation)')
+        && str_contains($publicRoutes, "'peanut.article.public-read', 'official.article'")
         && str_contains($publicMiddleware, 'ModuleExecutionBoundary'),
     'public Article entry is not Host-bound and Module guarded'
 );

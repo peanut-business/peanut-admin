@@ -3,7 +3,6 @@ declare(strict_types=1);
 namespace app\common\service;
 
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantContext;
 use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -20,5 +19,5 @@ final class FileService
     }
     public static function setFileUrl(string $value=''):string{return trim($value);}
     public static function setTenantFileUrl(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,string $value=''):string
-    {return StorageService::fromDefaultConnection()->normalizePublicReference(MemberTenantContext::tenantId($context),$value);}
+    {return StorageService::fromDefaultConnection()->normalizePublicReference($context->tenantId,$value);}
 }

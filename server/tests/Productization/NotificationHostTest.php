@@ -51,7 +51,7 @@ $readinessController = (string)file_get_contents(
     $serverRoot . '/app/adminapi/controller/config/ReadinessController.php'
 );
 expectNotificationHost(
-    str_contains($notificationProvider, 'bind(VerificationCodeCommands::class'),
+    str_contains($notificationProvider, 'VerificationCodeCommands::class =>'),
     'verification command contract is not bound at startup'
 );
 expectNotificationHost(
@@ -85,7 +85,7 @@ expectNotificationHost(
 );
 
 $verificationService = (string)file_get_contents(
-    $serverRoot . '/app/common/service/notice/VerificationCodeService.php'
+    $serverRoot . '/app/Modules/Official/Notification/Application/VerificationCodeService.php'
 );
 foreach (['$this->sender->send', "['code' => '****']", 'verify_code_hash', 'NoticeTenantRepository::createLog'] as $marker) {
     expectNotificationHost(str_contains($verificationService, $marker), 'verification boundary missing: ' . $marker);
@@ -192,12 +192,13 @@ foreach ([
 }
 
 $tenantSources = [$channelService, $verificationService, $applicationService, (string)file_get_contents(
-    $serverRoot . '/app/common/service/notice/NoticeTenantRepository.php'
+    $serverRoot . '/app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php'
 )];
 foreach ($tenantSources as $source) {
     $withoutAllowedContextTypes = str_replace([
         'PeanutAdmin\\Kernel\\Auth\\TenantContext',
         'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+        'PeanutAdmin\\Kernel\\Persistence\\TransactionManager',
     ], '', $source);
     expectNotificationHost(
         !str_contains($withoutAllowedContextTypes, 'PeanutAdmin\\'),

@@ -9,9 +9,9 @@ use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\Modules\Official\Member\Model\Member;
 use app\common\http\PageResult;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\MemberBalanceService;
+use app\common\service\Money;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\support\PaginationInput;
@@ -69,8 +69,8 @@ final class MemberQueryService implements MemberQueries
 
         return new MemberBalanceSnapshot(
             (int)$member->id,
-            MemberBalanceService::moneyToCents((string)$member->getData('user_money')),
-            MemberBalanceService::moneyToCents((string)$member->getData('total_recharge_amount')),
+            Money::toCents((string)$member->getData('user_money')),
+            Money::toCents((string)$member->getData('total_recharge_amount')),
         );
     }
 

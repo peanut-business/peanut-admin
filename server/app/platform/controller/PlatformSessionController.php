@@ -34,7 +34,7 @@ final class PlatformSessionController extends BasePlatformController
                 $this->requestId()
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            return $this->fail('Email or password is incorrect.');
+            throw \app\common\http\ApiProblem::fromEnvelope('Email or password is incorrect.', null, 40100);
         }
 
         return $this->data($authentication->responseData())
@@ -79,7 +79,7 @@ final class PlatformSessionController extends BasePlatformController
     public function info()
     {
         if ($this->platformContext === null) {
-            return $this->fail('Platform authentication is required.');
+            throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
         $permissions = $this->sessions->permissionKeys($this->platformContext);
 

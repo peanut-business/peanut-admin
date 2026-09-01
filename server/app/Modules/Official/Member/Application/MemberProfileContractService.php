@@ -7,7 +7,7 @@ use app\common\application\BusinessException;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

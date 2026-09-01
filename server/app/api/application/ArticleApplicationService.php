@@ -4,15 +4,15 @@ declare(strict_types=1);
 namespace app\api\application;
 
 use app\common\http\PageResult;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\ProductAssetReferenceService;
 use app\Modules\Official\Article\Model\Article;
 use app\Modules\Official\Article\Model\ArticleCollect;
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use app\common\execution\CurrentExecutionContext;
 use app\common\support\PaginationInput;
 
-class ArticleApplicationService extends ApplicationService
+class ArticleApplicationService
 {
     /** 公开文章列表。 */
     public function lists(array $params, int $memberId = 0): PageResult
@@ -84,12 +84,11 @@ class ArticleApplicationService extends ApplicationService
 
     public function addCollect(int $articleId, int $memberId): bool
     {
-        try {
-            $article = ArticleTenantRepository::articles()->where('id', $articleId)
+        $article = ArticleTenantRepository::articles()->where('id', $articleId)
                 ->where('is_show', 1)
                 ->findOrEmpty();
             if ($article->isEmpty()) {
-                throw new \RuntimeException('文章不存在或已下架');
+                throw BusinessException::notFound('ARTICLE_NOT_FOUND', '文章不存在或已下架');
             }
 
             $collect = ArticleTenantRepository::collections()->where('member_id', $memberId)
@@ -105,11 +104,7 @@ class ArticleApplicationService extends ApplicationService
                 $collect->status = 1;
                 $collect->save();
             }
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        return true;
     }
 
     public function cancelCollect(int $articleId, int $memberId): void

@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace app\adminapi\controller;
 
 use app\common\http\PageResult;
-use LogicException;
+use app\common\application\BusinessException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use app\common\execution\CurrentExecutionContext;
+use think\App;
 use think\response\Json;
 
 /**
@@ -17,11 +19,6 @@ use think\response\Json;
  */
 abstract class AbstractTenantCrudController extends BaseAdminController
 {
-    private ?object $crudServiceInstance = null;
-
-    /** @var class-string */
-    protected const CRUD_SERVICE = '';
-
     /** @var class-string */
     protected const CRUD_VALIDATE = '';
 
@@ -33,6 +30,14 @@ abstract class AbstractTenantCrudController extends BaseAdminController
     protected const CRUD_VALIDATE_LISTS = false;
     protected const CRUD_STATUS_FIELD = 'is_disable';
     protected const CRUD_STATUS_SCENE = 'status';
+
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly object $crudServiceInstance,
+    ) {
+        parent::__construct($app, $executionContext);
+    }
 
     final public function lists(): Json
     {
@@ -82,7 +87,10 @@ abstract class AbstractTenantCrudController extends BaseAdminController
         );
     }
 
-    abstract protected function resolveCrudContext(): TenantContext;
+    protected function resolveCrudContext(): TenantContext
+    {
+        return $this->tenantAdminContext();
+    }
 
     protected function listsInput(TenantContext $context): array
     {
@@ -117,7 +125,7 @@ abstract class AbstractTenantCrudController extends BaseAdminController
         return $this->validatedInput($context, static::CRUD_STATUS_SCENE, $this->request->post());
     }
 
-    protected function performLists(TenantContext $context, array $params): PageResult|array|false
+    protected function performLists(TenantContext $context, array $params): PageResult|array
     {
         return $this->crudService()->lists($context, $params);
     }
@@ -151,27 +159,22 @@ abstract class AbstractTenantCrudController extends BaseAdminController
         );
     }
 
-    protected function renderLists(PageResult|array|false $result): Json
+    protected function renderLists(PageResult|array $result): Json
     {
-        if ($result === false) {
-            return $this->fail($this->crudError());
-        }
-
         return $this->data($result);
     }
 
     protected function renderDetail(array $result): Json
     {
-        return $result === []
-            ? $this->fail(static::CRUD_NOT_FOUND_MESSAGE)
-            : $this->data($result);
+        if ($result === []) {
+            throw BusinessException::notFound('ADMIN_RESOURCE_NOT_FOUND', static::CRUD_NOT_FOUND_MESSAGE);
+        }
+        return $this->data($result);
     }
 
     protected function renderMutation(bool $result, string $successMessage): Json
     {
-        return $result
-            ? $this->success($successMessage)
-            : $this->fail($this->crudError());
+        return $this->success($successMessage);
     }
 
     protected function validatedInput(
@@ -182,20 +185,6 @@ abstract class AbstractTenantCrudController extends BaseAdminController
     {
         $this->validate($params, $this->crudValidateClass() . '.' . $scene);
         return $params;
-    }
-
-    /** @return class-string */
-    final protected function crudServiceClass(): string
-    {
-        $logic = static::CRUD_SERVICE;
-        if ($logic === '' || !class_exists($logic)) {
-            throw new LogicException(sprintf(
-                '%s must configure a valid CRUD_SERVICE class.',
-                static::class,
-            ));
-        }
-
-        return $logic;
     }
 
     /** @return class-string */
@@ -212,24 +201,8 @@ abstract class AbstractTenantCrudController extends BaseAdminController
         return $validate;
     }
 
-    final protected function crudError(): string
-    {
-        $service = $this->crudService();
-        if (!is_callable([$service, 'getError'])) {
-            throw new LogicException(sprintf(
-                '%s must provide a getError() method.',
-                $service::class,
-            ));
-        }
-
-        return (string) $service->getError();
-    }
-
     final protected function crudService(): object
     {
-        if ($this->crudServiceInstance === null) {
-            $this->crudServiceInstance = app($this->crudServiceClass());
-        }
         return $this->crudServiceInstance;
     }
 }

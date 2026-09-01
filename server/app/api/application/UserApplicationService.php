@@ -8,13 +8,13 @@ use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\FileService;
 use PeanutAdmin\Kernel\Module\ModuleException;
 
-class UserApplicationService extends ApplicationService
+class UserApplicationService
 {
     public function __construct(
         private readonly MemberQueries $members,
@@ -74,12 +74,11 @@ class UserApplicationService extends ApplicationService
      */
     public function setInfo(AuthenticatedMemberContext $context, int $memberId, array $params): bool
     {
-        try {
-            $allowed = ['nickname', 'avatar', 'sex', 'birthday', 'email'];
+        $allowed = ['nickname', 'avatar', 'sex', 'birthday', 'email'];
             $field   = $params['field'] ?? '';
 
             if (!in_array($field, $allowed, true)) {
-                throw new \Exception('不支持修改该字段');
+                throw BusinessException::invalid('MEMBER_PROFILE_FIELD_UNSUPPORTED', '不支持修改该字段');
             }
 
             $value = $params['value'];
@@ -88,37 +87,27 @@ class UserApplicationService extends ApplicationService
             }
 
             $this->memberProfiles->updateSelfField($context, $memberId, $field, $value);
-            return true;
-        } catch (\Exception $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        return true;
     }
 
     /** 修改密码（需要旧密码） */
     public function changePassword(AuthenticatedMemberContext $context, int $memberId, array $params): bool
     {
-        try {
-            $this->memberIdentities->changePassword(
+        $this->memberIdentities->changePassword(
                 $context,
                 $memberId,
                 (string)$params['old_password'],
                 (string)$params['password'],
             );
-            return true;
-        } catch (\Exception $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        return true;
     }
 
     /** 绑定手机号 */
     public function bindMobile(AuthenticatedMemberContext $context, int $memberId, array $params): bool
     {
-        try {
-            $mobile = $params['mobile'] ?? '';
+        $mobile = $params['mobile'] ?? '';
             if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
-                throw new \Exception('手机号格式错误');
+                throw BusinessException::invalid('MEMBER_MOBILE_INVALID', '手机号格式错误');
             }
             $member = $this->members->memberFields(
                 $context,
@@ -126,7 +115,7 @@ class UserApplicationService extends ApplicationService
                 ['id', 'mobile'],
             );
             if ($member === []) {
-                throw new \Exception('用户不存在');
+                throw BusinessException::notFound('MEMBER_NOT_FOUND', '用户不存在');
             }
             $this->memberIdentities->assertMobileAvailable($context, $memberId, $mobile);
             $scene = empty($member['mobile'])
@@ -139,13 +128,9 @@ class UserApplicationService extends ApplicationService
                 (string) ($params['code'] ?? ''),
             );
             if (!$result->accepted) {
-                throw new \Exception($result->error);
+                throw BusinessException::invalid('MEMBER_VERIFICATION_REJECTED', $result->error);
             }
             $this->memberIdentities->bindVerifiedMobile($context, $memberId, $mobile);
-            return true;
-        } catch (\Exception $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        return true;
     }
 }

@@ -8,6 +8,7 @@ use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\service\audit\AuditContractHost;
 use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\http\GuzzleOutboundHttpTransport;
 use app\common\service\http\OutboundHttpTransport;
@@ -22,6 +23,16 @@ use app\common\service\org\AdminDirectoryQuery;
 use app\common\service\org\DepartmentAdministrationRuntime;
 use app\common\service\org\TenantAdminRuntime;
 use app\common\service\tenant\TenantIdentityQuery;
+use app\common\service\storage\AliyunStorageClientFactory;
+use app\common\service\storage\FailClosedStorageCredentialResolver;
+use app\common\service\storage\QcloudStorageClientFactory;
+use app\common\service\storage\StorageCredentialResolver;
+use app\common\service\storage\StorageDriverFactory;
+use app\common\service\storage\StorageRepository;
+use app\common\service\storage\StorageService;
+use app\common\service\tenant\DefaultTenantContextResolver;
+use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\service\tenant\ApplicationHostPolicy;
 use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\StandaloneDataScopePolicy;
@@ -49,8 +60,10 @@ class AppService extends Service
     public function register(): void
     {
         $contexts = new ExecutionContextStore();
+        $current = new CurrentExecutionContext($contexts);
         $this->app->instance(ExecutionContextStore::class, $contexts);
-        $this->app->instance(CurrentExecutionContext::class, new CurrentExecutionContext($contexts));
+        $this->app->instance(CurrentExecutionContext::class, $current);
+        $this->app->instance(ExecutionContextAccess::class, new ExecutionContextAccess($current));
         $this->app->bind(PDO::class, fn(): PDO => $this->database());
         $this->app->bind(TransactionManager::class, fn(): TransactionManager => new PdoTransactionManager(
             $this->app->make(PDO::class),
@@ -86,7 +99,25 @@ class AppService extends Service
         $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
             $this->app->make(PDO::class),
         ));
-        $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport());
+        $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport(
+            $this->app->make(ExecutionContextAccess::class),
+        ));
+        $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
+        $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(StorageDriverFactory::class, fn(): StorageDriverFactory => new StorageDriverFactory(
+            $this->app->make(StorageCredentialResolver::class),
+            $this->app->make(OutboundHttpTransport::class),
+            $this->app->make(AliyunStorageClientFactory::class),
+            $this->app->make(QcloudStorageClientFactory::class),
+            $this->app->make(ExecutionContextAccess::class),
+            $this->app,
+        ));
+        $this->app->bind(StorageService::class, fn(): StorageService => new StorageService(
+            $this->app->make(StorageRepository::class),
+            $this->app->make(StorageDriverFactory::class),
+        ));
         $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
             return new ModuleExecutionBoundary(
                 $this->app->make(PDO::class),
@@ -113,6 +144,25 @@ class AppService extends Service
         $this->app->bind(TenantIdentityQuery::class, fn(): TenantIdentityQuery => new TenantIdentityQuery(
             $this->app->make(PDO::class),
         ));
+        $this->app->bind(DefaultTenantContextResolver::class, fn(): DefaultTenantContextResolver => new DefaultTenantContextResolver(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(TenantEntryBindingResolver::class, function (): TenantEntryBindingResolver {
+            $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
+            $defaultSystem = $mode === DeploymentMode::Standalone
+                && (bool)Config::get('deployment.public_default_tenant_fallback', true)
+                ? fn(string $actor, string $operation, string $operationId) => $this->app
+                    ->make(DefaultTenantContextResolver::class)
+                    ->system($actor, $operation, $operationId)
+                : null;
+            return new TenantEntryBindingResolver($this->app->make(PDO::class), $defaultSystem);
+        });
+        $this->app->bind(ApplicationHostPolicy::class, fn(): ApplicationHostPolicy => new ApplicationHostPolicy(
+            (string)Config::get('deployment.mode', ''),
+            self::hostList((string)Config::get('deployment.platform_hosts', '')),
+            self::hostList((string)Config::get('deployment.tenant_admin_hosts', '')),
+            $this->app->make(TenantEntryBindingResolver::class),
+        ));
         $this->app->bind(PlatformOpsApplicationService::class, fn(): PlatformOpsApplicationService => new PlatformOpsApplicationService(
             $this->app->make(PDO::class),
         ));
@@ -126,6 +176,17 @@ class AppService extends Service
                 default => throw new \RuntimeException('DEPLOYMENT_MODE_UNCONFIGURED'),
             };
         });
+        $this->app->bind(\app\common\service\dict\DictionaryRuntime::class, function (): \app\common\service\dict\DictionaryRuntime {
+            $tenant = new \app\common\service\dict\ThinkPhpTenantDictionaryProvider();
+            $system = new \app\common\service\dict\ThinkPhpSystemDictionaryProvider();
+            return new \app\common\service\dict\DictionaryRuntime(
+                new \PeanutAdmin\Kernel\Dictionary\Application\DictionaryService($tenant, $tenant, $system),
+                $system,
+            );
+        });
+        $this->app->bind(\app\common\service\tenant\TenantSettingService::class, fn(): \app\common\service\tenant\TenantSettingService => new \app\common\service\tenant\TenantSettingService(
+            new \app\common\service\tenant\ThinkPhpTenantSettingsProvider(),
+        ));
 
         $this->registerModules();
     }
@@ -160,5 +221,11 @@ class AppService extends Service
             false,
         );
         (new ModuleComposition($this->app))->register($registry);
+    }
+
+    /** @return list<string> */
+    private static function hostList(string $hosts): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', $hosts))));
     }
 }

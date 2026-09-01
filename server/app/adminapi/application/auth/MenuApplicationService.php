@@ -6,13 +6,13 @@ namespace app\adminapi\application\auth;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\authorization\MenuPermissionUsageQuery;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\model\auth\SystemMenu;
 use app\common\persistence\TransactionalExecution;
 use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-class MenuApplicationService extends ApplicationService
+class MenuApplicationService
 {
     public function __construct(
         private readonly AdminAuthorizationService $authorization,
@@ -22,13 +22,11 @@ class MenuApplicationService extends ApplicationService
 
     public function getMenuByAdminId(mixed $tenantContext, int $adminId): array
     {
-        self::clearError();
         return $this->authorization->menusForAdminId($tenantContext, $adminId);
     }
 
     public function getAll(): array
     {
-        self::clearError();
         $menus = SystemMenu::whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
             ->whereNotIn('paths', [
@@ -43,7 +41,6 @@ class MenuApplicationService extends ApplicationService
 
     public function getAllSimple(TenantContext $context): array
     {
-        self::clearError();
         $data = SystemMenu::where('is_disable', 0)
             ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
             ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths())
@@ -70,15 +67,12 @@ class MenuApplicationService extends ApplicationService
 
     public function detail(int $id): array
     {
-        self::clearError();
         return SystemMenu::findOrEmpty($id)->toArray();
     }
 
     public function add(array $params): bool
     {
-        self::clearError();
-        try {
-            return (bool) $this->transactions->run(function () use ($params): bool {
+        return (bool) $this->transactions->run(function () use ($params): bool {
                 self::assertParent((int)($params['pid'] ?? 0));
                 SystemMenu::create([
                     'pid' => $params['pid'] ?? 0, 'type' => $params['type'] ?? 'C',
@@ -89,20 +83,15 @@ class MenuApplicationService extends ApplicationService
                     'is_disable' => $params['is_disable'] ?? 0,
                 ]);
                 return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        });
     }
 
     public function edit(array $params): bool
     {
-        self::clearError();
-        try {
-            return (bool) $this->transactions->run(function () use ($params): bool {
+        return (bool) $this->transactions->run(function () use ($params): bool {
                 $id = (int)$params['id'];
                 $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
-                if ($menu->isEmpty()) throw new \RuntimeException('菜单不存在');
+                if ($menu->isEmpty()) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
                 self::assertParent((int)($params['pid'] ?? 0), $id);
                 $menu->save([
                     'pid' => $params['pid'] ?? 0,
@@ -114,43 +103,30 @@ class MenuApplicationService extends ApplicationService
                     'is_disable' => $params['is_disable'] ?? 0,
                 ]);
                 return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        });
     }
 
     public function delete(int $id): bool
     {
-        self::clearError();
-        try {
-            return (bool) $this->transactions->run(function () use ($id): bool {
+        return (bool) $this->transactions->run(function () use ($id): bool {
                 $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
-                if ($menu->isEmpty()) throw new \RuntimeException('菜单不存在');
-                if (SystemMenu::where('pid', $id)->count() > 0) throw new \RuntimeException('已关联下级菜单，暂不可删除');
+                if ($menu->isEmpty()) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
+                if (SystemMenu::where('pid', $id)->count() > 0) throw BusinessException::conflict('ADMIN_MENU_HAS_CHILDREN', '已关联下级菜单，暂不可删除');
                 $permission = trim((string)$menu->perms);
-                if ($permission !== '' && self::permissionAssigned($permission)) throw new \RuntimeException('菜单已被角色使用，暂不可删除');
+                if ($permission !== '' && $this->permissionUsage->assigned($permission)) throw BusinessException::conflict('ADMIN_MENU_IN_USE', '菜单已被角色使用，暂不可删除');
                 $menu->delete();
                 return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        });
     }
 
     public function updateStatus(int $id, int $isDisable): bool
     {
-        self::clearError();
-        try {
-            return (bool) $this->transactions->run(function () use ($id, $isDisable): bool {
+        return (bool) $this->transactions->run(function () use ($id, $isDisable): bool {
                 $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
-                if ($menu->isEmpty()) throw new \RuntimeException('菜单不存在');
+                if ($menu->isEmpty()) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
                 $menu->save(['is_disable' => $isDisable]);
                 return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        });
     }
 
     private static function assertParent(int $parentId, int $menuId = 0): void
@@ -159,33 +135,29 @@ class MenuApplicationService extends ApplicationService
             return;
         }
         if ($parentId === $menuId) {
-            throw new \RuntimeException('上级菜单不可是当前菜单');
+            throw BusinessException::invalid('ADMIN_MENU_PARENT_INVALID', '上级菜单不可是当前菜单');
         }
 
         $parents = SystemMenu::lock(true)->column(['id', 'pid', 'type'], 'id');
         $visited = [];
         while ($parentId > 0) {
             if ($parentId === $menuId) {
-                throw new \RuntimeException('上级菜单不可是当前菜单或其下级菜单');
+                throw BusinessException::invalid('ADMIN_MENU_PARENT_INVALID', '上级菜单不可是当前菜单或其下级菜单');
             }
             if (isset($visited[$parentId])) {
-                throw new \RuntimeException('菜单层级关系异常');
+                throw BusinessException::conflict('ADMIN_MENU_HIERARCHY_INVALID', '菜单层级关系异常');
             }
             $visited[$parentId] = true;
 
             $parent = $parents[$parentId] ?? null;
             if (!is_array($parent)) {
-                throw new \RuntimeException('上级菜单不存在');
+                throw BusinessException::notFound('ADMIN_MENU_PARENT_NOT_FOUND', '上级菜单不存在');
             }
             if ((string)$parent['type'] === 'A') {
-                throw new \RuntimeException('按钮不可作为上级菜单');
+                throw BusinessException::invalid('ADMIN_MENU_PARENT_INVALID', '按钮不可作为上级菜单');
             }
             $parentId = (int)$parent['pid'];
         }
     }
 
-    private static function permissionAssigned(string $permission): bool
-    {
-        return $this->permissionUsage->assigned($permission);
-    }
 }

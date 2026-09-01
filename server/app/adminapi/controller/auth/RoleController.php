@@ -8,7 +8,6 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\auth\RoleApplicationService;
-use app\common\service\org\OrgTenantContext;
 
 class RoleController extends BaseAdminController
 {
@@ -19,50 +18,44 @@ class RoleController extends BaseAdminController
 
     public function lists()
     {
-        $result = $this->roles->lists(OrgTenantContext::member(), $this->request->get());
+        $result = $this->roles->lists($this->tenantAdminContext(), $this->request->get());
         return $this->data($result);
     }
 
     public function all()
     {
-        return $this->data($this->roles->getAll(OrgTenantContext::member()));
+        return $this->data($this->roles->getAll($this->tenantAdminContext()));
     }
 
     public function detail()
     {
         $params = $this->request->get();
         $this->validate($params, ['id' => 'require|integer|gt:0']);
-        return $this->data($this->roles->detail(OrgTenantContext::member(), (int)$params['id']));
+        return $this->data($this->roles->detail($this->tenantAdminContext(), (int)$params['id']));
     }
 
     public function add()
     {
         $params = $this->roleParams();
         $this->validate($params, $this->roles->validationRules('add'));
-        $result = $this->roles->add(OrgTenantContext::member(), $params);
-        return $result
-            ? $this->success('操作成功')
-            : $this->fail($this->roles->getError());
+        $this->roles->add($this->tenantAdminContext(), $params);
+        return $this->success('操作成功');
     }
 
     public function edit()
     {
         $params = $this->roleParams();
         $this->validate($params, $this->roles->validationRules('edit'));
-        $result = $this->roles->edit(OrgTenantContext::member(), $params);
-        return $result
-            ? $this->success('操作成功')
-            : $this->fail($this->roles->getError());
+        $this->roles->edit($this->tenantAdminContext(), $params);
+        return $this->success('操作成功');
     }
 
     public function delete()
     {
         $params = $this->request->post();
         $this->validate($params, ['id' => 'require|integer|gt:0']);
-        $result = $this->roles->delete(OrgTenantContext::member(), (int)$params['id']);
-        return $result
-            ? $this->success('操作成功')
-            : $this->fail($this->roles->getError());
+        $this->roles->delete($this->tenantAdminContext(), (int)$params['id']);
+        return $this->success('操作成功');
     }
 
     /**

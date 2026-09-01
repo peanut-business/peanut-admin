@@ -61,7 +61,7 @@
     {"table": "pa_member_tag", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Member\\Model\\MemberTag"},
     {"table": "pa_member_tag_relation", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Member\\Model\\MemberTagRelation"},
     {"table": "pa_member_balance_log", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Member\\Model\\MemberBalanceLog"},
-    {"table": "pa_notice_template", "owner": "tenant-gateway", "access_entry": "app\\common\\service\\notice\\NoticeTenantRepository"},
+    {"table": "pa_notice_template", "owner": "tenant-gateway", "access_entry": "app\\Modules\\Official\\Notification\\Infrastructure\\Persistence\\NoticeTenantRepository"},
     {"table": "pa_notice_scene", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Notification\\Model\\NoticeScene"},
     {"table": "pa_notice_log", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Notification\\Model\\NoticeLog"},
     {"table": "pa_hot_search", "owner": "tenant-orm", "access_entry": "app\\common\\model\\setting\\HotSearch"},
@@ -94,7 +94,7 @@
     {"table": "pa_setting_target_value", "owner": "tenant-gateway", "access_entry": "app\\platform\\service\\plugin\\ModuleCatalogMutationRepository"},
     {"table": "pa_refund_log", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Payment\\Model\\RefundLog"},
     {"table": "pa_oauth_completion_ticket", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Oauth\\Model\\OAuthCompletionTicket"},
-    {"table": "pa_payment_tenant_channel_grant", "owner": "tenant-gateway", "access_entry": "app\\common\\service\\payment\\PaymentChannelGrantService"},
+    {"table": "pa_payment_tenant_channel_grant", "owner": "tenant-gateway", "access_entry": "app\\Modules\\Official\\Payment\\Infrastructure\\ThinkPhpPaymentChannelGrantCommands"},
     {"table": "pa_provider_qualification_evidence", "owner": "tenant-gateway", "access_entry": "app\\platform\\service\\provider\\PdoProviderQualificationEvidenceRepository"},
     {"table": "pa_fixture_delivery_record", "owner": "tenant-gateway", "access_entry": "app\\Modules\\Fixture\\DeliveryRecord\\Infrastructure\\Persistence\\PdoDeliveryRecordRepository"}
   ],

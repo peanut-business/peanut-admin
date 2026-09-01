@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
+use app\common\persistence\AdvisoryLockExecution;
+use app\common\persistence\AdvisoryLockUnavailable;
 use PDO;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Module\ModuleHostLayout;
@@ -76,74 +78,80 @@ final class PluginRuntimeGovernanceService
         }
 
         $lockName = 'pa:module-runtime:' . substr(hash('sha256', $packageKey), 0, 40);
-        if (!$this->advisoryLock($lockName)) {
-            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
-        }
         try {
-            $state = $this->installationState($packageKey);
-            if ($this->isCleanState($state, $confirmPlan, $purge)) {
-                return ['operation' => 'unchanged', 'package_key' => $packageKey, 'removed' => []];
-            }
-            $marker = $purge ? 'MODULE_PURGE_IN_PROGRESS' : 'MODULE_RETIRE_IN_PROGRESS';
-            $resuming = is_array($state) && $state['status'] === 'maintenance' && $state['last_error_code'] === $marker;
-            if (!$resuming) {
-                $scope = $this->scope($moduleOrPackageKey);
-                if ($scope === null) {
-                    throw new PluginLifecycleException('PLUGIN_NOT_INSTALLED', 'Module package is not installed.');
+            return (new AdvisoryLockExecution($this->pdo))->run($lockName, 0, function () use (
+                $packageKey,
+                $confirmPlan,
+                $purge,
+                $moduleOrPackageKey,
+                $codec,
+                $confirmPlanDigest,
+            ): array {
+                $state = $this->installationState($packageKey);
+                if ($this->isCleanState($state, $confirmPlan, $purge)) {
+                    return ['operation' => 'unchanged', 'package_key' => $packageKey, 'removed' => []];
                 }
-                $current = $this->buildPlan($scope, $purge);
-                if (!hash_equals($codec->encode($confirmPlan), $codec->encode($current))) {
-                    throw new PluginLifecycleException('MODULE_UNINSTALL_PLAN_CHANGED', 'Module uninstall plan changed before execution.');
-                }
-            } else {
-                $this->assertResumeScope($confirmPlan, $packageKey);
-            }
-
-            $moduleKeys = $this->confirmedModuleKeys($confirmPlan);
-            $ownedTablesByModule = $this->confirmedOwnedTablesByModule($confirmPlan);
-            $ownedTables = $this->confirmedOwnedTables($ownedTablesByModule);
-            $this->markMaintenance($packageKey, $moduleKeys, $marker);
-            $this->inject('after-marker');
-
-            $catalog = new ModuleCatalogApplier($this->pdo);
-            $currentCatalog = $catalog->plan($moduleKeys, $purge);
-            if ($currentCatalog['blockers'] !== []) {
-                throw new PluginLifecycleException('MODULE_UNINSTALL_BLOCKED', 'New catalog references block Module uninstall.');
-            }
-            $this->assertCurrentRemovalSubset($currentCatalog['removed'], $confirmPlan['removed']);
-            $purge ? $catalog->purge($moduleKeys) : $catalog->retire($moduleKeys);
-            $this->inject('after-catalog');
-
-            if ($purge) {
-                $this->dropOwnedTables($ownedTables, $ownedTablesByModule);
-                $this->inject('after-first-drop');
-                $this->assertOwnedTablesAbsent($ownedTables);
-                $this->pdo->beginTransaction();
-                try {
-                    $statement = $this->pdo->prepare('DELETE FROM pa_module_migration WHERE module_key IN (' . $this->placeholders($moduleKeys) . ')');
-                    $statement->execute($moduleKeys);
-                    if ((new ModuleCatalogApplier($this->pdo))->plan($moduleKeys, true)['removed'] !== []) {
-                        throw new PluginLifecycleException('MODULE_PURGE_INCOMPLETE', 'Module catalog remains after purge.');
+                $marker = $purge ? 'MODULE_PURGE_IN_PROGRESS' : 'MODULE_RETIRE_IN_PROGRESS';
+                $resuming = is_array($state) && $state['status'] === 'maintenance' && $state['last_error_code'] === $marker;
+                if (!$resuming) {
+                    $scope = $this->scope($moduleOrPackageKey);
+                    if ($scope === null) {
+                        throw new PluginLifecycleException('PLUGIN_NOT_INSTALLED', 'Module package is not installed.');
                     }
-                    $this->pdo->commit();
-                } catch (\Throwable $exception) {
-                    if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-                    throw $exception;
+                    $current = $this->buildPlan($scope, $purge);
+                    if (!hash_equals($codec->encode($confirmPlan), $codec->encode($current))) {
+                        throw new PluginLifecycleException('MODULE_UNINSTALL_PLAN_CHANGED', 'Module uninstall plan changed before execution.');
+                    }
+                } else {
+                    $this->assertResumeScope($confirmPlan, $packageKey);
                 }
-                $this->inject('after-database-clean');
-            }
 
-            $this->finalizeFilesystem($packageKey, $confirmPlan, $confirmPlanDigest, $purge);
-            $this->finalizeInstallation($packageKey, $moduleKeys, $purge);
-            return [
-                'operation' => $purge ? 'purged' : 'retired',
-                'package_key' => $packageKey,
-                'affected_modules' => $confirmPlan['affected_modules'],
-                'removed' => $confirmPlan['removed'],
-                'preserved' => $confirmPlan['preserved'],
-            ];
-        } finally {
-            $this->releaseAdvisoryLock($lockName);
+                $moduleKeys = $this->confirmedModuleKeys($confirmPlan);
+                $ownedTablesByModule = $this->confirmedOwnedTablesByModule($confirmPlan);
+                $ownedTables = $this->confirmedOwnedTables($ownedTablesByModule);
+                $this->markMaintenance($packageKey, $moduleKeys, $marker);
+                $this->inject('after-marker');
+
+                $catalog = new ModuleCatalogApplier($this->pdo);
+                $currentCatalog = $catalog->plan($moduleKeys, $purge);
+                if ($currentCatalog['blockers'] !== []) {
+                    throw new PluginLifecycleException('MODULE_UNINSTALL_BLOCKED', 'New catalog references block Module uninstall.');
+                }
+                $this->assertCurrentRemovalSubset($currentCatalog['removed'], $confirmPlan['removed']);
+                $purge ? $catalog->purge($moduleKeys) : $catalog->retire($moduleKeys);
+                $this->inject('after-catalog');
+
+                if ($purge) {
+                    $this->dropOwnedTables($ownedTables, $ownedTablesByModule);
+                    $this->inject('after-first-drop');
+                    $this->assertOwnedTablesAbsent($ownedTables);
+                    $this->pdo->beginTransaction();
+                    try {
+                        $statement = $this->pdo->prepare('DELETE FROM pa_module_migration WHERE module_key IN (' . $this->placeholders($moduleKeys) . ')');
+                        $statement->execute($moduleKeys);
+                        if ((new ModuleCatalogApplier($this->pdo))->plan($moduleKeys, true)['removed'] !== []) {
+                            throw new PluginLifecycleException('MODULE_PURGE_INCOMPLETE', 'Module catalog remains after purge.');
+                        }
+                        $this->pdo->commit();
+                    } catch (\Throwable $exception) {
+                        if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+                        throw $exception;
+                    }
+                    $this->inject('after-database-clean');
+                }
+
+                $this->finalizeFilesystem($packageKey, $confirmPlan, $confirmPlanDigest, $purge);
+                $this->finalizeInstallation($packageKey, $moduleKeys, $purge);
+                return [
+                    'operation' => $purge ? 'purged' : 'retired',
+                    'package_key' => $packageKey,
+                    'affected_modules' => $confirmPlan['affected_modules'],
+                    'removed' => $confirmPlan['removed'],
+                    'preserved' => $confirmPlan['preserved'],
+                ];
+            });
+        } catch (AdvisoryLockUnavailable) {
+            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
         }
     }
 
@@ -683,18 +691,6 @@ SQL);
     private function sortPlanEntries(array &$entries): void
     {
         usort($entries, static fn(array $a, array $b): int => strcmp($a['scope'] . "\0" . $a['table'] . "\0" . $a['action'], $b['scope'] . "\0" . $b['table'] . "\0" . $b['action']));
-    }
-
-    private function advisoryLock(string $name): bool
-    {
-        $statement = $this->pdo->prepare('SELECT GET_LOCK(?,0)');
-        $statement->execute([$name]);
-        return (int)$statement->fetchColumn() === 1;
-    }
-
-    private function releaseAdvisoryLock(string $name): void
-    {
-        try { $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(?)'); $statement->execute([$name]); } catch (\Throwable) {}
     }
 
     private function inject(string $point): void

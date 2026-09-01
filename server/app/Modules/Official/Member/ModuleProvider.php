@@ -18,6 +18,9 @@ use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\Modules\Official\Member\Contracts\MemberTagCommands;
+use app\Modules\Official\Member\Contracts\MemberSubjectLookup;
+use app\Modules\Official\Member\Infrastructure\Persistence\ThinkPhpMemberSubjectLookup;
+use app\common\tenancy\PlatformTenantDataGateway;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
@@ -53,6 +56,9 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         return [
             MemberQueries::class => fn(App $app): MemberQueries => new MemberQueryService(
                 $app->make(CurrentExecutionContext::class),
+            ),
+            MemberSubjectLookup::class => fn(App $app): MemberSubjectLookup => new ThinkPhpMemberSubjectLookup(
+                $app->make(PlatformTenantDataGateway::class),
             ),
             MemberIdentityCommands::class => fn(): MemberIdentityCommands => $this->identityCommands(),
             MemberProfileCommands::class => fn(): MemberProfileCommands => $this->profileCommands(),

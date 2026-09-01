@@ -3,15 +3,13 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\common\application\ApplicationService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
-use app\common\service\decoration\DecorationTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** PC 端业务聚合。 */
-class PcApplicationService extends ApplicationService
+class PcApplicationService
 {
     public function __construct(private readonly ArticleApplicationService $articles)
     {
@@ -27,7 +25,7 @@ class PcApplicationService extends ApplicationService
             'decorate' => DecorationReadService::pageByType(
                 $context,
                 DecorationEnum::PC_HOME,
-                DecorationTenantContext::ARTICLE_PC_INDEX_OPERATION
+                'article.pc-index'
             ),
         ];
     }

@@ -55,7 +55,7 @@ class ExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
-        $response = (new HostApiProblemRenderer($this->app))->render($request, $e);
+        $response = $this->app->make(HostApiProblemRenderer::class)->render($request, $e);
         if ($response instanceof Response) {
             return $response;
         }

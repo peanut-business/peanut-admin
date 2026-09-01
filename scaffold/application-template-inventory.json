@@ -4053,7 +4053,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b0f443eb09eb94b0e5157a4135c7912109018880484b769d2a84193d3c0cad55"
+            "source_sha256": "7df2e68f306ed594f64eac2dd32c12a018868adbb3e1f0de1d17b35d35e40c70"
         },
         {
             "path": "pc/tsconfig.json",
@@ -4225,7 +4225,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3c0af57f790d321880c054a239332f46420a08a09edd9fe46e8d517db93893e7"
+            "source_sha256": "b8461f7ea43b6b90b8292e7e3b23e86d4c47e5c71c5875b72b7bd9c38c4fe9e5"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -4279,7 +4279,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0b4674bb566a26b7781470e498b95443f1705e90b21c62779b38c44b3f9f6383"
+            "source_sha256": "d865f276e1bc0cb9445ffa083939284ce5434086a120d15eb0c3a060e85bc7b9"
         },
         {
             "path": "plugins/official.file/plugin.json",
@@ -4293,7 +4293,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "72760d9284e137625a044a093c2bf10d70b655c00652238f01b27c0935d39f6b"
+            "source_sha256": "861a9ea0d76883698f38538c6bb85f476297343ebb24320531c4b9e546df7e84"
         },
         {
             "path": "plugins/official.import-export/plugin.json",
@@ -4307,7 +4307,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1c9f71321327ab45de5eab8320e8bca5884dec6b86e2c526e8bca50bd5fe5216"
+            "source_sha256": "d733ec7818abb19cb89bc438d5572fc11584f47c05d1a2ea2e743495dab4a8f7"
         },
         {
             "path": "plugins/official.member/plugin.json",
@@ -4321,7 +4321,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "524bb99860296fe03bdbf08254a2338948d97eeeaec8f68de11fbc970cff4437"
+            "source_sha256": "7093cd90add2c711ff1a8e4661be0598df529b24142a43be29dd02c8df4062e1"
         },
         {
             "path": "plugins/official.notification/plugin.json",
@@ -4335,7 +4335,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "38ebff20c4a68a41fa3748cb26f1ca8200fff35184ae3972410f427849d613b0"
+            "source_sha256": "c934ee90c573b4333b213a2d335bc23807ac4ee1f968f8c81d27d4be18ae4c29"
         },
         {
             "path": "plugins/official.oauth/plugin.json",
@@ -4349,7 +4349,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7b87e1a9977eeb3f43d6abe9563c12fc7c6385e2b090c6c29832347c8df95477"
+            "source_sha256": "755e1c64b72f6d80847c82466e5f4fee88de507ca213749d9299f307fc611ba2"
         },
         {
             "path": "plugins/official.payment/plugin.json",
@@ -4363,7 +4363,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6128f0b4e60eb8a4e41b9f5f03254046412f7fe7ab3f8978630a2da6219f5e19"
+            "source_sha256": "d2de25e4bef7efe0f29a6cad56b28ffdf5c01334212f6a7b7308d779fb430073"
         },
         {
             "path": "plugins/official.task/plugin.json",
@@ -4377,7 +4377,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "de673ffbd3e49bdad8bde2642cc37e64433cac0b050b59e833c79593943e9bc8"
+            "source_sha256": "01832e79e65633a3531f824ba7c8bb25f7e58c3b51ec87162fb14a824b23a461"
         },
         {
             "path": "release-versions.json",
@@ -4619,7 +4619,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d1a256debb0272d3768f7e5dc013b0aeaf9ec01de8cf5841f4ed8c367ba2242d"
+            "source_sha256": "d772a18da67b0eaf208205457bb39b6e8aded28ecbc0d8d822f96a4f6939778b"
         },
         {
             "path": "scripts/ci-server-check.sh",
@@ -5282,7 +5282,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c6fe9531a81c71550738137aef16ae82fdf6558282901596af07c0446917a7e2"
+            "source_sha256": "4b74ca807d143255d4bdb14a4c1aa0805872bf978df11f3296d5905a1fc9a51f"
         },
         {
             "path": "server/app/BaseController.php",
@@ -5310,7 +5310,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c20f24b3fdf63b38e7c852e417bb2fd6a403e5acdc8a851f3e953f46fe52e3cb"
+            "source_sha256": "a17a1688bd48c8203f6d05a52e519d2f6ef8d7132ba700d82370196e14437acc"
         },
         {
             "path": "server/app/Modules/Fixture/DeliveryRecord/Application/DeliveryRecordAccess.php",
@@ -5532,7 +5532,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ab462e6c3c44a15058e67d4182b8acde506ad65bfc197adf508f88ddea9ef772"
+            "source_sha256": "0b33ec57ab472d78974ba83886b708cd4fa91bb3eeecf50fcd5f650bd2dddf9f"
+        },
+        {
+            "path": "server/app/Modules/Official/Article/Application/ArticleCapabilityAuthorization.php",
+            "target": "server/app/Modules/Official/Article/Application/ArticleCapabilityAuthorization.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "e9a68f5219258fd67a23e30462355287c0522bde9132fd69340d648cb411d36d"
         },
         {
             "path": "server/app/Modules/Official/Article/Application/ArticleCollectionSummaryService.php",
@@ -5546,7 +5560,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0e26bb2321ad9fad67b7f089411190f4471422c961d47e098be35b789815f3ae"
+            "source_sha256": "d4567bf68f0e33703590493fc204a796fb3837e66c59810372492d30c4aeb9e9"
+        },
+        {
+            "path": "server/app/Modules/Official/Article/Application/ArticleQueryService.php",
+            "target": "server/app/Modules/Official/Article/Application/ArticleQueryService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "0167447bc532b82bd48d5969957abc1b587c319fb6f857fd9c494dee2b3e5c05"
         },
         {
             "path": "server/app/Modules/Official/Article/Contracts/ArticleAdministration.php",
@@ -5591,6 +5619,20 @@
             "source_sha256": "41b1a727e4f0b48d909b4f0d2a9bb74e61a3def5bd31a79b67e9666eaf7cc2b3"
         },
         {
+            "path": "server/app/Modules/Official/Article/Contracts/ArticleQueries.php",
+            "target": "server/app/Modules/Official/Article/Contracts/ArticleQueries.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "0a05ac53383061c1f00de6e1d0c65a413df8f9fb1c57cb39ee63228df43c0512"
+        },
+        {
             "path": "server/app/Modules/Official/Article/Database/Migrations/20260825-adopt-permission-ownership.sql",
             "target": "server/app/Modules/Official/Article/Database/Migrations/20260825-adopt-permission-ownership.sql",
             "classification": "app-owned",
@@ -5630,7 +5672,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9ea6f121a03ddfbba6c2d6251b17d09c03ba6698bdb3685ac9a1c7c0fe8319a6"
+            "source_sha256": "804018c22941f64e39a06bad0ac21b2aeba5dc26a9bc6f05648de04ec94cf19f"
         },
         {
             "path": "server/app/Modules/Official/Article/Http/Controller/ArticleCateController.php",
@@ -5689,6 +5731,20 @@
             "source_sha256": "e253c42c4f55fd4eca34af869e5e1ed2d23d20f9e26c3056bf8903d184e5eca1"
         },
         {
+            "path": "server/app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php",
+            "target": "server/app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "6cb0ecd3ef1b9ca3fdeb87d6fd197ba5f49be68b6c8c14d332585df6d3bf0c4d"
+        },
+        {
             "path": "server/app/Modules/Official/Article/Model/Article.php",
             "target": "server/app/Modules/Official/Article/Model/Article.php",
             "classification": "app-owned",
@@ -5700,7 +5756,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "16ef4aa51691fdcd43babb49e43d73a77f8ff841f9e6a8354b9973696130e12b"
+            "source_sha256": "9c72b0ef6f2a538c0ce7fef9889d42b1f2b33b593a4706e25f52019ae3d50bfb"
         },
         {
             "path": "server/app/Modules/Official/Article/Model/ArticleCate.php",
@@ -5728,7 +5784,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1579f8fc5376980495582019f5d5794552fc88731a0c8dbb517d2f9ca374ea9a"
+            "source_sha256": "dff8abc3cc09bb40e38c9fdf5344eac0d8aafcfa0a50ee47904d746b9b9dbc12"
         },
         {
             "path": "server/app/Modules/Official/Article/ModuleProvider.php",
@@ -5742,7 +5798,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "be5d61a7b7cc8ce995a9e01777ab55a2a46ff8e62cf93ccc46db35ad17abba41"
+            "source_sha256": "bc1d86007133f54b44e7353686571bb3974f9fa2fff15a6a7410014aae4f8ad0"
         },
         {
             "path": "server/app/Modules/Official/Article/Resources/menus.json",
@@ -5798,7 +5854,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4f1ea52976425c40ee092723f925931741a087bb5d5f9ddb28d971f527e9284b"
+            "source_sha256": "ce0a768e782ba4a126c91a16f15b8d5449366374a8dbf74fa77a79b6bcaaa011"
         },
         {
             "path": "server/app/Modules/Official/Article/Validation/ArticleValidate.php",
@@ -5812,7 +5868,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b0c86145085e6578c80c1761c9109a21dd01b11966136c187c58a3ca6fef736e"
+            "source_sha256": "154aabdbd98529a290f33c3824ef4007a7b76cafbc18c81e97a450390ea1d1f3"
         },
         {
             "path": "server/app/Modules/Official/Article/composer.json",
@@ -5854,7 +5910,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "12424b1913092bae17a3e5a2c65ff33f3a2af0c9f9d70ad8311bed27e0ff0fd7"
+            "source_sha256": "d24bc870be9136eea85ad55de10e6644a94a2a39c78b85f9500eb9047eea6920"
+        },
+        {
+            "path": "server/app/Modules/Official/File/Application/FileUploadService.php",
+            "target": "server/app/Modules/Official/File/Application/FileUploadService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "a697c2cfe075e3c898ee01de0c64aa8dbf648c4cab2bda364d78d14a90667250"
         },
         {
             "path": "server/app/Modules/Official/File/Contracts/FileAdministration.php",
@@ -5869,6 +5939,20 @@
                 "full"
             ],
             "source_sha256": "c4adc3e91328696a3537a7f0e725004c4a6f2c7baea178a19d7dc0568b9e0f8d"
+        },
+        {
+            "path": "server/app/Modules/Official/File/Contracts/FileUploads.php",
+            "target": "server/app/Modules/Official/File/Contracts/FileUploads.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "3171f1a3e88ee88578ad55d498a805aaa9961a0b0c05be5bc80b576c9cf3ddc0"
         },
         {
             "path": "server/app/Modules/Official/File/Database/Migrations/20260826-namespace-permission-keys.sql",
@@ -5896,7 +5980,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9665f69c53049a3caf59a633ec8320ae3bbbfe02a423914d83af025073331c24"
+            "source_sha256": "95cc817b931ee6b1f5b6aa667b8441e9bb3218f90813d9f1178be2ccbff566f6"
         },
         {
             "path": "server/app/Modules/Official/File/Http/Controller/UploadController.php",
@@ -5910,7 +5994,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "77d2d689ab7c734f4cf9a4e9403d249424a91360acc1956a8339cb5e93541bd3"
+            "source_sha256": "81c6b6f73f6a4054fffa8926a2783d777598873b40a0b4154fcd2dec8480a505"
         },
         {
             "path": "server/app/Modules/Official/File/Http/routes.php",
@@ -5925,6 +6009,20 @@
                 "full"
             ],
             "source_sha256": "9da583b35fa4bd9890e19253918c829f697c5c3f96e5606c5938039c8aa8bee0"
+        },
+        {
+            "path": "server/app/Modules/Official/File/Infrastructure/Persistence/FileTenantRepository.php",
+            "target": "server/app/Modules/Official/File/Infrastructure/Persistence/FileTenantRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "cf06d733bf4c4c8ef53abe865e5a000d77d8ac889aee986bd13f6c4dedd83bd9"
         },
         {
             "path": "server/app/Modules/Official/File/Model/File.php",
@@ -5966,7 +6064,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cfcd3e5a4fbf9891979c299435fad19f6ced773830ea7553dff05144d7f80433"
+            "source_sha256": "0b545c933555eae2331cd7972348069759159d5274c27b5554a7ea19298089c1"
         },
         {
             "path": "server/app/Modules/Official/File/Resources/menus.json",
@@ -6064,7 +6162,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "53e03c73c11487d90bfd9a1de8c297f9d212ce8eccece0ab66ea9ea82b8b0405"
+            "source_sha256": "52d34d92d59ab5d639b2154aa2a54b1a4fa766f5ee3dacb2797479221be1896c"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Application/ImportExportApplicationService.php",
@@ -6078,7 +6176,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4d40a713a1bb802049615c6027573ddfebe4b84c289a7034943f2f0e4f1c6d5e"
+            "source_sha256": "7284e695a6a136e9b45c2160e025598e73fe1d808c7c5d7ee90033f87ff21699"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php",
@@ -6106,7 +6204,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4280bdffc6ca424d8b66b15b94f4cd0f1092ea02dda82a0a63d5b1eaf8b679fa"
+            "source_sha256": "2c975046c46e080ef3da9fa201c72892bcb961211d237997d5f52eca6a555c47"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php",
@@ -6120,7 +6218,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "21993776f3824bc007a595e21f4d56997c6c74a4e8f4639f12cbd71b87ac3d3c"
+            "source_sha256": "0c1b6ab96768a64df198dcb18e5defca298c446f9130496b16d2bfe5cfb3e983"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Application/TenantConfigurationTransferService.php",
@@ -6134,7 +6232,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b729f70b58683fda3b94de425a54d724edf55ee05ac01eb8bd07451bcd15602d"
+            "source_sha256": "bc41bc3ecff3e62b6ade85beb85a0391f6a6808bb2e0ca4f5001a7e62bf60acc"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Contracts/ConfigurationTransferCommands.php",
@@ -6246,7 +6344,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "55e2212f963639d63ca0624299e6fdc71b7b6cba8952778b226e1f7aa5e3e979"
+            "source_sha256": "a8f70903086b5a25c98c08285b7be27e62791e2ff9f42ae0b77b70bedaa98d5c"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Http/Controller/OperationLogExportController.php",
@@ -6260,7 +6358,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "09edcf8d7e2cf99ceb263421fdb295b2802bf9322c9192b1a41071540552d32b"
+            "source_sha256": "8396c2c674225024b9474b1b32223afbddf17644910cd783cf7b64743ec48d6c"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Http/routes.php",
@@ -6386,7 +6484,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "46b52fc820c49c6a9d5a7ce74e9a7bbdc58b2a8be3e85671b3e3f5ea6844a366"
+            "source_sha256": "36f11743bb2d3364b929b512dc9d69fa0640b8a246cbbbd2bcc9c1f47696399f"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/ModuleProvider.php",
@@ -6400,7 +6498,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ca3dfa04679f94a12dd6808f03a8976c710383ba3424bbb5ea86a3e3c81ab512"
+            "source_sha256": "aa5f4fcb78a7051accece11cecc98edc543c223f476b8cec9950df378b4412d7"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Resources/configuration-package.schema.json",
@@ -6498,7 +6596,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dd31beedb6a9462e2acaca6a42142f95b02af94c14ea78b9eba3665c1d8cffa0"
+            "source_sha256": "047843bdbcbd583c5cd44e95cd967765abdd6b853f59a379f0ee35ddeab8d14a"
         },
         {
             "path": "server/app/Modules/Official/Member/Application/MemberBalanceContractService.php",
@@ -6512,7 +6610,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "979734469607ef54fd3013eace00d94d2cdcf562fb295c84f996399290c9ad31"
+            "source_sha256": "16c1cdad4e4cebce3132f5ba5df3899a1b5528ab97071a2dce9e5e69106e0728"
+        },
+        {
+            "path": "server/app/Modules/Official/Member/Application/MemberBalanceService.php",
+            "target": "server/app/Modules/Official/Member/Application/MemberBalanceService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "63ae17eaf68c9371aa9ef05a8a6eca2031a8f420eda95dee38e4326f8949a950"
         },
         {
             "path": "server/app/Modules/Official/Member/Application/MemberIdentityContractService.php",
@@ -6526,7 +6638,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4a254f1930c83eacf2d3d231eee264e07bfaa94e0f6633fb644d53aa45f59265"
+            "source_sha256": "9c1cad39fbad1cbcd7fe62bc5896d84da35a92c7259b99dd3b487ec76d3fb626"
         },
         {
             "path": "server/app/Modules/Official/Member/Application/MemberProfileContractService.php",
@@ -6540,7 +6652,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "141e47583b95586eaafd383cbf29847cf7cefc8a4c5361c8539e714bb8f3f81e"
+            "source_sha256": "16c1a255324fc1faa1ad9f21662df7d249199e8bba4d622ab25f64b85a6dac60"
         },
         {
             "path": "server/app/Modules/Official/Member/Application/MemberQueryService.php",
@@ -6554,7 +6666,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "659cfc3e65e46239d42db23d855ca2dfcaa1335ad7247ef922c9f2288c1afdd2"
+            "source_sha256": "b144962c21db6c1221ce0c8bd52ef420dac6703f808120a143966b8e8b1381c5"
         },
         {
             "path": "server/app/Modules/Official/Member/Application/MemberTagContractService.php",
@@ -6568,7 +6680,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5c9c9917e15ede3fd05de5c639b19c9c3e1fd62a85a567909cddb95eca839375"
+            "source_sha256": "d82fd9df9f0cb17a5e2f1cd36d3eb71cb5b8db887e7c909552ff7cfedaa463dc"
         },
         {
             "path": "server/app/Modules/Official/Member/Contracts/Dto/MemberBalanceMutation.php",
@@ -6697,6 +6809,20 @@
             "source_sha256": "c93bd52edd0113646f25f988ce0c921810ad3287436d8f23f2bf240c8948ef88"
         },
         {
+            "path": "server/app/Modules/Official/Member/Contracts/MemberSubjectLookup.php",
+            "target": "server/app/Modules/Official/Member/Contracts/MemberSubjectLookup.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "a777c4d1d43c19da622fe17f90a34e6174ed9c68dd5a52660026eb0e9d18181d"
+        },
+        {
             "path": "server/app/Modules/Official/Member/Contracts/MemberTagCommands.php",
             "target": "server/app/Modules/Official/Member/Contracts/MemberTagCommands.php",
             "classification": "app-owned",
@@ -6736,7 +6862,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a4999b901c8120c3c5f25b2bc9fed560b70b25259b3b4f8ffad611510f7066aa"
+            "source_sha256": "6b9c9bb78be2e0d6e293e3ec6258ffb58657cfc2b3d059d3ef5f56f23cc6624c"
         },
         {
             "path": "server/app/Modules/Official/Member/Http/Controller/MemberController.php",
@@ -6750,7 +6876,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3fa0c952b24b8751b1adc39274bfe0e7e0a89a7ee0ecf1e3ac01b8b12f5b3d17"
+            "source_sha256": "cd101e73009a1f7b55b12e9b0d68042b1c15f0049d4d5cddb66eaabadbc19f54"
         },
         {
             "path": "server/app/Modules/Official/Member/Http/Controller/MemberTagController.php",
@@ -6764,7 +6890,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "61df20801ae5e8d0afba04bcf3bd9cdec0bfa15cea6253c10dd858cf4eee80cc"
+            "source_sha256": "8a89ad01b20ec04553fe48289fc7f3b8c9c307ee47153ba789a9dd5f48b0ebd2"
         },
         {
             "path": "server/app/Modules/Official/Member/Http/routes.php",
@@ -6778,7 +6904,35 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8de5ab7f52daf36921659bc805c422dc3630b2e8497f11a7f284458ffbecb69d"
+            "source_sha256": "1ae861bc6483c42298c98079b88422eccf05ed06ff045e51f093a42b799f61c8"
+        },
+        {
+            "path": "server/app/Modules/Official/Member/Infrastructure/Persistence/MemberTenantRepository.php",
+            "target": "server/app/Modules/Official/Member/Infrastructure/Persistence/MemberTenantRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "f7bc94368cd88d9f485c38d3d2da329eacfea5a5c95551dd00200551781da588"
+        },
+        {
+            "path": "server/app/Modules/Official/Member/Infrastructure/Persistence/ThinkPhpMemberSubjectLookup.php",
+            "target": "server/app/Modules/Official/Member/Infrastructure/Persistence/ThinkPhpMemberSubjectLookup.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "042ce163a0d2e0807c7d3032273c3d1a7d824d80cc22cdb219cba7a06304594b"
         },
         {
             "path": "server/app/Modules/Official/Member/Model/Member.php",
@@ -6792,7 +6946,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "98cc7c576b23869416d88a1476900ecb71b7ae482c5fd8401f8f31dc4feb5eca"
+            "source_sha256": "e8dfeb14bcfedd4235f80830041c0e02227330201d2dadec1d26df559daa1c06"
         },
         {
             "path": "server/app/Modules/Official/Member/Model/MemberBalanceLog.php",
@@ -6806,7 +6960,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "797a614be6144aa55be46d339368c94a56b4d47d3c26e0b20208b4a9e3a3ef99"
+            "source_sha256": "dd425b3d681fe6c8456a5a306d31ddd4622e6f520e4a10b6303cb940837ff124"
         },
         {
             "path": "server/app/Modules/Official/Member/Model/MemberTag.php",
@@ -6848,7 +7002,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "497389a4f44893383c158eb7cdad564e4ea04e74c70b5215b2a109475938d41f"
+            "source_sha256": "0c3bca00003e38606d0b0a6cb7b50223beb77bbc9edcd60ae5612b227606987b"
         },
         {
             "path": "server/app/Modules/Official/Member/Resources/menus.json",
@@ -6932,7 +7086,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ddaea65add8145f514314f5b490d5ff4c6c93d3945e5a09aab06a37a12d65b2f"
+            "source_sha256": "2fd78beab34f25ecf85fbc8d83cf8e1141f1a62dc22e99fc606161af5b863f9b"
         },
         {
             "path": "server/app/Modules/Official/Member/composer.json",
@@ -6974,7 +7128,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cc4022f62f2c63b33a324a92e297f33d695c59f28cf53a7c8a180d148d0ba048"
+            "source_sha256": "d6cba9506c0acd213e549e4105e0cf649be60318990d293c37f80aba37375718"
+        },
+        {
+            "path": "server/app/Modules/Official/Notification/Application/VerificationCodeService.php",
+            "target": "server/app/Modules/Official/Notification/Application/VerificationCodeService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "b11143c172431f4c62c31521e791cb6c2848b316a6893539f0eac9d417c9bd86"
         },
         {
             "path": "server/app/Modules/Official/Notification/Contracts/DeliveryResult.php",
@@ -7002,7 +7170,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b4cbc43d89dcbd1e2ebb2476050dcc3535294e0ef17ebadad1b65e7604cb58e6"
+            "source_sha256": "0c8536c42cb35f82148d724dec1d6bc8c863d4b797107001f89a32ad0d40619a"
         },
         {
             "path": "server/app/Modules/Official/Notification/Contracts/NotificationQueries.php",
@@ -7072,7 +7240,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bba190e0ea1a5eb43b1d694c34c533821fa9031c6316997b8051035f5027c154"
+            "source_sha256": "a94807bf1ddf360f9788941cd2c59378c41eccc20f27d64bd1291091480dbd4a"
         },
         {
             "path": "server/app/Modules/Official/Notification/Http/Controller/NoticeLogController.php",
@@ -7086,7 +7254,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b93852e554e0c686500dc1932d8bbf551407627e5d3ddbc97bb574af7a339bee"
+            "source_sha256": "97fd2c23e166c326570c2e2efb37fc57c5cedf0106a537e74522210c42c4bd0e"
         },
         {
             "path": "server/app/Modules/Official/Notification/Http/Controller/NoticeSceneController.php",
@@ -7100,7 +7268,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "00ba948a40bc1d55a4b6e90e50435c18ec9f03338a44ad60422985b60d5c6000"
+            "source_sha256": "ad0cb1307be2fc5853c7242644fcc5556c7271ec41f2680e864c6995272f0041"
         },
         {
             "path": "server/app/Modules/Official/Notification/Http/routes.php",
@@ -7114,7 +7282,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b3214290ad240347c331545447c308bdaa46a979b0022d47a490ccc5cb9a6591"
+            "source_sha256": "324349eb2e9a73f265763f9f49525c024e4673ce7cae74e9359999aa90fc35a7"
+        },
+        {
+            "path": "server/app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php",
+            "target": "server/app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "c0cf4a48f8e3c5a3f79d03a61d2f4cb13586c413a44eb7aadcdf1072257fd6e4"
         },
         {
             "path": "server/app/Modules/Official/Notification/Model/NoticeLog.php",
@@ -7142,7 +7324,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5d0464e9c33ed0e6fbe885a5fbae020dfa9ee6b5ab75d15601c54596acf5b959"
+            "source_sha256": "a382daa4a699bdedeb81be308118d30a10e3f7a782318674ef26c71ab47f5a6d"
         },
         {
             "path": "server/app/Modules/Official/Notification/ModuleProvider.php",
@@ -7156,7 +7338,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d8e3a1f44259e7027ddff9e83822555886ad41958d01ef386b62e9118f1274f1"
+            "source_sha256": "12f000ea4c74b4e68bac12adf0ec7b59ea01fe5e859b82b7bec3969b8a6a8eb4"
         },
         {
             "path": "server/app/Modules/Official/Notification/Resources/menus.json",
@@ -7212,7 +7394,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5621d410e4bb398049b7217240ebd63f87d0ac6bb6de381160313fffd1c03db4"
+            "source_sha256": "541f6a9836a1e18a7e0a2df3067fbbf678f3190c88b54170a4029dd05879b5fe"
         },
         {
             "path": "server/app/Modules/Official/Notification/composer.json",
@@ -7254,7 +7436,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ae81e73350bf296a467511167c88a3da38cd576366db4e40dc9959cb546ae361"
+            "source_sha256": "c43144c4bc1889267728f634c31fbd1ab1b5bba02c8105f4e247e8ebabd4eed1"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/OAuthCallbackLocator.php",
@@ -7268,7 +7450,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dd3f5578558275f54bb9988520b52bae6ebb5885bd29026843103a2d5c17c9cd"
+            "source_sha256": "d7b56d27a77f5680fe937e8ad77462a08e5ef46b6dedae3ef4bc3421bab7b3b9"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/OAuthCommandService.php",
@@ -7282,7 +7464,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "706cec1ec2b691e93d7ac2ba4382ab091a760b5a18ee921834c385d8b11a70a6"
+            "source_sha256": "3b65b39fa8dfa8c1fc002730298ced39dc7310d5f4b39d842208723fd3679cdc"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/OAuthQueryService.php",
@@ -7296,7 +7478,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9164094905b9141787a7c6da15d03ab49a384e81cbd724aa449e12ef3f57a42a"
+            "source_sha256": "e21a54e4a60fcf57510509248318476878b9b3adf412e005d882b26286651fb6"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/OfficialAccountApplicationService.php",
@@ -7310,7 +7492,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6ec21dd7310902287985f6d7bc9d63636173e48596314b301e240a9e589c53f1"
+            "source_sha256": "c2f7e847c2e8cc1c1b0fb57e9b9486bef71a261d091870d4e7a126ada599ccae"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/OfficialAccountMenuApplicationService.php",
@@ -7324,7 +7506,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f620e1784c62a7e7d86bbea377f6f08b60307e132ea5930861c6e627389759e6"
+            "source_sha256": "386c6aa30a6b6514209d58d4a5683815cc0493e81b470b3b625be4d97864ad53"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/OfficialAccountReplyApplicationService.php",
@@ -7338,7 +7520,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "631f016ce7793de8f44cca776a94429f9958b04b4648b24d82fc4bd586eae89a"
+            "source_sha256": "c01df9851c98e54d5b6dddcbffc393506b5ea137d0abe588dcb8026118db2a3c"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/OpenPlatformApplicationService.php",
@@ -7352,7 +7534,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1b538278846ccfadf1cc2bbdb87de69f4d381e5fe2c0cc855180d51233379f95"
+            "source_sha256": "d281ab62cc223bc9da76fa6afbbf1ae03c3393069cd123036fa15a477eb3b23b"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Application/WebPageApplicationService.php",
@@ -7366,7 +7548,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ebe84cff359f2474e69d03e5020e2fa1a608b6ec9b4a134752cdd408f515f41e"
+            "source_sha256": "e23764308601aff710b91bcb21f4e9e3d36ee8bd955ef752f3c1661a11f234e8"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Contracts/OAuthCommands.php",
@@ -7380,7 +7562,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "59f20b7be1f9a30776f0f958041e36e2e24515546fa19b9764b426a8e19bf4fb"
+            "source_sha256": "718f1601293e2664af470406a168bc206c2d914e11cf3149713ae8b2b6380e7f"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Contracts/OAuthQueries.php",
@@ -7422,7 +7604,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9dd86e4ea3033887568b9475a4d22be4f9a4fc5d396e36fffd46abeca576cfed"
+            "source_sha256": "7aa80e448d4f1887c952457746acb5b28cd7c0904a3205e574feac1a88b59e6f"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Http/Controller/OfficialAccountController.php",
@@ -7436,7 +7618,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "75cde0d733111d2bf191ebfc55d95c99cad8977ff8acb38975621b5fa650f2b1"
+            "source_sha256": "c4bc0031da62a19a94cee55704ecb5ef5adc0dc25b763a178c29365e0923257d"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Http/Controller/OfficialAccountMenuController.php",
@@ -7450,7 +7632,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d19c43aebbfa2388dde23fbe4a4a802e75a7f129d502b88117819a72705a2d10"
+            "source_sha256": "7cfe62cccf52b352f16ad21cb9d5d0b35e673a886681f2f5e9dc4fad747c4c4f"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Http/Controller/OfficialAccountReplyController.php",
@@ -7464,7 +7646,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7171aee439d304dff32f39a985b44c0081bb666436cf5389bf8e620a84c1a494"
+            "source_sha256": "2d79286e322d20f50435c099f705778c51941cb528504ba4cd7abf47b25cc404"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Http/Controller/OpenPlatformController.php",
@@ -7478,7 +7660,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b06b5e12b6b7d80b2fb3d2b52fa44f4a509df8bd419ee9bb419eaf71ddb22e9e"
+            "source_sha256": "f5fa7f32af333cedc75af6b6448a5d553845c2d066d37d9bdf507626aec7f204"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Http/Controller/WebPageController.php",
@@ -7492,7 +7674,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f5b0a1883f0903980ee5aa719a828b7d1ce26d9d2fc357246e0eb5e753e43a65"
+            "source_sha256": "e601632f8436170078e813396ce9f843abf2f13b4ca631f7f79ded81411a4df1"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Http/routes.php",
@@ -7509,6 +7691,20 @@
             "source_sha256": "dfba375e2d1dcb06f2dbdd13ac047b1060b58933b51f6a2bab7b2d0992e326e9"
         },
         {
+            "path": "server/app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php",
+            "target": "server/app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "c783fcfc03a74919b300f4e3cde8550a61efba2043c17653129936bf1837c037"
+        },
+        {
             "path": "server/app/Modules/Official/Oauth/Model/OAuthAttempt.php",
             "target": "server/app/Modules/Official/Oauth/Model/OAuthAttempt.php",
             "classification": "app-owned",
@@ -7520,7 +7716,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "56d61c57c4c492c3357f007cbb7156c37b02454d5ad6a85c6e25b943cf886693"
+            "source_sha256": "c671b3fd4e6dd456e61747525335035918afee434c831b31e3d396338a8fde8b"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Model/OAuthCompletionTicket.php",
@@ -7534,7 +7730,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6113c2eb1ee2821c63873e772635fb7ec771fdc710997fcaa454adc41eec1de0"
+            "source_sha256": "8401ebbaa2bf2a53551d3789d35c3a54a8e5deec02becdb65210c407b2179fe2"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Model/OAuthIdentity.php",
@@ -7548,7 +7744,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c1313c2cec0a0c7659acc4bb73c3cfeaa6baaa140be2b4ba9d0a301c40a2cd50"
+            "source_sha256": "771b6ea835964a217b5982014215ce2daefa6d91f8f79d00bf5353674d86f297"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Model/OAuthPrincipal.php",
@@ -7590,7 +7786,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d0b7d8902e29adb9bbbf555b083e925f545262e1e4d3ada88ce3900daefe54fe"
+            "source_sha256": "1ceafdb021988c80c2cde66822ac98b37245e30e054ecc866ee38a9e0c6da1e7"
         },
         {
             "path": "server/app/Modules/Official/Oauth/Resources/menus.json",
@@ -7758,7 +7954,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "62e1482d963ef8e81d4ca7f06d9ed0a7e2d33c1673177357e8f25c783a0b470f"
+            "source_sha256": "2e0107b1ac0ee2bf31d3b2545beeb1a2d0600c3f1b1020460f159509c87c2f14"
         },
         {
             "path": "server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php",
@@ -7772,7 +7968,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ff7b6fb0efd630033863e58c24912ec9b8034ac2d34aa46733c6ba1e85cd977f"
+            "source_sha256": "d0afa391f6c3ac8e95427a9bd0e9b10bbf3941ed681c15faa43fda895822f13c"
         },
         {
             "path": "server/app/Modules/Official/Payment/Application/RechargeSettingApplicationService.php",
@@ -7786,7 +7982,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d723ca29cc04e99a637572509b28542c3fcb94d0c7cfad51c6e85b952fcedf7e"
+            "source_sha256": "595422fbcce811e9bcfafc8b0132b20c5af63bb18af3996b0f030aeb72e22b4c"
+        },
+        {
+            "path": "server/app/Modules/Official/Payment/Application/RechargeTenantSettingService.php",
+            "target": "server/app/Modules/Official/Payment/Application/RechargeTenantSettingService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "3fa847afeee0ecbefff8412b002d6508decc902df28eca7446f799890eb3c89e"
         },
         {
             "path": "server/app/Modules/Official/Payment/Application/RefundApplicationService.php",
@@ -7800,7 +8010,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "45a006370816709b0b8bba15d4347c9da2ca40305988c4fa8d39c5472395bae0"
+            "source_sha256": "63e859676f54d3204893f6d822ba7f480fec52359c5367d0bb9cd9f7e438c7b3"
+        },
+        {
+            "path": "server/app/Modules/Official/Payment/Application/RefundEnum.php",
+            "target": "server/app/Modules/Official/Payment/Application/RefundEnum.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "558b1a1dcbb422a34de1f0376aa29d853321f7c4a42e324660f1d2c6f3bccf79"
         },
         {
             "path": "server/app/Modules/Official/Payment/Contracts/PaymentChannelGrantCommands.php",
@@ -7814,7 +8038,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c713c18d89993eff13dd80fade8adcfadc96ac840bc73dbf07023068e465eb63"
+            "source_sha256": "e02d082806842290a0a2540889c2af38e7651baa96945422d3a0db32588ba28f"
         },
         {
             "path": "server/app/Modules/Official/Payment/Database/Migrations/20260826-namespace-permission-keys.sql",
@@ -7842,7 +8066,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4e790438f9fc28943cdbeece56523aafb20800fd55a3002a1c5d301692759cce"
+            "source_sha256": "7895440fb8359ac3709432a874d28cc4a2f3318cf23035dacf91055b8df1f853"
         },
         {
             "path": "server/app/Modules/Official/Payment/Http/Controller/RechargeController.php",
@@ -7856,7 +8080,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "175134ec9fe454da6a7ed048c02037b3f5077f6186baa87f337fb67689659b11"
+            "source_sha256": "0d880b1ba39930f4958c5fbca92759cb36ea479f507b90ec5ea26f9400a7aae9"
         },
         {
             "path": "server/app/Modules/Official/Payment/Http/Controller/RechargeSettingController.php",
@@ -7870,7 +8094,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6ee684e950cf5b6c09e8bbd372a3e6a7dbaca6bd6d9a4aeb12bec5a8e8ebcc3e"
+            "source_sha256": "82300f1ebc4d020556d86ee09d42a51d9883a89be3d756e9061e6fda8667c758"
         },
         {
             "path": "server/app/Modules/Official/Payment/Http/Controller/RefundController.php",
@@ -7884,7 +8108,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d3dd923c9aab2c2b3882f47a8caf909da1536e269ce4d8205d6207ba35cf2b27"
+            "source_sha256": "84187edb6c41f79ac9da64d4e9394ed2986d38b8115052e39919d0770c513950"
         },
         {
             "path": "server/app/Modules/Official/Payment/Http/routes.php",
@@ -7901,6 +8125,20 @@
             "source_sha256": "ce19f518fdbd5169712dd3da52fa019b0ae8e4c81a84afa5d01878ee9d57776d"
         },
         {
+            "path": "server/app/Modules/Official/Payment/Infrastructure/Persistence/FinanceTenantRepository.php",
+            "target": "server/app/Modules/Official/Payment/Infrastructure/Persistence/FinanceTenantRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "f2898c4f078aac35c8ab4b23425b6258f5baf4a80a03cefd41ece6856e5a430b"
+        },
+        {
             "path": "server/app/Modules/Official/Payment/Infrastructure/ThinkPhpPaymentChannelGrantCommands.php",
             "target": "server/app/Modules/Official/Payment/Infrastructure/ThinkPhpPaymentChannelGrantCommands.php",
             "classification": "app-owned",
@@ -7912,7 +8150,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fc5cd9667371131fffd692a2b6ac7206d4438b28549276005914a7c9c775031e"
+            "source_sha256": "3876229ed59f6d3ef1c00d2788fa784a1307532c0854c8f610f0951f3a77ced6"
         },
         {
             "path": "server/app/Modules/Official/Payment/Model/PaymentScene.php",
@@ -7982,7 +8220,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d37314a32d613f8257a638786a33e62e9ed0eacb0364b21a251e341891c82874"
+            "source_sha256": "66a5900ee7ab51faa20613c97e23c553dd1bf1931d7120734a8fbffce04ec981"
         },
         {
             "path": "server/app/Modules/Official/Payment/Resources/menus.json",
@@ -8066,7 +8304,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c872747a8710038ce471699c5dff947f1ecc204943d6a35cebed320e900e0740"
+            "source_sha256": "cadc78838eac663c86e2e3c839e9cec1cf9d0fedf4d93e3f7cd5e0c053b54289"
         },
         {
             "path": "server/app/Modules/Official/Payment/Validation/RefundValidate.php",
@@ -8122,7 +8360,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "562b07c925290bf2309cd9086ace31c25338f7814f9490677d1de77bba649a3f"
+            "source_sha256": "2b96b963499c58ef6d74a45abf3db4bf0a616a92a14a7c417dc52ea872b15f3c"
+        },
+        {
+            "path": "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php",
+            "target": "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "5392aff9bb35ad453ebf2b6daaffab74aa634ba5cb3b49261051fb110509efaa"
         },
         {
             "path": "server/app/Modules/Official/Task/Application/CrontabTaskDefinition.php",
@@ -8136,7 +8388,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c4156c23d19e9a1952f5f33f61d3825bcf62e5f37f352b88ad592239c1219080"
+            "source_sha256": "ad8aa60726089cc479047b63d8e883c4d8162205e2f2b9699dde20bceb55f714"
         },
         {
             "path": "server/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php",
@@ -8150,7 +8402,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "eae6b274ad412994c9eca6000fc7792ff2c7b2c6ec4019d5bded489f1d0e81d2"
+            "source_sha256": "a6b8b1e36a0b3b486ce5fc9f2c68af0fbf4bc73a12616213c0861271f104dfa3"
         },
         {
             "path": "server/app/Modules/Official/Task/Application/TaskAuthorizationRouter.php",
@@ -8178,7 +8430,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a01fa1e9ec21ef6849fd4e83b15476df1c15ca1d48121796a693aeccadd807a7"
+            "source_sha256": "891c125033f77d66973f47499a3709e0a3fbf33c923ac2328505879cf6ccdbcf"
         },
         {
             "path": "server/app/Modules/Official/Task/Contracts/TaskJobRuntime.php",
@@ -8248,7 +8500,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "255d1ea4df0158796be4fac6ca2693efd2e6fbd35dfd0ccad683050a4365139f"
+            "source_sha256": "8c2a65e46921e55e3d21d7ac6a78c9f9e234ae2b5ab36b55f58a81d5fc80b62c"
         },
         {
             "path": "server/app/Modules/Official/Task/Http/routes.php",
@@ -8263,6 +8515,20 @@
                 "full"
             ],
             "source_sha256": "98685df062f2714d2fc17c17e07f13f4710ca345802fba61cf4147cfb5d36853"
+        },
+        {
+            "path": "server/app/Modules/Official/Task/Infrastructure/Persistence/CrontabTenantRepository.php",
+            "target": "server/app/Modules/Official/Task/Infrastructure/Persistence/CrontabTenantRepository.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "100557caa4b65c0a81dd465bdf51b0fc1f5aa4b1456ff49e3f31671a9d72af1c"
         },
         {
             "path": "server/app/Modules/Official/Task/Model/Crontab.php",
@@ -8290,7 +8556,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cadf593170cd4e9428373fa39a798f7fe706f3d13d55d3c9ed92b26f037bd18e"
+            "source_sha256": "9060b2c7367337f9d0e0291b7dc8930316dfd7fb3acbbe7257d1607dc987867b"
         },
         {
             "path": "server/app/Modules/Official/Task/Resources/menus.json",
@@ -8402,7 +8668,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0d21082e4ab083dfc8528533904c5e0d6c5790616c76f050873dffcbe311ad91"
+            "source_sha256": "7dccbedbabe1eea7e55eea4024982b9558aa6f07945c7a19dc32dcf5db6620b4"
         },
         {
             "path": "server/app/adminapi/application/auth/AdminApplicationService.php",
@@ -8416,7 +8682,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cd01d0c1cd6d8299c14685d11ddacdaa6f36f6aeb4503c1b87d67cc9974d61b3"
+            "source_sha256": "e8983a6bde15822ed6cffe223616e8db2107d1eee5598e6c4f2c363912cd0e23"
         },
         {
             "path": "server/app/adminapi/application/auth/LoginApplicationService.php",
@@ -8430,7 +8696,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fe9fcb833e986d619d541fd271b4daa84b7ee007b9d8421a65bf8597d8351155"
+            "source_sha256": "05ff1298b117bb1c5d5a523926c29ee9efc1419d7ba37f03a668fd5d001c7918"
         },
         {
             "path": "server/app/adminapi/application/auth/MenuApplicationService.php",
@@ -8444,7 +8710,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1469f11639eafee22cf53a86d3d8164f6fb261e49dc265f2c875f9cfda3e2672"
+            "source_sha256": "d2be700c5bc33418e0b2ccf28e6f45d76bea0ee43bcf585db202b37e0c192047"
         },
         {
             "path": "server/app/adminapi/application/auth/RoleApplicationService.php",
@@ -8458,7 +8724,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "95692eef963edd0a57be49e9084c7ad5241a947ba50f59081fc7db5b7a099c23"
+            "source_sha256": "e584d8e2a3bc12975563d7659b099de34401b3da294318a85a637939bb958b0f"
         },
         {
             "path": "server/app/adminapi/application/config/ConfigApplicationService.php",
@@ -8472,7 +8738,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6846399709f3b9da49682c7bde6e17f1e955bb56c9b613fd6d4f490d69507660"
+            "source_sha256": "eb9ee52f7c4c8e2a19a9ad48c614f0693597d1140b3a1e3efc2254143d672bdd"
         },
         {
             "path": "server/app/adminapi/application/decoration/DecorationPageApplicationService.php",
@@ -8486,7 +8752,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4570e23e05aba3a2c61008b3973cc108d8cbc293b0f3c560623777e0c46f027c"
+            "source_sha256": "f37444d7a7390e65e13269804cd2ed582e5a64bf02637bcbe89ef5ec4ea35e1c"
         },
         {
             "path": "server/app/adminapi/application/decoration/DecorationTabbarApplicationService.php",
@@ -8500,7 +8766,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "62874fa52ed13cfd93fe4f19822b233a1a11c8f1252a2a3dfc2bcb405e4baa79"
+            "source_sha256": "bbe404ef031a0d10579e5df0caefa27203633f366e6db259a1e7f9f388e8d395"
         },
         {
             "path": "server/app/adminapi/application/dept/DeptApplicationService.php",
@@ -8514,7 +8780,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "956c339c6f926d89c234cf52659ca8ec397eedbdada36e847f895c4f637db676"
+            "source_sha256": "fa4e5fa21156287bba71199bffc9e85b03ff8cb15124b15561aad7a8bb2c946b"
         },
         {
             "path": "server/app/adminapi/application/dept/JobsApplicationService.php",
@@ -8528,7 +8794,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5e6b64a90c0d4562326963fcdc8ff2d0405fc74b6241662f9d5d307752b98967"
+            "source_sha256": "61b53c82625a1022c51f9b9bb9a98bca66dc247db4c50e4005cfd39eefbf35ec"
         },
         {
             "path": "server/app/adminapi/application/dict/DictDataApplicationService.php",
@@ -8542,7 +8808,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "688717a1a61175298c8d25e897c55f6c9c462f3a6321c16232fac466d252574a"
+            "source_sha256": "8a7870472b394886a44a9f0dd27d1bc4793d73fba344d6b76e70b74e7f4e20b5"
         },
         {
             "path": "server/app/adminapi/application/dict/DictTypeApplicationService.php",
@@ -8556,7 +8822,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b7c083da0394645d4d526d87967eb0d2aedf99718b870029b4079df7adffa5df"
+            "source_sha256": "0ebb261e0344ff730cad5bc6991eda45ad06ad9f6c8fb7db72e290c3c9c62e3b"
         },
         {
             "path": "server/app/adminapi/application/generator/GeneratorApplicationService.php",
@@ -8570,7 +8836,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b2f53dfb0560024fcf5744d1b344c404f798d4922a374e19b66056c3c0599a8e"
+            "source_sha256": "aef93bbf4f9d210dcadfc4eb4414005ed752c35291b178485eaa1b3a2578f1a5"
         },
         {
             "path": "server/app/adminapi/application/log/OperationLogApplicationService.php",
@@ -8584,7 +8850,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "773caf38f81d7502222cca1e67efc61e00f5197d9d5af2ec8aeaf9a2584a943a"
+            "source_sha256": "0129f9a84971a12bb1e5c8e502b0c0fa0453e4bb70385b3c4c4733c7810b00c1"
         },
         {
             "path": "server/app/adminapi/application/setting/HotSearchApplicationService.php",
@@ -8598,7 +8864,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b024e424b52a97442e91a9ac731c3228fd32459dfa3c193503e5933dc669d8ff"
+            "source_sha256": "cbf3c64dfebe69a0d40db5714534496e770643c16b42be29c6438e75c2899abc"
         },
         {
             "path": "server/app/adminapi/application/setting/TransactionSettingsApplicationService.php",
@@ -8612,7 +8878,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "12ecf8532acf13ebc0faf209b45b283eeeb1d415f701f02e99fe34dfca1e87b1"
+            "source_sha256": "e9618a54da93caa26a79ca83b08e0acf32207c6d252c538e697658372846f606"
         },
         {
             "path": "server/app/adminapi/application/system/SystemApplicationService.php",
@@ -8626,7 +8892,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3d85a913d32fc95215fbcd439ea824626916dd6a16fb46ca78208ae39428cbba"
+            "source_sha256": "d17fd71287ff4ce05a0bc3b1e3cf1ced7e42119a0cb42994ca84bb358c1263dd"
         },
         {
             "path": "server/app/adminapi/controller/AbstractTenantCrudController.php",
@@ -8640,7 +8906,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4df4a8b5d642de275e2b087b337af27894f60760a13d51f4cbc9226f645f1aad"
+            "source_sha256": "685dcb382133e1e84559026cf477833fd0d313f8c644aad5501076d72142cd0a"
         },
         {
             "path": "server/app/adminapi/controller/BaseAdminController.php",
@@ -8654,7 +8920,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3629f8707476791c22b06d59d2948821f45efbf49fe98094c7c00ba57fbe2dc1"
+            "source_sha256": "457ba281435f654ae962d80d2929fc73b3ece08b4e6638134e29d1f2e0985397"
         },
         {
             "path": "server/app/adminapi/controller/WorkbenchController.php",
@@ -8668,7 +8934,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8eb34356ad327e123d6d8e80875aa6f002c0e5cbf7abe5502a5da91dc7abef2f"
+            "source_sha256": "55477f31a76484f98baede487c5b7d04043a1c266934ba2222ee20d4c3e15ab1"
         },
         {
             "path": "server/app/adminapi/controller/auth/AdminController.php",
@@ -8682,7 +8948,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a6734a1d6fbd07939cbb36e9afd4f398fd9ceaf7bc2e0473fa6dda315d05dd91"
+            "source_sha256": "9095313c8fac7345ac95a62fd3af190505cd80f4a5a8d2a29a1d5afde816bd64"
         },
         {
             "path": "server/app/adminapi/controller/auth/LoginController.php",
@@ -8696,7 +8962,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "889422c498d25caaccc9f9fc3a8500ab9778218615756f82a251a5f24df7bc33"
+            "source_sha256": "5d8bd3c34c83967228102f63a60edafbe7880f5f8b2a9009cccbfc3b56328df7"
         },
         {
             "path": "server/app/adminapi/controller/auth/MenuController.php",
@@ -8710,7 +8976,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9b61e01a0676a25e6be14bbc2ab4f800e8672d3d689efc16d0898b8e0b693ddf"
+            "source_sha256": "c0679bf34c4106a83880ae7655dcd1636259f2f6ff658129fd9bedce38bd8fd9"
         },
         {
             "path": "server/app/adminapi/controller/auth/RoleController.php",
@@ -8724,7 +8990,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f41ab5797c8dd6f74da4f09398b1f57a9674382cb0604a70db60d76d559e1cdf"
+            "source_sha256": "129d1d9a4ac7ef20962e3f983f92463b82be9e7319ecdb3f2695759a9aaeb0ec"
         },
         {
             "path": "server/app/adminapi/controller/auth/TenantSessionController.php",
@@ -8738,7 +9004,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5b398f509eaeb6ccc3a595442637f1f25defa39c99e9479fd49b98737be2ae97"
+            "source_sha256": "e71a43c7d2bd2869a419cab171b9a87c256f039cc6d4eabc7e5a97e17e6ece01"
         },
         {
             "path": "server/app/adminapi/controller/config/ConfigController.php",
@@ -8752,7 +9018,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1b81fbdf12d86569f031a140633b1186901395c19f5f2e89c58df033cc5d3aae"
+            "source_sha256": "2dcedeff170a7277c56bb4e864c790c88fd068d3c7c0dd8e59e0b782f1c88aa7"
         },
         {
             "path": "server/app/adminapi/controller/config/ReadinessController.php",
@@ -8766,7 +9032,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "80ae298439a509d971f140f38bc877bb5113f541e436d37e233bbad7527fbe58"
+            "source_sha256": "e5901df57f7fe4f29c2a67b618fd1f7ff1dd540a8511a0b87fb79f2f25ef20ed"
         },
         {
             "path": "server/app/adminapi/controller/decoration/DecorationPageController.php",
@@ -8780,7 +9046,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d4209cb8699c55688ee4827293f7d4bf717bc89afd9d9f722b311228c3b5e0f9"
+            "source_sha256": "e7ae6a072a5f72b1512a9576b9077fea450420b1bb425a44847ffca5a67a1e3e"
         },
         {
             "path": "server/app/adminapi/controller/decoration/DecorationTabbarController.php",
@@ -8794,7 +9060,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "05988e0ff4b96e0c9de7b4b1df5bf46787c507948856b939e93eb50de837cdc7"
+            "source_sha256": "f2c4bc79170cc0c85847446e2a1508a4e54bf03fff7ad923ab102943211b6c8d"
         },
         {
             "path": "server/app/adminapi/controller/dept/AbstractOrgCrudController.php",
@@ -8808,7 +9074,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7bc915ee195962f43ed1ba11468110c67dd13a5fe614944e8558766303fa1e0f"
+            "source_sha256": "f9ef2bdd6b137b6b3225ac9f9de11efb9097e502c4a1cbea6e74283860a1f1d3"
         },
         {
             "path": "server/app/adminapi/controller/dept/DeptController.php",
@@ -8822,7 +9088,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e79fa3bd7e969127bfeec9d2bcfc4d8f4f7f33f0adf3755f82a52e1432d0a8c7"
+            "source_sha256": "0221ace3b2a1c4b0ab43412ebc5a6c0eb1c97ff4a45a18cda596a5d7cf77bc5c"
         },
         {
             "path": "server/app/adminapi/controller/dept/JobsController.php",
@@ -8836,7 +9102,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9b3be6b2306ae7e2a276e67719c2d523565768830e448d1e5dc5a7e8b207bfb9"
+            "source_sha256": "e6d6d3078429a5142c02be10d8251c8fd40cfaf8da438fc91a45911400175014"
         },
         {
             "path": "server/app/adminapi/controller/dict/DictDataController.php",
@@ -8850,7 +9116,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7826de6fd9221f2a793b5180fd05d77b0f5c8d8bfe294a223458683370fc8efa"
+            "source_sha256": "02cfb316aad5a6317743d36fd275756a4a7110da2ca94f642c26bffa01745051"
         },
         {
             "path": "server/app/adminapi/controller/dict/DictTypeController.php",
@@ -8864,7 +9130,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "149d037ea247fa8367eabf49e767e335872177dc8f250ee9b8f694878c524264"
+            "source_sha256": "58c6a2eade346504d03021f5a5bc7e7504271522af8f161568800a04e570586a"
         },
         {
             "path": "server/app/adminapi/controller/generator/GeneratorController.php",
@@ -8878,7 +9144,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "709e93a71a51366e4fe98620c1edab0d6b692145074c403e9c0d8c4872436408"
+            "source_sha256": "be32ccb1dbc7035ca554ac9281258882b65fd12fd27bfeb88118164d7f30fbc7"
         },
         {
             "path": "server/app/adminapi/controller/log/OperationLogController.php",
@@ -8892,7 +9158,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7462e4e163f519b746eb32661403d04edeb21871a923c3944c8d844a6de80b44"
+            "source_sha256": "a8d3316c3ebdbfc8007d935014d42e14fd888baa460e5087f77b9f66a948210e"
         },
         {
             "path": "server/app/adminapi/controller/setting/HotSearchController.php",
@@ -8906,7 +9172,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c50263276fe5cc1d6376370c4d75d5ef737f41ec2fa02f668768f0374642f00b"
+            "source_sha256": "fca3ace17006c492a853ddaa1f58937e24edfde99f8434f4a8cc91a2b81f5354"
         },
         {
             "path": "server/app/adminapi/controller/setting/TransactionSettingsController.php",
@@ -8920,7 +9186,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5bab40c302f431287fe3b4908caee2b122788dd093b0bd11b891c7d041ddbd6a"
+            "source_sha256": "df7697aa82b8db2ee461bc77b3a4b87b7f857d7dfe6f45384b79e2b01c50137a"
         },
         {
             "path": "server/app/adminapi/controller/system/SystemController.php",
@@ -8934,7 +9200,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "91a3aa4adf3406f93755e08af23843a818829389c7f9b3df1bf9e6b37aaea68a"
+            "source_sha256": "d5f0d4917ce650583eb8e6b6799e6ae22309ad7b5cb3bebed57109200e5eb240"
         },
         {
             "path": "server/app/adminapi/http/AdminRequest.php",
@@ -8962,7 +9228,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "08f915026ba180d659a884c4167867620d88306f439ab4eb50b0132d81941ebc"
+            "source_sha256": "f2532109cfcdcb5077c2f34a5bf2d04c47c695b05268c0088ba1807895a726af"
         },
         {
             "path": "server/app/adminapi/http/middleware/LoginMiddleware.php",
@@ -8976,7 +9242,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "340d6ce7705fec60f24993dbbbf4f1a6383e3bd64ce41149fd6ef44bd6a56136"
+            "source_sha256": "f25a715583cc7def2c8c160e365c97ee644fd9aa5959ce000b9a3ff181f04ffb"
         },
         {
             "path": "server/app/adminapi/http/middleware/OperationLogMiddleware.php",
@@ -8990,7 +9256,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ac859f153017c080488fb0816b64331a0b9ba5e4b6909730e014f78802eb6645"
+            "source_sha256": "683d3372d9b88e467478207465eb9e773c31afc3a15572253e4582f22689544d"
         },
         {
             "path": "server/app/adminapi/middleware.php",
@@ -9005,6 +9271,20 @@
                 "full"
             ],
             "source_sha256": "d0ef901dd01e529656b593a1a2366694b10288e221198aeb15fd5582b529c389"
+        },
+        {
+            "path": "server/app/adminapi/provider.php",
+            "target": "server/app/adminapi/provider.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "72df917b6bcf504e9649543d17c431444537979ec4b9faa346adf60396b6c3a9"
         },
         {
             "path": "server/app/adminapi/route/app.php",
@@ -9102,7 +9382,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dfcbad49e216333aa48873b6fd2a195654960e703bdb6fbfbfc7b68bfdbcf7be"
+            "source_sha256": "a5d42415e69c129eaf6813a089236fcae1e4a8118444f2dcc4a0f6c9358011fe"
         },
         {
             "path": "server/app/adminapi/service/generator/GeneratorMetadataService.php",
@@ -9130,7 +9410,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "eac43da504b01771424dc4dece08d063d83ed5431446649a22c4dd6e8feb9954"
+            "source_sha256": "cf351de489b979f10e310633480e7564a96ba3ee7724978127a368b3f77fe1c6"
         },
         {
             "path": "server/app/adminapi/validate/auth/AdminValidate.php",
@@ -9284,7 +9564,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "166d33d3c67ca548122d719cb0b92129986fa91a0ae3614d3d43f3b7fdc018a8"
+            "source_sha256": "ceb0e78736c8419b98ebfda30d20c344504abb0c46d692176e6c3a9d20afdb38"
         },
         {
             "path": "server/app/api/application/IndexApplicationService.php",
@@ -9298,7 +9578,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "850910404ff69d43f138f3bd19a1fe7493263ef1a7b43e303a90a356cc1bbebd"
+            "source_sha256": "e7c251ad870e4355dadb79784ec5feb6ceb30ca9228f30e495d1f58c7001a9d9"
         },
         {
             "path": "server/app/api/application/LoginApplicationService.php",
@@ -9312,7 +9592,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9de3d5a2edc748faea48060720435c5c6cb7b4b071adfbe66947bcff67ab8885"
+            "source_sha256": "4ba5aba2eda3c7c8fd30488fa568210e42b695f75051a8a637af14e39ac41a49"
         },
         {
             "path": "server/app/api/application/OAuthApplicationService.php",
@@ -9326,7 +9606,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "97977953a5265cbc0a38d266da3499408601dad6b61627b42c4172e4caf0a487"
+            "source_sha256": "603ffefcc599dd28b8b02d597f68e930db073894d65d7466de27218dfbdd7e6e"
         },
         {
             "path": "server/app/api/application/OfficialAccountApplicationService.php",
@@ -9354,7 +9634,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "593e77baafd2ba617555fe2f334482c3127ab5ba916389fdbc6ccdbc543bae04"
+            "source_sha256": "053286b5b9410e35579a0ad23ad9e696df4c870cde3c36eb6528972614b33781"
         },
         {
             "path": "server/app/api/application/RechargeApplicationService.php",
@@ -9368,7 +9648,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8c9242d7676ca9e9498812c7cf74d347c14c96dc69adea58b6e37c23e811dde4"
+            "source_sha256": "9f151b6df85691f24cd34cb5cc57e09e0c77f7f3787fa2c9fcd8d42cd0b5b4cf"
         },
         {
             "path": "server/app/api/application/SearchApplicationService.php",
@@ -9382,7 +9662,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a060fb0f74f9547cc186ef36ff0e834c45017e169152eb7610cd822666762bbc"
+            "source_sha256": "10f2ad2cf498631657f9977e9e75f98310a772a1319a42a0a9f2bd9630fd5823"
         },
         {
             "path": "server/app/api/application/SmsApplicationService.php",
@@ -9396,7 +9676,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "42082b574e7e949f5def8366dd0caa1d363c9f683a313eceaa55bb5921326663"
+            "source_sha256": "0e8a4d9f3f79507c25560d8b141bd6d76882cb2608ec356adbe1d25f9752b775"
         },
         {
             "path": "server/app/api/application/UserApplicationService.php",
@@ -9410,7 +9690,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8b10a16caa0a18e5ff9e590a99ef70e1eba00e650d9bf552c2ed3da1bc57d34f"
+            "source_sha256": "bf84ca987a4784c119db8c3fba8fa939ce12e4b8934398c89a385a2b3e0d7184"
         },
         {
             "path": "server/app/api/controller/AccountLogController.php",
@@ -9424,7 +9704,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "39d58bce5ca46f54a011fd5eb3d63d72c258a5feeee484962ea4cdf314930586"
+            "source_sha256": "7203ecd25fb887bd6b0ba679c03279cb5f75e8dc1acd0abd3e78948517f3dc32"
         },
         {
             "path": "server/app/api/controller/ArticleController.php",
@@ -9438,7 +9718,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a3a5ac86d45ab174c49a3b17d197464288f282d4ad202f4647c7d689fb5ee7dc"
+            "source_sha256": "95e49e58fb22987b7a2113a1845db5eb191c9c7ffd17b349a17be9f4b6e72aa7"
         },
         {
             "path": "server/app/api/controller/BaseApiController.php",
@@ -9452,7 +9732,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5320c510ddf283fe54ed067cda7b8a5f0bb9000d9b9c673d66067e44c4905d48"
+            "source_sha256": "e072d6a30abc0cfbd4f21d2af7095fe8496e3cfae2d45536c0ece2bf8bad5872"
         },
         {
             "path": "server/app/api/controller/DecorationController.php",
@@ -9466,7 +9746,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8b119f5c3ef8b86cd4ce939d84a4367ea6cd0648262fa1e8636ebf73491a483e"
+            "source_sha256": "b96ba073eab80d1c59234de92a270e215cba4ad9f1d3b1743932c111de9a2da7"
         },
         {
             "path": "server/app/api/controller/IndexController.php",
@@ -9480,7 +9760,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "68b067ae5b094f0afd67b166d6d995c71e44ba5bc88b930a5792d0cb3e4bda59"
+            "source_sha256": "779c004a3b97b9b43d0ae654592014431f638b5e3b92cbb0c8a67254396af82c"
         },
         {
             "path": "server/app/api/controller/LoginController.php",
@@ -9494,7 +9774,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "56214b7164d88469eee9e4657f82aa063995dce50650e4e50a1a7e41c40062a6"
+            "source_sha256": "a5158d18b240a77af21f37d21be37491f9c3e8eb6c4b816205fdfaabdd628dfe"
         },
         {
             "path": "server/app/api/controller/OAuthController.php",
@@ -9508,7 +9788,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c9e269d1584e49bd9784577d59437296a3fc97574c2d3c3a90d534b56485dc4d"
+            "source_sha256": "e7f2bed84588db6286070a0bd19811aac8554e9b94eab2ea87cbb4a88b748f00"
         },
         {
             "path": "server/app/api/controller/OfficialAccountController.php",
@@ -9522,7 +9802,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "212e6801b985bee014b4e967f5c569a6e6b34b6626ebf0048970b2f26ad01a33"
+            "source_sha256": "6800a15a07fc04a1ce634003bbb79d577a6594185ecc1623ee38fa81f6287541"
         },
         {
             "path": "server/app/api/controller/PaymentNotifyController.php",
@@ -9536,7 +9816,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e9c50731a06755755e2923f0f2a8de5f359f22268e7bc2465ce84ac42530919c"
+            "source_sha256": "85bf879e64346aae6251a956a6740638fef4a4deece216544f5fc316b2f41f0a"
         },
         {
             "path": "server/app/api/controller/PcController.php",
@@ -9550,7 +9830,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d47616b3a037127afc9346850e498aa5658a3f997dbc9e51e7a9563fb25c6db2"
+            "source_sha256": "94ffc655d17e7e0448b98b8ac99f9e7552e4686fe3b9d9f15861212ea042209f"
         },
         {
             "path": "server/app/api/controller/RechargeController.php",
@@ -9564,7 +9844,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "749ceecbf852eafa79ca346067f7fba58cb9ac5a3a5733e0657d94bad460a7cb"
+            "source_sha256": "8c6b0222c42c87f60711b4966f3efb098da749ed6fa831754d9e277528b7f0f2"
         },
         {
             "path": "server/app/api/controller/SearchController.php",
@@ -9578,7 +9858,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7f84d5804aa81dd993418fafae3f8ec3dab68acf16cfed380bcdce281c78eece"
+            "source_sha256": "c1d089bd4293cbb8e4dedd6b8fb7429de8f0f3e6736fee782299a8536f9f52e1"
         },
         {
             "path": "server/app/api/controller/SmsController.php",
@@ -9592,7 +9872,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dfc2a6e31913febf824087ab92a24faf862caf24c3d60fc362e5672404b68921"
+            "source_sha256": "e35090d0fe441ae18b8da16daf78f8a9510591d58101e6e98c67283231eaf8f2"
         },
         {
             "path": "server/app/api/controller/StorageController.php",
@@ -9620,7 +9900,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2cea3d354ff38c08f6f357aa27dcb57c573b4083939b312b3f82ac825890c972"
+            "source_sha256": "24da07cb9fe54ab8cb2778c7453d2cf1c4c7d49f4b3df3b251659fdc6feaa19c"
         },
         {
             "path": "server/app/api/controller/UserController.php",
@@ -9634,7 +9914,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ef111ba4d5b88a78b1694504e47aaa2662db6b8a873409ddb8da095813131944"
+            "source_sha256": "633e370e42bc714769ff330bb9921e6c033235d872d1a9e71937412322090f97"
         },
         {
             "path": "server/app/api/middleware.php",
@@ -9662,11 +9942,11 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8a784b73df5426bef70d11ef08ddb7f20a6e90de3308c0eb00f45ac20fa1e4e1"
+            "source_sha256": "03ffa94a4e560b5902e47915d0ec6ab5a0a7b3d68c6f0df7aa4478d27a099b00"
         },
         {
-            "path": "server/app/api/middleware/PublicArticleTenantMiddleware.php",
-            "target": "server/app/api/middleware/PublicArticleTenantMiddleware.php",
+            "path": "server/app/api/middleware/PublicTenantModuleMiddleware.php",
+            "target": "server/app/api/middleware/PublicTenantModuleMiddleware.php",
             "classification": "app-owned",
             "owner": "application",
             "transform": "text",
@@ -9676,11 +9956,11 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "12033641fd469ea3c26c7386c91f7d9a52c28c9431a44521f9180b2640bc2a55"
+            "source_sha256": "cf5fbe9357572d1f0f6196806614ab72a4d5ab700f03e20c448d27c97d99aad7"
         },
         {
-            "path": "server/app/api/middleware/PublicDecorationTenantMiddleware.php",
-            "target": "server/app/api/middleware/PublicDecorationTenantMiddleware.php",
+            "path": "server/app/api/provider.php",
+            "target": "server/app/api/provider.php",
             "classification": "app-owned",
             "owner": "application",
             "transform": "text",
@@ -9690,49 +9970,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3ffc1a610a4e89a4b4a8a9977c60c0c705fc5f011ea29e553643d5294f2d48df"
-        },
-        {
-            "path": "server/app/api/middleware/PublicHotSearchTenantMiddleware.php",
-            "target": "server/app/api/middleware/PublicHotSearchTenantMiddleware.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "d8276f9867422ac567b3e34fac171dc74072a18986aa783443beb6647fa14856"
-        },
-        {
-            "path": "server/app/api/middleware/PublicMemberTenantMiddleware.php",
-            "target": "server/app/api/middleware/PublicMemberTenantMiddleware.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "6458a69adb1512d69aa63048aad1b34afa1de2881dd23db339583c3ba5c86b7b"
-        },
-        {
-            "path": "server/app/api/middleware/PublicNoticeTenantMiddleware.php",
-            "target": "server/app/api/middleware/PublicNoticeTenantMiddleware.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "864ba82f9f70a0a799894de7b73de646ce81bd9e69af3fa1d6a9f40a6e64ce3c"
+            "source_sha256": "eee71ac364bf981a2fdb14d09290895af17726d92a5b01b3dbac82074324a9c9"
         },
         {
             "path": "server/app/api/route/app.php",
@@ -9830,7 +10068,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bc05de02113e23f098070b6884545f553766218d52e5431cb241aaeab2a9ffdd"
+            "source_sha256": "0aafc5c3b11ecd78bea4fee64c26fd37130c900a214b9dd8e3d27d84fed5912f"
         },
         {
             "path": "server/app/command/CrontabDemo.php",
@@ -9844,7 +10082,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "572bf6f69e0feec6b78acba81e815654255b8152f634060408a9c58d1fe576c1"
+            "source_sha256": "f7b5b6df370930fd88379fdfae1f58198ea1d53be0d1d25a457ae2939490c7f7"
         },
         {
             "path": "server/app/command/GeneratorCleanup.php",
@@ -9900,7 +10138,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0e3d6c225e945e72c4c3620a891f6e668ad4b447426c35f6359defbb564ecf2a"
+            "source_sha256": "43bf9c61f61364dacf7334d9cb2fc0edbbacfdb8cb3792c8b8a7c338532bff94"
         },
         {
             "path": "server/app/command/ModuleInstall.php",
@@ -9914,7 +10152,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9de65f77da1fbf1ca77df886473c9393465f902b4dd1508a6e422a1af48bcd07"
+            "source_sha256": "40d817f760fc4095fe6b3b5fcb5057978f851defa93f821b92790766418ae8ae"
         },
         {
             "path": "server/app/command/ModuleInstallPackage.php",
@@ -9928,7 +10166,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bae92b64ae1600af025a399dbb975375410742683bc54fe747546cf1d143d631"
+            "source_sha256": "7d542509fff3003ef311219a3553a2cd66c4189e7a97d7559fb57aeab889295b"
         },
         {
             "path": "server/app/command/ModulePack.php",
@@ -9970,7 +10208,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e55b7caad3d58db2e431bb90637003320692f19585650de6d981c131cdb74238"
+            "source_sha256": "dd95da45825ab58e464867c6080bf3fbbcc1ab64ab0b168f165d93e854257bea"
         },
         {
             "path": "server/app/command/ModuleUninstallPackage.php",
@@ -9984,7 +10222,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ff38016118c5aab937e8312d43037b4bc8d12130d415ff348652f5a371e1929b"
+            "source_sha256": "0921aaef9853f9f8af22f4635597f6828e6bd0c6b254f98af6d93ae0d29a3d12"
         },
         {
             "path": "server/app/command/ModuleUpdatePackage.php",
@@ -9998,7 +10236,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "926b0fc23792dd05cbb6a99e072ec421d1c53abdb9bf0a61114ceda619b4382b"
+            "source_sha256": "299ad33e9c5539b61c384dd547ac0bbc9161c5be604275cadfb115376ada2f01"
         },
         {
             "path": "server/app/command/OpsBackupTask.php",
@@ -10012,7 +10250,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7e7605d7b1f0efa0f0e8923c88e05a71df071424bc3f626f9e1b50b34059d19f"
+            "source_sha256": "95df5e4cfe957c846655e1ddca7c81d9fda36c94cc3f02ed95d5b1a6febe54db"
         },
         {
             "path": "server/app/command/OpsModuleRequest.php",
@@ -10026,7 +10264,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c1fd344ed8bca54fb65d08dd5e23bc606b7355e3e10c802a4a8d5bbd0df59151"
+            "source_sha256": "9d2119e9d77ee021088245470b33e30363d85ebe7d7f30b3922e2331a81ac117"
         },
         {
             "path": "server/app/command/OpsModuleTask.php",
@@ -10040,7 +10278,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2034d2ae1b112ce556edb54a617766d9b1b6cc84252e1d0d978542199a057399"
+            "source_sha256": "a05792e9888e3c8291ba5f891028dce682d2b2ac3fadfa7fb3d5704b749aa1d9"
         },
         {
             "path": "server/app/command/OpsRestoreTask.php",
@@ -10054,7 +10292,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2f850aa68c313ac09a40eceed627366eb139f5fe5d8e0a5bec7d9e461082f8c0"
+            "source_sha256": "4daeed59c5685f9f04e8603d747865a86ce258de701a84f4c5eba42d9bdb3082"
         },
         {
             "path": "server/app/command/OpsUpgradeTask.php",
@@ -10068,7 +10306,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0374c8a77ce2fc1f6ea910d713bc87ce635ed622c7d0a1f7dfdad751de147a5d"
+            "source_sha256": "c22325adf82930408ee06507e865b56bf1cdc4b2de8ba5407d1aa767bb737e10"
         },
         {
             "path": "server/app/command/PluginCommandSupport.php",
@@ -10082,7 +10320,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "03054f294021b0b1ca6467810348f48bb66d8cbeec92ae13a94cd29f46b4f51b"
+            "source_sha256": "0aa8c46fb107ca5b94504342fa02bf079352b5475ab739ad845638c09a459a0d"
         },
         {
             "path": "server/app/command/PluginInstall.php",
@@ -10096,7 +10334,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f26862a7fe945254ce434e0d6de94e5faffd9e2463d30ba4d2280d852aea487e"
+            "source_sha256": "7fe8007abe4160a914a81ea7b3943bce894dc3f02c9dec1a77a9e856fd36fa41"
         },
         {
             "path": "server/app/command/PluginLock.php",
@@ -10138,7 +10376,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5a7b11f4ed49e7f455c33ba9d6987305d24bda845dccfba99ac665d5b9231834"
+            "source_sha256": "9d02b306b91afcd1d86fa5cfeffe7bff4b847f9f1e0912843f4a6fa845ba8d99"
         },
         {
             "path": "server/app/command/PluginRollback.php",
@@ -10152,7 +10390,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b95114363c058f1edf842677f6f956ac31f48eb53328222b1eed95ca932d4a83"
+            "source_sha256": "b47f8c8aad8862fbf5b9b8b8e0babda9f7ad004cf20c37d53e1a4620d31be16e"
         },
         {
             "path": "server/app/command/PluginUninstall.php",
@@ -10166,7 +10404,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "44f39cf50fabd86a61231c47a30d126f4ad32297b770b29b04bcc74633092026"
+            "source_sha256": "e8bebf4569c28a325c5a96b087620024d3c7c875fbac0b0b951d58e5e82913cd"
         },
         {
             "path": "server/app/command/PluginUpgrade.php",
@@ -10180,7 +10418,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "dea882af63164607b90a0d129a72faa6ddab2781e7aafed5d44c75bb83f43421"
+            "source_sha256": "8c56cbfd14282b6c4a7ac35aa17acc64987b6b38bc488d409ac4f28184e97ecf"
         },
         {
             "path": "server/app/command/RefundReconcile.php",
@@ -10194,7 +10432,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9f6293bcd3f7cec7c94746a55740ecebcefe3a41267fdda29fbc134ff7bbc186"
+            "source_sha256": "a062b19242c438bb4f79f3f97fdf95d3bbcaa0b20ce2a63c6ee78bb01c15a089"
         },
         {
             "path": "server/app/command/TenantModuleProfile.php",
@@ -10208,7 +10446,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6c55f1decbc2fb59c8d4bf611474ca26f503f6c9abdb8075315208725a94f23e"
+            "source_sha256": "b455e84d3370ba37489357586f3f8d3914fcb127c1c4c7cc7c6e404f0dde1746"
         },
         {
             "path": "server/app/command/TenantTaskWorker.php",
@@ -10222,7 +10460,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e5609d6780754f3170ce4ceed5265ab9bf3c23c8050b207194e79ccdefcaa593"
+            "source_sha256": "f6cf5f5baef0d887190a4848a9732b4f05941d8564ecf9efac33ff607b96ff1d"
         },
         {
             "path": "server/app/common.php",
@@ -10239,20 +10477,6 @@
             "source_sha256": "c2b5cc71da3cb6863c5b192abace6554654a7575577061a8f7a160c987b6a2b1"
         },
         {
-            "path": "server/app/common/application/ApplicationService.php",
-            "target": "server/app/common/application/ApplicationService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "91817f7762fd3e43e4bec971961adfc163e5fed1710bf98849192af972e7d42e"
-        },
-        {
             "path": "server/app/common/application/BusinessException.php",
             "target": "server/app/common/application/BusinessException.php",
             "classification": "app-owned",
@@ -10265,6 +10489,34 @@
                 "full"
             ],
             "source_sha256": "a55f151f939ba5cdb98984ec9570d9df6440dd0c1a2c90df4e31a270368d8129"
+        },
+        {
+            "path": "server/app/common/composition/ModuleBindingContributor.php",
+            "target": "server/app/common/composition/ModuleBindingContributor.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "317dca435539bf9f665c475f300c1c0732c7642a4e9761b6279918f0e2c5be84"
+        },
+        {
+            "path": "server/app/common/composition/ModuleComposition.php",
+            "target": "server/app/common/composition/ModuleComposition.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "0f9cdd7a0e686d64578ebffc0c032e0ab91285df6009b94c65219e060b674008"
         },
         {
             "path": "server/app/common/contract/AdminPermissionPolicy.php",
@@ -10715,20 +10967,6 @@
             "source_sha256": "522d27b0a940ee2e2e376de8e1acdb5dc362f93a6986932bbcdbb3330213635a"
         },
         {
-            "path": "server/app/common/enum/RefundEnum.php",
-            "target": "server/app/common/enum/RefundEnum.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "3407ce232eee6200dc261e56d93dc731ef20926102a7df9bd2f77c3189d0098a"
-        },
-        {
             "path": "server/app/common/enum/UserTerminalEnum.php",
             "target": "server/app/common/enum/UserTerminalEnum.php",
             "classification": "app-owned",
@@ -10785,6 +11023,34 @@
             "source_sha256": "9dfabf3ce6ed749017e78b74dee225bb1f7e73179a07ba4e724c01b2c4d3513c"
         },
         {
+            "path": "server/app/common/execution/AdminExecutionContext.php",
+            "target": "server/app/common/execution/AdminExecutionContext.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "260e71c4e26dca2596c986e84f8dd5e9be8c1f5cd7d2f1571a0d716e29eec33e"
+        },
+        {
+            "path": "server/app/common/execution/ConsumerExecutionContext.php",
+            "target": "server/app/common/execution/ConsumerExecutionContext.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "40c859b7980187bdba64a31e040d36c0fe5998b5fe974f95dd6c99e158e61853"
+        },
+        {
             "path": "server/app/common/execution/ContextualCommand.php",
             "target": "server/app/common/execution/ContextualCommand.php",
             "classification": "app-owned",
@@ -10796,7 +11062,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "438caeb57e521c38a7c208fda0b7064012c098613d290dddd10a6801b9092f05"
+            "source_sha256": "a18bdfca294142553562fc13657f049d928bd27c51c93a493b385121360e3438"
         },
         {
             "path": "server/app/common/execution/CurrentExecutionContext.php",
@@ -10810,7 +11076,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b1eb23edb49d5fc2dc438c9aa822957df8e6401d3128d81b5e089f2f592759f4"
+            "source_sha256": "3fe9f9975a32705c170d7207274c528a2654707e9b48cc0a08efbe40cca98385"
+        },
+        {
+            "path": "server/app/common/execution/DatabaseContextualCommand.php",
+            "target": "server/app/common/execution/DatabaseContextualCommand.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "ca744086c4e4d630d3028633b195f408aa3f882b2fb0c957ed81433cca434a9a"
         },
         {
             "path": "server/app/common/execution/ExecutionContext.php",
@@ -10824,7 +11104,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "72eb746150d43d8c0217e47bfe4352721ebcafa469ccfc28948db358021b5ea9"
+            "source_sha256": "e8e7cf1729295372cddbb6fefc3ba39dbc39afe1573ba494a54796ad7b5d59dc"
         },
         {
             "path": "server/app/common/execution/ExecutionContextAccess.php",
@@ -10838,7 +11118,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c64f9969a490f611089986cc6f11594b7cabf48a22615e7fd36ccecf985cebb1"
+            "source_sha256": "7224f1010c82c7de994eac5ecb992144adf903ec8103a0c7e9d2442d9cb1e48d"
         },
         {
             "path": "server/app/common/execution/ExecutionContextStore.php",
@@ -10852,7 +11132,35 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3361c6123475b18790760e472085e304a149659222774bfa61bf596d2a0f6795"
+            "source_sha256": "3b6b97e5d507fe386610e82176ef21a5744249cfb7f7e9da44a3dd0d330b9b83"
+        },
+        {
+            "path": "server/app/common/execution/InstallationExecutionContext.php",
+            "target": "server/app/common/execution/InstallationExecutionContext.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "dce7951f891294343a108fcfe9c443a39f17c52098fa8adad38ef9a0ea716275"
+        },
+        {
+            "path": "server/app/common/execution/InstanceExecutionContext.php",
+            "target": "server/app/common/execution/InstanceExecutionContext.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "12f4a51121a71d393487e041b4a9a1d5abf86330e86f9f6fdd61a49839b3fc68"
         },
         {
             "path": "server/app/common/execution/InstanceExecutionScope.php",
@@ -10867,6 +11175,48 @@
                 "full"
             ],
             "source_sha256": "5088de525bfbf1294509d715f1884c149f825ff71397fbf530c7a1cf75720eff"
+        },
+        {
+            "path": "server/app/common/execution/PlatformExecutionContext.php",
+            "target": "server/app/common/execution/PlatformExecutionContext.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "a184581da907f4e64c03dd59492bf19bb31c2b321359ee59aafb0c6d7b1b0e9a"
+        },
+        {
+            "path": "server/app/common/execution/SystemExecutionContext.php",
+            "target": "server/app/common/execution/SystemExecutionContext.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "80db9a94e26bd8aa8ce597b08bd5d83cd689a280f8d7f09d27a99594a707e9fb"
+        },
+        {
+            "path": "server/app/common/execution/SystemExecutionMetadata.php",
+            "target": "server/app/common/execution/SystemExecutionMetadata.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "31b12adfc06f2035acec54942b33bd685eab2944b6438e89440a9c986d2ff291"
         },
         {
             "path": "server/app/common/http/ApiProblem.php",
@@ -10894,7 +11244,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5c6736d7e53d7f282bf6827c193ffaee5ca11835e2059259c6e63ec2d2d858da"
+            "source_sha256": "25733c5fc25b80f0e9952f9bed660f9ad0891f15d616697b3c5730bb56b94187"
         },
         {
             "path": "server/app/common/http/HostApiProblemRenderer.php",
@@ -10908,7 +11258,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "edc5466070073669e405851074737571c418174939e9442f31c67a120d48fcd1"
+            "source_sha256": "f8ec4d592836c5eb85993e17f8209a7d250eb0b928c69d916adf43a8c5a83474"
         },
         {
             "path": "server/app/common/http/PageResult.php",
@@ -10936,7 +11286,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "67e932fd78fd442529102a1a947e0a5877d1e6fc1bce4c539b44c40dd2e4c554"
+            "source_sha256": "a5652a51109bcf7892ed006814851aefd42b935a47b694d079d73dc9cafbb017"
         },
         {
             "path": "server/app/common/http/middleware/InstallationStateMiddleware.php",
@@ -10964,7 +11314,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "359ef0d95368bb3ae485eb64a230aca9f89b1d14fb9369674637284bae44ca15"
+            "source_sha256": "cc9060c314679836932b83d8840b21886b1de3ba3de82f2b03c13d661538b067"
         },
         {
             "path": "server/app/common/model/BaseModel.php",
@@ -11356,7 +11706,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e19f5017cf21f1ee92d7a0ba8be2e26028158a71a8f9ef1bfe8ab2bb8410d282"
+            "source_sha256": "6b28e1a4dfabb9b9ab9b09dad715afb22d70e302a1ecfcff931a5284141e37fb"
         },
         {
             "path": "server/app/common/service/FileService.php",
@@ -11370,7 +11720,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a1fdfe9ef0a61c834d3fdb082eee2243f4f1c163a6076f0a8ec02d81f26da7b5"
+            "source_sha256": "fb9af62924494d9be4531acf9ee33ec42499b547aa43a48ccd34f29e3ebca59a"
         },
         {
             "path": "server/app/common/service/HtmlSanitizerService.php",
@@ -11401,8 +11751,8 @@
             "source_sha256": "902816c00f1514cad09ec6f447b2219caf1c8aff941fa77e63d101b64b9f2363"
         },
         {
-            "path": "server/app/common/service/MemberBalanceService.php",
-            "target": "server/app/common/service/MemberBalanceService.php",
+            "path": "server/app/common/service/Money.php",
+            "target": "server/app/common/service/Money.php",
             "classification": "app-owned",
             "owner": "application",
             "transform": "text",
@@ -11412,7 +11762,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "50c635f04430a44ed64d793a4d4fa9236b0e87be299da493e9cfaaa21042ae9d"
+            "source_sha256": "18fd2252cd40c2f2330b075adc94bd36f49b671ae12cbea2d9d546298581e855"
         },
         {
             "path": "server/app/common/service/ProductAssetReferenceService.php",
@@ -11443,20 +11793,6 @@
             "source_sha256": "eabaabc005439889c3f440302e87ffebaa6c92dca0fa8c0c653fa133d8bcc444"
         },
         {
-            "path": "server/app/common/service/UploadService.php",
-            "target": "server/app/common/service/UploadService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b5340790fa54b47801aeb0beddf939d7c4a932194b706a18505d698a0fbab91e"
-        },
-        {
             "path": "server/app/common/service/XlsxExportService.php",
             "target": "server/app/common/service/XlsxExportService.php",
             "classification": "app-owned",
@@ -11468,35 +11804,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f84883159111dd4255607df7fbbf73496b3c4fa6f5ebe644c0f17cd4be7c622b"
-        },
-        {
-            "path": "server/app/common/service/article/ArticleTenantContext.php",
-            "target": "server/app/common/service/article/ArticleTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "99bf18bc25b42947905d3b70d690b172b7e9c15c2c1664e7531065eb1c17382a"
-        },
-        {
-            "path": "server/app/common/service/article/ArticleTenantRepository.php",
-            "target": "server/app/common/service/article/ArticleTenantRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "458014d2852540e8038dab100938dc42538581b0987dd8b42821d6cc26a64284"
+            "source_sha256": "d0155d72de4207c79c9ed21ab57656935aaf481e1bc049f833dcf0c4ef6f9a16"
         },
         {
             "path": "server/app/common/service/async/ModuleAwareTaskHandler.php",
@@ -11510,21 +11818,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b6ba3a36eb273184462b1f2b65b931095a43c5219c8186cdb8eb7a5f1b57f352"
-        },
-        {
-            "path": "server/app/common/service/async/TaskImportExportRuntimeFactory.php",
-            "target": "server/app/common/service/async/TaskImportExportRuntimeFactory.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "df5d0a3a8e252b7086f52cd773ac2a9765e1220e2525908a4bf91fefcf24d68c"
+            "source_sha256": "40b142859b76be52c77f23787a41d36d1122cf9258bdb0c7f6b278a4508cacb7"
         },
         {
             "path": "server/app/common/service/audit/AuditContractHost.php",
@@ -11538,7 +11832,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "149d50f661aeaa538837500599f5e4e3732ced4ddf89060def177eb719001df3"
+            "source_sha256": "93b992d5064b9638016e8e0758dcfb3af4aeba826906bbb72e20d8e12ae3c505"
         },
         {
             "path": "server/app/common/service/audit/OperationLogDiagnostics.php",
@@ -11567,7 +11861,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cd9014e9f11cc3b6637bd7e70a2c868df4d27043bd43477962ad8471122fffe4"
+            "source_sha256": "c4953a1a44b09c2f693b67318fbb9d3d3196934f7a36aad33bdae6e7be12555b"
         },
         {
             "path": "server/app/common/service/audit/OperationLogTenantContext.php",
@@ -11581,7 +11875,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9f129dc09b1ff355cca7cc7adceb42c628f2b50e892df35925f228abbbddf170",
+            "source_sha256": "1bc4b385dd686f18fb29b11f9b40112f9ab237f14c7ee601f71d3e2d534b91bc",
             "adapter_kind": "deprecated-bridge"
         },
         {
@@ -11596,7 +11890,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "174f6208b89558b3532c3f890f7f5ebf260e8f396aec05189b9346b67c00115f"
+            "source_sha256": "4235c2b7888b2e548e1cfc9553d4db9761cb3b1fb7bfb2ac3bf2577723649b6a"
         },
         {
             "path": "server/app/common/service/audit/RedactionPolicy.php",
@@ -11624,7 +11918,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c546c044dfb004325ae05cb72856231418f3039bb7b2a24206f2af9cc7ba1c32"
+            "source_sha256": "025f3923957aa28f67527026dc928314baf2e23b1d92923e86ab4028ced42095"
         },
         {
             "path": "server/app/common/service/authorization/CoreTenantModuleAdminBridge.php",
@@ -11638,7 +11932,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ac3f53a5b2c5873a33d27ec34f63961f56bfdde097b306f73e72bf888af3fe53"
+            "source_sha256": "8affcf803ed24f306b36c5d8aa025b47dd55c7f544b3d1ae88c53da718fca75b"
         },
         {
             "path": "server/app/common/service/authorization/MenuPermissionUsageQuery.php",
@@ -11666,7 +11960,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "09b62ee387ee3cfec6f65b6508fb5b0bc69214aa9c303e5b7bbce6043969d0d5"
+            "source_sha256": "7039ef96ebedb33aea053b4ee8041bc59988f587ffd0108edbf1ac6df7a929fa"
         },
         {
             "path": "server/app/common/service/authorization/RoleAdministrationRuntime.php",
@@ -11680,21 +11974,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3943a8aa6504e8b8ab04ea8671b4915f8d36291466a9827d28326f59b16d3685"
-        },
-        {
-            "path": "server/app/common/service/capability/ArticleCapabilityAuthorization.php",
-            "target": "server/app/common/service/capability/ArticleCapabilityAuthorization.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b4f07217fbc52d683f8211344ef4a677f7f4eeabbdde8a426affd06dcc9a3143"
+            "source_sha256": "38484b30df5591219a6259f54021706be1d7e5722b3a1956af22e2f95702793a"
         },
         {
             "path": "server/app/common/service/capability/CrossProductAdoptionHost.php",
@@ -11708,7 +11988,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e3498618677174480ec9ed14f6e507322ab464d95fde02f3e7ed203d1dac33e4"
+            "source_sha256": "e860b359c088d6053fd245588e383c39857d2c796140d55ec57345c8aa910bca"
         },
         {
             "path": "server/app/common/service/config/BrandDefaults.php",
@@ -11737,7 +12017,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "338abde7dc367ced09f1e01604e691936ca85fd1fd32a5dbe30250d09ed62cef"
+            "source_sha256": "51e321656b95b1b861aa3c03a70f0f5e86ceeea2ec629d2317d98f8ad6f31829"
         },
         {
             "path": "server/app/common/service/config/TenantSettingWebsiteStore.php",
@@ -11751,7 +12031,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2ee8c21e9ac2467fd2078774880b56fea3b6624e4ad3d60d498f11ef582625fb",
+            "source_sha256": "add8c0b3bd969d9a49dc6f3fe6f8990536d4759947740bdc37f9b19c8b28d91d",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -11812,36 +12092,6 @@
             "source_sha256": "b6bc4da386dda29339fa19eb5a85841e497548ebfeb4ac361e005616b2a14a2c"
         },
         {
-            "path": "server/app/common/service/crontab/CrontabSchedulerService.php",
-            "target": "server/app/common/service/crontab/CrontabSchedulerService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "a17d981a321e22e12ebf0a22923ab009d93f3940e5809ebbaa18c9623b5377a9",
-            "adapter_kind": "framework-adapter"
-        },
-        {
-            "path": "server/app/common/service/crontab/CrontabTenantContext.php",
-            "target": "server/app/common/service/crontab/CrontabTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "d497745efddaf8a51f0384e58552ce4455384879304a1a2930fab4274bc7915f",
-            "adapter_kind": "framework-adapter"
-        },
-        {
             "path": "server/app/common/service/crontab/CrontabTenantLock.php",
             "target": "server/app/common/service/crontab/CrontabTenantLock.php",
             "classification": "app-owned",
@@ -11853,23 +12103,8 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a4637e467303d29c4b24ddffcc98463a16ac9b060572b4616023b160b7da5e4b",
+            "source_sha256": "7ae6ae17f7553df9b72902331df6a96985d0932c14b951ebab1ec525b6855981",
             "adapter_kind": "deprecated-bridge"
-        },
-        {
-            "path": "server/app/common/service/crontab/CrontabTenantRepository.php",
-            "target": "server/app/common/service/crontab/CrontabTenantRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "d6fc200ca176e4cba6678f3b3b5fccca796113d72933d4be676d9cd6a8611ba6",
-            "adapter_kind": "framework-adapter"
         },
         {
             "path": "server/app/common/service/decoration/DecorationReadService.php",
@@ -11897,7 +12132,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e1a4ee917f626cfd96dcb8ea2468e9d05cfbe07331df59f3a330d6e067b8670e"
+            "source_sha256": "789d095384061070133411d9f440e639df8bd0a87b8414dd56f65bb123dfd327"
         },
         {
             "path": "server/app/common/service/decoration/DecorationTabbarTenantRepository.php",
@@ -11912,20 +12147,6 @@
                 "full"
             ],
             "source_sha256": "0bd119be29cc515b4853264742ac8279f5faf6b8a9631585f3f86edb7b1ddd00"
-        },
-        {
-            "path": "server/app/common/service/decoration/DecorationTenantContext.php",
-            "target": "server/app/common/service/decoration/DecorationTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "4b208abf57ec61eac5b07fcbb413d98dbea46f2382909660a0d2647c7e7f535b"
         },
         {
             "path": "server/app/common/service/decoration/DecorationTenantRepository.php",
@@ -11955,20 +12176,6 @@
             ],
             "source_sha256": "3dafffd1353852b1c202b92b319b080ce5abaffc6f56c16bfc6937c4f275d1e7",
             "adapter_kind": "deprecated-bridge"
-        },
-        {
-            "path": "server/app/common/service/dict/DictTenantContext.php",
-            "target": "server/app/common/service/dict/DictTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "cf7b075f15929b3ad39d5f49a5e64a22e5ff94dc227f1814e6f01886794babb3"
         },
         {
             "path": "server/app/common/service/dict/DictionaryRuntime.php",
@@ -12011,7 +12218,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ed2ce632700e16c3657b71d14ec7929dc8064b808f164818cd7da9ce898e10e1",
+            "source_sha256": "3d67bcdfc9eee308a35015240981d29935259724de488b54f197b488777f7f54",
             "adapter_kind": "deprecated-bridge"
         },
         {
@@ -12140,7 +12347,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1f19c3b77762ddb401d623a48eb692483319ea55da560bc1e1475c7202072a5e",
+            "source_sha256": "367fd9ca5679ae85b653d69002530b80b59d6494d0043a3cefc59adb8a400542",
             "adapter_kind": "application-provider"
         },
         {
@@ -12301,94 +12508,8 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1c96650ca58a2fbaa08e3334e35bdaa252e10ee6ea9c118869dd367c4807786f",
+            "source_sha256": "068a6cc50cdea86d082baea6964a9c9326f03cf0426b3c2db12946d71806263f",
             "adapter_kind": "deprecated-bridge"
-        },
-        {
-            "path": "server/app/common/service/file/FileTenantContext.php",
-            "target": "server/app/common/service/file/FileTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "fc847def4c18810c542c1cf56934770f13873f46296d7078941aba189c5c061c",
-            "adapter_kind": "framework-adapter"
-        },
-        {
-            "path": "server/app/common/service/file/FileTenantRepository.php",
-            "target": "server/app/common/service/file/FileTenantRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "604327545e10ad7db37ee3ff694c5206d165b64194d2158eaadf7f809c9ac524",
-            "adapter_kind": "framework-adapter"
-        },
-        {
-            "path": "server/app/common/service/finance/FinanceTenantContext.php",
-            "target": "server/app/common/service/finance/FinanceTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b3fed458c65f83bf5730d26ec6596f86d91c99401b57f15a2c26d2a6a776bc13"
-        },
-        {
-            "path": "server/app/common/service/finance/FinanceTenantRepository.php",
-            "target": "server/app/common/service/finance/FinanceTenantRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "8bff3441e0e9c9f7686c3580226b506752d2a3dce41f2b73e7b02f104add5b9c"
-        },
-        {
-            "path": "server/app/common/service/finance/RechargeTenantSettingService.php",
-            "target": "server/app/common/service/finance/RechargeTenantSettingService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "5979f72553968e279f65e18b028ffc7ed177911e81314ab1260642401c09ff24"
-        },
-        {
-            "path": "server/app/common/service/hot_search/HotSearchTenantContext.php",
-            "target": "server/app/common/service/hot_search/HotSearchTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "585c8eb9ae1c09964ffaa9d8b6b3fc185ecb98c5fba1660a61443e28db69c439"
         },
         {
             "path": "server/app/common/service/hot_search/HotSearchTenantRepository.php",
@@ -12416,7 +12537,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "368146cf361bdbd886c73282644bd4b3995f891ca155590f2e792af7bc201202"
+            "source_sha256": "75aa89a749053b66f2500b0afb3c7abcf3b82b6f1f4299e0c912eb581a4f656d"
         },
         {
             "path": "server/app/common/service/http/OutboundHttpAttemptObservation.php",
@@ -12430,7 +12551,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8aa4dc242f7ca55052aa5e43d6c57ee1c984c57076af41f4ae3c0e2e808503f8"
+            "source_sha256": "f5d6b42f58a407dc883f45ac5315670ea8641e3269cee8a045d134e9c0c5993d"
         },
         {
             "path": "server/app/common/service/http/OutboundHttpException.php",
@@ -12613,35 +12734,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "38a7fa5a4ad33a93fa330cede83d93d81431dc2025039df77f937879613926c6"
-        },
-        {
-            "path": "server/app/common/service/member/MemberTenantContext.php",
-            "target": "server/app/common/service/member/MemberTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "e79fa572d860704c1368de1ff38f145a90c8e6d3c4bce454eb13b5421d61bdf1"
-        },
-        {
-            "path": "server/app/common/service/member/MemberTenantRepository.php",
-            "target": "server/app/common/service/member/MemberTenantRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "9473e11fc99af5a5b8a48caa15b5e7a054c572d8defaf837c08d349b88d2a944"
+            "source_sha256": "1e9fd727643fe63ca46b8d60fc1cb79248a848a26a5bc28bcc2a6294dd9890f0"
         },
         {
             "path": "server/app/common/service/module/ModuleExecutionBoundary.php",
@@ -12655,7 +12748,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0286518961421c37cb3dfd8f973a01001eb757e6f6bc6bab86d7272c00be54bd"
+            "source_sha256": "2e7b8d5f2ce2fe4d5fbeeeeb00334fcdc2fa84569328a7b60158c5c04dee68d5"
         },
         {
             "path": "server/app/common/service/module/ModuleExecutionContext.php",
@@ -12712,7 +12805,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "121e954cf0cc67c8361b61171d7f46e97f720b6a0e0c85e943e7498d1ba01c78"
+            "source_sha256": "4e0798b9dcbe4ce42320264c42e24b57dff45248682f4fb5fa12c9fbf69c312a"
         },
         {
             "path": "server/app/common/service/notice/ApplicationNoticeSmsSender.php",
@@ -12726,7 +12819,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a6607725678f6ad8730a4d74f182b54a36ce70c51342dae417f34daa5cc04293",
+            "source_sha256": "b24472f76a56b057dc216930efae0dc08d9a703478f941d50c09331ad1c3b12c",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -12741,7 +12834,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "12d11fe1348d315c920c67c2497c978ee9e38757a4f1b05f86608681adbac41b",
+            "source_sha256": "1204b3a76f5f1698403843c134bebe768d4f67a32fefa25ce04c870251dc73da",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -12771,22 +12864,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c7db0d2d033750a4f46c78cb08b24373cb4a8b7533d188544c0d796b3f62afbc",
-            "adapter_kind": "framework-adapter"
-        },
-        {
-            "path": "server/app/common/service/notice/NoticeTenantRepository.php",
-            "target": "server/app/common/service/notice/NoticeTenantRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "81c7d4860c199e923165ebb2cc075e6bd5384541ad37b1106a1da35a9187a2ba",
+            "source_sha256": "e57a2a6804f3af468faa61017aa32a5593c4dcc868afddd308c4616d3e4ea47f",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -12803,21 +12881,6 @@
             ],
             "source_sha256": "de5854d326c99342d77df6a4c65a735ff09ba69a12ee2445e42c52ec40d306b2",
             "adapter_kind": "deprecated-bridge"
-        },
-        {
-            "path": "server/app/common/service/notice/VerificationCodeService.php",
-            "target": "server/app/common/service/notice/VerificationCodeService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "2db585b69215f12b304f7adb76ddabd87644709869fac04c6302a1acad269388",
-            "adapter_kind": "framework-adapter"
         },
         {
             "path": "server/app/common/service/notice/driver/sms/AliyunSms.php",
@@ -12880,36 +12943,6 @@
             "adapter_kind": "deprecated-bridge"
         },
         {
-            "path": "server/app/common/service/oauth/OAuthTenantContext.php",
-            "target": "server/app/common/service/oauth/OAuthTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b7cdc0b950aaae38cbb5d33c2c7d42223cba16b8cea40f99102fd2e2bb5d0392",
-            "adapter_kind": "framework-adapter"
-        },
-        {
-            "path": "server/app/common/service/oauth/OAuthTenantRepository.php",
-            "target": "server/app/common/service/oauth/OAuthTenantRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "03c56982563f32dea2a52c5128dbce60102acfddcfb523e35beda43bdc67d140",
-            "adapter_kind": "framework-adapter"
-        },
-        {
             "path": "server/app/common/service/oauth/WechatOAuthTransport.php",
             "target": "server/app/common/service/oauth/WechatOAuthTransport.php",
             "classification": "app-owned",
@@ -12921,7 +12954,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d00a25dadc020370a92c7a463ea1045617ad7b17d2edd9bc13c861f4fc881383",
+            "source_sha256": "599d939abdd03d8eeb6bdefc7b0dc2eeaffb3898bd0d875501aaad16d307d215",
             "adapter_kind": "application-provider"
         },
         {
@@ -12966,7 +12999,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e5a767521b28d685441cf147b133a21f000c449fe49a3d997620ef8c792b0000"
+            "source_sha256": "965acf913055eb63ff11ebf0dbd615938dc1a8c137e65c857f5ca76c0166281e"
         },
         {
             "path": "server/app/common/service/org/DepartmentAdministrationRuntime.php",
@@ -12980,22 +13013,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "884533ce50ead52322fcdbd6372f425e4200ee37eb9e04b300add98c0cb8dccf"
-        },
-        {
-            "path": "server/app/common/service/org/OrgTenantContext.php",
-            "target": "server/app/common/service/org/OrgTenantContext.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "d509fa15780ba9118c336c5f1f6d58c00586655ccbd7d63acaec3b01b7b09bb9",
-            "adapter_kind": "deprecated-bridge"
+            "source_sha256": "353cb7659724b8a947855973cc1a4f80c3e54e7ce78186830a8dfdc2537c14fe"
         },
         {
             "path": "server/app/common/service/org/OrgTenantRepository.php",
@@ -13024,21 +13042,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a671196f405e41eced5ea43ef130c1111689002b256648f6d2cd463d48beb09a"
-        },
-        {
-            "path": "server/app/common/service/payment/PaymentChannelGrantService.php",
-            "target": "server/app/common/service/payment/PaymentChannelGrantService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "d78752b4dd4366f0731d535e29c2322fe58a4f8d9e6f3e9f8ed33b9571054eda"
+            "source_sha256": "3cb0c6646fee8cfcda5b326b580c1212a60e2fcb769021decf7b4344dd372a8b"
         },
         {
             "path": "server/app/common/service/payment/PaymentRetryLock.php",
@@ -13052,7 +13056,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fc418ff5c6a47f9eec499f8d532314354aafd4999f73e84ac19db87ee11d7321"
+            "source_sha256": "3dfb9261b31a06718567d731c5238ef5a4ad301fe68b2ccc1346371e2d48b48e"
         },
         {
             "path": "server/app/common/service/payment/PaymentScheduledTenantContext.php",
@@ -13332,7 +13336,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "70637b6a1d3a12ca37b3138cfcacac80b901bbb6dcd0bdfccc86e1afb1835a00"
+            "source_sha256": "3cab8d2485d49481ff3cfa80aea3148dfa150e7ce8db1099d109ec7ba885b9aa"
         },
         {
             "path": "server/app/common/service/permission/RegisteredAdminPermissionPolicy.php",
@@ -13361,7 +13365,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "40de19c68a543975110ab1791ce80914e7993d5c5a65b93424ae8e143baf0d96"
+            "source_sha256": "955c8ed761156487ca0c1182bae16d518ced24c85abe73d9372d08f6ec15106f"
         },
         {
             "path": "server/app/common/service/runtime/ApplicationCache.php",
@@ -13389,7 +13393,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9135bdc6d1c91c131960957fba396e62090f8d5154fcfc9a230eb52498c80fda"
+            "source_sha256": "2120a6ef5372f6e64bcae0b3b35fcbb2e68086ee548cfa83d5db7a50d0ce78b4"
         },
         {
             "path": "server/app/common/service/runtime/RuntimeNamespace.php",
@@ -13562,7 +13566,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2cf8c918309523361074b00012ba64f788f938d8aa80a377f28c9432a999e2ad"
+            "source_sha256": "a2b301981e4f21c925e49ea67b21989822dd81561c6604216ee3bafef3d42ca0"
         },
         {
             "path": "server/app/common/service/storage/QcloudStorageClientFactory.php",
@@ -13604,7 +13608,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "86a39fe301dab73dd0c10c722c6e0f0da20c271c3f295adb86be3ddb84713b79"
+            "source_sha256": "86b1e18c9d2ca84b5ee4992ddcc23513155ae3a330d1d1d9052651a80f0e9758"
         },
         {
             "path": "server/app/common/service/storage/StorageCredentialCipher.php",
@@ -13660,7 +13664,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b1f4fb257870856d59c2a3df42d1431a3fef1a40697ecee305b3596fa4dad6ab"
+            "source_sha256": "a47c30b48de65bbe9d84de893c6ed1e26792367caa36aa360a99ae796d48da26"
         },
         {
             "path": "server/app/common/service/storage/StoragePath.php",
@@ -13716,7 +13720,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b29a8bd3bda3510839c6444c7c4b5efaecf15459b365e36905d8c47cc8d51d57"
+            "source_sha256": "ddcbd0e1d7d7b3f636516396b59f83f3d6ca605efcfa2badfe89464e77315289"
         },
         {
             "path": "server/app/common/service/storage/StorageService.php",
@@ -13730,7 +13734,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fa65038cf7d7f7e05e476245855e429bce9b3a0b862443248d81ff5c780404ac"
+            "source_sha256": "a77d6fa87ee31c1479a64ad82a1faf8377e55a45e544d9ac19a372deb333fc63"
         },
         {
             "path": "server/app/common/service/storage/driver/AliyunStorageDriver.php",
@@ -13758,7 +13762,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "77183a831854d2755040a51d1e1aa94134dfc799c374af93e60be15886acc00a"
+            "source_sha256": "64ece8b22aab648f11bbe7ef0778d02c98ee3223104845d709007a2d41c80fd5"
         },
         {
             "path": "server/app/common/service/storage/driver/QcloudStorageDriver.php",
@@ -13800,7 +13804,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4676d3b57f4a7b0eb012788140a4e9a37c4f70009d38462094099eea9051dd49",
+            "source_sha256": "1be94f25a7923f9445125f66ddc1a471cdb20e4d11d7e5276914cf0db0d30346",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -13815,7 +13819,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d850816c3c9862ca64821618399fc0e91ba80df0731c3c83204d31dc4be73f67",
+            "source_sha256": "d8c39fbd38140c906da64d131bc9ec965b44b27bfdb727c5e6bb59cdb95b327e",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -13874,7 +13878,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1b5bb9bc2c4a97ab6838db294e3ce1822a12aed9fd740cb9bac74c8796fa959b",
+            "source_sha256": "1edc0e4070eaedbb6742a5f5c933236917de6d5c0514c5d9d55af46068060e78",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -13903,7 +13907,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "db920b79efce74b53afc941837deb5c4557a1c03e6fa452539f7854202866d3f"
+            "source_sha256": "a0d312736f462ca79d54ee71217f9654f51ba0e16e4f94ee6080588b77acda6b"
         },
         {
             "path": "server/app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php",
@@ -14002,7 +14006,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d8f325e311876f0b3896fbe2dfeb8e57ffc2e4047bf2916c4a147ab57831a910",
+            "source_sha256": "adc1df1eaff0414793d135407408dd20cabe8970c3d125c91eb0122527bb9814",
             "adapter_kind": "deprecated-bridge"
         },
         {
@@ -14116,7 +14120,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "80b62645b57048ac78f41c657c1be8cde53f04d4073464f20c472251752981c2"
+            "source_sha256": "d030f7ec72bea045b697789b56bd6323d8f5fcac36e23741a67595a019853461"
         },
         {
             "path": "server/app/common/tenancy/StandaloneDataScopePolicy.php",
@@ -14144,7 +14148,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ef0dd8b555c0be80141b77f1d1f6f76b477160a5e9d9a6cd0eb65ea22348d47a"
+            "source_sha256": "7144e09f61f1ffd8ff4202c5e68380e5785b467cd5939b578c2bc1d35d102e15"
         },
         {
             "path": "server/app/common/validate/ListsValidate.php",
@@ -14245,6 +14249,20 @@
             "source_sha256": "fa9860ecad28ff78922fe9e33717f037ac626dbe566373cdf797c3ea234f6971"
         },
         {
+            "path": "server/app/installation/http/middleware/InstallationExecutionMiddleware.php",
+            "target": "server/app/installation/http/middleware/InstallationExecutionMiddleware.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "646d5f45f10ac36fc499bf42537797b7aff257676b868618370deac883c28733"
+        },
+        {
             "path": "server/app/installation/middleware.php",
             "target": "server/app/installation/middleware.php",
             "classification": "app-owned",
@@ -14256,7 +14274,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d5bfb74f432937051a8885da0412a5f499e96e9ffa13f09048e6a96da588c16a"
+            "source_sha256": "d1175d08e4d71b2019ee619522c7f2509df329cde3806acfe5a0c51fcb019d7d"
         },
         {
             "path": "server/app/installation/route/app.php",
@@ -14320,7 +14338,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "118e6c6afccdd0c3d70d08b395700490dfd3654868490ef36b7a45ce1619faaf"
+            "source_sha256": "84cb3f66232c5f51b6fbf7d5221b70688a650ac02151bef72456e8587f4013ce"
         },
         {
             "path": "server/app/platform/controller/PlatformAccessController.php",
@@ -14332,7 +14350,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "abd0af0884147062baa2a66f2bfa4065dec4c6cf85871689c1ead780cc87b6d1"
+            "source_sha256": "f4b9515530ee10aa35e7d32350d598c64e8012dd3e921326f7c78d3fbaed46ed"
         },
         {
             "path": "server/app/platform/controller/PlatformControlPlaneQueryController.php",
@@ -14344,7 +14362,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "e9ad27bfe0f2ba55a899af657c59310b8ee1d8bc976d89c836ca58d0ab9fceaa"
+            "source_sha256": "9e2910834f079c990dbb86ae0ff6c73396dc55f7318292c26c48c66832f542e6"
         },
         {
             "path": "server/app/platform/controller/PlatformModuleLifecycleController.php",
@@ -14356,7 +14374,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "f1f9aaf8e7b8cd09b808bc6c93d4d4506ca5786853eaa7f07befa4ff38ff8026"
+            "source_sha256": "70f29c5f93364301299d389e78462d7bb2d23c57123087f7b019946409946dcb"
         },
         {
             "path": "server/app/platform/controller/PlatformOpsController.php",
@@ -14368,7 +14386,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "4551485fb4cd9418fab79d65db3f82814888ee4daedced7cb44c9feb22fad347"
+            "source_sha256": "4e462b7c3e69abb11b24836246a745b9f6a8b90afe1a33f4ea558fc25129cad5"
         },
         {
             "path": "server/app/platform/controller/PlatformSessionController.php",
@@ -14380,7 +14398,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "f915e7652c73abb73bdda18263225abe776fe8902fe2aa1ddaaafb72a5d63717"
+            "source_sha256": "81a362917efd2b7147033101dfed8615dac490e9ff537964e72e001c47f0e34a"
         },
         {
             "path": "server/app/platform/controller/PlatformStorageController.php",
@@ -14416,7 +14434,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "ad6a1e0b9fc6ebf672ebd8bca6f2735e4f8e5c990eed8d0d8529eb5fcc06b0ea"
+            "source_sha256": "e6188dab81bda904269cdbe026d1fc52b1725289019131e3e5a03a7d159f1afd"
         },
         {
             "path": "server/app/platform/controller/PlatformTenantEntryBindingController.php",
@@ -14428,7 +14446,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "d851f32991f0022734cefb17325018a788903ff32e38bd03c485698179458005"
+            "source_sha256": "832bb42d20d3a4b2c28fd13eb287af83e79c7624cb3054d5fb521a1227eb22d1"
         },
         {
             "path": "server/app/platform/controller/PlatformTenantInvitationController.php",
@@ -14440,7 +14458,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "f870776d7c202ef5c06dd349a2f28f43b0e78f24bcda6a42f584da86760790a6"
+            "source_sha256": "a456ca71dea2af166ac419932da78c09eed2cf762786c218e53c5c413aa028e7"
         },
         {
             "path": "server/app/platform/controller/PlatformTenantModuleController.php",
@@ -14452,7 +14470,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "b55de26407089b5640d5534d40840602c6ddbe32a1b39ba886248150e9439c54"
+            "source_sha256": "4e396ee142578432250816cb4aa3fc9667f192bfe22cbbec90fe96cbad675edd"
         },
         {
             "path": "server/app/platform/controller/TenantOwnerInvitationPublicController.php",
@@ -14464,7 +14482,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "d3ae8d08ccbe550aa545faec156db6a57e8d9fe6b34d13a69a65c861c5a2ffee"
+            "source_sha256": "c08bd4f8f2d499a0beedaf5b5d41fe28e92a1f0ea16ba0d4481ddd35536bb721"
         },
         {
             "path": "server/app/platform/http/PlatformRequest.php",
@@ -14476,7 +14494,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "eb1ada89536c9faf1f0dd240589f5c338b4fc58df33bc1f5cfceafa98a082115"
+            "source_sha256": "449c14e562be3968dfcac1eaa2af2e129ad02c616dd612e695b52c8d85967afb"
         },
         {
             "path": "server/app/platform/http/middleware/PlatformHostMiddleware.php",
@@ -14488,7 +14506,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "d36a6c75be47976863fd8049f8f23832ac5c6a5519360433c5e720abe26664eb"
+            "source_sha256": "b55a2b0b29c267c3a096e07a9442ae6ba1452bb47f3560a3f78157fbac88a19d"
         },
         {
             "path": "server/app/platform/http/middleware/PlatformInstanceToolMiddleware.php",
@@ -14512,7 +14530,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "4ec538f40206d55ca304c530bb05c37a4791496db601efd70586ddf919abe4a7"
+            "source_sha256": "4b8c3c3a44628540a4c78eb4469fa9853379dba6da2bed45a643d99a9f66cecc"
         },
         {
             "path": "server/app/platform/http/middleware/PlatformPermissionMiddleware.php",
@@ -14524,7 +14542,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "d6c0652b77c630088b208c0720107b65f3006e98829cb2e7d8cb219e117ed119"
+            "source_sha256": "b133538f0193b22c5381ace9ca1d615bb172f290be17c1dff7f96ea8871c920a"
         },
         {
             "path": "server/app/platform/identity/CorePlatformOperatorIdentityPort.php",
@@ -14644,7 +14662,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5f5db0f7104894e4191135691da4b7ce86fefed7f5414d361d556a4a9c0cfbb6"
+            "source_sha256": "9df8dab7d4ad67c2c33a0aacf39693c641a3557a44f346b355a0c2f9ed996be8"
         },
         {
             "path": "server/app/platform/invitation/TenantOwnerInvitationAdminService.php",
@@ -14740,7 +14758,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "f02acb6c346f97cab7ecb1e7407b74762d257ebc3be6b0814e94e9f612abcb67"
+            "source_sha256": "634ec6cb2f364508c27f1942ed3332c98274e9d5fe219f7f847f60269ca6b60d"
         },
         {
             "path": "server/app/platform/service/PdoTenantOwnerAdminProvisioner.php",
@@ -14776,7 +14794,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "f948408d4743bc12d7e6fe034c042ead65e8366336c7bf944f3b30afe207f22e"
+            "source_sha256": "acc923602e8665b1cefd9f07618008dedefe3d255d7de64b6067ace9a8e75f07"
         },
         {
             "path": "server/app/platform/service/PlatformTenantQueryService.php",
@@ -15136,7 +15154,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "aad847ea405a359099bfcc9356d5116358e914372c1bdd317aeb7abfb0078ba7"
+            "source_sha256": "83ebc57b8fa5b1db21fc1a0de5c8893a1bf598e14aa9654ea8963988210f81a0"
         },
         {
             "path": "server/app/platform/service/ops/PlatformOpsPermissionChecker.php",
@@ -15269,6 +15287,18 @@
                 "full"
             ],
             "source_sha256": "c8fa56afaa34230e6e3a745bf90afb086c4b72654795d044d9c5db95a48dbb43"
+        },
+        {
+            "path": "server/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php",
+            "target": "server/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "1a916ca3d77c19f91b0041321a1c7e0d2853131990b8bbbf98a7f40935a7b066"
         },
         {
             "path": "server/app/platform/service/plugin/ModuleLifecyclePolicy.php",
@@ -15412,7 +15442,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "2f7de5254a39dc416e5c3c43b3b86b6636f6cd8edb8872efc041a33ed098b21d"
+            "source_sha256": "6ba6594f0bf5eb7238091d7037b0958f2cf3e3df896117ad316acff646828db3"
         },
         {
             "path": "server/app/platform/service/plugin/PluginPackageArchiveService.php",
@@ -15968,7 +15998,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bdb6c9965b11b6635ef8ec14caf061bc2d657c5fd47613b145edc7013a89c691"
+            "source_sha256": "71a44d60ef24a3fe1d1479e185bf31b2b097c86dceddcae1662009d466c5fd22"
         },
         {
             "path": "server/config/module_packages.php",
@@ -16943,7 +16973,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f5f7f1f6b24b39b31527c18be218857557cbc21cdbf130f34c5c9a2da9b88958"
+            "source_sha256": "4d5c60c45a3dae499d4d9c39937000458973f50d4a007105c2d26532f7996266"
         },
         {
             "path": "server/route/registry_source.php",
@@ -17260,7 +17290,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "109f6a79240e5ab5780c710a6985baa69857d4754ace8c998572b21010a0ed92"
+            "source_sha256": "0d2c3b2169fd1e0457ea4b4231b3a68da067c23ca918a5d954050b6657df15f1"
         },
         {
             "path": "server/tests/Multitenancy/OperationLogTenantIsolationTest.php",
@@ -19382,7 +19412,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "24a19d70406553e07a0e29ea8d37278e621c10a638cd24c308eed7ff914f6162"
+            "source_sha256": "759a3553bfd72e472d6d8bd3d3251d0b8935bff482655e7203e174aaadec56d7"
         },
         {
             "path": "uniapp/tsconfig.json",

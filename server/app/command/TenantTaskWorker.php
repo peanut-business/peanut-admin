@@ -3,15 +3,27 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
+use app\common\execution\ExecutionContextAccess;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\runtime\OperationalLog;
 use app\common\execution\DatabaseContextualCommand;
+use PDO;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;
 
 final class TenantTaskWorker extends DatabaseContextualCommand
 {
+    public function __construct(
+        ExecutionContextStore $contexts,
+        ExecutionContextAccess $contextAccess,
+        PDO $pdo,
+        private readonly TaskImportExportRuntime $runtime,
+    ) {
+        parent::__construct($contexts, $contextAccess, $pdo);
+    }
+
     protected function configure()
     {
         $this->setName('tenant-task:work')
@@ -26,9 +38,8 @@ final class TenantTaskWorker extends DatabaseContextualCommand
             $output->writeln('[tenant-task:work] invalid tenant');
             return 1;
         }
-        $pdo = $this->database();
         try {
-            $processed = TaskImportExportRuntimeFactory::fromConfig($pdo)->runTenant(
+            $processed = $this->runtime->runTenant(
                 (int)$raw,
                 'tenant-worker-' . getmypid() . '-' . bin2hex(random_bytes(6)),
             );

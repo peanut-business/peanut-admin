@@ -16,6 +16,7 @@ use app\common\service\org\AdminDirectoryQuery;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PDO;
 use think\App;
+use think\Console;
 
 final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
 {
@@ -36,6 +37,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         CurrentExecutionContext $currentExecution,
         AdminDirectoryQuery $adminDirectory,
         ModuleExecutionBoundary $modules,
+        Console $console,
     ): TaskJobRuntime
     {
         return new PdoTaskJobRuntime(
@@ -45,6 +47,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             $currentExecution,
             $adminDirectory,
             $modules,
+            $console,
         );
     }
 
@@ -58,6 +61,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(CurrentExecutionContext::class),
                 $app->make(AdminDirectoryQuery::class),
                 $app->make(ModuleExecutionBoundary::class),
+                $app->make('console'),
             ),
             TaskScheduler::class => fn(App $app): TaskScheduler => $this->scheduler(
                 $app->make(TaskJobRuntime::class),

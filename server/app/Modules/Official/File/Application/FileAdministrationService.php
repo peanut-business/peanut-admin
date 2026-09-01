@@ -5,9 +5,10 @@ namespace app\Modules\Official\File\Application;
 
 use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
+use app\common\execution\ExecutionContextAccess;
 use app\common\http\PageResult;
 use app\common\service\FileService;
-use app\common\service\file\FileTenantRepository;
+use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\service\storage\StorageService;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
@@ -16,9 +17,11 @@ use PeanutAdmin\Kernel\Persistence\TransactionManager;
 /** Application use cases for File media and categories. */
 final class FileAdministrationService implements FileAdministration
 {
-    public function __construct(private readonly TransactionManager $transactions)
-    {
-    }
+    public function __construct(
+        private readonly TransactionManager $transactions,
+        private readonly StorageService $storage,
+        private readonly ExecutionContextAccess $contexts,
+    ) {}
 
     /** 分页列表：按 type / 分类子树 / source / name 组合过滤，追加 url。 */
     public function lists(array $params): PageResult
@@ -128,13 +131,13 @@ final class FileAdministrationService implements FileAdministration
             throw new \RuntimeException('素材记录删除失败');
         }
 
-        $tenantId = FileTenantRepository::tenantId();
+        $tenantId = $this->contexts->tenantId();
         $storageDeleted = 0;
         foreach ($rows as $row) {
             $fileId = (int) $row['id'];
             $fileKey = (string) $row['file_key'];
             try {
-                StorageService::fromDefaultConnection()->delete($tenantId, $fileKey);
+                $this->storage->delete($tenantId, $fileKey);
                 $storageDeleted++;
             } catch (\Throwable $e) {
                 throw new \RuntimeException('素材 ' . $fileId . ' 删除失败：' . $e->getMessage(), 0, $e);

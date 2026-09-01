@@ -3,27 +3,39 @@ declare(strict_types=1);
 
 namespace app\common\service\runtime;
 
+use PDO;
+
 /** Stable, non-secret namespace shared by every replica of one application instance. */
 final readonly class RuntimeNamespace
 {
+    private const PROJECT_ID = 'peanut-admin';
+    private const ENVIRONMENT_PATTERN = '/^[a-z][a-z0-9._-]{1,31}$/D';
     private const RESOURCE_PATTERN = '/^[a-z0-9][a-z0-9._-]{2,127}$/D';
 
-    private function __construct(private string $resourceId)
+    private function __construct(
+        private string $environment,
+        private string $resourceId,
+    )
     {
     }
 
     public static function fromEnvironment(): self
     {
-        return self::fromResourceId((string)env('PEANUT_DATABASE_RESOURCE_ID', ''));
+        return self::fromResourceId(
+            (string)(getenv('PEANUT_DATABASE_RESOURCE_ID') ?: ''),
+            (string)(getenv('APP_ENV') ?: ''),
+        );
     }
 
-    public static function fromResourceId(string $resourceId): self
+    public static function fromResourceId(string $resourceId, ?string $environment = null): self
     {
+        $environment = strtolower(trim($environment ?? (string)(getenv('APP_ENV') ?: '')));
         $resourceId = strtolower(trim($resourceId));
-        if (preg_match(self::RESOURCE_PATTERN, $resourceId) !== 1) {
+        if (preg_match(self::ENVIRONMENT_PATTERN, $environment) !== 1
+            || preg_match(self::RESOURCE_PATTERN, $resourceId) !== 1) {
             throw new \RuntimeException('RUNTIME_NAMESPACE_RESOURCE_ID_INVALID');
         }
-        return new self($resourceId);
+        return new self($environment, $resourceId);
     }
 
     public function fingerprint(): string
@@ -49,5 +61,23 @@ final readonly class RuntimeNamespace
     public function sessionPrefix(): string
     {
         return $this->cachePrefix() . 'session:';
+    }
+
+    public function advisoryLockName(PDO $pdo, string $logicalName): string
+    {
+        $statement = $pdo->query('SELECT DATABASE()');
+        $database = $statement === false ? false : $statement->fetchColumn();
+        if (!is_string($database) || trim($database) === '' || trim($logicalName) === '') {
+            throw new \RuntimeException('RUNTIME_NAMESPACE_DATABASE_INVALID');
+        }
+
+        $databaseFingerprint = substr(hash('sha256', $this->identity() . "\0" . $database), 0, 24);
+        $logicalFingerprint = substr(hash('sha256', $logicalName), 0, 32);
+        return "pa:l:{$databaseFingerprint}:{$logicalFingerprint}";
+    }
+
+    private function identity(): string
+    {
+        return self::PROJECT_ID . "\0" . $this->environment . "\0" . $this->resourceId;
     }
 }

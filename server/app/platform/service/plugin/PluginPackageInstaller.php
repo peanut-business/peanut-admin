@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
+use app\common\persistence\AdvisoryLockExecution;
+use app\common\persistence\AdvisoryLockUnavailable;
 use PDO;
 
 /** Promotes one verified package overlay, rebuilds the canonical lock, then invokes the shared lifecycle. */
@@ -69,12 +71,21 @@ final class PluginPackageInstaller
         $lockPath = $this->projectRoot() . '/plugins.lock';
         $lockBefore = is_file($lockPath) ? file_get_contents($lockPath) : null;
         $lifecycleStarted = false;
+        $plan = null;
         $lockName = 'pa:module-runtime:' . substr(hash('sha256', $package->packageKey), 0, 40);
-        if (!$this->advisoryLock($lockName)) {
-            $archive->cleanup($package);
-            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
-        }
         try {
+            return (new AdvisoryLockExecution($this->pdo))->run($lockName, 0, function () use (
+                $operation,
+                $package,
+                &$promoted,
+                &$replaced,
+                &$recoveryRoot,
+                $lockPath,
+                $lockBefore,
+                &$lifecycleStarted,
+                &$plan,
+            ): array {
+            try {
             $current = $this->currentDescriptors();
             $plan = $operation === 'update' ? $this->updatePlan($package, $current) : null;
             foreach ($current as $pluginKey => $descriptor) {
@@ -192,8 +203,11 @@ final class PluginPackageInstaller
             }
             if (is_string($recoveryRoot) && is_dir($recoveryRoot)) $this->removeTree($recoveryRoot);
             throw $exception;
+            }
+            });
+        } catch (AdvisoryLockUnavailable) {
+            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
         } finally {
-            $this->releaseAdvisoryLock($lockName);
             $archive->cleanup($package);
         }
     }
@@ -434,22 +448,6 @@ final class PluginPackageInstaller
             if (file_exists($resolved)) {
                 throw new PluginPackageException('MODULE_QUARANTINE_FAILED', 'Module quarantine cannot be cleared after install.');
             }
-        }
-    }
-
-    private function advisoryLock(string $name): bool
-    {
-        $statement = $this->pdo->prepare('SELECT GET_LOCK(?,0)');
-        $statement->execute([$name]);
-        return (int)$statement->fetchColumn() === 1;
-    }
-
-    private function releaseAdvisoryLock(string $name): void
-    {
-        try {
-            $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(?)');
-            $statement->execute([$name]);
-        } catch (\Throwable) {
         }
     }
 

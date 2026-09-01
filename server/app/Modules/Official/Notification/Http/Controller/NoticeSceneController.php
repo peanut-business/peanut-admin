@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Notification\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
+use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
@@ -13,10 +14,11 @@ class NoticeSceneController extends BaseAdminController
 {
     public function __construct(
         App $app,
+        CurrentExecutionContext $executionContext,
         private readonly NotificationQueries $queries,
         private readonly NotificationCommands $commands,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()

@@ -6,7 +6,7 @@ namespace app\Modules\Official\Article\Model;
 use app\common\model\TenantOwnedModel;
 use app\common\service\ProductAssetReferenceService;
 use app\common\service\RichTextResourceService;
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use think\model\concern\SoftDelete;
 
 class Article extends TenantOwnedModel

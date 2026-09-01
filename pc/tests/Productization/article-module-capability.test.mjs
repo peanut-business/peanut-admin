@@ -7,7 +7,7 @@ const pcRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const repoRoot = resolve(pcRoot, '..')
 const read = (path) => readFileSync(resolve(repoRoot, path), 'utf8')
 
-const routeSource = read('server/route/app.php')
+const routeSource = read('server/route/public_api.php')
 const pcIndex = read('pc/pages/index.vue')
 const pcInformation = read('pc/pages/information/index.vue')
 const pcCategory = read('pc/pages/information/[source].vue')
@@ -15,16 +15,16 @@ const pcCollection = read('pc/pages/user/collection.vue')
 const pcArticleApi = read('pc/api/article.ts')
 
 for (const route of [
-  "Route::get('api/pc/index'",
-  "Route::get('api/pc/infoCenter'",
-  "Route::get('api/pc/articleDetail'",
-  "Route::get('api/article/lists'",
-  "Route::get('api/article/detail'",
+  "Route::get('pc/index'",
+  "Route::get('pc/infoCenter'",
+  "Route::get('pc/articleDetail'",
+  "Route::get('article/lists'",
+  "Route::get('article/detail'",
 ]) {
   assert.equal(routeSource.includes(route), true, `missing PC Article route: ${route}`)
 }
 assert.equal(
-  routeSource.match(/->middleware\(PublicArticleTenantMiddleware::class/g)?.length >= 7,
+  routeSource.match(/->middleware\(PublicTenantModuleMiddleware::class, 'peanut\.article\.public-read', 'official\.article'/g)?.length >= 7,
   true,
   'PC and public Article routes are not uniformly Module guarded',
 )

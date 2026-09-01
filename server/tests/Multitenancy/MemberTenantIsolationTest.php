@@ -5,10 +5,10 @@ use app\common\enum\AccountLogEnum;
 use app\Modules\Official\Member\Model\MemberBalanceLog;
 use app\Modules\Official\Member\Application\MemberProfileContractService;
 use app\Modules\Official\Member\Application\MemberTagContractService;
-use app\common\service\MemberBalanceService;
+use app\Modules\Official\Member\Application\MemberBalanceService;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantContext;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -154,7 +154,7 @@ SQL);
     });
     $alpha = memberTenantContext(101, 501, 'mt03-member-alpha-' . $runId);
     $beta = memberTenantContext(202, 502, 'mt03-member-beta-' . $runId);
-    try { MemberTenantContext::member(); throw new RuntimeException('missing TenantContext was accepted'); } catch (Throwable $e) { expectMemberTenant($e->getMessage() !== '', 'missing context denial lost shape'); }
+    try { app(CurrentExecutionContext::class)->tenantAdmin(); throw new RuntimeException('missing TenantContext was accepted'); } catch (Throwable $e) { expectMemberTenant($e->getMessage() !== '', 'missing context denial lost shape'); }
 
     $betaMember = memberTenantRun($beta, static fn() => MemberTenantRepository::createMember($beta, [
         'tenant_id' => 101, 'sn' => 'M-SHARED-11', 'account' => 'same-account', 'nickname' => 'Beta member',
@@ -249,7 +249,7 @@ SQL);
         'duplicate same-Tenant source_sn row was inserted'
     );
 
-    foreach (['Modules/Official/Member/Application/MemberAdministrationService.php', 'Modules/Official/Member/Application/MemberTagContractService.php', 'common/service/MemberBalanceService.php', 'Modules/Official/Member/Model/MemberBalanceLog.php', 'common/service/member/MemberTenantContext.php', 'common/service/member/MemberTenantRepository.php'] as $relative) {
+    foreach (['Modules/Official/Member/Application/MemberAdministrationService.php', 'Modules/Official/Member/Application/MemberTagContractService.php', 'Modules/Official/Member/Application/MemberBalanceService.php', 'Modules/Official/Member/Model/MemberBalanceLog.php', 'Modules/Official/Member/Infrastructure/Persistence/MemberTenantRepository.php'] as $relative) {
         exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($serverRoot . '/app/' . $relative), $output, $exit);
         expectMemberTenant($exit === 0, 'PHP 8.3 lint failed: ' . $relative . ' ' . implode(' ', $output));
         $output = [];
