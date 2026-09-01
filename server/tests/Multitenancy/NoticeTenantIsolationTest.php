@@ -197,7 +197,7 @@ SQL);
             runNoticeTenant(
                 $alpha,
                 'test.notice.scene.validate',
-                fn() => (new NoticeSceneValidate())->scene('detail')->failException(true)->check(['id' => $sceneId]),
+                fn() => app(NoticeSceneValidate::class)->scene('detail')->failException(true)->check(['id' => $sceneId]),
             );
             throw new RuntimeException('invalid scene validation unexpectedly succeeded');
         } catch (Throwable $exception) {
