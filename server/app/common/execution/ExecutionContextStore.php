@@ -23,7 +23,11 @@ final class ExecutionContextStore
 
     public function run(ExecutionContext $context, callable $operation): mixed
     {
-        $currentTenantId = $this->current()?->tenantId();
+        $current = $this->current();
+        if ($current !== null && $current::class !== $context::class) {
+            throw new \DomainException('EXECUTION_AUDIENCE_CONTEXT_MISMATCH');
+        }
+        $currentTenantId = $current?->tenantId();
         $nextTenantId = $context->tenantId();
         if ($currentTenantId !== null
             && $nextTenantId !== null

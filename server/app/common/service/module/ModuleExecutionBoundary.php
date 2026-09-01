@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace app\common\service\module;
 
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
+use app\common\execution\SystemExecutionContext;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -60,25 +62,23 @@ final readonly class ModuleExecutionBoundary
     private function moduleContext(string $moduleKey, ?string $operation = null): ModuleExecutionContext
     {
         $execution = $this->execution->get();
-        $operation = trim((string)$operation) !== '' ? trim((string)$operation) : $execution->operation;
+        $operation = trim((string)$operation) !== '' ? trim((string)$operation) : $execution->operation();
 
         return match (true) {
-            $execution->actorType === ExecutionContext::TENANT_ADMIN
-                && $execution->scope instanceof TenantContext => ModuleExecutionContext::admin(
+            $execution instanceof AdminExecutionContext => ModuleExecutionContext::admin(
                     $moduleKey,
-                    $execution->scope,
+                    $execution->tenant,
                     $operation,
                 ),
-            $execution->actorType === ExecutionContext::MEMBER
-                && $execution->scope instanceof AuthenticatedMemberContext => ModuleExecutionContext::businessMember(
+            $execution instanceof ConsumerExecutionContext
+                && $execution->member !== null => ModuleExecutionContext::businessMember(
                     $moduleKey,
-                    $execution->scope,
+                    $execution->member,
                     $operation,
                 ),
-            $execution->actorType === ExecutionContext::SYSTEM
-                && $execution->scope instanceof TenantSystemContext => ModuleExecutionContext::system(
+            $execution instanceof SystemExecutionContext => ModuleExecutionContext::system(
                     $moduleKey,
-                    $execution->scope,
+                    $execution->system,
                 ),
             default => throw new \DomainException('MODULE_EXECUTION_CONTEXT_REQUIRED'),
         };

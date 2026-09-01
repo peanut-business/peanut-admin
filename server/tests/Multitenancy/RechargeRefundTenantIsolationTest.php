@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\enum\RefundEnum;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
@@ -71,7 +70,7 @@ function financeDatabase(PDO $admin, string $name): string
 function financeRun(TenantContext $context, string $operation, callable $callback): mixed
 {
     return app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($context, $operation),
+        new \app\common\execution\AdminExecutionContext($context, $operation),
         $callback,
     );
 }

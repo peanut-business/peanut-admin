@@ -12,7 +12,7 @@ final class CrontabTenantContext
 {
     public static function member(): TenantContext
     {
-        $context = ExecutionContextAccess::current()?->scope;
+        $context = ExecutionContextAccess::tenantAdmin();
         if (!$context instanceof TenantContext
             || $context->tenantId < 1
             || $context->accountId < 1

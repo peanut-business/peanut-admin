@@ -4,7 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\file;
 
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\execution\ExecutionContext;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
 use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -14,13 +15,12 @@ final class FileTenantContext
     public static function member(): AuthenticatedMemberContext|TenantContext
     {
         $current = ExecutionContextAccess::current();
-        $context = $current?->scope;
-        if ($current?->actorType === ExecutionContext::MEMBER && $context instanceof AuthenticatedMemberContext) {
-            return $context;
+        if ($current instanceof ConsumerExecutionContext
+            && $current->member instanceof AuthenticatedMemberContext) {
+            return $current->member;
         }
-        if ($current?->actorType === ExecutionContext::TENANT_ADMIN
-            && $context instanceof TenantContext && self::trustedMember($context)) {
-            return $context;
+        if ($current instanceof AdminExecutionContext && self::trustedMember($current->tenant)) {
+            return $current->tenant;
         }
         throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }

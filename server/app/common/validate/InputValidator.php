@@ -30,11 +30,7 @@ final readonly class InputValidator
     ): ValidatedInput {
         [$validator, $scene] = $this->createValidator($specification);
         if ($validator instanceof TenantContextValidate) {
-            $scope = $this->execution->current()?->scope;
-            if (!$scope instanceof TenantContext) {
-                throw new \DomainException('VALIDATION_TENANT_CONTEXT_REQUIRED');
-            }
-            $validator->forTenant($scope);
+            $validator->forTenant($this->execution->tenantAdmin());
         }
         if ($scene !== null) {
             if (!$validator->hasScene($scene)) {

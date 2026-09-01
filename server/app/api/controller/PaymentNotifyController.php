@@ -10,7 +10,6 @@ use app\Modules\Official\Payment\Model\PaymentScene;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\CallbackRequest;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\module\ModuleExecutionBoundary;
@@ -39,7 +38,7 @@ class PaymentNotifyController extends BaseApiController
             );
             $event = $resolution->verifiedValue;
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($event, $resolution): void {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.payment');
                     if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(
@@ -70,7 +69,7 @@ class PaymentNotifyController extends BaseApiController
             );
             $event = $resolution->verifiedValue;
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($event, $resolution): void {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.payment');
                     if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(

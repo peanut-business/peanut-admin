@@ -9,7 +9,7 @@ use app\common\dto\authorization\PermissionDecision;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\DemoAccountPolicy;
-use app\common\execution\ExecutionContext;
+use app\common\execution\AdminExecutionContext;
 use app\common\execution\ExecutionContextAccess;
 
 /**
@@ -24,7 +24,7 @@ class AuthMiddleware
     public function handle($request, \Closure $next)
     {
         $current = ExecutionContextAccess::current();
-        $adminInfo = $current?->actorType === ExecutionContext::TENANT_ADMIN
+        $adminInfo = $current instanceof AdminExecutionContext
             ? ExecutionContextAccess::principal()
             : null;
         if (empty($adminInfo)) {
@@ -39,7 +39,7 @@ class AuthMiddleware
         // 权限字符使用 adminapi/ 之后的精确路径，不做 URI alias 展开。
         $accessUri = substr($path, strlen('adminapi/'));
 
-        $tenantContext = $current?->scope;
+        $tenantContext = $current instanceof AdminExecutionContext ? $current->tenant : null;
         $decision = $tenantContext instanceof \PeanutAdmin\Kernel\Auth\TenantContext
             ? (new AdminAuthorizationService())->decide(
                 $tenantContext,

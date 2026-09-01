@@ -26,7 +26,7 @@ final class RequestTrace
             $current = null;
         }
         if ($current !== null) {
-            return self::remember($request, $current->requestId);
+            return self::remember($request, $current->requestId());
         }
 
         $known = self::map()[$request] ?? null;

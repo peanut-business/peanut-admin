@@ -160,7 +160,7 @@ qualificationExpect(
     str_contains($sources['member_context'], 'new AuthenticatedMemberContext(')
         && !str_contains($sources['member_context'], 'ValidatedTenantSession')
         && !str_contains($sources['member_context'], 'TenantContext::fromValidatedSession')
-        && str_contains($sources['member_middleware'], 'ExecutionContext::member(')
+        && str_contains($sources['member_middleware'], '\app\common\execution\ConsumerExecutionContext::member(')
         && str_contains($sources['member_middleware'], 'ExecutionContextStore')
         && !str_contains($sources['member_middleware'], '$request->authenticatedMemberContext =')
         && !str_contains($sources['member_middleware'], '$request->tenantContext = $this->tenantContexts()'),

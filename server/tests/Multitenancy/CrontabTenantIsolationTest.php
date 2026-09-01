@@ -5,9 +5,9 @@ use app\Modules\Official\Task\Application\CrontabApplicationService;
 use app\Modules\Official\Task\Application\CrontabTaskDefinition;
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\common\enum\CrontabEnum;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
+use app\common\execution\SystemExecutionContext;
 use app\common\service\crontab\CrontabTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -144,31 +144,31 @@ SQL);
     foreach ([[$alpha, 'alpha'], [$beta, 'beta']] as [$context, $suffix]) {
         expectCrontabTenant(
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($context, 'test.crontab.add.' . $suffix),
+                new \app\common\execution\AdminExecutionContext($context, 'test.crontab.add.' . $suffix),
                 fn() => app(CrontabApplicationService::class)->add($task),
             ),
             app(CrontabApplicationService::class)->getError(),
         );
     }
     $alphaId = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.crontab.query.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.crontab.query.alpha'),
         fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
     );
     $betaId = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.crontab.query.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.crontab.query.beta'),
         fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
     );
     expectCrontabTenant($alphaId > 0 && $betaId > 0 && $alphaId !== $betaId, 'Tenant schedules were not independently created');
     expectCrontabTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.detail.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.crontab.detail.cross-tenant'),
             fn() => app(CrontabApplicationService::class)->detail($betaId),
         ) === [],
         'cross-Tenant schedule detail leaked',
     );
     expectCrontabTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.crontab.delete.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.crontab.delete.cross-tenant'),
             fn() => app(CrontabApplicationService::class)->delete($betaId),
         ),
         'cross-Tenant schedule delete succeeded',
@@ -186,12 +186,13 @@ SQL);
         $scope = ScheduledTenantContext::require();
         $dispatches[] = [$command, $scope->tenantId(), $scope->contextIdentity(), $params];
         $current = ExecutionContextAccess::current();
+        $metadata = $current instanceof SystemExecutionContext ? $current->metadata : null;
         $taskTraces[] = [
-            'job_key' => $current?->attributes['job_key'] ?? null,
-            'attempt_number' => $current?->attributes['attempt_number'] ?? null,
-            'handler_key' => $current?->attributes['handler_key'] ?? null,
+            'job_key' => $metadata?->jobKey,
+            'attempt_number' => $metadata?->attemptNumber,
+            'handler_key' => $metadata?->handlerKey,
             'tenant_id' => $current?->tenantId(),
-            'request_id' => $current?->requestId,
+            'request_id' => $current?->requestId(),
         ];
         if ($scope->tenantId() === 202) {
             throw new RuntimeException('fixture retry');

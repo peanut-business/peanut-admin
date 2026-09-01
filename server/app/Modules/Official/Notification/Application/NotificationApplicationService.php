@@ -6,6 +6,7 @@ namespace app\Modules\Official\Notification\Application;
 use PDO;
 use app\common\application\BusinessException;
 use app\common\execution\CurrentExecutionContext;
+use app\common\execution\SystemExecutionContext;
 use app\common\http\PageResult;
 use app\Modules\Official\Notification\Contracts\DeliveryResult;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
@@ -30,9 +31,9 @@ final class NotificationApplicationService implements NotificationCommands, Noti
     ) {
     }
 
-    public function provisionTenantDefaults(): void
+    public function provisionTenantDefaults(SystemExecutionContext $context): void
     {
-        $tenantId = $this->executionContext->tenantId();
+        $tenantId = $context->tenantId();
         $statement = $this->pdo->prepare(<<<'SQL'
 INSERT INTO pa_notice_scene
   (code,name,description,recipient,variables,sms_template_id,sms_content,sms_status,create_time,update_time,tenant_id)

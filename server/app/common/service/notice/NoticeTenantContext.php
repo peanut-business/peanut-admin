@@ -5,6 +5,9 @@ namespace app\common\service\notice;
 
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\execution\ExecutionContextAccess;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
+use app\common\execution\SystemExecutionContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -15,7 +18,7 @@ final class NoticeTenantContext
 
     public static function member(): TenantContext
     {
-        $context = ExecutionContextAccess::current()?->scope;
+        $context = ExecutionContextAccess::tenantAdmin();
         self::tenantId($context);
         return $context;
     }
@@ -37,7 +40,13 @@ final class NoticeTenantContext
 
     public static function verification(object $request, string $operation): TenantContext|TenantSystemContext
     {
-        $context = ExecutionContextAccess::current()?->scope;
+        $current = ExecutionContextAccess::current();
+        $context = match (true) {
+            $current instanceof AdminExecutionContext => $current->tenant,
+            $current instanceof ConsumerExecutionContext => $current->publicTenant,
+            $current instanceof SystemExecutionContext => $current->system,
+            default => null,
+        };
         if ($context instanceof TenantContext) {
             self::tenantId($context);
             return $context;

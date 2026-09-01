@@ -5,7 +5,6 @@ namespace app\api\middleware;
 
 use app\api\service\UserTokenService;
 use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\JsonService;
@@ -48,7 +47,7 @@ class CheckTokenMiddleware
         }
 
         return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::member($memberContext, sprintf(
+            \app\common\execution\ConsumerExecutionContext::member($memberContext, sprintf(
                 'http.member.%s.%s',
                 strtolower((string)$request->method()),
                 trim((string)$request->pathinfo(), '/'),

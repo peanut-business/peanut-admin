@@ -39,7 +39,7 @@ function memberTenantContext(int $tenantId, int $memberId, string $requestId): T
 function memberTenantRun(TenantContext $context, callable $callback): mixed
 {
     return app(\app\common\execution\ExecutionContextStore::class)->run(
-        \app\common\execution\ExecutionContext::tenantAdmin($context, 'test.member.tenant'),
+        new \app\common\execution\AdminExecutionContext($context, 'test.member.tenant'),
         $callback,
     );
 }

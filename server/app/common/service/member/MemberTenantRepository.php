@@ -11,6 +11,9 @@ use app\common\service\finance\FinanceTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\execution\ExecutionContextAccess;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
+use app\common\execution\SystemExecutionContext;
 
 final class MemberTenantRepository
 {
@@ -80,6 +83,15 @@ final class MemberTenantRepository
     private static function tenantId(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext|null $context,
     ): int {
-        return MemberTenantContext::tenantId($context ?? ExecutionContextAccess::scope());
+        if ($context === null) {
+            $execution = ExecutionContextAccess::current();
+            $context = match (true) {
+                $execution instanceof AdminExecutionContext => $execution->tenant,
+                $execution instanceof ConsumerExecutionContext => $execution->member ?? $execution->publicTenant,
+                $execution instanceof SystemExecutionContext => $execution->system,
+                default => null,
+            };
+        }
+        return MemberTenantContext::tenantId($context);
     }
 }

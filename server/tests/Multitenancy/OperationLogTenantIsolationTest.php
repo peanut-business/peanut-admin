@@ -4,7 +4,6 @@ declare(strict_types=1);
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\adminapi\application\log\OperationLogApplicationService;
 use app\adminapi\service\OperationLogService;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\audit\OperationLogDiagnostics;
 use app\common\service\audit\OperationLogTenantContext;
@@ -160,7 +159,7 @@ try {
     }
 
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.record.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.record.alpha'),
         fn() => OperationLogService::record(
             $alpha,
             1,
@@ -178,7 +177,7 @@ try {
         ),
     );
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.operation-log.record.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.operation-log.record.beta'),
         fn() => OperationLogService::record(
             $beta,
             2,
@@ -223,7 +222,7 @@ try {
     $pdo->exec("CREATE TRIGGER reject_tenant_audit_projection BEFORE INSERT ON pa_tenant_audit_event FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'injected projection failure'");
     try {
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($projectionFailure, 'test.operation-log.rollback'),
+            new \app\common\execution\AdminExecutionContext($projectionFailure, 'test.operation-log.rollback'),
             fn() => OperationLogService::record(
                 $projectionFailure,
                 3,
@@ -283,11 +282,11 @@ try {
     );
 
     $alphaList = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.list.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.list.alpha'),
         fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 202, 'uri' => 'same/write']),
     );
     $betaList = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.operation-log.list.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.operation-log.list.beta'),
         fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 101, 'uri' => 'same/write']),
     );
     expectOperationTenant(
@@ -305,7 +304,7 @@ try {
     foreach ([$betaId, 999999] as $target) {
         try {
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($alpha, 'test.operation-log.detail.denied'),
+                new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.detail.denied'),
                 fn() => app(OperationLogApplicationService::class)->detail($target),
             );
             throw new RuntimeException('cross/missing audit detail unexpectedly succeeded');
@@ -315,7 +314,7 @@ try {
     }
 
     $export = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.export.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.export.alpha'),
         fn() => app(OperationLogApplicationService::class)->lists([
             'tenant_id' => 202,
             'uri' => 'same/write',
@@ -341,7 +340,7 @@ try {
     expectOperationTenant(!str_contains($sheet, 'beta-only-' . $runId), 'Alpha export leaked Beta audit content');
 
     $cleared = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.clear.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.clear.alpha'),
         fn() => app(OperationLogApplicationService::class)->clear(1, 'alpha', '127.0.0.1'),
     );
     expectOperationTenant($cleared === 2, 'Alpha clear did not count only Alpha rows');

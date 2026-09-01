@@ -9,7 +9,6 @@ use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\member\MemberTenantContext;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\module\ModuleExecutionBoundary;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use think\App;
@@ -51,7 +50,7 @@ class OAuthController extends BaseApiController
                     $this->operationId(),
                 );
             $result = app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $scene, $params, $callbackUrl) {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
                     return $this->commands->begin(
@@ -96,7 +95,7 @@ class OAuthController extends BaseApiController
                 $this->operationId(),
             );
             $result = app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $params) {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
                     return $this->commands->callback(
@@ -134,7 +133,7 @@ class OAuthController extends BaseApiController
                     $this->operationId(),
                 );
             $result = app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $params) {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
                     return $this->commands->miniProgramLogin(
@@ -161,7 +160,7 @@ class OAuthController extends BaseApiController
                 $this->operationId(),
             );
             $result = app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution, $params) {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
                     return $this->commands->complete($resolution->context, $params);
