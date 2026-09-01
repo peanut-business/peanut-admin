@@ -1,3 +1,4 @@
+-- peanut-release: 3.0.12
 ALTER TABLE `pa_generator_table`
   ADD COLUMN `data_owner` VARCHAR(20) NULL COMMENT 'Explicit generated data owner' AFTER `template_type`,
   ADD COLUMN `target_edition` VARCHAR(20) NULL COMMENT 'Explicit generated deployment edition' AFTER `data_owner`,
