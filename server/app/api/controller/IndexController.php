@@ -7,8 +7,6 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\IndexApplicationService;
-use app\common\service\article\ArticleTenantContext;
-use app\common\service\decoration\DecorationTenantContext;
 
 class IndexController extends BaseApiController
 {
@@ -22,7 +20,7 @@ class IndexController extends BaseApiController
     /** 首页数据 */
     public function index()
     {
-        $result = $this->index->getIndexData(ArticleTenantContext::read('article.index'));
+        $result = $this->index->getIndexData($this->publicTenantContext('article.index'));
         return $this->data($result);
     }
 
@@ -30,7 +28,7 @@ class IndexController extends BaseApiController
     public function config()
     {
         $result = $this->index->getConfigData(
-            DecorationTenantContext::read(DecorationTenantContext::CONFIG_OPERATION)
+            $this->publicTenantContext('decoration.config')
         );
         return $this->data($result);
     }
@@ -40,7 +38,7 @@ class IndexController extends BaseApiController
     {
         $type   = $this->request->get('type/s', 'service');
         $result = $this->index->getPolicyByType(
-            DecorationTenantContext::read(DecorationTenantContext::CONFIG_OPERATION),
+            $this->publicTenantContext('decoration.config'),
             $type,
         );
         return $this->data($result);

@@ -8,8 +8,10 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
+use app\Modules\Official\Notification\Application\VerificationCodeService;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\CurrentExecutionContext;
+use app\common\service\notice\NoticeSmsSender;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
@@ -26,6 +28,8 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
@@ -63,6 +67,30 @@ final readonly class LifecycleIdentity implements PlatformOperatorIdentityPort
         }
         return $this->identity;
     }
+}
+
+final class LifecycleNoticeSmsSender implements NoticeSmsSender
+{
+    public function send(
+        TenantContext|TenantSystemContext $context,
+        string $mobile,
+        string $templateId,
+        array $variables,
+        ?callable $beforeSend = null,
+    ): array {
+        throw new LogicException('lifecycle test does not send SMS');
+    }
+}
+
+function lifecycleNotificationService(PDO $pdo, ExecutionContextStore $contexts): NotificationApplicationService
+{
+    $current = new CurrentExecutionContext($contexts);
+    $access = new \app\common\execution\ExecutionContextAccess($current);
+    return new NotificationApplicationService(
+        $current,
+        new VerificationCodeService(new LifecycleNoticeSmsSender(), new PdoTransactionManager($pdo), $access),
+        $access,
+    );
 }
 
 $host = IsolatedBackendEnvironment::required('DB_HOST');
@@ -138,7 +166,7 @@ SQL);
             $pdo,
             new ApplicationTenantBootstrapService(
                 $pdo,
-                new NotificationApplicationService($pdo, new CurrentExecutionContext($applicationContexts)),
+                lifecycleNotificationService($pdo, $applicationContexts),
                 $applicationContexts,
             ),
         )
@@ -224,7 +252,7 @@ SQL);
                 $pdo,
                 new ApplicationTenantBootstrapService(
                     $pdo,
-                    new NotificationApplicationService($pdo, new CurrentExecutionContext($contexts)),
+                    lifecycleNotificationService($pdo, $contexts),
                     $contexts,
                 ),
             );

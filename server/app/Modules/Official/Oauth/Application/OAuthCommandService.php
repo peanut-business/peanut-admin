@@ -14,8 +14,6 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 /** The HTTP layer reaches OAuth writes only through this Module contract. */
 final class OAuthCommandService implements OAuthCommands
 {
-    private string $error = '';
-
     public function __construct(private readonly OAuthApplicationService $oauth)
     {
     }
@@ -30,39 +28,28 @@ final class OAuthCommandService implements OAuthCommands
         return OAuthCallbackLocator::byTicket($ticketHash);
     }
 
-    public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array|false
+    public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array
     {
-        return $this->capture($this->oauth->begin($context, $scene, $returnPath, $redirectUri, $binding, $transport));
+        return $this->oauth->begin($context, $scene, $returnPath, $redirectUri, $binding, $transport);
     }
 
-    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array|false
+    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array
     {
-        return $this->capture($this->oauth->callback($context, $scene, $code, $state, $binding, $transport));
+        return $this->oauth->callback($context, $scene, $code, $state, $binding, $transport);
     }
 
-    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array|false
+    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array
     {
-        return $this->capture($this->oauth->miniProgramLogin($context, $code, $binding, $transport));
+        return $this->oauth->miniProgramLogin($context, $code, $binding, $transport);
     }
 
-    public function complete(TenantContext|TenantSystemContext $context, array $params): array|false
+    public function complete(TenantContext|TenantSystemContext $context, array $params): array
     {
-        return $this->capture($this->oauth->complete($context, $params));
+        return $this->oauth->complete($context, $params);
     }
 
     public function bind(AuthenticatedMemberContext $context, int $memberId, string $scene, string $code, ?OAuthTransportInterface $transport = null): bool
     {
-        return $this->capture($this->oauth->bind($context, $memberId, $scene, $code, $transport));
-    }
-
-    public function error(): string
-    {
-        return $this->error;
-    }
-
-    private function capture(array|bool $result): array|bool
-    {
-        $this->error = $result === false ? $this->oauth->getError() : '';
-        return $result;
+        return $this->oauth->bind($context, $memberId, $scene, $code, $transport);
     }
 }

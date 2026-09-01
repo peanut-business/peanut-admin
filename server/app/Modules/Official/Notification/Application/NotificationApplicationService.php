@@ -11,19 +11,26 @@ use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
+use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\Modules\Official\Notification\Model\NoticeLog;
 use app\Modules\Official\Notification\Model\NoticeScene;
 use app\common\service\notice\NoticeChannelService;
-use app\common\service\notice\NoticeTenantContext;
-use app\common\service\notice\NoticeTenantRepository;
-use app\common\service\notice\VerificationCodeService;
 use app\common\service\member\AuthenticatedMemberContext;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\support\PaginationInput;
 
 final class NotificationApplicationService implements NotificationCommands, NotificationQueries, VerificationCodeCommands
 {
+    public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly VerificationCodeService $verificationCodes,
+        private readonly ExecutionContextAccess $contexts,
+    ) {
+    }
+
     public function provisionTenantDefaults(SystemExecutionContext $context): void
     {
         $system = $context->system;
@@ -43,12 +50,12 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function saveChannel(string $section, array $input): void
     {
-        NoticeChannelService::save(NoticeTenantContext::member(), $section, $input);
+        NoticeChannelService::save($this->contexts, $this->executionContext->tenantAdmin(), $section, $input);
     }
 
     public function saveScene(array $params): void
     {
-        $scene = NoticeTenantRepository::scenes(NoticeTenantContext::member())
+        $scene = NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())
             ->where('id', (int) $params['id'])
             ->findOrEmpty();
         if ($scene->isEmpty()) {
@@ -63,12 +70,12 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function channelDetail(): array
     {
-        return NoticeChannelService::detail(NoticeTenantContext::member());
+        return NoticeChannelService::detail($this->executionContext->tenantAdmin());
     }
 
     public function scenes(): array
     {
-        $list = NoticeTenantRepository::scenes(NoticeTenantContext::member())->field([
+        $list = NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())->field([
             'id', 'code', 'name', 'description', 'recipient', 'variables',
             'sms_template_id', 'sms_content', 'sms_status', 'update_time',
         ])->order('id', 'asc')->select()->toArray();
@@ -78,12 +85,12 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function sceneDetail(int $id): array
     {
-        return NoticeTenantRepository::scenes(NoticeTenantContext::member())->where('id', $id)->findOrEmpty()->toArray();
+        return NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->toArray();
     }
 
     public function sceneExists(int $id): bool
     {
-        return !NoticeTenantRepository::scenes(NoticeTenantContext::member())->where('id', $id)->findOrEmpty()->isEmpty();
+        return !NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->isEmpty();
     }
 
     public function logs(array $params): PageResult
@@ -149,7 +156,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function sendCode(TenantContext|TenantSystemContext $context, string $sceneCode, string $mobile): DeliveryResult
     {
-        return (new VerificationCodeService())->send($context, $sceneCode, $mobile);
+        return $this->verificationCodes->send($context, $sceneCode, $mobile);
     }
 
     public function verifyCode(
@@ -158,6 +165,6 @@ final class NotificationApplicationService implements NotificationCommands, Noti
         string $mobile,
         string $code
     ): VerificationResult {
-        return (new VerificationCodeService())->verify($context, $sceneCode, $mobile, $code);
+        return $this->verificationCodes->verify($context, $sceneCode, $mobile, $code);
     }
 }

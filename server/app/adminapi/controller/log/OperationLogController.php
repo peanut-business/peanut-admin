@@ -26,17 +26,13 @@ class OperationLogController extends BaseAdminController
 
     public function lists()
     {
-        try {
-            if ((int)$this->request->get('export', 0) > 0) {
-                $this->assertExportModule();
-            }
-            $res = $this->operationLogs->lists(
+        if ((int)$this->request->get('export', 0) > 0) {
+            $this->assertExportModule();
+        }
+        $res = $this->operationLogs->lists(
                 OperationLogTenantContext::member(),
                 $this->request->get()
-            );
-        } catch (\Throwable $e) {
-            return $this->fail($e->getMessage());
-        }
+        );
         if (!$res instanceof PageResult) {
             return $this->data($res);
         }

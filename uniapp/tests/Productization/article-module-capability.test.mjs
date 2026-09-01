@@ -7,7 +7,7 @@ const uniRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const repoRoot = resolve(uniRoot, '..')
 const read = (path) => readFileSync(resolve(repoRoot, path), 'utf8')
 
-const routeSource = read('server/route/app.php')
+const routeSource = read('server/route/public_api.php')
 const indexPage = read('uniapp/src/pages/index/index.vue')
 const newsPage = read('uniapp/src/pages/news/news.vue')
 const detailPage = read('uniapp/src/pages/news_detail/news_detail.vue')
@@ -17,15 +17,15 @@ for (const endpoint of ['api/article/cate', 'api/article/lists', 'api/article/de
   assert.equal(newsApi.includes(`'${endpoint}'`), true, `UniApp Article API drifted: ${endpoint}`)
 }
 for (const route of [
-  "Route::get('api/index/index'",
-  "Route::get('api/article/cate'",
-  "Route::get('api/article/lists'",
-  "Route::get('api/article/detail'",
+  "Route::get('index/index'",
+  "Route::get('article/cate'",
+  "Route::get('article/lists'",
+  "Route::get('article/detail'",
 ]) {
   assert.equal(routeSource.includes(route), true, `missing UniApp public Article route: ${route}`)
 }
 assert.equal(
-  routeSource.match(/->middleware\(PublicArticleTenantMiddleware::class/g)?.length >= 7,
+  routeSource.match(/->middleware\(PublicTenantModuleMiddleware::class, 'peanut\.article\.public-read', 'official\.article'/g)?.length >= 7,
   true,
   'UniApp public Article routes are not Module guarded',
 )

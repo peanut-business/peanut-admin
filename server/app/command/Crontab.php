@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\execution\DatabaseContextualCommand;
-use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\common\execution\ExecutionContextAccess;
+use app\common\execution\ExecutionContextStore;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
+use PDO;
 use think\console\Input;
 use think\console\Output;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
@@ -17,6 +19,15 @@ use PeanutAdmin\Kernel\Tenancy\TenantScope;
  */
 class Crontab extends DatabaseContextualCommand
 {
+    public function __construct(
+        ExecutionContextStore $contexts,
+        ExecutionContextAccess $contextAccess,
+        PDO $pdo,
+        private readonly TaskScheduler $taskScheduler,
+    ) {
+        parent::__construct($contexts, $contextAccess, $pdo);
+    }
+
     protected function configure()
     {
         $this->setName('crontab')->setDescription('定时任务调度器');
@@ -44,7 +55,7 @@ class Crontab extends DatabaseContextualCommand
 
     private function scheduler(): TaskScheduler
     {
-        return TaskImportExportRuntimeFactory::scheduler($this->database());
+        return $this->taskScheduler;
     }
 
     private function acquireSchedulerLock(): bool

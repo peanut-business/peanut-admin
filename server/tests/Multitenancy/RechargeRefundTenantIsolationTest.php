@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use app\common\execution\ExecutionContextStore;
-use app\common\enum\RefundEnum;
+use app\Modules\Official\Payment\Application\RefundEnum;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\contract\idempotency\IdempotencyCommand;
 use app\common\contract\idempotency\IdempotencyReceipt;
@@ -12,8 +12,7 @@ use app\common\service\idempotency\IdempotencyRuntimeFactory;
 use app\common\service\XlsxExportService;
 use app\Modules\Official\Payment\Application\RechargeAdministrationService;
 use app\Modules\Official\Payment\Model\RechargeOrder;
-use app\common\service\finance\FinanceTenantContext;
-use app\common\service\finance\FinanceTenantRepository;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;

@@ -9,7 +9,6 @@ use app\common\execution\CurrentExecutionContext;
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\decoration\DecorationTabbarApplicationService;
 use app\adminapi\validate\decoration\DecorationTabbarValidate;
-use app\common\service\decoration\DecorationTenantContext;
 
 class DecorationTabbarController extends BaseAdminController
 {
@@ -21,7 +20,7 @@ class DecorationTabbarController extends BaseAdminController
     public function detail()
     {
         return $this->data($this->decorationTabbars->detail(
-            DecorationTenantContext::member()
+            $this->tenantAdminContext()
         ));
     }
 
@@ -29,11 +28,11 @@ class DecorationTabbarController extends BaseAdminController
     {
         $params = $this->request->post();
         $this->validate($params, DecorationTabbarValidate::class);
-        $result = $this->decorationTabbars->save(
-            DecorationTenantContext::member(),
+        $this->decorationTabbars->save(
+            $this->tenantAdminContext(),
             (array)$params['style'],
             (array)$params['list']
         );
-        return $result ? $this->success('保存成功') : $this->fail($this->decorationTabbars->getError());
+        return $this->success('保存成功');
     }
 }

@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\common\application\ApplicationService;
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\service\DemoAccountPolicy;
@@ -16,14 +15,16 @@ use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
-use app\common\service\decoration\DecorationTenantContext;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\TenantIdentityQuery;
 
-class IndexApplicationService extends ApplicationService
+class IndexApplicationService
 {
-    public function __construct(private readonly TenantIdentityQuery $tenantIdentities)
-    {
+    public function __construct(
+        private readonly TenantIdentityQuery $tenantIdentities,
+        private readonly TenantApplicationSettingService $applicationSettings,
+        private readonly TenantEntryBindingResolver $entryBindings,
+    ) {
     }
 
     /** 全局配置（uniapp / H5 用） */
@@ -31,9 +32,9 @@ class IndexApplicationService extends ApplicationService
     {
         $domain    = request()->domain();
         $website = self::websiteService($context)->get();
-        $login = TenantApplicationSettingService::login($context);
-        $statistics = TenantApplicationSettingService::statistics($context);
-        $webPageSetting = TenantApplicationSettingService::webPage($context);
+        $login = $this->applicationSettings->login($context);
+        $statistics = $this->applicationSettings->statistics($context);
+        $webPageSetting = $this->applicationSettings->webPage($context);
         $webPage   = [
             'status'      => (int)$webPageSetting['status'],
             'page_status' => (int)$webPageSetting['page_status'],
@@ -53,7 +54,7 @@ class IndexApplicationService extends ApplicationService
                 'third_auth' => (int)$login['third_auth'],
                 'wechat_auth' => (int)$login['wechat_auth'],
             ],
-            'copyright' => self::copyright($context),
+            'copyright' => $this->copyright($context),
             'site_statistics' => [
                 'clarity_code' => (string)$statistics['clarity_code'],
             ],
@@ -61,12 +62,12 @@ class IndexApplicationService extends ApplicationService
             'tabbar'   => DecorationReadService::tabbar(
                 $context,
                 true,
-                DecorationTenantContext::CONFIG_OPERATION
+                'decoration.config'
             ),
             'theme'    => DecorationReadService::pageByType(
                 $context,
                 DecorationEnum::SYSTEM_THEME,
-                DecorationTenantContext::CONFIG_OPERATION
+                'decoration.config'
             ),
             'version'  => (string) config('project.version'),
         ];
@@ -110,7 +111,7 @@ class IndexApplicationService extends ApplicationService
     private function entryTenantName(): string
     {
         try {
-            $tenantId = TenantEntryBindingResolver::production()->boundTenantId(
+            $tenantId = $this->entryBindings->boundTenantId(
                 request(),
                 TenantEntryBindingResolver::ADMIN_CLIENT
             );
@@ -132,9 +133,9 @@ class IndexApplicationService extends ApplicationService
         );
     }
 
-    private static function copyright(TenantContext|TenantSystemContext $context): array
+    private function copyright(TenantContext|TenantSystemContext $context): array
     {
-        $document = TenantApplicationSettingService::copyright($context);
+        $document = $this->applicationSettings->copyright($context);
         return is_array($document['config'] ?? null) ? $document['config'] : [];
     }
 
@@ -144,7 +145,7 @@ class IndexApplicationService extends ApplicationService
         string $type,
     ): array
     {
-        $setting = TenantApplicationSettingService::agreement($context);
+        $setting = $this->applicationSettings->agreement($context);
         $prefix = $type === 'privacy' ? 'privacy' : 'service';
         return [
             'title'   => (string)$setting[$prefix . '_title'],
@@ -180,7 +181,7 @@ class IndexApplicationService extends ApplicationService
             'decorate' => DecorationReadService::pageByType(
                 $context,
                 DecorationEnum::MOBILE_HOME,
-                DecorationTenantContext::ARTICLE_INDEX_OPERATION
+                'article.index'
             ),
         ];
     }

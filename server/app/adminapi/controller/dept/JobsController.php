@@ -12,10 +12,8 @@ class JobsController extends AbstractOrgCrudController
 {
     public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly JobsApplicationService $jobs)
     {
-        parent::__construct($app, $executionContext);
+        parent::__construct($app, $executionContext, $jobs);
     }
-
-    protected const CRUD_SERVICE = JobsApplicationService::class;
 
     public function all()
     {

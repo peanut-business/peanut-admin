@@ -19,6 +19,8 @@ final class LoginMiddleware
         private readonly TenantAuthService $tenantAuth,
         private readonly ExecutionContextStore $executionContexts,
         private readonly AdminAuthorizationService $authorization,
+        private readonly ApplicationHostPolicy $hostPolicy,
+        private readonly TenantEntryBindingResolver $entryBindings,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -32,12 +34,12 @@ final class LoginMiddleware
         }
 
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin($request);
+            $this->hostPolicy->assertTenantAdmin($request);
             $context = $this->tenantAuth->context(
                 $token,
                 AdminRequest::requestId($request),
             );
-            $entryBindings = TenantEntryBindingResolver::production();
+            $entryBindings = $this->entryBindings;
             $entryBindings->assertTenantAccess(
                 $request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,

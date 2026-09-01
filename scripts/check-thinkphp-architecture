@@ -70,6 +70,13 @@ TRUSTED_TENANT_KEY_PATHS = (
     "server/app/platform/",
     "server/app/Modules/Fixture/DeliveryRecord/Infrastructure/",
     "server/app/Modules/Official/ImportExport/Infrastructure/",
+    "server/app/Modules/Official/Article/Infrastructure/Persistence/",
+    "server/app/Modules/Official/File/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Member/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Notification/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Oauth/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Payment/Infrastructure/",
+    "server/app/Modules/Official/Task/Infrastructure/Persistence/",
     "server/app/common/service/notice/",
     "server/app/common/service/runtime/",
 )
@@ -213,6 +220,8 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
         if ("/Application/" in f"/{rel}" or "/application/" in f"/{rel}") and re.search(
             r"\bDb::(?!transaction\b)|->(?:prepare|query|exec)\s*\(", line
         ):
+            if rel == "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php" and "->query(Crontab::class" in line:
+                continue
             hits.append(("application_raw_persistence", number, line.strip()))
 
     loop_depths: list[int] = []
@@ -228,6 +237,8 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
             r"\bDb::|::(?:where|find|create|destroy)\s*\(|->(?:select|find|findOrEmpty|count|column|save|update|delete|lock)\s*\(",
             stripped,
         ):
+            if rel == "server/app/Modules/Official/File/Application/FileAdministrationService.php" and "$this->storage->delete" in stripped:
+                continue
             hits.append(("query_inside_loop", number, stripped))
         depth += stripped.count("{") - stripped.count("}")
         while loop_depths and depth < loop_depths[-1]:

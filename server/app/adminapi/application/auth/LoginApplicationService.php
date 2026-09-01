@@ -5,7 +5,7 @@ namespace app\adminapi\application\auth;
 
 use app\adminapi\http\AdminRequest;
 use app\common\service\authorization\AdminAuthorizationService;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\service\tenant\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Auth\AuthException;
@@ -13,18 +13,20 @@ use PeanutAdmin\Kernel\Auth\TenantAuthentication;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TenantSelectionRequired;
 
-final class LoginApplicationService extends ApplicationService
+final class LoginApplicationService
 {
     public function __construct(
         private readonly TenantAuthService $tenantAuth,
         private readonly AdminAuthorizationService $authorization,
+        private readonly ApplicationHostPolicy $hostPolicy,
+        private readonly TenantEntryBindingResolver $entryBindings,
     ) {}
 
-    public function login(array $params): array|false
+    public function login(array $params): array
     {
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin(request());
-            $tenantCode = TenantEntryBindingResolver::production()->loginTenantCode(
+            $this->hostPolicy->assertTenantAdmin(request());
+            $tenantCode = $this->entryBindings->loginTenantCode(
                 request(),
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
@@ -65,9 +67,8 @@ final class LoginApplicationService extends ApplicationService
                     'tenant_member_id' => (string)$outcome->context->memberId,
                 ],
             ];
-        } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            self::setError('账号或密码错误');
-            return false;
+        } catch (AuthException|\DomainException|\InvalidArgumentException $exception) {
+            throw new BusinessException('ADMIN_LOGIN_REJECTED', 401, '账号或密码错误');
         }
     }
 

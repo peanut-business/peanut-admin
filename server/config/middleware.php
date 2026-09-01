@@ -3,11 +3,7 @@ use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\api\middleware\CheckTokenMiddleware;
-use app\api\middleware\PublicArticleTenantMiddleware;
-use app\api\middleware\PublicDecorationTenantMiddleware;
-use app\api\middleware\PublicHotSearchTenantMiddleware;
-use app\api\middleware\PublicMemberTenantMiddleware;
-use app\api\middleware\PublicNoticeTenantMiddleware;
+use app\api\middleware\PublicTenantModuleMiddleware;
 use app\common\http\middleware\InstallationStateMiddleware;
 use app\common\http\middleware\MaintenanceWriteGateMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
@@ -38,11 +34,7 @@ return [
         PlatformLoginMiddleware::class,
         LoginMiddleware::class,
         CheckTokenMiddleware::class,
-        PublicArticleTenantMiddleware::class,
-        PublicDecorationTenantMiddleware::class,
-        PublicHotSearchTenantMiddleware::class,
-        PublicMemberTenantMiddleware::class,
-        PublicNoticeTenantMiddleware::class,
+        PublicTenantModuleMiddleware::class,
         OfficialModuleMiddleware::class,
         PlatformPermissionMiddleware::class,
         AuthMiddleware::class,

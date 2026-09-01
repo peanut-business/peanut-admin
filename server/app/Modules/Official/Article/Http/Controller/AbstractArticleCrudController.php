@@ -5,11 +5,10 @@ namespace app\Modules\Official\Article\Http\Controller;
 
 use app\adminapi\controller\AbstractTenantCrudController;
 use app\Modules\Official\Article\Contracts\ArticleAdministration;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
-use app\common\service\article\ArticleTenantContext;
 use app\common\validate\TenantContextValidate;
 use LogicException;
-use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\App;
 use think\response\Json;
@@ -24,27 +23,17 @@ abstract class AbstractArticleCrudController extends AbstractTenantCrudControlle
     protected const CRUD_VALIDATE_LISTS = true;
     protected const CRUD_STATUS_FIELD = 'is_show';
 
-    public function __construct(App $app, protected readonly ArticleAdministration $articles)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        protected readonly ArticleAdministration $articles,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext, $articles);
     }
 
-    protected function resolveCrudContext(): TenantContext
+    protected function renderLists(PageResult|array $result): Json
     {
-        $context = ArticleTenantContext::member();
-        if (!$context instanceof TenantContext) {
-            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
-        }
-
-        return $context;
-    }
-
-    protected function renderLists(PageResult|array|false $result): Json
-    {
-        if ($result === false) {
-            throw new LogicException('ARTICLE_LIST_RESULT_INVALID');
-        }
-
         return $this->data($result);
     }
 

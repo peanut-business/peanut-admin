@@ -3,19 +3,17 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Application;
 
-use app\common\enum\RefundEnum;
 use app\common\http\PageResult;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\Modules\Official\Payment\Model\RefundLog;
 use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\FileService;
-use app\common\service\finance\FinanceTenantContext;
-use app\common\service\finance\FinanceTenantRepository;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 退款统计、记录和操作日志查询。 */
-class RefundApplicationService extends ApplicationService
+class RefundApplicationService
 {
     private const PAGE_SIZE_MAX = 25000;
 
@@ -38,14 +36,13 @@ class RefundApplicationService extends ApplicationService
     }
 
     /**
-     * @return PageResult|false
+     * @return PageResult
      */
-    public function lists(TenantContext $context, array $params): PageResult|false
+    public function lists(TenantContext $context, array $params): PageResult
     {
-        try {
-            if (in_array((int)($params['export'] ?? 0), [1, 2], true)) {
-                throw new \RuntimeException('该列表不支持导出');
-            }
+        if (in_array((int)($params['export'] ?? 0), [1, 2], true)) {
+            throw BusinessException::invalid('REFUND_EXPORT_UNSUPPORTED', '该列表不支持导出');
+        }
 
             $extendQuery = self::buildBaseQuery($context, $params, false);
             $extendRows = $extendQuery->fieldRaw(
@@ -92,7 +89,7 @@ class RefundApplicationService extends ApplicationService
             }
             unset($item);
 
-            return new PageResult(
+        return new PageResult(
                 $lists,
                 $pageResult->total,
                 $pageResult->page,
@@ -103,11 +100,7 @@ class RefundApplicationService extends ApplicationService
                     'success' => (int)($extend['success'] ?? 0),
                     'error' => (int)($extend['error'] ?? 0),
                 ]],
-            );
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        );
     }
 
     /** 最新日志在前；支付渠道原始报文不对管理页面暴露。 */
@@ -141,7 +134,6 @@ class RefundApplicationService extends ApplicationService
 
     private static function buildBaseQuery(TenantContext $context, array $params, bool $withStatus)
     {
-        FinanceTenantContext::tenantId($context);
         $query = FinanceTenantRepository::records($context, 'r')
             ->join('member u', 'u.tenant_id = r.tenant_id AND u.id = r.user_id');
 

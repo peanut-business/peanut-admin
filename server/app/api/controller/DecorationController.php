@@ -5,7 +5,7 @@ namespace app\api\controller;
 
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
-use app\common\service\decoration\DecorationTenantContext;
+use app\common\application\BusinessException;
 
 class DecorationController extends BaseApiController
 {
@@ -15,51 +15,33 @@ class DecorationController extends BaseApiController
     {
         $type = (int)$this->request->get('type', DecorationEnum::MOBILE_HOME);
         if (!in_array($type, DecorationEnum::MOBILE_TYPES, true)) {
-            return $this->fail('移动端装修页面类型无效');
+            throw BusinessException::invalid('DECORATION_PAGE_TYPE_INVALID', '移动端装修页面类型无效');
         }
-        try {
-            $context = DecorationTenantContext::read(
-                DecorationTenantContext::MOBILE_PAGE_OPERATION
-            );
-            return $this->data(DecorationReadService::pageByType(
+        $context = $this->publicTenantContext('decoration.mobile-page');
+        return $this->data(DecorationReadService::pageByType(
                 $context,
                 $type,
-                DecorationTenantContext::MOBILE_PAGE_OPERATION
-            ));
-        } catch (\Throwable $e) {
-            return $this->fail($e->getMessage());
-        }
+                'decoration.mobile-page'
+        ));
     }
 
     public function tabbar()
     {
-        try {
-            $context = DecorationTenantContext::read(
-                DecorationTenantContext::CONFIG_OPERATION
-            );
-            return $this->data(DecorationReadService::tabbar(
+        $context = $this->publicTenantContext('decoration.config');
+        return $this->data(DecorationReadService::tabbar(
                 $context,
                 true,
-                DecorationTenantContext::CONFIG_OPERATION
-            ));
-        } catch (\Throwable $e) {
-            return $this->fail($e->getMessage());
-        }
+                'decoration.config'
+        ));
     }
 
     public function pcPage()
     {
-        try {
-            $context = DecorationTenantContext::read(
-                DecorationTenantContext::PC_PAGE_OPERATION
-            );
-            return $this->data(DecorationReadService::pageByType(
+        $context = $this->publicTenantContext('decoration.pc-page');
+        return $this->data(DecorationReadService::pageByType(
                 $context,
                 DecorationEnum::PC_HOME,
-                DecorationTenantContext::PC_PAGE_OPERATION
-            ));
-        } catch (\Throwable $e) {
-            return $this->fail($e->getMessage());
-        }
+                'decoration.pc-page'
+        ));
     }
 }

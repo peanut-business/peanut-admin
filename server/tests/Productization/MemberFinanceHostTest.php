@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\MemberBalanceService;
+use app\Modules\Official\Member\Application\MemberBalanceService;
+use app\common\service\Money;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -14,7 +15,7 @@ function expectMemberFinance(bool $condition, string $message): void
 
 $serverRoot = dirname(__DIR__, 2);
 $repositoryRoot = dirname($serverRoot);
-$balanceServicePath = $serverRoot . '/app/common/service/MemberBalanceService.php';
+$balanceServicePath = $serverRoot . '/app/Modules/Official/Member/Application/MemberBalanceService.php';
 $balanceService = (string)file_get_contents($balanceServicePath);
 $balanceContractPath = $serverRoot . '/app/Modules/Official/Member/Application/MemberBalanceContractService.php';
 $balanceContract = (string)file_get_contents($balanceContractPath);
@@ -23,9 +24,9 @@ $memberProvider = (string)file_get_contents($serverRoot . '/app/Modules/Official
 $administration = (string)file_get_contents($serverRoot . '/app/Modules/Official/Member/Application/MemberAdministrationService.php');
 $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 
-expectMemberFinance(MemberBalanceService::moneyToCents('10.10') === 1010, 'decimal amount conversion changed');
-expectMemberFinance(MemberBalanceService::moneyToCents(0.1) === 10, 'float amount conversion changed');
-expectMemberFinance(MemberBalanceService::centsToMoney(1010) === '10.10', 'money formatting changed');
+expectMemberFinance(Money::toCents('10.10') === 1010, 'decimal amount conversion changed');
+expectMemberFinance(Money::toCents(0.1) === 10, 'float amount conversion changed');
+expectMemberFinance(Money::fromCents(1010) === '10.10', 'money formatting changed');
 expectMemberFinance(
     str_contains($balanceService, 'MemberTenantRepository::members($context)->lock(true)'),
     'balance owner must lock the Tenant-scoped member row'
@@ -83,7 +84,7 @@ expectMemberFinance(
     'official.member must export the query and balance command contracts'
 );
 expectMemberFinance(
-    str_contains($memberProvider, 'bind(MemberIdentityCommands::class'),
+    str_contains($memberProvider, 'MemberIdentityCommands::class =>'),
     'official.member must bind its identity command contract at startup'
 );
 expectMemberFinance(
@@ -91,7 +92,7 @@ expectMemberFinance(
     'Member balance command must delegate to the unique writer'
 );
 expectMemberFinance(
-    $ledgerWriters === [$serverRoot . '/app/common/service/member/MemberTenantRepository.php'],
+    $ledgerWriters === [$serverRoot . '/app/Modules/Official/Member/Infrastructure/Persistence/MemberTenantRepository.php'],
     'member balance ledger must have exactly one writer'
 );
 foreach ($callers as $relativePath) {
@@ -118,10 +119,11 @@ expectMemberFinance(
 
 $refund = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeAdministrationService.php');
 $retryStart = strpos($refund, 'public function refundAgain');
-$retryEnd = strpos($refund, 'private static function retryLockName', $retryStart ?: 0);
+$retryEnd = strpos($refund, 'private static function assertRefundableOrder', $retryStart ?: 0);
 expectMemberFinance($retryStart !== false && $retryEnd !== false, 'refund retry boundary is missing');
 expectMemberFinance(
-    !str_contains(substr($refund, $retryStart, $retryEnd - $retryStart), 'applyInTransaction('),
+    str_contains($refund, 'private readonly PaymentRetryLock $retryLocks')
+        && !str_contains(substr($refund, $retryStart, $retryEnd - $retryStart), 'applyInTransaction('),
     'refund retry must not deduct the balance again'
 );
 

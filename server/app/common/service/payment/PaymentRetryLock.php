@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\payment;
 
-use app\common\service\finance\FinanceTenantContext;
 use PDO;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Tenancy\TenantLockNamespace;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
@@ -15,14 +15,14 @@ final readonly class PaymentRetryLock
     {
     }
 
-    public function name(object $context, int $recordId): string
+    public function name(TenantContext $context, int $recordId): string
     {
         if ($recordId < 1) {
             throw new \InvalidArgumentException('退款记录 ID 无效');
         }
 
         $scope = TenantScope::fromTrustedContext(
-            FinanceTenantContext::tenantId($context),
+            $context->tenantId,
             (string)($context->requestId ?? ''),
         );
 

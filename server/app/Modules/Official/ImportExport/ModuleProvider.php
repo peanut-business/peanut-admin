@@ -11,8 +11,12 @@ use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferCommands;
 use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferQueries;
 use app\Modules\Official\ImportExport\Application\ConfigurationTransferApplicationService;
 use app\Modules\Official\ImportExport\Application\OperationLogExportApplicationService;
+use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
 use app\Modules\Official\ImportExport\Application\TenantConfigurationTransferService;
+use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
+use app\common\service\authorization\AdminAuthorizationService;
+use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PDO;
@@ -64,8 +68,18 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(PDO::class),
                 $app->make(TransactionManager::class),
             ),
-            OperationLogExportApplicationService::class => fn(App $app): OperationLogExportApplicationService => new OperationLogExportApplicationService(
+            AppFileMediaGateway::class => fn(App $app): AppFileMediaGateway => new AppFileMediaGateway(
                 $app->make(PDO::class),
+                $app->make(StorageService::class),
+            ),
+            TaskImportExportRuntime::class => fn(App $app): TaskImportExportRuntime => new TaskImportExportRuntime(
+                $app->make(PDO::class),
+                $app->make(TaskJobRuntime::class),
+                $app->make(AppFileMediaGateway::class),
+            ),
+            OperationLogExportApplicationService::class => fn(App $app): OperationLogExportApplicationService => new OperationLogExportApplicationService(
+                new AdminAuthorizationService($app->make(PDO::class)),
+                $app->make(TaskImportExportRuntime::class),
             ),
         ];
     }

@@ -5,7 +5,6 @@ namespace app\adminapi\controller\dept;
 
 use app\adminapi\controller\AbstractTenantCrudController;
 use app\common\http\PageResult;
-use app\common\service\org\OrgTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\response\Json;
 
@@ -13,11 +12,6 @@ use think\response\Json;
 abstract class AbstractOrgCrudController extends AbstractTenantCrudController
 {
     protected const CRUD_STATUS_FIELD = 'status';
-
-    protected function resolveCrudContext(): TenantContext
-    {
-        return OrgTenantContext::member();
-    }
 
     protected function validatedInput(
         TenantContext $context,
@@ -45,11 +39,9 @@ abstract class AbstractOrgCrudController extends AbstractTenantCrudController
         return $params;
     }
 
-    protected function renderLists(PageResult|array|false $result): Json
+    protected function renderLists(PageResult|array $result): Json
     {
-        return $result === false
-            ? $this->fail($this->crudError())
-            : $this->data($result);
+        return $this->data($result);
     }
 
     protected function renderDetail(array $result): Json

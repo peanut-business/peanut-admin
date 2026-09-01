@@ -9,7 +9,6 @@ use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\config\BrandDefaults;
 use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantContext;
 use app\common\service\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PDO;
@@ -36,7 +35,7 @@ final class FirstRunReadinessHost
         string $requestOrigin,
         string $deploymentMode,
     ): array {
-        $tenantId = MemberTenantContext::tenantId($context);
+        $tenantId = $context->tenantId;
         $registeredPermissions = $this->modules->registeredPermissions($tenantId);
         $notificationEnabled = in_array(
             'official.notification.channel.detail',

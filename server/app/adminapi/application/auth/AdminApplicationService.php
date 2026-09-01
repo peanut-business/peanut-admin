@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\auth;
 
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\org\AdminDirectoryQuery;
-use app\common\service\org\OrgTenantContext;
+use PeanutAdmin\Kernel\Context\TenantContextRequirement;
 use app\common\service\org\TenantAdminRuntime;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
@@ -16,7 +16,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
 
 /** Compatibility Admin CRUD backed by native accounts and TenantMembers. */
-final class AdminApplicationService extends ApplicationService
+final class AdminApplicationService
 {
     private const EXPORT_MAX_ROWS = 25000;
     private const EXPORT_DEFAULT_NAME = '管理员列表';
@@ -29,8 +29,7 @@ final class AdminApplicationService extends ApplicationService
 
     public function normalizeInput(array $params): array
     {
-        self::clearError();
-        $params = OrgTenantContext::withoutPayloadTenant($params);
+        $params = TenantContextRequirement::withoutTenantId($params);
         $params['account'] ??= $params['username'] ?? null;
         $params['name'] ??= $params['nickname'] ?? null;
         $params['role_id'] ??= $params['role_ids'] ?? null;
@@ -39,7 +38,6 @@ final class AdminApplicationService extends ApplicationService
 
     public function validationRules(string $scene): array
     {
-        self::clearError();
         $rules = [
             'id' => 'require|integer|gt:0',
             'account' => 'require|email|max:255',
@@ -61,9 +59,8 @@ final class AdminApplicationService extends ApplicationService
         return $rules;
     }
 
-    public function lists(TenantContext $context, array $params): array|false
+    public function lists(TenantContext $context, array $params): array
     {
-        self::clearError();
         try {
             $pageSize = max(1, min(
                 self::EXPORT_MAX_ROWS,
@@ -86,13 +83,12 @@ final class AdminApplicationService extends ApplicationService
                 'pageSize' => $pageSize,
             ];
         } catch (\Throwable $e) {
-            return self::fail($e);
+            throw $e;
         }
     }
 
     public function detail(TenantContext $context, int $id): array
     {
-        self::clearError();
         foreach ($this->rows($context, ['id' => $id]) as $row) {
             if ($row['id'] === $id) {
                 return $row;
@@ -103,12 +99,11 @@ final class AdminApplicationService extends ApplicationService
 
     public function add(TenantContext $context, array $params): bool
     {
-        self::clearError();
         $params = self::normalizeInput($params);
         try {
             $roles = self::normalizeIds($params['role_id'] ?? []);
             if ($roles === []) {
-                throw new \RuntimeException('请选择角色');
+                throw BusinessException::invalid('ADMIN_ROLE_REQUIRED', '请选择角色');
             }
             $department = self::firstId($params['dept_id'] ?? []);
             $service = $this->tenantAdmins->members();
@@ -154,17 +149,16 @@ final class AdminApplicationService extends ApplicationService
             }
             return true;
         } catch (\Throwable $e) {
-            return self::fail($e);
+            throw $e;
         }
     }
 
     public function edit(TenantContext $context, array $params): bool
     {
-        self::clearError();
         $params = self::normalizeInput($params);
         try {
             if (!empty($params['password'])) {
-                throw new \RuntimeException('密码只能由账号本人修改');
+                throw BusinessException::forbidden('ADMIN_PASSWORD_SELF_SERVICE_REQUIRED', '密码只能由账号本人修改');
             }
             $service = $this->tenantAdmins->members();
             $member = $service->get($context->tenantId, (int)$params['id']);
@@ -180,7 +174,7 @@ final class AdminApplicationService extends ApplicationService
             );
             $roles = self::normalizeIds($params['role_id'] ?? []);
             if ($roles === []) {
-                throw new \RuntimeException('请选择角色');
+                throw BusinessException::invalid('ADMIN_ROLE_REQUIRED', '请选择角色');
             }
             $member = $service->replaceRoles(
                 $context->tenantId,
@@ -194,16 +188,14 @@ final class AdminApplicationService extends ApplicationService
             self::transitionStatus($service, $context, $member, (int)$params['disable']);
             return true;
         } catch (\Throwable $e) {
-            return self::fail($e);
+            throw $e;
         }
     }
 
     public function delete(TenantContext $context, int $id, int $selfId = 0): bool
     {
-        self::clearError();
         if ($id === $selfId) {
-            self::setError('不能操作当前登录的管理员');
-            return false;
+            throw BusinessException::forbidden('ADMIN_SELF_OPERATION_FORBIDDEN', '不能操作当前登录的管理员');
         }
         try {
             $service = $this->tenantAdmins->members();
@@ -218,29 +210,26 @@ final class AdminApplicationService extends ApplicationService
             );
             return true;
         } catch (\Throwable $e) {
-            return self::fail($e);
+            throw $e;
         }
     }
 
     public function updateStatus(TenantContext $context, int $id, int $disable, int $selfId = 0): bool
     {
-        self::clearError();
         if ($id === $selfId) {
-            self::setError('不能操作当前登录的管理员');
-            return false;
+            throw BusinessException::forbidden('ADMIN_SELF_OPERATION_FORBIDDEN', '不能操作当前登录的管理员');
         }
         try {
             $service = $this->tenantAdmins->members();
             self::transitionStatus($service, $context, $service->get($context->tenantId, $id), $disable);
             return true;
         } catch (\Throwable $e) {
-            return self::fail($e);
+            throw $e;
         }
     }
 
     public function editSelf(TenantContext $context, int $memberId, array $params): bool
     {
-        self::clearError();
         try {
             if ($memberId !== $context->memberId) {
                 throw new \DomainException('TENANT_ADMIN_PRINCIPAL_INVALID');
@@ -271,7 +260,7 @@ final class AdminApplicationService extends ApplicationService
             }
             return true;
         } catch (\Throwable $e) {
-            return self::fail($e);
+            throw $e;
         }
     }
 
@@ -335,7 +324,7 @@ final class AdminApplicationService extends ApplicationService
     private function export(TenantContext $context, array $params, array $rows): array
     {
         if ($rows === []) {
-            throw new \RuntimeException('没有数据，无法导出');
+            throw BusinessException::conflict('ADMIN_EXPORT_EMPTY', '没有数据，无法导出');
         }
         $rows = array_slice($rows, 0, self::EXPORT_MAX_ROWS);
         $file = $this->xlsxExport->create((string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),

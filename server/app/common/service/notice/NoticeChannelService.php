@@ -10,6 +10,7 @@ use app\common\service\notice\driver\sms\AliyunSms;
 use app\common\service\notice\driver\sms\SmsDriver;
 use app\common\service\notice\driver\sms\TencentSms;
 use app\common\service\http\OutboundHttpTransport;
+use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -48,9 +49,9 @@ final class NoticeChannelService
         ];
     }
 
-    public static function save(TenantContext $context, string $section, array $input): void
+    public static function save(ExecutionContextAccess $contexts, TenantContext $context, string $section, array $input): void
     {
-        $tenantId = NoticeTenantContext::tenantId($context);
+        $tenantId = NoticeTenantContext::tenantId($contexts, $context);
         ExternalChannelBindingService::mutate(
             $context,
             self::BINDING_PROVIDER,
@@ -124,6 +125,7 @@ final class NoticeChannelService
 
     /** @return array{success:bool,provider:string,error:string,result:array<string,mixed>} */
     public static function sendSms(
+        ExecutionContextAccess $contexts,
         TenantContext|TenantSystemContext $context,
         string $mobile,
         string $templateId,
@@ -132,7 +134,7 @@ final class NoticeChannelService
         ?callable $beforeSend = null
     ): array
     {
-        NoticeTenantContext::verificationTenantId($context, 'notice.verification.send');
+        NoticeTenantContext::verificationTenantId($contexts, $context, 'notice.verification.send');
         $stored = self::bindingConfig($context);
         $provider = strtolower(trim((string)($stored['sms_default'] ?? '')));
         $config = in_array($provider, self::PROVIDERS, true)

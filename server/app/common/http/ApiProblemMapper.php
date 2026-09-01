@@ -42,6 +42,11 @@ final class ApiProblemMapper
             $exception instanceof ValidateException => ApiProblem::fromEnvelope(
                 (string)$exception->getError(),
             ),
+            $exception instanceof \InvalidArgumentException => new ApiProblem(
+                'INVALID_ARGUMENT',
+                422,
+                $exception->getMessage(),
+            ),
             $exception instanceof AuthException => new ApiProblem(
                 $exception->errorCode,
                 $exception->httpStatus,

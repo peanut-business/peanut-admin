@@ -70,7 +70,9 @@ namespace {
 
     $ownedFiles = [
         'app/common/service/FileService.php',
-        'app/common/service/UploadService.php',
+        'app/Modules/Official/File/Application/FileUploadService.php',
+        'app/Modules/Official/File/Contracts/FileUploads.php',
+        'app/Modules/Official/File/ModuleProvider.php',
         'app/api/controller/UploadController.php',
         'app/Modules/Official/File/Http/Controller/UploadController.php',
         'app/Modules/Official/File/Model/File.php',
@@ -95,13 +97,15 @@ namespace {
         'File presentation URL must be resolved by the application boundary from the canonical object key'
     );
     expectFileMedia(
-        str_contains($sources['app/common/service/UploadService.php'], 'StorageService::fromDefaultConnection()'),
-        'upload must use the unified storage service'
+        !is_file($serverRoot . '/app/common/service/UploadService.php')
+            && str_contains($sources['app/Modules/Official/File/Application/FileUploadService.php'], '$this->storage->storePath(')
+            && str_contains($sources['app/Modules/Official/File/ModuleProvider.php'], 'FileUploads::class'),
+        'upload must be owned and explicitly bound by the File Module'
     );
     expectFileMedia(
-        !str_contains($sources['app/common/service/UploadService.php'], 'request()->file')
-            && substr_count($sources['app/common/service/UploadService.php'], 'UploadedFile $uploaded') === 4,
-        'UploadService must receive the framework UploadedFile explicitly'
+        !str_contains($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'request()->file')
+            && substr_count($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'UploadedFile $uploaded') === 4,
+        'FileUploadService must receive the framework UploadedFile explicitly'
     );
     foreach ([
         'app/api/controller/UploadController.php',
@@ -110,12 +114,13 @@ namespace {
         expectFileMedia(
             str_contains($sources[$controller], "\$this->request->file('file')")
                 && str_contains($sources[$controller], 'instanceof UploadedFile')
-                && str_contains($sources[$controller], "throw new \\Exception('未接收到上传文件')"),
+                && str_contains($sources[$controller], 'FileUploads $uploads')
+                && !str_contains($sources[$controller], 'catch ('),
             $controller . ' must validate and pass its UploadedFile explicitly'
         );
     }
     expectFileMedia(
-        str_contains($sources['app/Modules/Official/File/Application/FileAdministrationService.php'], 'StorageService::fromDefaultConnection()->delete'),
+        str_contains($sources['app/Modules/Official/File/Application/FileAdministrationService.php'], '$this->storage->delete'),
         'delete must use the unified storage service'
     );
     expectFileMedia(

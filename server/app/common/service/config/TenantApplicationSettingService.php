@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\config;
 
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\tenant\TenantSettingsRuntimeFactory;
+use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -18,9 +18,13 @@ final class TenantApplicationSettingService
     private const WEB_PAGE = 'web-page';
     private const HOT_SEARCH = 'hot-search';
 
-    public static function agreement(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    public function __construct(private readonly TenantSettingService $settings)
     {
-        return self::document($context, self::AGREEMENT, [
+    }
+
+    public function agreement(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    {
+        return $this->document($context, self::AGREEMENT, [
             'service_title' => '',
             'service_content' => '',
             'privacy_title' => '',
@@ -28,34 +32,34 @@ final class TenantApplicationSettingService
         ]);
     }
 
-    public static function replaceAgreement(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    public function replaceAgreement(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        self::settings()->replace($context, self::AGREEMENT, $document);
+        $this->settings->replace($context, self::AGREEMENT, $document);
     }
 
-    public static function statistics(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    public function statistics(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
     {
-        return self::document($context, self::STATISTICS, ['clarity_code' => '']);
+        return $this->document($context, self::STATISTICS, ['clarity_code' => '']);
     }
 
-    public static function replaceStatistics(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    public function replaceStatistics(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        self::settings()->replace($context, self::STATISTICS, $document);
+        $this->settings->replace($context, self::STATISTICS, $document);
     }
 
-    public static function memberProfile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    public function memberProfile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
     {
-        return self::document($context, self::MEMBER_PROFILE, ['user_avatar' => '']);
+        return $this->document($context, self::MEMBER_PROFILE, ['user_avatar' => '']);
     }
 
-    public static function replaceMemberProfile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    public function replaceMemberProfile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        self::settings()->replace($context, self::MEMBER_PROFILE, $document);
+        $this->settings->replace($context, self::MEMBER_PROFILE, $document);
     }
 
-    public static function login(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    public function login(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
     {
-        $document = self::document($context, self::LOGIN, [
+        $document = $this->document($context, self::LOGIN, [
             'login_way' => [1, 2],
             'coerce_mobile' => 0,
             'login_agreement' => 0,
@@ -69,62 +73,53 @@ final class TenantApplicationSettingService
         return $document;
     }
 
-    public static function replaceLogin(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    public function replaceLogin(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        self::settings()->replace($context, self::LOGIN, $document);
+        $this->settings->replace($context, self::LOGIN, $document);
     }
 
-    public static function webPage(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    public function webPage(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
     {
-        return self::document($context, self::WEB_PAGE, [
+        return $this->document($context, self::WEB_PAGE, [
             'status' => 1,
             'page_status' => 0,
             'page_url' => '',
         ]);
     }
 
-    public static function replaceWebPage(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    public function replaceWebPage(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        self::settings()->replace($context, self::WEB_PAGE, $document);
+        $this->settings->replace($context, self::WEB_PAGE, $document);
     }
 
-    public static function hotSearch(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    public function hotSearch(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
     {
-        return self::document($context, self::HOT_SEARCH, ['status' => 0]);
+        return $this->document($context, self::HOT_SEARCH, ['status' => 0]);
     }
 
-    public static function replaceHotSearch(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    public function replaceHotSearch(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
     {
-        self::settings()->replace($context, self::HOT_SEARCH, $document);
+        $this->settings->replace($context, self::HOT_SEARCH, $document);
     }
 
-    private static function document(
+    public function copyright(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
+    {
+        return $this->document($context, 'copyright', ['config' => []]);
+    }
+
+    public function replaceCopyright(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
+    {
+        $this->settings->replace($context, 'copyright', $document);
+    }
+
+    private function document(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $namespace,
         array $defaults,
     ): array {
         return array_replace(
             $defaults,
-            self::settings()->get($context, $namespace)->document,
+            $this->settings->get($context, $namespace)->document,
         );
-    }
-
-    public static function copyright(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context): array
-    {
-        return self::document($context, 'copyright', ['config' => []]);
-    }
-
-    public static function replaceCopyright(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, array $document): void
-    {
-        self::settings()->replace($context, 'copyright', $document);
-    }
-
-    private static function settings(): \app\common\service\tenant\TenantSettingService
-    {
-        return TenantSettingsRuntimeFactory::service();
-    }
-
-    private function __construct()
-    {
     }
 }

@@ -8,14 +8,13 @@ use app\adminapi\service\generator\GeneratorImportPersistence;
 use app\adminapi\service\generator\GeneratorMetadataService;
 use app\adminapi\service\generator\GeneratorRenderService;
 use app\common\http\PageResult;
-use app\common\application\ApplicationService;
 use app\common\model\generator\GeneratorColumn;
 use app\common\model\generator\GeneratorDownload;
 use app\common\model\generator\GeneratorTable;
 use app\common\persistence\TransactionalExecution;
 use app\common\support\PaginationInput;
 
-class GeneratorApplicationService extends ApplicationService
+class GeneratorApplicationService
 {
     public function __construct(
         private readonly GeneratorImportPersistence $imports,
@@ -52,44 +51,33 @@ class GeneratorApplicationService extends ApplicationService
         return new PageResult($lists, $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
 
-    public function detail(int $adminId, int $id): array|false
+    public function detail(int $adminId, int $id): array
     {
-        try {
-            return self::ownedTable($adminId, $id, true);
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        return self::ownedTable($adminId, $id, true);
     }
 
     public function importTables(int $adminId, array $tableNames): bool
     {
-        try {
-            $tableNames = array_values(array_unique(array_map('strval', $tableNames)));
-            $metadata = GeneratorMetadataService::definitions($tableNames);
-            $definitions = [];
-            foreach ($tableNames as $tableName) {
-                $entityName = self::entityName($tableName);
-                self::assertEntity($entityName);
-                $definitions[] = [
-                    'table_name' => $tableName,
-                    'table_comment' => $metadata[$tableName]['table_comment'],
-                    'entity_name' => $entityName,
-                    'columns' => $metadata[$tableName]['columns'],
-                ];
-            }
-            $this->imports->import($adminId, $definitions);
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
+        $tableNames = array_values(array_unique(array_map('strval', $tableNames)));
+        $metadata = GeneratorMetadataService::definitions($tableNames);
+        $definitions = [];
+        foreach ($tableNames as $tableName) {
+            $entityName = self::entityName($tableName);
+            self::assertEntity($entityName);
+            $definitions[] = [
+                'table_name' => $tableName,
+                'table_comment' => $metadata[$tableName]['table_comment'],
+                'entity_name' => $entityName,
+                'columns' => $metadata[$tableName]['columns'],
+            ];
         }
+        $this->imports->import($adminId, $definitions);
+        return true;
     }
 
     public function sync(int $adminId, int $id): bool
     {
-        try {
-            $this->transactions->run(function () use ($adminId, $id): void {
+        $this->transactions->run(function () use ($adminId, $id): void {
                 $table = self::ownedTableModel($adminId, $id, true);
                 $metadata = GeneratorMetadataService::columns((string) $table->table_name);
                 $existing = [];
@@ -122,18 +110,13 @@ class GeneratorApplicationService extends ApplicationService
                 if ($seen !== []) $delete->whereNotIn('column_name', $seen);
                 $delete->delete();
                 $table->save(['table_comment' => (string) GeneratorMetadataService::table((string) $table->table_name)['table_comment']]);
-            });
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
+        return true;
     }
 
     public function update(int $adminId, array $params): bool
     {
-        try {
-            $this->transactions->run(function () use ($adminId, $params): void {
+        $this->transactions->run(function () use ($adminId, $params): void {
                 $id = (int) $params['id'];
                 $table = self::ownedTableModel($adminId, $id, true);
                 $module = trim((string) $params['module_name']);
@@ -193,19 +176,14 @@ class GeneratorApplicationService extends ApplicationService
                     'tree_config' => $tree,
                     'relations' => $relations,
                 ]);
-            });
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
+        return true;
     }
 
     public function delete(int $adminId, array $ids): bool
     {
-        try {
-            $ids = array_values(array_unique(array_map('intval', $ids)));
-            $this->transactions->run(function () use ($adminId, $ids): void {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        $this->transactions->run(function () use ($adminId, $ids): void {
                 foreach (GeneratorTable::where('admin_id', $adminId)->whereNotIn('id', $ids)->select() as $table) {
                     foreach ((array)$table->relations as $relation) {
                         if (in_array((int)($relation['target_table_id'] ?? 0), $ids, true)) {
@@ -217,87 +195,68 @@ class GeneratorApplicationService extends ApplicationService
                 if (count($owned) !== count($ids)) throw new \RuntimeException('生成配置不存在或无权访问');
                 GeneratorColumn::whereIn('table_id', $ids)->delete();
                 GeneratorTable::where('admin_id', $adminId)->whereIn('id', $ids)->delete();
-            });
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
+        return true;
     }
 
-    public function preview(int $adminId, int $id): array|false
+    public function preview(int $adminId, int $id): array
     {
-        try {
-            $tables = $this->snapshotTables($adminId, [$id]);
-            return GeneratorRenderService::render($tables[0]);
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        $tables = $this->snapshotTables($adminId, [$id]);
+        return GeneratorRenderService::render($tables[0]);
     }
 
-    public function generate(int $adminId, array $ids): array|false
+    public function generate(int $adminId, array $ids): array
     {
-        try {
-            $ids = array_values(array_unique(array_map('intval', $ids)));
-            $tables = $this->snapshotTables($adminId, $ids);
-            $files = [];
-            foreach ($tables as $table) {
-                foreach (GeneratorRenderService::render($table) as $file) {
-                    $path = (string) $file['path'];
-                    if (isset($files[$path])) throw new \RuntimeException('生成文件路径冲突：' . $path);
-                    $files[$path] = $file;
-                }
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        $tables = $this->snapshotTables($adminId, $ids);
+        $files = [];
+        foreach ($tables as $table) {
+            foreach (GeneratorRenderService::render($table) as $file) {
+                $path = (string) $file['path'];
+                if (isset($files[$path])) throw new \RuntimeException('生成文件路径冲突：' . $path);
+                $files[$path] = $file;
             }
-
-            $archive = GeneratorArchiveService::create(
-                array_values($files),
-                $adminId,
-                'peanut-code-' . date('YmdHis') . '.zip'
-            );
-            $token = bin2hex(random_bytes(32));
-            try {
-                GeneratorDownload::create([
-                    'admin_id' => $adminId,
-                    'token_hash' => hash('sha256', $token),
-                    'archive_path' => $archive['archive_path'],
-                    'download_name' => $archive['download_name'],
-                    'expire_time' => time() + 600,
-                    'used_time' => 0,
-                ]);
-            } catch (\Throwable $e) {
-                GeneratorArchiveService::cleanup($archive['archive_path'], $adminId);
-                throw $e;
-            }
-            return ['download_token' => $token, 'file_name' => $archive['download_name'], 'expires_in' => 600];
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
         }
+
+        $archive = GeneratorArchiveService::create(
+            array_values($files),
+            $adminId,
+            'peanut-code-' . date('YmdHis') . '.zip'
+        );
+        $token = bin2hex(random_bytes(32));
+        try {
+            GeneratorDownload::create([
+                'admin_id' => $adminId,
+                'token_hash' => hash('sha256', $token),
+                'archive_path' => $archive['archive_path'],
+                'download_name' => $archive['download_name'],
+                'expire_time' => time() + 600,
+                'used_time' => 0,
+            ]);
+        } catch (\Throwable $e) {
+            GeneratorArchiveService::cleanup($archive['archive_path'], $adminId);
+            throw $e;
+        }
+        return ['download_token' => $token, 'file_name' => $archive['download_name'], 'expires_in' => 600];
     }
 
-    public function consumeDownload(int $adminId, string $token): array|false
+    public function consumeDownload(int $adminId, string $token): array
     {
-        try {
-            return $this->transactions->run(function () use ($adminId, $token): array {
-                $row = GeneratorDownload::where([
-                    'admin_id' => $adminId,
-                    'token_hash' => hash('sha256', $token),
-                    'used_time' => 0,
-                ])->where('expire_time', '>', time())->lock(true)->findOrEmpty();
-                if ($row->isEmpty()) throw new \RuntimeException('下载令牌无效或已过期');
-                $path = GeneratorArchiveService::resolve((string) $row->archive_path, $adminId);
-                $row->save(['used_time' => time()]);
-                return [
-                    'path' => $path,
-                    'file_name' => (string)$row->download_name,
-                    'archive_path' => (string)$row->archive_path,
-                ];
-            });
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        return $this->transactions->run(function () use ($adminId, $token): array {
+            $row = GeneratorDownload::where([
+                'admin_id' => $adminId,
+                'token_hash' => hash('sha256', $token),
+                'used_time' => 0,
+            ])->where('expire_time', '>', time())->lock(true)->findOrEmpty();
+            if ($row->isEmpty()) throw new \RuntimeException('下载令牌无效或已过期');
+            $path = GeneratorArchiveService::resolve((string) $row->archive_path, $adminId);
+            $row->save(['used_time' => time()]);
+            return [
+                'path' => $path,
+                'file_name' => (string)$row->download_name,
+                'archive_path' => (string)$row->archive_path,
+            ];
+        });
     }
 
     public function models(int $adminId): array

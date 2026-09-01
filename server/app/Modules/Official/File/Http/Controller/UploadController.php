@@ -4,13 +4,20 @@ declare(strict_types=1);
 namespace app\Modules\Official\File\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
+use app\Modules\Official\File\Contracts\FileUploads;
 use app\common\enum\FileEnum;
-use app\common\service\UploadService;
-use app\common\service\file\FileTenantContext;
+use app\common\execution\CurrentExecutionContext;
 use think\file\UploadedFile;
+use app\common\application\BusinessException;
+use think\App;
 
 class UploadController extends BaseAdminController
 {
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly FileUploads $uploads)
+    {
+        parent::__construct($app, $executionContext);
+    }
+
     public function image()
     {
         return $this->upload('image');
@@ -29,26 +36,21 @@ class UploadController extends BaseAdminController
     /** @param string $method image|video|file */
     protected function upload(string $method)
     {
-        try {
-            $cidValue = $this->request->post('cid', 0);
-            if (!is_int($cidValue) && !(is_string($cidValue) && preg_match('/^-?\d+$/D', $cidValue) === 1)) {
-                throw new \InvalidArgumentException('目标分类无效');
-            }
-            $uploaded = $this->request->file('file');
-            if (!$uploaded instanceof UploadedFile) {
-                throw new \Exception('未接收到上传文件');
-            }
-            $cid = (int)$cidValue;
-            $res = UploadService::$method(
-                FileTenantContext::member(),
-                $uploaded,
-                $cid,
-                $this->adminId,
-                FileEnum::SOURCE_ADMIN
-            );
-            return $this->success('上传成功', $res);
-        } catch (\Throwable $e) {
-            return $this->fail($e->getMessage());
+        $cidValue = $this->request->post('cid', 0);
+        if (!is_int($cidValue) && !(is_string($cidValue) && preg_match('/^-?\d+$/D', $cidValue) === 1)) {
+            throw new \InvalidArgumentException('目标分类无效');
         }
+        $uploaded = $this->request->file('file');
+        if (!$uploaded instanceof UploadedFile) {
+            throw BusinessException::invalid('UPLOAD_FILE_REQUIRED', '未接收到上传文件');
+        }
+        $result = $this->uploads->{$method}(
+            $this->tenantAdminContext(),
+            $uploaded,
+            (int)$cidValue,
+            $this->adminId,
+            FileEnum::SOURCE_ADMIN,
+        );
+        return $this->success('上传成功', $result);
     }
 }

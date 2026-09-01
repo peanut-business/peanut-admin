@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
-use app\common\service\capability\ArticleCapabilityAuthorization;
+use app\Modules\Official\Article\Application\ArticleCapabilityAuthorization;
+use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess;
 use app\common\service\capability\CrossProductAdoptionHost;
 use PeanutAdmin\ArtifactRevision\Application\ArtifactRevisionService;
 use PeanutAdmin\ArtifactRevision\Database\Schema as ArtifactSchema;
@@ -201,7 +202,18 @@ try {
 
     $permittedArticleKeys = ['1'];
     $authorization = new ArticleCapabilityAuthorization(
-        $pdo,
+        new PdoArticleModuleAccess($pdo),
+        new class implements \app\Modules\Official\Article\Contracts\ArticleQueries {
+            public function visible(TenantContext $context, int $articleId): bool
+            {
+                return $context->tenantId === 1 && $articleId === 1;
+            }
+
+            public function options(TenantContext $context, int $limit): array
+            {
+                return [];
+            }
+        },
         static function (TenantContext $trustedTenant, string $operation, string $articleKey) use (&$permittedArticleKeys): bool {
             return in_array($articleKey, $permittedArticleKeys, true)
                 && $trustedTenant->tenantId === 1

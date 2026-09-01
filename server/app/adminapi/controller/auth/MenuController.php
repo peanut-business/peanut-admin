@@ -11,7 +11,6 @@ use app\adminapi\application\auth\MenuApplicationService;
 use app\adminapi\validate\auth\MenuValidate;
 use app\common\service\instance\InstanceToolAccessGuard;
 use app\common\service\JsonService;
-use app\common\service\org\OrgTenantContext;
 use think\response\Json;
 use app\common\execution\ExecutionContextAccess;
 
@@ -32,7 +31,7 @@ class MenuController extends BaseAdminController
     {
         return $this->instanceMenuDenial() ?? $this->data($this->menus->getAll());
     }
-    public function all()    { return $this->data($this->menus->getAllSimple(OrgTenantContext::member())); }
+    public function all()    { return $this->data($this->menus->getAllSimple($this->tenantAdminContext())); }
     public function detail()
     {
         if ($denial = $this->instanceMenuDenial()) return $denial;
@@ -45,16 +44,16 @@ class MenuController extends BaseAdminController
     {
         if ($denial = $this->instanceMenuDenial()) return $denial;
         $this->validate($this->request->post(), MenuValidate::class . '.add');
-        $result = $this->menus->add($this->request->post());
-        return $result ? $this->success('操作成功') : $this->fail($this->menus->getError());
+        $this->menus->add($this->request->post());
+        return $this->success('操作成功');
     }
 
     public function edit()
     {
         if ($denial = $this->instanceMenuDenial()) return $denial;
         $this->validate($this->request->post(), MenuValidate::class . '.edit');
-        $result = $this->menus->edit($this->request->post());
-        return $result ? $this->success('操作成功') : $this->fail($this->menus->getError());
+        $this->menus->edit($this->request->post());
+        return $this->success('操作成功');
     }
 
     public function delete()
@@ -62,8 +61,8 @@ class MenuController extends BaseAdminController
         if ($denial = $this->instanceMenuDenial()) return $denial;
         $params = ['id' => (int)$this->request->post('id')];
         $this->validate($params, MenuValidate::class . '.delete');
-        $result = $this->menus->delete($params['id']);
-        return $result ? $this->success('操作成功') : $this->fail($this->menus->getError());
+        $this->menus->delete($params['id']);
+        return $this->success('操作成功');
     }
 
     public function updateStatus()
@@ -74,8 +73,8 @@ class MenuController extends BaseAdminController
             'is_disable' => $this->request->post('is_disable'),
         ];
         $this->validate($params, MenuValidate::class . '.status');
-        $result = $this->menus->updateStatus($params['id'], (int)$params['is_disable']);
-        return $result ? $this->success('操作成功') : $this->fail($this->menus->getError());
+        $this->menus->updateStatus($params['id'], (int)$params['is_disable']);
+        return $this->success('操作成功');
     }
 
     private function instanceMenuDenial(): ?Json

@@ -9,6 +9,7 @@ use app\common\service\storage\driver\LocalStorageDriver;
 use app\common\service\storage\driver\QcloudStorageDriver;
 use app\common\service\storage\driver\QiniuStorageDriver;
 use app\common\service\runtime\OperationalLog;
+use think\App;
 
 final class StorageDriverFactory
 {
@@ -18,6 +19,7 @@ final class StorageDriverFactory
         private readonly AliyunStorageClientFactory $aliyun,
         private readonly QcloudStorageClientFactory $qcloud,
         private readonly ExecutionContextAccess $contexts,
+        private readonly App $app,
     ) {
     }
 
@@ -29,7 +31,7 @@ final class StorageDriverFactory
                 $account['resolved_credentials'] = $this->credentials->resolve($account);
             }
             $driver = match ($provider) {
-                'local' => new LocalStorageDriver($space),
+                'local' => new LocalStorageDriver($space, $this->app->getRootPath()),
                 'qiniu' => new QiniuStorageDriver($account, $space, $this->http),
                 'aliyun' => new AliyunStorageDriver($account, $space, $this->aliyun),
                 'qcloud' => new QcloudStorageDriver($account, $space, $this->qcloud),

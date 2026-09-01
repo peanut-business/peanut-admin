@@ -29,6 +29,7 @@ final readonly class TaskImportExportRuntime
     public function __construct(
         private PDO $pdo,
         TaskJobRuntime $tasks,
+        private AppFileMediaGateway $files,
     ) {
         $this->tasks = $tasks;
     }
@@ -51,7 +52,7 @@ final readonly class TaskImportExportRuntime
     /** @return array{url:string,filename:string} */
     public function download(AuthorizedOperationContext $context, string $fileKey): array
     {
-        return $this->files()->authorizedDownload($this->asOperation($context, 'read'), $fileKey);
+        return $this->files->authorizedDownload($this->asOperation($context, 'read'), $fileKey);
     }
 
     public function runTenant(int $tenantId, string $workerId): int
@@ -69,7 +70,7 @@ final readonly class TaskImportExportRuntime
             new ImportExportTaskHandler(new CsvOperationRunner(
                 (new CoreTenantRepositoryFactory($this->pdo))->importExport(),
                 $this->providers(),
-                $this->files(),
+                $this->files,
                 AuditContractHost::fromPdo($this->pdo),
             )),
             new AdminAsyncAuthorization($this->pdo),
@@ -79,11 +80,6 @@ final readonly class TaskImportExportRuntime
     private function providers(): DataProviderRegistry
     {
         return new DataProviderRegistry([new OperationLogExportProvider()]);
-    }
-
-    private function files(): AppFileMediaGateway
-    {
-        return new AppFileMediaGateway($this->pdo);
     }
 
     private function asOperation(AuthorizedOperationContext $source, string $operation): AuthorizedOperationContext

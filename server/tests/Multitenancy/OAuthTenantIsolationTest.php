@@ -7,12 +7,11 @@ use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\api\application\OAuthApplicationService;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\external\ExternalTenantBinding;
+use app\common\service\external\ExternalTenantContext;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\member\MemberTenantContext;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
-use app\common\service\oauth\OAuthTenantContext;
-use app\common\service\oauth\OAuthTenantRepository;
+use app\Modules\Official\Oauth\Infrastructure\Persistence\OAuthTenantRepository;
 use app\Modules\Official\Oauth\Application\OAuthCallbackLocator;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -96,8 +95,8 @@ function oauthSystemContext(int $tenantId, string $operationId): TenantSystemCon
 {
     return new TenantSystemContext(
         $tenantId,
-        MemberTenantContext::PUBLIC_AUTH_ACTOR,
-        'member.oauth-mini-program',
+        ExternalTenantResolver::ACTOR,
+        'oauth.mini-program',
         $operationId,
     );
 }
@@ -304,11 +303,11 @@ SQL);
         ->wechatSubjectForMember($beta, 22, 1)) === 'openid-shared', 'payment compatibility lookup lost Beta owned subject');
 
     $sameStateHash = str_repeat('c', 64);
-    $alphaBegin = new TenantSystemContext(101, MemberTenantContext::PUBLIC_AUTH_ACTOR, 'member.oauth-begin', 'alpha-begin');
+    $alphaBegin = new TenantSystemContext(101, ExternalTenantResolver::ACTOR, 'oauth.begin', 'alpha-begin');
     oauthRunSystem($alphaBegin, static fn() => OAuthTenantRepository::createAttempt($alphaBegin, [
         'state_hash' => $sameStateHash, 'scene' => 'oa', 'return_path' => '/alpha', 'expires_at' => time() + 600,
     ]));
-    $betaBegin = new TenantSystemContext(202, MemberTenantContext::PUBLIC_AUTH_ACTOR, 'member.oauth-begin', 'beta-begin');
+    $betaBegin = new TenantSystemContext(202, ExternalTenantResolver::ACTOR, 'oauth.begin', 'beta-begin');
     oauthRunSystem($betaBegin, static fn() => OAuthTenantRepository::createAttempt($betaBegin, [
         'tenant_id' => 101, 'state_hash' => $sameStateHash, 'scene' => 'oa', 'return_path' => '/beta', 'expires_at' => time() + 600,
     ]));
@@ -328,7 +327,7 @@ SQL);
     expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $validStateHash)) === 1, 'valid OAuth state was not located');
     expectOAuthTenant(count(OAuthCallbackLocator::byState($openPlatformProvider, $validStateHash)) === 0, 'wrong OAuth binding provider accepted state');
     $expiredStateHash = str_repeat('e', 64);
-    $expiredStateContext = new TenantSystemContext(101, MemberTenantContext::PUBLIC_AUTH_ACTOR, 'member.oauth-begin', 'expired-state');
+    $expiredStateContext = new TenantSystemContext(101, ExternalTenantResolver::ACTOR, 'oauth.begin', 'expired-state');
     oauthRunSystem($expiredStateContext, static fn() => OAuthTenantRepository::createAttempt($expiredStateContext, [
         'state_hash' => $expiredStateHash, 'scene' => 'oa', 'return_path' => '/expired', 'expires_at' => time() - 1,
     ]));
@@ -356,7 +355,7 @@ SQL);
     expectOAuthTenant(count(OAuthCallbackLocator::byTicket($ticketHash)) === 0, 'replayed OAuth ticket was accepted');
 
     try {
-        OAuthTenantContext::tenantId(new TenantSystemContext(202, 'forged.actor', 'member.oauth-begin', 'forged'));
+        ExternalTenantContext::tenantId(new TenantSystemContext(202, 'forged.actor', 'oauth.begin', 'forged'));
         throw new RuntimeException('forged OAuth system actor was accepted');
     } catch (Throwable $exception) {
         expectOAuthTenant($exception->getMessage() !== '', 'forged OAuth actor denial lost shape');
@@ -368,7 +367,7 @@ SQL);
         'app/api/application/LoginApplicationService.php',
         'app/api/application/OAuthApplicationService.php',
         'app/api/middleware/CheckTokenMiddleware.php',
-        'app/common/service/oauth/OAuthTenantRepository.php',
+        'app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php',
     ] as $relative) {
         $source = (string)file_get_contents($serverRoot . '/' . $relative);
         expectOAuthTenant(!str_contains($source, 'Member\\Model\\Member'), 'Member model leaked outside its owner: ' . $relative);

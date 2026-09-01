@@ -20,8 +20,8 @@ use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\Modules\Official\Member\Contracts\MemberTagCommands;
 use app\Modules\Official\Member\Model\MemberBalanceLog;
 use app\common\service\FileService;
-use app\common\service\MemberBalanceService;
-use app\common\service\member\MemberTenantRepository;
+use app\common\service\Money;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\service\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
@@ -409,7 +409,7 @@ final class MemberAdministrationService implements MemberAdministration
         $this->transactions->run(function () use ($context, $params, $adminId, $idempotencyKey): void {
                 $action = (int)$params['action'];
                 $memberId = (int)$params['user_id'];
-                $amountCents = MemberBalanceService::moneyToCents(abs((float)$params['num']));
+                $amountCents = Money::toCents(abs((float)$params['num']));
                 $remark = (string)($params['remark'] ?? '');
                 $lease = $this->idempotency->begin(IdempotencyCommand::tenant(
                     $context,

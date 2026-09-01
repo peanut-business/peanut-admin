@@ -6,9 +6,7 @@ namespace app\Modules\Official\ImportExport\Application;
 use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
 use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
 use app\common\dto\authorization\AdminPrincipal;
-use app\common\service\async\TaskImportExportRuntimeFactory;
 use app\common\service\authorization\AdminAuthorizationService;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** Application boundary for the Tenant Admin operation-log export workflow. */
@@ -17,10 +15,12 @@ final readonly class OperationLogExportApplicationService
     private AdminAuthorizationService $authorization;
     private TaskImportExportRuntime $runtime;
 
-    public function __construct(PDO $pdo)
-    {
-        $this->authorization = new AdminAuthorizationService($pdo);
-        $this->runtime = TaskImportExportRuntimeFactory::fromConfig($pdo);
+    public function __construct(
+        AdminAuthorizationService $authorization,
+        TaskImportExportRuntime $runtime,
+    ) {
+        $this->authorization = $authorization;
+        $this->runtime = $runtime;
     }
 
     public function submit(

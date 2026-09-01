@@ -134,7 +134,8 @@ $ownPublicMethods = array_values(array_map(
     static fn(ReflectionMethod $method): string => $method->getName(),
     array_filter(
         $base->getMethods(ReflectionMethod::IS_PUBLIC),
-        static fn(ReflectionMethod $method): bool => $method->getDeclaringClass()->getName() === $baseName,
+        static fn(ReflectionMethod $method): bool => $method->getDeclaringClass()->getName() === $baseName
+            && $method->getName() !== '__construct',
     ),
 ));
 sort($ownPublicMethods);
@@ -154,7 +155,7 @@ expectAdminTenantCrudConstant($base, 'CRUD_VALIDATE_LISTS', false, $baseName);
 expectAdminTenantCrudConstant($base, 'CRUD_STATUS_FIELD', 'is_disable', $baseName);
 expectAdminTenantCrudConstant($base, 'CRUD_STATUS_SCENE', 'status', $baseName);
 $contextHook = expectAdminTenantCrudMethod($base, 'resolveCrudContext', $baseName, false, true);
-expectAdminTenantCrud($contextHook->isAbstract(), $baseName . '::resolveCrudContext() must be abstract');
+expectAdminTenantCrud(!$contextHook->isAbstract(), $baseName . '::resolveCrudContext() must use the shared execution context');
 expectAdminTenantCrud(
     $contextHook->getReturnType()?->getName() === 'PeanutAdmin\\Kernel\\Auth\\TenantContext',
     $baseName . '::resolveCrudContext() must return TenantContext',
@@ -177,12 +178,12 @@ foreach ([
 ] as $constant => $value) {
     expectAdminTenantCrudConstant($articleAbstract, $constant, $value, $articleAbstractName);
 }
-foreach (['resolveCrudContext', 'renderLists', 'renderDetail', 'validatedInput'] as $hook) {
+foreach (['renderLists', 'renderDetail', 'validatedInput'] as $hook) {
     expectAdminTenantCrudMethod($articleAbstract, $hook, $articleAbstractName, false, true);
 }
 expectAdminTenantCrud(
-    str_contains(adminTenantCrudSource($articleAbstract), 'ArticleTenantContext::member()'),
-    $articleAbstractName . ' lost its Article Tenant context hook',
+    str_contains(adminTenantCrudSource($articleAbstract), 'CurrentExecutionContext $executionContext'),
+    $articleAbstractName . ' lost its injected execution context',
 );
 
 // Direct subclasses configure only their Application Service/Validate pair; their hooks
@@ -193,21 +194,18 @@ $directTenantCrud = [
         'service' => 'app\\adminapi\\application\\dict\\DictTypeApplicationService',
         'validate' => 'app\\adminapi\\validate\\dict\\DictTypeValidate',
         'notFound' => '字典类型不存在',
-        'context' => 'DictTenantContext::member()',
         'extraMethods' => ['all'],
     ],
     'app\\adminapi\\controller\\dict\\DictDataController' => [
         'service' => 'app\\adminapi\\application\\dict\\DictDataApplicationService',
         'validate' => 'app\\adminapi\\validate\\dict\\DictDataValidate',
         'notFound' => '字典数据不存在',
-        'context' => 'DictTenantContext::member()',
         'extraMethods' => ['byType'],
     ],
     'app\\Modules\\Official\\Oauth\\Http\\Controller\\OfficialAccountReplyController' => [
         'service' => 'app\\Modules\\Official\\Oauth\\Application\\OfficialAccountReplyApplicationService',
         'validate' => 'app\\Modules\\Official\\Oauth\\Validation\\OfficialAccountReplyValidate',
         'notFound' => '自动回复不存在',
-        'context' => 'MemberTenantContext::member()',
         'extraMethods' => [],
     ],
 ];
@@ -217,12 +215,14 @@ foreach ($directTenantCrud as $className => $contract) {
         $class->getParentClass()?->getName() === $baseName,
         $className . ' must extend AbstractTenantCrudController directly',
     );
-    expectAdminTenantCrudConstant($class, 'CRUD_SERVICE', $contract['service'], $className);
+    $parameters = $class->getConstructor()?->getParameters() ?? [];
+    expectAdminTenantCrud(
+        count($parameters) === 3 && $parameters[2]->getType()?->getName() === $contract['service'],
+        $className . ' must inject ' . $contract['service'],
+    );
     expectAdminTenantCrudConstant($class, 'CRUD_VALIDATE', $contract['validate'], $className);
     expectAdminTenantCrudConstant($class, 'CRUD_NOT_FOUND_MESSAGE', $contract['notFound'], $className);
-    expectAdminTenantCrudMethod($class, 'resolveCrudContext', $className, false, true);
-    $source = adminTenantCrudSource($class);
-    expectAdminTenantCrud(str_contains($source, $contract['context']), $className . ' lost its Tenant context hook');
+    expectAdminTenantCrudMethod($class, 'resolveCrudContext', $baseName, false, true);
     foreach ($contract['extraMethods'] as $methodName) {
         expectAdminTenantCrudMethod($class, $methodName, $className, true);
     }
@@ -240,9 +240,10 @@ $articleConstructor = $articleAbstract->getConstructor();
 expectAdminTenantCrud($articleConstructor !== null, $articleAbstractName . ' must receive its Application contract');
 $articleParameters = $articleConstructor->getParameters();
 expectAdminTenantCrud(
-    count($articleParameters) === 2
-        && $articleParameters[1]->getType()?->getName() === 'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
-    $articleAbstractName . ' must inject ArticleAdministration',
+    count($articleParameters) === 3
+        && $articleParameters[1]->getType()?->getName() === 'app\\common\\execution\\CurrentExecutionContext'
+        && $articleParameters[2]->getType()?->getName() === 'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
+    $articleAbstractName . ' must inject CurrentExecutionContext and ArticleAdministration',
 );
 foreach ([
     'app\\Modules\\Official\\Article\\Http\\Controller\\ArticleController' => [
@@ -287,9 +288,8 @@ expectAdminTenantCrud(
     $orgBaseName . ' must extend AbstractTenantCrudController directly',
 );
 expectAdminTenantCrudConstant($orgBase, 'CRUD_STATUS_FIELD', 'status', $orgBaseName);
-expectAdminTenantCrudMethod($orgBase, 'resolveCrudContext', $orgBaseName, false, true);
+expectAdminTenantCrudMethod($orgBase, 'resolveCrudContext', $baseName, false, true);
 expectAdminTenantCrudMethod($orgBase, 'validatedInput', $orgBaseName, false, true);
-expectAdminTenantCrud(str_contains(adminTenantCrudSource($orgBase), 'OrgTenantContext::member()'), $orgBaseName . ' lost its Org Tenant context hook');
 expectAdminTenantCrud(str_contains(adminTenantCrudSource($orgBase), 'validationRules'), $orgBaseName . ' lost Application Service validationRules hook');
 foreach ([
     $dept->getName() => [
@@ -301,9 +301,13 @@ foreach ([
         'extraMethods' => ['all'],
     ],
 ] as $className => $contract) {
-    expectAdminTenantCrudConstant($className === $dept->getName() ? $dept : $jobs, 'CRUD_SERVICE', $contract['service'], $className);
     $class = $className === $dept->getName() ? $dept : $jobs;
-    expectAdminTenantCrudMethod($class, 'resolveCrudContext', $orgBaseName, false, true);
+    $parameters = $class->getConstructor()?->getParameters() ?? [];
+    expectAdminTenantCrud(
+        count($parameters) === 3 && $parameters[2]->getType()?->getName() === $contract['service'],
+        $className . ' must inject ' . $contract['service'],
+    );
+    expectAdminTenantCrudMethod($class, 'resolveCrudContext', $baseName, false, true);
     foreach ($contract['extraMethods'] as $methodName) {
         expectAdminTenantCrudMethod($class, $methodName, $className, true);
     }

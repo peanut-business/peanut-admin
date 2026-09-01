@@ -8,7 +8,7 @@ use app\common\enum\CrontabEnum;
 use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
-use app\common\service\crontab\CrontabTenantRepository;
+use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
@@ -25,6 +25,16 @@ function expectCrontabTenant(bool $condition, string $message): void
     if (!$condition) {
         throw new RuntimeException($message);
     }
+}
+
+function expectCrontabTenantThrows(callable $operation, string $message): void
+{
+    try {
+        $operation();
+    } catch (Throwable) {
+        return;
+    }
+    throw new RuntimeException($message);
 }
 
 function crontabTenantContext(int $tenantId, int $accountId, int $memberId, string $requestId): TenantContext
@@ -147,7 +157,7 @@ SQL);
                 new \app\common\execution\AdminExecutionContext($context, 'test.crontab.add.' . $suffix),
                 fn() => app(CrontabApplicationService::class)->add($task),
             ),
-            app(CrontabApplicationService::class)->getError(),
+            'Tenant schedule creation failed',
         );
     }
     $alphaId = (int)app(ExecutionContextStore::class)->run(
@@ -159,15 +169,15 @@ SQL);
         fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
     );
     expectCrontabTenant($alphaId > 0 && $betaId > 0 && $alphaId !== $betaId, 'Tenant schedules were not independently created');
-    expectCrontabTenant(
-        app(ExecutionContextStore::class)->run(
+    expectCrontabTenantThrows(
+        fn() => app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($alpha, 'test.crontab.detail.cross-tenant'),
             fn() => app(CrontabApplicationService::class)->detail($betaId),
-        ) === [],
+        ),
         'cross-Tenant schedule detail leaked',
     );
-    expectCrontabTenant(
-        !app(ExecutionContextStore::class)->run(
+    expectCrontabTenantThrows(
+        fn() => app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($alpha, 'test.crontab.delete.cross-tenant'),
             fn() => app(CrontabApplicationService::class)->delete($betaId),
         ),
@@ -307,7 +317,7 @@ SQL)->fetchAll();
             && $betaJob['last_error_code'] === 'CRONTAB_EXECUTION_FAILED',
         'terminal Crontab failure is absent from the existing diagnostics projection',
     );
-    $schedulerSource = (string)file_get_contents($serverRoot . '/app/common/service/crontab/CrontabSchedulerService.php');
+    $schedulerSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/CrontabSchedulerService.php');
     $commandSource = (string)file_get_contents($serverRoot . '/app/command/Crontab.php');
     $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
     expectCrontabTenant(
