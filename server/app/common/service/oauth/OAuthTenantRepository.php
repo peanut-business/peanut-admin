@@ -7,7 +7,6 @@ use app\Modules\Official\Oauth\Model\OAuthAttempt;
 use app\Modules\Official\Oauth\Model\OAuthCompletionTicket;
 use app\Modules\Official\Oauth\Model\OAuthIdentity;
 use app\Modules\Official\Oauth\Model\OAuthPrincipal;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -72,21 +71,5 @@ final class OAuthTenantRepository
         OAuthTenantContext::tenantId($context);
         unset($data['tenant_id']);
         return OAuthCompletionTicket::create($data);
-    }
-
-    public static function subjectForOwnedMember(
-        AuthenticatedMemberContext|TenantContext $context,
-        int $memberId,
-        int $terminal
-    ): string
-    {
-        if ((new MemberModuleProvider())->queries()->identity($context, $memberId) === null) {
-            return '';
-        }
-        return (string)self::identities($context)->where([
-            'provider' => 'wechat',
-            'member_id' => $memberId,
-            'terminal' => $terminal,
-        ])->value('subject');
     }
 }

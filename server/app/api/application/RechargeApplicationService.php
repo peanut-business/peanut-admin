@@ -5,7 +5,8 @@ namespace app\api\application;
 
 use app\common\http\PageResult;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
+use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\Modules\Official\Oauth\ModuleProvider as OAuthModuleProvider;
 use app\common\enum\AccountLogEnum;
 use app\common\enum\UserTerminalEnum;
@@ -33,15 +34,18 @@ class RechargeApplicationService extends ApplicationService
 {
     private const MAX_AMOUNT_CENTS = 99999999;
 
-    public function __construct(private readonly AuditContractHost $audit)
-    {
+    public function __construct(
+        private readonly AuditContractHost $audit,
+        private readonly MemberQueries $members,
+        private readonly MemberBalanceCommands $memberBalances,
+    ) {
     }
 
     public function config(object $context, int $memberId, int $terminal): array|false
     {
         try {
             self::assertTerminal($terminal);
-            $member = (new MemberModuleProvider())->queries()->balanceSnapshot($context, $memberId);
+            $member = $this->members->balanceSnapshot($context, $memberId);
             if ($member === null) {
                 throw new \RuntimeException('用户不存在');
             }
@@ -94,7 +98,7 @@ class RechargeApplicationService extends ApplicationService
                 throw new \RuntimeException('充值金额超过单次上限');
             }
 
-            if ((new MemberModuleProvider())->queries()->balanceSnapshot($context, $memberId) === null) {
+            if ($this->members->balanceSnapshot($context, $memberId) === null) {
                 throw new \RuntimeException('用户不存在');
             }
             $defaultScene = RechargeTenantSettingService::defaultScene($context, $terminal);
@@ -381,7 +385,7 @@ class RechargeApplicationService extends ApplicationService
                     throw new \RuntimeException('支付交易流水已被使用');
                 }
 
-                (new MemberModuleProvider())->balanceCommands()->applyInTransaction(
+                $this->memberBalances->applyInTransaction(
                     $context,
                     new MemberBalanceMutation(
                         (int)$order->user_id,

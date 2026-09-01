@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\middleware;
 
 use app\api\service\UserTokenService;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\JsonService;
@@ -18,6 +18,7 @@ use app\common\service\member\MemberApiTenantContextResolver;
 class CheckTokenMiddleware
 {
     public function __construct(
+        private readonly MemberQueries $members,
         private readonly ?ExecutionContextStore $executionContexts = null,
         private ?MemberApiTenantContextResolver $tenantContexts = null,
     ) {}
@@ -52,8 +53,8 @@ class CheckTokenMiddleware
                 strtolower((string)$request->method()),
                 trim((string)$request->pathinfo(), '/'),
             )),
-            static function () use ($memberContext, $memberId, $next, $request) {
-                $member = (new MemberModuleProvider())->queries()->identity($memberContext, $memberId);
+            function () use ($memberContext, $memberId, $next, $request) {
+                $member = $this->members->identity($memberContext, $memberId);
                 if ($member === null) {
                     throw \app\common\http\ApiProblem::fromEnvelope('账号不存在', null, 40100);
                 }

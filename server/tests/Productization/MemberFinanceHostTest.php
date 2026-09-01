@@ -19,6 +19,7 @@ $balanceService = (string)file_get_contents($balanceServicePath);
 $balanceContractPath = $serverRoot . '/app/Modules/Official/Member/Application/MemberBalanceContractService.php';
 $balanceContract = (string)file_get_contents($balanceContractPath);
 $memberManifest = (string)file_get_contents($serverRoot . '/app/Modules/Official/Member/module.json');
+$memberProvider = (string)file_get_contents($serverRoot . '/app/Modules/Official/Member/ModuleProvider.php');
 $administration = (string)file_get_contents($serverRoot . '/app/Modules/Official/Member/Application/MemberAdministrationService.php');
 $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 
@@ -82,6 +83,10 @@ expectMemberFinance(
     'official.member must export the query and balance command contracts'
 );
 expectMemberFinance(
+    str_contains($memberProvider, 'bind(MemberIdentityCommands::class'),
+    'official.member must bind its identity command contract at startup'
+);
+expectMemberFinance(
     str_contains($balanceContract, 'MemberBalanceService::applyInTransaction'),
     'Member balance command must delegate to the unique writer'
 );
@@ -91,7 +96,7 @@ expectMemberFinance(
 );
 foreach ($callers as $relativePath) {
     $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
-    $call = strpos($source, 'balanceCommands()->applyInTransaction');
+    $call = strpos($source, 'applyInTransaction(');
     expectMemberFinance($call !== false, 'balance path bypasses the unique owner: ' . $relativePath);
     $beforeCall = substr($source, 0, $call);
     $hasTransactionBoundary = strrpos($beforeCall, 'Db::transaction(') !== false
@@ -102,7 +107,7 @@ foreach ($callers as $relativePath) {
 
 $settle = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
 $paidGuard = strpos($settle, 'pay_status === RechargeOrder::PAY_STATUS_PAID');
-$credit = strpos($settle, 'balanceCommands()->applyInTransaction');
+$credit = strpos($settle, 'memberBalances->applyInTransaction');
 expectMemberFinance($paidGuard !== false && $credit !== false && $paidGuard < $credit, 'paid callback guard must precede credit');
 expectMemberFinance(strpos($settle, "where('sn', \$orderSn)->lock(true)") < $paidGuard, 'recharge order must be locked before the paid guard');
 expectMemberFinance(
@@ -111,11 +116,11 @@ expectMemberFinance(
 );
 
 $refund = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeAdministrationService.php');
-$retryStart = strpos($refund, 'public static function refundAgain');
+$retryStart = strpos($refund, 'public function refundAgain');
 $retryEnd = strpos($refund, 'private static function retryLockName', $retryStart ?: 0);
 expectMemberFinance($retryStart !== false && $retryEnd !== false, 'refund retry boundary is missing');
 expectMemberFinance(
-    !str_contains(substr($refund, $retryStart, $retryEnd - $retryStart), 'balanceCommands()->applyInTransaction'),
+    !str_contains(substr($refund, $retryStart, $retryEnd - $retryStart), 'applyInTransaction('),
     'refund retry must not deduct the balance again'
 );
 

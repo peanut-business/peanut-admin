@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace app\api\application;
 
 use app\Modules\Official\Notification\ModuleProvider;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
+use app\Modules\Official\Member\Contracts\MemberProfileCommands;
+use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\application\ApplicationService;
 use app\common\enum\notice\NoticeSceneEnum;
 use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
@@ -14,10 +16,17 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 
 class UserApplicationService extends ApplicationService
 {
+    public function __construct(
+        private readonly MemberQueries $members,
+        private readonly MemberIdentityCommands $memberIdentities,
+        private readonly MemberProfileCommands $memberProfiles,
+    ) {
+    }
+
     /** 用户中心（首屏数据） */
     public function center(AuthenticatedMemberContext $context, int $memberId): array
     {
-        $data = (new MemberModuleProvider())->queries()->memberFields(
+        $data = $this->members->memberFields(
             $context,
             $memberId,
             ['id', 'sn', 'nickname', 'avatar', 'mobile', 'user_money', 'points', 'create_time'],
@@ -41,7 +50,7 @@ class UserApplicationService extends ApplicationService
     /** 个人信息 */
     public function info(AuthenticatedMemberContext $context, int $memberId): array
     {
-        $data = (new MemberModuleProvider())->queries()->memberFields(
+        $data = $this->members->memberFields(
             $context,
             $memberId,
             ['id', 'sn', 'account', 'nickname', 'avatar', 'sex', 'birthday', 'mobile', 'email', 'user_money', 'points', 'create_time', 'password'],
@@ -77,7 +86,7 @@ class UserApplicationService extends ApplicationService
                 $value = FileService::setTenantFileUrl($context, (string) $value);
             }
 
-            (new MemberModuleProvider())->profileCommands()->updateSelfField($context, $memberId, $field, $value);
+            $this->memberProfiles->updateSelfField($context, $memberId, $field, $value);
             return true;
         } catch (\Exception $e) {
             self::setError($e->getMessage());
@@ -89,7 +98,7 @@ class UserApplicationService extends ApplicationService
     public function changePassword(AuthenticatedMemberContext $context, int $memberId, array $params): bool
     {
         try {
-            (new MemberModuleProvider())->identityCommands()->changePassword(
+            $this->memberIdentities->changePassword(
                 $context,
                 $memberId,
                 (string)$params['old_password'],
@@ -110,7 +119,7 @@ class UserApplicationService extends ApplicationService
             if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                 throw new \Exception('手机号格式错误');
             }
-            $member = (new MemberModuleProvider())->queries()->memberFields(
+            $member = $this->members->memberFields(
                 $context,
                 $memberId,
                 ['id', 'mobile'],
@@ -118,7 +127,7 @@ class UserApplicationService extends ApplicationService
             if ($member === []) {
                 throw new \Exception('用户不存在');
             }
-            (new MemberModuleProvider())->identityCommands()->assertMobileAvailable($context, $memberId, $mobile);
+            $this->memberIdentities->assertMobileAvailable($context, $memberId, $mobile);
             $scene = empty($member['mobile'])
                 ? NoticeSceneEnum::BIND_MOBILE
                 : NoticeSceneEnum::CHANGE_MOBILE;
@@ -131,7 +140,7 @@ class UserApplicationService extends ApplicationService
             if (!$result->accepted) {
                 throw new \Exception($result->error);
             }
-            (new MemberModuleProvider())->identityCommands()->bindVerifiedMobile($context, $memberId, $mobile);
+            $this->memberIdentities->bindVerifiedMobile($context, $memberId, $mobile);
             return true;
         } catch (\Exception $e) {
             self::setError($e->getMessage());

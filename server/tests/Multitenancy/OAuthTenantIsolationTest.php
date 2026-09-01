@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\Oauth\Model\OAuthIdentity;
+use app\Modules\Official\Oauth\Contracts\OAuthQueries;
 use app\Modules\Official\Member\Application\MemberIdentityContractService;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\api\application\OAuthApplicationService;
@@ -140,7 +140,7 @@ if (($argv[1] ?? '') === 'oauth-worker') {
     $context = oauthSystemContext($tenantId, 'oauth-worker-' . getmypid());
     $result = oauthRunSystem(
         $context,
-        static fn() => (new OAuthApplicationService())->miniProgramLogin(
+        static fn() => app(OAuthApplicationService::class)->miniProgramLogin(
             $context,
             'fixture-code',
             oauthBinding($bindingId, $tenantId),
@@ -250,7 +250,7 @@ SQL);
     $betaLoginContext = oauthSystemContext(202, 'beta-same-identity');
     $betaOAuth = oauthRunSystem(
         $betaLoginContext,
-        static fn() => (new OAuthApplicationService())->miniProgramLogin(
+        static fn() => app(OAuthApplicationService::class)->miniProgramLogin(
             $betaLoginContext,
             'fixture-code',
             oauthBinding(302, 202),
@@ -269,7 +269,7 @@ SQL);
     $rollbackContext = oauthSystemContext(202, 'beta-rollback');
     $rolledBack = oauthRunSystem(
         $rollbackContext,
-        static fn() => (new OAuthApplicationService())->miniProgramLogin(
+        static fn() => app(OAuthApplicationService::class)->miniProgramLogin(
             $rollbackContext,
             'fixture-code',
             oauthBinding(302, 202),
@@ -300,7 +300,8 @@ SQL);
     expectOAuthTenant((int)$betaIdentity->tenant_id === 202, 'payload forged OAuth identity Tenant ownership');
     expectOAuthTenant(oauthRunTenant($alpha, 'read-beta-identity', static fn() => OAuthTenantRepository::identities($alpha)
         ->where('id', (int)$betaIdentity->id)->findOrEmpty()->isEmpty()), 'Alpha read Beta OAuth identity');
-    expectOAuthTenant(oauthRunTenant($beta, 'read-beta-subject', static fn() => OAuthIdentity::subjectForMember($beta, 22, 1)) === 'openid-shared', 'payment compatibility lookup lost Beta owned subject');
+    expectOAuthTenant(oauthRunTenant($beta, 'read-beta-subject', static fn() => app(OAuthQueries::class)
+        ->wechatSubjectForMember($beta, 22, 1)) === 'openid-shared', 'payment compatibility lookup lost Beta owned subject');
 
     $sameStateHash = str_repeat('c', 64);
     $alphaBegin = new TenantSystemContext(101, MemberTenantContext::PUBLIC_AUTH_ACTOR, 'member.oauth-begin', 'alpha-begin');

@@ -136,8 +136,8 @@ foreach (["where('sn', \$orderSn)->lock(true)", "\$currency !== 'CNY'",
     expectPaymentHost(str_contains($settlement, $marker), 'settlement invariant missing: ' . $marker);
 }
 expectPaymentHost(
-    str_contains($settlement, 'MemberModuleProvider')
-        && str_contains($settlement, 'balanceCommands()->applyInTransaction')
+    str_contains($settlement, 'MemberBalanceCommands')
+        && str_contains($settlement, 'memberBalances->applyInTransaction')
         && str_contains($settlement, 'MemberBalanceMutation'),
     'settlement does not use the public Member balance contract'
 );
