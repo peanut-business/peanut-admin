@@ -78,6 +78,7 @@ expectOAuthChannelHost(
 );
 
 $routeSource = peanut_route_registry_source($serverRoot);
+$routeInventory = peanut_route_endpoint_inventory($serverRoot);
 $oauthRouteSource = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Oauth/Http/routes.php'
 );
@@ -88,8 +89,14 @@ foreach (['setting/channel/config', 'setting/channel/save'] as $legacyRoute) {
     );
 }
 foreach (['api/oauth/wechat/redirect/pc', 'api/oauth/wechat/redirect/official-account'] as $callbackRoute) {
+    $matches = array_filter(
+        $routeInventory['endpoints'],
+        static fn(array $endpoint): bool => $endpoint['method'] === 'GET'
+            && $endpoint['path'] === '/' . $callbackRoute
+            && $endpoint['owner'] === ['type' => 'module', 'key' => 'official.oauth'],
+    );
     expectOAuthChannelHost(
-        str_contains($oauthRouteSource, $callbackRoute),
+        count($matches) === 1,
         'callback bridge route is missing: ' . $callbackRoute
     );
 }
