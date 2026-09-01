@@ -28,7 +28,6 @@ return [
         'controller',
         'installation',
         'platform',
-        'tenant',
     ],
 
     // 异常页面的模板文件

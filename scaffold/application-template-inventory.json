@@ -5282,7 +5282,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4c441e4d4de05f731185ac5158d91a6b178ae3949aee4d7d4095d5a3b38e9e1e"
+            "source_sha256": "c6fe9531a81c71550738137aef16ae82fdf6558282901596af07c0446917a7e2"
         },
         {
             "path": "server/app/BaseController.php",
@@ -8430,7 +8430,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7ba2d72f69ce218b55cc4eaa166f760e615c82233463ac408372557d6db561df"
+            "source_sha256": "fe9fcb833e986d619d541fd271b4daa84b7ee007b9d8421a65bf8597d8351155"
         },
         {
             "path": "server/app/adminapi/application/auth/MenuApplicationService.php",
@@ -8727,6 +8727,20 @@
             "source_sha256": "f41ab5797c8dd6f74da4f09398b1f57a9674382cb0604a70db60d76d559e1cdf"
         },
         {
+            "path": "server/app/adminapi/controller/auth/TenantSessionController.php",
+            "target": "server/app/adminapi/controller/auth/TenantSessionController.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "5b398f509eaeb6ccc3a595442637f1f25defa39c99e9479fd49b98737be2ae97"
+        },
+        {
             "path": "server/app/adminapi/controller/config/ConfigController.php",
             "target": "server/app/adminapi/controller/config/ConfigController.php",
             "classification": "app-owned",
@@ -8962,7 +8976,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "558c2a178d96ffec8c6d340f348b6658918aedbdbc8a475eba329711fc8c938d"
+            "source_sha256": "340d6ce7705fec60f24993dbbbf4f1a6383e3bd64ce41149fd6ef44bd6a56136"
         },
         {
             "path": "server/app/adminapi/http/middleware/OperationLogMiddleware.php",
@@ -15705,34 +15719,6 @@
             "source_sha256": "df3dcdcc4f4402ece1d612a57b6e41e5a885ed147efcb38c7689d9bdb942feb2"
         },
         {
-            "path": "server/app/tenant/controller/TenantSessionController.php",
-            "target": "server/app/tenant/controller/TenantSessionController.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b84cc60a7da278b6362abc0bbf26c3790aa8894becdcd6814aa3d548cd661ddf"
-        },
-        {
-            "path": "server/app/tenant/service/TenantAuthRuntimeFactory.php",
-            "target": "server/app/tenant/service/TenantAuthRuntimeFactory.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "83f64fbc266e964f998ed6f4edc58ef6dc3e21cac7f0954a3f76eb5846d4d36e"
-        },
-        {
             "path": "server/bootstrap/environment.php",
             "target": "server/bootstrap/environment.php",
             "classification": "managed",
@@ -15814,7 +15800,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9dcb1a94c634403ef65bca903c5faff5314b8c6b70dadefbb9a78adc8cdf0d9e"
+            "source_sha256": "2c164c58f669139239d868bb34b33104382318a5e36f745826cb741daef5b9a9"
         },
         {
             "path": "server/config/async.php",
@@ -16985,7 +16971,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6b101962df8d66726de68081f4b3cd4292df6aa13803ae619b32d1bd408fc268"
+            "source_sha256": "e8d2c51ae2cbd715605e8c100279b200a4109fcf5cd1c9307c629af3e0d43adf"
         },
         {
             "path": "server/runtime/.gitkeep",
@@ -17274,7 +17260,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c415b2da9c5bf33f0f74a3bcb4f4f9b92ac198fb8b1e790cae89385a7b4b228b"
+            "source_sha256": "109f6a79240e5ab5780c710a6985baa69857d4754ace8c998572b21010a0ed92"
         },
         {
             "path": "server/tests/Multitenancy/OperationLogTenantIsolationTest.php",

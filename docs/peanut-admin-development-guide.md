@@ -22,10 +22,9 @@
 ## 目录和 owner
 
 ```text
-server/app/adminapi/       管理 API Host
+server/app/adminapi/       管理 API 与 Tenant 会话 Application
 server/app/api/            业务会员和公开 API Host
 server/app/platform/       PlatformOperator 与实例内 Tenant 治理
-server/app/tenant/         Tenant 管理会话 Host
 server/app/common/         应用公共模型、服务和横切适配
 server/app/Modules/        应用 Module 后端
 server/database/           canonical Schema、安装器和追加 migration
