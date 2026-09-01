@@ -5,7 +5,6 @@ namespace app\adminapi\application\log;
 
 use app\common\http\PageResult;
 use app\adminapi\service\OperationLogService;
-use app\common\application\ApplicationService;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\audit\OperationLogTenantRepository;
@@ -14,7 +13,7 @@ use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\persistence\TransactionalExecution;
 
-class OperationLogApplicationService extends ApplicationService
+class OperationLogApplicationService
 {
     private const EXPORT_MAX_ROWS = 25000;
     private const EXPORT_DEFAULT_NAME = '操作日志';

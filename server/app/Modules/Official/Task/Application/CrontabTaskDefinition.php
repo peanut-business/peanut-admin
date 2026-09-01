@@ -9,7 +9,7 @@ use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
 use app\common\execution\SystemExecutionMetadata;
 use app\common\service\CrontabCommandService;
-use app\common\service\crontab\CrontabTenantRepository;
+use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\org\AdminDirectoryQuery;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
@@ -28,7 +28,7 @@ use PeanutAdmin\TaskJob\Execution\RetryableTaskException;
 use PeanutAdmin\TaskJob\Execution\TaskHandler;
 use PeanutAdmin\TaskJob\Submission\TaskSubmission;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionProvider;
-use think\facade\Console;
+use think\Console;
 
 /** The built-in Task definition for one claimed Crontab schedule window. */
 final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerDefinition, TaskHandler
@@ -46,6 +46,7 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
         private readonly ModuleExecutionBoundary $modules,
         private readonly ExecutionContextStore $executionContexts,
         private readonly CurrentExecutionContext $currentExecution,
+        private readonly Console $console,
     ) {
     }
 
@@ -149,7 +150,7 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
                         (self::$dispatcher)($command, $params);
                         return;
                     }
-                    Console::call($command, $params);
+                    $this->console->call($command, $params);
                 } catch (\Throwable) {
                     throw new RetryableTaskException('CRONTAB_EXECUTION_FAILED');
                 }

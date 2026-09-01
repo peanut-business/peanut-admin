@@ -12,10 +12,8 @@ class DeptController extends AbstractOrgCrudController
 {
     public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly DeptApplicationService $departments)
     {
-        parent::__construct($app, $executionContext);
+        parent::__construct($app, $executionContext, $departments);
     }
-
-    protected const CRUD_SERVICE = DeptApplicationService::class;
 
     public function all()
     {

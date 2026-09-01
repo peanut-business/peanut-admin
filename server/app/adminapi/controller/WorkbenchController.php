@@ -7,7 +7,6 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\application\WorkbenchApplicationService;
-use app\common\service\org\OrgTenantContext;
 
 class WorkbenchController extends BaseAdminController
 {
@@ -18,6 +17,6 @@ class WorkbenchController extends BaseAdminController
 
     public function index()
     {
-        return $this->data($this->workbench->index(OrgTenantContext::member()));
+        return $this->data($this->workbench->index($this->tenantAdminContext()));
     }
 }

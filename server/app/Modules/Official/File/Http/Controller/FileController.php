@@ -4,15 +4,17 @@ declare(strict_types=1);
 namespace app\Modules\Official\File\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
+use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\File\Contracts\FileAdministration;
 use app\Modules\Official\File\Validation\FileCateValidate;
 use think\App;
+use app\common\application\BusinessException;
 
 class FileController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly FileAdministration $files)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly FileAdministration $files)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     // ---- 文件 ----
@@ -35,10 +37,10 @@ class FileController extends BaseAdminController
     {
         $name = trim((string)$this->request->post('name', ''));
         if ($name === '') {
-            return $this->fail('名称不能为空');
+            throw BusinessException::invalid('FILE_NAME_REQUIRED', '名称不能为空');
         }
         if (mb_strlen($name) > 20) {
-            return $this->fail('名称最多 20 个字符');
+            throw BusinessException::invalid('FILE_NAME_TOO_LONG', '名称最多 20 个字符');
         }
         $this->files->rename(
             $this->integerValue($this->request->post('id'), '素材 ID 无效'),

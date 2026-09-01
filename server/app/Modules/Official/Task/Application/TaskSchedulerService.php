@@ -6,7 +6,6 @@ namespace app\Modules\Official\Task\Application;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
-use app\common\service\crontab\CrontabSchedulerService;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
 final readonly class TaskSchedulerService implements TaskScheduler

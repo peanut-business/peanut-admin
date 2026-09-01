@@ -21,33 +21,35 @@ $root = dirname(__DIR__, 2);
 $sources = [];
 foreach ([
     'default_context' => 'app/common/service/tenant/DefaultTenantContextResolver.php',
+    'app_service' => 'app/AppService.php',
     'default_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/DefaultTenantContextResolver.php',
     'entry_binding' => 'app/common/service/tenant/TenantEntryBindingResolver.php',
     'entry_binding_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantEntryBindingResolver.php',
     'entry_schema' => 'database/init.sql',
-    'public_member_middleware' => 'app/api/middleware/PublicMemberTenantMiddleware.php',
-    'public_decoration_middleware' => 'app/api/middleware/PublicDecorationTenantMiddleware.php',
-    'public_notice_middleware' => 'app/api/middleware/PublicNoticeTenantMiddleware.php',
-    'public_hot_search_middleware' => 'app/api/middleware/PublicHotSearchTenantMiddleware.php',
+    'public_tenant_module_middleware' => 'app/api/middleware/PublicTenantModuleMiddleware.php',
+    'current_execution_context' => 'app/common/execution/CurrentExecutionContext.php',
+    'execution_context_store' => 'app/common/execution/ExecutionContextStore.php',
     'tenant_session' => 'app/adminapi/controller/auth/TenantSessionController.php',
     'admin_login' => 'app/adminapi/application/auth/LoginApplicationService.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
     'authenticated_member_context_core' => 'vendor/peanut-admin/core/kernel/src/Context/AuthenticatedMemberContext.php',
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
+    'member_subject_lookup' => 'app/Modules/Official/Member/Infrastructure/Persistence/ThinkPhpMemberSubjectLookup.php',
     'member_middleware' => 'app/api/middleware/CheckTokenMiddleware.php',
-    'file_repository' => 'app/common/service/file/FileTenantRepository.php',
+    'file_repository' => 'app/Modules/Official/File/Infrastructure/Persistence/FileTenantRepository.php',
     'file_namespace' => 'app/common/service/file/FileObjectNamespace.php',
     'file_namespace_core' => 'vendor/peanut-admin/core/file-media/src/Storage/TenantObjectNamespace.php',
-    'article_repository' => 'app/common/service/article/ArticleTenantRepository.php',
+    'article_repository' => 'app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php',
     'decoration_repository' => 'app/common/service/decoration/DecorationTenantRepository.php',
-    'notice_repository' => 'app/common/service/notice/NoticeTenantRepository.php',
-    'oauth_repository' => 'app/common/service/oauth/OAuthTenantRepository.php',
+    'notice_repository' => 'app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php',
+    'oauth_repository' => 'app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php',
+    'oauth_queries' => 'app/Modules/Official/Oauth/Application/OAuthQueryService.php',
     'external_resolver' => 'app/common/service/external/ExternalTenantResolver.php',
     'external_resolver_core' => 'vendor/peanut-admin/core/integration-security/src/External/ExternalTenantResolver.php',
     'external_binding_contract' => 'app/common/service/external/ExternalTenantBindingRepository.php',
     'external_audit_contract' => 'app/common/service/external/ExternalTenantAudit.php',
-    'finance_repository' => 'app/common/service/finance/FinanceTenantRepository.php',
-    'recharge_settings' => 'app/common/service/finance/RechargeTenantSettingService.php',
+    'finance_repository' => 'app/Modules/Official/Payment/Infrastructure/Persistence/FinanceTenantRepository.php',
+    'recharge_settings' => 'app/Modules/Official/Payment/Application/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
     'tenant_settings_provider' => 'app/common/service/tenant/ThinkPhpTenantSettingsProvider.php',
     'tenant_settings_runtime' => 'app/common/service/tenant/TenantSettingsRuntimeFactory.php',
@@ -58,17 +60,13 @@ foreach ([
     'platform_storage' => 'vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php',
     'platform_storage_controller' => 'app/platform/controller/PlatformStorageController.php',
     'admin_permissions' => 'app/common/service/authorization/AdminAuthorizationService.php',
-    'member_admin_context' => 'app/common/service/member/MemberTenantContext.php',
-    'article_admin_context' => 'app/common/service/article/ArticleTenantContext.php',
-    'file_admin_context' => 'app/common/service/file/FileTenantContext.php',
-    'finance_admin_context' => 'app/common/service/finance/FinanceTenantContext.php',
-    'crontab_scheduler' => 'app/common/service/crontab/CrontabSchedulerService.php',
+    'crontab_scheduler' => 'app/Modules/Official/Task/Application/CrontabSchedulerService.php',
     'crontab_task_definition' => 'app/Modules/Official/Task/Application/CrontabTaskDefinition.php',
     'scheduled_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/ScheduledTenantContext.php',
     'tenant_scope_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantScope.php',
     'async_authorization' => 'app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php',
     'async_runtime' => 'app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php',
-    'async_runtime_factory' => 'app/common/service/async/TaskImportExportRuntimeFactory.php',
+    'async_module_provider' => 'app/Modules/Official/ImportExport/ModuleProvider.php',
     'async_worker_definition' => 'app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php',
     'async_files' => 'app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php',
     'storage_path' => 'app/common/service/storage/StoragePath.php',
@@ -96,7 +94,7 @@ foreach ([
     'fixture_module_access' => 'app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php',
     'official_article_manifest' => 'app/Modules/Official/Article/module.json',
     'official_article_access' => 'app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php',
-    'official_article_public' => 'app/api/middleware/PublicArticleTenantMiddleware.php',
+    'official_article_public' => 'app/api/middleware/PublicTenantModuleMiddleware.php',
     'member_token' => 'app/api/service/UserTokenService.php',
     'jwt_config' => 'config/jwt.php',
     'menu_controller' => 'app/adminapi/controller/auth/MenuController.php',
@@ -130,7 +128,7 @@ qualificationExpect(
 );
 qualificationExpect(
     str_contains($sources['default_context'], 'new CoreDefaultTenantContextResolver($pdo)')
-        && str_contains($sources['default_context'], 'CoreDefaultTenantContextResolver::operationId($request)')
+        && str_contains($sources['default_context'], 'RequestTrace::id($contexts, $request, \'public\')')
         && str_contains($sources['default_context_core'], "code = 'default'")
         && str_contains($sources['default_context_core'], "status = 'active'")
         && str_contains($sources['default_context_core'], 'LIMIT 2')
@@ -139,8 +137,11 @@ qualificationExpect(
     'anonymous default-Tenant resolution does not fail closed'
 );
 qualificationExpect(
-    str_contains($sources['member_context'], "t.status = 'active'")
-        && str_contains($sources['member_context'], 'm.tenant_id')
+    str_contains($sources['member_context'], 'MemberSubjectLookup')
+        && str_contains($sources['member_context'], "status = 'active'")
+        && str_contains($sources['member_subject_lookup'], "where('status', 1)")
+        && str_contains($sources['member_subject_lookup'], "whereNull('delete_time')")
+        && str_contains($sources['member_subject_lookup'], "getData('tenant_id')")
         && str_contains($sources['member_middleware'], 'MemberApiTenantContextResolver'),
     'member JWT ownership does not establish an active trusted Tenant context'
 );
@@ -173,10 +174,10 @@ qualificationExpect(
         && str_contains($sources['entry_binding'], '$this->delegate->loginTenantCode(')
         && str_contains($sources['entry_binding'], '$this->delegate->assertTenantAccess(')
         && str_contains($sources['entry_binding'], '$this->delegate->system(')
-        && str_contains($sources['entry_binding'], 'DefaultTenantContextResolver::system(')
-        && str_contains($sources['entry_binding'], 'DeploymentMode::Standalone')
-        && str_contains($sources['entry_binding'], 'public_default_tenant_fallback')
-        && str_contains($sources['entry_binding'], ': null')
+        && str_contains($sources['app_service'], 'DefaultTenantContextResolver::class')
+        && str_contains($sources['app_service'], 'DeploymentMode::Standalone')
+        && str_contains($sources['app_service'], 'deployment.public_default_tenant_fallback')
+        && str_contains($sources['app_service'], 'new TenantEntryBindingResolver($this->app->make(PDO::class), $defaultSystem)')
         && str_contains($sources['entry_binding_core'], 'b.host = :host')
         && str_contains($sources['entry_binding_core'], 'b.client_key = :client_key')
         && str_contains($sources['entry_binding_core'], 'count($rows) !== 1')
@@ -187,22 +188,15 @@ qualificationExpect(
 qualificationExpect(
     str_contains($sources['tenant_session'], 'loginTenantCode(')
         && str_contains($sources['admin_login'], 'loginTenantCode(')
-        && str_contains($sources['public_member_middleware'], 'TenantEntryBindingResolver::production()->system(')
-        && !str_contains($sources['public_member_middleware'], 'DefaultTenantContextResolver::system('),
+        && str_contains($sources['public_tenant_module_middleware'], '$this->entryBindings->system(')
+        && !str_contains($sources['public_tenant_module_middleware'], 'DefaultTenantContextResolver::system('),
     'Admin or anonymous member authentication bypasses Tenant entry resolution'
 );
-foreach (['public_decoration_middleware', 'public_notice_middleware', 'public_hot_search_middleware'] as $key) {
-    qualificationExpect(
-        str_contains($sources[$key], 'TenantEntryBindingResolver::production()->system(')
-            && !str_contains($sources[$key], '= DefaultTenantContextResolver::system('),
-        $key . ' bypasses Host-bound Tenant entry resolution'
-    );
-}
 qualificationExpect(
-    str_contains($sources['routes'], "Route::get('api/search/hotLists'")
-        && str_contains($sources['routes'], 'PublicHotSearchTenantMiddleware::class')
-        && str_contains($sources['routes'], "Route::get('api/index/policy'")
-        && substr_count($sources['routes'], 'PublicDecorationTenantMiddleware::class') >= 6,
+    str_contains($sources['routes'], "Route::get('search/hotLists'")
+        && str_contains($sources['routes'], "PublicTenantModuleMiddleware::class, 'peanut.hot-search.public-read', '', 'hot-search.lists'")
+        && str_contains($sources['routes'], "Route::get('index/policy'")
+        && substr_count($sources['routes'], "PublicTenantModuleMiddleware::class, 'peanut.decoration.public-read'") >= 6,
     'public hot-search or policy route is missing a Host-bound Tenant guard'
 );
 qualificationExpect(
@@ -222,8 +216,9 @@ qualificationExpect(
     'external callbacks do not reject ambiguous or suspended Tenant ownership'
 );
 qualificationExpect(
-    str_contains($sources['oauth_repository'], 'MemberTenantRepository::members($context)')
-        && str_contains($sources['oauth_repository'], 'self::identities($context)'),
+    str_contains($sources['oauth_queries'], 'OAuthTenantRepository::identities($context)')
+        && str_contains($sources['oauth_queries'], "'member_id' => \$memberId")
+        && str_contains($sources['oauth_repository'], 'return OAuthIdentity::where([])'),
     'OAuth subject lookup is not explicitly bound to the member Tenant context'
 );
 qualificationExpect(
@@ -258,14 +253,15 @@ qualificationExpect(
 );
 qualificationExpect(
     str_contains($sources['tenant_settings'], 'implements TenantSettingsQuery, TenantSettingsCommands')
-        && str_contains($sources['tenant_settings_runtime'], 'new TenantSettingService(new ThinkPhpTenantSettingsProvider())')
         && str_contains($sources['tenant_settings_provider'], "where('tenant_id', \$tenantId)")
         && str_contains($sources['tenant_settings_provider'], "where('namespace', \$namespace)")
-        && str_contains($sources['recharge_settings'], 'TenantSettingsRuntimeFactory::service()->get')
+        && str_contains($sources['recharge_settings'], 'private readonly TenantSettingService $settings')
+        && str_contains($sources['recharge_settings'], '$this->settings->get(')
+        && str_contains($sources['recharge_settings'], 'private readonly PaymentChannelGrantCommands $channelGrants')
         && str_contains($sources['tenant_settings_bootstrap_runtime'], 'new PdoTenantSettingsBootstrapProvider($pdo)')
         && str_contains($sources['application_tenant_bootstrap'], 'TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->pdo)')
         && !str_contains($sources['application_tenant_bootstrap'], 'PdoTenantSettingsBootstrapProvider')
-        && str_contains($sources['recharge_settings'], 'PaymentChannelGrantService::channelConfigured'),
+        && str_contains($sources['recharge_settings'], '$this->channelGrants->channelConfigured('),
     'recharge policy or payment channel configuration is not Tenant-owned'
 );
 foreach (['agreement', 'site-statistics', 'member-profile', 'login', 'web-page', 'hot-search'] as $namespace) {
@@ -302,21 +298,35 @@ qualificationExpect(
         && !str_contains($sources['routes'], "Route::post('storage/setup'"),
     'instance storage control remains reachable from a Tenant Admin audience'
 );
-foreach (['member_admin_context', 'article_admin_context', 'file_admin_context', 'finance_admin_context'] as $key) {
+foreach ([
+    'app/common/service/member/MemberTenantContext.php',
+    'app/common/service/article/ArticleTenantContext.php',
+    'app/common/service/file/FileTenantContext.php',
+    'app/common/service/oauth/OAuthTenantContext.php',
+    'app/common/service/hot_search/HotSearchTenantContext.php',
+    'app/common/service/decoration/DecorationTenantContext.php',
+    'app/common/service/finance/FinanceTenantContext.php',
+    'app/common/service/org/OrgTenantContext.php',
+    'app/common/service/dict/DictTenantContext.php',
+] as $retiredContext) {
     qualificationExpect(
-        str_contains($sources[$key], 'AuthenticatedMemberContext|TenantContext')
-            && str_contains($sources[$key], '$request->tenantContext ?? null')
-            && str_contains($sources[$key], 'authorizationRevision'),
-        'native Admin TenantContext is not accepted safely by domain entry: ' . $key
+        !is_file($root . '/' . $retiredContext),
+        'retired domain-specific Tenant context was reintroduced: ' . $retiredContext,
     );
 }
+qualificationExpect(
+    str_contains($sources['current_execution_context'], 'function tenantAdmin(): TenantContext')
+        && str_contains($sources['current_execution_context'], 'function member(): AuthenticatedMemberContext')
+        && str_contains($sources['execution_context_store'], 'function run(ExecutionContext $context, callable $operation)'),
+    'typed execution context boundary is missing',
+);
 foreach ([
     'official_member_routes' => [
-        "PublicMemberTenantMiddleware::class, 'member.register'",
-        "PublicMemberTenantMiddleware::class, 'member.login'",
+        "PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.register'",
+        "PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.login'",
     ],
     'official_notification_routes' => [
-        "PublicNoticeTenantMiddleware::class, 'notice.verification.send'",
+        "'peanut.notice.verification', (new ModuleProvider())->moduleKey(), 'notice.verification.send'",
     ],
 ] as $sourceKey => $routeGuards) {
     foreach ($routeGuards as $routeGuard) {
@@ -327,7 +337,7 @@ foreach ([
     }
 }
 qualificationExpect(
-    str_contains($sources['official_member_routes'], 'PublicNoticeTenantMiddleware::class')
+    str_contains($sources['official_member_routes'], "'peanut.notice.verification', 'official.notification'")
         && str_contains($sources['official_member_routes'], 'notice.verification.verify'),
     'member password/mobile flows are missing the Tenant-owned notification guard'
 );
@@ -365,9 +375,10 @@ foreach (array_diff(array_keys($matrix), ['tenant_module', 'official_article_mod
 qualificationExpect(
     str_contains($sources['official_article_manifest'], '"key": "official.article"')
         && str_contains($sources['official_article_access'], 'ModuleGuard')
+        && str_contains($sources['official_article_access'], 'public function assertTenant(')
         && str_contains($sources['official_article_access'], 'assertMemberAccess(')
-        && str_contains($sources['official_article_public'], 'TenantEntryBindingResolver::production()->system(')
-        && str_contains($sources['article_repository'], 'assertTenant('),
+        && str_contains($sources['official_article_public'], '$this->entryBindings->system(')
+        && str_contains($sources['article_repository'], 'return Article::where([])'),
     'official Article Module is not guarded across deployment, Tenant and public Host boundaries'
 );
 qualificationExpect(
@@ -427,7 +438,8 @@ qualificationExpect(
         && str_contains($sources['payment_notify_controller'], "assertExternalCallback('official.payment')")
         && !str_contains($sources['external_resolver'], 'assertExternalCallback(')
         && str_contains($sources['async_runtime'], 'ImportExportModuleProvider')
-        && str_contains($sources['async_runtime_factory'], 'TaskModuleProvider')
+        && str_contains($sources['async_module_provider'], 'TaskImportExportRuntime::class')
+        && str_contains($sources['async_module_provider'], 'TaskJobRuntime::class')
         && str_contains($sources['async_worker_definition'], "return 'official.import-export'")
         && str_contains($sources['module_worker'], "assertWorker('official.task')")
         && str_contains($sources['crontab_task_definition'], "assertScheduled('official.task')")

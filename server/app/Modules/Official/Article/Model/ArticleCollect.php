@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Model;
 
 use app\common\model\TenantOwnedModel;
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use think\model\concern\SoftDelete;
 
 class ArticleCollect extends TenantOwnedModel

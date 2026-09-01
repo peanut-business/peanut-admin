@@ -23,12 +23,10 @@ class SmsController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, SmsValidate::class . '.send');
-        $result = $this->sms->sendCode(
+        $this->sms->sendCode(
             NoticeTenantContext::verification($this->request, 'notice.verification.send'),
             $params
         );
-        return $result
-            ? $this->success('发送成功')
-            : $this->fail($this->sms->getError());
+        return $this->success('发送成功');
     }
 }

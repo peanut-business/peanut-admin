@@ -5,13 +5,12 @@ namespace app\adminapi\application\auth;
 
 use app\common\http\PageResult;
 use app\common\service\authorization\RoleAdministrationRuntime;
-use app\common\application\ApplicationService;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** Compatibility role API backed by native pa_role and pa_role_permission. */
-final class RoleApplicationService extends ApplicationService
+final class RoleApplicationService
 {
     public function __construct(private readonly RoleAdministrationRuntime $runtime)
     {
@@ -19,7 +18,6 @@ final class RoleApplicationService extends ApplicationService
 
     public function validationRules(string $scene): array
     {
-        self::clearError();
         return $scene === 'add'
             ? ['name' => 'require|length:1,120', 'menu_id' => 'array']
             : ['id' => 'require|integer|gt:0', 'name' => 'require|length:1,120', 'menu_id' => 'array'];
@@ -27,7 +25,6 @@ final class RoleApplicationService extends ApplicationService
 
     public function lists(TenantContext $context, array $params): PageResult
     {
-        self::clearError();
         $pagination = PaginationInput::from($params);
         $result = $this->service()->list($context->tenantId, $pagination->pageRequest);
         $lists = array_map(fn(array $row): array => $this->compat($context, $row), $result['items']);
@@ -36,25 +33,17 @@ final class RoleApplicationService extends ApplicationService
 
     public function getAll(TenantContext $context): array
     {
-        self::clearError();
         return self::lists($context, ['page_size' => 100])->items;
     }
 
     public function detail(TenantContext $context, int $id): array
     {
-        self::clearError();
-        try {
-            return $this->compat($context, $this->service()->get($context->tenantId, $id));
-        } catch (\Throwable) {
-            return [];
-        }
+        return $this->compat($context, $this->service()->get($context->tenantId, $id));
     }
 
     public function add(TenantContext $context, array $params): bool
     {
-        self::clearError();
-        try {
-            $service = $this->service();
+        $service = $this->service();
             $role = $service->create($context->tenantId, 'application.admin.' . bin2hex(random_bytes(8)),
                 (string)$params['name'], (string)($params['desc'] ?? ''), $context->memberId, $context->accountId, $context->requestId);
             $keys = $this->runtime->permissionKeys($context->tenantId, self::menuIds($params));
@@ -62,17 +51,12 @@ final class RoleApplicationService extends ApplicationService
                 $service->replacePermissions($context->tenantId, (int)$role['id'], $keys, (int)$role['revision'],
                     $context->memberId, $context->accountId, $context->requestId);
             }
-            return true;
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        return true;
     }
 
     public function edit(TenantContext $context, array $params): bool
     {
-        self::clearError();
-        try {
-            $service = $this->service();
+        $service = $this->service();
             $current = $service->get($context->tenantId, (int)$params['id']);
             $role = $service->update($context->tenantId, (int)$params['id'], (string)$params['name'],
                 (string)($params['desc'] ?? ''), (int)$current['revision'], $context->memberId, $context->accountId, $context->requestId);
@@ -80,23 +64,15 @@ final class RoleApplicationService extends ApplicationService
                 $service->replacePermissions($context->tenantId, (int)$params['id'], $this->runtime->permissionKeys($context->tenantId, self::menuIds($params)),
                     (int)$role['revision'], $context->memberId, $context->accountId, $context->requestId);
             }
-            return true;
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        return true;
     }
 
     public function delete(TenantContext $context, int $id): bool
     {
-        self::clearError();
-        try {
-            $service = $this->service();
+        $service = $this->service();
             $role = $service->get($context->tenantId, $id);
             $service->archive($context->tenantId, $id, (int)$role['revision'], $context->memberId, $context->accountId, $context->requestId);
-            return true;
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        return true;
     }
 
     private function compat(TenantContext $context, array $role): array

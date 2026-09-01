@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use app\common\service\tenant\TenantEntryBindingResolver;
+use app\common\execution\ExecutionContextAccess;
+use app\common\service\http\GuzzleOutboundHttpTransport;
+use app\common\service\notice\ApplicationNoticeSmsSender;
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
+use app\Modules\Official\Notification\Application\VerificationCodeService;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\DemoAccountPolicy;
@@ -471,11 +475,20 @@ function demoMultiMain(): int
         $passwords
     );
     $applicationContexts = new ExecutionContextStore();
+    $currentExecution = new CurrentExecutionContext($applicationContexts);
     $adminProvisioner = new PdoTenantOwnerAdminProvisioner(
         $pdo,
         new ApplicationTenantBootstrapService(
             $pdo,
-            new NotificationApplicationService($pdo, new CurrentExecutionContext($applicationContexts)),
+            new NotificationApplicationService(
+                $currentExecution,
+                new VerificationCodeService(
+                    new ApplicationNoticeSmsSender(new GuzzleOutboundHttpTransport(
+                        new ExecutionContextAccess($currentExecution),
+                    )),
+                    $transactions,
+                ),
+            ),
             $applicationContexts,
         ),
     );

@@ -4,15 +4,18 @@ declare(strict_types=1);
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
 use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
 use app\Modules\Official\Notification\Model\NoticeLog;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
+use app\common\execution\ExecutionContextAccess;
 use app\common\service\notice\NoticeTenantContext;
-use app\common\service\notice\NoticeTenantRepository;
+use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\service\notice\NoticeSmsSender;
 use app\common\service\notice\VerificationCodeSecret;
-use app\common\service\notice\VerificationCodeService;
+use app\Modules\Official\Notification\Application\VerificationCodeService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -153,12 +156,13 @@ SQL);
     $alpha = noticeTenantContext(101, 1001, 501, 'fresh-notice-alpha');
     $beta = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta');
     $notifications = app(NotificationApplicationService::class);
+    $contexts = app(ExecutionContextAccess::class);
     $invalidSend = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.send', 'invalid-send');
     $invalidVerify = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.verify', 'invalid-verify');
 
     $request = new stdClass();
     try {
-        NoticeTenantContext::member();
+        app(CurrentExecutionContext::class)->tenantAdmin();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectNoticeTenant($exception->getMessage() !== '', 'missing TenantContext denial lost its shape');
@@ -208,7 +212,7 @@ SQL);
 
     $beforeUntrusted = (int)$pdo->query('SELECT COUNT(*) FROM pa_notice_log')->fetchColumn();
     $sender = new SuccessfulNoticeSender();
-    $service = new VerificationCodeService($sender);
+    $service = new VerificationCodeService($sender, new PdoTransactionManager($pdo), $contexts);
     foreach (['send', 'verify'] as $operation) {
         try {
             $operation === 'send'
@@ -256,12 +260,12 @@ SQL);
     $alphaScene = (int)runNoticeTenant(
         $alpha,
         'test.notice.scenes.alpha.login-code',
-        fn() => NoticeTenantRepository::scenes($alpha)->where('code', 'login_code')->value('id'),
+        fn() => NoticeTenantRepository::scenes($contexts, $alpha)->where('code', 'login_code')->value('id'),
     );
     $betaScene = (int)runNoticeTenant(
         $beta,
         'test.notice.scenes.beta.login-code',
-        fn() => NoticeTenantRepository::scenes($beta)->where('code', 'login_code')->value('id'),
+        fn() => NoticeTenantRepository::scenes($contexts, $beta)->where('code', 'login_code')->value('id'),
     );
     $logData = static fn(int $sceneId, string $receiver, string $code): array => [
         'template_id' => 0,
@@ -283,17 +287,17 @@ SQL);
     runNoticeTenant(
         $alpha,
         'test.notice.logs.create.alpha.first',
-        fn() => NoticeTenantRepository::createLog($alpha, $logData($alphaScene, '13800000002', '4827')),
+        fn() => NoticeTenantRepository::createLog($contexts, $alpha, $logData($alphaScene, '13800000002', '4827')),
     );
     runNoticeTenant(
         $beta,
         'test.notice.logs.create.beta',
-        fn() => NoticeTenantRepository::createLog($beta, $logData($betaScene, '13800000002', '4827')),
+        fn() => NoticeTenantRepository::createLog($contexts, $beta, $logData($betaScene, '13800000002', '4827')),
     );
     runNoticeTenant(
         $alpha,
         'test.notice.logs.create.alpha.second',
-        fn() => NoticeTenantRepository::createLog($alpha, $logData($alphaScene, '13800000003', '5938')),
+        fn() => NoticeTenantRepository::createLog($contexts, $alpha, $logData($alphaScene, '13800000003', '5938')),
     );
 
     $alphaVerification = runNoticeTenant(
@@ -306,7 +310,7 @@ SQL);
         (int)runNoticeTenant(
             $beta,
             'test.notice.logs.beta.verification',
-            fn() => NoticeTenantRepository::logs($beta)->where('receiver', '13800000002')->value('is_verified'),
+            fn() => NoticeTenantRepository::logs($contexts, $beta)->where('receiver', '13800000002')->value('is_verified'),
         ) === NoticeLog::VERIFIED_NO,
         'Alpha verification consumed Beta code'
     );
@@ -339,7 +343,7 @@ SQL);
     $betaLogId = (int)runNoticeTenant(
         $beta,
         'test.notice.logs.beta.latest',
-        fn() => NoticeTenantRepository::logs($beta)->order('id', 'desc')->value('id'),
+        fn() => NoticeTenantRepository::logs($contexts, $beta)->order('id', 'desc')->value('id'),
     );
     expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.cross', fn() => $notifications->logDetail($betaLogId)) === [], 'cross-tenant log detail was visible');
     expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.missing', fn() => $notifications->logDetail(999999)) === [], 'missing log detail shape changed');

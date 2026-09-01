@@ -7,9 +7,11 @@ use PDO;
 use app\common\composition\ModuleBindingContributor;
 use app\Modules\Official\Article\Application\ArticleAdministrationService;
 use app\Modules\Official\Article\Application\ArticleCollectionSummaryService;
+use app\Modules\Official\Article\Application\ArticleQueryService;
 use app\Modules\Official\Article\Contracts\ArticleAdministration;
 use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
 use app\Modules\Official\Article\Contracts\ArticleModuleAccess;
+use app\Modules\Official\Article\Contracts\ArticleQueries;
 use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
@@ -37,6 +39,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         return [
             ArticleModuleAccess::class => fn(App $app): ArticleModuleAccess => $this->access($app->make(PDO::class)),
             ArticleCollectionSummary::class => fn(): ArticleCollectionSummary => $this->collectionSummary(),
+            ArticleQueries::class => fn(): ArticleQueries => new ArticleQueryService(),
             ArticleAdministration::class => fn(App $app): ArticleAdministration => new ArticleAdministrationService(
                 $app->make(CurrentExecutionContext::class),
                 $app->make(\PeanutAdmin\Kernel\Persistence\TransactionManager::class),

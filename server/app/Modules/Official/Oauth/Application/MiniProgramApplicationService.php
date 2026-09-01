@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Application;
 
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\FileService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 微信小程序基础配置。 */
-class MiniProgramApplicationService extends ApplicationService
+class MiniProgramApplicationService
 {
     protected const CONFIG_TYPE = 'mnp_setting';
 
@@ -44,8 +44,7 @@ class MiniProgramApplicationService extends ApplicationService
         $incomingSecret = trim((string)$params['app_secret']);
         $secret = $incomingSecret === '******' ? $currentSecret : $incomingSecret;
         if ($secret === '') {
-            self::setError('AppSecret 不能为空');
-            return false;
+            throw BusinessException::invalid('OAUTH_APP_SECRET_REQUIRED', 'AppSecret 不能为空');
         }
         $data = [
             'name'        => trim((string) ($params['name'] ?? '')),

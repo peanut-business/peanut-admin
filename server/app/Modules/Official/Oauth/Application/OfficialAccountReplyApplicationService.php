@@ -5,16 +5,15 @@ namespace app\Modules\Official\Oauth\Application;
 
 use app\common\http\PageResult;
 use app\common\enum\channel\OfficialAccountEnum;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\Modules\Official\Oauth\Model\OfficialAccountReply;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use app\common\service\external\ExternalTenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use app\common\service\member\MemberTenantContext;
 use app\common\support\PaginationInput;
 
-class OfficialAccountReplyApplicationService extends ApplicationService
+class OfficialAccountReplyApplicationService
 {
     public function __construct(private readonly TransactionManager $transactions)
     {
@@ -40,83 +39,58 @@ class OfficialAccountReplyApplicationService extends ApplicationService
 
     public function detail(TenantContext $context, int $id): array
     {
-        MemberTenantContext::tenantId($context);
         $reply = OfficialAccountReply::where([])->findOrEmpty($id);
         return $reply->isEmpty() ? [] : $reply->toArray();
     }
 
     public function add(TenantContext $context, array $params): bool
     {
-        try {
-            $this->transactions->run(function () use ($context, $params): void {
+        $this->transactions->run(function () use ($context, $params): void {
                 $data = self::normalize($params);
-                MemberTenantContext::tenantId($context);
                 self::disableOtherSingletons($data['reply_type'], $data['status']);
                 OfficialAccountReply::create($data);
-            });
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
+        return true;
     }
 
     public function edit(TenantContext $context, array $params): bool
     {
-        try {
-            $this->transactions->run(function () use ($context, $params): void {
-                MemberTenantContext::tenantId($context);
+        $this->transactions->run(function () use ($context, $params): void {
                 $reply = OfficialAccountReply::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
-                    throw new \RuntimeException('自动回复不存在');
+                    throw BusinessException::notFound('OAUTH_REPLY_NOT_FOUND', '自动回复不存在');
                 }
                 $data = self::normalize($params);
                 self::disableOtherSingletons($data['reply_type'], $data['status'], (int)$reply->id);
                 $reply->save($data);
-            });
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
+        return true;
     }
 
     public function delete(TenantContext $context, int $id): bool
     {
-        try {
-            $this->transactions->run(function () use ($context, $id): void {
-                MemberTenantContext::tenantId($context);
+        $this->transactions->run(function () use ($context, $id): void {
                 $reply = OfficialAccountReply::where('id', $id)->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
-                    throw new \RuntimeException('自动回复不存在');
+                    throw BusinessException::notFound('OAUTH_REPLY_NOT_FOUND', '自动回复不存在');
                 }
                 $reply->delete();
-            });
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
+        return true;
     }
 
     public function updateStatus(TenantContext $context, int $id, int $status): bool
     {
-        try {
-            $this->transactions->run(function () use ($context, $id, $status): void {
-                MemberTenantContext::tenantId($context);
+        $this->transactions->run(function () use ($context, $id, $status): void {
                 $reply = OfficialAccountReply::where('id', $id)->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
-                    throw new \RuntimeException('自动回复不存在');
+                    throw BusinessException::notFound('OAUTH_REPLY_NOT_FOUND', '自动回复不存在');
                 }
                 self::disableOtherSingletons((int)$reply->reply_type, $status, $id);
                 $reply->status = $status;
                 $reply->save();
-            });
-            return true;
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        });
+        return true;
     }
 
     public function resolve(TenantSystemContext $context, array $message): ?array

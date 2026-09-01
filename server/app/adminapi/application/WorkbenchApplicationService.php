@@ -4,13 +4,12 @@ declare(strict_types=1);
 namespace app\adminapi\application;
 
 use app\common\service\authorization\AdminAuthorizationService;
-use app\common\application\ApplicationService;
 use app\common\service\FileService;
 use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-class WorkbenchApplicationService extends ApplicationService
+class WorkbenchApplicationService
 {
     public function __construct(private readonly AdminAuthorizationService $authorization)
     {

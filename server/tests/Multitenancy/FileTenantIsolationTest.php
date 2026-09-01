@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\file\FileObjectNamespace;
-use app\common\service\file\FileTenantContext;
-use app\common\service\file\FileTenantRepository;
+use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -117,7 +117,7 @@ try {
     $alpha = fileTenantContext(101, 501, 'mt03-file-alpha-' . $runId);
     $beta = fileTenantContext(202, 502, 'mt03-file-beta-' . $runId);
     try {
-        FileTenantContext::member();
+        app(CurrentExecutionContext::class)->tenantAdmin();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectFileTenant($exception->getMessage() !== '', 'missing context denial lost its shape');

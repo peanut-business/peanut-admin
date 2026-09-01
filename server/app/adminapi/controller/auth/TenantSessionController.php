@@ -14,8 +14,12 @@ use think\App;
 
 final class TenantSessionController extends BaseLikeAdminController
 {
-    public function __construct(App $app, private readonly TenantAuthEndpoint $tenantAuth)
-    {
+    public function __construct(
+        App $app,
+        private readonly TenantAuthEndpoint $tenantAuth,
+        private readonly ApplicationHostPolicy $hostPolicy,
+        private readonly TenantEntryBindingResolver $entryBindings,
+    ) {
         parent::__construct($app);
     }
 
@@ -23,8 +27,8 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         $params = $this->request->post();
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
-            $tenantCode = TenantEntryBindingResolver::production()->loginTenantCode(
+            $this->hostPolicy->assertTenantAdmin($this->request);
+            $tenantCode = $this->entryBindings->loginTenantCode(
                 $this->request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
@@ -46,8 +50,8 @@ final class TenantSessionController extends BaseLikeAdminController
     {
         $params = $this->request->post();
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
-            TenantEntryBindingResolver::production()->assertTenantAccess(
+            $this->hostPolicy->assertTenantAdmin($this->request);
+            $this->entryBindings->assertTenantAccess(
                 $this->request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 (int)($params['tenant_id'] ?? 0),
@@ -67,8 +71,8 @@ final class TenantSessionController extends BaseLikeAdminController
     public function switchChallenge()
     {
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
-            if (TenantEntryBindingResolver::production()->boundTenantId(
+            $this->hostPolicy->assertTenantAdmin($this->request);
+            if ($this->entryBindings->boundTenantId(
                 $this->request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
             ) !== null) {
@@ -88,7 +92,7 @@ final class TenantSessionController extends BaseLikeAdminController
     public function refresh()
     {
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
+            $this->hostPolicy->assertTenantAdmin($this->request);
             return $this->response($this->tenantAuth->refresh(
                 trim((string)$this->request->cookie($this->tenantAuth->refreshCookieName(), '')),
                 $this->isTrustedBrowserOrigin(),
@@ -104,7 +108,7 @@ final class TenantSessionController extends BaseLikeAdminController
     public function logout()
     {
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin($this->request);
+            $this->hostPolicy->assertTenantAdmin($this->request);
             return $this->response($this->tenantAuth->logout(
                 PlatformRequest::bearerToken($this->request),
                 PlatformRequest::requestId($this->request)

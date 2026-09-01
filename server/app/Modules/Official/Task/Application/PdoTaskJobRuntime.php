@@ -22,6 +22,7 @@ use PeanutAdmin\TaskJob\Submission\TaskSubmissionRegistry;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PDO;
+use think\Console;
 
 final readonly class PdoTaskJobRuntime implements TaskJobRuntime
 {
@@ -32,6 +33,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
         private CurrentExecutionContext $currentExecution,
         private AdminDirectoryQuery $adminDirectory,
         private ModuleExecutionBoundary $modules,
+        private Console $console,
     ) {
         if (strlen($this->signingKey) < 32) {
             throw new \RuntimeException('ASYNC_SIGNING_KEY_INVALID');
@@ -112,6 +114,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
             $this->modules,
             $this->executionContexts,
             $this->currentExecution,
+            $this->console,
         );
     }
 }

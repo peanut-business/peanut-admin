@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Model;
 
 use app\common\model\TenantOwnedModel;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\model\concern\SoftDelete;

@@ -352,15 +352,17 @@ namespace app\adminapi\controller\{{module}};
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\{{module}}\{{entity}}ApplicationService;
 use app\adminapi\validate\{{module}}\{{entity}}Validate;
+use app\common\execution\CurrentExecutionContext;
 use think\App;
 
 class {{entity}}Controller extends BaseAdminController
 {
     public function __construct(
         App $app,
+        CurrentExecutionContext $executionContext,
         private readonly {{entity}}ApplicationService $service,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()

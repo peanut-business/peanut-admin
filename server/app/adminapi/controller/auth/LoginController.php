@@ -11,6 +11,7 @@ use app\adminapi\service\AdminTokenService;
 use app\adminapi\validate\auth\LoginValidate;
 use app\common\service\DemoAccountPolicy;
 use app\common\execution\ExecutionContextAccess;
+use app\common\application\BusinessException;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
@@ -37,17 +38,13 @@ class LoginController extends BaseAdminController
         $params['terminal'] = (int)($params['terminal'] ?? 1);
 
         $this->validate($params, LoginValidate::class);
-        $result = $this->loginApplication->login($params);
-
-        return $result === false
-            ? $this->fail($this->loginApplication->getError())
-            : $this->data($result);
+        return $this->data($this->loginApplication->login($params));
     }
 
     public function info()
     {
         $admin = $this->adminInfo;
-        if ($admin === []) return $this->fail('管理员不存在');
+        if ($admin === []) throw BusinessException::notFound('ADMIN_PRINCIPAL_NOT_FOUND', '管理员不存在');
         $roleNames = array_column($admin['roles'] ?? [], 'name');
         $accessData = $this->authorization->accessData(
             $this->contextAccess->tenantAdmin(),

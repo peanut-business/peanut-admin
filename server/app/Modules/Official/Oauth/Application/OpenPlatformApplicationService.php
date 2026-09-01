@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Application;
 
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-class OpenPlatformApplicationService extends ApplicationService
+class OpenPlatformApplicationService
 {
     private const CONFIG_TYPE = 'open_platform';
 
@@ -30,8 +30,7 @@ class OpenPlatformApplicationService extends ApplicationService
         $incomingSecret = trim((string)$params['app_secret']);
         $secret = $incomingSecret === '******' ? $currentSecret : $incomingSecret;
         if ($secret === '') {
-            self::setError('AppSecret 不能为空');
-            return false;
+            throw BusinessException::invalid('OAUTH_APP_SECRET_REQUIRED', 'AppSecret 不能为空');
         }
         $data = [
             'app_id' => trim((string)$params['app_id']),

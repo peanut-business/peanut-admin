@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\member;
 
-use app\Modules\Official\Member\Model\Member;
-use app\common\tenancy\PlatformTenantDataGateway;
+use app\Modules\Official\Member\Contracts\MemberSubjectLookup;
 use PDO;
 
 /** Restores application-member identity from a verified JWT subject and authoritative ownership. */
@@ -12,7 +11,7 @@ final class MemberApiTenantContextResolver
 {
     public function __construct(
         private readonly PDO $pdo,
-        private readonly PlatformTenantDataGateway $tenantData,
+        private readonly MemberSubjectLookup $members,
     ) {
     }
 
@@ -22,19 +21,8 @@ final class MemberApiTenantContextResolver
             throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
         }
 
-        $member = $this->tenantData
-            ->query(Member::class, 'api.member-auth', 'resolve-tenant-context')
-            ->where('id', $memberId)
-            ->where('status', 1)
-            ->whereNull('delete_time')
-            ->field(['id', 'tenant_id'])
-            ->find();
-        if ($member === null) {
-            throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
-        }
-        $row = $member->toArray();
-        $tenantId = (int)($row['tenant_id'] ?? 0);
-        if ($tenantId < 1 || (int)($row['id'] ?? 0) !== $memberId) {
+        $tenantId = $this->members->tenantId($memberId);
+        if ($tenantId === null) {
             throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
         }
         $tenant = $this->pdo->prepare(

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\system;
 
-use app\common\application\ApplicationService;
 use app\common\service\runtime\ApplicationCache;
 
 /**
@@ -11,7 +10,7 @@ use app\common\service\runtime\ApplicationCache;
  * Class SystemApplicationService
  * @package app\adminapi\application\system
  */
-class SystemApplicationService extends ApplicationService
+class SystemApplicationService
 {
     /**
      * 系统环境信息

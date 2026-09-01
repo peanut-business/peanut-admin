@@ -7,7 +7,7 @@ use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

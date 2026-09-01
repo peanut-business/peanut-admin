@@ -13,8 +13,10 @@ class BaseAdminController extends BaseLikeAdminController
     protected int   $adminId   = 0;
     protected array $adminInfo = [];
 
-    public function __construct(App $app, private readonly CurrentExecutionContext $executionContext)
-    {
+    public function __construct(
+        App $app,
+        protected readonly CurrentExecutionContext $executionContext,
+    ) {
         parent::__construct($app);
     }
 
@@ -25,5 +27,15 @@ class BaseAdminController extends BaseLikeAdminController
             $this->adminInfo = $current->tenantAdminPrincipal();
             $this->adminId = (int)$this->adminInfo['id'];
         }
+    }
+
+    protected function executionContext(): CurrentExecutionContext
+    {
+        return $this->executionContext;
+    }
+
+    protected function tenantAdminContext(): \PeanutAdmin\Kernel\Auth\TenantContext
+    {
+        return $this->executionContext->tenantAdmin();
     }
 }

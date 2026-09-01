@@ -8,7 +8,6 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\RechargeApplicationService;
 use app\Modules\Official\Payment\Model\PaymentScene;
-use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\payment\dto\CallbackRequest;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\execution\ExecutionContextStore;
@@ -31,67 +30,59 @@ class PaymentNotifyController extends BaseApiController
 
     public function wechat()
     {
-        try {
-            $request = new CallbackRequest(
+        $request = new CallbackRequest(
                 (string)$this->request->getContent(),
                 (array)$this->request->header()
             );
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+        $resolution = ExternalTenantResolver::production()->verifiedCallback(
                 ExternalTenantResolver::WECHAT_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',
                 $this->operationId(),
-                static fn(array $config) => (new PaymentServiceFactory($config))->callback('wechat')->parse($request),
+                fn(array $config) => $this->recharges->parseCallback('wechat', $config, $request),
             );
-            $event = $resolution->verifiedValue;
-            $this->executionContexts->run(
+        $event = $resolution->verifiedValue;
+        $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($event, $resolution): void {
                     $this->modules->assertExternalCallback('official.payment');
-                    if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(
+                    if ($event->status() === 'success') {
+                        $this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,
                         $event,
                         PaymentScene::PAY_WAY_WECHAT,
-                    )) {
-                        throw new \RuntimeException($this->recharges->getError());
+                        );
                     }
                 },
             );
-            return json(['code' => 'SUCCESS', 'message' => '成功']);
-        } catch (\Throwable) {
-            return json(['code' => 'FAIL', 'message' => '处理失败'], 500);
-        }
+        return json(['code' => 'SUCCESS', 'message' => '成功']);
     }
 
     public function alipay()
     {
-        try {
-            $request = new CallbackRequest('', [], $this->request->post());
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+        $request = new CallbackRequest('', [], $this->request->post());
+        $resolution = ExternalTenantResolver::production()->verifiedCallback(
                 ExternalTenantResolver::ALIPAY_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',
                 $this->operationId(),
-                static fn(array $config) => (new PaymentServiceFactory($config))->callback('alipay')->parse($request),
+                fn(array $config) => $this->recharges->parseCallback('alipay', $config, $request),
             );
-            $event = $resolution->verifiedValue;
-            $this->executionContexts->run(
+        $event = $resolution->verifiedValue;
+        $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($event, $resolution): void {
                     $this->modules->assertExternalCallback('official.payment');
-                    if ($event->status() === 'success' && !$this->recharges->settleVerifiedCallback(
+                    if ($event->status() === 'success') {
+                        $this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,
                         $event,
                         PaymentScene::PAY_WAY_ALIPAY,
-                    )) {
-                        throw new \RuntimeException($this->recharges->getError());
+                        );
                     }
                 },
             );
-            return response('success');
-        } catch (\Throwable) {
-            return response('failure', 500);
-        }
+        return response('success');
     }
 
     private function operationId(): string

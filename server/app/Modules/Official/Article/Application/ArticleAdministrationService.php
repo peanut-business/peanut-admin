@@ -8,7 +8,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\service\ProductAssetReferenceService;
 use app\common\service\RichTextResourceService;
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 

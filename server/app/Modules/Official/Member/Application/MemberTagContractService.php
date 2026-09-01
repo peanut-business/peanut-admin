@@ -5,7 +5,7 @@ namespace app\Modules\Official\Member\Application;
 
 use app\common\application\BusinessException;
 use app\Modules\Official\Member\Contracts\MemberTagCommands;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class MemberTagContractService implements MemberTagCommands

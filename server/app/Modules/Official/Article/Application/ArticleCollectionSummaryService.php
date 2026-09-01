@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Application;
 
 use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use app\common\service\member\AuthenticatedMemberContext;
 
 final class ArticleCollectionSummaryService implements ArticleCollectionSummary

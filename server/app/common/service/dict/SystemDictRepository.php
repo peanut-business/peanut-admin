@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\dict;
 
-/** @deprecated Use DictionaryRuntimeFactory and the core SystemDictionaryProvider. */
+/** System dictionary repository helper. */
 final class SystemDictRepository
 {
     /** @return list<array{id:int,name:string,value:string,sort:int,source:string}> */

@@ -9,8 +9,7 @@ use app\api\controller\LoginController as ApiLoginController;
 use app\api\controller\UserController as ApiUserController;
 use app\api\controller\AccountLogController as ApiAccountLogController;
 use app\api\middleware\CheckTokenMiddleware;
-use app\api\middleware\PublicMemberTenantMiddleware;
-use app\api\middleware\PublicNoticeTenantMiddleware;
+use app\api\middleware\PublicTenantModuleMiddleware;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
@@ -42,18 +41,15 @@ if (($peanutRouteApplication ?? null) !== 'api') {
 }
 
 Route::post('login/register', [ApiLoginController::class, 'register'])
-    ->middleware(PublicMemberTenantMiddleware::class, 'member.register')
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.register');
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.register');
 Route::post('login/account', [ApiLoginController::class, 'account'])
-    ->middleware(PublicMemberTenantMiddleware::class, 'member.login')
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.login');
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.login');
 foreach ([
     ['login/mobile', 'mobile', 'notice.verification.verify', 'http.mobile-login'],
     ['login/resetPassword', 'resetPassword', 'notice.verification.verify', 'http.reset-password'],
 ] as [$path, $action, $noticeOperation, $memberOperation]) {
     Route::post($path, [ApiLoginController::class, $action])
-        ->middleware(PublicNoticeTenantMiddleware::class, $noticeOperation)
-        ->middleware(OfficialModuleMiddleware::class, 'official.notification', $noticeOperation)
+        ->middleware(PublicTenantModuleMiddleware::class, 'peanut.notice.verification', 'official.notification', $noticeOperation)
         ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), $memberOperation);
 }
 
