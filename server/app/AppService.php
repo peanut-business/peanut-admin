@@ -13,7 +13,6 @@ use app\adminapi\service\OperationLogService;
 use app\adminapi\service\generator\GeneratorImportPersistence;
 use app\api\application\IndexApplicationService;
 use app\api\application\LoginApplicationService as MemberLoginApplicationService;
-use app\api\application\OAuthApplicationService;
 use app\api\service\UserTokenService;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\common\composition\ModuleComposition;
@@ -414,20 +413,6 @@ class AppService extends Service
             $this->app->make(UserTokenService::class),
             (string)Config::get('project.default_image.user_avatar', ''),
         ));
-        $this->app->bind(OAuthApplicationService::class, fn(): OAuthApplicationService => new OAuthApplicationService(
-            $this->app->make(\app\Modules\Official\Member\Contracts\MemberQueries::class),
-            $this->app->make(\app\Modules\Official\Member\Contracts\MemberIdentityCommands::class),
-            $this->app->make(\app\Modules\Official\Member\Contracts\MemberProfileCommands::class),
-            $this->app->make(\app\Modules\Official\Notification\Contracts\VerificationCodeCommands::class),
-            $this->app->make(\app\common\persistence\AdvisoryLockExecution::class),
-            $this->app->make(\app\common\persistence\TransactionalExecution::class),
-            $this->app->make(\app\common\service\config\TenantApplicationSettingService::class),
-            $this->app->make(\app\common\service\external\ExternalTenantResolver::class),
-            $this->app->make(FileService::class),
-            $this->app->make(UserTokenService::class),
-            (string)Config::get('project.default_image.user_avatar', ''),
-        ));
-
         $this->registerModules();
     }
 

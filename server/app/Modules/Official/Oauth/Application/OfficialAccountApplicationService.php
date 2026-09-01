@@ -3,14 +3,17 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Application;
 
+use app\Modules\Official\Oauth\Contracts\OfficialAccountCallbacks;
 use app\common\application\BusinessException;
 use app\common\service\FileService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\service\wechat\OfficialAccountService;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
-class OfficialAccountApplicationService
+class OfficialAccountApplicationService implements OfficialAccountCallbacks
 {
     private const CONFIG_TYPE = 'oa_setting';
 
@@ -18,7 +21,32 @@ class OfficialAccountApplicationService
         private readonly TransactionManager $transactions,
         private readonly ExternalChannelBindingService $bindings,
         private readonly FileService $files,
+        private readonly OfficialAccountReplyApplicationService $replies,
     ) {
+    }
+
+    public function verify(array $params, array $config): bool
+    {
+        return OfficialAccountService::verifySignature(
+            (string)($config['token'] ?? ''),
+            (string)($params['timestamp'] ?? ''),
+            (string)($params['nonce'] ?? ''),
+            (string)($params['signature'] ?? ''),
+        );
+    }
+
+    public function handlePlain(TenantSystemContext $context, string $xml): string
+    {
+        try {
+            $message = OfficialAccountService::parsePlainMessage($xml);
+        } catch (\RuntimeException) {
+            throw BusinessException::forbidden('OFFICIAL_ACCOUNT_MESSAGE_INVALID', 'callback rejected');
+        }
+        $reply = $this->replies->resolve($context, $message);
+        if ($reply === null || trim((string)($reply['content'] ?? '')) === '') {
+            return 'success';
+        }
+        return OfficialAccountService::textReplyXml($message, (string)$reply['content']);
     }
 
     public function getConfig(TenantContext $context, string $domain): array

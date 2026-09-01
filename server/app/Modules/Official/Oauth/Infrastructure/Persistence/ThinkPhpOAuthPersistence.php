@@ -18,11 +18,6 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class ThinkPhpOAuthPersistence implements OAuthPersistence
 {
-    public static function identities()
-    {
-        return OAuthIdentity::where([]);
-    }
-
     public function createAttempt(TenantContext|TenantSystemContext $context, array $data): void
     {
         unset($data['tenant_id']);

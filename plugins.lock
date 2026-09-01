@@ -582,7 +582,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "8e9e091c152ff374cfb216db4aa47d595c9b2d54ee073e47de96b50e863ccf59"
+                "sha256": "8ef701c1bc7c9792cb8ebc3ff7939cd86dcbb3b962c6be5f7e47dda98339d097"
             },
             "trust": {
                 "channel": "bundled",
@@ -679,7 +679,7 @@
                 }
             ],
             "manifest": "plugins/official.oauth/plugin.json",
-            "manifest_sha256": "95d61da662353d29a0f476768a27a0946edad68e08ec3956893f399dc08f4f91"
+            "manifest_sha256": "3a2a69ba549f9741d6de7d6e9a36672b780e20d6ca5dd2938bd8f813606206ef"
         },
         {
             "key": "official.payment",
@@ -726,6 +726,10 @@
                             "dependencies": [
                                 {
                                     "module_key": "official.member",
+                                    "version": "^1.0"
+                                },
+                                {
+                                    "module_key": "official.oauth",
                                     "version": "^1.0"
                                 }
                             ],
@@ -776,7 +780,7 @@
                 }
             ],
             "manifest": "plugins/official.payment/plugin.json",
-            "manifest_sha256": "d91b9b0262e289c2bf9156150fdb9ac339e31f68594207a1ff32293f1d23bb69"
+            "manifest_sha256": "59b4771e56f695fc1bfa1d44e049656dab291137fae32863ddde14f3417dc000"
         },
         {
             "key": "official.task",

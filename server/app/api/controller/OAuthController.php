@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\Modules\Official\Oauth\Contracts\OAuthCommands;
+use app\Modules\Official\Oauth\Contracts\Dto\OAuthLoginResult;
+use app\api\service\UserTokenService;
+use app\common\service\FileService;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\external\ExternalTenantResolver;
@@ -23,6 +26,8 @@ class OAuthController extends BaseApiController
         private readonly ExecutionContextStore $executionContexts,
         private readonly ModuleExecutionBoundary $modules,
         private readonly ExternalTenantResolver $externalTenants,
+        private readonly UserTokenService $tokens,
+        private readonly FileService $files,
     ) {
         parent::__construct($app, $executionContext);
     }
@@ -66,7 +71,7 @@ class OAuthController extends BaseApiController
                     );
                 },
         );
-        return $this->data($result);
+        return $this->data($result->toArray());
     }
 
     public function redirectPc()
@@ -109,7 +114,7 @@ class OAuthController extends BaseApiController
                     );
                 },
         );
-        return $this->data($result);
+        return $this->data($this->loginResult($result));
     }
 
     public function miniProgram()
@@ -143,7 +148,7 @@ class OAuthController extends BaseApiController
                     );
                 },
         );
-        return $this->data($result);
+        return $this->data($this->loginResult($result));
     }
 
     public function complete()
@@ -163,7 +168,7 @@ class OAuthController extends BaseApiController
                     return $this->commands->complete($resolution->context, $params, $ip);
                 },
         );
-        return $this->data($result);
+        return $this->data($this->loginResult($result));
     }
 
     public function bind()
@@ -182,6 +187,34 @@ class OAuthController extends BaseApiController
     private function operationId(): string
     {
         return RequestTrace::id($this->request, 'oauth');
+    }
+
+    private function loginResult(OAuthLoginResult $result): array
+    {
+        $data = [
+            'completed' => $result->completed,
+            'member' => [
+                'id' => $result->member->id,
+                'sn' => $result->member->sn,
+                'nickname' => $result->member->nickname,
+                'avatar' => $this->files->getFileUrl($result->member->avatar),
+                'mobile' => $result->member->mobile,
+            ],
+        ];
+        if ($result->completed) {
+            $data['token'] = $this->tokens->createToken($result->member->id);
+        } else {
+            $data += [
+                'completion_ticket' => $result->completionTicket,
+                'expires_in' => $result->expiresIn,
+                'need_profile' => $result->needProfile,
+                'need_mobile' => $result->needMobile,
+            ];
+        }
+        if ($result->returnPath !== null) {
+            $data['return_path'] = $result->returnPath;
+        }
+        return $data;
     }
 
 }

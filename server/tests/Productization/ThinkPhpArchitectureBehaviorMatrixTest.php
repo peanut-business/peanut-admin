@@ -414,6 +414,10 @@ cases = {
         "server/app/adminapi/application/ConsoleProbe.php",
         "<?php\nuse think\\Console;\n",
     ),
+    "application_transport": (
+        "server/app/Modules/Official/Oauth/Application/TransportProbe.php",
+        "<?php\nfinal class TransportProbe { public function run(): void { new WechatOAuthTransport(); } }\n",
+    ),
 }
 print(json.dumps({
     name: [hit[0] for hit in scanner.hits_for(scanner.ROOT / path, source)]
@@ -449,6 +453,10 @@ expectTpq51(
 expectTpq51(
     in_array('application_framework_model', $probeHits['application_console'] ?? [], true),
     'Application import of ThinkPHP Console was not rejected',
+);
+expectTpq51(
+    in_array('application_composition_root', $probeHits['application_transport'] ?? [], true),
+    'Application construction of a transport dependency was not rejected',
 );
 
 $contextFailure = false;

@@ -13,10 +13,14 @@ use app\common\service\external\ThinkPhpExternalTenantBindingRepository;
 use app\Modules\Official\Oauth\Application\OAuthQueryService;
 use app\Modules\Official\Oauth\Application\OAuthCommandService;
 use app\Modules\Official\Oauth\Contracts\OAuthCallbackLocator;
+use app\Modules\Official\Oauth\Contracts\OfficialAccountCallbacks;
 use app\Modules\Official\Oauth\Contracts\OAuthCommands;
+use app\Modules\Official\Oauth\Contracts\OAuthPersistence;
 use app\Modules\Official\Oauth\Contracts\OAuthQueries;
 use app\Modules\Official\Oauth\Infrastructure\Persistence\ThinkPhpOAuthCallbackLocator;
-use app\api\application\OAuthApplicationService;
+use app\Modules\Official\Oauth\Infrastructure\Persistence\ThinkPhpOAuthPersistence;
+use app\common\service\oauth\WechatOAuthTransport;
+use app\common\service\oauth\contract\OAuthTransportInterface;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
@@ -29,13 +33,16 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
 
     public function queries(): OAuthQueries
     {
-        return new OAuthQueryService();
+        return new OAuthQueryService(new ThinkPhpOAuthPersistence());
     }
 
     public function bindings(): array
     {
         return [
             OAuthCallbackLocator::class => fn(): OAuthCallbackLocator => new ThinkPhpOAuthCallbackLocator(),
+            OAuthPersistence::class => ThinkPhpOAuthPersistence::class,
+            OAuthTransportInterface::class => WechatOAuthTransport::class,
+            OfficialAccountCallbacks::class => \app\Modules\Official\Oauth\Application\OfficialAccountApplicationService::class,
             ThinkPhpExternalTenantBindingRepository::class => fn(App $app): ThinkPhpExternalTenantBindingRepository => new ThinkPhpExternalTenantBindingRepository(
                 $app->make(OAuthCallbackLocator::class),
             ),
@@ -51,9 +58,19 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(ExternalChannelBindingStore::class),
             ),
             OAuthCommands::class => fn(App $app): OAuthCommands => new OAuthCommandService(
-                $app->make(OAuthApplicationService::class),
+                $app->make(\app\Modules\Official\Member\Contracts\MemberQueries::class),
+                $app->make(\app\Modules\Official\Member\Contracts\MemberIdentityCommands::class),
+                $app->make(\app\Modules\Official\Member\Contracts\MemberProfileCommands::class),
+                $app->make(\app\Modules\Official\Notification\Contracts\VerificationCodeCommands::class),
+                $app->make(\app\common\persistence\AdvisoryLockExecution::class),
+                $app->make(\app\common\persistence\TransactionalExecution::class),
+                $app->make(\app\common\service\config\TenantApplicationSettingService::class),
+                $app->make(ExternalTenantResolver::class),
+                $app->make(OAuthPersistence::class),
+                $app->make(OAuthTransportInterface::class),
+                (string)$app->config->get('project.default_image.user_avatar', ''),
             ),
-            OAuthQueries::class => fn(): OAuthQueries => $this->queries(),
+            OAuthQueries::class => fn(App $app): OAuthQueries => new OAuthQueryService($app->make(OAuthPersistence::class)),
         ];
     }
 }

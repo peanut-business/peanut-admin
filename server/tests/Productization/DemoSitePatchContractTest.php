@@ -90,7 +90,7 @@ $expect(
 $admin = $read($root . '/server/app/adminapi/application/auth/AdminApplicationService.php');
 $tenantAdminRuntime = $read($root . '/server/app/common/service/org/TenantAdminRuntime.php');
 $expect(
-    str_contains($admin, 'self::runtime()->assertPasswordChangeAllowed')
+    str_contains($admin, '$this->tenantAdmins->assertPasswordChangeAllowed')
         && str_contains($tenantAdminRuntime, '$this->demoAccounts->assertPasswordChangeAllowed'),
     'demo password mutation is not rejected by the Server'
 );

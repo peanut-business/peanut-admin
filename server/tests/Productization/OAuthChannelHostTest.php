@@ -46,7 +46,7 @@ expectOAuthChannelHost(
     'official-account callback bridge target is invalid'
 );
 
-$oauthLogic = (string)file_get_contents($serverRoot . '/app/api/application/OAuthApplicationService.php');
+$oauthLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Oauth/Application/OAuthCommandService.php');
 $oauthProvider = (string)file_get_contents($serverRoot . '/app/Modules/Official/Oauth/ModuleProvider.php');
 $rechargeApplication = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
 expectOAuthChannelHost(
@@ -60,14 +60,25 @@ foreach ([
     'private const ATTEMPT_TTL = 600',
     'private const COMPLETION_TTL = 600',
     "'state_hash' => hash('sha256', \$state)",
-    "where('token_hash', hash('sha256', \$rawTicket))",
-    '->lock(true)',
-    '?OAuthTransportInterface $transport = null',
-    'new WechatOAuthTransport()',
+    'completionForUpdate($context, hash(\'sha256\', $rawTicket))',
+    'private readonly OAuthTransportInterface $transport',
+    '$this->transport->exchange(',
     'ExternalTenantBinding $binding',
 ] as $marker) {
     expectOAuthChannelHost(str_contains($oauthLogic, $marker), 'OAuth invariant missing: ' . $marker);
 }
+foreach ([
+    'app/api/application/OAuthApplicationService.php',
+    'app/api/application/OfficialAccountApplicationService.php',
+] as $retiredHost) {
+    expectOAuthChannelHost(!is_file($serverRoot . '/' . $retiredHost), 'retired OAuth Host remains: ' . $retiredHost);
+}
+expectOAuthChannelHost(
+    !str_contains($oauthLogic, 'app\\api\\')
+        && !str_contains($oauthLogic, 'Infrastructure\\')
+        && !str_contains($oauthLogic, 'Model\\'),
+    'OAuth Module application bypasses its contracts',
+);
 $oauthWithoutAllowedContextTypes = str_replace([
     'PeanutAdmin\\Kernel\\Auth\\TenantContext',
     'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',

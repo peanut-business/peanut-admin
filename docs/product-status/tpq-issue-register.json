@@ -213,7 +213,7 @@
     {
       "id": "application_composition_root",
       "tpq": "WP1",
-      "description": "Application orchestration constructs a Provider, Service or Repository factory instead of receiving it"
+      "description": "Application orchestration constructs a service, factory, transport, gateway, provider or client dependency instead of receiving it"
     },
     {
       "id": "controller_catch_all",

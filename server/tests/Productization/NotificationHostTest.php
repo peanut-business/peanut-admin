@@ -69,8 +69,13 @@ expectNotificationHost(
         && !str_contains($readinessController, 'new FirstRunReadinessHost'),
     'readiness projection bypasses its container-owned Notification dependency'
 );
-foreach (['Login', 'OAuth', 'Sms', 'User'] as $application) {
-    $consumer = (string)file_get_contents($serverRoot . '/app/api/application/' . $application . 'ApplicationService.php');
+foreach ([
+    'Login' => '/app/api/application/LoginApplicationService.php',
+    'OAuth' => '/app/Modules/Official/Oauth/Application/OAuthCommandService.php',
+    'Sms' => '/app/api/application/SmsApplicationService.php',
+    'User' => '/app/api/application/UserApplicationService.php',
+] as $application => $path) {
+    $consumer = (string)file_get_contents($serverRoot . $path);
     expectNotificationHost(
         str_contains($consumer, 'VerificationCodeCommands')
             && str_contains($consumer, '$this->verificationCodes->')
@@ -93,18 +98,24 @@ foreach (['$this->sender->send', "['code' => '****']", 'verify_code_hash', 'Noti
 $applicationSender = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/ApplicationNoticeSmsSender.php'
 );
+$notificationProvider = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Notification/ModuleProvider.php'
+);
 expectNotificationHost(
     str_contains($applicationSender, '$this->channels->sendSms('),
     'tenant-owned notification flow does not delegate to the application credential Host'
 );
 expectNotificationHost(
-    str_contains($applicationSender, "getenv('APP_ENV') ?: ''")
-        && str_contains($applicationSender, "'delivery' => 'simulated'"),
+    str_contains($notificationProvider, "env('APP_ENV', '') === 'development'")
+        && str_contains($applicationSender, 'private readonly bool $developmentMode')
+        && str_contains($applicationSender, "'delivery' => 'simulated'")
+        && !str_contains($applicationSender, 'getenv('),
     'development SMS delivery is not simulated before the External Channel Host'
 );
 expectNotificationHost(
-    str_contains($verificationService, "? '1234'")
-        && str_contains($verificationService, "getenv('APP_ENV') ?: ''"),
+    str_contains($verificationService, 'private readonly bool $developmentMode')
+        && str_contains($verificationService, "? '1234'")
+        && !str_contains($verificationService, 'getenv('),
     'development verification code is not fixed to 1234'
 );
 expectNotificationHost(

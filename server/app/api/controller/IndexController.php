@@ -32,14 +32,10 @@ class IndexController extends BaseApiController
     /** 全局配置 */
     public function config()
     {
-        try {
-            $entryTenantId = $this->entryBindings->boundTenantId(
-                $this->request,
-                TenantEntryBindingResolver::ADMIN_CLIENT,
-            );
-        } catch (\DomainException) {
-            $entryTenantId = null;
-        }
+        $entryTenantId = $this->entryBindings->boundTenantId(
+            $this->request,
+            TenantEntryBindingResolver::ADMIN_CLIENT,
+        );
         $result = $this->index->getConfigData(
             $this->publicTenantContext('decoration.config'),
             (string)$this->request->domain(),

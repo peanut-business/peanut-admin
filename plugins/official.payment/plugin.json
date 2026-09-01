@@ -45,6 +45,10 @@
                         {
                             "module_key": "official.member",
                             "version": "^1.0"
+                        },
+                        {
+                            "module_key": "official.oauth",
+                            "version": "^1.0"
                         }
                     ],
                     "permissions": {

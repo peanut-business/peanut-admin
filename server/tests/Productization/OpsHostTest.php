@@ -118,7 +118,7 @@ expectOpsHost(
     'Operation Log projections must share one transaction boundary',
 );
 expectOpsHost(
-    substr_count($repositorySource, 'INSERT INTO pa_operation_log') === 1
+    substr_count($repositorySource, 'OperationLog::create') === 1
         && !str_contains($projectionSource, 'OperationLog::create'),
     'Operation Log owner contract must keep one production writer',
 );

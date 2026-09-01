@@ -6,7 +6,7 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\OfficialAccountApplicationService;
+use app\Modules\Official\Oauth\Contracts\OfficialAccountCallbacks;
 use app\common\application\BusinessException;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\external\ExternalTenantResolutionException;
@@ -20,7 +20,7 @@ class OfficialAccountController extends BaseApiController
     public function __construct(
         App $app,
         CurrentExecutionContext $executionContext,
-        private readonly OfficialAccountApplicationService $officialAccount,
+        private readonly OfficialAccountCallbacks $officialAccount,
         private readonly ExecutionContextStore $executionContexts,
         private readonly ModuleExecutionBoundary $modules,
         private readonly ExternalTenantResolver $externalTenants,

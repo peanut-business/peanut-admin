@@ -4,15 +4,15 @@ declare(strict_types=1);
 use app\Modules\Official\Oauth\Contracts\OAuthQueries;
 use app\Modules\Official\Member\Application\MemberIdentityContractService;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
-use app\api\application\OAuthApplicationService;
+use app\Modules\Official\Oauth\Application\OAuthCommandService;
+use app\Modules\Official\Oauth\Contracts\OAuthPersistence;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantContext;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
-use app\Modules\Official\Oauth\Infrastructure\Persistence\OAuthTenantRepository;
-use app\Modules\Official\Oauth\Application\OAuthCallbackLocator;
+use app\Modules\Official\Oauth\Contracts\OAuthCallbackLocator;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -129,6 +129,23 @@ function oauthRunTenant(TenantContext $context, string $operationId, callable $o
     );
 }
 
+function oauthCommands(OAuthTransportInterface $transport): OAuthCommandService
+{
+    return new OAuthCommandService(
+        app(\app\Modules\Official\Member\Contracts\MemberQueries::class),
+        app(\app\Modules\Official\Member\Contracts\MemberIdentityCommands::class),
+        app(\app\Modules\Official\Member\Contracts\MemberProfileCommands::class),
+        app(\app\Modules\Official\Notification\Contracts\VerificationCodeCommands::class),
+        app(\app\common\persistence\AdvisoryLockExecution::class),
+        app(\app\common\persistence\TransactionalExecution::class),
+        app(\app\common\service\config\TenantApplicationSettingService::class),
+        app(ExternalTenantResolver::class),
+        app(OAuthPersistence::class),
+        $transport,
+        '',
+    );
+}
+
 if (($argv[1] ?? '') === 'oauth-worker') {
     $app = new think\App();
     $app->initialize();
@@ -139,12 +156,11 @@ if (($argv[1] ?? '') === 'oauth-worker') {
     $context = oauthSystemContext($tenantId, 'oauth-worker-' . getmypid());
     $result = oauthRunSystem(
         $context,
-        static fn() => app(OAuthApplicationService::class)->miniProgramLogin(
+        static fn() => oauthCommands(new OAuthTenantFixtureTransport($subject, $unionId, 'Concurrent member'))->miniProgramLogin(
             $context,
             'fixture-code',
             oauthBinding($bindingId, $tenantId),
             '127.0.0.1',
-            new OAuthTenantFixtureTransport($subject, $unionId, 'Concurrent member'),
         ),
     );
     if ($result === false) {
@@ -205,6 +221,8 @@ VALUES (202, 'login', JSON_OBJECT('login_way', JSON_ARRAY(1, 2), 'coerce_mobile'
 SQL);
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App(); $app->initialize();
+    $persistence = app(OAuthPersistence::class);
+    $locator = app(OAuthCallbackLocator::class);
 
     $alpha = oauthTenantContext(101, 11, 'fresh-oauth-alpha');
     $beta = oauthTenantContext(202, 22, 'fresh-oauth-beta');
@@ -250,12 +268,11 @@ SQL);
     $betaLoginContext = oauthSystemContext(202, 'beta-same-identity');
     $betaOAuth = oauthRunSystem(
         $betaLoginContext,
-        static fn() => app(OAuthApplicationService::class)->miniProgramLogin(
+        static fn() => oauthCommands(new OAuthTenantFixtureTransport('same-concurrent-subject', 'same-concurrent-union', 'Beta member'))->miniProgramLogin(
             $betaLoginContext,
             'fixture-code',
             oauthBinding(302, 202),
             '127.0.0.1',
-            new OAuthTenantFixtureTransport('same-concurrent-subject', 'same-concurrent-union', 'Beta member'),
         ),
     );
     expectOAuthTenant($betaOAuth !== false, 'Beta OAuth login failed');
@@ -270,12 +287,11 @@ SQL);
     $rollbackContext = oauthSystemContext(202, 'beta-rollback');
     $rolledBack = oauthRunSystem(
         $rollbackContext,
-        static fn() => app(OAuthApplicationService::class)->miniProgramLogin(
+        static fn() => oauthCommands(new OAuthTenantFixtureTransport('rollback-subject', 'rollback-union', 'Rollback member'))->miniProgramLogin(
             $rollbackContext,
             'fixture-code',
             oauthBinding(302, 202),
             '127.0.0.1',
-            new OAuthTenantFixtureTransport('rollback-subject', 'rollback-union', 'Rollback member'),
         ),
     );
     expectOAuthTenant($rolledBack === false, 'forced OAuth identity failure unexpectedly succeeded');
@@ -287,75 +303,78 @@ SQL);
         (int)$pdo->query('SELECT COUNT(*) FROM pa_oauth_principal WHERE tenant_id = 202')->fetchColumn() === $betaPrincipalsBeforeRollback,
         'failed OAuth identity creation did not roll back the principal write',
     );
-    $betaPrincipal = oauthRunTenant($beta, 'create-beta-principal', static fn() => OAuthTenantRepository::createPrincipal($beta, [
+    $betaPrincipal = oauthRunTenant($beta, 'create-beta-principal', static fn() => $persistence->createPrincipal($beta, [
         'tenant_id' => 101,
         'provider' => 'wechat', 'union_scope' => 'wechat_default',
         'union_id' => 'union-shared', 'member_id' => 22,
     ]));
-    expectOAuthTenant((int)$betaPrincipal->tenant_id === 202, 'payload forged OAuth principal Tenant ownership');
-    $betaIdentity = oauthRunTenant($beta, 'create-beta-identity', static fn() => OAuthTenantRepository::createIdentity($beta, [
+    expectOAuthTenant($betaPrincipal->memberId === 22, 'payload forged OAuth principal Tenant ownership');
+    oauthRunTenant($beta, 'create-beta-identity', static fn() => $persistence->createIdentity($beta, [
         'tenant_id' => 101,
         'provider' => 'wechat', 'client_key' => 'mnp:app-instance',
         'subject' => 'openid-shared', 'principal_id' => (int)$betaPrincipal->id,
         'member_id' => 22, 'terminal' => 1,
     ]));
-    expectOAuthTenant((int)$betaIdentity->tenant_id === 202, 'payload forged OAuth identity Tenant ownership');
-    expectOAuthTenant(oauthRunTenant($alpha, 'read-beta-identity', static fn() => OAuthTenantRepository::identities($alpha)
-        ->where('id', (int)$betaIdentity->id)->findOrEmpty()->isEmpty()), 'Alpha read Beta OAuth identity');
+    $betaIdentity = oauthRunTenant($beta, 'read-beta-identity', static fn() => $persistence->identityBySubjectForUpdate(
+        $beta, 'wechat', 'mnp:app-instance', 'openid-shared',
+    ));
+    expectOAuthTenant($betaIdentity?->memberId === 22, 'payload forged OAuth identity Tenant ownership');
+    expectOAuthTenant(oauthRunTenant($alpha, 'read-beta-identity', static fn() => $persistence->identityBySubjectForUpdate(
+        $alpha, 'wechat', 'mnp:app-instance', 'openid-shared',
+    ))?->memberId === 11, 'Alpha read Beta OAuth identity');
     expectOAuthTenant(oauthRunTenant($beta, 'read-beta-subject', static fn() => app(OAuthQueries::class)
         ->wechatSubjectForMember($beta, 22, 1)) === 'openid-shared', 'payment compatibility lookup lost Beta owned subject');
 
     $sameStateHash = str_repeat('c', 64);
     $alphaBegin = new TenantSystemContext(101, ExternalTenantResolver::ACTOR, 'oauth.begin', 'alpha-begin');
-    oauthRunSystem($alphaBegin, static fn() => OAuthTenantRepository::createAttempt($alphaBegin, [
+    oauthRunSystem($alphaBegin, static fn() => $persistence->createAttempt($alphaBegin, [
         'state_hash' => $sameStateHash, 'scene' => 'oa', 'return_path' => '/alpha', 'expires_at' => time() + 600,
     ]));
     $betaBegin = new TenantSystemContext(202, ExternalTenantResolver::ACTOR, 'oauth.begin', 'beta-begin');
-    oauthRunSystem($betaBegin, static fn() => OAuthTenantRepository::createAttempt($betaBegin, [
+    oauthRunSystem($betaBegin, static fn() => $persistence->createAttempt($betaBegin, [
         'tenant_id' => 101, 'state_hash' => $sameStateHash, 'scene' => 'oa', 'return_path' => '/beta', 'expires_at' => time() + 600,
     ]));
-    expectOAuthTenant((int)oauthRunTenant($alpha, 'count-alpha-state', static fn() => OAuthTenantRepository::attempts($alpha)->where('state_hash', $sameStateHash)->count()) === 1, 'Alpha OAuth state was not isolated');
-    expectOAuthTenant((int)oauthRunTenant($beta, 'count-beta-state', static fn() => OAuthTenantRepository::attempts($beta)->where('state_hash', $sameStateHash)->count()) === 1, 'Beta OAuth state was not isolated');
+    expectOAuthTenant(oauthRunTenant($alpha, 'count-alpha-state', static fn() => $persistence->attemptForUpdate($alpha, $sameStateHash))?->returnPath === '/alpha', 'Alpha OAuth state was not isolated');
+    expectOAuthTenant(oauthRunTenant($beta, 'count-beta-state', static fn() => $persistence->attemptForUpdate($beta, $sameStateHash))?->returnPath === '/beta', 'Beta OAuth state was not isolated');
 
-    oauthRunTenant($beta, 'create-beta-ticket', static fn() => OAuthTenantRepository::createCompletionTicket($beta, [
+    oauthRunTenant($beta, 'create-beta-ticket', static fn() => $persistence->createCompletion($beta, [
         'tenant_id' => 101, 'token_hash' => str_repeat('d', 64), 'member_id' => 22,
         'binding_id' => 202, 'need_profile' => 1, 'need_mobile' => 0, 'expires_at' => time() + 600,
     ]));
-    expectOAuthTenant((int)oauthRunTenant($alpha, 'read-beta-ticket', static fn() => OAuthTenantRepository::completionTickets($alpha)
-        ->where('token_hash', str_repeat('d', 64))->count()) === 0, 'Alpha read Beta completion ticket');
+    expectOAuthTenant(oauthRunTenant($alpha, 'read-beta-ticket', static fn() => $persistence->completionForUpdate($alpha, str_repeat('d', 64))) === null, 'Alpha read Beta completion ticket');
 
     $officialProvider = ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH;
     $openPlatformProvider = ExternalTenantResolver::WECHAT_OPEN_PLATFORM;
     $validStateHash = str_repeat('a', 64);
-    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $validStateHash)) === 1, 'valid OAuth state was not located');
-    expectOAuthTenant(count(OAuthCallbackLocator::byState($openPlatformProvider, $validStateHash)) === 0, 'wrong OAuth binding provider accepted state');
+    expectOAuthTenant(count($locator->locateState($officialProvider, $validStateHash)) === 1, 'valid OAuth state was not located');
+    expectOAuthTenant(count($locator->locateState($openPlatformProvider, $validStateHash)) === 0, 'wrong OAuth binding provider accepted state');
     $expiredStateHash = str_repeat('e', 64);
     $expiredStateContext = new TenantSystemContext(101, ExternalTenantResolver::ACTOR, 'oauth.begin', 'expired-state');
-    oauthRunSystem($expiredStateContext, static fn() => OAuthTenantRepository::createAttempt($expiredStateContext, [
+    oauthRunSystem($expiredStateContext, static fn() => $persistence->createAttempt($expiredStateContext, [
         'state_hash' => $expiredStateHash, 'scene' => 'oa', 'return_path' => '/expired', 'expires_at' => time() - 1,
     ]));
-    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $expiredStateHash)) === 0, 'expired OAuth state was accepted');
-    oauthRunTenant($alpha, 'consume-alpha-state', static fn() => OAuthTenantRepository::attempts($alpha)
-        ->where('state_hash', $validStateHash)->update(['used_at' => time()]));
-    expectOAuthTenant(count(OAuthCallbackLocator::byState($officialProvider, $validStateHash)) === 0, 'replayed OAuth state was accepted');
+    expectOAuthTenant(count($locator->locateState($officialProvider, $expiredStateHash)) === 0, 'expired OAuth state was accepted');
+    $alphaAttempt = oauthRunTenant($alpha, 'find-alpha-state', static fn() => $persistence->attemptForUpdate($alpha, $validStateHash));
+    oauthRunTenant($alpha, 'consume-alpha-state', static fn() => $persistence->markAttemptUsed($alpha, $alphaAttempt->id, time()));
+    expectOAuthTenant(count($locator->locateState($officialProvider, $validStateHash)) === 0, 'replayed OAuth state was accepted');
 
     $alphaBindingId = (int)$pdo->query("SELECT id FROM pa_external_channel_binding WHERE tenant_id = 101 AND provider = 'oauth.wechat.oa'")->fetchColumn();
     expectOAuthTenant($alphaBindingId > 0, 'Alpha OAuth binding is missing');
     $ticketHash = str_repeat('f', 64);
     $expiredTicketHash = str_repeat('9', 64);
-    oauthRunTenant($alpha, 'create-alpha-ticket', static fn() => OAuthTenantRepository::createCompletionTicket($alpha, [
+    oauthRunTenant($alpha, 'create-alpha-ticket', static fn() => $persistence->createCompletion($alpha, [
         'token_hash' => $ticketHash, 'binding_id' => $alphaBindingId, 'member_id' => 11,
         'need_profile' => 0, 'need_mobile' => 0, 'expires_at' => time() + 600,
     ]));
-    oauthRunTenant($alpha, 'create-expired-alpha-ticket', static fn() => OAuthTenantRepository::createCompletionTicket($alpha, [
+    oauthRunTenant($alpha, 'create-expired-alpha-ticket', static fn() => $persistence->createCompletion($alpha, [
         'token_hash' => $expiredTicketHash, 'binding_id' => $alphaBindingId, 'member_id' => 11,
         'need_profile' => 0, 'need_mobile' => 0, 'expires_at' => time() - 1,
     ]));
-    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($ticketHash)) === 1, 'valid OAuth ticket was not located');
-    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($expiredTicketHash)) === 0, 'expired OAuth ticket was accepted');
-    oauthRunTenant($alpha, 'consume-alpha-ticket', static fn() => OAuthTenantRepository::completionTickets($alpha)
-        ->where('token_hash', $ticketHash)->update(['used_at' => time()]));
-    expectOAuthTenant(count(OAuthCallbackLocator::byTicket($ticketHash)) === 0, 'replayed OAuth ticket was accepted');
+    expectOAuthTenant(count($locator->locateTicket($ticketHash)) === 1, 'valid OAuth ticket was not located');
+    expectOAuthTenant(count($locator->locateTicket($expiredTicketHash)) === 0, 'expired OAuth ticket was accepted');
+    $alphaTicket = oauthRunTenant($alpha, 'find-alpha-ticket', static fn() => $persistence->completionForUpdate($alpha, $ticketHash));
+    oauthRunTenant($alpha, 'consume-alpha-ticket', static fn() => $persistence->markCompletionUsed($alpha, $alphaTicket->id, time()));
+    expectOAuthTenant(count($locator->locateTicket($ticketHash)) === 0, 'replayed OAuth ticket was accepted');
 
     try {
         ExternalTenantContext::tenantId(new TenantSystemContext(202, 'forged.actor', 'oauth.begin', 'forged'));
@@ -368,9 +387,9 @@ SQL);
     expectOAuthTenant(str_contains($controller, 'ExternalTenantResolver::production()->onlyActiveBinding('), 'OAuth begin does not use the trusted external binding resolver');
     foreach ([
         'app/api/application/LoginApplicationService.php',
-        'app/api/application/OAuthApplicationService.php',
+        'app/Modules/Official/Oauth/Application/OAuthCommandService.php',
         'app/api/middleware/CheckTokenMiddleware.php',
-        'app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php',
+        'app/Modules/Official/Oauth/Infrastructure/Persistence/ThinkPhpOAuthPersistence.php',
     ] as $relative) {
         $source = (string)file_get_contents($serverRoot . '/' . $relative);
         expectOAuthTenant(!str_contains($source, 'Member\\Model\\Member'), 'Member model leaked outside its owner: ' . $relative);

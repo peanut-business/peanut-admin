@@ -44,6 +44,10 @@ foreach ([
     'decoration_repository' => 'app/common/service/decoration/DecorationTenantRepository.php',
     'notice_repository' => 'app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php',
     'oauth_repository' => 'app/Modules/Official/Oauth/Infrastructure/Persistence/ThinkPhpOAuthPersistence.php',
+    'oauth_attempt_model' => 'app/Modules/Official/Oauth/Model/OAuthAttempt.php',
+    'oauth_completion_model' => 'app/Modules/Official/Oauth/Model/OAuthCompletionTicket.php',
+    'oauth_identity_model' => 'app/Modules/Official/Oauth/Model/OAuthIdentity.php',
+    'oauth_principal_model' => 'app/Modules/Official/Oauth/Model/OAuthPrincipal.php',
     'oauth_queries' => 'app/Modules/Official/Oauth/Application/OAuthQueryService.php',
     'external_resolver' => 'app/common/service/external/ExternalTenantResolver.php',
     'external_resolver_core' => 'vendor/peanut-admin/core/integration-security/src/External/ExternalTenantResolver.php',
@@ -107,12 +111,28 @@ foreach ([
         : qualificationSource($root, $relative);
 }
 
-foreach (['file_repository', 'article_repository', 'decoration_repository', 'notice_repository', 'oauth_repository', 'finance_repository'] as $key) {
+foreach (['file_repository', 'article_repository', 'decoration_repository', 'notice_repository', 'finance_repository'] as $key) {
     qualificationExpect(
         str_contains($sources[$key], '::where([])'),
         $key . ' lost its global-scope ORM entry',
     );
 }
+foreach (['oauth_attempt_model', 'oauth_completion_model', 'oauth_identity_model', 'oauth_principal_model'] as $key) {
+    qualificationExpect(
+        str_contains($sources[$key], 'extends TenantOwnedModel'),
+        $key . ' lost its Tenant-owned ORM scope',
+    );
+}
+qualificationExpect(
+    !str_contains($sources['oauth_repository'], "where('tenant_id'")
+        && !str_contains($sources['oauth_repository'], 'where("tenant_id"')
+        && !str_contains($sources['oauth_repository'], 'withoutGlobalScope')
+        && str_contains($sources['oauth_repository'], 'OAuthAttempt::')
+        && str_contains($sources['oauth_repository'], 'OAuthCompletionTicket::')
+        && str_contains($sources['oauth_repository'], 'OAuthIdentity::')
+        && str_contains($sources['oauth_repository'], 'OAuthPrincipal::'),
+    'oauth persistence bypassed Tenant-owned ORM models',
+);
 qualificationExpect(
     str_contains($sources['file_namespace'], 'TenantObjectNamespace::directory')
         && str_contains($sources['file_namespace'], 'TenantObjectNamespace::ownsUri')

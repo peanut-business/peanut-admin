@@ -238,7 +238,8 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
         ):
             hits.append(("framework_upload_contract", number, line.strip()))
         if application_path and re.search(
-            r"\bnew\s+[A-Za-z0-9_\\]+(?:ModuleProvider|Service|RepositoryFactory)\s*\(", line
+            r"\bnew\s+[A-Za-z0-9_\\]+(?:ModuleProvider|Service|RepositoryFactory|Transport|Gateway|Provider|Client|Factory)\s*\(",
+            line,
         ):
             hits.append(("application_composition_root", number, line.strip()))
         if (rel.endswith("Controller.php")

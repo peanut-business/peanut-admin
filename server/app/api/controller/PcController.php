@@ -30,14 +30,10 @@ class PcController extends BaseApiController
     /** PC 配置 */
     public function config()
     {
-        try {
-            $entryTenantId = $this->entryBindings->boundTenantId(
-                $this->request,
-                TenantEntryBindingResolver::ADMIN_CLIENT,
-            );
-        } catch (\DomainException) {
-            $entryTenantId = null;
-        }
+        $entryTenantId = $this->entryBindings->boundTenantId(
+            $this->request,
+            TenantEntryBindingResolver::ADMIN_CLIENT,
+        );
         $result = $this->indexApplication->getConfigData(
             $this->publicTenantContext('decoration.config'),
             (string)$this->request->domain(),
