@@ -159,6 +159,31 @@
       "id": "oversized_route_registry",
       "tpq": "TPQ21/TPQ43",
       "description": "The root route registry still owns Module and identity-specific route declarations"
+    },
+    {
+      "id": "database_connection_locator",
+      "tpq": "WP1",
+      "description": "Runtime code obtains another database connection outside the single composition root"
+    },
+    {
+      "id": "global_service_locator",
+      "tpq": "WP1",
+      "description": "Application, service or Module provider code locates dependencies through global app()"
+    },
+    {
+      "id": "nullable_pdo_fallback",
+      "tpq": "WP1",
+      "description": "A runtime dependency permits a nullable PDO and silently locates or substitutes a connection"
+    },
+    {
+      "id": "application_raw_persistence",
+      "tpq": "WP1",
+      "description": "Application orchestration performs a raw database query or mutation"
+    },
+    {
+      "id": "model_owner_bypass",
+      "tpq": "WP1",
+      "description": "Raw database access bypasses the registered Model owner for a table"
     }
   ],
   "known_tenant_models": [
