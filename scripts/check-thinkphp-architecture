@@ -47,6 +47,7 @@ RULE_OWNERS = {
     "nullable_pdo_fallback": ("WP1", "Sol"),
     "application_raw_persistence": ("WP1", "Sol"),
     "model_owner_bypass": ("WP1", "Sol"),
+    "eager_cli_database_dependency": ("WP1", "Sol"),
 }
 
 DATABASE_COMPOSITION_ROOTS = {
@@ -85,13 +86,16 @@ OUTBOUND_TRANSPORT_ADAPTERS = {
 }
 
 TRUSTED_TENANT_KEY_FILES = {
+    "server/app/command/TenantTaskWorker.php",
     "server/app/common/model/decoration/DecoratePage.php",
     "server/app/common/model/log/OperationLog.php",
     "server/app/common/model/setting/TransactionSetting.php",
     "server/app/common/model/setting/HotSearch.php",
+    "server/app/common/service/org/AdminDirectoryQuery.php",
     "server/app/common/model/dict/DictData.php",
     "server/app/common/model/dict/DictType.php",
     "server/app/common/model/dept/Jobs.php",
+    "server/app/common/service/member/MemberApiTenantContextResolver.php",
 }
 
 
@@ -122,6 +126,13 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
     lines = text.splitlines()
     hits: list[tuple[str, int, str]] = []
     rel = relative(path)
+    if rel == "server/app/common/execution/ContextualCommand.php" and re.search(r"\bPDO\b|function\s+database\s*\(", text):
+        hits.append(("eager_cli_database_dependency", 1, "ContextualCommand requires a database"))
+    if (rel.startswith("server/app/command/")
+        and rel != "server/app/command/PluginCommandSupport.php"
+        and ("$this->database()" in text or "use PluginCommandSupport;" in text)
+        and "extends DatabaseContextualCommand" not in text):
+        hits.append(("eager_cli_database_dependency", 1, "database command bypasses DatabaseContextualCommand"))
     for number, line in enumerate(lines, 1):
         if "withoutGlobalScope" in line and rel != "server/app/common/tenancy/PlatformTenantDataGateway.php":
             hits.append(("global_scope_bypass", number, line.strip()))
@@ -236,11 +247,24 @@ def model_owner_bypass_hits(path: Path, text: str) -> list[tuple[str, int, str]]
         owner_path = "server/" + model.replace("\\", "/") + ".php"
         if not table or not model or rel == owner_path:
             continue
-        match = re.search(rf"(?<![A-Za-z0-9_]){re.escape(table)}(?![A-Za-z0-9_])", text, re.IGNORECASE)
-        if match is None:
-            continue
-        line = text.count("\n", 0, match.start()) + 1
-        hits.append(("model_owner_bypass", line, f"{table} bypasses {model}"))
+        for match in re.finditer(
+            rf"(?<![A-Za-z0-9_]){re.escape(table)}(?![A-Za-z0-9_])",
+            text,
+            re.IGNORECASE,
+        ):
+            line_start = text.rfind("\n", 0, match.start()) + 1
+            line_end = text.find("\n", match.end())
+            excerpt = text[line_start:line_end if line_end >= 0 else len(text)]
+            if not re.search(
+                r"\b(?:SELECT|FROM|JOIN|INSERT|UPDATE|DELETE|REPLACE|INTO)\b"
+                r"|\bDb::(?:name|table)\s*\(|->(?:join|table)\s*\(|\binsertRows\s*\(",
+                excerpt,
+                re.IGNORECASE,
+            ):
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            hits.append(("model_owner_bypass", line, f"{table} bypasses {model}"))
+            break
     return hits
 
 

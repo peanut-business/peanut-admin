@@ -18,11 +18,16 @@ class NoticeScene extends TenantOwnedModel
     /** @param list<array{0:string,1:string,2:string,3:string}> $scenes */
     public static function provisionDefaults(array $scenes): void
     {
+        $existing = array_fill_keys(array_map(
+            'strval',
+            self::whereIn('code', array_column($scenes, 0))->column('code'),
+        ), true);
+        $missing = [];
         foreach ($scenes as [$code, $name, $description, $content]) {
-            if (self::where('code', $code)->find() !== null) {
+            if (isset($existing[$code])) {
                 continue;
             }
-            self::create([
+            $missing[] = [
                 'code' => $code,
                 'name' => $name,
                 'description' => $description,
@@ -33,7 +38,10 @@ class NoticeScene extends TenantOwnedModel
                 'sms_status' => self::STATUS_DISABLED,
                 'create_time' => 0,
                 'update_time' => 0,
-            ]);
+            ];
+        }
+        if ($missing !== []) {
+            (new self())->saveAll($missing);
         }
     }
 }

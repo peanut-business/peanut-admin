@@ -184,6 +184,11 @@
       "id": "model_owner_bypass",
       "tpq": "WP1",
       "description": "Raw database access bypasses the registered Model owner for a table"
+    },
+    {
+      "id": "eager_cli_database_dependency",
+      "tpq": "WP1",
+      "description": "A generic CLI base forces database construction for commands that do not use persistence"
     }
   ],
   "known_tenant_models": [
