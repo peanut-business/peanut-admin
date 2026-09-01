@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\capability;
 
 use app\Modules\Official\Article\ModuleProvider;
+use app\Modules\Official\Article\Model\Article;
 use PDO;
 use Closure;
 use PeanutAdmin\Kernel\Api\ApiException;
@@ -83,13 +84,11 @@ final class ArticleCapabilityAuthorization
     private function visible(int $tenantId, int $articleId): bool
     {
         try {
-            $statement = $this->pdo->prepare(
-                'SELECT 1 FROM `pa_article` WHERE `tenant_id` = :tenant_id AND `id` = :id AND `is_show` = 1 '
-                . 'AND (`delete_time` IS NULL OR `delete_time` = 0) LIMIT 1'
-            );
-            $statement->execute(['tenant_id' => $tenantId, 'id' => $articleId]);
-
-            return $statement->fetchColumn() !== false;
+            return !Article::where('tenant_id', $tenantId)
+                ->where('id', $articleId)
+                ->where('is_show', 1)
+                ->findOrEmpty()
+                ->isEmpty();
         } catch (Throwable) {
             return false;
         }

@@ -6,33 +6,27 @@ namespace app\common\service\audit;
 use app\common\contract\audit\AuditActor;
 use app\common\contract\audit\AuditEvent;
 use app\common\contract\audit\AuditResource;
+use app\common\execution\CurrentExecutionContext;
 use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Audit\AuditRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
 
 final class AuditContractHost implements AuditRepository
 {
     private OperationLogProjection $operationLogs;
 
-    public function __construct(private readonly PDO $pdo)
+    public function __construct(
+        private readonly PDO $pdo,
+        ?CurrentExecutionContext $execution,
+    )
     {
-        $this->operationLogs = new OperationLogProjection($pdo);
+        $this->operationLogs = new OperationLogProjection($execution);
     }
 
     public static function fromPdo(PDO $pdo): self
     {
-        return new self($pdo);
-    }
-
-    public static function production(): self
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('AUDIT_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-        return new self($pdo);
+        return new self($pdo, null);
     }
 
     public function record(AuditEvent $event): void

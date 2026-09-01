@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\http;
 
+use app\common\execution\ExecutionContextAccess;
 use app\common\service\JsonService;
 use app\common\service\runtime\OperationalLog;
 use think\App;
@@ -18,8 +19,10 @@ final readonly class HostApiProblemRenderer
         'installation' => ['INSTALLATION_UNEXPECTED_FAILURE', '安装服务暂时不可用。'],
     ];
 
-    public function __construct(private App $app)
-    {
+    public function __construct(
+        private App $app,
+        private ExecutionContextAccess $contexts,
+    ) {
     }
 
     public function render($request, \Throwable $exception): ?Response
@@ -34,8 +37,8 @@ final readonly class HostApiProblemRenderer
             $problem = new ApiProblem($fallback[0], 500, $fallback[1]);
         }
 
-        $requestId = RequestTrace::id($request, $application !== '' ? $application : 'http');
-        OperationalLog::warning('api_problem', [
+        $requestId = RequestTrace::id($this->contexts, $request, $application !== '' ? $application : 'http');
+        OperationalLog::warning($this->contexts, 'api_problem', [
             'application' => $application !== '' ? $application : 'unknown',
             'method' => $request->method(),
             'path' => '/' . ltrim($request->pathinfo(), '/'),

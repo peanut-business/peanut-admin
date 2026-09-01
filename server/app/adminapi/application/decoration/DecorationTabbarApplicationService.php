@@ -7,11 +7,15 @@ use app\common\application\ApplicationService;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
 use app\common\service\decoration\DecorationTabbarTenantRepository;
-use think\facade\Db;
+use app\common\persistence\TransactionalExecution;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DecorationTabbarApplicationService extends ApplicationService
 {
+    public function __construct(private readonly TransactionalExecution $transactions)
+    {
+    }
+
     public function detail(TenantContext $context): array
     {
         self::clearError();
@@ -23,7 +27,7 @@ class DecorationTabbarApplicationService extends ApplicationService
         self::clearError();
         try {
             DecorationSchemaService::validateTabbar($context, $style, $items);
-            Db::transaction(function () use ($context, $style, $items): void {
+            $this->transactions->run(function () use ($context, $style, $items): void {
                 DecorationTabbarTenantRepository::replace($style, array_map(
                     static function (array $item) use ($context): array {
                         return DecorationSchemaService::resourcesForStorage($item, $context);

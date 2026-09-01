@@ -3,16 +3,23 @@ declare(strict_types=1);
 
 namespace app\common\http\middleware;
 
+use app\common\execution\ExecutionContextAccess;
 use app\common\http\RequestTrace;
 use app\common\service\audit\AuditContractHost;
 use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
-use think\facade\Db;
 
 /** Fails closed for every HTTP mutation while an active maintenance window is in effect. */
 final class MaintenanceWriteGateMiddleware
 {
     private const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly AuditContractHost $audit,
+        private readonly ExecutionContextAccess $contexts,
+    ) {
+    }
 
     public function handle($request, \Closure $next)
     {
@@ -22,15 +29,11 @@ final class MaintenanceWriteGateMiddleware
             return $next($request);
         }
 
-        $requestId = RequestTrace::id($request, 'maintenance');
+        $requestId = RequestTrace::id($this->contexts, $request, 'maintenance');
         try {
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new \RuntimeException('MAINTENANCE_GATE_DATABASE_UNAVAILABLE');
-            }
-            $window = $this->activeWindow($pdo);
+            $window = $this->activeWindow($this->pdo);
             if ($window !== null) {
-                AuditContractHost::fromPdo($pdo)->recordPlatform(
+                $this->audit->recordPlatform(
                     'platform.maintenance.write-blocked',
                     'maintenance.write',
                     $requestId,
@@ -89,5 +92,4 @@ SQL);
             || ($method === 'POST'
                 && preg_match('#^v1/ops/maintenance/maintenance_[a-f0-9]{32}/close$#D', $path) === 1);
     }
-
 }

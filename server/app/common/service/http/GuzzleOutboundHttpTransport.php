@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\http;
 
+use app\common\execution\ExecutionContextAccess;
 use app\common\service\runtime\OperationalLog;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
@@ -13,7 +14,10 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
 {
     private ClientInterface $client;
 
-    public function __construct(?ClientInterface $client = null)
+    public function __construct(
+        private ExecutionContextAccess $contexts,
+        ?ClientInterface $client = null,
+    )
     {
         $this->client = $client ?? new Client();
     }
@@ -42,7 +46,7 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
                 );
                 $status = $response->getStatusCode();
                 OutboundHttpAttemptObservation::response(
-                    $request->method, $request->url, $attempt, $startedAt, $status,
+                    $this->contexts, $request->method, $request->url, $attempt, $startedAt, $status,
                 );
                 if ($request->retrySafe && $attempt < $attempts && $status >= 500) {
                     continue;
@@ -59,7 +63,7 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
             } catch (GuzzleException $exception) {
                 $last = $exception;
                 OutboundHttpAttemptObservation::failure(
-                    $request->method, $request->url, $attempt, $startedAt, $exception,
+                    $this->contexts, $request->method, $request->url, $attempt, $startedAt, $exception,
                 );
                 if ($attempt < $attempts) {
                     continue;
@@ -67,7 +71,7 @@ final readonly class GuzzleOutboundHttpTransport implements OutboundHttpTranspor
             }
         }
 
-        OperationalLog::warning('outbound_http_unavailable', [
+        OperationalLog::warning($this->contexts, 'outbound_http_unavailable', [
             'method' => strtoupper($request->method),
             'host' => (string)(parse_url($request->url, PHP_URL_HOST) ?: 'unknown'),
             'exception' => $last === null ? 'unknown' : $last::class,

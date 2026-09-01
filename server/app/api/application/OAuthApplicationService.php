@@ -44,6 +44,8 @@ class OAuthApplicationService extends ApplicationService
         private readonly MemberIdentityCommands $memberIdentities,
         private readonly MemberProfileCommands $memberProfiles,
         private readonly VerificationCodeCommands $verificationCodes,
+        private readonly AdvisoryLockExecution $locks,
+        private readonly TransactionalExecution $transactions,
     ) {
     }
 
@@ -97,7 +99,7 @@ class OAuthApplicationService extends ApplicationService
             if (!in_array($scene, ['oa', 'open_pc'], true)) {
                 throw new \RuntimeException('微信授权场景无效');
             }
-            $returnPath = self::consumeAttempt($context, $scene, $state);
+            $returnPath = $this->consumeAttempt($context, $scene, $state);
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange($scene, $binding->config, $code);
             $result = $this->loginWithProfile($context, $scene, $profile, $binding);
@@ -166,7 +168,7 @@ class OAuthApplicationService extends ApplicationService
         }
 
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $params, $rawTicket): array {
+            return $this->transactions->run(function () use ($context, $params, $rawTicket): array {
                 $ticket = OAuthTenantRepository::completionTickets($context)
                     ->where('token_hash', hash('sha256', $rawTicket))
                     ->lock(true)->findOrEmpty();
@@ -279,10 +281,10 @@ class OAuthApplicationService extends ApplicationService
             : 'identity:' . $clientKey . ':' . $profile->subject();
         $lockName = 'peanut:oauth:' . substr(hash('sha256', $tenantId . ':' . $lockSeed), 0, 48);
         try {
-            return app(AdvisoryLockExecution::class)->run(
+            return $this->locks->run(
                 $lockName,
                 5,
-                fn(): array => app(TransactionalExecution::class)->run(function () use (
+                fn(): array => $this->transactions->run(function () use (
                     $bindingMemberId,
                     $clientKey,
                     $context,
@@ -500,7 +502,7 @@ class OAuthApplicationService extends ApplicationService
         ];
     }
 
-    private static function consumeAttempt(
+    private function consumeAttempt(
         TenantSystemContext $context,
         string $scene,
         string $state
@@ -510,7 +512,7 @@ class OAuthApplicationService extends ApplicationService
         if ($state === '') {
             throw new \RuntimeException('微信授权 state 缺失');
         }
-        return app(TransactionalExecution::class)->run(function () use ($context, $scene, $state): string {
+        return $this->transactions->run(function () use ($context, $scene, $state): string {
             $attempt = OAuthTenantRepository::attempts($context)
                 ->where('state_hash', hash('sha256', $state))
                 ->lock(true)->findOrEmpty();

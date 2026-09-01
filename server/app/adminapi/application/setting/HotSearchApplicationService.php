@@ -20,6 +20,10 @@ class HotSearchApplicationService extends ApplicationService
 {
     protected const CONFIG_TYPE = 'hot_search';
 
+    public function __construct(private readonly TransactionalExecution $transactions)
+    {
+    }
+
     /** 读取配置：开关 + 词条列表 */
     public function getConfig(TenantContext $context): array
     {
@@ -52,7 +56,7 @@ class HotSearchApplicationService extends ApplicationService
         }
 
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $params, $rows): bool {
+            return $this->transactions->run(function () use ($context, $params, $rows): bool {
                 TenantApplicationSettingService::replaceHotSearch($context, [
                     'status' => (int)($params['status'] ?? 0),
                 ]);

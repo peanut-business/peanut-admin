@@ -14,7 +14,7 @@ final class PublicMemberTenantMiddleware
 {
     private const OPERATIONS = ['member.register', 'member.login'];
 
-    public function __construct(private readonly ?ExecutionContextStore $executionContexts = null)
+    public function __construct(private readonly ExecutionContextStore $executionContexts)
     {
     }
 
@@ -35,7 +35,7 @@ final class PublicMemberTenantMiddleware
             throw \app\common\http\ApiProblem::fromEnvelope('租户入口不可用', null, 50300);
         }
 
-        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
+        return $this->executionContexts->run(
             \app\common\execution\ConsumerExecutionContext::publicTenant($context),
             static fn() => $next($request),
         );

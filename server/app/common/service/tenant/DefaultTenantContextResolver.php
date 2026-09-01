@@ -3,27 +3,29 @@ declare(strict_types=1);
 
 namespace app\common\service\tenant;
 
+use app\common\execution\ExecutionContextAccess;
 use app\common\http\RequestTrace;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver as CoreDefaultTenantContextResolver;
-use think\facade\Db;
+use PDO;
 
 /** Resolves anonymous application work only through the unique active default Tenant. */
-final class DefaultTenantContextResolver
+final readonly class DefaultTenantContextResolver
 {
-    public static function system(string $actor, string $operation, string $operationId): TenantSystemContext
+    private CoreDefaultTenantContextResolver $delegate;
+
+    public function __construct(PDO $pdo)
     {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof \PDO) throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
-        return (new CoreDefaultTenantContextResolver($pdo))->system($actor, $operation, $operationId);
+        $this->delegate = new CoreDefaultTenantContextResolver($pdo);
     }
 
-    public static function operationId(object $request): string
+    public function system(string $actor, string $operation, string $operationId): TenantSystemContext
     {
-        return RequestTrace::id($request, 'public');
+        return $this->delegate->system($actor, $operation, $operationId);
     }
 
-    private function __construct()
+    public static function operationId(ExecutionContextAccess $contexts, object $request): string
     {
+        return RequestTrace::id($contexts, $request, 'public');
     }
 }

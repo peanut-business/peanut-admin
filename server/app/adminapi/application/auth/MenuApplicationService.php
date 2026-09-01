@@ -8,16 +8,22 @@ use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\authorization\MenuPermissionUsageQuery;
 use app\common\application\ApplicationService;
 use app\common\model\auth\SystemMenu;
+use app\common\persistence\TransactionalExecution;
 use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
 
 class MenuApplicationService extends ApplicationService
 {
+    public function __construct(
+        private readonly AdminAuthorizationService $authorization,
+        private readonly MenuPermissionUsageQuery $permissionUsage,
+        private readonly TransactionalExecution $transactions,
+    ) {}
+
     public function getMenuByAdminId(mixed $tenantContext, int $adminId): array
     {
         self::clearError();
-        return (new AdminAuthorizationService())->menusForAdminId($tenantContext, $adminId);
+        return $this->authorization->menusForAdminId($tenantContext, $adminId);
     }
 
     public function getAll(): array
@@ -57,7 +63,7 @@ class MenuApplicationService extends ApplicationService
                 'module_key' => (string)$menu['module_key'],
                 'managed' => true,
             ],
-            (new AdminAuthorizationService())->assignableMenuRecords($context)
+            $this->authorization->assignableMenuRecords($context)
         );
         return [...linear_to_tree($data), ...$moduleMenus];
     }
@@ -72,7 +78,7 @@ class MenuApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            return (bool) Db::transaction(function () use ($params): bool {
+            return (bool) $this->transactions->run(function () use ($params): bool {
                 self::assertParent((int)($params['pid'] ?? 0));
                 SystemMenu::create([
                     'pid' => $params['pid'] ?? 0, 'type' => $params['type'] ?? 'C',
@@ -93,7 +99,7 @@ class MenuApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            return (bool) Db::transaction(function () use ($params): bool {
+            return (bool) $this->transactions->run(function () use ($params): bool {
                 $id = (int)$params['id'];
                 $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
                 if ($menu->isEmpty()) throw new \RuntimeException('菜单不存在');
@@ -118,7 +124,7 @@ class MenuApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            return (bool) Db::transaction(function () use ($id): bool {
+            return (bool) $this->transactions->run(function () use ($id): bool {
                 $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
                 if ($menu->isEmpty()) throw new \RuntimeException('菜单不存在');
                 if (SystemMenu::where('pid', $id)->count() > 0) throw new \RuntimeException('已关联下级菜单，暂不可删除');
@@ -136,7 +142,7 @@ class MenuApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            return (bool) Db::transaction(function () use ($id, $isDisable): bool {
+            return (bool) $this->transactions->run(function () use ($id, $isDisable): bool {
                 $menu = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
                 if ($menu->isEmpty()) throw new \RuntimeException('菜单不存在');
                 $menu->save(['is_disable' => $isDisable]);
@@ -180,6 +186,6 @@ class MenuApplicationService extends ApplicationService
 
     private static function permissionAssigned(string $permission): bool
     {
-        return app(MenuPermissionUsageQuery::class)->assigned($permission);
+        return $this->permissionUsage->assigned($permission);
     }
 }

@@ -5,7 +5,13 @@ namespace app\platform\service;
 
 use PDO;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\Modules\Official\Task\Model\Crontab;
 use app\common\execution\ExecutionContextStore;
+use app\common\execution\SystemExecutionContext;
+use app\common\model\decoration\DecoratePage;
+use app\common\model\decoration\DecorateTabbar;
+use app\common\model\decoration\DecorationTabbarSetting;
+use app\common\model\setting\TransactionSetting;
 use app\common\service\config\BrandDefaults;
 use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -43,12 +49,28 @@ final readonly class ApplicationTenantBootstrapService
             return;
         }
 
-        $this->grantOwnerPermissions($tenantId, $ownerMemberId, $ownerRoleId);
-        $this->seedCrontab($tenantId);
-        $this->seedNoticeScenes($tenantId, $tenantCode);
-        $this->seedDecoration($tenantId);
-        $this->seedSettings($tenantId);
-        $this->seedExternalBindings($tenantId, $tenantCode);
+        $operationId = $this->executionContexts->current()?->requestId()
+            ?? 'tenant-bootstrap:' . $tenantCode;
+        $execution = new SystemExecutionContext(new TenantSystemContext(
+            $tenantId,
+            'platform.tenant-bootstrap',
+            'notification.provision-tenant-defaults',
+            $operationId,
+        ));
+        $this->executionContexts->run($execution, function () use (
+            $execution,
+            $tenantId,
+            $ownerMemberId,
+            $ownerRoleId,
+            $tenantCode,
+        ): void {
+            $this->grantOwnerPermissions($tenantId, $ownerMemberId, $ownerRoleId);
+            $this->seedCrontab();
+            $this->seedNoticeScenes($execution);
+            $this->seedDecoration();
+            $this->seedSettings($tenantId);
+            $this->seedExternalBindings($tenantId, $tenantCode);
+        });
     }
 
     private function applicationSchemaPresent(): bool
@@ -88,48 +110,61 @@ SQL);
         ]);
     }
 
-    private function seedCrontab(int $tenantId): void
+    private function seedCrontab(): void
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_crontab
-  (name,type,command,params,status,expression,error,last_time,time,max_time,sort,remark,create_time,update_time,tenant_id)
-SELECT :name,1,:command,'',1,:expression,'',0,0,0,:sort,:remark,0,0,:tenant_id
-WHERE NOT EXISTS (
-  SELECT 1 FROM pa_crontab WHERE tenant_id = :tenant_scope AND command = :command_scope
-)
-SQL);
-        foreach ([
-            ['退款状态收敛', 'refund:reconcile', '* * * * *', 100, '查询支付渠道并收敛充值退款最终状态'],
-            ['代码生成归档清理', 'generator:cleanup', '0 3 * * *', 20, '清理已使用或过期的代码生成下载令牌和隔离归档'],
-        ] as [$name, $command, $expression, $sort, $remark]) {
-            $statement->execute([
-                'name' => $name,
-                'command' => $command,
-                'expression' => $expression,
-                'sort' => $sort,
-                'remark' => $remark,
-                'tenant_id' => $tenantId,
-                'tenant_scope' => $tenantId,
-                'command_scope' => $command,
-            ]);
+        $defaults = [
+            [
+                'name' => '退款状态收敛',
+                'type' => 1,
+                'command' => 'refund:reconcile',
+                'params' => '',
+                'status' => 1,
+                'expression' => '* * * * *',
+                'error' => '',
+                'last_time' => 0,
+                'time' => 0,
+                'max_time' => 0,
+                'sort' => 100,
+                'remark' => '查询支付渠道并收敛充值退款最终状态',
+                'create_time' => 0,
+                'update_time' => 0,
+            ],
+            [
+                'name' => '代码生成归档清理',
+                'type' => 1,
+                'command' => 'generator:cleanup',
+                'params' => '',
+                'status' => 1,
+                'expression' => '0 3 * * *',
+                'error' => '',
+                'last_time' => 0,
+                'time' => 0,
+                'max_time' => 0,
+                'sort' => 20,
+                'remark' => '清理已使用或过期的代码生成下载令牌和隔离归档',
+                'create_time' => 0,
+                'update_time' => 0,
+            ],
+        ];
+        $existing = array_fill_keys(array_map(
+            'strval',
+            Crontab::whereIn('command', array_column($defaults, 'command'))->column('command'),
+        ), true);
+        $missing = array_values(array_filter(
+            $defaults,
+            static fn(array $row): bool => !isset($existing[$row['command']]),
+        ));
+        if ($missing !== []) {
+            (new Crontab())->saveAll($missing);
         }
     }
 
-    private function seedNoticeScenes(int $tenantId, string $tenantCode): void
+    private function seedNoticeScenes(SystemExecutionContext $execution): void
     {
-        $operationId = $this->executionContexts->current()?->requestId()
-            ?? 'tenant-bootstrap:' . $tenantCode;
-        $this->notifications->provisionTenantDefaults(
-            new \app\common\execution\SystemExecutionContext(new TenantSystemContext(
-                $tenantId,
-                'platform.tenant-bootstrap',
-                'notification.provision-tenant-defaults',
-                $operationId,
-            )),
-        );
+        $this->notifications->provisionTenantDefaults($execution);
     }
 
-    private function seedDecoration(int $tenantId): void
+    private function seedDecoration(): void
     {
         $pages = [
             [1, '移动端首页', '[{"title":"搜索","name":"search","disabled":1,"content":{},"styles":{}},{"title":"首页轮播图","name":"banner","content":{"enabled":1,"style":1,"bg_style":1,"data":[{"is_show":1,"image":"","bg":"","name":"","link":{"target_type":"shop","target":"home"}}]},"styles":{}},{"title":"导航菜单","name":"nav","content":{"enabled":1,"style":2,"per_line":5,"show_line":2,"data":[{"is_show":1,"image":"","name":"资讯中心","link":{"target_type":"shop","target":"news"}}]},"styles":{}},{"title":"首页中部轮播图","name":"middle-banner","content":{"enabled":1,"data":[{"is_show":1,"image":"","name":"","link":{"target_type":"shop","target":"home"}}]},"styles":{}},{"title":"资讯","name":"news","disabled":1,"content":{},"styles":{}}]', '[{"title":"页面设置","name":"page-meta","content":{"title":"首页","title_type":1,"title_img":"","bg_type":1,"bg_color":"#2F80ED","bg_image":"","text_color":1},"styles":{}}]'],
@@ -138,46 +173,46 @@ SQL);
             [4, 'PC 首页', '[{"title":"首页轮播图","name":"pc-banner","content":{"enabled":1,"data":[{"image":"","name":"","link":{"target_type":"shop","target":"home"}}]},"styles":{"position":"absolute","left":"40px","top":"75px","width":"750px","height":"340px"}}]', '[]'],
             [5, '系统风格', '{"themeColorId":3,"topTextColor":"white","navigationBarColor":"#A74BFD","themeColor1":"#A74BFD","themeColor2":"#CB60FF","buttonColor":"white"}', '[]'],
         ];
-        $page = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_decorate_page (type,name,data,meta,create_time,update_time,tenant_id)
-SELECT :type,:name,:data,:meta,0,0,:tenant_id
-WHERE NOT EXISTS (
-  SELECT 1 FROM pa_decorate_page WHERE tenant_id = :tenant_scope AND type = :type_scope
-)
-SQL);
+        $existingPageTypes = array_fill_keys(array_map(
+            'intval',
+            DecoratePage::whereIn('type', array_column($pages, 0))->column('type'),
+        ), true);
+        $missingPages = [];
         foreach ($pages as [$type, $name, $data, $meta]) {
-            $page->execute([
-                'type' => $type,
-                'name' => $name,
-                'data' => $data,
-                'meta' => $meta,
-                'tenant_id' => $tenantId,
-                'tenant_scope' => $tenantId,
-                'type_scope' => $type,
-            ]);
+            if (!isset($existingPageTypes[$type])) {
+                $missingPages[] = compact('type', 'name', 'data', 'meta') + [
+                    'create_time' => 0,
+                    'update_time' => 0,
+                ];
+            }
+        }
+        if ($missingPages !== []) {
+            (new DecoratePage())->saveAll($missingPages);
         }
 
-        $tabbar = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_decorate_tabbar
-  (position,name,selected,unselected,link,is_show,create_time,update_time,tenant_id)
-SELECT :position,:name,'','',:link,1,0,0,:tenant_id
-WHERE NOT EXISTS (
-  SELECT 1 FROM pa_decorate_tabbar WHERE tenant_id = :tenant_scope AND position = :position_scope
-)
-SQL);
-        foreach ([
+        $tabbars = [
             [0, '首页', '{"target_type":"shop","target":"home"}'],
             [1, '资讯', '{"target_type":"shop","target":"news"}'],
             [2, '我的', '{"target_type":"shop","target":"profile"}'],
-        ] as [$position, $name, $link]) {
-            $tabbar->execute([
-                'position' => $position,
-                'name' => $name,
-                'link' => $link,
-                'tenant_id' => $tenantId,
-                'tenant_scope' => $tenantId,
-                'position_scope' => $position,
-            ]);
+        ];
+        $existingPositions = array_fill_keys(array_map(
+            'intval',
+            DecorateTabbar::whereIn('position', array_column($tabbars, 0))->column('position'),
+        ), true);
+        $missingTabbars = [];
+        foreach ($tabbars as [$position, $name, $link]) {
+            if (!isset($existingPositions[$position])) {
+                $missingTabbars[] = compact('position', 'name', 'link') + [
+                    'selected' => '',
+                    'unselected' => '',
+                    'is_show' => 1,
+                    'create_time' => 0,
+                    'update_time' => 0,
+                ];
+            }
+        }
+        if ($missingTabbars !== []) {
+            (new DecorateTabbar())->saveAll($missingTabbars);
         }
     }
 
@@ -210,14 +245,23 @@ SQL);
             'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
             [$tenantId]
         );
-        $this->insertIgnore(
-            'INSERT IGNORE INTO pa_decorate_tabbar_setting (tenant_id,style,create_time,update_time) VALUES (?,\'{"default_color":"#666666","selected_color":"#2F80ED"}\',0,0)',
-            [$tenantId]
-        );
-        $this->insertIgnore(
-            'INSERT IGNORE INTO pa_transaction_setting (tenant_id,cancel_unpaid_orders,cancel_unpaid_orders_times,verification_orders,verification_orders_times,create_time,update_time) VALUES (?,1,30,1,24,0,0)',
-            [$tenantId]
-        );
+        if (DecorationTabbarSetting::where([])->find() === null) {
+            DecorationTabbarSetting::create([
+                'style' => '{"default_color":"#666666","selected_color":"#2F80ED"}',
+                'create_time' => 0,
+                'update_time' => 0,
+            ]);
+        }
+        if (TransactionSetting::where([])->find() === null) {
+            TransactionSetting::create([
+                'cancel_unpaid_orders' => 1,
+                'cancel_unpaid_orders_times' => 30,
+                'verification_orders' => 1,
+                'verification_orders_times' => 24,
+                'create_time' => 0,
+                'update_time' => 0,
+            ]);
+        }
     }
 
     private function seedExternalBindings(int $tenantId, string $tenantCode): void

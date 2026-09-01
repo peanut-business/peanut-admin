@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 use app\api\application\ArticleApplicationService;
 use app\api\application\IndexApplicationService;
 use app\api\application\PcApplicationService;
@@ -16,12 +17,12 @@ use app\common\service\decoration\DecorationTenantContext;
 class PcController extends BaseApiController
 {
     public function __construct(
-        App $app,
+        App $app, CurrentExecutionContext $executionContext,
         private readonly ArticleApplicationService $articles,
         private readonly IndexApplicationService $indexApplication,
         private readonly PcApplicationService $pcApplication,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public array $notNeedLogin = ['config', 'index', 'infoCenter', 'articleDetail'];

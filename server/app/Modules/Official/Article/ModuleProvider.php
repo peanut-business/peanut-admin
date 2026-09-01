@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article;
 
 use PDO;
+use app\common\composition\ModuleBindingContributor;
+use app\Modules\Official\Article\Application\ArticleAdministrationService;
 use app\Modules\Official\Article\Application\ArticleCollectionSummaryService;
 use app\Modules\Official\Article\Contracts\ArticleAdministration;
 use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
@@ -13,7 +15,7 @@ use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
-final class ModuleProvider implements ModuleProviderContract
+final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
 {
     public function moduleKey(): string
     {
@@ -30,16 +32,15 @@ final class ModuleProvider implements ModuleProviderContract
         return new ArticleCollectionSummaryService();
     }
 
-    public function administration(): ArticleAdministration
+    public function bindings(): array
     {
-        return app(ArticleAdministration::class);
-    }
-
-    public function register(App $app): void
-    {
-        $app->bind(ArticleCollectionSummary::class, fn(): ArticleCollectionSummary => new ArticleCollectionSummaryService());
-        $app->bind(ArticleAdministration::class, fn(): ArticleAdministration => new ArticleAdministrationService(
-            $app->make(CurrentExecutionContext::class),
-        ));
+        return [
+            ArticleModuleAccess::class => fn(App $app): ArticleModuleAccess => $this->access($app->make(PDO::class)),
+            ArticleCollectionSummary::class => fn(): ArticleCollectionSummary => $this->collectionSummary(),
+            ArticleAdministration::class => fn(App $app): ArticleAdministration => new ArticleAdministrationService(
+                $app->make(CurrentExecutionContext::class),
+                $app->make(\PeanutAdmin\Kernel\Persistence\TransactionManager::class),
+            ),
+        ];
     }
 }

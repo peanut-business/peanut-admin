@@ -67,7 +67,7 @@ class RefundReconcile extends ContextualCommand
             $log = $logsByRecord[(int)$record->id] ?? null;
             $order = $ordersById[(int)$record->order_id] ?? null;
             if (!$log instanceof RefundLog || !$order instanceof RechargeOrder) {
-                OperationalLog::warning('refund_reconcile_related_data_missing', $diagnostics + [
+                OperationalLog::warning($this->executionContext(), 'refund_reconcile_related_data_missing', $diagnostics + [
                     'record_id' => (int)$record->id,
                 ]);
                 continue;
@@ -85,7 +85,7 @@ class RefundReconcile extends ContextualCommand
                     (string)$record->sn
                 );
             } catch (\Throwable $e) {
-                OperationalLog::warning('refund_reconcile_gateway_query_failed', $diagnostics + [
+                OperationalLog::warning($this->executionContext(), 'refund_reconcile_gateway_query_failed', $diagnostics + [
                     'record_id' => (int)$record->id,
                     'exception' => $e::class,
                 ]);
@@ -100,7 +100,7 @@ class RefundReconcile extends ContextualCommand
                 RefundGatewayInterface::STATUS_SUCCESS,
                 RefundGatewayInterface::STATUS_FAILED,
             ], true)) {
-                OperationalLog::warning('refund_reconcile_gateway_status_unknown', $diagnostics + [
+                OperationalLog::warning($this->executionContext(), 'refund_reconcile_gateway_status_unknown', $diagnostics + [
                     'record_id' => (int)$record->id,
                 ]);
                 continue;
@@ -162,7 +162,7 @@ class RefundReconcile extends ContextualCommand
                     $settled++;
                 }
             } catch (\Throwable $e) {
-                OperationalLog::warning('refund_reconcile_persist_failed', $diagnostics + [
+                OperationalLog::warning($this->executionContext(), 'refund_reconcile_persist_failed', $diagnostics + [
                     'record_id' => (int)$record->id,
                     'exception' => $e::class,
                 ]);

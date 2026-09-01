@@ -3,25 +3,35 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\execution\CurrentExecutionContext;
 use app\platform\http\PlatformRequest;
-use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\PlatformOperatorSessionService;
 use app\platform\validate\PlatformLoginValidate;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\PlatformRefreshCookie;
+use think\App;
 
 final class PlatformSessionController extends BasePlatformController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $execution,
+        private readonly PlatformOperatorSessionService $sessions,
+    ) {
+        parent::__construct($app, $execution);
+    }
+
     public function login()
     {
         $params = $this->request->post();
         $this->validate($params, PlatformLoginValidate::class);
         try {
-            $authentication = PlatformRuntimeFactory::sessions()->login(
+            $authentication = $this->sessions->login(
                 trim((string)$params['email']),
                 (string)$params['password'],
                 $this->request->ip(),
                 $this->request->header('User-Agent'),
-                PlatformRequest::requestId($this->request)
+                $this->requestId()
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             return $this->fail('Email or password is incorrect.');
@@ -35,11 +45,11 @@ final class PlatformSessionController extends BasePlatformController
     {
         $token = PlatformRequest::refreshToken($this->request);
         try {
-            $authentication = PlatformRuntimeFactory::sessions()->refresh(
+            $authentication = $this->sessions->refresh(
                 $token,
                 $this->request->ip(),
                 $this->request->header('User-Agent'),
-                PlatformRequest::requestId($this->request)
+                $this->requestId()
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw \app\common\http\ApiProblem::fromEnvelope(
@@ -58,7 +68,7 @@ final class PlatformSessionController extends BasePlatformController
         $token = PlatformRequest::bearerToken($this->request);
         if ($token !== '') {
             try {
-                PlatformRuntimeFactory::sessions()->logout($token);
+                $this->sessions->logout($token);
             } catch (AuthException) {
             }
         }
@@ -71,7 +81,7 @@ final class PlatformSessionController extends BasePlatformController
         if ($this->platformContext === null) {
             return $this->fail('Platform authentication is required.');
         }
-        $permissions = PlatformRuntimeFactory::sessions()->permissionKeys($this->platformContext);
+        $permissions = $this->sessions->permissionKeys($this->platformContext);
 
         return $this->data([
             'audience' => 'platform',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\config;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\config\ConfigApplicationService;
@@ -13,9 +14,9 @@ use InvalidArgumentException;
 
 class ConfigController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly ConfigApplicationService $configuration)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly ConfigApplicationService $configuration)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function getWebsite()

@@ -4,15 +4,16 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\RechargeApplicationService;
 use app\api\validate\RechargeValidate;
 use app\common\service\finance\FinanceTenantContext;
 class RechargeController extends BaseApiController
 {
-    public function __construct(App $app, private readonly RechargeApplicationService $recharges)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly RechargeApplicationService $recharges)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function config()

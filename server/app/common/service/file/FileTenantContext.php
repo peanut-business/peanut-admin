@@ -12,9 +12,9 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class FileTenantContext
 {
-    public static function member(): AuthenticatedMemberContext|TenantContext
+    public static function member(ExecutionContextAccess $contexts): AuthenticatedMemberContext|TenantContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         if ($current instanceof ConsumerExecutionContext
             && $current->member instanceof AuthenticatedMemberContext) {
             return $current->member;

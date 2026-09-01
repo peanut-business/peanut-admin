@@ -27,7 +27,7 @@ use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /** 充值记录查询、部分退款和失败重试。 */
 class RechargeAdministrationService extends ApplicationService
@@ -38,6 +38,8 @@ class RechargeAdministrationService extends ApplicationService
     public function __construct(
         private readonly XlsxExportService $xlsxExport,
         private readonly IdempotentCommandExecutor $refundIdempotency,
+        private readonly TransactionManager $transactions,
+        private readonly PaymentRetryLock $retryLocks,
     ) {}
 
     /**
@@ -75,7 +77,10 @@ class RechargeAdministrationService extends ApplicationService
                     'var_page' => 'page_no',
                 ]), $pageNo)
                 : PaginationInput::from($params)->result($query);
-            $rows = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+            $rows = self::withRefundedAmounts($context, array_map(
+                static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
+                $pageResult->items,
+            ));
 
             return new PageResult(
                 self::formatRows($rows),
@@ -102,7 +107,7 @@ class RechargeAdministrationService extends ApplicationService
     ): array
     {
         try {
-            $prepared = Db::transaction(function () use ($context, $params, $adminId, $idempotencyKey): array {
+            $prepared = $this->transactions->run(function () use ($context, $params, $adminId, $idempotencyKey): array {
                 $idempotency = $this->refundIdempotency;
                 /** @var RechargeOrder $order */
                 $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$params['recharge_id']);
@@ -190,8 +195,8 @@ class RechargeAdministrationService extends ApplicationService
     public function refundAgain(object $context, array $params, int $adminId): array
     {
         $recordId = (int)$params['record_id'];
-        $retryLock = self::retryLockName($context, $recordId);
-        if (!self::acquireRetryLock($retryLock)) {
+        $retryLock = $this->retryLocks->name($context, $recordId);
+        if (!$this->retryLocks->acquire($retryLock)) {
             $message = '退款正在处理中，请勿重复操作';
             $this->setError($message);
             return [false, $message];
@@ -199,7 +204,7 @@ class RechargeAdministrationService extends ApplicationService
 
         try {
             try {
-                [$order, $record, $log] = Db::transaction(function () use ($context, $recordId, $adminId): array {
+                [$order, $record, $log] = $this->transactions->run(function () use ($context, $recordId, $adminId): array {
                     /** @var RefundRecord $record */
                     $record = FinanceTenantRepository::records($context)->lock(true)->findOrEmpty($recordId);
                     if ($record->isEmpty()) {
@@ -239,34 +244,7 @@ class RechargeAdministrationService extends ApplicationService
             // 重试同样先提交 ERROR -> ING 和本次日志，再在事务外请求渠道。
             return $this->requestGatewayRefund($context, $order, $record, $log);
         } finally {
-            self::releaseRetryLock($retryLock);
-        }
-    }
-
-    private static function retryLockName(object $context, int $recordId): string
-    {
-        return PaymentRetryLock::name($context, $recordId);
-    }
-
-    /** MySQL 会话级互斥覆盖完整渠道调用周期，避免快速失败时排队请求再次获准。 */
-    private static function acquireRetryLock(string $lockName): bool
-    {
-        $rows = Db::query(
-            'SELECT GET_LOCK(:lock_name, 0) AS acquired',
-            ['lock_name' => $lockName]
-        );
-        return (int)($rows[0]['acquired'] ?? 0) === 1;
-    }
-
-    private static function releaseRetryLock(string $lockName): void
-    {
-        try {
-            Db::query(
-                'SELECT RELEASE_LOCK(:lock_name)',
-                ['lock_name' => $lockName]
-            );
-        } catch (\Throwable) {
-            // MySQL 连接关闭时命名锁会自动释放，不覆盖本次退款结果。
+            $this->retryLocks->release($retryLock);
         }
     }
 
@@ -405,7 +383,7 @@ class RechargeAdministrationService extends ApplicationService
 
         // 渠道请求完成后使用新的短事务锁定本次记录和日志，原子落下业务结果和幂等回执。
         try {
-            Db::transaction(function () use (
+            $this->transactions->run(function () use (
                 $context,
                 $record,
                 $log,
@@ -474,9 +452,6 @@ class RechargeAdministrationService extends ApplicationService
             ->field(
                 'ro.id,ro.sn,ro.order_amount,ro.pay_way,ro.pay_time,'
                 . 'ro.pay_status,ro.create_time,ro.refund_status,'
-                . "COALESCE((SELECT SUM(rr.refund_amount) FROM pa_refund_record rr"
-                . " WHERE rr.tenant_id = ro.tenant_id AND rr.order_type = 'recharge'"
-                . ' AND rr.order_id = ro.id), 0) AS refunded_amount,'
                 . 'u.avatar,u.nickname,u.account'
             );
 
@@ -506,6 +481,21 @@ class RechargeAdministrationService extends ApplicationService
         }
 
         return $query;
+    }
+
+    private static function withRefundedAmounts(object $context, array $rows): array
+    {
+        $orderIds = array_values(array_unique(array_map('intval', array_column($rows, 'id'))));
+        $amounts = $orderIds === [] ? [] : FinanceTenantRepository::records($context)
+            ->where('order_type', RefundEnum::ORDER_TYPE_RECHARGE)
+            ->whereIn('order_id', $orderIds)
+            ->group('order_id')
+            ->column('SUM(refund_amount)', 'order_id');
+        foreach ($rows as &$row) {
+            $row['refunded_amount'] = $amounts[(int)$row['id']] ?? 0;
+        }
+        unset($row);
+        return $rows;
     }
 
     private static function formatRows(array $rows): array
@@ -581,11 +571,11 @@ class RechargeAdministrationService extends ApplicationService
             $limit = min($count, self::EXPORT_MAX_ROWS);
         }
 
-        $rows = self::buildListQuery($context, $params)
+        $rows = self::withRefundedAmounts($context, self::buildListQuery($context, $params)
             ->order('ro.id', 'desc')
             ->limit($offset, $limit)
             ->select()
-            ->toArray();
+            ->toArray());
         $file = $this->xlsxExport->create(
             (string)($params['file_name'] ?? self::EXPORT_DEFAULT_NAME),
             ['充值单号', '用户昵称', '充值金额', '支付方式', '支付状态', '支付时间', '下单时间'],

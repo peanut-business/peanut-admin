@@ -3,31 +3,32 @@ declare(strict_types=1);
 
 namespace app\common\service\org;
 
-use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\DemoAccountPolicy;
-use PDO;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
 
 /** Composition root for native Tenant administration services. */
 final readonly class TenantAdminRuntime
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private MemberAdminService $members,
+        private AccountSelfService $selfService,
+        private DemoAccountPolicy $demoAccounts,
+    ) {
     }
 
     public function members(): MemberAdminService
     {
-        return new MemberAdminService($this->pdo, ApplicationPasswordPolicy::hasher());
+        return $this->members;
     }
 
     public function selfService(): AccountSelfService
     {
-        return new AccountSelfService($this->pdo, ApplicationPasswordPolicy::hasher());
+        return $this->selfService;
     }
 
     public function assertPasswordChangeAllowed(int $accountId): void
     {
-        DemoAccountPolicy::assertPasswordChangeAllowed($this->pdo, $accountId);
+        $this->demoAccounts->assertPasswordChangeAllowed($accountId);
     }
 }

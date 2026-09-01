@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\setting;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\setting\HotSearchApplicationService;
@@ -11,9 +12,9 @@ use app\common\service\hot_search\HotSearchTenantContext;
 
 class HotSearchController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly HotSearchApplicationService $hotSearch)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly HotSearchApplicationService $hotSearch)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function getConfig()

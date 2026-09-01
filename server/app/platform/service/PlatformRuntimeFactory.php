@@ -5,6 +5,7 @@ namespace app\platform\service;
 
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\common\execution\ExecutionContextStore;
+use app\common\tenancy\PlatformTenantDataGateway;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\audit\AuditContractHost;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
@@ -37,32 +38,36 @@ use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Platform\Application\PlatformWorkspaceQueryService;
 use think\facade\Config;
-use think\facade\Db;
 
 final class PlatformRuntimeFactory
 {
-    private static ?PlatformOperatorSessionService $sessions = null;
-    private static ?PlatformTenantQueryService $tenantQueries = null;
-    private static ?TenantEntryBindingAdminService $tenantEntryBindings = null;
-    private static ?TenantGovernanceService $tenantGovernance = null;
-    private static ?PlatformTenantModuleService $tenantModules = null;
-    private static ?PlatformAccessAdminService $platformAccess = null;
-    private static ?PlatformModuleRuntimeService $moduleRuntime = null;
+    private ?PlatformOperatorSessionService $sessions = null;
+    private ?PlatformTenantQueryService $tenantQueries = null;
+    private ?TenantEntryBindingAdminService $tenantEntryBindings = null;
+    private ?TenantGovernanceService $tenantGovernance = null;
+    private ?PlatformTenantModuleService $tenantModules = null;
+    private ?PlatformAccessAdminService $platformAccess = null;
+    private ?PlatformModuleRuntimeService $moduleRuntime = null;
 
-    public static function sessions(): PlatformOperatorSessionService
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly NotificationCommands $notifications,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly PlatformTenantDataGateway $tenantData,
+    ) {
+    }
+
+    public function sessions(): PlatformOperatorSessionService
     {
-        if (self::$sessions !== null) {
-            return self::$sessions;
+        if ($this->sessions !== null) {
+            return $this->sessions;
         }
 
         $key = trim((string)Config::get('platform_auth.identifier_hmac_key', ''));
         if (strlen($key) < 32) {
             throw new \DomainException('PLATFORM_AUTH_CONFIGURATION_UNAVAILABLE');
         }
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE');
-        }
+        $pdo = $this->pdo;
         $auth = new PlatformAuthService(
             new PdoTransactionManager($pdo),
             new PdoPlatformAuthRepository($pdo),
@@ -73,50 +78,50 @@ final class PlatformRuntimeFactory
         );
         $permissions = new PdoPlatformAuthorizationRepository($pdo);
 
-        return self::$sessions = new PlatformOperatorSessionService(
+        return $this->sessions = new PlatformOperatorSessionService(
             $auth,
             new PlatformAuthorizationEvaluator($permissions, new RevisionPermissionCache()),
             $permissions
         );
     }
 
-    public static function identities(): CorePlatformOperatorIdentityPort
+    public function identities(): CorePlatformOperatorIdentityPort
     {
-        return new CorePlatformOperatorIdentityPort(self::sessions());
+        return new CorePlatformOperatorIdentityPort($this->sessions());
     }
 
-    public static function tenantQueries(): PlatformTenantQueryService
+    public function tenantQueries(): PlatformTenantQueryService
     {
-        if (self::$tenantQueries !== null) {
-            return self::$tenantQueries;
+        if ($this->tenantQueries !== null) {
+            return $this->tenantQueries;
         }
 
-        return self::$tenantQueries = new PlatformTenantQueryService(
-            self::sessions(),
-            new PlatformWorkspaceQueryService(self::pdo())
+        return $this->tenantQueries = new PlatformTenantQueryService(
+            $this->sessions(),
+            new PlatformWorkspaceQueryService($this->pdo)
         );
     }
 
-    public static function tenantEntryBindings(): TenantEntryBindingAdminService
+    public function tenantEntryBindings(): TenantEntryBindingAdminService
     {
-        return self::$tenantEntryBindings ??= new TenantEntryBindingAdminService(
-            self::pdo(),
-            self::sessions()
+        return $this->tenantEntryBindings ??= new TenantEntryBindingAdminService(
+            $this->pdo,
+            $this->sessions()
         );
     }
 
-    public static function platformAccess(): PlatformAccessAdminService
+    public function platformAccess(): PlatformAccessAdminService
     {
-        return self::$platformAccess ??= new PlatformAccessAdminService(self::pdo(), ApplicationPasswordPolicy::hasher());
+        return $this->platformAccess ??= new PlatformAccessAdminService($this->pdo, ApplicationPasswordPolicy::hasher());
     }
 
-    public static function tenantGovernance(): TenantGovernanceService
+    public function tenantGovernance(): TenantGovernanceService
     {
-        if (self::$tenantGovernance !== null) {
-            return self::$tenantGovernance;
+        if ($this->tenantGovernance !== null) {
+            return $this->tenantGovernance;
         }
 
-        $pdo = self::pdo();
+        $pdo = $this->pdo;
         $transactions = new PdoTransactionManager($pdo);
         $audit = AuditContractHost::fromPdo($pdo);
         $modules = new TenantModuleManager(
@@ -130,8 +135,8 @@ final class PlatformRuntimeFactory
             }
         );
 
-        return self::$tenantGovernance = new TenantGovernanceService(
-            self::identities(),
+        return $this->tenantGovernance = new TenantGovernanceService(
+            $this->identities(),
             $transactions,
             new BootstrapService(
                 $transactions,
@@ -143,17 +148,17 @@ final class PlatformRuntimeFactory
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $modules),
-            self::ownerAdminProvisioner($pdo)
+            $this->ownerAdminProvisioner()
         );
     }
 
-    public static function tenantModules(): PlatformTenantModuleService
+    public function tenantModules(): PlatformTenantModuleService
     {
-        if (self::$tenantModules !== null) {
-            return self::$tenantModules;
+        if ($this->tenantModules !== null) {
+            return $this->tenantModules;
         }
 
-        $pdo = self::pdo();
+        $pdo = $this->pdo;
         $config = Config::get('modules', []);
         if (!is_array($config)) {
             throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
@@ -169,7 +174,7 @@ final class PlatformRuntimeFactory
         $transactions = new PdoTransactionManager($pdo);
         $audit = AuditContractHost::fromPdo($pdo);
         $governance = new TenantGovernanceService(
-            self::identities(),
+            $this->identities(),
             $transactions,
             new BootstrapService(
                 $transactions,
@@ -181,20 +186,20 @@ final class PlatformRuntimeFactory
                 ApplicationPasswordPolicy::hasher()
             ),
             new PlatformTenantAdminService($pdo, $manager),
-            self::ownerAdminProvisioner($pdo)
+            $this->ownerAdminProvisioner()
         );
 
-        return self::$tenantModules = new PlatformTenantModuleService(
-            self::sessions(),
+        return $this->tenantModules = new PlatformTenantModuleService(
+            $this->sessions(),
             $governance,
             $registry,
             $validator
         );
     }
 
-    public static function moduleRuntime(): PlatformModuleRuntimeService
+    public function moduleRuntime(): PlatformModuleRuntimeService
     {
-        if (self::$moduleRuntime !== null) return self::$moduleRuntime;
+        if ($this->moduleRuntime !== null) return $this->moduleRuntime;
         $config = Config::get('modules', []);
         if (!is_array($config)) throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
         $trusted = [];
@@ -202,31 +207,19 @@ final class PlatformRuntimeFactory
             $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
             if (is_string($keyId) && is_string($decoded) && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) $trusted[$keyId] = $decoded;
         }
-        return self::$moduleRuntime = new PlatformModuleRuntimeService(self::pdo(), dirname(__DIR__, 3), $config, $trusted);
+        return $this->moduleRuntime = new PlatformModuleRuntimeService($this->pdo, dirname(__DIR__, 3), $config, $trusted);
     }
 
-    private static function pdo(): PDO
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-        return $pdo;
-    }
-
-    private static function ownerAdminProvisioner(PDO $pdo): PdoTenantOwnerAdminProvisioner
+    private function ownerAdminProvisioner(): PdoTenantOwnerAdminProvisioner
     {
         return new PdoTenantOwnerAdminProvisioner(
-            $pdo,
+            $this->pdo,
             new ApplicationTenantBootstrapService(
-                $pdo,
-                app(NotificationCommands::class),
-                app(ExecutionContextStore::class),
+                $this->pdo,
+                $this->notifications,
+                $this->executionContexts,
+                $this->tenantData,
             ),
         );
-    }
-
-    private function __construct()
-    {
     }
 }

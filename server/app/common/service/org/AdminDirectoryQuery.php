@@ -62,4 +62,42 @@ SQL;
         $statement->execute($bindings);
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /** @return null|array{id:int,account_id:int,authorization_revision:int} */
+    public function activeTenantOwner(int $tenantId, ?int $memberId, ?int $accountId): ?array
+    {
+        $sql = <<<'SQL'
+SELECT member.id, member.account_id, member.authorization_revision
+FROM pa_tenant_member member
+JOIN pa_account account
+  ON account.id = member.account_id
+ AND account.status = 'active'
+JOIN pa_member_role membership
+  ON membership.tenant_id = member.tenant_id
+ AND membership.tenant_member_id = member.id
+JOIN pa_role role
+  ON role.tenant_id = membership.tenant_id
+ AND role.id = membership.role_id
+ AND role.`key` = 'core.tenant-owner'
+ AND role.is_builtin = 1
+ AND role.status = 'active'
+WHERE member.tenant_id = :tenant_id
+  AND member.status = 'active'
+SQL;
+        $bindings = ['tenant_id' => $tenantId];
+        if ($memberId !== null && $accountId !== null) {
+            $sql .= "  AND member.id = :member_id\n  AND member.account_id = :account_id\n";
+            $bindings['member_id'] = $memberId;
+            $bindings['account_id'] = $accountId;
+        }
+        $statement = $this->pdo->prepare($sql . "\nORDER BY member.id ASC LIMIT 1");
+        $statement->execute($bindings);
+        $owner = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($owner) ? [
+            'id' => (int)$owner['id'],
+            'account_id' => (int)$owner['account_id'],
+            'authorization_revision' => (int)$owner['authorization_revision'],
+        ] : null;
+    }
 }

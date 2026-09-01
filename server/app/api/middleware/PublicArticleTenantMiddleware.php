@@ -15,8 +15,8 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 final class PublicArticleTenantMiddleware
 {
     public function __construct(
-        private readonly ?ExecutionContextStore $executionContexts = null,
-        private readonly ?ModuleExecutionBoundary $modules = null,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly ModuleExecutionBoundary $modules,
     ) {}
 
     public function handle($request, \Closure $next, string $operation)
@@ -33,8 +33,8 @@ final class PublicArticleTenantMiddleware
             throw \app\common\http\ApiProblem::fromEnvelope('默认租户不可用', null, 50300);
         }
 
-        $modules = $this->modules ?? app(ModuleExecutionBoundary::class);
-        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
+        $modules = $this->modules;
+        return $this->executionContexts->run(
             \app\common\execution\ConsumerExecutionContext::publicTenant($context),
             static function () use ($modules, $next, $request) {
                 try {

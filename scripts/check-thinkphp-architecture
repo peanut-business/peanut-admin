@@ -42,6 +42,16 @@ RULE_OWNERS = {
     "raw_http_transport": ("TPQ45", "Sol"),
     "non_http_entry": ("TPQ26/TPQ47", "Sol"),
     "oversized_route_registry": ("TPQ21/TPQ43", "Sol"),
+    "database_connection_locator": ("WP1", "Sol"),
+    "global_service_locator": ("WP1", "Sol"),
+    "nullable_pdo_fallback": ("WP1", "Sol"),
+    "application_raw_persistence": ("WP1", "Sol"),
+    "model_owner_bypass": ("WP1", "Sol"),
+    "eager_cli_database_dependency": ("WP1", "Sol"),
+}
+
+DATABASE_COMPOSITION_ROOTS = {
+    "server/app/AppService.php",
 }
 
 TRUSTED_TENANT_KEY_PATHS = (
@@ -76,13 +86,16 @@ OUTBOUND_TRANSPORT_ADAPTERS = {
 }
 
 TRUSTED_TENANT_KEY_FILES = {
+    "server/app/command/TenantTaskWorker.php",
     "server/app/common/model/decoration/DecoratePage.php",
     "server/app/common/model/log/OperationLog.php",
     "server/app/common/model/setting/TransactionSetting.php",
     "server/app/common/model/setting/HotSearch.php",
+    "server/app/common/service/org/AdminDirectoryQuery.php",
     "server/app/common/model/dict/DictData.php",
     "server/app/common/model/dict/DictType.php",
     "server/app/common/model/dept/Jobs.php",
+    "server/app/common/service/member/MemberApiTenantContextResolver.php",
 }
 
 
@@ -113,6 +126,13 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
     lines = text.splitlines()
     hits: list[tuple[str, int, str]] = []
     rel = relative(path)
+    if rel == "server/app/common/execution/ContextualCommand.php" and re.search(r"\bPDO\b|function\s+database\s*\(", text):
+        hits.append(("eager_cli_database_dependency", 1, "ContextualCommand requires a database"))
+    if (rel.startswith("server/app/command/")
+        and rel != "server/app/command/PluginCommandSupport.php"
+        and ("$this->database()" in text or "use PluginCommandSupport;" in text)
+        and "extends DatabaseContextualCommand" not in text):
+        hits.append(("eager_cli_database_dependency", 1, "database command bypasses DatabaseContextualCommand"))
     for number, line in enumerate(lines, 1):
         if "withoutGlobalScope" in line and rel != "server/app/common/tenancy/PlatformTenantDataGateway.php":
             hits.append(("global_scope_bypass", number, line.strip()))
@@ -180,6 +200,20 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
             r"\bclass\s+[A-Za-z0-9_]+\s+implements\s+TaskHandler\b", line
         ) and rel != "server/app/common/service/async/ModuleAwareTaskHandler.php"):
             hits.append(("non_http_entry", number, line.strip()))
+        if "Db::connect(" in line and rel not in DATABASE_COMPOSITION_ROOTS:
+            hits.append(("database_connection_locator", number, line.strip()))
+        if re.search(r"(?:\?PDO\b|PDO\s*\|\s*null\b|PDO\s+\$[A-Za-z_][A-Za-z0-9_]*\s*=\s*null\b)", line):
+            hits.append(("nullable_pdo_fallback", number, line.strip()))
+        if (re.search(r"\bapp\s*\(\s*[A-Za-z_\\]", line)
+            and ("/Application/" in f"/{rel}"
+                 or "/application/" in f"/{rel}"
+                 or "/service/" in f"/{rel}"
+                 or rel.endswith("ModuleProvider.php"))):
+            hits.append(("global_service_locator", number, line.strip()))
+        if ("/Application/" in f"/{rel}" or "/application/" in f"/{rel}") and re.search(
+            r"\bDb::(?!transaction\b)|->(?:prepare|query|exec)\s*\(", line
+        ):
+            hits.append(("application_raw_persistence", number, line.strip()))
 
     loop_depths: list[int] = []
     depth = 0
@@ -198,6 +232,39 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
         depth += stripped.count("{") - stripped.count("}")
         while loop_depths and depth < loop_depths[-1]:
             loop_depths.pop()
+    return hits
+
+
+def model_owner_bypass_hits(path: Path, text: str) -> list[tuple[str, int, str]]:
+    if not re.search(r"\bDb::(?!transaction\b)|->(?:prepare|query|exec)\s*\(", text):
+        return []
+    rel = relative(path)
+    ownership = json.loads(OWNERSHIP.read_text(encoding="utf-8"))
+    hits: list[tuple[str, int, str]] = []
+    for item in ownership.get("model_owners", []):
+        table = str(item.get("table", "")).strip()
+        model = str(item.get("model", "")).strip()
+        owner_path = "server/" + model.replace("\\", "/") + ".php"
+        if not table or not model or rel == owner_path:
+            continue
+        for match in re.finditer(
+            rf"(?<![A-Za-z0-9_]){re.escape(table)}(?![A-Za-z0-9_])",
+            text,
+            re.IGNORECASE,
+        ):
+            line_start = text.rfind("\n", 0, match.start()) + 1
+            line_end = text.find("\n", match.end())
+            excerpt = text[line_start:line_end if line_end >= 0 else len(text)]
+            if not re.search(
+                r"\b(?:SELECT|FROM|JOIN|INSERT|UPDATE|DELETE|REPLACE|INTO)\b"
+                r"|\bDb::(?:name|table)\s*\(|->(?:join|table)\s*\(|\binsertRows\s*\(",
+                excerpt,
+                re.IGNORECASE,
+            ):
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            hits.append(("model_owner_bypass", line, f"{table} bypasses {model}"))
+            break
     return hits
 
 
@@ -235,6 +302,25 @@ def current_findings(register: dict) -> list[dict]:
                 "path": relative(path),
                 "line": line,
                 "symbol": excerpt[:160],
+                "tpq": RULE_OWNERS[rule][0],
+                "owner": item.get("owner") if item else None,
+                "decision": item.get("decision") if item else None,
+                "status": item.get("status") if item else "unregistered",
+                "verification": item.get("verification") if item else None,
+                "reason": item.get("reason") if item else None,
+                "review_due": item.get("review_due") if item else None,
+            })
+        for rule, line, excerpt in model_owner_bypass_hits(path, text):
+            key = (rule, relative(path), excerpt)
+            occurrences[key] = occurrences.get(key, 0) + 1
+            finding_id = issue_id(rule, relative(path), excerpt, occurrences[key])
+            item = registered.get(finding_id)
+            findings.append({
+                "issue_id": finding_id,
+                "category": rule,
+                "path": relative(path),
+                "line": line,
+                "symbol": excerpt,
                 "tpq": RULE_OWNERS[rule][0],
                 "owner": item.get("owner") if item else None,
                 "decision": item.get("decision") if item else None,

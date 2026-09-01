@@ -16,11 +16,6 @@ final readonly class StorageConfigurationService
 
     public function __construct(private StorageRepository $repo) {}
 
-    public static function fromDefaultConnection(): self
-    {
-        return new self(StorageRepository::fromDefaultConnection());
-    }
-
     public function snapshot(): array
     {
         return [

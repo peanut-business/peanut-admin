@@ -12,6 +12,10 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class WorkbenchApplicationService extends ApplicationService
 {
+    public function __construct(private readonly AdminAuthorizationService $authorization)
+    {
+    }
+
     public function index(TenantContext $context): array
     {
         return [
@@ -78,7 +82,7 @@ class WorkbenchApplicationService extends ApplicationService
             ['name' => '菜单权限', 'image' => 'menu_auth', 'url' => '/system/menu'],
             ['name' => '网站信息', 'image' => 'menu_web', 'url' => '/app-setting/website'],
         ];
-        $moduleMenus = (new AdminAuthorizationService())->moduleMenuRecords($context);
+        $moduleMenus = $this->authorization->moduleMenuRecords($context);
         $items = array_values(array_filter(
             $items,
             static fn(array $item): bool => $item['url'] !== '/system/file'

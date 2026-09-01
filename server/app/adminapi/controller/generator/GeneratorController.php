@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\generator;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\generator\GeneratorApplicationService;
@@ -15,9 +16,9 @@ use think\response\Json;
 
 class GeneratorController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly GeneratorApplicationService $generator)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly GeneratorApplicationService $generator)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function sourceTables()

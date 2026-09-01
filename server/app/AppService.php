@@ -3,14 +3,7 @@ declare (strict_types = 1);
 
 namespace app;
 
-use app\Modules\Fixture\DeliveryRecord\ModuleProvider as DeliveryRecordModuleProvider;
-use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
-use app\Modules\Official\File\ModuleProvider as FileModuleProvider;
-use app\Modules\Official\ImportExport\ModuleProvider as ImportExportModuleProvider;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
-use app\Modules\Official\Notification\ModuleProvider as NotificationModuleProvider;
-use app\Modules\Official\Oauth\ModuleProvider as OauthModuleProvider;
-use app\adminapi\service\generator\GeneratorImportPersistence;
+use app\common\composition\ModuleComposition;
 use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\service\audit\AuditContractHost;
@@ -34,6 +27,8 @@ use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\StandaloneDataScopePolicy;
 use app\common\validate\InputValidator;
 use app\platform\service\ops\PlatformOpsApplicationService;
+use app\platform\service\plugin\ModuleDefinitionRegistryFactory;
+use app\platform\service\plugin\PluginLockResolver;
 use think\Service;
 use think\facade\Config;
 use think\facade\Db;
@@ -44,6 +39,7 @@ use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /**
  * 应用服务类
@@ -56,14 +52,17 @@ class AppService extends Service
         $this->app->instance(ExecutionContextStore::class, $contexts);
         $this->app->instance(CurrentExecutionContext::class, new CurrentExecutionContext($contexts));
         $this->app->bind(PDO::class, fn(): PDO => $this->database());
+        $this->app->bind(TransactionManager::class, fn(): TransactionManager => new PdoTransactionManager(
+            $this->app->make(PDO::class),
+        ));
         $this->app->bind(TenantAuthService::class, function (): TenantAuthService {
             $key = trim((string)Config::get('tenant_auth.identifier_hmac_key', ''));
             if (strlen($key) < 32) {
                 throw new \DomainException('TENANT_AUTH_CONFIGURATION_UNAVAILABLE');
             }
-            $pdo = $this->database();
+            $pdo = $this->app->make(PDO::class);
             return new TenantAuthService(
-                new PdoTransactionManager($pdo),
+                $this->app->make(TransactionManager::class),
                 new PdoTenantAuthRepository($pdo),
                 ApplicationPasswordPolicy::hasher(),
                 new SystemClock(),
@@ -75,50 +74,47 @@ class AppService extends Service
             $this->app->make(TenantAuthService::class),
         ));
         $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => AuditContractHost::fromPdo(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(InputValidator::class, fn(): InputValidator => new InputValidator(
             $this->app,
             $this->app->make(CurrentExecutionContext::class),
         ));
-        $this->app->bind(GeneratorImportPersistence::class, fn(): GeneratorImportPersistence => new GeneratorImportPersistence(
-            $this->database(),
-        ));
         $this->app->bind(AdminAuthorizationQuery::class, fn(): AdminAuthorizationQuery => new AdminAuthorizationService(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport());
         $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
             return new ModuleExecutionBoundary(
-                $this->database(),
+                $this->app->make(PDO::class),
                 $this->app->make(CurrentExecutionContext::class),
             );
         });
         $this->app->bind(AdminDirectoryQuery::class, fn(): AdminDirectoryQuery => new AdminDirectoryQuery(
-            $this->database(),
+            $this->app->make(PDO::class),
             $this->app->make(CurrentExecutionContext::class),
         ));
         $this->app->bind(DepartmentAdministrationRuntime::class, fn(): DepartmentAdministrationRuntime => new DepartmentAdministrationRuntime(
-            $this->database(),
+            $this->app->make(PDO::class),
             $this->app->make(CurrentExecutionContext::class),
         ));
         $this->app->bind(TenantAdminRuntime::class, fn(): TenantAdminRuntime => new TenantAdminRuntime(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(MenuPermissionUsageQuery::class, fn(): MenuPermissionUsageQuery => new MenuPermissionUsageQuery(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(RoleAdministrationRuntime::class, fn(): RoleAdministrationRuntime => new RoleAdministrationRuntime(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(TenantIdentityQuery::class, fn(): TenantIdentityQuery => new TenantIdentityQuery(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(PlatformOpsApplicationService::class, fn(): PlatformOpsApplicationService => new PlatformOpsApplicationService(
-            $this->database(),
+            $this->app->make(PDO::class),
         ));
         $this->app->bind(DataScopePolicy::class, function (): DataScopePolicy {
             $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
@@ -131,19 +127,7 @@ class AppService extends Service
             };
         });
 
-        foreach ([
-            new ArticleModuleProvider(),
-            new FileModuleProvider(),
-            new ImportExportModuleProvider(),
-            new MemberModuleProvider(),
-            new NotificationModuleProvider(),
-            new OauthModuleProvider(),
-        ] as $provider) {
-            $provider->register($this->app);
-        }
-        if (class_exists(DeliveryRecordModuleProvider::class)) {
-            (new DeliveryRecordModuleProvider())->register($this->app);
-        }
+        $this->registerModules();
     }
 
     public function boot(): void
@@ -157,5 +141,24 @@ class AppService extends Service
             throw new \RuntimeException('APPLICATION_DATABASE_UNAVAILABLE');
         }
         return $pdo;
+    }
+
+    private function registerModules(): void
+    {
+        $config = Config::get('modules', []);
+        if (!is_array($config)) {
+            throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
+        }
+        $serverRoot = dirname(__DIR__);
+        $lockPath = trim((string)($config['plugin_lock'] ?? ''));
+        if ($lockPath === '') {
+            throw new \RuntimeException('PLUGIN_LOCK_INVALID');
+        }
+        $registry = (new ModuleDefinitionRegistryFactory($serverRoot))->fromPluginLock(
+            new PluginLockResolver($serverRoot, $lockPath),
+            $config,
+            false,
+        );
+        (new ModuleComposition($this->app))->register($registry);
     }
 }

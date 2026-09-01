@@ -20,9 +20,10 @@ class JobsApplicationService extends ApplicationService
     private const EXPORT_MAX_ROWS = 25000;
     private const EXPORT_DEFAULT_NAME = '岗位列表';
 
-    public function __construct(private readonly XlsxExportService $xlsxExport)
-    {
-    }
+    public function __construct(
+        private readonly XlsxExportService $xlsxExport,
+        private readonly TransactionalExecution $transactions,
+    ) {}
 
     /** 将 Peanut 旧版 is_disable 请求转换为 LikeAdmin status 契约。 */
     public function normalizeInput(array $params): array
@@ -111,7 +112,7 @@ class JobsApplicationService extends ApplicationService
         self::clearError();
         $params = self::normalizeInput($params);
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $params): bool {
+            return $this->transactions->run(function () use ($context, $params): bool {
                 self::assertUnique($context, (string)$params['name'], (string)$params['code']);
                 $status = (int)$params['status'];
                 OrgTenantRepository::create(Jobs::class, [
@@ -134,7 +135,7 @@ class JobsApplicationService extends ApplicationService
         self::clearError();
         $params = self::normalizeInput($params);
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $params): bool {
+            return $this->transactions->run(function () use ($context, $params): bool {
                 $id = (int)$params['id'];
                 $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
                 if ($jobs->isEmpty()) {
@@ -161,7 +162,7 @@ class JobsApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $id): bool {
+            return $this->transactions->run(function () use ($context, $id): bool {
                 $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
                 if ($jobs->isEmpty()) {
                     throw new \RuntimeException('岗位不存在');
@@ -178,7 +179,7 @@ class JobsApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $id, $status): bool {
+            return $this->transactions->run(function () use ($context, $id, $status): bool {
                 $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
                 if ($jobs->isEmpty()) {
                     throw new \RuntimeException('岗位不存在');

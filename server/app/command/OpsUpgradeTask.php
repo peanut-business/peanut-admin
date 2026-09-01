@@ -4,17 +4,15 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\ops\PdoUpgradeTaskExecutionService;
-use PDO;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
-use think\facade\Db;
 use Throwable;
 
 /** Deployment-control bridge for the fixed PC42 upgrade state machine. */
-final class OpsUpgradeTask extends ContextualCommand
+final class OpsUpgradeTask extends DatabaseContextualCommand
 {
     protected function configure(): void
     {
@@ -29,10 +27,7 @@ final class OpsUpgradeTask extends ContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new \RuntimeException('OPS_UPGRADE_DATABASE_UNAVAILABLE');
-            }
+            $pdo = $this->database();
             $service = new PdoUpgradeTaskExecutionService($pdo, dirname(__DIR__, 3));
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {

@@ -16,14 +16,14 @@ final class NoticeTenantContext
 {
     public const VERIFICATION_ACTOR = 'peanut.notice.verification';
 
-    public static function member(): TenantContext
+    public static function member(ExecutionContextAccess $contexts): TenantContext
     {
-        $context = ExecutionContextAccess::tenantAdmin();
-        self::tenantId($context);
+        $context = $contexts->tenantAdmin();
+        self::tenantId($contexts, $context);
         return $context;
     }
 
-    public static function tenantId(mixed $context): int
+    public static function tenantId(ExecutionContextAccess $contexts, mixed $context): int
     {
         if (!$context instanceof TenantContext
             || $context->tenantId < 1
@@ -35,12 +35,16 @@ final class NoticeTenantContext
             || $context->requestId === '') {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
-        return self::authoritativeTenantId($context->tenantId);
+        return self::authoritativeTenantId($contexts, $context->tenantId);
     }
 
-    public static function verification(object $request, string $operation): TenantContext|TenantSystemContext
+    public static function verification(
+        ExecutionContextAccess $contexts,
+        object $request,
+        string $operation,
+    ): TenantContext|TenantSystemContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         $context = match (true) {
             $current instanceof AdminExecutionContext => $current->tenant,
             $current instanceof ConsumerExecutionContext => $current->publicTenant,
@@ -48,7 +52,7 @@ final class NoticeTenantContext
             default => null,
         };
         if ($context instanceof TenantContext) {
-            self::tenantId($context);
+            self::tenantId($contexts, $context);
             return $context;
         }
         if ($context instanceof TenantSystemContext
@@ -62,14 +66,15 @@ final class NoticeTenantContext
     }
 
     public static function verificationTenantId(
+        ExecutionContextAccess $contexts,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $operation
     ): int {
         if ($context instanceof AuthenticatedMemberContext) {
-            return self::authoritativeTenantId($context->tenantId);
+            return self::authoritativeTenantId($contexts, $context->tenantId);
         }
         if ($context instanceof TenantContext) {
-            return self::tenantId($context);
+            return self::tenantId($contexts, $context);
         }
         if ($context->tenantId < 1
             || $context->actorKey !== self::VERIFICATION_ACTOR
@@ -77,12 +82,12 @@ final class NoticeTenantContext
             || $context->operationId === '') {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
-        return self::authoritativeTenantId($context->tenantId);
+        return self::authoritativeTenantId($contexts, $context->tenantId);
     }
 
-    private static function authoritativeTenantId(int $tenantId): int
+    private static function authoritativeTenantId(ExecutionContextAccess $contexts, int $tenantId): int
     {
-        if (ExecutionContextAccess::current()?->tenantId() !== $tenantId) {
+        if ($contexts->current()?->tenantId() !== $tenantId) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
         return $tenantId;

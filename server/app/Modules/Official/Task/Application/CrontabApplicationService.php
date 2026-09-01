@@ -10,13 +10,17 @@ use app\common\service\crontab\CrontabTenantRepository;
 use Cron\CronExpression;
 use app\common\service\CrontabCommandService;
 use app\common\support\PaginationInput;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /**
  * 定时任务逻辑层
  */
 class CrontabApplicationService extends ApplicationService
 {
+    public function __construct(private readonly TransactionManager $transactions)
+    {
+    }
+
     /** 分页列表：支持 name(模糊) / status 过滤 */
     public function lists(array $params): PageResult
     {
@@ -75,7 +79,7 @@ class CrontabApplicationService extends ApplicationService
         self::clearError();
         try {
             CrontabCommandService::assertAllowed(trim((string)$params['command']));
-            Db::transaction(function () use ($params): void {
+            $this->transactions->run(function () use ($params): void {
                 $crontab = CrontabTenantRepository::schedules()
                     ->where('id', (int)$params['id'])->lock(true)->findOrEmpty();
                 if ($crontab->isEmpty()) {

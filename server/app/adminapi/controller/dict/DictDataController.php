@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\dict;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\AbstractTenantCrudController;
 use app\adminapi\application\dict\DictDataApplicationService;
@@ -14,9 +15,9 @@ use think\response\Json;
 
 class DictDataController extends AbstractTenantCrudController
 {
-    public function __construct(App $app, private readonly DictDataApplicationService $dictionaryData)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly DictDataApplicationService $dictionaryData)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     protected const CRUD_SERVICE = DictDataApplicationService::class;

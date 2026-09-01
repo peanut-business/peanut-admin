@@ -8,10 +8,14 @@ use app\common\service\tenant\ApplicationHostPolicy;
 
 final class PlatformHostMiddleware
 {
+    public function __construct(private readonly ApplicationHostPolicy $hosts)
+    {
+    }
+
     public function handle($request, \Closure $next)
     {
         try {
-            ApplicationHostPolicy::production()->assertPlatform($request);
+            $this->hosts->assertPlatform($request);
         } catch (\DomainException|\InvalidArgumentException) {
             throw \app\common\http\ApiProblem::fromEnvelope('Platform host is not allowed.', null, 40300);
         }

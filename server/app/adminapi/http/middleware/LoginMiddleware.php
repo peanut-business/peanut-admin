@@ -17,7 +17,8 @@ final class LoginMiddleware
 {
     public function __construct(
         private readonly TenantAuthService $tenantAuth,
-        private readonly ?ExecutionContextStore $executionContexts = null,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly AdminAuthorizationService $authorization,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -42,7 +43,7 @@ final class LoginMiddleware
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 $context->tenantId,
             );
-            $principal = (new AdminAuthorizationService())->principal($context)->toArray();
+            $principal = $this->authorization->principal($context)->toArray();
             $principal['terminal'] = 1;
             $entryBound = $entryBindings->boundTenantId(
                 $request,
@@ -57,7 +58,7 @@ final class LoginMiddleware
             strtolower((string)$request->method()),
             trim((string)$request->pathinfo(), '/'),
         );
-        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
+        return $this->executionContexts->run(
             new \app\common\execution\AdminExecutionContext($context, $operation, $principal, $entryBound),
             static fn() => $next($request),
         );

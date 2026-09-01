@@ -15,9 +15,9 @@ final class HotSearchTenantContext
     public const PUBLIC_ACTOR = 'peanut.hot-search.public-read';
     public const PUBLIC_LIST_OPERATION = 'hot-search.lists';
 
-    public static function member(): TenantContext
+    public static function member(ExecutionContextAccess $contexts): TenantContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         $context = $current instanceof AdminExecutionContext ? $current->tenant : null;
         if (!$context instanceof TenantContext || !self::trustedMember($context)) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
@@ -25,9 +25,9 @@ final class HotSearchTenantContext
         return $context;
     }
 
-    public static function read(): TenantContext|TenantSystemContext
+    public static function read(ExecutionContextAccess $contexts): TenantContext|TenantSystemContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         $context = match (true) {
             $current instanceof AdminExecutionContext => $current->tenant,
             $current instanceof ConsumerExecutionContext => $current->publicTenant,

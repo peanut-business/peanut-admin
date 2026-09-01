@@ -3,14 +3,17 @@ declare(strict_types=1);
 
 namespace app\common\service\member;
 
+use app\Modules\Official\Member\Model\Member;
+use app\common\tenancy\PlatformTenantDataGateway;
 use PDO;
-use think\facade\Db;
 
 /** Restores application-member identity from a verified JWT subject and authoritative ownership. */
 final class MemberApiTenantContextResolver
 {
-    public function __construct(private ?PDO $pdo = null)
-    {
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly PlatformTenantDataGateway $tenantData,
+    ) {
     }
 
     public function resolve(int $memberId, string $token, string $requestId): AuthenticatedMemberContext
@@ -19,25 +22,26 @@ final class MemberApiTenantContextResolver
             throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
         }
 
-        $statement = $this->connection()->prepare(<<<'SQL'
-SELECT m.id AS member_id, m.tenant_id
-FROM pa_member m
-JOIN pa_tenant t
-  ON t.id = m.tenant_id
- AND t.status = 'active'
-WHERE m.id = :member_id
-  AND m.status = 1
-  AND m.delete_time IS NULL
-LIMIT 2
-SQL);
-        $statement->execute(['member_id' => $memberId]);
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-        if (count($rows) !== 1) {
+        $member = $this->tenantData
+            ->query(Member::class, 'api.member-auth', 'resolve-tenant-context')
+            ->where('id', $memberId)
+            ->where('status', 1)
+            ->whereNull('delete_time')
+            ->field(['id', 'tenant_id'])
+            ->find();
+        if ($member === null) {
             throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
         }
-        $row = $rows[0];
+        $row = $member->toArray();
         $tenantId = (int)($row['tenant_id'] ?? 0);
-        if ($tenantId < 1 || (int)($row['member_id'] ?? 0) !== $memberId) {
+        if ($tenantId < 1 || (int)($row['id'] ?? 0) !== $memberId) {
+            throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
+        }
+        $tenant = $this->pdo->prepare(
+            "SELECT 1 FROM pa_tenant WHERE id = :tenant_id AND status = 'active' LIMIT 1"
+        );
+        $tenant->execute(['tenant_id' => $tenantId]);
+        if ($tenant->fetchColumn() === false) {
             throw new \DomainException('MEMBER_TENANT_CONTEXT_UNAVAILABLE');
         }
 
@@ -47,17 +51,5 @@ SQL);
             hash('sha256', $token),
             $requestId,
         );
-    }
-
-    private function connection(): PDO
-    {
-        if ($this->pdo instanceof PDO) {
-            return $this->pdo;
-        }
-        $connection = Db::connect()->connect();
-        if (!$connection instanceof PDO) {
-            throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-        return $this->pdo = $connection;
     }
 }

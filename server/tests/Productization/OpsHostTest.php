@@ -142,7 +142,7 @@ expectOpsHost(
         && str_contains($diagnosticSource, "'items' => \$this->operationLogEvidence(\$since)"),
     'diagnostic bundle does not include Operation Log evidence',
 );
-expectOpsHost(str_contains($logicSource, 'Db::transaction'), 'log clear must be transactional');
+expectOpsHost(str_contains($logicSource, '$this->transactions->run('), 'log clear must be transactional');
 expectOpsHost(str_contains($logicSource, "'log/clear'"), 'log clear must retain an audit tombstone');
 expectOpsHost(!str_contains($serviceSource, 'PeanutAdmin\\OpsConsole'), 'application log owner must not deep import core');
 

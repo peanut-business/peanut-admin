@@ -10,9 +10,9 @@ use app\common\execution\ExecutionContextAccess;
 
 final class CrontabTenantContext
 {
-    public static function member(): TenantContext
+    public static function member(ExecutionContextAccess $contexts): TenantContext
     {
-        $context = ExecutionContextAccess::tenantAdmin();
+        $context = $contexts->tenantAdmin();
         if (!$context instanceof TenantContext
             || $context->tenantId < 1
             || $context->accountId < 1

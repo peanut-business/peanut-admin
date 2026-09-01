@@ -8,11 +8,15 @@ use app\common\service\FileService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 class OfficialAccountApplicationService extends ApplicationService
 {
     private const CONFIG_TYPE = 'oa_setting';
+
+    public function __construct(private readonly TransactionManager $transactions)
+    {
+    }
 
     public function getConfig(TenantContext $context): array
     {
@@ -61,7 +65,7 @@ class OfficialAccountApplicationService extends ApplicationService
             'app_secret' => $secret,
             'token' => trim((string)($params['token'] ?? '')),
         ];
-        Db::transaction(function () use ($context, $data): void {
+        $this->transactions->run(function () use ($context, $data): void {
             ExternalChannelBindingService::update(
                 $context,
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,

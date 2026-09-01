@@ -19,8 +19,8 @@ class CheckTokenMiddleware
 {
     public function __construct(
         private readonly MemberQueries $members,
-        private readonly ?ExecutionContextStore $executionContexts = null,
-        private ?MemberApiTenantContextResolver $tenantContexts = null,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly MemberApiTenantContextResolver $tenantContexts,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -38,7 +38,7 @@ class CheckTokenMiddleware
 
         try {
             $requestId = RequestTrace::id($request, 'member');
-            $memberContext = $this->tenantContexts()->resolve(
+            $memberContext = $this->tenantContexts->resolve(
                 $memberId,
                 $token,
                 $requestId,
@@ -47,7 +47,7 @@ class CheckTokenMiddleware
             throw \app\common\http\ApiProblem::fromEnvelope('租户上下文不可用', null, 40300);
         }
 
-        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
+        return $this->executionContexts->run(
             \app\common\execution\ConsumerExecutionContext::member($memberContext, sprintf(
                 'http.member.%s.%s',
                 strtolower((string)$request->method()),
@@ -76,8 +76,4 @@ class CheckTokenMiddleware
         ) === 1 ? $matches[1] : '';
     }
 
-    private function tenantContexts(): MemberApiTenantContextResolver
-    {
-        return $this->tenantContexts ??= new MemberApiTenantContextResolver();
-    }
 }

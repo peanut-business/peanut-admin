@@ -13,6 +13,10 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 /** Compatibility role API backed by native pa_role and pa_role_permission. */
 final class RoleApplicationService extends ApplicationService
 {
+    public function __construct(private readonly RoleAdministrationRuntime $runtime)
+    {
+    }
+
     public function validationRules(string $scene): array
     {
         self::clearError();
@@ -25,8 +29,8 @@ final class RoleApplicationService extends ApplicationService
     {
         self::clearError();
         $pagination = PaginationInput::from($params);
-        $result = self::service()->list($context->tenantId, $pagination->pageRequest);
-        $lists = array_map(fn(array $row): array => self::compat($context, $row), $result['items']);
+        $result = $this->service()->list($context->tenantId, $pagination->pageRequest);
+        $lists = array_map(fn(array $row): array => $this->compat($context, $row), $result['items']);
         return new PageResult($lists, $result['total'], $pagination->page, $pagination->pageSize);
     }
 
@@ -40,7 +44,7 @@ final class RoleApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            return self::compat($context, self::service()->get($context->tenantId, $id));
+            return $this->compat($context, $this->service()->get($context->tenantId, $id));
         } catch (\Throwable) {
             return [];
         }
@@ -50,10 +54,10 @@ final class RoleApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            $service = self::service();
+            $service = $this->service();
             $role = $service->create($context->tenantId, 'application.admin.' . bin2hex(random_bytes(8)),
                 (string)$params['name'], (string)($params['desc'] ?? ''), $context->memberId, $context->accountId, $context->requestId);
-            $keys = self::runtime()->permissionKeys($context->tenantId, self::menuIds($params));
+            $keys = $this->runtime->permissionKeys($context->tenantId, self::menuIds($params));
             if ($keys !== []) {
                 $service->replacePermissions($context->tenantId, (int)$role['id'], $keys, (int)$role['revision'],
                     $context->memberId, $context->accountId, $context->requestId);
@@ -68,12 +72,12 @@ final class RoleApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            $service = self::service();
+            $service = $this->service();
             $current = $service->get($context->tenantId, (int)$params['id']);
             $role = $service->update($context->tenantId, (int)$params['id'], (string)$params['name'],
                 (string)($params['desc'] ?? ''), (int)$current['revision'], $context->memberId, $context->accountId, $context->requestId);
             if (array_key_exists('menu_id', $params) || array_key_exists('menu_ids', $params)) {
-                $service->replacePermissions($context->tenantId, (int)$params['id'], self::runtime()->permissionKeys($context->tenantId, self::menuIds($params)),
+                $service->replacePermissions($context->tenantId, (int)$params['id'], $this->runtime->permissionKeys($context->tenantId, self::menuIds($params)),
                     (int)$role['revision'], $context->memberId, $context->accountId, $context->requestId);
             }
             return true;
@@ -86,7 +90,7 @@ final class RoleApplicationService extends ApplicationService
     {
         self::clearError();
         try {
-            $service = self::service();
+            $service = $this->service();
             $role = $service->get($context->tenantId, $id);
             $service->archive($context->tenantId, $id, (int)$role['revision'], $context->memberId, $context->accountId, $context->requestId);
             return true;
@@ -95,12 +99,12 @@ final class RoleApplicationService extends ApplicationService
         }
     }
 
-    private static function compat(TenantContext $context, array $role): array
+    private function compat(TenantContext $context, array $role): array
     {
         $keys = $role['permission_keys'] ?? [];
-        $menus = self::runtime()->menuIds($context, is_array($keys) ? $keys : []);
+        $menus = $this->runtime->menuIds($context, is_array($keys) ? $keys : []);
         return ['id' => (int)$role['id'], 'name' => $role['name'], 'desc' => $role['description'] ?? '', 'sort' => 0,
-            'create_time' => '', 'num' => self::runtime()->memberCount($context->tenantId, (int)$role['id']),
+            'create_time' => '', 'num' => $this->runtime->memberCount($context->tenantId, (int)$role['id']),
             'menu_id' => $menus, 'menu_ids' => $menus, 'status' => $role['status'], 'revision' => (int)$role['revision']];
     }
 
@@ -114,13 +118,8 @@ final class RoleApplicationService extends ApplicationService
         );
     }
 
-    private static function service(): \PeanutAdmin\Kernel\Authorization\Application\RoleAdminService
+    private function service(): \PeanutAdmin\Kernel\Authorization\Application\RoleAdminService
     {
-        return self::runtime()->service();
-    }
-
-    private static function runtime(): RoleAdministrationRuntime
-    {
-        return app(RoleAdministrationRuntime::class);
+        return $this->runtime->service();
     }
 }

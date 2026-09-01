@@ -78,7 +78,7 @@ final readonly class TaskImportExportRuntime
 
     private function providers(): DataProviderRegistry
     {
-        return new DataProviderRegistry([new OperationLogExportProvider($this->pdo)]);
+        return new DataProviderRegistry([new OperationLogExportProvider()]);
     }
 
     private function files(): AppFileMediaGateway

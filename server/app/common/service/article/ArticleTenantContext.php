@@ -15,9 +15,9 @@ final class ArticleTenantContext
 {
     public const PUBLIC_ACTOR = 'peanut.article.public-read';
 
-    public static function member(): AuthenticatedMemberContext|TenantContext
+    public static function member(ExecutionContextAccess $contexts): AuthenticatedMemberContext|TenantContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         if ($current instanceof ConsumerExecutionContext
             && $current->member instanceof AuthenticatedMemberContext) {
             return $current->member;
@@ -28,9 +28,12 @@ final class ArticleTenantContext
         throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
     }
 
-    public static function read(string $operation): TenantContext|TenantSystemContext
+    public static function read(
+        ExecutionContextAccess $contexts,
+        string $operation,
+    ): TenantContext|TenantSystemContext
     {
-        $current = ExecutionContextAccess::current();
+        $current = $contexts->current();
         $context = match (true) {
             $current instanceof AdminExecutionContext => $current->tenant,
             $current instanceof ConsumerExecutionContext => $current->publicTenant,

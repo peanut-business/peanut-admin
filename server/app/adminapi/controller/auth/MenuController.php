@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\auth;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\auth\MenuApplicationService;
@@ -16,12 +17,17 @@ use app\common\execution\ExecutionContextAccess;
 
 class MenuController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly MenuApplicationService $menus)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly MenuApplicationService $menus,
+        private readonly ExecutionContextAccess $contextAccess,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
-    public function route()  { return $this->data($this->menus->getMenuByAdminId(ExecutionContextAccess::tenantAdmin(), $this->adminId)); }
+    public function route()  { return $this->data($this->menus->getMenuByAdminId($this->contextAccess->tenantAdmin(), $this->adminId)); }
     public function lists()
     {
         return $this->instanceMenuDenial() ?? $this->data($this->menus->getAll());

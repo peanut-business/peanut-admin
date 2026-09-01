@@ -31,7 +31,7 @@ class CrontabDemo extends ContextualCommand
             $scope->tenantId(),
             date('Y-m-d H:i:s')
         );
-        OperationalLog::info('crontab_demo_executed', $diagnostics + ['message' => $msg]);
+        OperationalLog::info($this->executionContext(), 'crontab_demo_executed', $diagnostics + ['message' => $msg]);
         $output->writeln($msg);
         return 0;
     }

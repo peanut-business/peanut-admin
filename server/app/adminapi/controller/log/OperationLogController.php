@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\log;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\common\http\PageResult;
@@ -13,9 +14,14 @@ use app\common\service\module\ModuleExecutionBoundary;
 
 class OperationLogController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly OperationLogApplicationService $operationLogs)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly OperationLogApplicationService $operationLogs,
+        private readonly ModuleExecutionBoundary $modules,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()
@@ -50,7 +56,7 @@ class OperationLogController extends BaseAdminController
 
     private function assertExportModule(): void
     {
-        app(ModuleExecutionBoundary::class)->assertHttp('official.import-export', 'http.admin.export');
+        $this->modules->assertHttp('official.import-export', 'http.admin.export');
     }
 
 }

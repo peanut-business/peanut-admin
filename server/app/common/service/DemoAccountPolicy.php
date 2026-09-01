@@ -8,6 +8,10 @@ use PDO;
 /** Keeps public demo credentials and password locking out of normal deployments. */
 final class DemoAccountPolicy
 {
+    public function __construct(private readonly PDO $pdo)
+    {
+    }
+
     /**
      * Disposable demo credential only. Normal account passwords continue to
      * use Core's stronger minimum-length policy.
@@ -39,12 +43,12 @@ final class DemoAccountPolicy
         return false;
     }
 
-    public static function assertPasswordChangeAllowed(PDO $pdo, int $accountId): void
+    public function assertPasswordChangeAllowed(int $accountId): void
     {
         if (!self::enabled()) {
             return;
         }
-        $statement = $pdo->prepare(<<<'SQL'
+        $statement = $this->pdo->prepare(<<<'SQL'
 SELECT identifier_normalized
 FROM pa_credential
 WHERE account_id = :account_id
@@ -78,12 +82,12 @@ SQL);
         return false;
     }
 
-    public static function platformMutationLocked(PDO $pdo, int $accountId): bool
+    public function platformMutationLocked(int $accountId): bool
     {
         if (!self::enabled() || $accountId < 1) {
             return false;
         }
-        $statement = $pdo->prepare(<<<'SQL'
+        $statement = $this->pdo->prepare(<<<'SQL'
 SELECT c.identifier_normalized
 FROM pa_credential c
 WHERE c.account_id = :account_id
@@ -110,7 +114,7 @@ SQL);
         return bin2hex(random_bytes(24)) . 'A1';
     }
 
-    public static function replaceCredentialHashes(PDO $pdo, array $emails): void
+    public function replaceCredentialHashes(array $emails): void
     {
         if (!self::enabled()) {
             throw new \LogicException('演示密码策略未启用');
@@ -123,7 +127,7 @@ SQL);
         if (!is_string($hash) || $hash === '') {
             throw new \RuntimeException('演示密码摘要生成失败');
         }
-        $statement = $pdo->prepare(<<<'SQL'
+        $statement = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_credential
 SET secret_hash = :secret_hash,
     failed_attempts = 0,
@@ -141,9 +145,5 @@ SQL);
                 $statement->execute(['secret_hash' => $hash, 'email' => trim($email)]);
             }
         }
-    }
-
-    private function __construct()
-    {
     }
 }
