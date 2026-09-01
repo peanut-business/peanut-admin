@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
+use app\common\persistence\AdvisoryLockExecution;
+use app\common\persistence\AdvisoryLockUnavailable;
+use app\common\service\runtime\RuntimeNamespace;
 use app\platform\service\plugin\DeterministicTarArchive;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageArchiveService;
@@ -127,11 +130,15 @@ $exists = $admin->prepare('SELECT COUNT(*) FROM information_schema.schemata WHER
 $exists->execute([$database]);
 moduleBundleExpect((int)$exists->fetchColumn() === 0, 'isolated bundle database already exists');
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
+$namespaceDatabase = "peanut_admin_development_p0e_{$databaseMatch[1]}_consumer_module_cycle";
+$exists->execute([$namespaceDatabase]);
+moduleBundleExpect((int)$exists->fetchColumn() === 0, 'isolated namespace database already exists');
+$admin->exec("CREATE DATABASE `{$namespaceDatabase}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
 
 IsolatedBackendEnvironment::activate([
     'APP_ENV' => 'development',
     'APP_DEBUG' => 'true',
-    'DEPLOYMENT_MODE' => 'standalone',
+    'DEPLOYMENT_MODE' => 'multi-tenant',
     'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-p0e-mysql84-gate',
     'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-p0e-mysql84-gate-host-direct',
     'PEANUT_DATABASE_CONSUMER' => 'host',
@@ -154,8 +161,90 @@ $pdo = new PDO(
     ],
 );
 moduleBundleExpect((string)$pdo->query('SELECT DATABASE()')->fetchColumn() === $database, 'isolated database selection changed');
+$contender = new PDO(
+    "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+    $user,
+    $password,
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false],
+);
+$otherDatabase = new PDO(
+    "mysql:host={$host};port={$port};dbname={$namespaceDatabase};charset=utf8mb4",
+    $user,
+    $password,
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false],
+);
+moduleBundleExpect(
+    RuntimeNamespace::fromResourceId('peanut-admin-mysql84-development', 'development')
+        ->advisoryLockName($pdo, 'module-bundle-lock-environment')
+        !== RuntimeNamespace::fromResourceId('peanut-admin-mysql84-development', 'production')
+            ->advisoryLockName($pdo, 'module-bundle-lock-environment'),
+    'runtime environment is absent from the advisory-lock namespace',
+);
+moduleBundleExpect(
+    RuntimeNamespace::fromResourceId('peanut-admin-mysql84-development', 'development')
+        ->advisoryLockName($pdo, 'module-bundle-lock-resource')
+        !== RuntimeNamespace::fromResourceId('peanut-admin-p0e-mysql84-gate', 'development')
+            ->advisoryLockName($pdo, 'module-bundle-lock-resource'),
+    'database resource identity is absent from the advisory-lock namespace',
+);
+$busy = false;
+$otherDatabaseRan = false;
+(new AdvisoryLockExecution($pdo))->run('module-bundle-lock-contract', 0, static function () use (
+    $contender,
+    $otherDatabase,
+    &$busy,
+    &$otherDatabaseRan,
+): void {
+    try {
+        (new AdvisoryLockExecution($contender))->run('module-bundle-lock-contract', 0, static fn() => null);
+    } catch (AdvisoryLockUnavailable) {
+        $busy = true;
+    }
+    $otherDatabaseRan = (new AdvisoryLockExecution($otherDatabase))->run(
+        'module-bundle-lock-contract',
+        0,
+        static fn(): bool => true,
+    );
+});
+moduleBundleExpect($busy, 'same database resource did not preserve advisory-lock mutual exclusion');
+moduleBundleExpect($otherDatabaseRan, 'different database resource shared an advisory lock');
+$callbackFailed = false;
+try {
+    (new AdvisoryLockExecution($pdo))->run(
+        'module-bundle-lock-release',
+        0,
+        static fn() => throw new RuntimeException('lock callback failed'),
+    );
+} catch (RuntimeException $exception) {
+    $callbackFailed = $exception->getMessage() === 'lock callback failed';
+}
+moduleBundleExpect($callbackFailed, 'advisory-lock callback failure contract changed');
+moduleBundleExpect(
+    (new AdvisoryLockExecution($contender))->run(
+        'module-bundle-lock-release',
+        0,
+        static fn(): bool => true,
+    ),
+    'callback failure did not release the advisory lock',
+);
 initializeCoreIdentity($pdo, 'module-bundle@example.test', 'module-bundle-test-password', null);
 $serverRoot = dirname(__DIR__, 2);
+$lockSqlOwners = [];
+$applicationFiles = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($serverRoot . '/app', FilesystemIterator::SKIP_DOTS),
+);
+foreach ($applicationFiles as $file) {
+    if (!$file->isFile() || $file->getExtension() !== 'php') continue;
+    $source = (string)file_get_contents($file->getPathname());
+    if (str_contains($source, 'GET_LOCK') || str_contains($source, 'RELEASE_LOCK')) {
+        $lockSqlOwners[] = substr($file->getPathname(), strlen($serverRoot) + 1);
+    }
+}
+sort($lockSqlOwners, SORT_STRING);
+moduleBundleExpect(
+    $lockSqlOwners === ['app/common/persistence/AdvisoryLockExecution.php'],
+    'production application retained another advisory-lock SQL executor',
+);
 executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
 $applicationMigrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
 sort($applicationMigrations, SORT_STRING);
@@ -521,9 +610,12 @@ try {
     moduleBundleRemoveTree($temporary);
     IsolatedBackendEnvironment::cleanup();
     $pdo = null;
+    $contender = null;
+    $otherDatabase = null;
     if ($completed) {
         $admin->exec("DROP DATABASE `{$database}`");
+        $admin->exec("DROP DATABASE `{$namespaceDatabase}`");
     } else {
-        fwrite(STDERR, "BUNDLE_TEST_DATABASE_RETAINED={$database}\n");
+        fwrite(STDERR, "BUNDLE_TEST_DATABASE_RETAINED={$database},{$namespaceDatabase}\n");
     }
 }
