@@ -24,6 +24,7 @@ class AuthMiddleware
     public function __construct(
         private readonly ExecutionContextAccess $contextAccess,
         private readonly AdminAuthorizationService $authorization,
+        private readonly AdminApiAccessRegistry $accessRegistry,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -37,7 +38,7 @@ class AuthMiddleware
         }
 
         $path = 'adminapi/' . strtolower(trim($request->pathinfo(), '/'));
-        if (AdminApiAccessRegistry::isAuthenticatedOnly((string)$request->method(), $path)) {
+        if ($this->accessRegistry->isAuthenticatedOnly((string)$request->method(), $path)) {
             return $next($request);
         }
 

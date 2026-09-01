@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Application;
 
-use app\Modules\Official\Payment\Model\RechargeOrder;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 
 class RefundEnum
 {
@@ -55,8 +55,8 @@ class RefundEnum
     public static function getRefundWayByPayWay(int $payWay): int
     {
         return in_array($payWay, [
-            RechargeOrder::PAY_WAY_WECHAT,
-            RechargeOrder::PAY_WAY_ALIPAY,
+            FinanceTenantRepository::PAY_WAY_WECHAT,
+            FinanceTenantRepository::PAY_WAY_ALIPAY,
         ], true) ? self::REFUND_ONLINE : self::REFUND_OFFLINE;
     }
 }

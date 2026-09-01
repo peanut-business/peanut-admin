@@ -30,6 +30,7 @@ foreach ([
     'current_execution_context' => 'app/common/execution/CurrentExecutionContext.php',
     'execution_context_store' => 'app/common/execution/ExecutionContextStore.php',
     'tenant_session' => 'app/adminapi/controller/auth/TenantSessionController.php',
+    'tenant_session_application' => 'app/adminapi/application/auth/TenantSessionApplicationService.php',
     'admin_login' => 'app/adminapi/application/auth/LoginApplicationService.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
     'authenticated_member_context_core' => 'vendor/peanut-admin/core/kernel/src/Context/AuthenticatedMemberContext.php',
@@ -61,6 +62,7 @@ foreach ([
     'platform_storage_controller' => 'app/platform/controller/PlatformStorageController.php',
     'admin_permissions' => 'app/common/service/authorization/AdminAuthorizationService.php',
     'crontab_scheduler' => 'app/Modules/Official/Task/Application/CrontabSchedulerService.php',
+    'crontab_repository' => 'app/Modules/Official/Task/Infrastructure/Persistence/CrontabTenantRepository.php',
     'crontab_task_definition' => 'app/Modules/Official/Task/Application/CrontabTaskDefinition.php',
     'scheduled_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/ScheduledTenantContext.php',
     'tenant_scope_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantScope.php',
@@ -186,7 +188,8 @@ qualificationExpect(
     'Tenant entry bindings are not instance-owned and active-Tenant scoped'
 );
 qualificationExpect(
-    str_contains($sources['tenant_session'], 'loginTenantCode(')
+    str_contains($sources['tenant_session'], 'TenantSessionApplicationService')
+        && str_contains($sources['tenant_session_application'], 'loginTenantCode(')
         && str_contains($sources['admin_login'], 'loginTenantCode(')
         && str_contains($sources['public_tenant_module_middleware'], '$this->entryBindings->system(')
         && !str_contains($sources['public_tenant_module_middleware'], 'DefaultTenantContextResolver::system('),
@@ -222,7 +225,7 @@ qualificationExpect(
     'OAuth subject lookup is not explicitly bound to the member Tenant context'
 );
 qualificationExpect(
-    str_contains($sources['crontab_scheduler'], "t.status', 'active'")
+    str_contains($sources['crontab_repository'], "t.status', 'active'")
         && str_contains($sources['crontab_scheduler'], 'use PeanutAdmin\\Kernel\\Tenancy\\TenantScope;')
         && !str_contains($sources['crontab_scheduler'], 'Console::call')
         && str_contains($sources['crontab_task_definition'], 'ScheduledTenantContext::run')
@@ -245,9 +248,9 @@ qualificationExpect(
 );
 qualificationExpect(
     str_contains($sources['notice_channel'], "private const BINDING_PROVIDER = 'notice.sms'")
-        && str_contains($sources['notice_channel'], 'ExternalChannelBindingService::mutate')
+        && str_contains($sources['notice_channel'], '$this->bindings->mutate(')
         && str_contains($sources['notice_channel'], "'tenant:' . \$tenantId")
-        && str_contains($sources['notice_channel'], 'ExternalTenantResolver::production()')
+        && str_contains($sources['notice_channel'], '$this->resolver')
         && !str_contains($sources['notice_channel'], 'ConfigService'),
     'notification Provider configuration is not Tenant-owned'
 );
@@ -259,7 +262,11 @@ qualificationExpect(
         && str_contains($sources['recharge_settings'], '$this->settings->get(')
         && str_contains($sources['recharge_settings'], 'private readonly PaymentChannelGrantCommands $channelGrants')
         && str_contains($sources['tenant_settings_bootstrap_runtime'], 'new PdoTenantSettingsBootstrapProvider($pdo)')
-        && str_contains($sources['application_tenant_bootstrap'], 'TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->pdo)')
+        && str_contains($sources['app_service'], 'TenantSettingsBootstrapCommands::class')
+        && str_contains($sources['app_service'], 'TenantSettingsBootstrapRuntimeFactory::forProvisioning(')
+        && str_contains($sources['application_tenant_bootstrap'], 'private TenantSettingsBootstrapCommands $tenantSettings')
+        && str_contains($sources['application_tenant_bootstrap'], '$this->tenantSettings->seedDefaults(')
+        && !str_contains($sources['application_tenant_bootstrap'], 'TenantSettingsBootstrapRuntimeFactory')
         && !str_contains($sources['application_tenant_bootstrap'], 'PdoTenantSettingsBootstrapProvider')
         && str_contains($sources['recharge_settings'], '$this->channelGrants->channelConfigured('),
     'recharge policy or payment channel configuration is not Tenant-owned'
@@ -437,7 +444,7 @@ qualificationExpect(
         && str_contains($sources['official_account_controller'], "assertExternalCallback('official.oauth')")
         && str_contains($sources['payment_notify_controller'], "assertExternalCallback('official.payment')")
         && !str_contains($sources['external_resolver'], 'assertExternalCallback(')
-        && str_contains($sources['async_runtime'], 'ImportExportModuleProvider')
+        && str_contains($sources['async_runtime'], 'ImportExportCommands')
         && str_contains($sources['async_module_provider'], 'TaskImportExportRuntime::class')
         && str_contains($sources['async_module_provider'], 'TaskJobRuntime::class')
         && str_contains($sources['async_worker_definition'], "return 'official.import-export'")

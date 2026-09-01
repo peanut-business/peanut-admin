@@ -14,9 +14,6 @@ use app\common\contract\idempotency\IdempotencyResult;
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
 use app\common\persistence\AdvisoryLockUnavailable;
-use app\Modules\Official\Payment\Model\RechargeOrder;
-use app\Modules\Official\Payment\Model\RefundLog;
-use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\FileService;
 use app\common\service\Money;
 use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
@@ -39,6 +36,8 @@ class RechargeAdministrationService
         private readonly IdempotentCommandExecutor $refundIdempotency,
         private readonly TransactionManager $transactions,
         private readonly PaymentRetryLock $retryLocks,
+        private readonly PaymentServiceFactory $payments,
+        private readonly FileService $files,
     ) {}
 
     /**
@@ -75,10 +74,8 @@ class RechargeAdministrationService
                     'var_page' => 'page_no',
                 ]), $pageNo)
                 : PaginationInput::from($params)->result($query);
-            $rows = self::withRefundedAmounts($context, array_map(
-                static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-                $pageResult->items,
-            ));
+            $pageResult = FinanceTenantRepository::arrayPage($pageResult);
+            $rows = self::withRefundedAmounts($context, $pageResult->items);
 
         return new PageResult(
                 self::formatRows($rows),
@@ -101,7 +98,6 @@ class RechargeAdministrationService
     {
         $prepared = $this->transactions->run(function () use ($context, $params, $adminId, $idempotencyKey): array {
                 $idempotency = $this->refundIdempotency;
-                /** @var RechargeOrder $order */
                 $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$params['recharge_id']);
                 self::assertRefundableOrder($order);
 
@@ -122,9 +118,9 @@ class RechargeAdministrationService
 
                 $amountCents = self::requestedRefundAmountCents($context, $order, $requestedCents);
                 $amount = $amountCents / 100;
-                $refundSn = RefundRecord::generateSn();
+                $refundSn = FinanceTenantRepository::nextRefundSn();
 
-                $order->refund_status = RechargeOrder::REFUND_STATUS_STARTED;
+                $order->refund_status = FinanceTenantRepository::REFUND_STATUS_STARTED;
                 $order->save();
 
                 MemberContracts::balanceCommands()->applyInTransaction(
@@ -143,7 +139,6 @@ class RechargeAdministrationService
                     ),
                 );
 
-                /** @var RefundRecord $record */
                 $record = FinanceTenantRepository::createRecord($context, [
                     'sn' => $refundSn,
                     'user_id' => (int)$order->user_id,
@@ -185,7 +180,6 @@ class RechargeAdministrationService
         try {
             return $this->retryLocks->run($context, $recordId, function () use ($context, $recordId, $adminId): string {
                 [$order, $record, $log] = $this->transactions->run(function () use ($context, $recordId, $adminId): array {
-                    /** @var RefundRecord $record */
                     $record = FinanceTenantRepository::records($context)->lock(true)->findOrEmpty($recordId);
                     if ($record->isEmpty()) {
                         throw BusinessException::notFound('REFUND_RECORD_NOT_FOUND', '退款记录不存在');
@@ -197,7 +191,6 @@ class RechargeAdministrationService
                         throw BusinessException::conflict('REFUND_IN_PROGRESS', '退款正在处理中，请勿重复操作');
                     }
 
-                    /** @var RechargeOrder $order */
                     $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$record->order_id);
                     if ($order->isEmpty()) {
                         throw BusinessException::notFound('RECHARGE_ORDER_NOT_FOUND', '充值订单不存在');
@@ -225,17 +218,17 @@ class RechargeAdministrationService
         }
     }
 
-    private static function assertRefundableOrder(RechargeOrder $order): void
+    private static function assertRefundableOrder(object $order): void
     {
         if ($order->isEmpty()) {
             throw BusinessException::notFound('RECHARGE_ORDER_NOT_FOUND', '充值订单不存在');
         }
-        if ((int)$order->pay_status !== RechargeOrder::PAY_STATUS_PAID) {
+        if ((int)$order->pay_status !== FinanceTenantRepository::PAY_STATUS_PAID) {
             throw BusinessException::conflict('RECHARGE_ORDER_NOT_REFUNDABLE', '当前订单不可退款');
         }
     }
 
-    private static function requestedRefundAmountCents(object $context, RechargeOrder $order, mixed $requested): int
+    private static function requestedRefundAmountCents(object $context, object $order, mixed $requested): int
     {
         $orderCents = Money::toCents((string)$order->order_amount);
         $refundedCents = Money::toCents((string)(FinanceTenantRepository::records($context)
@@ -303,13 +296,13 @@ class RechargeAdministrationService
 
     private static function createRefundLog(
         object $context,
-        RechargeOrder $order,
-        RefundRecord $record,
+        object $order,
+        object $record,
         float $amount,
         int $adminId
-    ): RefundLog {
+    ): object {
         return FinanceTenantRepository::createLog($context, [
-            'sn' => RefundLog::generateSn(),
+            'sn' => FinanceTenantRepository::nextRefundLogSn(),
             'record_id' => (int)$record->id,
             'user_id' => (int)$order->user_id,
             'handle_id' => $adminId,
@@ -322,9 +315,9 @@ class RechargeAdministrationService
 
     private function requestGatewayRefund(
         object $context,
-        RechargeOrder $order,
-        RefundRecord $record,
-        RefundLog $log,
+        object $order,
+        object $record,
+        object $log,
         ?IdempotentCommandExecutor $idempotency = null,
         ?IdempotencyResult $lease = null,
     ): string {
@@ -333,11 +326,11 @@ class RechargeAdministrationService
         $gatewayFailure = null;
         try {
             $channel = match ((int)$order->pay_way) {
-                RechargeOrder::PAY_WAY_WECHAT => 'wechat',
-                RechargeOrder::PAY_WAY_ALIPAY => 'alipay',
+                FinanceTenantRepository::PAY_WAY_WECHAT => 'wechat',
+                FinanceTenantRepository::PAY_WAY_ALIPAY => 'alipay',
                 default => throw BusinessException::invalid('PAYMENT_CHANNEL_UNSUPPORTED', '支付方式异常'),
             };
-            $result = PaymentServiceFactory::forTenant($context, $channel)->refund($channel)->refund(
+            $result = $this->payments->forTenant($context, $channel)->refund($channel)->refund(
                 $order->getData(),
                 (string)$record->sn,
                 Money::toCents((string)$record->refund_amount)
@@ -373,11 +366,8 @@ class RechargeAdministrationService
                 $success,
                 $businessMessage,
             ): void {
-                /** @var RefundRecord $lockedRecord */
                 $lockedRecord = FinanceTenantRepository::records($context)->lock(true)->findOrEmpty((int)$record->id);
-                /** @var RefundLog $lockedLog */
                 $lockedLog = FinanceTenantRepository::logs($context)->lock(true)->findOrEmpty((int)$log->id);
-                /** @var RechargeOrder $lockedOrder */
                 $lockedOrder = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty((int)$order->id);
                 if ($lockedRecord->isEmpty() || $lockedLog->isEmpty() || $lockedOrder->isEmpty()) {
                     throw BusinessException::conflict('REFUND_RESULT_STATE_INVALID', '退款结果关联数据不存在');
@@ -483,15 +473,15 @@ class RechargeAdministrationService
             $row['refunded_amount'] = Money::fromCents($refundedCents);
             $row['refundable_amount'] = Money::fromCents(max(0, $orderCents - $refundedCents));
             $row['pay_way_text'] = [
-                RechargeOrder::PAY_WAY_BALANCE => '余额支付',
-                RechargeOrder::PAY_WAY_WECHAT => '微信支付',
-                RechargeOrder::PAY_WAY_ALIPAY => '支付宝支付',
+                FinanceTenantRepository::PAY_WAY_BALANCE => '余额支付',
+                FinanceTenantRepository::PAY_WAY_WECHAT => '微信支付',
+                FinanceTenantRepository::PAY_WAY_ALIPAY => '支付宝支付',
             ][$row['pay_way']] ?? '';
             $row['pay_status_text'] = [
-                RechargeOrder::PAY_STATUS_UNPAID => '未支付',
-                RechargeOrder::PAY_STATUS_PAID => '已支付',
+                FinanceTenantRepository::PAY_STATUS_UNPAID => '未支付',
+                FinanceTenantRepository::PAY_STATUS_PAID => '已支付',
             ][$row['pay_status']] ?? '';
-            $row['avatar'] = FileService::getFileUrl((string)($row['avatar'] ?? ''));
+            $row['avatar'] = $this->files->getFileUrl((string)($row['avatar'] ?? ''));
             $row['pay_time'] = self::formatTime($row['pay_time'] ?? 0);
             $row['create_time'] = self::formatTime($row['create_time'] ?? 0);
         }

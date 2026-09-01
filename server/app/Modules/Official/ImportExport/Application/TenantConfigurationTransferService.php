@@ -4,28 +4,26 @@ declare(strict_types=1);
 namespace app\Modules\Official\ImportExport\Application;
 
 use app\common\dto\authorization\AdminPrincipal;
-use app\common\service\authorization\AdminAuthorizationService;
-use PDO;
+use app\common\contract\authorization\AdminAuthorizationQuery;
+use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferCommands;
+use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferQueries;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /** Tenant Admin application boundary for configuration package operations. */
 final readonly class TenantConfigurationTransferService
 {
-    private AdminAuthorizationService $authorization;
-    private ConfigurationTransferApplicationService $transfers;
-
-    public function __construct(PDO $pdo, TransactionManager $transactions)
-    {
-        $this->authorization = new AdminAuthorizationService($pdo);
-        $this->transfers = new ConfigurationTransferApplicationService($pdo, $transactions);
+    public function __construct(
+        private AdminAuthorizationQuery $authorization,
+        private ConfigurationTransferCommands $commands,
+        private ConfigurationTransferQueries $queries,
+    ) {
     }
 
     /** @return array<string,mixed> */
     public function export(TenantContext $context, AdminPrincipal $principal): array
     {
         $this->authorize($context, $principal, 'official.import-export.configuration.export');
-        return $this->transfers->export($context, 'tenant');
+        return $this->queries->export($context, 'tenant');
     }
 
     /** @return array<string,mixed> */
@@ -37,7 +35,7 @@ final readonly class TenantConfigurationTransferService
         string $conflictPolicy,
     ): array {
         $this->authorize($context, $principal, 'official.import-export.configuration.dry-run');
-        return $this->transfers->dryRun(
+        return $this->queries->dryRun(
             $context,
             'tenant',
             $package,
@@ -55,7 +53,7 @@ final readonly class TenantConfigurationTransferService
         string $conflictPolicy,
     ): array {
         $this->authorize($context, $principal, 'official.import-export.configuration.apply');
-        return $this->transfers->apply(
+        return $this->commands->apply(
             $context,
             'tenant',
             $package,

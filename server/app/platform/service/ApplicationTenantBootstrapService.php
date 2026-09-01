@@ -6,6 +6,7 @@ namespace app\platform\service;
 use PDO;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Task\Model\Crontab;
+use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
 use app\common\model\decoration\DecoratePage;
@@ -13,7 +14,6 @@ use app\common\model\decoration\DecorateTabbar;
 use app\common\model\decoration\DecorationTabbarSetting;
 use app\common\model\setting\TransactionSetting;
 use app\common\service\config\BrandDefaults;
-use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
@@ -37,6 +37,7 @@ final readonly class ApplicationTenantBootstrapService
         private PDO $pdo,
         private NotificationCommands $notifications,
         private ExecutionContextStore $executionContexts,
+        private TenantSettingsBootstrapCommands $tenantSettings,
     ) {
     }
 
@@ -239,8 +240,7 @@ SQL);
             'web-page' => ['status' => 1, 'page_status' => 0, 'page_url' => ''],
             'hot-search' => ['status' => 0],
         ];
-        TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->pdo)
-            ->seedDefaults($tenantId, $documents);
+        $this->tenantSettings->seedDefaults($tenantId, $documents);
         $this->insertIgnore(
             'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
             [$tenantId]

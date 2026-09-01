@@ -5,8 +5,6 @@ namespace app\Modules\Official\Payment\Application;
 
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
-use app\Modules\Official\Payment\Model\RefundLog;
-use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\service\FileService;
 use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\support\PaginationInput;
@@ -16,6 +14,10 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 class RefundApplicationService
 {
     private const PAGE_SIZE_MAX = 25000;
+
+    public function __construct(private readonly FileService $files)
+    {
+    }
 
     /** Peanut 按实际退款金额汇总；当前全额退款时与参考订单金额口径一致。 */
     public function stat(TenantContext $context): array
@@ -71,7 +73,8 @@ class RefundApplicationService
                     'var_page' => 'page_no',
                 ]), $pageNo)
                 : $pagination->result($query->field('r.*,u.nickname,u.avatar')->order('r.id', 'desc'));
-            $lists = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+            $pageResult = FinanceTenantRepository::arrayPage($pageResult);
+            $lists = $pageResult->items;
 
             foreach ($lists as &$item) {
                 $item['id'] = (int)$item['id'];
@@ -83,7 +86,7 @@ class RefundApplicationService
                 $item['refund_type_text'] = RefundEnum::getTypeDesc($item['refund_type']);
                 $item['refund_status_text'] = RefundEnum::getStatusDesc($item['refund_status']);
                 $item['refund_way_text'] = RefundEnum::getWayDesc($item['refund_way']);
-                $item['avatar'] = FileService::getFileUrl((string)($item['avatar'] ?? ''));
+                $item['avatar'] = $this->files->getFileUrl((string)($item['avatar'] ?? ''));
                 $item['create_time'] = self::formatTime($item['create_time'] ?? 0);
                 unset($item['refund_msg']);
             }

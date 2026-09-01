@@ -14,6 +14,8 @@ use app\common\service\payment\PaymentScheduledTenantContext;
 use app\common\service\payment\PaymentTenantDiagnostics;
 use app\common\service\runtime\OperationalLog;
 use app\common\execution\ContextualCommand;
+use app\common\execution\ExecutionContextAccess;
+use app\common\execution\ExecutionContextStore;
 use think\console\Input;
 use think\console\Output;
 use think\facade\Db;
@@ -21,6 +23,14 @@ use think\facade\Db;
 /** 查询支付渠道并收敛充值退款的最终状态。 */
 class RefundReconcile extends ContextualCommand
 {
+    public function __construct(
+        ExecutionContextStore $contexts,
+        ExecutionContextAccess $contextAccess,
+        private readonly PaymentServiceFactory $payments,
+    ) {
+        parent::__construct($contexts, $contextAccess);
+    }
+
     protected function configure()
     {
         $this->setName('refund:reconcile')->setDescription('收敛充值退款状态');
@@ -80,7 +90,7 @@ class RefundReconcile extends ContextualCommand
                     RechargeOrder::PAY_WAY_ALIPAY => 'alipay',
                     default => throw new \RuntimeException('支付方式异常'),
                 };
-                $result = PaymentServiceFactory::forTenant($scope, $channel)->refund($channel)->query(
+                $result = $this->payments->forTenant($scope, $channel)->refund($channel)->query(
                     $order->getData(),
                     (string)$record->sn
                 );

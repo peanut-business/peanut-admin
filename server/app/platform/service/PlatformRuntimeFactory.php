@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
-use app\common\tenancy\PlatformTenantDataGateway;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\audit\AuditContractHost;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
@@ -22,7 +22,6 @@ use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
-use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
@@ -37,7 +36,6 @@ use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
 use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Platform\Application\PlatformWorkspaceQueryService;
-use think\facade\Config;
 
 final class PlatformRuntimeFactory
 {
@@ -49,11 +47,15 @@ final class PlatformRuntimeFactory
     private ?PlatformAccessAdminService $platformAccess = null;
     private ?PlatformModuleRuntimeService $moduleRuntime = null;
 
+    /** @param array<string,mixed> $moduleConfig @param array<string,mixed> $trustedModuleKeyConfig */
     public function __construct(
         private readonly PDO $pdo,
         private readonly NotificationCommands $notifications,
         private readonly ExecutionContextStore $executionContexts,
-        private readonly PlatformTenantDataGateway $tenantData,
+        private readonly TenantSettingsBootstrapCommands $tenantSettings,
+        private readonly string $identifierHmacKey,
+        private readonly array $moduleConfig,
+        private readonly array $trustedModuleKeyConfig,
     ) {
     }
 
@@ -63,7 +65,7 @@ final class PlatformRuntimeFactory
             return $this->sessions;
         }
 
-        $key = trim((string)Config::get('platform_auth.identifier_hmac_key', ''));
+        $key = trim($this->identifierHmacKey);
         if (strlen($key) < 32) {
             throw new \DomainException('PLATFORM_AUTH_CONFIGURATION_UNAVAILABLE');
         }
@@ -159,11 +161,7 @@ final class PlatformRuntimeFactory
         }
 
         $pdo = $this->pdo;
-        $config = Config::get('modules', []);
-        if (!is_array($config)) {
-            throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
-        }
-        $governance = new PdoModuleGovernanceProvider($pdo, dirname(__DIR__, 3), $config);
+        $governance = new PdoModuleGovernanceProvider($pdo, dirname(__DIR__, 3), $this->moduleConfig);
         $registry = $governance->registry();
         $validator = new OpisTenantModuleConfigValidator();
         $repository = new VerifiedTenantModuleRepository(
@@ -200,14 +198,17 @@ final class PlatformRuntimeFactory
     public function moduleRuntime(): PlatformModuleRuntimeService
     {
         if ($this->moduleRuntime !== null) return $this->moduleRuntime;
-        $config = Config::get('modules', []);
-        if (!is_array($config)) throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
         $trusted = [];
-        foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
+        foreach ($this->trustedModuleKeyConfig as $keyId => $encoded) {
             $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
             if (is_string($keyId) && is_string($decoded) && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) $trusted[$keyId] = $decoded;
         }
-        return $this->moduleRuntime = new PlatformModuleRuntimeService($this->pdo, dirname(__DIR__, 3), $config, $trusted);
+        return $this->moduleRuntime = new PlatformModuleRuntimeService(
+            $this->pdo,
+            dirname(__DIR__, 3),
+            $this->moduleConfig,
+            $trusted,
+        );
     }
 
     private function ownerAdminProvisioner(): PdoTenantOwnerAdminProvisioner
@@ -218,7 +219,7 @@ final class PlatformRuntimeFactory
                 $this->pdo,
                 $this->notifications,
                 $this->executionContexts,
-                $this->tenantData,
+                $this->tenantSettings,
             ),
         );
     }

@@ -23,6 +23,7 @@ class PaymentNotifyController extends BaseApiController
         private readonly RechargeApplicationService $recharges,
         private readonly ExecutionContextStore $executionContexts,
         private readonly ModuleExecutionBoundary $modules,
+        private readonly ExternalTenantResolver $externalTenants,
     )
     {
         parent::__construct($app, $executionContext);
@@ -34,7 +35,7 @@ class PaymentNotifyController extends BaseApiController
                 (string)$this->request->getContent(),
                 (array)$this->request->header()
             );
-        $resolution = ExternalTenantResolver::production()->verifiedCallback(
+        $resolution = $this->externalTenants->verifiedCallback(
                 ExternalTenantResolver::WECHAT_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',
@@ -61,7 +62,7 @@ class PaymentNotifyController extends BaseApiController
     public function alipay()
     {
         $request = new CallbackRequest('', [], $this->request->post());
-        $resolution = ExternalTenantResolver::production()->verifiedCallback(
+        $resolution = $this->externalTenants->verifiedCallback(
                 ExternalTenantResolver::ALIPAY_PAYMENT,
                 (string)$this->request->route('binding'),
                 'payment.settle',

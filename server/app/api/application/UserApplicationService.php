@@ -22,6 +22,7 @@ class UserApplicationService
         private readonly MemberProfileCommands $memberProfiles,
         private readonly VerificationCodeCommands $verificationCodes,
         private readonly ArticleCollectionSummary $articleCollections,
+        private readonly FileService $files,
     ) {
     }
 
@@ -38,7 +39,7 @@ class UserApplicationService
         }
         $data['balance']    = $data['user_money'];
         unset($data['user_money']);
-        $data['avatar']     = FileService::getFileUrl((string) $data['avatar']);
+        $data['avatar']     = $this->files->getFileUrl((string) $data['avatar']);
         try {
             $data['collect_num'] = $this->articleCollections->countForMember($context, $memberId);
         } catch (ModuleException) {
@@ -61,7 +62,7 @@ class UserApplicationService
         }
         $data['balance'] = $data['user_money'];
         unset($data['user_money']);
-        $data['avatar'] = FileService::getFileUrl((string) $data['avatar']);
+        $data['avatar'] = $this->files->getFileUrl((string) $data['avatar']);
         $data['has_password'] = $data['password'] !== '' && $data['password'] !== null;
         unset($data['password']);
 
@@ -83,7 +84,7 @@ class UserApplicationService
 
             $value = $params['value'];
             if ($field === 'avatar') {
-                $value = FileService::setTenantFileUrl($context, (string) $value);
+                $value = $this->files->setTenantFileUrl($context, (string) $value);
             }
 
             $this->memberProfiles->updateSelfField($context, $memberId, $field, $value);

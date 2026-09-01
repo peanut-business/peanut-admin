@@ -9,6 +9,8 @@ use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Package;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
+use PeanutAdmin\OpsConsole\Task\OpsTaskService;
 use Throwable;
 
 /** Read-only projection for recent operations tasks and the latest verified backup pair. */
@@ -16,26 +18,25 @@ final readonly class PlatformBackupCenterService
 {
     private const TASK_LIMIT = 20;
 
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private BackupRestoreProviderRegistry $backupProviders,
+        private OpsTaskService $tasks,
+    ) {
     }
 
     /** @return array{provider:array<string,mixed>,latest_verified:?array<string,mixed>,latest_restore_verified:?array<string,mixed>,tasks:list<array<string,mixed>>} */
-    public function snapshot(PlatformContext $context, ?string $runtimeCommit = null): array
+    public function snapshot(PlatformContext $context, string $runtimeCommit): array
     {
         if (!(new PlatformOpsPermissionChecker($this->pdo))->allows($context, Package::READ_PERMISSION)) {
             throw OpsConsoleException::denied();
         }
 
-        $descriptor = PlatformOpsRuntimeFactory::backupProviders()
+        $descriptor = $this->backupProviders
             ->require(PairedBackupProvider::PROVIDER_KEY);
         $provider = [
             'key' => $descriptor->key,
         ];
-        if ($runtimeCommit === null) {
-            $runtimeCommit = PlatformOpsRuntimeFactory::runtimeStatusProvider($this->pdo)
-                ->runtimeCommit();
-        }
         if (preg_match('/^[a-f0-9]{40}$/D', $runtimeCommit) !== 1) {
             throw OpsConsoleException::statusUnavailable();
         }
@@ -65,7 +66,7 @@ SQL);
 
         $tasks = [];
         foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $taskKey) {
-            $tasks[] = PlatformOpsRuntimeFactory::tasks($this->pdo)
+            $tasks[] = $this->tasks
                 ->task($context, (string)$taskKey)
                 ->toPublicArray();
         }

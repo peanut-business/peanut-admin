@@ -130,10 +130,7 @@ class GeneratorController extends BaseAdminController
         $file = $this->generator->consumeDownload($this->adminId, (string) $params['token']);
         $adminId = $this->adminId;
         register_shutdown_function(static function () use ($file, $adminId): void {
-            try {
-                GeneratorArchiveService::cleanup($file['archive_path'], $adminId);
-            } catch (\Throwable) {
-            }
+            GeneratorArchiveService::cleanupAfterResponse($file['archive_path'], $adminId);
         });
         return download($file['path'], $file['file_name']);
     }

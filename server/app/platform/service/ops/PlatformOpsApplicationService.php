@@ -154,7 +154,7 @@ final readonly class PlatformOpsApplicationService
     /** @return array<string,mixed> */
     public function backups(PlatformContext $context): array
     {
-        return $this->backups->snapshot($context);
+        return $this->backups->snapshot($context, $this->runtimeStatus->runtimeCommit());
     }
 
     /** @return array<string,mixed> */

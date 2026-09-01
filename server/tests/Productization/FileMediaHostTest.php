@@ -62,9 +62,9 @@ namespace {
     );
     expectFileMedia(($storageEvidence['configuration_restored'] ?? false) === true, 'S01 configuration must be restored');
 
+    $fileService = (new ReflectionClass(\app\common\service\FileService::class))->newInstanceWithoutConstructor();
     expectFileMedia(
-        \app\common\service\FileService::getFileUrl('https://cdn.example.test/a.png')
-            === 'https://cdn.example.test/a.png',
+        $fileService->getFileUrl('https://cdn.example.test/a.png') === 'https://cdn.example.test/a.png',
         'absolute URL must remain unchanged'
     );
 
@@ -72,6 +72,7 @@ namespace {
         'app/common/service/FileService.php',
         'app/Modules/Official/File/Application/FileUploadService.php',
         'app/Modules/Official/File/Contracts/FileUploads.php',
+        'app/Modules/Official/File/Contracts/Dto/UploadFile.php',
         'app/Modules/Official/File/ModuleProvider.php',
         'app/api/controller/UploadController.php',
         'app/Modules/Official/File/Http/Controller/UploadController.php',
@@ -92,7 +93,7 @@ namespace {
         !str_contains($sources['app/Modules/Official/File/Model/File.php'], 'getUrlAttr')
             && str_contains(
                 $sources['app/Modules/Official/File/Application/FileAdministrationService.php'],
-                "FileService::getFileUrl((string) (\$item['file_key'] ?? ''))",
+                "\$this->files->getFileUrl((string) (\$item['file_key'] ?? ''))",
             ),
         'File presentation URL must be resolved by the application boundary from the canonical object key'
     );
@@ -104,8 +105,10 @@ namespace {
     );
     expectFileMedia(
         !str_contains($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'request()->file')
-            && substr_count($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'UploadedFile $uploaded') === 4,
-        'FileUploadService must receive the framework UploadedFile explicitly'
+            && !str_contains($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'think\\file\\UploadedFile')
+            && !str_contains($sources['app/Modules/Official/File/Contracts/FileUploads.php'], 'think\\file\\UploadedFile')
+            && substr_count($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'UploadFile $uploaded') === 4,
+        'FileUploadService must receive the framework-neutral upload value'
     );
     foreach ([
         'app/api/controller/UploadController.php',
@@ -114,9 +117,10 @@ namespace {
         expectFileMedia(
             str_contains($sources[$controller], "\$this->request->file('file')")
                 && str_contains($sources[$controller], 'instanceof UploadedFile')
+                && str_contains($sources[$controller], 'new UploadFile(')
                 && str_contains($sources[$controller], 'FileUploads $uploads')
                 && !str_contains($sources[$controller], 'catch ('),
-            $controller . ' must validate and pass its UploadedFile explicitly'
+            $controller . ' must adapt its UploadedFile at the HTTP boundary'
         );
     }
     expectFileMedia(

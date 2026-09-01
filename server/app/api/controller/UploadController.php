@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\Modules\Official\File\Contracts\FileUploads;
+use app\Modules\Official\File\Contracts\Dto\UploadFile;
 use app\common\enum\FileEnum;
 use app\common\execution\CurrentExecutionContext;
 use think\file\UploadedFile;
@@ -32,7 +33,13 @@ class UploadController extends BaseApiController
         }
         $result = $this->uploads->image(
             $this->memberContext(),
-            $uploaded,
+            new UploadFile(
+                (string)$uploaded->getPathname(),
+                (string)$uploaded->getOriginalName(),
+                (int)$uploaded->getSize(),
+                (string)($uploaded->getMime() ?: 'application/octet-stream'),
+                (string)$uploaded->getOriginalExtension(),
+            ),
             (int)$cidValue,
             $this->memberId,
             FileEnum::SOURCE_USER,

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\storage;
 
+use app\common\application\BusinessException;
+
 final readonly class StorageService
 {
     public const DELIVERY_URL_TTL = 600;
@@ -10,7 +12,12 @@ final readonly class StorageService
     public function __construct(
         private StorageRepository $repository,
         private StorageDriverFactory $drivers,
-    ) {}
+        private string $signingSecret,
+    ) {
+        if (strlen($this->signingSecret) < 32) {
+            throw new \RuntimeException('文件签名配置无效');
+        }
+    }
 
     public function storePath(
         int $tenantId,
@@ -170,11 +177,15 @@ final readonly class StorageService
         if ($expires < time() || $expires > time() + self::DELIVERY_URL_TTL + 30
             || !hash_equals($this->signature($tenantId, $fileKey, $expires), $signature)
         ) {
-            throw new \RuntimeException('文件链接无效或已过期');
+            throw new BusinessException(
+                'STORAGE_DELIVERY_INPUT_INVALID',
+                422,
+                '文件链接无效或已过期',
+            );
         }
         $object = $this->repository->deliverableObjectForTenant($tenantId, $fileKey);
         if ($object === null) {
-            throw new \RuntimeException('文件不存在或不可用');
+            throw BusinessException::notFound('STORAGE_DELIVERY_NOT_FOUND', '文件不存在或不可用');
         }
         $driver = $this->drivers->make($object, $object);
         $path = $driver->localPath((string)$object['object_key']);
@@ -198,7 +209,7 @@ final readonly class StorageService
             if ($temporary && is_file($path)) {
                 unlink($path);
             }
-            throw new \RuntimeException('文件不存在或不可用');
+            throw BusinessException::notFound('STORAGE_DELIVERY_NOT_FOUND', '文件不存在或不可用');
         }
         return [
             'path' => $path,
@@ -224,11 +235,7 @@ final readonly class StorageService
 
     private function signature(int $tenantId, string $fileKey, int $expires): string
     {
-        $secret = (string)config('jwt.secret', '');
-        if (strlen($secret) < 32) {
-            throw new \RuntimeException('文件签名配置无效');
-        }
-        return hash_hmac('sha256', $tenantId . '|' . $fileKey . '|' . $expires, $secret);
+        return hash_hmac('sha256', $tenantId . '|' . $fileKey . '|' . $expires, $this->signingSecret);
     }
 
     private function internalReference(string $reference): ?string

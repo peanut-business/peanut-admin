@@ -47,6 +47,7 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
         private readonly ExecutionContextStore $executionContexts,
         private readonly CurrentExecutionContext $currentExecution,
         private readonly Console $console,
+        private readonly CrontabCommandService $commands,
     ) {
     }
 
@@ -126,8 +127,8 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
         }
 
         $command = trim((string)$item->command);
-        CrontabCommandService::assertTenantAware($command);
-        $moduleKey = CrontabCommandService::moduleKey($command)
+        $this->commands->assertTenantAware($command);
+        $moduleKey = $this->commands->moduleKey($command)
             ?? throw new \RuntimeException('CRONTAB_MODULE_UNAVAILABLE');
         $params = ((string)$item->params !== '') ? explode(' ', (string)$item->params) : [];
         $system = new TenantSystemContext(

@@ -8,21 +8,12 @@ use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferQueries;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationPackageCodec;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferAdapter;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferValue;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\CoreSettingsConfigurationAdapter;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\SecretReferenceCodec;
-use app\common\service\configuration_transfer\ExternalBindingConfigurationAdapter;
-use app\common\service\configuration_transfer\TenantModuleConfigurationAdapter;
-use app\common\service\configuration_transfer\TenantSettingsConfigurationAdapter;
-use app\common\service\audit\AuditContractHost;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Audit\AuditRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
-use PeanutAdmin\Settings\Secret\SecretProtector;
-use PeanutAdmin\Settings\Secret\SodiumSecretProtector;
-use PDO;
-use Throwable;
 
 /**
  * Application-owned configuration transfer facade.
@@ -43,23 +34,15 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
     /** @var array<string, ConfigurationTransferAdapter> */
     private array $adapters = [];
 
-    private ConfigurationPackageCodec $codec;
-
-    private AuditRepository $audit;
-
     /**
-     * @param list<ConfigurationTransferAdapter>|null $adapters
+     * @param list<ConfigurationTransferAdapter> $adapters
      */
     public function __construct(
-        PDO $pdo,
         private readonly TransactionManager $transactions,
-        ?array $adapters = null,
-        ?ConfigurationPackageCodec $codec = null,
-        ?AuditRepository $audit = null,
+        array $adapters,
+        private readonly ConfigurationPackageCodec $codec,
+        private readonly AuditRepository $audit,
     ) {
-        $this->codec = $codec ?? new ConfigurationPackageCodec();
-        $this->audit = $audit ?? AuditContractHost::fromPdo($pdo);
-        $adapters ??= $this->defaultAdapters($pdo);
         foreach ($adapters as $adapter) {
             if (!$adapter instanceof ConfigurationTransferAdapter) {
                 throw new \InvalidArgumentException('TRANSFER_ADAPTER_INVALID');
@@ -486,28 +469,4 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
         );
     }
 
-    /** @return list<ConfigurationTransferAdapter> */
-    private function defaultAdapters(PDO $pdo): array
-    {
-        return [
-            new TenantSettingsConfigurationAdapter($pdo),
-            new TenantModuleConfigurationAdapter($pdo),
-            new ExternalBindingConfigurationAdapter($pdo),
-            new CoreSettingsConfigurationAdapter($pdo, null, $this->secretProtector()),
-        ];
-    }
-
-    private function secretProtector(): SecretProtector
-    {
-        $encoded = getenv('PEANUT_SETTINGS_SECRET_KEYS');
-        $activeKeyId = getenv('PEANUT_SETTINGS_ACTIVE_SECRET_KEY_ID');
-        if (!is_string($encoded) || !is_string($activeKeyId) || $encoded === '' || $activeKeyId === '') {
-            return new \app\Modules\Official\ImportExport\Infrastructure\Configuration\UnavailableSecretProtector();
-        }
-        try {
-            return SodiumSecretProtector::fromJson($encoded, $activeKeyId);
-        } catch (Throwable) {
-            return new \app\Modules\Official\ImportExport\Infrastructure\Configuration\UnavailableSecretProtector();
-        }
-    }
 }

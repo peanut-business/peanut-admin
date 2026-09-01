@@ -146,7 +146,7 @@ try {
         public function method(): string { return 'POST'; }
     };
     try {
-        (new OperationLogMiddleware())->handle($missingRequest, function () use (&$handlerCalled): void {
+        $app->make(OperationLogMiddleware::class)->handle($missingRequest, function () use (&$handlerCalled): void {
             $handlerCalled = true;
         });
         throw new RuntimeException('middleware accepted a write without TenantContext');
@@ -160,7 +160,7 @@ try {
 
     app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.record.alpha'),
-        fn() => OperationLogService::record(
+        fn() => app(OperationLogService::class)->record(
             $alpha,
             1,
             'alpha',
@@ -178,7 +178,7 @@ try {
     );
     app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($beta, 'test.operation-log.record.beta'),
-        fn() => OperationLogService::record(
+        fn() => app(OperationLogService::class)->record(
             $beta,
             2,
             'beta',
@@ -223,7 +223,7 @@ try {
     try {
         app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($projectionFailure, 'test.operation-log.rollback'),
-            fn() => OperationLogService::record(
+            fn() => app(OperationLogService::class)->record(
                 $projectionFailure,
                 3,
                 'rollback-user',
@@ -250,7 +250,7 @@ try {
 
     $evidenceMethod = new ReflectionMethod(PlatformDiagnosticBundleService::class, 'operationLogEvidence');
     $evidence = $evidenceMethod->invoke(
-        new PlatformDiagnosticBundleService($pdo),
+        $app->make(PlatformDiagnosticBundleService::class),
         new DateTimeImmutable('2000-01-01T00:00:00Z'),
     );
     $evidenceByRequest = array_column($evidence, null, 'request_id');
@@ -283,11 +283,11 @@ try {
 
     $alphaList = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.list.alpha'),
-        fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 202, 'uri' => 'same/write']),
+        fn() => app(OperationLogApplicationService::class)->lists($alpha, ['tenant_id' => 202, 'uri' => 'same/write']),
     );
     $betaList = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($beta, 'test.operation-log.list.beta'),
-        fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 101, 'uri' => 'same/write']),
+        fn() => app(OperationLogApplicationService::class)->lists($beta, ['tenant_id' => 101, 'uri' => 'same/write']),
     );
     expectOperationTenant(
         $alphaList->total() === 1
@@ -305,7 +305,7 @@ try {
         try {
             app(ExecutionContextStore::class)->run(
                 new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.detail.denied'),
-                fn() => app(OperationLogApplicationService::class)->detail($target),
+                fn() => app(OperationLogApplicationService::class)->detail($alpha, $target),
             );
             throw new RuntimeException('cross/missing audit detail unexpectedly succeeded');
         } catch (InvalidArgumentException $exception) {
@@ -315,7 +315,7 @@ try {
 
     $export = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.export.alpha'),
-        fn() => app(OperationLogApplicationService::class)->lists([
+        fn() => app(OperationLogApplicationService::class)->lists($alpha, [
             'tenant_id' => 202,
             'uri' => 'same/write',
             'export' => 2,
@@ -341,7 +341,7 @@ try {
 
     $cleared = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.clear.alpha'),
-        fn() => app(OperationLogApplicationService::class)->clear(1, 'alpha', '127.0.0.1'),
+        fn() => app(OperationLogApplicationService::class)->clear($alpha, 1, 'alpha', '127.0.0.1'),
     );
     expectOperationTenant($cleared === 2, 'Alpha clear did not count only Alpha rows');
     expectOperationTenant(

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
-use app\common\service\http\OutboundHttpTransport;
 use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -12,8 +11,8 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 final class ApplicationNoticeSmsSender implements NoticeSmsSender
 {
     public function __construct(
-        private readonly OutboundHttpTransport $transport,
         private readonly ExecutionContextAccess $contexts,
+        private readonly NoticeChannelService $channels,
     ) {}
 
     public function send(
@@ -36,13 +35,12 @@ final class ApplicationNoticeSmsSender implements NoticeSmsSender
             ];
         }
 
-        return NoticeChannelService::sendSms(
+        return $this->channels->sendSms(
             $this->contexts,
             $context,
             $mobile,
             $templateId,
             $variables,
-            $this->transport,
             $beforeSend,
         );
     }

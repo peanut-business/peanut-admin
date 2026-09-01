@@ -6,7 +6,6 @@ namespace app\adminapi\application\config;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -15,27 +14,22 @@ class ConfigApplicationService
 {
     public function __construct(
         private readonly TenantApplicationSettingService $applicationSettings,
+        private readonly FileService $files,
+        private readonly RichTextResourceService $richText,
+        private readonly WebsiteConfigService $website,
+        private readonly string $defaultAvatar,
     ) {
     }
 
     public function getWebsite(AuthenticatedMemberContext|TenantContext $context): array
     {
-        return self::websiteService($context)->get();
+        return $this->website->get($context);
     }
 
     public function saveWebsite(AuthenticatedMemberContext|TenantContext $context, array $params): bool
     {
-        self::websiteService($context)->save($params);
+        $this->website->save($context, $params);
         return true;
-    }
-
-    private static function websiteService(AuthenticatedMemberContext|TenantContext $context): WebsiteConfigService
-    {
-        return new WebsiteConfigService(
-            new TenantSettingWebsiteStore($context),
-            static fn(string $value): string => FileService::getFileUrl($value),
-            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
-        );
     }
 
     public function getCopyright(AuthenticatedMemberContext|TenantContext $context): array
@@ -58,9 +52,9 @@ class ConfigApplicationService
         $setting = $this->applicationSettings->agreement($context);
         return [
             'service_title' => (string)$setting['service_title'],
-            'service_content' => RichTextResourceService::forRead((string)$setting['service_content']),
+            'service_content' => $this->richText->forRead((string)$setting['service_content']),
             'privacy_title' => (string)$setting['privacy_title'],
-            'privacy_content' => RichTextResourceService::forRead((string)$setting['privacy_content']),
+            'privacy_content' => $this->richText->forRead((string)$setting['privacy_content']),
         ];
     }
 
@@ -71,12 +65,12 @@ class ConfigApplicationService
     {
         $this->applicationSettings->replaceAgreement($context, [
             'service_title' => trim((string)$params['service_title']),
-            'service_content' => RichTextResourceService::forStorage(
+            'service_content' => $this->richText->forStorage(
                 (string)$params['service_content'],
                 $context,
             ),
             'privacy_title' => trim((string)$params['privacy_title']),
-            'privacy_content' => RichTextResourceService::forStorage(
+            'privacy_content' => $this->richText->forStorage(
                 (string)$params['privacy_content'],
                 $context,
             ),
@@ -106,8 +100,8 @@ class ConfigApplicationService
         $setting = $this->applicationSettings->memberProfile($context);
         $avatar = trim((string)$setting['user_avatar']);
         return [
-            'default_avatar' => FileService::getFileUrl(
-                $avatar !== '' ? $avatar : (string)config('project.default_image.user_avatar', '')
+            'default_avatar' => $this->files->getFileUrl(
+                $avatar !== '' ? $avatar : $this->defaultAvatar
             ),
         ];
     }
@@ -118,7 +112,7 @@ class ConfigApplicationService
     ): bool
     {
         $this->applicationSettings->replaceMemberProfile($context, [
-            'user_avatar' => FileService::setTenantFileUrl($context, (string)$params['default_avatar']),
+            'user_avatar' => $this->files->setTenantFileUrl($context, (string)$params['default_avatar']),
         ]);
         return true;
     }

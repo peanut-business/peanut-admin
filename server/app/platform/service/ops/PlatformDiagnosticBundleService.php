@@ -16,7 +16,7 @@ use PeanutAdmin\OpsConsole\Logs\RuntimeLogQuery;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogService;
 use PeanutAdmin\OpsConsole\Logs\SafeLogMessageCatalog;
 use PeanutAdmin\OpsConsole\Package;
-use think\facade\Config;
+use PeanutAdmin\OpsConsole\Status\OpsStatusService;
 
 /** Creates a fixed-schema JSON artifact without reading arbitrary files or raw log messages. */
 final readonly class PlatformDiagnosticBundleService
@@ -26,6 +26,10 @@ final readonly class PlatformDiagnosticBundleService
 
     public function __construct(
         private PDO $pdo,
+        private OpsStatusService $status,
+        private PdoModuleGovernanceProvider $moduleGovernance,
+        private string $deploymentMode,
+        private bool $debugEnabled,
     ) {
     }
 
@@ -45,12 +49,12 @@ final readonly class PlatformDiagnosticBundleService
         $zone = new DateTimeZone('UTC');
         $generatedAt = new DateTimeImmutable('now', $zone);
         $since = $generatedAt->modify('-' . $windowMinutes . ' minutes');
-        $status = PlatformOpsRuntimeFactory::status($this->pdo)
+        $status = $this->status
             ->read($context)
             ->toPublicArray();
         $modules = array_map(
             static fn(object $module): array => $module->toArray(),
-            PdoModuleGovernanceProvider::forApplication($this->pdo)
+            $this->moduleGovernance
                 ->qualification()
                 ->installedModules(),
         );
@@ -66,7 +70,7 @@ final readonly class PlatformDiagnosticBundleService
             new SafeLogMessageCatalog([]),
         ))->read($context, new RuntimeLogQuery('platform.audit', 'info', null, 100))->toPublicArray();
 
-        $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
+        $mode = DeploymentMode::fromConfiguredValue($this->deploymentMode);
         $payload = [
             'generated_at' => $this->instant($generatedAt),
             'window' => [
@@ -92,7 +96,7 @@ final readonly class PlatformDiagnosticBundleService
             ],
             'configuration' => [
                 'deployment_mode' => $mode?->value ?? 'unconfigured',
-                'debug_enabled' => (bool)Config::get('app.app_debug', false),
+                'debug_enabled' => $this->debugEnabled,
                 'php_version' => PHP_VERSION,
                 'core_package_version' => InstalledVersions::isInstalled('peanut-admin/core')
                     ? (InstalledVersions::getPrettyVersion('peanut-admin/core') ?? 'unknown')

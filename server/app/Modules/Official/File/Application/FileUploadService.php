@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace app\Modules\Official\File\Application;
 
 use app\Modules\Official\File\Contracts\FileUploads;
+use app\Modules\Official\File\Contracts\Dto\UploadFile;
 use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\enum\FileEnum;
 use app\common\execution\ExecutionContextAccess;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\file\UploadedFile;
 
 final class FileUploadService implements FileUploads
 {
@@ -19,22 +19,22 @@ final class FileUploadService implements FileUploads
         private readonly ExecutionContextAccess $contexts,
     ) {}
 
-    public function image(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public function image(AuthenticatedMemberContext|TenantContext $context, UploadFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
         return $this->save($context, $uploaded, FileEnum::IMAGE, $cid, $sourceId, $source);
     }
 
-    public function video(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public function video(AuthenticatedMemberContext|TenantContext $context, UploadFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
         return $this->save($context, $uploaded, FileEnum::VIDEO, $cid, $sourceId, $source);
     }
 
-    public function file(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
+    public function file(AuthenticatedMemberContext|TenantContext $context, UploadFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
     {
         return $this->save($context, $uploaded, FileEnum::FILE, $cid, $sourceId, $source);
     }
 
-    private function save(AuthenticatedMemberContext|TenantContext $context, UploadedFile $uploaded, int $type, int $cid, int $sourceId, int $source): array
+    private function save(AuthenticatedMemberContext|TenantContext $context, UploadFile $uploaded, int $type, int $cid, int $sourceId, int $source): array
     {
         if (!FileEnum::isValidType($type)) {
             throw new \InvalidArgumentException('文件类型无效');
@@ -55,16 +55,16 @@ final class FileUploadService implements FileUploads
             }
         }
 
-        $ext = strtolower($uploaded->getOriginalExtension());
+        $ext = strtolower($uploaded->extension);
         if (!in_array($ext, FileEnum::EXT[$type], true)) {
             throw new \Exception('不允许上传 ' . ($ext ?: '未知') . ' 格式文件');
         }
-        if ($uploaded->getSize() > FileEnum::MAX_SIZE[$type]) {
+        if ($uploaded->size > FileEnum::MAX_SIZE[$type]) {
             $mb = (int)(FileEnum::MAX_SIZE[$type] / 1024 / 1024);
             throw new \Exception('文件大小超过上限 ' . $mb . 'MB');
         }
 
-        $originName = $uploaded->getOriginalName();
+        $originName = $uploaded->originalName;
         $name = mb_substr((string)pathinfo($originName, PATHINFO_FILENAME), 0, 120) . '.' . $ext;
         $purpose = match ($type) {
             FileEnum::IMAGE => 'material.image',
@@ -79,9 +79,9 @@ final class FileUploadService implements FileUploads
             $tenantId,
             (int)$context->memberId,
             $purpose,
-            $uploaded->getPathname(),
+            $uploaded->path,
             $name,
-            (string)($uploaded->getMime() ?: 'application/octet-stream'),
+            $uploaded->mediaType !== '' ? $uploaded->mediaType : 'application/octet-stream',
         );
 
         try {

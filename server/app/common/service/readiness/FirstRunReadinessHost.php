@@ -7,7 +7,7 @@ use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\config\BrandDefaults;
-use app\common\service\config\TenantSettingWebsiteStore;
+use app\common\service\config\WebsiteConfigService;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -26,6 +26,7 @@ final class FirstRunReadinessHost
         private readonly CoreTenantModuleAdminBridge $modules,
         private readonly StorageConfigurationService $storage,
         private readonly PDO $pdo,
+        private readonly WebsiteConfigService $website,
     ) {
     }
 
@@ -82,7 +83,7 @@ final class FirstRunReadinessHost
     private function brand(AuthenticatedMemberContext|TenantContext $context): array
     {
         $defaults = BrandDefaults::website();
-        $website = (new TenantSettingWebsiteStore($context))->read();
+        $website = $this->website->get($context);
         $requiredFields = ['name', 'web_logo', 'web_favicon', 'shop_name', 'pc_title'];
         $complete = $this->fieldsPresent($website, $requiredFields);
         $customized = false;

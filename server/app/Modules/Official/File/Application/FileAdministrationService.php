@@ -21,6 +21,7 @@ final class FileAdministrationService implements FileAdministration
         private readonly TransactionManager $transactions,
         private readonly StorageService $storage,
         private readonly ExecutionContextAccess $contexts,
+        private readonly FileService $files,
     ) {}
 
     /** 分页列表：按 type / 分类子树 / source / name 组合过滤，追加 url。 */
@@ -58,12 +59,10 @@ final class FileAdministrationService implements FileAdministration
         }
 
         $pageResult = $pagination->result($query->order(['id' => 'desc']));
-        $lists = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = FileTenantRepository::arrayPage($pageResult);
+        $lists = $pageResult->items;
         foreach ($lists as &$item) {
-            $item['url'] = FileService::getFileUrl((string) ($item['file_key'] ?? ''));
+            $item['url'] = $this->files->getFileUrl((string) ($item['file_key'] ?? ''));
         }
         unset($item);
 

@@ -14,8 +14,6 @@ use app\common\application\BusinessException;
 use app\common\contract\audit\AuditResource;
 use app\common\execution\ExecutionContextAccess;
 use app\common\persistence\TransactionalExecution;
-use app\Modules\Official\Payment\Model\PaymentScene;
-use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\common\service\Money;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\external\ExternalTenantContext;
@@ -43,6 +41,7 @@ class RechargeApplicationService
         private readonly ExecutionContextAccess $executionContext,
         private readonly RechargeTenantSettingService $rechargeSettings,
         private readonly PaymentChannelGrantCommands $channelGrants,
+        private readonly PaymentServiceFactory $payments,
     ) {
     }
 
@@ -71,7 +70,7 @@ class RechargeApplicationService
                 'terminal' => $terminal,
                 'channels' => array_map(static fn(array $scene): array => [
                     'pay_way' => (int)$scene['pay_way'],
-                    'name' => PaymentScene::getPayWayDesc((int)$scene['pay_way']),
+                    'name' => FinanceTenantRepository::payWayDescription((int)$scene['pay_way']),
                     'is_default' => (int)$scene['is_default'],
                 ], $scenes),
         ];
@@ -112,18 +111,18 @@ class RechargeApplicationService
                 $defaultScene,
                 $amountCents,
                 $terminal,
-            ): RechargeOrder {
+            ): object {
                 $order = FinanceTenantRepository::createOrder($context, [
-                    'sn' => RechargeOrder::generateSn(),
+                    'sn' => FinanceTenantRepository::nextOrderSn(),
                     'user_id' => $memberId,
                     'pay_sn' => '',
                     'pay_way' => (int)$defaultScene['pay_way'],
-                    'pay_status' => RechargeOrder::PAY_STATUS_UNPAID,
+                    'pay_status' => FinanceTenantRepository::PAY_STATUS_UNPAID,
                     'pay_time' => null,
                     'order_amount' => self::centsToMoney($amountCents),
                     'order_terminal' => $terminal,
                     'transaction_id' => null,
-                    'refund_status' => RechargeOrder::REFUND_STATUS_NONE,
+                    'refund_status' => FinanceTenantRepository::REFUND_STATUS_NONE,
                 ]);
                 $this->recordPublicFinanceAudit(
                     $context,
@@ -142,11 +141,10 @@ class RechargeApplicationService
     public function prepareAttempt(object $context, int $memberId, int $orderId, int $payWay): array
     {
         return $this->transactions->run(function () use ($context, $memberId, $orderId, $payWay): array {
-                /** @var RechargeOrder $order */
                 $order = FinanceTenantRepository::orders($context)->lock(true)->findOrEmpty($orderId);
                 self::assertOwnedUnpaid($order, $memberId);
                 $terminal = (int)$order->order_terminal;
-                if (!PaymentScene::supports($terminal, $payWay)) {
+                if (!FinanceTenantRepository::supportsPayWay($terminal, $payWay)) {
                     throw BusinessException::conflict('RECHARGE_PAY_WAY_DISABLED', '当前终端未启用该支付方式');
                 }
                 $scene = $this->rechargeSettings->scene($context, $terminal, $payWay);
@@ -160,7 +158,7 @@ class RechargeApplicationService
                 $grant = $this->channelGrants->activeGrantForTenant($context, $provider, true);
 
                 $order->pay_way = $payWay;
-                $order->pay_sn = RechargeOrder::generatePaySn();
+                $order->pay_sn = FinanceTenantRepository::nextPaySn();
                 $order->payment_binding_id = (int)$grant['external_binding_id'];
                 $order->payment_grant_id = (int)$grant['id'];
                 $order->payment_merchant_account_ref = (string)($grant['merchant_account_ref'] ?? '');
@@ -197,7 +195,7 @@ class RechargeApplicationService
         $attempt = $this->prepareAttempt($context, $memberId, $orderId, $payWay);
         $order = $attempt['order'];
             $grant = $attempt['grant'];
-            if ($payWay === PaymentScene::PAY_WAY_WECHAT
+            if ($payWay === FinanceTenantRepository::PAY_WAY_WECHAT
                 && in_array((int)$order['order_terminal'], [1, 2], true)) {
                 $openid = $this->oauth->wechatSubjectForMember(
                     $context,
@@ -209,8 +207,8 @@ class RechargeApplicationService
                 }
             }
             $channel = match ($payWay) {
-                PaymentScene::PAY_WAY_WECHAT => 'wechat',
-                PaymentScene::PAY_WAY_ALIPAY => 'alipay',
+                FinanceTenantRepository::PAY_WAY_WECHAT => 'wechat',
+                FinanceTenantRepository::PAY_WAY_ALIPAY => 'alipay',
                 default => throw BusinessException::invalid('PAYMENT_CHANNEL_UNSUPPORTED', '支付渠道不受支持'),
             };
             $notifyUrl = rtrim($notifyUrl, '/')
@@ -225,7 +223,7 @@ class RechargeApplicationService
                 $openid,
                 $clientIp
             );
-            $result = (new PaymentServiceFactory($grant['config']))->prepay($channel)->prepay($request);
+            $result = $this->payments->forConfig($grant['config'])->prepay($channel)->prepay($request);
         return [
                 'order' => self::formatOrder($order),
                 'payment' => $result->toArray(),
@@ -234,7 +232,7 @@ class RechargeApplicationService
 
     public function parseCallback(string $channel, array $config, CallbackRequest $request): PaymentEvent
     {
-        return (new PaymentServiceFactory($config))->callback($channel)->parse($request);
+        return $this->payments->forConfig($config)->callback($channel)->parse($request);
     }
 
     public function detail(object $context, int $memberId, int $orderId): array
@@ -252,7 +250,8 @@ class RechargeApplicationService
         $pageSize = max(1, min(100, (int)($params['page_size'] ?? 15)));
         $query = FinanceTenantRepository::orders($context)->where('user_id', $memberId);
         $pageResult = PaginationInput::from($params)->result($query->order('id', 'desc'));
-        $rows = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+        $pageResult = FinanceTenantRepository::arrayPage($pageResult);
+        $rows = $pageResult->items;
         return new PageResult(
             array_map([self::class, 'formatOrder'], $rows),
             $pageResult->total,
@@ -270,7 +269,7 @@ class RechargeApplicationService
         if ($paymentBindingId < 1) {
             throw BusinessException::invalid('PAYMENT_CALLBACK_GRANT_REQUIRED', '支付回调授权缺失');
         }
-            $order = RechargeOrder::where('sn', $event->orderSn())
+            $order = FinanceTenantRepository::orders($context)->where('sn', $event->orderSn())
                 ->where('payment_binding_id', $paymentBindingId)
                 ->findOrEmpty();
             if ($order->isEmpty()) {
@@ -327,7 +326,6 @@ class RechargeApplicationService
                     throw BusinessException::forbidden('PAYMENT_TENANT_INVALID', '支付回调租户无效');
                 }
 
-                /** @var RechargeOrder $order */
                 $order = FinanceTenantRepository::orders($context)->where('sn', $orderSn)->lock(true)->findOrEmpty();
                 if ($order->isEmpty()) {
                     throw BusinessException::notFound('RECHARGE_ORDER_NOT_FOUND', '充值订单不存在');
@@ -347,7 +345,7 @@ class RechargeApplicationService
                     throw BusinessException::conflict('PAYMENT_GRANT_MISMATCH', '支付渠道授权不一致');
                 }
 
-                if ((int)$order->pay_status === RechargeOrder::PAY_STATUS_PAID) {
+                if ((int)$order->pay_status === FinanceTenantRepository::PAY_STATUS_PAID) {
                     if ((string)$order->transaction_id !== $transactionId) {
                         throw BusinessException::conflict('PAYMENT_TRANSACTION_CONFLICT', '支付交易流水冲突');
                     }
@@ -375,7 +373,7 @@ class RechargeApplicationService
                     ),
                 );
 
-                $order->pay_status = RechargeOrder::PAY_STATUS_PAID;
+                $order->pay_status = FinanceTenantRepository::PAY_STATUS_PAID;
                 $order->pay_time = time();
                 $order->transaction_id = $transactionId;
                 $order->save();
@@ -397,12 +395,12 @@ class RechargeApplicationService
         });
     }
 
-    private static function assertOwnedUnpaid(RechargeOrder $order, int $memberId): void
+    private static function assertOwnedUnpaid(object $order, int $memberId): void
     {
         if ($order->isEmpty() || (int)$order->user_id !== $memberId) {
             throw BusinessException::notFound('RECHARGE_ORDER_NOT_FOUND', '充值订单不存在');
         }
-        if ((int)$order->pay_status !== RechargeOrder::PAY_STATUS_UNPAID) {
+        if ((int)$order->pay_status !== FinanceTenantRepository::PAY_STATUS_UNPAID) {
             throw BusinessException::conflict('RECHARGE_ORDER_ALREADY_PAID', '充值订单已支付');
         }
     }
@@ -412,7 +410,7 @@ class RechargeApplicationService
         object $context,
         string $eventType,
         string $operation,
-        RechargeOrder $order,
+        object $order,
         array $metadata,
     ): void {
         $tenantId = $this->executionContext->tenantId();
@@ -445,8 +443,8 @@ class RechargeApplicationService
     private static function channelToPayWay(string $channel): int
     {
         return match (strtolower(trim($channel))) {
-            'wechat' => PaymentScene::PAY_WAY_WECHAT,
-            'alipay' => PaymentScene::PAY_WAY_ALIPAY,
+            'wechat' => FinanceTenantRepository::PAY_WAY_WECHAT,
+            'alipay' => FinanceTenantRepository::PAY_WAY_ALIPAY,
             default => throw BusinessException::invalid('PAYMENT_CHANNEL_UNSUPPORTED', '支付渠道不受支持'),
         };
     }
@@ -477,9 +475,9 @@ class RechargeApplicationService
             'id' => (int)$row['id'],
             'sn' => (string)$row['sn'],
             'pay_way' => (int)$row['pay_way'],
-            'pay_way_text' => PaymentScene::getPayWayDesc((int)$row['pay_way']),
+            'pay_way_text' => FinanceTenantRepository::payWayDescription((int)$row['pay_way']),
             'pay_status' => (int)$row['pay_status'],
-            'pay_status_text' => (int)$row['pay_status'] === RechargeOrder::PAY_STATUS_PAID ? '已支付' : '未支付',
+            'pay_status_text' => (int)$row['pay_status'] === FinanceTenantRepository::PAY_STATUS_PAID ? '已支付' : '未支付',
             'order_amount' => self::moneyString($row['order_amount']),
             'order_terminal' => (int)$row['order_terminal'],
             'terminal_text' => UserTerminalEnum::getDesc((int)$row['order_terminal']),

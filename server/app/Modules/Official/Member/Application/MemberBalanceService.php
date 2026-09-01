@@ -6,8 +6,6 @@ namespace app\Modules\Official\Member\Application;
 use app\common\application\BusinessException;
 use app\common\enum\AccountLogEnum;
 use app\common\service\Money;
-use app\Modules\Official\Member\Model\Member;
-use app\Modules\Official\Member\Model\MemberBalanceLog;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -28,7 +26,7 @@ final class MemberBalanceService
         int $adminId = 0,
         int $rechargeDeltaCents = 0,
         string $insufficientMessage = ''
-    ): Member {
+    ): object {
         if ($amountCents <= 0) {
             throw BusinessException::invalid('MEMBER_BALANCE_AMOUNT_INVALID', '调整金额必须大于零');
         }
@@ -36,7 +34,6 @@ final class MemberBalanceService
             throw BusinessException::invalid('MEMBER_BALANCE_ACTION_INVALID', '余额变动方向无效');
         }
 
-        /** @var Member $member */
         $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty($memberId);
         if ($member->isEmpty()) {
             throw BusinessException::notFound(
@@ -106,7 +103,7 @@ final class MemberBalanceService
         }
 
         MemberTenantRepository::createBalanceLog($context, [
-            'sn' => MemberBalanceLog::generateSn($context),
+            'sn' => MemberTenantRepository::nextBalanceLogSn($context),
             'member_id' => $memberId,
             'change_object' => $changeObject,
             'change_type' => $changeType,

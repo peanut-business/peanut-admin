@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Model;
 
 use app\common\model\TenantOwnedModel;
-use app\common\service\FileService;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -19,7 +18,7 @@ class Member extends TenantOwnedModel
 
     public function setAvatarAttr($value): string
     {
-        return FileService::setFileUrl((string)$value);
+        return trim((string)$value);
     }
 
     /** 生成唯一会员编号（M + 10位时间戳 + 4位随机） */

@@ -41,8 +41,10 @@ final readonly class CoreTenantModuleAdminBridge
         ];
     }
 
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private PdoModuleGovernanceProvider $moduleGovernance,
+    ) {
     }
 
     /** @return array{menu:list<array<string,mixed>>,permissions:list<string>} */
@@ -70,7 +72,7 @@ final readonly class CoreTenantModuleAdminBridge
         }
         $catalog = new PdoMenuCatalogRepository($pdo);
         $definitions = $catalog->activeDefinitions('tenant');
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $qualification = $this->moduleGovernance->qualification();
         $deploymentModules = array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
@@ -97,7 +99,7 @@ final readonly class CoreTenantModuleAdminBridge
         }
         $pdo = $this->pdo;
         $catalog = new PdoMenuCatalogRepository($pdo);
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $qualification = $this->moduleGovernance->qualification();
         $deploymentModules = array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
@@ -120,7 +122,7 @@ final readonly class CoreTenantModuleAdminBridge
             return [];
         }
         $pdo = $this->pdo;
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $qualification = $this->moduleGovernance->qualification();
         $installed = array_fill_keys(array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
@@ -155,7 +157,7 @@ final readonly class CoreTenantModuleAdminBridge
             return [];
         }
         $pdo = $this->pdo;
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $qualification = $this->moduleGovernance->qualification();
         $installed = array_fill_keys(array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()

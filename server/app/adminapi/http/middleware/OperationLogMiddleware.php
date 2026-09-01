@@ -24,9 +24,10 @@ class OperationLogMiddleware
     /** 不记录的动作后缀（避免日志模块自我刷屏） */
     protected array $except = ['log/clear'];
 
-    public function __construct(private readonly ExecutionContextAccess $contextAccess)
-    {
-    }
+    public function __construct(
+        private readonly ExecutionContextAccess $contextAccess,
+        private readonly OperationLogService $operationLogs,
+    ) {}
 
     public function handle($request, \Closure $next)
     {
@@ -84,7 +85,7 @@ class OperationLogMiddleware
         $adminInfo = $this->contextAccess->principal();
 
         try {
-            OperationLogService::record(
+            $this->operationLogs->record(
                 $context,
                 (int)($adminInfo['id'] ?? 0),
                 (string)($adminInfo['username'] ?? ''),

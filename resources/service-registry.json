@@ -1265,7 +1265,7 @@
         "server/app/Modules/Official/Task/Application/CrontabApplicationService.php",
         "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php",
         "server/app/Modules/Official/Task/Application/CrontabTaskDefinition.php",
-        "server/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php",
+        "server/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php",
         "server/app/Modules/Official/Task/Application/TaskAuthorizationRouter.php",
         "server/app/Modules/Official/Task/Application/TaskSchedulerService.php",
         "server/app/Modules/Official/Task/Contracts/TaskJobRuntime.php",

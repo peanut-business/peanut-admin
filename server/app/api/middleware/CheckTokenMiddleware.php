@@ -21,6 +21,7 @@ class CheckTokenMiddleware
         private readonly MemberQueries $members,
         private readonly ExecutionContextStore $executionContexts,
         private readonly MemberApiTenantContextResolver $tenantContexts,
+        private readonly UserTokenService $tokens,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -31,8 +32,9 @@ class CheckTokenMiddleware
             throw \app\common\http\ApiProblem::fromEnvelope('请求缺少 token', null, 40100);
         }
 
-        $memberId = UserTokenService::parseToken($token);
-        if ($memberId === false) {
+        try {
+            $memberId = $this->tokens->parseToken($token);
+        } catch (\UnexpectedValueException) {
             throw \app\common\http\ApiProblem::fromEnvelope('登录超时，请重新登录', null, 40100);
         }
 

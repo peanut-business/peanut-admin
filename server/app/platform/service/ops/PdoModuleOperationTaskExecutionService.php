@@ -14,6 +14,7 @@ use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Task\OpsAuditEvent;
 use PeanutAdmin\OpsConsole\Task\OpsTaskSubmission;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use Throwable;
 use Closure;
 
@@ -38,8 +39,9 @@ final readonly class PdoModuleOperationTaskExecutionService
         private string $projectRoot,
         private array $moduleConfig,
         private array $trustedKeys,
-        private ?string $registryPath = null,
-        private ?Closure $runtimeIdentity = null,
+        private ?string $registryPath,
+        private BackupRestoreProviderRegistry $backupProviders,
+        private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
     ) {
     }
 
@@ -331,7 +333,7 @@ SQL);
                 throw new \RuntimeException('OPS_MODULE_STEP_INVALID');
             }
             $context = $this->context($task);
-            $provider = PlatformOpsRuntimeFactory::backupProviders()->require(PairedBackupProvider::PROVIDER_KEY);
+            $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
             $child = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($context, $this->childSubmission(
                 Package::BACKUP_TASK_TYPE,
                 $provider->backupHandlerKey,
@@ -376,7 +378,7 @@ SQL);
             ) {
                 throw new \RuntimeException('OPS_MODULE_BACKUP_FAILED');
             }
-            $provider = PlatformOpsRuntimeFactory::backupProviders()->require(PairedBackupProvider::PROVIDER_KEY);
+            $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
             $restore = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($this->context($task), $this->childSubmission(
                 Package::RESTORE_TASK_TYPE,
                 $provider->restoreHandlerKey,
@@ -589,11 +591,11 @@ SQL);
     /** @return array{commit:string,tree:string,health:string,repository_clean:bool} */
     private function runtime(PlatformContext $context): array
     {
-        if ($this->runtimeIdentity instanceof Closure) {
-            $identity = ($this->runtimeIdentity)($context);
+        if ($this->runtimeStatus instanceof Closure) {
+            $identity = ($this->runtimeStatus)($context);
             if (is_array($identity)) return $identity;
         }
-        $snapshot = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))->snapshot($context);
+        $snapshot = $this->runtimeStatus->snapshot($context);
         return [
             'commit' => $snapshot->commit,
             'tree' => $snapshot->tree,
@@ -601,6 +603,7 @@ SQL);
             'repository_clean' => $snapshot->repositoryClean,
         ];
     }
+
 
     private function failStaleRunningTasks(): void
     {

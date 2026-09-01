@@ -20,9 +20,16 @@ final class NoticeChannelService
     private const BINDING_PROVIDER = 'notice.sms';
     private const PROVIDERS = ['aliyun', 'tencent'];
 
-    public static function detail(TenantContext $context): array
+    public function __construct(
+        private readonly ExternalChannelBindingService $bindings,
+        private readonly ExternalTenantResolver $resolver,
+        private readonly OutboundHttpTransport $transport,
+    ) {
+    }
+
+    public function detail(TenantContext $context): array
     {
-        $stored = self::bindingConfig($context);
+        $stored = $this->bindingConfig($context);
         $default = strtolower(trim((string)($stored['sms_default'] ?? '')));
         $aliyun = self::providerConfig($stored, 'aliyun');
         $tencent = self::providerConfig($stored, 'tencent');
@@ -49,10 +56,10 @@ final class NoticeChannelService
         ];
     }
 
-    public static function save(ExecutionContextAccess $contexts, TenantContext $context, string $section, array $input): void
+    public function save(ExecutionContextAccess $contexts, TenantContext $context, string $section, array $input): void
     {
         $tenantId = NoticeTenantContext::tenantId($contexts, $context);
-        ExternalChannelBindingService::mutate(
+        $this->bindings->mutate(
             $context,
             self::BINDING_PROVIDER,
             'tenant:' . $tenantId . ':' . self::BINDING_PROVIDER,
@@ -124,18 +131,17 @@ final class NoticeChannelService
     }
 
     /** @return array{success:bool,provider:string,error:string,result:array<string,mixed>} */
-    public static function sendSms(
+    public function sendSms(
         ExecutionContextAccess $contexts,
         TenantContext|TenantSystemContext $context,
         string $mobile,
         string $templateId,
         array $variables,
-        OutboundHttpTransport $transport,
         ?callable $beforeSend = null
     ): array
     {
         NoticeTenantContext::verificationTenantId($contexts, $context, 'notice.verification.send');
-        $stored = self::bindingConfig($context);
+        $stored = $this->bindingConfig($context);
         $provider = strtolower(trim((string)($stored['sms_default'] ?? '')));
         $config = in_array($provider, self::PROVIDERS, true)
             ? self::providerConfig($stored, $provider)
@@ -144,18 +150,17 @@ final class NoticeChannelService
             return self::result(false, $provider, '短信服务商未启用或配置不完整');
         }
 
-        $driver = self::makeDriver($provider, $config, $transport);
+        $driver = self::makeDriver($provider, $config, $this->transport);
         if ($beforeSend !== null) {
             $beforeSend($provider);
         }
         try {
-            $success = $driver->send($mobile, $templateId, $variables);
-            $error = $success ? '' : $driver->getError();
+            $delivery = $driver->send($mobile, $templateId, $variables);
             return self::result(
-                $success,
+                $delivery->success,
                 $provider,
-                self::sanitizeError($error, $mobile, $config),
-                self::safeReceipt($provider, $driver->getResult())
+                self::sanitizeError($delivery->error, $mobile, $config),
+                self::safeReceipt($provider, $delivery->receipt),
             );
         } catch (\Throwable $exception) {
             return self::result(
@@ -176,10 +181,10 @@ final class NoticeChannelService
         return compact('success', 'provider', 'error', 'result');
     }
 
-    private static function bindingConfig(TenantContext|TenantSystemContext $context): array
+    private function bindingConfig(TenantContext|TenantSystemContext $context): array
     {
         try {
-            return ExternalTenantResolver::production()
+            return $this->resolver
                 ->bindingForTenant($context, self::BINDING_PROVIDER, false)
                 ->config;
         } catch (ExternalTenantResolutionException) {

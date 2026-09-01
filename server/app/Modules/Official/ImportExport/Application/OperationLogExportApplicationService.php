@@ -6,17 +6,17 @@ namespace app\Modules\Official\ImportExport\Application;
 use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
 use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
 use app\common\dto\authorization\AdminPrincipal;
-use app\common\service\authorization\AdminAuthorizationService;
+use app\common\contract\authorization\AuthorizedOperationFactory;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** Application boundary for the Tenant Admin operation-log export workflow. */
 final readonly class OperationLogExportApplicationService
 {
-    private AdminAuthorizationService $authorization;
+    private AuthorizedOperationFactory $authorization;
     private TaskImportExportRuntime $runtime;
 
     public function __construct(
-        AdminAuthorizationService $authorization,
+        AuthorizedOperationFactory $authorization,
         TaskImportExportRuntime $runtime,
     ) {
         $this->authorization = $authorization;

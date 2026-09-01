@@ -4,9 +4,7 @@ declare(strict_types=1);
 namespace app\platform\controller;
 
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\JsonService;
 use app\platform\validate\PlatformAccessValidate;
-use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Platform\PlatformOperatorStatus;
 use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use think\App;
@@ -168,14 +166,6 @@ final class PlatformAccessController extends BasePlatformController
 
         $params = $this->request->post();
         $this->validate($params, PlatformAccessValidate::class . '.' . $scene);
-        try {
-            return $this->data($operation($params, $this->platformContext->core));
-        } catch (AdminAccessException $exception) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                $exception->getMessage(),
-                ['error_code' => $exception->errorCode],
-                $exception->httpStatus * 100
-            );
-        }
+        return $this->data($operation($params, $this->platformContext->core));
     }
 }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
+use app\common\application\BusinessException;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\tenant\TenantEntryBindingResolver;
 use app\platform\context\PlatformOperatorContext;
@@ -50,10 +51,16 @@ SQL);
             TenantEntryBindingResolver::ADMIN_CLIENT,
             TenantEntryBindingResolver::MEMBER_CLIENT,
         ], true)) {
-            throw new \DomainException('TENANT_ENTRY_CLIENT_INVALID');
+            throw BusinessException::conflict(
+                'TENANT_ENTRY_CLIENT_INVALID',
+                'Tenant entry binding request was rejected.',
+            );
         }
         if ($tenantId < 1 || trim($changeReason) === '') {
-            throw new \DomainException('TENANT_ENTRY_INPUT_INVALID');
+            throw BusinessException::conflict(
+                'TENANT_ENTRY_INPUT_INVALID',
+                'Tenant entry binding request was rejected.',
+            );
         }
 
         return (new PdoTransactionManager($this->pdo))->run(function () use (
@@ -69,7 +76,10 @@ SQL);
             $tenant->execute(['id' => $tenantId]);
             $tenantRow = $tenant->fetch(PDO::FETCH_ASSOC);
             if (!is_array($tenantRow) || $tenantRow['status'] !== 'active') {
-                throw new \DomainException('TENANT_ENTRY_TENANT_UNAVAILABLE');
+                throw BusinessException::conflict(
+                    'TENANT_ENTRY_TENANT_UNAVAILABLE',
+                    'Tenant entry binding request was rejected.',
+                );
             }
 
             $existing = $this->pdo->prepare(<<<'SQL'
@@ -98,7 +108,10 @@ SQL);
                 $bindingId = (int)$existingRow['id'];
                 if ($existingRow['status'] === 'active'
                     && (int)$existingRow['tenant_id'] !== $tenantId) {
-                    throw new \DomainException('TENANT_ENTRY_BINDING_CONFLICT');
+                    throw BusinessException::conflict(
+                        'TENANT_ENTRY_BINDING_CONFLICT',
+                        'Tenant entry binding request was rejected.',
+                    );
                 }
                 $update = $this->pdo->prepare(
                     "UPDATE pa_tenant_entry_binding SET tenant_id = :tenant_id, status = 'active' WHERE id = :id"
@@ -132,7 +145,10 @@ SQL);
     ): array {
         $this->sessions->assertAllowed($context, 'platform.tenant.update');
         if ($bindingId < 1 || trim($changeReason) === '') {
-            throw new \DomainException('TENANT_ENTRY_INPUT_INVALID');
+            throw BusinessException::conflict(
+                'TENANT_ENTRY_INPUT_INVALID',
+                'Tenant entry binding request was rejected.',
+            );
         }
 
         return (new PdoTransactionManager($this->pdo))->run(function () use (
@@ -146,7 +162,10 @@ SQL);
             $statement->execute(['id' => $bindingId]);
             $row = $statement->fetch(PDO::FETCH_ASSOC);
             if (!is_array($row)) {
-                throw new \DomainException('TENANT_ENTRY_BINDING_NOT_FOUND');
+                throw BusinessException::conflict(
+                    'TENANT_ENTRY_BINDING_NOT_FOUND',
+                    'Tenant entry binding request was rejected.',
+                );
             }
             if ($row['status'] !== 'disabled') {
                 $update = $this->pdo->prepare(

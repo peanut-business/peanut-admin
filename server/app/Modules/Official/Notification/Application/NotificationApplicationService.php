@@ -12,8 +12,6 @@ use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
-use app\Modules\Official\Notification\Model\NoticeLog;
-use app\Modules\Official\Notification\Model\NoticeScene;
 use app\common\service\notice\NoticeChannelService;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\execution\CurrentExecutionContext;
@@ -28,6 +26,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
         private readonly CurrentExecutionContext $executionContext,
         private readonly VerificationCodeService $verificationCodes,
         private readonly ExecutionContextAccess $contexts,
+        private readonly NoticeChannelService $channels,
     ) {
     }
 
@@ -40,7 +39,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
             || $system->operationId === '') {
             throw new \DomainException('NOTIFICATION_PROVISION_CONTEXT_INVALID');
         }
-        NoticeScene::provisionDefaults([
+        NoticeTenantRepository::provisionDefaultScenes([
             ['login_code', '登录验证码', '用户使用手机号验证码登录', '您的登录验证码是${code}，五分钟内有效。'],
             ['bind_mobile', '绑定手机验证码', '用户首次绑定手机号', '您的绑定手机验证码是${code}，五分钟内有效。'],
             ['change_mobile', '变更手机验证码', '用户更换已绑定手机号', '您的变更手机验证码是${code}，五分钟内有效。'],
@@ -50,7 +49,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function saveChannel(string $section, array $input): void
     {
-        NoticeChannelService::save($this->contexts, $this->executionContext->tenantAdmin(), $section, $input);
+        $this->channels->save($this->contexts, $this->executionContext->tenantAdmin(), $section, $input);
     }
 
     public function saveScene(array $params): void
@@ -70,7 +69,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function channelDetail(): array
     {
-        return NoticeChannelService::detail($this->executionContext->tenantAdmin());
+        return $this->channels->detail($this->executionContext->tenantAdmin());
     }
 
     public function scenes(): array
@@ -95,7 +94,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function logs(array $params): PageResult
     {
-        $query = NoticeLog::alias('l')
+        $query = NoticeTenantRepository::logQuery('l')
             ->leftJoin('notice_template t', 't.id = l.template_id')
             ->leftJoin('notice_scene s', 's.id = l.scene_id')
             ->field([
@@ -128,17 +127,15 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
         $pagination = PaginationInput::from($params);
         $pageResult = $pagination->result($query->order('l.id', 'desc'));
-        $list = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = NoticeTenantRepository::arrayPage($pageResult);
+        $list = $pageResult->items;
 
         return new PageResult($list, $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
 
     public function logDetail(int $id): array
     {
-        return NoticeLog::alias('l')
+        return NoticeTenantRepository::logQuery('l')
             ->leftJoin('notice_template t', 't.id = l.template_id')
             ->leftJoin('notice_scene s', 's.id = l.scene_id')
             ->field([

@@ -9,6 +9,11 @@ use app\common\service\CrontabCommandService;
 
 class CrontabValidate extends Validate
 {
+    public function __construct(private readonly CrontabCommandService $commands)
+    {
+        parent::__construct();
+    }
+
     protected $rule = [
         'id'         => 'require|integer|gt:0',
         'name'       => 'require|max:100',
@@ -54,7 +59,7 @@ class CrontabValidate extends Validate
     protected function checkCommand($value): bool|string
     {
         try {
-            CrontabCommandService::assertAllowed(trim((string)$value));
+            $this->commands->assertAllowed(trim((string)$value));
             return true;
         } catch (\Throwable $e) {
             return $e->getMessage();

@@ -5,7 +5,6 @@ namespace app\platform\controller;
 
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
-use app\common\service\JsonService;
 use app\platform\http\PlatformRequest;
 use app\platform\service\PlatformTenantQueryService;
 use app\platform\service\TenantGovernanceService;
@@ -34,27 +33,17 @@ final class PlatformTenantController extends BasePlatformController
 
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.provision');
-        try {
-            return $this->data($this->tenantGovernance->provision(
-                PlatformRequest::bearerToken($this->request),
-                trim((string)$params['tenant_code']),
-                trim((string)$params['tenant_name']),
-                trim((string)$params['owner_email']),
-                isset($params['initial_password']) && (string)$params['initial_password'] !== ''
-                    ? (string)$params['initial_password']
-                    : null,
-                trim((string)$params['owner_display_name']),
-                $this->platformContext->core->requestId
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        } catch (\DomainException|\InvalidArgumentException) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Tenant provisioning was rejected.',
-                ['error_code' => 'TENANT_PROVISION_REJECTED'],
-                40900
-            );
-        }
+        return $this->data($this->tenantGovernance->provision(
+            PlatformRequest::bearerToken($this->request),
+            trim((string)$params['tenant_code']),
+            trim((string)$params['tenant_name']),
+            trim((string)$params['owner_email']),
+            isset($params['initial_password']) && (string)$params['initial_password'] !== ''
+                ? (string)$params['initial_password']
+                : null,
+            trim((string)$params['owner_display_name']),
+            $this->platformContext->core->requestId
+        ));
     }
 
     public function activate()
@@ -65,24 +54,14 @@ final class PlatformTenantController extends BasePlatformController
 
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.activate');
-        try {
-            return $this->data($this->tenantGovernance->transition(
-                PlatformRequest::bearerToken($this->request),
-                (int)$params['tenant_id'],
-                (int)$params['expected_revision'],
-                TenantStatus::Active,
-                trim((string)$params['change_reason']),
-                $this->platformContext->core->requestId
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        } catch (\DomainException|\InvalidArgumentException) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Tenant activation was rejected.',
-                ['error_code' => 'TENANT_ACTIVATION_REJECTED'],
-                40900
-            );
-        }
+        return $this->data($this->tenantGovernance->transition(
+            PlatformRequest::bearerToken($this->request),
+            (int)$params['tenant_id'],
+            (int)$params['expected_revision'],
+            TenantStatus::Active,
+            trim((string)$params['change_reason']),
+            $this->platformContext->core->requestId
+        ));
     }
 
     public function suspend()
@@ -93,24 +72,14 @@ final class PlatformTenantController extends BasePlatformController
 
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.suspend');
-        try {
-            return $this->data($this->tenantGovernance->transition(
-                PlatformRequest::bearerToken($this->request),
-                (int)$params['tenant_id'],
-                (int)$params['expected_revision'],
-                TenantStatus::Suspended,
-                trim((string)$params['change_reason']),
-                $this->platformContext->core->requestId
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        } catch (\DomainException|\InvalidArgumentException) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Tenant suspension was rejected.',
-                ['error_code' => 'TENANT_SUSPENSION_REJECTED'],
-                40900
-            );
-        }
+        return $this->data($this->tenantGovernance->transition(
+            PlatformRequest::bearerToken($this->request),
+            (int)$params['tenant_id'],
+            (int)$params['expected_revision'],
+            TenantStatus::Suspended,
+            trim((string)$params['change_reason']),
+            $this->platformContext->core->requestId
+        ));
     }
 
     public function close()
@@ -121,24 +90,14 @@ final class PlatformTenantController extends BasePlatformController
 
         $params = $this->request->post();
         $this->validate($params, PlatformTenantLifecycleValidate::class . '.close');
-        try {
-            return $this->data($this->tenantGovernance->transition(
-                PlatformRequest::bearerToken($this->request),
-                (int)$params['tenant_id'],
-                (int)$params['expected_revision'],
-                TenantStatus::Closed,
-                trim((string)$params['change_reason']),
-                $this->platformContext->core->requestId
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        } catch (\DomainException|\InvalidArgumentException) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Tenant closure was rejected.',
-                ['error_code' => 'TENANT_CLOSURE_REJECTED'],
-                40900
-            );
-        }
+        return $this->data($this->tenantGovernance->transition(
+            PlatformRequest::bearerToken($this->request),
+            (int)$params['tenant_id'],
+            (int)$params['expected_revision'],
+            TenantStatus::Closed,
+            trim((string)$params['change_reason']),
+            $this->platformContext->core->requestId
+        ));
     }
 
     public function lists()
@@ -147,16 +106,12 @@ final class PlatformTenantController extends BasePlatformController
             throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
-        try {
-            $page = $this->positiveInteger($this->request->get('page', 1), 'PAGE_INVALID');
-            $pageSize = $this->positiveInteger($this->request->get('page_size', 20), 'PAGE_SIZE_INVALID');
-            $result = $this->tenantQueries->tenants(
-                $this->platformContext,
-                new PageRequest($page, $pageSize)
-            );
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        }
+        $page = $this->positiveInteger($this->request->get('page', 1), 'PAGE_INVALID');
+        $pageSize = $this->positiveInteger($this->request->get('page_size', 20), 'PAGE_SIZE_INVALID');
+        $result = $this->tenantQueries->tenants(
+            $this->platformContext,
+            new PageRequest($page, $pageSize)
+        );
 
         return $this->dataLists(new PageResult($result['items'], $result['total'], $page, $pageSize));
     }
@@ -167,15 +122,11 @@ final class PlatformTenantController extends BasePlatformController
             throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
 
-        try {
-            $tenantId = $this->positiveInteger($this->request->get('id'), 'TENANT_ID_INVALID');
-            return $this->data($this->tenantQueries->tenant(
-                $this->platformContext,
-                $tenantId
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        }
+        $tenantId = $this->positiveInteger($this->request->get('id'), 'TENANT_ID_INVALID');
+        return $this->data($this->tenantQueries->tenant(
+            $this->platformContext,
+            $tenantId
+        ));
     }
 
     private function positiveInteger(mixed $value, string $errorCode): int
@@ -188,14 +139,5 @@ final class PlatformTenantController extends BasePlatformController
             throw AdminAccessException::invalid($errorCode, 'A positive integer is required.');
         }
         return (int)$candidate;
-    }
-
-    private function accessFailure(AdminAccessException $exception)
-    {
-        throw \app\common\http\ApiProblem::fromEnvelope(
-            $exception->getMessage(),
-            ['error_code' => $exception->errorCode],
-            $exception->httpStatus * 100
-        );
     }
 }

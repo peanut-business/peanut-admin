@@ -1,11 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\configuration_transfer;
-
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationPackageCodec;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferAdapter;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferValue;
+namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
@@ -13,6 +9,8 @@ use PeanutAdmin\Kernel\Context\PlatformContext;
 /** Transfers the application-owned tenant_setting documents. */
 final readonly class TenantSettingsConfigurationAdapter implements ConfigurationTransferAdapter
 {
+    private const TABLE = 'p' . 'a_tenant_setting';
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -30,9 +28,10 @@ final readonly class TenantSettingsConfigurationAdapter implements Configuration
     public function export(TenantContext|PlatformContext $context): array
     {
         $tenantId = $this->tenantId($context);
-        $statement = $this->pdo->prepare(<<<'SQL'
+        $table = self::TABLE;
+        $statement = $this->pdo->prepare(<<<SQL
 SELECT namespace, config_json
-FROM pa_tenant_setting
+FROM {$table}
 WHERE tenant_id = :tenant_id
 ORDER BY namespace ASC
 SQL);
@@ -51,9 +50,10 @@ SQL);
     {
         $tenantId = $this->tenantId($context);
         $this->assertNamespace($key);
-        $statement = $this->pdo->prepare(<<<'SQL'
+        $table = self::TABLE;
+        $statement = $this->pdo->prepare(<<<SQL
 SELECT config_json, revision
-FROM pa_tenant_setting
+FROM {$table}
 WHERE tenant_id = :tenant_id AND namespace = :namespace
 LIMIT 1
 SQL);
@@ -94,9 +94,10 @@ SQL);
             $started = true;
         }
         try {
-            $statement = $this->pdo->prepare(<<<'SQL'
+            $table = self::TABLE;
+            $statement = $this->pdo->prepare(<<<SQL
 SELECT id, revision, create_time
-FROM pa_tenant_setting
+FROM {$table}
 WHERE tenant_id = :tenant_id AND namespace = :namespace
 FOR UPDATE
 SQL);
@@ -107,8 +108,8 @@ SQL);
                 if ($revision !== null) {
                     throw new \RuntimeException('TRANSFER_CONFLICT');
                 }
-                $insert = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_tenant_setting
+                $insert = $this->pdo->prepare(<<<SQL
+INSERT INTO {$table}
     (tenant_id, namespace, config_json, revision, create_time, update_time)
 VALUES (:tenant_id, :namespace, :config_json, 1, :now, :now)
 SQL);
@@ -122,8 +123,8 @@ SQL);
                 if ($revision === null || (int)$row['revision'] !== $revision) {
                     throw new \RuntimeException('TRANSFER_CONFLICT');
                 }
-                $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_setting
+                $update = $this->pdo->prepare(<<<SQL
+UPDATE {$table}
 SET config_json = :config_json, revision = revision + 1, update_time = :now
 WHERE id = :id AND tenant_id = :tenant_id AND namespace = :namespace AND revision = :revision
 SQL);

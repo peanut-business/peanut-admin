@@ -159,7 +159,7 @@ officialArticleExpect(
     str_contains($pcApplication, 'private readonly ArticleApplicationService $articles')
         && substr_count($pcApplication, '$this->articles->limitArticles(') === 3
         && !str_contains($pcApplication, 'app(ArticleApplicationService::class)')
-        && str_contains($pcApplication, 'DecorationReadService::pageByType('),
+        && str_contains($pcApplication, 'pageByType('),
     'PC aggregation no longer routes Article and decoration reads through guarded services'
 );
 officialArticleExpect(

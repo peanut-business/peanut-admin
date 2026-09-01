@@ -24,8 +24,8 @@ final readonly class PlatformModuleOperationExecutionService
         private string $projectRoot,
         private array $moduleConfig,
         private array $trustedKeys,
-        private ?string $registryPath = null,
-        private ?Closure $runtimeIdentity = null,
+        private ?string $registryPath,
+        private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
     ) {
     }
 
@@ -168,11 +168,11 @@ SQL);
     /** @return array{commit:string,tree:string,health:string,repository_clean:bool} */
     private function runtime(PlatformContext $context): array
     {
-        if ($this->runtimeIdentity instanceof Closure) {
-            $identity = ($this->runtimeIdentity)($context);
+        if ($this->runtimeStatus instanceof Closure) {
+            $identity = ($this->runtimeStatus)($context);
             if (is_array($identity)) return $identity;
         }
-        $snapshot = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))->snapshot($context);
+        $snapshot = $this->runtimeStatus->snapshot($context);
         return [
             'commit' => $snapshot->commit,
             'tree' => $snapshot->tree,

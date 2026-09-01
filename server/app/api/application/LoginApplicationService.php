@@ -20,6 +20,9 @@ class LoginApplicationService
         private readonly MemberIdentityCommands $memberIdentities,
         private readonly VerificationCodeCommands $verificationCodes,
         private readonly TenantApplicationSettingService $applicationSettings,
+        private readonly FileService $files,
+        private readonly UserTokenService $tokens,
+        private readonly string $defaultAvatar,
     ) {
     }
 
@@ -54,8 +57,8 @@ class LoginApplicationService
             request()->ip(),
         );
 
-        $token  = UserTokenService::createToken($member->id);
-        $avatar = FileService::getFileUrl((string) $member->avatar);
+        $token  = $this->tokens->createToken($member->id);
+        $avatar = $this->files->getFileUrl((string) $member->avatar);
 
         return [
             'token'    => $token,
@@ -87,7 +90,7 @@ class LoginApplicationService
             $this->defaultAvatar($context),
             request()->ip(),
         );
-        return self::loginResult($member, false);
+        return $this->loginResult($member, false);
     }
 
     public function resetPassword(TenantContext|TenantSystemContext $context, array $params): bool
@@ -111,18 +114,18 @@ class LoginApplicationService
         return true;
     }
 
-    private static function loginResult(MemberIdentitySnapshot $member, bool $recordLogin = true): array
+    private function loginResult(MemberIdentitySnapshot $member, bool $recordLogin = true): array
     {
         if ($recordLogin) {
             throw new \LogicException('Member login must be recorded by MemberIdentityCommands');
         }
 
         return [
-            'token'    => UserTokenService::createToken((int) $member->id),
+            'token'    => $this->tokens->createToken((int) $member->id),
             'id'       => $member->id,
             'sn'       => $member->sn,
             'nickname' => $member->nickname,
-            'avatar'   => FileService::getFileUrl((string) $member->avatar),
+            'avatar'   => $this->files->getFileUrl((string) $member->avatar),
             'mobile'   => $member->mobile,
         ];
     }
@@ -141,7 +144,7 @@ class LoginApplicationService
     private function defaultAvatar(TenantContext|TenantSystemContext $context): string
     {
         $avatar = trim((string)$this->applicationSettings->memberProfile($context)['user_avatar']);
-        return $avatar !== '' ? $avatar : (string)config('project.default_image.user_avatar', '');
+        return $avatar !== '' ? $avatar : $this->defaultAvatar;
     }
 
     /** 退出（JWT 无状态，客户端丢弃 token 即可） */

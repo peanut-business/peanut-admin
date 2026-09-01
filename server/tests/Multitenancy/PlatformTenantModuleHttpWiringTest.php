@@ -53,8 +53,9 @@ pm01ModuleHttpExpect(
     'default Module roots must be an explicit empty deployment input'
 );
 $runtime = (string)file_get_contents(dirname(__DIR__, 2) . '/app/platform/service/PlatformRuntimeFactory.php');
+$composition = (string)file_get_contents(dirname(__DIR__, 2) . '/app/AppService.php');
 $registryFactory = (string)file_get_contents(
-    dirname(__DIR__, 2) . '/app/platform/service/plugin/PluginModuleRegistryFactory.php'
+    dirname(__DIR__, 2) . '/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php'
 );
 $routes = peanut_route_registry_source(dirname(__DIR__, 2));
 $adminBridge = (string)file_get_contents(
@@ -64,9 +65,10 @@ $serverMenuMapper = (string)file_get_contents(
     dirname(__DIR__, 3) . '/web/src/store/modules/app/server-menu.ts'
 );
 pm01ModuleHttpExpect(
-    str_contains($runtime, "'MODULE_REGISTRY_UNAVAILABLE'")
+    str_contains($composition, "'MODULE_REGISTRY_UNAVAILABLE'")
+        && str_contains($composition, 'new PlatformRuntimeFactory(')
+        && !str_contains($runtime, 'Config::')
         && str_contains($runtime, 'PdoModuleGovernanceProvider')
-        && str_contains($registryFactory, 'DeployedTenantModuleRegistry::compile')
         && str_contains($registryFactory, 'ModuleBoundaryChecker')
         && str_contains($runtime, 'VerifiedTenantModuleRepository'),
     'production Module runtime lost fail-closed deployment verification'

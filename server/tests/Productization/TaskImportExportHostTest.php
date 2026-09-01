@@ -70,7 +70,7 @@ expectTaskHost(
         && str_contains($moduleProviderSource, 'StorageService::class'),
     'Import/Export container assembly is incomplete',
 );
-$taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
+$taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php');
 expectTaskHost(str_contains($taskRuntimeSource, 'TrustedJobPublisher'), 'official.task does not own trusted submission');
 expectTaskHost(str_contains($taskRuntimeSource, 'LocalWorker'), 'official.task does not own worker execution');
 $gatewaySource = (string)file_get_contents($serverRoot . '/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php');

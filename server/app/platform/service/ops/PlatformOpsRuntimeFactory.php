@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\provider\NotificationQualificationContributor;
 use app\platform\service\provider\OauthQualificationContributor;
 use app\platform\service\provider\PaymentQualificationContributor;
@@ -15,93 +16,137 @@ use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
 use PeanutAdmin\OpsConsole\Status\OpsStatusService;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use PeanutAdmin\OpsConsole\Task\OpsTaskService;
-use think\facade\Config;
 
 final class PlatformOpsRuntimeFactory
 {
-    public static function status(PDO $pdo): OpsStatusService
+    /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly string $projectRoot,
+        private readonly array $moduleConfig,
+        private readonly array $trustedKeys,
+    ) {
+    }
+
+    public function status(): OpsStatusService
     {
         return new OpsStatusService(
-            new PlatformOpsPermissionChecker($pdo),
-            self::runtimeStatusProvider($pdo)
+            new PlatformOpsPermissionChecker($this->pdo),
+            $this->runtimeStatusProvider(),
         );
     }
 
-    public static function runtimeStatusProvider(PDO $pdo): ApplicationRuntimeStatusProvider
+    public function runtimeStatusProvider(): ApplicationRuntimeStatusProvider
     {
-        return new ApplicationRuntimeStatusProvider($pdo, dirname(__DIR__, 5));
+        return new ApplicationRuntimeStatusProvider(
+            $this->pdo,
+            $this->projectRoot,
+            $this->readiness(),
+            $this->moduleGovernance(),
+        );
     }
 
-    public static function maintenance(PDO $pdo): MaintenanceService
+    public function maintenance(): MaintenanceService
     {
         return new MaintenanceService(
-            new PlatformOpsPermissionChecker($pdo),
+            new PlatformOpsPermissionChecker($this->pdo),
             new MaintenanceReasonRegistry([
                 'planned-upgrade',
                 'database-maintenance',
                 'security-maintenance',
                 'module-lifecycle',
             ]),
-            new PdoMaintenanceWindowStore($pdo)
+            new PdoMaintenanceWindowStore($this->pdo),
         );
     }
 
-    public static function backupProviders(): BackupRestoreProviderRegistry
+    public function backupProviders(): BackupRestoreProviderRegistry
     {
         return new BackupRestoreProviderRegistry([new PairedBackupProvider()]);
     }
 
-    public static function tasks(PDO $pdo): OpsTaskService
+    public function tasks(): OpsTaskService
     {
         return new OpsTaskService(
-            new PlatformOpsPermissionChecker($pdo),
-            self::backupProviders(),
-            new PdoOpsTaskDispatcher($pdo)
+            new PlatformOpsPermissionChecker($this->pdo),
+            $this->backupProviders(),
+            new PdoOpsTaskDispatcher($this->pdo),
         );
     }
 
-    public static function upgrades(PDO $pdo): PlatformUpgradeExecutionService
+    public function upgrades(): PlatformUpgradeExecutionService
     {
-        return new PlatformUpgradeExecutionService($pdo, dirname(__DIR__, 5));
+        return new PlatformUpgradeExecutionService(
+            $this->pdo,
+            $this->projectRoot,
+            $this->runtimeStatusProvider(),
+        );
     }
 
-    public static function moduleOperations(PDO $pdo): PlatformModuleOperationExecutionService
+    public function moduleOperations(): PlatformModuleOperationExecutionService
     {
-        $trusted = [];
-        foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
-            $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
-            if (is_string($keyId) && is_string($decoded)
-                && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES
-            ) {
-                $trusted[$keyId] = $decoded;
-            }
-        }
-        $config = Config::get('modules', []);
         return new PlatformModuleOperationExecutionService(
-            $pdo,
-            dirname(__DIR__, 5),
-            is_array($config) ? $config : [],
-            $trusted,
+            $this->pdo,
+            $this->projectRoot,
+            $this->moduleConfig,
+            $this->trustedKeys,
+            null,
+            $this->runtimeStatusProvider(),
         );
     }
 
-    public static function providerQualifications(PDO $pdo): PlatformProviderQualificationService
+    public function providerQualifications(string $digestKey): PlatformProviderQualificationService
     {
-        $digestKey = trim((string)Config::get('platform_auth.identifier_hmac_key', ''));
         return new PlatformProviderQualificationService(
-            new PlatformOpsPermissionChecker($pdo),
-            new PdoProviderQualificationEvidenceRepository($pdo),
+            new PlatformOpsPermissionChecker($this->pdo),
+            new PdoProviderQualificationEvidenceRepository($this->pdo),
             [
-                new PaymentQualificationContributor($pdo, $digestKey),
-                new NotificationQualificationContributor($pdo, $digestKey),
-                new OauthQualificationContributor($pdo, $digestKey),
-                new StorageQualificationContributor($pdo, $digestKey),
+                new PaymentQualificationContributor($this->pdo, $digestKey),
+                new NotificationQualificationContributor($this->pdo, $digestKey),
+                new OauthQualificationContributor($this->pdo, $digestKey),
+                new StorageQualificationContributor($this->pdo, $digestKey),
             ],
             $digestKey,
         );
     }
 
-    private function __construct()
+    public function moduleGovernance(): PdoModuleGovernanceProvider
     {
+        return new PdoModuleGovernanceProvider(
+            $this->pdo,
+            $this->projectRoot . '/server',
+            $this->moduleConfig,
+        );
+    }
+
+    public function backups(): PlatformBackupCenterService
+    {
+        return new PlatformBackupCenterService(
+            $this->pdo,
+            $this->backupProviders(),
+            $this->tasks(),
+        );
+    }
+
+    public function readiness(): PlatformUpgradeReadinessService
+    {
+        return new PlatformUpgradeReadinessService(
+            $this->pdo,
+            $this->projectRoot,
+            $this->moduleGovernance(),
+            $this->backups(),
+            $this->maintenance(),
+        );
+    }
+
+    public function diagnostics(string $deploymentMode, bool $debugEnabled): PlatformDiagnosticBundleService
+    {
+        return new PlatformDiagnosticBundleService(
+            $this->pdo,
+            $this->status(),
+            $this->moduleGovernance(),
+            $deploymentMode,
+            $debugEnabled,
+        );
     }
 }

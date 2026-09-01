@@ -22,6 +22,7 @@ use app\common\service\oauth\dto\OAuthProfile;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\service\FileService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -46,6 +47,10 @@ class OAuthApplicationService
         private readonly AdvisoryLockExecution $locks,
         private readonly TransactionalExecution $transactions,
         private readonly TenantApplicationSettingService $applicationSettings,
+        private readonly ExternalTenantResolver $externalTenants,
+        private readonly FileService $files,
+        private readonly UserTokenService $tokens,
+        private readonly string $defaultAvatar,
     ) {
     }
 
@@ -127,7 +132,7 @@ class OAuthApplicationService
                 throw BusinessException::forbidden('MEMBER_UNAVAILABLE', '用户不存在或已禁用');
             }
             $transport ??= new WechatOAuthTransport();
-            $binding = ExternalTenantResolver::production()->bindingForTenant(
+            $binding = $this->externalTenants->bindingForTenant(
                 $context,
                 ExternalTenantResolver::oauthProvider($scene),
             );
@@ -214,7 +219,7 @@ class OAuthApplicationService
                 }
                 $ticket->used_at = time();
                 $ticket->save();
-                return self::fullLoginResult($member);
+                return $this->fullLoginResult($member);
         });
     }
 
@@ -236,7 +241,7 @@ class OAuthApplicationService
             return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
         }
         $this->memberIdentities->recordLogin($context, $member->id, request()->ip());
-        return self::fullLoginResult($member);
+        return $this->fullLoginResult($member);
     }
 
     /** @return array{0:MemberIdentitySnapshot,1:bool} */
@@ -425,7 +430,7 @@ class OAuthApplicationService
     private function defaultAvatar(TenantContext|TenantSystemContext $context): string
     {
         $avatar = trim((string)$this->applicationSettings->memberProfile($context)['user_avatar']);
-        return $avatar !== '' ? $avatar : (string)config('project.default_image.user_avatar', '');
+        return $avatar !== '' ? $avatar : $this->defaultAvatar;
     }
 
     private static function completionResult(
@@ -452,26 +457,26 @@ class OAuthApplicationService
             'expires_in' => self::COMPLETION_TTL,
             'need_profile' => $needProfile,
             'need_mobile' => $needMobile,
-            'member' => self::memberSummary($member),
+            'member' => $this->memberSummary($member),
         ];
     }
 
-    private static function fullLoginResult(MemberIdentitySnapshot $member): array
+    private function fullLoginResult(MemberIdentitySnapshot $member): array
     {
         return [
             'completed' => true,
-            'token' => UserTokenService::createToken($member->id),
-            'member' => self::memberSummary($member),
+            'token' => $this->tokens->createToken($member->id),
+            'member' => $this->memberSummary($member),
         ];
     }
 
-    private static function memberSummary(MemberIdentitySnapshot $member): array
+    private function memberSummary(MemberIdentitySnapshot $member): array
     {
         return [
             'id' => $member->id,
             'sn' => $member->sn,
             'nickname' => $member->nickname,
-            'avatar' => \app\common\service\FileService::getFileUrl($member->avatar),
+            'avatar' => $this->files->getFileUrl($member->avatar),
             'mobile' => $member->mobile,
         ];
     }

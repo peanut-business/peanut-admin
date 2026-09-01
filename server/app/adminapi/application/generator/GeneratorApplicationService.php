@@ -5,7 +5,7 @@ namespace app\adminapi\application\generator;
 
 use app\adminapi\service\generator\GeneratorArchiveService;
 use app\adminapi\service\generator\GeneratorImportPersistence;
-use app\adminapi\service\generator\GeneratorMetadataService;
+use app\adminapi\infrastructure\generator\ThinkPhpGeneratorMetadata;
 use app\adminapi\service\generator\GeneratorRenderService;
 use app\common\http\PageResult;
 use app\common\model\generator\GeneratorColumn;
@@ -19,12 +19,14 @@ class GeneratorApplicationService
     public function __construct(
         private readonly GeneratorImportPersistence $imports,
         private readonly TransactionalExecution $transactions,
+        private readonly ThinkPhpGeneratorMetadata $metadata,
+        private readonly string $databasePrefix,
     ) {}
 
     public function sourceTables(array $params): PageResult
     {
         $pagination = PaginationInput::from($params);
-        return GeneratorMetadataService::tables(
+        return $this->metadata->tables(
             trim((string) ($params['keyword'] ?? '')),
             $pagination->page,
             $pagination->pageSize,
@@ -44,10 +46,8 @@ class GeneratorApplicationService
             });
         }
         $pageResult = $pagination->result($query->order('id', 'desc'));
-        $lists = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = GeneratorImportPersistence::arrayPage($pageResult);
+        $lists = $pageResult->items;
         return new PageResult($lists, $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
 
@@ -59,10 +59,10 @@ class GeneratorApplicationService
     public function importTables(int $adminId, array $tableNames): bool
     {
         $tableNames = array_values(array_unique(array_map('strval', $tableNames)));
-        $metadata = GeneratorMetadataService::definitions($tableNames);
+        $metadata = $this->metadata->definitions($tableNames);
         $definitions = [];
         foreach ($tableNames as $tableName) {
-            $entityName = self::entityName($tableName);
+            $entityName = $this->entityName($tableName);
             self::assertEntity($entityName);
             $definitions[] = [
                 'table_name' => $tableName,
@@ -79,7 +79,7 @@ class GeneratorApplicationService
     {
         $this->transactions->run(function () use ($adminId, $id): void {
                 $table = self::ownedTableModel($adminId, $id, true);
-                $metadata = GeneratorMetadataService::columns((string) $table->table_name);
+                $metadata = $this->metadata->columns((string) $table->table_name);
                 $existing = [];
                 foreach (GeneratorColumn::where('table_id', $id)->select() as $row) {
                     $existing[(string) $row->column_name] = $row;
@@ -109,7 +109,7 @@ class GeneratorApplicationService
                 $delete = GeneratorColumn::where('table_id', $id);
                 if ($seen !== []) $delete->whereNotIn('column_name', $seen);
                 $delete->delete();
-                $table->save(['table_comment' => (string) GeneratorMetadataService::table((string) $table->table_name)['table_comment']]);
+                $table->save(['table_comment' => (string)$this->metadata->table((string)$table->table_name)['table_comment']]);
         });
         return true;
     }
@@ -132,7 +132,7 @@ class GeneratorApplicationService
                     static fn($column): array => $column->toArray(),
                     array_values($columns)
                 ), 'column_name'));
-                $relations = self::normalizeRelations(
+                $relations = $this->normalizeRelations(
                     $adminId,
                     $params['relations'] ?? [],
                     $columnNames
@@ -284,12 +284,10 @@ class GeneratorApplicationService
         return $table;
     }
 
-    private static function entityName(string $tableName): string
+    private function entityName(string $tableName): string
     {
-        $connection = (string) config('database.default', 'mysql');
-        $prefix = (string) config('database.connections.' . $connection . '.prefix', '');
-        $name = $prefix !== '' && str_starts_with($tableName, $prefix)
-            ? substr($tableName, strlen($prefix)) : $tableName;
+        $name = $this->databasePrefix !== '' && str_starts_with($tableName, $this->databasePrefix)
+            ? substr($tableName, strlen($this->databasePrefix)) : $tableName;
         return str_replace(' ', '', ucwords(str_replace('_', ' ', $name)));
     }
 
@@ -303,7 +301,7 @@ class GeneratorApplicationService
         if (!preg_match('/^[A-Z][A-Za-z0-9]{0,63}$/D', $entity)) throw new \InvalidArgumentException('实体名称格式错误');
     }
 
-    private static function normalizeRelations(
+    private function normalizeRelations(
         int $adminId,
         mixed $relations,
         array $columnNames
@@ -317,11 +315,11 @@ class GeneratorApplicationService
             $targetTableId = (int)($relation['target_table_id'] ?? 0);
             if ($targetTableId <= 0) throw new \InvalidArgumentException('关系目标配置无效');
             $type = self::choice((string) ($relation['type'] ?? ''), ['belongsTo', 'hasOne', 'hasMany']);
-            GeneratorMetadataService::assertIdentifier($name, '关系名称');
+            $this->metadata->assertIdentifier($name, '关系名称');
             $local = (string) ($relation['local_key'] ?? 'id');
             $foreign = (string) ($relation['foreign_key'] ?? 'id');
-            GeneratorMetadataService::assertIdentifier($local, '本地键');
-            GeneratorMetadataService::assertIdentifier($foreign, '外键');
+            $this->metadata->assertIdentifier($local, '本地键');
+            $this->metadata->assertIdentifier($foreign, '外键');
             if (!in_array($local, $columnNames, true)) {
                 throw new \InvalidArgumentException('关系本地字段不存在');
             }

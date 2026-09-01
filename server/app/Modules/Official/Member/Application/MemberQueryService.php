@@ -6,7 +6,6 @@ namespace app\Modules\Official\Member\Application;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceSnapshot;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberQueries;
-use app\Modules\Official\Member\Model\Member;
 use app\common\http\PageResult;
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\Money;
@@ -86,12 +85,7 @@ final class MemberQueryService implements MemberQueries
             'page_size' => $pageSize,
         ])->result($query->order('id', 'desc'));
 
-        return new PageResult(
-            array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items),
-            $pageResult->total,
-            $pageResult->page,
-            $pageResult->pageSize,
-        );
+        return MemberTenantRepository::arrayPage($pageResult);
     }
 
     private function identitySnapshot(
@@ -107,7 +101,7 @@ final class MemberQueryService implements MemberQueries
         return $member->isEmpty() ? null : self::snapshot($member);
     }
 
-    private static function snapshot(Member $member): MemberIdentitySnapshot
+    private static function snapshot(object $member): MemberIdentitySnapshot
     {
         return new MemberIdentitySnapshot(
             (int)$member->id,

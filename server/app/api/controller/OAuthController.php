@@ -22,6 +22,7 @@ class OAuthController extends BaseApiController
         private readonly OAuthCommands $commands,
         private readonly ExecutionContextStore $executionContexts,
         private readonly ModuleExecutionBoundary $modules,
+        private readonly ExternalTenantResolver $externalTenants,
     ) {
         parent::__construct($app, $executionContext);
     }
@@ -41,12 +42,12 @@ class OAuthController extends BaseApiController
         $provider = ExternalTenantResolver::oauthProvider($scene);
             $clientId = trim((string)($params['client_id'] ?? ''));
             $resolution = $clientId === ''
-                ? ExternalTenantResolver::production()->onlyActiveBinding(
+                ? $this->externalTenants->onlyActiveBinding(
                     $provider,
                     'oauth.begin',
                     $this->operationId(),
                 )
-                : ExternalTenantResolver::production()->clientIdentity(
+                : $this->externalTenants->clientIdentity(
                     $provider,
                     $clientId,
                     'oauth.begin',
@@ -88,7 +89,7 @@ class OAuthController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.callback');
-        $resolution = ExternalTenantResolver::production()->oauthState(
+        $resolution = $this->externalTenants->oauthState(
                 ExternalTenantResolver::oauthProvider((string)$params['scene']),
                 (string)$params['state'],
                 $this->operationId(),
@@ -113,7 +114,7 @@ class OAuthController extends BaseApiController
     {
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.mnp');
-        $resolver = ExternalTenantResolver::production();
+        $resolver = $this->externalTenants;
             $clientId = trim((string)($params['client_id'] ?? ''));
             $resolution = $clientId === ''
                 ? $resolver->onlyActiveBinding(
@@ -146,7 +147,7 @@ class OAuthController extends BaseApiController
         $params = $this->request->post();
         $this->validate($params, OAuthValidate::class . '.complete');
         $params['code'] = (string)($params['verification_code'] ?? '');
-        $resolution = ExternalTenantResolver::production()->oauthTicket(
+        $resolution = $this->externalTenants->oauthTicket(
                 (string)$params['ticket'],
                 $this->operationId(),
             );

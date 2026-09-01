@@ -70,7 +70,8 @@ class JobsApplicationService
 
             $pagination = PaginationInput::from($params);
             $pageResult = PaginationInput::from($params)->result(self::buildListQuery($context, $params));
-            $rows = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+            $pageResult = OrgTenantRepository::arrayPage($pageResult);
+            $rows = $pageResult->items;
 
             return new PageResult(
                 self::formatRows($rows),

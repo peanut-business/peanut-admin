@@ -12,6 +12,7 @@ use app\Modules\Official\Notification\Application\VerificationCodeService;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\notice\NoticeSmsSender;
+use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
@@ -168,6 +169,7 @@ SQL);
                 $pdo,
                 lifecycleNotificationService($pdo, $applicationContexts),
                 $applicationContexts,
+                TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
             ),
         )
     );
@@ -254,6 +256,7 @@ SQL);
                     $pdo,
                     lifecycleNotificationService($pdo, $contexts),
                     $contexts,
+                    TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
                 ),
             );
         }

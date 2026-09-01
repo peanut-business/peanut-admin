@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
+use app\common\application\BusinessException;
 use app\platform\context\PlatformOperatorContext;
 use PeanutAdmin\Kernel\Auth\PlatformAuthentication;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -25,7 +26,15 @@ final readonly class PlatformOperatorSessionService
         ?string $userAgent,
         string $requestId
     ): PlatformAuthentication {
-        return $this->authentication->login($email, $password, $ipAddress, $userAgent, $requestId);
+        try {
+            return $this->authentication->login($email, $password, $ipAddress, $userAgent, $requestId);
+        } catch (\PeanutAdmin\Kernel\Auth\AuthException|\DomainException|\InvalidArgumentException) {
+            throw new BusinessException(
+                'PLATFORM_AUTHENTICATION_REJECTED',
+                401,
+                'Email or password is incorrect.',
+            );
+        }
     }
 
     public function refresh(

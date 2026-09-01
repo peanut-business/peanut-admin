@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\api\application;
 
 use app\Modules\Official\Oauth\Application\OfficialAccountReplyApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\wechat\OfficialAccountService;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -26,7 +27,14 @@ class OfficialAccountApplicationService
 
     public function handlePlain(TenantSystemContext $context, string $xml): string
     {
-        $message = OfficialAccountService::parsePlainMessage($xml);
+        try {
+            $message = OfficialAccountService::parsePlainMessage($xml);
+        } catch (\RuntimeException) {
+            throw BusinessException::forbidden(
+                'OFFICIAL_ACCOUNT_MESSAGE_INVALID',
+                'callback rejected',
+            );
+        }
         $reply = $this->replies->resolve($context, $message);
         if ($reply === null || trim((string)($reply['content'] ?? '')) === '') {
             return 'success';

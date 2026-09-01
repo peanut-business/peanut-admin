@@ -67,11 +67,11 @@ final class ApiProblemMapper
                 $exception->httpStatus,
                 $exception->getMessage(),
             ),
-            $exception instanceof OpsConsoleException => new ApiProblem(
+            $exception instanceof OpsConsoleException => (new ApiProblem(
                 $exception->problemCode,
                 $exception->status,
                 'Operations request was rejected.',
-            ),
+            ))->withHeaders(['Cache-Control' => 'no-store']),
             $exception instanceof PluginLifecycleException
                 || $exception instanceof PluginPackageException
                 || $exception instanceof ModuleScaffoldException => new ApiProblem(
@@ -92,7 +92,8 @@ final class ApiProblemMapper
     {
         return match ($errorCode) {
             'MODULE_TENANT_DISABLED',
-            'MODULE_OPERATION_NOT_ALLOWED' => 403,
+            'MODULE_OPERATION_NOT_ALLOWED',
+            'CONTEXT_TENANT_REQUIRED' => 403,
             'MODULE_NOT_INSTALLED',
             'MODULE_INSTALLATION_FAILED',
             'MODULE_REGISTRY_UNAVAILABLE' => 503,

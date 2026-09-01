@@ -16,11 +16,13 @@ class DecorationTabbarApplicationService
     public function __construct(
         private readonly TransactionalExecution $transactions,
         private readonly ArticleQueries $articles,
+        private readonly DecorationReadService $decoration,
+        private readonly DecorationSchemaService $schema,
     ) {}
 
     public function detail(TenantContext $context): array
     {
-        return DecorationReadService::tabbar($context, false);
+        return $this->decoration->tabbar($context, false);
     }
 
     public function save(TenantContext $context, array $style, array $items): bool
@@ -32,8 +34,8 @@ class DecorationTabbarApplicationService
         }
         $this->transactions->run(function () use ($context, $style, $items): void {
                 DecorationTabbarTenantRepository::replace($style, array_map(
-                    static function (array $item) use ($context): array {
-                        return DecorationSchemaService::resourcesForStorage($item, $context);
+                    function (array $item) use ($context): array {
+                        return $this->schema->resourcesForStorage($item, $context);
                     },
                     $items
                 ));

@@ -18,16 +18,6 @@ final class OAuthCommandService implements OAuthCommands
     {
     }
 
-    public function locateState(string $provider, string $stateHash): array
-    {
-        return OAuthCallbackLocator::byState($provider, $stateHash);
-    }
-
-    public function locateTicket(string $ticketHash): array
-    {
-        return OAuthCallbackLocator::byTicket($ticketHash);
-    }
-
     public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array
     {
         return $this->oauth->begin($context, $scene, $returnPath, $redirectUri, $binding, $transport);

@@ -23,6 +23,7 @@ class PayConfigApplicationService
     public function __construct(
         private readonly TransactionManager $transactions,
         private readonly PaymentChannelGrantCommands $channelGrants,
+        private readonly ExternalChannelBindingService $bindings,
     ) {
     }
 
@@ -47,8 +48,8 @@ class PayConfigApplicationService
     public function getConfig(TenantContext $context): array
     {
         $stored = [
-            ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
-            ...ExternalChannelBindingService::config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
+            ...$this->bindings->config($context, ExternalTenantResolver::WECHAT_PAYMENT),
+            ...$this->bindings->config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
         ];
         $result = [];
         foreach (self::FIELDS as $field => $default) {
@@ -70,8 +71,8 @@ class PayConfigApplicationService
     public function setConfig(TenantContext $context, array $params): bool
     {
         $stored = [
-                ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
-                ...ExternalChannelBindingService::config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
+                ...$this->bindings->config($context, ExternalTenantResolver::WECHAT_PAYMENT),
+                ...$this->bindings->config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
             ];
             $data = [];
             foreach (self::FIELDS as $field => $default) {
@@ -89,7 +90,7 @@ class PayConfigApplicationService
             }
         self::assertUsable($data);
         $this->transactions->run(function () use ($context, $data): void {
-                ExternalChannelBindingService::update(
+                $this->bindings->update(
                     $context,
                     ExternalTenantResolver::WECHAT_PAYMENT,
                     $data,
@@ -97,7 +98,7 @@ class PayConfigApplicationService
                         ? (string)$data['wx_pay_appid'] . ':' . (string)$data['wx_pay_mch_id'] : '',
                 );
                 $this->channelGrants->ensureSelfGrant($context, ExternalTenantResolver::WECHAT_PAYMENT);
-                ExternalChannelBindingService::update(
+                $this->bindings->update(
                     $context,
                     ExternalTenantResolver::ALIPAY_PAYMENT,
                     $data,

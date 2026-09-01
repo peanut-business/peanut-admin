@@ -5,7 +5,6 @@ namespace app\Modules\Official\Member\Application;
 
 use app\common\application\BusinessException;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
-use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\support\PositiveIds;
@@ -17,7 +16,7 @@ final class MemberProfileContractService implements MemberProfileCommands
     public function createAdminMember(TenantContext $context, array $profile, array $tagIds): void
     {
         $member = MemberTenantRepository::createMember($context, [
-            'sn' => Member::generateSn($context),
+            'sn' => MemberTenantRepository::nextMemberSn($context),
             'nickname' => (string)$profile['nickname'],
             'avatar' => (string)($profile['avatar'] ?? ''),
             'mobile' => (string)($profile['mobile'] ?? ''),
@@ -121,7 +120,7 @@ final class MemberProfileContractService implements MemberProfileCommands
         }
     }
 
-    private function member(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, int $memberId): Member
+    private function member(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, int $memberId): object
     {
         $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
         if ($member->isEmpty()) {

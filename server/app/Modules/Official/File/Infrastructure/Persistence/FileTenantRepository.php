@@ -6,9 +6,12 @@ namespace app\Modules\Official\File\Infrastructure\Persistence;
 use app\Modules\Official\File\Model\File;
 use app\Modules\Official\File\Model\FileCate;
 use app\common\execution\ExecutionContextAccess;
+use app\common\persistence\ConvertsModelPage;
 
 final class FileTenantRepository
 {
+    use ConvertsModelPage;
+
     public static function files()
     {
         return File::where([]);

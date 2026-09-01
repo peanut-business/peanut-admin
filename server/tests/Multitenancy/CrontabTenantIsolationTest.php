@@ -208,8 +208,21 @@ SQL);
             throw new RuntimeException('fixture retry');
         }
     });
-    $tasks = (new TaskModuleProvider())->jobs($pdo, $signingKey);
-    $scheduler = (new TaskModuleProvider())->scheduler($tasks);
+    $taskProvider = new TaskModuleProvider();
+    $tasks = $taskProvider->jobs(
+        $pdo,
+        $signingKey,
+        app(\app\common\execution\ExecutionContextStore::class),
+        app(\app\common\execution\CurrentExecutionContext::class),
+        app(\app\common\service\org\AdminDirectoryQuery::class),
+        app(\app\common\service\module\ModuleExecutionBoundary::class),
+        app('console'),
+        25,
+    );
+    $scheduler = $taskProvider->scheduler(
+        $tasks,
+        app(\app\Modules\Official\Task\Application\CrontabSchedulerService::class),
+    );
     $scheduler->runDue($windowNow);
 
     $jobs = $pdo->query(<<<'SQL'
@@ -319,7 +332,7 @@ SQL)->fetchAll();
     );
     $schedulerSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/CrontabSchedulerService.php');
     $commandSource = (string)file_get_contents($serverRoot . '/app/command/Crontab.php');
-    $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/PdoTaskJobRuntime.php');
+    $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php');
     expectCrontabTenant(
         !str_contains($schedulerSource, 'Console::call')
             && !str_contains($commandSource, 'Console::call')

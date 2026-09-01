@@ -10,8 +10,6 @@ use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\decoration\DecorationPageApplicationService;
 use app\adminapi\validate\decoration\DecorationPageValidate;
 use app\common\enum\decoration\DecorationEnum;
-use app\common\service\module\ModuleExecutionBoundary;
-use PeanutAdmin\Kernel\Module\ModuleException;
 
 class DecorationPageController extends BaseAdminController
 {
@@ -19,7 +17,6 @@ class DecorationPageController extends BaseAdminController
         App $app,
         CurrentExecutionContext $executionContext,
         private readonly DecorationPageApplicationService $decorationPages,
-        private readonly ModuleExecutionBoundary $modules,
     )
     {
         parent::__construct($app, $executionContext);
@@ -65,11 +62,6 @@ class DecorationPageController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, DecorationPageValidate::class . '.article');
-        try {
-            $this->modules->assertHttp('official.article', 'http.admin');
-        } catch (ModuleException) {
-            return $this->data([]);
-        }
         return $this->data($this->decorationPages->articleOptions(
             $this->tenantAdminContext(),
             (int)($params['limit'] ?? 20)

@@ -3,8 +3,12 @@ declare(strict_types=1);
 
 namespace app\common\service\org;
 
+use app\common\persistence\ConvertsModelPage;
+
 final class OrgTenantRepository
 {
+    use ConvertsModelPage;
+
     public static function query(string $modelClass)
     {
         return $modelClass::where([]);

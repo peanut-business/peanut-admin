@@ -7,7 +7,6 @@ use app\Modules\Official\Notification\Contracts\DeliveryResult;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\Modules\Official\Notification\Model\NoticeLog;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\notice\NoticeSmsSender;
 use app\common\service\notice\NoticeTenantContext;
@@ -91,16 +90,16 @@ class VerificationCodeService
                 $log = NoticeTenantRepository::createLog($this->contexts, $context, [
                     'template_id' => 0,
                     'scene_id' => (int)$scene->id,
-                    'channel' => NoticeLog::CHANNEL_SMS,
+                    'channel' => NoticeTenantRepository::LOG_CHANNEL_SMS,
                     'receiver' => $mobile,
                     'title' => (string)$scene->name,
                     'content' => $content,
-                    'status' => NoticeLog::STATUS_PENDING,
+                    'status' => NoticeTenantRepository::LOG_STATUS_PENDING,
                     'error' => '',
                     'extra' => $this->encodeExtra($templateId, []),
                     'send_time' => $sendTime,
                     'verify_code_hash' => VerificationCodeSecret::hash($code),
-                    'is_verified' => NoticeLog::VERIFIED_NO,
+                    'is_verified' => NoticeTenantRepository::LOG_VERIFIED_NO,
                     'check_count' => 0,
                     'verified_time' => 0,
                     'provider' => $provider,
@@ -111,7 +110,7 @@ class VerificationCodeService
             return new DeliveryResult(false, $result['provider'], $result['error'], $result['result']);
         }
         $log->provider = $result['provider'];
-        $log->status = $result['success'] ? NoticeLog::STATUS_SUCCESS : NoticeLog::STATUS_FAIL;
+        $log->status = $result['success'] ? NoticeTenantRepository::LOG_STATUS_SUCCESS : NoticeTenantRepository::LOG_STATUS_FAIL;
         $log->error = $result['error'];
         $log->extra = $this->encodeExtra($templateId, $result['result']);
         $log->save();
@@ -149,15 +148,15 @@ class VerificationCodeService
         return $this->transactions->run(function () use ($context, $scene, $mobile, $code): VerificationResult {
             $log = NoticeTenantRepository::logs($this->contexts, $context, 'notice.verification.verify')
                 ->where('scene_id', (int) $scene->id)
-                ->where('channel', NoticeLog::CHANNEL_SMS)
+                ->where('channel', NoticeTenantRepository::LOG_CHANNEL_SMS)
                 ->where('receiver', $mobile)
-                ->where('status', NoticeLog::STATUS_SUCCESS)
+                ->where('status', NoticeTenantRepository::LOG_STATUS_SUCCESS)
                 ->order('send_time', 'desc')
                 ->order('id', 'desc')
                 ->lock(true)
                 ->findOrEmpty();
 
-            if ($log->isEmpty() || (int)$log->is_verified === NoticeLog::VERIFIED_YES) {
+            if ($log->isEmpty() || (int)$log->is_verified === NoticeTenantRepository::LOG_VERIFIED_YES) {
                 return new VerificationResult(false, '验证码不存在或已使用');
             }
 
@@ -172,7 +171,7 @@ class VerificationCodeService
                 return new VerificationResult(false, '验证码不正确');
             }
 
-            $log->is_verified = NoticeLog::VERIFIED_YES;
+            $log->is_verified = NoticeTenantRepository::LOG_VERIFIED_YES;
             $log->verified_time = time();
             $log->save();
             return new VerificationResult(true);
@@ -182,10 +181,10 @@ class VerificationCodeService
     private function sentRecently(TenantContext|TenantSystemContext $context, string $mobile): bool
     {
         return NoticeTenantRepository::logs($this->contexts, $context, 'notice.verification.send')
-            ->where('channel', NoticeLog::CHANNEL_SMS)
+            ->where('channel', NoticeTenantRepository::LOG_CHANNEL_SMS)
             ->where('receiver', $mobile)
             ->where('scene_id', '>', 0)
-            ->where('status', NoticeLog::STATUS_SUCCESS)
+            ->where('status', NoticeTenantRepository::LOG_STATUS_SUCCESS)
             ->where('send_time', '>', time() - self::SEND_INTERVAL)
             ->count() > 0;
     }

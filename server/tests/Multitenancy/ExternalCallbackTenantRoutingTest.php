@@ -6,9 +6,9 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 use app\common\service\external\ExternalTenantAudit;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantBindingRepository;
-use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\service\external\ThinkPhpExternalTenantBindingRepository;
 
 function externalExpect(bool $condition, string $message): void
 {
@@ -202,7 +202,7 @@ $officialController = (string)file_get_contents($root . '/app/api/controller/Off
 $oauthController = (string)file_get_contents($root . '/app/api/controller/OAuthController.php');
 $settlement = (string)file_get_contents($root . '/app/api/application/RechargeApplicationService.php');
 $schema = (string)file_get_contents($root . '/database/init.sql');
-$bindingService = (string)file_get_contents($root . '/app/common/service/external/ExternalChannelBindingService.php');
+$bindingRepository = (string)file_get_contents($root . '/app/common/service/external/ThinkPhpExternalTenantBindingRepository.php');
 $bootstrapService = (string)file_get_contents($root . '/app/platform/service/ApplicationTenantBootstrapService.php');
 foreach ([$paymentController, $officialController, $oauthController] as $source) {
     externalExpect(!str_contains($source, "['tenant_id']") && !str_contains($source, "get('tenant_id")
@@ -223,7 +223,7 @@ externalExpect(
 );
 foreach (['Db::transaction(', "->where('tenant_id', \$tenantId)", "->lock(true)",
     "'callback_key' => \$callbackKey", 'bin2hex(random_bytes(32))'] as $marker) {
-    externalExpect(str_contains($bindingService, $marker), 'binding Runtime invariant missing: ' . $marker);
+    externalExpect(str_contains($bindingRepository, $marker), 'binding persistence invariant missing: ' . $marker);
 }
 externalExpect(
     str_contains($bootstrapService, "'callback_key' => bin2hex(random_bytes(32))")
@@ -231,7 +231,7 @@ externalExpect(
     'Tenant bootstrap still derives callback keys from tenant identity'
 );
 
-$keyTransition = new ReflectionMethod(ExternalChannelBindingService::class, 'callbackKeyForUpdate');
+$keyTransition = new ReflectionMethod(ThinkPhpExternalTenantBindingRepository::class, 'callbackKeyForUpdate');
 $keyTransition->setAccessible(true);
 $provider = ExternalTenantResolver::WECHAT_PAYMENT;
 $placeholder = hash('sha256', 'fresh-default:' . $provider);

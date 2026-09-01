@@ -19,6 +19,7 @@ final readonly class PlatformUpgradeExecutionService
     public function __construct(
         private PDO $pdo,
         private string $projectRoot,
+        private ApplicationRuntimeStatusProvider $runtimeStatus,
     ) {
     }
 
@@ -32,7 +33,7 @@ final readonly class PlatformUpgradeExecutionService
             throw OpsConsoleException::denied();
         }
 
-        $readiness = PlatformOpsRuntimeFactory::runtimeStatusProvider($this->pdo)
+        $readiness = $this->runtimeStatus
             ->upgradeReadiness($context);
         $sourceRuntime = is_array($readiness['source']['runtime'] ?? null)
             ? $readiness['source']['runtime']

@@ -189,6 +189,61 @@
       "id": "eager_cli_database_dependency",
       "tpq": "WP1",
       "description": "A generic CLI base forces database construction for commands that do not use persistence"
+    },
+    {
+      "id": "common_module_reverse_dependency",
+      "tpq": "WP1",
+      "description": "Common code imports or constructs a concrete application Module"
+    },
+    {
+      "id": "application_framework_model",
+      "tpq": "WP1",
+      "description": "Application orchestration imports or branches on a ThinkORM Model"
+    },
+    {
+      "id": "framework_upload_contract",
+      "tpq": "WP1",
+      "description": "Application or Module Contracts expose ThinkPHP UploadedFile"
+    },
+    {
+      "id": "application_composition_root",
+      "tpq": "WP1",
+      "description": "Application orchestration constructs a Provider, Service or Repository factory instead of receiving it"
+    },
+    {
+      "id": "controller_catch_all",
+      "tpq": "TPQ41/TPQ46",
+      "description": "Controller catches Throwable or base Exception instead of using the host problem renderer"
+    },
+    {
+      "id": "model_service_locator",
+      "tpq": "WP1",
+      "description": "Model resolves a dependency through the global application container"
+    },
+    {
+      "id": "common_facade_persistence",
+      "tpq": "WP1",
+      "description": "A Common business service uses the ThinkPHP database Facade outside an explicit adapter"
+    },
+    {
+      "id": "mutable_error_state",
+      "tpq": "TPQ41/TPQ46",
+      "description": "Service or driver propagates a business failure through mutable getError/setError state"
+    },
+    {
+      "id": "global_configuration_locator",
+      "tpq": "WP1",
+      "description": "Application or service code locates runtime configuration outside an explicit composition root"
+    },
+    {
+      "id": "static_runtime_assembly",
+      "tpq": "WP1",
+      "description": "Application or service code assembles a stateful runtime through a zero-argument static factory"
+    },
+    {
+      "id": "classified_false_error",
+      "tpq": "TPQ41/TPQ46",
+      "description": "A classified authentication, scheduler, payment or persistence error is collapsed to false"
     }
   ],
   "known_tenant_models": [

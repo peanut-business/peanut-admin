@@ -14,6 +14,8 @@ use app\Modules\Official\Article\Contracts\ArticleModuleAccess;
 use app\Modules\Official\Article\Contracts\ArticleQueries;
 use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess;
 use app\common\execution\CurrentExecutionContext;
+use app\common\service\ProductAssetReferenceService;
+use app\common\service\RichTextResourceService;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
@@ -43,6 +45,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             ArticleAdministration::class => fn(App $app): ArticleAdministration => new ArticleAdministrationService(
                 $app->make(CurrentExecutionContext::class),
                 $app->make(\PeanutAdmin\Kernel\Persistence\TransactionManager::class),
+                $app->make(ProductAssetReferenceService::class),
+                $app->make(RichTextResourceService::class),
             ),
         ];
     }

@@ -6,14 +6,18 @@ namespace app\api\application;
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
 use app\common\service\ProductAssetReferenceService;
-use app\Modules\Official\Article\Model\Article;
-use app\Modules\Official\Article\Model\ArticleCollect;
+use app\common\service\RichTextResourceService;
 use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use app\common\execution\CurrentExecutionContext;
 use app\common\support\PaginationInput;
 
 class ArticleApplicationService
 {
+    public function __construct(
+        private readonly ProductAssetReferenceService $assets,
+        private readonly RichTextResourceService $richText,
+    ) {}
+
     /** 公开文章列表。 */
     public function lists(array $params, int $memberId = 0): PageResult
     {
@@ -40,7 +44,8 @@ class ArticleApplicationService
         }
 
         $pageResult = PaginationInput::from($params)->result($query);
-        $lists = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+        $pageResult = ArticleTenantRepository::arrayPage($pageResult);
+        $lists = $pageResult->items;
         $articleIds = array_map('intval', array_column($lists, 'id'));
         $collectIds = $memberId > 0 && $articleIds !== []
             ? ArticleTenantRepository::collections()->where('member_id', $memberId)
@@ -50,7 +55,7 @@ class ArticleApplicationService
             : [];
         foreach ($lists as &$row) {
             $row['click'] = (int) $row['click_actual'] + (int) $row['click_virtual'];
-            $row['image'] = ProductAssetReferenceService::forRead((string)($row['image'] ?? ''));
+            $row['image'] = $this->assets->forRead((string)($row['image'] ?? ''));
             $row['collect'] = in_array((int) $row['id'], array_map('intval', $collectIds), true);
             unset($row['click_actual'], $row['click_virtual'], $row['sort']);
         }
@@ -72,12 +77,14 @@ class ArticleApplicationService
     /** 文章详情。 */
     public function detail(int $id, int $memberId = 0): array
     {
-        $article = Article::getArticleDetailArr($id);
+        $article = ArticleTenantRepository::publishedDetail($id);
         if ($article === []) {
             return [];
         }
+        $article['image'] = $this->assets->forRead((string)($article['image'] ?? ''));
+        $article['content'] = $this->richText->forRead((string)($article['content'] ?? ''));
         $article['collect'] = $memberId > 0
-            ? ArticleCollect::isCollected($memberId, $id)
+            ? ArticleTenantRepository::isCollected($memberId, $id)
             : false;
         return $article;
     }
@@ -127,7 +134,8 @@ class ArticleApplicationService
             ->field('c.id,c.article_id,a.title,a.image,a.desc,a.is_show,a.click_virtual,a.click_actual,a.create_time,c.create_time as collect_time,a.sort');
 
         $pageResult = PaginationInput::from($params)->result($query->order(['a.sort' => 'desc', 'c.id' => 'desc']));
-        $lists = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+        $pageResult = ArticleTenantRepository::arrayPage($pageResult);
+        $lists = $pageResult->items;
         foreach ($lists as &$row) {
             $row['click'] = (int) $row['click_actual'] + (int) $row['click_virtual'];
             $row['collect_time'] = empty($row['collect_time']) ? '' : date('Y-m-d H:i', (int) $row['collect_time']);
@@ -146,7 +154,7 @@ class ArticleApplicationService
         $byCategory = [];
         foreach (ArticleTenantRepository::topPublishedByCategories(array_column($categories, 'id'), 10) as $article) {
             $article['click'] = (int) $article['click_actual'] + (int) $article['click_virtual'];
-            $article['image'] = ProductAssetReferenceService::forRead((string)($article['image'] ?? ''));
+            $article['image'] = $this->assets->forRead((string)($article['image'] ?? ''));
             unset($article['click_actual'], $article['click_virtual'], $article['category_rank']);
             $byCategory[(int)$article['cid']][] = $article;
         }
@@ -160,12 +168,12 @@ class ArticleApplicationService
     /** PC 文章详情，含前后篇与同分类最新资讯。 */
     public function pcDetail(int $memberId, int $articleId, string $source = 'default'): array
     {
-        $detail = self::detail($articleId, $memberId);
+        $detail = $this->detail($articleId, $memberId);
         if ($detail === []) {
             return [];
         }
 
-        $lists = self::limitArticles($source, 0, (int) $detail['cid']);
+        $lists = $this->limitArticles($source, 0, (int) $detail['cid']);
         $nowIndex = 0;
         foreach ($lists as $key => $item) {
             if ((int) $item['id'] === $articleId) {
@@ -175,7 +183,7 @@ class ArticleApplicationService
         }
         $detail['last'] = $lists[$nowIndex - 1] ?? [];
         $detail['next'] = $lists[$nowIndex + 1] ?? [];
-        $detail['new'] = self::limitArticles('new', 8, (int) $detail['cid'], $articleId);
+        $detail['new'] = $this->limitArticles('new', 8, (int) $detail['cid'], $articleId);
         $detail['cate_name'] = (string) ArticleTenantRepository::categories()->where('id', (int) $detail['cid'])->value('name');
         return $detail;
     }
@@ -206,7 +214,7 @@ class ArticleApplicationService
         $rows = $query->select()->toArray();
         foreach ($rows as &$row) {
             $row['click'] = (int) $row['click_actual'] + (int) $row['click_virtual'];
-            $row['image'] = ProductAssetReferenceService::forRead((string)($row['image'] ?? ''));
+            $row['image'] = $this->assets->forRead((string)($row['image'] ?? ''));
             unset($row['click_actual'], $row['click_virtual'], $row['sort']);
         }
         unset($row);

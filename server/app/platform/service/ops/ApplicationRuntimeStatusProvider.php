@@ -17,14 +17,15 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
     public function __construct(
         private PDO $pdo,
         private string $projectRoot,
+        private PlatformUpgradeReadinessService $readiness,
+        private PdoModuleGovernanceProvider $moduleGovernance,
     ) {
     }
 
     public function snapshot(PlatformContext $context): OpsStatusSnapshot
     {
         $runtime = $this->runtimeEvidence();
-        $readiness = (new PlatformUpgradeReadinessService($this->pdo, $this->projectRoot))
-            ->snapshot($context, $runtime);
+        $readiness = $this->readiness->snapshot($context, $runtime);
         $backup = is_array($readiness['backup']['latest_verified'] ?? null)
             ? $readiness['backup']['latest_verified']
             : null;
@@ -54,8 +55,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
     /** @return array<string,mixed> */
     public function upgradeReadiness(PlatformContext $context): array
     {
-        return (new PlatformUpgradeReadinessService($this->pdo, $this->projectRoot))
-            ->snapshot($context, $this->runtimeEvidence());
+        return $this->readiness->snapshot($context, $this->runtimeEvidence());
     }
 
     public function runtimeCommit(): string
@@ -100,7 +100,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         );
 
         [$moduleStatus, $moduleLatency] = $this->probe(function (): void {
-            PdoModuleGovernanceProvider::forApplication($this->pdo)
+            $this->moduleGovernance
                 ->qualification()
                 ->installedModules();
         });

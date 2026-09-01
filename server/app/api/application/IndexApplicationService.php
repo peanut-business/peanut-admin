@@ -11,7 +11,6 @@ use app\common\service\FileService;
 use app\common\service\ProductAssetReferenceService;
 use app\common\service\RichTextResourceService;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
@@ -24,6 +23,12 @@ class IndexApplicationService
         private readonly TenantIdentityQuery $tenantIdentities,
         private readonly TenantApplicationSettingService $applicationSettings,
         private readonly TenantEntryBindingResolver $entryBindings,
+        private readonly FileService $files,
+        private readonly ProductAssetReferenceService $assets,
+        private readonly RichTextResourceService $richText,
+        private readonly DecorationReadService $decoration,
+        private readonly WebsiteConfigService $website,
+        private readonly string $projectVersion,
     ) {
     }
 
@@ -31,7 +36,7 @@ class IndexApplicationService
     public function getConfigData(TenantContext|TenantSystemContext $context): array
     {
         $domain    = request()->domain();
-        $website = self::websiteService($context)->get();
+        $website = $this->website->get($context);
         $login = $this->applicationSettings->login($context);
         $statistics = $this->applicationSettings->statistics($context);
         $webPageSetting = $this->applicationSettings->webPage($context);
@@ -59,17 +64,17 @@ class IndexApplicationService
                 'clarity_code' => (string)$statistics['clarity_code'],
             ],
             'web_page' => $webPage,
-            'tabbar'   => DecorationReadService::tabbar(
+            'tabbar'   => $this->decoration->tabbar(
                 $context,
                 true,
                 'decoration.config'
             ),
-            'theme'    => DecorationReadService::pageByType(
+            'theme'    => $this->decoration->pageByType(
                 $context,
                 DecorationEnum::SYSTEM_THEME,
                 'decoration.config'
             ),
-            'version'  => (string) config('project.version'),
+            'version'  => $this->projectVersion,
         ];
     }
 
@@ -124,15 +129,6 @@ class IndexApplicationService
         }
     }
 
-    private static function websiteService(TenantContext|TenantSystemContext $context): WebsiteConfigService
-    {
-        return new WebsiteConfigService(
-            new TenantSettingWebsiteStore($context),
-            static fn(string $value): string => FileService::getFileUrl($value),
-            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
-        );
-    }
-
     private function copyright(TenantContext|TenantSystemContext $context): array
     {
         $document = $this->applicationSettings->copyright($context);
@@ -149,7 +145,7 @@ class IndexApplicationService
         $prefix = $type === 'privacy' ? 'privacy' : 'service';
         return [
             'title'   => (string)$setting[$prefix . '_title'],
-            'content' => RichTextResourceService::forRead(
+            'content' => $this->richText->forRead(
                 (string)$setting[$prefix . '_content']
             ),
         ];
@@ -171,14 +167,14 @@ class IndexApplicationService
 
         foreach ($articles as &$row) {
             $row['click'] = (int) $row['click_actual'] + (int) $row['click_virtual'];
-            $row['image'] = ProductAssetReferenceService::forRead((string)($row['image'] ?? ''));
+            $row['image'] = $this->assets->forRead((string)($row['image'] ?? ''));
             unset($row['click_actual'], $row['click_virtual']);
         }
         unset($row);
 
         return [
             'article' => $articles,
-            'decorate' => DecorationReadService::pageByType(
+            'decorate' => $this->decoration->pageByType(
                 $context,
                 DecorationEnum::MOBILE_HOME,
                 'article.index'

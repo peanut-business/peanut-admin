@@ -101,6 +101,15 @@ class GeneratorArchiveService
         self::removeRunDirectory($runDirectory);
     }
 
+    public static function cleanupAfterResponse(string $storedRelativePath, int $adminId): void
+    {
+        try {
+            self::cleanup($storedRelativePath, $adminId);
+        } catch (Throwable) {
+            // The response has already been sent; the scheduled cleanup command owns retries.
+        }
+    }
+
     private static function ownedArchivePath(string $storedRelativePath, int $adminId): string
     {
         if ($adminId <= 0) {

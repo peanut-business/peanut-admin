@@ -5,7 +5,7 @@ namespace app\Modules\Official\Payment\Application;
 
 use app\common\enum\UserTerminalEnum;
 use app\common\application\BusinessException;
-use app\Modules\Official\Payment\Model\PaymentScene;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class RechargeSettingApplicationService
@@ -49,7 +49,7 @@ class RechargeSettingApplicationService
         foreach ($params['scenes'] as $scene) {
                 if ((int)$scene['status'] === 1
                     && !$this->settings->channelConfigured($context, (int)$scene['pay_way'])) {
-                    throw BusinessException::conflict('RECHARGE_CHANNEL_DISABLED', PaymentScene::getPayWayDesc((int)$scene['pay_way']) . '未启用，不能用于充值场景');
+                    throw BusinessException::conflict('RECHARGE_CHANNEL_DISABLED', FinanceTenantRepository::payWayDescription((int)$scene['pay_way']) . '未启用，不能用于充值场景');
                 }
             }
         $this->settings->replace($context, [

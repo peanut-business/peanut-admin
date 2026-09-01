@@ -6,10 +6,13 @@ namespace app\adminapi\service\generator;
 use app\common\model\generator\GeneratorColumn;
 use app\common\model\generator\GeneratorTable;
 use app\common\persistence\TransactionalExecution;
+use app\common\persistence\ConvertsModelPage;
 
 /** Instance-owned batch persistence for imported generator metadata. */
 final readonly class GeneratorImportPersistence
 {
+    use ConvertsModelPage;
+
     public function __construct(private TransactionalExecution $transactions)
     {
     }

@@ -5,7 +5,6 @@ namespace app\Modules\Official\Member\Application;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
-use app\Modules\Official\Member\Model\Member;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -18,7 +17,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         if (MemberTenantRepository::members($context)->where('account', $account)->count() > 0) {
             throw new \RuntimeException('账号已被注册');
         }
-        $sn = Member::generateSn($context);
+        $sn = MemberTenantRepository::nextMemberSn($context);
         MemberTenantRepository::createMember($context, [
             'sn' => $sn,
             'account' => $account,
@@ -57,7 +56,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
     ): MemberIdentitySnapshot {
         $member = MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty();
         if ($member->isEmpty()) {
-            $sn = Member::generateSn($context);
+            $sn = MemberTenantRepository::nextMemberSn($context);
             $member = MemberTenantRepository::createMember($context, [
                 'sn' => $sn,
                 'account' => $mobile,
@@ -131,7 +130,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
 
     public function createOAuthMember(TenantContext|TenantSystemContext $context, array $profile): MemberIdentitySnapshot
     {
-        $sn = Member::generateSn($context);
+        $sn = MemberTenantRepository::nextMemberSn($context);
         do {
             $account = 'wx_' . strtolower(bin2hex(random_bytes(6)));
         } while (MemberTenantRepository::members($context)->withTrashed()->where('account', $account)->count() > 0);
@@ -181,7 +180,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         return md5(md5($password) . $salt) . ':' . $salt;
     }
 
-    private static function snapshot(Member $member): MemberIdentitySnapshot
+    private static function snapshot(object $member): MemberIdentitySnapshot
     {
         return new MemberIdentitySnapshot(
             (int)$member->id,

@@ -21,6 +21,7 @@ class OperationLogApplicationService
     public function __construct(
         private readonly XlsxExportService $xlsxExport,
         private readonly TransactionalExecution $transactions,
+        private readonly OperationLogService $operationLogs,
     ) {}
 
     /** 分页列表，支持按 用户名/URI/方法 过滤 */
@@ -124,7 +125,7 @@ class OperationLogApplicationService
         return $this->transactions->run(function () use ($context, $adminId, $username, $ip): int {
             $count = (int)OperationLogTenantRepository::query()->count();
             OperationLogTenantRepository::query()->delete();
-            OperationLogService::record(
+            $this->operationLogs->record(
                 $context,
                 $adminId,
                 $username,

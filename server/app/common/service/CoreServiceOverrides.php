@@ -16,6 +16,13 @@ final class CoreServiceOverrides
     public const CONTRACT_VERSION = '2.0.0';
 
     private static ?ServiceOverrideRegistry $registry = null;
+    private static array $configuredOverrides = [];
+
+    public static function configure(array $overrides): void
+    {
+        self::$configuredOverrides = $overrides;
+        self::$registry = null;
+    }
 
     public static function adminPermissionPolicy(): AdminPermissionPolicy
     {
@@ -29,9 +36,8 @@ final class CoreServiceOverrides
             return self::$registry;
         }
 
-        $configured = config('peanut.overrides', []);
         $overrides = [];
-        foreach (is_array($configured) ? $configured : [] as $key => $implementation) {
+        foreach (self::$configuredOverrides as $key => $implementation) {
             if (!is_string($key) || !is_string($implementation)) {
                 throw new \RuntimeException('Peanut 核心服务覆盖配置无效');
             }

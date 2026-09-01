@@ -21,8 +21,10 @@ use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 /** Tenant Admin identity, RBAC and access projection service. */
 final class AdminAuthorizationService implements AdminAuthorizationQuery, AuthorizedOperationFactory
 {
-    public function __construct(private readonly PDO $pdo)
-    {
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly CoreTenantModuleAdminBridge $moduleAdmin,
+    ) {
     }
 
     public function principal(TenantContext $tenantContext): AdminPrincipal
@@ -36,7 +38,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
         if (!$admin instanceof AdminPrincipal) {
             return new AdminAccessData([], []);
         }
-        $bridge = new CoreTenantModuleAdminBridge($this->pdo);
+        $bridge = $this->moduleAdmin;
         $native = $bridge->accessData($tenantContext);
         $permissions = $native['permissions'];
 
@@ -90,7 +92,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             return PermissionDecision::deny($accessUri, 'PLATFORM_ROUTE_FORBIDDEN');
         }
 
-        $bridge = new CoreTenantModuleAdminBridge($this->pdo);
+        $bridge = $this->moduleAdmin;
         $registered = [
             ...$bridge->registeredSystemMenuPermissions($tenantContext->tenantId),
         ];
@@ -169,13 +171,13 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
     /** @return list<array<string,mixed>> */
     public function assignableMenuRecordsForTenant(int $tenantId): array
     {
-        return (new CoreTenantModuleAdminBridge($this->pdo))->assignableMenuRecords($tenantId);
+        return $this->moduleAdmin->assignableMenuRecords($tenantId);
     }
 
     /** @return list<array<string,mixed>> */
     public function moduleMenuRecords(TenantContext $tenantContext): array
     {
-        return (new CoreTenantModuleAdminBridge($this->pdo))->accessData($tenantContext)['menu'];
+        return $this->moduleAdmin->accessData($tenantContext)['menu'];
     }
 
     /** @param list<string> $permissions */
@@ -198,8 +200,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             '/article/list',
             ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
         ]);
-        $registered = (new CoreTenantModuleAdminBridge($this->pdo))
-            ->registeredSystemMenuPermissions($tenantContext->tenantId);
+        $registered = $this->moduleAdmin->registeredSystemMenuPermissions($tenantContext->tenantId);
         $visiblePermissions = $admin->root
             ? $registered
             : array_values(array_intersect($permissions, $registered));

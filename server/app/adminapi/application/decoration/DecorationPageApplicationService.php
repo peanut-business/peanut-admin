@@ -10,13 +10,19 @@ use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
 use app\common\service\decoration\DecorationTenantRepository;
 use app\common\persistence\TransactionalExecution;
+use app\common\service\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Module\ModuleException;
 
 class DecorationPageApplicationService
 {
     public function __construct(
         private readonly TransactionalExecution $transactions,
         private readonly ArticleQueries $articles,
+        private readonly DecorationReadService $decoration,
+        private readonly DecorationSchemaService $schema,
+        private readonly ProductAssetReferenceService $assets,
+        private readonly ModuleExecutionBoundary $modules,
     ) {}
 
     public function lists(TenantContext $context, array $allowedTypes): array
@@ -32,12 +38,12 @@ class DecorationPageApplicationService
         if ($page->isEmpty() || !in_array((int)$page->type, $allowedTypes, true)) {
             throw BusinessException::notFound('DECORATION_PAGE_NOT_FOUND', '装修页面不存在或无权访问');
         }
-        return DecorationReadService::formatPage($page->toArray());
+        return $this->decoration->formatPage($page->toArray());
     }
 
     public function detailByType(TenantContext $context, int $type): array
     {
-        return DecorationReadService::pageByType($context, $type);
+        return $this->decoration->pageByType($context, $type);
     }
 
     public function save(TenantContext $context, array $params, array $allowedTypes): bool
@@ -63,11 +69,11 @@ class DecorationPageApplicationService
                     throw BusinessException::conflict('DECORATION_PAGE_TYPE_IMMUTABLE', '装修页面类型不可修改');
                 }
                 $page->data = json_encode(
-                    DecorationSchemaService::resourcesForStorage($data, $context),
+                    $this->schema->resourcesForStorage($data, $context),
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 );
                 $page->meta = json_encode(
-                    DecorationSchemaService::resourcesForStorage($meta, $context),
+                    $this->schema->resourcesForStorage($meta, $context),
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 );
                 $page->save();
@@ -77,9 +83,14 @@ class DecorationPageApplicationService
 
     public function articleOptions(TenantContext $context, int $limit): array
     {
+        try {
+            $this->modules->assertHttp('official.article', 'http.admin');
+        } catch (ModuleException) {
+            return [];
+        }
         $rows = $this->articles->options($context, $limit);
         foreach ($rows as &$row) {
-            $row['image'] = ProductAssetReferenceService::forRead((string)($row['image'] ?? ''));
+            $row['image'] = $this->assets->forRead((string)($row['image'] ?? ''));
         }
         unset($row);
         return $rows;

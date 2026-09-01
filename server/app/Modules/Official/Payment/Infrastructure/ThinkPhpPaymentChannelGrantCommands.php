@@ -32,6 +32,13 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
     /** @return array<string,mixed> */
     public function activeGrantForTenant(object $context, string $provider, bool $lock = false): array
     {
+        return $this->findActiveGrant($context, $provider, $lock)
+            ?? throw new \RuntimeException('支付渠道未授权或已撤销');
+    }
+
+    /** @return array<string,mixed>|null */
+    private function findActiveGrant(object $context, string $provider, bool $lock = false): ?array
+    {
         $tenantId = ExternalTenantContext::tenantId($context);
         $query = Db::name('payment_tenant_channel_grant')->alias('g')
             ->field('g.id,g.tenant_id,g.provider,g.external_binding_id,g.merchant_account_ref,'
@@ -50,8 +57,11 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
             $query->lock(true);
         }
         $rows = $query->select()->toArray();
+        if ($rows === []) {
+            return null;
+        }
         if (count($rows) !== 1) {
-            throw new \RuntimeException('支付渠道未授权或已撤销');
+            throw new \RuntimeException('支付渠道授权状态冲突');
         }
         $row = $rows[0];
         $config = json_decode((string)($row['config_json'] ?? ''), true);
@@ -65,9 +75,8 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
 
     public function channelConfigured(object $context, int $payWay): bool
     {
-        try {
-            $grant = $this->activeGrantForTenant($context, $this->providerForPayWay($payWay));
-        } catch (\Throwable) {
+        $grant = $this->findActiveGrant($context, $this->providerForPayWay($payWay));
+        if ($grant === null) {
             return false;
         }
         return $payWay === PaymentScene::PAY_WAY_WECHAT

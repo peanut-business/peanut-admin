@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use app\common\application\BusinessException;
 use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblemMapper;
 use app\common\http\PageResult;
@@ -18,6 +19,7 @@ use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use think\Container;
 use think\DbManager;
+use think\Model;
 use think\db\BaseQuery;
 use think\db\connector\Mysql;
 use think\paginator\driver\Bootstrap;
@@ -174,6 +176,15 @@ function tpq51SqlCount(string $sql, string $needle): int
     return substr_count(strtolower($sql), strtolower($needle));
 }
 
+function tpq51InstallDataScopePolicy(DataScopePolicy $policy): void
+{
+    Model::maker(static function (Model $model) use ($policy): void {
+        if ($model instanceof TenantOwnedModel) {
+            $model->setDataScopePolicy($policy);
+        }
+    });
+}
+
 $container = new Container();
 Container::setInstance($container);
 
@@ -198,9 +209,17 @@ $database->setConfig([
 $connection = $database->connect();
 expectTpq51($connection instanceof Tpq51RecordingMysql, 'TPQ51 recording connector was not selected');
 
+$missingPolicyRejected = false;
+try {
+    Tpq51Child::where('id', '>', 0)->select();
+} catch (LogicException $exception) {
+    $missingPolicyRejected = $exception->getMessage() === 'DATA_SCOPE_POLICY_UNAVAILABLE';
+}
+expectTpq51($missingPolicyRejected, 'Tenant Model did not fail closed without an injected data-scope policy');
+
 $tenantContext = tpq51TenantContext(101);
 $execution = new \app\common\execution\AdminExecutionContext($tenantContext, 'tpq51.behavior');
-$container->instance(DataScopePolicy::class, new MultiTenantDataScopePolicy($current));
+tpq51InstallDataScopePolicy(new MultiTenantDataScopePolicy($current));
 
 $connection->resetStatements();
 $children = $store->run(
@@ -290,7 +309,7 @@ expectTpq51($differentTenantRejected, 'nested execution context changed the auth
 expectTpq51($store->isEmpty(), 'rejected Tenant context leaked onto the execution stack');
 
 $connection->resetStatements();
-(new PlatformTenantDataGateway())
+(new PlatformTenantDataGateway(new ExecutionContextAccess($current)))
     ->query(Tpq51Child::class, 'platform-test', 'tpq51.cross-tenant-read')
     ->select();
 expectTpq51(
@@ -298,7 +317,7 @@ expectTpq51(
     'explicit Platform Tenant gateway did not preserve its audited scope bypass',
 );
 
-$container->instance(DataScopePolicy::class, new StandaloneDataScopePolicy());
+tpq51InstallDataScopePolicy(new StandaloneDataScopePolicy());
 $connection->resetStatements();
 $standalone = new Tpq51Child([
     'id' => 5,

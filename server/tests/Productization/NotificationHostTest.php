@@ -26,7 +26,7 @@ $channelService = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/NoticeChannelService.php'
 );
 foreach ([
-    'new AliyunSms', 'new TencentSms', 'ExternalChannelBindingService::mutate', 'safeReceipt', 'sanitizeError',
+    'new AliyunSms', 'new TencentSms', '$this->bindings->mutate(', 'safeReceipt', 'sanitizeError',
     "private const BINDING_PROVIDER = 'notice.sms'",
 ] as $marker) {
     expectNotificationHost(str_contains($channelService, $marker), 'SMS Host invariant missing: ' . $marker);
@@ -79,7 +79,7 @@ foreach (['Login', 'OAuth', 'Sms', 'User'] as $application) {
     );
 }
 expectNotificationHost(
-    str_contains($applicationService, "NoticeLog::alias('l')")
+    str_contains($applicationService, "NoticeTenantRepository::logQuery('l')")
         && !str_contains($applicationService, "where('l.tenant_id'"),
     'notification log reads do not rely on the global Tenant model scope'
 );
@@ -94,7 +94,7 @@ $applicationSender = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/ApplicationNoticeSmsSender.php'
 );
 expectNotificationHost(
-    str_contains($applicationSender, 'NoticeChannelService::sendSms'),
+    str_contains($applicationSender, '$this->channels->sendSms('),
     'tenant-owned notification flow does not delegate to the application credential Host'
 );
 expectNotificationHost(
@@ -116,11 +116,11 @@ expectNotificationHost(
     'verification flow does not pass its trusted Tenant context to the SMS Host'
 );
 expectNotificationHost(
-    !str_contains($verificationService, "->where('is_verified', NoticeLog::VERIFIED_NO)"),
+    !str_contains($verificationService, "->where('is_verified', NoticeTenantRepository::LOG_VERIFIED_NO)"),
     'verification can fall back to an older code after the latest code is consumed'
 );
 expectNotificationHost(
-    str_contains($verificationService, '(int)$log->is_verified === NoticeLog::VERIFIED_YES'),
+    str_contains($verificationService, '(int)$log->is_verified === NoticeTenantRepository::LOG_VERIFIED_YES'),
     'latest successful verification record is not checked for prior consumption'
 );
 foreach (['ConfigService::get', 'new AliyunSms', 'new TencentSms', "'verify_code' => \$code"] as $forbidden) {

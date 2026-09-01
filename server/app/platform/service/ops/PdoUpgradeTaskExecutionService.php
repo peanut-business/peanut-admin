@@ -15,6 +15,7 @@ use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Task\OpsAuditEvent;
 use PeanutAdmin\OpsConsole\Task\OpsTaskSubmission;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use Throwable;
 
 /** Trusted state machine behind the fixed deployment-control worker. */
@@ -44,6 +45,8 @@ final readonly class PdoUpgradeTaskExecutionService
     public function __construct(
         private PDO $pdo,
         private string $projectRoot,
+        private BackupRestoreProviderRegistry $backupProviders,
+        private ApplicationRuntimeStatusProvider $runtimeStatus,
     ) {
     }
 
@@ -152,8 +155,7 @@ SQL);
             }
         });
         $context = $this->context($task);
-        $snapshot = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))
-            ->snapshot($context);
+        $snapshot = $this->runtimeStatus->snapshot($context);
         if (!hash_equals((string)$execution['target_commit'], $snapshot->commit)
             || !hash_equals((string)$execution['target_tree'], $snapshot->tree)
             || $snapshot->releaseKey !== (string)$execution['target_release_key']
@@ -341,8 +343,7 @@ SQL);
         $payload = $this->payload($task);
         $target = PlatformUpgradeTarget::load($this->projectRoot);
         $context = $this->context($task);
-        $readiness = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))
-            ->upgradeReadiness($context);
+        $readiness = $this->runtimeStatus->upgradeReadiness($context);
         if (($readiness['preflight']['state'] ?? null) !== 'ready'
             || !hash_equals($payload['source_commit'], (string)($readiness['source']['runtime']['commit'] ?? ''))
             || !hash_equals($payload['source_tree'], (string)($readiness['source']['runtime']['tree'] ?? ''))
@@ -360,7 +361,7 @@ SQL);
             if ((string)$execution['current_step'] !== 'preflight') {
                 throw new \RuntimeException('OPS_UPGRADE_STEP_INVALID');
             }
-            $provider = PlatformOpsRuntimeFactory::backupProviders()
+            $provider = $this->backupProviders
                 ->require(PairedBackupProvider::PROVIDER_KEY);
             $submission = $this->childSubmission(
                 Package::BACKUP_TASK_TYPE,
@@ -423,7 +424,7 @@ SQL);
                 throw new \RuntimeException('OPS_UPGRADE_BACKUP_FAILED');
             }
             $context = $this->context($task);
-            $provider = PlatformOpsRuntimeFactory::backupProviders()
+            $provider = $this->backupProviders
                 ->require(PairedBackupProvider::PROVIDER_KEY);
             $payload = [
                 'provider_key' => $provider->key,
@@ -565,8 +566,7 @@ SQL);
                 throw new \RuntimeException('OPS_UPGRADE_STEP_CONFLICT');
             }
 
-            $readiness = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))
-                ->upgradeReadiness($context);
+            $readiness = $this->runtimeStatus->upgradeReadiness($context);
             if (($readiness['state'] ?? null) !== 'ready'
                 || !hash_equals((string)$execution['target_descriptor_sha256'], (string)($readiness['target']['descriptor_sha256'] ?? ''))
                 || !hash_equals((string)$execution['backup_reference_key'], (string)($readiness['recovery_pointer']['backup_reference_key'] ?? ''))

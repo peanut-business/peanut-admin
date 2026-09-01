@@ -31,6 +31,8 @@ class DecorationSchemaService
         6 => ['#FD498F', '#FA444D', 'white'],
     ];
 
+    public function __construct(private readonly ProductAssetReferenceService $assets) {}
+
     public static function validatePage(
         object $context,
         int $type,
@@ -100,17 +102,17 @@ class DecorationSchemaService
         }
     }
 
-    public static function resourcesForStorage(
+    public function resourcesForStorage(
         mixed $value,
         ?object $context = null
     ): mixed
     {
-        return self::transformResources($value, false, null, $context);
+        return $this->transformResources($value, false, null, $context);
     }
 
-    public static function resourcesForRead(mixed $value): mixed
+    public function resourcesForRead(mixed $value): mixed
     {
-        return self::transformResources($value, true);
+        return $this->transformResources($value, true);
     }
 
     public static function validateLink(
@@ -361,7 +363,7 @@ class DecorationSchemaService
         }
     }
 
-    private static function transformResources(
+    private function transformResources(
         mixed $value,
         bool $absolute,
         ?string $key = null,
@@ -370,7 +372,7 @@ class DecorationSchemaService
     {
         if (is_array($value)) {
             foreach ($value as $childKey => $child) {
-                $value[$childKey] = self::transformResources(
+                $value[$childKey] = $this->transformResources(
                     $child,
                     $absolute,
                     (string)$childKey,
@@ -383,9 +385,9 @@ class DecorationSchemaService
             return $value;
         }
         if ($absolute) {
-            return ProductAssetReferenceService::forRead($value);
+            return $this->assets->forRead($value);
         }
-        return ProductAssetReferenceService::forStorage($value, null, $context);
+        return $this->assets->forStorage($value, null, $context);
     }
 
     private static function binary(mixed $value, string $label): void

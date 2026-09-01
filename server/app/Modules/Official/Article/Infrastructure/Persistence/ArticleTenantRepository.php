@@ -7,9 +7,12 @@ use app\Modules\Official\Article\Model\Article;
 use app\Modules\Official\Article\Model\ArticleCate;
 use app\Modules\Official\Article\Model\ArticleCollect;
 use think\facade\Db;
+use app\common\persistence\ConvertsModelPage;
 
 final class ArticleTenantRepository
 {
+    use ConvertsModelPage;
+
     public static function articles()
     {
         return Article::where([]);
@@ -41,6 +44,17 @@ final class ArticleTenantRepository
     {
         unset($data['tenant_id']);
         return ArticleCollect::create($data);
+    }
+
+    /** @return array<string,mixed> */
+    public static function publishedDetail(int $id): array
+    {
+        return Article::getArticleDetailArr($id);
+    }
+
+    public static function isCollected(int $memberId, int $articleId): bool
+    {
+        return ArticleCollect::isCollected($memberId, $articleId);
     }
 
     /** @return list<array<string,mixed>> */

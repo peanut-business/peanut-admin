@@ -4,11 +4,12 @@ declare(strict_types=1);
 namespace app\platform\invitation;
 
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
-use app\common\tenancy\PlatformTenantDataGateway;
 use app\platform\query\PlatformControlPlaneQueryService;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use think\facade\Config;
 
@@ -23,7 +24,8 @@ final class PlatformInvitationRuntimeFactory
         private readonly PlatformRuntimeFactory $platform,
         private readonly NotificationCommands $notifications,
         private readonly ExecutionContextStore $executionContexts,
-        private readonly PlatformTenantDataGateway $tenantData,
+        private readonly TenantSettingsBootstrapCommands $tenantSettings,
+        private readonly PdoModuleGovernanceProvider $moduleGovernance,
     ) {
     }
 
@@ -48,7 +50,7 @@ final class PlatformInvitationRuntimeFactory
                 $this->pdo,
                 $this->notifications,
                 $this->executionContexts,
-                $this->tenantData,
+                $this->tenantSettings,
             ),
         );
     }
@@ -58,6 +60,7 @@ final class PlatformInvitationRuntimeFactory
         return $this->queries ??= new PlatformControlPlaneQueryService(
             $this->pdo,
             $this->platform->sessions(),
+            $this->moduleGovernance->qualification(),
         );
     }
 }

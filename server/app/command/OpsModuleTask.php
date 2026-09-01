@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
@@ -31,11 +32,21 @@ final class OpsModuleTask extends DatabaseContextualCommand
             $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new \RuntimeException('OPS_MODULE_CONFIG_INVALID');
+            $trustedKeys = $this->trustedKeys();
+            $runtime = new PlatformOpsRuntimeFactory(
+                $pdo,
+                dirname(__DIR__, 3),
+                $config,
+                $trustedKeys,
+            );
             $service = new PdoModuleOperationTaskExecutionService(
                 $pdo,
                 dirname(__DIR__, 3),
                 $config,
-                $this->trustedKeys(),
+                $trustedKeys,
+                null,
+                $runtime->backupProviders(),
+                $runtime->runtimeStatusProvider(),
             );
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {

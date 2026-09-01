@@ -59,6 +59,7 @@ $serverRoot = dirname(__DIR__, 2);
 $routes = peanut_route_registry_source($serverRoot);
 $factory = (string)file_get_contents($serverRoot . '/app/platform/service/PlatformRuntimeFactory.php');
 $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformAccessController.php');
+$problemMapper = (string)file_get_contents($serverRoot . '/app/common/http/ApiProblemMapper.php');
 
 $expectedRoutes = [
     'operators/create' => ['createOperator', 'platform.operator.create'],
@@ -91,8 +92,9 @@ foreach ($expectedRoutes as $path => [$action, $permission]) {
     );
 }
 platformAccessHttpExpect(
-    str_contains($factory, 'public static function platformAccess(): PlatformAccessAdminService')
-        && str_contains($factory, 'new PlatformAccessAdminService(self::pdo())'),
+    str_contains($factory, 'public function platformAccess(): PlatformAccessAdminService')
+        && str_contains($factory, 'new PlatformAccessAdminService($this->pdo, ApplicationPasswordPolicy::hasher())')
+        && !str_contains($factory, 'public static function platformAccess()'),
     'PlatformAccessAdminService factory wiring is missing'
 );
 platformAccessHttpExpect(
@@ -100,8 +102,9 @@ platformAccessHttpExpect(
         && str_contains($controller, '$context->operatorId')
         && str_contains($controller, '$context->accountId')
         && str_contains($controller, '$context->requestId')
-        && str_contains($controller, 'catch (AdminAccessException $exception)')
-        && str_contains($controller, '$exception->httpStatus * 100'),
+        && !str_contains($controller, 'catch (')
+        && str_contains($problemMapper, '$exception instanceof AdminAccessException')
+        && str_contains($problemMapper, '$exception->httpStatus'),
     'controller lost trusted actor context or stable AdminAccessException mapping'
 );
 

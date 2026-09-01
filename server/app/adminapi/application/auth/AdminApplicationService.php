@@ -25,6 +25,7 @@ final class AdminApplicationService
         private readonly XlsxExportService $xlsxExport,
         private readonly AdminDirectoryQuery $directory,
         private readonly TenantAdminRuntime $tenantAdmins,
+        private readonly FileService $files,
     ) {}
 
     public function normalizeInput(array $params): array
@@ -278,7 +279,7 @@ final class AdminApplicationService
                 'username' => (string)$row['username'],
                 'name' => (string)($row['display_name'] ?: $row['username']),
                 'nickname' => (string)($row['display_name'] ?: $row['username']),
-                'avatar' => FileService::getFileUrl((string)($row['avatar_uri'] ?? '')),
+                'avatar' => $this->files->getFileUrl((string)($row['avatar_uri'] ?? '')),
                 'root' => (int)$row['root'],
                 'disable' => in_array($row['status'], ['active', 'pending'], true) ? 0 : 1,
                 'disable_desc' => in_array($row['status'], ['active', 'pending'], true) ? '正常' : '禁用',

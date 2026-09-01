@@ -25,17 +25,13 @@ final class PlatformSessionController extends BasePlatformController
     {
         $params = $this->request->post();
         $this->validate($params, PlatformLoginValidate::class);
-        try {
-            $authentication = $this->sessions->login(
-                trim((string)$params['email']),
-                (string)$params['password'],
-                $this->request->ip(),
-                $this->request->header('User-Agent'),
-                $this->requestId()
-            );
-        } catch (AuthException|\DomainException|\InvalidArgumentException) {
-            throw \app\common\http\ApiProblem::fromEnvelope('Email or password is incorrect.', null, 40100);
-        }
+        $authentication = $this->sessions->login(
+            trim((string)$params['email']),
+            (string)$params['password'],
+            $this->request->ip(),
+            $this->request->header('User-Agent'),
+            $this->requestId()
+        );
 
         return $this->data($authentication->responseData())
             ->header(['Set-Cookie' => PlatformRefreshCookie::issue($authentication->tokens->refresh)]);
@@ -51,7 +47,7 @@ final class PlatformSessionController extends BasePlatformController
                 $this->request->header('User-Agent'),
                 $this->requestId()
             );
-        } catch (AuthException|\DomainException|\InvalidArgumentException) {
+        } catch (AuthException) {
             throw \app\common\http\ApiProblem::fromEnvelope(
                 'Platform refresh credential is invalid.',
                 ['error_code' => 'PLATFORM_REFRESH_CREDENTIAL_INVALID'],
@@ -70,6 +66,7 @@ final class PlatformSessionController extends BasePlatformController
             try {
                 $this->sessions->logout($token);
             } catch (AuthException) {
+                // Logout remains idempotent when the supplied credential is already invalid.
             }
         }
 

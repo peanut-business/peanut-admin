@@ -16,12 +16,6 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
  */
 interface OAuthCommands
 {
-    /** @return list<ExternalTenantBinding> */
-    public function locateState(string $provider, string $stateHash): array;
-
-    /** @return list<ExternalTenantBinding> */
-    public function locateTicket(string $ticketHash): array;
-
     public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array;
 
     public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array;

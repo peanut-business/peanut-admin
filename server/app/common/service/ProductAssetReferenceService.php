@@ -8,12 +8,14 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 内容与装修等产品记录的公开资源引用边界。 */
-final class ProductAssetReferenceService
+final readonly class ProductAssetReferenceService
 {
+    public function __construct(private FileService $files) {}
+
     /**
      * 同源 local storage URL 保存为相对 URI；云/CDN/外部 URL 保留绝对地址与原始域名。
      */
-    public static function forStorage(
+    public function forStorage(
         string $value,
         ?string $applicationOrigin = null,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext|null $context = null,
@@ -25,24 +27,24 @@ final class ProductAssetReferenceService
         }
         if (!self::isHttpUrl($value)) {
             $uri = ltrim($value, '/');
-            return $context === null ? $uri : FileService::setTenantFileUrl($context, $uri);
+            return $context === null ? $uri : $this->files->setTenantFileUrl($context, $uri);
         }
 
         $origin = rtrim($applicationOrigin ?? (string)request()->domain(), '/');
         if (self::isSameOriginStorageUrl($value, $origin)) {
             $uri = ltrim((string)parse_url($value, PHP_URL_PATH), '/');
-            return $context === null ? $uri : FileService::setTenantFileUrl($context, $uri);
+            return $context === null ? $uri : $this->files->setTenantFileUrl($context, $uri);
         }
         if ($context !== null) {
-            FileService::setTenantFileUrl($context, $value);
+            $this->files->setTenantFileUrl($context, $value);
         }
         return $value;
     }
 
-    public static function forRead(string $value): string
+    public function forRead(string $value): string
     {
         $value = trim($value);
-        return self::isHttpUrl($value) ? $value : FileService::getFileUrl($value);
+        return self::isHttpUrl($value) ? $value : $this->files->getFileUrl($value);
     }
 
     private static function isSameOriginStorageUrl(string $value, string $origin): bool

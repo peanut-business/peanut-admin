@@ -8,22 +8,24 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 富文本内资源地址的相对 URI 存储与绝对 URL 读取转换。 */
-class RichTextResourceService
+final readonly class RichTextResourceService
 {
-    public static function forStorage(
+    public function __construct(private FileService $files) {}
+
+    public function forStorage(
         string $html,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext|null $context = null
     ): string
     {
-        return self::transform(HtmlSanitizerService::sanitize($html), false, $context);
+        return $this->transform(HtmlSanitizerService::sanitize($html), false, $context);
     }
 
-    public static function forRead(string $html): string
+    public function forRead(string $html): string
     {
-        return self::transform(HtmlSanitizerService::sanitize($html), true);
+        return $this->transform(HtmlSanitizerService::sanitize($html), true);
     }
 
-    private static function transform(
+    private function transform(
         string $html,
         bool $forRead,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext|null $context = null
@@ -33,17 +35,17 @@ class RichTextResourceService
             return '';
         }
 
-        $convert = static function (string $url) use ($forRead): string {
+        $convert = function (string $url) use ($forRead, $context): string {
             $url = trim($url);
             if ($url === '' || preg_match('/^(?:mailto:|tel:|#)/i', $url)) {
                 return $url;
             }
             if ($forRead) {
-                return FileService::getFileUrl($url);
+                return $this->files->getFileUrl($url);
             }
             return $context === null
-                ? FileService::setFileUrl($url)
-                : FileService::setTenantFileUrl($context, $url);
+                ? trim($url)
+                : $this->files->setTenantFileUrl($context, $url);
         };
 
         $html = preg_replace_callback(

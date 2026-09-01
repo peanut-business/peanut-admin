@@ -108,7 +108,7 @@ foreach ($callers as $relativePath) {
 }
 
 $settle = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
-$paidGuard = strpos($settle, 'pay_status === RechargeOrder::PAY_STATUS_PAID');
+$paidGuard = strpos($settle, 'pay_status === FinanceTenantRepository::PAY_STATUS_PAID');
 $credit = strpos($settle, 'memberBalances->applyInTransaction');
 expectMemberFinance($paidGuard !== false && $credit !== false && $paidGuard < $credit, 'paid callback guard must precede credit');
 expectMemberFinance(strpos($settle, "where('sn', \$orderSn)->lock(true)") < $paidGuard, 'recharge order must be locked before the paid guard');

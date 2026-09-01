@@ -7,6 +7,8 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\ops\DeploymentModuleRequestService;
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\PairedBackupProvider;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use app\platform\service\ops\PlatformModuleOperationExecutionService;
 use app\platform\service\plugin\PluginPackageArchiveService;
 use app\platform\service\plugin\PluginPackageInstaller;
@@ -212,7 +214,15 @@ try {
     $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
     moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');
 
-    $executor = new PdoModuleOperationTaskExecutionService($pdo, $target, $config, [], $registryPath, $runtime);
+    $executor = new PdoModuleOperationTaskExecutionService(
+        $pdo,
+        $target,
+        $config,
+        [],
+        $registryPath,
+        new BackupRestoreProviderRegistry([new PairedBackupProvider()]),
+        $runtime,
+    );
     $claimed = $executor->claim();
     moduleDeliveryExpect(is_array($claimed) && ($claimed['current_step'] ?? null) === 'preflight', 'Module operation was not claimed');
     $taskKey = (string)$claimed['task_key'];

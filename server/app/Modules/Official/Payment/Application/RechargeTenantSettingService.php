@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Application;
 
-use app\Modules\Official\Payment\Model\PaymentScene;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\tenant\TenantSettingService;
 use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;
@@ -41,7 +41,7 @@ final class RechargeTenantSettingService
         $scenes = array_filter(
             is_array($config['scenes'] ?? null) ? $config['scenes'] : [],
             static fn(array $scene): bool => (int)($scene['terminal'] ?? 0) === $terminal
-                && (int)($scene['status'] ?? 0) === PaymentScene::STATUS_ENABLED
+                && (int)($scene['status'] ?? 0) === FinanceTenantRepository::SCENE_STATUS_ENABLED
         );
         usort($scenes, static fn(array $left, array $right): int =>
             [(int)($right['is_default'] ?? 0), (int)($left['pay_way'] ?? 0)]
@@ -84,11 +84,7 @@ final class RechargeTenantSettingService
 
     private static function defaults(): array
     {
-        $scenes = PaymentScene::field('terminal,pay_way,status,is_default')
-            ->order('terminal', 'asc')
-            ->order('pay_way', 'asc')
-            ->select()
-            ->toArray();
+        $scenes = FinanceTenantRepository::paymentScenes();
         return [
             'status' => 0,
             'min_amount' => '0.01',

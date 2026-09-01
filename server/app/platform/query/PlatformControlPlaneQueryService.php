@@ -5,7 +5,6 @@ namespace app\platform\query;
 
 use app\common\contract\module\ModuleQualificationQuery;
 use app\common\contract\module\ModuleQualification;
-use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\context\PlatformOperatorContext;
 use app\platform\service\PlatformOperatorSessionService;
 use PDO;
@@ -17,7 +16,7 @@ final readonly class PlatformControlPlaneQueryService
     public function __construct(
         private PDO $pdo,
         private PlatformOperatorSessionService $sessions,
-        private ?ModuleQualificationQuery $qualification = null,
+        private ModuleQualificationQuery $qualification,
     ) {
     }
 
@@ -108,10 +107,8 @@ SQL, [], $page);
         PageRequest $page
     ): array {
         $this->sessions->assertAllowed($context, 'platform.tenant.read');
-        $qualification = $this->qualification ?? PdoModuleGovernanceProvider::forApplication($this->pdo)
-            ->qualification();
         $states = [];
-        foreach ($qualification->tenantModuleStates($tenantId) as $state) {
+        foreach ($this->qualification->tenantModuleStates($tenantId) as $state) {
             $states[$state->moduleKey] = $state->toArray();
         }
 
@@ -136,7 +133,7 @@ SQL, [], $page);
                     'installation_status' => $module->status,
                 ];
             },
-            $qualification->installedModules()
+            $this->qualification->installedModules()
         );
         return [
             'items' => array_slice($rows, $page->offset(), $page->pageSize),

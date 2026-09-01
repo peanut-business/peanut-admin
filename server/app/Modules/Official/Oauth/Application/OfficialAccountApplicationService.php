@@ -14,13 +14,16 @@ class OfficialAccountApplicationService
 {
     private const CONFIG_TYPE = 'oa_setting';
 
-    public function __construct(private readonly TransactionManager $transactions)
-    {
+    public function __construct(
+        private readonly TransactionManager $transactions,
+        private readonly ExternalChannelBindingService $bindings,
+        private readonly FileService $files,
+    ) {
     }
 
     public function getConfig(TenantContext $context): array
     {
-        $stored = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK);
+        $stored = $this->bindings->config($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK);
         $qrCode = (string)($stored['qr_code'] ?? '');
         $secret = (string)($stored['app_secret'] ?? '');
         $domain = rtrim((string)request()->domain(), '/');
@@ -29,16 +32,12 @@ class OfficialAccountApplicationService
         return [
             'name' => (string)($stored['name'] ?? ''),
             'original_id' => (string)($stored['original_id'] ?? ''),
-            'qr_code' => FileService::getFileUrl($qrCode),
+            'qr_code' => $this->files->getFileUrl($qrCode),
             'app_id' => (string)($stored['app_id'] ?? ''),
             'app_secret' => $secret !== '' ? '******' : '',
             'app_secret_configured' => $secret !== '',
             'url' => $domain . '/api/wechat/official-account/callback/'
-                . ExternalTenantResolver::production()->bindingForTenant(
-                    $context,
-                    ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
-                    false,
-                )->callbackKey,
+                . $this->bindings->callbackKey($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK),
             'token' => (string)($stored['token'] ?? ''),
             'business_domain' => $authority,
             'js_secure_domain' => $authority,
@@ -49,7 +48,7 @@ class OfficialAccountApplicationService
 
     public function setConfig(TenantContext $context, array $params): bool
     {
-        $current = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK);
+        $current = $this->bindings->config($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK);
         $currentSecret = (string)($current['app_secret'] ?? '');
         $incomingSecret = trim((string)$params['app_secret']);
         $secret = $incomingSecret === '******' ? $currentSecret : $incomingSecret;
@@ -59,19 +58,19 @@ class OfficialAccountApplicationService
         $data = [
             'name' => trim((string)($params['name'] ?? '')),
             'original_id' => trim((string)($params['original_id'] ?? '')),
-            'qr_code' => self::relativeFile($context, (string)($params['qr_code'] ?? '')),
+            'qr_code' => $this->relativeFile($context, (string)($params['qr_code'] ?? '')),
             'app_id' => trim((string)$params['app_id']),
             'app_secret' => $secret,
             'token' => trim((string)($params['token'] ?? '')),
         ];
         $this->transactions->run(function () use ($context, $data): void {
-            ExternalChannelBindingService::update(
+            $this->bindings->update(
                 $context,
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 $data,
                 $data['original_id'] !== '' ? $data['original_id'] : $data['app_id'],
             );
-            ExternalChannelBindingService::update(
+            $this->bindings->update(
                 $context,
                 ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH,
                 ['app_id' => $data['app_id'], 'app_secret' => $data['app_secret']],
@@ -81,13 +80,13 @@ class OfficialAccountApplicationService
         return true;
     }
 
-    private static function relativeFile(TenantContext $context, string $value): string
+    private function relativeFile(TenantContext $context, string $value): string
     {
         $value = trim($value);
         if ($value === '') {
             return '';
         }
-        $uri = FileService::setTenantFileUrl($context, $value);
+        $uri = $this->files->setTenantFileUrl($context, $value);
         if (preg_match('#^https?://#i', $uri)) {
             $uri = (string)parse_url($uri, PHP_URL_PATH);
         }

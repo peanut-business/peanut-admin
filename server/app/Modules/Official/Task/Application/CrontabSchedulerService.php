@@ -3,14 +3,11 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Task\Application;
 
-use app\common\enum\CrontabEnum;
-use app\Modules\Official\Task\Model\Crontab;
 use app\common\contract\audit\AuditResource;
 use app\common\service\audit\AuditContractHost;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\crontab\CrontabTenantLock;
-use app\common\tenancy\PlatformTenantDataGateway;
 use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
 use PeanutAdmin\Kernel\Scheduling\ScheduleWindow;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
@@ -25,7 +22,7 @@ final class CrontabSchedulerService
         private readonly CurrentExecutionContext $current,
         private readonly CrontabTenantLock $locks,
         private readonly AuditContractHost $audit,
-        private readonly PlatformTenantDataGateway $tenantData,
+        private readonly CrontabTenantRepository $crontabs,
     ) {
     }
 
@@ -35,18 +32,8 @@ final class CrontabSchedulerService
      */
     public function runDue(int $now, callable $trigger): array
     {
-        $models = $this->tenantData
-            ->query(Crontab::class, 'scheduler', 'crontab.discover-due')
-            ->alias('c')
-            ->join('tenant t', 't.id = c.tenant_id')
-            ->where('t.status', 'active')
-            ->where('c.status', CrontabEnum::START)
-            ->field('c.*')
-            ->select();
-
         $tenantIds = [];
-        foreach ($models as $model) {
-            $item = $model->getData();
+        foreach ($this->crontabs->dueSchedules() as $item) {
             $tenantId = self::positiveInt($item['tenant_id'] ?? null, 'Scheduled job Tenant owner is invalid');
             $tenantIds[$tenantId] = true;
             $this->consider($item, $now, $trigger);
@@ -55,7 +42,7 @@ final class CrontabSchedulerService
     }
 
     /** @param callable(TenantScope,array<string,mixed>):void $trigger */
-    public function consider(array $item, int $now, callable $trigger): bool
+    public function consider(array $item, int $now, callable $trigger): void
     {
         $tenantId = self::positiveInt($item['tenant_id'] ?? null, 'Scheduled job Tenant owner is invalid');
         $jobId = self::positiveInt($item['id'] ?? null, 'Scheduled job ID is invalid');
@@ -71,68 +58,51 @@ final class CrontabSchedulerService
             'crontab.consider',
             $scope->contextIdentity(),
         );
-        return $this->contexts->run(
+        $this->contexts->run(
             new \app\common\execution\SystemExecutionContext($system),
-            function () use ($scope, $jobId, $lastTime, $now, $item, $trigger): bool {
+            function () use ($scope, $jobId, $lastTime, $now, $item, $trigger): void {
                 if (!$this->locks->acquire($scope, $jobId)) {
-                    return false;
+                    return;
                 }
                 try {
-            $window = new ScheduleWindow($lastTime, $now);
-            if ($window->isInitial()) {
-                return self::owned($scope, $jobId)
-                    ->where('status', CrontabEnum::START)
-                    ->where('last_time', 0)
-                    ->update(['last_time' => $now]) === 1;
-            }
+                    $window = new ScheduleWindow($lastTime, $now);
+                    if ($window->isInitial()) {
+                        $this->crontabs->claimInitial($jobId, $now);
+                        return;
+                    }
 
-            try {
-                $nextTime = (new CronExpression((string)($item['expression'] ?? '')))
-                    ->getNextRunDate(date('Y-m-d H:i:s', $lastTime))
-                    ->getTimestamp();
-            } catch (\Throwable $exception) {
-                self::owned($scope, $jobId)
-                    ->where('status', CrontabEnum::START)
-                    ->update([
-                        'error' => '运行规则错误：' . $exception->getMessage(),
-                        'status' => CrontabEnum::ERROR,
-                    ]);
-                $this->audit(
-                    $scope,
-                    $jobId,
-                    'task.crontab.rejected',
-                    'crontab.schedule',
-                    AuditOutcome::Error,
-                    'CRONTAB_EXPRESSION_INVALID',
-                );
-                return false;
-            }
+                    try {
+                        $nextTime = (new CronExpression((string)($item['expression'] ?? '')))
+                            ->getNextRunDate(date('Y-m-d H:i:s', $lastTime))
+                            ->getTimestamp();
+                    } catch (\InvalidArgumentException $exception) {
+                        $this->crontabs->rejectInvalid($jobId, '运行规则错误：' . $exception->getMessage());
+                        $this->audit(
+                            $scope,
+                            $jobId,
+                            'task.crontab.rejected',
+                            'crontab.schedule',
+                            AuditOutcome::Error,
+                            'CRONTAB_EXPRESSION_INVALID',
+                        );
+                        return;
+                    }
 
-            if (!$window->isDue($nextTime)) {
-                return false;
-            }
+                    if (!$window->isDue($nextTime)) {
+                        return;
+                    }
 
-            $claimed = self::owned($scope, $jobId)
-                ->where('status', CrontabEnum::START)
-                ->where('last_time', $lastTime)
-                ->update(['last_time' => $now]);
-            if ($claimed !== 1) {
-                return false;
-            }
+                    if (!$this->crontabs->claimDue($jobId, $lastTime, $now)) {
+                        return;
+                    }
 
-            $item['last_time'] = $now;
-            $trigger($scope, $item);
-            return true;
+                    $item['last_time'] = $now;
+                    $trigger($scope, $item);
                 } finally {
                     $this->locks->release($scope, $jobId);
                 }
             },
         );
-    }
-
-    private static function owned(TenantScope $scope, int $jobId)
-    {
-        return CrontabTenantRepository::schedules()->where('id', $jobId);
     }
 
     private static function positiveInt(mixed $value, string $message): int

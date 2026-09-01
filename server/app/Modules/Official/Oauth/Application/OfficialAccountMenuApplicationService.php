@@ -10,41 +10,44 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class OfficialAccountMenuApplicationService
 {
+    public function __construct(
+        private readonly ExternalChannelBindingService $bindings,
+        private readonly OfficialAccountService $officialAccount,
+    ) {}
+
     public function detail(TenantContext $context): array
     {
-        $stored = self::config($context);
+        $stored = $this->config($context);
         $menu = $stored['menu'] ?? [];
         return ['menu' => is_array($menu) ? $menu : []];
     }
 
     public function save(TenantContext $context, array $menu): bool
     {
-        self::store($context, $menu);
+        $this->store($context, $menu);
         return true;
     }
 
     public function saveAndPublish(
         TenantContext $context,
         array $menu,
-        ?OfficialAccountService $service = null
     ): bool
     {
-        $config = self::config($context);
-            $service ??= new OfficialAccountService();
-            $service->publishMenu(
+        $config = $this->config($context);
+            $this->officialAccount->publishMenu(
                 (string)($config['app_id'] ?? ''),
                 (string)($config['app_secret'] ?? ''),
                 $menu
             );
-            self::store($context, $menu, $config);
+            $this->store($context, $menu, $config);
         return true;
     }
 
-    private static function store(TenantContext $context, array $menu, ?array $config = null): void
+    private function store(TenantContext $context, array $menu, ?array $config = null): void
     {
-        $config ??= self::config($context);
+        $config ??= $this->config($context);
         $config['menu'] = $menu;
-        ExternalChannelBindingService::update(
+        $this->bindings->update(
             $context,
             ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
             $config,
@@ -52,9 +55,9 @@ class OfficialAccountMenuApplicationService
         );
     }
 
-    private static function config(TenantContext $context): array
+    private function config(TenantContext $context): array
     {
-        return ExternalChannelBindingService::config(
+        return $this->bindings->config(
             $context,
             ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK
         );

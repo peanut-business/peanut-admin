@@ -50,7 +50,7 @@ $oauthLogic = (string)file_get_contents($serverRoot . '/app/api/application/OAut
 $oauthProvider = (string)file_get_contents($serverRoot . '/app/Modules/Official/Oauth/ModuleProvider.php');
 $rechargeApplication = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
 expectOAuthChannelHost(
-    str_contains($oauthProvider, 'bind(OAuthQueries::class')
+    str_contains($oauthProvider, 'OAuthQueries::class =>')
         && str_contains($rechargeApplication, 'private readonly OAuthQueries $oauth')
         && str_contains($rechargeApplication, '$this->oauth->wechatSubjectForMember(')
         && !str_contains($rechargeApplication, 'OAuthModuleProvider'),

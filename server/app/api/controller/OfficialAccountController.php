@@ -7,10 +7,13 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\OfficialAccountApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\service\external\ExternalTenantResolutionException;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\module\ModuleExecutionBoundary;
+use PeanutAdmin\Kernel\Module\ModuleException;
 
 class OfficialAccountController extends BaseApiController
 {
@@ -20,6 +23,7 @@ class OfficialAccountController extends BaseApiController
         private readonly OfficialAccountApplicationService $officialAccount,
         private readonly ExecutionContextStore $executionContexts,
         private readonly ModuleExecutionBoundary $modules,
+        private readonly ExternalTenantResolver $externalTenants,
     )
     {
         parent::__construct($app, $executionContext);
@@ -31,7 +35,7 @@ class OfficialAccountController extends BaseApiController
     {
         $params = $this->request->get();
         try {
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+            $resolution = $this->externalTenants->verifiedCallback(
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.verify',
@@ -42,7 +46,7 @@ class OfficialAccountController extends BaseApiController
                 new \app\common\execution\SystemExecutionContext($resolution->context),
                 fn() => $this->modules->assertExternalCallback('official.oauth'),
             );
-        } catch (\Throwable) {
+        } catch (ExternalTenantResolutionException|ModuleException) {
             return response('callback rejected', 403, ['Content-Type' => 'text/plain; charset=utf-8']);
         }
         return response((string)($params['echostr'] ?? ''), 200, ['Content-Type' => 'text/plain; charset=utf-8']);
@@ -52,7 +56,7 @@ class OfficialAccountController extends BaseApiController
     {
         $params = $this->request->get();
         try {
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+            $resolution = $this->externalTenants->verifiedCallback(
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.callback',
@@ -72,7 +76,7 @@ class OfficialAccountController extends BaseApiController
                     );
                 },
             );
-        } catch (\Throwable) {
+        } catch (ExternalTenantResolutionException|ModuleException|BusinessException) {
             return response('callback rejected', 403, ['Content-Type' => 'text/plain; charset=utf-8']);
         }
         $contentType = $result === 'success' ? 'text/plain; charset=utf-8' : 'application/xml; charset=utf-8';

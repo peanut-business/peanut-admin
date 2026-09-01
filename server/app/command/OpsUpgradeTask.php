@@ -4,11 +4,13 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\ops\PdoUpgradeTaskExecutionService;
+use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
+use think\facade\Config;
 use Throwable;
 
 /** Deployment-control bridge for the fixed PC42 upgrade state machine. */
@@ -28,7 +30,17 @@ final class OpsUpgradeTask extends DatabaseContextualCommand
     {
         try {
             $pdo = $this->database();
-            $service = new PdoUpgradeTaskExecutionService($pdo, dirname(__DIR__, 3));
+            $moduleConfig = Config::get('modules', []);
+            if (!is_array($moduleConfig)) {
+                throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
+            }
+            $runtime = new PlatformOpsRuntimeFactory($pdo, dirname(__DIR__, 3), $moduleConfig, []);
+            $service = new PdoUpgradeTaskExecutionService(
+                $pdo,
+                dirname(__DIR__, 3),
+                $runtime->backupProviders(),
+                $runtime->runtimeStatusProvider(),
+            );
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
                 'claim' => $service->claim(),

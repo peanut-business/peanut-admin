@@ -1,12 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace app\Modules\Official\Task\Application;
+namespace app\Modules\Official\Task\Infrastructure\Runtime;
 
+use app\Modules\Official\Task\Application\CrontabTaskDefinition;
+use app\Modules\Official\Task\Application\TaskAuthorizationRouter;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
 use app\common\service\async\ModuleAwareTaskHandler;
-use app\common\persistence\CoreTenantRepositoryFactory;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\module\ModuleExecutionBoundary;
@@ -21,19 +22,19 @@ use PeanutAdmin\TaskJob\Submission\TaskSubmissionProvider;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionRegistry;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
-use PDO;
 use think\Console;
 
 final readonly class PdoTaskJobRuntime implements TaskJobRuntime
 {
     public function __construct(
-        private PDO $pdo,
+        private PdoTaskJobRepository $repository,
         private string $signingKey,
         private ExecutionContextStore $executionContexts,
         private CurrentExecutionContext $currentExecution,
         private AdminDirectoryQuery $adminDirectory,
         private ModuleExecutionBoundary $modules,
         private Console $console,
+        private int $workerLimit,
     ) {
         if (strlen($this->signingKey) < 32) {
             throw new \RuntimeException('ASYNC_SIGNING_KEY_INVALID');
@@ -43,7 +44,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
     public function publisher(TaskSubmissionProvider ...$providers): TrustedJobPublisher
     {
         return new TrustedJobPublisher(
-            $this->repository(),
+            $this->repository,
             new TaskSubmissionRegistry($providers),
             $this->envelopes(),
         );
@@ -51,7 +52,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
 
     public function jobs(): TaskJobService
     {
-        return new TaskJobService($this->repository());
+        return new TaskJobService($this->repository);
     }
 
     public function enqueueCrontab(TenantScope $scope, int $scheduleId, string $contextIdentity): void
@@ -84,22 +85,17 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
         $worker = new LocalWorker(
             $tenantId,
             $workerId,
-            $this->repository(),
+            $this->repository,
             new TaskHandlerRegistry($handlers),
             new JobHandlerAdapter($this->envelopes(), new TaskAuthorizationRouter($definitions)),
         );
 
         $processed = 0;
-        $limit = min(1000, max(1, (int)config('async.worker_limit', 25)));
+        $limit = min(1000, max(1, $this->workerLimit));
         while ($processed < $limit && $worker->runOnce() !== null) {
             ++$processed;
         }
         return $processed;
-    }
-
-    private function repository(): PdoTaskJobRepository
-    {
-        return (new CoreTenantRepositoryFactory($this->pdo))->taskJobs();
     }
 
     private function envelopes(): TrustedEnvelopeCodec

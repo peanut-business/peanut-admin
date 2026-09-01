@@ -17,7 +17,10 @@ use PeanutAdmin\Kernel\Persistence\TransactionManager;
  */
 class CrontabApplicationService
 {
-    public function __construct(private readonly TransactionManager $transactions)
+    public function __construct(
+        private readonly TransactionManager $transactions,
+        private readonly CrontabCommandService $commands,
+    )
     {
     }
 
@@ -36,10 +39,8 @@ class CrontabApplicationService
 
         $pageResult = $pagination->result(CrontabTenantRepository::schedules()->where($where)
             ->order(['id' => 'desc']));
-        $lists = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = CrontabTenantRepository::arrayPage($pageResult);
+        $lists = $pageResult->items;
 
         return new PageResult(self::formatRows($lists), $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
@@ -55,7 +56,7 @@ class CrontabApplicationService
 
     public function add(array $params): bool
     {
-        CrontabCommandService::assertAllowed(trim((string)$params['command']));
+        $this->commands->assertAllowed(trim((string)$params['command']));
         CrontabTenantRepository::create([
             'name'       => (string) $params['name'],
             'type'       => (int) $params['type'],
@@ -72,7 +73,7 @@ class CrontabApplicationService
 
     public function edit(array $params): bool
     {
-        CrontabCommandService::assertAllowed(trim((string)$params['command']));
+        $this->commands->assertAllowed(trim((string)$params['command']));
         $this->transactions->run(function () use ($params): void {
             $crontab = CrontabTenantRepository::schedules()
                 ->where('id', (int)$params['id'])->lock(true)->findOrEmpty();

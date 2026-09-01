@@ -11,6 +11,7 @@ use app\Modules\Official\Member\Application\MemberProfileContractService;
 use app\Modules\Official\Member\Application\MemberTagContractService;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\execution\CurrentExecutionContext;
+use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
 use app\Modules\Official\Member\Contracts\MemberAdministration;
@@ -73,6 +74,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(MemberBalanceCommands::class),
                 $app->make(IdempotentCommandExecutor::class),
                 $app->make(\PeanutAdmin\Kernel\Persistence\TransactionManager::class),
+                $app->make(FileService::class),
             ),
         ];
     }

@@ -15,6 +15,7 @@ final readonly class TaskSchedulerService implements TaskScheduler
 
     public function __construct(
         private TaskJobRuntime $tasks,
+        private CrontabSchedulerService $crontabs,
         TaskWorkerDefinition ...$definitions,
     ) {
         $this->definitions = $definitions;
@@ -22,7 +23,7 @@ final readonly class TaskSchedulerService implements TaskScheduler
 
     public function runDue(int $now): void
     {
-        $tenantIds = CrontabSchedulerService::runDue(
+        $tenantIds = $this->crontabs->runDue(
             $now,
             fn(TenantScope $scope, array $item) => $this->tasks->enqueueCrontab(
                 $scope,

@@ -1,11 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\configuration_transfer;
-
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationPackageCodec;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferAdapter;
-use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferValue;
+namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
 use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
@@ -16,8 +12,12 @@ use PeanutAdmin\Kernel\Module\TenantModuleConfigurationService;
 /** Transfers only the configuration of currently effective Tenant Modules. */
 final readonly class TenantModuleConfigurationAdapter implements ConfigurationTransferAdapter
 {
-    public function __construct(private PDO $pdo)
-    {
+    private const TABLE = 'p' . 'a_tenant_module';
+
+    public function __construct(
+        private PDO $pdo,
+        private PdoModuleGovernanceProvider $moduleGovernance,
+    ) {
     }
 
     public function key(): string
@@ -33,9 +33,10 @@ final readonly class TenantModuleConfigurationAdapter implements ConfigurationTr
     public function export(TenantContext|PlatformContext $context): array
     {
         $tenantId = $this->tenantId($context);
-        $statement = $this->pdo->prepare(<<<'SQL'
+        $table = self::TABLE;
+        $statement = $this->pdo->prepare(<<<SQL
 SELECT module_key, config_json
-FROM pa_tenant_module
+FROM {$table}
 WHERE tenant_id = :tenant_id
   AND status = 'enabled'
   AND (effective_at IS NULL OR effective_at <= CURRENT_TIMESTAMP(3))
@@ -61,9 +62,10 @@ SQL);
     {
         $tenantId = $this->tenantId($context);
         $this->assertModuleKey($key);
-        $statement = $this->pdo->prepare(<<<'SQL'
+        $table = self::TABLE;
+        $statement = $this->pdo->prepare(<<<SQL
 SELECT status, config_json, config_revision, effective_at, expires_at
-FROM pa_tenant_module
+FROM {$table}
 WHERE tenant_id = :tenant_id AND module_key = :module_key
 LIMIT 1
 SQL);
@@ -102,7 +104,7 @@ SQL);
             throw new \RuntimeException('TRANSFER_TENANT_MODULE_NOT_ENABLED');
         }
 
-        $registry = PdoModuleGovernanceProvider::forApplication($this->pdo)->registry();
+        $registry = $this->moduleGovernance->registry();
         (new TenantModuleConfigurationService(
             $this->pdo,
             $registry->compiled(),

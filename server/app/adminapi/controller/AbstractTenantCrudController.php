@@ -19,6 +19,7 @@ use think\response\Json;
  */
 abstract class AbstractTenantCrudController extends BaseAdminController
 {
+
     /** @var class-string */
     protected const CRUD_VALIDATE = '';
 

@@ -1,18 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace app\Modules\Official\Oauth\Application;
+namespace app\Modules\Official\Oauth\Infrastructure\Persistence;
 
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
+use app\Modules\Official\Oauth\Contracts\OAuthCallbackLocator;
 use app\Modules\Official\Oauth\Model\OAuthAttempt;
 use app\Modules\Official\Oauth\Model\OAuthCompletionTicket;
 
-/** OAuth owns state/ticket lookup; other Modules consume only this narrow result. */
-final class OAuthCallbackLocator
+final class ThinkPhpOAuthCallbackLocator implements OAuthCallbackLocator
 {
-    /** @return list<ExternalTenantBinding> */
-    public static function byState(string $provider, string $stateHash): array
+    public function locateState(string $provider, string $stateHash): array
     {
         $scene = match ($provider) {
             ExternalTenantResolver::WECHAT_OFFICIAL_OAUTH => 'oa',
@@ -23,9 +22,9 @@ final class OAuthCallbackLocator
             return [];
         }
 
-        return self::bindings(
+        return $this->bindings(
             OAuthAttempt::callbackCandidates()->alias('o')
-                ->field(self::bindingFields())
+                ->field($this->bindingFields())
                 ->join('external_channel_binding b', 'b.tenant_id = o.tenant_id')
                 ->join('tenant t', 't.id = b.tenant_id')
                 ->where('b.provider', $provider)
@@ -37,12 +36,11 @@ final class OAuthCallbackLocator
         );
     }
 
-    /** @return list<ExternalTenantBinding> */
-    public static function byTicket(string $ticketHash): array
+    public function locateTicket(string $ticketHash): array
     {
-        return self::bindings(
+        return $this->bindings(
             OAuthCompletionTicket::callbackCandidates()->alias('o')
-                ->field(self::bindingFields())
+                ->field($this->bindingFields())
                 ->join('external_channel_binding b', 'b.id = o.binding_id AND b.tenant_id = o.tenant_id')
                 ->join('tenant t', 't.id = b.tenant_id')
                 ->where('o.token_hash', $ticketHash)
@@ -58,7 +56,7 @@ final class OAuthCallbackLocator
     }
 
     /** @param list<array<string, mixed>> $rows @return list<ExternalTenantBinding> */
-    private static function bindings(array $rows): array
+    private function bindings(array $rows): array
     {
         return array_map(static function (array $row): ExternalTenantBinding {
             $config = json_decode((string)($row['config_json'] ?? ''), true);
@@ -76,7 +74,7 @@ final class OAuthCallbackLocator
         }, $rows);
     }
 
-    private static function bindingFields(): string
+    private function bindingFields(): string
     {
         return 'b.id,b.tenant_id,b.provider,b.callback_key,b.identity_hash,b.identity_hint,'
             . 'b.config_json,b.status,t.status AS tenant_status';

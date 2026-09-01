@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace app\Modules\Official\Task;
 
 use app\common\composition\ModuleBindingContributor;
-use app\Modules\Official\Task\Application\PdoTaskJobRuntime;
+use app\Modules\Official\Task\Application\CrontabSchedulerService;
 use app\Modules\Official\Task\Application\TaskSchedulerService;
+use app\Modules\Official\Task\Infrastructure\Runtime\PdoTaskJobRuntime;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
@@ -13,6 +14,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\org\AdminDirectoryQuery;
+use app\common\persistence\CoreTenantRepositoryFactory;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PDO;
 use think\App;
@@ -25,9 +27,13 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         return 'official.task';
     }
 
-    public function scheduler(TaskJobRuntime $tasks, TaskWorkerDefinition ...$definitions): TaskScheduler
+    public function scheduler(
+        TaskJobRuntime $tasks,
+        CrontabSchedulerService $crontabs,
+        TaskWorkerDefinition ...$definitions,
+    ): TaskScheduler
     {
-        return new TaskSchedulerService($tasks, ...$definitions);
+        return new TaskSchedulerService($tasks, $crontabs, ...$definitions);
     }
 
     public function jobs(
@@ -38,16 +44,18 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         AdminDirectoryQuery $adminDirectory,
         ModuleExecutionBoundary $modules,
         Console $console,
+        int $workerLimit,
     ): TaskJobRuntime
     {
         return new PdoTaskJobRuntime(
-            $pdo,
+            (new CoreTenantRepositoryFactory($pdo))->taskJobs(),
             $signingKey,
             $executionContexts,
             $currentExecution,
             $adminDirectory,
             $modules,
             $console,
+            $workerLimit,
         );
     }
 
@@ -62,9 +70,11 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(AdminDirectoryQuery::class),
                 $app->make(ModuleExecutionBoundary::class),
                 $app->make('console'),
+                (int)$app->config->get('async.worker_limit', 25),
             ),
             TaskScheduler::class => fn(App $app): TaskScheduler => $this->scheduler(
                 $app->make(TaskJobRuntime::class),
+                $app->make(CrontabSchedulerService::class),
             ),
         ];
     }

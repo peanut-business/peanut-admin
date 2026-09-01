@@ -10,9 +10,12 @@ use app\Modules\Official\Member\Model\MemberTagRelation;
 use app\common\service\member\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use app\common\persistence\ConvertsModelPage;
 
 final class MemberTenantRepository
 {
+    use ConvertsModelPage;
+
     public static function members(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context)
     {
         self::tenantId($context);
@@ -71,6 +74,16 @@ final class MemberTenantRepository
     {
         unset($data['tenant_id']);
         return MemberBalanceLog::create($data);
+    }
+
+    public static function nextMemberSn(TenantContext|TenantSystemContext $context): string
+    {
+        return Member::generateSn($context);
+    }
+
+    public static function nextBalanceLogSn(TenantContext|TenantSystemContext $context): string
+    {
+        return MemberBalanceLog::generateSn($context);
     }
 
     private static function tenantId(
