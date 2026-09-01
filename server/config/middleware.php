@@ -8,6 +8,8 @@ use app\api\middleware\PublicDecorationTenantMiddleware;
 use app\api\middleware\PublicHotSearchTenantMiddleware;
 use app\api\middleware\PublicMemberTenantMiddleware;
 use app\api\middleware\PublicNoticeTenantMiddleware;
+use app\common\http\middleware\InstallationStateMiddleware;
+use app\common\http\middleware\MaintenanceWriteGateMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use app\platform\http\middleware\PlatformHostMiddleware;
 use app\platform\http\middleware\PlatformInstanceToolMiddleware;
@@ -30,6 +32,8 @@ return [
     ],
     // 优先级设置，此数组中的中间件会按照数组中的顺序优先执行
     'priority' => [
+        InstallationStateMiddleware::class,
+        MaintenanceWriteGateMiddleware::class,
         PlatformHostMiddleware::class,
         PlatformLoginMiddleware::class,
         LoginMiddleware::class,
