@@ -37,6 +37,7 @@ final class ModuleProvider implements ModuleProviderContract
 
     public function register(App $app): void
     {
+        $app->bind(ArticleCollectionSummary::class, fn(): ArticleCollectionSummary => new ArticleCollectionSummaryService());
         $app->bind(ArticleAdministration::class, fn(): ArticleAdministration => new ArticleAdministrationService(
             $app->make(CurrentExecutionContext::class),
         ));

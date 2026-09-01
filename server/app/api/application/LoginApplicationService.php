@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\Modules\Official\Notification\ModuleProvider;
+use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\api\service\UserTokenService;
@@ -16,8 +16,10 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 class LoginApplicationService extends ApplicationService
 {
-    public function __construct(private readonly MemberIdentityCommands $memberIdentities)
-    {
+    public function __construct(
+        private readonly MemberIdentityCommands $memberIdentities,
+        private readonly VerificationCodeCommands $verificationCodes,
+    ) {
     }
 
     /**
@@ -79,7 +81,7 @@ class LoginApplicationService extends ApplicationService
         try {
             self::assertLoginWayEnabled($context, 2);
             $mobile = (string) $params['mobile'];
-            $result = (new ModuleProvider())->verification()->verifyCode(
+            $result = $this->verificationCodes->verifyCode(
                 $context,
                 NoticeSceneEnum::LOGIN_CODE,
                 $mobile,
@@ -106,7 +108,7 @@ class LoginApplicationService extends ApplicationService
     {
         try {
             $this->memberIdentities->assertMobileBound($context, (string)$params['mobile']);
-            $result = (new ModuleProvider())->verification()->verifyCode(
+            $result = $this->verificationCodes->verifyCode(
                 $context,
                 NoticeSceneEnum::RESET_PASSWORD,
                 (string) $params['mobile'],

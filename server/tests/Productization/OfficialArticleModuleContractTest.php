@@ -90,6 +90,7 @@ $repository = (string)file_get_contents($serverRoot . '/app/common/service/artic
 $capability = (string)file_get_contents($serverRoot . '/app/common/service/capability/ArticleCapabilityAuthorization.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicArticleTenantMiddleware.php');
 $administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
+$provider = (string)file_get_contents($moduleRoot . '/ModuleProvider.php');
 $categoryController = (string)file_get_contents($moduleRoot . '/Http/Controller/ArticleCateController.php');
 $menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/application/auth/MenuApplicationService.php');
 $permissionService = (string)file_get_contents($serverRoot . '/app/common/service/authorization/AdminAuthorizationService.php');
@@ -164,7 +165,10 @@ officialArticleExpect(
     'member collection path lost Article-owned storage boundary'
 );
 officialArticleExpect(
-    str_contains($userApplication, 'collectionSummary()')
+    str_contains($provider, 'bind(ArticleCollectionSummary::class')
+        && str_contains($userApplication, 'private readonly ArticleCollectionSummary $articleCollections')
+        && str_contains($userApplication, '$this->articleCollections->countForMember(')
+        && !str_contains($userApplication, 'ArticleModuleProvider')
         && str_contains($userApplication, 'catch (ModuleException)')
         && !str_contains($userApplication, 'ArticleCollect::'),
     'member center bypasses the public Article collection summary contract'

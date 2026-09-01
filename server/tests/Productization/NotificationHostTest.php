@@ -38,6 +38,22 @@ expectNotificationHost(
 $applicationService = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Notification/Application/NotificationApplicationService.php'
 );
+$notificationProvider = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Notification/ModuleProvider.php'
+);
+expectNotificationHost(
+    str_contains($notificationProvider, 'bind(VerificationCodeCommands::class'),
+    'verification command contract is not bound at startup'
+);
+foreach (['Login', 'OAuth', 'Sms', 'User'] as $application) {
+    $consumer = (string)file_get_contents($serverRoot . '/app/api/application/' . $application . 'ApplicationService.php');
+    expectNotificationHost(
+        str_contains($consumer, 'VerificationCodeCommands')
+            && str_contains($consumer, '$this->verificationCodes->')
+            && !str_contains($consumer, '(new ModuleProvider())->verification()'),
+        $application . ' consumer bypasses the Notification contract binding'
+    );
+}
 expectNotificationHost(
     str_contains($applicationService, "NoticeLog::alias('l')")
         && !str_contains($applicationService, "where('l.tenant_id'"),
