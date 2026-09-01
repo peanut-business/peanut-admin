@@ -6,6 +6,8 @@ $repositoryRoot = dirname(__DIR__);
 require_once $repositoryRoot . '/server/route/registry_source.php';
 $routeSource = peanut_route_registry_source($repositoryRoot . '/server');
 $accessConfig = require $repositoryRoot . '/server/config/admin_api_access.php';
+$markdown = in_array('--markdown', $argv, true);
+$inventoryJson = in_array('--inventory-json', $argv, true);
 
 /** @return list<array{method:string,path:string,permission:string,access:string}> */
 function adminApiMatrix(string $repositoryRoot, string $routeSource, array $accessConfig): array
@@ -95,6 +97,9 @@ function explicitRoutes(string $routeSource): array
 }
 
 try {
+    if ($markdown && $inventoryJson) {
+        throw new RuntimeException('--markdown and --inventory-json cannot be combined');
+    }
     if (($accessConfig['version'] ?? null) !== 1) {
         throw new RuntimeException('admin API exception metadata version must be exactly 1');
     }
@@ -163,7 +168,7 @@ try {
         static fn(array $row): bool => $row['access'] === 'unregistered',
     ));
 
-    if (in_array('--markdown', $argv, true)) {
+    if ($markdown) {
         echo "| Method | Admin API route | Access registration |\n";
         echo "|---|---|---|\n";
         foreach ($matrix as $row) {
@@ -191,12 +196,19 @@ try {
         static fn(array $row): bool => $row['access'] === 'permission',
     ));
     $authenticatedCount = count($matrix) - $permissionCount;
-    echo sprintf(
-        "Admin API permission gate passed: %d routes (%d permission, %d authenticated)\n",
-        count($matrix),
-        $permissionCount,
-        $authenticatedCount,
-    );
+    if ($inventoryJson) {
+        echo json_encode(
+            peanut_route_endpoint_inventory($repositoryRoot . '/server'),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+        ) . PHP_EOL;
+    } else {
+        echo sprintf(
+            "Admin API permission gate passed: %d routes (%d permission, %d authenticated)\n",
+            count($matrix),
+            $permissionCount,
+            $authenticatedCount,
+        );
+    }
 } catch (Throwable $exception) {
     fwrite(STDERR, 'Admin API permission gate failed: ' . $exception->getMessage() . PHP_EOL);
     exit(1);
